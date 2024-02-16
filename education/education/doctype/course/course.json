@@ -9,6 +9,7 @@
  "field_order": [
   "course_name",
   "department",
+  "course_credits",
   "hero_image",
   "column_break_tflc",
   "description",
@@ -37,6 +38,12 @@
    "label": "Department",
    "options": "Department"
   },
+  {
+    "fieldname": "course_credits",
+    "fieldtype": "Int",
+    "in_list_view": 1,
+    "label": "Course Credits (Default)"  
+},
   {
    "fieldname": "section_break_6",
    "fieldtype": "Section Break"

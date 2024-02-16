@@ -44,6 +44,23 @@
    "label": "Program Abbreviation"
   },
   {
+    "fieldname": "program_type",
+    "fieldtype": "Select",
+    "options": "\nTime-based\nCredits-based", 
+    "in_list_view": 1,
+    "label": "Program Type"
+   },
+   {
+    "label": "Terms for completion",
+    "fieldname": "terms_complete",
+    "fieldtype": "Int"
+},
+{
+    "label": "Credits for completion",
+    "fieldname": "credits_complete",
+    "fieldtype": "Int"
+},
+  {
    "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",

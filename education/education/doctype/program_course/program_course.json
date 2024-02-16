@@ -33,7 +33,23 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Mandatory"
-  }
+  },
+  {
+    "default": null,
+    "fieldname": "course_term",
+    "fieldtype": "Int",
+    "in_list_view": 1,
+    "label": "Term number",
+    "depends_on": "eval: doc.program_type == 'Time-based'"
+   },
+   {
+    "fetch_from": "course.course_credits",
+    "fieldname": "pgmcourse_credits",
+    "fieldtype": "Int",
+    "in_list_view": 1,
+    "label": "Credits for this program",
+    "depends_on": "eval: doc.program_type == 'Credits-based'"
+   }
  ],
  "istable": 1,
  "links": [],
