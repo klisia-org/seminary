@@ -9,6 +9,9 @@
  "field_order": [
   "program_name",
   "department",
+  "program_type",
+  "terms_complete",
+  "credits_complete",
   "hero_image",
   "column_break_3",
   "program_abbreviation",
