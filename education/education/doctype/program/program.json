@@ -58,13 +58,15 @@
     "fieldname": "terms_complete",
     "fieldtype": "Int",
     "in_list_view": 1,
-    "label": "Terms for completion"
+    "label": "Terms for completion",
+    "depends_on": "eval: self.program_type == 'Time-based'"
 },
 {
     "fieldname": "credits_complete",
     "fieldtype": "Int",
     "in_list_view": 1,
-    "label": "Credits for completion"
+    "label": "Credits for completion",
+    "depends_on": "eval: self.program_type == 'Credits-based'"
 },
 {
   "fieldname": "section_break_pgmtype",
