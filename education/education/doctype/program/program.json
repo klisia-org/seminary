@@ -10,11 +10,12 @@
   "program_name",
   "department",
   "program_type",
-  "terms_complete",
-  "credits_complete",
   "hero_image",
   "column_break_3",
   "program_abbreviation",
+  "section_break_pgmtype",
+  "terms_complete",
+  "credits_complete",
   "section_break_courses",
   "courses",
   "connections_tab"
@@ -54,15 +55,22 @@
     "label": "Program Type"
    },
    {
-    "label": "Terms for completion",
     "fieldname": "terms_complete",
-    "fieldtype": "Int"
+    "fieldtype": "Int",
+    "in_list_view": 1,
+    "label": "Terms for completion"
 },
 {
-    "label": "Credits for completion",
     "fieldname": "credits_complete",
-    "fieldtype": "Int"
+    "fieldtype": "Int",
+    "in_list_view": 1,
+    "label": "Credits for completion"
 },
+{
+  "fieldname": "section_break_pgmtype",
+  "fieldtype": "Section Break",
+  "label": "Type of Program"
+ },
   {
    "fieldname": "courses",
    "fieldtype": "Table",
@@ -130,7 +138,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-01-25 11:16:12.200449",
+ "modified": "2024-02-16 11:16:12.200449",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",
