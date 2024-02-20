@@ -28,7 +28,7 @@ class StudentGroup(Document):
 
 	def validate_strength(self):
 		if cint(self.max_strength) < 0:
-			frappe.throw(_("""Max strength cannot be less than zero."""))
+			frappe.throw(_("""Max number of students cannot be less than zero."""))
 		if self.max_strength and len(self.students) > self.max_strength:
 			frappe.throw(
 				_("""Cannot enroll more than {0} students for this student group.""").format(

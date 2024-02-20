@@ -53,7 +53,7 @@
    "description": "Set 0 for no limit",
    "fieldname": "max_strength",
    "fieldtype": "Int",
-   "label": "Max Strength"
+   "label": "Max Number of Students in this Group"
   },
   {
    "fieldname": "column_break_3",
