@@ -31,6 +31,6 @@ frappe.ui.form.on('Program', 'program_type', function(frm) {
 		} else if (frm.doc.program_type == 'Credit-based') {
 		frm.set_df_property('terms_complete', 'label', 'Suggested # terms to complete (will only be used for statistical purposes)');
 		frm.set_df_property('credits_complete', 'label', 'Minimum # of Credits to Graduate');
-		frm.refresh();
+		frm.reload();
 	}
 });

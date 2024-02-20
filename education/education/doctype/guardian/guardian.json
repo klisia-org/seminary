@@ -413,7 +413,7 @@
    "in_global_search": 0,
    "in_list_view": 0,
    "in_standard_filter": 0,
-   "label": "Guardian Of ",
+   "label": "Reference Of ",
    "length": 0,
    "no_copy": 0,
    "permlevel": 0,
@@ -542,7 +542,7 @@
  "modified": "2018-08-21 16:15:54.050317",
  "modified_by": "Administrator",
  "module": "Education",
- "name": "Guardian",
+ "name": "References",
  "name_case": "",
  "owner": "Administrator",
  "permissions": [
