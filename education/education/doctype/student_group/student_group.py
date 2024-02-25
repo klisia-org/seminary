@@ -12,19 +12,12 @@ from education.education.utils import validate_duplicate_student
 
 class StudentGroup(Document):
 	def validate(self):
-		self.validate_mandatory_fields()
 		self.validate_strength()
 		self.validate_students()
 		self.validate_and_set_child_table_fields()
 		validate_duplicate_student(self.students)
 
-	def validate_mandatory_fields(self):
-		if self.group_based_on == "Course" and not self.course:
-			frappe.throw(_("Please select Course"))
-		if self.group_based_on == "Course" and (not self.program and self.batch):
-			frappe.throw(_("Please select Program"))
-		if self.group_based_on == "Batch" and not self.program:
-			frappe.throw(_("Please select Program"))
+	
 
 	def validate_strength(self):
 		if cint(self.max_strength) < 0:
@@ -41,9 +34,6 @@ class StudentGroup(Document):
 			self.academic_year,
 			self.academic_term,
 			self.program,
-			self.batch,
-			self.student_category,
-			self.course,
 		)
 		students = [d.student for d in program_enrollment] if program_enrollment else []
 		for d in self.students:
@@ -54,28 +44,6 @@ class StudentGroup(Document):
 			):
 				frappe.throw(
 					_("{0} - {1} is inactive student").format(d.group_roll_number, d.student_name)
-				)
-
-			if (
-				(self.group_based_on == "Batch")
-				and cint(frappe.defaults.get_defaults().validate_batch)
-				and d.student not in students
-			):
-				frappe.throw(
-					_("{0} - {1} is not enrolled in the Batch {2}").format(
-						d.group_roll_number, d.student_name, self.batch
-					)
-				)
-
-			if (
-				(self.group_based_on == "Course")
-				and cint(frappe.defaults.get_defaults().validate_course)
-				and (d.student not in students)
-			):
-				frappe.throw(
-					_("{0} - {1} is not enrolled in the Course {2}").format(
-						d.group_roll_number, d.student_name, self.course
-					)
 				)
 
 	def validate_and_set_child_table_fields(self):
@@ -97,15 +65,11 @@ class StudentGroup(Document):
 @frappe.whitelist()
 def get_students(
 	academic_year,
-	group_based_on,
 	academic_term=None,
 	program=None,
-	batch=None,
-	student_category=None,
-	course=None,
 ):
 	enrolled_students = get_program_enrollment(
-		academic_year, academic_term, program, batch, student_category, course
+		academic_year, academic_term, program
 	)
 
 	if enrolled_students:
@@ -126,9 +90,6 @@ def get_program_enrollment(
 	academic_year,
 	academic_term=None,
 	program=None,
-	batch=None,
-	student_category=None,
-	course=None,
 ):
 
 	condition1 = " "
@@ -137,14 +98,7 @@ def get_program_enrollment(
 		condition1 += " and pe.academic_term = %(academic_term)s"
 	if program:
 		condition1 += " and pe.program = %(program)s"
-	if batch:
-		condition1 += " and pe.student_batch_name = %(batch)s"
-	if student_category:
-		condition1 += " and pe.student_category = %(student_category)s"
-	if course:
-		condition1 += " and pe.name = pec.parent and pec.course = %(course)s"
-		condition2 = ", `tabProgram Enrollment Course` pec"
-
+	
 	return frappe.db.sql(
 		"""
 		select
@@ -164,9 +118,7 @@ def get_program_enrollment(
 				"academic_year": academic_year,
 				"academic_term": academic_term,
 				"program": program,
-				"batch": batch,
-				"student_category": student_category,
-				"course": course,
+				
 			}
 		),
 		as_dict=1,
@@ -181,9 +133,7 @@ def fetch_students(doctype, txt, searchfield, start, page_len, filters):
 			filters.get("academic_year"),
 			filters.get("academic_term"),
 			filters.get("program"),
-			filters.get("batch"),
-			filters.get("student_category"),
-		)
+			)
 		student_group_student = frappe.db.sql_list(
 			"""select student from `tabStudent Group Student` where parent=%s""",
 			(filters.get("student_group")),
