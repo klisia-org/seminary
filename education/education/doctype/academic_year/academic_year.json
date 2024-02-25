@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "section_break_zolm",
   "academic_year_name",
   "year_start_date",
   "year_end_date",
@@ -13,9 +14,13 @@
  ],
  "fields": [
   {
+   "allow_in_quick_entry": 1,
    "fieldname": "academic_year_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Academic Year Name",
+   "not_nullable": 1,
    "reqd": 1,
    "unique": 1
   },
@@ -24,7 +29,7 @@
    "fieldname": "year_start_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Year Start Date",
+   "label": "Academic Year Start Date",
    "reqd": 1
   },
   {
@@ -32,7 +37,7 @@
    "fieldname": "year_end_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Year End Date",
+   "label": "Academic Year End Date",
    "reqd": 1
   },
   {
@@ -40,6 +45,11 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "section_break_zolm",
+   "fieldtype": "Section Break",
+   "label": "Manually Add Academic Years"
   }
  ],
  "links": [
@@ -94,7 +104,7 @@
    "link_fieldname": "academic_year"
   }
  ],
- "modified": "2024-01-25 11:14:11.648233",
+ "modified": "2024-02-24 17:24:33.063128",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Academic Year",

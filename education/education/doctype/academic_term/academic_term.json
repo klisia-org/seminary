@@ -23,7 +23,8 @@
    "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "term_name",
@@ -107,7 +108,7 @@
    "link_fieldname": "academic_term"
   }
  ],
- "modified": "2024-01-25 11:11:16.432849",
+ "modified": "2024-02-24 17:01:31.810251",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Academic Term",

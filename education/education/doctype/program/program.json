@@ -10,14 +10,24 @@
   "program_name",
   "department",
   "program_type",
-  "hero_image",
   "column_break_3",
   "program_abbreviation",
+  "program_level",
   "section_break_pgmtype",
   "terms_complete",
+  "column_break_voqj",
   "credits_complete",
   "section_break_courses",
   "courses",
+  "tracks_tab",
+  "you_can_specify_courses_per_program_track_section",
+  "pgm_courses_track",
+  "web_tab",
+  "website_information_section",
+  "hero_image",
+  "program_description",
+  "program_requirements",
+  "program_duration",
   "connections_tab"
  ],
  "fields": [
@@ -48,41 +58,44 @@
    "label": "Program Abbreviation"
   },
   {
-    "fieldname": "program_type",
-    "fieldtype": "Select",
-    "options": "\nTime-based\nCredits-based", 
-    "in_list_view": 1,
-    "label": "Program Type"
-   },
-   {
-    "fieldname": "terms_complete",
-    "fieldtype": "Int",
-    "in_list_view": 1,
-    "label": "Terms for completion",
-    "depends_on": "eval: self.program_type == 'Time-based'"
-},
-{
-    "fieldname": "credits_complete",
-    "fieldtype": "Int",
-    "in_list_view": 1,
-    "label": "Credits for completion",
-    "depends_on": "eval: self.program_type == 'Credits-based'"
-},
-{
-  "fieldname": "section_break_pgmtype",
-  "fieldtype": "Section Break",
-  "label": "Type of Program"
- },
+   "description": "Time-based: use terms; Credit-based: track credit completion; Non-formal is a specific type for outreach; Custom is for everything else.",
+   "fieldname": "program_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Enrollment Type",
+   "options": "\nTime-based\nCredits-based\nNon-formal\nCustom",
+   "search_index": 1,
+   "translatable": 1
+  },
   {
+   "fieldname": "terms_complete",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Terms for completion"
+  },
+  {
+   "fieldname": "credits_complete",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Credits for completion"
+  },
+  {
+   "fieldname": "section_break_pgmtype",
+   "fieldtype": "Section Break",
+   "label": "Program Type will regulate which of the options below will be used for student progress (the other may be used for statistical purposes)"
+  },
+  {
+   "description": "This allows the same course to be used in different programs, in different terms and with different number of credits.",
    "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",
    "options": "Program Course"
   },
   {
+   "description": "See also the tab \"Tracks\" where you can configure courses for specific tracks of this program.",
    "fieldname": "section_break_courses",
    "fieldtype": "Section Break",
-   "label": "Courses"
+   "label": "Courses of this program (use Term number for guiding the student progress in Time-based programs)"
   },
   {
    "fieldname": "connections_tab",
@@ -91,10 +104,64 @@
    "show_dashboard": 1
   },
   {
+   "bold": 1,
    "fieldname": "hero_image",
    "fieldtype": "Attach Image",
    "hidden": 1,
-   "label": "Image"
+   "label": "Program Image"
+  },
+  {
+   "fieldname": "web_tab",
+   "fieldtype": "Tab Break",
+   "label": "Web"
+  },
+  {
+   "fieldname": "website_information_section",
+   "fieldtype": "Section Break",
+   "label": "Website information"
+  },
+  {
+   "fieldname": "program_description",
+   "fieldtype": "Text Editor",
+   "label": "Program Description"
+  },
+  {
+   "fieldname": "program_requirements",
+   "fieldtype": "Text Editor",
+   "label": "Requirements"
+  },
+  {
+   "fieldname": "program_duration",
+   "fieldtype": "Int",
+   "label": "Duration"
+  },
+  {
+   "fieldname": "tracks_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tracks"
+  },
+  {
+   "fieldname": "pgm_courses_track",
+   "fieldtype": "Table",
+   "label": "Courses per Track",
+   "options": "Program Track Courses"
+  },
+  {
+   "fieldname": "you_can_specify_courses_per_program_track_section",
+   "fieldtype": "Section Break",
+   "label": "You can specify courses per program track"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Program Level",
+   "options": "\nNon degree\nCertificate\nBachelors\nMasters\nDoctorate",
+   "translatable": 1
+  },
+  {
+   "fieldname": "column_break_voqj",
+   "fieldtype": "Column Break"
   }
  ],
  "image_field": "hero_image",
@@ -140,7 +207,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-02-16 11:16:12.200449",
+ "modified": "2024-02-24 18:17:13.181340",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",
@@ -172,8 +239,6 @@
    "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -206,5 +271,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

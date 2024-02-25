@@ -78,12 +78,14 @@
    "in_standard_filter": 1,
    "label": "Program of Interest",
    "options": "Program",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "default": "0",
    "fieldname": "paid",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Paid"
   },
   {
@@ -119,13 +121,15 @@
    "fieldtype": "Link",
    "label": "Academic Year",
    "options": "Academic Year",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term",
-   "options": "Academic Term"
+   "options": "Academic Term",
+   "search_index": 1
   },
   {
    "fieldname": "student_admission",
@@ -293,7 +297,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2023-11-10 10:54:53.499881",
+ "modified": "2024-02-23 00:21:27.134483",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Applicant",

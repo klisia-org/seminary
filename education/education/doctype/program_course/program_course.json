@@ -34,35 +34,34 @@
    "fieldname": "required",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Mandatory"
+   "label": "Mandatory for this program"
   },
   {
-    "default": null,
-    "fieldname": "course_term",
-    "fieldtype": "Int",
-    "in_list_view": 1,
-    "label": "Term number",
-    "depends_on": "eval: doc.program_type == 'Credits-based'"
-   },
-   {
-    "fetch_from": "course.course_credits",
-    "fieldname": "pgmcourse_credits",
-    "fieldtype": "Int",
-    "in_list_view": 1,
-    "label": "Credits for this program",
-    "depends_on": "eval: doc.program_type == 'Credits-based'"
-   }
+   "depends_on": "eval: doc.program_type == 'Credits-based'",
+   "fieldname": "course_term",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Term number"
+  },
+  {
+   "depends_on": "eval: doc.program_type == 'Credits-based'",
+   "fetch_from": "course.course_credits",
+   "fieldname": "pgmcourse_credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Credits for this program"
+  }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-02-17 18:14:22.816795",
+ "modified": "2024-02-23 14:46:24.082585",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Course",
  "owner": "Administrator",
  "permissions": [],
- "restrict_to_domain": "",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
