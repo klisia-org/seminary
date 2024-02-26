@@ -128,7 +128,7 @@ def get_program_enrollment(
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def fetch_students(doctype, txt, searchfield, start, page_len, filters):
-	get_program_enrollment(
+	enrolled_students = get_program_enrollment(
 			filters.get("academic_year"),
 			filters.get("academic_term"),
 			filters.get("program"),
