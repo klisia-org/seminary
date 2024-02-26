@@ -10,7 +10,7 @@ frappe.ui.form.on('Student Group', {
 		if (!frm.__islocal) {
 			frm.set_query('student', 'students', function() {
 				return{
-					query: 'education.education.doctype.student_group.student_group.fetch_students',
+					query: 'education.education.doctype.student_group.student_group.get_program_enrollment',
 					filters: {
 						'academic_year': frm.doc.academic_year,				
 						'academic_term': frm.doc.academic_term,
