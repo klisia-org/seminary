@@ -115,7 +115,7 @@ def get_program_enrollment(
 			pe.student = t.name AND
 			t.enabled = 1 AND
 			t.docstatus = 1 AND
-			pe.name NOT IN (select student from `tabStudent Group Student` where parent = %(name)s) 
+			pe.name NOT IN (select student from `tabStudent Group Student`)
 		order by
 			pe.student_name asc
 		""",
