@@ -128,22 +128,21 @@ def get_program_enrollment(
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def fetch_students(doctype, txt, searchfield, start, page_len, filters):
-	if filters.get("group_based_on") != "Activity":
-		enrolled_students = get_program_enrollment(
+	get_program_enrollment(
 			filters.get("academic_year"),
 			filters.get("academic_term"),
 			filters.get("program"),
 			)
-		student_group_student = frappe.db.sql_list(
+	student_group_student = frappe.db.sql_list(
 			"""select student from `tabStudent Group Student` where parent=%s""",
 			(filters.get("student_group")),
 		)
-		students = (
+	students = (
 			[d.student for d in enrolled_students if d.student not in student_group_student]
 			if enrolled_students
 			else [""]
 		) or [""]
-		return frappe.db.sql(
+	return frappe.db.sql(
 			"""select name, student_name from tabStudent
 			where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
 			order by idx desc, name
@@ -151,14 +150,4 @@ def fetch_students(doctype, txt, searchfield, start, page_len, filters):
 				", ".join(["%s"] * len(students)), searchfield
 			),
 			tuple(students + ["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
-		)
-	else:
-		return frappe.db.sql(
-			"""select name, student_name from tabStudent
-			where `{0}` LIKE %s or title LIKE %s
-			order by idx desc, name
-			limit %s, %s""".format(
-				searchfield
-			),
-			tuple(["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
 		)
