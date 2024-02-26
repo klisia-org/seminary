@@ -137,7 +137,7 @@ def fetch_students(doctype, txt, searchfield, start, page_len, filters):
 			where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
 			order by idx desc, name
 			limit %s, %s""".format(
-				", ".join(["%s"] * len(students)), searchfield
+				", ".join(["%s"] * len(students))
 			),
-			tuple(students + ["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
+			tuple(students + ["%%%s%%" % txt, "" % txt, start, page_len]),
 		)
