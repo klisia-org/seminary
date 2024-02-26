@@ -100,10 +100,6 @@ def get_program_enrollment(
 	program=None,
 ):
 
-	if academic_term:
-		condition1 += " and pe.academic_term = %(academic_term)s"
-	if program:
-		condition1 += " and pe.program = %(program)s"
 	
 	return frappe.db.sql(
 		"""
@@ -112,17 +108,17 @@ def get_program_enrollment(
 		from
 			`tabProgram Enrollment` pe, `tabStudent` t 
 		where
-			pe.academic_year = %(academic_year)s  
-			and pe.docstatus = 1 AND
+			pe.academic_year = %(academic_year)s  AND
+			pe.academic_term = %(academic_term)s AND
+			pe.program = %(program)s AND
+			pe.docstatus = 1 AND
 			pe.student = t.name AND
 			t.enabled = 1 AND
 			t.docstatus = 1 AND
 			pe.name NOT IN (select student from `tabStudent Group Student` where parent = %(name)s) 
 		order by
 			pe.student_name asc
-		""".format(
-			condition1=condition1
-		),
+		""",
 		(
 			{
 				"academic_year": academic_year,
