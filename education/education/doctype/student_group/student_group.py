@@ -129,3 +129,15 @@ def get_program_enrollment(
 		),
 		as_dict=1,
 	)
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def fetch_students(doctype, txt, searchfield, start, page_len, filters):
+	frappe.db.sql(
+			"""select name, student_name from tabStudent
+			where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
+			order by idx desc, name
+			limit %s, %s""".format(
+				", ".join(["%s"] * len(students)), searchfield
+			),
+			tuple(students + ["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
+		)

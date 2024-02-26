@@ -51,7 +51,7 @@ frappe.ui.form.on('Student Group', {
 
 	get_students: function(frm) {
 				frappe.call({
-					method: 'education.education.doctype.student_group.student_group.get_students',
+					method: 'education.education.doctype.student_group.student_group.fetch_students',
 					args: {
 						'academic_year': frm.doc.academic_year,
 						'academic_term': frm.doc.academic_term,
