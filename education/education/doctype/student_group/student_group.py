@@ -65,8 +65,8 @@ class StudentGroup(Document):
 @frappe.whitelist()
 def get_students(
 	academic_year,
-	academic_term=None,
-	program=None,
+	academic_term,
+	program,
 ):
 	enrolled_students = get_program_enrollment(
 		academic_year, academic_term, program
