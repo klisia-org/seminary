@@ -14,8 +14,7 @@ frappe.ui.form.on('Student Group', {
 					filters: {
 						'academic_year': frm.doc.academic_year,				
 						'academic_term': frm.doc.academic_term,
-						'program': frm.doc.program,						
-						'student_group': frm.doc.name
+						'program': frm.doc.program
 					}
 				}
 			});

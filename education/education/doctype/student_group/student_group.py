@@ -68,6 +68,14 @@ def get_students(
 	academic_term=None,
 	program=None,
 ):
+	"""
+	Get the list of students enrolled in a specific academic year, academic term, and program.
+
+	:param academic_year: The academic year of the students.
+	:param academic_term: The academic term of the students (optional).
+	:param program: The program of the students (optional).
+	:return: A list of enrolled students.
+	"""
 	enrolled_students = get_program_enrollment(
 		academic_year, academic_term, program
 	)
@@ -129,25 +137,25 @@ def get_program_enrollment(
 @frappe.validate_and_sanitize_search_inputs
 def fetch_students(doctype, txt, searchfield, start, page_len, filters):
 	enrolled_students = get_program_enrollment(
-			filters.get("academic_year"),
-			filters.get("academic_term"),
-			filters.get("program"),
-			)
+		filters.get("academic_year"),
+		filters.get("academic_term"),
+		filters.get("program"),
+	)
 	student_group_student = frappe.db.sql_list(
-			"""select student from `tabStudent Group Student` where parent=%s""",
-			(filters.get("student_group")),
-		)
+		"""select student from `tabStudent Group Student` where parent=%s""",
+		(filters.get("student_group"),),
+	)
 	students = (
-			[d.student for d in enrolled_students if d.student not in student_group_student]
-			if enrolled_students
-			else [""]
-		) or [""]
+		[d.student for d in enrolled_students if d.student not in student_group_student]
+		if enrolled_students
+		else [""]
+	) or [""]
 	return frappe.db.sql(
-			"""select name, student_name from tabStudent
-			where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
-			order by idx desc, name
-			limit %s, %s""".format(
-				", ".join(["%s"] * len(students)), searchfield
-			),
-			tuple(students + ["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
-		)
+		"""select name, student_name from tabStudent
+		where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
+		order by idx desc, name
+		limit %s, %s""".format(
+			", ".join(["%s"] * len(students)), searchfield
+		),
+		tuple(students + ["%%%s%%" % txt, "%%%s%%" % txt, start, page_len]),
+	)
