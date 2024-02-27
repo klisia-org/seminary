@@ -17,7 +17,6 @@
   "column_break_3",
   "max_strength",
   "disabled",
-  "program_type",
   "section_break_6",
   "get_students",
   "students",
@@ -110,19 +109,10 @@
    "fieldname": "student_group_section",
    "fieldtype": "Section Break",
    "label": "Student Group"
-  },
-  {
-   "fetch_from": "program.program_type",
-   "fieldname": "program_type",
-   "fieldtype": "Link",
-   "label": "Program Type",
-   "options": "Program",
-   "read_only": 1,
-   "search_index": 1
   }
  ],
  "links": [],
- "modified": "2024-02-25 16:14:39.142151",
+ "modified": "2024-02-25 18:03:40.087923",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Group",

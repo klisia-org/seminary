@@ -36,7 +36,8 @@
    "in_global_search": 1,
    "label": "Student",
    "options": "Student",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fetch_from": "student.student_name",
@@ -71,7 +72,8 @@
    "in_standard_filter": 1,
    "label": "Program",
    "options": "Program",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "academic_year",
@@ -80,13 +82,16 @@
    "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term",
-   "options": "Academic Term"
+   "options": "Academic Term",
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "default": "Today",
@@ -97,7 +102,7 @@
   },
   {
    "default": "0",
-   "description": "Check this if the Student is residing at the Institute's Hostel.",
+   "description": "Check this if the Student is residing at the Seminary's lodging.",
    "fieldname": "boarding_student",
    "fieldtype": "Check",
    "label": "Boarding Student"
@@ -175,7 +180,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-01-25 11:17:11.685644",
+ "modified": "2024-02-26 17:57:51.846689",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

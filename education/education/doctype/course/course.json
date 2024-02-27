@@ -13,6 +13,8 @@
   "hero_image",
   "column_break_tflc",
   "description",
+  "prerequisites_section",
+  "course_prerequisite",
   "section_break_6",
   "topics",
   "assessment_tab",
@@ -39,14 +41,15 @@
    "options": "Department"
   },
   {
-    "fieldname": "course_credits",
-    "fieldtype": "Int",
-    "in_list_view": 1,
-    "label": "Course Credits (Default)"  
-},
+   "fieldname": "course_credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Course Credits (Default)"
+  },
   {
    "fieldname": "section_break_6",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Topics"
   },
   {
    "fieldname": "topics",
@@ -95,14 +98,26 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "prerequisites_section",
+   "fieldtype": "Section Break",
+   "label": "Prerequisites"
+  },
+  {
+   "fieldname": "course_prerequisite",
+   "fieldtype": "Table",
+   "label": "Course Prerequisites",
+   "options": "Course_prerequisite"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2023-01-13 17:12:58.871929",
+ "modified": "2024-02-26 17:42:14.905239",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
