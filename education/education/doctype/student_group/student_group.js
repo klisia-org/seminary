@@ -50,10 +50,13 @@ frappe.ui.form.on('Student Group', {
 	},
 
 	get_students: function(frm) {
-				frappe.call({
-					frm.students = [];
+		frm.students = [],
 					frm.set_value('students', []);
+				frappe.call({
 					method: 'get_students',
+					doc: frm.doc,
+					
+					
 					args: {
 						'academic_year': frm.doc.academic_year,
 						'academic_term': frm.doc.academic_term,
