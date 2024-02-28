@@ -112,7 +112,7 @@ class ProgramEnrollment(Document):
 	@frappe.whitelist()
 	def get_courses(self):
 		return frappe.db.sql(
-			"""select course from `tabProgram Course` where parent = %s and required = 1""",
+			"""select course from `tabProgram Course` where parent = %s and pgm_course_reqonenroll = 1""",
 			(self.program),
 			as_dict=1,
 		)
