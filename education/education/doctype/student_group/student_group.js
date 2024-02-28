@@ -51,7 +51,9 @@ frappe.ui.form.on('Student Group', {
 
 	get_students: function(frm) {
 				frappe.call({
-					method: 'education.education.doctype.student_group.student_group.fetch_students',
+					frm.students = [];
+					frm.set_value('students', []);
+					method: 'get_students',
 					args: {
 						'academic_year': frm.doc.academic_year,
 						'academic_term': frm.doc.academic_term,
@@ -59,26 +61,12 @@ frappe.ui.form.on('Student Group', {
 						},
 					callback: function(r) {
 						if (r.message) {
-							$.each(r.message, function(i, d) {
-								if(!in_list(student_list, d.student)) {
-									var s = frm.add_child('students');
-									s.student = d.student;
-									s.student_name = d.student_name;
-									if (d.active === 0) {
-										s.active = 0;
-									}
-									s.group_roll_number = ++max_roll_no;
+							frm.students = r.message;
+							frm.set_value('students', r.message);							
 								}
-							});
-							refresh_field('students');
-							frm.save();
-						} else {
-							frappe.msgprint(__('Student Group is already updated.'))
-						}
-					}
-				})
-			},
-		},);
+							}});
+						} 
+					});
 
 frappe.ui.form.on('Student Group Instructor', {
 	instructors_add: function(frm){

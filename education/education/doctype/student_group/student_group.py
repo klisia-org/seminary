@@ -68,43 +68,10 @@ def get_students(
 	academic_term=None,
 	program=None,
 ):
-	"""
-	Get the list of students enrolled in a specific academic year, academic term, and program.
-
-	:param academic_year: The academic year of the students.
-	:param academic_term: The academic term of the students (optional).
-	:param program: The program of the students (optional).
-	:return: A list of enrolled students.
-	"""
-	enrolled_students = get_program_enrollment(
-		academic_year, academic_term, program
-	)
-
-	if enrolled_students:
-		student_list = []
-		for s in enrolled_students:
-			if frappe.db.get_value("Student", s.student, "enabled"):
-				s.update({"active": 1})
-			else:
-				s.update({"active": 0})
-			student_list.append(s)
-		return student_list
-	else:
-		frappe.msgprint(_("No students found"))
-		return []
-
-
-def get_program_enrollment(
-	academic_year,
-	academic_term=None,
-	program=None,
-):
-
-	
 	return frappe.db.sql(
 		"""
 		select
-			pe.student, pe.student_name
+			pe.student
 		from
 			`tabProgram Enrollment` pe, `tabStudent` t 
 		where
@@ -129,15 +96,3 @@ def get_program_enrollment(
 		),
 		as_dict=1,
 	)
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def fetch_students(doctype, txt, searchfield, start, page_len, filters):
-	frappe.db.sql(
-			"""select name, student_name from tabStudent
-			where name in ({0}) and (`{1}` LIKE %s or student_name LIKE %s)
-			order by idx desc, name
-			limit %s, %s""".format(
-				", ".join(["%s"] * len(students))
-			),
-			tuple(students + ["%%%s%%" % txt, "" % txt, start, page_len]),
-		)
