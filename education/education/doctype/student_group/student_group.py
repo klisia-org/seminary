@@ -3,12 +3,9 @@
 
 
 import frappe
-from frappe import _
+from frappe import _, msgprint
 from frappe.model.document import Document
 from frappe.utils import cint
-
-from education.education.utils import validate_duplicate_student
-
 
 class StudentGroup(Document):
 	def validate(self):
@@ -25,11 +22,7 @@ class StudentGroup(Document):
 			)
 
 @frappe.whitelist()
-def get_students(
-	academic_year,
-	academic_term=None,
-	program=None,
-):
+def get_students(self, academic_year, academic_term=None, program=None):
 	return frappe.db.sql(
 		"""
 		select
@@ -46,15 +39,13 @@ def get_students(
 			t.docstatus = 1 AND
 			pe.name NOT IN (select student from `tabStudent Group Student`)
 		order by
-			pe.student_name asc
+			pe.student asc
 		""",
-		(
-			{
-				"academic_year": academic_year,
-				"academic_term": academic_term,
-				"program": program,
-				
-			}
-		),
+		(self.student_group, academic_year, academic_term, program),
+		{
+			"academic_year": academic_year,
+			"academic_term": academic_term,
+			"program": program,
+		},
 		as_dict=1,
 	)
