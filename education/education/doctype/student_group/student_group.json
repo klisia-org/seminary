@@ -18,7 +18,6 @@
   "max_strength",
   "disabled",
   "section_break_6",
-  "get_students",
   "students",
   "section_break_12",
   "instructors"
@@ -81,11 +80,6 @@
    "fieldname": "section_break_6",
    "fieldtype": "Section Break",
    "label": "Students"
-  },
-  {
-   "fieldname": "get_students",
-   "fieldtype": "Button",
-   "label": "Get Students"
   },
   {
    "allow_on_submit": 1,
