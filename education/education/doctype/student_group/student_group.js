@@ -48,7 +48,7 @@ frappe.ui.form.on('Student Group', {
 
 		}
 	},
-
+	
 	get_students: function(frm) {
 		frm.students = [],
 					frm.set_value('students', []);
