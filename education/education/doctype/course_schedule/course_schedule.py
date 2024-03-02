@@ -45,18 +45,7 @@ class CourseSchedule(Document):
 					).format(self.academic_term)
 				)
 
-			academic_year = self.academic_year
-			academic_year = self.academic_year
-			start_date, end_date = frappe.db.get_value(
-				"Academic Year", academic_year, ["year_start_date", "year_end_date"]
-			)
-			if (self.c_datestart < start_date or self.c_dateend > end_date):
-				frappe.throw(
-					_(
-						"Schedule date selected does not lie within the Academic Year."
-					).format(self.academic_year)
-				)
-
+			
 	def validate_time(self):
 		"""Validates if from_time is greater than to_time"""
 		if self.from_time > self.to_time:
