@@ -9,9 +9,6 @@ frappe.ui.form.on("Course Schedule", {
 				frappe.set_route("Form", "Student Attendance Tool");
 			});
 		}
-		if (frm.doc.student_group) {
-			frm.events.get_instructors(frm);
-		}
 	},
 
 	onload: (frm) => {
@@ -26,33 +23,7 @@ frappe.ui.form.on("Course Schedule", {
 			else
 				return;
 
-		});
-
-		frm.set_query('course', function() {
-			return {
-				query: 'education.education.doctype.program_enrollment.program_enrollment.get_program_courses',
-				filters: {
-					'program': frm.doc.program
-				}
-			};
-		});
-
-	},
-
-	student_group: (frm) => {
-		frm.events.get_instructors(frm);
-	},
-
-	get_instructors: (frm) => {
-		frm.instructors = [];
-		frappe.call({
-			method: 'education.education.api.get_instructors',
-			args: {
-				"student_group": frm.doc.student_group
-			},
-			callback: function(data) {
-				frm.instructors = data.message
-			}
 		})
+
 	}
 });

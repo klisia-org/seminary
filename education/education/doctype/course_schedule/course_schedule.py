@@ -29,43 +29,32 @@ class CourseSchedule(Document):
 			+ (self.instructor_name if self.instructor_name else self.instructor)
 		)
 
-	def validate_course(self):
-		group_based_on, course = frappe.db.get_value(
-			"Student Group", self.student_group, ["group_based_on", "course"]
-		)
-		if group_based_on == "Course":
-			self.course = course
-
 	def validate_date(self):
-		academic_year, academic_term = frappe.db.get_value(
-			"Student Group", self.student_group, ["academic_year", "academic_term"]
-		)
-		self.schedule_date = frappe.utils.getdate(self.schedule_date)
-
-		if academic_term:
+			academic_term = self.academic_term
 			start_date, end_date = frappe.db.get_value(
 				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
 			)
 			if (
 				start_date
 				and end_date
-				and (self.schedule_date < start_date or self.schedule_date > end_date)
+				and (self.c_datestart < start_date or self.c_dateend > end_date)
 			):
 				frappe.throw(
 					_(
-						"Schedule date selected does not lie within the Academic Term of the Student Group {0}."
-					).format(self.student_group)
+						"Schedule date selected does not lie within the Academic Term."
+					).format(self.academic_term)
 				)
 
-		elif academic_year:
+			academic_year = self.academic_year
+			academic_year = self.academic_year
 			start_date, end_date = frappe.db.get_value(
 				"Academic Year", academic_year, ["year_start_date", "year_end_date"]
 			)
-			if self.schedule_date < start_date or self.schedule_date > end_date:
+			if (self.c_datestart < start_date or self.c_dateend > end_date):
 				frappe.throw(
 					_(
-						"Schedule date selected does not lie within the Academic Year of the Student Group {0}."
-					).format(self.student_group)
+						"Schedule date selected does not lie within the Academic Year."
+					).format(self.academic_year)
 				)
 
 	def validate_time(self):
@@ -82,20 +71,24 @@ class CourseSchedule(Document):
 				pass
 
 	def validate_overlap(self):
-		"""Validates overlap for Student Group, Instructor, Room"""
+		"""Validates overlap for Instructor, Room"""
 
 		from education.education.utils import validate_overlap_for
-
-		# Validate overlapping course schedules.
-		if self.student_group:
-			validate_overlap_for(self, "Course Schedule", "student_group")
 
 		validate_overlap_for(self, "Course Schedule", "instructor")
 		validate_overlap_for(self, "Course Schedule", "room")
 
-		# validate overlapping assessment schedules.
-		if self.student_group:
-			validate_overlap_for(self, "Assessment Plan", "student_group")
+		@frappe.whitelist()
+		def get_meeting_dates(self):
+			meeting_dates = []
+			days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
+			current_date = self.c_datestart
+			import calendar
+			from datetime import timedelta
+			from dateutil import relativedelta
+			while current_date <= self.c_dateend:
+				if days_of_week[current_date.weekday()]:
+					meeting_dates.append(current_date)
+				current_date += timedelta(days=1)
 
-		validate_overlap_for(self, "Assessment Plan", "room")
-		validate_overlap_for(self, "Assessment Plan", "supervisor", self.instructor)
+			return meeting_dates
