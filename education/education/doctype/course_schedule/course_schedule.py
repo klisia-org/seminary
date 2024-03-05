@@ -16,7 +16,6 @@ class CourseSchedule(Document):
 			"Instructor", self.instructor1
 		)
 		self.set_title()
-		self.validate_course()
 		self.validate_date()
 		self.validate_time()
 		self.validate_overlap()
