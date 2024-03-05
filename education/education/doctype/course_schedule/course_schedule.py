@@ -34,8 +34,8 @@ class CourseSchedule(Document):
 				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
 			)
 			# Convert self.c_datestart and self.c_dateend to date objects
-			c_datestart = datetime.datetime.striptime(self.c_datestart, '%m-%d-%Y').date()
-			c_dateend = datetime.datetime.striptime(self.c_dateend, '%m-%d-%Y').date()
+			c_datestart = datetime.striptime(self.c_datestart, '%m-%d-%Y').date()
+			c_dateend = datetime.striptime(self.c_dateend, '%m-%d-%Y').date()
 			print(type(term_start_date))
 			print(type(c_datestart))
 
