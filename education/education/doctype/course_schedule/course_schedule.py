@@ -3,7 +3,7 @@
 # For license information, please see license.txt
 
 
-from datetime import date
+from datetime import datetime
 
 import frappe
 from frappe import _
@@ -34,9 +34,10 @@ class CourseSchedule(Document):
 				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
 			)
 			# Convert self.c_datestart and self.c_dateend to date objects
-			c_datestart = date.isoformat(self.c_datestart).date()
-			c_dateend = date.isoformat(self.c_dateend).date()
-			
+			c_datestart = datetime.datetime.striptime(self.c_datestart, '%m-%d-%Y').date()
+			c_dateend = datetime.datetime.striptime(self.c_dateend, '%m-%d-%Y').date()
+			print(type(term_start_date))
+			print(type(c_datestart))
 
 			if (
 				start_date
