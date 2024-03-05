@@ -55,13 +55,6 @@ class CourseSchedule(Document):
 		if self.from_time > self.to_time:
 			frappe.throw(_("From Time cannot be greater than To Time."))
 
-	def validate_overlap(self):
-		"""Validates overlap for Instructor, Room"""
-
-		from education.education.utils import validate_overlap_for
-
-		validate_overlap_for(self, "Course Schedule", "instructor1")
-		validate_overlap_for(self, "Course Schedule", "room")
 
 		@frappe.whitelist()
 		def get_meeting_dates(self):
