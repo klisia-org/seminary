@@ -55,14 +55,6 @@ class CourseSchedule(Document):
 		if self.from_time > self.to_time:
 			frappe.throw(_("From Time cannot be greater than To Time."))
 
-		"""Handles specicfic case to update schedule date in calendar """
-		if isinstance(self.from_time, str):
-			try:
-				datetime_obj = datetime.strptime(self.from_time, "%Y-%m-%d %H:%M:%S")
-				self.schedule_date = datetime_obj
-			except ValueError:
-				pass
-
 	def validate_overlap(self):
 		"""Validates overlap for Instructor, Room"""
 
