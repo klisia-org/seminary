@@ -36,6 +36,8 @@ class CourseSchedule(Document):
 			# Convert self.c_datestart and self.c_dateend to date objects
 			c_datestart = datetime.strptime(self.c_datestart, '%Y-%m-%d').date()
 			c_dateend = datetime.strptime(self.c_dateend, '%Y-%m-%d').date()
+			start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+			end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
 			if (
 				start_date
