@@ -65,7 +65,8 @@ frappe.ui.form.on('Student Group', {
 					callback: function(r) {
 						if (r.message) {
 							frm.students = r.message;
-							frm.set_value('students', r.message);							
+							frm.set_value('students', r.message);
+							frm.refresh_field('students'); 					
 								}
 							}});
 						} 

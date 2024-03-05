@@ -13,7 +13,7 @@ from frappe.model.document import Document
 class CourseSchedule(Document):
 	def validate(self):
 		self.instructor_name = frappe.db.get_value(
-			"Instructor", self.instructor, "instructor_name"
+			"Instructor", self.instructor1
 		)
 		self.set_title()
 		self.validate_course()
@@ -26,7 +26,7 @@ class CourseSchedule(Document):
 		self.title = (
 			self.course
 			+ " by "
-			+ (self.instructor_name if self.instructor_name else self.instructor)
+			+ (self.instructor1)
 		)
 
 	def validate_date(self):
@@ -64,7 +64,7 @@ class CourseSchedule(Document):
 
 		from education.education.utils import validate_overlap_for
 
-		validate_overlap_for(self, "Course Schedule", "instructor")
+		validate_overlap_for(self, "Course Schedule", "instructor1")
 		validate_overlap_for(self, "Course Schedule", "room")
 
 		@frappe.whitelist()
