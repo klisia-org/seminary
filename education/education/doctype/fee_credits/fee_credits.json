@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-04 10:46:54.650004",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "configure_credits_section",
+  "date_startfee",
+  "credit_cost",
+  "active"
+ ],
+ "fields": [
+  {
+   "fieldname": "configure_credits_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Credits"
+  },
+  {
+   "fieldname": "date_startfee",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date Start",
+   "reqd": 1
+  },
+  {
+   "fieldname": "credit_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Cost of 1 credit",
+   "non_negative": 1,
+   "precision": "2",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-04 15:53:37.197893",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "fee_credits",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

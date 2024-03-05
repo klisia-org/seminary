@@ -88,7 +88,6 @@
    "description": "This allows the same course to be used in different programs, in different terms and with different number of credits.",
    "fieldname": "courses",
    "fieldtype": "Table",
-   "label": "Courses",
    "options": "Program Course"
   },
   {
@@ -153,11 +152,10 @@
   },
   {
    "fieldname": "program_level",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Program Level",
-   "options": "\nNon degree\nCertificate\nBachelors\nMasters\nDoctorate",
-   "translatable": 1
+   "options": "Program Level"
   },
   {
    "fieldname": "column_break_voqj",
@@ -207,7 +205,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-02-24 18:17:13.181340",
+ "modified": "2024-03-05 10:09:36.214924",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

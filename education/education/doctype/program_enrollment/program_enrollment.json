@@ -16,7 +16,7 @@
   "academic_term",
   "image",
   "section_break_vsaj",
-  "student_category",
+  "student_feetype",
   "student_batch_name",
   "column_break_ebuo",
   "school_house",
@@ -24,6 +24,8 @@
   "enrolled_courses",
   "courses",
   "fees_tab",
+  "payers_for_this_program_section",
+  "table_nfjw",
   "section_break_7",
   "fees",
   "amended_from",
@@ -46,12 +48,6 @@
    "in_global_search": 1,
    "label": "Student Name",
    "read_only": 1
-  },
-  {
-   "fieldname": "student_category",
-   "fieldtype": "Link",
-   "label": "Student Category",
-   "options": "Student Category"
   },
   {
    "allow_on_submit": 1,
@@ -80,7 +76,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Academic Year",
+   "label": "Academic Year on Enrollment",
    "options": "Academic Year",
    "reqd": 1,
    "search_index": 1
@@ -88,7 +84,7 @@
   {
    "fieldname": "academic_term",
    "fieldtype": "Link",
-   "label": "Academic Term",
+   "label": "Academic Term on Enrollment",
    "options": "Academic Term",
    "reqd": 1,
    "search_index": 1
@@ -169,6 +165,27 @@
    "fieldtype": "Link",
    "label": "School House",
    "options": "School House"
+  },
+  {
+   "fieldname": "payers_for_this_program_section",
+   "fieldtype": "Section Break",
+   "label": "Payers for this program"
+  },
+  {
+   "fieldname": "table_nfjw",
+   "fieldtype": "Table",
+   "label": "Check if this is correct always. Payments can be split between individual and churches or others.",
+   "options": "pgm_enroll_payers",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.customer_group",
+   "fieldname": "student_feetype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student Fee Group",
+   "options": "Customer Group",
+   "reqd": 1
   }
  ],
  "image_field": "image",
@@ -180,7 +197,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-02-26 17:57:51.846689",
+ "modified": "2024-03-05 10:17:12.624008",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

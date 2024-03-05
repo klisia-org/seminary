@@ -47,6 +47,10 @@
   "customer",
   "column_break_rgpi",
   "customer_group",
+  "services_section",
+  "studentservices",
+  "lodging_section",
+  "stu_lodge_enroll",
   "exit_tab",
   "exit",
   "date_of_leaving",
@@ -215,12 +219,11 @@
   {
    "fieldname": "section_break_18",
    "fieldtype": "Section Break",
-   "label": "Guardian Details"
+   "label": "Connected to"
   },
   {
    "fieldname": "guardians",
    "fieldtype": "Table",
-   "label": "Guardians",
    "options": "Student Guardian"
   },
   {
@@ -286,9 +289,10 @@
    "show_dashboard": 1
   },
   {
+   "description": "The Customer Group affects pricing as it is linked to a Price List.",
    "fieldname": "customer_details_tab",
    "fieldtype": "Tab Break",
-   "label": "Customer Details"
+   "label": "Finances and Services"
   },
   {
    "fieldname": "customer_details_section",
@@ -306,11 +310,33 @@
    "fieldname": "customer_group",
    "fieldtype": "Link",
    "label": "Customer Group",
-   "options": "Customer Group"
+   "options": "Customer Group",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_rgpi",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "services_section",
+   "fieldtype": "Section Break",
+   "label": "Services"
+  },
+  {
+   "description": "Here you can Enroll the Student in additional services.",
+   "fieldname": "studentservices",
+   "fieldtype": "Table",
+   "options": "Student Services"
+  },
+  {
+   "fieldname": "lodging_section",
+   "fieldtype": "Section Break",
+   "label": "Lodging"
+  },
+  {
+   "fieldname": "stu_lodge_enroll",
+   "fieldtype": "Table",
+   "options": "Student Logding Enrollment"
   }
  ],
  "image_field": "image",
@@ -351,7 +377,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2024-02-24 18:57:56.945252",
+ "modified": "2024-03-05 11:21:13.443628",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student",

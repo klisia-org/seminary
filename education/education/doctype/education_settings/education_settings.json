@@ -14,6 +14,13 @@
   "academic_term_reqd",
   "user_creation_skip",
   "auto_submit_sales_invoice",
+  "accounts_section",
+  "column_break_wmyg",
+  "company",
+  "cost_center",
+  "column_break_lhee",
+  "receivable_account",
+  "income_account",
   "section_break_7",
   "instructor_created_by"
  ],
@@ -84,11 +91,55 @@
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
    "label": "Submit Sales Invoice from Program Enrollment / Fee Schedule"
+  },
+  {
+   "fieldname": "accounts_section",
+   "fieldtype": "Section Break",
+   "label": "Accounts"
+  },
+  {
+   "fetch_from": "company.default_receivable_account",
+   "fieldname": "receivable_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Receivable Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_wmyg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "company.default_income_account",
+   "fieldname": "income_account",
+   "fieldtype": "Link",
+   "label": "Income Account",
+   "options": "Account"
+  },
+  {
+   "fetch_from": "company.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_lhee",
+   "fieldtype": "Column Break"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-24 14:43:09.520597",
+ "modified": "2024-03-04 23:51:04.124678",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education Settings",

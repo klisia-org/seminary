@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "naming_series:",
+ "autoname": "format:{instructor_name}",
  "creation": "2015-11-04 15:56:30.004034",
  "doctype": "DocType",
  "document_type": "Other",
@@ -12,7 +12,6 @@
   "gender",
   "column_break_5",
   "status",
-  "naming_series",
   "department",
   "image",
   "log_details",
@@ -23,8 +22,11 @@
    "fieldname": "instructor_name",
    "fieldtype": "Data",
    "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Instructor Name",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "employee",
@@ -36,13 +38,6 @@
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "EDU-INS-.YYYY.-",
-   "set_only_once": 1
   },
   {
    "fetch_from": "employee.department",
@@ -77,7 +72,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Active\nLeft"
+   "options": "Active\nInactive"
   },
   {
    "fetch_from": "employee.gender",
@@ -90,11 +85,11 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2023-11-21 19:11:38.243654",
+ "modified": "2024-03-05 10:27:51.613124",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Instructor",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

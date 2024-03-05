@@ -9,8 +9,12 @@
  "engine": "InnoDB",
  "field_order": [
   "category_name",
-  "description",
-  "item"
+  "is_credit",
+  "feecategory_type",
+  "item",
+  "pgm_lvl",
+  "payment_term_template",
+  "description"
  ],
  "fields": [
   {
@@ -36,14 +40,46 @@
    "allow_in_quick_entry": 1,
    "fieldname": "item",
    "fieldtype": "Link",
-   "label": "Item",
+   "in_list_view": 1,
+   "label": "ERP Item",
    "options": "Item",
-   "read_only": 1
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Selecting this checkbox is required if you want to charge this fee per academic credit once the student is enrolled in the academic term.",
+   "fieldname": "is_credit",
+   "fieldtype": "Check",
+   "label": "Is Academic Credit?",
+   "search_index": 1
+  },
+  {
+   "fieldname": "pgm_lvl",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "Program Level",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "payment_term_template",
+   "fieldtype": "Link",
+   "label": "Payment Terms",
+   "options": "Payment Terms Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "feecategory_type",
+   "fieldtype": "Select",
+   "label": "Category Type",
+   "options": "Tuition\nServices",
+   "reqd": 1
   }
  ],
  "icon": "fa fa-flag",
  "links": [],
- "modified": "2024-01-07 14:03:30.856221",
+ "modified": "2024-03-05 10:41:19.572201",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Fee Category",
