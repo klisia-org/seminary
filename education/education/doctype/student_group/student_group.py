@@ -36,8 +36,7 @@ def get_students(self, academic_year, academic_term=None, program=None):
 			pe.docstatus = 1 AND
 			pe.student = t.name AND
 			t.enabled = 1 AND
-			t.docstatus = 1 AND
-			pe.name NOT IN (select student from `tabStudent Group Student`)
+			t.docstatus = 1 
 		order by
 			pe.student asc
 		""",
