@@ -40,7 +40,8 @@ class CourseSchedule(Document):
 			if (
 				start_date
 				and end_date
-				and (self.c_datestart < start_date or self.c_dateend > end_date)
+				and ((self.c_datestart < start_date)
+		 		 or (self.c_dateend > end_date))
 			):
 				frappe.throw(
 					_(
