@@ -1,0 +1,117 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{sched_course}",
+ "creation": "2024-03-07 10:49:07.810991",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_information_section",
+  "sched_course",
+  "course_data",
+  "acadterm_sc",
+  "syllabus_sc",
+  "column_break_byme",
+  "instructor_sc",
+  "instructor2_sc",
+  "lms_link",
+  "meeting_dates_section",
+  "table_dtrb"
+ ],
+ "fields": [
+  {
+   "fieldname": "sched_course",
+   "fieldtype": "Link",
+   "label": "Scheduled Course",
+   "options": "Course Schedule"
+  },
+  {
+   "fetch_from": "sched_course.course",
+   "fieldname": "course_data",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "sched_course.academic_term",
+   "fieldname": "acadterm_sc",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_byme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "sched_course.instructor1",
+   "fieldname": "instructor_sc",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Instructor of Record",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "sched_course.instructor2",
+   "fieldname": "instructor2_sc",
+   "fieldtype": "Data",
+   "label": "Co-instructor"
+  },
+  {
+   "fieldname": "course_information_section",
+   "fieldtype": "Section Break",
+   "label": "Course Information"
+  },
+  {
+   "fetch_from": "sched_course.moodle_link",
+   "fieldname": "lms_link",
+   "fieldtype": "Data",
+   "label": "LMS link"
+  },
+  {
+   "fetch_from": "sched_course.syllabus",
+   "fieldname": "syllabus_sc",
+   "fieldtype": "Attach",
+   "label": "Syllabus",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "meeting_dates_section",
+   "fieldtype": "Section Break",
+   "label": "Meeting dates"
+  },
+  {
+   "fieldname": "table_dtrb",
+   "fieldtype": "Table",
+   "options": "Course Schedule Meeting Dates"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-07 11:29:05.665390",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Scheduled Course",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

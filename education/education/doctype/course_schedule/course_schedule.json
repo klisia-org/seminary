@@ -17,6 +17,7 @@
   "naming_series",
   "modality",
   "color",
+  "syllabus",
   "section_break_6",
   "c_datestart",
   "c_dateend",
@@ -41,7 +42,10 @@
   "sunday_column",
   "sunday",
   "integration_section",
-  "moodle_link"
+  "moodle_link",
+  "meeting_dates_tab",
+  "meeting_dates_section",
+  "cs_meetinfo"
  ],
  "fields": [
   {
@@ -235,10 +239,31 @@
    "label": "Instructor of Record",
    "options": "Instructor",
    "reqd": 1
+  },
+  {
+   "fieldname": "syllabus",
+   "fieldtype": "Attach",
+   "label": "Syllabus"
+  },
+  {
+   "fieldname": "meeting_dates_tab",
+   "fieldtype": "Tab Break",
+   "label": "Meeting Dates"
+  },
+  {
+   "fieldname": "cs_meetinfo",
+   "fieldtype": "Table",
+   "options": "Course Schedule Meeting Dates"
+  },
+  {
+   "description": "Meeting dates are generated automatically from the criteria in the Details tab. Please check manually and adjust as needed.",
+   "fieldname": "meeting_dates_section",
+   "fieldtype": "Section Break",
+   "label": "Meeting Dates"
   }
  ],
  "links": [],
- "modified": "2024-03-05 10:38:34.019226",
+ "modified": "2024-03-07 11:27:02.736106",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",

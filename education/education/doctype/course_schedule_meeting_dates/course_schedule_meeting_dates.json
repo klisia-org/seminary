@@ -1,0 +1,45 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-07 11:20:16.080076",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cs_meetdate",
+  "cs_fromtime",
+  "cs_totime"
+ ],
+ "fields": [
+  {
+   "fieldname": "cs_meetdate",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Meeting Date"
+  },
+  {
+   "fieldname": "cs_fromtime",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "From"
+  },
+  {
+   "fieldname": "cs_totime",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "To"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-07 11:23:59.189063",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Course Schedule Meeting Dates",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

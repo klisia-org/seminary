@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "format:{course_data}-{academic_term}-{####}",
  "creation": "2024-03-06 17:42:21.146997",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -33,9 +33,8 @@
   {
    "fieldname": "program_ce",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Program Enrollment",
+   "link_filters": "[[{\"fieldname\":\"program_ce\",\"field_option\":\"Program Enrollment\"},\"pgmenrol_active\",\"=\",1]]",
    "options": "Program Enrollment",
    "reqd": 1
   },
@@ -51,8 +50,6 @@
   {
    "fieldname": "coursesc_ce",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Course",
    "options": "Course Schedule",
    "reqd": 1
@@ -65,6 +62,7 @@
    "fetch_from": "program_ce.program",
    "fieldname": "program_data",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Program",
    "read_only": 1
   },
@@ -72,6 +70,8 @@
    "fetch_from": "coursesc_ce.course",
    "fieldname": "course_data",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Course",
    "read_only": 1
   },
@@ -85,10 +85,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-07 08:01:22.403796",
+ "modified": "2024-03-07 10:45:50.771618",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
