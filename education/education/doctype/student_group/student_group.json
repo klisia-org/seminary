@@ -31,6 +31,7 @@
    "unique": 1
   },
   {
+    "default": "0",
    "description": "Set 0 for no limit",
    "fieldname": "max_strength",
    "fieldtype": "Int",
