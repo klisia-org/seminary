@@ -39,7 +39,6 @@ def get_students(self, academic_year, academic_term=None, program=None, students
 		order by
 			pe.student asc
 		""",
-		(self.student_group),
 		{
 			"academic_year": academic_year,
 			"academic_term": academic_term,
