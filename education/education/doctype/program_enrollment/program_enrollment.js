@@ -24,28 +24,7 @@ frappe.ui.form.on('Program Enrollment', {
 		}
 	},
 
-	program: function(frm) {
-		frm.events.get_courses(frm);
-		if (frm.doc.program) {
-			frappe.call({
-				method: 'education.education.api.get_fee_schedule',
-				args: {
-					'program': frm.doc.program,
-					'student_category': frm.doc.student_category
-				},
-				callback: function(r) {
-					if (r.message) {
-						frm.set_value('fees' ,r.message);
-						frm.events.get_courses(frm);
-					}
-				}
-			});
-		}
-	},
-
-	student_category: function() {
-		frappe.ui.form.trigger('Program Enrollment', 'program');
-	},
+	
 
 	
 });
