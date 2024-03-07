@@ -31,8 +31,7 @@
    "unique": 1
   },
   {
-    "default": "0",
-   "description": "Set 0 for no limit",
+    "description": "Set 0 for no limit",
    "fieldname": "max_strength",
    "fieldtype": "Int",
    "label": "Max Number of Students in this Group"

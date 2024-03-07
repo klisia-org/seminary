@@ -50,7 +50,7 @@ def enroll_student(source_name):
 	student_applicant = frappe.db.get_value(
 		"Student Applicant",
 		source_name,
-		["student_category", "program", "academic_year"],
+		["student_category", "program", "academic_term"],
 		as_dict=True,
 	)
 	program_enrollment = frappe.new_doc("Program Enrollment")
@@ -58,7 +58,7 @@ def enroll_student(source_name):
 	program_enrollment.student_category = student_applicant.student_category
 	program_enrollment.student_name = student.student_name
 	program_enrollment.program = student_applicant.program
-	program_enrollment.academic_year = student_applicant.academic_year
+	program_enrollment.academic_term = student_applicant.academic_term
 	program_enrollment.save()
 
 	frappe.publish_realtime(
@@ -99,20 +99,8 @@ def mark_attendance(
 	"""
 
 	if student_group:
-		academic_year = frappe.db.get_value("Student Group", student_group, "academic_year")
-		if academic_year:
-			year_start_date, year_end_date = frappe.db.get_value(
-				"Academic Year", academic_year, ["year_start_date", "year_end_date"]
-			)
-			if getdate(date) < getdate(year_start_date) or getdate(date) > getdate(
-				year_end_date
-			):
-				frappe.throw(
-					_("Attendance cannot be marked outside of Academic Year {0}").format(academic_year)
-				)
-
-	present = json.loads(students_present)
-	absent = json.loads(students_absent)
+		present = json.loads(students_present)
+		absent = json.loads(students_absent)
 
 	for d in present:
 		make_attendance_records(
@@ -469,19 +457,19 @@ def update_email_group(doctype, name):
 
 
 @frappe.whitelist()
-def get_current_enrollment(student, academic_year=None):
-	current_academic_year = academic_year or frappe.defaults.get_defaults().academic_year
+def get_current_enrollment(student, academic_term=None):
+	current_academic_term = academic_term or frappe.defaults.get_defaults().academic_term
 	program_enrollment_list = frappe.db.sql(
 		"""
 		select
 			name as program_enrollment, student_name, program, student_batch_name as student_batch,
-			student_category, academic_term, academic_year
+			student_category, academic_term
 		from
 			`tabProgram Enrollment`
 		where
-			student = %s and academic_year = %s
+			student = %s and academic_term = %s
 		order by creation""",
-		(student, current_academic_year),
+		(student, current_academic_term),
 		as_dict=1,
 	)
 
