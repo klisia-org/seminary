@@ -8,6 +8,9 @@ from datetime import datetime
 import frappe
 from frappe import _
 from frappe.model.document import Document
+import calendar
+from datetime import timedelta
+from dateutil import relativedelta
 
 
 class CourseSchedule(Document):
@@ -58,15 +61,26 @@ class CourseSchedule(Document):
 
 		@frappe.whitelist()
 		def get_meeting_dates(self):
-			meeting_dates = []
-			days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
-			current_date = self.c_datestart
-			import calendar
-			from datetime import timedelta
-			from dateutil import relativedelta
+			"""Returns a list of meeting dates"""		
 			while current_date <= self.c_dateend:
 				if days_of_week[current_date.weekday()]:
 					meeting_dates.append(current_date)
 				current_date += timedelta(days=1)
 
+			meeting_dates = []
+			days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
+			current_date = self.c_datestart
+			while current_date <= self.c_dateend:
+				if days_of_week[current_date.weekday()]:
+					meeting_dates.append(current_date)
+					# Create a new child document for each meeting date
+					child_doc = frappe.new_doc("Course Schedule Meeting Dates")
+					child_doc.parent = self.name
+					child_doc.cs_meetdate = current_date
+					child_doc.cs_fromtime = self.from_time
+					child_doc.cs_totime = self.to_time
+					child_doc.insert()
+				current_date += timedelta(days=1)
 			return meeting_dates
+		
+		
