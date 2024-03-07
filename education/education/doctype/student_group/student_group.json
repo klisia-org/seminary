@@ -11,7 +11,6 @@
  "field_order": [
   "student_group_section",
   "program",
-  "academic_year",
   "academic_term",
   "student_group_name",
   "column_break_3",
@@ -23,16 +22,7 @@
   "instructors"
  ],
  "fields": [
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
+ {
    "default": "{program}-{academic_term}",
    "fieldname": "student_group_name",
    "fieldtype": "Data",
@@ -130,7 +120,7 @@
    "write": 1
   }
  ],
- "search_fields": "program, academic_year",
+ "search_fields": "program",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

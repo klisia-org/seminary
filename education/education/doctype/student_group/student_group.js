@@ -1,18 +1,11 @@
 frappe.ui.form.on('Student Group', {
 	onload: function(frm) {
-		frm.set_query('academic_term', function() {
-			return {
-				filters: {
-					'academic_year': (frm.doc.academic_year)
-				}
-			};
-		});
 		if (!frm.__islocal) {
 			frm.set_query('student', 'students', function() {
 				return{
 					query: 'education.education.doctype.student_group.student_group.get_students',
 					filters: {
-						'academic_year': frm.doc.academic_year,				
+						
 						'academic_term': frm.doc.academic_term,
 						'program': frm.doc.program
 					}
@@ -58,7 +51,7 @@ frappe.ui.form.on('Student Group', {
 					
 					
 					args: {
-						'academic_year': frm.doc.academic_year,
+						
 						'academic_term': frm.doc.academic_term,
 						'program': frm.doc.program
 						},
