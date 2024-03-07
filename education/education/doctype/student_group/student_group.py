@@ -20,7 +20,7 @@ class StudentGroup(Document):
 					self.max_strength
 				)
 			)
-
+@frappe.whitelist()
 def get_students(self, academic_year, academic_term=None, program=None, students=None, max_strength=None):
 	return frappe.db.sql(
 		"""

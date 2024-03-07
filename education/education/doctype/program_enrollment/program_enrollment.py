@@ -54,7 +54,6 @@ class ProgramEnrollment(Document):
 			{
 				"student": self.student,
 				"program": self.program,
-				"academic_year": self.academic_year,
 				"academic_term": self.academic_term,
 				"docstatus": ("<", 2),
 				"name": ("!=", self.name),
@@ -160,11 +159,7 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
 def get_students(doctype, txt, searchfield, start, page_len, filters):
 	if not filters.get("academic_term"):
 		filters["academic_term"] = frappe.defaults.get_defaults().academic_term
-
-	if not filters.get("academic_year"):
-		filters["academic_year"] = frappe.defaults.get_defaults().academic_year
-
-	enrolled_students = frappe.get_list(
+		enrolled_students = frappe.get_list(
 		"Program Enrollment",
 		filters={
 			"academic_term": filters.get("academic_term"),

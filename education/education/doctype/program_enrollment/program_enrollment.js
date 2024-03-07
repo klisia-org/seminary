@@ -5,22 +5,6 @@
 frappe.ui.form.on('Program Enrollment', {
 
 	onload: function(frm) {
-		frm.set_query('academic_term', function() {
-			return {
-				'filters':{
-					'academic_year': frm.doc.academic_year
-				}
-			};
-		});
-
-		frm.set_query('academic_term', 'fees', function() {
-			return {
-				'filters':{
-					'academic_year': frm.doc.academic_year
-				}
-			};
-		});
-
 		frm.fields_dict['fees'].grid.get_field('fee_schedule').get_query = function(doc, cdt, cdn) {
 			var d = locals[cdt][cdn];
 			return {
