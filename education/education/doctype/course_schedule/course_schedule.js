@@ -37,5 +37,7 @@ frappe.call({
         if (r.message) {
 			frm.set_value('meeting_dates', r.message);
         }
+		else
+			return;
     }
 })};
