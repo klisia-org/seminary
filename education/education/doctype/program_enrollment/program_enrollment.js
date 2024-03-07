@@ -38,16 +38,6 @@ frappe.ui.form.on('Program Enrollment', {
 				}
 			});
 		}
-
-		frm.set_query('student', function() {
-			return{
-				query: 'education.education.doctype.program_enrollment.program_enrollment.get_students',
-				filters: {
-					'academic_year': frm.doc.academic_year,
-					'academic_term': frm.doc.academic_term
-				}
-			}
-		});
 	},
 
 	program: function(frm) {
@@ -73,20 +63,7 @@ frappe.ui.form.on('Program Enrollment', {
 		frappe.ui.form.trigger('Program Enrollment', 'program');
 	},
 
-	get_courses: function(frm) {
-		frm.program_courses = [];
-		frm.set_value('courses',[]);
-		frappe.call({
-			method: 'get_courses',
-			doc: frm.doc,
-			callback: function(r) {
-				if (r.message) {
-					frm.program_courses = r.message
-					frm.set_value('courses', r.message);
-				}
-			}
-		})
-	}
+	
 });
 
 frappe.ui.form.on('Program Enrollment Course', {

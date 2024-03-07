@@ -15,9 +15,7 @@ class ProgramEnrollment(Document):
 	def validate(self):
 		self.set_student_name()
 		self.validate_duplication()
-		self.validate_academic_year()
-		if self.academic_term:
-			self.validate_academic_term()
+		self.validate_academic_term()
 
 		if not self.courses:
 			self.extend("courses", self.get_courses())
@@ -30,25 +28,6 @@ class ProgramEnrollment(Document):
 		self.update_student_joining_date()
 		self.make_fee_records()
 		self.create_course_enrollments()
-
-	def validate_academic_year(self):
-		start_date, end_date = frappe.db.get_value(
-			"Academic Year", self.academic_year, ["year_start_date", "year_end_date"]
-		)
-		if self.enrollment_date:
-			if start_date and getdate(self.enrollment_date) < getdate(start_date):
-				frappe.throw(
-					_(
-						"Enrollment Date cannot be before the Start Date of the Academic Year {0}"
-					).format(get_link_to_form("Academic Year", self.academic_year))
-				)
-
-			if end_date and getdate(self.enrollment_date) > getdate(end_date):
-				frappe.throw(
-					_("Enrollment Date cannot be after the End Date of the Academic Term {0}").format(
-						get_link_to_form("Academic Year", self.academic_year)
-					)
-				)
 
 	def validate_academic_term(self):
 		start_date, end_date = frappe.db.get_value(
@@ -109,14 +88,7 @@ class ProgramEnrollment(Document):
 			]
 			msgprint(_("Fee Records Created - {0}").format(comma_and(sales_invoice_list)))
 
-	@frappe.whitelist()
-	def get_courses(self):
-		return frappe.db.sql(
-			"""select course from `tabProgram Course` where parent = %s and pgm_course_reqonenroll = 1""",
-			(self.program),
-			as_dict=1,
-		)
-
+	
 	def create_course_enrollments(self):
 		for course in self.courses:
 			filters = {
@@ -196,7 +168,6 @@ def get_students(doctype, txt, searchfield, start, page_len, filters):
 		"Program Enrollment",
 		filters={
 			"academic_term": filters.get("academic_term"),
-			"academic_year": filters.get("academic_year"),
 		},
 		fields=["student"],
 	)

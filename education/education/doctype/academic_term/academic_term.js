@@ -4,5 +4,8 @@
 frappe.ui.form.on('Academic Term', {
 	refresh: function(frm) {
 
+	},
+	save: function(frm) {
+		set_iscurrent_acterm(frm);
 	}
 });

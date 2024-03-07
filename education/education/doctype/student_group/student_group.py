@@ -21,8 +21,7 @@ class StudentGroup(Document):
 				)
 			)
 
-@frappe.whitelist()
-def get_students(self, academic_year, academic_term=None, program=None):
+def get_students(self, academic_year, academic_term=None, program=None, students=None, max_strength=None):
 	return frappe.db.sql(
 		"""
 		select
