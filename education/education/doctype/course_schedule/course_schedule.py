@@ -61,7 +61,7 @@ class CourseSchedule(Document):
 
 		@frappe.whitelist()
 		def get_meeting_dates(self):
-			"""Returns a list of meeting dates"""		
+			"""Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""		
 			while current_date <= self.c_dateend:
 				if days_of_week[current_date.weekday()]:
 					meeting_dates.append(current_date)
