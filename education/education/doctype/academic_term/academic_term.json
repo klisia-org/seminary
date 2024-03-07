@@ -10,6 +10,7 @@
  "field_order": [
   "academic_year",
   "term_name",
+  "iscurrent_acterm",
   "column_break_jhzu",
   "term_start_date",
   "term_end_date",
@@ -64,6 +65,14 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "iscurrent_acterm",
+   "fieldtype": "Check",
+   "label": "Current Academic Term?",
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "links": [
@@ -108,7 +117,7 @@
    "link_fieldname": "academic_term"
   }
  ],
- "modified": "2024-02-24 17:01:31.810251",
+ "modified": "2024-03-06 21:05:46.801327",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Academic Term",

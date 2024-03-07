@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "EDU-ENR-.YYYY.-.#####",
+ "autoname": "format:{student}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
  "doctype": "DocType",
  "document_type": "Document",
@@ -10,20 +10,22 @@
   "student",
   "student_name",
   "enrollment_date",
+  "date_of_conclusion",
   "column_break_4",
   "program",
-  "academic_year",
   "academic_term",
   "image",
-  "section_break_vsaj",
-  "student_feetype",
-  "student_batch_name",
-  "column_break_ebuo",
-  "school_house",
-  "boarding_student",
+  "section_break_tfcw",
+  "pgmenrol_active",
+  "current_std_term",
+  "column_break_unkt",
+  "inactiveuntil",
+  "inactive_motive",
   "enrolled_courses",
   "courses",
   "fees_tab",
+  "section_break_vsaj",
+  "student_feetype",
   "payers_for_this_program_section",
   "table_nfjw",
   "section_break_7",
@@ -50,14 +52,6 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "student_batch_name",
-   "fieldtype": "Link",
-   "in_global_search": 1,
-   "label": "Student Batch",
-   "options": "Student Batch Name"
-  },
-  {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
@@ -72,16 +66,7 @@
    "search_index": 1
   },
   {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year on Enrollment",
-   "options": "Academic Year",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
+   "allow_on_submit": 1,
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term on Enrollment",
@@ -97,23 +82,16 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "description": "Check this if the Student is residing at the Seminary's lodging.",
-   "fieldname": "boarding_student",
-   "fieldtype": "Check",
-   "label": "Boarding Student"
-  },
-  {
    "fieldname": "enrolled_courses",
    "fieldtype": "Section Break",
-   "label": "Enrolled courses"
+   "label": "Courses Taken"
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",
-   "options": "Program Enrollment Course"
+   "options": "Program Enrollment Course",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_7",
@@ -145,10 +123,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_ebuo",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "fees_tab",
    "fieldtype": "Tab Break",
    "label": "Fees"
@@ -158,13 +132,6 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "school_house",
-   "fieldtype": "Link",
-   "label": "School House",
-   "options": "School House"
   },
   {
    "fieldname": "payers_for_this_program_section",
@@ -186,6 +153,48 @@
    "label": "Student Fee Group",
    "options": "Customer Group",
    "reqd": 1
+  },
+  {
+   "fieldname": "date_of_conclusion",
+   "fieldtype": "Date",
+   "label": "Date of Conclusion"
+  },
+  {
+   "fieldname": "section_break_tfcw",
+   "fieldtype": "Section Break",
+   "label": "Program Status"
+  },
+  {
+   "default": "1",
+   "fieldname": "pgmenrol_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_unkt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inactiveuntil",
+   "fieldtype": "Date",
+   "label": "Inactive until"
+  },
+  {
+   "default": "1",
+   "fieldname": "current_std_term",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Current Term (index)",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "inactive_motive",
+   "fieldtype": "Small Text",
+   "label": "Reason for being inactive"
   }
  ],
  "image_field": "image",
@@ -197,11 +206,11 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-05 10:17:12.624008",
+ "modified": "2024-03-06 21:59:07.946838",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
