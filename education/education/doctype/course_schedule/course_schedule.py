@@ -82,5 +82,6 @@ class CourseSchedule(Document):
 					child_doc.insert()
 				current_date += timedelta(days=1)
 			return meeting_dates
+			child_doc.submit()
 		
 		
