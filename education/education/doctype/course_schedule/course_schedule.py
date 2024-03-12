@@ -18,28 +18,11 @@ class CourseSchedule(Document):
 		self.instructor_name = frappe.db.get_value(
 			"Instructor", self.instructor1
 		)
-		self.validate_date()
+		
 		self.validate_time()
 	
 	
-	def validate_date(self):
-			academic_term = self.academic_term
-			start_date, end_date = frappe.db.get_value(
-				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
-			)
-			course_datestart = self.c_datestart	
-			course_dateend = self.c_dateend	
-			if (
-				start_date
-				and end_date
-				and ((course_datestart < start_date)
-		 		 or (course_dateend > end_date))
-			):
-				frappe.throw(
-					_(
-						"Schedule date selected does not lie within the Academic Term."
-					).format(self.academic_term)
-				)
+	
 
 			
 	def validate_time(self):
