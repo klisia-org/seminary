@@ -37,12 +37,12 @@ class CourseSchedule(Document):
 			if days_of_week[current_date.weekday()]:
 				meeting_dates.append(current_date)
 				# Create a new child document for each meeting date
-				child_doc = frappe.doc.append("Course Schedule Meeting Dates", {
+				child_doc = frappe.doc.append("course_schedule_meeting_dates", {
 					"parent": self.name,
 					"cs_meetdate": current_date,
 					"cs_fromtime": self.from_time,
 					"cs_totime": self.to_time
 				})
-				
+				child_doc.insert()
 				current_date += timedelta(days=1)
 		return meeting_dates
