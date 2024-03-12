@@ -21,10 +21,7 @@ class CourseSchedule(Document):
 		self.validate_date()
 		self.validate_time()
 	
-	def before_save(self):
-		self.set_hex_color()
-		
-
+	
 	def validate_date(self):
 			academic_term = self.academic_term
 			start_date, end_date = frappe.db.get_value(
