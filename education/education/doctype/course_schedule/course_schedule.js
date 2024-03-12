@@ -41,4 +41,4 @@ frappe.ui.form.on("Course Schedule", {
 		else
 			return;
 }
-})}
+})};

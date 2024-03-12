@@ -249,15 +249,15 @@ def get_course_schedule_events(start, end, filters=None):
 	"""
 	from frappe.desk.calendar import get_event_conditions
 
-	conditions = get_event_conditions("Course Schedule", filters)
+	conditions = get_event_conditions("Course Schedule Meeting Dates", filters)
 
 	data = frappe.db.sql(
-		"""select name, course, color,
-			timestamp(schedule_date, from_time) as from_time,
-			timestamp(schedule_date, to_time) as to_time,
+		"""select name, course,
+			timestamp(cs_meetdate, cs_fromtime) as from_time,
+			timestamp(cs_meetdate, cs_totime) as to_time,
 			room, 0 as 'allDay'
-		from `tabCourse Schedule`
-		where ( schedule_date between %(start)s and %(end)s )
+		from `tabCourse Schedule Meeting Dates`
+		where ( cs_meetdate between %(start)s and %(end)s )
 		{conditions}""".format(
 			conditions=conditions
 		),
