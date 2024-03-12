@@ -33,7 +33,8 @@ class CourseSchedule(Document):
 		"""Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""     
 		days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
 		current_date = datetime.strptime(self.c_datestart, "%Y-%m-%d")
-		while current_date <= self.c_dateend:
+		final_date = datetime.strptime(self.c_dateend, "%Y-%m-%d")
+		while current_date <= final_date:
 			if days_of_week[current_date.weekday()]:
 				meeting_dates.append(current_date)
 				current_date += timedelta(days=1)
