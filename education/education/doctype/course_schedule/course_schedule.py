@@ -40,7 +40,7 @@ class CourseSchedule(Document):
 				current_date += timedelta(days=1)
 		return meeting_dates
 	@frappe.whitelist()
-	def on_update(self):
+	def save_dates(self):
 		"""Create child documents for each meeting date"""
 		meeting_dates = self.get_meeting_dates()
 		for meeting_date in meeting_dates:
