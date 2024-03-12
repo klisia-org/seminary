@@ -252,7 +252,7 @@ def get_course_schedule_events(start, end, filters=None):
 	conditions = get_event_conditions("Course Schedule Meeting Dates", filters)
 
 	data = frappe.db.sql(
-		"""select name, course,
+		"""select name, 
 			timestamp(cs_meetdate, cs_fromtime) as from_time,
 			timestamp(cs_meetdate, cs_totime) as to_time,
 			room, 0 as 'allDay'
