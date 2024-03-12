@@ -18,18 +18,9 @@ class CourseSchedule(Document):
 		self.instructor_name = frappe.db.get_value(
 			"Instructor", self.instructor1
 		)
-		self.set_title()
 		self.validate_date()
 		self.validate_time()
 		
-
-	def set_title(self):
-		"""Set document Title"""
-		self.title = (
-			self.course
-			+ " by "
-			+ (self.instructor1)
-		)
 
 	def validate_date(self):
 			academic_term = self.academic_term
