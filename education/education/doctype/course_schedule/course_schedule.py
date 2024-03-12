@@ -71,9 +71,5 @@ class CourseSchedule(Document):
 					child_doc.cs_fromtime = self.from_time
 					child_doc.cs_totime = self.to_time
 					child_doc.insert()
-					child_doc.submit()
-				current_date += timedelta(days=1)
+					current_date += timedelta(days=1)
 			return meeting_dates
-			
-		
-		
