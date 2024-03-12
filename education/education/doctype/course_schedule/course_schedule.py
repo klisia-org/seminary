@@ -31,26 +31,4 @@ class CourseSchedule(Document):
 			frappe.throw(_("From Time cannot be greater than To Time."))
 
 
-		@frappe.whitelist()
-		def get_meeting_dates(self):
-			"""Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""		
-			while current_date <= self.c_dateend:
-				if days_of_week[current_date.weekday()]:
-					meeting_dates.append(current_date)
-				current_date += timedelta(days=1)
-
-			meeting_dates = []
-			days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
-			current_date = self.c_datestart
-			while current_date <= self.c_dateend:
-				if days_of_week[current_date.weekday()]:
-					meeting_dates.append(current_date)
-					# Create a new child document for each meeting date
-					child_doc = frappe.doc.append("Course Schedule Meeting Dates", {
-						"parent": self.name,
-						"cs_meetdate": current_date,
-						"cs_fromtime": self.from_time,
-						"cs_totime": self.to_time
-					})
-					current_date += timedelta(days=1)
-			return meeting_dates
+	
