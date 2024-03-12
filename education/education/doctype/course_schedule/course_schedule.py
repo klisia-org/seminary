@@ -20,6 +20,9 @@ class CourseSchedule(Document):
 		)
 		self.validate_date()
 		self.validate_time()
+	
+	def before_save(self):
+		self.set_hex_color()
 		
 
 	def validate_date(self):
@@ -28,8 +31,8 @@ class CourseSchedule(Document):
 				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
 			)
 			# Convert self.c_datestart and self.c_dateend to date objects
-			course_datestart = datetime.strptime(self.c_datestart, '%Y-%m-%d').date()
-			course_dateend = datetime.strptime(self.c_dateend, '%Y-%m-%d').date()
+			course_datestart = self.c_datestart
+			course_dateend = self.c_dateend
 			
 			if (
 				start_date
@@ -65,11 +68,11 @@ class CourseSchedule(Document):
 				if days_of_week[current_date.weekday()]:
 					meeting_dates.append(current_date)
 					# Create a new child document for each meeting date
-					child_doc = frappe.new_doc("Course Schedule Meeting Dates")
-					child_doc.parent = self.name
-					child_doc.cs_meetdate = current_date
-					child_doc.cs_fromtime = self.from_time
-					child_doc.cs_totime = self.to_time
-					child_doc.insert()
+					child_doc = frappe.doc.append("Course Schedule Meeting Dates", {
+						"parent": self.name,
+						"cs_meetdate": current_date,
+						"cs_fromtime": self.from_time,
+						"cs_totime": self.to_time
+					})
 					current_date += timedelta(days=1)
 			return meeting_dates

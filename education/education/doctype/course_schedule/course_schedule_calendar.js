@@ -1,10 +1,10 @@
-frappe.views.calendar["Course Schedule"] = {
+frappe.views.calendar["Course Schedule Meeting Dates"] = {
 	field_map: {
-		"start": "from_time",
-		"end": "to_time",
+		"date": "cs_meetdate",
+		"start": "cs_fromtime",
+		"end": "cs_totime",
 		"id": "name",
 		"title": "course",
-		"allDay": "allDay",
 	},
 	gantt: false,
 	order_by: "c.datestart",
