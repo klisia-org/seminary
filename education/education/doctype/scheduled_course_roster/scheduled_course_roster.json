@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-11 15:00:49.630005",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student_roster",
+  "stuname_roster",
+  "student_main_link",
+  "stuemail_rc"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_roster",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Course Enrollment Individual"
+  },
+  {
+   "fetch_from": "student_roster.student_ce",
+   "fieldname": "stuname_roster",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name"
+  },
+  {
+   "fieldname": "student_main_link",
+   "fieldtype": "Link",
+   "label": "Student (main link)",
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student_main_link.student_email_id",
+   "fieldname": "stuemail_rc",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student email"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-11 15:52:47.276660",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Scheduled Course Roster",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

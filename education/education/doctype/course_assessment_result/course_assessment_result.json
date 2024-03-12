@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{stuname_asres}-grade-(#####)",
+ "creation": "2024-03-11 16:03:58.336661",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student_asres",
+  "stuname_asres",
+  "namecourseroster_asres",
+  "grades_section",
+  "course_ass_results_detail"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_asres",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "student_asres.student_name",
+   "fieldname": "stuname_asres",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "namecourseroster_asres",
+   "fieldtype": "Link",
+   "label": "Name in Course Roster",
+   "options": "Scheduled Course Roster"
+  },
+  {
+   "fieldname": "grades_section",
+   "fieldtype": "Section Break",
+   "label": "Grades"
+  },
+  {
+   "fieldname": "course_ass_results_detail",
+   "fieldtype": "Table",
+   "options": "Course Assess Results Detail"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-11 16:19:12.598129",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Course Assessment Result",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

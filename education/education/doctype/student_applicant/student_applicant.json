@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "naming_series:",
+ "allow_rename": 1,
+ "autoname": "format:{academic_term}-{first_name}-{###}",
  "creation": "2015-09-11 11:50:09.740807",
  "doctype": "DocType",
  "document_type": "Document",
@@ -297,11 +298,11 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-02-23 00:21:27.134483",
+ "modified": "2024-03-07 17:42:03.718035",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Applicant",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

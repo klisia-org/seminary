@@ -2,7 +2,7 @@
  "actions": [],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
- "autoname": "naming_series:",
+ "autoname": "format:{academic_term}-{course}-{##}",
  "creation": "2015-09-09 16:34:04.960369",
  "doctype": "DocType",
  "document_type": "Document",
@@ -14,7 +14,6 @@
   "instructor2",
   "academic_term",
   "column_break_2",
-  "naming_series",
   "modality",
   "color",
   "syllabus",
@@ -59,13 +58,6 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "options": "EDU-CSH-.YYYY.-",
-   "set_only_once": 1
   },
   {
    "fieldname": "c_datestart",
@@ -119,13 +111,15 @@
    "fieldname": "from_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "From Time"
+   "label": "From Time",
+   "mandatory_depends_on": "modality!=Virtual"
   },
   {
    "fieldname": "to_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "To Time"
+   "label": "To Time",
+   "mandatory_depends_on": "modality!=Virtual"
   },
   {
    "fieldname": "title",
@@ -263,11 +257,11 @@
   }
  ],
  "links": [],
- "modified": "2024-03-07 11:27:02.736106",
+ "modified": "2024-03-11 13:31:46.279575",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -283,8 +277,9 @@
    "write": 1
   }
  ],
- "sort_field": "title",
+ "quick_entry": 1,
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "track_changes": 1
 }

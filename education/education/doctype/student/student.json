@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "format:{YY}-{#####}",
  "creation": "2015-09-07 13:00:55.938280",
  "doctype": "DocType",
  "document_type": "Document",
@@ -377,11 +377,11 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2024-03-05 11:21:13.443628",
+ "modified": "2024-03-07 17:44:01.374396",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

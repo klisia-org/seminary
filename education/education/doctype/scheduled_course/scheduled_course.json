@@ -16,7 +16,16 @@
   "instructor2_sc",
   "lms_link",
   "meeting_dates_section",
-  "table_dtrb"
+  "table_dtrb",
+  "section_break_ajsp",
+  "course_sc",
+  "gradesc_sc",
+  "courseassescrit_sc",
+  "class_roster_tab",
+  "schedcourse_roster",
+  "section_break_fgqg",
+  "gradebook_btn",
+  "sturestults_btn"
  ],
  "fields": [
   {
@@ -87,11 +96,61 @@
    "fieldname": "table_dtrb",
    "fieldtype": "Table",
    "options": "Course Schedule Meeting Dates"
+  },
+  {
+   "fieldname": "section_break_ajsp",
+   "fieldtype": "Section Break",
+   "label": "Grading"
+  },
+  {
+   "fetch_from": "sched_course.course",
+   "fieldname": "course_sc",
+   "fieldtype": "Link",
+   "options": "Course",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "course_sc.default_grading_scale",
+   "fieldname": "gradesc_sc",
+   "fieldtype": "Data",
+   "label": "Grading Scale"
+  },
+  {
+   "fieldname": "courseassescrit_sc",
+   "fieldtype": "Table",
+   "label": "Course Assessment Criteria",
+   "options": "Course Assessment Criteria"
+  },
+  {
+   "fieldname": "class_roster_tab",
+   "fieldtype": "Tab Break",
+   "label": "Class Roster"
+  },
+  {
+   "fieldname": "schedcourse_roster",
+   "fieldtype": "Table",
+   "options": "Scheduled Course Roster"
+  },
+  {
+   "fieldname": "section_break_fgqg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "gradebook_btn",
+   "fieldtype": "Button",
+   "label": "Gradebook"
+  },
+  {
+   "bold": 1,
+   "fieldname": "sturestults_btn",
+   "fieldtype": "Button",
+   "label": "Student Results"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-03-07 11:29:05.665390",
+ "modified": "2024-03-11 15:57:25.422534",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course",
