@@ -43,6 +43,6 @@ class CourseSchedule(Document):
 					"cs_fromtime": self.from_time,
 					"cs_totime": self.to_time
 				})
-				print(child_doc)
+				
 				current_date += timedelta(days=1)
 		return meeting_dates
