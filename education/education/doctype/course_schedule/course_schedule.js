@@ -41,7 +41,7 @@ frappe.ui.form.on("Course Schedule", {
 		else
 			return;
 }
-})}
+})},
 frappe.ui.form.on("Course Schedule Meeting Dates", {
 	meeting_date: (frm, cdt, cdn) => {
 		var row = locals[cdt][cdn];
@@ -59,4 +59,4 @@ frappe.ui.form.on("Course Schedule Meeting Dates", {
 			}
 		})
 	}
-})
+});
