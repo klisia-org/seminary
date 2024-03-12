@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "course_name",
+  "coursecode",
   "department",
   "course_credits",
   "hero_image",
@@ -109,11 +110,17 @@
    "fieldtype": "Table",
    "label": "Course Prerequisites",
    "options": "Course_prerequisite"
+  },
+  {
+   "fieldname": "coursecode",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Code"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2024-02-26 17:42:14.905239",
+ "modified": "2024-03-12 08:24:40.387945",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course",

@@ -2,7 +2,7 @@
  "actions": [],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
- "autoname": "format:{academic_term}-{course}-{##}",
+ "autoname": "format:{academic_term}-c{####}",
  "creation": "2015-09-09 16:34:04.960369",
  "doctype": "DocType",
  "document_type": "Document",
@@ -14,6 +14,7 @@
   "instructor2",
   "academic_term",
   "column_break_2",
+  "coursecode_cs",
   "modality",
   "color",
   "syllabus",
@@ -254,10 +255,18 @@
    "fieldname": "meeting_dates_section",
    "fieldtype": "Section Break",
    "label": "Meeting Dates"
+  },
+  {
+   "fetch_from": "course.coursecode",
+   "fieldname": "coursecode_cs",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course code",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2024-03-11 13:31:46.279575",
+ "modified": "2024-03-12 08:34:21.037091",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",
