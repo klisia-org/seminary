@@ -17,3 +17,7 @@ frappe.ui.form.on("Course Schedule", {
 
 	}
 });
+frappe.ui.form.on("Course Schedule Meeting Dates", {
+	meeting_date: (frm, cdt, cdn) => {
+		let row = course_schedule.get_meeting_dates(cdt, cdn);
+}});
