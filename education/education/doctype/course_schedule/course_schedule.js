@@ -28,7 +28,7 @@ frappe.ui.form.on("Course Schedule", {
 	}
 }),
 
-onsave; (frm) => {
+	after_save; (frm) => {
 	frappe.call({
 		method: 'education.education.course_schedule.get_meeting_dates',
 		args: {
@@ -41,4 +41,22 @@ onsave; (frm) => {
 		else
 			return;
 }
-})};
+})}
+frappe.ui.form.on("Course Schedule Meeting Dates", {
+	meeting_date: (frm, cdt, cdn) => {
+		var row = locals[cdt][cdn];
+		frappe.call({
+			method: 'education.education.course_schedule.get_meeting_dates',
+			args: {
+				'docname': frm.doc.name
+			},
+			callback: function(r) {
+				if (r.message) {
+					frm.set_value('meeting_dates', r.message);
+				}
+				else
+					return;
+			}
+		})
+	}
+})
