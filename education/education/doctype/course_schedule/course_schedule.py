@@ -27,12 +27,13 @@ class CourseSchedule(Document):
 			start_date, end_date = frappe.db.get_value(
 				"Academic Term", academic_term, ["term_start_date", "term_end_date"]
 			)
-						
+			course_datestart = self.c_datestart	
+			course_dateend = self.c_dateend	
 			if (
 				start_date
 				and end_date
-				and ((self.c_datestart < start_date)
-		 		 or (self.c_dateend > end_date))
+				and ((course_datestart < start_date)
+		 		 or (course_dateend > end_date))
 			):
 				frappe.throw(
 					_(
