@@ -1,4 +1,4 @@
-frappe.views.calendar["Course Schedule Meeting Dates"] = {
+frappe.views.calendar["Course Schedule"] = {
 	field_map: {
 		"date": "cs_meetdate",
 		"start": "cs_fromtime",
