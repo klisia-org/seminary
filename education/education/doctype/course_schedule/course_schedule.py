@@ -43,5 +43,6 @@ class CourseSchedule(Document):
 					"cs_fromtime": self.from_time,
 					"cs_totime": self.to_time
 				})
+				frappe.doc.save()
 				current_date += timedelta(days=1)
 		return meeting_dates
