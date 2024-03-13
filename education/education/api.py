@@ -24,7 +24,7 @@ def get_course(program):
 	return courses
 
 @frappe.whitelist()
-def set_iscurrent_acterm(academic_term):
+def set_iscurrent_acterm(academic_term=None):
 	academic_terms = frappe.get_all("Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"])
 	today = getdate()
 	
