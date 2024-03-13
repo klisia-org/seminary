@@ -19,7 +19,7 @@ class CourseEnrollmentIndividual(Document):
 			filters={
 				"program_ce": (self.program_ce),
 				"coursesc_ce": self.coursesc_ce,
-				"docstatus": ("!=", 2),
+				"docstatus": ("=", 1),
 			},
 		)
 		if CEI:
