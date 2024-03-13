@@ -19,7 +19,7 @@ class AcademicTerm(Document):
 		self.validate_duplication()
 		self.validate_dates()
 		self.validate_term_against_year()
-		self.set_iscurrent_acterm()
+		
 
 	def set_title(self):
 		self.title = (
