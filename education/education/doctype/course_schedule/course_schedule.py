@@ -26,7 +26,7 @@ class CourseSchedule(Document):
 			return datetime.strptime(date, "%Y-%m-%d")
 		if isinstance(date, datetime):
 			return date.date()
-		return date
+		return date.date()
 	
 	def validate_date(self):
 		academic_term = self.academic_term
