@@ -18,9 +18,35 @@ class CourseSchedule(Document):
 		self.instructor_name = frappe.db.get_value(
 			"Instructor", self.instructor1
 		)
-		
+		self.validate_date()
 		self.validate_time()
-	
+
+	def convert_to_date(self, date):
+		if isinstance(date, str):
+			return datetime.strptime(date, "%Y-%m-%d")
+		return date
+	def validate_date(self):
+		academic_term = self.academic_term
+		start_date, end_date = frappe.db.get_value(
+		"Academic Term", academic_term, ["term_start_date", "term_end_date"]
+            )
+		start_date = self.convert_to_date(start_date)
+		end_date = self.convert_to_date(end_date)
+		course_datestart = self.c_datestart 
+		course_dateend = self.c_dateend
+		course_datestart = self.convert_to_date(course_datestart)
+		course_dateend = self.convert_to_date(course_dateend) 
+		if (
+			start_date
+            and end_date
+            and ((course_datestart < start_date)
+            or (course_dateend > end_date))
+            ):
+			frappe.throw(
+                    _(
+                        "Schedule date selected does not lie within the Academic Term."
+                    ).format(self.academic_term)
+                )
 	
 	def validate_time(self):
 		"""Validates if from_time is greater than to_time"""
