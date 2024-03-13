@@ -43,9 +43,18 @@
   "sunday",
   "integration_section",
   "moodle_link",
+  "intlms_lnk",
   "meeting_dates_tab",
   "meeting_dates_section",
-  "cs_meetinfo"
+  "cs_meetinfo",
+  "grading_tab",
+  "gradesc_cs",
+  "courseassescrit_sc",
+  "class_roster_tab",
+  "cs_roster",
+  "section_break_udqm",
+  "gradebook_btn",
+  "cs_studres"
  ],
  "fields": [
   {
@@ -64,12 +73,14 @@
    "fieldname": "c_datestart",
    "fieldtype": "Date",
    "label": "Start Date",
+   "permlevel": 2,
    "reqd": 1
   },
   {
    "fieldname": "c_dateend",
    "fieldtype": "Date",
    "label": "End Date",
+   "permlevel": 2,
    "reqd": 1
   },
   {
@@ -102,7 +113,8 @@
    "fieldname": "room",
    "fieldtype": "Link",
    "label": "Room",
-   "options": "Room"
+   "options": "Room",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_9",
@@ -113,14 +125,16 @@
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "From Time",
-   "mandatory_depends_on": "modality!=Virtual"
+   "mandatory_depends_on": "modality!=Virtual",
+   "permlevel": 1
   },
   {
    "fieldname": "to_time",
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "To Time",
-   "mandatory_depends_on": "modality!=Virtual"
+   "mandatory_depends_on": "modality!=Virtual",
+   "permlevel": 1
   },
   {
    "fieldname": "title",
@@ -132,43 +146,50 @@
    "default": "0",
    "fieldname": "monday",
    "fieldtype": "Check",
-   "label": "Monday"
+   "label": "Monday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "tuesday",
    "fieldtype": "Check",
-   "label": "Tuesday"
+   "label": "Tuesday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "wednesday",
    "fieldtype": "Check",
-   "label": "Wednesday"
+   "label": "Wednesday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "thursday",
    "fieldtype": "Check",
-   "label": "Thursday"
+   "label": "Thursday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "friday",
    "fieldtype": "Check",
-   "label": "Friday"
+   "label": "Friday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "saturday",
    "fieldtype": "Check",
-   "label": "Saturday"
+   "label": "Saturday",
+   "permlevel": 2
   },
   {
    "default": "0",
    "fieldname": "sunday",
    "fieldtype": "Check",
-   "label": "Sunday"
+   "label": "Sunday",
+   "permlevel": 2
   },
   {
    "fieldname": "section_break_7",
@@ -212,7 +233,8 @@
    "fieldname": "moodle_link",
    "fieldtype": "Data",
    "label": "Moodle link",
-   "options": "URL"
+   "options": "URL",
+   "permlevel": 2
   },
   {
    "fieldname": "course_information_section",
@@ -248,7 +270,8 @@
   {
    "fieldname": "cs_meetinfo",
    "fieldtype": "Table",
-   "options": "Course Schedule Meeting Dates"
+   "options": "Course Schedule Meeting Dates",
+   "permlevel": 1
   },
   {
    "description": "Meeting dates are generated automatically from the criteria in the Details tab. Please check manually and adjust as needed.",
@@ -263,10 +286,63 @@
    "in_list_view": 1,
    "label": "Course code",
    "read_only": 1
+  },
+  {
+   "fieldname": "intlms_lnk",
+   "fieldtype": "Data",
+   "label": "Internal LMS",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "grading_tab",
+   "fieldtype": "Tab Break",
+   "label": "Grading"
+  },
+  {
+   "fetch_from": "course.default_grading_scale",
+   "fieldname": "gradesc_cs",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grading Scale",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "courseassescrit_sc",
+   "fieldtype": "Table",
+   "label": "Course Assessment Criteria",
+   "options": "Course Assessment Criteria",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "class_roster_tab",
+   "fieldtype": "Tab Break",
+   "label": "Class Roster"
+  },
+  {
+   "fieldname": "cs_roster",
+   "fieldtype": "Table",
+   "options": "Scheduled Course Roster",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "section_break_udqm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "gradebook_btn",
+   "fieldtype": "Button",
+   "label": "Gradebook"
+  },
+  {
+   "bold": 1,
+   "fieldname": "cs_studres",
+   "fieldtype": "Button",
+   "label": "Student Results"
   }
  ],
  "links": [],
- "modified": "2024-03-12 08:34:21.037091",
+ "modified": "2024-03-12 21:31:48.672249",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",
@@ -284,9 +360,65 @@
    "role": "Academics User",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_order": "DESC",
  "states": [],
  "title_field": "title",
