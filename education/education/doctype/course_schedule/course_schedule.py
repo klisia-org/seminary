@@ -24,7 +24,10 @@ class CourseSchedule(Document):
 	def convert_to_date(self, date):
 		if isinstance(date, str):
 			return datetime.strptime(date, "%Y-%m-%d")
+		if isinstance(date, datetime):
+			return date.date()
 		return date
+	
 	def validate_date(self):
 		academic_term = self.academic_term
 		start_date, end_date = frappe.db.get_value(
