@@ -10,18 +10,29 @@ from frappe.email.doctype.email_group.email_group import add_subscribers
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cstr, flt, getdate
 
-
+@frappe.whitelist()
 def get_course(program):
 	"""Return list of courses for a particular program
 	:param program: Program
 	"""
 	courses = frappe.db.sql(
-		"""select course, course_name from `tabProgram Course` where parent=%s""",
+		"""select course, course_name from `tabProgram Course` where parent=%s
+		UNION select program_track_course from `tabProgram Track Courses` where parent=%s""",
 		(program),
 		as_dict=1,
 	)
 	return courses
 
+@frappe.whitelist()
+def set_iscurrent_acterm(academic_term):
+	academic_terms = frappe.get_all("Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"])
+	today = getdate()
+	
+	for term in academic_terms:
+		if term.term_start_date <= today <= term.term_end_date:
+			frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
+		else:
+			frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 0)
 
 @frappe.whitelist()
 def enroll_student(source_name):

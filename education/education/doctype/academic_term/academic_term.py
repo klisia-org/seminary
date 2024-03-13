@@ -82,10 +82,3 @@ class AcademicTerm(Document):
 					frappe.bold(self.academic_year)
 				)
 			)
-		def set_iscurrent_acterm(self):
-			today = getdate()
-			if self.term_start_date <= today <= self.term_end_date:
-				frappe.db.sql("UPDATE `tabAcademic Term` SET iscurrent_acterm = 0")
-				self.iscurrent_acterm = 1
-			else:
-				self.iscurrent_acterm = 0
