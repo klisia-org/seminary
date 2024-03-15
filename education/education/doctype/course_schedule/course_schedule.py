@@ -81,8 +81,6 @@ class CourseSchedule(Document):
 		from_time = self.convert_to_time(self.from_time)
 		to_time = self.convert_to_time(self.to_time)
 		for meeting_date in meeting_dates:
-			print("from_time:", from_time)
-			print("to_time:", to_time)
 			meeting = frappe.get_doc({
 				"doctype": "Course Schedule Meeting Dates", 
 				"parent": self.name,
