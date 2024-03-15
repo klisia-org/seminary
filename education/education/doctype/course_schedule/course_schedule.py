@@ -91,4 +91,5 @@ class CourseSchedule(Document):
 				"cs_totime": to_time.strftime("%H:%M:%S"),
 				})
 			meeting.insert()
-			meeting.save()
+		frappe.msgprint(_("Meeting Dates Created Successfully. Please save the document to continue."))
+			
