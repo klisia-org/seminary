@@ -75,7 +75,9 @@ class CourseSchedule(Document):
 		for meeting_date in meeting_dates:
 			meeting = frappe.get_doc({
 				"doctype": "Course Schedule Meeting Dates", 
-				"parent": self.name, 
+				"parent": self.name,
+				"parentfield": "cs_meetinfo",
+				"parenttype": "Course Schedule", 
 				"cs_meetdate": meeting_date,
 				"cs_from_time": self.from_time,
 				"cs_to_time": self.to_time,
