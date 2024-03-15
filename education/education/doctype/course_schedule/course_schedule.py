@@ -52,7 +52,7 @@ class CourseSchedule(Document):
                 )
 	def convert_to_time(self, time):
 		if isinstance(time, str):
-			return datetime.strptime(time, '%H::%M::%S').time()
+			return datetime.strptime(time, '%H:%M:%S').time()
 		if isinstance(time, datetime):
 			return time.time()
 		return time
