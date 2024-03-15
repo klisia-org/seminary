@@ -99,9 +99,10 @@ class CourseSchedule(Document):
 				})
 				print(meeting)
 				meeting.insert()
+				meeting.save()
 
-			# Commit the current batch of inserts to the database
-			frappe.db.commit()
+			
+			
 
 
 			
