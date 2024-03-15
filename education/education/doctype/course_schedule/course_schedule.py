@@ -50,12 +50,7 @@ class CourseSchedule(Document):
                         "Schedule date selected does not lie within the Academic Term."
                     ).format(self.academic_term)
                 )
-	def convert_to_time(self, time):
-		if isinstance(time, str):
-			return datetime.strptime(time, '%H:%M:%S').time()
-		if isinstance(time, datetime):
-			return time.time()
-		return time
+	
 	
 	def validate_time(self):
 		"""Validates if from_time is greater than to_time"""
@@ -96,8 +91,8 @@ class CourseSchedule(Document):
 					"parentfield": "cs_meetinfo",
 					"parenttype": "Course Schedule", 
 					"cs_meetdate": meeting_date,
-					"cs_fromtime": from_time.strftime("%H:%M:%S"),
-					"cs_totime": to_time.strftime("%H:%M:%S"),
+					"cs_fromtime": from_time,
+					"cs_totime": to_time,
 				})
 				meeting.insert()
 
