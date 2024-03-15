@@ -74,22 +74,35 @@ class CourseSchedule(Document):
 				meeting_dates.append(current_date)
 				current_date += timedelta(days=1)
 		return meeting_dates
+	
 	@frappe.whitelist()
 	def save_dates(self):
 		"""Create child documents for each meeting date"""
 		meeting_dates = self.get_meeting_dates()
 		from_time = self.convert_to_time(self.from_time)
 		to_time = self.convert_to_time(self.to_time)
-		for meeting_date in meeting_dates:
-			meeting = frappe.get_doc({
-				"doctype": "Course Schedule Meeting Dates", 
-				"parent": self.name,
-				"parentfield": "cs_meetinfo",
-				"parenttype": "Course Schedule", 
-				"cs_meetdate": meeting_date,
-				"cs_fromtime": from_time.strftime("%H:%M:%S"),
-				"cs_totime": to_time.strftime("%H:%M:%S"),
+
+		# Define the batch size
+		batch_size = 5
+
+		for i in range(0, len(meeting_dates), batch_size):
+			# Get the next batch of meeting dates
+			batch = meeting_dates[i:i+batch_size]
+
+			for meeting_date in batch:
+				meeting = frappe.get_doc({
+					"doctype": "Course Schedule Meeting Dates", 
+					"parent": self.name,
+					"parentfield": "cs_meetinfo",
+					"parenttype": "Course Schedule", 
+					"cs_meetdate": meeting_date,
+					"cs_fromtime": from_time.strftime("%H:%M:%S"),
+					"cs_totime": to_time.strftime("%H:%M:%S"),
 				})
-			meeting.insert()
+				meeting.insert()
+
+			# Commit the current batch of inserts to the database
+			frappe.db.commit()
+
 		frappe.msgprint(_("Meeting Dates Created Successfully. Please save the document to continue."))
 			
