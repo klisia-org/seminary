@@ -87,8 +87,8 @@ class CourseSchedule(Document):
 				"parentfield": "cs_meetinfo",
 				"parenttype": "Course Schedule", 
 				"cs_meetdate": meeting_date,
-				"cs_from_time": from_time.strftime("%H:%M:%S"),
-				"cs_to_time": to_time.strftime("%H:%M:%S"),
+				"cs_fromtime": from_time.strftime("%H:%M:%S"),
+				"cs_totime": to_time.strftime("%H:%M:%S"),
 				})
 			meeting.insert()
 			meeting.save()
