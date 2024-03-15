@@ -74,9 +74,12 @@ class CourseSchedule(Document):
 	def save_dates(self):
 		"""Create child documents for each meeting date"""
 		meeting_dates = self.get_meeting_dates()
-		from_time = self.convert_to_time(self.from_time)
-		to_time = self.convert_to_time(self.to_time)
-
+		from_time = self.from_time
+		to_time = self.to_time
+		# Clear existing meeting dates
+		frappe.db.sql(
+			"DELETE FROM `tabCourse Schedule Meeting Dates` WHERE parent=%s", self.name
+		)
 		# Define the batch size
 		batch_size = 2
 
