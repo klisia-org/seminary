@@ -83,7 +83,7 @@ class CourseSchedule(Document):
 		to_time = self.convert_to_time(self.to_time)
 
 		# Define the batch size
-		batch_size = 5
+		batch_size = 2
 
 		for i in range(0, len(meeting_dates), batch_size):
 			# Get the next batch of meeting dates
