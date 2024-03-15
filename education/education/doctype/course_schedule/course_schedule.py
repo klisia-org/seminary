@@ -50,6 +50,12 @@ class CourseSchedule(Document):
                         "Schedule date selected does not lie within the Academic Term."
                     ).format(self.academic_term)
                 )
+	def convert_to_time(self, time):
+		if isinstance(time, str):
+			return datetime.strptime(time, '%H::%M::%S').time()
+		if isinstance(time, datetime):
+			return time.time()
+		return time
 	
 	def validate_time(self):
 		"""Validates if from_time is greater than to_time"""
@@ -72,6 +78,8 @@ class CourseSchedule(Document):
 	def save_dates(self):
 		"""Create child documents for each meeting date"""
 		meeting_dates = self.get_meeting_dates()
+		from_time = self.convert_to_time(self.from_time)
+		to_time = self.convert_to_time(self.to_time)
 		for meeting_date in meeting_dates:
 			meeting = frappe.get_doc({
 				"doctype": "Course Schedule Meeting Dates", 
@@ -79,8 +87,8 @@ class CourseSchedule(Document):
 				"parentfield": "cs_meetinfo",
 				"parenttype": "Course Schedule", 
 				"cs_meetdate": meeting_date,
-				"cs_from_time": self.from_time,
-				"cs_to_time": self.to_time,
+				"cs_from_time": from_time,
+				"cs_to_time": to_time,
 				})
 			meeting.insert()
 			meeting.save()
