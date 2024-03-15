@@ -1,5 +1,11 @@
 {
- "actions": [],
+ "actions": [
+  {
+   "action": "education.education.api.set_iscurrent_acterm",
+   "action_type": "Server Action",
+   "label": "Roll Terms"
+  }
+ ],
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:title",
@@ -117,7 +123,7 @@
    "link_fieldname": "academic_term"
   }
  ],
- "modified": "2024-03-06 21:05:46.801327",
+ "modified": "2024-03-13 16:39:00.079769",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Academic Term",

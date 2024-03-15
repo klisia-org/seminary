@@ -1,7 +1,7 @@
 // Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("fee_credits", {
+// frappe.ui.form.on("Trigger Events Fees", {
 // 	refresh(frm) {
 
 // 	},

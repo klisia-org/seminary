@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:{student}-{program}-{##}",
+ "autoname": "format:{student_name}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
  "doctype": "DocType",
  "document_type": "Document",
@@ -13,6 +13,7 @@
   "date_of_conclusion",
   "column_break_4",
   "program",
+  "emphasis_program_track",
   "academic_term",
   "image",
   "section_break_tfcw",
@@ -70,6 +71,7 @@
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term on Enrollment",
+   "link_filters": "[[{\"fieldname\":\"academic_term\",\"field_option\":\"Academic Term\"},\"iscurrent_acterm\",\"=\",1]]",
    "options": "Academic Term",
    "reqd": 1,
    "search_index": 1
@@ -195,6 +197,12 @@
    "fieldname": "inactive_motive",
    "fieldtype": "Small Text",
    "label": "Reason for being inactive"
+  },
+  {
+   "fieldname": "emphasis_program_track",
+   "fieldtype": "Link",
+   "label": "Emphasis (Program track)",
+   "options": "Program Track"
   }
  ],
  "image_field": "image",
@@ -206,7 +214,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-06 21:59:07.946838",
+ "modified": "2024-03-13 17:50:22.051727",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

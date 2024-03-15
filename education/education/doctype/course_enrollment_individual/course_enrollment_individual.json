@@ -8,10 +8,13 @@
   "program_ce",
   "student_ce",
   "coursesc_ce",
+  "audit",
   "section_break_qhjs",
   "program_data",
   "course_data",
   "academic_term",
+  "registrar_use_only_section",
+  "no_prereq",
   "section_break_ogto",
   "amended_from"
  ],
@@ -81,11 +84,30 @@
    "fieldtype": "Data",
    "label": "Academic Term",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "audit",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Only audit"
+  },
+  {
+   "description": "Use with caution and with previous approval",
+   "fieldname": "registrar_use_only_section",
+   "fieldtype": "Section Break",
+   "label": "Registrar Use ONLY"
+  },
+  {
+   "default": "0",
+   "fieldname": "no_prereq",
+   "fieldtype": "Check",
+   "label": "Don't check pre-requisites"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-12 21:07:20.475691",
+ "modified": "2024-03-13 20:22:18.832407",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",
@@ -129,7 +151,6 @@
    "report": 1,
    "role": "Student",
    "share": 1,
-   "submit": 1,
    "write": 1
   }
  ],

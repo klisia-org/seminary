@@ -8,8 +8,8 @@
   "course",
   "course_name",
   "academic_term",
-  "pec_finalgradecode",
-  "pec_finalgradenum"
+  "pec_finalgradenum",
+  "pec_finalgradecode"
  ],
  "fields": [
   {
@@ -40,17 +40,19 @@
   {
    "fieldname": "pec_finalgradecode",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Final Grade Code"
   },
   {
    "fieldname": "pec_finalgradenum",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Final Grade Numeric"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-03-13 09:40:31.416961",
+ "modified": "2024-03-14 12:37:32.148612",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment Course",

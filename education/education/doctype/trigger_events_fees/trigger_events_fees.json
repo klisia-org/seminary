@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-14 18:00:08.186489",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trig_ev_fee"
+ ],
+ "fields": [
+  {
+   "fieldname": "trig_ev_fee",
+   "fieldtype": "Select",
+   "label": "Events",
+   "options": "\nProgram Enrollment\nCourse Enrollment\nNew Academic Term\nNew Academic Year\nOn Use",
+   "translatable": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-03-14 18:02:26.025405",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Trigger Events Fees",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -9,11 +9,15 @@
  "engine": "InnoDB",
  "field_order": [
   "category_name",
-  "is_credit",
   "feecategory_type",
+  "is_credit",
+  "column_break_ahwh",
   "item",
-  "pgm_lvl",
+  "section_break_pziy",
+  "fc_event",
+  "column_break_vahg",
   "payment_term_template",
+  "section_break_sdur",
   "description"
  ],
  "fields": [
@@ -54,15 +58,6 @@
    "search_index": 1
   },
   {
-   "fieldname": "pgm_lvl",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Program Level",
-   "options": "Program Level",
-   "reqd": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "payment_term_template",
    "fieldtype": "Link",
    "label": "Payment Terms",
@@ -73,13 +68,36 @@
    "fieldname": "feecategory_type",
    "fieldtype": "Select",
    "label": "Category Type",
-   "options": "Tuition\nServices\nLodging",
+   "options": "\nTuition\nServices\nLodging",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ahwh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_pziy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_vahg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_sdur",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "fc_event",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Event to charge",
+   "options": "Trigger Events Fees"
   }
  ],
  "icon": "fa fa-flag",
  "links": [],
- "modified": "2024-03-05 18:47:58.833224",
+ "modified": "2024-03-14 18:03:46.723439",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Fee Category",

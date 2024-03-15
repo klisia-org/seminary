@@ -9,7 +9,8 @@
   "fee_category",
   "payer",
   "pay_percent",
-  "payterm_payer"
+  "payterm_payer",
+  "pep_event"
  ],
  "fields": [
   {
@@ -45,12 +46,19 @@
    "label": "Payment term",
    "options": "Payment Terms Template",
    "reqd": 1
+  },
+  {
+   "fetch_from": "fee_category.fc_event",
+   "fieldname": "pep_event",
+   "fieldtype": "Data",
+   "label": "Event",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-04 23:41:21.834716",
+ "modified": "2024-03-14 18:18:19.438502",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "pgm_enroll_payers",

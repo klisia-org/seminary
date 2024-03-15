@@ -21,6 +21,8 @@
   "section_break_courses",
   "courses",
   "tracks_tab",
+  "tracks_section",
+  "pgm_pgmtracks",
   "you_can_specify_courses_per_program_track_section",
   "pgm_courses_track",
   "web_tab",
@@ -29,6 +31,8 @@
   "program_description",
   "program_requirements",
   "program_duration",
+  "financial_tab",
+  "pgm_pgmfees",
   "connections_tab"
  ],
  "fields": [
@@ -59,12 +63,12 @@
    "label": "Program Abbreviation"
   },
   {
-   "description": "Time-based: use terms; Credit-based: track credit completion; Non-formal is a specific type for outreach; Custom is for everything else.",
+   "description": "Time-based: use terms for student progress; Credit-based: students may enroll in courses for any term; track credit completion",
    "fieldname": "program_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Enrollment Type",
-   "options": "\nTime-based\nCredits-based\nNon-formal\nCustom",
+   "options": "\nTime-based\nCredits-based",
    "search_index": 1,
    "translatable": 1
   },
@@ -72,13 +76,15 @@
    "fieldname": "terms_complete",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Terms for completion"
+   "label": "Terms for completion",
+   "mandatory_depends_on": "program_type==\"Time-based\""
   },
   {
    "fieldname": "credits_complete",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Credits for completion"
+   "label": "Credits for completion",
+   "mandatory_depends_on": "program_type==\"Credits-based\""
   },
   {
    "fieldname": "section_break_pgmtype",
@@ -147,6 +153,7 @@
    "options": "Program Track Courses"
   },
   {
+   "description": "Note: The courses available on the previous page are the only ones for \"General Studies\" / no track. Use this section only for what is particular for a track.\nSee the help file for details.",
    "fieldname": "you_can_specify_courses_per_program_track_section",
    "fieldtype": "Section Break",
    "label": "You can specify courses per program track"
@@ -168,6 +175,27 @@
    "label": "Fee Category",
    "link_filters": "[[{\"fieldname\":\"pgm_feecateg\",\"field_option\":\"Fee Category\"},\"feecategory_type\",\"=\",\"Tuition\"]]",
    "options": "Fee Category"
+  },
+  {
+   "fieldname": "tracks_section",
+   "fieldtype": "Section Break",
+   "label": "Tracks"
+  },
+  {
+   "fieldname": "pgm_pgmtracks",
+   "fieldtype": "Table",
+   "options": "Program Track"
+  },
+  {
+   "fieldname": "financial_tab",
+   "fieldtype": "Tab Break",
+   "label": "Financial"
+  },
+  {
+   "fieldname": "pgm_pgmfees",
+   "fieldtype": "Table",
+   "label": "Program Fees",
+   "options": "Program Fees"
   }
  ],
  "image_field": "hero_image",
@@ -213,7 +241,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-03-05 18:49:06.969940",
+ "modified": "2024-03-14 16:50:11.119943",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

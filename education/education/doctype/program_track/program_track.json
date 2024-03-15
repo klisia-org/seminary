@@ -1,27 +1,16 @@
 {
  "actions": [],
- "autoname": "format:{program}-{track_name}",
+ "autoname": "format:{track_name}",
  "creation": "2024-02-23 19:02:42.921180",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "track_of_a_program_section",
-  "program",
-  "column_break_gmex",
+  "column_break_zlpi",
   "track_name"
  ],
  "fields": [
-  {
-   "fieldname": "program",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program",
-   "options": "Program",
-   "reqd": 1,
-   "search_index": 1
-  },
   {
    "fieldname": "track_name",
    "fieldtype": "Data",
@@ -35,35 +24,23 @@
   {
    "fieldname": "track_of_a_program_section",
    "fieldtype": "Section Break",
-   "label": "Track of a Program"
+   "label": "Tracks of this Program"
   },
   {
-   "fieldname": "column_break_gmex",
+   "fieldname": "column_break_zlpi",
    "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
+ "istable": 1,
  "links": [],
- "modified": "2024-02-24 17:53:18.618354",
+ "modified": "2024-03-13 17:14:05.660621",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Track",
  "naming_rule": "Expression",
  "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
+ "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

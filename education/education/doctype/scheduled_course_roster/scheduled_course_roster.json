@@ -6,10 +6,15 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "student_info_section",
   "student_roster",
   "stuname_roster",
   "student_main_link",
-  "stuemail_rc"
+  "stuemail_rc",
+  "program_std_scr",
+  "audit_bool",
+  "grades_section",
+  "table_mvvs"
  ],
  "fields": [
   {
@@ -39,12 +44,44 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Student email"
+  },
+  {
+   "fetch_from": "student_roster.program_data",
+   "fieldname": "program_std_scr",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "student_roster.audit",
+   "fieldname": "audit_bool",
+   "fieldtype": "Check",
+   "label": "Is Audit?"
+  },
+  {
+   "fieldname": "grades_section",
+   "fieldtype": "Section Break",
+   "label": "Grades"
+  },
+  {
+   "depends_on": "audit_bool==False",
+   "fieldname": "table_mvvs",
+   "fieldtype": "Table",
+   "options": "Course Assess Results Detail"
+  },
+  {
+   "fieldname": "student_info_section",
+   "fieldtype": "Section Break",
+   "label": "Student Info"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-11 15:52:47.276660",
+ "modified": "2024-03-14 12:32:52.963824",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",

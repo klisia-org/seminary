@@ -18,6 +18,8 @@
   "modality",
   "color",
   "syllabus",
+  "section_break_ashf",
+  "sendgrades_btn",
   "section_break_6",
   "c_datestart",
   "c_dateend",
@@ -43,13 +45,12 @@
   "sunday",
   "integration_section",
   "moodle_link",
-  "intlms_lnk",
-  "meeting_dates_tab",
-  "meeting_dates_section",
-  "cs_meetinfo",
   "grading_tab",
   "gradesc_cs",
   "courseassescrit_sc",
+  "meeting_dates_tab",
+  "meeting_dates_section",
+  "cs_meetinfo",
   "class_roster_tab",
   "cs_roster",
   "section_break_udqm",
@@ -288,15 +289,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "intlms_lnk",
-   "fieldtype": "Data",
-   "label": "Internal LMS",
-   "permlevel": 2
-  },
-  {
    "fieldname": "grading_tab",
    "fieldtype": "Tab Break",
-   "label": "Grading"
+   "label": "Grade Setup"
   },
   {
    "fetch_from": "course.default_grading_scale",
@@ -326,7 +321,8 @@
   },
   {
    "fieldname": "section_break_udqm",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Grading"
   },
   {
    "bold": 1,
@@ -339,10 +335,21 @@
    "fieldname": "cs_studres",
    "fieldtype": "Button",
    "label": "Student Results"
+  },
+  {
+   "fieldname": "section_break_ashf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "bold": 1,
+   "depends_on": "c_dateend>get.date(today)",
+   "fieldname": "sendgrades_btn",
+   "fieldtype": "Button",
+   "label": "Send Final Grades"
   }
  ],
  "links": [],
- "modified": "2024-03-12 21:31:48.672249",
+ "modified": "2024-03-14 12:19:58.781034",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",

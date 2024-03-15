@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:course_name",
+ "autoname": "format:{course_name}",
  "creation": "2015-09-07 12:39:55.181893",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -28,9 +28,12 @@
   {
    "fieldname": "course_name",
    "fieldtype": "Data",
+   "in_global_search": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Course Name",
    "reqd": 1,
+   "translatable": 1,
    "unique": 1
   },
   {
@@ -120,11 +123,11 @@
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2024-03-12 08:24:40.387945",
+ "modified": "2024-03-13 14:33:57.932146",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

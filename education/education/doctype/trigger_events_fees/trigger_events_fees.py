@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class CourseAssessmentResult(Document):
+class TriggerEventsFees(Document):
 	pass
