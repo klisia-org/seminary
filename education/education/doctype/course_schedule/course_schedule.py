@@ -97,10 +97,11 @@ class CourseSchedule(Document):
 					"cs_fromtime": from_time,
 					"cs_totime": to_time,
 				})
+				print(meeting)
 				meeting.insert()
 
 			# Commit the current batch of inserts to the database
 			frappe.db.commit()
 
-		frappe.msgprint(_("Meeting Dates Created Successfully. Please save the document to continue."))
+
 			
