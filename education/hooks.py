@@ -48,12 +48,12 @@ standard_portal_menu_items = [
 		"title": "Admission",
 		"route": "/admissions",
 		"reference_doctype": "Student Admission",
-		"role": "Student",
+		"role": "Student Applicant",
 	},
 ]
 
 default_roles = [
-	{"role": "Student", "doctype": "Student", "email_field": "student_email_id"},
+	{"role": "Student Applicant", "doctype": "Student Applicant", "email_field": "student_email_id"},
 ]
 
 accounting_dimension_doctypes = ["Fee Schedule", "Fee Structure"]
@@ -68,7 +68,7 @@ global_search_doctypes = {
 		{"doctype": "Quiz", "index": 6},
 		{"doctype": "Question", "index": 7},
 		{"doctype": "Fee Schedule", "index": 8},
-		{"doctype": "Fee Structure", "index": 9},
+		{"doctype": "Course Schedule Meeting Dates", "index": 9},
 		{"doctype": "Student Group", "index": 10},
 		{"doctype": "Student", "index": 11},
 		{"doctype": "Instructor", "index": 12},
@@ -99,6 +99,7 @@ global_search_doctypes = {
 		{"doctype": "Fee Category", "index": 37},
 		{"doctype": "Assessment Code", "index": 38},
 		{"doctype": "Discussion", "index": 39},
+        
 	]
 }
 

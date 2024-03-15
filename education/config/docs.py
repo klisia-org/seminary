@@ -2,9 +2,9 @@
 Configuration for docs
 """
 
-# source_link = "https://github.com/[org_name]/education"
-# headline = "App that does everything"
-# sub_heading = "Yes, you got that right the first time, everything"
+# source_link = "https://github.com/drmurilomelo/education"
+# headline = "Seminary Management System done the right way"
+# 
 
 
 def get_context(context):
