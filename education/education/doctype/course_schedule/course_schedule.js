@@ -2,9 +2,9 @@ frappe.ui.form.on("Course Schedule", {
 	refresh: function(frm) {
 		frm.add_custom_button(__('Add Meeting Dates'), function()  {
 			if(!frm.cs_meetinfo) {
-				frm.call('save_dates');
-				frappe.msgprint('Meeting dates added');
-				frm.reload_doc();
+				frm.call('save_dates').then(function() {
+					frm.reload_doc();
+				});
 		
 				} else { 
 					frappe.msgprint('No meeting dates found')}})
