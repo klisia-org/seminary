@@ -73,9 +73,12 @@ class CourseSchedule(Document):
 		"""Create child documents for each meeting date"""
 		meeting_dates = self.get_meeting_dates()
 		for meeting_date in meeting_dates:
-			meeting = frappe.get_doc({"doctype": "Course Schedule Meeting Dates", "parent": self.name, 
-			"cs_meetdate": meeting_date,
-			"cs_from_time": self.from_time,
-			"cs_to_time": self.to_time})
+			meeting = frappe.get_doc({
+				"doctype": "Course Schedule Meeting Dates", 
+				"parent": self.name, 
+				"cs_meetdate": meeting_date,
+				"cs_from_time": self.from_time,
+				"cs_to_time": self.to_time,
+				})
 			meeting.insert()
 			meeting.save()
