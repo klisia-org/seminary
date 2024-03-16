@@ -37,8 +37,8 @@ frappe.ui.form.on("Course Enrollment Individual", {
     },
     on_submit(frm) {
       if (frm.doc.__islocal) {
+            frm.call('CourseEnrollmentIndividual.copy_data_to_scheduled_course_roster');
             frm.call('CourseEnrollmentIndividual.copy_data_to_program_enrollment_course', {program_ce, coursesc_ce});
             console.log('Data copied to Student Records')   ;
-            frm.call('CourseEnrollmentIndividual.copy_data_to_scheduled_course_roster');
         }; 
 }});
