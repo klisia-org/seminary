@@ -78,22 +78,22 @@ class CourseEnrollmentIndividual(Document):
 						if not confirm_enrollment:
 							return
 
-@frappe.whitelist()
-def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
-	program_enrollment = frappe.get_doc("Program Enrollment", program_ce)
-	course_schedule = frappe.get_doc("Course Schedule", coursesc_ce)
-	course = coursesc_ce
+	@frappe.whitelist()
+	def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
+		program_enrollment = frappe.get_doc("Program Enrollment", program_ce)
+		course_schedule = frappe.get_doc("Course Schedule", coursesc_ce)
+		course = coursesc_ce
 
-	if course:
-		course_name = course_schedule.course
-		academic_term = course_schedule.academic_term
-		program_enrollment.append("Program Enrollment Course", {
-			"course_schedule": course,
-			"course_name": course_name,
-			"academic_term": academic_term
-		})
+		if course:
+			course_name = course_schedule.course
+			academic_term = course_schedule.academic_term
+			program_enrollment.append("Program Enrollment Course", {
+				"course_schedule": course,
+				"course_name": course_name,
+				"academic_term": academic_term
+			})
 
-	program_enrollment.save()
+		program_enrollment.save()
 
 
 @frappe.whitelist()
