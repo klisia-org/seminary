@@ -78,8 +78,8 @@ class CourseEnrollmentIndividual(Document):
 						if not confirm_enrollment:
 							return
 
-	@frappe.whitelist()
-	def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
+@frappe.whitelist()
+def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
 		program_enrollment = frappe.get_doc("Program Enrollment", program_ce)
 		course_schedule = frappe.get_doc("Course Schedule", coursesc_ce)
 		course = coursesc_ce
@@ -116,3 +116,8 @@ def copy_data_to_scheduled_course_roster(self):
 			})
 	scheduled_course_roster.insert()
 	scheduled_course_roster.save()
+
+	@frappe.whitelist()
+	def on_submit(self):
+		copy_data_to_scheduled_course_roster(self)
+		copy_data_to_program_enrollment_course(self.program_ce, self.coursesc_ce)
