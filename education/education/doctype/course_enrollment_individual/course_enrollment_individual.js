@@ -49,5 +49,17 @@ frappe.ui.form.on("Course Enrollment Individual", {
                 }
             });
         }
-    }
-});
+        if (frm.doc.__islocal) {
+            frappe.call({
+                method: "copy_data_to_scheduled_course_roster",
+                args: {
+                    course_enrollment_individual: frm.doc.name
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frappe.msgprint("Student Added to Course Roster");
+                    }
+                }
+            });
+        } 
+}});

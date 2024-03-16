@@ -78,21 +78,40 @@ class CourseEnrollmentIndividual(Document):
 						if not confirm_enrollment:
 							return
 
-	@frappe.whitelist()
-	def copy_data_to_program_enrollment_course(self):
-		program_enrollment = frappe.get_doc("Program Enrollment", self.program_ce)
-		course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
-		course = self.coursesc_ce
+@frappe.whitelist()
+def copy_data_to_program_enrollment_course(self):
+	program_enrollment = frappe.get_doc("Program Enrollment", self.program_ce)
+	course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
+	course = self.coursesc_ce
 
-		if course:
+	if course:
 			
-			course_name = course_schedule.course
-			academic_term = course_schedule.academic_term
+		course_name = course_schedule.course
+		academic_term = course_schedule.academic_term
+		program_enrollment.append("courses", {
+			"course_schedule": course,
+			"course_name": course_name,
+			"academic_term": academic_term
+		})
 
-			program_enrollment.append("courses", {
-				"course_schedule": course,
-				"course_name": course_name,
-				"academic_term": academic_term
+	program_enrollment.save()
+
+@frappe.whitelist()
+def copy_data_to_scheduled_course_roster(self):
+	course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
+	student = frappe.get_doc("Student", self.student_ce)
+
+	if course_schedule and student:
+		scheduled_course_roster = frappe.get_doc({
+			"doctype": "Scheduled Course Roster",
+			"parent": course_schedule.name,
+			"parenttype": "Course Schedule",
+			"parentfield": "scheduled_course_roster",
+			"student_roster": self.student_ce,
+			"stuname_roster": student.student_name,
+			"student_main_link": student.name,
+			"stuemail_rc": student.student_email_id,
+			"program_data": course_schedule.program_std_scr,
+			"audit": self.audit_bool
 			})
-
-		program_enrollment.save()
+	scheduled_course_roster.insert()

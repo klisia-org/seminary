@@ -11,7 +11,14 @@ frappe.ui.form.on("Course Schedule", {
 				
 				},
 	
-			
+			validate: function(frm) {
+				if (frm.doc.modality !== "Virtual") {
+					if (!frm.doc.monday && !frm.doc.tuesday && !frm.doc.wednesday && !frm.doc.thursday && !frm.doc.friday && !frm.doc.saturday && !frm.doc.sunday) {
+						frappe.msgprint('Please select at least one day of the week');
+						validated = false;
+					}
+				}
+			},
 
 	onload: (frm) => {
 		frm.set_query('instructor', () => {

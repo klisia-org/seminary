@@ -14,10 +14,8 @@ from education.education.api import get_student_group_students
 
 class StudentAttendance(Document):
 	def validate(self):
-		self.validate_mandatory()
 		self.validate_date()
 		self.set_date()
-		self.set_student_group()
 		self.validate_student()
 		self.validate_duplication()
 		self.validate_is_holiday()
@@ -28,43 +26,29 @@ class StudentAttendance(Document):
 				"Course Schedule", self.course_schedule, "schedule_date"
 			)
 
-	def validate_mandatory(self):
-		if not (self.student_group or self.course_schedule):
-			frappe.throw(
-				_("{0} or {1} is mandatory").format(
-					frappe.bold("Student Group"), frappe.bold("Course Schedule")
-				),
-				title=_("Mandatory Fields"),
-			)
-
 	def validate_date(self):
 		if not self.leave_application and getdate(self.date) > getdate():
 			frappe.throw(_("Attendance cannot be marked for future dates."))
 
-		if self.student_group:
-			academic_year = frappe.db.get_value(
-				"Student Group", self.student_group, "academic_year"
+		if self.course_schedule:
+			academic_term = frappe.db.get_value(
+				"Course Schedule", self.course_schedule, "academic_term"
 			)
-			if academic_year:
-				year_start_date, year_end_date = frappe.db.get_value(
-					"Academic Year", academic_year, ["year_start_date", "year_end_date"]
+			if academic_term:
+				term_start_date, term_end_date = frappe.db.get_value(
+					"Academic Term", academic_term, ["start_date", "end_date"]
 				)
-				if year_start_date and year_end_date:
-					if getdate(self.date) < getdate(year_start_date) or getdate(self.date) > getdate(
-						year_end_date
+				if term_start_date and term_end_date:
+					if getdate(self.date) < getdate(term_start_date) or getdate(self.date) > getdate(
+						term_end_date
 					):
 						frappe.throw(
-							_("Attendance cannot be marked outside of Academic Year {0}").format(
-								academic_year
+							_("Attendance cannot be marked outside of Academic Term {0}").format(
+								academic_term
 							)
 						)
 
-	def set_student_group(self):
-		if self.course_schedule:
-			self.student_group = frappe.db.get_value(
-				"Course Schedule", self.course_schedule, "student_group"
-			)
-
+	
 	def validate_student(self):
 		if self.course_schedule:
 			student_group = frappe.db.get_value(
