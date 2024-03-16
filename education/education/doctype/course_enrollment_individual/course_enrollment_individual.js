@@ -36,30 +36,9 @@ frappe.ui.form.on("Course Enrollment Individual", {
         });
     },
     on_submit(frm) {
-        if (!frm.doc.audit) {
-            frappe.call({
-                method: "copy_data_to_program_enrollment_course",
-                args: {
-                    course_enrollment_individual: frm.doc.name
-                },
-                callback: function(response) {
-                    if (response.message) {
-                        frappe.msgprint("Data copied to Student Records");
-                    }
-                }
-            });
-        }
-        if (frm.doc.__islocal) {
-            frappe.call({
-                method: "copy_data_to_scheduled_course_roster",
-                args: {
-                    course_enrollment_individual: frm.doc.name
-                },
-                callback: function(response) {
-                    if (response.message) {
-                        frappe.msgprint("Student Added to Course Roster");
-                    }
-                }
-            });
-        } 
+      if (frm.doc.__islocal) {
+            frm.call('CourseEnrollmentIndividual.copy_data_to_program_enrollment_course', {program_ce, coursesc_ce});
+            console.log('Data copied to Student Records')   ;
+            frm.call('CourseEnrollmentIndividual.copy_data_to_scheduled_course_roster');
+        }; 
 }});

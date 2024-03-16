@@ -79,13 +79,12 @@ class CourseEnrollmentIndividual(Document):
 							return
 
 @frappe.whitelist()
-def copy_data_to_program_enrollment_course(self):
-	program_enrollment = frappe.get_doc("Program Enrollment", self.program_ce)
-	course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
-	course = self.coursesc_ce
+def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
+	program_enrollment = frappe.get_doc("Program Enrollment", program_ce)
+	course_schedule = frappe.get_doc("Course Schedule", coursesc_ce)
+	course = coursesc_ce
 
 	if course:
-			
 		course_name = course_schedule.course
 		academic_term = course_schedule.academic_term
 		program_enrollment.append("courses", {
@@ -95,6 +94,7 @@ def copy_data_to_program_enrollment_course(self):
 		})
 
 	program_enrollment.save()
+
 
 @frappe.whitelist()
 def copy_data_to_scheduled_course_roster(self):
@@ -108,10 +108,11 @@ def copy_data_to_scheduled_course_roster(self):
 			"parenttype": "Course Schedule",
 			"parentfield": "scheduled_course_roster",
 			"student_roster": self.student_ce,
-			"stuname_roster": student.student_name,
+			"stuname_roster": self.student_ce,
 			"student_main_link": student.name,
 			"stuemail_rc": student.student_email_id,
 			"program_data": course_schedule.program_std_scr,
 			"audit": self.audit_bool
 			})
 	scheduled_course_roster.insert()
+	scheduled_course_roster.save()
