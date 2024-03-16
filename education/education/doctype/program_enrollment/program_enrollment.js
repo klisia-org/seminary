@@ -5,14 +5,7 @@
 frappe.ui.form.on('Program Enrollment', {
 
 	onload: function(frm) {
-		frm.fields_dict['fees'].grid.get_field('fee_schedule').get_query = function(doc, cdt, cdn) {
-			var d = locals[cdt][cdn];
-			return {
-				filters: {'academic_term': d.academic_term}
-			}
-		};
-
-		if (frm.doc.program) {
+		frm.set_query('program', function() {
 			frm.set_query('course', 'courses', function() {
 				return {
 					query: 'education.education.doctype.program_enrollment.program_enrollment.get_program_courses',
@@ -21,12 +14,8 @@ frappe.ui.form.on('Program Enrollment', {
 					}
 				}
 			});
-		}
+		});
 	},
-
-	
-
-	
 });
 
 frappe.ui.form.on('Program Enrollment Course', {
@@ -40,5 +29,5 @@ frappe.ui.form.on('Program Enrollment Course', {
 			return { filters: [['Course', 'name', 'not in', course_list],
 				['Course', 'name', 'in', frm.program_courses.map((e) => e.course)]] };
 		};
-	}
+},
 });

@@ -25,8 +25,6 @@
   "academic_year",
   "academic_term",
   "section_break_7",
-  "fee_structure",
-  "fee_schedule",
   "currency",
   "components",
   "section_break_10",
@@ -77,15 +75,6 @@
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "Student Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "fee_schedule",
-   "fieldtype": "Link",
-   "in_global_search": 1,
-   "label": "Fee Schedule",
-   "options": "Fee Schedule",
-   "print_hide": 1,
    "read_only": 1
   },
   {
@@ -168,14 +157,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": ".",
-   "fieldname": "student_batch",
-   "fieldtype": "Link",
-   "label": "Student Batch",
-   "options": "Student Batch Name",
-   "print_hide": 1
-  },
-  {
    "fieldname": "column_break_16",
    "fieldtype": "Column Break"
   },
@@ -210,21 +191,6 @@
    "options": "Currency",
    "print_hide": 1,
    "read_only": 1
-  },
-  {
-   "fieldname": "fee_structure",
-   "fieldtype": "Link",
-   "label": "Fee Structure",
-   "options": "Fee Structure",
-   "print_hide": 1,
-   "reqd": 1
-  },
-  {
-   "fieldname": "components",
-   "fieldtype": "Table",
-   "label": "Components",
-   "options": "Fee Component",
-   "reqd": 1
   },
   {
    "fieldname": "section_break_10",
@@ -299,23 +265,22 @@
    "label": "Accounting",
    "print_hide": 1
   },
-  {
-   "fetch_from": "fee_structure.receivable_account",
-   "fieldname": "receivable_account",
-   "fieldtype": "Link",
-   "label": "Receivable Account",
-   "options": "Account",
-   "print_hide": 1,
-   "reqd": 1
-  },
-  {
-   "fetch_from": "fee_structure.income_account",
-   "fieldname": "income_account",
-   "fieldtype": "Link",
-   "label": "Income Account",
-   "options": "Account",
-   "print_hide": 1
-  },
+    {
+     "fetch_from": "fee_structure.receivable_account",
+     "fieldname": "receivable_account",
+     "fieldtype": "Link",
+     "label": "Receivable Account",
+     "options": "Account",
+     "print_hide": 1
+    },
+    {
+     "fetch_from": "fee_structure.income_account",
+     "fieldname": "income_account",
+     "fieldtype": "Link",
+     "label": "Income Account",
+     "options": "Account",
+     "print_hide": 1
+    },
   {
    "fieldname": "column_break_39",
    "fieldtype": "Column Break",

@@ -8,7 +8,7 @@ from frappe.desk.reportview import get_match_cond
 from frappe.model.document import Document
 from frappe.query_builder.functions import Min
 from frappe.utils import comma_and, get_link_to_form, getdate
-from education.education.doctype.fee_schedule.fee_schedule import create_sales_invoice
+
 
 
 class ProgramEnrollment(Document):
@@ -24,7 +24,6 @@ class ProgramEnrollment(Document):
 
 	def on_submit(self):
 		self.update_student_joining_date()
-		self.make_fee_records()
 		self.create_course_enrollments()
 
 	def validate_academic_term(self):
@@ -71,19 +70,7 @@ class ProgramEnrollment(Document):
 		if date:
 			frappe.db.set_value("Student", self.student, "joining_date", date[0].enrollment_date)
 
-	def make_fee_records(self):
-		from education.education.api import get_fee_components
-
-		sales_invoice_list = []
-		for d in self.fees:
-			sales_invoice = create_sales_invoice(d.fee_schedule, self.student)
-			sales_invoice_list.append(sales_invoice)
-		if sales_invoice_list:
-			sales_invoice_list = [
-				"""<a href="/app/Form/Sales Invoice/%s" target="_blank">%s</a>""" % (fee, fee)
-				for fee in sales_invoice_list
-			]
-			msgprint(_("Fee Records Created - {0}").format(comma_and(sales_invoice_list)))
+	
 
 	
 	def create_course_enrollments(self):

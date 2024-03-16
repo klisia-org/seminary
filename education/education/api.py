@@ -98,7 +98,7 @@ def check_attendance_records_exist(course_schedule=None, student_group=None, dat
 
 @frappe.whitelist()
 def mark_attendance(
-	students_present, students_absent, course_schedule=None, student_group=None, date=None
+	students_present, students_absent, course_schedule=None, date=None
 ):
 	"""Creates Multiple Attendance Records.
 
@@ -109,18 +109,18 @@ def mark_attendance(
 	:param date: Date.
 	"""
 
-	if student_group:
+	if course_schedule:
 		present = json.loads(students_present)
 		absent = json.loads(students_absent)
 
 	for d in present:
 		make_attendance_records(
-			d["student"], d["student_name"], "Present", course_schedule, student_group, date
+			d["student"], d["student_name"], "Present", course_schedule,  date
 		)
 
 	for d in absent:
 		make_attendance_records(
-			d["student"], d["student_name"], "Absent", course_schedule, student_group, date
+			d["student"], d["student_name"], "Absent", course_schedule, date
 		)
 
 	frappe.db.commit()
@@ -128,7 +128,7 @@ def mark_attendance(
 
 
 def make_attendance_records(
-	student, student_name, status, course_schedule=None, student_group=None, date=None
+	student, student_name, status, course_schedule=None, date=None
 ):
 	"""Creates/Update Attendance Record.
 
@@ -142,7 +142,6 @@ def make_attendance_records(
 			"doctype": "Student Attendance",
 			"student": student,
 			"course_schedule": course_schedule,
-			"student_group": student_group,
 			"date": date,
 		}
 	)
@@ -151,7 +150,6 @@ def make_attendance_records(
 	student_attendance.student = student
 	student_attendance.student_name = student_name
 	student_attendance.course_schedule = course_schedule
-	student_attendance.student_group = student_group
 	student_attendance.date = date
 	student_attendance.status = status
 	student_attendance.save()
@@ -170,84 +168,7 @@ def get_student_guardians(student):
 	return guardians
 
 
-@frappe.whitelist()
-def get_student_group_students(student_group, include_inactive=0):
-	"""Returns List of student, student_name in Student Group.
 
-	:param student_group: Student Group.
-	"""
-	if include_inactive:
-		students = frappe.get_all(
-			"Student Group Student",
-			fields=["student", "student_name"],
-			filters={"parent": student_group},
-			order_by="group_roll_number",
-		)
-	else:
-		students = frappe.get_all(
-			"Student Group Student",
-			fields=["student", "student_name"],
-			filters={"parent": student_group, "active": 1},
-			order_by="group_roll_number",
-		)
-	return students
-
-
-@frappe.whitelist()
-def get_fee_structure(program, academic_term=None):
-	"""Returns Fee Structure.
-
-	:param program: Program.
-	:param academic_term: Academic Term.
-	"""
-	fee_structure = frappe.db.get_values(
-		"Fee Structure",
-		{"program": program, "academic_term": academic_term},
-		"name",
-		as_dict=True,
-	)
-	return fee_structure[0].name if fee_structure else None
-
-
-@frappe.whitelist()
-def get_fee_components(fee_structure):
-	"""Returns Fee Components.
-
-	:param fee_structure: Fee Structure.
-	"""
-	if fee_structure:
-		fs = frappe.get_all(
-			"Fee Component",
-			fields=["fees_category", "description", "amount"],
-			filters={"parent": fee_structure},
-			order_by="idx",
-		)
-		return fs
-
-
-@frappe.whitelist()
-def get_fee_schedule(program, student_category=None):
-	"""Returns Fee Schedule.
-
-	:param program: Program.
-	:param student_category: Student Category
-	"""
-	fs = frappe.get_all(
-		"Program Fee",
-		fields=["academic_term", "fee_schedule", "due_date", "amount"],
-		filters={"parent": program, "student_category": student_category},
-		order_by="idx",
-	)
-	return fs
-
-
-@frappe.whitelist()
-def collect_fees(fees, amt):
-	paid_amount = flt(amt) + flt(frappe.db.get_value("Fees", fees, "paid_amount"))
-	total_amount = flt(frappe.db.get_value("Fees", fees, "total_amount"))
-	frappe.db.set_value("Fees", fees, "paid_amount", paid_amount)
-	frappe.db.set_value("Fees", fees, "outstanding_amount", (total_amount - paid_amount))
-	return paid_amount
 
 
 @frappe.whitelist()
@@ -504,15 +425,12 @@ def get_student_invoices(student):
 	sales_invoice_list = frappe.db.get_list(
 		"Sales Invoice",
 		filters={"student": student, "status": ["in", ["Paid", "Unpaid"]]},
-		fields=["name", "status", "student", "due_date", "fee_schedule", "grand_total"],
+		fields=["name", "status", "student", "due_date", "grand_total"],
 	)
 
 	for si in sales_invoice_list:
 		student_program_invoice_status = {}
 		student_program_invoice_status["status"] = si.status
-		student_program_invoice_status["program"] = get_program_from_fee_schedule(
-			si.fee_schedule
-		)
 		student_program_invoice_status["amount"] = si.grand_total
 
 		if si.status == "Paid":
@@ -543,9 +461,4 @@ def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
 	return payment_date
 
 
-def get_program_from_fee_schedule(fee_schedule):
-	# fee_schedule = "EDU-FSH-2024-00023"
-	program = frappe.db.get_value(
-		"Fee Schedule", filters={"name": fee_schedule}, fieldname=["program"]
-	)
-	return program
+

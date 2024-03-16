@@ -28,3 +28,71 @@ class CourseEnrollmentIndividual(Document):
 					getlink("Course Enrollment Individual", CEI[0].name)
 				)
 			)
+
+	def get_program_courses(self):
+		program = frappe.get_doc("Program Enrollment", self.program_ce)
+		courses = []
+
+			# Get courses from program.courses child table
+		for course in program.courses:
+			courses.append(course.course)
+
+			# Get courses from program_track_courses where emphasis_program_track matches
+			if program.emphasis_program_track:
+				track_courses = frappe.get_list(
+					"Program Track Courses",
+					filters={"program_track": program.emphasis_program_track},
+					fields=["course"],
+					)
+				for track_course in track_courses:
+					courses.append(track_course.course)
+
+				return courses
+			
+			if self.program_ce:
+				program = frappe.get_doc("Program Enrollment", self.program_ce)
+				courses = get_program_courses(self)
+
+				if program.program_type != "Time-based":
+					return
+
+				filtered_courses = []
+				for course in courses:
+					program_course = frappe.get_doc("Program Course", course)
+					if program_course.course_term <= program.current_std_term:
+						filtered_courses.append(course)
+
+				
+				# Use filtered_courses for further processing
+				for course in filtered_courses:
+					course_doc = frappe.get_doc("Course", course)
+					if course_doc.prereq_mandatory == "Mandatory":
+						filtered_courses.remove(course)
+					elif course_doc.prereq_mandatory == "Recommended":
+						confirm_enrollment = frappe.confirm(
+							"Recommended pre-requisites for this course are not met. Are you sure you want to enroll?",
+							title="Confirmation",
+							primary_action="Save",
+							secondary_action="Cancel"
+						)
+						if not confirm_enrollment:
+							return
+
+	@frappe.whitelist()
+	def copy_data_to_program_enrollment_course(self):
+		program_enrollment = frappe.get_doc("Program Enrollment", self.program_ce)
+		course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
+		course = self.coursesc_ce
+
+		if course:
+			
+			course_name = course_schedule.course
+			academic_term = course_schedule.academic_term
+
+			program_enrollment.append("courses", {
+				"course_schedule": course,
+				"course_name": course_name,
+				"academic_term": academic_term
+			})
+
+		program_enrollment.save()
