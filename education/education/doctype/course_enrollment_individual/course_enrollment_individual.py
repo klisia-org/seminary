@@ -106,10 +106,10 @@ def copy_data_to_scheduled_course_roster(self):
 			"student_main_link": student.name,
 			"stuemail_rc": student.student_email_id,
 			"program_std_scr": course_schedule.program_data,
-			"audit": self.audit_bool,
+			"audit": self.audit_bool
 			
 			})
-		scheduled_course_roster.insert().submit()
+		scheduled_course_roster.insert()
 
 @frappe.whitelist()
 def make_copies(self):
