@@ -30,7 +30,6 @@
   "payers_for_this_program_section",
   "table_nfjw",
   "section_break_7",
-  "fees",
   "amended_from",
   "connections_tab"
  ],
@@ -98,12 +97,6 @@
   {
    "fieldname": "section_break_7",
    "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "fees",
-   "fieldtype": "Table",
-   "label": "Fees",
-   "options": "Program Fee"
   },
   {
    "fieldname": "amended_from",
@@ -214,7 +207,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-13 17:50:22.051727",
+ "modified": "2024-03-16 12:49:29.539584",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",
