@@ -128,7 +128,7 @@ class Student(Document):
 				"customer_name": self.student_name,
 				"customer_group": self.customer_group
 				or frappe.db.get_single_value("Selling Settings", "customer_group"),
-				"customer_type": "Individual",
+				"customer_type": "Student",
 				"image": self.image,
 			}
 		).insert()
