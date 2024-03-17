@@ -20,6 +20,7 @@ class CourseSchedule(Document):
 		)
 		self.validate_date()
 		self.validate_time()
+		self.validate_assessment_criteria()
 
 	def convert_to_date(self, date):
 		if isinstance(date, str):
@@ -100,6 +101,19 @@ class CourseSchedule(Document):
 				print(meeting)
 				meeting.insert()
 				meeting.save()
+
+	@frappe.whitelist()
+	def validate_assessment_criteria(self):
+		assessment_criteria = frappe.get_all(
+			"Course Assessment Criteria",
+			filters={"parent": self.name},
+			fields=["weight_scac"],
+		)
+		if not assessment_criteria:
+			return
+		total_weight = sum([ac.get("weight_scac") for ac in assessment_criteria])
+		if total_weight != 100:
+			frappe.throw(_("Assessment Criteria must total 100%"))
 
 			
 			

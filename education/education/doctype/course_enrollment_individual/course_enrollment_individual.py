@@ -106,7 +106,7 @@ def copy_data_to_scheduled_course_roster(self):
 			"doctype": "Scheduled Course Roster",
 			"parent": course_schedule.name,
 			"parenttype": "Course Schedule",
-			"parentfield": "scheduled_course_roster",
+			"parentfield": "cs_roster",
 			"student_roster": self.student_ce,
 			"stuname_roster": self.student_ce,
 			"student_main_link": student.name,
