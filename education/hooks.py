@@ -190,14 +190,14 @@ after_install = "education.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-	"Course Emrollment Individual": {
- 		"on_submit": "education.education.course_enrollment_individual.make_copies"
+#doc_events = {
+#	"Course Emrollment Individual": {
+# 		"on_submit": "education.education.course_enrollment_individual.make_copies"
         
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
- 	}
- }
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------

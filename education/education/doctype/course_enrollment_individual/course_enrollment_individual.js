@@ -34,5 +34,11 @@ frappe.ui.form.on("Course Enrollment Individual", {
                 }
             };
         });
+    },
+    submit(frm) {
+        frappe.call('make_copies')
+            .then(r => {
+                frappe.msgprint('Course Enrollment has been submitted');
+            });
     }
     });
