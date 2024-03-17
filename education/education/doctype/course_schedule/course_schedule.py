@@ -81,26 +81,19 @@ class CourseSchedule(Document):
 		frappe.db.sql(
 			"DELETE FROM `tabCourse Schedule Meeting Dates` WHERE parent=%s", self.name
 		)
-		# Define the batch size
-		batch_size = 2
-
-		for i in range(0, len(meeting_dates), batch_size):
-			# Get the next batch of meeting dates
-			batch = meeting_dates[i:i+batch_size]
-
-			for meeting_date in batch:
-				meeting = frappe.get_doc({
-					"doctype": "Course Schedule Meeting Dates", 
-					"parent": self.name,
-					"parentfield": "cs_meetinfo",
-					"parenttype": "Course Schedule", 
-					"cs_meetdate": meeting_date,
-					"cs_fromtime": from_time,
-					"cs_totime": to_time,
-				})
-				print(meeting)
-				meeting.insert()
-				meeting.save()
+		for meeting_date in meeting_dates:
+			meeting = frappe.get_doc({
+				"doctype": "Course Schedule Meeting Dates", 
+				"parent": self.name,
+				"parentfield": "cs_meetinfo",
+				"parenttype": "Course Schedule", 
+				"cs_meetdate": meeting_date,
+				"cs_fromtime": from_time,
+				"cs_totime": to_time,
+			})
+			print(meeting)
+			meeting.insert()
+			meeting.save()
 
 	@frappe.whitelist()
 	def populate_assessmentcriteria(self):
