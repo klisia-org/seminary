@@ -81,7 +81,10 @@ class Student(Document):
 			)
 			student_user.add_roles("Student")
 			student_user.save(ignore_permissions=True)
-
+			self.user = student_user.name
+		else:
+			student_user.add_roles("Student")
+			student_user.save(ignore_permissions=True)
 			self.user = student_user.name
 
 	def check_unique(self):
