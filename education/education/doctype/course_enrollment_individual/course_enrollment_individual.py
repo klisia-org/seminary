@@ -112,5 +112,6 @@ def copy_data_to_scheduled_course_roster(self):
 		scheduled_course_roster.insert().submit()
 
 @frappe.whitelist()
-def on_submit(self):
+def make_copies(self):
 		self.copy_data_to_scheduled_course_roster()
+		self.copy_data_to_program_enrollment_course()
