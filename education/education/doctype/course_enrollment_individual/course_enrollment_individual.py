@@ -47,27 +47,21 @@ class CourseEnrollmentIndividual(Document):
 				for track_course in track_courses:
 					courses.append(track_course.course)
 
-				return courses
-			
-			if self.program_ce:
-				program = frappe.get_doc("Program Enrollment", self.program_ce)
-				courses = get_program_courses(self)
-
 				if program.program_type != "Time-based":
-					return
+					return courses
 
-				filtered_courses = []
-				for course in courses:
+				if program.program_type == "Time-based":
 					program_course = frappe.get_doc("Program Course", course)
-					if program_course.course_term <= program.current_std_term:
-						filtered_courses.append(course)
+					if program_course.course_term > program.current_std_term:
+						courses.remove(course)
+						return courses
 
 				
-				# Use filtered_courses for further processing
-				for course in filtered_courses:
+				
+				for course in courses:
 					course_doc = frappe.get_doc("Course", course)
 					if course_doc.prereq_mandatory == "Mandatory":
-						filtered_courses.remove(course)
+						courses.remove(course)
 					elif course_doc.prereq_mandatory == "Recommended":
 						confirm_enrollment = frappe.confirm(
 							"Recommended pre-requisites for this course are not met. Are you sure you want to enroll?",
@@ -98,11 +92,11 @@ def copy_data_to_program_enrollment_course(program_ce, coursesc_ce):
 
 @frappe.whitelist()
 def copy_data_to_scheduled_course_roster(self):
-	course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
-	student = frappe.get_doc("Student", self.student_ce)
+		course_schedule = frappe.get_doc("Course Schedule", self.coursesc_ce)
+		student = frappe.get_doc("Student", self.student_ce)
 
-	if course_schedule and student:
-		scheduled_course_roster = frappe.get_doc({
+		if course_schedule and student:
+			scheduled_course_roster = frappe.get_doc({
 			"doctype": "Scheduled Course Roster",
 			"parent": course_schedule.name,
 			"parenttype": "Course Schedule",
@@ -114,10 +108,10 @@ def copy_data_to_scheduled_course_roster(self):
 			"program_data": course_schedule.program_std_scr,
 			"audit": self.audit_bool
 			})
-	scheduled_course_roster.insert()
-	scheduled_course_roster.save()
+		scheduled_course_roster.insert()
+		scheduled_course_roster.save()
 
-	@frappe.whitelist()
-	def on_submit(self):
+@frappe.whitelist()
+def on_submit(self):
 		copy_data_to_scheduled_course_roster(self)
 		copy_data_to_program_enrollment_course(self.program_ce, self.coursesc_ce)

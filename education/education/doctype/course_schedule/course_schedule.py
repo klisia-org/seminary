@@ -105,7 +105,7 @@ class CourseSchedule(Document):
 	@frappe.whitelist()
 	def validate_assessment_criteria(self):
 		assessment_criteria = frappe.get_all(
-			"Course Assessment Criteria",
+			"Scheduled Course Assess Criteria",
 			filters={"parent": self.name},
 			fields=["weight_scac"],
 		)
