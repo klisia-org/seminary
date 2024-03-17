@@ -103,6 +103,30 @@ class CourseSchedule(Document):
 				meeting.save()
 
 	@frappe.whitelist()
+	def populate_assessmentcriteria(self):
+		"""Populate the assessment criteria from the course to the schedule"""
+		assessment_criteria = frappe.get_all(
+			"Course Assessment Criteria",
+			filters={"parent": self.course},
+			fields=["assessment_criteria", "weightage"],
+		)
+		if not assessment_criteria:
+			return
+		for ac in assessment_criteria:
+			scheduled_course_assessment_criteria = frappe.get_doc(
+				{
+					"doctype": "Scheduled Course Assess Criteria",
+					"parent": self.name,
+					"parenttype": "Course Schedule",
+					"parentfield": "assessment_criteria",
+					"assesscriteria_scac": ac.get("assessment_criteria"),
+					"weight_scac": ac.get("weightage"),
+				})
+			scheduled_course_assessment_criteria.insert()
+			scheduled_course_assessment_criteria.save()
+			
+
+	@frappe.whitelist()
 	def validate_assessment_criteria(self):
 		assessment_criteria = frappe.get_all(
 			"Scheduled Course Assess Criteria",

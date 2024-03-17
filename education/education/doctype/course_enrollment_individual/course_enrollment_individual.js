@@ -35,4 +35,13 @@ frappe.ui.form.on("Course Enrollment Individual", {
             };
         });
     },
+     on_submit: function(frm) {
+         frappe.call({
+             method: "on_submit",
+             args: {
+                 program_ce: frm.doc.program_ce,
+                 coursesc_ce: frm.doc.coursesc_ce
+             }
+         });
+     }
     });
