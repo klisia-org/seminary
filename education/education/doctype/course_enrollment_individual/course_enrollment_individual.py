@@ -106,11 +106,11 @@ def copy_data_to_scheduled_course_roster(self):
 			"stuname_roster": self.student_ce,
 			"student_main_link": student.name,
 			"stuemail_rc": student.student_email_id,
-			"program_std_scr": course_schedule.program_data,
+			"program_std_scr": self.program_data,
 			"audit": self.audit_bool
 			
 			})
-		scheduled_course_roster.insert()
+		scheduled_course_roster.insert().save()
 
 @frappe.whitelist()
 def make_copies(self):
@@ -125,40 +125,30 @@ def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
 	program = program.program
 	academic_term = frappe.get_value("Academic Term", "term_name", 
 								  filters={"iscurrent_acterm": True})
-	
+	#Get all courses scheduled for the current academic term
 	courses = frappe.get_all(
 		"Course Schedule",
 		filters={"academic_term": academic_term})
 	
 
-	# Get courses from program.courses child table
+	# Remove courses that are not in program.courses child table
 	for course in program.courses:
 		if course.course not in courses:
 			courses.remove(course.course)
 
-	# Get courses from program_track_courses where emphasis_program_track matches
-	if program.emphasis_program_track:
-		track_courses = frappe.get_list(
-			"Program Track Courses",
-			filters={"program_track": program.emphasis_program_track},
-			fields=["course"],
-		)
-		for track_course in track_courses:
-			if track_course.course not in courses:
-				courses.remove(track_course.course)
-
+	
 	if program.program_type != "Time-based":
 		return courses
-
+	#remove courses not allowed for students in time-based programs not yet that academic term
 	if program.program_type == "Time-based":
 		for course in program.courses:
 			program_course = frappe.get_doc("Program Course", course.course)
 			if program_course.course_term > program.current_std_term:
 				courses.remove(course.course)
 				return courses
-
+	# Remove courses with mandatory pre-requisites not met (when met, should be in program_enrollment_courses with grade not empty)
 	for course in courses:
-		course_doc = frappe.get_doc("Course", course)
+		course_doc = frappe.get_doc("Course_prerequisite", course)
 		if course_doc.prereq_mandatory == "Mandatory":
 			courses.remove(course)
 
