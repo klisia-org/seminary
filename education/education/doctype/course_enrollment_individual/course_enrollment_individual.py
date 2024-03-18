@@ -12,6 +12,7 @@ from frappe.utils.csvutils import getlink
 class CourseEnrollmentIndividual(Document):
 	def validate(self):
 		self.validate_duplicate()
+		self.get_program_courses()
 
 	def validate_duplicate(self):
 		CEI= frappe.get_list(
@@ -115,3 +116,43 @@ def copy_data_to_scheduled_course_roster(self):
 def make_copies(self):
 		self.copy_data_to_scheduled_course_roster()
 		self.copy_data_to_program_enrollment_course()
+		
+
+@frappe.whitelist()
+def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
+	program_ce = filters.get("program_ce")
+	program = frappe.get_doc("Program Enrollment", program_ce)
+	courses = []
+
+	# Get courses from program.courses child table
+	for course in program.courses:
+		courses.append(course.course)
+
+	# Get courses from program_track_courses where emphasis_program_track matches
+	if program.emphasis_program_track:
+		track_courses = frappe.get_list(
+			"Program Track Courses",
+			filters={"program_track": program.emphasis_program_track},
+			fields=["course"],
+		)
+		for track_course in track_courses:
+			courses.append(track_course.course)
+
+	if program.program_type != "Time-based":
+		return courses
+
+	if program.program_type == "Time-based":
+		for course in program.courses:
+			program_course = frappe.get_doc("Program Course", course.course)
+			if program_course.course_term > program.current_std_term:
+				courses.remove(course.course)
+				return courses
+
+	for course in courses:
+		course_doc = frappe.get_doc("Course", course)
+		if course_doc.prereq_mandatory == "Mandatory":
+			courses.remove(course)
+
+	return courses
+
+

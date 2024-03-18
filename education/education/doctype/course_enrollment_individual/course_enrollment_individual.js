@@ -24,17 +24,17 @@ frappe.ui.form.on("Course Enrollment Individual", {
                 }
             };
         });
-        frm.set_query("coursesc_ce", "program_ce", function(doc, cdt, cdn) {
-            var d = locals[cdt][cdn];
+        frm.set_query("coursesc_ce", () => {
             return {
+                query: "courses_for_student",
                 filters: {
-                    program: d.program_ce,
-                    no_prereq: true,
-                    audit: true
+                    coursesc_ce: "courses"
                 }
             };
+            
         });
     },
+    
     submit() {
         frappe.call('make_copies')
             .then(r => {
