@@ -26,7 +26,7 @@ frappe.ui.form.on("Course Enrollment Individual", {
         });
         frm.set_query("coursesc_ce", () => {
             return {
-                query: "education.education.course_enrollment_individual.courses_for_student",
+                query: "education.education.education.course_enrollment_individual.courses_for_student",
                 filters: {
                     coursesc_ce: "courses"
                 }
