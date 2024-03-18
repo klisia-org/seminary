@@ -118,40 +118,6 @@ def make_copies(self):
 		self.copy_data_to_program_enrollment_course()
 		
 
-@frappe.whitelist()
-def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
-	program_ce = filters.get("program_ce")
-	program = frappe.get_doc("Program Enrollment", program_ce)
-	program = program.program
-	academic_term = frappe.get_value("Academic Term", "term_name", 
-								  filters={"iscurrent_acterm": True})
-	#Get all courses scheduled for the current academic term
-	courses = frappe.get_all(
-		"Course Schedule",
-		filters={"academic_term": academic_term})
-	
 
-	# Remove courses that are not in program.courses child table
-	for course in program.courses:
-		if course.course not in courses:
-			courses.remove(course.course)
-
-	
-	if program.program_type != "Time-based":
-		return courses
-	#remove courses not allowed for students in time-based programs not yet that academic term
-	if program.program_type == "Time-based":
-		for course in program.courses:
-			program_course = frappe.get_doc("Program Course", course.course)
-			if program_course.course_term > program.current_std_term:
-				courses.remove(course.course)
-				return courses
-	# Remove courses with mandatory pre-requisites not met (when met, should be in program_enrollment_courses with grade not empty)
-	for course in courses:
-		course_doc = frappe.get_doc("Course_prerequisite", course)
-		if course_doc.prereq_mandatory == "Mandatory":
-			courses.remove(course)
-
-	return courses
 
 
