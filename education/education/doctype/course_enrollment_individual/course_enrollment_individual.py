@@ -122,11 +122,19 @@ def make_copies(self):
 def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
 	program_ce = filters.get("program_ce")
 	program = frappe.get_doc("Program Enrollment", program_ce)
-	courses = []
+	program = program.program
+	academic_term = frappe.get_value("Academic Term", "term_name", 
+								  filters={"iscurrent_acterm": True})
+	
+	courses = frappe.get_all(
+		"Course Schedule",
+		filters={"academic_term": academic_term})
+	
 
 	# Get courses from program.courses child table
 	for course in program.courses:
-		courses.append(course.course)
+		if course.course not in courses:
+			courses.remove(course.course)
 
 	# Get courses from program_track_courses where emphasis_program_track matches
 	if program.emphasis_program_track:
@@ -136,7 +144,8 @@ def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
 			fields=["course"],
 		)
 		for track_course in track_courses:
-			courses.append(track_course.course)
+			if track_course.course not in courses:
+				courses.remove(track_course.course)
 
 	if program.program_type != "Time-based":
 		return courses
