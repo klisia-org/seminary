@@ -9,6 +9,8 @@
   "column_break_4",
   "academic_term_reqd",
   "auto_submit_sales_invoice",
+  "section_break_qqak",
+  "default_gradescale",
   "accounts_section",
   "column_break_wmyg",
   "company",
@@ -117,11 +119,22 @@
    "fieldname": "min_perc_enroll",
    "fieldtype": "Percent",
    "label": "Minimum percentage paid for enrollment"
+  },
+  {
+   "fieldname": "section_break_qqak",
+   "fieldtype": "Section Break",
+   "label": "Course Defaults"
+  },
+  {
+   "fieldname": "default_gradescale",
+   "fieldtype": "Link",
+   "label": "Default Grading Scale",
+   "options": "Grading Scale"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-03-13 20:34:03.607792",
+ "modified": "2024-03-17 18:34:47.677906",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education Settings",

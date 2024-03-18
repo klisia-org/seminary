@@ -28,7 +28,7 @@
   "section_break_vsaj",
   "student_feetype",
   "payers_for_this_program_section",
-  "table_nfjw",
+  "pe_payers",
   "section_break_7",
   "amended_from",
   "connections_tab"
@@ -88,11 +88,11 @@
    "label": "Courses Taken"
   },
   {
+   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades.",
    "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",
-   "options": "Program Enrollment Course",
-   "read_only": 1
+   "options": "Program Enrollment Course"
   },
   {
    "fieldname": "section_break_7",
@@ -132,13 +132,6 @@
    "fieldname": "payers_for_this_program_section",
    "fieldtype": "Section Break",
    "label": "Payers for this program"
-  },
-  {
-   "fieldname": "table_nfjw",
-   "fieldtype": "Table",
-   "label": "Check if this is correct always. Payments can be split between individual and churches or others.",
-   "options": "pgm_enroll_payers",
-   "reqd": 1
   },
   {
    "fetch_from": "student.customer_group",
@@ -196,6 +189,12 @@
    "fieldtype": "Link",
    "label": "Emphasis (Program track)",
    "options": "Program Track"
+  },
+  {
+   "description": "Check if this is correct always. Payments can be split between individual and churches or others.",
+   "fieldname": "pe_payers",
+   "fieldtype": "Table",
+   "options": "pgm_enroll_payers"
   }
  ],
  "image_field": "image",
@@ -207,7 +206,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-16 12:49:29.539584",
+ "modified": "2024-03-16 21:31:37.665829",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",
