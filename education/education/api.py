@@ -463,9 +463,9 @@ def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
 
 @frappe.whitelist()
 def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
-	program_ce = filters.get("program_ce")
-	program = frappe.get_doc("Program Enrollment", program_ce)
-	program = program.program
+	
+	program_en = frappe.get_doc("Program Enrollment", filters={"name": "program_ce"})
+	program = program_en.program
 	academic_term = frappe.get_value("Academic Term", "term_name", 
 								  filters={"iscurrent_acterm": True})
 	#Get all courses scheduled for the current academic term
@@ -474,14 +474,12 @@ def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
 		filters={"academic_term": academic_term})
 	
 
-	# Remove courses that are not in program.courses child table
+	# Remove courses that are not in program_course.courses child table
 	for course in program.courses:
 		if course.course not in courses:
 			courses.remove(course.course)
 
 	
-	if program.program_type != "Time-based":
-		return courses
 	#remove courses not allowed for students in time-based programs not yet that academic term
 	if program.program_type == "Time-based":
 		for course in program.courses:
