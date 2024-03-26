@@ -49,7 +49,7 @@ def get_columns(filters=None):
 	]
 
 
-def get_data(filters=None):
+""" def get_data(filters=None):
 	data = []
 
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
@@ -139,3 +139,4 @@ def get_chart_data(data):
 		},
 		"type": "bar",
 	}
+ """

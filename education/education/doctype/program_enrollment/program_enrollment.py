@@ -168,3 +168,9 @@ def get_students(doctype, txt, searchfield, start, page_len, filters):
 		% (", ".join(["%s"] * len(students)), searchfield, "%s", "%s", "%s"),
 		tuple(students + ["%%%s%%" % txt, start, page_len]),
 	)
+
+
+
+
+	
+	

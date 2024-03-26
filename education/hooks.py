@@ -4,7 +4,7 @@ from . import __version__ as app_version
 
 app_name = "education"
 app_title = "Education"
-app_publisher = "Frappe Technologies Pvt. Ltd."
+app_publisher = "Klisia and Frappe"
 app_description = "Education"
 app_icon = "octicon octicon-file-directory"
 app_color = "grey"
@@ -190,14 +190,18 @@ after_install = "education.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-#doc_events = {
-#	"Course Emrollment Individual": {
-# 		"on_submit": "education.education.course_enrollment_individual.make_copies"
+doc_events = {
+	"Course Enrollment Individual": {
+		"on_submit": "education.education.api.copy_data_to_scheduled_course_roster",
+		"on_submit": "education.education.api.copy_data_to_program_enrollment_course",
         
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
-# 	}
-# }
+	},
+    "Program Enrollment": {
+		"on_submit": "education.education.api.get_payers",
+	}
+ }
 
 # Scheduled Tasks
 # ---------------

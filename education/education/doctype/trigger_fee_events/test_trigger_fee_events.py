@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestTriggerEventsFees(FrappeTestCase):
+class TestTriggerFeeEvents(FrappeTestCase):
 	pass

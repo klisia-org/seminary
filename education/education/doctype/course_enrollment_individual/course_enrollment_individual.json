@@ -13,8 +13,11 @@
   "program_data",
   "course_data",
   "academic_term",
+  "credits",
   "registrar_use_only_section",
   "no_prereq",
+  "column_break_jfah",
+  "cei_si",
   "section_break_ogto",
   "amended_from"
  ],
@@ -37,7 +40,7 @@
    "fieldname": "program_ce",
    "fieldtype": "Link",
    "label": "Program Enrollment",
-   "link_filters": "[[{\"fieldname\":\"program_ce\",\"field_option\":\"Program Enrollment\"},\"pgmenrol_active\",\"=\",1]]",
+   "link_filters": "[[{\"fieldname\":\"program_ce\",\"field_option\":\"Program Enrollment\"},\"pgmenrol_active\",\"=\",1],[{\"fieldname\":\"program_ce\",\"field_option\":\"Program Enrollment\"},\"docstatus\",\"=\",\"1\"]]",
    "options": "Program Enrollment",
    "reqd": 1
   },
@@ -53,7 +56,9 @@
   {
    "fieldname": "coursesc_ce",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Course",
+   "link_filters": "[[{\"fieldname\":\"coursesc_ce\",\"field_option\":\"Course Schedule\"},\"open_enroll\",\"=\",1]]",
    "options": "Course Schedule",
    "reqd": 1
   },
@@ -75,7 +80,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Course",
+   "label": "Course Name",
    "read_only": 1
   },
   {
@@ -103,11 +108,29 @@
    "fieldname": "no_prereq",
    "fieldtype": "Check",
    "label": "Don't check pre-requisites"
+  },
+  {
+   "fieldname": "column_break_jfah",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "cei_si",
+   "fieldtype": "Check",
+   "label": "Sales Invoice Created?"
+  },
+  {
+   "default": "0",
+   "fieldname": "credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Credits",
+   "non_negative": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-13 20:22:18.832407",
+ "modified": "2024-03-24 18:27:38.501839",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",
@@ -145,7 +168,6 @@
    "delete": 1,
    "email": 1,
    "export": 1,
-   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,

@@ -11,6 +11,8 @@
   "auto_submit_sales_invoice",
   "section_break_qqak",
   "default_gradescale",
+  "audit_settings_section",
+  "allow_audit",
   "accounts_section",
   "column_break_wmyg",
   "company",
@@ -130,11 +132,24 @@
    "fieldtype": "Link",
    "label": "Default Grading Scale",
    "options": "Grading Scale"
+  },
+  {
+   "default": "1",
+   "description": "Once you allow audits, you will need to create a Fee Category, Item, and Payer Fee Category PE to match this (in the later, select the Is Audit checkbox",
+   "fieldname": "allow_audit",
+   "fieldtype": "Check",
+   "label": "Allow audits?",
+   "mandatory_depends_on": "allow_audit==True"
+  },
+  {
+   "fieldname": "audit_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Audit Settings"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-03-17 18:34:47.677906",
+ "modified": "2024-03-25 20:24:37.133245",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education Settings",

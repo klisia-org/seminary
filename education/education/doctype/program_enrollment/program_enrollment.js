@@ -16,7 +16,15 @@ frappe.ui.form.on('Program Enrollment', {
 			});
 		});
 	},
-});
+	on_save: function(frm) {
+		frm.call('get_payers')
+			.fail(() => {
+				frappe.msgprint("Error adding payers");
+			})
+			.then(() => {
+				frm.reload_doc();
+			});
+},});
 
 frappe.ui.form.on('Program Enrollment Course', {
 	courses_add: function(frm){

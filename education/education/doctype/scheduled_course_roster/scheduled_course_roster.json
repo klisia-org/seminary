@@ -7,46 +7,27 @@
  "engine": "InnoDB",
  "field_order": [
   "student_info_section",
-  "student_roster",
   "stuname_roster",
-  "student_main_link",
   "stuemail_rc",
   "program_std_scr",
   "audit_bool",
   "grades_section",
   "stdroster_grade"
  ],
- "fields": [
-  {
-   "fieldname": "student_roster",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Student",
-   "options": "Course Enrollment Individual"
-  },
-  {
-   "fetch_from": "student_roster.student_ce",
+    "fields": [
+ {
    "fieldname": "stuname_roster",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Student Name"
   },
-  {
-   "fieldname": "student_main_link",
-   "fieldtype": "Link",
-   "label": "Student (main link)",
-   "options": "Student",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "student_main_link.student_email_id",
+   {
    "fieldname": "stuemail_rc",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Student email"
   },
   {
-   "fetch_from": "student_roster.program_data",
    "fieldname": "program_std_scr",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -56,7 +37,6 @@
   },
   {
    "default": "0",
-   "fetch_from": "student_roster.audit",
    "fieldname": "audit_bool",
    "fieldtype": "Check",
    "label": "Is Audit?"

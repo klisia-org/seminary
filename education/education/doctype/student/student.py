@@ -83,6 +83,7 @@ class Student(Document):
 			student_user.save(ignore_permissions=True)
 			self.user = student_user.name
 		else:
+			student_user = frappe.get_doc("User", self.student_email_id)
 			student_user.add_roles("Student")
 			student_user.save(ignore_permissions=True)
 			self.user = student_user.name
@@ -121,6 +122,8 @@ class Student(Document):
 
 		frappe.msgprint(_("Customer {0} updated").format(customer.name), alert=True)
 
+	
+	
 	def create_customer(self):
 		customer = frappe.get_doc(
 			{
@@ -128,7 +131,7 @@ class Student(Document):
 				"customer_name": self.student_name,
 				"customer_group": self.customer_group
 				or frappe.db.get_single_value("Selling Settings", "customer_group"),
-				"customer_type": "Student",
+				"customer_type": "Individual",
 				"image": self.image,
 			}
 		).insert()

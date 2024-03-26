@@ -11,6 +11,9 @@ from frappe.model.document import Document
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
+from frappe.utils import add_days, getdate
+
+from education.education.utils import OverlapError
 
 
 class CourseSchedule(Document):
@@ -21,6 +24,15 @@ class CourseSchedule(Document):
 		self.validate_date()
 		self.validate_time()
 		self.validate_assessment_criteria()
+
+	def validate_assessment_criteria(self):
+		"""Validates if the total weightage of all assessment criteria is 100%"""
+		if self.courseassescrit_sc:
+			total_weight_scac = 0
+			for criteria in self.courseassescrit_sc:
+				total_weight_scac+= criteria.weight_scac or 0
+			if total_weight_scac != 100:
+				frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
 
 	def convert_to_date(self, date):
 		if isinstance(date, str):
@@ -46,11 +58,7 @@ class CourseSchedule(Document):
             and ((course_datestart < start_date)
             or (course_dateend > end_date))
             ):
-			frappe.throw(
-                    _(
-                        "Schedule date selected does not lie within the Academic Term."
-                    ).format(self.academic_term)
-                )
+			frappe.throw(_("Schedule date selected does not lie within the Academic Term: {}").format(self.academic_term))
 	
 	
 	def validate_time(self):
@@ -58,54 +66,20 @@ class CourseSchedule(Document):
 		if self.from_time > self.to_time:
 			frappe.throw(_("From Time cannot be greater than To Time."))
 
-	@frappe.whitelist()
-	def get_meeting_dates(self):
-		meeting_dates = []
-		"""Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""     
-		days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
-		current_date = datetime.strptime(self.c_datestart, "%Y-%m-%d")
-		final_date = datetime.strptime(self.c_dateend, "%Y-%m-%d")
-		while current_date <= final_date:
-			if days_of_week[current_date.weekday()]:
-				meeting_dates.append(current_date)
-				current_date += timedelta(days=1)
-		return meeting_dates
 	
-	@frappe.whitelist()
-	def save_dates(self):
-		"""Create child documents for each meeting date"""
-		meeting_dates = self.get_meeting_dates()
-		from_time = self.from_time
-		to_time = self.to_time
-		# Clear existing meeting dates
-		frappe.db.sql(
-			"DELETE FROM `tabCourse Schedule Meeting Dates` WHERE parent=%s", self.name
-		)
-		for meeting_date in meeting_dates:
-			meeting = frappe.get_doc({
-				"doctype": "Course Schedule Meeting Dates", 
-				"parent": self.name,
-				"parentfield": "cs_meetinfo",
-				"parenttype": "Course Schedule", 
-				"cs_meetdate": meeting_date,
-				"cs_fromtime": from_time,
-				"cs_totime": to_time,
-			})
-			print(meeting)
-			meeting.insert()
-			meeting.save()
-
 	@frappe.whitelist()
 	def populate_assessmentcriteria(self):
 		"""Populate the assessment criteria from the course to the schedule"""
 		assessment_criteria = frappe.get_all(
-			"Course Assessment Criteria",
-			filters={"parent": self.course},
-			fields=["assessment_criteria", "weightage"],
+		"Course Assessment Criteria",
+		filters={"parent": self.course},
+		fields=["assessment_criteria", "weightage"],
 		)
 		if not assessment_criteria:
 			return
 		for ac in assessment_criteria:
+			if ac is None:
+				continue
 			scheduled_course_assessment_criteria = frappe.get_doc(
 				{
 					"doctype": "Scheduled Course Assess Criteria",
@@ -120,17 +94,55 @@ class CourseSchedule(Document):
 			
 
 	@frappe.whitelist()
-	def validate_assessment_criteria(self):
-		assessment_criteria = frappe.get_all(
-			"Scheduled Course Assess Criteria",
-			filters={"parent": self.name},
-			fields=["weight_scac"],
-		)
-		if not assessment_criteria:
-			return
-		total_weight = sum([ac.get("weight_scac") for ac in assessment_criteria])
-		if total_weight != 100:
-			frappe.throw(_("Assessment Criteria must total 100%"))
+	def schedule_dates(self, days):
+	# Clear existing meeting dates
+		frappe.db.sql(
+		"DELETE FROM `tabCourse Schedule Meeting Dates` WHERE parent=%s", self.name
+			)
+				
+		"""Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""     
+		meeting_dates = []
+		meeting_dates_errors = []
+		#days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
+		current_date = self.c_datestart
+		#final_date = datetime.strptime(self.c_dateend, "%Y-%m-%d")
+			
+		while current_date <= self.c_dateend:
+			if calendar.day_name[getdate(current_date).weekday()] in days:
+				meeting_date = self.save_dates(current_date)
+				try:
+					meeting_date.save()
+				except OverlapError:
+					meeting_dates_errors.append(current_date)
+				else:
+					meeting_dates.append(meeting_date)
+			current_date = add_days(current_date, 1)
+		
+		return dict(
+			meeting_dates=meeting_dates,
+			meeting_dates_errors=meeting_dates_errors,
+				)
+			
+	
+	@frappe.whitelist()
+	def save_dates(self, current_date):
+		"""Define variables"""
+		cs = self.name
+		pt = "Course Schedule"
+		pf = "cs_meetinfo"
+		name = cs+"-"+str(current_date)
+
+		# Create new meeting date
+		meeting_date = frappe.new_doc("Course Schedule Meeting Dates")
+		meeting_date.name = name
+		meeting_date.parent = cs
+		meeting_date.parentfield = pf
+		meeting_date.parenttype = pt	
+		meeting_date.cs_meetdate = current_date
+		meeting_date.cs_fromtime = self.from_time
+		meeting_date.cs_totime = self.to_time
+		return meeting_date
+	
 
 			
 			

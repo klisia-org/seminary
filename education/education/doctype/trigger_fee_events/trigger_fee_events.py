@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class TriggerEventsFees(Document):
+class TriggerFeeEvents(Document):
 	pass

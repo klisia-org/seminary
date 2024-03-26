@@ -9,6 +9,10 @@ from frappe import _
 from frappe.email.doctype.email_group.email_group import add_subscribers
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cstr, flt, getdate
+from frappe.model.document import Document
+import calendar
+from datetime import timedelta
+from dateutil import relativedelta
 
 @frappe.whitelist()
 def get_course(program):
@@ -179,17 +183,21 @@ def get_course_schedule_events(start, end, filters=None):
 	:param end: End date-time.
 	:param filters: Filters (JSON).
 	"""
+	filters = json.loads(filters)
 	from frappe.desk.calendar import get_event_conditions
 
-	conditions = get_event_conditions("Course Schedule Meeting Dates", filters)
+	conditions = get_event_conditions("Course Schedule", filters)
 
-	data = frappe.db.sql(
-		"""select name, 
-			timestamp(cs_meetdate, cs_fromtime) as from_time,
-			timestamp(cs_meetdate, cs_totime) as to_time,
-			room, 0 as 'allDay'
-		from `tabCourse Schedule Meeting Dates`
-		where ( cs_meetdate between %(start)s and %(end)s )
+	return frappe.db.sql(
+		"""SELECT CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title, 
+			cs.course as course,
+			timestamp(cm.cs_meetdate, cm.cs_fromtime) as dtstart,
+			timestamp(cm.cs_meetdate, cm.cs_totime) as dtend,
+			0 as 'allDay'
+		from `tabCourse Schedule Meeting Dates` cm, `tabCourse Schedule` cs
+		where 
+		cs.name = cm.parent and
+		(cm.cs_meetdate between %(start)s and %(end)s )
 		{conditions}""".format(
 			conditions=conditions
 		),
@@ -197,8 +205,7 @@ def get_course_schedule_events(start, end, filters=None):
 		as_dict=True,
 		update={"allDay": 0},
 	)
-
-	return data
+	
 
 
 @frappe.whitelist()
@@ -417,6 +424,77 @@ def get_instructors(student_group):
 		"Student Group Instructor", {"parent": student_group}, pluck="instructor"
 	)
 
+@frappe.whitelist()
+def get_payers(program_enrollment, method):
+	pe = program_enrollment
+	pen = pe.name
+	active = pe.pgmenrol_active
+	student = pe.student
+	turn = 1
+	while turn <= 2:
+		if not frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen}) and turn == 1:
+			print("Creating Payers Fee Category PE -turn "+ str(turn) + pen)
+			pfc = frappe.new_doc("Payers Fee Category PE")
+			pfc.pf_pe = pen
+			pfc.pf_student = student
+			pfc.pf_active = active
+			pfc.pf_custgroup = "Student"
+			pfc.insert()
+			pfc.save()
+			turn += 1
+		elif frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen}) and turn == 2:
+			print("Payers Fee Category PE already exists - turn " + str(turn))
+			get_payers_fees(pen)
+			break
+	return
+				
+	
+	
+@frappe.whitelist()
+def get_payers_fees(pen):
+		
+		pfc = frappe.get_doc({"doctype": "Payers Fee Category PE", "pf_pe": pen})
+		
+		doc =[]
+		doc = frappe.db.sql(
+		"""select pf.pgm_feecategory as feecat, pf.pgm_feeevent as event, s.customer, '1' as percentage, fc.payment_term_template as term
+			from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
+			where pe.student = s.name and
+			pe.program = p.name and
+			p.name = pf.parent and
+			pf.pgm_feecategory = fc.name and
+			pe.name = %s""", (pen), as_list=1)
+		row_count = frappe.db.sql(
+		"""select count(pf.pgm_feecategory) from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
+			where pe.student = s.name and
+			pe.program = p.name and
+			p.name = pf.parent and
+			pf.pgm_feecategory = fc.name and
+			pe.name = %s""", (pen))[0][0]
+		i = 0	
+		while i < row_count:
+			feecat = doc[i][0]
+			event = doc[i][1]
+			customer = doc[i][2]
+			term = doc[i][3]
+			percentage = doc[i][4]
+			print(pen, feecat, event, customer, term, percentage)
+			ppe = frappe.new_doc("pgm_enroll_payers")
+			ppe.parent = pen
+			ppe.parentfield = "pf_payers"
+			ppe.parenttype = "Payers Fee Category PE"
+			ppe.fee_category = feecat
+			ppe.pep_event = event
+			ppe.payer = customer
+			ppe.payterm_payer = term
+			ppe.pay_percent = "100"
+			ppe.insert()
+			ppe.save()
+			i += 1
+		return
+
+
+
 
 @frappe.whitelist()
 def get_student_invoices(student):
@@ -462,35 +540,99 @@ def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
 
 
 @frappe.whitelist()
-def courses_for_student(doctype, txt, searchfield, start, page_len, filters):
+def courses_for_student(program_ce):
 	
-	program_en = frappe.get_doc("Program Enrollment", filters={"name": "program_ce"})
-	program = program_en.program
-	academic_term = frappe.get_value("Academic Term", "term_name", 
-								  filters={"iscurrent_acterm": True})
-	#Get all courses scheduled for the current academic term
-	courses = frappe.get_all(
-		"Course Schedule",
-		filters={"academic_term": academic_term})
+	pgen_name = program_ce
+	#This query is to get the available scheduled courses for the student based on the program enrollment, program track and the academic term, checking for pre-requisites	 
 	
-
-	# Remove courses that are not in program_course.courses child table
-	for course in program.courses:
-		if course.course not in courses:
-			courses.remove(course.course)
-
-	
-	#remove courses not allowed for students in time-based programs not yet that academic term
-	if program.program_type == "Time-based":
-		for course in program.courses:
-			program_course = frappe.get_doc("Program Course", course.course)
-			if program_course.course_term > program.current_std_term:
-				courses.remove(course.course)
-				return courses
-	# Remove courses with mandatory pre-requisites not met (when met, should be in program_enrollment_courses with grade not empty)
-	for course in courses:
-		course_doc = frappe.get_doc("Course_prerequisite", course)
-		if course_doc.prereq_mandatory == "Mandatory":
-			courses.remove(course)
-
+	courses = frappe.db.sql(
+		"""select cs.course 
+		from `tabCourse Schedule` cs, `tabAcademic Term` aterm
+		where aterm.name = cs.academic_term and
+		cs.open_enroll = '1' and
+		aterm.iscurrent_acterm = '1' and cs.course in 
+		((select pc.course 
+		from `tabProgram Enrollment` pe, `tabProgram Course` pc
+		where pe.program = pc.parent and
+		pe.name = %s)
+		UNION
+		(select ptc.program_track_course
+		from `tabProgram Enrollment` pe, `tabProgram Track Courses` ptc
+		where pe.pgmenrol_active = '1' and
+		ptc.parent = pe.program and
+		pe.emphasis_program_track = ptc.program_track and
+		pe.name = %s)) and
+		cs.course not in (select c.name 
+		from `tabCourse` c, `tabCourse_prerequisite` cp
+		where cp.parent = c.name and
+		cp.prereq_mandatory = "Mandatory" and
+		c.name not in 
+		(select pec.course
+		from `tabCourse_prerequisite` cp, `tabProgram Enrollment Course` pec
+		where cp.parent = pec.course and
+		pec.parent = %s and
+		pec.pec_finalgradecode is not null)) and
+		cs.course not in (select pc.course 
+		from `tabProgram` p, `tabProgram Course` pc, `tabProgram Enrollment` pe
+		where p.name = pc.parent and
+		p.name = pe.program and
+		pe.name = %s and
+		p.program_type = 'Time-based' and
+		pc.course_term > pe.current_std_term) and
+		cs.course not in (select ptc.program_track_course 
+		from `tabProgram` p, `tabProgram Track Courses` ptc, `tabProgram Enrollment` pe
+		where p.name = ptc.parent and
+		p.name = pe.program and
+		pe.name = %s and
+		p.program_type = 'Time-based' and
+		ptc.term > pe.current_std_term) and cs.course not in
+		(select course_data from `tabCourse Enrollment Individual` where audit = 0 and
+		docstatus != '2' and program_ce = %s)""", (pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name), as_list=1)
+	 # Flatten the list of tuples into a list of strings
+	courses = [course[0] for course in courses]	
 	return courses
+	
+
+@frappe.whitelist()
+def copy_data_to_scheduled_course_roster(doc, method):
+		student_ce = doc.student_ce
+		program = doc.program_data
+		coursesc_ce = doc.coursesc_ce
+		audit = doc.audit
+		
+		
+		student_email = frappe.db.sql(
+			"""select distinct s.student_email_id from tabStudent s, `tabCourse Enrollment Individual` cei
+			where cei.student_ce = s.student_name and
+			cei.student_ce = %s""", student_ce, as_dict=0)
+
+		if coursesc_ce and student_ce:
+			doc = frappe.new_doc("Scheduled Course Roster")
+			doc.parent = coursesc_ce,
+			doc.parenttype = "Course Schedule",
+			doc.parentfield = "cs_roster",
+			doc.stuname_roster = student_ce,
+			doc.stuemail_rc = student_email,
+			doc.program_std_scr = program,
+			doc.audit_bool = audit
+			
+			doc.insert().save()
+
+@frappe.whitelist()
+def copy_data_to_program_enrollment_course(doc, method):
+		cei = doc.program_ce
+		course_lnk = doc.coursesc_ce
+		course = doc.course_data
+		ac_term = doc.academic_term
+		 
+		if cei:
+			doc = frappe.new_doc("Program Enrollment Course")
+			doc.parent = cei,
+			doc.parenttype = "Program Enrollment",
+			doc.parentfield = "courses",
+			doc.course = course_lnk,
+			doc.course_name = course,
+			doc.academic_term = ac_term
+			
+			doc.insert().save()
+		

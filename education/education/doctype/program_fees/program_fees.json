@@ -32,15 +32,14 @@
    "in_standard_filter": 1,
    "label": "Event to charge",
    "link_filters": "[[{\"fieldname\":\"pgm_feeevent\",\"field_option\":\"Trigger Events Fees\"},\"trig_ev_fee\",\"!=\",\"On Use\"]]",
-   "options": "Trigger Events Fees",
-   "reqd": 1,
+   "options": "Trigger Fee Events",
    "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-14 18:05:22.362075",
+ "modified": "2024-03-22 14:06:26.246507",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Fees",

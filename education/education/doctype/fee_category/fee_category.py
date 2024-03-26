@@ -6,42 +6,21 @@ from frappe.model.document import Document
 
 
 class FeeCategory(Document):
-	def after_insert(self):
-		# create an item
-		item_name = create_item(self)
-		self.item = item_name
-		self.save()
+	def validate(self):
+		self.validate_tuition()
+		self.validate_audit()
 
-	def on_update(self):
-		# update item
-		item_name = update_item(self)
-		self.item = item_name
-
-	def on_trash(self):
-		# delete item
-		frappe.delete_doc("Item", self.name, force=1)
-
-
-def create_item(doc, use_name_field=True):
-	name_field = doc.name if use_name_field else doc.fees_category
-	if frappe.db.exists("Item", name_field):
-		return frappe.db.get_value("Item", name_field, "name")
-
-	item = frappe.new_doc("Item")
-	item.item_code = name_field
-	item.description = doc.description
-	item.item_group = "Fee Component"
-	item.is_sales_item = 1
-	item.is_service_item = 1
-	item.is_stock_item = 0
-
-	item.insert()
-	return item.name
+	def validate_tuition(self):
+		if self.fc_event !="Course Enrollment":
+			if self.is_credit == 1:
+				frappe.throw("Credits are only allowed for events of type Course Enrollment")
+	
+	def validate_audit(self):
+		if self.fc_event !="Course Enrollment":
+			if self.is_audit == 1:
+				frappe.throw("Audit is only allowed for events of type Course Enrollment")
+		if self.is_credit == 1:
+			if self.is_audit == 1:
+				frappe.throw("Audit and Credits are mutually exclusive")
 
 
-def update_item(doc):
-	item = frappe.get_doc("Item", doc.name)
-	item.item_name = doc.name
-	item.description = doc.description
-	item.save()
-	return item.name

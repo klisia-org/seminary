@@ -2,7 +2,7 @@
  "actions": [],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
- "autoname": "format:{academic_term}-c{####}",
+ "autoname": "format:{course}-{academic_term}-{####}",
  "creation": "2015-09-09 16:34:04.960369",
  "doctype": "DocType",
  "document_type": "Document",
@@ -16,6 +16,7 @@
   "column_break_2",
   "coursecode_cs",
   "modality",
+  "open_enroll",
   "color",
   "syllabus",
   "section_break_ashf",
@@ -31,18 +32,15 @@
   "section_break_7",
   "monday_column",
   "monday",
+  "friday",
   "tuesday_column",
   "tuesday",
+  "saturday",
   "wednesday_column",
   "wednesday",
+  "sunday",
   "thursday_column",
   "thursday",
-  "friday_column",
-  "friday",
-  "saturday_column",
-  "saturday",
-  "sunday_column",
-  "sunday",
   "integration_section",
   "moodle_link",
   "grading_tab",
@@ -195,9 +193,10 @@
    "permlevel": 2
   },
   {
+   "columns": 7,
    "fieldname": "section_break_7",
    "fieldtype": "Section Break",
-   "label": "Days of the Week for this section"
+   "label": "Days of the Week"
   },
   {
    "fieldname": "monday_column",
@@ -213,18 +212,6 @@
   },
   {
    "fieldname": "thursday_column",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "friday_column",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "saturday_column",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "sunday_column",
    "fieldtype": "Column Break"
   },
   {
@@ -296,17 +283,21 @@
   {
    "fetch_from": "course.default_grading_scale",
    "fieldname": "gradesc_cs",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Grading Scale",
-   "permlevel": 2
+   "not_nullable": 1,
+   "options": "Grading Scale",
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "courseassescrit_sc",
    "fieldtype": "Table",
    "label": "Course Assessment Criteria",
    "options": "Scheduled Course Assess Criteria",
-   "permlevel": 1
+   "permlevel": 1,
+   "reqd": 1
   },
   {
    "fieldname": "class_roster_tab",
@@ -346,10 +337,18 @@
    "fieldname": "sendgrades_btn",
    "fieldtype": "Button",
    "label": "Send Final Grades"
+  },
+  {
+   "default": "1",
+   "fieldname": "open_enroll",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Open for Enrollment?"
   }
  ],
  "links": [],
- "modified": "2024-03-16 19:53:29.971071",
+ "modified": "2024-03-21 20:01:27.681443",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",

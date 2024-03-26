@@ -98,7 +98,7 @@
    "options": "Program Course"
   },
   {
-   "description": "See also the tab \"Tracks\" where you can configure courses for specific tracks of this program.",
+   "description": "ALL courses of the program must be listed here. See also the tab \"Tracks\" where you can configure if a course is mandatory for specific tracks of this program.",
    "fieldname": "section_break_courses",
    "fieldtype": "Section Break",
    "label": "Courses of this program (use Term number for guiding the student progress in Time-based programs)"
@@ -153,7 +153,7 @@
    "options": "Program Track Courses"
   },
   {
-   "description": "Note: The courses available on the previous page are the only ones for \"General Studies\" / no track. Use this section only for what is particular for a track.\nSee the help file for details.",
+   "description": "Note: The courses available on the previous page should be ALL the courses in the program. Use this only to specify what is mandatory for students on a particular track.",
    "fieldname": "you_can_specify_courses_per_program_track_section",
    "fieldtype": "Section Break",
    "label": "You can specify courses per program track"
@@ -195,7 +195,8 @@
    "fieldname": "pgm_pgmfees",
    "fieldtype": "Table",
    "label": "Program Fees",
-   "options": "Program Fees"
+   "options": "Program Fees",
+   "reqd": 1
   }
  ],
  "image_field": "hero_image",
@@ -219,29 +220,9 @@
    "group": "Student Activity",
    "link_doctype": "Student Log",
    "link_fieldname": "program"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Plan",
-   "link_fieldname": "program"
-  },
-  {
-   "group": "Fee",
-   "link_doctype": "Fee Structure",
-   "link_fieldname": "program"
-  },
-  {
-   "group": "Fee",
-   "link_doctype": "Fee Schedule",
-   "link_fieldname": "program"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Result",
-   "link_fieldname": "program"
   }
  ],
- "modified": "2024-03-14 16:50:11.119943",
+ "modified": "2024-03-23 19:29:58.363216",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

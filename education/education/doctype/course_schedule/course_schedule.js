@@ -1,13 +1,63 @@
 frappe.ui.form.on("Course Schedule", {
 	refresh: function(frm) {
+		frm.trigger("render_days");
 		frm.add_custom_button(__('Add Meeting Dates'), function()  {
-			if(!frm.cs_meetinfo) {
-				frm.call('save_dates').then(function() {
-					frm.reload_doc();
+			const selectedDays = [];
+  			if (frm.doc.monday) {
+    			selectedDays.push("Monday")};
+			if (frm.doc.tuesday) {
+				selectedDays.push("Tuesday")};
+			if (frm.doc.wednesday) {
+				selectedDays.push("Wednesday")};
+			if (frm.doc.thursday) {
+				selectedDays.push("Thursday")};
+			if (frm.doc.friday) {
+				selectedDays.push("Friday")};
+			if (frm.doc.saturday) {
+				selectedDays.push("Saturday")};
+			if (frm.doc.sunday) {
+				selectedDays.push("Sunday")};
+
+			frappe.dom.freeze(__("Scheduling..."));
+			frm.call('schedule_dates', { days: selectedDays })
+				.fail(() => {
+					frappe.dom.unfreeze();
+					frappe.msgprint(__("Course Scheduling Failed"));
+				})
+				.then(r => {
+					frappe.dom.unfreeze();
+					if (!r.message) {
+						frappe.throw(__('There were errors creating Course Schedule'));
+					}
+					const { meeting_dates} = r.message;
+					if (meeting_dates) {
+						const meeting_dates_html = meeting_dates.map(c => `
+							<tr>
+								<td>${c.cs_meetdate}</td>
+							</tr>
+						`).join('');
+						
+						const html = `
+							<table class="table table-bordered">
+								<caption>${__('Following meeting dates were created')}</caption>
+								<thead><tr><th>${__("Date")}</th></tr></thead>
+								<tbody>
+									${meeting_dates_html}
+								</tbody>
+							</table>
+						`;
+
+						frappe.msgprint(html);
+				
+						
+					}
 				});
-		
-				} else { 
-					frappe.msgprint('No meeting dates found')}})
+			
+
+
+
+
+		});
 				
 				},
 	
@@ -19,6 +69,8 @@ frappe.ui.form.on("Course Schedule", {
 					}
 				}
 			},
+
+	
 
 	onload: (frm) => {
 		frm.set_query('instructor', () => {

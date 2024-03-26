@@ -24,14 +24,10 @@
   "inactive_motive",
   "enrolled_courses",
   "courses",
-  "fees_tab",
-  "section_break_vsaj",
-  "student_feetype",
-  "payers_for_this_program_section",
-  "pe_payers",
-  "section_break_7",
-  "amended_from",
-  "connections_tab"
+  "section_break_uzvb",
+  "amended",
+  "connections_tab",
+  "amended_from"
  ],
  "fields": [
   {
@@ -95,52 +91,16 @@
    "options": "Program Enrollment Course"
   },
   {
-   "fieldname": "section_break_7",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Program Enrollment",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
   },
   {
-   "fieldname": "section_break_vsaj",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "fees_tab",
-   "fieldtype": "Tab Break",
-   "label": "Fees"
-  },
-  {
    "fieldname": "connections_tab",
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
-  },
-  {
-   "fieldname": "payers_for_this_program_section",
-   "fieldtype": "Section Break",
-   "label": "Payers for this program"
-  },
-  {
-   "fetch_from": "student.customer_group",
-   "fieldname": "student_feetype",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Student Fee Group",
-   "options": "Customer Group",
-   "reqd": 1
   },
   {
    "fieldname": "date_of_conclusion",
@@ -191,10 +151,25 @@
    "options": "Program Track"
   },
   {
-   "description": "Check if this is correct always. Payments can be split between individual and churches or others.",
-   "fieldname": "pe_payers",
-   "fieldtype": "Table",
-   "options": "pgm_enroll_payers"
+   "fieldname": "section_break_uzvb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Enrollment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "image_field": "image",
@@ -206,7 +181,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-16 21:31:37.665829",
+ "modified": "2024-03-22 16:49:06.418771",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",
