@@ -13,6 +13,7 @@ from frappe.model.document import Document
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
+import erpnext
 
 @frappe.whitelist()
 def get_course(program):
@@ -635,4 +636,230 @@ def copy_data_to_program_enrollment_course(doc, method):
 			doc.academic_term = ac_term
 			
 			doc.insert().save()
+
+@frappe.whitelist()
+def get_inv_data_nat():
+		print("Method called")
+		today = frappe.utils.today()
+		company = frappe.defaults.get_defaults().company
+		currency = erpnext.get_company_currency(company)
+		receivable_account = frappe.db.get_single_value('Education Settings', 'receivable_account')
+		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
+		company = frappe.db.get_single_value('Education Settings', 'company')
+		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
+		inv_data = []
+		inv_data = frappe.db.sql("""select pfc.pf_student as student, pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg, `tabItem Price` ip 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		cg.default_price_list = ip.price_list and
+		ip.item_code = fc.item and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'New Academic Term'""", as_list=1)
+		rows = frappe.db.sql("""select count(pep.fee_category)
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'New Academic Term'""") [0] [0]
 		
+		
+		i =0
+		while i < rows:
+			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
+			print(income_account)
+
+			items= []
+			items.append({
+				"doctype:": "Sales Invoice Item",
+				"item_name": inv_data[i][9],
+				"qty": inv_data[i][4]/100,
+				"rate": 0,
+				"description": "Fee for " + inv_data[i][1],
+				"income_account": income_account,
+				"cost_center": cost_center,
+				"base_rate": 0,
+				"price_list_rate": inv_data[i][11]
+			})		
+
+			sales_invoice = frappe.get_doc(
+				{"doctype": "Sales Invoice",
+				"naming_series": "ACC-SINV-.YYYY.-",
+				"posting_date": today,
+				"company": company,
+				"currency": currency,
+				"debit_to": receivable_account,
+				"income_account": income_account,
+				"conversion_rate": 1,
+				"customer": inv_data[i][2],
+				"selling_price_list": inv_data[i][10],
+				"base_grand_total": inv_data[i][11],
+				"payment_terms_template": inv_data[i][5],
+				"items": items
+				})
+			sales_invoice.run_method("set_missing_values")
+			sales_invoice.insert()
+			sales_invoice.save()
+			i += 1
+			print("Invoice Created")
+		return "done"
+		
+@frappe.whitelist()
+def get_inv_data_nayear():
+		print("Method called")
+		today = frappe.utils.today()
+		company = frappe.defaults.get_defaults().company
+		currency = erpnext.get_company_currency(company)
+		receivable_account = frappe.db.get_single_value('Education Settings', 'receivable_account')
+		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
+		company = frappe.db.get_single_value('Education Settings', 'company')
+		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
+		inv_data = []
+		inv_data = frappe.db.sql("""select pfc.pf_student as student, pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg, `tabItem Price` ip 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		cg.default_price_list = ip.price_list and
+		ip.item_code = fc.item and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'New Academic Year'""", as_list=1)
+		rows = frappe.db.sql("""select count(pep.fee_category)
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'New Academic Year'""") [0] [0]
+		
+		
+		i =0
+		while i < rows:
+			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
+			print(income_account)
+
+			items= []
+			items.append({
+				"doctype:": "Sales Invoice Item",
+				"item_name": inv_data[i][9],
+				"qty": inv_data[i][4]/100,
+				"rate": 0,
+				"description": "Fee for " + inv_data[i][1],
+				"income_account": income_account,
+				"cost_center": cost_center,
+				"base_rate": 0,
+				"price_list_rate": inv_data[i][11]
+			})		
+
+			sales_invoice = frappe.get_doc(
+				{"doctype": "Sales Invoice",
+				"naming_series": "ACC-SINV-.YYYY.-",
+				"posting_date": today,
+				"company": company,
+				"currency": currency,
+				"debit_to": receivable_account,
+				"income_account": income_account,
+				"conversion_rate": 1,
+				"customer": inv_data[i][2],
+				"selling_price_list": inv_data[i][10],
+				"base_grand_total": inv_data[i][11],
+				"payment_terms_template": inv_data[i][5],
+				"items": items
+				})
+			sales_invoice.run_method("set_missing_values")
+			sales_invoice.insert()
+			sales_invoice.save()
+			i += 1
+			print("Invoice Created")
+		return "done"
+
+@frappe.whitelist()
+def get_inv_data_monthly():
+		print("Method called")
+		today = frappe.utils.today()
+		company = frappe.defaults.get_defaults().company
+		currency = erpnext.get_company_currency(company)
+		receivable_account = frappe.db.get_single_value('Education Settings', 'receivable_account')
+		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
+		company = frappe.db.get_single_value('Education Settings', 'company')
+		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
+		inv_data = []
+		inv_data = frappe.db.sql("""select pfc.pf_student as student, pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg, `tabItem Price` ip 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		cg.default_price_list = ip.price_list and
+		ip.item_code = fc.item and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'Monthly'""", as_list=1)
+		rows = frappe.db.sql("""select count(pep.fee_category)
+		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg 
+		where pep.parent = pfc.name and
+		pep.fee_category = fc.category_name and
+		pep.fee_category = fc.name and
+		pfc.pf_custgroup = cg.customer_group_name and
+		pfc.pf_active = 1 and
+		pep.pep_event = 'Monthly'""") [0] [0]
+		
+		
+		i =0
+		while i < rows:
+			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
+			print(income_account)
+
+			items= []
+			items.append({
+				"doctype:": "Sales Invoice Item",
+				"item_name": inv_data[i][9],
+				"qty": inv_data[i][4]/100,
+				"rate": 0,
+				"description": "Fee for " + inv_data[i][1],
+				"income_account": income_account,
+				"cost_center": cost_center,
+				"base_rate": 0,
+				"price_list_rate": inv_data[i][11]
+			})		
+
+			sales_invoice = frappe.get_doc(
+				{"doctype": "Sales Invoice",
+				"naming_series": "ACC-SINV-.YYYY.-",
+				"posting_date": today,
+				"company": company,
+				"currency": currency,
+				"debit_to": receivable_account,
+				"income_account": income_account,
+				"conversion_rate": 1,
+				"student": inv_data[i][0],
+				"customer": inv_data[i][2],
+				"selling_price_list": inv_data[i][10],
+				"base_grand_total": inv_data[i][11],
+				"payment_terms_template": inv_data[i][5],
+				"items": items
+				})
+			sales_invoice.run_method("set_missing_values")
+			sales_invoice.insert()
+			sales_invoice.save()
+			i += 1
+			print("Invoice Created")
+		return "done"
+
+@frappe.whitelist()
+def get_pgmenrollments(name):
+	program_enrollments = []
+	program_enrollments = frappe.get_all(
+		"Program Enrollment",
+		filters={"student": name},
+		fields=["program", "pgmenrol_active", "enrollment_date", "date_of_conclusion"],
+		)
+	if not program_enrollments:
+		return "No Program Enrollments Found"
+	else:
+		return program_enrollments

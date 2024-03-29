@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_guest_to_view": 1,
  "autoname": "format:{course_data}-{academic_term}-{####}",
  "creation": "2024-03-06 17:42:21.146997",
  "doctype": "DocType",
@@ -130,7 +131,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-24 18:27:38.501839",
+ "modified": "2024-03-29 09:48:48.519527",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",
@@ -176,7 +177,9 @@
    "write": 1
   }
  ],
+ "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "translated_doctype": 1
 }

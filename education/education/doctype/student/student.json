@@ -47,10 +47,10 @@
   "customer",
   "column_break_rgpi",
   "customer_group",
+  "program_enrollment_section",
+  "pe_html",
   "services_section",
-  "studentservices",
-  "lodging_section",
-  "stu_lodge_enroll",
+  "service_html",
   "exit_tab",
   "exit",
   "date_of_leaving",
@@ -323,20 +323,19 @@
    "label": "Services"
   },
   {
-   "description": "Here you can Enroll the Student in additional services.",
-   "fieldname": "studentservices",
-   "fieldtype": "Table",
-   "options": "Student Services"
+   "fieldname": "service_html",
+   "fieldtype": "HTML"
   },
   {
-   "fieldname": "lodging_section",
+   "fieldname": "program_enrollment_section",
    "fieldtype": "Section Break",
-   "label": "Lodging"
+   "label": "Program Enrollment"
   },
   {
-   "fieldname": "stu_lodge_enroll",
-   "fieldtype": "Table",
-   "options": "Student Logding Enrollment"
+   "fieldname": "pe_html",
+   "fieldtype": "HTML",
+   "label": "Programs",
+   "options": "<div>table</div>"
   }
  ],
  "image_field": "image",
@@ -355,29 +354,9 @@
    "group": "Student Activity",
    "link_doctype": "Student Log",
    "link_fieldname": "student"
-  },
-  {
-   "group": "Student Activity",
-   "link_doctype": "Student Group",
-   "link_fieldname": "student"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Result",
-   "link_fieldname": "student"
-  },
-  {
-   "group": "Attendance",
-   "link_doctype": "Student Attendance",
-   "link_fieldname": "student"
-  },
-  {
-   "group": "Attendance",
-   "link_doctype": "Student Leave Application",
-   "link_fieldname": "student"
   }
  ],
- "modified": "2024-03-07 17:44:01.374396",
+ "modified": "2024-03-27 21:59:37.660106",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student",

@@ -32,17 +32,7 @@ class CourseEnrollmentIndividual(Document):
 				)
 			)
 
-	@frappe.whitelist()
-	def get_user(self):
-		student = frappe.get_doc("Student", self.student_ce)
-		user = student.user
-		return user
-	
-	@frappe.whitelist()
-	def get_student(self, user):
-		user = self.user
-		student = frappe.db.sql("""select name from `tabStudent` where user = %s""", (user))
-		return student
+
 
 	@frappe.whitelist()
 	def get_credits(self):

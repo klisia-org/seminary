@@ -109,6 +109,21 @@ class Student(Document):
 				"Student Applicant", self.student_applicant, "application_status", "Admitted"
 			)
 
+	@frappe.whitelist()
+	def get_pgmenrollments(self):
+		print("get_program_enrollments was called")
+		program_enrollments = []
+		program_enrollments = frappe.get_all(
+			"Program Enrollment",
+			filters={"student": self.name},
+			fields=["program", "pgmenrol_active", "enrollment_date", "date_of_comcusion"],
+			)
+		if not program_enrollments:
+			return "No Program Enrollments Found"
+		else:
+			print(program_enrollments)
+			return program_enrollments
+
 	# End of Validate Functions
 
 	# On Update Functions
@@ -151,17 +166,7 @@ class Student(Document):
 		else:
 			enrollments = {item["course"]: item["name"] for item in course_enrollments}
 			return enrollments
-
-	def get_program_enrollments(self):
-		"""Returns a list of course enrollments linked with the current student"""
-		program_enrollments = frappe.get_all(
-			"Program Enrollment", filters={"student": self.name}, fields=["program"]
-		)
-		if not program_enrollments:
-			return None
-		else:
-			enrollments = [item["program"] for item in program_enrollments]
-			return enrollments
+		
 
 	def get_topic_progress(self, course_enrollment_name, topic):
 		"""
@@ -245,16 +250,16 @@ class Student(Document):
 			return enrollment
 
 
-def get_timeline_data(doctype, name):
+#def get_timeline_data(doctype, name):
 	"""Return timeline for attendance"""
-	return dict(
-		frappe.db.sql(
-			"""select unix_timestamp(`date`), count(*)
-		from `tabStudent Attendance` where
-			student=%s
-			and `date` > date_sub(curdate(), interval 1 year)
-			and docstatus = 1 and status = 'Present'
-			group by date""",
-			name,
-		)
-	)
+#	return dict(
+#		frappe.db.sql(
+#			"""select unix_timestamp(`date`), count(*)
+#		from `tabStudent Attendance` where
+#			student=%s
+#			and `date` > date_sub(curdate(), interval 1 year)
+#			and docstatus = 1 and status = 'Present'
+#			group by date""",
+#			name,
+#		)
+#	)

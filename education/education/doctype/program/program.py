@@ -7,8 +7,8 @@ from frappe.model.document import Document
 
 
 class Program(Document):
-	def validate(self):
-		self.validate_courses_pgmtrack()
+	#def validate(self):
+		#self.validate_courses_pgmtrack()
 		
 	def get_course_list(self):
 		program_course_list = self.courses
@@ -18,10 +18,13 @@ class Program(Document):
 		]
 		return course_list
 
-	def validate_courses_pgmtrack(self):
+""" 	def validate_courses_pgmtrack(self):
 		program_course_list = self.courses
-		for program_course in program_course_list:
-			if self.pgm_courses_track not in program_course.course:
-				frappe.throw(
-					"Course {0} is in the Program Track but not in Courses for this Program".format(program_course.course)
-				)
+		pgm_track_list = self.pgm_courses_track
+		if pgm_track_list:
+			for pgm_track in pgm_track_list:
+				if pgm_track not in program_course_list:
+					frappe.throw(
+						"Course {0} is in the Program Track but not in Courses for this Program".format(pgm_track.program_track_course)
+					)
+		return """
