@@ -1,11 +1,14 @@
+# education/education/web_form/enroll_in_a_course/enroll_in_a_course.py
+
 import frappe
 
+
 def get_context(context):
-	context.user = frappe.session.user
-	print(context.user)
-	student_name = frappe.db.sql("""select student_name from `tabStudent` where user = %s""", (context.user))
-	context.student_name = student_name[0][0]
-	print(context.student_name)
+    pass
 
-
-
+@frappe.whitelist()
+def get_student_name():
+    user = frappe.session.user
+    student = frappe.get_value("Student", {"user": user}, "student_name")
+    print(student)
+    return student
