@@ -84,7 +84,7 @@ def enroll_student(source_name):
 
 
 @frappe.whitelist()
-def check_attendance_records_exist(course_schedule=None, student_group=None, date=None):
+def check_attendance_records_exist(course_schedule=None, date=None):
 	"""Check if Attendance Records are made against the specified Course Schedule or Student Group for given date.
 
 	:param course_schedule: Course Schedule.
@@ -95,10 +95,7 @@ def check_attendance_records_exist(course_schedule=None, student_group=None, dat
 		return frappe.get_list(
 			"Student Attendance", filters={"course_schedule": course_schedule}
 		)
-	else:
-		return frappe.get_list(
-			"Student Attendance", filters={"student_group": student_group, "date": date}
-		)
+	
 
 
 @frappe.whitelist()
@@ -223,7 +220,7 @@ def get_assessment_criteria(course):
 	)
 
 
-@frappe.whitelist()
+""" @frappe.whitelist()
 def get_assessment_students(assessment_plan, student_group):
 	student_list = get_student_group_students(student_group)
 	for i, student in enumerate(student_list):
@@ -244,7 +241,7 @@ def get_assessment_students(assessment_plan, student_group):
 			)
 		else:
 			student.update({"assessment_details": None})
-	return student_list
+	return student_list """
 
 
 @frappe.whitelist()
@@ -346,7 +343,7 @@ def mark_assessment_result(assessment_plan, scores):
 	return assessment_result_dict
 
 
-@frappe.whitelist()
+""" @frappe.whitelist()
 def submit_assessment_results(assessment_plan, student_group):
 	total_result = 0
 	student_list = get_student_group_students(student_group)
@@ -356,7 +353,7 @@ def submit_assessment_results(assessment_plan, student_group):
 			total_result += 1
 			doc.submit()
 	return total_result
-
+ """
 
 def get_assessment_result_doc(student, assessment_plan):
 	assessment_result = frappe.get_all(
@@ -378,7 +375,7 @@ def get_assessment_result_doc(student, assessment_plan):
 		return frappe.new_doc("Assessment Result")
 
 
-@frappe.whitelist()
+""" @frappe.whitelist()
 def update_email_group(doctype, name):
 	if not frappe.db.exists("Email Group", name):
 		email_group = frappe.new_doc("Email Group")
@@ -393,7 +390,7 @@ def update_email_group(doctype, name):
 			email = frappe.db.get_value("Guardian", guard.guardian, "email_address")
 			if email:
 				email_list.append(email)
-	add_subscribers(name, email_list)
+	add_subscribers(name, email_list) """
 
 
 @frappe.whitelist()
@@ -419,11 +416,11 @@ def get_current_enrollment(student, academic_term=None):
 		return None
 
 
-@frappe.whitelist()
+""" @frappe.whitelist()
 def get_instructors(student_group):
 	return frappe.get_all(
 		"Student Group Instructor", {"parent": student_group}, pluck="instructor"
-	)
+	) """
 
 @frappe.whitelist()
 def get_payers(program_enrollment, method):
