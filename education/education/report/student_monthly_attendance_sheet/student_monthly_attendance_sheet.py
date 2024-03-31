@@ -7,7 +7,6 @@ from erpnext.support.doctype.issue.issue import get_holidays
 from frappe import _
 from frappe.utils import add_days, cstr, date_diff, get_first_day, get_last_day, getdate
 
-from education.education.api import get_student_group_students
 from education.education.doctype.student_attendance.student_attendance import (
 	get_holiday_list,
 )
@@ -28,7 +27,7 @@ def execute(filters=None):
 
 	total_days_in_month = date_diff(to_date, from_date) + 1
 	columns = get_columns(total_days_in_month)
-	students = get_student_group_students(filters.get("student_group"), 1)
+	
 	students_list = get_students_list(students)
 	att_map = get_attendance_list(
 		from_date, to_date, filters.get("student_group"), students_list

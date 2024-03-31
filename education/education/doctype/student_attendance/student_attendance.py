@@ -9,7 +9,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import formatdate, get_link_to_form, getdate
 
-from education.education.api import get_student_group_students
+
 
 
 class StudentAttendance(Document):
