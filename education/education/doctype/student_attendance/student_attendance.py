@@ -14,7 +14,6 @@ from education.education.api import get_student_group_students
 
 class StudentAttendance(Document):
 	def validate(self):
-		self.validate_date()
 		self.set_date()
 		self.validate_student()
 		self.validate_duplication()
@@ -22,56 +21,31 @@ class StudentAttendance(Document):
 
 	def set_date(self):
 		if self.course_schedule:
-			self.date = frappe.db.get_value(
-				"Course Schedule", self.course_schedule, "schedule_date"
-			)
+			self.date = frappe.db.sql(
+				"""select min(smd.cs_meetdate) 
+				from `tabCourse Schedule`cs, `tabCourse Schedule Meeting Dates` smd
+				where smd.parent = cs.name and
+				smd.attendance = 0 and
+				cs.name = %s""", self.course_schedule)[0][0]
+		else:
+			frappe.throw(_("There is no date to take attendance for."))
 
-	def validate_date(self):
-		if not self.leave_application and getdate(self.date) > getdate():
-			frappe.throw(_("Attendance cannot be marked for future dates."))
-
-		if self.course_schedule:
-			academic_term = frappe.db.get_value(
-				"Course Schedule", self.course_schedule, "academic_term"
-			)
-			if academic_term:
-				term_start_date, term_end_date = frappe.db.get_value(
-					"Academic Term", academic_term, ["start_date", "end_date"]
-				)
-				if term_start_date and term_end_date:
-					if getdate(self.date) < getdate(term_start_date) or getdate(self.date) > getdate(
-						term_end_date
-					):
-						frappe.throw(
-							_("Attendance cannot be marked outside of Academic Term {0}").format(
-								academic_term
-							)
-						)
 
 	
 	def validate_student(self):
 		if self.course_schedule:
-			student_group = frappe.db.get_value(
-				"Course Schedule", self.course_schedule, "student_group"
+			students = frappe.get_all(
+				"Scheduled Course Roster",
+				filters={"parent": self.course_schedule},
+				fields=["student"],
 			)
-		else:
-			student_group = self.student_group
-		student_group_students = [
-			d.student for d in get_student_group_students(student_group)
-		]
-		if student_group and self.student not in student_group_students:
-			student_group_doc = get_link_to_form("Student Group", student_group)
-			frappe.throw(
-				_("Student {0}: {1} does not belong to Student Group {2}").format(
-					frappe.bold(self.student), self.student_name, frappe.bold(student_group_doc)
-				)
-			)
+			students = [student.student for student in students]
+			
 
 	def validate_duplication(self):
 		"""Check if the Attendance Record is Unique"""
 		attendance_record = None
-		if self.course_schedule:
-			attendance_record = frappe.db.exists(
+		attendance_record = frappe.db.exists(
 				"Student Attendance",
 				{
 					"student": self.student,
@@ -80,18 +54,7 @@ class StudentAttendance(Document):
 					"name": ("!=", self.name),
 				},
 			)
-		else:
-			attendance_record = frappe.db.exists(
-				"Student Attendance",
-				{
-					"student": self.student,
-					"student_group": self.student_group,
-					"date": self.date,
-					"docstatus": ("!=", 2),
-					"name": ("!=", self.name),
-					"course_schedule": "",
-				},
-			)
+	
 
 		if attendance_record:
 			record = get_link_to_form("Student Attendance", attendance_record)

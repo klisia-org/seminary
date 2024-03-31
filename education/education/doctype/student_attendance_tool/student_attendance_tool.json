@@ -22,29 +22,13 @@
    "fieldname": "based_on",
    "fieldtype": "Select",
    "label": "Based On",
-   "options": "Student Group\nCourse Schedule"
-  },
-  {
-   "default": "Batch",
-   "depends_on": "eval:doc.based_on == \"Student Group\"",
-   "fieldname": "group_based_on",
-   "fieldtype": "Select",
-   "label": "Group Based On",
-   "options": "Batch\nCourse\nActivity"
+   "options": "Course Schedule"
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
-  {
-   "depends_on": "eval:doc.based_on ==\"Student Group\"",
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Student Group",
-   "options": "Student Group",
-   "reqd": 1
-  },
+
   {
    "depends_on": "eval:doc.based_on ==\"Course Schedule\"",
    "fieldname": "course_schedule",
@@ -55,7 +39,6 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.based_on ==\"Student Group\"",
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -63,7 +46,7 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval: (doc.course_schedule \n|| (doc.student_group && doc.date))",
+   "depends_on": "eval: (doc.course_schedule)",
    "fieldname": "attendance",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -73,16 +56,9 @@
    "fieldtype": "HTML",
    "label": "Students HTML"
   },
+
   {
-   "fetch_from": "student_group.academic_year",
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "student_group.academic_term",
+   "fetch_from": "course_schedule.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term",

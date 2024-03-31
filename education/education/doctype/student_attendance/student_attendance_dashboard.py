@@ -6,7 +6,7 @@ def get_data():
 		"reports": [
 			{
 				"label": _("Reports"),
-				"items": ["Student Monthly Attendance Sheet", "Student Batch-Wise Attendance"],
+				"items": ["Student Monthly Attendance Sheet"],
 			}
 		]
 	}
