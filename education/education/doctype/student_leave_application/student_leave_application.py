@@ -89,10 +89,7 @@ class StudentLeaveApplication(Document):
 				doc.date = date
 				doc.leave_application = self.name
 				doc.status = status
-				if self.attendance_based_on == "Student Group":
-					doc.student_group = self.student_group
-				else:
-					doc.course_schedule = self.course_schedule
+				doc.course_schedule = self.course_schedule
 				doc.insert(ignore_permissions=True, ignore_mandatory=True)
 				doc.submit()
 
@@ -140,7 +137,7 @@ def get_number_of_leave_days(from_date, to_date, holiday_list):
 	return number_of_days
 
 
-@frappe.whitelist()
+""" @frappe.whitelist()
 def get_student_groups(student):
 	student_group = frappe.db.get_all(
 		"Student Group Student",
@@ -148,4 +145,4 @@ def get_student_groups(student):
 		filters={"student": student},
 	)
 
-	return student_group
+	return student_group """
