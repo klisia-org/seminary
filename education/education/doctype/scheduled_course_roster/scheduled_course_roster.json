@@ -11,17 +11,18 @@
   "stuemail_rc",
   "program_std_scr",
   "audit_bool",
+  "active",
   "grades_section",
   "stdroster_grade"
  ],
-    "fields": [
- {
+ "fields": [
+  {
    "fieldname": "stuname_roster",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Student Name"
   },
-   {
+  {
    "fieldname": "stuemail_rc",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -55,12 +56,18 @@
    "fieldname": "stdroster_grade",
    "fieldtype": "Table",
    "options": "Course Assess Results Detail"
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Active?"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-17 18:28:20.491876",
+ "modified": "2024-04-01 20:01:28.149804",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",
