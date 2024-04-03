@@ -11,6 +11,7 @@
   "coursesc_ce",
   "audit",
   "section_break_qhjs",
+  "student_name",
   "program_data",
   "course_data",
   "academic_term",
@@ -48,10 +49,11 @@
   {
    "fetch_from": "program_ce.student_name",
    "fieldname": "student_ce",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student",
+   "options": "Student",
    "reqd": 1
   },
   {
@@ -127,11 +129,17 @@
    "in_list_view": 1,
    "label": "Credits",
    "non_negative": 1
+  },
+  {
+   "fetch_from": "program_ce.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-29 09:48:48.519527",
+ "modified": "2024-04-02 19:13:33.357793",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",

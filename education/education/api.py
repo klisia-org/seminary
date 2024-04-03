@@ -546,6 +546,7 @@ def copy_data_to_scheduled_course_roster(doc, method):
 		program = doc.program_data
 		coursesc_ce = doc.coursesc_ce
 		audit = doc.audit
+		student_name = doc.student_name
 		
 		
 		student_email = frappe.db.sql(
@@ -558,7 +559,8 @@ def copy_data_to_scheduled_course_roster(doc, method):
 			doc.parent = coursesc_ce,
 			doc.parenttype = "Course Schedule",
 			doc.parentfield = "cs_roster",
-			doc.stuname_roster = student_ce,
+			doc.stuname_roster = student_name,
+			doc.student = student_ce,
 			doc.stuemail_rc = student_email,
 			doc.program_std_scr = program,
 			doc.audit_bool = audit

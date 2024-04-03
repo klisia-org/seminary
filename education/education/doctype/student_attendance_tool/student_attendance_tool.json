@@ -6,7 +6,6 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "based_on",
   "column_break_2",
   "academic_term",
   "course_schedule",
@@ -15,13 +14,6 @@
   "students_html"
  ],
  "fields": [
-  {
-   "default": "Course Schedule",
-   "fieldname": "based_on",
-   "fieldtype": "Select",
-   "label": "Based On",
-   "options": "Course Schedule"
-  },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
@@ -65,7 +57,7 @@
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-04-01 19:51:23.656799",
+ "modified": "2024-04-02 16:44:00.364854",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Attendance Tool",

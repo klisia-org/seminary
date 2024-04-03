@@ -18,15 +18,37 @@ frappe.ui.form.on('Student Attendance Tool', {
 		frm.disable_save();
 	},
 
+	student_roster: function(frm) {
+		if ( frm.doc.course_schedule) {
+			frm.students_area.find('.student-attendance-checks').html(`<div style='padding: 2rem 0'>Fetching...</div>`);
+			var method = "education.education.doctype.student_attendance_tool.student_attendance_tool.get_student_attendance_records";
+
+			frappe.call({
+				method: method,
+				args: {
+					
+					date: frm.doc.date,
+					course_schedule: frm.doc.course_schedule
+				},
+				callback: function(r) {
+					frm.events.get_students(frm, r.message);
+				}
+			})
+		}
+	},
+
 
 	date: function(frm) {
 		if (frm.doc.date > frappe.datetime.get_today())
 			frappe.throw(__("Cannot mark attendance for future dates."));
+		frm.trigger("student_roster");
 		
 			
 	},
 
-	
+	course_schedule: function(frm) {
+		frm.trigger("student_roster");
+	},
 
 	get_students: function(frm, students) {
 		students = students || [];
@@ -84,7 +106,7 @@ education.StudentsEditor = class StudentsEditor {
 					var $check = $(check);
 					studs.push({
 						student: $check.data().student,
-						student_name: $check.data().studentName,
+						student_name: $check.data().stuname_roster,
 						
 						disabled: $check.prop("disabled"),
 						checked: $check.is(":checked")
@@ -137,10 +159,10 @@ education.StudentsEditor = class StudentsEditor {
 							<input
 								type="checkbox"
 								data-student="${student.student}"
-								data-student-name="${student.student_name}"
+								data-student-name="${student.stuname_roster}"
 								class="students-check"
 								${student.status==='Present' ? 'checked' : ''}>
-							 ${student.student_name}
+							 ${student.stuname_roster}
 						</label>
 					</div>
 				</div>`;

@@ -12,6 +12,7 @@
   "program_std_scr",
   "audit_bool",
   "active",
+  "student",
   "grades_section",
   "stdroster_grade"
  ],
@@ -62,12 +63,18 @@
    "fieldname": "active",
    "fieldtype": "Check",
    "label": "Active?"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Data",
+   "label": "Student",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-04-01 20:01:28.149804",
+ "modified": "2024-04-02 19:15:52.655445",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",
