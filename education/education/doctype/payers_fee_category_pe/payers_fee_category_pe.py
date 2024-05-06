@@ -10,7 +10,6 @@ import erpnext
 class PayersFeeCategoryPE(Document):
 	@frappe.whitelist()
 	def get_inv_data_pe(self):
-		print("Method called")
 		today = frappe.utils.today()
 		company = frappe.defaults.get_defaults().company
 		currency = erpnext.get_company_currency(company)
@@ -18,6 +17,7 @@ class PayersFeeCategoryPE(Document):
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		company = frappe.db.get_single_value('Education Settings', 'company')
 		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
+		stulink = self.stu_link
 		inv_data = []
 		inv_data = frappe.db.sql("""select pfc.pf_student as student, pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
 		from `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabFee Category` fc, `tabCustomer Group` cg, `tabItem Price` ip 
@@ -70,12 +70,28 @@ class PayersFeeCategoryPE(Document):
 				"selling_price_list": inv_data[i][10],
 				"base_grand_total": inv_data[i][11],
 				"payment_terms_template": inv_data[i][5],
-				"items": items
+				"items": items,
+				"student": stulink,
 				})
 			sales_invoice.run_method("set_missing_values")
 			sales_invoice.insert()
 			sales_invoice.save()
 			i += 1
 			print("Invoice Created")
+
+	@frappe.whitelist()
+	# Method to check if the sum of the percentages is equal to 100 
+	def check_percentages(self):
+		pay_data = []
+		pay_data = frappe.db.sql("""select pep.pep_event, sum(pep.pay_percent) as percentage 
+		from `tabpgm_enroll_payers` pep
+		where pep.parent = %s
+		group by pep.pep_event
+		having percentage != 100""", self.name, as_list=1)
+		
+		
+		if pay_data:
+			frappe.throw("The sum of the percentages paid for a Fee Category is not equal to 100")
+		
 
 		

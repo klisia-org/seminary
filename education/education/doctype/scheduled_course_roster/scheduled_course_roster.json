@@ -1,18 +1,20 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "format:{course_sc}-{student}",
  "creation": "2024-03-11 15:00:49.630005",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "student_info_section",
+  "course_sc",
+  "student",
   "stuname_roster",
   "stuemail_rc",
   "program_std_scr",
   "audit_bool",
   "active",
-  "student",
+  "stuimage",
   "grades_section",
   "stdroster_grade"
  ],
@@ -21,13 +23,15 @@
    "fieldname": "stuname_roster",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Student Name"
   },
   {
    "fieldname": "stuemail_rc",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Student email"
+   "label": "Student email",
+   "read_only": 1
   },
   {
    "fieldname": "program_std_scr",
@@ -41,6 +45,8 @@
    "default": "0",
    "fieldname": "audit_bool",
    "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Is Audit?"
   },
   {
@@ -62,6 +68,7 @@
    "default": "1",
    "fieldname": "active",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Active?"
   },
   {
@@ -69,18 +76,90 @@
    "fieldtype": "Data",
    "label": "Student",
    "read_only": 1
+  },
+  {
+   "fieldname": "course_sc",
+   "fieldtype": "Link",
+   "label": "Course Scheduled",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stuimage",
+   "fieldtype": "Attach Image",
+   "label": "Student Photo"
   }
  ],
- "index_web_pages_for_search": 1,
- "istable": 1,
+ "image_field": "stuimage",
  "links": [],
- "modified": "2024-04-02 19:15:52.655445",
+ "modified": "2024-05-06 08:51:31.860700",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",
+ "naming_rule": "Expression",
  "owner": "Administrator",
- "permissions": [],
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "read_only": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "course_sc",
+ "track_changes": 1,
+ "track_seen": 1
 }

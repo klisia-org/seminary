@@ -76,6 +76,8 @@ frappe.ui.form.on("Course Schedule", {
 						frappe.msgprint('Please select at least one day of the week');
 						validated = false;
 					}
+				} else {
+					frm.call('validate')
 				}
 			},
 
@@ -95,5 +97,44 @@ frappe.ui.form.on("Course Schedule", {
 
 		})
 
-	}
+	},
+	onload: function(frm) {
+		if (!frm.doc.__islocal) {
+			frappe.call({
+				method: "education.education.api.get_course_rosters",
+				args: {
+					name: frm.doc.name
+				},
+				callback: function(r) {
+					if (r.message) {
+						var enrollments = r.message;
+						var table = "<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
+						table += "<table><thead><tr><th>Photo</th><th>Student ID</th><th>Student Name</th><th>Student Email</th><th>Audit</th><th>Active</th><th>Program</th><th>Grade</th></tr></thead><tbody>";
+						for (var i = 0; i < enrollments.length; i++) {
+							var activeStatus = enrollments[i].active ? "Yes" : "No";
+							var auditStatus = enrollments[i].audit_bool ? "Yes" : "No";
+							var image = enrollments[i].stuimage ? "<img src='" + enrollments[i].stuimage + "' width='100' height='100'>" : "";
+							// Handle null values in table cells
+							var grade = "<a href='/app/scheduled-course-roster/" + enrollments[i].course_sc + "-" + enrollments[i].student + "'>" + "Grades"  + "</a>";			
+							var student = "<a href='/app/student/" + enrollments[i].student + "'>" + enrollments[i].student + "</a>";
+							var stuname_roster = enrollments[i].stuname_roster || "";
+							var stuemail_rc = enrollments[i].stuemail_rc || "";
+							var program_std_scr = enrollments[i].program_std_scr || "";
+							
+							table += "<tr><td>" + image + "</td><td>" + student + "</td><td>" + stuname_roster + "</td><td>" + stuemail_rc + "</td><td>" + auditStatus + "</td><td>" + activeStatus + "</td><td>" + program_std_scr + "</td><td>" + grade + "</td></tr>";
+						}
+						table += "</tbody></table>";
+						frm.set_df_property('csroster_html', 'options', table);
+						frm.refresh_field('csroster_html');
+					} else {
+						frm.set_df_property('csroster_html', 'options', "No course enrollments found");
+						frm.refresh_field('csroster_html');
+					}
+				}
 			});
+		} else {
+					frm.set_df_property('csroster_html', 'options', "No student enrolled so far");
+					frm.refresh_field('csroster_html');
+				};
+			}},
+	);

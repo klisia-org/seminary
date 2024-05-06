@@ -9,7 +9,9 @@
   "course_name",
   "academic_term",
   "pec_finalgradenum",
-  "pec_finalgradecode"
+  "pec_finalgradecode",
+  "credits",
+  "status"
  ],
  "fields": [
   {
@@ -49,11 +51,25 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Final Grade Numeric"
+  },
+  {
+   "fieldname": "credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Credits",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-03-18 19:34:08.743324",
+ "modified": "2024-05-02 11:59:40.579012",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment Course",

@@ -16,6 +16,8 @@
   "course_data",
   "academic_term",
   "credits",
+  "stu_user",
+  "stuimage",
   "registrar_use_only_section",
   "no_prereq",
   "column_break_jfah",
@@ -47,7 +49,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "program_ce.student_name",
+   "fetch_from": "program_ce.student",
    "fieldname": "student_ce",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -135,11 +137,24 @@
    "fieldname": "student_name",
    "fieldtype": "Data",
    "label": "Student Name"
+  },
+  {
+   "fetch_from": "student_ce.user",
+   "fieldname": "stu_user",
+   "fieldtype": "Data",
+   "label": "Student User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student_ce.image",
+   "fieldname": "stuimage",
+   "fieldtype": "Attach Image",
+   "label": "Student Image"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-04-02 19:13:33.357793",
+ "modified": "2024-05-05 22:06:15.930930",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Enrollment Individual",

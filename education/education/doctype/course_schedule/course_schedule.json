@@ -50,10 +50,8 @@
   "meeting_dates_section",
   "cs_meetinfo",
   "class_roster_tab",
-  "cs_roster",
-  "section_break_udqm",
-  "gradebook_btn",
-  "cs_studres"
+  "class_roster_section",
+  "csroster_html"
  ],
  "fields": [
   {
@@ -305,29 +303,6 @@
    "label": "Class Roster"
   },
   {
-   "fieldname": "cs_roster",
-   "fieldtype": "Table",
-   "options": "Scheduled Course Roster",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "section_break_udqm",
-   "fieldtype": "Section Break",
-   "label": "Grading"
-  },
-  {
-   "bold": 1,
-   "fieldname": "gradebook_btn",
-   "fieldtype": "Button",
-   "label": "Gradebook"
-  },
-  {
-   "bold": 1,
-   "fieldname": "cs_studres",
-   "fieldtype": "Button",
-   "label": "Student Results"
-  },
-  {
    "fieldname": "section_break_ashf",
    "fieldtype": "Section Break"
   },
@@ -345,10 +320,22 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Open for Enrollment?"
+  },
+  {
+   "description": "Click on Grades to see/edit grades of a particular student.",
+   "fieldname": "csroster_html",
+   "fieldtype": "HTML",
+   "label": "Class Roster and Grades",
+   "options": "<div>table</div>"
+  },
+  {
+   "fieldname": "class_roster_section",
+   "fieldtype": "Section Break",
+   "label": "Class Roster"
   }
  ],
  "links": [],
- "modified": "2024-03-21 20:01:27.681443",
+ "modified": "2024-05-06 09:06:27.584325",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",
@@ -425,6 +412,7 @@
    "write": 1
   }
  ],
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "title_field": "title",

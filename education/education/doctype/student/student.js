@@ -8,13 +8,13 @@ frappe.ui.form.on('Student', {
 				filters: {
 					ignore_user_type: 1,
 				},
-			};
+			};  
 		});
 
 		if(!frm.is_new()) {
 			frm.add_custom_button(__('Accounting Ledger'), function() {
 				frappe.set_route('query-report', 'General Ledger',
-					{party_type:'Student', party:frm.doc.name});
+					{party_type:'Customer', party:frm.doc.customer});
 			});
 		};
 	},

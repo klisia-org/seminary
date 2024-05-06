@@ -13,6 +13,7 @@
   "section_break_obto",
   "pf_payers",
   "section_break_jxev",
+  "stu_link",
   "si_created"
  ],
  "fields": [
@@ -73,11 +74,18 @@
    "fieldname": "si_created",
    "fieldtype": "Check",
    "label": "Program Enrollment Invoices Created"
+  },
+  {
+   "fetch_from": "pf_pe.student",
+   "fieldname": "stu_link",
+   "fieldtype": "Link",
+   "label": "Student Link",
+   "options": "Student"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-03-23 16:15:23.680632",
+ "modified": "2024-05-02 16:51:42.510479",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Payers Fee Category PE",

@@ -44,7 +44,6 @@ class CourseEnrollmentIndividual(Document):
 		else:
 			print("Audit is not 1")
 			credits = frappe.db.sql("""select pgmcourse_credits from `tabProgram Course` where parent = %s and course = %s""", (pe, ce))
-			print("Before tuple" + pe + ce + str(credits))
 			if credits:
 				credits = credits[0][0]
 				print(credits)
@@ -78,6 +77,7 @@ class CourseEnrollmentIndividual(Document):
 		is_audit = self.audit
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
+		stulink = self.student_ce
 		inv_data = []
 		inv_data = frappe.db.sql("""select cei.student_ce, cei.audit, cei.credits, cei.program_data,  pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
 		from `tabCourse Enrollment Individual` cei,  `tabFee Category` fc, `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabCustomer Group` cg, `tabItem Price` ip  
@@ -149,7 +149,8 @@ class CourseEnrollmentIndividual(Document):
 					"base_grand_total": gt,
 					"payment_terms_template": inv_data[i][8],
 					"remarks": "Fee for " + self.name,
-					"items": items
+					"items": items,
+					"student": stulink,
 					})
 			sales_invoice.insert()
 			sales_invoice.save()

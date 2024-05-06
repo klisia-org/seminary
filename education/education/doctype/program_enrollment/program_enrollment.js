@@ -24,7 +24,15 @@ frappe.ui.form.on('Program Enrollment', {
 			.then(() => {
 				frm.reload_doc();
 			});
-},});
+},
+	refresh(frm) {
+		if (frm.doc.docstatus === 1) {
+		frm.add_custom_button(__('Payers for this Program'), function() {
+			frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
+		}).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});};
+	}
+
+});
 
 frappe.ui.form.on('Program Enrollment Course', {
 	courses_add: function(frm){

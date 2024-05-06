@@ -193,7 +193,7 @@ after_install = "education.install.after_install"
 doc_events = {
 	"Course Enrollment Individual": {
 		"on_submit": "education.education.api.copy_data_to_scheduled_course_roster",
-		"on_submit": "education.education.api.copy_data_to_program_enrollment_course",
+	#	"on_submit": "education.education.api.copy_data_to_program_enrollment_course",
         
 # 		"on_cancel": "method",
 # 		"on_trash": "method"

@@ -16,7 +16,17 @@ refresh(frm) {
                     frappe.msgprint("Error creating Sales Invoice(s)!");
                 });
         }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});}; 
-       
-    }      
-    });
-            
+    console.log("Sales Invoice button added")   
+    },      
+    
+
+after_save(frm) {
+    frm.call('check_percentages')
+         console.log("Percentages checked")
+        .then(r => {
+            if (r.message) {
+                frappe.msgprint(r.message);
+            }
+        });
+    }  
+});          

@@ -542,30 +542,51 @@ def courses_for_student(program_ce):
 
 @frappe.whitelist()
 def copy_data_to_scheduled_course_roster(doc, method):
-		student_ce = doc.student_ce
-		program = doc.program_data
-		coursesc_ce = doc.coursesc_ce
-		audit = doc.audit
-		student_name = doc.student_name
-		
-		
-		student_email = frappe.db.sql(
-			"""select distinct s.student_email_id from tabStudent s, `tabCourse Enrollment Individual` cei
-			where cei.student_ce = s.student_name and
-			cei.student_ce = %s""", student_ce, as_dict=0)
+	student_ce = doc.student_ce
+	program = doc.program_data
+	coursesc_ce = doc.coursesc_ce
+	audit = doc.audit
+	student_name = doc.student_name
+	student_email = doc.stu_user
+	image = doc.stuimage
 
-		if coursesc_ce and student_ce:
-			doc = frappe.new_doc("Scheduled Course Roster")
-			doc.parent = coursesc_ce,
-			doc.parenttype = "Course Schedule",
-			doc.parentfield = "cs_roster",
-			doc.stuname_roster = student_name,
-			doc.student = student_ce,
-			doc.stuemail_rc = student_email,
-			doc.program_std_scr = program,
-			doc.audit_bool = audit
-			
-			doc.insert().save()
+	if coursesc_ce and student_ce:
+		items = []
+		criteria = []
+		criteria = frappe.db.sql(
+			"""select distinct scac.assesscriteria_scac, scac.weight_scac from `tabScheduled Course Assess Criteria` scac
+			where scac.docstatus = 0 and
+			scac.parent = %s""", coursesc_ce, as_list=1)
+		rows = frappe.db.sql(
+			"""select count(distinct scac.assesscriteria_scac) from `tabScheduled Course Assess Criteria` scac
+			where scac.docstatus = 0 and
+			scac.parent = %s""", coursesc_ce)[0][0]
+		i = 0
+		while i < rows:
+			if criteria:
+				items.append({
+					"doctype": "Course Assess Results Detail",
+					"student_card": student_ce,
+					"assessment_criteria": criteria[i][0],
+					"maximum_score": criteria[i][1]
+				})
+				i += 1
+
+		roster = frappe.get_doc({
+			"doctype": "Scheduled Course Roster",
+			"course_sc": coursesc_ce,
+			"stuname_roster": student_name,
+			"student": student_ce,
+			"stuemail_rc": student_email,
+			"program_std_scr": program,
+			"audit_bool": audit,
+			"active": 1,
+			"stuimage": image,
+			"stdroster_grade": items
+		})
+		roster.insert()
+		roster.save()
+	return
 
 @frappe.whitelist()
 def copy_data_to_program_enrollment_course(doc, method):
@@ -573,17 +594,20 @@ def copy_data_to_program_enrollment_course(doc, method):
 		course_lnk = doc.coursesc_ce
 		course = doc.course_data
 		ac_term = doc.academic_term
+		credits = doc.credits
 		 
 		if cei:
-			doc = frappe.new_doc("Program Enrollment Course")
-			doc.parent = cei,
-			doc.parenttype = "Program Enrollment",
-			doc.parentfield = "courses",
-			doc.course = course_lnk,
-			doc.course_name = course,
-			doc.academic_term = ac_term
+			program_enrollment_course = frappe.new_doc("Program Enrollment Course")
+			program_enrollment_course.parent = cei
+			program_enrollment_course.parenttype = "Program Enrollment"
+			program_enrollment_course.parentfield = "courses"
+			program_enrollment_course.course = course_lnk
+			program_enrollment_course.course_name = course
+			program_enrollment_course.academic_term = ac_term
+			program_enrollment_course.credits = credits
+			program_enrollment_course.status = "Enrolled"
 			
-			doc.insert().save()
+			program_enrollment_course.insert()
 
 @frappe.whitelist()
 def get_inv_data_nat():
@@ -808,6 +832,20 @@ def get_pgmenrollments(name):
 		fields=["program", "pgmenrol_active", "enrollment_date", "date_of_conclusion"],
 		)
 	if not program_enrollments:
-		return "No Program Enrollments Found"
+		return 
 	else:
 		return program_enrollments
+
+@frappe.whitelist()
+def get_course_rosters(name):
+	course_rosters = []
+	course_rosters = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": name},
+		fields=["course_sc", "stuname_roster", "stuimage", "student", "stuemail_rc", "program_std_scr", "audit_bool", "active"],
+		)
+	if not course_rosters:
+		print("No course rosters found")
+		return []
+	else:
+		return course_rosters

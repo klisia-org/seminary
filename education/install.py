@@ -13,6 +13,7 @@ def after_install():
 	create_student_role()
 	create_registrar_role()
 	create_instructor_role()
+	get_custom_fields()
 	
 
 def setup_fixtures():
@@ -54,3 +55,23 @@ def create_registrar_role():
 def create_instructor_role():
 	if not frappe.db.exists("Role", "Instructor"):
 		frappe.get_doc({"doctype": "Role", "role_name": "Instructor", "desk_access": 1}).save()
+
+def get_custom_fields():
+	"""Education specific custom fields that needs to be added to the Sales Invoice DocType."""
+	return {
+		"Sales Invoice": [
+			{
+				"fieldname": "student_info_section",
+				"fieldtype": "Section Break",
+				"label": "Student Info",
+				"collapsible": 1,
+				"insert_after": "ignore_pricing_rule",
+			},
+			{
+				"fieldname": "student",
+				"fieldtype": "Link",
+				"label": "Student",
+				"options": "Student",
+				"insert_after": "student_info_section",
+			},
+				],}
