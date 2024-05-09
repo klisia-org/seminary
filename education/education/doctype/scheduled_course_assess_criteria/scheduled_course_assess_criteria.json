@@ -45,7 +45,6 @@
   },
   {
    "default": "0",
-   "fetch_from": "assesscriteria_scac.extracredit_ac",
    "fieldname": "extracredit_scac",
    "fieldtype": "Check",
    "in_list_view": 1,
@@ -76,7 +75,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-16 19:54:54.437733",
+ "modified": "2024-05-08 16:33:03.178864",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Assess Criteria",

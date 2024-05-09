@@ -30,7 +30,10 @@ class CourseSchedule(Document):
 		if self.courseassescrit_sc:
 			total_weight_scac = 0
 			for criteria in self.courseassescrit_sc:
-				total_weight_scac+= criteria.weight_scac or 0
+				if criteria.extracredit_scac == 0:
+					total_weight_scac += criteria.weight_scac or 0
+				elif criteria.extracredit_scac == 1:
+					continue
 			if total_weight_scac != 100:
 				frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
 
@@ -67,30 +70,7 @@ class CourseSchedule(Document):
 			frappe.throw(_("From Time cannot be greater than To Time."))
 
 	
-	@frappe.whitelist()
-	def populate_assessmentcriteria(self):
-		"""Populate the assessment criteria from the course to the schedule"""
-		assessment_criteria = frappe.get_all(
-		"Course Assessment Criteria",
-		filters={"parent": self.course},
-		fields=["assessment_criteria", "weightage"],
-		)
-		if not assessment_criteria:
-			return
-		for ac in assessment_criteria:
-			if ac is None:
-				continue
-			scheduled_course_assessment_criteria = frappe.get_doc(
-				{
-					"doctype": "Scheduled Course Assess Criteria",
-					"parent": self.name,
-					"parenttype": "Course Schedule",
-					"parentfield": "assessment_criteria",
-					"assesscriteria_scac": ac.get("assessment_criteria"),
-					"weight_scac": ac.get("weightage"),
-				})
-			scheduled_course_assessment_criteria.insert()
-			scheduled_course_assessment_criteria.save()
+
 			
 
 	@frappe.whitelist()

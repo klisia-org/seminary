@@ -8,13 +8,18 @@
  "field_order": [
   "student_info_section",
   "course_sc",
-  "student",
   "stuname_roster",
   "stuemail_rc",
-  "program_std_scr",
   "audit_bool",
-  "active",
+  "column_break_jrcl",
+  "program_std_scr",
+  "student",
   "stuimage",
+  "active",
+  "final_grade_sect",
+  "fscore",
+  "column_break_debd",
+  "fgrade",
   "grades_section",
   "stdroster_grade"
  ],
@@ -52,7 +57,7 @@
   {
    "fieldname": "grades_section",
    "fieldtype": "Section Break",
-   "label": "Grades"
+   "label": "Grades (Assignments)"
   },
   {
    "fieldname": "student_info_section",
@@ -74,6 +79,7 @@
   {
    "fieldname": "student",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Student",
    "read_only": 1
   },
@@ -87,12 +93,40 @@
   {
    "fieldname": "stuimage",
    "fieldtype": "Attach Image",
+   "hidden": 1,
    "label": "Student Photo"
+  },
+  {
+   "fieldname": "column_break_jrcl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "final_grade_sect",
+   "fieldtype": "Section Break",
+   "label": "Final Grade"
+  },
+  {
+   "fieldname": "fscore",
+   "fieldtype": "Float",
+   "label": "Final Score",
+   "non_negative": 1,
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_debd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fgrade",
+   "fieldtype": "Data",
+   "label": "Final Grade",
+   "read_only": 1
   }
  ],
  "image_field": "stuimage",
  "links": [],
- "modified": "2024-05-06 08:51:31.860700",
+ "modified": "2024-05-06 23:51:13.260042",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",

@@ -91,6 +91,7 @@
    "options": "Program Enrollment Course"
   },
   {
+   "fetch_from": "student.image",
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
@@ -181,7 +182,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-03-22 16:49:06.418771",
+ "modified": "2024-05-08 17:01:10.106375",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

@@ -192,27 +192,29 @@ after_install = "education.install.after_install"
 
 doc_events = {
 	"Course Enrollment Individual": {
-		"on_submit": "education.education.api.copy_data_to_scheduled_course_roster",
-	#	"on_submit": "education.education.api.copy_data_to_program_enrollment_course",
-        
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
+		"on_submit": [
+			"education.education.api.copy_data_to_scheduled_course_roster",
+			"education.education.api.copy_data_to_program_enrollment_course"
+		]
+        #,
+		#"on_cancel": "method",
+		#"on_trash": "method"
 	},
-    "Program Enrollment": {
+	"Program Enrollment": {
 		"on_submit": "education.education.api.get_payers",
 	}
- }
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"education.tasks.all"
 # 	],
-# 	"daily": [
-# 		"education.tasks.daily"
-# 	],
+	"daily": [
+ 		"education.tasks.daily"
+	],
 # 	"hourly": [
 # 		"education.tasks.hourly"
 # 	],
@@ -222,7 +224,7 @@ doc_events = {
 # 	"monthly": [
 # 		"education.tasks.monthly"
 # 	],
-# }
+ }
 
 # Testing
 # -------

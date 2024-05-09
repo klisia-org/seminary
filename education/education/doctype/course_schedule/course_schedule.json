@@ -1,5 +1,11 @@
 {
- "actions": [],
+ "actions": [
+  {
+   "action": "education.education.api.send_grades",
+   "action_type": "Server Action",
+   "label": "Send Grades"
+  }
+ ],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
  "autoname": "format:{course}-{academic_term}-{####}",
@@ -19,8 +25,6 @@
   "open_enroll",
   "color",
   "syllabus",
-  "section_break_ashf",
-  "sendgrades_btn",
   "section_break_6",
   "c_datestart",
   "c_dateend",
@@ -49,6 +53,7 @@
   "meeting_dates_tab",
   "meeting_dates_section",
   "cs_meetinfo",
+  "hasmtgdate",
   "class_roster_tab",
   "class_roster_section",
   "csroster_html"
@@ -70,14 +75,14 @@
    "fieldname": "c_datestart",
    "fieldtype": "Date",
    "label": "Start Date",
-   "permlevel": 2,
+   "permlevel": 1,
    "reqd": 1
   },
   {
    "fieldname": "c_dateend",
    "fieldtype": "Date",
    "label": "End Date",
-   "permlevel": 2,
+   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -146,49 +151,49 @@
    "fieldname": "monday",
    "fieldtype": "Check",
    "label": "Monday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "tuesday",
    "fieldtype": "Check",
    "label": "Tuesday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "wednesday",
    "fieldtype": "Check",
    "label": "Wednesday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "thursday",
    "fieldtype": "Check",
    "label": "Thursday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "friday",
    "fieldtype": "Check",
    "label": "Friday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "saturday",
    "fieldtype": "Check",
    "label": "Saturday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "sunday",
    "fieldtype": "Check",
    "label": "Sunday",
-   "permlevel": 2
+   "permlevel": 1
   },
   {
    "columns": 7,
@@ -258,7 +263,8 @@
    "fieldname": "cs_meetinfo",
    "fieldtype": "Table",
    "options": "Course Schedule Meeting Dates",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "description": "Meeting dates are generated automatically from the criteria in the Details tab. Please check manually and adjust as needed.",
@@ -303,17 +309,6 @@
    "label": "Class Roster"
   },
   {
-   "fieldname": "section_break_ashf",
-   "fieldtype": "Section Break"
-  },
-  {
-   "bold": 1,
-   "depends_on": "c_dateend>get.date(today)",
-   "fieldname": "sendgrades_btn",
-   "fieldtype": "Button",
-   "label": "Send Final Grades"
-  },
-  {
    "default": "1",
    "fieldname": "open_enroll",
    "fieldtype": "Check",
@@ -332,10 +327,17 @@
    "fieldname": "class_roster_section",
    "fieldtype": "Section Break",
    "label": "Class Roster"
+  },
+  {
+   "default": "0",
+   "fieldname": "hasmtgdate",
+   "fieldtype": "Check",
+   "label": "Meeting Dates Created"
   }
  ],
+ "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2024-05-06 09:06:27.584325",
+ "modified": "2024-05-09 11:44:12.658698",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",
@@ -388,7 +390,6 @@
    "write": 1
   },
   {
-   "delete": 1,
    "email": 1,
    "export": 1,
    "permlevel": 1,
@@ -400,7 +401,6 @@
    "write": 1
   },
   {
-   "delete": 1,
    "email": 1,
    "export": 1,
    "permlevel": 2,
@@ -408,8 +408,7 @@
    "read": 1,
    "report": 1,
    "role": "Academics User",
-   "share": 1,
-   "write": 1
+   "share": 1
   }
  ],
  "sort_field": "modified",

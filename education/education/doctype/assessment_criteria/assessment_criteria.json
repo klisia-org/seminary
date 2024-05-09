@@ -8,8 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "assessment_criteria",
-  "assessment_criteria_group",
-  "extracredit_ac"
+  "assessment_criteria_group"
  ],
  "fields": [
   {
@@ -26,18 +25,10 @@
    "fieldtype": "Link",
    "label": "Assessment Criteria Group",
    "options": "Assessment Criteria Group"
-  },
-  {
-   "default": "0",
-   "description": "If checked, this will not be computed as part of the 100% required for the assessment criteria of a particular course",
-   "fieldname": "extracredit_ac",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Extra credit"
   }
  ],
  "links": [],
- "modified": "2024-03-14 13:10:52.824994",
+ "modified": "2024-05-08 16:33:25.646030",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Assessment Criteria",

@@ -13,7 +13,6 @@
   "column_break_3",
   "program_abbreviation",
   "program_level",
-  "pgm_feecateg",
   "section_break_pgmtype",
   "terms_complete",
   "column_break_voqj",
@@ -170,13 +169,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "pgm_feecateg",
-   "fieldtype": "Link",
-   "label": "Fee Category",
-   "link_filters": "[[{\"fieldname\":\"pgm_feecateg\",\"field_option\":\"Fee Category\"},\"feecategory_type\",\"=\",\"Tuition\"]]",
-   "options": "Fee Category"
-  },
-  {
    "fieldname": "tracks_section",
    "fieldtype": "Section Break",
    "label": "Tracks"
@@ -222,7 +214,7 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-03-23 19:29:58.363216",
+ "modified": "2024-05-08 13:34:44.664934",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program",

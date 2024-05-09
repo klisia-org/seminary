@@ -1,7 +1,11 @@
 frappe.ui.form.on("Course Schedule", {
+	
 	refresh: function(frm) {
 		frm.trigger("render_days");
-		frm.add_custom_button(__('Add Meeting Dates'), function()  {
+		if (frm.doc.hasmtgdate === 0) {
+			frm.add_custom_button(__('Add Meeting Dates'), function() {
+				// Button functionality here
+		
 			const selectedDays = [];
   			if (frm.doc.monday) {
     			selectedDays.push("Monday")};
@@ -52,13 +56,29 @@ frappe.ui.form.on("Course Schedule", {
 						
 					}
 				});
+				frappe.call({
+					method: "education.education.api.course_event",
+					args: {
+						name: frm.doc.name
+					},
+					callback: function(r) {
+						if (r.message) {
+							frm.msgprint("Calendar created successfully");
+						}}
+			});
+			frm.doc.hasmtgdate = 1;
+			frm.save();
+		});
+	};
+	
+
 			
 
 
 
 
-		});
-		if (!frm.doc.__islocal) {
+		
+/* 		if (!frm.doc.__islocal) {
 				frm.add_custom_button(__("Mark Attendance"), function() {
 					frappe.route_options = {
 						
@@ -67,11 +87,26 @@ frappe.ui.form.on("Course Schedule", {
 					frappe.set_route("Form", "Student Attendance Tool");
 				});
 				
-			};
-		},
-	
+			}; */
+/* 		if (!frm.doc.__islocal) {
+				frm.add_custom_button(__("Add Calendar"), function() {
+					frappe.call({
+						method: "education.education.api.course_event",
+						args: {
+							name: frm.doc.name
+						},
+						callback: function(r) {
+							if (r.message) {
+								frm.msgprint("Calendar created successfully");
+							}}
+				});
+			});
+				
+		}; */
+		
+	},
 			validate: function(frm) {
-				if (frm.doc.modality !== "Virtual") {
+				if (frm.doc.modality !== "Virtual" && frm.doc.c_datestart !== frm.doc.c_dateend) {
 					if (!frm.doc.monday && !frm.doc.tuesday && !frm.doc.wednesday && !frm.doc.thursday && !frm.doc.friday && !frm.doc.saturday && !frm.doc.sunday) {
 						frappe.msgprint('Please select at least one day of the week');
 						validated = false;
@@ -136,5 +171,8 @@ frappe.ui.form.on("Course Schedule", {
 					frm.set_df_property('csroster_html', 'options', "No student enrolled so far");
 					frm.refresh_field('csroster_html');
 				};
-			}},
-	);
+		
+	
+			},
+		
+	})

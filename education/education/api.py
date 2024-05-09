@@ -14,6 +14,7 @@ import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 import erpnext
+from datetime import datetime
 
 @frappe.whitelist()
 def get_course(program):
@@ -554,7 +555,7 @@ def copy_data_to_scheduled_course_roster(doc, method):
 		items = []
 		criteria = []
 		criteria = frappe.db.sql(
-			"""select distinct scac.assesscriteria_scac, scac.weight_scac from `tabScheduled Course Assess Criteria` scac
+			"""select distinct scac.assesscriteria_scac, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""", coursesc_ce, as_list=1)
 		rows = frappe.db.sql(
@@ -568,7 +569,9 @@ def copy_data_to_scheduled_course_roster(doc, method):
 					"doctype": "Course Assess Results Detail",
 					"student_card": student_ce,
 					"assessment_criteria": criteria[i][0],
-					"maximum_score": criteria[i][1]
+					"maximum_score": criteria[i][1],
+					"extracredit_card": criteria[i][2],
+					"maxextrapoints_card": criteria[i][3],
 				})
 				i += 1
 
@@ -582,6 +585,8 @@ def copy_data_to_scheduled_course_roster(doc, method):
 			"audit_bool": audit,
 			"active": 1,
 			"stuimage": image,
+			"fscore": "",
+			"fgrade": "",
 			"stdroster_grade": items
 		})
 		roster.insert()
@@ -849,3 +854,164 @@ def get_course_rosters(name):
 		return []
 	else:
 		return course_rosters
+	
+@frappe.whitelist()
+def grade_thisstudent(name):
+		
+	csr = frappe.get_doc("Scheduled Course Roster", name)
+	cs = csr.course_sc
+	course = frappe.get_doc("Course Schedule", cs)
+	gscale = course.gradesc_cs
+	grading_scale = frappe.get_doc("Grading Scale", gscale)
+	gmax = grading_scale.maxnumgrade
+	detail = csr.stdroster_grade
+	if grading_scale.grscale_type == "Points":
+		for row in detail:
+			score = row.rawscore_card
+			maxscore = row.maximum_score
+			named = row.name
+			extracredit = row.extracredit_card
+			if score is not None  and extracredit == 0:
+				wscore = round((score / gmax) * maxscore, 2)
+				row.grade = get_grade(grading_scale, score)
+				row.score = wscore
+				print(named + " " +row.grade + " " + str(wscore))
+			frappe.db.set_value("Course Assess Results Detail", named, {
+				"grade": row.grade,
+				"score": row.score
+			}
+			)
+		csr.save()
+		return "done"
+
+@frappe.whitelist()
+def fgrade_this_std(name):
+	print("fgrade_this_std called")
+	csr = frappe.get_doc("Scheduled Course Roster", name)
+	cs = csr.course_sc
+	course = frappe.get_doc("Course Schedule", cs)
+	gscale = course.gradesc_cs
+	grading_scale = frappe.get_doc("Grading Scale", gscale)
+	if grading_scale.grscale_type == "Points":
+		fscore1 = frappe.db.sql("""select sum(score) from `tabCourse Assess Results Detail` where parent = %s""", (name))
+		fscore1 = fscore1[0][0] if fscore1 and fscore1[0][0] is not None else 0
+		fscore2 = frappe.db.sql("""select sum(actualextrapt_card) from `tabCourse Assess Results Detail` where extracredit_card = 1 and parent = %s""", (name))
+		fscore2 = fscore2[0][0] if fscore2 and fscore2[0][0] is not None else 0
+		fscore = fscore1 + fscore2
+		frappe.db.set_value("Scheduled Course Roster", name, "fscore", fscore)
+		print(fscore)
+		fgrade = get_grade(grading_scale, fscore)
+		frappe.db.set_value("Scheduled Course Roster", name, "fgrade", fgrade)
+		return "done"
+
+@frappe.whitelist()
+def send_grades(doc=None,**kwargs):
+	print("sendgrades called")
+	print(kwargs)
+	if isinstance(doc, str):
+    # Parse the JSON string if it's a string
+		document_data = json.loads(doc)
+		docname = document_data.get("name")
+	else:
+    # Use doc.get("name") if it's already a dictionary (fallback)
+		docname = doc.get("name")
+	print(docname)
+	records = frappe.get_all("Scheduled Course Roster", filters={"course_sc": docname}, fields=["name", "course_sc", "stuname_roster", "student", "program_std_scr", "audit_bool", "active"])
+	for record in records:
+		# Process each record here
+		named = record.name
+		print(named)
+		course_sc = record.course_sc
+		student = record.student
+		program = record.program_std_scr
+		audit_bool = record.audit_bool
+		active = record.active
+		pe = frappe.db.get_value("Program Enrollment", {"student": student, "program": program}, "name")
+		# Perform further operations with the record
+		if audit_bool == 0 and active == 1:
+			grade_thisstudent(named)
+			fgrade_this_std(named)
+			fscore = frappe.db.get_value("Scheduled Course Roster", named, "fscore")
+			fgrade = frappe.db.get_value("Scheduled Course Roster", named, "fgrade")
+			pec = frappe.db.get_value("Program Enrollment Course", {"parent": pe, "course": course_sc}, "name")
+			frappe.db.set_value("Program Enrollment Course", pec, 
+					   {"pec_finalgradenum": fscore,
+		 				 "pec_finalgradecode": fgrade})
+	return "All grades sent"
+	# Add a message to confirm to the user
+
+@frappe.whitelist()	
+def course_event(name):
+	course = frappe.get_doc("Course Schedule", name)
+	datest = str(course.c_datestart)  # Convert datest to a string
+	timest = str(course.from_time)  # Convert timest to a string
+	datetimest = datest + " " + timest
+	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S") # Convert datetimest to a datetime object
+	print(datetimest)
+	datef = str(course.c_dateend)  # Convert datef to a string
+	timef = str(course.to_time)  # Convert timef to a string
+	datetimef = datef + " " + timef
+	datetimef = datetime.strptime(datetimef, "%Y-%m-%d %H:%M:%S")
+	datetimef2 = datest + " " + timef
+	datetimef2 = datetime.strptime(datetimef2, "%Y-%m-%d %H:%M:%S")
+	dateend = course.c_dateend
+	print(datetimef)
+	participants = []
+	participants = course_rosters = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": name})
+	event_participants = []  # Create an empty list for event participants
+	for participant in participants:
+		event_participants.append({
+			"reference_doctype": "Scheduled Course Roster",
+			"reference_docname": participant.name,
+			"email": participant.stuemail_rc
+		})
+	if datef == datest:
+		# Create a new calendar event
+		event = frappe.get_doc({
+			"doctype": "Event",
+			"subject": name,
+			"starts_on": datetimest,
+			"ends_on": datetimef,
+			"event_type": "Public",
+			"event_category": "Event",
+			"description": name + " Room: " + (course.room or "N/A"),
+			"event_participants": event_participants
+		})
+	elif datef > datest:
+		# Create a new calendar event
+		event = frappe.get_doc({
+			"doctype": "Event",
+			"subject": name,
+			"starts_on": datetimest,
+			"ends_on": datetimef2,
+			"repeat_this_event": 1,
+			"repeat_on": "Weekly",
+			"repeat_till": dateend,
+			"monday": course.monday,
+			"tuesday": course.tuesday,
+			"wednesday": course.wednesday,
+			"thursday": course.thursday,
+			"friday": course.friday,
+			"saturday": course.saturday,
+			"sunday": course.sunday,
+			"event_type": "Public",
+			"event_category": "Event",
+			"description": name + " Room: " + (course.room or "N/A"),
+			"event_participants": event_participants
+		})
+	event.insert()
+	print(event)
+
+
+	return "event created"
+			
+			
+		
+	
+
+	
+	
+
+	
