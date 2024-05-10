@@ -9,12 +9,12 @@ def get_data():
 		"heatmap": True,
 		"heatmap_message": _("This is based on the course schedules of this Instructor"),
 		"fieldname": "instructor",
-		"non_standard_fieldnames": {"Assessment Plan": "supervisor"},
+		
 		"transactions": [
 			{
-				"label": _("Course and Assessment"),
-				"items": ["Course Schedule", "Assessment Plan"],
+				"label": _("Courses"),
+				"items": ["Course Schedule"],
 			},
-			{"label": _("Students"), "items": ["Student Group"]},
+			
 		],
 	}

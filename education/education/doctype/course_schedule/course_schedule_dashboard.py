@@ -4,8 +4,8 @@
 from frappe import _
 
 
-def get_data():
+""" def get_data():
 	return {
 		"fieldname": "course_schedule",
 		"transactions": [{"label": _("Attendance"), "items": ["Student Attendance"]}],
-	}
+	} """

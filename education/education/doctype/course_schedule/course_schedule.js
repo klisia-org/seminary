@@ -150,7 +150,7 @@ frappe.ui.form.on("Course Schedule", {
 							var auditStatus = enrollments[i].audit_bool ? "Yes" : "No";
 							var image = enrollments[i].stuimage ? "<img src='" + enrollments[i].stuimage + "' width='100' height='100'>" : "";
 							// Handle null values in table cells
-							var grade = "<a href='/app/scheduled-course-roster/" + enrollments[i].course_sc + "-" + enrollments[i].student + "'>" + "Grades"  + "</a>";			
+							var grade = "<a href='/app/scheduled-course-roster/" + enrollments[i].course_sc + "-" + enrollments[i].student + "' style='color: #44b2f7;'>" + "Grades"  + "</a>";
 							var student = "<a href='/app/student/" + enrollments[i].student + "'>" + enrollments[i].student + "</a>";
 							var stuname_roster = enrollments[i].stuname_roster || "";
 							var stuemail_rc = enrollments[i].stuemail_rc || "";

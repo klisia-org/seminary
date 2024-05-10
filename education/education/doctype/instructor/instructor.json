@@ -84,8 +84,13 @@
   }
  ],
  "image_field": "image",
- "links": [],
- "modified": "2024-03-05 10:27:51.613124",
+ "links": [
+  {
+   "link_doctype": "Course Schedule",
+   "link_fieldname": "instructor1"
+  }
+ ],
+ "modified": "2024-05-09 18:27:36.284836",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Instructor",

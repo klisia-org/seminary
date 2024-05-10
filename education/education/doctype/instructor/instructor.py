@@ -42,13 +42,13 @@ def get_timeline_data(doctype, name):
 	return dict(
 		frappe.db.sql(
 			"""
-			SELECT unix_timestamp(`schedule_date`), count(*)
+			SELECT unix_timestamp(`c_datestart`), count(*)
 			FROM `tabCourse Schedule`
 			WHERE
 				instructor=%s and
-				`schedule_date` > date_sub(curdate(), interval 1 year)
-			GROUP BY schedule_date
-		""",
+				`c_datestart` > date_sub(curdate(), interval 1 year) 
+			GROUP BY c_datestart
+			""",
 			name,
 		)
 	)
