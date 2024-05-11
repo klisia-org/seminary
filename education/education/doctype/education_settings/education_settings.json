@@ -5,10 +5,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "attendance_freeze_date",
+  "auto_submit_sales_invoice",
   "column_break_4",
   "academic_term_reqd",
-  "auto_submit_sales_invoice",
   "section_break_qqak",
   "default_gradescale",
   "audit_settings_section",
@@ -28,19 +27,15 @@
  ],
  "fields": [
   {
-   "fieldname": "attendance_freeze_date",
-   "fieldtype": "Date",
-   "label": "Attendance Freeze Date"
-  },
-  {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
+   "default": "1",
    "description": "If enabled, field Academic Term will be Mandatory in Program Enrollment Tool.",
    "fieldname": "academic_term_reqd",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Make Academic Term Mandatory"
   },
   {
@@ -114,12 +109,15 @@
    "default": "0",
    "fieldname": "block_cei_pay",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Block Course Enrollment until paid?"
   },
   {
    "depends_on": "doc.block_cei_pay==1",
+   "description": "This will only consider what the student should pay, not other payers.",
    "fieldname": "min_perc_enroll",
    "fieldtype": "Percent",
+   "hidden": 1,
    "label": "Minimum percentage paid for enrollment"
   },
   {
@@ -149,7 +147,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-03-25 20:24:37.133245",
+ "modified": "2024-05-11 11:53:01.454744",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education Settings",

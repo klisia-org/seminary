@@ -27,14 +27,15 @@ class ProgramEnrollment(Document):
 		self.create_course_enrollments()
 
 	def validate_academic_term(self):
+		today = getdate()
 		start_date, end_date = frappe.db.get_value(
 			"Academic Term", self.academic_term, ["term_start_date", "term_end_date"]
 		)
 		if self.enrollment_date:
-			if start_date and getdate(self.enrollment_date) < getdate(start_date):
+			if getdate(self.enrollment_date) < today:
 				frappe.throw(
 					_(
-						"Enrollment Date cannot be before the Start Date of the Academic Term {0}"
+						"Enrollment Date cannot be before today"
 					).format(get_link_to_form("Academic Term", self.academic_term))
 				)
 
