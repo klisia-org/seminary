@@ -20,7 +20,7 @@ def setup_fixtures():
 	records = [
 		# Party Type Records
 		{"doctype": "Party Type", "party_type": "Student", "account_type": "Receivable"},
-		{"doctype": "Party Type", "party_type": "Donor", "account_type": "Receivable"},
+		
 		# Item Group Records
 		{"doctype": "Item Group", "item_group_name": "Tuition"},
 		# Customer Group Records
@@ -36,6 +36,11 @@ def setup_fixtures():
 		{"doctype": "Program Level", "pgm_level": "Undergraduate"},
 		{"doctype": "Program Level", "pgm_level": "Masters"},
 		{"doctype": "Program Level", "pgm_level": "Doctoral"},
+		# Trigger Fee Events
+		{"doctype": "Trigger Fee Event", "trigger": "Course Enrollment", "active": 1},
+		{"doctype": "Trigger Fee Event", "trigger": "Program Enrollment", "active": 1},
+		{"doctype": "Trigger Fee Event", "trigger": "New Academic Term", "active": 1},
+		{"doctype": "Trigger Fee Event", "trigger": "New Academic Year", "active": 1},
 	]
 	make_records(records)
 

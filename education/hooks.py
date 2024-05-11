@@ -280,6 +280,10 @@ scheduler_events = {
 # auth_hooks = [
 # 	"education.auth.validate"
 # ]
+# Export and Import Fixtures
+# --------------------------
+# fixtures = ["Custom Field"]
+
 
 # Translation
 # --------------------------------
