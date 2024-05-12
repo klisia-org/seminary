@@ -86,18 +86,31 @@ class StudentApplicant(Document):
 				_("Not eligible for the admission in this program as per Date Of Birth")
 			)
 
+	def validateattachments(self):
+		# Get the file data
+		file_data = frappe.get_doc("File", {"file_url": self.resume})
+		if file_data:
+			# Check the file extension
+			allowed_extensions = ('.pdf', '.doc', '.docx', '.jpg')
+			if not file_data.file_name.lower().endswith(allowed_extensions):
+				frappe.throw(_("Only PDF, DOC, DOCX, and JPG files are allowed for the resume field."))
+			# Check the file size
+			max_file_size = 1048576  # 1MB = 1048576 bytes
+			if file_data.file_size > max_file_size:
+				frappe.throw(_("The file size of the resume field should be less than 1MB."))
+
 	def on_payment_authorized(self, *args, **kwargs):
 		self.db_set("paid", 1)
 
 
-def get_student_admission_data(student_admission, program):
+	def get_student_admission_data(student_admission, program):
 
-	admission_programs = frappe.get_all(
-		"Student Admission Program",
-		{"parenttype": "Student Admission", "parent": student_admission, "program": program},
-		["applicant_naming_series", "min_age", "max_age"],
-	)
+		admission_programs = frappe.get_all(
+			"Student Admission Program",
+			{"parenttype": "Student Admission", "parent": student_admission, "program": program},
+			["applicant_naming_series", "min_age", "max_age"],
+			)
 
-	if admission_programs:
-		return admission_programs[0]
-	return None
+		if admission_programs:
+			return admission_programs[0]
+		return None

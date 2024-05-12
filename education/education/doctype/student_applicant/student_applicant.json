@@ -197,9 +197,9 @@
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Gender",
-   "options": "Gender",
+   "options": "\nMale\nFemale",
    "reqd": 1
   },
   {
@@ -560,7 +560,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-05-11 18:33:21.872412",
+ "modified": "2024-05-11 18:58:48.838084",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Applicant",
