@@ -7,7 +7,8 @@
  "field_order": [
   "guardian",
   "guardian_name",
-  "relation"
+  "relation",
+  "emergency"
  ],
  "fields": [
   {
@@ -33,11 +34,19 @@
    "in_list_view": 1,
    "label": "Relationship",
    "options": "\nRelative or Guardian\nPersonal Reference\nChurch Reference\nSpouse"
+  },
+  {
+   "default": "0",
+   "fieldname": "emergency",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is emergency contact?"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-05-11 18:35:29.533440",
+ "modified": "2024-05-12 13:50:02.706049",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Guardian",

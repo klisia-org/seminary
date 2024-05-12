@@ -84,16 +84,6 @@
    "link_fieldname": "academic_year"
   },
   {
-   "group": "Assessment",
-   "link_doctype": "Assessment Plan",
-   "link_fieldname": "academic_year"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Result",
-   "link_fieldname": "academic_year"
-  },
-  {
    "group": "Fee",
    "link_doctype": "Fee Schedule",
    "link_fieldname": "academic_year"

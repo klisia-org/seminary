@@ -11,7 +11,6 @@
   "column_break_3",
   "program",
   "course",
-  "student_group",
   "section_break_8",
   "other_details"
  ],
@@ -56,12 +55,7 @@
    "label": "Course",
    "options": "Course"
   },
-  {
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "label": "Student Group",
-   "options": "Student Group"
-  },
+
   {
    "fieldname": "section_break_8",
    "fieldtype": "Section Break"

@@ -18,13 +18,6 @@ frappe.query_reports["Student Monthly Attendance Sheet"] = {
 		"fieldtype": "Link",
 		"options":"Academic Year",
 		"reqd": 1
-	},
-	{
-		"fieldname": "student_group",
-		"label": __("Student Group"),
-		"fieldtype": "Link",
-		"options": "Student Group",
-		"reqd": 1
 	}
 	],
 }

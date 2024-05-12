@@ -37,7 +37,7 @@ website_route_rules = [
 	{"from_route": "/admissions", "to_route": "Student Admission"},
 ]
 
-treeviews = ["Assessment Group"]
+#treeviews = ["Assessment Group"]
 
 calendars = [
 	"Course Schedule",
@@ -78,10 +78,7 @@ global_search_doctypes = {
 		{"doctype": "Program Enrollment", "index": 16},
 		{"doctype": "Student Language", "index": 17},
 		{"doctype": "Student Applicant", "index": 18},
-		{"doctype": "Assessment Result", "index": 19},
-		{"doctype": "Assessment Plan", "index": 20},
 		{"doctype": "Grading Scale", "index": 21},
-		{"doctype": "Guardian", "index": 22},
 		{"doctype": "Student Leave Application", "index": 23},
 		{"doctype": "Student Log", "index": 24},
 		{"doctype": "Room", "index": 25},
@@ -89,15 +86,13 @@ global_search_doctypes = {
 		{"doctype": "Student Attendance", "index": 27},
 		{"doctype": "Announcement", "index": 28},
 		{"doctype": "Student Category", "index": 29},
-		{"doctype": "Assessment Group", "index": 30},
-		{"doctype": "Student Batch Name", "index": 31},
+		
 		{"doctype": "Assessment Criteria", "index": 32},
 		{"doctype": "Academic Year", "index": 33},
 		{"doctype": "Academic Term", "index": 34},
 		{"doctype": "School House", "index": 35},
 		{"doctype": "Student Admission", "index": 36},
 		{"doctype": "Fee Category", "index": 37},
-		{"doctype": "Assessment Code", "index": 38},
 		{"doctype": "Discussion", "index": 39},
         
 	]

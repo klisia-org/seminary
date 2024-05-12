@@ -222,42 +222,6 @@ def get_assessment_criteria(course):
 
 
 
-
-@frappe.whitelist()
-def get_assessment_details(assessment_plan):
-	"""Returns Assessment Criteria  and Maximum Score from Assessment Plan Master.
-
-	:param Assessment Plan: Assessment Plan
-	"""
-	return frappe.get_all(
-		"Assessment Plan Criteria",
-		fields=["assessment_criteria", "maximum_score", "docstatus"],
-		filters={"parent": assessment_plan},
-		order_by="idx",
-	)
-
-
-@frappe.whitelist()
-def get_result(student, assessment_plan):
-	"""Returns Submitted Result of given student for specified Assessment Plan
-
-	:param Student: Student
-	:param Assessment Plan: Assessment Plan
-	"""
-	results = frappe.get_all(
-		"Assessment Result",
-		filters={
-			"student": student,
-			"assessment_plan": assessment_plan,
-			"docstatus": ("!=", 2),
-		},
-	)
-	if results:
-		return frappe.get_doc("Assessment Result", results[0])
-	else:
-		return None
-
-
 @frappe.whitelist()
 def get_grade(grading_scale, percentage):
 	"""Returns Grade based on the Grading Scale and Score.
@@ -283,66 +247,6 @@ def get_grade(grading_scale, percentage):
 		else:
 			grade = ""
 	return grade
-
-
-@frappe.whitelist()
-def mark_assessment_result(assessment_plan, scores):
-	student_score = json.loads(scores)
-	assessment_details = []
-	for criteria in student_score.get("assessment_details"):
-		assessment_details.append(
-			{
-				"assessment_criteria": criteria,
-				"score": flt(student_score["assessment_details"][criteria]),
-			}
-		)
-	assessment_result = get_assessment_result_doc(
-		student_score["student"], assessment_plan
-	)
-	assessment_result.update(
-		{
-			"student": student_score.get("student"),
-			"assessment_plan": assessment_plan,
-			"comment": student_score.get("comment"),
-			"total_score": student_score.get("total_score"),
-			"details": assessment_details,
-		}
-	)
-	assessment_result.save()
-	details = {}
-	for d in assessment_result.details:
-		details.update({d.assessment_criteria: d.grade})
-	assessment_result_dict = {
-		"name": assessment_result.name,
-		"student": assessment_result.student,
-		"total_score": assessment_result.total_score,
-		"grade": assessment_result.grade,
-		"details": details,
-	}
-	return assessment_result_dict
-
-
-
-
-def get_assessment_result_doc(student, assessment_plan):
-	assessment_result = frappe.get_all(
-		"Assessment Result",
-		filters={
-			"student": student,
-			"assessment_plan": assessment_plan,
-			"docstatus": ("!=", 2),
-		},
-	)
-	if assessment_result:
-		doc = frappe.get_doc("Assessment Result", assessment_result[0])
-		if doc.docstatus == 0:
-			return doc
-		elif doc.docstatus == 1:
-			frappe.msgprint(_("Result already Submitted"))
-			return None
-	else:
-		return frappe.new_doc("Assessment Result")
-
 
 
 

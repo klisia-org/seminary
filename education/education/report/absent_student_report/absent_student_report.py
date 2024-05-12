@@ -38,7 +38,7 @@ def execute(filters=None):
 	data = []
 	for student in absent_students:
 		if not student.student in leave_applicants:
-			row = [student.student, student.student_name, student.student_group]
+			row = [student.student, student.student_name]
 			stud_details = frappe.db.get_value(
 				"Student",
 				student.student,
@@ -75,12 +75,12 @@ def get_columns(filters):
 def get_absent_students(date):
 	absent_students = frappe.db.sql(
 		"""
-		SELECT student, student_name, student_group
+		SELECT student, student_name
 		FROM `tabStudent Attendance`
 		WHERE
 			status='Absent' and docstatus=1 and date = %s
 		ORDER BY
-			student_group, student_name""",
+			student_name""",
 		date,
 		as_dict=1,
 	)

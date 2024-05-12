@@ -30,7 +30,7 @@ def execute(filters=None):
 	
 	students_list = get_students_list(students)
 	att_map = get_attendance_list(
-		from_date, to_date, filters.get("student_group"), students_list
+		from_date, to_date, students_list
 	)
 	data = []
 
@@ -85,14 +85,14 @@ def get_students_list(students):
 	return student_list
 
 
-def get_attendance_list(from_date, to_date, student_group, students_list):
+def get_attendance_list(from_date, to_date, students_list):
 	attendance_list = frappe.db.sql(
 		"""select student, date, status
-		from `tabStudent Attendance` where student_group = %s
-		and docstatus = 1
+		from `tabStudent Attendance` where 
+		docstatus = 1
 		and date between %s and %s
 		order by student, date""",
-		(student_group, from_date, to_date),
+		(from_date, to_date),
 		as_dict=1,
 	)
 

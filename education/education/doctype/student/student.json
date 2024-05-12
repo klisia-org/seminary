@@ -40,8 +40,6 @@
   "relations_tab",
   "section_break_18",
   "guardians",
-  "section_break_20",
-  "siblings",
   "customer_details_tab",
   "customer_details_section",
   "customer",
@@ -227,18 +225,6 @@
    "options": "Student Guardian"
   },
   {
-   "fieldname": "section_break_20",
-   "fieldtype": "Section Break",
-   "label": "Sibling Details",
-   "options": "Country"
-  },
-  {
-   "fieldname": "siblings",
-   "fieldtype": "Table",
-   "label": "Siblings",
-   "options": "Student Sibling"
-  },
-  {
    "fieldname": "exit",
    "fieldtype": "Section Break"
   },
@@ -275,7 +261,7 @@
   {
    "fieldname": "relations_tab",
    "fieldtype": "Tab Break",
-   "label": "Relations"
+   "label": "Contacts"
   },
   {
    "fieldname": "exit_tab",
@@ -356,7 +342,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2024-03-27 21:59:37.660106",
+ "modified": "2024-05-12 13:57:03.082433",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student",

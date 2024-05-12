@@ -8,8 +8,7 @@ from erpnext import get_default_company
 from frappe.utils import add_days, add_months, getdate
 
 from education.education.doctype.student.test_student import create_student
-from education.education.doctype.student_group.test_student_group import \
-    get_random_group
+
 
 
 class TestStudentLeaveApplication(unittest.TestCase):
@@ -88,7 +87,7 @@ def create_leave_application(from_date=None, to_date=None, mark_as_present=0, su
 	leave_application = frappe.new_doc("Student Leave Application")
 	leave_application.student = student.name
 	leave_application.attendance_based_on = "Student Group"
-	leave_application.student_group = get_random_group().name
+	
 	leave_application.from_date = from_date if from_date else getdate()
 	leave_application.to_date = from_date if from_date else getdate()
 	leave_application.mark_as_present = mark_as_present
@@ -108,7 +107,7 @@ def create_student_attendance(date=None, status=None):
 			"student": student.name,
 			"status": status if status else "Present",
 			"date": date if date else getdate(),
-			"student_group": get_random_group().name,
+			
 		}
 	).insert()
 	return attendance

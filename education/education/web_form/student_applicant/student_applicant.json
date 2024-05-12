@@ -348,31 +348,7 @@
    "reqd": 0,
    "show_in_filter": 0
   },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "section_break_21",
-   "fieldtype": "Section Break",
-   "hidden": 0,
-   "label": "Sibling Details",
-   "max_length": 0,
-   "max_value": 0,
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "siblings",
-   "fieldtype": "Table",
-   "hidden": 0,
-   "label": "Siblings",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "Student Sibling",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
+
   {
    "allow_read_on_all_link_options": 0,
    "fieldname": "section_break_xuzu",

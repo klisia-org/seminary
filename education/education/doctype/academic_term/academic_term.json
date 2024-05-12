@@ -111,16 +111,6 @@
    "group": "Program",
    "link_doctype": "Program Enrollment",
    "link_fieldname": "academic_term"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Plan",
-   "link_fieldname": "academic_term"
-  },
-  {
-   "group": "Assessment",
-   "link_doctype": "Assessment Result",
-   "link_fieldname": "academic_term"
   }
  ],
  "modified": "2024-03-13 16:39:00.079769",
