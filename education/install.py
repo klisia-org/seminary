@@ -1,7 +1,7 @@
 import frappe
 #from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.desk.page.setup_wizard.setup_wizard import make_records
-from education.education.doctype.trigger_fee_events.trigger_fee_events import trigger_fee_events
+
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
 # TODO: Remove all Items created when Fee Category is created
@@ -37,11 +37,7 @@ def setup_fixtures():
 		{"doctype": "Program Level", "pgm_level": "Undergraduate"},
 		{"doctype": "Program Level", "pgm_level": "Masters"},
 		{"doctype": "Program Level", "pgm_level": "Doctoral"},
-		# Trigger Fee Events
-		{"doctype": "Trigger Fee Events", "trigger": "Course Enrollment", "active": 1},
-		{"doctype": "Trigger Fee Events", "trigger": "Program Enrollment", "active": 1},
-		{"doctype": "Trigger Fee Events", "trigger": "New Academic Term", "active": 1},
-		{"doctype": "Trigger Fee Events", "trigger": "New Academic Year", "active": 1},
+		
 	]
 	make_records(records)
 

@@ -39,12 +39,13 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Pass/Fail",
-   "options": "\nPass\nFail"
+   "options": "\nPass\nFail",
+   "reqd": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-05-08 07:08:31.455665",
+ "modified": "2024-05-13 23:43:58.425952",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Grading Scale Interval",

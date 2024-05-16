@@ -56,7 +56,8 @@
   "hasmtgdate",
   "class_roster_tab",
   "class_roster_section",
-  "csroster_html"
+  "csroster_html",
+  "grades_sent"
  ],
  "fields": [
   {
@@ -247,7 +248,8 @@
    "in_list_view": 1,
    "label": "Instructor of Record",
    "options": "Instructor",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "syllabus",
@@ -317,7 +319,7 @@
    "label": "Open for Enrollment?"
   },
   {
-   "description": "Click on Grades to see/edit grades of a particular student.",
+   "description": "Click on Grades to see/edit grades of a particular student. When you click on the button \"Send Grades,\" all students' grades will be sent to the registrar and will no longer be editable.",
    "fieldname": "csroster_html",
    "fieldtype": "HTML",
    "label": "Class Roster and Grades",
@@ -333,11 +335,18 @@
    "fieldname": "hasmtgdate",
    "fieldtype": "Check",
    "label": "Meeting Dates Created"
+  },
+  {
+   "default": "0",
+   "fieldname": "grades_sent",
+   "fieldtype": "Check",
+   "label": "Grades sent",
+   "read_only": 1
   }
  ],
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2024-05-09 18:00:41.738457",
+ "modified": "2024-05-14 06:18:03.694102",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Course Schedule",

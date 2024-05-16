@@ -74,6 +74,8 @@ class CourseEnrollmentIndividual(Document):
 		company = frappe.defaults.get_defaults().company
 		currency = erpnext.get_company_currency(company)
 		receivable_account = frappe.db.get_single_value('Education Settings', 'receivable_account')
+		audithours = frappe.db.get_single_value('Education Settings', 'auditcredit')
+		submitinvoice = frappe.db.get_single_value('Education Settings', 'auto_submit_sales_invoice')
 		is_audit = self.audit
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		cost_center = frappe.db.get_single_value('Education Settings', 'cost_center') or None
@@ -111,12 +113,12 @@ class CourseEnrollmentIndividual(Document):
 		
 		i =0
 		while i < rows:
-			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
 			
-
 			items= []
-			if inv_data[i][11]==1 and is_audit == 0:
+			if inv_data[i][11]==1:
 					qty = inv_data[i][2] * inv_data[i][7] / 100
+			elif is_audit == 1 and audithours == 1:
+				qty = inv_data[i][2] * inv_data[i][7] / 100
 			else:
 					qty = inv_data[i][7]/100
 			
@@ -154,6 +156,8 @@ class CourseEnrollmentIndividual(Document):
 					})
 			sales_invoice.insert()
 			sales_invoice.save()
+			if submitinvoice == 1:
+				sales_invoice.submit()
 			i += 1
 			print("Invoice Created")
 		

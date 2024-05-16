@@ -10,8 +10,10 @@
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
+  "advancetb",
   "audit_settings_section",
   "allow_audit",
+  "auditcredit",
   "accounts_section",
   "column_break_wmyg",
   "company",
@@ -54,7 +56,7 @@
    "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
-   "label": "Submit Sales Invoice from Program Enrollment / Fee Schedule"
+   "label": "Submit Sales Invoice from Enrollments"
   },
   {
    "fieldname": "accounts_section",
@@ -143,11 +145,25 @@
    "fieldname": "audit_settings_section",
    "fieldtype": "Section Break",
    "label": "Audit Settings"
+  },
+  {
+   "default": "0",
+   "description": "If not checked, the corresponding fee will be the same for all audited courses.",
+   "fieldname": "auditcredit",
+   "fieldtype": "Check",
+   "label": "Should audit be charged per credit hour?"
+  },
+  {
+   "default": "0",
+   "description": "In this version, all students will advance, regardless of their performance. However, a manual submission will be required when these validations will occur.",
+   "fieldname": "advancetb",
+   "fieldtype": "Check",
+   "label": "Auto-advance students in Time-based Programs?"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-05-11 11:53:01.454744",
+ "modified": "2024-05-15 19:43:49.030685",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Education Settings",

@@ -39,7 +39,7 @@ class Instructor(Document):
 
 def get_timeline_data(doctype, name):
 	"""Return timeline for course schedule"""
-	return dict(
+	timeline_data = dict(
 		frappe.db.sql(
 			"""
 			SELECT unix_timestamp(`c_datestart`), count(*)
@@ -52,3 +52,6 @@ def get_timeline_data(doctype, name):
 			name,
 		)
 	)
+	if not timeline_data:
+		timeline_data = {int(time.time()): 0}  # Set current date as c_datestart if timeline_data is empty
+	return timeline_data

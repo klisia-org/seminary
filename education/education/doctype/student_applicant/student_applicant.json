@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "format:{academic_term}-{first_name}-{###}",
  "creation": "2015-09-11 11:50:09.740807",
+ "default_view": "List",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
@@ -42,7 +43,7 @@
   "marital",
   "education_section",
   "highdegree",
-  "resume",
+  "stueducation",
   "reading",
   "compliteracy",
   "useemail",
@@ -85,7 +86,7 @@
   "emailchurch",
   "doctrine_tab",
   "doctrinal_agreement_section",
-  "doctrinalst",
+  "ds2",
   "signdoctrine",
   "section_break_qktc",
   "gospelunderst",
@@ -326,9 +327,9 @@
   },
   {
    "fieldname": "titleresp",
-   "fieldtype": "Select",
-   "label": "Title",
-   "options": "Mr.\nMs.\nMrs.\nRev.\nDr."
+   "fieldtype": "Link",
+   "label": "Salutation",
+   "options": "Salutation"
   },
   {
    "fieldname": "zipcode",
@@ -431,11 +432,6 @@
    "options": "\nDoctorate\nMaster\nBachelor\nHigh School Diploma\nLess than High School"
   },
   {
-   "fieldname": "resume",
-   "fieldtype": "Attach",
-   "label": "Attach your resum\u00e9 here"
-  },
-  {
    "fieldname": "reading",
    "fieldtype": "Select",
    "label": "Regarding your reading habits, which option best describes you?",
@@ -457,13 +453,6 @@
    "fieldname": "doctrine_tab",
    "fieldtype": "Tab Break",
    "label": "Doctrine"
-  },
-  {
-   "fieldname": "doctrinalst",
-   "fieldtype": "Link",
-   "label": "Our Doctrinal Statement",
-   "options": "Doctrinal Statement",
-   "read_only": 1
   },
   {
    "description": "By signing here, I certify that I read and fully agree with the doctrinal statement above.",
@@ -556,11 +545,24 @@
    "fieldname": "emailchurch",
    "fieldtype": "Data",
    "label": "Email"
+  },
+  {
+   "fieldname": "stueducation",
+   "fieldtype": "Table",
+   "label": "List your educational achievements",
+   "options": "Student Education"
+  },
+  {
+   "default": "<h3>\"Test\"</h3>",
+   "fieldname": "ds2",
+   "fieldtype": "Data",
+   "label": "Please read carefully and check if you agree with it.",
+   "options": "options"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-05-11 18:58:48.838084",
+ "modified": "2024-05-16 15:50:23.549796",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Student Applicant",
@@ -579,11 +581,25 @@
    "role": "Academics User",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student Applicant",
+   "share": 1,
+   "write": 1
   }
  ],
+ "route": "apply-to-enroll",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "translated_doctype": 1
 }

@@ -83,10 +83,10 @@ class PayersFeeCategoryPE(Document):
 	# Method to check if the sum of the percentages is equal to 100 
 	def check_percentages(self):
 		pay_data = []
-		pay_data = frappe.db.sql("""select pep.pep_event, sum(pep.pay_percent) as percentage 
+		pay_data = frappe.db.sql("""select pep.fee_category, sum(pep.pay_percent) as percentage 
 		from `tabpgm_enroll_payers` pep
 		where pep.parent = %s
-		group by pep.pep_event
+		group by pep.fee_category
 		having percentage != 100""", self.name, as_list=1)
 		
 		

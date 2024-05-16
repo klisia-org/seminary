@@ -17,6 +17,7 @@ from education.education.utils import OverlapError
 
 
 class CourseSchedule(Document):
+	@frappe.whitelist()
 	def validate(self):
 		self.instructor_name = frappe.db.get_value(
 			"Instructor", self.instructor1

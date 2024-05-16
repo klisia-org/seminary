@@ -31,14 +31,101 @@ def get_course(program):
 
 @frappe.whitelist()
 def set_iscurrent_acterm(academic_term=None):
+	#This is a complex method, as it triggers many others in case there is a change in Academic Term
+	#Refer to the other methods for their functionality in detail.
+	#Essentially, students will be enrolled in courses for time-based programs, and invoices triggered by New Academic Term (and Year, if applicable) will be generated
 	academic_terms = frappe.get_all("Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"])
 	today = getdate()
+	currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
+	currentyear = frappe.db.sql("""select academic_year from `tabAcademic Term` where iscurrent_acterm = 1""")
 	
 	for term in academic_terms:
 		if term.term_start_date <= today <= term.term_end_date:
-			frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
+			if term.name != currentterm[0][0]:
+				frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
+				newyear = frappe.db.get_value("Academic Term", term.name, "academic_year")
+				roll_pe()
+				get_inv_data_nat()
+				if newyear != currentyear:
+					get_inv_data_nayear()
+			else:
+				break
+	
 		else:
 			frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 0)
+	return "Term rolled successfully"
+
+@frappe.whitelist()
+def roll_pe():
+	# Students' academic terms will advance. In case enrolled in a time-based program, petb_enroll will try to enroll them in courses 
+	tb = frappe.db.get_single_value("Education Settings", "advancetb")
+	pes = frappe.get_all("Program Enrollment", filters={"pgmenrol_active": 1, "docstatus": 1}, fields=["name", "current_std_term"])
+	for pe in pes:
+		pe_name = pe.name
+		pe_term = pe.current_std_term
+		pe_program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+		pe_program_type = frappe.db.get_value("Program", pe_program, "program_type")
+		pe_term = pe_term + 1
+		frappe.db.set_value("Program Enrollment", pe_name, "current_std_term", pe_term)
+		if pe_program_type == "Time-based" and tb==1:
+			petb_enroll(pe_name, pe_term)	
+		else:
+			continue
+
+
+@frappe.whitelist()
+def petb_enroll(pe_name, pe_term):
+	#This will try to enroll all active students from time-based programs in courses scheduled for the new academic term and open for enrollment
+	currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
+	program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+	pecs = frappe.get_all("Program Course", filters={"parent": program, "course_term": pe_term}, fields=["name", "course"])
+	cs = frappe.get_all("Course Schedule", filters={"academic_term":currentterm, "open_enroll":1}, fields=["name", "course"])
+	for pec in pecs:
+		for cs_course in cs:
+			if pec.course == cs_course.course:
+				course = pec.course
+				try:
+					course_enroll(pe_name, course)
+				except Exception as e:
+					# Handle the error here
+					print(f"An error occurred: {str(e)}")
+				
+			else:
+				continue
+	return "No course to enroll"
+
+@frappe.whitelist()	
+def course_enroll(pe_name, course):
+	#This is called for each student in petb_enroll
+	student = frappe.get_value("Program Enrollment", pe_name, "student")
+	cs = frappe.db.sql("""select distinct name from `tabCourse Schedule` 
+	where academic_term in (select name from `tabAcademic Term` where iscurrent_acterm = 1) and open_enroll = 1 and
+	course = %s""", course)[0][0]
+	doc = frappe.new_doc("Course Enrollment Individual")
+	doc.program_ce = pe_name
+	doc.student_ce = student
+	doc.coursesc_ce = cs
+	doc.docstatus = 0
+	doc.insert()
+
+
+@frappe.whitelist()
+def credits_pe_track():
+	pe = frappe.get_all("Program Enrollment", filters={"pgmenrol_active": 1}, fields=["name", "program", "emphasis_program_track"])
+	
+	for p in pe:
+		pe_name = p.name
+		credits = frappe.db.sql("""select coalesce(sum(pec.credits), 0) from
+		`tabProgram Enrollment Course` pec, `tabProgram Track Courses` ptc, `tabProgram Enrollment` pe
+		where pe.name = pec.parent and
+		ptc.parent = pe.program and 
+		ptc.program_track = pe.emphasis_program_track and pec.status = "Pass" and
+		ptc.program_track_course = pec.course_name and pe.name = %s""", pe_name)[0][0]
+		if credits:
+			frappe.db.set_value("Program Enrollment", pe_name, "trackcredits", credits)
+		else:
+			continue
+	return 
 
 @frappe.whitelist()
 def enroll_student(source_name):
@@ -515,8 +602,8 @@ def copy_data_to_program_enrollment_course(doc, method):
 			program_enrollment_course.academic_term = ac_term
 			program_enrollment_course.credits = credits
 			program_enrollment_course.status = "Enrolled"
-			
 			program_enrollment_course.insert()
+
 
 @frappe.whitelist()
 def get_inv_data_nat():
@@ -779,7 +866,7 @@ def grade_thisstudent(name):
 				wscore = round((score / gmax) * maxscore, 2)
 				row.grade = get_grade(grading_scale, score)
 				row.score = wscore
-				print(named + " " +row.grade + " " + str(wscore))
+				
 			frappe.db.set_value("Course Assess Results Detail", named, {
 				"grade": row.grade,
 				"score": row.score
@@ -787,6 +874,33 @@ def grade_thisstudent(name):
 			)
 		csr.save()
 		return "done"
+	
+@frappe.whitelist()
+def get_gradepass(grading_scale, percentage):
+	"""Returns Grade based on the Grading Scale and Score.
+
+	:param Grading Scale: Grading Scale
+	:param Percentage: Score Percentage Percentage
+	"""
+	grading_scale_intervals = {}
+	if not hasattr(frappe.local, "grading_scale_pass"):
+		grading_scale = frappe.get_all(
+			"Grading Scale Interval",
+			fields=["grade_pass", "threshold"],
+			filters={"parent": grading_scale},
+		)
+		frappe.local.grading_scale = grading_scale
+	for d in frappe.local.grading_scale:
+		grading_scale_intervals.update({d.threshold: d.grade_pass})
+	intervals = sorted(grading_scale_intervals.keys(), key=float, reverse=True)
+	for interval in intervals:
+		if flt(percentage) >= interval:
+			gradepass = grading_scale_intervals.get(interval)
+			print(gradepass)
+			break
+		else:
+			gradepass = ""
+	return gradepass
 
 @frappe.whitelist()
 def fgrade_this_std(name):
@@ -802,16 +916,22 @@ def fgrade_this_std(name):
 		fscore2 = frappe.db.sql("""select sum(actualextrapt_card) from `tabCourse Assess Results Detail` where extracredit_card = 1 and parent = %s""", (name))
 		fscore2 = fscore2[0][0] if fscore2 and fscore2[0][0] is not None else 0
 		fscore = fscore1 + fscore2
+		if fscore >=100:
+			fscore = 100
+		else: 
+			fscore = fscore
 		frappe.db.set_value("Scheduled Course Roster", name, "fscore", fscore)
 		print(fscore)
 		fgrade = get_grade(grading_scale, fscore)
 		frappe.db.set_value("Scheduled Course Roster", name, "fgrade", fgrade)
+		fgradepass = get_gradepass(grading_scale, fscore)
+		print(fgradepass)
+		frappe.db.set_value("Scheduled Course Roster", name, "fgradepass", fgradepass)
 		return "done"
 
 @frappe.whitelist()
 def send_grades(doc=None,**kwargs):
-	print("sendgrades called")
-	print(kwargs)
+	
 	if isinstance(doc, str):
     # Parse the JSON string if it's a string
 		document_data = json.loads(doc)
@@ -831,16 +951,33 @@ def send_grades(doc=None,**kwargs):
 		audit_bool = record.audit_bool
 		active = record.active
 		pe = frappe.db.get_value("Program Enrollment", {"student": student, "program": program}, "name")
+		totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
 		# Perform further operations with the record
 		if audit_bool == 0 and active == 1:
 			grade_thisstudent(named)
 			fgrade_this_std(named)
 			fscore = frappe.db.get_value("Scheduled Course Roster", named, "fscore")
 			fgrade = frappe.db.get_value("Scheduled Course Roster", named, "fgrade")
+			fgradepass = frappe.db.get_value("Scheduled Course Roster", named, "fgradepass")
 			pec = frappe.db.get_value("Program Enrollment Course", {"parent": pe, "course": course_sc}, "name")
+			credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
+			if fgradepass == "Fail":
+				credits = 0
+			newcredits = totalcredits + (int(credits) if credits is not None else 0)
+			print(newcredits)
 			frappe.db.set_value("Program Enrollment Course", pec, 
 					   {"pec_finalgradenum": fscore,
-		 				 "pec_finalgradecode": fgrade})
+		 				 "pec_finalgradecode": fgrade,
+						 "status": fgradepass})
+			frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
+			frappe.db.set_value("Scheduled Course Roster", named, 
+					   {"active": "0",
+		 				"docstatus": "1"})
+		else: continue
+	frappe.db.set_value("Course Schedule", docname, 
+					 {"grades_sent": "1",
+	   				"open_enroll": "0",
+	   				"docstatus": "1"})		
 	return "All grades sent"
 	# Add a message to confirm to the user
 
@@ -913,7 +1050,13 @@ def course_event(name):
 			
 			
 		
-	
+@frappe.whitelist()
+def get_doctrinal_statement():
+	print("Method DS called")
+	doctrinal_statement = frappe.get_doc('Doctrinal Statement')
+	doctrinal_statement = doctrinal_statement.doctrinalst
+	print(doctrinal_statement)
+	return doctrinal_statement
 
 	
 	

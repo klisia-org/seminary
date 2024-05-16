@@ -1,5 +1,11 @@
 {
- "actions": [],
+ "actions": [
+  {
+   "action": "education.education.api.credits_pe_track",
+   "action_type": "Server Action",
+   "label": "Test Track"
+  }
+ ],
  "allow_import": 1,
  "autoname": "format:{student_name}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
@@ -19,6 +25,8 @@
   "section_break_tfcw",
   "pgmenrol_active",
   "current_std_term",
+  "totalcredits",
+  "trackcredits",
   "column_break_unkt",
   "inactiveuntil",
   "inactive_motive",
@@ -171,6 +179,19 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "totalcredits",
+   "fieldtype": "Int",
+   "label": "Total Credits Taken (Passed)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "trackcredits",
+   "fieldtype": "Int",
+   "label": "Track Credits Taken (Passed)"
   }
  ],
  "image_field": "image",
@@ -182,7 +203,7 @@
    "link_fieldname": "program_enrollment"
   }
  ],
- "modified": "2024-05-08 17:01:10.106375",
+ "modified": "2024-05-15 21:57:59.588408",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Program Enrollment",

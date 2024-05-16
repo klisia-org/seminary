@@ -6,8 +6,8 @@ def get_data():
 		{
 			"module_name": "Education",
 			"color": "grey",
-			"icon": "octicon octicon-file-directory",
+			"icon": "/education/education/education/assets/bible.svg",
 			"type": "module",
-			"label": _("Education"),
+			"label": _("Seminary"),
 		}
 	]

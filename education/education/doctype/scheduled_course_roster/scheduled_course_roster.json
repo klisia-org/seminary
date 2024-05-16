@@ -20,6 +20,7 @@
   "fscore",
   "column_break_debd",
   "fgrade",
+  "fgradepass",
   "grades_section",
   "stdroster_grade"
  ],
@@ -122,11 +123,16 @@
    "fieldtype": "Data",
    "label": "Final Grade",
    "read_only": 1
+  },
+  {
+   "fieldname": "fgradepass",
+   "fieldtype": "Data",
+   "label": "Pass / Fail"
   }
  ],
  "image_field": "stuimage",
  "links": [],
- "modified": "2024-05-06 23:51:13.260042",
+ "modified": "2024-05-13 22:46:56.231464",
  "modified_by": "Administrator",
  "module": "Education",
  "name": "Scheduled Course Roster",
