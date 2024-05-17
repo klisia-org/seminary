@@ -3,6 +3,6 @@
 *.egg-info
 *.swp
 tags
-education/docs/current
+seminary/docs/current
 dist/
 __pycache__/
