@@ -20,8 +20,7 @@ def after_install():
 def setup_fixtures():
 	records = [
 		# Party Type Records
-		{"doctype": "Party Type", "party_type": "Student"},
-		
+		{"doctype": "Party Type", "party_type": "Student", "account_type": "Receivable"},	
 		# Item Group Records
 		{"doctype": "Item Group", "item_group_name": "Tuition"},
 		# Customer Group Records
@@ -31,9 +30,7 @@ def setup_fixtures():
 		{"doctype": "Customer Group", "customer_group_name": "Denomination"},
 		{"doctype": "Customer Group", "customer_group_name": "Seminary"},
 		{"doctype": "Customer Group", "customer_group_name": "Para-church Organization"},
-
-		
-	]
+		]
 	make_records(records)
 
 
