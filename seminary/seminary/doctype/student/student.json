@@ -222,7 +222,7 @@
   {
    "fieldname": "contacts",
    "fieldtype": "Table",
-   "options": "Student Contact"
+   "options": "Student Contacts"
   },
   {
    "fieldname": "exit",

@@ -269,7 +269,7 @@
    "fieldname": "contacts",
    "fieldtype": "Table",
    "label": "Contacts",
-   "options": "Student Contact"
+   "options": "Student Contacts"
   },
   {
    "fieldname": "section_break_23",

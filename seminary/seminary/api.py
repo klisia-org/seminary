@@ -252,7 +252,7 @@ def get_student_contacts(student):
 	:param student: Student.
 	"""
 	contacts = frappe.get_all(
-		"Student Contact", fields=["contact"], filters={"parent": student}
+		"Student Contacts", fields=["contact"], filters={"parent": student}
 	)
 	return contacts
 

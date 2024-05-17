@@ -585,7 +585,7 @@
    "label": "Contacts",
    "max_length": 0,
    "max_value": 0,
-   "options": "Student Contact",
+   "options": "Student Contacts",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
