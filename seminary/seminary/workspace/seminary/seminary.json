@@ -7,7 +7,7 @@
  "doctype": "Workspace",
  "for_user": "",
  "hide_custom": 0,
- "icon": "/seminary/seminary/assets/bible.svg",
+ "icon": "fa-solid fa-book-bible",
  "idx": 0,
  "indicator_color": "green",
  "is_hidden": 0,

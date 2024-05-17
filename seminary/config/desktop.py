@@ -6,7 +6,7 @@ def get_data():
 		{
 			"module_name": "Seminary",
 			"color": "grey",
-			"icon": "/seminary/seminary/assets/bible.svg",
+			"icon": "fa-solid fa-book-bible",
 			"type": "module",
 			"label": _("Seminary"),
 		}

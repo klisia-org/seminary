@@ -217,7 +217,7 @@
   {
    "fieldname": "section_break_18",
    "fieldtype": "Section Break",
-   "label": "Connected to"
+   "label": "References and Contacts"
   },
   {
    "fieldname": "contacts",
@@ -332,17 +332,12 @@
    "link_fieldname": "student"
   },
   {
-   "group": "Admission",
-   "link_doctype": "Course Enrollment",
-   "link_fieldname": "student"
-  },
-  {
    "group": "Student Activity",
    "link_doctype": "Student Log",
    "link_fieldname": "student"
   }
  ],
- "modified": "2024-05-12 13:57:03.082433",
+ "modified": "2024-05-17 10:00:58.216312",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student",

@@ -6,7 +6,7 @@ app_name = "seminary"
 app_title = "Seminary"
 app_publisher = "Klisia and Frappe"
 app_description = "Seminary Management System"
-app_icon = "seminary\public\icons\bible.svg"
+app_icon = "fa-solid fa-book-bible"
 app_color = "grey"
 app_email = "support@seminaryerp.org"
 app_license = "GNU GPL V3"
@@ -17,9 +17,9 @@ required_apps = ["erpnext"]
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/seminary/css/seminary.css"
+app_include_css = "assets/seminary/css/seminary.css"
 # app_include_js = "/assets/seminary/js/seminary.js"
-app_include_js = "seminary.bundle.js"
+app_include_js = "assets/seminary/js/seminary.bundle.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/seminary/css/seminary.css"

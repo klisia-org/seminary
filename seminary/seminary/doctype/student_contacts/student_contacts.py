@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, Klisia and Frappe and contributors
 # For license information, please see license.txt
 
-
+# import frappe
 from frappe.model.document import Document
 
 
-class StudentContact(Document):
+class StudentContacts(Document):
 	pass

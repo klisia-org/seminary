@@ -60,8 +60,7 @@
   "zipcode",
   "country",
   "relations_tab",
-  "section_break_20",
-  "Contacts",
+  "contactsrefs",
   "employment_tab",
   "employment_section",
   "employer",
@@ -91,7 +90,8 @@
   "section_break_qktc",
   "gospelunderst",
   "testimony",
-  "pgmexpect"
+  "pgmexpect",
+  "contacts"
  ],
  "fields": [
   {
@@ -259,11 +259,6 @@
    "fieldname": "state",
    "fieldtype": "Data",
    "label": "State"
-  },
-  {
-   "fieldname": "section_break_20",
-   "fieldtype": "Section Break",
-   "label": "Emergency contact and References"
   },
   {
    "fieldname": "contacts",
@@ -558,11 +553,17 @@
    "fieldtype": "Data",
    "label": "Please read carefully and check if you agree with it.",
    "options": "options"
+  },
+  {
+   "fieldname": "contactsrefs",
+   "fieldtype": "Table",
+   "label": "Contacts and References",
+   "options": "Student Contacts"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-05-16 15:50:23.549796",
+ "modified": "2024-05-17 10:03:57.970368",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Applicant",
