@@ -10,7 +10,7 @@ from frappe.utils import getdate, today
 from erpnext import get_default_currency
 from frappe.utils.nestedset import get_root_of
 
-from seminary.seminary.utils import check_content_completion, check_quiz_completion
+
 
 
 class Student(Document):

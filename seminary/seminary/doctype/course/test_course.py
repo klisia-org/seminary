@@ -5,8 +5,6 @@ import unittest
 
 import frappe
 
-from seminary.seminary.doctype.topic.test_topic import (
-    make_topic, make_topic_and_linked_content)
 
 # test_records = frappe.get_test_records('Course')
 
