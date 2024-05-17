@@ -98,16 +98,6 @@
    "link_fieldname": "academic_term"
   },
   {
-   "group": "Fee",
-   "link_doctype": "Fee Structure",
-   "link_fieldname": "academic_term"
-  },
-  {
-   "group": "Fee",
-   "link_doctype": "Fee Schedule",
-   "link_fieldname": "academic_term"
-  },
-  {
    "group": "Program",
    "link_doctype": "Program Enrollment",
    "link_fieldname": "academic_term"

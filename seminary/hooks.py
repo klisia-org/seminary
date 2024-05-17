@@ -6,7 +6,7 @@ app_name = "seminary"
 app_title = "Seminary"
 app_publisher = "Klisia and Frappe"
 app_description = "Seminary Management System"
-app_icon = "octicon octicon-file-directory"
+app_icon = "/seminary/seminary/assets/bible.svg"
 app_color = "grey"
 app_email = "support@seminaryerp.org"
 app_license = "GNU GPL V3"
@@ -56,7 +56,7 @@ default_roles = [
 	{"role": "Student Applicant", "doctype": "Student Applicant", "email_field": "student_email_id"},
 ]
 
-accounting_dimension_doctypes = ["Fee Schedule", "Fee Structure"]
+
 
 global_search_doctypes = {
 	"Seminary": [
@@ -67,7 +67,6 @@ global_search_doctypes = {
 		{"doctype": "Program", "index": 5},
 		{"doctype": "Quiz", "index": 6},
 		{"doctype": "Question", "index": 7},
-		{"doctype": "Fee Schedule", "index": 8},
 		{"doctype": "Course Schedule Meeting Dates", "index": 9},
 		{"doctype": "Student Group", "index": 10},
 		{"doctype": "Student", "index": 11},
@@ -90,7 +89,7 @@ global_search_doctypes = {
 		{"doctype": "Assessment Criteria", "index": 32},
 		{"doctype": "Academic Year", "index": 33},
 		{"doctype": "Academic Term", "index": 34},
-		{"doctype": "School House", "index": 35},
+		
 		{"doctype": "Student Admission", "index": 36},
 		{"doctype": "Fee Category", "index": 37},
 		{"doctype": "Discussion", "index": 39},

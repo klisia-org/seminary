@@ -82,16 +82,6 @@
    "group": "Academic Term and Program",
    "link_doctype": "Program Enrollment",
    "link_fieldname": "academic_year"
-  },
-  {
-   "group": "Fee",
-   "link_doctype": "Fee Schedule",
-   "link_fieldname": "academic_year"
-  },
-  {
-   "group": "Fee",
-   "link_doctype": "Fee Structure",
-   "link_fieldname": "academic_year"
   }
  ],
  "modified": "2024-02-24 17:24:33.063128",
