@@ -20,7 +20,7 @@ def after_install():
 def setup_fixtures():
 	records = [
 		# Party Type Records
-		{"doctype": "Party Type", "party_type": "Student", "account_type": "Receivable"},
+		{"doctype": "Party Type", "party_type": "Student"},
 		
 		# Item Group Records
 		{"doctype": "Item Group", "item_group_name": "Tuition"},
@@ -31,12 +31,7 @@ def setup_fixtures():
 		{"doctype": "Customer Group", "customer_group_name": "Denomination"},
 		{"doctype": "Customer Group", "customer_group_name": "Seminary"},
 		{"doctype": "Customer Group", "customer_group_name": "Para-church Organization"},
-		# Program Level Records
-		{"doctype": "Program Level", "pgm_level": "Non-Degree"},
-		{"doctype": "Program Level", "pgm_level": "Certificate"},
-		{"doctype": "Program Level", "pgm_level": "Undergraduate"},
-		{"doctype": "Program Level", "pgm_level": "Masters"},
-		{"doctype": "Program Level", "pgm_level": "Doctoral"},
+
 		
 	]
 	make_records(records)
