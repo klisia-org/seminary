@@ -1,0 +1,605 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "format:{academic_term}-{first_name}-{###}",
+ "creation": "2015-09-11 11:50:09.740807",
+ "default_view": "List",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "first_name",
+  "middle_name",
+  "last_name",
+  "titleresp",
+  "column_break_8",
+  "naming_series",
+  "application_date",
+  "application_status",
+  "program",
+  "section_break_xuzu",
+  "student_email_id",
+  "student_admission",
+  "student_category",
+  "image",
+  "column_break_lvby",
+  "academic_year",
+  "academic_term",
+  "paid",
+  "section_break_23",
+  "title",
+  "amended_from",
+  "personal_details_tab",
+  "section_break_4",
+  "date_of_birth",
+  "gender",
+  "blood_group",
+  "social_security_number",
+  "column_break_12",
+  "student_mobile_number",
+  "nationality",
+  "ethnic",
+  "marital",
+  "education_section",
+  "highdegree",
+  "stueducation",
+  "reading",
+  "compliteracy",
+  "useemail",
+  "disabilities_section",
+  "disablechk",
+  "disable_accom",
+  "address_tab",
+  "home_address",
+  "address_line_1",
+  "address_line_2",
+  "city",
+  "column_break_23",
+  "state",
+  "zipcode",
+  "country",
+  "relations_tab",
+  "section_break_20",
+  "Contacts",
+  "employment_tab",
+  "employment_section",
+  "employer",
+  "position",
+  "empladdress",
+  "emplcity",
+  "emplzip",
+  "column_break_pkyb",
+  "stdate",
+  "supervisor",
+  "suphone",
+  "churchsection",
+  "churchname",
+  "churchaddress",
+  "churchcity",
+  "churchstate",
+  "churchzip",
+  "column_break_zlgs",
+  "who_should_we_contact_to_confirm_your_church_participation",
+  "titlechurch",
+  "phonechurch",
+  "emailchurch",
+  "doctrine_tab",
+  "doctrinal_agreement_section",
+  "ds2",
+  "signdoctrine",
+  "section_break_qktc",
+  "gospelunderst",
+  "testimony",
+  "pgmexpect"
+ ],
+ "fields": [
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program of Interest",
+   "options": "Program",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "paid",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Paid"
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "no_copy": 1,
+   "options": "EDU-APP-.YYYY.-",
+   "set_only_once": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "application_status",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "label": "Application Status",
+   "no_copy": 1,
+   "options": "Applied\nApproved\nRejected\nAdmitted",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "application_date",
+   "fieldtype": "Date",
+   "label": "Application Date"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year for Enrollment",
+   "options": "Academic Year",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term for Enrollment",
+   "options": "Academic Term",
+   "search_index": 1
+  },
+  {
+   "fieldname": "student_admission",
+   "fieldtype": "Link",
+   "label": "Student Admission",
+   "options": "Student Admission"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "reqd": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "\nMale\nFemale",
+   "reqd": 1
+  },
+  {
+   "fieldname": "blood_group",
+   "fieldtype": "Select",
+   "label": "Blood Group",
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student_email_id",
+   "fieldtype": "Data",
+   "label": "Student Email Address",
+   "options": "Email",
+   "unique": 1
+  },
+  {
+   "fieldname": "student_mobile_number",
+   "fieldtype": "Data",
+   "label": "Student Mobile Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "fieldname": "home_address",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "column_break_23",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "section_break_20",
+   "fieldtype": "Section Break",
+   "label": "Emergency contact and References"
+  },
+  {
+   "fieldname": "contacts",
+   "fieldtype": "Table",
+   "label": "Contacts",
+   "options": "Student Contact"
+  },
+  {
+   "fieldname": "section_break_23",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Applicant",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_category",
+   "fieldtype": "Link",
+   "label": "Student Category",
+   "options": "Student Category"
+  },
+  {
+   "fieldname": "section_break_xuzu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_lvby",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "personal_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Personal Details"
+  },
+  {
+   "fieldname": "relations_tab",
+   "fieldtype": "Tab Break",
+   "label": "Contacts"
+  },
+  {
+   "fieldname": "address_tab",
+   "fieldtype": "Tab Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "titleresp",
+   "fieldtype": "Link",
+   "label": "Salutation",
+   "options": "Salutation"
+  },
+  {
+   "fieldname": "zipcode",
+   "fieldtype": "Data",
+   "label": "ZIP cide"
+  },
+  {
+   "fieldname": "social_security_number",
+   "fieldtype": "Data",
+   "label": "Social Security Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ethnic",
+   "fieldtype": "Select",
+   "label": "Ethnic Group",
+   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther"
+  },
+  {
+   "fieldname": "disabilities_section",
+   "fieldtype": "Section Break",
+   "label": "Disabilities"
+  },
+  {
+   "default": "0",
+   "fieldname": "disablechk",
+   "fieldtype": "Check",
+   "label": "Are you disabled?"
+  },
+  {
+   "depends_on": "disablechk == 1",
+   "fieldname": "disable_accom",
+   "fieldtype": "Data",
+   "label": "If you are disabled, what accommodations will you require?"
+  },
+  {
+   "fieldname": "marital",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)"
+  },
+  {
+   "fieldname": "employment_tab",
+   "fieldtype": "Tab Break",
+   "label": "Employment & Church"
+  },
+  {
+   "fieldname": "employer",
+   "fieldtype": "Data",
+   "label": "Place of Employment"
+  },
+  {
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position"
+  },
+  {
+   "fieldname": "empladdress",
+   "fieldtype": "Data",
+   "label": "Employer Business Address"
+  },
+  {
+   "fieldname": "emplcity",
+   "fieldtype": "Data",
+   "label": "Employer City"
+  },
+  {
+   "fieldname": "emplzip",
+   "fieldtype": "Data",
+   "label": "Employer ZIP code"
+  },
+  {
+   "fieldname": "column_break_pkyb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "stdate",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Data",
+   "label": "Direct Supervisor"
+  },
+  {
+   "fieldname": "suphone",
+   "fieldtype": "Phone",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "education_section",
+   "fieldtype": "Section Break",
+   "label": "Education"
+  },
+  {
+   "fieldname": "highdegree",
+   "fieldtype": "Select",
+   "label": "What is your highest academic degree?",
+   "options": "\nDoctorate\nMaster\nBachelor\nHigh School Diploma\nLess than High School"
+  },
+  {
+   "fieldname": "reading",
+   "fieldtype": "Select",
+   "label": "Regarding your reading habits, which option best describes you?",
+   "options": "\nI read books, magazines, and articles frequently\nI read books and magazines occasionally\nI don't have the habit of reading, but I used to\nI never developed the habit of reading"
+  },
+  {
+   "fieldname": "compliteracy",
+   "fieldtype": "Select",
+   "label": "Regarding your computer literacy, which option best describes you?",
+   "options": "\nI am familiar with and have access to a computer with internet, word processor, and email\nI have a computer but I struggle with new programs\nI am proficient in email, internet, and word processors, but I don't have a computer\nI don't have a computer and my computer skills need development"
+  },
+  {
+   "default": "0",
+   "fieldname": "useemail",
+   "fieldtype": "Check",
+   "label": "Do you check your email daily (Mon-Sat)?"
+  },
+  {
+   "fieldname": "doctrine_tab",
+   "fieldtype": "Tab Break",
+   "label": "Doctrine"
+  },
+  {
+   "description": "By signing here, I certify that I read and fully agree with the doctrinal statement above.",
+   "fieldname": "signdoctrine",
+   "fieldtype": "Signature",
+   "label": "Sign here",
+   "reqd": 1
+  },
+  {
+   "fieldname": "doctrinal_agreement_section",
+   "fieldtype": "Section Break",
+   "label": "Doctrinal Agreement"
+  },
+  {
+   "fieldname": "section_break_qktc",
+   "fieldtype": "Section Break",
+   "label": "Faith and Practice"
+  },
+  {
+   "fieldname": "gospelunderst",
+   "fieldtype": "Long Text",
+   "label": "Please explain your understanding of the gospel and the Christian life."
+  },
+  {
+   "fieldname": "testimony",
+   "fieldtype": "Long Text",
+   "label": "How did you become a believer? What changed in your life?"
+  },
+  {
+   "fieldname": "pgmexpect",
+   "fieldtype": "Long Text",
+   "label": "How enrolling in this program will help you serve the church?"
+  },
+  {
+   "fieldname": "employment_section",
+   "fieldtype": "Section Break",
+   "label": "Employment"
+  },
+  {
+   "fieldname": "churchsection",
+   "fieldtype": "Section Break",
+   "label": "Church"
+  },
+  {
+   "fieldname": "churchname",
+   "fieldtype": "Data",
+   "label": "Name of the Church"
+  },
+  {
+   "fieldname": "churchaddress",
+   "fieldtype": "Data",
+   "label": "Church Address"
+  },
+  {
+   "fieldname": "churchcity",
+   "fieldtype": "Data",
+   "label": "Church City"
+  },
+  {
+   "fieldname": "churchstate",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "churchzip",
+   "fieldtype": "Data",
+   "label": "ZIP code"
+  },
+  {
+   "fieldname": "column_break_zlgs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "who_should_we_contact_to_confirm_your_church_participation",
+   "fieldtype": "Data",
+   "label": "Who should we contact to confirm your church participation?"
+  },
+  {
+   "fieldname": "titlechurch",
+   "fieldtype": "Data",
+   "label": "Title of this person"
+  },
+  {
+   "fieldname": "phonechurch",
+   "fieldtype": "Phone",
+   "label": "Phone number"
+  },
+  {
+   "description": "This email must be of someone who can endorse your active involvement in a local church.",
+   "fieldname": "emailchurch",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "stueducation",
+   "fieldtype": "Table",
+   "label": "List your educational achievements",
+   "options": "Student Education"
+  },
+  {
+   "default": "<h3>\"Test\"</h3>",
+   "fieldname": "ds2",
+   "fieldtype": "Data",
+   "label": "Please read carefully and check if you agree with it.",
+   "options": "options"
+  }
+ ],
+ "image_field": "image",
+ "links": [],
+ "modified": "2024-05-16 15:50:23.549796",
+ "modified_by": "Administrator",
+ "module": "Education",
+ "name": "Student Applicant",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student Applicant",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "route": "apply-to-enroll",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "translated_doctype": 1
+}

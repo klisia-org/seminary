@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export const leaveStore = defineStore('education-leave', () => {
+export const leaveStore = defineStore('seminary-leave', () => {
 	const isAttendancePage = ref(false)
 	
 	const setIsAttendancePage = (value) => {

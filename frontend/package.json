@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/assets/education/frontend/ && yarn copy-html-entry",
+    "build": "vite build --base=/assets/seminary/frontend/ && yarn copy-html-entry",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../education/public/frontend/index.html ../education/www/education.html"
+    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
   },
   "dependencies": {
     "dayjs": "^1.11.10",

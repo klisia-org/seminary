@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-05 10:58:36.214129",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "room_id",
+  "room_occupancy",
+  "room_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "room_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Room ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "room_occupancy",
+   "fieldtype": "Int",
+   "label": "Occupancy"
+  },
+  {
+   "default": "Operational",
+   "fieldname": "room_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Operational\nNon-Operational",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-05 11:02:27.139148",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Building Rooms",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

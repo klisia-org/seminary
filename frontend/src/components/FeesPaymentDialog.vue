@@ -92,7 +92,7 @@ onMounted(() => {
 })
 
 const paymentOptions = createResource({
-	url: 'education.education.billing.get_payment_options',
+	url: 'seminary.seminary.billing.get_payment_options',
 	makeParams(values) {
 		return {
 			doctype: "Sales Invoice",
@@ -104,11 +104,11 @@ const paymentOptions = createResource({
 })
 
 const paymentSuccessResource = createResource({
-	url: 'education.education.billing.handle_payment_success',
+	url: 'seminary.seminary.billing.handle_payment_success',
 })
 
 const paymentFailureResource = createResource({
-	url: 'education.education.billing.handle_payment_failure',
+	url: 'seminary.seminary.billing.handle_payment_failure',
 })
 
 function openPaymentGateway (close) {

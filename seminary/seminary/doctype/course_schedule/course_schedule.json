@@ -1,0 +1,428 @@
+{
+ "actions": [
+  {
+   "action": "seminary.seminary.api.send_grades",
+   "action_type": "Server Action",
+   "label": "Send Grades"
+  }
+ ],
+ "allow_events_in_timeline": 1,
+ "allow_import": 1,
+ "autoname": "format:{course}-{academic_term}-{####}",
+ "creation": "2015-09-09 16:34:04.960369",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_information_section",
+  "course",
+  "instructor1",
+  "instructor2",
+  "academic_term",
+  "column_break_2",
+  "coursecode_cs",
+  "modality",
+  "open_enroll",
+  "color",
+  "syllabus",
+  "section_break_6",
+  "c_datestart",
+  "c_dateend",
+  "room",
+  "column_break_9",
+  "from_time",
+  "to_time",
+  "title",
+  "section_break_7",
+  "monday_column",
+  "monday",
+  "friday",
+  "tuesday_column",
+  "tuesday",
+  "saturday",
+  "wednesday_column",
+  "wednesday",
+  "sunday",
+  "thursday_column",
+  "thursday",
+  "integration_section",
+  "moodle_link",
+  "grading_tab",
+  "gradesc_cs",
+  "courseassescrit_sc",
+  "meeting_dates_tab",
+  "meeting_dates_section",
+  "cs_meetinfo",
+  "hasmtgdate",
+  "class_roster_tab",
+  "class_roster_section",
+  "csroster_html",
+  "grades_sent"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Academic Term",
+   "options": "Academic Term",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "c_datestart",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "c_dateend",
+   "fieldtype": "Date",
+   "label": "End Date",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "modality",
+   "fieldtype": "Select",
+   "label": "Modality",
+   "options": "Presential\nVirtual\nHybrid",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "color",
+   "fieldtype": "Color",
+   "label": "Color",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break",
+   "label": "General Schedule Information"
+  },
+  {
+   "fieldname": "room",
+   "fieldtype": "Link",
+   "label": "Room",
+   "options": "Room",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "From Time",
+   "mandatory_depends_on": "modality!=Virtual",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "to_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "To Time",
+   "mandatory_depends_on": "modality!=Virtual",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "default": "0",
+   "fieldname": "monday",
+   "fieldtype": "Check",
+   "label": "Monday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "thursday",
+   "fieldtype": "Check",
+   "label": "Thursday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "friday",
+   "fieldtype": "Check",
+   "label": "Friday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "saturday",
+   "fieldtype": "Check",
+   "label": "Saturday",
+   "permlevel": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "sunday",
+   "fieldtype": "Check",
+   "label": "Sunday",
+   "permlevel": 1
+  },
+  {
+   "columns": 7,
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break",
+   "label": "Days of the Week"
+  },
+  {
+   "fieldname": "monday_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tuesday_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "wednesday_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "thursday_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "integration_section",
+   "fieldtype": "Section Break",
+   "label": "Integration"
+  },
+  {
+   "fieldname": "moodle_link",
+   "fieldtype": "Data",
+   "label": "Moodle link",
+   "options": "URL",
+   "permlevel": 2
+  },
+  {
+   "fieldname": "course_information_section",
+   "fieldtype": "Section Break",
+   "label": "Course Information"
+  },
+  {
+   "description": "Use this for joint teaching in this section (instance) of the course. ",
+   "fieldname": "instructor2",
+   "fieldtype": "Link",
+   "label": "Instructor 2",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "instructor1",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Instructor of Record",
+   "options": "Instructor",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "syllabus",
+   "fieldtype": "Attach",
+   "label": "Syllabus"
+  },
+  {
+   "fieldname": "meeting_dates_tab",
+   "fieldtype": "Tab Break",
+   "label": "Meeting Dates"
+  },
+  {
+   "fieldname": "cs_meetinfo",
+   "fieldtype": "Table",
+   "options": "Course Schedule Meeting Dates",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Meeting dates are generated automatically from the criteria in the Details tab. Please check manually and adjust as needed.",
+   "fieldname": "meeting_dates_section",
+   "fieldtype": "Section Break",
+   "label": "Meeting Dates"
+  },
+  {
+   "fetch_from": "course.coursecode",
+   "fieldname": "coursecode_cs",
+   "fieldtype": "Data",
+   "label": "Course code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grading_tab",
+   "fieldtype": "Tab Break",
+   "label": "Grade Setup"
+  },
+  {
+   "fetch_from": "course.default_grading_scale",
+   "fieldname": "gradesc_cs",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Grading Scale",
+   "not_nullable": 1,
+   "options": "Grading Scale",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "courseassescrit_sc",
+   "fieldtype": "Table",
+   "label": "Course Assessment Criteria",
+   "options": "Scheduled Course Assess Criteria",
+   "permlevel": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "class_roster_tab",
+   "fieldtype": "Tab Break",
+   "label": "Class Roster"
+  },
+  {
+   "default": "1",
+   "fieldname": "open_enroll",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Open for Enrollment?"
+  },
+  {
+   "description": "Click on Grades to see/edit grades of a particular student. When you click on the button \"Send Grades,\" all students' grades will be sent to the registrar and will no longer be editable.",
+   "fieldname": "csroster_html",
+   "fieldtype": "HTML",
+   "label": "Class Roster and Grades",
+   "options": "<div>table</div>"
+  },
+  {
+   "fieldname": "class_roster_section",
+   "fieldtype": "Section Break",
+   "label": "Class Roster"
+  },
+  {
+   "default": "0",
+   "fieldname": "hasmtgdate",
+   "fieldtype": "Check",
+   "label": "Meeting Dates Created"
+  },
+  {
+   "default": "0",
+   "fieldname": "grades_sent",
+   "fieldtype": "Check",
+   "label": "Grades sent",
+   "read_only": 1
+  }
+ ],
+ "is_calendar_and_gantt": 1,
+ "links": [],
+ "modified": "2024-05-14 06:18:03.694102",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Schedule",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 2,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

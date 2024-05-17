@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2016-08-26 03:11:09.591049",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "grade_code",
+  "threshold",
+  "grade_description",
+  "grade_pass"
+ ],
+ "fields": [
+  {
+   "fieldname": "grade_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grade Code or GPA",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Threshold",
+   "mandatory_depends_on": "parent.grscale_type==Points"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "grade_description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grade Description"
+  },
+  {
+   "default": "Pass",
+   "fieldname": "grade_pass",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Pass/Fail",
+   "options": "\nPass\nFail",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-13 23:43:58.425952",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grading Scale Interval",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

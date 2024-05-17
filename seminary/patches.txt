@@ -1,0 +1,8 @@
+[pre_model_sync]
+seminary.patches.v14_0.create_student_party_type
+
+[post_model_sync]
+
+seminary.patches.v14_0.lms_deprecation_message #22-12-2022
+seminary.patches.v14_0.student_name
+seminary.patches.v14_0.delete_lms_user_role

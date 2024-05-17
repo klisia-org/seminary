@@ -171,7 +171,7 @@ const attendanceData = createListResource({
 
 
 const applyLeave = createResource({
-	url:"education.education.api.apply_leave",
+	url:"seminary.seminary.api.apply_leave",
 	params:{
 		leave_data:newLeave,
 		program_name:programName.value,

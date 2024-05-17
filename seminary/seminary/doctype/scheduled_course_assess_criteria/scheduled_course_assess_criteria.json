@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-11 22:13:53.464060",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_yajx",
+  "assesscriteria_scac",
+  "column_break_etid",
+  "weight_scac",
+  "section_break_bqdt",
+  "column_break_flax",
+  "extracredit_scac",
+  "column_break_lbwl",
+  "fudgepoints_scac"
+ ],
+ "fields": [
+  {
+   "fieldname": "assesscriteria_scac",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assessment Criteria",
+   "options": "Assessment Criteria",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_flax",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "extracredit_scac==False",
+   "description": "Percentage of the total assessments for this course",
+   "fieldname": "weight_scac",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Weight",
+   "mandatory_depends_on": "extracredit_scac==False"
+  },
+  {
+   "description": "Changes in these criteria will affect only this instance of the course. If you want to change assessment of all future courses, please make the change within the master Course setting.",
+   "fieldname": "section_break_yajx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "extracredit_scac",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Extra Credit"
+  },
+  {
+   "fieldname": "section_break_bqdt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "extracredit_scac==True",
+   "description": "This is the maximum extra points a student may earn (in their final grade for the course)",
+   "fieldname": "fudgepoints_scac",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Fudge Extra Credit Points",
+   "mandatory_depends_on": "extracredit_scac==True"
+  },
+  {
+   "fieldname": "column_break_etid",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_lbwl",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-08 16:33:03.178864",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Scheduled Course Assess Criteria",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

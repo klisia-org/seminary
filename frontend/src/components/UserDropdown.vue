@@ -10,7 +10,7 @@
 				<div class="w-8 h-8 rounded-full flex items-center justify-center">
 
 
-					<Avatar v-if="educationSettings?.logo" :image="educationSettings?.logo" shape="circle" size="xl" />
+					<Avatar v-if="seminarySettings?.logo" :image="seminarySettings?.logo" shape="circle" size="xl" />
 					<School v-else />
 				</div>
 				<div class="flex flex-1 flex-col text-left duration-300 ease-in-out" :class="isCollapsed
@@ -18,7 +18,7 @@
 						: 'opacity-100 ml-2 w-auto'
 					">
 					<div class="text-base font-medium text-gray-900 leading-none">
-						{{ educationSettings?.name || 'Education' }}
+						{{ seminarySettings?.name || 'Seminary' }}
 					</div>
 					<div class="mt-1 text-sm text-gray-700 leading-none">
 						{{ user.data.full_name }}
@@ -57,7 +57,7 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
-	educationSettings: {
+	seminarySettings: {
 	}
 })
 

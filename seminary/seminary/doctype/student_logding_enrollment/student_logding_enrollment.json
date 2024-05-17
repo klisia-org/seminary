@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-05 11:10:56.673032",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "stu_building",
+  "stu_room",
+  "date_start_lodge",
+  "enddate_lodge",
+  "stu_lodg_fee"
+ ],
+ "fields": [
+  {
+   "fieldname": "stu_building",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Building",
+   "options": "Buildings"
+  },
+  {
+   "fieldname": "stu_room",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Room",
+   "options": "Building Rooms"
+  },
+  {
+   "fieldname": "date_start_lodge",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "enddate_lodge",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date"
+  },
+  {
+   "fetch_from": "stu_building.build_feecategory",
+   "fieldname": "stu_lodg_fee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Category",
+   "link_filters": "[[{\"fieldname\":\"stu_lodg_fee\",\"field_option\":\"Fee Category\"},\"feecategory_type\",\"=\",\"Lodging\"]]",
+   "options": "Fee Category"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-07 01:15:50.880074",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Logding Enrollment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

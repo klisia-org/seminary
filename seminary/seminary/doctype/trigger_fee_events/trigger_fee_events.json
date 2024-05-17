@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "autoname": "format:{trigger}",
+ "creation": "2024-03-21 20:59:42.960644",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trigger",
+  "column_break_wftp",
+  "active"
+ ],
+ "fields": [
+  {
+   "fieldname": "trigger",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Trigger",
+   "reqd": 1,
+   "search_index": 1,
+   "translatable": 1
+  },
+  {
+   "fieldname": "column_break_wftp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-21 21:05:12.540710",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Trigger Fee Events",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

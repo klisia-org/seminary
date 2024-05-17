@@ -8,7 +8,7 @@
 		<UserDropdown 
 			class="p-2"  
 			:isCollapsed="isSidebarCollapsed" 
-			:educationSettings ="!educationSettings.loading && educationSettings.data"
+			:seminarySettings ="!seminarySettings.loading && seminarySettings.data"
 		/>
 		<div class="flex flex-col overflow-y-auto">
 			<SidebarLink
@@ -90,8 +90,8 @@ const links = [
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false)
 
 // create a resource which call the function get_school_abbr_logo in api file using createResource
-const educationSettings = createResource({	
-	url: 'education.education.api.get_school_abbr_logo',
+const seminarySettings = createResource({	
+	url: 'seminary.seminary.api.get_school_abbr_logo',
 	auto: true,
 })
 

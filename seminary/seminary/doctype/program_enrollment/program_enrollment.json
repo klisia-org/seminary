@@ -1,0 +1,234 @@
+{
+ "actions": [
+  {
+   "action": "seminary.seminary.api.credits_pe_track",
+   "action_type": "Server Action",
+   "label": "Test Track"
+  }
+ ],
+ "allow_import": 1,
+ "autoname": "format:{student_name}-{program}-{##}",
+ "creation": "2015-12-02 12:58:32.916080",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "enrollment_date",
+  "date_of_conclusion",
+  "column_break_4",
+  "program",
+  "emphasis_program_track",
+  "academic_term",
+  "image",
+  "section_break_tfcw",
+  "pgmenrol_active",
+  "current_std_term",
+  "totalcredits",
+  "trackcredits",
+  "column_break_unkt",
+  "inactiveuntil",
+  "inactive_motive",
+  "enrolled_courses",
+  "courses",
+  "section_break_uzvb",
+  "amended",
+  "connections_tab",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Read Only",
+   "in_global_search": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term on Enrollment",
+   "link_filters": "[[{\"fieldname\":\"academic_term\",\"field_option\":\"Academic Term\"},\"iscurrent_acterm\",\"=\",1]]",
+   "options": "Academic Term",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "enrollment_date",
+   "fieldtype": "Date",
+   "label": "Enrollment Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "enrolled_courses",
+   "fieldtype": "Section Break",
+   "label": "Courses Taken"
+  },
+  {
+   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades.",
+   "fieldname": "courses",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "Program Enrollment Course"
+  },
+  {
+   "fetch_from": "student.image",
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "date_of_conclusion",
+   "fieldtype": "Date",
+   "label": "Date of Conclusion"
+  },
+  {
+   "fieldname": "section_break_tfcw",
+   "fieldtype": "Section Break",
+   "label": "Program Status"
+  },
+  {
+   "default": "1",
+   "fieldname": "pgmenrol_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_unkt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "inactiveuntil",
+   "fieldtype": "Date",
+   "label": "Inactive until"
+  },
+  {
+   "default": "1",
+   "fieldname": "current_std_term",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Current Term (index)",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "inactive_motive",
+   "fieldtype": "Small Text",
+   "label": "Reason for being inactive"
+  },
+  {
+   "fieldname": "emphasis_program_track",
+   "fieldtype": "Link",
+   "label": "Emphasis (Program track)",
+   "options": "Program Track"
+  },
+  {
+   "fieldname": "section_break_uzvb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Enrollment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "totalcredits",
+   "fieldtype": "Int",
+   "label": "Total Credits Taken (Passed)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "trackcredits",
+   "fieldtype": "Int",
+   "label": "Track Credits Taken (Passed)"
+  }
+ ],
+ "image_field": "image",
+ "is_submittable": 1,
+ "links": [
+  {
+   "group": "Enrollment",
+   "link_doctype": "Course Enrollment",
+   "link_fieldname": "program_enrollment"
+  }
+ ],
+ "modified": "2024-05-15 21:57:59.588408",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Enrollment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name"
+}

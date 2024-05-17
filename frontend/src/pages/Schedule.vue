@@ -19,7 +19,7 @@ const events= ref([])
 
 
 const scheduleResource = createResource({
-  url:"education.education.api.get_course_schedule_for_student",
+  url:"seminary.seminary.api.get_course_schedule_for_student",
   params: {program_name:programName.value},
   onSuccess:(response) => {
     let schedule = []

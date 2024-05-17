@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "creation": "2015-09-07 14:37:01.886859",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course",
+  "course_name",
+  "pgm_course_reqonenroll",
+  "required",
+  "course_term",
+  "pgmcourse_credits"
+ ],
+ "fields": [
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.course_name",
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory for this program"
+  },
+  {
+   "depends_on": "eval: doc.program_type == 'Credits-based'",
+   "fieldname": "course_term",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Term number"
+  },
+  {
+   "depends_on": "eval: doc.program_type == 'Credits-based'",
+   "fetch_from": "course.course_credits",
+   "fieldname": "pgmcourse_credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Credits for this program"
+  },
+  {
+   "default": "0",
+   "fieldname": "pgm_course_reqonenroll",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory on program enrollment"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2024-02-26 18:00:20.399911",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Course",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

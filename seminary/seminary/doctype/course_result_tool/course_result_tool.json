@@ -1,0 +1,69 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-11 16:20:12.131693",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "schedcourse_restool",
+  "column_break_oeyf",
+  "courserosterlnk_restool",
+  "section_break_wxvh",
+  "result_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "schedcourse_restool",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Scheduled Course",
+   "options": "Scheduled Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_oeyf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "courserosterlnk_restool",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Roster",
+   "options": "Scheduled Course Roster",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_wxvh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "result_html",
+   "fieldtype": "HTML",
+   "label": "Result HTML"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-03-11 16:26:34.367775",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Result Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
