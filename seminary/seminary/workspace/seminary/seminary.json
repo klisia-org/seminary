@@ -7,9 +7,9 @@
  "doctype": "Workspace",
  "for_user": "",
  "hide_custom": 0,
- "icon": "fa-solid fa-book-bible",
+ "icon": "non-profit",
  "idx": 0,
- "indicator_color": "green",
+ "indicator_color": "",
  "is_hidden": 0,
  "label": "Seminary",
  "links": [
@@ -288,7 +288,7 @@
    "type": "Link"
   }
  ],
- "modified": "2024-05-15 23:01:53.087726",
+ "modified": "2024-05-17 15:04:17.653360",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
