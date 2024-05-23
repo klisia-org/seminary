@@ -6,7 +6,7 @@ export const studentStore = defineStore('seminary-student', () => {
 
 	const studentInfo = ref({})
 	const currentProgram = ref({})
-	const studentGroups = ref([])
+	
 
 	const student = createResource({
 		url: 'seminary.seminary.api.get_student_info',
@@ -17,8 +17,6 @@ export const studentStore = defineStore('seminary-student', () => {
 			currentProgram.value = info.current_program 
 			// remove current_program from info
 			delete info.current_program
-			studentGroups.value = info.student_groups
-			delete info.student_groups
 			studentInfo.value = info
 		},
 		onError(err) {
@@ -40,9 +38,7 @@ export const studentStore = defineStore('seminary-student', () => {
 		return currentProgram
 	}
 
-	function getStudentGroups(){
-		return studentGroups
-	}
 
-	return { student ,studentInfo, currentProgram , studentGroups, getStudentInfo, getCurrentProgram, getStudentGroups }
+
+	return { student, studentInfo, currentProgram , getStudentInfo, getCurrentProgram }
 })

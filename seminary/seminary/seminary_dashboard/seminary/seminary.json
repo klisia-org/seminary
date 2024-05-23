@@ -1,0 +1,28 @@
+{
+ "cards": [],
+ "charts": [
+  {
+   "width": "Half"
+  },
+  {
+   "chart": "Enrolled Students",
+   "width": "Half"
+  },
+  {
+   "chart": "Students per current course",
+   "width": "Half"
+  }
+ ],
+ "creation": "2024-05-20 16:12:43.450220",
+ "dashboard_name": "Seminary",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "modified": "2024-05-20 16:18:57.412937",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary",
+ "owner": "Administrator"
+}

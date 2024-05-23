@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import set_name_by_naming_series
-
+import time
 
 class Instructor(Document):
 	def autoname(self):
@@ -45,7 +45,7 @@ def get_timeline_data(doctype, name):
 			SELECT unix_timestamp(`c_datestart`), count(*)
 			FROM `tabCourse Schedule`
 			WHERE
-				instructor=%s and
+				`instructor1`=%s and
 				`c_datestart` > date_sub(curdate(), interval 1 year) 
 			GROUP BY c_datestart
 			""",

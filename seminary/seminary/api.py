@@ -339,31 +339,6 @@ def get_grade(grading_scale, percentage):
 
 
 @frappe.whitelist()
-def get_current_enrollment(student, academic_term=None):
-	current_academic_term = academic_term or frappe.defaults.get_defaults().academic_term
-	program_enrollment_list = frappe.db.sql(
-		"""
-		select
-			name as program_enrollment, student_name, program, 
-			student_category, academic_term
-		from
-			`tabProgram Enrollment`
-		where
-			student = %s and academic_term = %s
-		order by creation""",
-		(student, current_academic_term),
-		as_dict=1,
-	)
-
-	if program_enrollment_list:
-		return program_enrollment_list[0]
-	else:
-		return None
-
-
-
-
-@frappe.whitelist()
 def get_payers(program_enrollment, method):
 	pe = program_enrollment
 	pen = pe.name
@@ -1059,6 +1034,48 @@ def get_doctrinal_statement():
 	return doctrinal_statement
 
 	
-	
+@frappe.whitelist()
+def get_user_info():
+	if frappe.session.user == "Guest":
+		frappe.throw("Authentication failed", exc=frappe.AuthenticationError)
 
-	
+	current_user = frappe.db.get_list(
+		"User",
+		fields=["name", "email", "enabled", "user_image", "full_name", "user_type"],
+		filters={"name": frappe.session.user},
+	)[0]
+	current_user["session_user"] = True
+	return current_user
+
+
+@frappe.whitelist()
+def get_student_info():
+	email = frappe.session.user
+	if email == "Administrator":
+		return
+	student_info = frappe.db.get_list(
+		"Student",
+		fields=["*"],
+		filters={"user": email},
+	)[0]
+
+	program_enrollment_list = frappe.db.sql(
+		"""
+		select
+			name as program_enrollment, student_name, program, 
+			student_category, academic_term
+		from
+			`tabProgram Enrollment`
+		where
+			student = %s and pgmenrol_active = 1 and docstatus != 2
+		order by creation""",
+		(student_info.name),
+		as_dict=1,
+	)
+
+	if program_enrollment_list:
+		current_program = program_enrollment_list[0]
+		student_info["current_program"] = current_program
+	return student_info
+
+

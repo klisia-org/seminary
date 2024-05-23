@@ -8,12 +8,13 @@
  "engine": "InnoDB",
  "field_order": [
   "instructor_name",
-  "employee",
+  "user",
   "gender",
   "column_break_5",
   "status",
   "department",
   "image",
+  "employee",
   "log_details",
   "instructor_log"
  ],
@@ -31,7 +32,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Employee",
    "options": "Employee"
   },
@@ -81,6 +82,13 @@
    "label": "Gender",
    "options": "Gender",
    "read_only_depends_on": "employee"
+  },
+  {
+   "description": "Please input the User in the system, if applicable.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "System User",
+   "options": "User"
   }
  ],
  "image_field": "image",
@@ -90,7 +98,7 @@
    "link_fieldname": "instructor1"
   }
  ],
- "modified": "2024-05-09 18:27:36.284836",
+ "modified": "2024-05-22 11:54:16.773011",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

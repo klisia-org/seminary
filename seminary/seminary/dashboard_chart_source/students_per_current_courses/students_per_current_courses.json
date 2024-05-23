@@ -1,0 +1,13 @@
+{
+ "creation": "2024-05-20 16:14:51.039047",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2024-05-20 16:14:51.039047",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Students per Current Courses",
+ "owner": "Administrator",
+ "source_name": "Students per Current Courses",
+ "timeseries": 0
+}
