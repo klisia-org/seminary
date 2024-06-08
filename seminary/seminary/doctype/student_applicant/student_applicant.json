@@ -550,9 +550,9 @@
   {
    "default": "<h3>\"Test\"</h3>",
    "fieldname": "ds2",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Please read carefully and check if you agree with it.",
-   "options": "options"
+   "options": "Doctrinal Statement"
   },
   {
    "fieldname": "contactsrefs",
@@ -563,7 +563,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-05-17 10:03:57.970368",
+ "modified": "2024-06-07 17:59:21.034258",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Applicant",
