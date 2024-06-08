@@ -16,7 +16,7 @@ class StudentApplicant(Document):
 			naming_series = None
 			if self.program:
 				# set the naming series from the student admission if provided.
-				student_admission = get_student_admission_data(self.student_admission, self.program)
+				student_admission = self.get_student_admission_data(self.student_admission, self.program)
 				if student_admission:
 					naming_series = student_admission.get("applicant_naming_series")
 				else:
@@ -60,7 +60,7 @@ class StudentApplicant(Document):
 
 	def validation_from_student_admission(self):
 
-		student_admission = get_student_admission_data(self.student_admission, self.program)
+		student_admission = self.get_student_admission_data(self.student_admission, self.program)
 
 		if (
 			student_admission
@@ -86,19 +86,16 @@ class StudentApplicant(Document):
 				_("Not eligible for the admission in this program as per Date Of Birth")
 			)
 
-
-
 	def on_payment_authorized(self, *args, **kwargs):
 		self.db_set("paid", 1)
 
-
-	def get_student_admission_data(student_admission, program):
+	def get_student_admission_data(self, student_admission, program):
 
 		admission_programs = frappe.get_all(
 			"Student Admission Program",
 			{"parenttype": "Student Admission", "parent": student_admission, "program": program},
 			["applicant_naming_series", "min_age", "max_age"],
-			)
+		)
 
 		if admission_programs:
 			return admission_programs[0]

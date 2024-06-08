@@ -21,7 +21,7 @@
   "section_break_xuzu",
   "student_email_id",
   "student_admission",
-  "student_category",
+  "customer_group",
   "image",
   "column_break_lvby",
   "academic_year",
@@ -284,15 +284,6 @@
    "options": "Student Applicant",
    "print_hide": 1,
    "read_only": 1
-  },
-  {
-   "default": "Student",
-   "fieldname": "student_category",
-   "fieldtype": "Link",
-   "in_global_search": 1,
-   "label": "Student Category",
-   "link_filters": "[[\"Customer Group\",\"name\",\"like\",\"%Student%\"]]",
-   "options": "Customer Group"
   },
   {
    "fieldname": "section_break_xuzu",
@@ -562,11 +553,20 @@
    "fieldtype": "Table",
    "label": "Contacts and References",
    "options": "Student Contacts"
+  },
+  {
+   "default": "Student",
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "label": "Student Category",
+   "link_filters": "[[\"Customer Group\",\"name\",\"like\",\"%Student%\"]]",
+   "options": "Customer Group"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-06-08 14:00:04.168701",
+ "modified": "2024-06-08 14:27:02.295555",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Applicant",
