@@ -286,10 +286,13 @@
    "read_only": 1
   },
   {
+   "default": "Student",
    "fieldname": "student_category",
    "fieldtype": "Link",
+   "in_global_search": 1,
    "label": "Student Category",
-   "options": "Student Category"
+   "link_filters": "[[\"Customer Group\",\"name\",\"like\",\"%Student%\"]]",
+   "options": "Customer Group"
   },
   {
    "fieldname": "section_break_xuzu",
@@ -563,7 +566,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-06-07 17:59:21.034258",
+ "modified": "2024-06-08 14:00:04.168701",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Applicant",
