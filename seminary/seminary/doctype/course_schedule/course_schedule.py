@@ -93,6 +93,7 @@ class CourseSchedule(Document):
 				meeting_date = self.save_dates(current_date)
 				try:
 					meeting_date.save()
+					frappe.db.set_value('Course Schedule', self, 'hasmtgdate', 1)
 				except OverlapError:
 					meeting_dates_errors.append(current_date)
 				else:

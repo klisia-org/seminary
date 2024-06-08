@@ -24,7 +24,7 @@ class ProgramEnrollment(Document):
 
 	def on_submit(self):
 		self.update_student_joining_date()
-		self.create_course_enrollments()
+		
 
 	def validate_academic_term(self):
 		today = getdate()

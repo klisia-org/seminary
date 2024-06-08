@@ -66,7 +66,7 @@ frappe.ui.form.on("Course Schedule", {
 							frm.msgprint("Calendar created successfully");
 						}}
 			});
-			frm.doc.hasmtgdate = 1;
+			frm.set_value('hasmtgdate',  1);
 			frm.save();
 		});
 	};
