@@ -268,7 +268,7 @@
    "permlevel": 1
   },
   {
-   "description": "Meeting dates are generated automatically from the criteria in the Details tab. Please check manually and adjust as needed.",
+   "description": "Meeting dates are generated automatically from criteria in the Details tab. Please check manually and adjust as needed.",
    "fieldname": "meeting_dates_section",
    "fieldtype": "Section Break",
    "label": "Meeting Dates"
@@ -345,7 +345,7 @@
  ],
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2024-06-07 15:12:21.678642",
+ "modified": "2024-06-07 15:43:22.787345",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
