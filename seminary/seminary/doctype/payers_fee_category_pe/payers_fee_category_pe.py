@@ -14,6 +14,7 @@ class PayersFeeCategoryPE(Document):
 		company = frappe.defaults.get_defaults().company
 		currency = erpnext.get_company_currency(company)
 		receivable_account = frappe.db.get_single_value('Seminary Settings', 'receivable_account')
+		submittable = frappe.db.get_single_value('Seminary Settings', 'auto_submit_sales_invoice')
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		company = frappe.db.get_single_value('Seminary Settings', 'company')
 		cost_center = frappe.db.get_single_value('Seminary Settings', 'cost_center') or None
@@ -39,10 +40,11 @@ class PayersFeeCategoryPE(Document):
 		pfc.pf_student = %s""", self.pf_student) [0] [0]
 		
 		
-		i =0
+		i = 0
 		while i < rows:
 			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
 			print(income_account)
+			
 
 			items= []
 			items.append({
@@ -76,6 +78,8 @@ class PayersFeeCategoryPE(Document):
 			sales_invoice.run_method("set_missing_values")
 			sales_invoice.insert()
 			sales_invoice.save()
+			if submittable == 1:
+				sales_invoice.submit()
 			i += 1
 			print("Invoice Created")
 
