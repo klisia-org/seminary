@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
  "custom_blocks": [],
  "docstatus": 0,
@@ -286,9 +286,28 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Active Students that passed each course",
+   "link_count": 0,
+   "link_to": "Active students that passed each course",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2024-05-17 15:04:17.653360",
+ "modified": "2024-06-11 16:18:05.725487",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",

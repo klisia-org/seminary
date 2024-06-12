@@ -1,11 +1,5 @@
 {
- "actions": [
-  {
-   "action": "seminary.seminary.api.credits_pe_track",
-   "action_type": "Server Action",
-   "label": "Test Track"
-  }
- ],
+ "actions": [],
  "allow_import": 1,
  "autoname": "format:{student_name}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
@@ -199,11 +193,11 @@
  "links": [
   {
    "group": "Enrollment",
-   "link_doctype": "Course Enrollment",
-   "link_fieldname": "program_enrollment"
+   "link_doctype": "Course Enrollment Individual",
+   "link_fieldname": "program_ce"
   }
  ],
- "modified": "2024-05-15 21:57:59.588408",
+ "modified": "2024-06-11 12:03:55.614719",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",
