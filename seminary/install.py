@@ -32,6 +32,10 @@ def setup_fixtures():
 		{"doctype": "Customer Group", "customer_group_name": "Denomination"},
 		{"doctype": "Customer Group", "customer_group_name": "Seminary"},
 		{"doctype": "Customer Group", "customer_group_name": "Para-church Organization"},
+		# Trigger Fee Events
+		{"doctype": "Trigger Fee Event", "trigger": "Course Enrollment", "Active": "1"},
+		{"doctype": "Trigger Fee Event", "trigger": "New Academic Term", "Active": "1"},
+	
 		]
 	make_records(records)
 

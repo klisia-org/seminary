@@ -4,7 +4,7 @@ from . import __version__ as app_version
 
 app_name = "seminary"
 app_title = "Seminary"
-app_publisher = "Klisia and Frappe"
+app_publisher = "Klisia / SeminaryERP"
 app_description = "Seminary Management System"
 app_icon = "fa-solid fa-book-bible"
 app_color = "grey"
