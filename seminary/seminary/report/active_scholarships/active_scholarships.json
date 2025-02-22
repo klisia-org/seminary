@@ -1,0 +1,41 @@
+{
+ "add_total_row": 1,
+ "columns": [],
+ "creation": "2025-02-21 18:41:14.854272",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{}",
+ "letterhead": null,
+ "modified": "2025-02-22 11:25:11.777609",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Active Scholarships",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "select scholarship, pf_student as student, stu_link  from `tabPayers Fee Category PE` where pf_active = 1 and scholarship is not null and scholarship != '' order by scholarship",
+ "ref_doctype": "Scholarships",
+ "report_name": "Active Scholarships",
+ "report_type": "Query Report",
+ "roles": [
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Auditor"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
+ "timeout": 0
+}

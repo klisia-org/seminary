@@ -1,0 +1,37 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2025-02-22 11:57:08.326578",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letterhead": null,
+ "modified": "2025-02-22 11:57:08.326578",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "All Active Scholarships",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "select pfc.scholarship, pfc.pf_student as student, pe.program  \nfrom `tabPayers Fee Category PE` pfc, `tabProgram Enrollment` pe \nwhere pfc.pf_pe = pe.name and\npfc.pf_active = 1 and pfc.scholarship is not null and pfc.scholarship != '' order by pe.program, pfc.scholarship",
+ "ref_doctype": "Scholarships",
+ "report_name": "All Active Scholarships",
+ "report_type": "Query Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Registrar"
+  }
+ ],
+ "timeout": 0
+}
