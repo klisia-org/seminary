@@ -3,11 +3,21 @@ import frappe
 from frappe.desk.page.setup_wizard.setup_wizard import make_records
 import os
 import re
+from frappe.desk.doctype.global_search_settings.global_search_settings import (
+	update_global_search_doctypes,
+)
+from frappe.utils.dashboard import sync_dashboards
 
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
 # TODO: Remove all Items created when Fee Category is created
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
+
+def _(x, *args, **kwargs):
+	"""Redefine the translation function to return the string as is.
+	We want to create english records but still mark the strings as translatable.
+	The respective DocTypes have 'Translate Link Fields' enabled."""
+	return x
 
 
 def after_install():
@@ -81,17 +91,23 @@ def get_custom_fields():
 			},
 				],}
 def update_trigger_fee_events():
-		for trigger in (
-			_("Program Enrollment"),
-			_("Course Enrollment"),
-			_("New Academic Year"),
-			_("New Academic Term"),
-			_("Monthly"),
-		):
-			doc = frappe.new_doc("Trigger Fee Event")
-			doc.trigger = trigger
-			doc.active = 1
-			doc.insert(ignore_permissions=True, ignore_if_duplicate=True)
+	triggers = [
+		_("Program Enrollment"),
+		_("Course Enrollment"),
+		_("New Academic Year"),
+		_("New Academic Term"),
+		_("Monthly"),
+	]
+
+	for trigger in triggers:
+		if not frappe.db.exists("Trigger Fee Event", {"trigger": trigger}):
+			doc = frappe.get_doc({
+				"module": "Seminary",
+				"doctype": "Trigger Fee Event",
+				"trigger": trigger,
+				"active": 1
+			})
+			doc.insert(ignore_permissions=True)
 
 def delete_genders():
 	# Delete auto inserted genders 

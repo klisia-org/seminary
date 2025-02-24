@@ -276,7 +276,7 @@ scheduler_events = {
 # ]
 # Export and Import Fixtures
 # --------------------------
-# fixtures = ["Custom Field"]
+fixtures = ["Custom Field"]
 
 
 # Translation
