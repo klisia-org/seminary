@@ -13,11 +13,7 @@ from frappe.utils.dashboard import sync_dashboards
 # TODO: Remove all Items created when Fee Category is created
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
 
-def _(x, *args, **kwargs):
-	"""Redefine the translation function to return the string as is.
-	We want to create english records but still mark the strings as translatable.
-	The respective DocTypes have 'Translate Link Fields' enabled."""
-	return x
+
 
 
 def after_install():
@@ -27,9 +23,8 @@ def after_install():
 	create_registrar_role()
 	create_instructor_role()
 	get_custom_fields()
-	update_trigger_fee_events()
 	delete_genders()
-	update_grading_scale()
+	
 	
 	
 
@@ -39,17 +34,20 @@ def setup_fixtures():
 		# Item Group Records
 		{"doctype": "Item Group", "item_group_name": "Tuition"},
 		# Customer Group Records
-		{"doctype": "Customer Group", "customer_group_name": "Student"},
-		{"doctype": "Customer Group", "customer_group_name": "Donor"},
-		{"doctype": "Customer Group", "customer_group_name": "Church"},
-		{"doctype": "Customer Group", "customer_group_name": "Denomination"},
-		{"doctype": "Customer Group", "customer_group_name": "Seminary"},
-		{"doctype": "Customer Group", "customer_group_name": "Para-church Organization"},
-		# Stock Item Records
-		{"doctype": "Item", "item_code": "Credit hour", "item_name": "Credit hour", "item_group": "Tuition", "stock_uom": "Unit", "is_sales_item": 1},
-		{"doctype": "Item", "item_code": "Program Admission", "item_name": "Program Admission", "item_group": "Tuition", "stock_uom": "Unit", "is_sales_item": 1},
-		{"doctype": "Item", "item_code": "Donation for Scholarship", "item_name": "Donation for Scholarship", "item_group": "Tuition", "stock_uom": "Unit", "is_sales_item": 1},
-		
+		{"doctype": "Customer Group", "customer_group_name": "Student", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Donor", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Church", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Denomination", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Seminary", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Para-church Organization", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Alumni", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Board Member", "default_price_list": "Standard Selling"},
+		{"doctype": "Customer Group", "customer_group_name": "Volunteer", "default_price_list": "Standard Selling"},
+		#UOM
+		{"doctype": "UOM", "uom_name": "Academic Event", "must_be_whole_number": 0},
+		{"doctype": "UOM", "uom_name": "Credit hour", "must_be_whole_number": 0},
+	
+
 	
 		]
 	make_records(records)
@@ -90,56 +88,12 @@ def get_custom_fields():
 				"insert_after": "student_info_section",
 			},
 				],}
-def update_trigger_fee_events():
-	triggers = [
-		_("Program Enrollment"),
-		_("Course Enrollment"),
-		_("New Academic Year"),
-		_("New Academic Term"),
-		_("Monthly"),
-	]
 
-	for trigger in triggers:
-		if not frappe.db.exists("Trigger Fee Event", {"trigger": trigger}):
-			doc = frappe.get_doc({
-				"module": "Seminary",
-				"doctype": "Trigger Fee Event",
-				"trigger": trigger,
-				"active": 1
-			})
-			doc.insert(ignore_permissions=True)
 
 def delete_genders():
 	# Delete auto inserted genders 
-	frappe.db.sql("DELETE FROM `tabGender' WHERE name NOT IN ('Male', 'Female')")
+	frappe.db.sql("DELETE FROM `tabGender` WHERE name NOT IN ('Male', 'Female')")
 
-def update_grading_scale():
-	# Create Default Grading Scale and populate child table Grading Scale Interval
-	if not frappe.db.exists("Grading Scale", "Default"):
-		doc = frappe.get_doc({
-			"doctype": "Grading Scale",
-			"grading_scale_name": "Default Grading Scale",
-			"maxnumgrade": 100,
-			"grscale_type": "Points",
-			
-			"interval": [
-				{"grade_code": "A+", "threshold": 98, "grade_description": "A+", "grade_pass": "Pass"},
-				{"grade_code": "A", "threshold": 96, "grade_description": "A", "grade_pass": "Pass"},
-				{"grade_code": "A-", "threshold": 94, "grade_description": "A-", "grade_pass": "Pass"},
-				{"grade_code": "B+", "threshold": 92, "grade_description": "B+", "grade_pass": "Pass"},
-				{"grade_code": "B", "threshold": 89, "grade_description": "B", "grade_pass": "Pass"},
-				{"grade_code": "B-", "threshold": 86, "grade_description": "B-", "grade_pass": "Pass"},
-				{"grade_code": "C+", "threshold": 83, "grade_description": "C+", "grade_pass": "Pass"},
-				{"grade_code": "C", "threshold": 80, "grade_description": "C", "grade_pass": "Pass"},
-				{"grade_code": "C-", "threshold": 77, "grade_description": "C-", "grade_pass": "Pass"},
-				{"grade_code": "D+", "threshold": 74, "grade_description": "D+", "grade_pass": "Pass"},
-				{"grade_code": "D", "threshold": 72, "grade_description": "D", "grade_pass": "Pass"},
-				{"grade_code": "D-", "threshold": 69, "grade_description": "D-", "grade_pass": "Pass"},
-				{"grade_code": "F", "threshold": 0, "grade_description": "F", "grade_pass": "Fail"},
-			]
-		})
-		doc.insert(ignore_permissions=True)
-		frappe.db.commit()
 
 
 

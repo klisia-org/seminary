@@ -30,6 +30,18 @@ def get_course(program):
 	return courses
 
 @frappe.whitelist()
+def first_term(doc):
+	#Set the first term as the current term if no term is set as current
+	currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
+	print("Current term is: ", currentterm)
+	print("Self.name is: ", doc)
+	if not currentterm:
+		frappe.db.set_value("Academic Term", doc, "iscurrent_acterm", 1)
+		print("The current term has been set to this term.")
+	else:
+		return print("There is already a current term. Terms will roll automatically according to their dates.")
+
+@frappe.whitelist()
 def set_iscurrent_acterm(academic_term=None):
 	#This is a complex method, as it triggers many others in case there is a change in Academic Term
 	#Refer to the other methods for their functionality in detail.

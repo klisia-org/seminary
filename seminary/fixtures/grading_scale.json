@@ -1,0 +1,96 @@
+[
+ {
+  "amended_from": null,
+  "description": null,
+  "docstatus": 1,
+  "doctype": "Grading Scale",
+  "grading_scale_name": "ESWA",
+  "grscale_type": "Points",
+  "intervals": [
+   {
+    "grade_code": "A+",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 98.0
+   },
+   {
+    "grade_code": "A",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 95.0
+   },
+   {
+    "grade_code": "A-",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 93.0
+   },
+   {
+    "grade_code": "B+",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 90.0
+   },
+   {
+    "grade_code": "B",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 88.0
+   },
+   {
+    "grade_code": "B-",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 86.0
+   },
+   {
+    "grade_code": "C",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 70.0
+   },
+   {
+    "grade_code": "D",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 60.0
+   },
+   {
+    "grade_code": "F",
+    "grade_description": null,
+    "grade_pass": "Pass",
+    "parent": "ESWA",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 0.0
+   }
+  ],
+  "maxnumgrade": 100.0,
+  "modified": "2025-02-15 14:08:45.957859",
+  "name": "ESWA"
+ }
+]

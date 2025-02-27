@@ -3,12 +3,15 @@
 
 
 import frappe
-from frappe.model.document import Document
+from frappe.website.website_generator import WebsiteGenerator
 
 
-class Program(Document):
+class Program(WebsiteGenerator):
 	#def validate(self):
 		#self.validate_courses_pgmtrack()
+
+
+		
 		
 	def get_course_list(self):
 		program_course_list = self.courses

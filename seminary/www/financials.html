@@ -1,0 +1,57 @@
+
+{% extends "templates/web.html" %}
+
+
+
+{% block breadcrumbs %}
+	{% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block header %}
+
+<h1> Financial Situation of {{fullname}}: </h1>
+
+{% endblock %}
+
+{% block page_content %}
+
+
+
+<h2>Scholarship</h2> {{scholarship}}
+
+<h2>Invoices:</h2>
+<table style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
+    <thead>
+        <tr>
+            <th style="padding: 10px;">Invoice</th>
+            <th style="padding: 10px;">Customer</th>
+            <th style="padding: 10px;">Date</th>
+            <th style="padding: 10px;">Total</th>
+            <th style="padding: 10px;">Outstanding Amount</th>
+            <th style="padding: 10px;">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for invoice in invoices %}
+        <tr>
+            <td style="padding: 10px;"><a href="{{ invoice.url }}">{{ invoice.name }}</a></td>
+            <td style="padding: 10px;">{{ invoice.customer }}</td>
+            <td style="padding: 10px;">{{ invoice.posting_date }}</td>
+            <td style="padding: 10px;">{{ invoice.total }}</td>
+            <td style="padding: 10px;">{{ invoice.outstanding_amount }}</td>
+            <td style="padding: 10px;" class="{{ 'unpaid' if invoice.status == 'Unpaid' else 'paid' }}">{{ invoice.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<style>
+    .unpaid {
+        color: red;
+    }
+    .paid {
+        color: green;
+    }
+</style>
+
+{% endblock %}

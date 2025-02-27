@@ -1,0 +1,44 @@
+[
+ {
+  "category_name": "Program Admission Fee",
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Fee Category",
+  "fc_event": "Program Enrollment",
+  "feecategory_type": "Tuition",
+  "is_audit": 0,
+  "is_credit": 0,
+  "item": "Admission Fee",
+  "modified": "2025-02-19 09:37:09.595400",
+  "name": "Program Admission Fee",
+  "payment_term_template": "For immediate payment"
+ },
+ {
+  "category_name": "Registration fee (new term)",
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Fee Category",
+  "fc_event": "New Academic Term",
+  "feecategory_type": "Tuition",
+  "is_audit": 0,
+  "is_credit": 0,
+  "item": "Admission Fee",
+  "modified": "2025-02-17 15:37:43.429298",
+  "name": "Registration fee (new term)",
+  "payment_term_template": "For immediate payment"
+ },
+ {
+  "category_name": "Credit hour",
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Fee Category",
+  "fc_event": "Course Enrollment",
+  "feecategory_type": "Tuition",
+  "is_audit": 0,
+  "is_credit": 1,
+  "item": "Credit hour",
+  "modified": "2025-02-17 15:36:08.001269",
+  "name": "Credit hour",
+  "payment_term_template": "For immediate payment"
+ }
+]

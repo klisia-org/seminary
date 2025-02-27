@@ -1,0 +1,19 @@
+[
+ {
+  "credit_days": 2,
+  "credit_months": 0,
+  "description": null,
+  "discount": 0.0,
+  "discount_type": "Percentage",
+  "discount_validity": 0,
+  "discount_validity_based_on": "Day(s) after invoice date",
+  "docstatus": 0,
+  "doctype": "Payment Term",
+  "due_date_based_on": "Day(s) after invoice date",
+  "invoice_portion": 100.0,
+  "mode_of_payment": "Credit Card",
+  "modified": "2025-02-17 15:32:47.340892",
+  "name": "In 2 days",
+  "payment_term_name": "In 2 days"
+ }
+]

@@ -1,0 +1,42 @@
+[
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2025-02-17 15:27:50.937102",
+  "name": "New Academic Year",
+  "trigger": "New Academic Year"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2025-02-17 15:28:17.658335",
+  "name": "Monthly",
+  "trigger": "Monthly"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2025-02-19 09:36:24.621776",
+  "name": "Program Enrollment",
+  "trigger": "Program Enrollment"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2025-02-17 15:24:57.665392",
+  "name": "Course Enrollment",
+  "trigger": "Course Enrollment"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2025-02-17 15:25:19.475178",
+  "name": "New Academic Term",
+  "trigger": "New Academic Term"
+ }
+]

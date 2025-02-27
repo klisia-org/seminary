@@ -13,6 +13,8 @@ class AcademicTerm(Document):
 		self.name = (
 			self.academic_year + " ({})".format(self.term_name) if self.term_name else ""
 		)
+	
+		
 
 	def validate(self):
 		self.set_title()

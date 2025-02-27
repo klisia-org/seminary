@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_guest_to_view": 1,
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:program_name",
@@ -27,9 +28,13 @@
   "web_tab",
   "website_information_section",
   "hero_image",
+  "published",
+  "route",
   "program_description",
   "program_requirements",
+  "duration_txt",
   "program_duration",
+  "duration_unit",
   "financial_tab",
   "pgm_pgmfees",
   "connections_tab"
@@ -136,9 +141,10 @@
    "label": "Requirements"
   },
   {
+   "description": "This may be used to filter or sort programs.",
    "fieldname": "program_duration",
    "fieldtype": "Int",
-   "label": "Duration"
+   "label": "Duration (numbers only)"
   },
   {
    "fieldname": "tracks_tab",
@@ -189,9 +195,35 @@
    "label": "Program Fees",
    "options": "Program Fees",
    "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Publish on web"
+  },
+  {
+   "fieldname": "duration_unit",
+   "fieldtype": "Select",
+   "label": "Duration (unit of measure)",
+   "options": "Credit-hours\nSemesters\nYears"
+  },
+  {
+   "description": "Use this to describe details of program duration, before the searchable fields below.",
+   "fieldname": "duration_txt",
+   "fieldtype": "Text Editor",
+   "label": "Program Duration (text)"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route (slug)"
   }
  ],
+ "has_web_view": 1,
  "image_field": "hero_image",
+ "index_web_pages_for_search": 1,
+ "is_published_field": "published",
  "links": [
   {
    "group": "Admission and Enrollments",
@@ -205,16 +237,12 @@
   },
   {
    "group": "Student Activity",
-   "link_doctype": "Student Group",
-   "link_fieldname": "program"
-  },
-  {
-   "group": "Student Activity",
    "link_doctype": "Student Log",
    "link_fieldname": "program"
   }
  ],
- "modified": "2024-05-08 13:34:44.664934",
+ "make_attachments_public": 1,
+ "modified": "2025-02-26 12:37:53.740432",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",
@@ -274,10 +302,13 @@
    "share": 1
   }
  ],
+ "route": "program",
  "search_fields": "program_name",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "program_name",
  "track_changes": 1
 }

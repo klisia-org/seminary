@@ -35,6 +35,7 @@ website_generators = ["Student Admission"]
 
 website_route_rules = [
 	{"from_route": "/admissions", "to_route": "Student Admission"},
+    {"from_route": "/program", "to_route": "Program", "defaults": {"my-account-header.title": "Programs"}},
 ]
 
 #treeviews = ["Assessment Group"]
@@ -49,6 +50,13 @@ standard_portal_menu_items = [
 		"route": "/admissions",
 		"reference_doctype": "Student Admission",
 		"role": "Student Applicant",
+	},
+	{
+		"title": "Financials",
+		"route": "/financials",
+		"reference_doctype": "Sales Invoice",
+		"role": "Student",
+		"condition": "frappe.get_all('Sales Invoice', filters={'custom_student': frappe.session.user})"
 	},
 ]
 
@@ -73,7 +81,7 @@ global_search_doctypes = {
 		{"doctype": "Instructor", "index": 12},
 		{"doctype": "Course Activity", "index": 13},
 		{"doctype": "Quiz Activity", "index": 14},
-		{"doctype": "Course Enrollment", "index": 15},
+		{"doctype": "Course Enrollment Individual", "index": 15},
 		{"doctype": "Program Enrollment", "index": 16},
 		{"doctype": "Student Language", "index": 17},
 		{"doctype": "Student Applicant", "index": 18},
@@ -276,7 +284,7 @@ scheduler_events = {
 # ]
 # Export and Import Fixtures
 # --------------------------
-fixtures = ["Custom Field"]
+fixtures = ["Trigger Fee Events", "Grading Scale", "Grading Scale Interval", "Item", "Payment Term", "Payment Terms Template", "Fee Category", "Program Level", "Assessment Criteria"]
 
 
 # Translation

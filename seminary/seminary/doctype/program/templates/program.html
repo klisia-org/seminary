@@ -1,0 +1,22 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div style="text-align: center;">
+    <img src="{{ hero_image }}" alt="Hero Image" style="height: 320px">
+</div>
+
+
+<h1>{{ title }}</h1>
+
+{{ program_description}}
+ 
+<h2>Program Requirements</h2>
+{{program_requirements}}
+ 
+<h2>Program Duration</h2>
+{{duration_txt}}
+{{program_duration}} {{duration_unit}}
+
+{% endblock %}
+
+<!-- this is a custom web page template -->

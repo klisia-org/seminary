@@ -17,9 +17,9 @@
  "introduction_text": "<div class=\"ql-editor read-mode\"><h3>We rejoice in the Lord that you are seeking to grow in the love and knowledge of our triune God alongside us!</h3><p><br></p><p>Please fill this form and we will get back to you, as soon as we prayerfully consider your application.</p></div>",
  "is_standard": 1,
  "list_columns": [],
- "login_required": 1,
+ "login_required": 0,
  "max_attachment_size": 0,
- "modified": "2024-05-17 10:09:46.615658",
+ "modified": "2025-02-25 15:48:56.630268",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "student-applicant",
@@ -169,7 +169,7 @@
    "max_length": 0,
    "max_value": 0,
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -195,7 +195,7 @@
    "max_value": 0,
    "options": "Gender",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {

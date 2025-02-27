@@ -1,0 +1,19 @@
+<div style="display: flex; align-items: center;">
+	<div style="flex: 1;">
+		{% if hero_image %}
+			<img src="{{ hero_image }}" alt="Hero Image" style="width: 200px;">
+		{% else %}
+			<div style="width: 200px; height: 200px; visibility: hidden;"></div>
+		{% endif %}
+	</div>
+	<div style="flex: 2; display: flex; align-items: flex-start;  font-size: large; font-weight: 00 ;">
+		<a href="{{ doc.route }}">{{ doc.title or doc.name }}</a>
+	</div>
+
+</div>
+
+<div style="height: 20px; visibility: hidden;"></div>
+
+
+
+<!-- this is a sample default list template -->
