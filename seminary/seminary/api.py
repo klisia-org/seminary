@@ -1101,3 +1101,41 @@ def get_program_fees(program):
 	)
 	print(program_fees)
 	return program_fees
+
+@frappe.whitelist()
+def add_scholarship(doc):
+	print("Add Scholarship called")
+	program_enrollment = doc.program_enrollment
+	student = doc.student
+	scholarship = doc.scholarship
+	sch_payer = frappe.db.get_value('Singles', {'doctype': 'Seminary Settings', 'field': 'scholarship_cust'}, 'value')
+	if scholarship:
+		scholarship_discs = frappe.db.sql(
+			"""select pgm_fee, discount_ from `tabScholarship Discounts` where parent = %s""", (scholarship)
+		)
+		student_fees = frappe.db.sql(
+			"""select  fee_category, pay_percent, payterm_payer, pep_event from `tabpgm_enroll_payers` where parent = %s and payer = %s""", (program_enrollment, student)
+		)
+		for fee in student_fees:
+			for disc in scholarship_discs:
+				 
+				if fee[0] == disc[0]:
+					stu_pay = fee[2]
+					discount = disc[1]
+					new_stu_pay = stu_pay - discount
+					print("category: " + fee[0] + ", new fee: " + str(new_stu_pay))
+					frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0]}, "pay_percent", new_stu_pay)
+					doc = frappe.new_doc("pgm_enroll_payers")
+					doc.parent = program_enrollment
+					doc.parentfield = "pf_payers"
+					doc.parenttype = "Payers Fee Category PE"
+					doc.fee_category = fee[0]
+					doc.payer = sch_payer
+					doc.payterm_payer = fee[2]
+					doc.pep_event = fee[3]
+					doc.pay_percent = discount
+					doc.insert()
+					doc.save()
+
+		
+	

@@ -21,6 +21,10 @@
   "column_break_lhee",
   "receivable_account",
   "income_account",
+  "scholarships_section",
+  "scholarship_cc",
+  "column_break_wnvm",
+  "scholarship_cust",
   "course_enrollment_parameters_section",
   "block_cei_pay",
   "min_perc_enroll",
@@ -159,11 +163,33 @@
    "fieldname": "advancetb",
    "fieldtype": "Check",
    "label": "Auto-advance students in Time-based Programs?"
+  },
+  {
+   "fieldname": "scholarships_section",
+   "fieldtype": "Section Break",
+   "label": "Scholarships"
+  },
+  {
+   "fieldname": "scholarship_cc",
+   "fieldtype": "Link",
+   "label": "Scholarship - Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_wnvm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "This customer will be used in all Sales Invoices of Scholarships.",
+   "fieldname": "scholarship_cust",
+   "fieldtype": "Link",
+   "label": "Scholarship - Customer",
+   "options": "Customer"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-05-15 19:43:49.030685",
+ "modified": "2025-02-27 13:49:55.650893",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
