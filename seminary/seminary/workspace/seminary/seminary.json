@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
  "custom_blocks": [],
  "docstatus": 0,
@@ -304,10 +304,51 @@
    "link_to": "Active students that passed each course",
    "link_type": "Report",
    "onboard": 0,
+   "report_ref_doctype": "Program",
+   "type": "Link"
+  },
+  {
+   "description": "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Define Scholarships",
+   "link_count": 0,
+   "link_to": "Scholarships",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Assign Scholarships in the Payers for Program Enrollment",
+   "link_count": 0,
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Active Scholarship List",
+   "link_count": 0,
+   "link_to": "All Active Scholarships",
+   "link_type": "Report",
+   "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2024-06-11 16:18:05.725487",
+ "modified": "2025-02-27 11:14:12.620686",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",

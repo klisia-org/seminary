@@ -84,7 +84,7 @@
    "options": "Student"
   },
   {
-   "description": "The scholarship will give discounts in the fee categories defined there.",
+   "description": "The scholarship will give discounts in the fee categories defined there. You may need to save and reload to see the changes.",
    "fieldname": "scholarship",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -94,7 +94,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-27 10:56:12.169717",
+ "modified": "2025-02-27 11:20:41.462568",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Payers Fee Category PE",
