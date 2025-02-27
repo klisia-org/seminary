@@ -10,6 +10,7 @@
   "column_break_gkkm",
   "pf_active",
   "pf_custgroup",
+  "scholarship",
   "section_break_obto",
   "pf_payers",
   "section_break_jxev",
@@ -81,11 +82,19 @@
    "fieldtype": "Link",
    "label": "Student Link",
    "options": "Student"
+  },
+  {
+   "description": "The scholarship will give discounts in the fee categories defined there.",
+   "fieldname": "scholarship",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Scholarship",
+   "options": "Scholarships"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-05-02 16:51:42.510479",
+ "modified": "2025-02-27 10:56:12.169717",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Payers Fee Category PE",

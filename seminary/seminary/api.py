@@ -1091,3 +1091,13 @@ def get_student_info():
 	return student_info
 
 
+@frappe.whitelist()
+def get_program_fees(program):
+	program_fees = []
+	program_fees = frappe.get_all(
+		"Program Fees",
+		filters={"parent": program},
+		fields=["pgm_feecategory"],
+	)
+	print(program_fees)
+	return program_fees
