@@ -103,35 +103,95 @@ class PayersFeeCategoryPE(Document):
 		program_enrollment = self.pf_pe
 		student = self.pf_student
 		scholarship = self.scholarship
-		sch_payer = frappe.db.get_value('Singles', {'doctype': 'Seminary Settings', 'field': 'scholarship_cust'}, 'value')
+		
+		# Fetch scholarship payer
+		sch_payer = frappe.db.sql(
+			"""Select value from `tabSingles` where doctype = 'Seminary Settings' and field = 'scholarship_cust'""", as_list=1)
+		sch_payer = sch_payer[0][0] if sch_payer else None
+		print("Scholarship payer:", sch_payer)
+		if not sch_payer:
+			frappe.throw("Scholarship payer not found in Seminary Settings")
+		
 		if scholarship:
+			print("Scholarship exists:", scholarship)
 			scholarship_discs = frappe.db.sql(
-			"""select pgm_fee, discount_ from `tabScholarship Discounts` where parent = %s""", (scholarship)
+				"""select pgm_fee, discount_ from `tabScholarship Discounts` where parent = %s""", (scholarship)
 			)
+			print("Scholarship discounts:", scholarship_discs)
+			
 			student_fees = frappe.db.sql(
-			"""select  fee_category, pay_percent, payterm_payer, pep_event from `tabpgm_enroll_payers` where parent = %s and payer = %s""", (program_enrollment, student)
+				"""select fee_category, pay_percent, payterm_payer, pep_event from `tabpgm_enroll_payers` where parent = %s and payer = %s""", (program_enrollment, student)
 			)
+			print("Student fees:", student_fees)
+			
 			for fee in student_fees:
 				for disc in scholarship_discs:
-				 
 					if fee[0] == disc[0]:
-						stu_pay = fee[2]
+						stu_pay = fee[1]
 						discount = disc[1]
-						new_stu_pay = stu_pay - discount
-						print("category: " + fee[0] + ", new fee: " + str(new_stu_pay))
-						frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0]}, "pay_percent", new_stu_pay)
-						doc = frappe.new_doc("pgm_enroll_payers")
-						doc.parent = program_enrollment
-						doc.parentfield = "pf_payers"
-						doc.parenttype = "Payers Fee Category PE"
-						doc.fee_category = fee[0]
-						doc.payer = sch_payer
-						doc.payterm_payer = fee[2]
-						doc.pep_event = fee[3]
-						doc.pay_percent = discount
-						doc.insert()
-						doc.save()
+						
+						# Check if scholarship already exists
+						existing_scholarship = frappe.db.sql(
+							"""select pay_percent from `tabpgm_enroll_payers` where parent = %s and fee_category = %s and payer = %s""", (program_enrollment, fee[0], sch_payer)
+						)
+						
+						if existing_scholarship:
+							sch_pay = existing_scholarship[0][0]
+							new_stu_pay = float(stu_pay) + sch_pay - discount
+							print("category: " + fee[0] + ", new fee after change: " + str(new_stu_pay))
+							
+							frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0], "payer": student}, "pay_percent", new_stu_pay)
+							
+							frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0], "payer": sch_payer}, "pay_percent", discount)
+						else:
+							new_stu_pay = float(stu_pay) - discount
+							print("category: " + fee[0] + ", new fee: " + str(new_stu_pay))
+							
+							frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0], "payer": student}, "pay_percent", new_stu_pay)
+							
+							doc = frappe.new_doc("pgm_enroll_payers")
+							doc.parent = program_enrollment
+							doc.parentfield = "pf_payers"
+							doc.parenttype = "Payers Fee Category PE"
+							doc.fee_category = fee[0]
+							doc.payer = sch_payer
+							doc.payterm_payer = fee[2]
+							doc.pep_event = fee[3]
+							doc.pay_percent = discount
+							doc.insert()
+							doc.save()
+		else:
+			#Check if scholarship existed before and remove it, first adding % back to student
+			scholarship_exists = frappe.db.sql(
+				"""select name, fee_category, pay_percent from `tabpgm_enroll_payers` where parent = %s and payer = %s""", (program_enrollment, sch_payer)
+			)
+			student_fees = frappe.db.sql(
+				"""select fee_category, pay_percent, payterm_payer, pep_event from `tabpgm_enroll_payers` where parent = %s and payer = %s""", (program_enrollment, student)
+			)
+			if scholarship_exists:
+				for fee in student_fees:
+					for sch in scholarship_exists:
+						if fee[0] == sch[1]:
+							new_stu_pay = float(fee[1]) + sch[2]
+							frappe.db.set_value("pgm_enroll_payers", {"parent": program_enrollment, "fee_category": fee[0], "payer": student}, "pay_percent", new_stu_pay)
+							
+							frappe.delete_doc("pgm_enroll_payers", sch[0])
+							print("Scholarship removed")
 
-		
+					
+			else:
+				print("No scholarship to remove")
 
+	@frappe.whitelist()
+	def get_scholarships(self):
+		program_enrollment = self.pf_pe
+		pe = frappe.get_doc("Program Enrollment", program_enrollment)
+		program = pe.program
+		scholarships = frappe.db.sql(
+			"""select name from `tabScholarships` where program = %s""", program
+		)
 		
+		return scholarships
+
+
+

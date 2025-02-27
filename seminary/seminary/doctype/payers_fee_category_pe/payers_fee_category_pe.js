@@ -45,12 +45,24 @@ frappe.ui.form.on("Payers Fee Category PE", {
                 console.log("Error calling check_percentages:", e);
             });
         console.log("Calling seminary.seminary.api.add_scholarship with doc name:", frm.doc.name);
-        frm.call('seminary.seminary.api.add_scholarship', frm.doc.name)
+        frm.call('add_scholarship', frm.doc.name)
             .then(r => {
                 console.log("add_scholarship called successfully");
             })
             .catch(e => {
-                console.log("Error calling seminary.seminary.api.add_scholarship:", e);
+                console.log("Error calling add_scholarship:", e);
             });
+    },
+
+    onload(frm) {
+        frm.set_query("scholarship", "seminary.seminary.api.get_scholarships");
+     
+                
+           
+        
+                    
     }
+               
+      
+    
 });

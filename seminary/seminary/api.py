@@ -7,8 +7,9 @@ import json
 import frappe
 from frappe import _
 from frappe.email.doctype.email_group.email_group import add_subscribers
+from frappe.desk.reportview import get_filters_cond, get_match_cond
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cstr, flt, getdate
+from frappe.utils import cstr, flt, getdate, unique
 from frappe.model.document import Document
 import calendar
 from datetime import timedelta
@@ -1136,6 +1137,27 @@ def add_scholarship(doc):
 					doc.pay_percent = discount
 					doc.insert()
 					doc.save()
+@frappe.whitelist()
+def get_fields(doctype, fields=None):
+	if fields is None:
+		fields = []
+	meta = frappe.get_meta(doctype)
+	fields.extend(meta.get_search_fields())
 
-		
+	if meta.title_field and meta.title_field.strip() not in fields:
+		fields.insert(1, meta.title_field.strip())
+
+	return unique(fields)
+
+@frappe.whitelist()
+def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
+	doctype = "Payers Fee Category PE"
+	fields = frappe.get_fields(doctype, ["name", "program_enrollment"])
+	program_enrollment = filters.get("program_enrollment")
+	pe = frappe.get_doc("Program Enrollment", program_enrollment)
+	program = pe.program
+	scholarships = frappe.db.sql(
+		"""select name from `tabScholarships` where program = %s""", program
+	)
+	return scholarships
 	
