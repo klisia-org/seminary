@@ -293,6 +293,7 @@
    "read_only": 1
   },
   {
+   "default": "Student",
    "fieldname": "customer_group",
    "fieldtype": "Link",
    "label": "Customer Group",
@@ -337,7 +338,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2024-05-17 10:00:58.216312",
+ "modified": "2025-02-28 15:16:07.552407",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student",
