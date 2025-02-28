@@ -167,12 +167,11 @@ def enroll_student(source_name):
 	student_applicant = frappe.db.get_value(
 		"Student Applicant",
 		source_name,
-		["student_category", "program", "academic_term"],
+		["program", "academic_term"],
 		as_dict=True,
 	)
 	program_enrollment = frappe.new_doc("Program Enrollment")
 	program_enrollment.student = student.name
-	program_enrollment.student_category = student_applicant.student_category
 	program_enrollment.student_name = student.student_name
 	program_enrollment.program = student_applicant.program
 	program_enrollment.academic_term = student_applicant.academic_term
@@ -1082,7 +1081,7 @@ def get_student_info():
 		"""
 		select
 			name as program_enrollment, student_name, program, 
-			student_category, academic_term
+			academic_term
 		from
 			`tabProgram Enrollment`
 		where
