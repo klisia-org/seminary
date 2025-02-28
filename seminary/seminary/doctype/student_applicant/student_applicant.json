@@ -553,15 +553,6 @@
    "fieldtype": "Table",
    "label": "Contacts and References",
    "options": "Student Contacts"
-  },
-  {
-   "default": "Student",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "in_global_search": 1,
-   "label": "Student Category",
-   "link_filters": "[[\"Customer Group\",\"name\",\"like\",\"%Student%\"]]",
-   "options": "Customer Group"
   }
  ],
  "image_field": "image",
