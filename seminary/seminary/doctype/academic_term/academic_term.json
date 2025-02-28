@@ -87,11 +87,7 @@
    "link_doctype": "Student Applicant",
    "link_fieldname": "academic_term"
   },
-  {
-   "group": "Student",
-   "link_doctype": "Student Group",
-   "link_fieldname": "academic_term"
-  },
+
   {
    "group": "Student",
    "link_doctype": "Student Log",
@@ -123,7 +119,7 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
+ "quick_entry": 0,
  "sort_field": "name",
  "sort_order": "DESC",
  "states": [],
