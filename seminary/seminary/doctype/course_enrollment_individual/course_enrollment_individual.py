@@ -79,6 +79,8 @@ class CourseEnrollmentIndividual(Document):
 		is_audit = self.audit
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		cost_center = frappe.db.get_single_value('Seminary Settings', 'cost_center') or None
+		sch_cost_center = frappe.db.get_single_value('Seminary Settings', 'scholarship_cc') 
+		sch_customer = frappe.db.get_single_value('Seminary Settings', 'scholarship_cust')
 		stulink = self.student_ce
 		inv_data = []
 		inv_data = frappe.db.sql("""select cei.student_ce, cei.audit, cei.credits, cei.program_data,  pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
@@ -124,7 +126,8 @@ class CourseEnrollmentIndividual(Document):
 			
 			gt = qty * inv_data[i][14]
 			print(qty)
-
+			cost_center = cost_center if inv_data[i][5] != sch_customer else sch_cost_center
+			discount = 0 if inv_data[i][5] != sch_customer else 100
 			items.append({
 					"doctype:": "Sales Invoice Item",
 					"item_name": inv_data[i][12],
@@ -152,7 +155,9 @@ class CourseEnrollmentIndividual(Document):
 					"payment_terms_template": inv_data[i][8],
 					"remarks": "Fee for " + self.name,
 					"items": items,
-					"student": stulink,
+					"cost_center": cost_center,
+					"custom_student": stulink,
+					"additional_discount_percentage": discount
 					})
 			sales_invoice.insert()
 			sales_invoice.save()

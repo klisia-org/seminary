@@ -24,7 +24,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2025-02-22 13:38:06.234448",
+ "modified": "2025-02-28 07:59:40.815881",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scholarship Sales Invoices",
@@ -46,6 +46,9 @@
   },
   {
    "role": "Seminary Manager"
+  },
+  {
+   "role": "Projects Manager"
   }
  ],
  "timeout": 0
