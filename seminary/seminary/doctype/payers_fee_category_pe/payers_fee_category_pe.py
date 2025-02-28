@@ -18,6 +18,8 @@ class PayersFeeCategoryPE(Document):
 		income_account = frappe.db.sql("""select default_income_account from `tabCompany` where name=%s""", company)[0][0]
 		company = frappe.db.get_single_value('Seminary Settings', 'company')
 		cost_center = frappe.db.get_single_value('Seminary Settings', 'cost_center') or None
+		sch_cost_center = frappe.db.get_single_value('Seminary Settings', 'scholarship_cc') 
+		sch_customer = frappe.db.get_single_value('Seminary Settings', 'scholarship_cust')
 		stulink = self.stu_link
 		inv_data = []
 		inv_data = frappe.db.sql("""select pfc.pf_student as student, pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate 
@@ -44,7 +46,8 @@ class PayersFeeCategoryPE(Document):
 		while i < rows:
 			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
 			print(income_account)
-			
+			cost_center = cost_center if inv_data[i][5] != sch_customer else sch_cost_center
+			discount = 0 if inv_data[i][5] != sch_customer else 100
 
 			items= []
 			items.append({
@@ -73,7 +76,8 @@ class PayersFeeCategoryPE(Document):
 				"base_grand_total": inv_data[i][11],
 				"payment_terms_template": inv_data[i][5],
 				"items": items,
-				"student": stulink,
+				"custom_student": stulink,
+				"additional_discount_percentage": discount
 				})
 			sales_invoice.run_method("set_missing_values")
 			sales_invoice.insert()
