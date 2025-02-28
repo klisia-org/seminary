@@ -75,8 +75,7 @@ global_search_doctypes = {
 		{"doctype": "Program", "index": 5},
 		{"doctype": "Quiz", "index": 6},
 		{"doctype": "Question", "index": 7},
-		{"doctype": "Course Schedule Meeting Dates", "index": 9},
-		{"doctype": "Student Group", "index": 10},
+		{"doctype": "Course Schedule Meeting Dates", "index": 9},		
 		{"doctype": "Student", "index": 11},
 		{"doctype": "Instructor", "index": 12},
 		{"doctype": "Course Activity", "index": 13},
@@ -92,7 +91,7 @@ global_search_doctypes = {
 		{"doctype": "Course Schedule", "index": 26},
 		{"doctype": "Student Attendance", "index": 27},
 		{"doctype": "Announcement", "index": 28},
-		{"doctype": "Student Category", "index": 29},
+		
 		
 		{"doctype": "Assessment Criteria", "index": 32},
 		{"doctype": "Academic Year", "index": 33},
@@ -100,7 +99,7 @@ global_search_doctypes = {
 		
 		{"doctype": "Student Admission", "index": 36},
 		{"doctype": "Fee Category", "index": 37},
-		{"doctype": "Discussion", "index": 39},
+		
         
 	]
 }

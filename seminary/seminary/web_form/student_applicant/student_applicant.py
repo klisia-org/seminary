@@ -2,8 +2,10 @@ import frappe
 
 @frappe.whitelist()
 def get_context(context):
-    doctrinal_statement = frappe.get_doc('Doctrinal Statement')
-    context.doctrinal_statement = doctrinal_statement.doctrinalst
+    at = frappe.db.get_value('Academic Term', {'iscurrent_acterm': 1}, 'name')
+    context.academic_term = at
+    return context
+    
     
 @frappe.whitelist()
 def get_doctrinal_statement():
@@ -12,3 +14,5 @@ def get_doctrinal_statement():
 	doctrinal_statement = doctrinal_statement.doctrinalst
 	print(doctrinal_statement)
 	return doctrinal_statement
+
+

@@ -42,7 +42,7 @@ frappe.ui.form.on("Payers Fee Category PE", {
                 frm.save()
                     .then(() => {
                         frm.reload_doc(); // Reload the form after saving
-                    });
+                    }); 
             })
             .catch(e => {
                 console.log("Error calling add_scholarship:", e);

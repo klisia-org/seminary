@@ -46,8 +46,8 @@ class PayersFeeCategoryPE(Document):
 		while i < rows:
 			print("Creating Invoice - " + str(i) + " of " + str(rows) + " rows")
 			print(income_account)
-			cost_center = cost_center if inv_data[i][5] != sch_customer else sch_cost_center
-			discount = 0 if inv_data[i][5] != sch_customer else 100
+			cost_center = cost_center if inv_data[i][2] != sch_customer else sch_cost_center
+			discount = 0 if inv_data[i][2] != sch_customer else 100
 
 			items= []
 			items.append({

@@ -975,7 +975,7 @@ def course_event(name):
 	datest = str(course.c_datestart)  # Convert datest to a string
 	timest = str(course.from_time)  # Convert timest to a string
 	datetimest = datest + " " + timest
-	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S") # Convert datetimest to a datetime object
+	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S.%f") # Convert datetimest to a datetime object
 	print(datetimest)
 	datef = str(course.c_dateend)  # Convert datef to a string
 	timef = str(course.to_time)  # Convert timef to a string
@@ -1038,13 +1038,19 @@ def course_event(name):
 			
 			
 		
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_doctrinal_statement():
 	print("Method DS called")
 	doctrinal_statement = frappe.get_doc('Doctrinal Statement')
 	doctrinal_statement = doctrinal_statement.doctrinalst
 	print(doctrinal_statement)
 	return doctrinal_statement
+
+@frappe.whitelist(allow_guest=True)
+def active_term():
+	at = frappe.db.get_value('Academic Term', {'iscurrent_acterm': 1}, 'name')
+	ay = frappe.db.get_value('Academic Term', {'iscurrent_acterm': 1}, 'academic_year')
+	return {'academic_term': at, 'academic_year': ay}
 
 	
 @frappe.whitelist()
