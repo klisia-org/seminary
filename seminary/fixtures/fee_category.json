@@ -40,5 +40,19 @@
   "modified": "2025-02-17 15:36:08.001269",
   "name": "Credit hour",
   "payment_term_template": "For immediate payment"
+ },
+ {
+  "category_name": "Audit Fee",
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Fee Category",
+  "fc_event": "Course Enrollment",
+  "feecategory_type": "Tuition",
+  "is_audit": 1,
+  "is_credit": 0,
+  "item": "Audit Flat Fee",
+  "modified": "2025-02-28 15:25:35.846585",
+  "name": "Audit Fee",
+  "payment_term_template": "For immediate payment"
  }
 ]

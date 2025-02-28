@@ -4,93 +4,129 @@
   "description": null,
   "docstatus": 1,
   "doctype": "Grading Scale",
-  "grading_scale_name": "ESWA",
+  "grading_scale_name": "Default Numeric Scale",
   "grscale_type": "Points",
   "intervals": [
    {
     "grade_code": "A+",
-    "grade_description": null,
+    "grade_description": "A+",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
     "threshold": 98.0
    },
    {
     "grade_code": "A",
-    "grade_description": null,
+    "grade_description": "A",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 95.0
+    "threshold": 96.0
    },
    {
     "grade_code": "A-",
-    "grade_description": null,
+    "grade_description": "A-",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 93.0
+    "threshold": 94.0
    },
    {
     "grade_code": "B+",
-    "grade_description": null,
+    "grade_description": "B+",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 90.0
+    "threshold": 92.0
    },
    {
     "grade_code": "B",
-    "grade_description": null,
+    "grade_description": "B",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 88.0
+    "threshold": 89.0
    },
    {
     "grade_code": "B-",
-    "grade_description": null,
+    "grade_description": "B-",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
     "threshold": 86.0
    },
    {
-    "grade_code": "C",
-    "grade_description": null,
+    "grade_code": "C+",
+    "grade_description": "C+",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 70.0
+    "threshold": 83.0
+   },
+   {
+    "grade_code": "C",
+    "grade_description": "C",
+    "grade_pass": "Pass",
+    "parent": "Default Numeric Scale",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 80.0
+   },
+   {
+    "grade_code": "C-",
+    "grade_description": "C-",
+    "grade_pass": "Pass",
+    "parent": "Default Numeric Scale",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 77.0
+   },
+   {
+    "grade_code": "D+",
+    "grade_description": "D+",
+    "grade_pass": "Pass",
+    "parent": "Default Numeric Scale",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 74.0
    },
    {
     "grade_code": "D",
-    "grade_description": null,
+    "grade_description": "D",
     "grade_pass": "Pass",
-    "parent": "ESWA",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
-    "threshold": 60.0
+    "threshold": 72.0
+   },
+   {
+    "grade_code": "D-",
+    "grade_description": "D-",
+    "grade_pass": "Pass",
+    "parent": "Default Numeric Scale",
+    "parentfield": "intervals",
+    "parenttype": "Grading Scale",
+    "threshold": 69.0
    },
    {
     "grade_code": "F",
-    "grade_description": null,
-    "grade_pass": "Pass",
-    "parent": "ESWA",
+    "grade_description": "F",
+    "grade_pass": "Fail",
+    "parent": "Default Numeric Scale",
     "parentfield": "intervals",
     "parenttype": "Grading Scale",
     "threshold": 0.0
    }
   ],
   "maxnumgrade": 100.0,
-  "modified": "2025-02-15 14:08:45.957859",
-  "name": "ESWA"
+  "modified": "2025-02-28 09:49:27.275161",
+  "name": "Default Numeric Scale"
  }
 ]

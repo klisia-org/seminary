@@ -1,0 +1,44 @@
+[
+ {
+  "assessment_criteria": "Academic Paper",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:52:18.046205",
+  "name": "Academic Paper"
+ },
+ {
+  "assessment_criteria": "Reading Report",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:52:31.784371",
+  "name": "Reading Report"
+ },
+ {
+  "assessment_criteria": "Project",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:52:48.521452",
+  "name": "Project"
+ },
+ {
+  "assessment_criteria": "Quiz",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:53:00.050504",
+  "name": "Quiz"
+ },
+ {
+  "assessment_criteria": "Exam",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:53:05.412982",
+  "name": "Exam"
+ },
+ {
+  "assessment_criteria": "Participation",
+  "docstatus": 0,
+  "doctype": "Assessment Criteria",
+  "modified": "2025-02-28 09:53:23.994199",
+  "name": "Participation"
+ }
+]

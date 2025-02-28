@@ -1,0 +1,42 @@
+[
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Program Level",
+  "modified": "2025-02-28 09:17:47.586148",
+  "name": "Masters",
+  "pgm_level": "Masters"
+ },
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Program Level",
+  "modified": "2025-02-28 15:43:33.637288",
+  "name": "Bachelors",
+  "pgm_level": "Bachelors"
+ },
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Program Level",
+  "modified": "2025-02-28 15:43:42.594876",
+  "name": "Doctorate",
+  "pgm_level": "Doctorate"
+ },
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Program Level",
+  "modified": "2025-02-28 15:43:49.321084",
+  "name": "Certificate",
+  "pgm_level": "Certificate"
+ },
+ {
+  "description": null,
+  "docstatus": 0,
+  "doctype": "Program Level",
+  "modified": "2025-02-28 15:44:00.190826",
+  "name": "Non Formal Program",
+  "pgm_level": "Non Formal Program"
+ }
+]

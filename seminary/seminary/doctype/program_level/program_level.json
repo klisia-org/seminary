@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{pgm_level}-{##}",
+ "autoname": "format:{pgm_level}",
  "creation": "2024-03-04 20:48:32.308155",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -17,7 +17,8 @@
    "in_standard_filter": 1,
    "label": "Program Level",
    "reqd": 1,
-   "search_index": 1
+   "translatable": 1,
+   "unique": 1
   },
   {
    "fieldname": "description",
@@ -27,7 +28,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-03-04 20:56:39.526782",
+ "modified": "2025-02-28 15:42:45.984332",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Level",
