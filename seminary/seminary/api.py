@@ -1151,13 +1151,13 @@ def get_fields(doctype, fields=None):
 
 @frappe.whitelist()
 def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
-	doctype = "Payers Fee Category PE"
-	fields = frappe.get_fields(doctype, ["name", "program_enrollment"])
-	program_enrollment = filters.get("program_enrollment")
+	program_enrollment = frappe.db.sql(
+		"""select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""", (f"%{txt}%",)
+	)[0][0]
 	pe = frappe.get_doc("Program Enrollment", program_enrollment)
 	program = pe.program
 	scholarships = frappe.db.sql(
-		"""select name from `tabScholarships` where program = %s""", program
+		"""select name from `tabScholarships` where program = %s""", (program,)
 	)
 	return scholarships
 	

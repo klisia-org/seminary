@@ -55,9 +55,14 @@ frappe.ui.form.on("Payers Fee Category PE", {
     },
 
     onload(frm) {
-        frm.set_query("scholarship", "seminary.seminary.api.get_scholarships");
-     
-                
+        frm.set_query("scholarship", function (doc, cdt, cdn) {
+            let row = frappe.get_doc(cdt, cdn);
+            return {
+                query: "seminary.seminary.api.get_scholarships"
+            };      
+            
+        });
+                  
            
         
                     
