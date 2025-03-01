@@ -19,12 +19,12 @@
    "fieldname": "enrollment",
    "fieldtype": "Link",
    "label": "Course Enrollment",
-   "options": "Course Enrollment",
+   "options": "Course Enrollment Individual",
    "reqd": 1,
    "set_only_once": 1
   },
   {
-   "fetch_from": "enrollment.course",
+   "fetch_from": "enrollment.coursesc_ce",
    "fieldname": "course",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -35,7 +35,7 @@
    "set_only_once": 1
   },
   {
-   "fetch_from": "enrollment.student",
+   "fetch_from": "enrollment.student_ce",
    "fieldname": "student",
    "fieldtype": "Data",
    "in_list_view": 1,
