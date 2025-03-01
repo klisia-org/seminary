@@ -19,9 +19,7 @@ from seminary.seminary.utils import OverlapError
 class CourseSchedule(Document):
 	@frappe.whitelist()
 	def validate(self):
-		self.instructor_name = frappe.db.get_value(
-			"Instructor", self.instructor1
-		)
+		
 		self.validate_date()
 		self.validate_time()
 		self.validate_assessment_criteria()

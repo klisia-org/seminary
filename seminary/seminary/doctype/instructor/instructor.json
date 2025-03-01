@@ -84,11 +84,12 @@
    "read_only_depends_on": "employee"
   },
   {
-   "description": "Please input the User in the system, if applicable.",
+   "description": "Please input the User in the system.",
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "System User",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   }
  ],
  "image_field": "image",
@@ -98,7 +99,7 @@
    "link_fieldname": "instructor1"
   }
  ],
- "modified": "2024-05-22 11:54:16.773011",
+ "modified": "2025-03-01 11:47:33.388258",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

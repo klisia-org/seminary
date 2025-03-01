@@ -17,7 +17,6 @@
   "course_information_section",
   "course",
   "instructor1",
-  "instructor2",
   "academic_term",
   "column_break_2",
   "coursecode_cs",
@@ -236,18 +235,10 @@
    "label": "Course Information"
   },
   {
-   "description": "Use this for joint teaching in this section (instance) of the course. ",
-   "fieldname": "instructor2",
-   "fieldtype": "Link",
-   "label": "Instructor 2",
-   "options": "Instructor"
-  },
-  {
    "fieldname": "instructor1",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Instructor of Record",
-   "options": "Instructor",
+   "fieldtype": "Table",
+   "label": "Instructors",
+   "options": "Course Schedule Instructors",
    "reqd": 1,
    "search_index": 1
   },
@@ -291,7 +282,6 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Grading Scale",
-   "not_nullable": 1,
    "options": "Grading Scale",
    "reqd": 1,
    "search_index": 1
@@ -345,7 +335,7 @@
  ],
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2024-06-07 15:43:22.787345",
+ "modified": "2025-03-01 12:08:25.250827",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
