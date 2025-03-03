@@ -290,7 +290,8 @@ def get_course_schedule_events(start, end, filters=None):
 			cs.course as course,
 			timestamp(cm.cs_meetdate, cm.cs_fromtime) as dtstart,
 			timestamp(cm.cs_meetdate, cm.cs_totime) as dtend,
-			0 as 'allDay'
+			0 as 'allDay',
+			cs.color as color
 		from `tabCourse Schedule Meeting Dates` cm, `tabCourse Schedule` cs
 		where 
 		cs.name = cm.parent and

@@ -15,6 +15,14 @@ frappe.ui.form.on('Program Enrollment', {
 				}
 			});
 		});
+		frm.set_query('emphasis_program_track', function() {
+			return {
+				query: 'seminary.seminary.doctype.program_enrollment.program_enrollment.get_emphasis',
+				filters: {
+					'program': frm.doc.program
+				}
+			}
+		});
 	},
 	on_save: function(frm) {
 		frm.call('get_payers')

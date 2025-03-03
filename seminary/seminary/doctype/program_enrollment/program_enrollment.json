@@ -93,6 +93,7 @@
    "options": "Program Enrollment Course"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "student.image",
    "fieldname": "image",
    "fieldtype": "Attach Image",
@@ -148,6 +149,7 @@
    "label": "Reason for being inactive"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "emphasis_program_track",
    "fieldtype": "Link",
    "in_filter": 1,
@@ -201,7 +203,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2025-03-03 08:14:54.540342",
+ "modified": "2025-03-03 09:21:37.434866",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

@@ -102,6 +102,26 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
 		},
 	)
 
+@frappe.whitelist()
+def get_emphasis(doctype, txt, searchfield, start, page_len, filters):
+    if not filters.get("program"):
+        frappe.msgprint(_("Please select a Program first."))
+        return []
+
+    doctype = "Program Track"
+    options = frappe.db.sql(
+        """select name from `tabProgram Track`
+        where  parent = %(program)s and is_emphasis = 1 
+        limit {start}, {page_len}""".format(
+            match_cond=get_match_cond(doctype), start=start, page_len=page_len
+        ),
+        {
+            "program": filters["program"],
+        },
+    )
+    print("Options:", options)  # Debugging statement
+    return options
+
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
