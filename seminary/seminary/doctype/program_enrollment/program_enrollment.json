@@ -150,6 +150,10 @@
   {
    "fieldname": "emphasis_program_track",
    "fieldtype": "Link",
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Emphasis (Program track)",
    "options": "Program Track"
   },
@@ -197,7 +201,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2024-06-11 12:03:55.614719",
+ "modified": "2025-03-03 08:14:54.540342",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

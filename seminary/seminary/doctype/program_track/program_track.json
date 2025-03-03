@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{track_name}",
+ "autoname": "format:{parent}-{track_name}",
  "creation": "2024-02-23 19:02:42.921180",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -10,6 +10,7 @@
   "column_break_zlpi",
   "track_name",
   "addcredits",
+  "is_emphasis",
   "tdescription"
  ],
  "fields": [
@@ -19,7 +20,6 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Track Name",
-   "not_nullable": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -37,7 +37,7 @@
    "fieldname": "addcredits",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Additional credits",
+   "label": "Track-specific credits",
    "non_negative": 1,
    "reqd": 1
   },
@@ -45,12 +45,23 @@
    "fieldname": "tdescription",
    "fieldtype": "Text Editor",
    "label": "Track Description"
+  },
+  {
+   "default": "0",
+   "description": "Check this box if this is a Program Emphasis. Students may have only one Program Emphasis. If not checked, this track will serve to organize number of credits for this track (e.g. the program requires 6 hours in Greek, but 8 different courses may be chosen to fill this requirement).",
+   "fieldname": "is_emphasis",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Program Emphasis?"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-05-08 06:58:28.729913",
+ "modified": "2025-03-03 08:07:37.238488",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Track",
