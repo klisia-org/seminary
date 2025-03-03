@@ -42,6 +42,11 @@ frappe.ui.form.on("Instructor", {
 			};
 		});
 
+		// Example frontend code to debug heatmap data
+	
+		// console.log("Heatmap Data:", timeline_data);  // Add this line to verify the data being passed to the heatmap component
+
+
 		frm.set_query("course", "instructor_log", function(_doc, cdt, cdn) {
 			let d = locals[cdt][cdn];
 			return {

@@ -52,6 +52,7 @@
   {
    "fieldname": "n_students",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Number of Students",
    "non_negative": 1
   },
@@ -59,12 +60,13 @@
    "default": "0",
    "fieldname": "inst_record",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Instructor of Record"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-03-01 15:58:30.220224",
+ "modified": "2025-03-01 16:04:04.444754",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor Log",
