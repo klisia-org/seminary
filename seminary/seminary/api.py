@@ -9,13 +9,28 @@ from frappe import _
 from frappe.email.doctype.email_group.email_group import add_subscribers
 from frappe.desk.reportview import get_filters_cond, get_match_cond
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cstr, flt, getdate, unique
+from frappe.utils import cstr, flt, getdate, unique, get_datetime, cint, now, add_days, format_date, date_diff
 from frappe.model.document import Document
+from frappe.translate import get_all_translations
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 import erpnext
 from datetime import datetime
+import zipfile
+import os
+import re
+import shutil
+import xml.etree.ElementTree as ET
+from xml.dom.minidom import parseString
+
+@frappe.whitelist(allow_guest=True)
+def get_school_abbr_logo():
+	abbr = frappe.db.get_single_value(
+		"Website Settings", "app_name"
+	)
+	logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
+	return {"name": abbr, "logo": logo}
 
 @frappe.whitelist()
 def get_course(program):
@@ -29,6 +44,20 @@ def get_course(program):
 		as_dict=1,
 	)
 	return courses
+
+@frappe.whitelist()
+def get_student_programs(student):
+	"""Return list of programs for a particular student, with their grades
+	:param student: Student
+	"""
+	grades = frappe.db.sql(
+		"""select pe.program, pe.name as program_enrollment, pe.pgmenrol_active, pe.student, pec.course_name, pec.academic_term, pec.credits, pec.pec_finalgradecode, pec.pec_finalgradenum, pec.status 
+from `tabProgram Enrollment` pe, `tabProgram Enrollment Course` pec
+where pe.name = pec.parent and pe.student = %s""",
+		(student),
+		as_dict=1,
+	)
+	return grades
 
 @frappe.whitelist()
 def first_term(doc):
@@ -420,36 +449,28 @@ def get_payers_fees(pen):
 			i += 1
 		return
 
-
+@frappe.whitelist()
+def get_scholarship(student):
+	scholarship = frappe.get_all("Payers Fee Category PE", filters={"stu_link": student, "pf_active": 1}, fields=["scholarship"])
+	return scholarship
 
 
 @frappe.whitelist()
 def get_student_invoices(student):
-	student_sales_invoices = []
+	sales_invoice_list = []
 
-	sales_invoice_list = frappe.db.get_list(
-		"Sales Invoice",
-		filters={"student": student, "status": ["in", ["Paid", "Unpaid"]]},
-		fields=["name", "status", "student", "due_date", "grand_total"],
-	)
+	sales_invoice_list = frappe.get_all("Sales Invoice", filters={"custom_student": student}, fields=["name", "customer", "posting_date", "total", "outstanding_amount", "status"])
+	for invoice in sales_invoice_list:
+		invoice["name"] = frappe.get_value("Sales Invoice", invoice["name"], "name")
+		invoice["customer"] = frappe.get_value("Customer", invoice["customer"], "customer_name")
+		invoice["posting_date"] = frappe.utils.formatdate(invoice["posting_date"])
+		invoice["status"] = "Paid" if invoice["status"] == "Paid" else "Unpaid"
+		invoice["total"] = "{:,.2f}".format(invoice["total"])
+		invoice["outstanding_amount"] = "{:,.2f}".format(invoice["outstanding_amount"])
+	sales_invoice_list = sorted(sales_invoice_list, key=lambda x: (x["status"], x["posting_date"]), reverse=True)
+	print(sales_invoice_list)
 
-	for si in sales_invoice_list:
-		student_program_invoice_status = {}
-		student_program_invoice_status["status"] = si.status
-		student_program_invoice_status["amount"] = si.grand_total
-
-		if si.status == "Paid":
-			student_program_invoice_status[
-				"payment_date"
-			] = get_posting_date_from_payment_entry_against_sales_invoice(si.name)
-			student_program_invoice_status["due_date"] = ""
-		else:
-			student_program_invoice_status["due_date"] = si.due_date
-			student_program_invoice_status["payment_date"] = ""
-
-		student_sales_invoices.append(student_program_invoice_status)
-
-	return student_sales_invoices
+	return sales_invoice_list
 
 
 def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):

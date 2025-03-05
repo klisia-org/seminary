@@ -1,4 +1,13 @@
 <template>
+	<div v-if="studentInfo.scholarships && studentInfo.scholarships.length > 0 && studentInfo.scholarships[0].scholarship" class="flex flex-col items-center justify-center">
+		<h2 class="text-lg font-bold text-gray-800">
+			Scholarship: {{ studentInfo.scholarships[0].scholarship }}
+		</h2>
+	</div> 
+	<div v-else class="flex flex-col items-center justify-center">
+		<p class="text-lg font-bold text-gray-800"> </p>
+	</div>	
+
 	<div v-if="tableData.rows.length > 0" class="px-5 py-4">
 		<ListView :columns="tableData.columns" :rows="tableData.rows" :options="{
 			selectable: false,
@@ -55,6 +64,17 @@ import { createToast } from '@/utils'
 const { getStudentInfo } = studentStore()
 let studentInfo = getStudentInfo().value
 
+const scholarshipsResource = createResource({
+	url: 'seminary.seminary.api.get_scholarship',
+	params: {
+		student: studentInfo.name,
+	},
+	onSuccess: (response) => {
+		studentInfo.scholarships = response
+	},
+	auto: true,
+})
+
 const feesResource = createResource({
 	url: 'seminary.seminary.api.get_student_invoices',
 	params: {
@@ -62,7 +82,7 @@ const feesResource = createResource({
 	},
 	onSuccess: (response) => {
 		response = response.sort((a, b) => {
-			const statusOrder = { Overdue: 0, Unpaid: 1, Paid: 2 }
+			const statusOrder = { Unpaid: 0, Paid: 1 }
 
 			const statusA = statusOrder[a.status]
 			const statusB = statusOrder[b.status]
@@ -81,28 +101,34 @@ const tableData = reactive({
 	rows: [],
 	columns: [
 		{
-			label: 'Program',
-			key: 'program',
+			label: 'Name',
+			key: 'name',
+			width: 1,
+		},
+	
+		{
+			label: 'Customer',
+			key: 'customer',
+			width: 1,
+		},
+		{
+			label: 'Posting Date',
+			key: 'posting_date',
+			width: 1,
+		},
+		{
+			label: 'Total Amount',
+			key: 'total',
+			width: 1,
+		},
+		{
+			label: 'Outsdanding Amount',
+			key: 'outstanding_amount',
 			width: 1,
 		},
 		{
 			label: 'Status',
 			key: 'status',
-			width: 1,
-		},
-		{
-			label: 'Payment Date',
-			key: 'payment_date',
-			width: 1,
-		},
-		{
-			label: 'Due Date',
-			key: 'due_date',
-			width: 1,
-		},
-		{
-			label: 'Amount',
-			key: 'amount',
 			width: 1,
 		},
 		{
@@ -119,7 +145,7 @@ const showPaymentDialog = ref(false)
 const openInvoicePDF = (row) => {
 	let url = `/api/method/frappe.utils.print_format.download_pdf?
 		doctype=${encodeURIComponent('Sales Invoice')}
-		&name=${encodeURIComponent(row.invoice)}
+		&name=${encodeURIComponent(row.name)}
 		&format=${encodeURIComponent('Standard')}
 	`
 	window.open(url, '_blank')

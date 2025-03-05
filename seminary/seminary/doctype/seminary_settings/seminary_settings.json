@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "auto_submit_sales_invoice",
+  "logo_portal",
   "column_break_4",
   "academic_term_reqd",
   "section_break_qqak",
@@ -185,11 +186,17 @@
    "fieldtype": "Link",
    "label": "Scholarship - Customer",
    "options": "Customer"
+  },
+  {
+   "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal.",
+   "fieldname": "logo_portal",
+   "fieldtype": "Attach Image",
+   "label": "Seminary Logo (round)"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-02-27 13:49:55.650893",
+ "modified": "2025-03-05 11:31:51.754778",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

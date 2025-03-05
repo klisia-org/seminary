@@ -1,16 +1,14 @@
 <template>
 	<Dropdown :options="userDropdownOptions" class="p-2">
 		<template v-slot="{ open }">
-			<button class="flex h-12 py-2 items-center rounded-md duration-300 ease-in-out" :class="isCollapsed
+			<button class="flex h-12 py-2 items-center  duration-300 ease-in-out" :class="isCollapsed
 					? 'px-0 w-auto'
 					: open
 						? 'bg-white shadow-sm px-2 w-52'
 						: 'hover:bg-gray-200 px-2 w-52'
 				">
-				<div class="w-8 h-8 rounded-full flex items-center justify-center">
-
-
-					<Avatar v-if="seminarySettings?.logo" :image="seminarySettings?.logo" shape="circle" size="xl" />
+				<div class="w-8 h-8 flex items-center justify-center overflow-hidden">
+					<Avatar v-if="seminarySettings?.logo" :image="seminarySettings?.logo" size="xl" class="object-cover" />
 					<School v-else />
 				</div>
 				<div class="flex flex-1 flex-col text-left duration-300 ease-in-out" :class="isCollapsed

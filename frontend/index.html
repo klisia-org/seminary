@@ -5,6 +5,10 @@
     <link rel="icon" href="/klisia_icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Klisia - Seminary Management System</title>
+    <meta name="title" content="{{ meta.title }}" />
+		<meta name="image" content="{{ meta.image }}" />
+		<meta name="description" content="{{ meta.description }}" />
+		<meta name="keywords" content="{{ meta.keywords }}" />
   </head>
   <body>
     <div id="app"></div>
@@ -13,14 +17,8 @@
 
     <script>
       window.csrf_token = '{{ frappe.session.csrf_token }}'
-      window.document.title = '{{ abbr }}'
-      let link = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = '{{ logo }}'
+     
+      
     </script>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -208,9 +208,9 @@ const isMobilePresent = ref(true)
 const isEmailPresent = ref(true)
 
 const billingDetails = reactive({
-	program: props.row.program || "",
+	
 	student:props.student.student_name || "",
-	amount: props.row.amount || "",
+	amount: props.row.outstanding_amount || "",
 	id: props.student.name || "",
 	mobile_number: "",
 	email: props.student.student_email_id || "",
@@ -245,12 +245,7 @@ const allFields = [
 			type: 'data',
 			readonly: true
 		},
-		{
-			label: 'Program',
-			name:'program',
-			type:'data',
-			readonly:true
-		},
+	
 		{
 			label: 'Mobile Number',
 			name: 'mobile_number',

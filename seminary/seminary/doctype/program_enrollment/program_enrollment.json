@@ -117,6 +117,7 @@
    "label": "Program Status"
   },
   {
+   "allow_on_submit": 1,
    "default": "1",
    "fieldname": "pgmenrol_active",
    "fieldtype": "Check",
@@ -203,7 +204,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2025-03-03 09:21:37.434866",
+ "modified": "2025-03-05 17:21:48.997298",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",
