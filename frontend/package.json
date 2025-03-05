@@ -9,6 +9,7 @@
     "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
   },
   "dependencies": {
+    "@tiptap/core": "^2.11.5",
     "@tiptap/pm": "^2.4.0",
     "@tiptap/starter-kit": "^2.4.0",
     "@tiptap/vue-3": "^2.4.0",
