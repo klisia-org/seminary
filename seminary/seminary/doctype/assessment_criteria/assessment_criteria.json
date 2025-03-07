@@ -1,14 +1,15 @@
 {
  "actions": [],
  "allow_import": 1,
+ "allow_rename": 1,
  "autoname": "field:assessment_criteria",
  "creation": "2016-12-14 16:40:15.144115",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "assessment_criteria"
- 
+  "assessment_criteria",
+  "type"
  ],
  "fields": [
   {
@@ -17,12 +18,21 @@
    "in_list_view": 1,
    "label": "Assessment Criteria",
    "reqd": 1,
+   "translatable": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "Quiz\nAssignment\nOffline",
+   "reqd": 1
   }
-
  ],
  "links": [],
- "modified": "2024-05-08 16:33:25.646030",
+ "modified": "2025-03-07 07:43:03.297290",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assessment Criteria",
@@ -40,6 +50,39 @@
    "role": "Academics User",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
  "quick_entry": 1,

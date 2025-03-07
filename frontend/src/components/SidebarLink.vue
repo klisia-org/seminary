@@ -30,9 +30,10 @@
 </template>
 
 <script setup>
-import { Tooltip } from 'frappe-ui'
+import { Tooltip, Button } from 'frappe-ui'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import * as icons from 'lucide-vue-next'
 
 const router = useRouter()
 const props = defineProps({
@@ -51,6 +52,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  
 })
 
 function handleClick() {

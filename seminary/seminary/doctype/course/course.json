@@ -16,8 +16,6 @@
   "description",
   "prerequisites_section",
   "course_prerequisite",
-  "section_break_6",
-  "topics",
   "assessment_tab",
   "assessment",
   "default_grading_scale",
@@ -33,7 +31,6 @@
    "in_standard_filter": 1,
    "label": "Course Name",
    "reqd": 1,
-   "translatable": 1,
    "unique": 1
   },
   {
@@ -49,17 +46,6 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Course Credits (Default)"
-  },
-  {
-   "fieldname": "section_break_6",
-   "fieldtype": "Section Break",
-   "label": "Topics"
-  },
-  {
-   "fieldname": "topics",
-   "fieldtype": "Table",
-   "label": "Topics",
-   "options": "Course Topic"
   },
   {
    "fieldname": "hero_image",
@@ -86,7 +72,7 @@
   },
   {
    "fieldname": "description",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Description"
   },
   {
@@ -124,7 +110,7 @@
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2024-03-19 19:37:25.228662",
+ "modified": "2025-03-05 18:51:34.182001",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course",
@@ -178,6 +164,15 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
  "search_fields": "course_name",

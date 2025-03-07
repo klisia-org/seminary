@@ -15,6 +15,9 @@
   "department",
   "image",
   "employee",
+  "mini_bio_section",
+  "bio",
+  "shortbio",
   "log_details",
   "instructor_log"
  ],
@@ -90,6 +93,22 @@
    "label": "System User",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "mini_bio_section",
+   "fieldtype": "Section Break",
+   "label": "Mini bio"
+  },
+  {
+   "fieldname": "bio",
+   "fieldtype": "Text Editor",
+   "label": "Mini Bio for Website"
+  },
+  {
+   "description": "No more than 2 lines",
+   "fieldname": "shortbio",
+   "fieldtype": "Small Text",
+   "label": "Shorter bio for LMS"
   }
  ],
  "image_field": "image",
@@ -99,7 +118,7 @@
    "link_fieldname": "instructor1"
   }
  ],
- "modified": "2025-03-01 11:47:33.388258",
+ "modified": "2025-03-06 07:44:49.789844",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

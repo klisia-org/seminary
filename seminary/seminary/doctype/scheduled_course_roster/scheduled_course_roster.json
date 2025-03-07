@@ -16,6 +16,10 @@
   "student",
   "stuimage",
   "active",
+  "course_progress_section",
+  "current_lesson",
+  "column_break_ahkk",
+  "progress",
   "final_grade_sect",
   "fscore",
   "column_break_debd",
@@ -128,11 +132,32 @@
    "fieldname": "fgradepass",
    "fieldtype": "Data",
    "label": "Pass / Fail"
+  },
+  {
+   "fieldname": "course_progress_section",
+   "fieldtype": "Section Break",
+   "label": "Course Progress"
+  },
+  {
+   "fieldname": "current_lesson",
+   "fieldtype": "Link",
+   "label": "Current Lesson",
+   "options": "Course Schedule Lesson"
+  },
+  {
+   "fieldname": "column_break_ahkk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "progress",
+   "fieldtype": "Float",
+   "label": "Progress",
+   "read_only": 1
   }
  ],
  "image_field": "stuimage",
  "links": [],
- "modified": "2024-05-13 22:46:56.231464",
+ "modified": "2025-03-06 07:59:55.570924",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Roster",

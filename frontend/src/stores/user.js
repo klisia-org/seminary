@@ -4,7 +4,7 @@ import router from "@/router"
 
 export const usersStore = defineStore('seminary-users', () => {
 	const user = createResource({
-		url: 'seminary.seminary.api.get_user_info',
+		url: 'seminary.seminary.utils.get_user_info',
 		cache: "User",
 		initialData: [],
 		onError(error) {

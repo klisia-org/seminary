@@ -1,0 +1,188 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{chapter}-{lesson_title}={##}",
+ "creation": "2025-03-05 18:12:02.012080",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_chapter_section",
+  "chapter",
+  "lesson_title",
+  "body",
+  "content",
+  "help",
+  "instructor_notes",
+  "youtube",
+  "assessment_section",
+  "quiz_id",
+  "question",
+  "file_type",
+  "hidden_section",
+  "course",
+  "course_schedule",
+  "is_scorm_package"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_chapter_section",
+   "fieldtype": "Section Break",
+   "label": "Course Chapter"
+  },
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course Chapter",
+   "options": "Course Schedule Chapter",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lesson_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Lesson Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "help",
+   "fieldtype": "HTML",
+   "label": "Help"
+  },
+  {
+   "fieldname": "instructor_notes",
+   "fieldtype": "Text Editor",
+   "label": "Instructor Notes"
+  },
+  {
+   "fieldname": "youtube",
+   "fieldtype": "Data",
+   "label": "YouTube Video URL"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text Editor",
+   "ignore_xss_filter": 1,
+   "label": "Lesson Text"
+  },
+  {
+   "fieldname": "hidden_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Hidden for Management"
+  },
+  {
+   "fetch_from": "chapter.course",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fetch_from": "chapter.coursesc",
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Content"
+  },
+  {
+   "fieldname": "assessment_section",
+   "fieldtype": "Section Break",
+   "label": "Assessment"
+  },
+  {
+   "fieldname": "quiz_id",
+   "fieldtype": "Data",
+   "label": "Quiz ID"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "label": "Question"
+  },
+  {
+   "fieldname": "file_type",
+   "fieldtype": "Select",
+   "label": "File Type",
+   "mandatory_depends_on": "question",
+   "options": "Image\nDocument\nPDF"
+  },
+  {
+   "default": "0",
+   "fetch_from": "chapter.is_scorm_package",
+   "fieldname": "is_scorm_package",
+   "fieldtype": "Check",
+   "label": "Is SCORM Package",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-06 15:44:18.486700",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Schedule Lesson",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "lesson_title",
+ "track_changes": 1
+}

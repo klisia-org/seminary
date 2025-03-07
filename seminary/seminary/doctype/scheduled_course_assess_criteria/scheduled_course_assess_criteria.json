@@ -3,13 +3,15 @@
  "allow_rename": 1,
  "creation": "2024-03-11 22:13:53.464060",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "section_break_yajx",
   "assesscriteria_scac",
+  "type",
   "column_break_etid",
   "weight_scac",
+  "linked_activity_section",
+  "quiz",
   "section_break_bqdt",
   "column_break_flax",
   "extracredit_scac",
@@ -70,12 +72,33 @@
   {
    "fieldname": "column_break_lbwl",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "assesscriteria_scac.type",
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Assessment Criteria Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "linked_activity_section",
+   "fieldtype": "Section Break",
+   "label": "Linked Activity"
+  },
+  {
+   "depends_on": "type == 'Quiz'",
+   "fieldname": "quiz",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Quiz",
+   "mandatory_depends_on": "type == 'Quiz'",
+   "options": "Quiz"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-05-08 16:33:03.178864",
+ "modified": "2025-03-07 08:01:42.695385",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

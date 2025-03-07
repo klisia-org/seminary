@@ -55,12 +55,17 @@ const links = [
 	// 	icon: LayoutDashboard,
 	// },
 	{
+		label: 'Courses',
+		to: '/courses',
+		icon: BookOpen,
+	},
+	{
 		label: 'Schedule',
 		to: '/schedule',
 		icon: CalendarCheck,
 	},
 	{
-		label: 'Grades',
+		label: 'Transcripts',
 		to: '/grades',
 		icon: GraduationCap,
 	},

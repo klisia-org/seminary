@@ -13,6 +13,15 @@ app_license = "GNU GPL V3"
 
 required_apps = ["erpnext"]
 
+# Include app in Apps Screen
+# --------------------------
+add_to_apps_screen = [{
+	"name": "seminary",
+	"logo": "/assets/seminary/klisia_icon.png",  # Update this path to your custom app's logo
+	"title": "Seminary ERP",
+	"route": "/seminary"
+}]
+
 # Includes in <head>
 # ------------------
 

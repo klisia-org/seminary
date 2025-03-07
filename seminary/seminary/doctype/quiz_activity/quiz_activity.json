@@ -1,7 +1,6 @@
 {
  "actions": [],
  "autoname": "format:EDU-QA-{YYYY}-{#####}",
- "beta": 1,
  "creation": "2018-10-15 15:48:40.482821",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -27,8 +26,9 @@
   {
    "fieldname": "enrollment",
    "fieldtype": "Link",
-   "label": "Enrollment",
-   "options": "Course Enrollment",
+   "label": "Course Enrollment",
+   "options": "Course Enrollment Individual",
+   "reqd": 1,
    "set_only_once": 1
   },
   {
@@ -45,7 +45,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "enrollment.course",
+   "fetch_from": "enrollment.coursesc_ce",
    "fieldname": "course",
    "fieldtype": "Link",
    "label": "Course",
@@ -63,6 +63,7 @@
    "in_list_view": 1,
    "label": "Quiz",
    "options": "Quiz",
+   "reqd": 1,
    "set_only_once": 1
   },
   {
@@ -116,7 +117,7 @@
   }
  ],
  "links": [],
- "modified": "2023-02-06 12:25:09.357718",
+ "modified": "2025-03-07 05:35:18.594141",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz Activity",
@@ -143,9 +144,19 @@
    "report": 1,
    "role": "Instructor",
    "share": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
   }
  ],
- "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

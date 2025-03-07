@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "allow_events_in_timeline": 1,
+ "autoname": "format: {coursesc}-{chapter_title}",
+ "creation": "2025-03-05 17:54:40.204500",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_chapter_section",
+  "coursesc",
+  "course",
+  "chapter_title",
+  "description",
+  "scorm_section",
+  "is_scorm_package",
+  "manifest_file",
+  "launch_file",
+  "scorm_package",
+  "scorm_package_path",
+  "lessons_section",
+  "lessons"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_chapter_section",
+   "fieldtype": "Section Break",
+   "label": "Course Chapter"
+  },
+  {
+   "fieldname": "coursesc",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "search_index": 1
+  },
+  {
+   "fetch_from": "coursesc.course",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "chapter_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  },
+  {
+   "fieldname": "scorm_section",
+   "fieldtype": "Section Break",
+   "label": "SCORM"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_scorm_package",
+   "fieldtype": "Check",
+   "label": "Is SCORM package"
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "manifest_file",
+   "fieldtype": "Code",
+   "label": "Manifest File",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lessons_section",
+   "fieldtype": "Section Break",
+   "label": "Lessons"
+  },
+  {
+   "fieldname": "lessons",
+   "fieldtype": "Table",
+   "label": "Lessons",
+   "options": "Course Schedule Lesson Reference"
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "launch_file",
+   "fieldtype": "Code",
+   "label": "Launch File"
+  },
+  {
+   "fieldname": "scorm_package",
+   "fieldtype": "Link",
+   "label": "SCORM Package",
+   "options": "File",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scorm_package_path",
+   "fieldtype": "Code",
+   "label": "SCORM Package Path",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "make_attachments_public": 1,
+ "modified": "2025-03-06 08:46:45.062644",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Schedule Chapter",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "chapter_title"
+}

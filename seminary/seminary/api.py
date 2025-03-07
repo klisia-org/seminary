@@ -1074,18 +1074,8 @@ def active_term():
 	return {'academic_term': at, 'academic_year': ay}
 
 	
-@frappe.whitelist()
-def get_user_info():
-	if frappe.session.user == "Guest":
-		frappe.throw("Authentication failed", exc=frappe.AuthenticationError)
 
-	current_user = frappe.db.get_list(
-		"User",
-		fields=["name", "email", "enabled", "user_image", "full_name", "user_type"],
-		filters={"name": frappe.session.user},
-	)[0]
-	current_user["session_user"] = True
-	return current_user
+
 
 
 @frappe.whitelist()

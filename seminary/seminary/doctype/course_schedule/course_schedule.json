@@ -44,8 +44,14 @@
   "sunday",
   "thursday_column",
   "thursday",
-  "integration_section",
-  "moodle_link",
+  "column_break_qewt",
+  "lms_tab",
+  "lms_configuration_section",
+  "course_image",
+  "published",
+  "short_introduction",
+  "course_description_for_lms",
+  "chapters",
   "grading_tab",
   "gradesc_cs",
   "courseassescrit_sc",
@@ -62,6 +68,7 @@
   {
    "fieldname": "academic_term",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Academic Term",
    "options": "Academic Term",
@@ -74,6 +81,7 @@
   {
    "fieldname": "c_datestart",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Start Date",
    "permlevel": 1,
    "reqd": 1
@@ -81,6 +89,7 @@
   {
    "fieldname": "c_dateend",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "End Date",
    "permlevel": 1,
    "reqd": 1
@@ -115,6 +124,7 @@
   {
    "fieldname": "room",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Room",
    "options": "Room",
    "permlevel": 1
@@ -218,18 +228,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "integration_section",
-   "fieldtype": "Section Break",
-   "label": "Integration"
-  },
-  {
-   "fieldname": "moodle_link",
-   "fieldtype": "Data",
-   "label": "Moodle link",
-   "options": "URL",
-   "permlevel": 2
-  },
-  {
    "fieldname": "course_information_section",
    "fieldtype": "Section Break",
    "label": "Course Information"
@@ -239,8 +237,7 @@
    "fieldtype": "Table",
    "label": "Instructors",
    "options": "Course Schedule Instructors",
-   "reqd": 1,
-   "search_index": 1
+   "reqd": 1
   },
   {
    "fieldname": "syllabus",
@@ -331,11 +328,56 @@
    "fieldtype": "Check",
    "label": "Grades sent",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_qewt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "This will appear on the first page of the course",
+   "fieldname": "lms_tab",
+   "fieldtype": "Tab Break",
+   "label": "LMS"
+  },
+  {
+   "fieldname": "lms_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "LMS Configuration"
+  },
+  {
+   "fieldname": "course_image",
+   "fieldtype": "Attach Image",
+   "label": "Image for LMS"
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fetch_from": "course.description",
+   "fieldname": "course_description_for_lms",
+   "fieldtype": "Text Editor",
+   "label": "Course Description for LMS"
+  },
+  {
+   "fieldname": "chapters",
+   "fieldtype": "Table",
+   "label": "Chapters",
+   "options": "Course Schedule Chapter Reference"
+  },
+  {
+   "description": "This will appear on the course card and on the very top of the first page on the LMS.",
+   "fieldname": "short_introduction",
+   "fieldtype": "Small Text",
+   "label": "Short Introduction"
   }
  ],
+ "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-01 12:08:25.250827",
+ "modified": "2025-03-07 07:23:46.539681",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
