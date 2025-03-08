@@ -4,11 +4,9 @@
 			v-if="course.data.video_link"
 			:src="video_link"
 			class="rounded-t-md min-h-56 w-full"
-		/>
+		></iframe>
 		<div class="p-5">
-			<div v-if="course.data.paid_course" class="text-2xl font-semibold mb-3">
-				{{ course.data.price }}
-			</div>
+			
 			<div v-if="course.data.membership" class="space-y-2">
 				<router-link
 					:to="{
@@ -30,50 +28,11 @@
 						</span>
 					</Button>
 				</router-link>
-				<CertificationLinks :courseName="course.data.name" />
+				
 			</div>
-			<router-link
-				v-else-if="course.data.paid_course"
-				:to="{
-					name: 'Billing',
-					params: {
-						type: 'course',
-						name: course.data.name,
-					},
-				}"
-			>
-				<Button variant="solid" size="md" class="w-full">
-					<span>
-						{{ __('Buy this course') }}
-					</span>
-				</Button>
-			</router-link>
-			<div
-				v-else-if="course.data.disable_self_learning"
-				class="bg-surface-blue-2 text-blue-900 text-sm rounded-md py-1 px-3"
-			>
-				{{ __('Contact the Administrator to enroll for this course.') }}
-			</div>
-			<Button
-				v-else
-				@click="enrollStudent()"
-				variant="solid"
-				class="w-full"
-				size="md"
-			>
-				<span>
-					{{ __('Start Learning') }}
-				</span>
-			</Button>
-			<Button
-				v-if="canGetCertificate"
-				@click="fetchCertificate()"
-				variant="subtle"
-				class="w-full mt-2"
-				size="md"
-			>
-				{{ __('Get Certificate') }}
-			</Button>
+			
+			
+			
 			<router-link
 				v-if="user?.data?.is_moderator || is_instructor()"
 				:to="{
@@ -106,33 +65,9 @@
 						{{ __('Enrolled Students') }}
 					</span>
 				</div>
-				<div
-					v-if="parseInt(course.data.rating) > 0"
-					class="flex items-center text-ink-gray-9"
-				>
-					<Star class="h-4 w-4 stroke-1.5 fill-orange-500 text-gray-50" />
-					<span class="ml-2">
-						{{ course.data.rating }} {{ __('Rating') }}
-					</span>
-				</div>
-				<div
-					v-if="course.data.enable_certification"
-					class="flex items-center font-semibold text-ink-gray-9"
-				>
-					<GraduationCap class="h-4 w-4 stroke-2" />
-					<span class="ml-2">
-						{{ __('Certificate of Completion') }}
-					</span>
-				</div>
-				<div
-					v-if="course.data.paid_certificate"
-					class="flex items-center font-semibold text-ink-gray-9"
-				>
-					<GraduationCap class="h-4 w-4 stroke-2" />
-					<span class="ml-2">
-						{{ __('Paid Certificate after Evaluation') }}
-					</span>
-				</div>
+				
+				
+				
 			</div>
 		</div>
 	</div>
@@ -144,7 +79,7 @@ import { Button, createResource, Tooltip } from 'frappe-ui'
 import { showToast, formatAmount } from '@/utils/'
 import { capture } from '@/telemetry'
 import { useRouter } from 'vue-router'
-import CertificationLinks from '@/components/CertificationLinks.vue'
+
 
 const router = useRouter()
 const user = inject('$user')
@@ -163,46 +98,7 @@ const video_link = computed(() => {
 	return null
 })
 
-function enrollStudent() {
-	if (!user.data) {
-		showToast(
-			__('Please Login'),
-			__('You need to login first to enroll for this course'),
-			'alert-circle'
-		)
-		setTimeout(() => {
-			window.location.href = `/login?redirect-to=${window.location.pathname}`
-		}, 2000)
-	} else {
-		const enrollStudentResource = createResource({
-			url: 'lms.lms.doctype.lms_enrollment.lms_enrollment.create_membership',
-		})
-		enrollStudentResource
-			.submit({
-				course: props.course.data.name,
-			})
-			.then(() => {
-				capture('enrolled_in_course', {
-					course: props.course.data.name,
-				})
-				showToast(
-					__('Success'),
-					__('You have been enrolled in this course'),
-					'check'
-				)
-				setTimeout(() => {
-					router.push({
-						name: 'Lesson',
-						params: {
-							courseName: props.course.data.name,
-							chapterNumber: 1,
-							lessonNumber: 1,
-						},
-					})
-				}, 2000)
-			})
-	}
-}
+
 
 const is_instructor = () => {
 	let user_is_instructor = false
@@ -214,37 +110,5 @@ const is_instructor = () => {
 	return user_is_instructor
 }
 
-const canGetCertificate = computed(() => {
-	if (
-		props.course.data?.enable_certification &&
-		props.course.data?.membership?.progress == 100
-	) {
-		return true
-	}
-	return false
-})
 
-const certificate = createResource({
-	url: 'lms.lms.doctype.lms_certificate.lms_certificate.create_certificate',
-	makeParams(values) {
-		return {
-			course: values.course,
-		}
-	},
-	onSuccess(data) {
-		window.open(
-			`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Certificate&name=${
-				data.name
-			}&format=${encodeURIComponent(data.template)}`,
-			'_blank'
-		)
-	},
-})
-
-const fetchCertificate = () => {
-	certificate.submit({
-		course: props.course.data?.name,
-		member: user.data?.name,
-	})
-}
 </script>

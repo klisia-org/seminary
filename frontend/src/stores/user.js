@@ -2,9 +2,9 @@ import { defineStore } from 'pinia'
 import { createResource } from 'frappe-ui'
 import router from "@/router"
 
-export const usersStore = defineStore('seminary-users', () => {
-	const user = createResource({
-		url: 'seminary.seminary.utils.get_user_info',
+export const usersStore = defineStore('users', () => {
+	let userResource = createResource({
+		url: 'seminary.seminary.api.get_user_info',
 		cache: "User",
 		initialData: [],
 		onError(error) {
@@ -15,9 +15,13 @@ export const usersStore = defineStore('seminary-users', () => {
 				router.push('/login')
 			}
 		},
+		auto: true,
 	})
-
+	const allUsers = createResource({
+		url: 'seminary.seminary.utils.get_all_users',
+		cache: ['allUsers'],
+	})
 	return {
-		user,
+		userResource, allUsers
 	}
 })

@@ -78,7 +78,6 @@ def validate_duplicate_student(students):
 def get_user_info():
 	if frappe.session.user == "Guest":
 		return None
-
 	user = frappe.db.get_value(
 		"User",
 		frappe.session.user,
@@ -92,6 +91,20 @@ def get_user_info():
 	user.is_student = "Student" in user.roles
 	user.is_system_manager = "System Manager" in user.roles
 	return user
+
+@frappe.whitelist()
+def get_all_users():
+	frappe.only_for(["Academics User", "Instructor", "Seminary Manager"])
+	users = frappe.get_all(
+		"User",
+		{
+			"enabled": 1,
+		},
+		["name", "full_name", "user_image"],
+	)
+
+	return {user.name: user for user in users}
+
 
 def has_course_moderator_role(member=None):
 	return frappe.db.get_value(
@@ -179,6 +192,34 @@ def get_course_or_filters(filters):
 
 
 
+@frappe.whitelist(allow_guest=True)
+def get_course_outline(course, progress=False):
+	"""Returns the course outline."""
+	outline = []
+	chapters = frappe.get_all(
+		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
+	)
+	for chapter in chapters:
+		chapter_details = frappe.db.get_value(
+			"Course Schedule Chapter",
+			chapter.chapter,
+			["name", "chapter_title", "is_scorm_package", "launch_file", "scorm_package"],
+			as_dict=True,
+		)
+		chapter_details["idx"] = chapter.idx
+		chapter_details.lessons = get_lesson(course, chapter_details, progress=progress)
+
+		if chapter_details.is_scorm_package:
+			chapter_details.scorm_package = frappe.db.get_value(
+				"File",
+				chapter_details.scorm_package,
+				["file_name", "file_size", "file_url"],
+				as_dict=1,
+			)
+
+		outline.append(chapter_details)
+	return outline
+
 
 
 def get_enrollment_details(courses):
@@ -207,6 +248,7 @@ def get_course_fields():
 		"name",
 		"course",
 		"course_image",
+		"short_introduction",
 		"course_description_for_lms",
 		"published",
 		"syllabus",
@@ -216,7 +258,68 @@ def get_course_fields():
 		"c_dateend",
 	]
 
+@frappe.whitelist(allow_guest=True)
+def get_course_details(course):
+	course_details = frappe.db.get_value(
+		"Course Schedule",
+		course,
+		[
+		"name",
+		"course",
+		"course_image",
+		"short_introduction",
+		"course_description_for_lms",
+		"published",
+		"syllabus",
+		"modality",
+		"academic_term",
+		"c_datestart",
+		"c_dateend",
+		],
+		as_dict=1,
+	)
+	
+	course_details.instructors = get_instructors(course_details.name)
+	
+	if frappe.session.user == "Guest":
+		course_details.membership = None
+		course_details.is_instructor = False
+	else:
+		course_details.membership = frappe.db.get_value(
+			"Scheduled Course Roster",
+			{"stuemail_rc": frappe.session.user, "course_sc": course_details.name},
+			["name", "course", "current_lesson", "progress", "stuemail_rc"],
+			as_dict=1,
+		)
 
+	if course_details.membership and course_details.membership.current_lesson:
+		course_details.current_lesson = get_lesson_index(
+			course_details.membership.current_lesson
+		)
+
+	return course_details
+
+def get_lesson_index(lesson_name):
+	"""Returns the {chapter_index}.{lesson_index} for the lesson."""
+	lesson = frappe.db.get_value(
+		"Course Schedule Lesson Reference", {"lesson": lesson_name}, ["idx", "parent"], as_dict=True
+	)
+	if not lesson:
+		return "1-1"
+
+	chapter = frappe.db.get_value(
+		"Course Schedule Chapter Reference", {"chapter": lesson.parent}, ["idx"], as_dict=True
+	)
+	if not chapter:
+		return "1-1"
+
+	return f"{chapter.idx}-{lesson.idx}"
+
+
+def get_lesson_url(course, lesson_number):
+	if not lesson_number:
+		return
+	return f"/courses/{course}/learn/{lesson_number}"
 
 
 @frappe.whitelist(allow_guest=True)

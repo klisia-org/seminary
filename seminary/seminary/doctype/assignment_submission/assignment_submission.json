@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-03-07 10:04:07.197858",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "id_section",
+  "course_schedule",
+  "student",
+  "user",
+  "assignment",
+  "type",
+  "assignment_section",
+  "assignment_title",
+  "question",
+  "submission_section",
+  "assignment_attachment",
+  "answer",
+  "feedback_section",
+  "grade",
+  "status",
+  "comments",
+  "evaluator"
+ ],
+ "fields": [
+  {
+   "fieldname": "id_section",
+   "fieldtype": "Section Break",
+   "label": "ID"
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Scheduled Course Roster"
+  },
+  {
+   "fetch_from": "student.stuemail_rc",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "assignment",
+   "fieldtype": "Link",
+   "label": "Assignment",
+   "options": "Assignment Activity"
+  },
+  {
+   "fetch_from": "assignment.type",
+   "fieldname": "type",
+   "fieldtype": "Data",
+   "label": "Attachment type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submission_section",
+   "fieldtype": "Section Break",
+   "label": "Submission"
+  },
+  {
+   "fieldname": "assignment_attachment",
+   "fieldtype": "Attach",
+   "label": "Assignment Attachment"
+  },
+  {
+   "fieldname": "feedback_section",
+   "fieldtype": "Section Break",
+   "label": "Feedback"
+  },
+  {
+   "default": "Not Graded",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Not Graded\nGraded\nPass\nFail"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "evaluator",
+   "fieldtype": "Link",
+   "label": "Evaluated by",
+   "options": "User"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Text Editor",
+   "label": "Answer"
+  },
+  {
+   "fieldname": "assignment_section",
+   "fieldtype": "Section Break",
+   "label": "Assignment"
+  },
+  {
+   "fetch_from": "assignment.title",
+   "fieldname": "assignment_title",
+   "fieldtype": "Data",
+   "label": "Assignment Title",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "assignment.question",
+   "fieldname": "question",
+   "fieldtype": "Text Editor",
+   "label": "Instructions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Float",
+   "label": "Grade"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-07 10:30:17.512044",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Assignment Submission",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

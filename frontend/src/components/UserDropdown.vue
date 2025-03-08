@@ -19,7 +19,7 @@
 						{{ seminarySettings?.name || 'Seminary' }}
 					</div>
 					<div class="mt-1 text-sm text-gray-700 leading-none">
-						{{ user.data.full_name }}
+						{{ userResource.data.full_name }}
 					</div>
 				</div>
 
@@ -41,11 +41,18 @@
 import { Dropdown, FeatherIcon, Avatar } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import { usersStore } from '@/stores/user';
-import { provide, ref } from 'vue'
+import { provide, ref, markRaw, computed } from 'vue'
 import ProfileModal from '@/components/ProfileModal.vue'
-import { School } from 'lucide-vue-next';
+import { School, ChevronDown, LogIn, LogOut, Moon, User, Settings, Sun, } from 'lucide-vue-next';
+import { useSettings } from '@/stores/settings'
+import { createDialog } from '@/utils/dialogs'
 
-const { user } = usersStore()
+import { useRouter } from 'vue-router'
+
+
+const router = useRouter()
+
+let { userResource } = usersStore()
 const { logout } = sessionStore()
 defineOptions({
   inheritAttrs: false
@@ -64,18 +71,54 @@ const showProfileDialog = ref(false)
 provide('showProfileDialog', showProfileDialog)
 
 
-const userDropdownOptions = [
-	{
-		icon: 'user',
-		label: 'Profile',
-		onClick: () => showProfileDialog.value = true,
-	},
-	{
-		icon: 'log-out',
-		label: 'Log out',
-		onClick: () => logout.submit(),
-	},
-]
+const userDropdownOptions = computed(() => {
+	return [
+		{
+			icon: User,
+			label: 'My Profile',
+			onClick: () => {
+				router.push(`/user/${userResource.data?.username}`)
+			},
+			condition: () => {
+				return isLoggedIn
+			},
+		},
+		
+		{
+			icon: Settings,
+			label: 'Settings',
+			onClick: () => {
+				settingsStore.isSettingsOpen = true
+			},
+			condition: () => {
+				return userResource.data?.is_moderator
+			},
+		},
+		
+		{
+			icon: LogOut,
+			label: 'Log out',
+			onClick: () => {
+				logout.submit().then(() => {
+					isLoggedIn = false
+				})
+			},
+			condition: () => {
+				return isLoggedIn
+			},
+		},
+		{
+			icon: LogIn,
+			label: 'Log in',
+			onClick: () => {
+				window.location.href = '/login'
+			},
+			condition: () => {
+				return !isLoggedIn
+			},
+		},
+	]
+})
 
 </script>
   

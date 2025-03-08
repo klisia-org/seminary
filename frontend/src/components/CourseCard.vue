@@ -64,7 +64,7 @@
 					>
 						<UserAvatar
 							v-for="instructor in course.instructors"
-							:user="instructor"
+							:user="instructor.user"
 						/>
 					</div>
 					<CourseInstructors :instructors="course.instructors" />
@@ -153,7 +153,5 @@ const props = defineProps({
 	margin: 0.25rem 0 1.25rem;
 	line-height: 1.5;
 }
-.course-card {
-  /* Add your styles here */
-}
+
 </style>

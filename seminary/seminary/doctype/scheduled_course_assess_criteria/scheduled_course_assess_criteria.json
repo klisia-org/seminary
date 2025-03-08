@@ -12,6 +12,7 @@
   "weight_scac",
   "linked_activity_section",
   "quiz",
+  "assignment",
   "section_break_bqdt",
   "column_break_flax",
   "extracredit_scac",
@@ -32,13 +33,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "extracredit_scac==False",
    "description": "Percentage of the total assessments for this course",
    "fieldname": "weight_scac",
    "fieldtype": "Percent",
    "in_list_view": 1,
    "label": "Weight",
-   "mandatory_depends_on": "extracredit_scac==False"
+   "mandatory_depends_on": "extracredit_scac==0"
   },
   {
    "description": "Changes in these criteria will affect only this instance of the course. If you want to change assessment of all future courses, please make the change within the master Course setting.",
@@ -57,7 +57,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "extracredit_scac==True",
+   "allow_in_quick_entry": 1,
    "description": "This is the maximum extra points a student may earn (in their final grade for the course)",
    "fieldname": "fudgepoints_scac",
    "fieldtype": "Float",
@@ -77,29 +77,38 @@
    "fetch_from": "assesscriteria_scac.type",
    "fieldname": "type",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Assessment Criteria Type",
    "read_only": 1
   },
   {
+   "allow_in_quick_entry": 1,
    "description": "Depending on Assessment Criteria Type, the proper linked activity can be selected",
    "fieldname": "linked_activity_section",
    "fieldtype": "Section Break",
    "label": "Linked Activity"
   },
   {
-   "depends_on": "type == 'Quiz'",
+   "allow_in_quick_entry": 1,
    "fieldname": "quiz",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Quiz",
-   "mandatory_depends_on": "type == 'Quiz'",
    "options": "Quiz"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "assignment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assignment",
+   "options": "Assignment Activity"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-07 08:39:57.834121",
+ "modified": "2025-03-07 09:48:47.570424",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

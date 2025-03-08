@@ -25,6 +25,24 @@ import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 
 @frappe.whitelist(allow_guest=True)
+def get_user_info():
+	if frappe.session.user == "Guest":
+		return None
+	user = frappe.db.get_value(
+		"User",
+		frappe.session.user,
+		["name", "email", "enabled", "user_image", "full_name", "user_type", "username"],
+		as_dict=1,
+	)
+	user["roles"] = frappe.get_roles(user.name)
+	user.is_instructor = "Academics User" in user.roles
+	user.is_moderator = "Seminary Manager" in user.roles
+	user.is_evaluator = "Instructor" in user.roles
+	user.is_student = "Student" in user.roles
+	user.is_system_manager = "System Manager" in user.roles
+	return user
+
+@frappe.whitelist(allow_guest=True)
 def get_school_abbr_logo():
 	abbr = frappe.db.get_single_value(
 		"Website Settings", "app_name"
@@ -1074,6 +1092,160 @@ def active_term():
 	return {'academic_term': at, 'academic_year': ay}
 
 	
+@frappe.whitelist()
+def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+	values = frappe._dict(
+		{"title": chapter_title, "course": course, "is_scorm_package": is_scorm_package}
+	)
+
+	if is_scorm_package:
+		scorm_package = frappe._dict(scorm_package)
+		extract_path = extract_package(course, chapter_title, scorm_package)
+
+		values.update(
+			{
+				"scorm_package": scorm_package.name,
+				"scorm_package_path": extract_path.split("public")[1],
+				"manifest_file": get_manifest_file(extract_path).split("public")[1],
+				"launch_file": get_launch_file(extract_path).split("public")[1],
+			}
+		)
+
+	if name:
+		chapter = frappe.get_doc("Course Schedule Chapter", name)
+	else:
+		chapter = frappe.new_doc("Course Schedule Chapter")
+
+	chapter.update(values)
+	chapter.save()
+
+	if is_scorm_package and not len(chapter.lessons):
+		add_lesson(lesson_title, chapter.name, course)
+
+	return chapter
+
+def extract_package(course, chapter_title, scorm_package):
+	package = frappe.get_doc("File", scorm_package.name)
+	zip_path = package.get_full_path()
+	# check_for_malicious_code(zip_path)
+	extract_path = frappe.get_site_path("public", "scorm", course, chapter_title)
+	zipfile.ZipFile(zip_path).extractall(extract_path)
+	return extract_path
+
+
+def check_for_malicious_code(zip_path):
+	suspicious_patterns = [
+		# Unsafe inline JavaScript
+		r'on(click|load|mouseover|error|submit|focus|blur|change|keyup|keydown|keypress|resize)=".*?"',  # Inline event handlers (e.g., onerror, onclick)
+		r'<script.*?src=["\']http',  # External script tags
+		r"eval\(",  # Usage of eval()
+		r"Function\(",  # Usage of Function constructor
+		r"(btoa|atob)\(",  # Base64 encoding/decoding
+		# Dangerous XML patterns
+		r"<!ENTITY",  # XXE-related
+		r"<\?xml-stylesheet .*?>",  # External stylesheets in XML
+	]
+
+	with zipfile.ZipFile(zip_path, "r") as zf:
+		for file_name in zf.namelist():
+			if file_name.endswith((".html", ".js", ".xml")):
+				with zf.open(file_name) as file:
+					content = file.read().decode("utf-8", errors="ignore")
+					for pattern in suspicious_patterns:
+						if re.search(pattern, content):
+							frappe.throw(
+								_("Suspicious pattern found in {0}: {1}").format(file_name, pattern)
+							)
+
+
+def get_manifest_file(extract_path):
+	manifest_file = None
+	for root, dirs, files in os.walk(extract_path):
+		for file in files:
+			if file == "imsmanifest.xml":
+				manifest_file = os.path.join(root, file)
+				break
+		if manifest_file:
+			break
+	return manifest_file
+
+
+def get_launch_file(extract_path):
+	launch_file = None
+	manifest_file = get_manifest_file(extract_path)
+
+	if manifest_file:
+		with open(manifest_file) as file:
+			data = file.read()
+			dom = parseString(data)
+			resource = dom.getElementsByTagName("resource")
+			for res in resource:
+				if (
+					res.getAttribute("adlcp:scormtype") == "sco"
+					or res.getAttribute("adlcp:scormType") == "sco"
+				):
+					launch_file = res.getAttribute("href")
+					break
+
+		if launch_file:
+			launch_file = os.path.join(os.path.dirname(manifest_file), launch_file)
+
+	return launch_file
+
+
+def add_lesson(title, chapter, course):
+	lesson = frappe.new_doc("Course Schedule Lesson")
+	lesson.update(
+		{
+			"title": title,
+			"chapter": chapter,
+			"course": course,
+		}
+	)
+	lesson.insert()
+
+	lesson_reference = frappe.new_doc("Course Schedule Lesson Reference")
+	lesson_reference.update(
+		{
+			"lesson": lesson.name,
+			"parent": chapter,
+			"parenttype": "Course Schedule Chapter",
+			"parentfield": "lessons",
+		}
+	)
+	lesson_reference.insert()
+
+
+@frappe.whitelist()
+def delete_chapter(chapter):
+	chapterInfo = frappe.db.get_value(
+		"Course Schedule Chapter", chapter, ["is_scorm_package", "scorm_package_path"], as_dict=True
+	)
+
+	if chapterInfo.is_scorm_package:
+		delete_scorm_package(chapterInfo.scorm_package_path)
+
+	frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
+	frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
+	frappe.db.delete("Course Schedule Course Lesson", {"chapter": chapter})
+	frappe.db.delete("Course Schedule Chapter", chapter)
+
+
+def delete_scorm_package(scorm_package_path):
+	scorm_package_path = frappe.get_site_path("public", scorm_package_path[1:])
+	if os.path.exists(scorm_package_path):
+		shutil.rmtree(scorm_package_path)
+
+
+@frappe.whitelist()
+def mark_lesson_progress(course, chapter_number, lesson_number):
+	chapter_name = frappe.get_value(
+		"Course Schedule Chapter Reference", {"parent": course, "idx": chapter_number}, "chapter"
+	)
+	lesson_name = frappe.get_value(
+		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson_number}, "lesson"
+	)
+	save_progress(lesson_name, course)
 
 
 
@@ -1178,3 +1350,15 @@ def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
 	)
 	return scholarships
 	
+@frappe.whitelist()
+def delete_lesson(lesson, chapter):
+	# Delete Reference
+	chapter = frappe.get_doc("Course Schedule Chapter", chapter)
+	chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
+	chapter.save()
+
+	# Delete progress
+	frappe.db.delete("Course Schedule Progress", {"lesson": lesson})
+
+	# Delete Lesson
+	frappe.db.delete("Course Schedule Lesson", lesson)

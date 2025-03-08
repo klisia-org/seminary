@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
 import {studentStore} from '@/stores/student'
 
 export const sessionStore = defineStore('seminary-session', () => {
-	const { user:currentUser } = usersStore()
+	let { userResource} = usersStore()
 	const { student } = studentStore()
 
 	function sessionUser() {
@@ -26,8 +26,7 @@ export const sessionStore = defineStore('seminary-session', () => {
 			throw new Error('Invalid email or password')
 		},
 		onSuccess() {
-			currentUser.reload()
-			sessionUser.reload()
+			userResource.reload()
 			student.reload()
 			user.value = sessionUser()
 			login.reset()
@@ -38,6 +37,7 @@ export const sessionStore = defineStore('seminary-session', () => {
 	const logout = createResource({
 		url: 'logout',
 		onSuccess() {
+			userResource.reset()
 			user.value = null
 			window.location.href = '/login'
 		},

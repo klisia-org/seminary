@@ -3,60 +3,43 @@
 		class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5"
 	>
 		<!-- Add header content if needed -->
+     <h2 class="text-lg font-semibold text-ink-gray-9">Courses</h2>
+     <br>
 	</header>
-	<div class="p-5 pb-10">
-    <div class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:items-center justify-between mb-5">
-      
-      <div v-if="tableData.rows.length > 0" class="px-5 py-4">
-		<ListView :columns="tableData.columns" :rows="tableData.rows" :options="{
-			selectable: false,
-			showTooltip: false,
-			onRowClick: () => { },
-		}" row-key="id" v-if="tableData.rows.length > 0">
-			<ListHeader>
-				<ListHeaderItem v-for="column in tableData.columns" :key="column.key" :item="column" />
-			</ListHeader>
-			<ListRow v-for="row in tableData.rows" :key="row.id" :row="row" v-slot="{ column, item }">
-				<ListRowItem :item="item" :align="column.align">
-				
-				</ListRowItem>
-			</ListRow>
-		</ListView>
-    </div>
-  </div>
-    <div v-if="courses.data?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
-      <router-link v-for="course in courses.data" :to="{ name: 'CourseDetail', params: { courseName: course.name } }" :key="course.name">
-        <h3>{{ course.course }}</h3>
-			<p>{{ course.academic_term }}</p>
+
+  <div v-if="courses.data?.length" class="p-5 pb-10 flex flex-wrap justify-center gap-4">
+    <div v-for="course in courses.data" :key="course.name" class="course_card" style="max-width: 640px; flex: 1 1 calc(100% - 1rem);">
+      <router-link :to="{ name: 'CourseDetail', params: { courseName: course.name } }" class="w-full h-full">
+        <div class="course-image" :style="{ backgroundImage: `url(${course.course_image})` }"></div>
+        <div class="p-4">
+          <h3 class="text-lg font-semibold">{{ course.course }}</h3>
+          <div class="short-introduction text-ink-gray-7 text-sm">
+            {{ course.short_introduction }}
+            {{ course.academic_term }}
+          </div>
+        </div>
       </router-link>
     </div>
+  </div>
     <div v-else class="flex flex-col items-center justify-center text-sm text-ink-gray-5 italic mt-48">
       <BookOpen class="size-10 mx-auto stroke-1 text-ink-gray-4" />
       <div class="text-lg font-medium mb-1">
         <span>No courses found</span>
-      
-     
+      </div>
     </div>
-    </div>
-	</div>
+  
+
 </template>
 
 <script setup>
-import {
-	Breadcrumbs,
-	Button,
-	createListResource,
-	FormControl,
-	Select,
-	TabButtons,
-} from 'frappe-ui'
+
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { BookOpen, Plus } from 'lucide-vue-next'
 import { studentStore } from '@/stores/student'
 import { createResource } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
 import { reactive } from 'vue'
-//import CourseCard from '@/components/CourseCard.vue'
+
 
 const user = inject('$user')
 const dayjs = inject('$dayjs')
@@ -134,3 +117,46 @@ const setQueryParams = () => {
   history.replaceState({}, '', `${location.pathname}?${queries.toString()}`)
 }
 </script>
+<style>
+.course_card {
+  display: flex;
+  height: 350px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  transition: all 0.3s;
+}
+.course-image {
+	height: 168px;
+	width: 100%;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+}
+
+
+.image-placeholder {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	font-size: 5rem;
+	color: theme('colors.gray.700');
+	font-weight: 600;
+}
+
+.short-introduction {
+	display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+	-webkit-box-orient: vertical;
+	text-overflow: ellipsis;
+	width: 100%;
+	overflow: hidden;
+	margin: 0.25rem 0 1.25rem;
+	line-height: 1.5;
+}
+</style>

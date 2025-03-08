@@ -5,10 +5,10 @@
 			class="grid grid-cols-[70%,30%] mb-4 px-2"
 		>
 			<div class="font-semibold text-lg leading-5 text-ink-gray-9">
-				{{ __(title) }}
+				{{ (title) }}
 			</div>
 			<Button size="sm" v-if="allowEdit" @click="openChapterModal()">
-				{{ __('Add Chapter') }}
+				{{ ('Add Chapter') }}
 			</Button>
 			<!-- <span class="font-medium cursor-pointer" @click="expandAllChapters()">
 				{{ expandAll ? __("Collapse all chapters") : __("Expand all chapters") }}
@@ -39,17 +39,17 @@
 						class="text-base text-left text-ink-gray-9 font-medium leading-5 ml-2"
 						@click="redirectToChapter(chapter)"
 					>
-						{{ chapter.title }}
+						{{ chapter.chapter_title }}
 					</div>
 					<div class="flex ml-auto space-x-4">
-						<Tooltip :text="__('Edit Chapter')" placement="bottom">
+						<Tooltip :text="('Edit Chapter')" placement="bottom">
 							<FilePenLine
 								v-if="allowEdit"
 								@click.prevent="openChapterModal(chapter)"
 								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
 							/>
 						</Tooltip>
-						<Tooltip :text="__('Delete Chapter')" placement="bottom">
+						<Tooltip :text="('Delete Chapter')" placement="bottom">
 							<Trash2
 								v-if="allowEdit"
 								@click.prevent="trashChapter(chapter.name)"
@@ -98,7 +98,7 @@
 											v-else-if="lesson.icon === 'icon-list'"
 											class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 										/>
-										{{ lesson.title }}
+										{{ lesson.lesson_title }}
 										<Trash2
 											v-if="allowEdit"
 											@click.prevent="trashLesson(lesson.name, chapter.name)"
@@ -126,7 +126,7 @@
 							}"
 						>
 							<Button>
-								{{ __('Add Lesson') }}
+								{{ ('Add Lesson') }}
 							</Button>
 						</router-link>
 					</div>
@@ -191,7 +191,7 @@ const props = defineProps({
 })
 
 const outline = createResource({
-	url: 'lms.lms.utils.get_course_outline',
+	url: 'seminary.seminary.utils.get_course_outline',
 	cache: ['course_outline', props.courseName],
 	params: {
 		course: props.courseName,
@@ -201,7 +201,7 @@ const outline = createResource({
 })
 
 const deleteLesson = createResource({
-	url: 'lms.lms.api.delete_lesson',
+	url: 'seminary.seminary.utils.delete_lesson',
 	makeParams(values) {
 		return {
 			lesson: values.lesson,
@@ -215,7 +215,7 @@ const deleteLesson = createResource({
 })
 
 const updateLessonIndex = createResource({
-	url: 'lms.lms.api.update_lesson_index',
+	url: 'seminary.seminary.api.update_lesson_index',
 	makeParams(values) {
 		return {
 			lesson: values.lesson,
@@ -231,13 +231,13 @@ const updateLessonIndex = createResource({
 
 const trashLesson = (lessonName, chapterName) => {
 	$dialog({
-		title: __('Delete this lesson?'),
-		message: __(
+		title: ('Delete this lesson?'),
+		message: (
 			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{
-				label: __('Delete'),
+				label: ('Delete'),
 				theme: 'red',
 				variant: 'solid',
 				onClick(close) {
@@ -267,7 +267,7 @@ const getCurrentChapter = () => {
 
 const updateOutline = (e) => {
 	updateLessonIndex.submit({
-		lesson: e.item.__draggable_context.element.name,
+		lesson: e.item.draggable_context.element.name,
 		sourceChapter: e.from.dataset.chapter,
 		targetChapter: e.to.dataset.chapter,
 		idx: e.newIndex,
@@ -275,7 +275,7 @@ const updateOutline = (e) => {
 }
 
 const deleteChapter = createResource({
-	url: 'lms.lms.api.delete_chapter',
+	url: 'seminary.seminary.api.delete_chapter',
 	makeParams(values) {
 		return {
 			chapter: values.chapter,
@@ -289,13 +289,13 @@ const deleteChapter = createResource({
 
 const trashChapter = (chapterName) => {
 	$dialog({
-		title: __('Delete this chapter?'),
-		message: __(
+		title: ('Delete this chapter?'),
+		message: (
 			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{
-				label: __('Delete'),
+				label: ('Delete'),
 				theme: 'red',
 				variant: 'solid',
 				onClick(close) {
@@ -313,8 +313,8 @@ const redirectToChapter = (chapter) => {
 	if (props.allowEdit) return
 	if (!user.data) {
 		showToast(
-			__('You are not enrolled'),
-			__('Please enroll for this course to view this lesson'),
+			('You are not enrolled'),
+			('Please enroll for this course to view this lesson'),
 			'alert-circle'
 		)
 		return

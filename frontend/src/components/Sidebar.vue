@@ -44,9 +44,16 @@
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
 import { LayoutDashboard,CalendarCheck,GraduationCap, Banknote, UserCheck, ArrowLeftToLine, BookOpen } from 'lucide-vue-next';
-
+import { usersStore } from '@/stores/user'
+import { sessionStore } from '@/stores/session'
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
+import { ref } from 'vue'
+
+const { userResource } = usersStore()
+const { user } = sessionStore()
+const isModerator = ref(false)
+const isInstructor = ref(false)
 
 const links = [
 	// {
@@ -99,5 +106,6 @@ const seminarySettings = createResource({
 	url: 'seminary.seminary.api.get_school_abbr_logo',
 	auto: true,
 })
+
 
 </script>

@@ -12,6 +12,7 @@
       </div>
     </div>
   </div>
+  <Dialogs />
   <Toasts />
 </template>
 
@@ -20,4 +21,8 @@ import Sidebar from '@/components/Sidebar.vue'
 import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
 import { Toasts } from 'frappe-ui';
+import { Dialogs } from '@/utils/dialogs'
+import { usersStore } from '@/stores/user'
+
+let { userResource } = usersStore()
 </script>

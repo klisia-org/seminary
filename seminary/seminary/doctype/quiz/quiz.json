@@ -1,8 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
- "allow_rename": 1,
- "autoname": "field:title",
+ "autoname": "format:{title}-{###}",
  "creation": "2018-10-17 05:52:50.149904",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -80,11 +79,11 @@
   }
  ],
  "links": [],
- "modified": "2025-03-06 20:25:13.926209",
+ "modified": "2025-03-07 09:50:08.283238",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

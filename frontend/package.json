@@ -25,7 +25,8 @@
     "tailwindcss": "^3.3.3",
     "vite": "^2.9.18",
     "vue": "^3.2.25",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.0.0",

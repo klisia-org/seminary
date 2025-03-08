@@ -124,22 +124,28 @@ let router = createRouter({
   routes,
 })
 
+router.beforeEach(async (to, from, next) => {
+	const { userResource } = usersStore()
+	let { isLoggedIn } = sessionStore()
+	
 
-router.beforeEach(async (to, from) => {
-  const { isLoggedIn, user: sessionUser } = sessionStore()
-  const { user } = usersStore()
-  const { student } = studentStore()
+	try {
+		if (isLoggedIn) {
+			await userResource.promise
+		}
+	} catch (error) {
+		isLoggedIn = false
+	}
 
-  if (!isLoggedIn) {
-    window.location.href = '/login'
-    return await next(false)
-  }
-
-  if (user.data.length === 0) {
-    await user.reload()
-  }
-  await student.reload()
-
+	if (!isLoggedIn) {
+		await allowGuestAccess.promise
+		if (!allowGuestAccess.data) {
+			window.location.href = '/login'
+			return
+		}
+	}
+	return next()
 })
+
 
 export default router

@@ -17,7 +17,7 @@ required_apps = ["erpnext"]
 # --------------------------
 add_to_apps_screen = [{
 	"name": "seminary",
-	"logo": "/assets/seminary/klisia_icon.png",  # Update this path to your custom app's logo
+	"logo": "assets/seminary/images/klisia_icon.png",  # Update this path to your custom app's logo
 	"title": "Seminary ERP",
 	"route": "/seminary"
 }]
