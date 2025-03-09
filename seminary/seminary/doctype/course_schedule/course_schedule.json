@@ -377,7 +377,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-07 07:23:46.539681",
+ "modified": "2025-03-09 14:26:32.741381",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
@@ -415,7 +415,8 @@
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "delete": 1,
@@ -448,7 +449,8 @@
    "read": 1,
    "report": 1,
    "role": "Academics User",
-   "share": 1
+   "share": 1,
+   "write": 1
   }
  ],
  "sort_field": "modified",

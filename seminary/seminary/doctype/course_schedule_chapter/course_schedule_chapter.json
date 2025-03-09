@@ -8,6 +8,7 @@
  "field_order": [
   "coursesc",
   "course_title",
+  "chapter_title",
   "lessons_section",
   "lessons",
   "scorm_section",
@@ -21,8 +22,10 @@
   {
    "fieldname": "coursesc",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Course Schedule",
-   "options": "Course Schedule"
+   "options": "Course Schedule",
+   "reqd": 1
   },
   {
    "fetch_from": "coursesc.course",
@@ -79,11 +82,17 @@
    "fieldtype": "Code",
    "label": "Launch File",
    "read_only": 1
+  },
+  {
+   "fieldname": "chapter_title",
+   "fieldtype": "Data",
+   "label": "Chapter Title",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-09 14:02:47.565988",
+ "modified": "2025-03-09 14:29:10.378328",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",
