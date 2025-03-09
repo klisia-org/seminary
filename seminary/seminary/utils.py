@@ -2,11 +2,92 @@
 
 import frappe
 from frappe import _
+import re
+import string
+import frappe
+import hashlib
+import json
+import requests
 
+
+from frappe.desk.doctype.dashboard_chart.dashboard_chart import get_result
+from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
+from frappe.desk.search import get_user_groups
+from frappe.desk.notifications import extract_mentions
+from frappe.utils import (
+	add_months,
+	cint,
+	cstr,
+	ceil,
+	flt,
+	fmt_money,
+	format_date,
+	get_datetime,
+	getdate,
+	validate_phone_number,
+	get_fullname,
+	pretty_date,
+	get_time_str,
+	nowtime,
+	format_datetime,
+)
+from frappe.utils.dateutils import get_period
+from seminary.seminary.md import find_macros, markdown_to_html
 
 class OverlapError(frappe.ValidationError):
 	pass
 
+RE_SLUG_NOTALLOWED = re.compile("[^a-z0-9]+")
+
+
+def slugify(title, used_slugs=None):
+	"""Converts title to a slug.
+
+	If a list of used slugs is specified, it will make sure the generated slug
+	is not one of them.
+
+	    >>> slugify("Hello World!")
+	    'hello-world'
+	    >>> slugify("Hello World!", ['hello-world'])
+	    'hello-world-2'
+	    >>> slugify("Hello World!", ['hello-world', 'hello-world-2'])
+	    'hello-world-3'
+	"""
+	if not used_slugs:
+		used_slugs = []
+
+	slug = RE_SLUG_NOTALLOWED.sub("-", title.lower()).strip("-")
+	used_slugs = set(used_slugs)
+
+	if slug not in used_slugs:
+		return slug
+
+	count = 2
+	while True:
+		new_slug = f"{slug}-{count}"
+		if new_slug not in used_slugs:
+			return new_slug
+		count = count + 1
+
+def generate_slug(title, doctype):
+	result = frappe.get_all(doctype, fields=["name"])
+	slugs = {row["name"] for row in result}
+	return slugify(title, used_slugs=slugs)
+
+
+def validate_duplicate_student(students):
+	unique_students = []
+	for stud in students:
+		if stud.student in unique_students:
+			frappe.throw(
+				_("Student {0} - {1} appears Multiple times in row {2} & {3}").format(
+					stud.student, stud.student_name, unique_students.index(stud.student) + 1, stud.idx
+				)
+			)
+		else:
+			unique_students.append(stud.student)
+
+	return None
 
 def validate_overlap_for(doc, doctype, fieldname, value=None):
 	"""Checks overlap for specified field.
@@ -442,6 +523,18 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.course_title = course_info.title
 	return lesson_details
 
+def get_course_progress(course, member=None):
+	"""Returns the course progress of the session user"""
+	lesson_count = get_lessons(course, get_details=False)
+	if not lesson_count:
+		return 0
+	completed_lessons = frappe.db.count(
+		"Course Schedule Progress",
+		{"course": course, "member": member or frappe.session.user, "status": "Complete"},
+	)
+	precision = cint(frappe.db.get_default("float_precision")) or 3
+	return flt(((completed_lessons / lesson_count) * 100), precision)
+
 def get_progress(course, lesson, member=None):
 	if not member:
 		member = frappe.session.user
@@ -451,6 +544,96 @@ def get_progress(course, lesson, member=None):
 		{"course": course, "member": member, "lesson": lesson},
 		["status"],
 	)
+
+def get_lessons(course, chapter=None, get_details=True, progress=False):
+	"""If chapter is passed, returns lessons of only that chapter.
+	Else returns lessons of all chapters of the course"""
+	lessons = []
+	lesson_count = 0
+	if chapter:
+		if get_details:
+			return get_lesson_details(chapter, progress=progress)
+		else:
+			return frappe.db.count("Course Schedule Lesson Reference", {"parent": chapter.name})
+
+	for chapter in get_chapters(course):
+		if get_details:
+			lessons += get_lesson_details(chapter, progress=progress)
+		else:
+			lesson_count += frappe.db.count("Course Schedule Lesson Reference", {"parent": chapter.name})
+
+	return lessons if get_details else lesson_count
+
+def get_lesson_details(chapter, progress=False):
+	lessons = []
+	lesson_list = frappe.get_all(
+		"Course Schedule Lesson Reference", {"parent": chapter.name}, ["lesson", "idx"], order_by="idx"
+	)
+	for row in lesson_list:
+		lesson_details = frappe.db.get_value(
+			"Course Schedule Lesson",
+			row.lesson,
+			[
+				"name",
+				"lesson_title",
+				"include_in_preview",
+				"body",
+				"creation",
+				"youtube",
+				"quiz_id",
+				"question",
+				"file_type",
+				"instructor_notes",
+				"course",
+				"content",
+			],
+			as_dict=True,
+		)
+		lesson_details.number = f"{chapter.idx}.{row.idx}"
+		lesson_details.icon = get_lesson_icon(lesson_details.body, lesson_details.content)
+
+		if progress:
+			lesson_details.is_complete = get_progress(lesson_details.course, lesson_details.name)
+
+		lessons.append(lesson_details)
+	return lessons
+
+
+def get_lesson_icon(body, content):
+	if content:
+		content = json.loads(content)
+
+		for block in content.get("blocks"):
+			if block.get("type") == "upload" and block.get("data").get("file_type").lower() in [
+				"mp4",
+				"webm",
+				"ogg",
+				"mov",
+			]:
+				return "icon-youtube"
+
+			if block.get("type") == "embed" and block.get("data").get("service") in [
+				"youtube",
+				"vimeo",
+			]:
+				return "icon-youtube"
+
+			if block.get("type") == "quiz":
+				return "icon-quiz"
+
+		return "icon-list"
+
+	macros = find_macros(body)
+	for macro in macros:
+		if macro[0] == "YouTubeVideo" or macro[0] == "Video":
+			return "icon-youtube"
+		elif macro[0] == "Quiz":
+			return "icon-quiz"
+
+	return "icon-list"
+
+
+
 def render_html(lesson):
 	youtube = lesson.youtube
 	quiz_id = lesson.quiz_id

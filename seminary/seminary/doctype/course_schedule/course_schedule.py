@@ -65,9 +65,10 @@ class CourseSchedule(Document):
 	
 	def validate_time(self):
 		"""Validates if from_time is greater than to_time"""
-		if self.from_time and self.to_time:
-			if self.from_time > self.to_time:
-				frappe.throw(_("From Time cannot be greater than To Time."))
+		if self.is_new() or self.has_value_changed("from_time") or self.has_value_changed("to_time"):
+			if self.from_time and self.to_time:
+				if self.from_time > self.to_time:
+					frappe.throw(_("From Time cannot be greater than To Time."))
 
 	
 

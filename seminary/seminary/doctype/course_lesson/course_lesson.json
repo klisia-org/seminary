@@ -1,0 +1,144 @@
+{
+ "actions": [],
+ "autoname": "format:{lesson_title}_{####}",
+ "creation": "2025-03-08 14:40:26.854417",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "chapter",
+  "lesson_title",
+  "course_sc",
+  "section_break_ksdk",
+  "body",
+  "help",
+  "youtube",
+  "instructor_content",
+  "assignments_section",
+  "quiz_id",
+  "assignment_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "chapter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Chapter",
+   "options": "Course Schedule Chapter",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lesson_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Lesson Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_ksdk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text Editor",
+   "label": "Lesson Content"
+  },
+  {
+   "fetch_from": "chapter.coursesc",
+   "fieldname": "course_sc",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "help",
+   "fieldtype": "HTML",
+   "label": "Help"
+  },
+  {
+   "fieldname": "youtube",
+   "fieldtype": "Data",
+   "label": "YouTube Video ID"
+  },
+  {
+   "fieldname": "instructor_content",
+   "fieldtype": "Text Editor",
+   "label": "Instructor Content"
+  },
+  {
+   "fieldname": "assignments_section",
+   "fieldtype": "Section Break",
+   "label": "Assignments"
+  },
+  {
+   "fieldname": "quiz_id",
+   "fieldtype": "Data",
+   "label": "Quiz ID"
+  },
+  {
+   "fieldname": "assignment_id",
+   "fieldtype": "Data",
+   "label": "Assignment ID"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-08 14:57:11.984646",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Lesson",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "lesson_title",
+ "track_changes": 1
+}
