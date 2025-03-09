@@ -14,6 +14,7 @@
   "youtube",
   "instructor_content",
   "assignments_section",
+  "assessment_criteria",
   "quiz_id",
   "assignment_id"
  ],
@@ -70,19 +71,27 @@
    "label": "Assignments"
   },
   {
+   "fetch_from": "assessment_criteria.quiz",
    "fieldname": "quiz_id",
    "fieldtype": "Data",
    "label": "Quiz ID"
   },
   {
+   "fetch_from": "assessment_criteria.assignment",
    "fieldname": "assignment_id",
    "fieldtype": "Data",
    "label": "Assignment ID"
+  },
+  {
+   "fieldname": "assessment_criteria",
+   "fieldtype": "Link",
+   "label": "Assessment Criteria",
+   "options": "Scheduled Course Assess Criteria"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-08 14:57:11.984646",
+ "modified": "2025-03-09 14:09:43.604856",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",
