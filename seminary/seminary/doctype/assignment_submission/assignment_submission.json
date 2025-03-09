@@ -32,7 +32,7 @@
   {
    "fieldname": "course_schedule",
    "fieldtype": "Link",
-   "label": "Course",
+   "label": "Course Schedule",
    "options": "Course Schedule"
   },
   {
@@ -126,7 +126,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-07 10:30:17.512044",
+ "modified": "2025-03-09 14:15:52.602316",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

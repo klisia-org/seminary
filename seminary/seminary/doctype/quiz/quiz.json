@@ -39,7 +39,7 @@
   },
   {
    "default": "0",
-   "description": "Score out of 100",
+   "description": "Score out of 100. Use this to force students to achieve the score. ",
    "fieldname": "passing_score",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -79,7 +79,7 @@
   }
  ],
  "links": [],
- "modified": "2025-03-07 09:50:08.283238",
+ "modified": "2025-03-09 14:18:02.568184",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",
@@ -124,7 +124,6 @@
   },
   {
    "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
