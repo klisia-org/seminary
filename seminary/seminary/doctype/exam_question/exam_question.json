@@ -23,6 +23,7 @@
    "fetch_from": "question.question",
    "fieldname": "question_text",
    "fieldtype": "Text Editor",
+   "in_list_view": 1,
    "label": "Question"
   },
   {
@@ -37,7 +38,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-10 13:52:25.812978",
+ "modified": "2025-03-10 14:20:47.708943",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question",

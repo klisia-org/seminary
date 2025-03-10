@@ -1,11 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{question}{####}",
+ "autoname": "format:{question_short}{####}",
  "creation": "2025-03-10 13:40:28.162324",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "question_short",
   "question",
   "points"
  ],
@@ -21,12 +22,17 @@
    "fieldname": "points",
    "fieldtype": "Float",
    "label": "Points"
+  },
+  {
+   "fieldname": "question_short",
+   "fieldtype": "Data",
+   "label": "Question short name"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:42:59.374028",
+ "modified": "2025-03-10 14:18:07.840680",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Open Question",
@@ -95,6 +101,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "question",
+ "title_field": "question_short",
  "track_changes": 1
 }
