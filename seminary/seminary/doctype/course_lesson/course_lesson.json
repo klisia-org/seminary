@@ -71,13 +71,11 @@
    "label": "Assignments"
   },
   {
-   "fetch_from": "assessment_criteria.quiz",
    "fieldname": "quiz_id",
    "fieldtype": "Data",
    "label": "Quiz ID"
   },
   {
-   "fetch_from": "assessment_criteria.assignment",
    "fieldname": "assignment_id",
    "fieldtype": "Data",
    "label": "Assignment ID"
@@ -91,7 +89,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 11:30:03.534308",
+ "modified": "2025-03-10 12:44:56.695110",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

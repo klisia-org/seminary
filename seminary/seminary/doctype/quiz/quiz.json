@@ -15,7 +15,8 @@
   "grading_basis",
   "column_break_7",
   "is_time_bound",
-  "duration"
+  "duration",
+  "total_points"
  ],
  "fields": [
   {
@@ -28,7 +29,7 @@
   {
    "fieldname": "question",
    "fieldtype": "Table",
-   "label": "Question",
+   "label": "Multiple Choices Question",
    "options": "Quiz Question",
    "reqd": 1
   },
@@ -39,7 +40,7 @@
   },
   {
    "default": "0",
-   "description": "Score out of 100. Use this to force students to achieve the score. ",
+   "description": "Score out of 100. Use this to force students to achieve the score. Default = 0 (no effect)",
    "fieldname": "passing_score",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -69,6 +70,7 @@
   },
   {
    "depends_on": "is_time_bound",
+   "description": "in minutes",
    "fieldname": "duration",
    "fieldtype": "Duration",
    "label": "Duration"
@@ -76,10 +78,17 @@
   {
    "fieldname": "column_break_7",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_points",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Points Possible",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2025-03-09 14:18:02.568184",
+ "modified": "2025-03-10 13:12:58.857953",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",
@@ -134,6 +143,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

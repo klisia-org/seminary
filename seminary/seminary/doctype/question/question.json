@@ -9,7 +9,8 @@
  "field_order": [
   "question",
   "options",
-  "question_type"
+  "question_type",
+  "points"
  ],
  "fields": [
   {
@@ -33,10 +34,15 @@
    "label": "Type",
    "options": "\nSingle Correct Answer\nMultiple Correct Answer",
    "read_only": 1
+  },
+  {
+   "fieldname": "points",
+   "fieldtype": "Float",
+   "label": "Points"
   }
  ],
  "links": [],
- "modified": "2023-02-06 12:24:36.703135",
+ "modified": "2025-03-10 13:06:13.604738",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Question",
@@ -69,6 +75,7 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

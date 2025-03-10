@@ -11,16 +11,17 @@
  "fields": [
   {
    "fieldname": "chapter",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Chapter",
+   "options": "Course Schedule Chapter",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-10 11:07:13.863895",
+ "modified": "2025-03-10 12:20:26.705551",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter Reference",
