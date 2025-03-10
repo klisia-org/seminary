@@ -1,53 +1,41 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{title}-{###}",
- "creation": "2025-03-07 09:06:43.140515",
+ "autoname": "format:{question_short}{####}",
+ "creation": "2025-03-10 13:40:28.162324",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "assignment_section",
-  "title",
+  "question_short",
   "question",
-  "type"
+  "points"
  ],
  "fields": [
   {
-   "description": "Assignment activities are to be submitted on the LMS",
-   "fieldname": "assignment_section",
-   "fieldtype": "Section Break",
-   "label": "Assignment"
-  },
-  {
-   "allow_in_quick_entry": 1,
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Title",
-   "reqd": 1
-  },
-  {
-   "allow_in_quick_entry": 1,
    "fieldname": "question",
    "fieldtype": "Text Editor",
-   "label": "Instructions"
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
   },
   {
-   "allow_in_quick_entry": 1,
-   "fieldname": "type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Accepted file type",
-   "options": "PDF\nDocument\nImage\nURL",
-   "reqd": 1
+   "fieldname": "points",
+   "fieldtype": "Float",
+   "label": "Points"
+  },
+  {
+   "fieldname": "question_short",
+   "fieldtype": "Data",
+   "label": "Question short name"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:18:24.156868",
+ "modified": "2025-03-10 14:18:07.840680",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Assignment Activity",
+ "name": "Open Question",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
@@ -88,15 +76,6 @@
    "write": 1
   },
   {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -107,11 +86,21 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
- "quick_entry": 1,
  "row_format": "Dynamic",
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "question_short",
+ "track_changes": 1
 }

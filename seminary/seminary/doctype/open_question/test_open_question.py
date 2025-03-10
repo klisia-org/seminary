@@ -12,18 +12,18 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class UnitTestCourseScheduleChapter(UnitTestCase):
+class UnitTestOpenQuestion(UnitTestCase):
 	"""
-	Unit tests for CourseScheduleChapter.
+	Unit tests for OpenQuestion.
 	Use this class for testing individual functions and methods.
 	"""
 
 	pass
 
 
-class IntegrationTestCourseScheduleChapter(IntegrationTestCase):
+class IntegrationTestOpenQuestion(IntegrationTestCase):
 	"""
-	Integration tests for CourseScheduleChapter.
+	Integration tests for OpenQuestion.
 	Use this class for testing interactions between multiple components.
 	"""
 

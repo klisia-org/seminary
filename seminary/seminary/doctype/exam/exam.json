@@ -1,53 +1,76 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{title}-{###}",
- "creation": "2025-03-07 09:06:43.140515",
+ "autoname": "format:{title}{###}",
+ "creation": "2025-03-10 13:46:52.598184",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "assignment_section",
+  "id_section",
   "title",
-  "question",
-  "type"
+  "questions_section",
+  "questions",
+  "exam_config_section",
+  "is_time_bound",
+  "max_time",
+  "max_points"
  ],
  "fields": [
   {
-   "description": "Assignment activities are to be submitted on the LMS",
-   "fieldname": "assignment_section",
+   "fieldname": "id_section",
    "fieldtype": "Section Break",
-   "label": "Assignment"
+   "label": "ID"
   },
   {
-   "allow_in_quick_entry": 1,
    "fieldname": "title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title",
+   "in_standard_filter": 1,
+   "label": "Exam Title",
    "reqd": 1
   },
   {
-   "allow_in_quick_entry": 1,
-   "fieldname": "question",
-   "fieldtype": "Text Editor",
-   "label": "Instructions"
+   "fieldname": "questions_section",
+   "fieldtype": "Section Break",
+   "label": "Questions"
   },
   {
-   "allow_in_quick_entry": 1,
-   "fieldname": "type",
-   "fieldtype": "Select",
+   "fieldname": "questions",
+   "fieldtype": "Table",
+   "label": "questions",
+   "options": "Exam Question"
+  },
+  {
+   "fieldname": "exam_config_section",
+   "fieldtype": "Section Break",
+   "label": "Exam Config"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_time_bound",
+   "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Accepted file type",
-   "options": "PDF\nDocument\nImage\nURL",
-   "reqd": 1
+   "label": "Is time-bound"
+  },
+  {
+   "depends_on": "is_time_bound",
+   "fieldname": "max_time",
+   "fieldtype": "Float",
+   "label": "Max time in minutes"
+  },
+  {
+   "fieldname": "max_points",
+   "fieldtype": "Float",
+   "label": "Max Points"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:18:24.156868",
+ "modified": "2025-03-10 13:51:43.892810",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Assignment Activity",
+ "name": "Exam",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
@@ -88,15 +111,6 @@
    "write": 1
   },
   {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -107,11 +121,20 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
- "quick_entry": 1,
  "row_format": "Dynamic",
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "title"
 }

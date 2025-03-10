@@ -1,11 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{course_title}-{chapter_title)",
- "creation": "2025-03-09 13:02:42.893669",
+ "autoname": "format:{chapter_title}{###}",
+ "creation": "2025-03-10 11:17:17.690579",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "id_section",
   "coursesc",
   "course_title",
   "chapter_title",
@@ -20,6 +21,11 @@
  ],
  "fields": [
   {
+   "fieldname": "id_section",
+   "fieldtype": "Section Break",
+   "label": "ID"
+  },
+  {
    "fieldname": "coursesc",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -33,6 +39,13 @@
    "fieldtype": "Link",
    "label": "Course Title",
    "options": "Course"
+  },
+  {
+   "fieldname": "chapter_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Chapter Title",
+   "reqd": 1
   },
   {
    "fieldname": "lessons_section",
@@ -57,11 +70,11 @@
    "label": "Is SCORM Package"
   },
   {
+   "depends_on": "is_scorm_package",
    "fieldname": "scorm_package",
    "fieldtype": "Link",
    "label": "SCORM Package",
-   "options": "File",
-   "read_only": 1
+   "options": "File"
   },
   {
    "depends_on": "is_scorm_package",
@@ -82,17 +95,12 @@
    "fieldtype": "Code",
    "label": "Launch File",
    "read_only": 1
-  },
-  {
-   "fieldname": "chapter_title",
-   "fieldtype": "Data",
-   "label": "Chapter Title",
-   "reqd": 1
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-09 14:29:10.378328",
+ "modified": "2025-03-10 11:27:42.183079",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",
@@ -119,18 +127,6 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Seminary Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
    "role": "Academics User",
    "share": 1,
    "write": 1
@@ -143,12 +139,11 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Instructor",
+   "role": "Seminary Manager",
    "share": 1,
    "write": 1
   },
   {
-   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -159,8 +154,10 @@
    "write": 1
   }
  ],
- "sort_field": "modified",
+ "row_format": "Dynamic",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "chapter_title",
  "track_changes": 1
 }
