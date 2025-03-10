@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{course_title}-{chapter_title)",
+ "autoname": "format:{course_title}-{chapter_title}",
  "creation": "2025-03-09 13:02:42.893669",
  "doctype": "DocType",
  "engine": "InnoDB",
