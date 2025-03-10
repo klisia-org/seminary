@@ -21,9 +21,10 @@
  "fields": [
   {
    "fieldname": "chapter",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course Chapter",
+   "options": "Course Schedule Chapter",
    "reqd": 1
   },
   {
@@ -90,7 +91,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 11:07:39.830630",
+ "modified": "2025-03-10 11:30:03.534308",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

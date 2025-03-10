@@ -1,0 +1,163 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{chapter_title}{###}",
+ "creation": "2025-03-10 11:17:17.690579",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "id_section",
+  "coursesc",
+  "course_title",
+  "chapter_title",
+  "lessons_section",
+  "lessons",
+  "scorm_section",
+  "is_scorm_package",
+  "scorm_package",
+  "scorm_package_path",
+  "manifest_file",
+  "launch_file"
+ ],
+ "fields": [
+  {
+   "fieldname": "id_section",
+   "fieldtype": "Section Break",
+   "label": "ID"
+  },
+  {
+   "fieldname": "coursesc",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "coursesc.course",
+   "fieldname": "course_title",
+   "fieldtype": "Link",
+   "label": "Course Title",
+   "options": "Course"
+  },
+  {
+   "fieldname": "chapter_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Chapter Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lessons_section",
+   "fieldtype": "Section Break",
+   "label": "Lessons"
+  },
+  {
+   "fieldname": "lessons",
+   "fieldtype": "Table",
+   "label": "Lessons",
+   "options": "Course Schedule Lesson Reference"
+  },
+  {
+   "fieldname": "scorm_section",
+   "fieldtype": "Section Break",
+   "label": "SCORM"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_scorm_package",
+   "fieldtype": "Check",
+   "label": "Is SCORM Package"
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "scorm_package",
+   "fieldtype": "Link",
+   "label": "SCORM Package",
+   "options": "File"
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "scorm_package_path",
+   "fieldtype": "Code",
+   "label": "SCORM Package Path"
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "manifest_file",
+   "fieldtype": "Code",
+   "label": "Manifest File",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_scorm_package",
+   "fieldname": "launch_file",
+   "fieldtype": "Code",
+   "label": "Launch File",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-10 11:27:42.183079",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Schedule Chapter",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "chapter_title",
+ "track_changes": 1
+}
