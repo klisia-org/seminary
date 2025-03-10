@@ -21,10 +21,9 @@
  "fields": [
   {
    "fieldname": "chapter",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Course Chapter",
-   "options": "Course Schedule Chapter",
    "reqd": 1
   },
   {
@@ -91,7 +90,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-09 14:09:43.604856",
+ "modified": "2025-03-10 11:07:39.830630",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",
@@ -145,6 +144,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
