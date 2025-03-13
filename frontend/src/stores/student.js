@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { createResource } from 'frappe-ui'
 
-export const studentStore = defineStore('seminary-student', () => {
+// Get user data to check if user is a student
+const user = inject('$user')
+
+export const studentStore = user.data.is_student ? defineStore('seminary-student', () => {
   const studentInfo = ref({})
   const currentProgram = ref({})
 
   const student = createResource({
     url: 'seminary.seminary.api.get_student_info',
     onSuccess(student_info) {
-      if (!student_info) {
-        window.location.href = "/app"
-      }
       currentProgram.value = student_info.current_program
       // remove current_program from info
       delete student_info.current_program
@@ -33,4 +33,4 @@ export const studentStore = defineStore('seminary-student', () => {
   }
 
   return { student, studentInfo, currentProgram, getStudentInfo, getCurrentProgram }
-})
+}) : null

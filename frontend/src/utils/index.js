@@ -1,16 +1,16 @@
 import { toast } from 'frappe-ui'
 import { useTimeAgo } from '@vueuse/core'
-import { Quiz } from '@/utils/quiz'
-import { Assignment } from '@/utils/assignment'
-import { Upload } from '@/utils/upload'
-import { Markdown } from '@/utils/markdownParser'
+// import { Quiz } from '@/utils/quiz'
+// import { Assignment } from '@/utils/assignment'
+// import { Upload } from '@/utils/upload'
+// import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
 import Paragraph from '@editorjs/paragraph'
-import { CodeBox } from '@/utils/code'
+// import { CodeBox } from '@/utils/code'
 import NestedList from '@editorjs/nested-list'
 import InlineCode from '@editorjs/inline-code'
 import { watch } from 'vue'
-import dayjs from '@/utils/dayjs'
+// import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
@@ -158,10 +158,7 @@ export function getEditorTools() {
 		quiz: Quiz,
 		assignment: Assignment,
 		upload: Upload,
-		markdown: {
-			class: Markdown,
-			inlineToolbar: true,
-		},
+		markdown: Markdown,
 		image: SimpleImage,
 		table: {
 			class: Table,

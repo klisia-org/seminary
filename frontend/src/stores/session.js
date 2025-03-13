@@ -3,11 +3,11 @@ import { createResource } from 'frappe-ui'
 import { usersStore } from '@/stores/user'
 import router from '@/router'
 import { ref, computed } from 'vue'
-import {studentStore} from '@/stores/student'
+
 
 export const sessionStore = defineStore('seminary-session', () => {
 	let { userResource} = usersStore()
-	const { student } = studentStore()
+	
 
 	function sessionUser() {
 		let cookies = new URLSearchParams(document.cookie.split('; ').join('&'))
@@ -26,8 +26,7 @@ export const sessionStore = defineStore('seminary-session', () => {
 			throw new Error('Invalid email or password')
 		},
 		onSuccess() {
-			userResource.reload()
-			student.reload()
+			userResource.reload()			
 			user.value = sessionUser()
 			login.reset()
 			router.replace({ path: '/' })

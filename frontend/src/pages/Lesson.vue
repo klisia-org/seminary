@@ -4,28 +4,11 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<CertificationLinks :courseName="courseName" />
+			
 		</header>
 		<div class="grid md:grid-cols-[70%,30%] h-screen">
 			<div
-				v-if="lesson.data.no_preview"
-				class="border-r text-center pt-10 px-5 md:px-0 pb-10"
-			>
-				<p class="mb-4">
-					{{
-						__(
-							'This lesson is not available for preview. Please enroll in the course to access it.'
-						)
-					}}
-				</p>
-				<Button v-if="user.data" @click="enrollStudent()" variant="solid">
-					{{ __('Start Learning') }}
-				</Button>
-				<Button v-else @click="redirectToLogin()">
-					{{ __('Login') }}
-				</Button>
-			</div>
-			<div v-else class="border-r container pt-5 pb-10 px-5">
+				class="border-r container pt-5 pb-10 px-5">
 				<div class="flex flex-col md:flex-row md:items-center justify-between">
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ lesson.data.title }}
@@ -51,21 +34,7 @@
 								</span>
 							</Button>
 						</router-link>
-						<router-link
-							v-if="allowEdit()"
-							:to="{
-								name: 'LessonForm',
-								params: {
-									courseName: courseName,
-									chapterNumber: props.chapterNumber,
-									lessonNumber: props.lessonNumber,
-								},
-							}"
-						>
-							<Button class="mr-2">
-								{{ __('Edit') }}
-							</Button>
-						</router-link>
+						
 						<router-link
 							v-if="lesson.data.next"
 							:to="{
@@ -134,10 +103,10 @@
 					></div>
 				</div>
 				<div
-					v-else-if="lesson.data.instructor_notes"
+					v-else-if="lesson.data.instructor_content"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-6"
 				>
-					<LessonContent :content="lesson.data.instructor_notes" />
+					<LessonContent :content="lesson.data.instructor_content" />
 				</div>
 				<div
 					v-if="lesson.data.content"
@@ -205,7 +174,7 @@ import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import CertificationLinks from '@/components/CertificationLinks.vue'
+
 
 const user = inject('$user')
 const router = useRouter()

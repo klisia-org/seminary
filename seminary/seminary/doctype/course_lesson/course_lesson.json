@@ -9,14 +9,17 @@
   "lesson_title",
   "course_sc",
   "section_break_ksdk",
+  "content_column",
   "body",
+  "content",
   "help",
   "youtube",
   "instructor_content",
   "assignments_section",
   "assessment_criteria",
   "quiz_id",
-  "assignment_id"
+  "assignment_id",
+  "exam"
  ],
  "fields": [
   {
@@ -71,11 +74,13 @@
    "label": "Assignments"
   },
   {
+   "fetch_from": "assessment_criteria.quiz",
    "fieldname": "quiz_id",
    "fieldtype": "Data",
    "label": "Quiz ID"
   },
   {
+   "fetch_from": "assessment_criteria.assignment",
    "fieldname": "assignment_id",
    "fieldtype": "Data",
    "label": "Assignment ID"
@@ -85,11 +90,27 @@
    "fieldtype": "Link",
    "label": "Assessment Criteria",
    "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fetch_from": "assessment_criteria.exam",
+   "fieldname": "exam",
+   "fieldtype": "Data",
+   "label": "Exam"
+  },
+  {
+   "fieldname": "content_column",
+   "fieldtype": "Column Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Content"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 12:44:56.695110",
+ "modified": "2025-03-13 09:25:37.807337",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

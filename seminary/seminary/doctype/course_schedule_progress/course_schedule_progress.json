@@ -1,6 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
+ "autoname": "autoincrement",
  "creation": "2025-03-06 15:31:00.333003",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -44,7 +44,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Lesson",
-   "options": "Course Schedule Lesson",
+   "options": "Course Lesson",
    "search_index": 1
   },
   {
@@ -73,10 +73,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-06 15:40:38.287264",
+ "modified": "2025-03-13 08:49:26.315022",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Progress",
+ "naming_rule": "Autoincrement",
  "owner": "Administrator",
  "permissions": [
   {
@@ -128,6 +129,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

@@ -23,6 +23,7 @@ import re
 import shutil
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
+from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 
 @frappe.whitelist(allow_guest=True)
 def get_user_info():
@@ -40,7 +41,18 @@ def get_user_info():
 	user.is_evaluator = "Instructor" in user.roles
 	user.is_student = "Student" in user.roles
 	user.is_system_manager = "System Manager" in user.roles
+	user.student = frappe.db.get_value("Student", {"user": user.name, "enabled": 1}, "name")
 	return user
+
+@frappe.whitelist()
+def get_instructor_info():
+	instructor = frappe.db.get_value(
+		"Instructor",
+		{"user": frappe.session.user},
+		["name", "instructor_name", "user", "status", "bio", "shortbio", "image"],
+		as_dict=1,
+	)
+	return instructor
 
 @frappe.whitelist(allow_guest=True)
 def get_school_abbr_logo():
@@ -573,11 +585,11 @@ def copy_data_to_scheduled_course_roster(doc, method):
 		items = []
 		criteria = []
 		criteria = frappe.db.sql(
-			"""select distinct scac.assesscriteria_scac, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
+			"""select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""", coursesc_ce, as_list=1)
 		rows = frappe.db.sql(
-			"""select count(distinct scac.assesscriteria_scac) from `tabScheduled Course Assess Criteria` scac
+			"""select count(distinct scac.name) from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""", coursesc_ce)[0][0]
 		i = 0
@@ -1120,7 +1132,7 @@ def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=
 	chapter.save()
 
 	if is_scorm_package and not len(chapter.lessons):
-		add_lesson(lesson_title, chapter.name, course)
+		add_lesson(chapter_title, chapter.name, course)
 
 	return chapter
 
@@ -1193,13 +1205,13 @@ def get_launch_file(extract_path):
 	return launch_file
 
 
-def add_lesson(title, chapter, course):
-	lesson = frappe.new_doc("Course Schedule Lesson")
+def add_lesson(lesson_title, chapter, course_sc):
+	lesson = frappe.new_doc("Course Lesson")
 	lesson.update(
 		{
-			"title": title,
+			"title": lesson_title,
 			"chapter": chapter,
-			"course": course,
+			"course": course_sc,
 		}
 	)
 	lesson.insert()
@@ -1227,7 +1239,7 @@ def delete_chapter(chapter):
 
 	frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
 	frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
-	frappe.db.delete("Course Schedule Course Lesson", {"chapter": chapter})
+	frappe.db.delete("Course Lesson", {"chapter": chapter})
 	frappe.db.delete("Course Schedule Chapter", chapter)
 
 
@@ -1361,4 +1373,4 @@ def delete_lesson(lesson, chapter):
 	frappe.db.delete("Course Schedule Progress", {"lesson": lesson})
 
 	# Delete Lesson
-	frappe.db.delete("Course Schedule Lesson", lesson)
+	frappe.db.delete("Course Lesson", lesson)

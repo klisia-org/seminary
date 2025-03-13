@@ -6,32 +6,30 @@
     "dev": "vite",
     "build": "vite build --base=/assets/seminary/frontend/ && yarn copy-html-entry",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
+    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/frontend.html"
   },
   "dependencies": {
-    "@tiptap/core": "^2.11.5",
-    "@tiptap/pm": "^2.4.0",
-    "@tiptap/starter-kit": "^2.4.0",
-    "@tiptap/vue-3": "^2.4.0",
-    "@vitejs/plugin-vue": "^2.0.0",
-    "autoprefixer": "^10.4.2",
-    "dayjs": "^1.11.10",
-    "feather-icons": "^4.28.0",
-    "frappe-ui": "^0.1.17",
-    "lucide-vue-next": "^0.259.0",
-    "pinia": "^2.1.7",
-    "postcss": "^8.4.5",
-    "qalendar": "^3.6.1",
-    "tailwindcss": "^3.3.3",
-    "vite": "^2.9.18",
-    "vue": "^3.2.25",
-    "vue-router": "^4.0.12",
+    "@editorjs/embed": "^2.7.6",
+    "@editorjs/header": "^2.8.8",
+    "@editorjs/inline-code": "^1.5.1",
+    "@editorjs/nested-list": "^1.4.3",
+    "@editorjs/paragraph": "^2.11.7",
+    "@editorjs/simple-image": "^1.6.0",
+    "@editorjs/table": "^2.4.4",
+    "feather-icons": "^4.29.2",
+    "frappe-ui": "^0.1.72",
+    "lucide-vue-next": "^0.479.0",
+    "pinia": "^3.0.1",
+    "socket.io-client": "^4.8.1",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5",
     "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^2.0.0",
+    "@vitejs/plugin-vue": "^5.1.4",
     "autoprefixer": "^10.4.2",
     "postcss": "^8.4.5",
-    "vite": "^2.9.18"
+    "tailwindcss": "^3.4.14",
+    "vite": "^5.4.10"
   }
 }

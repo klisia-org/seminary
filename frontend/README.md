@@ -10,6 +10,10 @@ apps with Vue 3 and the Frappe UI package.
 This boilerplate sets up Vue 3, Vue Router, TailwindCSS, and Frappe UI out of
 the box. It also has basic authentication frontend.
 
+## Docs
+
+[Frappe UI Website](https://frappeui.com)
+
 ## Usage
 
 This template is meant to be cloned inside an existing Frappe App. Assuming your
