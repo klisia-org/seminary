@@ -19,7 +19,24 @@
 						v-html="course.data.course_description_for_lms"
 						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
 					></div>
+					<div v-for="instructor in course.data.instructors" class="flex items-center">
+						<br>
+						{{ instructor.instructor_name }}
 					
+							<span
+								class="h-6 mr-1 p-2"
+								:class="{
+									'avatar-group overlap': course.data.instructors.length > 1,
+								}"
+							>
+								<InstructorAvatar
+									:instructor="instructor"
+								/>
+								<br>
+							</span>
+						
+							
+						</div>
 					<div class="mt-10">
 						<CourseOutline
 							:title="('Course Outline')"
@@ -36,11 +53,8 @@
 import { createResource, Breadcrumbs, Badge, Tooltip } from 'frappe-ui'
 import { computed } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
-
-// import CourseOutline from '@/components/CourseOutline.vue'
-
 import { updateDocumentTitle } from '@/utils'
-
+import InstructorAvatar from '@/components/InstructorAvatar.vue'
 
 const props = defineProps({
 	courseName: {
@@ -57,6 +71,7 @@ const course = createResource({
 	},
 	auto: true,
 })
+console.log(course)
 
 const breadcrumbs = computed(() => {
 	let items = [{ label: 'Courses', route: { name: 'Courses' } }]

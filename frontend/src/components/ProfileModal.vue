@@ -64,7 +64,7 @@
 								<div v-for="field in section.fields" :key="field.label" >
 									<div class="flex items-center">
 										<p class="w-1/2 text-sm text-gray-600">{{ field.label }}:&nbsp;</p>
-										<p class="w-1/2 text-gray-900">{{ field.value }}</p>
+										<p class="w-1/2 text-gray-900" v-html="field.label === 'Bio' ? stripHtmlTags(field.value) : field.value"></p>
 									</div>
 								</div>
 							</div>
@@ -86,13 +86,7 @@ import { Dialog, Avatar, FeatherIcon, createResource } from 'frappe-ui'
 import { inject, ref, computed, watchEffect } from 'vue'
 import { usersStore } from '../stores/user'
 
-
 let userResource = usersStore()
-
-let isStudent = userResource.userResource.data.is_student
-console.log(isStudent)
-let user = userResource.userResource.data.name
-
 
 const showProfileDialog = inject('showProfileDialog')
 
@@ -112,19 +106,8 @@ const studentInfo = ref({
 	nationality: ''
 })
 
-
-const studentResource = createResource({
-	url: 'seminary.seminary.api.get_student_info',
-	params: {
-		student: user,
-	},
-	onSuccess: (response) => {
-		Object.assign(studentInfo.value, response)
-	},
-	auto: true,
-})
-
-
+const studentResource = ref(null)
+const instructorResource = ref(null)
 
 const infoFormat = ref([])
 
@@ -181,17 +164,6 @@ const instructorInfo = ref({
     shortbio: '',
 })
 
-const InstructorResource = createResource({
-    url: 'seminary.seminary.api.get_instructor_info',
-    params: {
-        instructor: user,
-    },
-    onSuccess: (response) => {
-        Object.assign(instructorInfo.value, response)
-    },
-    auto: true,
-})
-
 const instructorInfoFormat = ref([])
 
 watchEffect(() => {
@@ -219,5 +191,51 @@ watchEffect(() => {
         },
     ]
 })
+
+// Watch for changes in userResource to set isStudent and user
+const isStudent = ref(false)
+const user = ref('')
+
+watchEffect(() => {
+	if (userResource.userResource.data) {
+		isStudent.value = userResource.userResource.data.is_student
+		user.value = userResource.userResource.data.name
+
+		// Initialize studentResource if isStudent is true and studentResource is not already created
+		if (isStudent.value && !studentResource.value) {
+			studentResource.value = createResource({
+				url: 'seminary.seminary.api.get_student_info',
+				params: {
+					student: user.value,
+				},
+				onSuccess: (response) => {
+					Object.assign(studentInfo.value, response)
+				},
+				auto: true,
+			})
+		}
+
+		// Initialize instructorResource if isStudent is false and instructorResource is not already created
+		if (!isStudent.value && !instructorResource.value) {
+			instructorResource.value = createResource({
+				url: 'seminary.seminary.api.get_instructor_info',
+				params: {
+					instructor: user.value,
+				},
+				onSuccess: (response) => {
+					Object.assign(instructorInfo.value, response)
+				},
+				auto: true,
+			})
+		}
+	}
+})
+
+// Function to strip HTML tags from a string
+function stripHtmlTags(str) {
+	const div = document.createElement('div')
+	div.innerHTML = str
+	return div.textContent || div.innerText || ''
+}
 
 </script>

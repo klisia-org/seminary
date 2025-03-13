@@ -10,8 +10,9 @@
   "course_sc",
   "section_break_ksdk",
   "content_column",
-  "body",
+  "preview",
   "content",
+  "body",
   "help",
   "youtube",
   "instructor_content",
@@ -44,7 +45,7 @@
   {
    "fieldname": "body",
    "fieldtype": "Text Editor",
-   "label": "Lesson Content"
+   "label": "Lesson Content Body"
   },
   {
    "fetch_from": "chapter.coursesc",
@@ -106,11 +107,16 @@
    "fieldname": "content",
    "fieldtype": "Text",
    "label": "Content"
+  },
+  {
+   "fieldname": "preview",
+   "fieldtype": "Small Text",
+   "label": "Text for Preview"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-13 09:25:37.807337",
+ "modified": "2025-03-13 10:16:56.591594",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

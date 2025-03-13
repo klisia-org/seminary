@@ -260,11 +260,22 @@ def get_instructors(course):
 			frappe.db.get_value(
 				"Instructor",
 				instructor,
-				["instructor_name", "user", "image", "shortbio"],
+				["instructor_name", "user", "image", "shortbio", "bio"],
 				as_dict=True,
 			)
 		)
 	return instructor_details
+
+@frappe.whitelist(allow_guest=True)
+def get_instructor(instructorName):
+	instructor = frappe.db.get_value(
+				"Instructor",
+				instructorName,
+				["instructor_name", "user", "image", "shortbio", "bio"],
+				as_dict=True,
+			)
+	print(instructor)
+	return instructor
 	
 def get_course_or_filters(filters):
 	or_filters = {}
@@ -278,6 +289,7 @@ def get_course_or_filters(filters):
 def get_course_outline(course, progress=False):
 	"""Returns the course outline."""
 	outline = []
+	print(course)
 	chapters = frappe.get_all(
 		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
 	)
@@ -289,7 +301,8 @@ def get_course_outline(course, progress=False):
 			as_dict=True,
 		)
 		chapter_details["idx"] = chapter.idx
-		chapter_details.lessons = get_lesson(course, chapter_details, progress=progress)
+		print(chapter)
+		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
 
 		if chapter_details.is_scorm_package:
 			chapter_details.scorm_package = frappe.db.get_value(
@@ -404,35 +417,6 @@ def get_lesson_url(course, lesson_number):
 	return f"/courses/{course}/learn/{lesson_number}"
 
 
-@frappe.whitelist(allow_guest=True)
-def get_course_outline(course, progress=False):
-	"""Returns the course outline."""
-	outline = []
-	print(course)
-	chapters = frappe.get_all(
-		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
-	)
-	for chapter in chapters:
-		chapter_details = frappe.db.get_value(
-			"Course Schedule Chapter",
-			chapter.chapter,
-			["name", "chapter_title", "is_scorm_package", "launch_file", "scorm_package"],
-			as_dict=True,
-		)
-		chapter_details["idx"] = chapter.idx
-		print(chapter)
-		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
-
-		if chapter_details.is_scorm_package:
-			chapter_details.scorm_package = frappe.db.get_value(
-				"File",
-				chapter_details.scorm_package,
-				["file_name", "file_size", "file_url"],
-				as_dict=1,
-			)
-
-		outline.append(chapter_details)
-	return outline
 
 def get_membership(course, member=None):
 	if not member:
@@ -484,9 +468,9 @@ def get_lesson(course, chapter, lesson):
 		"Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
 	)
 	lesson_details = frappe.db.get_value(
-		"Course Schedule Course Lesson",
+		"Course Lesson",
 		lesson_name,
-		["title", "is_scorm_package"],
+		["lesson_title", "is_scorm_package"],
 		as_dict=1,
 	)
 	if not lesson_details or lesson_details.is_scorm_package:
@@ -504,8 +488,8 @@ def get_lesson(course, chapter, lesson):
 	):
 		return {
 			
-			"title": lesson_details.title,
-			"course_title": course_info.title,
+			"lesson_title": lesson_details.Lesson_title,
+			"course_title": course_info.course,
 		}
 
 	lesson_details = frappe.db.get_value(
@@ -514,6 +498,7 @@ def get_lesson(course, chapter, lesson):
 		[
 			"name",
 			"lesson_title",
+			"preview",	
 			"body",
 			"creation",
 			"youtube",
@@ -596,6 +581,8 @@ def get_lesson_details(chapter, progress=False):
 			[
 				"name",
 				"lesson_title",
+				"preview",
+				"content",
 				"body",
 				"creation",
 				"youtube",

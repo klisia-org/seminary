@@ -50,24 +50,29 @@
 									},
 								}"
 							>
-								<div class="flex items-center text-sm leading-5 group">
-									<MonitorPlay
-										v-if="lesson.icon === 'icon-youtube'"
-										class="h-4 w-4 stroke-1 mr-2"
-									/>
-									<HelpCircle
-										v-else-if="lesson.icon === 'icon-quiz'"
-										class="h-4 w-4 stroke-1 mr-2"
-									/>
-									<FileText
-										v-else-if="lesson.icon === 'icon-list'"
-										class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
-									/>
-									{{ lesson.lesson_title }}
-									<Check
-										v-if="lesson.is_complete"
-										class="h-4 w-4 text-green-700 ml-2"
-									/>
+								<div class="flex flex-col items-start text-sm leading-5 group">
+									<div class="flex items-center">
+										<MonitorPlay
+											v-if="lesson.icon === 'icon-youtube'"
+											class="h-4 w-4 stroke-1 mr-2"
+										/>
+										<HelpCircle
+											v-else-if="lesson.icon === 'icon-quiz'"
+											class="h-4 w-4 stroke-1 mr-2"
+										/>
+										<FileText
+											v-else-if="lesson.icon === 'icon-list'"
+											class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
+										/>
+										{{ lesson.lesson_title }}
+										<Check
+											v-if="lesson.is_complete"
+											class="h-4 w-4 text-green-700 ml-2"
+										/>
+									</div>
+									<div v-if="lesson.preview" class="rounded-md bg-[#E6F4FF] p-2 w-full mt-2">
+										{{ lesson.preview }}
+									</div>
 								</div>
 							</router-link>
 						</div>

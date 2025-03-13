@@ -61,7 +61,7 @@
     let isSystemManager = user.data.is_system_manager
     
    
-    console.log(user.data)
+   
     
     const courses = createResource({
       url: isStudent ? "seminary.seminary.utils.get_courses_for_student" : "seminary.seminary.utils.get_courses",

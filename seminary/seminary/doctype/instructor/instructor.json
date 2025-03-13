@@ -23,6 +23,7 @@
  ],
  "fields": [
   {
+   "description": "This is the name that will appear on the LMS.",
    "fieldname": "instructor_name",
    "fieldtype": "Data",
    "in_global_search": 1,
@@ -53,6 +54,7 @@
    "options": "Department"
   },
   {
+    "description": "This is the image that will appear on the LMS, both in the Avatar and in your Instructor Profile page.",
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
@@ -112,13 +114,8 @@
   }
  ],
  "image_field": "image",
- "links": [
-  {
-   "link_doctype": "Course Schedule",
-   "link_fieldname": "instructor1"
-  }
- ],
- "modified": "2025-03-06 07:44:49.789844",
+ "links": [],
+ "modified": "2025-03-13 12:11:54.405983",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
@@ -143,8 +140,21 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

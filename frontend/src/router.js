@@ -36,6 +36,12 @@ const routes = [
 		props: true,
 	},
   {
+    path: "/instructorprofile/:instructorName",
+    name: "InstructorProfile",
+    component: () => import('@/pages/InstructorProfile.vue'),
+    props: true,
+  },
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }
