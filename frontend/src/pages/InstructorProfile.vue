@@ -12,6 +12,11 @@
         <div v-if="instructor.data.profileimage" class="m-5">
             <img :src="instructor.data.profileimage" alt="Instructor Image" class="rounded-full h-40 w-40" />  
         </div>
+        <div class="m-5">
+            <div class="text-lg font-semibold text-blue-900">
+               Contact: <a :href="`mailto:${instructor.data.user}`">{{ instructor.data.user }}</a>
+            </div>
+        </div>  
         <div v-if="instructor.data.bio" class="m-5">
             <div class="text-3xl font-semibold text-ink-gray-9">
                 Know your Professor

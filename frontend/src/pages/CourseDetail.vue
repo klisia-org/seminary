@@ -20,9 +20,9 @@
 						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
 					></div>
 					<div class="mt-10">
-						<div v-if="course.data.instructors.length = 1" class="text-lg font-semibold">Instructor</div>
-						<div v-else="course.data.instructors.length > 1"class="text-lg font-semibold">Instructors</div>
-					</div>
+						<div v-if="course.data.instructors.length === 1" class="text-lg font-semibold">Instructor</div>
+						<div v-else class="text-lg font-semibold">Instructors</div>
+					
 					<div v-for="instructor in course.data.instructors" class="flex items-center">
 						<br>
 						{{ instructor.instructor_name }}
@@ -38,7 +38,7 @@
 								/>
 								<br>
 							</span>
-											
+						</div>				
 						</div>
 					<div class="mt-10">
 						<CourseOutline
