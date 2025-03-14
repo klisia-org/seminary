@@ -2,7 +2,7 @@
 	<div class="text-base">
 			<div class="grid grid-cols-[70%,30%] mb-4 px-2">
 				<div class="font-semibold text-lg leading-5 text-ink-gray-9">
-					{{ (course) }}
+					<!-- {{ (course) }} -->
 				</div>
 			</div>
 			<div

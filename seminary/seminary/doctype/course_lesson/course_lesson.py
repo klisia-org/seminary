@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils.telemetry import capture
-from lms.lms.utils import get_course_progress
+from seminary.seminary.utils import get_course_progress
 from ...md import find_macros
 import json
 

@@ -260,7 +260,7 @@ def get_instructors(course):
 			frappe.db.get_value(
 				"Instructor",
 				instructor,
-				["instructor_name", "user", "image", "shortbio", "bio"],
+				["instructor_name", "user", "profileimage", "shortbio", "bio"],
 				as_dict=True,
 			)
 		)
@@ -271,7 +271,7 @@ def get_instructor(instructorName):
 	instructor = frappe.db.get_value(
 				"Instructor",
 				instructorName,
-				["instructor_name", "user", "image", "shortbio", "bio"],
+				["instructor_name", "user", "profileimage", "shortbio", "bio"],
 				as_dict=True,
 			)
 	print(instructor)
@@ -370,6 +370,8 @@ def get_course_details(course):
 		"academic_term",
 		"c_datestart",
 		"c_dateend",
+		"enrollments",
+		"lessons"
 		],
 		as_dict=1,
 	)

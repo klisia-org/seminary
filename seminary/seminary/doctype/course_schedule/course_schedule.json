@@ -62,7 +62,10 @@
   "class_roster_tab",
   "class_roster_section",
   "csroster_html",
-  "grades_sent"
+  "grades_sent",
+  "section_break_adom",
+  "enrollments",
+  "lessons"
  ],
  "fields": [
   {
@@ -372,12 +375,28 @@
    "fieldname": "short_introduction",
    "fieldtype": "Small Text",
    "label": "Short Introduction"
+  },
+  {
+   "fieldname": "section_break_adom",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "enrollments",
+   "fieldtype": "Int",
+   "label": "Enrollments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lessons",
+   "fieldtype": "Int",
+   "label": "Lessons",
+   "read_only": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-12 09:06:47.624902",
+ "modified": "2025-03-13 17:52:16.728774",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

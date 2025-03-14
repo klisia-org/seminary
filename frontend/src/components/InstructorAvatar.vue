@@ -11,8 +11,8 @@
 				class="avatar border border-outline-gray-2 cursor-auto"
 				v-if="instructor_name"
 				:label="instructor_name"
-				:image="image"
-				:size="xl"
+				:image="encodedProfileImage"
+				:size="size"
 				v-bind="$attrs"
 			/>
 		</router-link>
@@ -32,4 +32,6 @@ const props = defineProps({
 }})
 
 const instructor_name = computed(() => props.instructor?.instructor_name || '')
+const profileImage = computed(() => props.instructor?.profileimage || '')
+const encodedProfileImage = computed(() => profileImage.value ? encodeURI(profileImage.value) : '')
 </script>

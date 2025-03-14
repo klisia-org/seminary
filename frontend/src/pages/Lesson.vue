@@ -11,7 +11,7 @@
 				class="border-r container pt-5 pb-10 px-5">
 				<div class="flex flex-col md:flex-row md:items-center justify-between">
 					<div class="text-3xl font-semibold text-ink-gray-9">
-						{{ lesson.data.title }}
+						{{ lesson.data.lesson_title }}
 					</div>
 					<div class="flex items-center mt-2 md:mt-0">
 						<router-link
@@ -69,23 +69,23 @@
 					</div>
 				</div>
 
-				<div class="flex items-center mt-2">
-					<span
-						class="h-6 mr-1"
-						:class="{
-							'avatar-group overlap': lesson.data.instructors?.length > 1,
-						}"
-					>
-						<UserAvatar
-							v-for="instructor in lesson.data.instructors"
-							:user="instructor"
-						/>
-					</span>
-					<CourseInstructors
-						v-if="lesson.data?.instructors"
-						:instructors="lesson.data.instructors"
-					/>
-				</div>
+				<div v-for="instructor in course.data.instructors" class="flex items-center">
+						<br>
+						{{ instructor.instructor_name }}
+					
+							<span
+								class="h-6 mr-1 p-2"
+								:class="{
+									'avatar-group overlap': course.data.instructors.length > 1,
+								}"
+							>
+								<InstructorAvatar
+									:instructor="instructor"
+								/>
+								<br>
+							</span>
+											
+						</div>
 				<div
 					v-if="
 						lesson.data.instructor_content &&
@@ -95,7 +95,7 @@
 					class="bg-surface-gray-2 p-3 rounded-md mt-6"
 				>
 					<div class="text-ink-gray-5 font-medium">
-						{{ __('Instructor Notes') }}
+						{{ ('Instructor Notes') }}
 					</div>
 					<div
 						id="instructor-content"
@@ -129,7 +129,7 @@
 					<Discussions
 						v-if="allowDiscussions"
 						:title="'Questions'"
-						:doctype="'Course Lesson'"
+						:doctype="'Course Lesson'" 
 						:docname="lesson.data.name"
 						:key="lesson.data.name"
 					/>
@@ -206,7 +206,7 @@ onMounted(() => {
 })
 
 const lesson = createResource({
-	url: 'lms.lms.utils.get_lesson',
+	url: 'seminary.seminary.utils.get_lesson',
 	cache: ['lesson', props.courseName, props.chapterNumber, props.lessonNumber],
 	makeParams(values) {
 		return {
@@ -266,7 +266,7 @@ const markProgress = () => {
 }
 
 const progress = createResource({
-	url: 'lms.lms.doctype.course_lesson.course_lesson.save_progress',
+	url: 'seminary.seminary.doctype.course_lesson.course_lesson.save_progress',
 	makeParams() {
 		return {
 			lesson: lesson.data.name,
@@ -385,7 +385,7 @@ const enrollStudent = () => {
 }
 
 const redirectToLogin = () => {
-	window.location.href = `/login?redirect-to=/lms/courses/${props.courseName}`
+	window.location.href = `/login?redirect-to=/seminary/courses/${props.courseName}`
 }
 
 const pageMeta = computed(() => {

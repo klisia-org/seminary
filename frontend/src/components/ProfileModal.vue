@@ -51,7 +51,7 @@
 						size="3xl"
 						class="h-12 w-12"
 						:label="instructorInfo.instructor_name"
-						:image="instructorInfo.image || null"
+						:image="instructorInfo.profileimage || null"
 					  />
 					  <div class="flex flex-col ml-2 gap-1">
 						<p class="text-lg font-semibold">{{ instructorInfo.instructor_name }}</p>
