@@ -86,10 +86,11 @@ def save_progress(lesson, course):
 		"Course Schedule Progress", {"lesson": lesson, "member": frappe.session.user}
 	)
 
-	quiz_completed = get_quiz_progress(lesson)
-	assignment_completed = get_assignment_progress(lesson)
+	# quiz_completed = get_quiz_progress(lesson)
+	# assignment_completed = get_assignment_progress(lesson)
+	#when uncomment, add (and quiz_completed and assignment_completed) to the if condition below
 
-	if not already_completed and quiz_completed and assignment_completed:
+	if not already_completed:
 		frappe.get_doc(
 			{
 				"doctype": "Course Schedule Progress",

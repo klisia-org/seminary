@@ -26,6 +26,56 @@ from xml.dom.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 
 @frappe.whitelist(allow_guest=True)
+def get_translations():
+	if frappe.session.user != "Guest":
+		language = frappe.db.get_value("User", frappe.session.user, "language")
+	else:
+		language = frappe.db.get_single_value("System Settings", "language")
+	return get_all_translations(language)
+
+@frappe.whitelist()
+def get_file_info(file_url):
+	print("Get File Info called with file_url: ", file_url)
+	"""Get file info for the given file URL."""
+	file_info = frappe.db.get_value(
+		"File", {"file_url": file_url}, ["file_name", "file_size", "file_url"], as_dict=1
+	)
+	return file_info
+
+@frappe.whitelist()
+def save_course(course, course_data, instructors):
+	try:
+		# Update course details
+		course_doc = frappe.get_doc('Course Schedule', course)
+		course_doc.update({
+			'short_introduction': course_data['short_introduction'],
+			'course_description_for_lms': course_data['course_description_for_lms'],
+			'course_image': course_data['course_image']['file_url'] if course_data['course_image'] else None,
+			'published': course_data['published'],
+		})
+		course_doc.save()
+
+		# Clear existing instructors
+		frappe.db.sql('DELETE FROM `tabCourse Schedule Instructors` WHERE parent=%s', course)
+
+		# Add new instructors
+		for idx, instructor in enumerate(instructors):
+			frappe.get_doc({
+				'doctype': 'Course Schedule Instructors',
+				'parent': course,
+				'parentfield': 'instructor1',
+				'parenttype': 'Course Schedule',
+				'instructor': instructor['instructor'],
+				'idx': idx + 1,
+			}).insert()
+
+		frappe.db.commit()
+		return {'success': True}
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _('Error saving course'))
+		return {'success': False, 'message': f"Error saving course: {str(e)}"}
+
+@frappe.whitelist(allow_guest=True)
 def get_user_info():
 	if frappe.session.user == "Guest":
 		return None

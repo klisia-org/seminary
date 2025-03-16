@@ -30,7 +30,7 @@
 									<ChevronLeft class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ __('Previous') }}
+									{{ ('Previous') }}
 								</span>
 							</Button>
 						</router-link>
@@ -51,7 +51,7 @@
 									<ChevronRight class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ __('Next') }}
+									{{ ('Next') }}
 								</span>
 							</Button>
 						</router-link>
@@ -63,39 +63,34 @@
 							}"
 						>
 							<Button>
-								{{ __('Back to Course') }}
+								{{ ('Back to Course') }}
 							</Button>
 						</router-link>
 					</div>
 				</div>
 
-				<div v-for="instructor in course.data.instructors" class="flex items-center">
+				<div v-for="instructor in lesson.data.instructors" class="flex items-center">
 						<br>
 						{{ instructor.instructor_name }}
 					
-							<span
-								class="h-6 mr-1 p-2"
-								:class="{
-									'avatar-group overlap': course.data.instructors.length > 1,
-								}"
-							>
+							
 								<InstructorAvatar
 									:instructor="instructor"
 								/>
 								<br>
-							</span>
+							
 											
 						</div>
 				<div
 					v-if="
 						lesson.data.instructor_content &&
-						JSON.parse(lesson.data.instructor_content)?.blocks?.length > 1 &&
+						lesson.data.instructor_content && isValidJSON(lesson.data.instructor_content) && JSON.parse(lesson.data.instructor_content)?.blocks?.length > 1 &&
 						allowInstructorContent()
 					"
 					class="bg-surface-gray-2 p-3 rounded-md mt-6"
 				>
 					<div class="text-ink-gray-5 font-medium">
-						{{ ('Instructor Notes') }}
+						{{ ('Instructor Content') }}
 					</div>
 					<div
 						id="instructor-content"
@@ -122,29 +117,21 @@
 						v-if="lesson.data?.body"
 						:content="lesson.data.body"
 						:youtube="lesson.data.youtube"
-						:quizId="lesson.data.quiz_id"
+						
 					/>
 				</div>
-				<div class="mt-20">
-					<Discussions
-						v-if="allowDiscussions"
-						:title="'Questions'"
-						:doctype="'Course Lesson'" 
-						:docname="lesson.data.name"
-						:key="lesson.data.name"
-					/>
-				</div>
+			
 			</div>
 			<div class="sticky top-10">
 				<div class="bg-surface-menu-bar py-5 px-2 border-b">
 					<div class="text-lg font-semibold text-ink-gray-9">
-						{{ lesson.data.course_title }}
+						{{ lesson.data.lesson_title }}
 					</div>
 					<div
 						v-if="user && lesson.data.membership"
 						class="text-sm mt-4 mb-2 text-ink-gray-5"
 					>
-						{{ Math.ceil(lessonProgress) }}% {{ __('completed') }}
+						{{ Math.ceil(lessonProgress) }}% {{ ('completed') }}
 					</div>
 
 					<ProgressBar
@@ -165,15 +152,13 @@
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
-import UserAvatar from '@/components/UserAvatar.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-vue-next'
-import Discussions from '@/components/Discussions.vue'
 import { getEditorTools, updateDocumentTitle } from '../utils'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
-import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
+import InstructorAvatar from '@/components/InstructorAvatar.vue'
 
 
 const user = inject('$user')
@@ -205,6 +190,7 @@ onMounted(() => {
 	startTimer()
 })
 
+
 const lesson = createResource({
 	url: 'seminary.seminary.utils.get_lesson',
 	cache: ['lesson', props.courseName, props.chapterNumber, props.lessonNumber],
@@ -234,15 +220,9 @@ const lesson = createResource({
 				'instructor-content',
 				data.instructor_content
 			)
-		editor.value?.isReady.then(() => {
-			checkIfDiscussionsAllowed()
-		})
+	
 
-		if (!editor.value && data.body) {
-			const quizRegex = /\{\{ Quiz\(".*"\) \}\}/
-			const hasQuiz = quizRegex.test(data.body)
-			if (!hasQuiz) allowDiscussions.value = true
-		}
+		
 	},
 })
 
@@ -258,7 +238,7 @@ const renderEditor = (holder, content) => {
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed
 	})
 }
-
+console.log(lesson)
 const markProgress = () => {
 	if (user.data && lesson.data && !lesson.data.progress) {
 		progress.submit()
@@ -272,6 +252,7 @@ const progress = createResource({
 			lesson: lesson.data.name,
 			course: props.courseName,
 		}
+		
 	},
 	onSuccess(data) {
 		lessonProgress.value = data
@@ -333,20 +314,7 @@ onBeforeUnmount(() => {
 	clearInterval(timerInterval)
 })
 
-const checkIfDiscussionsAllowed = () => {
-	let quizPresent = false
-	JSON.parse(lesson.data?.content)?.blocks?.forEach((block) => {
-		if (block.type === 'quiz') quizPresent = true
-	})
 
-	if (
-		!quizPresent &&
-		(lesson.data?.membership ||
-			user.data?.is_moderator ||
-			user.data?.is_instructor)
-	)
-		allowDiscussions.value = true
-}
 
 const allowEdit = () => {
 	if (user.data?.is_moderator) return true
@@ -365,7 +333,7 @@ const enrollment = createResource({
 	makeParams() {
 		return {
 			doc: {
-				doctype: 'LMS Enrollment',
+				doctype: 'Scheduled Course Roster',
 				course: props.courseName,
 				member: user.data?.name,
 			},
@@ -390,12 +358,20 @@ const redirectToLogin = () => {
 
 const pageMeta = computed(() => {
 	return {
-		title: lesson.data?.title,
-		description: lesson.data?.course,
+		title: lesson.data?.lesson_title,
+		description: lesson.data?.course_sc,
 	}
 })
 
 updateDocumentTitle(pageMeta)
+const isValidJSON = (str) => {
+	try {
+		JSON.parse(str);
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
 </script>
 <style>
 .avatar-group {

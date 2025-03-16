@@ -5,6 +5,7 @@ import router from './router'
 import App from './App.vue'
 import { createPinia } from 'pinia'
 import { usersStore } from './stores/user'
+import translationPlugin from './translation'
 
 
 import {
@@ -25,6 +26,7 @@ setConfig('resourceFetcher', frappeRequest)
 app.use(router)
 app.use(resourcesPlugin)
 app.use(pinia)
+app.use(translationPlugin)
 
 app.component('Button', Button)
 app.component('Card', Card)

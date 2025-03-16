@@ -1419,6 +1419,11 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
+hljs@^6.2.3:
+  version "6.2.3"
+  resolved "https://registry.yarnpkg.com/hljs/-/hljs-6.2.3.tgz#d4d6208fa2a84f294956bc50f2c812e9cbd49bcc"
+  integrity sha512-2vtAOX8kI7WO4/19XPFl7WJauIGsOxZkD+6LLmDWx6IQsPvxjnqqFsJlfg+wkghrb5I59OS5oeqGU7Ihbp+oOw==
+
 hookable@^5.5.3:
   version "5.5.3"
   resolved "https://registry.yarnpkg.com/hookable/-/hookable-5.5.3.tgz#6cfc358984a1ef991e2518cb9ed4a778bbd3215d"

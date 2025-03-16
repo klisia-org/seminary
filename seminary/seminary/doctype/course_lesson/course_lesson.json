@@ -8,6 +8,7 @@
   "chapter",
   "lesson_title",
   "course_sc",
+  "is_scorm_package",
   "section_break_ksdk",
   "content_column",
   "preview",
@@ -112,11 +113,19 @@
    "fieldname": "preview",
    "fieldtype": "Small Text",
    "label": "Text for Preview"
+  },
+  {
+   "default": "0",
+   "fetch_from": "chapter.is_scorm_package",
+   "fieldname": "is_scorm_package",
+   "fieldtype": "Check",
+   "label": "Is SCORM Package",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-13 10:16:56.591594",
+ "modified": "2025-03-14 17:35:02.252570",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

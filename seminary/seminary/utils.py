@@ -217,12 +217,12 @@ from `tabCourse Enrollment Individual` cei, `tabCourse Schedule` cs
 where cs.name = cei.coursesc_ce and cs.published = 1
 and cei.stu_user = %s""", student, as_dict=True
 	)
-	print(courses)
+	
 	return courses
 
 @frappe.whitelist(allow_guest=True)
 def get_courses(filters=None, start=0, page_length=20):
-	print("get_courses called")
+	
 	"""Returns the list of courses."""
 
 	if not filters:
@@ -240,7 +240,7 @@ def get_courses(filters=None, start=0, page_length=20):
 	)
 	courses = get_enrollment_details(courses)
 	courses = get_course_card_details(courses)
-	print(courses)
+	
 	return courses
 
 
@@ -289,7 +289,7 @@ def get_course_or_filters(filters):
 def get_course_outline(course, progress=False):
 	"""Returns the course outline."""
 	outline = []
-	print(course)
+	
 	chapters = frappe.get_all(
 		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
 	)
@@ -301,7 +301,7 @@ def get_course_outline(course, progress=False):
 			as_dict=True,
 		)
 		chapter_details["idx"] = chapter.idx
-		print(chapter)
+		
 		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
 
 		if chapter_details.is_scorm_package:
@@ -466,33 +466,41 @@ def get_lesson(course, chapter, lesson):
 	chapter_name = frappe.db.get_value(
 		"Course Schedule Chapter Reference", {"parent": course, "idx": chapter}, "chapter"
 	)
+	print(f"Chapter Name: {chapter_name}")  # Debug print
+
 	lesson_name = frappe.db.get_value(
-		"Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
+		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
 	)
+	print(f"Lesson Name: {lesson_name}")  # Debug print
+
+	if not lesson_name:
+		return {}
+		
 	lesson_details = frappe.db.get_value(
 		"Course Lesson",
 		lesson_name,
 		["lesson_title", "is_scorm_package"],
 		as_dict=1,
 	)
-	if not lesson_details or lesson_details.is_scorm_package:
-		return {}
+	print(f"Lesson Details (first): {lesson_details}")  # Debug print
 
-	membership = get_membership(course)
-	course_info = frappe.db.get_value(
-		"Course Schedule", course, ["course"], as_dict=1
-	)
+	# if not lesson_details:
+	# 	return {}
 
-	if (
-		not membership
-		and not has_course_moderator_role()
-		and not is_instructor(course)
-	):
-		return {
-			
-			"lesson_title": lesson_details.Lesson_title,
-			"course_title": course_info.course,
-		}
+	# membership = get_membership(course)
+	
+	# if (
+	# 	not membership
+	# 	and not has_course_moderator_role()
+	# 	and not is_instructor(course)
+	# ):
+	# 	return {
+	# 		"lesson_title": lesson_details.lesson_title,
+	# 		"course_title": course,
+	# 	}
+	
+
+	print(f"Fetching detailed lesson info for: {lesson_name}")  # Debug print
 
 	lesson_details = frappe.db.get_value(
 		"Course Lesson",
@@ -505,15 +513,18 @@ def get_lesson(course, chapter, lesson):
 			"creation",
 			"youtube",
 			"quiz_id",
-			"question",
-			"file_type",
-			"instructor_notes",
-			"course",
+			"exam",
+			"assessment_criteria",
+			"assignment_id",
+			"course_sc",
 			"content",
 			"instructor_content",
 		],
 		as_dict=True,
 	)
+	print(f"Lesson Details (second): {lesson_details}")  # Debug print
+
+	
 
 	if frappe.session.user == "Guest":
 		progress = 0
@@ -525,9 +536,10 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.next = neighbours["next"]
 	lesson_details.progress = progress
 	lesson_details.prev = neighbours["prev"]
-	lesson_details.membership = membership
+	# lesson_details.membership = membership
 	lesson_details.instructors = get_instructors(course)
-	lesson_details.course_title = course_info.title
+	# lesson_details.course_title = course_info.title
+	
 	return lesson_details
 
 def get_course_progress(course, member=None):
@@ -610,7 +622,13 @@ def get_lesson_details(chapter, progress=False):
 
 def get_lesson_icon(body, content):
 	if content:
-		content = json.loads(content)
+		print("Content: ", content)
+		try:
+			content = json.loads(content)
+			print("Content JSONfied: ", content)
+		except json.JSONDecodeError:
+			print("Invalid JSON content")
+			return "icon-list"
 
 		for block in content.get("blocks"):
 			if block.get("type") == "upload" and block.get("data").get("file_type").lower() in [
