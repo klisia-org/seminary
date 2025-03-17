@@ -2,8 +2,11 @@
 	<div class="text-base">
 			<div class="grid grid-cols-[70%,30%] mb-4 px-2">
 				<div class="font-semibold text-lg leading-5 text-ink-gray-9">
-					<!-- {{ (course) }} -->
+					<!-- {{ (course_title) }} -->
 				</div>
+				<Button size="sm"  @click="openChapterModal()">
+				{{ __('Add Chapter') }}
+			</Button>
 			</div>
 			<div
 				:class="{
@@ -32,6 +35,23 @@
 						>
 							{{ chapter.chapter_title }}
 						</div>
+						<div class="flex ml-auto space-x-4">
+						<Tooltip :text="__('Edit Chapter')" placement="bottom">
+							<FilePenLine
+								
+								@click.prevent="openChapterModal(chapter)"
+								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
+							/>
+						</Tooltip>
+						<Tooltip :text="__('Delete Chapter')" placement="bottom">
+							<Trash2
+								
+								@click.prevent="trashChapter(chapter.name)"
+								class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
+								/>
+							
+						</Tooltip>
+					</div>
 					</DisclosureButton>
 					<DisclosurePanel v-if="!chapter.is_scorm_package">
 						<div
@@ -76,13 +96,36 @@
 								</div>
 							</router-link>
 						</div>
+						<div  class="flex mt-2 mb-4 pl-8">
+						<router-link
+							v-if="!chapter.is_scorm_package"
+							:to="{
+								name: 'LessonForm',
+								params: {
+									courseName: courseName,
+									chapterNumber: chapter.idx,
+									lessonNumber: chapter.lessons.length + 1,
+								},
+							}"
+						>
+							<Button>
+								{{ __('Add Lesson') }}
+							</Button>
+						</router-link>
+					</div>
 					</DisclosurePanel>
 				</Disclosure>
 			</div>
 		</div>
+		<ChapterModal
+		v-model="showChapterModal"
+		v-model:outline="outline"
+		:course="courseName"
+		:chapterDetail="getCurrentChapter()"
+	/>
 </template>
 <script setup>
-import { Button, createResource, Tooltip } from 'frappe-ui'
+import { Button, createResource, Tooltip, Dialog } from 'frappe-ui'
 import { getCurrentInstance, inject, ref } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
@@ -95,8 +138,9 @@ import {
 	Trash2,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
-
-import { showToast } from '@/utils'
+import ChapterModal from '@/components/Modals/ChapterModal.vue'
+import { showToast} from '@/utils'
+import { createDialog } from '@/utils/dialogs'
 
 const route = useRoute()
 const router = useRouter()
@@ -104,7 +148,6 @@ const user = inject('$user')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
 
 const props = defineProps({
 	courseName: {
@@ -139,6 +182,15 @@ const outline = createResource({
 	auto: true,
 })
 
+const course_title = createResource({
+	url: 'seminary.seminary.utils.get_course_title',
+	cache: ['course_title', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+})
+
 const deleteLesson = createResource({
 	url: 'seminary.seminary.api.delete_lesson',
 	makeParams(values) {
@@ -169,7 +221,7 @@ const updateLessonIndex = createResource({
 })
 
 const trashLesson = (lessonName, chapterName) => {
-	$dialog({
+	createDialog({
 		title: __('Delete this lesson?'),
 		message: __(
 			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
@@ -227,7 +279,8 @@ const deleteChapter = createResource({
 })
 
 const trashChapter = (chapterName) => {
-	$dialog({
+	console.log('trashChapter called with:', chapterName); // Add this line for debugging
+	createDialog({
 		title: __('Delete this chapter?'),
 		message: __(
 			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'

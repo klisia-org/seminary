@@ -28,8 +28,11 @@ export let Dialogs = {
 }
 
 export function createDialog(options) {
-	let dialog = reactive(options)
-	dialog.key = `dialog-${Math.random().toString(36).slice(2, 9)}`
-	dialogs.value.push(dialog)
-	dialog.show = true
+    let dialog = reactive({
+        ...options,
+        key: `dialog-${Math.random().toString(36).slice(2, 9)}`,
+        show: true, // Ensure show is set to true
+    })
+    dialogs.value.push(dialog)
 }
+

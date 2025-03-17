@@ -17,6 +17,7 @@
   "help",
   "youtube",
   "instructor_content",
+  "instructor_notes",
   "assignments_section",
   "assessment_criteria",
   "quiz_id",
@@ -67,7 +68,7 @@
   },
   {
    "fieldname": "instructor_content",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Instructor Content"
   },
   {
@@ -110,6 +111,7 @@
    "label": "Content"
   },
   {
+   "description": "This will appear on the LMS as a blue emphasis on the course outline.",
    "fieldname": "preview",
    "fieldtype": "Small Text",
    "label": "Text for Preview"
@@ -121,11 +123,16 @@
    "fieldtype": "Check",
    "label": "Is SCORM Package",
    "read_only": 1
+  },
+  {
+   "fieldname": "instructor_notes",
+   "fieldtype": "Text Editor",
+   "label": "Instructor Notes"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-14 17:35:02.252570",
+ "modified": "2025-03-16 15:27:22.572104",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

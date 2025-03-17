@@ -43,37 +43,23 @@ def get_file_info(file_url):
 	return file_info
 
 @frappe.whitelist()
-def save_course(course, course_data, instructors):
+def save_course(course, course_data):
+	
 	try:
+		if isinstance(course_data, str):
+			course_data = json.loads(course_data)
 		# Update course details
-		course_doc = frappe.get_doc('Course Schedule', course)
-		course_doc.update({
-			'short_introduction': course_data['short_introduction'],
-			'course_description_for_lms': course_data['course_description_for_lms'],
-			'course_image': course_data['course_image']['file_url'] if course_data['course_image'] else None,
-			'published': course_data['published'],
-		})
-		course_doc.save()
-
-		# Clear existing instructors
-		frappe.db.sql('DELETE FROM `tabCourse Schedule Instructors` WHERE parent=%s', course)
-
-		# Add new instructors
-		for idx, instructor in enumerate(instructors):
-			frappe.get_doc({
-				'doctype': 'Course Schedule Instructors',
-				'parent': course,
-				'parentfield': 'instructor1',
-				'parenttype': 'Course Schedule',
-				'instructor': instructor['instructor'],
-				'idx': idx + 1,
-			}).insert()
+		frappe.db.set_value('Course Schedule', course, 'short_introduction', course_data['short_introduction'])
+		frappe.db.set_value('Course Schedule', course, 'course_description_for_lms', course_data['course_description_for_lms'])
+		frappe.db.set_value('Course Schedule', course, 'course_image', course_data['course_image']['file_url'] if course_data['course_image'] else None)
+		frappe.db.set_value('Course Schedule', course, 'published', course_data['published'])
 
 		frappe.db.commit()
-		return {'success': True}
+		return {"success": True}
+
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), _('Error saving course'))
-		return {'success': False, 'message': f"Error saving course: {str(e)}"}
+		frappe.log_error(frappe.get_traceback(), 'Error saving course')
+		return {"success": False, "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)
 def get_user_info():
@@ -1156,8 +1142,9 @@ def active_term():
 	
 @frappe.whitelist()
 def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+	course_title = frappe.get_value("Course Schedule", course, "course")
 	values = frappe._dict(
-		{"title": chapter_title, "course": course, "is_scorm_package": is_scorm_package}
+		{"chapter_title": chapter_title, "coursesc": course, "is_scorm_package": is_scorm_package, "course_title": course_title}
 	)
 
 	if is_scorm_package:

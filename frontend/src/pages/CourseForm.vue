@@ -166,6 +166,7 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
+import { createDialog } from '@/utils/dialogs.js'
 
 const user = inject('$user')
 const newTag = ref('')
@@ -174,7 +175,7 @@ const instructors = ref([])
 const instructorNames = ref([])
 const settingsStore = useSettings()
 const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
+const $dialog  = createDialog
 
 const props = defineProps({
 	courseName: {
@@ -211,20 +212,7 @@ onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
 })
 
-const courseEditResource = createResource({
-	url: 'frappe.client.set_value',
-	auto: false,
-	makeParams(values) {
-		return {
-			doctype: 'Course Schedule',
-			name: values.course,
-			fieldname: {
-				image: course.course_image?.file_url || '',
-				...course,
-			},
-		}
-	},
-})
+
 
 // const instructorEditResource = createResource({
 // 	url: 'frappe.client.set_value',
@@ -313,22 +301,27 @@ const submitCourse = () => {
 			body: JSON.stringify({
 				course: courseResource.data.name,
 				course_data: course,
-				instructors: instructors.value,
 			}),
 		})
-			.then((response) => response.json())
-			.then((data) => {
-				if (data.success) {
-					showToast('Success', 'Course updated successfully', 'check')
-				} else {
-					showToast('Error', data.message || 'An error occurred', 'x')
-				}
-			})
-			.catch((error) => {
-				showToast('Error', error.message || 'An error occurred', 'x')
-			})
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			return response.json();
+		})
+		.then((data) => {
+			if (data.success) {
+				showToast('Success', 'Course updated successfully', 'check');
+			} else {
+				showToast('Error', data.message || 'An error occurred', 'x');
+			}
+		})
+		.catch((error) => {
+			console.error('Fetch error:', error);
+			showToast('Error', error.message || 'An error occurred', 'x');
+		});
 	}
-}
+};
 
 const validateFile = (file) => {
 	let extension = file.name.split('.').pop().toLowerCase()

@@ -42,6 +42,12 @@ const routes = [
 		props: true,
 	},
   {
+		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber/edit',
+		name: 'LessonForm',
+		component: () => import('@/pages/LessonForm.vue'),
+		props: true,
+	},
+  {
     path: "/instructorprofile/:instructorName",
     name: "InstructorProfile",
     component: () => import('@/pages/InstructorProfile.vue'),

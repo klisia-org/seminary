@@ -34,7 +34,21 @@
 								</span>
 							</Button>
 						</router-link>
-						
+						<router-link
+							v-if="user?.data?.is_moderator || is_instructor()"
+							:to="{
+								name: 'LessonForm',
+								params: {
+									courseName: courseName,
+									chapterNumber: props.chapterNumber,
+									lessonNumber: props.lessonNumber,
+								},
+							}"
+						>
+							<Button variant="solid" class="mr-2">
+								{{ __('Edit') }}
+							</Button>
+						</router-link>
 						<router-link
 							v-if="lesson.data.next"
 							:to="{
@@ -84,13 +98,13 @@
 				<div
 					v-if="
 						lesson.data.instructor_content &&
-						lesson.data.instructor_content && isValidJSON(lesson.data.instructor_content) && JSON.parse(lesson.data.instructor_content)?.blocks?.length > 1 &&
-						allowInstructorContent()
+						JSON.parse(lesson.data.instructor_content)?.blocks?.length > 1 &&
+						(user?.data?.is_moderator || is_instructor())
 					"
 					class="bg-surface-gray-2 p-3 rounded-md mt-6"
 				>
 					<div class="text-ink-gray-5 font-medium">
-						{{ ('Instructor Content') }}
+						{{ ('Instructor Notes') }}
 					</div>
 					<div
 						id="instructor-content"
@@ -98,10 +112,10 @@
 					></div>
 				</div>
 				<div
-					v-else-if="lesson.data.instructor_content"
+					v-else-if="lesson.data.instructor_notes"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-6"
 				>
-					<LessonContent :content="lesson.data.instructor_content" />
+					<LessonContent :content="lesson.data.instructor_notes" />
 				</div>
 				<div
 					v-if="lesson.data.content"
@@ -266,7 +280,7 @@ const breadcrumbs = computed(() => {
 		route: { name: 'CourseDetail', params: { courseName: props.courseName } },
 	})
 	items.push({
-		label: lesson?.data?.title,
+		label: lesson?.data?.lesson_title,
 		route: {
 			name: 'Lesson',
 			params: {
@@ -316,16 +330,16 @@ onBeforeUnmount(() => {
 
 
 
-const allowEdit = () => {
-	if (user.data?.is_moderator) return true
-	if (lesson.data?.instructors?.includes(user.data?.name)) return true
-	return false
-}
-
-const allowInstructorContent = () => {
-	if (user.data?.is_moderator) return true
-	if (lesson.data?.instructors?.includes(user.data?.name)) return true
-	return false
+const is_instructor = () => {
+	let user_is_instructor = false
+	if (lesson.data?.instructors) {
+		lesson.data.instructors.forEach((instructor) => {
+			if (!user_is_instructor && instructor.user == user.data?.name) {
+				user_is_instructor = true
+			}
+		})
+	}
+	return user_is_instructor
 }
 
 const enrollment = createResource({

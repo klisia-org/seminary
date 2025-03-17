@@ -301,7 +301,7 @@ def get_course_outline(course, progress=False):
 			as_dict=True,
 		)
 		chapter_details["idx"] = chapter.idx
-		
+				
 		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
 
 		if chapter_details.is_scorm_package:
@@ -312,10 +312,13 @@ def get_course_outline(course, progress=False):
 				as_dict=1,
 			)
 
+		
 		outline.append(chapter_details)
 	return outline
 
-
+@frappe.whitelist(allow_guest=True)
+def get_course_title(course):
+	return frappe.db.get_value("Course Schedule", course, "course")
 
 def get_enrollment_details(courses):
 	for course in courses:
@@ -519,6 +522,7 @@ def get_lesson(course, chapter, lesson):
 			"course_sc",
 			"content",
 			"instructor_content",
+			"instructor_notes",
 		],
 		as_dict=True,
 	)
@@ -538,7 +542,8 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.prev = neighbours["prev"]
 	# lesson_details.membership = membership
 	lesson_details.instructors = get_instructors(course)
-	# lesson_details.course_title = course_info.title
+	lesson_details.course_title = frappe.db.get_value("Course Schedule", course, "course")
+	print(f"Lesson Details (third): {lesson_details}")  # Debug print
 	
 	return lesson_details
 
@@ -745,6 +750,44 @@ def get_enrollment(master, document, student):
 		return enrollments[0].name
 	else:
 		return None
+
+@frappe.whitelist()
+def get_lesson_creation_details(course, chapter, lesson):
+	chapter_name = frappe.db.get_value(
+		"Course Schedule Chapter Reference", {"parent": course, "idx": chapter}, "chapter"
+	)
+	lesson_name = frappe.db.get_value(
+		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
+	)
+
+	if lesson_name:
+		lesson_details = frappe.db.get_value(
+			"Course Lesson",
+			lesson_name,
+			[
+				"name",
+				"lesson_title",
+				"preview",
+				"body",
+				"content",
+				"instructor_notes",
+				"instructor_content",
+				"assessment_criteria",
+				"youtube",
+				"quiz_id",
+				"assignment_id",
+				"exam",
+			],
+			as_dict=1,
+		)
+
+	return {
+		"course_title": frappe.db.get_value("Course Schedule", course, "course"),
+		"chapter": frappe.db.get_value(
+			"Course Schedule Chapter", chapter_name, ["chapter_title", "name"], as_dict=True
+		),
+		"lesson": lesson_details if lesson_name else None,
+	}
 
 
 @frappe.whitelist()
