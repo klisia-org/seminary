@@ -154,10 +154,18 @@ domains = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "seminary.utils.jinja_methods",
-# 	"filters": "seminary.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"seminary.seminary.utils.get_lesson_count",
+		"seminary.seminary.utils.get_instructors",
+		"seminary.seminary.utils.get_lesson_index",
+		"seminary.seminary.utils.get_lesson_url",
+		"seminary.page_renderers.get_profile_url",
+		"seminary.seminary.utils.is_instructor",
+		
+	],
+	"filters": [],
+}
 
 # Installation
 # ------------

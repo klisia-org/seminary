@@ -30,6 +30,12 @@ const routes = [
 		props: true,
 	},
   {
+    path: "/courses/:courseName/assessment",
+    name: "CourseAssessment",
+    component: () => import('@/pages/CourseAssessment.vue'),
+    props: true,
+  },
+  {
 		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber',
 		name: 'Lesson',
 		component: () => import('@/pages/Lesson.vue'),

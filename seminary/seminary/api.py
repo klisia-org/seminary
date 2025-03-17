@@ -516,6 +516,74 @@ def get_payers_fees(pen):
 		return
 
 @frappe.whitelist()
+def save_course_assessment(course, assessment_data):
+    """Save Course Assessment Criteria.
+
+    :param course: Course.
+    :param assessment_data: Assessment Data (JSON).
+    """
+    import json
+    print("Assessment Data:", assessment_data)
+    print("Course:", course)
+    
+    # If assessment_data is a string, convert it to a dictionary/list
+    if isinstance(assessment_data, str):
+        assessment_data = json.loads(assessment_data)
+
+    # Get existing documents for the course
+    existing_docs = frappe.db.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course},
+        fields=["name"]
+    )
+    existing_doc_names = {doc["name"] for doc in existing_docs}
+    print("Existing docs:", existing_doc_names)
+    
+    for data in assessment_data:
+        # Check if the record exists by verifying if "name" is provided and is in existing_docs.
+        if data.get("name") and data["name"] in existing_doc_names:
+            # Update the existing record
+            doc = frappe.get_doc("Scheduled Course Assess Criteria", data["name"])
+            doc.title = data.get("title", "")
+            doc.assesscriteria_scac = data.get("assesscriteria_scac", "")
+            doc.type = data.get("type", "")
+            doc.weight_scac = data.get("weight_scac", 0)
+            doc.extracredit_scac = data.get("extracredit_scac", "")
+            doc.fudgepoints_scac = data.get("fudgepoints_scac", "")
+            doc.quiz = data.get("quiz", "")
+            doc.assignment = data.get("assignment", "")
+            doc.exam = data.get("exam", "")
+            # These are usually already set, but include them if needed:
+            doc.parent = course
+            doc.parentfield = "courseassescrit_sc"
+            doc.parenttype = "Course Schedule"
+            doc.save(ignore_permissions=True)
+            print("Updated doc:", doc.name)
+        else:
+            # Create a new record if no matching "name" is found.
+            doc = frappe.get_doc({
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": course,
+                "parentfield": "courseassescrit_sc",
+                "parenttype": "Course Schedule",
+                "title": data.get("title", ""),
+                "assesscriteria_scac": data.get("assesscriteria_scac", ""),
+                "type": data.get("type", ""),
+                "weight_scac": data.get("weight_scac", 0),
+                "extracredit_scac": data.get("extracredit_scac", ""),
+                "fudgepoints_scac": data.get("fudgepoints_scac", ""),
+                "quiz": data.get("quiz", ""),
+                "assignment": data.get("assignment", ""),
+                "exam": data.get("exam", ""),
+            })
+            doc.insert(ignore_permissions=True)
+            print("Created new doc:", doc.name)
+    
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
 def get_scholarship(student):
 	scholarship = frappe.get_all("Payers Fee Category PE", filters={"stu_link": student, "pf_active": 1}, fields=["scholarship"])
 	return scholarship
@@ -1295,8 +1363,6 @@ def mark_lesson_progress(course, chapter_number, lesson_number):
 		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson_number}, "lesson"
 	)
 	save_progress(lesson_name, course)
-
-
 
 
 @frappe.whitelist()

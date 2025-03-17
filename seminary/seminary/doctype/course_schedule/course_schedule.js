@@ -1,6 +1,7 @@
 frappe.ui.form.on("Course Schedule", {
 	
 	refresh: function(frm) {
+		frm.add_web_link(`/seminary/courses/${frm.doc.name}`, "See on Website");
 		frm.trigger("render_days");
 		if (frm.doc.hasmtgdate === 0) {
 			frm.add_custom_button(__('Add Meeting Dates'), function() {

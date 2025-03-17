@@ -14,10 +14,20 @@ class CourseLesson(Document):
 	def validate(self):
 		# self.check_and_create_folder()
 		self.validate_quiz_id()
+		self.updates_lessons()
 
 	def validate_quiz_id(self):
 		if self.quiz_id and not frappe.db.exists("Quiz", self.quiz_id):
 			frappe.throw(_("Invalid Quiz ID"))
+
+	def updates_lessons(self):
+		if self.is_new():
+			lesson_count = frappe.db.count("Course Lesson", filters={"course_sc": self.course_sc}) + 1
+		else:
+			lesson_count = frappe.db.count("Course Lesson", filters={"course_sc": self.course_sc})
+		print(lesson_count)
+		frappe.db.set_value("Course Schedule", self.course_sc, "lessons", lesson_count)
+		
 
 	# def on_update(self):
 	# 	dynamic_documents = ["Exam", "Quiz"]
