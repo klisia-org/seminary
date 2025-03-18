@@ -6,7 +6,17 @@
           class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
         >
           <Breadcrumbs class="h-7" :items="breadcrumbs" />
-          <div class="flex items-center mt-3 md:mt-0">
+          <div v-if="totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
+            <Tooltip 
+              :text="__('Save only allowed when Total Points = 100')" placement="bottom">
+              <Button variant="subtle" class="ml-2">
+                <span>
+                  {{ __('Adjust totals to save') }}
+                </span>
+              </Button>
+            </Tooltip>
+          </div>
+          <div v-else class="flex items-center mt-3 md:mt-0">
             <Button variant="solid" @click="submitCourseAssessment()" class="ml-2">
               <span>
                 {{ __('Save') }}
@@ -16,8 +26,19 @@
         </header>
         <div class="mt-5 mb-10">
           <div class="container mb-5">
-            <div class="text-lg font-semibold mb-4">
-              {{ __('Assessment Criteria for this course') }}
+            <div v-if="!course.data" class="text-lg font-semibold mb-4">
+              {{ __('Assessment Criteria') }}
+            </div>
+            <div v-else class="text-lg font-semibold mb-4">
+              {{ __('Assessment Criteria for ' + course.data.course) }}
+            </div>
+            <div :class="{'flex justify-between mb-4 p-3 text-xl': true, 'bg-red-400 rounded': totalPoints !== 100}">
+              <div>
+                <strong>{{ __('Total Points') }}:</strong> {{ totalPoints }}
+              </div>
+              <div>
+                <strong>{{ __('Max Fudge Points') }}:</strong> {{ maxFudgePoints }}
+              </div>
             </div>
             <div class="border border-gray-300 p-4 rounded-md">
               <div v-for="(criteria, index) in assessmentCriteria" :key="index" class="border border-gray-300 p-4 mb-4 rounded-md flex items-center">
@@ -36,12 +57,13 @@
                     :required="true"
                     @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
                   />
-                  <p>Type: {{ criteria.type }}</p>
+                  
                   <Link
                     v-if="criteria.type === 'Quiz'"
                     v-model="criteria.quiz"
                     doctype="Quiz"
                     :label="__('Select a Quiz')"
+                    :required="true"
                     :onCreate="(value, close) => redirectToForm()"
                   />
                   <Link
@@ -49,26 +71,46 @@
                     v-model="criteria.exam"
                     doctype="Exam"
                     :label="__('Select an Exam')"
+                    :required="true"
                   />
                   <Link
                     v-else-if="criteria.type === 'Assignment'"
                     v-model="criteria.assignment"
                     doctype="Assignment Activity"
                     :label="__('Select an Assignment')"
+                    :required="true"
                     :onCreate="(value, close) => redirectToForm()"
                   />
-                  <Link
-                    v-else-if="criteria.type === 'Offline'"
-                    v-model="criteria.creator"
-                    doctype="User"
-                  />
+                  <template v-else>
+                    <p>Offline</p>
+                  </template>
+                 
                   <FormControl
-                    v-model="criteria.weight_scac"
-                    :label="__('Weight')"
+                    v-model="criteria.extracredit_scac"
+                    :label="__('Is Extra Credit?')"
+                    type="checkbox"
+                    :required="false"
                     class="mb-4"
-                    :required="true"
-                    maxlength="10"
-                  />
+                    :default="false"
+                    />
+                    
+                    <div v-if="criteria.extracredit_scac" class="mb-4 light-blue-bg p-2 rounded">
+                    <FormControl
+                      v-model="criteria.fudgepoints_scac"
+                      :label="__('Fudge Points')"
+                      type="float"
+                      :required="true"
+                    />
+                  </div>
+                  <div v-else class="mb-4">
+                    <FormControl
+                      v-model="criteria.weight_scac"
+                      :label="__('Weight')"
+                      type="float"
+                      class="max-w-14ch"
+                      :required="true"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -90,13 +132,14 @@
 </template>
 
 <script setup>
-import { createResource, Breadcrumbs, Button, FormControl } from 'frappe-ui'
+import { createResource, Breadcrumbs, Button, FormControl, Tooltip } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast, updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
+
 
 const route = useRoute()
 const router = useRouter()
@@ -120,14 +163,12 @@ const modalcriteria = reactive({
   quiz: '',
   exam: '',
   assignment: '',
-  extracredit_scac: '',
+  extracredit_scac: 0,
   fudgepoints_scac: '',
   parent: props.courseName,
   parenttype: 'Course Schedule',
   parentfield: 'courseassescrit_sc'
 })
-
-
 
 const course = createResource({
   url: 'seminary.seminary.utils.get_course_details',
@@ -137,7 +178,6 @@ const course = createResource({
   },
   auto: true,
 })
-console.log(course)
 
 const assessments = createResource({
   url: 'seminary.seminary.utils.get_assessments',
@@ -147,7 +187,6 @@ const assessments = createResource({
   },
   auto: true,
 })
-console.log(assessments)
 
 const breadcrumbs = computed(() => {
   let items = [{ label: 'Courses', route: { name: 'Courses' } }]
@@ -173,8 +212,19 @@ updateDocumentTitle(pageMeta)
 
 const assessmentCriteria = reactive([]);
 
+const totalPoints = computed(() => {
+  return assessmentCriteria.reduce((sum, criteria) => {
+    return criteria.extracredit_scac === 0 ? sum + parseFloat(criteria.weight_scac || 0) : sum;
+  }, 0);
+});
+
+const maxFudgePoints = computed(() => {
+  return assessmentCriteria.reduce((sum, criteria) => {
+    return criteria.extracredit_scac ? sum + parseFloat(criteria.fudgepoints_scac || 0) : sum;
+  }, 0);
+});
+
 onMounted(() => {
-  console.log('Assessment data on Mount:', assessments)
   watch(() => assessments.data, (newVal) => {
     if (newVal) {
       loadAssessmentCriteria();
@@ -184,7 +234,6 @@ onMounted(() => {
 })
 
 function loadAssessmentCriteria() {
-  console.log('Assessments data:', assessments.data)
   assessmentCriteria.length = 0; // Clear the array before populating it
   if (assessments.data) {
     if (Array.isArray(assessments.data)) {
@@ -198,7 +247,7 @@ function loadAssessmentCriteria() {
           exam: item.exam || '',
           assignment: item.assignment || '',
           creator: item.creator || '',
-          extracredit_scac: item.extracredit_scac || '',
+          extracredit_scac: item.extracredit_scac || 0,
           fudgepoints_scac: item.fudgepoints_scac || '',
           name: item.name || '',
           parent: item.parent || '',
@@ -216,7 +265,7 @@ function loadAssessmentCriteria() {
         exam: assessments.data.exam || '',
         assignment: assessments.data.assignment || '',
         creator: assessments.data.creator || '',
-        extracredit_scac: assessments.data.extracredit_scac || '',
+        extracredit_scac: assessments.data.extracredit_scac || 0,
         fudgepoints_scac: assessments.data.fudgepoints_scac || '',
         name: assessments.data.name || '',
         parent: assessments.data.parent || '',
@@ -227,8 +276,7 @@ function loadAssessmentCriteria() {
   } else {
     console.log('No assessments data found');
   }
-  console.log('Assessment criteria:', assessmentCriteria)
-  addCriteria();
+   addCriteria();
 }
 
 function addCriteria() {
@@ -240,7 +288,7 @@ function addCriteria() {
     quiz: '',
     exam: '',
     assignment: '',
-    extracredit_scac: '',
+    extracredit_scac: 0,
     fudgepoints_scac: '',
     parent: props.courseName,
     parenttype: 'Course Schedule',
@@ -270,9 +318,38 @@ function openCourseAssessmentModal() {
   showCourseAssessmentModal.value = true;
 }
 
+function validateCriteria() {
+  for (const criteria of assessmentCriteria) {
+    if (!criteria.assesscriteria_scac) {
+      return false;
+    }
+    if (criteria.type === 'Quiz' && !criteria.quiz) {
+      return false;
+    }
+    if (criteria.type === 'Exam' && !criteria.exam) {
+      return false;
+    }
+    if (criteria.type === 'Assignment' && !criteria.assignment) {
+      return false;
+    }
+    if (!criteria.extracredit_scac && !criteria.weight_scac) {
+      return false;
+    }
+    if (criteria.extracredit_scac && !criteria.fudgepoints_scac) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 function submitCourseAssessment() {
+  if (!validateCriteria()) {
+    showToast('Error', 'Please fill in all required fields', 'error');
+    return;
+  }
+
   // Handle form submission logic here
-  console.log('Form submitted:', assessmentCriteria);
   fetch('/api/method/seminary.seminary.api.save_course_assessment', {
     method: 'POST',
     headers: {
@@ -297,12 +374,10 @@ function submitCourseAssessment() {
 
 async function fetchType(criteria) {
   if (criteria.assesscriteria_scac) {
-    console.log('Fetching type for:', criteria.assesscriteria_scac);
     try {
       const response = await fetch(`/api/resource/Assessment Criteria/${criteria.assesscriteria_scac}`);
       const data = await response.json();
       criteria.type = data.data.type;
-      console.log('Type:', criteria.type);
     } catch (error) {
       console.error('Error fetching type:', error);
     }
@@ -315,7 +390,6 @@ function onAssessmentSaved() {
   assessments.reload()
   // Now, close the Modal
   showCourseAssessmentModal.value = false;
-  console.log('Parent page reloaded after saving assessment')
 }
 </script>
 
@@ -328,5 +402,8 @@ function onAssessmentSaved() {
 }
 .btn {
   margin-right: 0.5rem;
+}
+.light-blue-bg {
+  background-color: #E6F4FF;
 }
 </style>

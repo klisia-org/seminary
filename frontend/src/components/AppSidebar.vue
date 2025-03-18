@@ -78,22 +78,12 @@ const links = [
 		to: '/fees',
 		icon: Banknote,
 	},
-	// {
-	// 	label: 'Attendance',
-	// 	to: '/attendance',
-	// 	icon: UserCheck,
-	// },
-	// {
-	// 	// TODO: create School Diary Page with card like CRM and from ListView go to Resource Document of each Card
-	// 	label: 'Notes',
-	// 	to: '/notes',
-	// 	icon: BookOpen,
-	// },
-	// {
-	// 	label: 'Profile',
-	// 	to: '/profile',
-	// 	icon: User,
-	// },
+	
+	{
+		label: 'Quizzes',
+		to: '/quizzes',
+		icon: UserCheck,
+	},
 ]
 
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false)

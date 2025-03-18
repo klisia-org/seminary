@@ -60,6 +60,35 @@ const routes = [
     props: true,
   },
   {
+		path: '/quizzes',
+		name: 'Quizzes',
+		component: () => import('@/pages/Quizzes.vue'),
+	},
+	{
+		path: '/quizzes/:quizID',
+		name: 'QuizForm',
+		component: () => import('@/pages/QuizForm.vue'),
+		props: true,
+	},
+	{
+		path: '/quiz/:quizID',
+		name: 'QuizPage',
+		component: () => import('@/pages/QuizPage.vue'),
+		props: true,
+	},
+	{
+		path: '/quiz-submissions/:quizID',
+		name: 'QuizSubmissionList',
+		component: () => import('@/pages/QuizSubmissionList.vue'),
+		props: true,
+	},
+	{
+		path: '/quiz-submission/:submission',
+		name: 'QuizSubmission',
+		component: () => import('@/pages/QuizSubmission.vue'),
+		props: true,
+	},
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }

@@ -145,7 +145,7 @@ def get_quiz_progress(lesson):
 		quizzes = [value for name, value in macros if name == "Quiz"]
 
 	for quiz in quizzes:
-		passing_percentage = frappe.db.get_value("Quiz", quiz, "passing_score")
+		passing_percentage = frappe.db.get_value("Quiz", quiz, "passing_percentage")
 		if not frappe.db.exists(
 			"Quiz Activity",
 			{

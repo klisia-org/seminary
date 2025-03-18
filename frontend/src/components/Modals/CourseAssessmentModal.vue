@@ -93,7 +93,7 @@ const props = defineProps({
     required: true,
   },
 })
-console.log('Course Name:', props.courseName)
+
 
 const courseassess = reactive({
   title: '',

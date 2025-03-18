@@ -1508,3 +1508,9 @@ def delete_lesson(lesson, chapter):
 
 	# Delete Lesson
 	frappe.db.delete("Course Lesson", lesson)
+
+@frappe.whitelist()
+def delete_documents(doctype, documents):
+	frappe.only_for("Seminary Manager")
+	for doc in documents:
+		frappe.delete_doc(doctype, doc)

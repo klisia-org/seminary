@@ -4,5 +4,5 @@
 import unittest
 
 
-class TestQuizActivity(unittest.TestCase):
+class TestQuizSubmission(unittest.TestCase):
 	pass

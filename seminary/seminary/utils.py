@@ -186,15 +186,21 @@ def get_all_users():
 
 	return {user.name: user for user in users}
 
-
+@frappe.whitelist(allow_guest=True)
 def has_course_moderator_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
 		{"parent": member or frappe.session.user, "role": "Seminary Manager"},
 		"name",
 	)
-
-
+@frappe.whitelist(allow_guest=True)
+def has_course_instructor_role(member=None):
+	return frappe.db.get_value(
+		"Has Role",
+		{"parent": member or frappe.session.user, "role": "Academics User"},
+		"name",
+	)
+@frappe.whitelist(allow_guest=True)
 def has_course_evaluator_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
@@ -202,7 +208,7 @@ def has_course_evaluator_role(member=None):
 		"name",
 	)
 
-
+@frappe.whitelist(allow_guest=True)
 def has_student_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
@@ -796,6 +802,16 @@ def get_lesson_creation_details(course, chapter, lesson):
 		),
 		"lesson": lesson_details if lesson_name else None,
 	}
+
+@frappe.whitelist()
+def get_question_details(question):
+	fields = ["question", "type", "multiple"]
+	for i in range(1, 5):
+		fields.append(f"option_{i}")
+		fields.append(f"explanation_{i}")
+
+	question_details = frappe.db.get_value("Question", question, fields, as_dict=1)
+	return question_details
 
 @frappe.whitelist()
 def get_assessments(course):

@@ -92,8 +92,8 @@
 							</span>
 						</div>
 						<div class="text-ink-gray-9 text-sm font-semibold item-left">
-							{{ question.marks }}
-							{{ question.marks == 1 ? ('Mark') : ('Marks') }}
+							{{ question.points }}
+							{{ question.points == 1 ? ('Point') : ('Points') }}
 						</div>
 					</div>
 					<div
@@ -196,8 +196,7 @@
 						<Button
 							v-if="
 								quiz.data.show_answers &&
-								!showAnswers.length &&
-								questionDetails.data.type != 'Open Ended'
+								!showAnswers.length 
 							"
 							@click="checkAnswer()"
 						>
@@ -226,14 +225,7 @@
 			<div class="text-lg font-semibold">
 				{{ ('Quiz Summary') }}
 			</div>
-			<div v-if="quizSubmission.data.is_open_ended">
-				{{
-					(
-						"Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result."
-					)
-				}}
-			</div>
-			<div v-else>
+			<div class="text-ink-gray-9">
 				{{
 					(
 						'You got {0}% correct answers with a score of {1} out of {2}'
@@ -244,6 +236,7 @@
 					)
 				}}
 			</div>
+			
 			<Button
 				@click="resetQuiz()"
 				class="mt-2"
@@ -280,15 +273,7 @@
 	</div>
 </template>
 <script setup>
-import {
-	Badge,
-	Button,
-	call,
-	createResource,
-	ListView,
-	TextEditor,
-	FormControl,
-} from 'frappe-ui'
+import {Badge, Button, call, createResource, ListView, TextEditor, FormControl} from 'frappe-ui'
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { createToast, showToast } from '@/utils/'
 import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'
@@ -318,7 +303,7 @@ const quiz = createResource({
 	url: 'frappe.client.get',
 	makeParams(values) {
 		return {
-			doctype: 'LMS Quiz',
+			doctype: 'Quiz',
 			name: props.quizName,
 		}
 	},
@@ -388,7 +373,7 @@ const attempts = createResource({
 	url: 'frappe.client.get_list',
 	makeParams(values) {
 		return {
-			doctype: 'LMS Quiz Submission',
+			doctype: 'Quiz Submission',
 			filters: {
 				member: user.data?.name,
 				quiz: quiz.data?.name,
@@ -426,7 +411,7 @@ watch(
 )
 
 const quizSubmission = createResource({
-	url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
+	url: 'seminary.seminary.doctype.quiz.quiz.quiz_summary',
 	makeParams(values) {
 		return {
 			quiz: quiz.data.name,
@@ -436,7 +421,7 @@ const quizSubmission = createResource({
 })
 
 const questionDetails = createResource({
-	url: 'lms.lms.utils.get_question_details',
+	url: 'seminary.seminary.utils.get_question_details',
 	makeParams(values) {
 		return {
 			question: currentQuestion.value,
@@ -501,7 +486,7 @@ const checkAnswer = () => {
 	}
 
 	createResource({
-		url: 'lms.lms.doctype.lms_quiz.lms_quiz.check_answer',
+		url: 'seminary.seminary.doctype.quiz.quiz.check_answer',
 		params: {
 			question: currentQuestion.value,
 			type: questionDetails.data.type,
@@ -545,10 +530,10 @@ const addToLocalStorage = () => {
 }
 
 const nextQuestion = () => {
-	if (!quiz.data.show_answers && questionDetails.data?.type != 'Open Ended') {
+	if (!quiz.data.show_answers) {
 		checkAnswer()
 	} else {
-		if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
+		addToLocalStorage()
 		resetQuestion()
 	}
 }
@@ -563,8 +548,7 @@ const resetQuestion = () => {
 
 const submitQuiz = () => {
 	if (!quiz.data.show_answers) {
-		if (questionDetails.data.type == 'Open Ended') addToLocalStorage()
-		else checkAnswer()
+		checkAnswer()
 		setTimeout(() => {
 			createSubmission()
 		}, 500)
@@ -615,7 +599,7 @@ const getInstructions = (question) => {
 const markLessonProgress = () => {
 	console.log(router)
 	if (router.currentRoute.value.name == 'Lesson') {
-		call('lms.lms.api.mark_lesson_progress', {
+		call('seminary.seminary.api.mark_lesson_progress', {
 			course: router.currentRoute.value.params.courseName,
 			chapter_number: router.currentRoute.value.params.chapterNumber,
 			lesson_number: router.currentRoute.value.params.lessonNumber,

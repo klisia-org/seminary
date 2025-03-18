@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class QuizActivity(Document):
+class QuizSubmission(Document):
 	pass

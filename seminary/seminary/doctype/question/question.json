@@ -1,16 +1,39 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:QUESTION-{#####}",
+ "allow_rename": 1,
+ "autoname": "format:QTS-{YYYY}-{#####}",
  "creation": "2018-10-01 15:58:00.696815",
+ "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "question",
-  "options",
-  "question_type",
-  "points"
+  "type",
+  "points",
+  "multiple",
+  "choices_section",
+  "option_1",
+  "is_correct_1",
+  "explanation_1",
+  "column_break_klxh",
+  "option_2",
+  "is_correct_2",
+  "explanation_2",
+  "column_break_pctk",
+  "option_3",
+  "is_correct_3",
+  "explanation_3",
+  "column_break_rlxe",
+  "option_4",
+  "is_correct_4",
+  "explanation_4",
+  "user_input_section",
+  "possibility_1",
+  "possibility_2",
+  "possibility_3",
+  "possibility_4"
  ],
  "fields": [
   {
@@ -21,28 +44,133 @@
    "reqd": 1
   },
   {
-   "fieldname": "options",
-   "fieldtype": "Table",
-   "label": "Options",
-   "options": "Options",
-   "reqd": 1
-  },
-  {
-   "fieldname": "question_type",
-   "fieldtype": "Select",
-   "in_standard_filter": 1,
-   "label": "Type",
-   "options": "\nSingle Correct Answer\nMultiple Correct Answer",
-   "read_only": 1
-  },
-  {
    "fieldname": "points",
    "fieldtype": "Float",
    "label": "Points"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "Choices\nUser Input"
+  },
+  {
+   "default": "0",
+   "fieldname": "multiple",
+   "fieldtype": "Check",
+   "label": "Multiple Correct Answers"
+  },
+  {
+   "fieldname": "choices_section",
+   "fieldtype": "Section Break",
+   "label": "Choices"
+  },
+  {
+   "fieldname": "option_1",
+   "fieldtype": "Small Text",
+   "label": "Option 1"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_1",
+   "fieldtype": "Check",
+   "label": "Option 1 Is Correct"
+  },
+  {
+   "fieldname": "explanation_1",
+   "fieldtype": "Small Text",
+   "label": "Explanation 1"
+  },
+  {
+   "fieldname": "column_break_klxh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "option_2",
+   "fieldtype": "Small Text",
+   "label": "Option 2"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_2",
+   "fieldtype": "Check",
+   "label": "Option 2 Is Correct"
+  },
+  {
+   "fieldname": "explanation_2",
+   "fieldtype": "Small Text",
+   "label": "Explanation 2"
+  },
+  {
+   "fieldname": "column_break_pctk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "option_3",
+   "fieldtype": "Small Text",
+   "label": "Option 3"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_3",
+   "fieldtype": "Check",
+   "label": "Option 3 is Correct"
+  },
+  {
+   "fieldname": "explanation_3",
+   "fieldtype": "Small Text",
+   "label": "Explanation 3"
+  },
+  {
+   "fieldname": "column_break_rlxe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "option_4",
+   "fieldtype": "Small Text",
+   "label": "Option 4"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_4",
+   "fieldtype": "Check",
+   "label": "Option 4 Is Correct"
+  },
+  {
+   "fieldname": "explanation_4",
+   "fieldtype": "Small Text",
+   "label": "Explanation 4"
+  },
+  {
+   "depends_on": "type == 'User Input'",
+   "fieldname": "user_input_section",
+   "fieldtype": "Section Break",
+   "label": "User Input"
+  },
+  {
+   "fieldname": "possibility_1",
+   "fieldtype": "Small Text",
+   "label": "Acceptable Answer 1",
+   "mandatory_depends_on": "type == 'User Input'"
+  },
+  {
+   "fieldname": "possibility_2",
+   "fieldtype": "Small Text",
+   "label": "Acceptable Answer 2"
+  },
+  {
+   "fieldname": "possibility_3",
+   "fieldtype": "Small Text",
+   "label": "Acceptable Answer 3"
+  },
+  {
+   "fieldname": "possibility_4",
+   "fieldtype": "Small Text",
+   "label": "Acceptable Answer 4"
   }
  ],
  "links": [],
- "modified": "2025-03-10 13:06:13.604738",
+ "modified": "2025-03-18 08:20:57.653471",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Question",
@@ -72,9 +200,20 @@
    "role": "Instructor",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
   }
  ],
- "quick_entry": 1,
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
