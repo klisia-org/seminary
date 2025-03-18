@@ -1,90 +1,91 @@
 <template>
-	<Dialog
-		v-model="show"
-        :options="{
-            title='Add Course Assessment',
-            size: 'lg',
-            actions: [
-                {
-                    label: 'Create',
-                    variant: 'solid',
-                    onClick: (close) => addCourseAssessment(close),
-                },
-            ],
-        }"
->
-<template #body-content>
-			<div class="space-y-4 text-base">
-				<FormControl
-                    v-model="criteria.title"
-                    :label="__('Title')"
-                    class="mb-4"
-                    :required="false"
-                  />
-                  <Link
-                    v-model="criteria.assesscriteria_scac"
-                    :label="__('Assessment Criteria')"
-                    class="mb-4"
-                    doctype="Assessment Criteria"
-                    :required="true"
-                  />
-                  <Link
-                    v-if="criteria.type === 'Quiz'"
-                    v-model="criteria.quiz"
-                    doctype="Quiz"
-                    :label="__('Select a Quiz')"
-                    :onCreate="(value, close) => redirectToForm()"
-                  />
-                  <Link
-                    v-else-if="criteria.type === 'Exam'"
-                    v-model="criteria.exam"
-                    doctype="Exam"
-                    :label="__('Select an Exam')"
-                  />
-                  <Link
-                    v-else-if="criteria.type === 'Assignment'"
-                    v-model="criteria.assignment"
-                    doctype="Assignment Activity"
-                    :label="__('Select an Assignment')"
-                    :onCreate="(value, close) => redirectToForm()"
-                  />
-                  <Link
-                    v-else-if="criteria.type === 'Offline'"
-                    v-model="criteria.creator"
-                    doctype="User"
-                  />
-                  <FormControl
-                    v-model="criteria.weight_scac"
-                    :label="__('Weight')"
-                    class="mb-4"
-                    :required="true"
-                    maxlength="10"
-                  />
-            </div>
+  <Dialog
+    v-model="show"
+    :options="{
+      title: 'Add Course Assessment',
+      size: 'lg',
+      actions: [
+        {
+          label: 'Create',
+          variant: 'solid',
+          onClick: (close) => insertCriteria(close),
+        },
+      ],
+    }"
+  >
+    <template #body-content>
+      <div class="space-y-4 text-base">
+        <FormControl
+          v-model="criteria.title"
+          :label="__('Title')"
+          class="mb-4"
+          :required="false"
+        />
+        <Link
+          v-model="criteria.assesscriteria_scac"
+          :label="__('Assessment Criteria')"
+          class="mb-4"
+          doctype="Assessment Criteria"
+          :required="true"
+          @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
+        />
+        <p> {{ criteria.type }}</p>
+        <Link
+          v-if="criteria.type === 'Quiz'"
+          v-model="criteria.quiz"
+          doctype="Quiz"
+          :label="__('Select a Quiz')"
+          :onCreate="(value, close) => redirectToForm()"
+        />
+        <Link
+          v-else-if="criteria.type === 'Exam'"
+          v-model="criteria.exam"
+          doctype="Exam"
+          :label="__('Select an Exam')"
+        />
+        <Link
+          v-else-if="criteria.type === 'Assignment'"
+          v-model="criteria.assignment"
+          doctype="Assignment Activity"
+          :label="__('Select an Assignment')"
+          :onCreate="(value, close) => redirectToForm()"
+        />
+        <template v-else>
+          <p>Offline</p>
         </template>
-
-</Dialog>
+        <FormControl
+          v-model="criteria.weight_scac"
+          :label="__('Weight')"
+          class="mb-4"
+          :required="true"
+          maxlength="10"
+        />
+      </div>
+    </template>
+  </Dialog>
 </template>
+
 <script setup>
 import {
-	Button,
-	createResource,
-	Dialog,
-	FormControl,
-	Switch,
-    createDocumentResource
+  Button,
+  createResource,
+  Dialog,
+  FormControl
 } from 'frappe-ui'
 import { reactive, watch } from 'vue'
-import { showToast, getFileSize } from '@/utils/'
-import { capture } from '@/telemetry'
+import { showToast } from '@/utils/'
+import { useRoute, useRouter } from 'vue-router'
 import { useSettings } from '@/stores/settings'
-import {createDialog} from '@/utils/dialogs'
+import { createDialog } from '@/utils/dialogs'
+import Link from '@/components/Controls/Link.vue'
 
 const $dialog = createDialog
-
+const route = useRoute()
+const router = useRouter()
 const show = defineModel()
 const CourseAssessment = defineModel('CourseAssessment')
 const settingsStore = useSettings()
+const emit = defineEmits(['assessment-saved'])
 
 const props = defineProps({
   courseName: {
@@ -92,18 +93,36 @@ const props = defineProps({
     required: true,
   },
 })
+console.log('Course Name:', props.courseName)
 
 const courseassess = reactive({
-	title: '',
-	assesscriteria_scac: '',
-    type: '',
-    weight_scac: '',
-    quiz: '',
-    exam: '',
-    assignment: '',
-    extracredit_scac: '',
-    fudgepoints_scac: ''
+  title: '',
+  assesscriteria_scac: '',
+  type: '',
+  weight_scac: '',
+  quiz: '',
+  exam: '',
+  assignment: '',
+  extracredit_scac: '',
+  fudgepoints_scac: '',
+  parent: props.courseName,
+  parenttype: 'Course Schedule',
+  parentfield: 'courseassescrit_sc'
+})
 
+const criteria = reactive({
+  title: '',
+  assesscriteria_scac: '',
+  type: '',
+  weight_scac: '',
+  quiz: '',
+  exam: '',
+  assignment: '',
+  extracredit_scac: '',
+  fudgepoints_scac: '',
+  parent: props.courseName,
+  parenttype: 'Course Schedule',
+  parentfield: 'courseassescrit_sc'
 })
 
 async function fetchType(criteria) {
@@ -118,32 +137,27 @@ async function fetchType(criteria) {
   }
 }
 
-const courseAssessmentResource = createDocumentResource({
-    doctype: 'Scheduled Course Assess Criteria',
-    parent: props.courseName,
-    parentType: 'Course Schedule',
-    parentField: 'courseassescrit_sc',
-    title: courseassess.title,
-    assesscriteria_scac: courseassess.assesscriteria_scac,
-    type: courseassess.type,
-    weight_scac: courseassess.weight_scac,
-    quiz: courseassess.quiz,
-    exam: courseassess.exam,
-    assignment: courseassess.assignment,
-    extracredit_scac: courseassess.extracredit_scac,
-    fudgepoints_scac: courseassess.fudgepoints_scac,
-    course: props.courseName,
-   })
-
-
-const addCourseAssessment = async (close) => {
-    try {
-        await courseAssessmentResource.save()
-        showToast('Course Assessment added successfully')
-        close()
-    } catch (error) {
-        showToast('Failed to add Course Assessment', 'error')
-    }
+const insertCriteria = () => {
+  console.log('Inserting Criteria:', criteria)
+  if (criteria) {
+    fetch('/api/method/seminary.seminary.api.insert_cs_assessment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ criteria }) // Serialize criteria to JSON string
+    })
+    .then(response => response.json())
+    .then(data => {
+     
+      showToast('Success', 'Course Assessment added successfully', 'check');
+      emit('assessment-saved');
+      close();
+    })
+    .catch(error => {
+      console.error('Error:', error)
+      showToast('Failed to add Course Assessment', 'error')
+    })
+  }
 }
-
 </script>

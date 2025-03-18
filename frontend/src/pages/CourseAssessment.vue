@@ -34,7 +34,9 @@
                     class="mb-4"
                     doctype="Assessment Criteria"
                     :required="true"
+                    @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
                   />
+                  <p>Type: {{ criteria.type }}</p>
                   <Link
                     v-if="criteria.type === 'Quiz'"
                     v-model="criteria.quiz"
@@ -71,32 +73,37 @@
               </div>
             </div>
             <br>
-            <Button size="sm"  @click="openCourseAssessmentModal()">
-				{{ __('Add Evaluation') }}
-			</Button>
+            <Button size="sm" @click="openCourseAssessmentModal">
+              {{ __('Add Evaluation') }}
+            </Button>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <CCourseAssessmentModal
-		v-model="showCourseAssessmentModal"
-		v-model:outline="outline"
-		:course="courseName"
-		:chapterDetail="getCurrentChapter()"
-	/>
+  <CourseAssessmentModal
+    v-model="showCourseAssessmentModal"
+    v-model:modalcriteria="modalcriteria"
+    :courseName="props.courseName"
+    @assessment-saved="onAssessmentSaved" 
+  />
 </template>
 
 <script setup>
 import { createResource, Breadcrumbs, Button, FormControl } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showToast, updateDocumentTitle } from '@/utils'
+import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
 
+const route = useRoute()
+const router = useRouter()
 const user = inject('$user')
 const settingsStore = useSettings()
+const showCourseAssessmentModal = ref(false)
+const show = defineModel()
 
 const props = defineProps({
   courseName: {
@@ -104,6 +111,23 @@ const props = defineProps({
     required: true,
   },
 })
+
+const modalcriteria = reactive({
+  title: '',
+  assesscriteria_scac: '',
+  type: '',
+  weight_scac: '',
+  quiz: '',
+  exam: '',
+  assignment: '',
+  extracredit_scac: '',
+  fudgepoints_scac: '',
+  parent: props.courseName,
+  parenttype: 'Course Schedule',
+  parentfield: 'courseassescrit_sc'
+})
+
+
 
 const course = createResource({
   url: 'seminary.seminary.utils.get_course_details',
@@ -176,10 +200,10 @@ function loadAssessmentCriteria() {
           creator: item.creator || '',
           extracredit_scac: item.extracredit_scac || '',
           fudgepoints_scac: item.fudgepoints_scac || '',
-          name : item.name || '',
-          parent : item.parent || '',
-          parenttype : item.parenttype || '',
-          parentfield : item.parentfield || ''
+          name: item.name || '',
+          parent: item.parent || '',
+          parenttype: item.parenttype || '',
+          parentfield: item.parentfield || ''
         });
       });
     } else {
@@ -194,30 +218,56 @@ function loadAssessmentCriteria() {
         creator: assessments.data.creator || '',
         extracredit_scac: assessments.data.extracredit_scac || '',
         fudgepoints_scac: assessments.data.fudgepoints_scac || '',
-        name : item.name || '',
-        parent : item.parent || '',
-        parenttype : item.parenttype || '',
-        parentfield : item.parentfield || ''
+        name: assessments.data.name || '',
+        parent: assessments.data.parent || '',
+        parenttype: assessments.data.parenttype || '',
+        parentfield: assessments.data.parentfield || ''
       });
     }
   } else {
     console.log('No assessments data found');
   }
   console.log('Assessment criteria:', assessmentCriteria)
+  addCriteria();
 }
 
 function addCriteria() {
-  const newCriteria = { title: '', assesscriteria_scac: '', type: '', weight_scac: 0, quiz: '', exam: '', assignment: '', creator: '', extracredit_scac: '', fudgepoints_scac: '', name: '', parent: '', parenttype: '', parentfield: '' };
-  assessmentCriteria.push(newCriteria);
-  watch(() => newCriteria.assesscriteria_scac, (newVal) => {
-    if (newVal) {
-      fetchType(newCriteria);
-    }
+  const newCriteria = reactive({
+    title: '',
+    assesscriteria_scac: '',
+    type: '',
+    weight_scac: 0,
+    quiz: '',
+    exam: '',
+    assignment: '',
+    extracredit_scac: '',
+    fudgepoints_scac: '',
+    parent: props.courseName,
+    parenttype: 'Course Schedule',
+    parentfield: 'courseassescrit_sc'
   });
+  
+  // Add the new criteria to the reactive array.
+  assessmentCriteria.push(newCriteria);
+  
+  // Attach a watcher to this new criteria.
+  watch(
+    () => newCriteria.assesscriteria_scac,
+    (newVal) => {
+      if (newVal) {
+        fetchType(newCriteria);
+        console.log('New Criteria:', newCriteria);
+      }
+    }
+  );
 }
 
 function removeCriteria(index) {
   assessmentCriteria.splice(index, 1);
+}
+
+function openCourseAssessmentModal() {
+  showCourseAssessmentModal.value = true;
 }
 
 function submitCourseAssessment() {
@@ -247,14 +297,25 @@ function submitCourseAssessment() {
 
 async function fetchType(criteria) {
   if (criteria.assesscriteria_scac) {
+    console.log('Fetching type for:', criteria.assesscriteria_scac);
     try {
       const response = await fetch(`/api/resource/Assessment Criteria/${criteria.assesscriteria_scac}`);
       const data = await response.json();
       criteria.type = data.data.type;
+      console.log('Type:', criteria.type);
     } catch (error) {
       console.error('Error fetching type:', error);
     }
   }
+}
+
+
+function onAssessmentSaved() {
+  // Reload the parent's resource (e.g., assessments)
+  assessments.reload()
+  // Now, close the Modal
+  showCourseAssessmentModal.value = false;
+  console.log('Parent page reloaded after saving assessment')
 }
 </script>
 

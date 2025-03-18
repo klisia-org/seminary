@@ -891,6 +891,37 @@ def get_inv_data_nayear():
 		return "done"
 
 @frappe.whitelist()
+def insert_cs_assessment(criteria):
+    # If criteria is already a dict, use it directly.
+    # If it's a string, then parse it.
+    if isinstance(criteria, str):
+        criteria = json.loads(criteria)
+    
+    # Now, criteria is a dict and you can work with it:
+    frappe.logger().info(f"Received criteria: {criteria}")
+    
+    # Insert your logic to save the assessment, for example:
+    doc = frappe.get_doc({
+        "doctype": "Scheduled Course Assess Criteria",
+        "parent": criteria.get("parent"),
+        "parenttype": "Course Schedule",
+        "parentfield": "courseassescrit_sc",
+        "title": criteria.get("title"),
+        "assesscriteria_scac": criteria.get("assesscriteria_scac"),
+        "type": criteria.get("type"),
+        "weight_scac": criteria.get("weight_scac"),
+        "quiz": criteria.get("quiz"),
+        "exam": criteria.get("exam"),
+        "assignment": criteria.get("assignment"),
+        "extracredit_scac": criteria.get("extracredit_scac"),
+        "fudgepoints_scac": criteria.get("fudgepoints_scac"),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    
+    return {"success": True}
+
+@frappe.whitelist()
 def get_inv_data_monthly():
 		print("Method called")
 		today = frappe.utils.today()
