@@ -6,30 +6,13 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "question_link",
   "question",
+  "question_detail",
   "points",
   "type"
  ],
  "fields": [
   {
-   "fieldname": "question_link",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Question Link",
-   "options": "Question",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "question_link.question",
-   "fieldname": "question",
-   "fieldtype": "Text Editor",
-   "in_list_view": 1,
-   "label": "Question",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "question_link.points",
    "fieldname": "points",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -39,15 +22,33 @@
   },
   {
    "default": "Choices",
+   "fetch_from": "question.type",
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Question Type",
-   "options": "Choices"
+   "options": "Choices\nUser Input",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "question.question",
+   "fieldname": "question_detail",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Question Link",
+   "options": "Question",
+   "reqd": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-03-18 07:54:37.872563",
+ "modified": "2025-03-19 14:51:31.293452",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz Question",

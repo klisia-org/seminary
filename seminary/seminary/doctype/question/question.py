@@ -1,45 +1,110 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2025, Klisia, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from seminary.seminary.utils import has_course_instructor_role, has_course_moderator_role
 
 
 class Question(Document):
 	def validate(self):
-		self.check_at_least_one_option()
-		self.check_minimum_one_correct_answer()
-		self.set_question_type()
+		validate_correct_answers(self)
+		update_question_title(self)
 
-	def check_at_least_one_option(self):
-		if len(self.options) <= 1:
-			frappe.throw(_("A question must have more than one options"))
-		else:
-			pass
 
-	def check_minimum_one_correct_answer(self):
-		correct_options = [option.is_correct for option in self.options]
-		if bool(sum(correct_options)):
-			pass
-		else:
-			frappe.throw(_("A qustion must have at least one correct options"))
+def validate_correct_answers(question):
+	if question.type == "Choices":
+		validate_duplicate_options(question)
+		validate_minimum_options(question)
+		validate_correct_options(question)
+	elif question.type == "User Input":
+		validate_possible_answer(question)
 
-	def set_question_type(self):
-		correct_options = [option for option in self.options if option.is_correct]
-		if len(correct_options) > 1:
-			self.question_type = "Multiple Correct Answer"
-		else:
-			self.question_type = "Single Correct Answer"
 
-	def get_answer(self):
-		options = self.options
-		answers = [item.name for item in options if item.is_correct == True]
-		if len(answers) == 0:
-			frappe.throw(_("No correct answer is set for {0}").format(self.name))
-			return None
-		elif len(answers) == 1:
-			return answers[0]
-		else:
-			return answers
+def validate_duplicate_options(question):
+	options = []
+
+	for num in range(1, 5):
+		if question.get(f"option_{num}"):
+			options.append(question.get(f"option_{num}"))
+
+	if len(set(options)) != len(options):
+		frappe.throw(_("Duplicate options found for this question."))
+
+
+def validate_correct_options(question):
+	correct_options = get_correct_options(question)
+
+	if len(correct_options) > 1:
+		question.multiple = 1
+
+	if not len(correct_options):
+		frappe.throw(_("At least one option must be correct for this question."))
+
+
+def validate_minimum_options(question):
+	if question.type == "Choices" and (not question.option_1 or not question.option_2):
+		frappe.throw(_("Minimum two options are required for multiple choice questions."))
+
+
+def validate_possible_answer(question):
+	possible_answers = []
+	possible_answers_fields = [
+		"possibility_1",
+		"possibility_2",
+		"possibility_3",
+		"possibility_4",
+	]
+
+	for field in possible_answers_fields:
+		if question.get(field):
+			possible_answers.append(field)
+
+	if not len(possible_answers):
+		frappe.throw(
+			_("Add at least one possible answer for this question: {0}").format(
+				frappe.bold(question.question)
+			)
+		)
+
+
+def update_question_title(question):
+	if not question.is_new():
+		question_rows = frappe.get_all(
+			"Quiz Question", {"question": question.name}, pluck="name"
+		)
+
+		for row in question_rows:
+			frappe.db.set_value("Quiz Question", row, "question_detail", question.question)
+
+
+def get_correct_options(question):
+	correct_options = []
+	correct_option_fields = [
+		"is_correct_1",
+		"is_correct_2",
+		"is_correct_3",
+		"is_correct_4",
+	]
+	for field in correct_option_fields:
+		if question.get(field) == 1:
+			correct_options.append(field)
+
+	return correct_options
+
+
+@frappe.whitelist()
+def get_question_details(question):
+	if not has_course_instructor_role() or not has_course_moderator_role():
+		return
+
+	fields = ["question", "type", "name"]
+	for i in range(1, 5):
+		fields.append(f"option_{i}")
+		fields.append(f"is_correct_{i}")
+		fields.append(f"explanation_{i}")
+		fields.append(f"possibility_{i}")
+
+	return frappe.db.get_value("Question", question, fields, as_dict=1)

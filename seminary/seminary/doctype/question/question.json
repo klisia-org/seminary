@@ -11,7 +11,7 @@
  "field_order": [
   "question",
   "type",
-  "points",
+  "course",
   "multiple",
   "choices_section",
   "option_1",
@@ -44,11 +44,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "points",
-   "fieldtype": "Float",
-   "label": "Points"
-  },
-  {
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
@@ -61,6 +56,7 @@
    "label": "Multiple Correct Answers"
   },
   {
+   "depends_on": "eval: doc.type == 'Choices'",
    "fieldname": "choices_section",
    "fieldtype": "Section Break",
    "label": "Choices"
@@ -142,7 +138,7 @@
    "label": "Explanation 4"
   },
   {
-   "depends_on": "type == 'User Input'",
+   "depends_on": "eval: doc.type == 'User Input';",
    "fieldname": "user_input_section",
    "fieldtype": "Section Break",
    "label": "User Input"
@@ -167,10 +163,17 @@
    "fieldname": "possibility_4",
    "fieldtype": "Small Text",
    "label": "Acceptable Answer 4"
+  },
+  {
+   "description": "This serves to filter questions specific for a course",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
   }
  ],
  "links": [],
- "modified": "2025-03-18 08:20:57.653471",
+ "modified": "2025-03-19 14:24:37.862797",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Question",

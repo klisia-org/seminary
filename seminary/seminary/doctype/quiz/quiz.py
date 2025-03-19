@@ -1,4 +1,4 @@
-# Copyright (c) 2021, FOSS United and contributors
+# Copyright (c) 2025, Klisia, FOSS United and contributors
 # For license information, please see license.txt
 
 import json
@@ -9,11 +9,7 @@ from frappe.model.document import Document
 from frappe.utils import cstr, comma_and, cint
 from fuzzywuzzy import fuzz
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
-from seminary.seminary.utils import (
-	generate_slug,
-	# has_course_moderator_role,
-	# has_course_instructor_role,
-)
+from seminary.seminary.utils import generate_slug
 from binascii import Error as BinasciiError
 from frappe.utils.file_manager import safe_b64decode
 from frappe.core.doctype.file.utils import get_random_filename
@@ -93,7 +89,7 @@ def quiz_summary(quiz, results):
 	quiz_details = frappe.db.get_value(
 		"Quiz",
 		quiz,
-		["total_points", "passing_percentage", "lesson", "course"],
+		["total_points", "passing_percentage"],
 		as_dict=1,
 	)
 

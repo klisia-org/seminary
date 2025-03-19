@@ -2,13 +2,14 @@
  "actions": [],
  "allow_import": 1,
  "autoname": "format:{title}-{###}",
- "creation": "2018-10-17 05:52:50.149904",
+ "creation": "2025-03-19 12:16:53.160358",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "title",
-  "question",
+  "course",
+  "questions",
   "quiz_configuration_section",
   "passing_percentage",
   "max_attempts",
@@ -31,13 +32,6 @@
    "unique": 1
   },
   {
-   "fieldname": "question",
-   "fieldtype": "Table",
-   "label": "Multiple Choices Questions",
-   "options": "Quiz Question",
-   "reqd": 1
-  },
-  {
    "fieldname": "quiz_configuration_section",
    "fieldtype": "Section Break",
    "label": "Quiz Configuration"
@@ -53,10 +47,14 @@
   },
   {
    "default": "Latest Highest Score",
+   "description": "This is not yet implemented",
    "fieldname": "grading_basis",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Grading Basis",
-   "options": "Latest Highest Score\nLatest Attempt"
+   "options": "Latest Highest Score\nLatest Attempt",
+   "print_hide": 1,
+   "report_hide": 1
   },
   {
    "default": "0",
@@ -116,10 +114,24 @@
    "in_list_view": 1,
    "label": "Passing Score",
    "non_negative": 1
+  },
+  {
+   "fieldname": "questions",
+   "fieldtype": "Table",
+   "label": "Multiple Choices Questions",
+   "options": "Quiz Question",
+   "reqd": 1
+  },
+  {
+   "description": "This refers to the Course itself, not the Course Schedule (so can be used for many CS)",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
   }
  ],
  "links": [],
- "modified": "2025-03-18 10:37:13.199434",
+ "modified": "2025-03-19 14:28:36.438749",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",
@@ -163,7 +175,6 @@
    "write": 1
   },
   {
-   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
