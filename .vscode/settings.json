@@ -1,4 +1,5 @@
 {
     "search.useParentIgnoreFiles": true,
-    "search.useGlobalIgnoreFiles": true
+    "search.useGlobalIgnoreFiles": true,
+"python.pythonPath": "/home/drmrmelo/lms/env/bin/python"
 }

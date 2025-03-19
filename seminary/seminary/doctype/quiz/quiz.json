@@ -33,7 +33,7 @@
   {
    "fieldname": "question",
    "fieldtype": "Table",
-   "label": "Multiple Choices Question",
+   "label": "Multiple Choices Questions",
    "options": "Quiz Question",
    "reqd": 1
   },

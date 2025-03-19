@@ -6,3 +6,5 @@ tags
 seminary/docs/current
 dist/
 __pycache__/
+.vscode/settings.json
+/.vscode
