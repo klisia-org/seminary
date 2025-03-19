@@ -62,10 +62,10 @@
 				<span v-html="row.answer"></span>
 			</div>
 			<div class="grid grid-cols-2 gap-5">
-				<FormControl v-model="row.marks" :label="__('Marks')" />
+				<FormControl v-model="row.points" :label="__('Points')" />
 				<FormControl
-					v-model="row.marks_out_of"
-					:label="__('Marks out of')"
+					v-model="row.points_out_of"
+					:label="__('Points out of')"
 					:disabled="true"
 				/>
 			</div>
@@ -117,7 +117,7 @@ const props = defineProps({
 })
 
 const submisisonDetails = createDocumentResource({
-	doctype: 'LMS Quiz Submission',
+	doctype: 'Quiz Submission',
 	name: props.submission,
 	auto: true,
 })

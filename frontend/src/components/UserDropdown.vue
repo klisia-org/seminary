@@ -32,8 +32,8 @@
 			</button>
 		</template>
 	</Dropdown>
-
 	<ProfileModal />
+	
 </template>
   
 <script setup>
@@ -41,15 +41,12 @@
 import { Dropdown, FeatherIcon, Avatar } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import { usersStore } from '@/stores/user';
-import { provide, ref, markRaw, computed } from 'vue'
-import ProfileModal from '@/components/ProfileModal.vue'
+import { provide, ref, markRaw, computed, inject } from 'vue'
 import { School, ChevronDown, LogIn, LogOut, Moon, User, Settings, Sun, } from 'lucide-vue-next';
-import { useSettings } from '@/stores/settings'
-import { createDialog } from '@/utils/dialogs'
-
 import { useRouter } from 'vue-router'
+import ProfileModal from '@/components/ProfileModal.vue'
 
-
+const user = inject('$user')
 const router = useRouter()
 
 let { userResource } = usersStore()
@@ -71,54 +68,18 @@ const showProfileDialog = ref(false)
 provide('showProfileDialog', showProfileDialog)
 
 
-const userDropdownOptions = computed(() => {
-	return [
-		{
-			icon: User,
-			label: 'My Profile',
-			onClick: () => {
-				router.push(`/user/${userResource.data?.username}`)
-			},
-			condition: () => {
-				return isLoggedIn
-			},
-		},
-		
-		{
-			icon: Settings,
-			label: 'Settings',
-			onClick: () => {
-				settingsStore.isSettingsOpen = true
-			},
-			condition: () => {
-				return userResource.data?.is_moderator
-			},
-		},
-		
-		{
-			icon: LogOut,
-			label: 'Log out',
-			onClick: () => {
-				logout.submit().then(() => {
-					isLoggedIn = false
-				})
-			},
-			condition: () => {
-				return isLoggedIn
-			},
-		},
-		{
-			icon: LogIn,
-			label: 'Log in',
-			onClick: () => {
-				window.location.href = '/login'
-			},
-			condition: () => {
-				return !isLoggedIn
-			},
-		},
-	]
-})
+const userDropdownOptions = [
+  {
+    icon: 'user',
+    label: 'Profile',
+    onClick: () => (showProfileDialog.value = true),
+  },
+  {
+    icon: 'log-out',
+    label: 'Log out',
+    onClick: () => logout.submit(),
+  },
+]
 
 </script>
   

@@ -23,6 +23,43 @@ import re
 import shutil
 import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
+from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
+
+@frappe.whitelist(allow_guest=True)
+def get_translations():
+	if frappe.session.user != "Guest":
+		language = frappe.db.get_value("User", frappe.session.user, "language")
+	else:
+		language = frappe.db.get_single_value("System Settings", "language")
+	return get_all_translations(language)
+
+@frappe.whitelist()
+def get_file_info(file_url):
+	print("Get File Info called with file_url: ", file_url)
+	"""Get file info for the given file URL."""
+	file_info = frappe.db.get_value(
+		"File", {"file_url": file_url}, ["file_name", "file_size", "file_url"], as_dict=1
+	)
+	return file_info
+
+@frappe.whitelist()
+def save_course(course, course_data):
+	
+	try:
+		if isinstance(course_data, str):
+			course_data = json.loads(course_data)
+		# Update course details
+		frappe.db.set_value('Course Schedule', course, 'short_introduction', course_data['short_introduction'])
+		frappe.db.set_value('Course Schedule', course, 'course_description_for_lms', course_data['course_description_for_lms'])
+		frappe.db.set_value('Course Schedule', course, 'course_image', course_data['course_image']['file_url'] if course_data['course_image'] else None)
+		frappe.db.set_value('Course Schedule', course, 'published', course_data['published'])
+
+		frappe.db.commit()
+		return {"success": True}
+
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Error saving course')
+		return {"success": False, "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)
 def get_user_info():
@@ -40,7 +77,18 @@ def get_user_info():
 	user.is_evaluator = "Instructor" in user.roles
 	user.is_student = "Student" in user.roles
 	user.is_system_manager = "System Manager" in user.roles
+	user.student = frappe.db.get_value("Student", {"user": user.name, "enabled": 1}, "name")
 	return user
+
+@frappe.whitelist()
+def get_instructor_info():
+	instructor = frappe.db.get_value(
+		"Instructor",
+		{"user": frappe.session.user},
+		["name", "instructor_name", "user", "status", "bio", "shortbio", "image"],
+		as_dict=1,
+	)
+	return instructor
 
 @frappe.whitelist(allow_guest=True)
 def get_school_abbr_logo():
@@ -468,6 +516,74 @@ def get_payers_fees(pen):
 		return
 
 @frappe.whitelist()
+def save_course_assessment(course, assessment_data):
+    """Save Course Assessment Criteria.
+
+    :param course: Course.
+    :param assessment_data: Assessment Data (JSON).
+    """
+    import json
+    print("Assessment Data:", assessment_data)
+    print("Course:", course)
+    
+    # If assessment_data is a string, convert it to a dictionary/list
+    if isinstance(assessment_data, str):
+        assessment_data = json.loads(assessment_data)
+
+    # Get existing documents for the course
+    existing_docs = frappe.db.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course},
+        fields=["name"]
+    )
+    existing_doc_names = {doc["name"] for doc in existing_docs}
+    print("Existing docs:", existing_doc_names)
+    
+    for data in assessment_data:
+        # Check if the record exists by verifying if "name" is provided and is in existing_docs.
+        if data.get("name") and data["name"] in existing_doc_names:
+            # Update the existing record
+            doc = frappe.get_doc("Scheduled Course Assess Criteria", data["name"])
+            doc.title = data.get("title", "")
+            doc.assesscriteria_scac = data.get("assesscriteria_scac", "")
+            doc.type = data.get("type", "")
+            doc.weight_scac = data.get("weight_scac", 0)
+            doc.extracredit_scac = data.get("extracredit_scac", "")
+            doc.fudgepoints_scac = data.get("fudgepoints_scac", "")
+            doc.quiz = data.get("quiz", "")
+            doc.assignment = data.get("assignment", "")
+            doc.exam = data.get("exam", "")
+            # These are usually already set, but include them if needed:
+            doc.parent = course
+            doc.parentfield = "courseassescrit_sc"
+            doc.parenttype = "Course Schedule"
+            doc.save(ignore_permissions=True)
+            print("Updated doc:", doc.name)
+        else:
+            # Create a new record if no matching "name" is found.
+            doc = frappe.get_doc({
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": course,
+                "parentfield": "courseassescrit_sc",
+                "parenttype": "Course Schedule",
+                "title": data.get("title", ""),
+                "assesscriteria_scac": data.get("assesscriteria_scac", ""),
+                "type": data.get("type", ""),
+                "weight_scac": data.get("weight_scac", 0),
+                "extracredit_scac": data.get("extracredit_scac", ""),
+                "fudgepoints_scac": data.get("fudgepoints_scac", ""),
+                "quiz": data.get("quiz", ""),
+                "assignment": data.get("assignment", ""),
+                "exam": data.get("exam", ""),
+            })
+            doc.insert(ignore_permissions=True)
+            print("Created new doc:", doc.name)
+    
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
 def get_scholarship(student):
 	scholarship = frappe.get_all("Payers Fee Category PE", filters={"stu_link": student, "pf_active": 1}, fields=["scholarship"])
 	return scholarship
@@ -573,11 +689,11 @@ def copy_data_to_scheduled_course_roster(doc, method):
 		items = []
 		criteria = []
 		criteria = frappe.db.sql(
-			"""select distinct scac.assesscriteria_scac, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
+			"""select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""", coursesc_ce, as_list=1)
 		rows = frappe.db.sql(
-			"""select count(distinct scac.assesscriteria_scac) from `tabScheduled Course Assess Criteria` scac
+			"""select count(distinct scac.name) from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
 			scac.parent = %s""", coursesc_ce)[0][0]
 		i = 0
@@ -773,6 +889,37 @@ def get_inv_data_nayear():
 			i += 1
 			print("Invoice Created")
 		return "done"
+
+@frappe.whitelist()
+def insert_cs_assessment(criteria):
+    # If criteria is already a dict, use it directly.
+    # If it's a string, then parse it.
+    if isinstance(criteria, str):
+        criteria = json.loads(criteria)
+    
+    # Now, criteria is a dict and you can work with it:
+    frappe.logger().info(f"Received criteria: {criteria}")
+    
+    # Insert your logic to save the assessment, for example:
+    doc = frappe.get_doc({
+        "doctype": "Scheduled Course Assess Criteria",
+        "parent": criteria.get("parent"),
+        "parenttype": "Course Schedule",
+        "parentfield": "courseassescrit_sc",
+        "title": criteria.get("title"),
+        "assesscriteria_scac": criteria.get("assesscriteria_scac"),
+        "type": criteria.get("type"),
+        "weight_scac": criteria.get("weight_scac"),
+        "quiz": criteria.get("quiz"),
+        "exam": criteria.get("exam"),
+        "assignment": criteria.get("assignment"),
+        "extracredit_scac": criteria.get("extracredit_scac"),
+        "fudgepoints_scac": criteria.get("fudgepoints_scac"),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    
+    return {"success": True}
 
 @frappe.whitelist()
 def get_inv_data_monthly():
@@ -1094,8 +1241,9 @@ def active_term():
 	
 @frappe.whitelist()
 def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+	course_title = frappe.get_value("Course Schedule", course, "course")
 	values = frappe._dict(
-		{"title": chapter_title, "course": course, "is_scorm_package": is_scorm_package}
+		{"chapter_title": chapter_title, "coursesc": course, "is_scorm_package": is_scorm_package, "course_title": course_title}
 	)
 
 	if is_scorm_package:
@@ -1120,7 +1268,7 @@ def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=
 	chapter.save()
 
 	if is_scorm_package and not len(chapter.lessons):
-		add_lesson(lesson_title, chapter.name, course)
+		add_lesson(chapter_title, chapter.name, course)
 
 	return chapter
 
@@ -1193,13 +1341,13 @@ def get_launch_file(extract_path):
 	return launch_file
 
 
-def add_lesson(title, chapter, course):
-	lesson = frappe.new_doc("Course Schedule Lesson")
+def add_lesson(lesson_title, chapter, course_sc):
+	lesson = frappe.new_doc("Course Lesson")
 	lesson.update(
 		{
-			"title": title,
+			"title": lesson_title,
 			"chapter": chapter,
-			"course": course,
+			"course": course_sc,
 		}
 	)
 	lesson.insert()
@@ -1227,7 +1375,7 @@ def delete_chapter(chapter):
 
 	frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
 	frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
-	frappe.db.delete("Course Schedule Course Lesson", {"chapter": chapter})
+	frappe.db.delete("Course Lesson", {"chapter": chapter})
 	frappe.db.delete("Course Schedule Chapter", chapter)
 
 
@@ -1246,8 +1394,6 @@ def mark_lesson_progress(course, chapter_number, lesson_number):
 		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson_number}, "lesson"
 	)
 	save_progress(lesson_name, course)
-
-
 
 
 @frappe.whitelist()
@@ -1361,4 +1507,10 @@ def delete_lesson(lesson, chapter):
 	frappe.db.delete("Course Schedule Progress", {"lesson": lesson})
 
 	# Delete Lesson
-	frappe.db.delete("Course Schedule Lesson", lesson)
+	frappe.db.delete("Course Lesson", lesson)
+
+@frappe.whitelist()
+def delete_documents(doctype, documents):
+	frappe.only_for("Seminary Manager")
+	for doc in documents:
+		frappe.delete_doc(doctype, doc)

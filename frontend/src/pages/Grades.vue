@@ -1,7 +1,14 @@
 <template>
+    <div v-if="isStudent">
+
+        <h2 class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+        My Transcripts
+        </h2>
 	<div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
 	  <div v-for="(group, program) in sortedGroupedData" :key="program">
-		<h2>{{ program }}</h2>
+        <h2 class="text-lg font-bold text-gray-700">{{ program }}</h2>
+        <br>
+       
 		<ListView :columns="tableData.columns" :rows="group" :options="{
 		  selectable: false,
 		  showTooltip: false,
@@ -18,21 +25,34 @@
 		<br>
 	  </div>
 	</div>
+    </div>
 	<div v-else>
 	  <MissingData message="No grades found" />
+	</div>
+    <div v-else class="flex flex-col items-center justify-center">
+		<p class="text-lg font-bold text-gray-500">Individual Student Transcripts are only displayed for Students</p>
 	</div>
   </template>
 
 <script setup>
 import { Dropdown, FeatherIcon, ListView, createResource, createListResource, ListHeader, ListHeaderItem, ListRow, ListRowItem, Button } from 'frappe-ui';
-import { studentStore } from '@/stores/student';
-import { reactive, ref, computed } from 'vue';
+import { reactive, ref, computed, inject } from 'vue';
 import MissingData from '@/components/MissingData.vue';
-
-const { getCurrentProgram, getStudentInfo } = studentStore();
-
-let studentInfo = getStudentInfo().value;
-let currentProgram = getCurrentProgram().value;
+import { usersStore} from '../stores/user'
+   
+    
+let studentInfo = usersStore()   
+   
+   
+const user = inject('$user')
+  
+const start = ref(0)
+    
+let userResource = usersStore()
+    
+let isStudent = user.data.is_student
+   
+let student = user.data.student
 
 const allPrograms = ref([]);
 const selectedProgram = ref("");
@@ -55,7 +75,7 @@ const student_programs = createResource({
   url: "seminary.seminary.api.get_student_programs",
   makeParams() {
     return {
-      student: studentInfo.name
+      student: student
     }
   },
   onSuccess: (response) => {

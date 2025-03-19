@@ -4,31 +4,14 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<CertificationLinks :courseName="courseName" />
+			
 		</header>
 		<div class="grid md:grid-cols-[70%,30%] h-screen">
 			<div
-				v-if="lesson.data.no_preview"
-				class="border-r text-center pt-10 px-5 md:px-0 pb-10"
-			>
-				<p class="mb-4">
-					{{
-						__(
-							'This lesson is not available for preview. Please enroll in the course to access it.'
-						)
-					}}
-				</p>
-				<Button v-if="user.data" @click="enrollStudent()" variant="solid">
-					{{ __('Start Learning') }}
-				</Button>
-				<Button v-else @click="redirectToLogin()">
-					{{ __('Login') }}
-				</Button>
-			</div>
-			<div v-else class="border-r container pt-5 pb-10 px-5">
+				class="border-r container pt-5 pb-10 px-5">
 				<div class="flex flex-col md:flex-row md:items-center justify-between">
 					<div class="text-3xl font-semibold text-ink-gray-9">
-						{{ lesson.data.title }}
+						{{ lesson.data.lesson_title }}
 					</div>
 					<div class="flex items-center mt-2 md:mt-0">
 						<router-link
@@ -47,12 +30,12 @@
 									<ChevronLeft class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ __('Previous') }}
+									{{ ('Previous') }}
 								</span>
 							</Button>
 						</router-link>
 						<router-link
-							v-if="allowEdit()"
+							v-if="user?.data?.is_moderator || is_instructor()"
 							:to="{
 								name: 'LessonForm',
 								params: {
@@ -62,7 +45,7 @@
 								},
 							}"
 						>
-							<Button class="mr-2">
+							<Button variant="solid" class="mr-2">
 								{{ __('Edit') }}
 							</Button>
 						</router-link>
@@ -82,7 +65,7 @@
 									<ChevronRight class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ __('Next') }}
+									{{ ('Next') }}
 								</span>
 							</Button>
 						</router-link>
@@ -94,39 +77,34 @@
 							}"
 						>
 							<Button>
-								{{ __('Back to Course') }}
+								{{ ('Back to Course') }}
 							</Button>
 						</router-link>
 					</div>
 				</div>
 
-				<div class="flex items-center mt-2">
-					<span
-						class="h-6 mr-1"
-						:class="{
-							'avatar-group overlap': lesson.data.instructors?.length > 1,
-						}"
-					>
-						<UserAvatar
-							v-for="instructor in lesson.data.instructors"
-							:user="instructor"
-						/>
-					</span>
-					<CourseInstructors
-						v-if="lesson.data?.instructors"
-						:instructors="lesson.data.instructors"
-					/>
-				</div>
+				<div v-for="instructor in lesson.data.instructors" class="flex items-center">
+						<br>
+						{{ instructor.instructor_name }}
+					
+							
+								<InstructorAvatar
+									:instructor="instructor"
+								/>
+								<br>
+							
+											
+						</div>
 				<div
 					v-if="
 						lesson.data.instructor_content &&
 						JSON.parse(lesson.data.instructor_content)?.blocks?.length > 1 &&
-						allowInstructorContent()
+						(user?.data?.is_moderator || is_instructor())
 					"
 					class="bg-surface-gray-2 p-3 rounded-md mt-6"
 				>
 					<div class="text-ink-gray-5 font-medium">
-						{{ __('Instructor Notes') }}
+						{{ ('Instructor Notes') }}
 					</div>
 					<div
 						id="instructor-content"
@@ -153,29 +131,21 @@
 						v-if="lesson.data?.body"
 						:content="lesson.data.body"
 						:youtube="lesson.data.youtube"
-						:quizId="lesson.data.quiz_id"
+						
 					/>
 				</div>
-				<div class="mt-20">
-					<Discussions
-						v-if="allowDiscussions"
-						:title="'Questions'"
-						:doctype="'Course Lesson'"
-						:docname="lesson.data.name"
-						:key="lesson.data.name"
-					/>
-				</div>
+			
 			</div>
 			<div class="sticky top-10">
 				<div class="bg-surface-menu-bar py-5 px-2 border-b">
 					<div class="text-lg font-semibold text-ink-gray-9">
-						{{ lesson.data.course_title }}
+						{{ lesson.data.lesson_title }}
 					</div>
 					<div
 						v-if="user && lesson.data.membership"
 						class="text-sm mt-4 mb-2 text-ink-gray-5"
 					>
-						{{ Math.ceil(lessonProgress) }}% {{ __('completed') }}
+						{{ Math.ceil(lessonProgress) }}% {{ ('completed') }}
 					</div>
 
 					<ProgressBar
@@ -196,16 +166,14 @@
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, watch, inject, ref, onMounted, onBeforeUnmount } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
-import UserAvatar from '@/components/UserAvatar.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-vue-next'
-import Discussions from '@/components/Discussions.vue'
 import { getEditorTools, updateDocumentTitle } from '../utils'
 import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
-import CourseInstructors from '@/components/CourseInstructors.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
-import CertificationLinks from '@/components/CertificationLinks.vue'
+import InstructorAvatar from '@/components/InstructorAvatar.vue'
+
 
 const user = inject('$user')
 const router = useRouter()
@@ -236,8 +204,9 @@ onMounted(() => {
 	startTimer()
 })
 
+
 const lesson = createResource({
-	url: 'lms.lms.utils.get_lesson',
+	url: 'seminary.seminary.utils.get_lesson',
 	cache: ['lesson', props.courseName, props.chapterNumber, props.lessonNumber],
 	makeParams(values) {
 		return {
@@ -265,15 +234,9 @@ const lesson = createResource({
 				'instructor-content',
 				data.instructor_content
 			)
-		editor.value?.isReady.then(() => {
-			checkIfDiscussionsAllowed()
-		})
+	
 
-		if (!editor.value && data.body) {
-			const quizRegex = /\{\{ Quiz\(".*"\) \}\}/
-			const hasQuiz = quizRegex.test(data.body)
-			if (!hasQuiz) allowDiscussions.value = true
-		}
+		
 	},
 })
 
@@ -289,7 +252,7 @@ const renderEditor = (holder, content) => {
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed
 	})
 }
-
+console.log(lesson)
 const markProgress = () => {
 	if (user.data && lesson.data && !lesson.data.progress) {
 		progress.submit()
@@ -297,12 +260,13 @@ const markProgress = () => {
 }
 
 const progress = createResource({
-	url: 'lms.lms.doctype.course_lesson.course_lesson.save_progress',
+	url: 'seminary.seminary.doctype.course_lesson.course_lesson.save_progress',
 	makeParams() {
 		return {
 			lesson: lesson.data.name,
 			course: props.courseName,
 		}
+		
 	},
 	onSuccess(data) {
 		lessonProgress.value = data
@@ -316,7 +280,7 @@ const breadcrumbs = computed(() => {
 		route: { name: 'CourseDetail', params: { courseName: props.courseName } },
 	})
 	items.push({
-		label: lesson?.data?.title,
+		label: lesson?.data?.lesson_title,
 		route: {
 			name: 'Lesson',
 			params: {
@@ -364,31 +328,18 @@ onBeforeUnmount(() => {
 	clearInterval(timerInterval)
 })
 
-const checkIfDiscussionsAllowed = () => {
-	let quizPresent = false
-	JSON.parse(lesson.data?.content)?.blocks?.forEach((block) => {
-		if (block.type === 'quiz') quizPresent = true
-	})
 
-	if (
-		!quizPresent &&
-		(lesson.data?.membership ||
-			user.data?.is_moderator ||
-			user.data?.is_instructor)
-	)
-		allowDiscussions.value = true
-}
 
-const allowEdit = () => {
-	if (user.data?.is_moderator) return true
-	if (lesson.data?.instructors?.includes(user.data?.name)) return true
-	return false
-}
-
-const allowInstructorContent = () => {
-	if (user.data?.is_moderator) return true
-	if (lesson.data?.instructors?.includes(user.data?.name)) return true
-	return false
+const is_instructor = () => {
+	let user_is_instructor = false
+	if (lesson.data?.instructors) {
+		lesson.data.instructors.forEach((instructor) => {
+			if (!user_is_instructor && instructor.user == user.data?.name) {
+				user_is_instructor = true
+			}
+		})
+	}
+	return user_is_instructor
 }
 
 const enrollment = createResource({
@@ -396,7 +347,7 @@ const enrollment = createResource({
 	makeParams() {
 		return {
 			doc: {
-				doctype: 'LMS Enrollment',
+				doctype: 'Scheduled Course Roster',
 				course: props.courseName,
 				member: user.data?.name,
 			},
@@ -416,17 +367,25 @@ const enrollStudent = () => {
 }
 
 const redirectToLogin = () => {
-	window.location.href = `/login?redirect-to=/lms/courses/${props.courseName}`
+	window.location.href = `/login?redirect-to=/seminary/courses/${props.courseName}`
 }
 
 const pageMeta = computed(() => {
 	return {
-		title: lesson.data?.title,
-		description: lesson.data?.course,
+		title: lesson.data?.lesson_title,
+		description: lesson.data?.course_sc,
 	}
 })
 
 updateDocumentTitle(pageMeta)
+const isValidJSON = (str) => {
+	try {
+		JSON.parse(str);
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
 </script>
 <style>
 .avatar-group {

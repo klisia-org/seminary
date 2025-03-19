@@ -34,7 +34,7 @@ const props = defineProps({
 const title = createResource({
 	url: 'frappe.client.get_value',
 	params: {
-		doctype: 'LMS Quiz',
+		doctype: 'Quiz',
 		fieldname: 'title',
 		filters: {
 			name: props.quizID,

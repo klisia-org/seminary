@@ -7,14 +7,6 @@
 				>
 					<Breadcrumbs class="h-7" :items="breadcrumbs" />
 					<div class="flex items-center mt-3 md:mt-0">
-						<Button v-if="courseResource.data?.name" @click="trashCourse()">
-							<template #prefix>
-								<Trash2 class="w-4 h-4 stroke-1.5" />
-							</template>
-							<span>
-								{{ __('Delete') }}
-							</span>
-						</Button>
 						<Button variant="solid" @click="submitCourse()" class="ml-2">
 							<span>
 								{{ __('Save') }}
@@ -28,7 +20,7 @@
 							{{ __('Details') }}
 						</div>
 						<FormControl
-							v-model="course.title"
+							v-model="course.course"
 							:label="__('Title')"
 							class="mb-4"
 							:required="true"
@@ -50,8 +42,8 @@
 								<span class="text-ink-red-3">*</span>
 							</div>
 							<TextEditor
-								:content="course.description"
-								@change="(val) => (course.description = val)"
+								:content="course.course_description_for_lms"
+								@change="(val) => (course.course_description_for_lms = val)"
 								:editable="true"
 								:fixedMenu="true"
 								editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
@@ -105,53 +97,20 @@
 								</div>
 							</div>
 						</div>
-						<FormControl
-							v-model="course.video_link"
-							:label="__('Preview Video')"
-							:placeholder="
-								__(
-									'Paste the youtube link of a short video introducing the course'
-								)
-							"
-							class="mb-4"
-						/>
+					
 						<div class="mb-4">
-							<div class="mb-1.5 text-xs text-ink-gray-5">
-								{{ __('Tags') }}
-							</div>
-							<div class="flex items-center">
-								<div
-									v-if="course.tags"
-									v-for="tag in course.tags?.split(', ')"
-									class="flex items-center bg-surface-gray-2 text-ink-gray-7 p-2 rounded-md mr-2"
-								>
-									{{ tag }}
-									<X
-										class="stroke-1.5 w-3 h-3 ml-2 cursor-pointer"
-										@click="removeTag(tag)"
-									/>
-								</div>
-								<FormControl
-									v-model="newTag"
-									:placeholder="__('Add a keyword and then press enter')"
-									class="w-72"
-									@keyup.enter="updateTags()"
-									id="tags"
-								/>
-							</div>
+							<MultiSelect
+								v-model="instructorNames"
+								doctype="Instructor"
+								:label="__('Instructors')"
+								:filters="{ Status: 'Active' }"
+								:required="true"
+							/>
 						</div>
-						<div class="w-1/2 mb-4">
-							
-						<MultiSelect
-							v-model="instructors"
-							doctype="User"
-							:label="__('Instructors')"
-							:filters="{ ignore_user_type: 1 }"
-							:required="true"
-						/>
 					</div>
 					<div class="container border-t">
-						<div class="text-lg font-semibold mt-5 mb-4">
+						<div v-if="user.data?.is_moderator"
+							class="text-lg font-semibold mt-5 mb-4">
 							{{ __('Settings') }}
 						</div>
 						<div class="grid grid-cols-2 gap-10 mb-4">
@@ -164,25 +123,20 @@
 									v-model="course.published"
 									:label="__('Published')"
 								/>
-								
 							</div>
-						
 						</div>
 					</div>
-			
 				</div>
 			</div>
 			<div class="border-l pt-5">
 				<CourseOutline
 					v-if="courseResource.data"
 					:courseName="courseResource.data.name"
-					:title="course.title"
+					:title="course.course"
 					:allowEdit="true"
 				/>
 			</div>
 		</div>
-	</div>
-	
 	</div>
 </template>
 <script setup>
@@ -212,14 +166,16 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
+import { createDialog } from '@/utils/dialogs.js'
 
 const user = inject('$user')
 const newTag = ref('')
 const router = useRouter()
 const instructors = ref([])
+const instructorNames = ref([])
 const settingsStore = useSettings()
 const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
+const $dialog  = createDialog
 
 const props = defineProps({
 	courseName: {
@@ -228,31 +184,16 @@ const props = defineProps({
 })
 
 const course = reactive({
-	title: '',
+	course: '',
 	short_introduction: '',
-	description: '',
-	video_link: '',
+	course_description_for_lms: '',
 	course_image: null,
-	
 	published: false,
-	
-	evaluator: '',
 })
 
 onMounted(() => {
-	if (
-		props.courseName == 'new' &&
-		!user.data?.is_moderator &&
-		!user.data?.is_instructor
-	) {
-		router.push({ name: 'Courses' })
-	}
-
-	if (props.courseName !== 'new') {
-		courseResource.reload()
-	} else {
-		capture('course_form_opened')
-	}
+	console.log('Mounted: courseName =', props.courseName)
+	courseResource.reload()
 	window.addEventListener('keydown', keyboardShortcut)
 })
 
@@ -271,39 +212,28 @@ onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
 })
 
-const courseCreationResource = createResource({
-	url: 'frappe.client.insert',
-	makeParams(values) {
-		return {
-			doc: {
-				doctype: 'Course Schedule',
-				image: course.course_image?.file_url || '',
-				instructors: instructors.value.map((instructor) => ({
-					instructor: instructor,
-				})),
-				...values,
-			},
-		}
-	},
-})
 
-const courseEditResource = createResource({
-	url: 'frappe.client.set_value',
-	auto: false,
-	makeParams(values) {
-		return {
-			doctype: 'Course Schedule',
-			name: values.course,
-			fieldname: {
-				image: course.course_image?.file_url || '',
-				instructors: instructors.value.map((instructor) => ({
-					instructor: instructor,
-				})),
-				...course,
-			},
-		}
-	},
-})
+
+// const instructorEditResource = createResource({
+// 	url: 'frappe.client.set_value',
+// 	auto: false,
+// 	makeParams(values) {
+// 		return {
+// 			doctype: 'Course Schedule Instructors',
+// 			parent: values.course,
+// 			fieldname: {
+// 				instructor1: instructors.value.map((instructor, index) => ({
+// 					instructor: instructor.instructor,
+// 					idx: index + 1,
+// 					parent: values.course,
+// 					parentfield: 'instructor1',
+// 					parenttype: 'Course Schedule',
+// 					user: instructor.user,
+// 				})),
+// 			},
+// 		}
+// 	},
+// })
 
 const courseResource = createResource({
 	url: 'frappe.client.get',
@@ -315,26 +245,33 @@ const courseResource = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
+		console.log('courseResource onSuccess: data =', data)
+		if (!data) {
+			console.error('No data received from courseResource')
+			return
+		}
 		Object.keys(data).forEach((key) => {
-			if (key == 'instructors') {
+			if (key == 'instructor1') {
 				instructors.value = []
-				data.instructors.forEach((instructor) => {
-					instructors.value.push(instructor.instructor)
+				instructorNames.value = []
+				data.instructor1.forEach((instructor) => {
+					instructors.value.push(instructor)
+					instructorNames.value.push(instructor.instructor)
 				})
 			} else if (Object.hasOwn(course, key)) course[key] = data[key]
 		})
-		let checkboxes = [
-			'published',
-			
-		]
+		let checkboxes = ['published']
 		for (let idx in checkboxes) {
 			let key = checkboxes[idx]
 			course[key] = course[key] ? true : false
 		}
 
-		if (data.image) imageResource.reload({ image: data.image })
+		if (data.course_image) imageResource.reload({ image: data.course_image })
 		check_permission()
 	},
+	onError(err) {
+		console.error('courseResource onError:', err)
+	}
 })
 
 const imageResource = createResource({
@@ -346,86 +283,45 @@ const imageResource = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
+		console.log('imageResource onSuccess: data =', data)
 		course.course_image = data
 	},
+	onError(err) {
+		console.error('imageResource onError:', err)
+	}
 })
 
 const submitCourse = () => {
 	if (courseResource.data) {
-		courseEditResource.submit(
-			{
+		fetch('/api/method/seminary.seminary.api.save_course', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
 				course: courseResource.data.name,
-			},
-			{
-				onSuccess() {
-					showToast('Success', 'Course updated successfully', 'check')
-				},
-				onError(err) {
-					showToast('Error', err.messages?.[0] || err, 'x')
-				},
-			}
-		)
-	} else {
-		courseCreationResource.submit(course, {
-			onSuccess(data) {
-				capture('course_created')
-				showToast('Success', 'Course created successfully', 'check')
-				/* if (!settingsStore.onboardingDetails.data?.is_onboarded) {
-					settingsStore.onboardingDetails.reload()
-				} */
-				router.push({
-					name: 'CourseForm',
-					params: { courseName: data.name },
-				})
-			},
-			onError(err) {
-				showToast('Error', err.messages?.[0] || err, 'x')
-			},
+				course_data: course,
+			}),
 		})
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			return response.json();
+		})
+		.then((data) => {
+			if (data.success) {
+				showToast('Success', 'Course updated successfully', 'check');
+			} else {
+				showToast('Error', data.message || 'An error occurred', 'x');
+			}
+		})
+		.catch((error) => {
+			console.error('Fetch error:', error);
+			showToast('Error', error.message || 'An error occurred', 'x');
+		});
 	}
-}
-
-const deleteCourse = createResource({
-	url: 'seminary.seminary.api.delete_course',
-	makeParams(values) {
-		return {
-			course: props.courseName,
-		}
-	},
-	onSuccess() {
-		showToast(__('Success'), __('Course deleted successfully'), 'check')
-		router.push({ name: 'Courses' })
-	},
-})
-
-const trashCourse = () => {
-	$dialog({
-		title: __('Delete Course'),
-		message: __(
-			'Deleting the course will also delete all its chapters and lessons. Are you sure you want to delete this course?'
-		),
-		actions: [
-			{
-				label: __('Delete'),
-				theme: 'red',
-				variant: 'solid',
-				onClick(close) {
-					deleteCourse.submit()
-					close()
-				},
-			},
-		],
-	})
-}
-
-watch(
-	() => props.courseName !== 'new',
-	(newVal) => {
-		if (newVal) {
-			courseResource.reload()
-		}
-	}
-)
+};
 
 const validateFile = (file) => {
 	let extension = file.name.split('.').pop().toLowerCase()
@@ -433,8 +329,6 @@ const validateFile = (file) => {
 		return __('Only image file is allowed.')
 	}
 }
-
-
 
 const saveImage = (file) => {
 	course.course_image = file
@@ -444,19 +338,21 @@ const removeImage = () => {
 	course.course_image = null
 }
 
-
-
 const check_permission = () => {
+	console.log('check_permission: user.data =', user.data)
+	console.log('check_permission: instructors.value =', instructors.value)
 	let user_is_instructor = false
 	if (user.data?.is_moderator) return
 
 	instructors.value.forEach((instructor) => {
-		if (!user_is_instructor && instructor == user.data?.name) {
+		if (!user_is_instructor && instructor.user == user.data?.name) {
 			user_is_instructor = true
 		}
 	})
 
+	console.log('check_permission: user_is_instructor =', user_is_instructor)
 	if (!user_is_instructor) {
+		console.log('Redirecting to Courses due to insufficient permissions')
 		router.push({ name: 'Courses' })
 	}
 }
@@ -470,12 +366,12 @@ const breadcrumbs = computed(() => {
 	]
 	if (courseResource.data) {
 		crumbs.push({
-			label: course.title,
+			label: course.course,
 			route: { name: 'CourseDetail', params: { courseName: props.courseName } },
 		})
 	}
 	crumbs.push({
-		label: props.courseName == 'new' ? 'New Course' : 'Edit Course',
+		label: 'Edit Course',
 		route: { name: 'CourseForm', params: { courseName: props.courseName } },
 	})
 	return crumbs
@@ -483,8 +379,8 @@ const breadcrumbs = computed(() => {
 
 const pageMeta = computed(() => {
 	return {
-		title: 'Create a Course',
-		description: 'Create or edit a course for your learning system.',
+		title: 'Edit Course',
+		description: 'Edit a course for your learning system.',
 	}
 })
 

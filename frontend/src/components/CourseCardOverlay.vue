@@ -4,9 +4,8 @@
 			v-if="course.data.video_link"
 			:src="video_link"
 			class="rounded-t-md min-h-56 w-full"
-		></iframe>
+		/>
 		<div class="p-5">
-			
 			<div v-if="course.data.membership" class="space-y-2">
 				<router-link
 					:to="{
@@ -24,7 +23,7 @@
 				>
 					<Button variant="solid" size="md" class="w-full">
 						<span>
-							{{ __('Continue Learning') }}
+							{{ ('Continue Learning') }}
 						</span>
 					</Button>
 				</router-link>
@@ -32,6 +31,17 @@
 			</div>
 			
 			
+			<Button
+				v-else
+				@click="enrollStudent()"
+				variant="solid"
+				class="w-full"
+				size="md"
+			>
+				<span>
+					{{ ('Start Learning') }}
+				</span>
+			</Button>
 			
 			<router-link
 				v-if="user?.data?.is_moderator || is_instructor()"
@@ -44,28 +54,42 @@
 			>
 				<Button variant="subtle" class="w-full mt-2" size="md">
 					<span>
-						{{ __('Edit') }}
+						{{ ('Edit') }}
+					</span>
+				</Button>
+			</router-link>
+			<router-link
+				v-if="user?.data?.is_moderator || is_instructor()"
+				:to="{
+					name: 'CourseAssessment',
+					params: {
+						courseName: course.data.name,
+					},
+				}"
+			>
+				<Button variant="subtle" class="w-full mt-2" size="md">
+					<span>
+						{{ ('Configure Assessments') }}
 					</span>
 				</Button>
 			</router-link>
 			<div class="space-y-4">
 				<div class="mt-8 font-medium text-ink-gray-9">
-					{{ __('This course has:') }}
+					{{ ('This course has:') }}
 				</div>
 				<div class="flex items-center text-ink-gray-9">
 					<BookOpen class="h-4 w-4 stroke-1.5" />
 					<span class="ml-2">
-						{{ course.data.lessons }} {{ __('Lessons') }}
+						{{ course.data.lessons }} {{ ('Lessons') }}
 					</span>
 				</div>
 				<div class="flex items-center text-ink-gray-9">
 					<Users class="h-4 w-4 stroke-1.5" />
 					<span class="ml-2">
 						{{ formatAmount(course.data.enrollments) }}
-						{{ __('Enrolled Students') }}
+						{{ ('Enrolled Students') }}
 					</span>
 				</div>
-				
 				
 				
 			</div>
@@ -77,7 +101,7 @@ import { BookOpen, Users, Star, GraduationCap } from 'lucide-vue-next'
 import { computed, inject } from 'vue'
 import { Button, createResource, Tooltip } from 'frappe-ui'
 import { showToast, formatAmount } from '@/utils/'
-import { capture } from '@/telemetry'
+
 import { useRouter } from 'vue-router'
 
 
@@ -98,17 +122,44 @@ const video_link = computed(() => {
 	return null
 })
 
-
+function enrollStudent() {
+	if (!user.data) {
+		showToast(
+			__('Please Login'),
+			__('You need to login first to enroll for this course'),
+			'alert-circle'
+		)
+		setTimeout(() => {
+			window.location.href = `/login?redirect-to=${window.location.pathname}`
+		}, 2000)
+	} else {
+		
+				setTimeout(() => {
+					router.push({
+						name: 'Lesson',
+						params: {
+							courseName: props.course.data.name,
+							chapterNumber: 1,
+							lessonNumber: 1,
+						},
+					})
+				}, 2000)
+			
+	}
+}
 
 const is_instructor = () => {
 	let user_is_instructor = false
 	props.course.data.instructors.forEach((instructor) => {
-		if (!user_is_instructor && instructor.name == user.data?.name) {
+		if (!user_is_instructor && instructor.user == user.data?.name) {
 			user_is_instructor = true
 		}
 	})
+    console.log(user_is_instructor)
 	return user_is_instructor
 }
+
+
 
 
 </script>

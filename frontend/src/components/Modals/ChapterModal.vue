@@ -2,7 +2,7 @@
 	<Dialog
 		v-model="show"
 		:options="{
-			chapter_title: chapterDetail ? __('Edit Chapter') : __('Add Chapter'),
+			title: chapterDetail ? __('Edit Chapter') : __('Add Chapter'),
 			size: 'lg',
 			actions: [
 				{
@@ -79,8 +79,12 @@ import {
 } from 'frappe-ui'
 import { reactive, watch } from 'vue'
 import { showToast, getFileSize } from '@/utils/'
+import { capture } from '@/telemetry'
 import { FileText, X } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
+import {createDialog} from '@/utils/dialogs'
+
+const $dialog = createDialog
 
 const show = defineModel()
 const outline = defineModel('outline')
@@ -97,7 +101,7 @@ const props = defineProps({
 })
 
 const chapter = reactive({
-	chapter_title: '',
+	title: '',
 	is_scorm_package: 0,
 	scorm_package: null,
 })
@@ -170,10 +174,10 @@ const addChapter = async (close) => {
 
 const validateChapter = () => {
 	if (!chapter.chapter_title) {
-		return __('Title is required')
+		return __('Chapter Title is required')
 	}
 	if (chapter.is_scorm_package && !chapter.scorm_package) {
-		return __('Please upload a SCORM package')
+		return __('Please upload a SCORM package or uncheck the SCORM package option')
 	}
 }
 
@@ -189,7 +193,7 @@ const editChapter = (close) => {
 		{
 			validate() {
 				if (!chapter.chapter_title) {
-					return 'Title is required'
+					return 'Chapter Title is required'
 				}
 			},
 			onSuccess() {

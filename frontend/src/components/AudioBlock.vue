@@ -120,6 +120,7 @@ watch(isPlaying, (newVal) => {
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
 	input[type='range'] {
+		appearance: none;
 		overflow: hidden;
 		width: 150px;
 		-webkit-appearance: none;

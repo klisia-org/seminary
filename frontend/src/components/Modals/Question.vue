@@ -46,15 +46,15 @@
 						/>
 					</div>
 					<FormControl
-						v-model="question.marks"
-						:label="__('Marks')"
+						v-model="question.points"
+						:label="__('Points')"
 						type="number"
 					/>
 					<FormControl
 						:label="__('Type')"
 						v-model="question.type"
 						type="select"
-						:options="['Choices', 'User Input', 'Open Ended']"
+						:options="['Choices', 'User Input']"
 						class="pb-2"
 						:required="true"
 					/>
@@ -92,11 +92,11 @@
 					<Link
 						v-model="existingQuestion.question"
 						:label="__('Select a question')"
-						doctype="LMS Question"
+						doctype="Question"
 					/>
 					<FormControl
-						v-model="existingQuestion.marks"
-						:label="__('Marks')"
+						v-model="existingQuestion.points"
+						:label="__('Points')"
 						type="number"
 					/>
 				</div>
@@ -117,12 +117,12 @@ const editMode = ref(false)
 
 const existingQuestion = reactive({
 	question: '',
-	marks: 0,
+	points: 0,
 })
 const question = reactive({
 	question: '',
 	type: 'Choices',
-	marks: 0,
+	points: 0,
 })
 
 const populateFields = () => {
@@ -153,7 +153,7 @@ const questionData = createResource({
 	url: 'frappe.client.get',
 	makeParams() {
 		return {
-			doctype: 'LMS Question',
+			doctype: 'Question',
 			name: props.questionDetail.question,
 		}
 	},
@@ -170,7 +170,7 @@ const questionData = createResource({
 				: false
 			counter++
 		}
-		question.marks = props.questionDetail.marks
+		question.points = props.questionDetail.points
 	},
 })
 
@@ -179,15 +179,15 @@ watch(show, () => {
 		editMode.value = false
 		if (props.questionDetail.question) questionData.fetch()
 		else {
-			;(question.question = ''), (question.marks = 0)
+			;(question.question = ''), (question.points = 0)
 			question.type = 'Choices'
 			existingQuestion.question = ''
-			existingQuestion.marks = 0
+			existingQuestion.points = 0
 			questionType.value = null
 			populateFields()
 		}
 
-		if (props.questionDetail.marks) question.marks = props.questionDetail.marks
+		if (props.questionDetail.points) question.points = props.questionDetail.points
 	}
 })
 
@@ -196,10 +196,10 @@ const questionRow = createResource({
 	makeParams(values) {
 		return {
 			doc: {
-				doctype: 'LMS Quiz Question',
+				doctype: 'Quiz Question',
 				parent: quiz.value.data.name,
 				parentfield: 'questions',
-				parenttype: 'LMS Quiz',
+				parenttype: 'Quiz',
 				...values,
 			},
 		}
@@ -211,7 +211,7 @@ const questionCreation = createResource({
 	makeParams(values) {
 		return {
 			doc: {
-				doctype: 'LMS Question',
+				doctype: 'Question',
 				...question,
 			},
 		}
@@ -228,7 +228,7 @@ const addQuestion = (close) => {
 		addQuestionRow(
 			{
 				question: existingQuestion.question,
-				marks: existingQuestion.marks,
+				points: existingQuestion.points,
 			},
 			close
 		)
@@ -240,7 +240,7 @@ const addQuestion = (close) => {
 					addQuestionRow(
 						{
 							question: data.name,
-							marks: question.marks,
+							points: question.points,
 						},
 						close
 					)
@@ -278,7 +278,7 @@ const questionUpdate = createResource({
 	auto: false,
 	makeParams(values) {
 		return {
-			doctype: 'LMS Question',
+			doctype: 'Question',
 			name: questionData.data?.name,
 			fieldname: {
 				...question,
@@ -287,15 +287,15 @@ const questionUpdate = createResource({
 	},
 })
 
-const marksUpdate = createResource({
+const pointsUpdate = createResource({
 	url: 'frappe.client.set_value',
 	auto: false,
 	makeParams(values) {
 		return {
-			doctype: 'LMS Quiz Question',
+			doctype: 'Quiz Question',
 			name: props.questionDetail.name,
 			fieldname: {
-				marks: question.marks,
+				points: question.points,
 			},
 		}
 	},
@@ -306,7 +306,7 @@ const updateQuestion = (close) => {
 		{},
 		{
 			onSuccess() {
-				marksUpdate.submit(
+				pointsUpdate.submit(
 					{},
 					{
 						onSuccess() {

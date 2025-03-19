@@ -186,15 +186,21 @@ def get_all_users():
 
 	return {user.name: user for user in users}
 
-
+@frappe.whitelist(allow_guest=True)
 def has_course_moderator_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
 		{"parent": member or frappe.session.user, "role": "Seminary Manager"},
 		"name",
 	)
-
-
+@frappe.whitelist(allow_guest=True)
+def has_course_instructor_role(member=None):
+	return frappe.db.get_value(
+		"Has Role",
+		{"parent": member or frappe.session.user, "role": "Academics User"},
+		"name",
+	)
+@frappe.whitelist(allow_guest=True)
 def has_course_evaluator_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
@@ -202,7 +208,7 @@ def has_course_evaluator_role(member=None):
 		"name",
 	)
 
-
+@frappe.whitelist(allow_guest=True)
 def has_student_role(member=None):
 	return frappe.db.get_value(
 		"Has Role",
@@ -212,16 +218,17 @@ def has_student_role(member=None):
 @frappe.whitelist(allow_guest=True)
 def get_courses_for_student(student):
 	courses =frappe.db.sql(
-		"""select cei.coursesc_ce as name, cei.course_data as course, cei.stu_user, cei.student_ce, cei.student_name, cs.course_image, cs.course_description_for_lms, cs.published, cs. academic_term, cs.syllabus, cs.modality, cs.c_datestart
+		"""select cei.coursesc_ce as name, cei.course_data as course, cs.course_image, cs.course_description_for_lms, cs.short_introduction, cs. academic_term
 from `tabCourse Enrollment Individual` cei, `tabCourse Schedule` cs
-where cs.name = cei.coursesc_ce
+where cs.name = cei.coursesc_ce and cs.published = 1
 and cei.stu_user = %s""", student, as_dict=True
 	)
+	
 	return courses
 
 @frappe.whitelist(allow_guest=True)
 def get_courses(filters=None, start=0, page_length=20):
-	print("get_courses called")
+	
 	"""Returns the list of courses."""
 
 	if not filters:
@@ -239,7 +246,7 @@ def get_courses(filters=None, start=0, page_length=20):
 	)
 	courses = get_enrollment_details(courses)
 	courses = get_course_card_details(courses)
-	print(courses)
+	
 	return courses
 
 
@@ -259,11 +266,22 @@ def get_instructors(course):
 			frappe.db.get_value(
 				"Instructor",
 				instructor,
-				["instructor_name", "user", "image", "shortbio"],
+				["instructor_name", "user", "profileimage", "shortbio", "bio"],
 				as_dict=True,
 			)
 		)
 	return instructor_details
+
+@frappe.whitelist(allow_guest=True)
+def get_instructor(instructorName):
+	instructor = frappe.db.get_value(
+				"Instructor",
+				instructorName,
+				["instructor_name", "user", "profileimage", "shortbio", "bio"],
+				as_dict=True,
+			)
+	print(instructor)
+	return instructor
 	
 def get_course_or_filters(filters):
 	or_filters = {}
@@ -277,6 +295,7 @@ def get_course_or_filters(filters):
 def get_course_outline(course, progress=False):
 	"""Returns the course outline."""
 	outline = []
+	
 	chapters = frappe.get_all(
 		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
 	)
@@ -288,7 +307,8 @@ def get_course_outline(course, progress=False):
 			as_dict=True,
 		)
 		chapter_details["idx"] = chapter.idx
-		chapter_details.lessons = get_lesson(course, chapter_details, progress=progress)
+				
+		chapter_details.lessons = get_lessons(course, chapter_details, progress=progress)
 
 		if chapter_details.is_scorm_package:
 			chapter_details.scorm_package = frappe.db.get_value(
@@ -298,10 +318,13 @@ def get_course_outline(course, progress=False):
 				as_dict=1,
 			)
 
+		
 		outline.append(chapter_details)
 	return outline
 
-
+@frappe.whitelist(allow_guest=True)
+def get_course_title(course):
+	return frappe.db.get_value("Course Schedule", course, "course")
 
 def get_enrollment_details(courses):
 	for course in courses:
@@ -356,6 +379,8 @@ def get_course_details(course):
 		"academic_term",
 		"c_datestart",
 		"c_dateend",
+		"enrollments",
+		"lessons"
 		],
 		as_dict=1,
 	)
@@ -369,7 +394,7 @@ def get_course_details(course):
 		course_details.membership = frappe.db.get_value(
 			"Scheduled Course Roster",
 			{"stuemail_rc": frappe.session.user, "course_sc": course_details.name},
-			["name", "course", "current_lesson", "progress", "stuemail_rc"],
+			["name", "course_sc", "current_lesson", "progress", "stuemail_rc"],
 			as_dict=1,
 		)
 
@@ -403,33 +428,6 @@ def get_lesson_url(course, lesson_number):
 	return f"/courses/{course}/learn/{lesson_number}"
 
 
-@frappe.whitelist(allow_guest=True)
-def get_course_outline(course, progress=False):
-	"""Returns the course outline."""
-	outline = []
-	chapters = frappe.get_all(
-		"Course Schedule Chapter Reference", {"parent": course}, ["chapter", "idx"], order_by="idx"
-	)
-	for chapter in chapters:
-		chapter_details = frappe.db.get_value(
-			"Course Schedule Course Chapter",
-			chapter.chapter,
-			["name", "chapter_title", "is_scorm_package", "launch_file", "scorm_package"],
-			as_dict=True,
-		)
-		chapter_details["idx"] = chapter.idx
-		chapter_details.lessons = get_lesson(course, chapter_details, progress=progress)
-
-		if chapter_details.is_scorm_package:
-			chapter_details.scorm_package = frappe.db.get_value(
-				"File",
-				chapter_details.scorm_package,
-				["file_name", "file_size", "file_url"],
-				as_dict=1,
-			)
-
-		outline.append(chapter_details)
-	return outline
 
 def get_membership(course, member=None):
 	if not member:
@@ -455,58 +453,88 @@ def get_membership(course, member=None):
 
 	return False
 
+def get_chapters(course):
+	"""Returns all chapters of this course."""
+	if not course:
+		return []
+	chapters = frappe.get_all(
+		"Course Schedule Chapter Reference", {"parent": course}, ["idx", "chapter"], order_by="idx"
+	)
+	for chapter in chapters:
+		chapter_details = frappe.db.get_value(
+			"Course Schedule Chapter",
+			{"name": chapter.chapter},
+			["name", "chapter_title"],
+			as_dict=True,
+		)
+		chapter.update(chapter_details)
+	return chapters
+
 @frappe.whitelist(allow_guest=True)
 def get_lesson(course, chapter, lesson):
 	chapter_name = frappe.db.get_value(
 		"Course Schedule Chapter Reference", {"parent": course, "idx": chapter}, "chapter"
 	)
+	print(f"Chapter Name: {chapter_name}")  # Debug print
+
 	lesson_name = frappe.db.get_value(
-		"Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
+		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
 	)
+	print(f"Lesson Name: {lesson_name}")  # Debug print
+
+	if not lesson_name:
+		return {}
+		
 	lesson_details = frappe.db.get_value(
-		"Course Schedule Course Lesson",
+		"Course Lesson",
 		lesson_name,
-		["title", "is_scorm_package"],
+		["lesson_title", "is_scorm_package"],
 		as_dict=1,
 	)
-	if not lesson_details or lesson_details.is_scorm_package:
-		return {}
+	print(f"Lesson Details (first): {lesson_details}")  # Debug print
 
-	membership = get_membership(course)
-	course_info = frappe.db.get_value(
-		"Course Schedule", course, ["course"], as_dict=1
-	)
+	# if not lesson_details:
+	# 	return {}
 
-	if (
-		not membership
-		and not has_course_moderator_role()
-		and not is_instructor(course)
-	):
-		return {
-			"no_preview": 1,
-			"title": lesson_details.title,
-			"course_title": course_info.title,
-		}
+	# membership = get_membership(course)
+	
+	# if (
+	# 	not membership
+	# 	and not has_course_moderator_role()
+	# 	and not is_instructor(course)
+	# ):
+	# 	return {
+	# 		"lesson_title": lesson_details.lesson_title,
+	# 		"course_title": course,
+	# 	}
+	
+
+	print(f"Fetching detailed lesson info for: {lesson_name}")  # Debug print
 
 	lesson_details = frappe.db.get_value(
-		"Course Schedule Lesson",
+		"Course Lesson",
 		lesson_name,
 		[
 			"name",
 			"lesson_title",
+			"preview",	
 			"body",
 			"creation",
 			"youtube",
 			"quiz_id",
-			"question",
-			"file_type",
-			"instructor_notes",
-			"course",
+			"exam",
+			"assessment_criteria",
+			"assignment_id",
+			"course_sc",
 			"content",
 			"instructor_content",
+			"instructor_notes",
 		],
 		as_dict=True,
 	)
+	print(f"Lesson Details (second): {lesson_details}")  # Debug print
+
+	
 
 	if frappe.session.user == "Guest":
 		progress = 0
@@ -518,9 +546,11 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.next = neighbours["next"]
 	lesson_details.progress = progress
 	lesson_details.prev = neighbours["prev"]
-	lesson_details.membership = membership
+	# lesson_details.membership = membership
 	lesson_details.instructors = get_instructors(course)
-	lesson_details.course_title = course_info.title
+	lesson_details.course_title = frappe.db.get_value("Course Schedule", course, "course")
+	print(f"Lesson Details (third): {lesson_details}")  # Debug print
+	
 	return lesson_details
 
 def get_course_progress(course, member=None):
@@ -571,21 +601,23 @@ def get_lesson_details(chapter, progress=False):
 	)
 	for row in lesson_list:
 		lesson_details = frappe.db.get_value(
-			"Course Schedule Lesson",
+			"Course Lesson",
 			row.lesson,
 			[
 				"name",
 				"lesson_title",
-				"include_in_preview",
+				"preview",
+				"content",
 				"body",
 				"creation",
 				"youtube",
+				"assessment_criteria",
 				"quiz_id",
-				"question",
-				"file_type",
-				"instructor_notes",
-				"course",
-				"content",
+				"assignment_id",
+				"exam",
+				"instructor_content",
+				"course_sc"
+				
 			],
 			as_dict=True,
 		)
@@ -601,7 +633,13 @@ def get_lesson_details(chapter, progress=False):
 
 def get_lesson_icon(body, content):
 	if content:
-		content = json.loads(content)
+		print("Content: ", content)
+		try:
+			content = json.loads(content)
+			print("Content JSONfied: ", content)
+		except json.JSONDecodeError:
+			print("Invalid JSON content")
+			return "icon-list"
 
 		for block in content.get("blocks"):
 			if block.get("type") == "upload" and block.get("data").get("file_type").lower() in [
@@ -718,7 +756,72 @@ def get_enrollment(master, document, student):
 		return enrollments[0].name
 	else:
 		return None
+	
+def get_lesson_count(course):
+	lesson_count = 0
+	chapters = frappe.get_all("Chapter Reference", {"parent": course}, ["chapter"])
+	for chapter in chapters:
+		lesson_count += frappe.db.count("Lesson Reference", {"parent": chapter.chapter})
 
+	return lesson_count
+
+@frappe.whitelist()
+def get_lesson_creation_details(course, chapter, lesson):
+	chapter_name = frappe.db.get_value(
+		"Course Schedule Chapter Reference", {"parent": course, "idx": chapter}, "chapter"
+	)
+	lesson_name = frappe.db.get_value(
+		"Course Schedule Lesson Reference", {"parent": chapter_name, "idx": lesson}, "lesson"
+	)
+
+	if lesson_name:
+		lesson_details = frappe.db.get_value(
+			"Course Lesson",
+			lesson_name,
+			[
+				"name",
+				"lesson_title",
+				"preview",
+				"body",
+				"content",
+				"instructor_notes",
+				"instructor_content",
+				"assessment_criteria",
+				"youtube",
+				"quiz_id",
+				"assignment_id",
+				"exam",
+			],
+			as_dict=1,
+		)
+
+	return {
+		"course_title": frappe.db.get_value("Course Schedule", course, "course"),
+		"chapter": frappe.db.get_value(
+			"Course Schedule Chapter", chapter_name, ["chapter_title", "name"], as_dict=True
+		),
+		"lesson": lesson_details if lesson_name else None,
+	}
+
+@frappe.whitelist()
+def get_question_details(question):
+	fields = ["question", "type", "multiple"]
+	for i in range(1, 5):
+		fields.append(f"option_{i}")
+		fields.append(f"explanation_{i}")
+
+	question_details = frappe.db.get_value("Question", question, fields, as_dict=1)
+	return question_details
+
+@frappe.whitelist()
+def get_assessments(course):
+	assessments = frappe.get_all(
+		"Scheduled Course Assess Criteria",
+		filters={"parent": course},
+		fields=["*"],
+	)
+	print(assessments)
+	return assessments
 
 @frappe.whitelist()
 def enroll_in_program(program_name, student=None):

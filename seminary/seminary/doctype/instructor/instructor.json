@@ -13,7 +13,7 @@
   "column_break_5",
   "status",
   "department",
-  "image",
+  "profileimage",
   "employee",
   "mini_bio_section",
   "bio",
@@ -23,6 +23,7 @@
  ],
  "fields": [
   {
+   "description": "This is the name that will appear on the LMS.",
    "fieldname": "instructor_name",
    "fieldtype": "Data",
    "in_global_search": 1,
@@ -51,12 +52,6 @@
    "in_standard_filter": 1,
    "label": "Department",
    "options": "Department"
-  },
-  {
-   "fieldname": "image",
-   "fieldtype": "Attach Image",
-   "hidden": 1,
-   "label": "Image"
   },
   {
    "fieldname": "log_details",
@@ -109,16 +104,17 @@
    "fieldname": "shortbio",
    "fieldtype": "Small Text",
    "label": "Shorter bio for LMS"
-  }
- ],
- "image_field": "image",
- "links": [
+  },
   {
-   "link_doctype": "Course Schedule",
-   "link_fieldname": "instructor1"
+   "fieldname": "profileimage",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
   }
  ],
- "modified": "2025-03-06 07:44:49.789844",
+ "image_field": "profileimage",
+ "links": [],
+ "modified": "2025-03-13 18:35:55.057758",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
@@ -127,10 +123,12 @@
  "permissions": [
   {
    "email": 1,
+   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Instructor"
+   "role": "Instructor",
+   "write": 1
   },
   {
    "create": 1,
@@ -143,8 +141,21 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

@@ -3,7 +3,7 @@ import VideoBlock from '@/components/VideoBlock.vue'
 import UploadPlugin from '@/components/UploadPlugin.vue'
 import { h, createApp } from 'vue'
 import { Upload as UploadIcon } from 'lucide-vue-next'
-
+import translationPlugin from '../translation'
 
 export class Upload {
 	constructor({ data, api, readOnly }) {

@@ -8,15 +8,21 @@
   "chapter",
   "lesson_title",
   "course_sc",
+  "is_scorm_package",
   "section_break_ksdk",
+  "content_column",
+  "preview",
+  "content",
   "body",
   "help",
   "youtube",
   "instructor_content",
+  "instructor_notes",
   "assignments_section",
   "assessment_criteria",
   "quiz_id",
-  "assignment_id"
+  "assignment_id",
+  "exam"
  ],
  "fields": [
   {
@@ -41,7 +47,7 @@
   {
    "fieldname": "body",
    "fieldtype": "Text Editor",
-   "label": "Lesson Content"
+   "label": "Lesson Content Body"
   },
   {
    "fetch_from": "chapter.coursesc",
@@ -62,7 +68,7 @@
   },
   {
    "fieldname": "instructor_content",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Text",
    "label": "Instructor Content"
   },
   {
@@ -71,11 +77,13 @@
    "label": "Assignments"
   },
   {
+   "fetch_from": "assessment_criteria.quiz",
    "fieldname": "quiz_id",
    "fieldtype": "Data",
    "label": "Quiz ID"
   },
   {
+   "fetch_from": "assessment_criteria.assignment",
    "fieldname": "assignment_id",
    "fieldtype": "Data",
    "label": "Assignment ID"
@@ -85,11 +93,46 @@
    "fieldtype": "Link",
    "label": "Assessment Criteria",
    "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fetch_from": "assessment_criteria.exam",
+   "fieldname": "exam",
+   "fieldtype": "Data",
+   "label": "Exam"
+  },
+  {
+   "fieldname": "content_column",
+   "fieldtype": "Column Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Content"
+  },
+  {
+   "description": "This will appear on the LMS as a blue emphasis on the course outline.",
+   "fieldname": "preview",
+   "fieldtype": "Small Text",
+   "label": "Text for Preview"
+  },
+  {
+   "default": "0",
+   "fetch_from": "chapter.is_scorm_package",
+   "fieldname": "is_scorm_package",
+   "fieldtype": "Check",
+   "label": "Is SCORM Package",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_notes",
+   "fieldtype": "Text Editor",
+   "label": "Instructor Notes"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 12:44:56.695110",
+ "modified": "2025-03-16 15:27:22.572104",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

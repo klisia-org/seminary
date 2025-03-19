@@ -6,10 +6,13 @@ app_name = "seminary"
 app_title = "Seminary"
 app_publisher = "Klisia / SeminaryERP"
 app_description = "Seminary Management System"
-app_icon = "icon-sem"
-app_color = "grey"
+app_icon = "klisia_icon.png"
+app_logo_url = "assets/seminary/images/klisia_icon.png"
+source_link = "https://github.com/klisia-org/seminary"
+app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
 app_license = "GNU GPL V3"
+app_home = "/app/seminary"
 
 required_apps = ["erpnext"]
 
@@ -19,7 +22,7 @@ add_to_apps_screen = [{
 	"name": "seminary",
 	"logo": "assets/seminary/images/klisia_icon.png",  # Update this path to your custom app's logo
 	"title": "Seminary ERP",
-	"route": "/seminary"
+	"route": "/app/seminary"
 }]
 
 # Includes in <head>
@@ -151,10 +154,18 @@ domains = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "seminary.utils.jinja_methods",
-# 	"filters": "seminary.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"seminary.seminary.utils.get_lesson_count",
+		"seminary.seminary.utils.get_instructors",
+		"seminary.seminary.utils.get_lesson_index",
+		"seminary.seminary.utils.get_lesson_url",
+		"seminary.page_renderers.get_profile_url",
+		"seminary.seminary.utils.is_instructor",
+		
+	],
+	"filters": [],
+}
 
 # Installation
 # ------------
@@ -302,3 +313,5 @@ fixtures = ["Trigger Fee Events", "Grading Scale", "Grading Scale Interval", "It
 # Recommended only for DocTypes which have limited documents with untranslated names
 # For example: Role, Gender, etc.
 # translated_search_doctypes = []
+
+website_route_rules = [{'from_route': '/frontend/<path:app_path>', 'to_route': 'frontend'},]

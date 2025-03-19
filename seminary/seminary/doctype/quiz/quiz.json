@@ -10,11 +10,15 @@
   "title",
   "question",
   "quiz_configuration_section",
-  "passing_score",
+  "passing_percentage",
   "max_attempts",
   "grading_basis",
   "column_break_7",
   "is_time_bound",
+  "show_answers",
+  "show_submission_history",
+  "shuffle_questions",
+  "limit_questions_to",
   "duration",
   "total_points"
  ],
@@ -37,14 +41,6 @@
    "fieldname": "quiz_configuration_section",
    "fieldtype": "Section Break",
    "label": "Quiz Configuration"
-  },
-  {
-   "default": "0",
-   "description": "Score out of 100. Use this to force students to achieve the score. Default = 0 (no effect)",
-   "fieldname": "passing_score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Passing Score"
   },
   {
    "default": "1",
@@ -84,11 +80,46 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Points Possible",
+   "non_negative": 1,
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "This will force the student to submit each question and see the answer for that question before going to the next.",
+   "fieldname": "show_answers",
+   "fieldtype": "Check",
+   "label": "Show Answers"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_submission_history",
+   "fieldtype": "Check",
+   "label": "Show Submission History"
+  },
+  {
+   "default": "0",
+   "fieldname": "shuffle_questions",
+   "fieldtype": "Check",
+   "label": "Shuffle Questions"
+  },
+  {
+   "depends_on": "shuffle_questions",
+   "fieldname": "limit_questions_to",
+   "fieldtype": "Int",
+   "label": "Limit Questions to (on Shuffle)"
+  },
+  {
+   "default": "0",
+   "description": "Score out of 100. Use this to force students to achieve the score. Default = 0 (no effect)",
+   "fieldname": "passing_percentage",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Passing Score",
+   "non_negative": 1
   }
  ],
  "links": [],
- "modified": "2025-03-10 13:12:58.857953",
+ "modified": "2025-03-18 10:37:13.199434",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",

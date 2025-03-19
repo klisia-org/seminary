@@ -78,7 +78,7 @@ import {
 	ListRows,
 	ListRow,
 	ListHeader,
-	ListHeaderItem,
+	ListHeaderItem
 } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 import { computed, inject, onMounted } from 'vue'
@@ -102,9 +102,9 @@ const quizFilter = computed(() => {
 })
 
 const quizzes = createListResource({
-	doctype: 'LMS Quiz',
+	doctype: 'Quiz',
 	filters: quizFilter,
-	fields: ['name', 'title', 'passing_percentage', 'total_marks'],
+	fields: ['name', 'title', 'passing_percentage', 'total_points'],
 	auto: true,
 	cache: ['quizzes', user.data?.name],
 	orderBy: 'modified desc',
@@ -118,8 +118,8 @@ const quizColumns = computed(() => {
 			width: 2,
 		},
 		{
-			label: __('Total Marks'),
-			key: 'total_marks',
+			label: __('Total Points'),
+			key: 'total_points',
 			width: 1,
 			align: 'center',
 		},

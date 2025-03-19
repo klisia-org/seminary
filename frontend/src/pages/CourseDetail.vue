@@ -14,16 +14,32 @@
 					<div class="my-3 leading-6 text-ink-gray-7">
 						{{ course.data.short_introduction }}
 					</div>
-					
-					</div>
-					<div class="flex mt-3 mb-4 w-fit">
-						
-					</div>
-					<CourseCardOverlay :course="course" class="md:hidden mb-4" />
+							
 					<div
-						v-html="course.course_description_for_lms"
+						v-html="course.data.course_description_for_lms"
 						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
 					></div>
+					<div class="mt-10">
+						<div v-if="course.data.instructors.length === 1" class="text-lg font-semibold">Instructor</div>
+						<div v-else class="text-lg font-semibold">Instructors</div>
+					
+					<div v-for="instructor in course.data.instructors" class="flex items-center">
+						<br>
+						{{ instructor.instructor_name }}
+					
+							<span
+								class="h-6 mr-1 p-2"
+								:class="{
+									'avatar-group overlap': course.data.instructors.length > 1,
+								}"
+							>
+								<InstructorAvatar
+									:instructor="instructor"
+								/>
+								<br>
+							</span>
+						</div>				
+						</div>
 					<div class="mt-10">
 						<CourseOutline
 							:title="('Course Outline')"
@@ -31,23 +47,21 @@
 							:showOutline="true"
 						/>
 					</div>
-					
 				</div>
-				<div class="hidden md:block">
-					<CourseCardOverlay :course="course" />
+				<div class="border-0 rounded-md min-w-80">
+					<CourseCardOverlay :course="course" class="mb-4" />
 				</div>
 			</div>
 		</div>
-	
+	</div>
 </template>
 <script setup>
 import { createResource, Breadcrumbs, Badge, Tooltip } from 'frappe-ui'
 import { computed } from 'vue'
-import { Users, Star } from 'lucide-vue-next'
-import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle } from '@/utils'
-import CourseInstructors from '@/components/CourseInstructors.vue'
+import InstructorAvatar from '@/components/InstructorAvatar.vue'
+import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 
 const props = defineProps({
 	courseName: {
@@ -64,12 +78,12 @@ const course = createResource({
 	},
 	auto: true,
 })
-
+console.log(course)
 
 const breadcrumbs = computed(() => {
 	let items = [{ label: 'Courses', route: { name: 'Courses' } }]
 	items.push({
-		label: course?.data?.name,
+		label: course?.data?.course,
 		route: { name: 'CourseDetail', params: { courseName: course?.data?.name } },
 	})
 	return items
@@ -77,7 +91,7 @@ const breadcrumbs = computed(() => {
 
 const pageMeta = computed(() => {
 	return {
-		title: course?.data?.name,
+		title: course?.data?.title,
 		description: course?.data?.short_introduction,
 	}
 })

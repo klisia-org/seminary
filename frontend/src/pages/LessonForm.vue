@@ -13,19 +13,21 @@
 					>
 						{{ __('Save') }}
 					</Button>
+					
 				</header>
 				<div class="py-5">
 					<div class="w-5/6 mx-auto">
+											
 						<FormControl
-							v-model="lesson.title"
+							v-model="lesson.lesson_title"
 							label="Title"
 							class="mb-4"
 							:required="true"
 						/>
 						<FormControl
-							v-model="lesson.include_in_preview"
-							type="checkbox"
-							label="Include in Preview"
+							v-model="lesson.preview"
+							type="text"
+							label="Text for Preview on the Course Page"
 						/>
 					</div>
 					<div class="border-t mt-4">
@@ -69,11 +71,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="">
-				<div class="sticky top-0 p-5">
-					<LessonHelp />
-				</div>
-			</div>
+		
 		</div>
 	</div>
 </template>
@@ -88,7 +86,6 @@ import {
 	onBeforeUnmount,
 } from 'vue'
 import EditorJS from '@editorjs/editorjs'
-import LessonHelp from '@/components/LessonHelp.vue'
 import { ChevronRight } from 'lucide-vue-next'
 import { updateDocumentTitle, createToast, getEditorTools } from '@/utils'
 import { capture } from '@/telemetry'
@@ -137,15 +134,15 @@ const renderEditor = (holder) => {
 }
 
 const lesson = reactive({
-	title: '',
-	include_in_preview: false,
+	lesson_title: '',
+	preview: '',
 	body: '',
 	instructor_notes: '',
 	content: '',
 })
 
 const lessonDetails = createResource({
-	url: 'lms.lms.utils.get_lesson_creation_details',
+	url: 'seminary.seminary.utils.get_lesson_creation_details',
 	params: {
 		course: props.courseName,
 		chapter: props.chapterNumber,
@@ -221,8 +218,8 @@ const newLessonResource = createResource({
 		return {
 			doc: {
 				doctype: 'Course Lesson',
-				course: props.courseName,
-				chapter: lessonDetails.data?.chapter.name,
+				course_sc: props.courseName,
+				chapter: lessonDetails.data.chapter.name,
 				...lesson,
 			},
 		}
@@ -245,9 +242,9 @@ const lessonReference = createResource({
 	makeParams(values) {
 		return {
 			doc: {
-				doctype: 'Lesson Reference',
+				doctype: 'Course Schedule Lesson Reference',
 				parent: lessonDetails.data?.chapter.name,
-				parenttype: 'Course Chapter',
+				parenttype: 'Course Schedule Chapter',
 				parentfield: 'lessons',
 				lesson: values.lesson,
 				idx: props.lessonNumber,
@@ -433,7 +430,7 @@ const editCurrentLesson = () => {
 }
 
 const validateLesson = () => {
-	if (!lesson.title) {
+	if (!lesson.lesson_title) {
 		return 'Title is required'
 	}
 	if (!lesson.content) {
@@ -441,9 +438,9 @@ const validateLesson = () => {
 	}
 }
 
-const showToast = (title, text, icon) => {
+const showToast = (lesson_title, text, icon) => {
 	createToast({
-		title: title,
+		lesson_title: lesson_title,
 		text: text,
 		icon: icon,
 		iconClasses:
@@ -469,7 +466,7 @@ const breadcrumbs = computed(() => {
 
 	if (lessonDetails?.data?.lesson) {
 		crumbs.push({
-			label: lessonDetails.data.lesson.title,
+			label: lessonDetails.data.lesson.lesson_title,
 			route: {
 				name: 'Lesson',
 				params: {

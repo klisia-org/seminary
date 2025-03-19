@@ -24,8 +24,8 @@
   </div>
 </template>
 
-<script setup>
-import { session } from '@/stores/session'
+<script lang="ts" setup>
+import { session } from '../data/session'
 
 function submit(e) {
   let formData = new FormData(e.target)

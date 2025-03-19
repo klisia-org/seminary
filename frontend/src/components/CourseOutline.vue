@@ -1,91 +1,77 @@
 <template>
 	<div class="text-base">
-		<div
-			v-if="title && (outline.data?.length || allowEdit)"
-			class="grid grid-cols-[70%,30%] mb-4 px-2"
-		>
-			<div class="font-semibold text-lg leading-5 text-ink-gray-9">
-				{{ (title) }}
-			</div>
-			<Button size="sm" v-if="allowEdit" @click="openChapterModal()">
-				{{ ('Add Chapter') }}
+			<div class="grid grid-cols-[70%,30%] mb-4 px-2">
+				<div class="font-semibold text-lg leading-5 text-ink-gray-9">
+					<!-- {{ (course_title) }} -->
+				</div>
+				<Button size="sm"  @click="openChapterModal()">
+				{{ __('Add Chapter') }}
 			</Button>
-			<!-- <span class="font-medium cursor-pointer" @click="expandAllChapters()">
-				{{ expandAll ? __("Collapse all chapters") : __("Expand all chapters") }}
-			</span> -->
-		</div>
-		<div
-			:class="{
-				'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
-			}"
-		>
-			<Disclosure
-				v-slot="{ open }"
-				v-for="(chapter, index) in outline.data"
-				:key="chapter.name"
-				:defaultOpen="openChapterDetail(chapter.idx)"
+			</div>
+			<div
+				:class="{
+					'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
+				}"
 			>
-				<DisclosureButton ref="" class="flex items-center w-full p-2 group">
-					<ChevronRight
-						:class="{
-							'rotate-90 transform duration-200': open,
-							'duration-200': !open,
-							hidden: chapter.is_scorm_package,
-							open: index == 1,
-						}"
-						class="h-4 w-4 text-ink-gray-9 stroke-1"
-					/>
-					<div
-						class="text-base text-left text-ink-gray-9 font-medium leading-5 ml-2"
-						@click="redirectToChapter(chapter)"
-					>
-						{{ chapter.chapter_title }}
-					</div>
-					<div class="flex ml-auto space-x-4">
-						<Tooltip :text="('Edit Chapter')" placement="bottom">
+				<Disclosure
+					v-slot="{ open }"
+					v-for="(chapter, index) in outline.data"
+					:key="chapter.name"
+					:defaultOpen="openChapterDetail(chapter.idx)"
+				>
+					<DisclosureButton ref="" class="flex items-center w-full p-2 group">
+						<ChevronRight
+							:class="{
+								'rotate-90 transform duration-200': open,
+								'duration-200': !open,
+								hidden: chapter.is_scorm_package,
+								open: index == 1,
+							}"
+							class="h-4 w-4 text-ink-gray-9 stroke-1"
+						/>
+						<div
+							class="text-base text-left text-ink-gray-9 font-medium leading-5 ml-2"
+							@click="redirectToChapter(chapter)"
+						>
+							{{ chapter.chapter_title }}
+						</div>
+						<div class="flex ml-auto space-x-4">
+						<Tooltip :text="__('Edit Chapter')" placement="bottom">
 							<FilePenLine
-								v-if="allowEdit"
+								
 								@click.prevent="openChapterModal(chapter)"
 								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
 							/>
 						</Tooltip>
-						<Tooltip :text="('Delete Chapter')" placement="bottom">
+						<Tooltip :text="__('Delete Chapter')" placement="bottom">
 							<Trash2
-								v-if="allowEdit"
+								
 								@click.prevent="trashChapter(chapter.name)"
 								class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
-							/>
+								/>
+							
 						</Tooltip>
 					</div>
-				</DisclosureButton>
-				<DisclosurePanel v-if="!chapter.is_scorm_package">
-					<Draggable
-						v-if="!chapter.is_scorm_package"
-						:list="chapter.lessons"
-						:disabled="!allowEdit"
-						item-key="name"
-						group="items"
-						@end="updateOutline"
-						:data-chapter="chapter.name"
-					>
-						<template #item="{ element: lesson }">
-							<div
-								class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9"
-								:class="
-									isActiveLesson(lesson.number) ? 'bg-surface-selected' : ''
-								"
+					</DisclosureButton>
+					<DisclosurePanel v-if="!chapter.is_scorm_package">
+						<div
+							v-for="lesson in chapter.lessons"
+							:key="lesson.name"
+							class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9"
+							:class="isActiveLesson(lesson.number) ? 'bg-surface-selected' : ''"
+						>
+							<router-link
+								:to="{
+									name: 'Lesson',
+									params: {
+										courseName: courseName,
+										chapterNumber: lesson.number.split('.')[0],
+										lessonNumber: lesson.number.split('.')[1],
+									},
+								}"
 							>
-								<router-link
-									:to="{
-										name: allowEdit ? 'LessonForm' : 'Lesson',
-										params: {
-											courseName: courseName,
-											chapterNumber: lesson.number.split('.')[0],
-											lessonNumber: lesson.number.split('.')[1],
-										},
-									}"
-								>
-									<div class="flex items-center text-sm leading-5 group">
+								<div class="flex flex-col items-start text-sm leading-5 group">
+									<div class="flex items-center">
 										<MonitorPlay
 											v-if="lesson.icon === 'icon-youtube'"
 											class="h-4 w-4 stroke-1 mr-2"
@@ -99,21 +85,18 @@
 											class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
 										/>
 										{{ lesson.lesson_title }}
-										<Trash2
-											v-if="allowEdit"
-											@click.prevent="trashLesson(lesson.name, chapter.name)"
-											class="h-4 w-4 text-ink-red-3 ml-auto invisible group-hover:visible"
-										/>
 										<Check
 											v-if="lesson.is_complete"
 											class="h-4 w-4 text-green-700 ml-2"
 										/>
 									</div>
-								</router-link>
-							</div>
-						</template>
-					</Draggable>
-					<div v-if="allowEdit" class="flex mt-2 mb-4 pl-8">
+									<div v-if="lesson.preview" class="rounded-md bg-[#E6F4FF] p-2 w-full mt-2">
+										{{ lesson.preview }}
+									</div>
+								</div>
+							</router-link>
+						</div>
+						<div  class="flex mt-2 mb-4 pl-8">
 						<router-link
 							v-if="!chapter.is_scorm_package"
 							:to="{
@@ -126,15 +109,15 @@
 							}"
 						>
 							<Button>
-								{{ ('Add Lesson') }}
+								{{ __('Add Lesson') }}
 							</Button>
 						</router-link>
 					</div>
-				</DisclosurePanel>
-			</Disclosure>
+					</DisclosurePanel>
+				</Disclosure>
+			</div>
 		</div>
-	</div>
-	<ChapterModal
+		<ChapterModal
 		v-model="showChapterModal"
 		v-model:outline="outline"
 		:course="courseName"
@@ -142,9 +125,8 @@
 	/>
 </template>
 <script setup>
-import { Button, createResource, Tooltip } from 'frappe-ui'
+import { Button, createResource, Tooltip, Dialog } from 'frappe-ui'
 import { getCurrentInstance, inject, ref } from 'vue'
-import Draggable from 'vuedraggable'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
@@ -157,7 +139,8 @@ import {
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
-import { showToast } from '@/utils'
+import { showToast} from '@/utils'
+import { createDialog } from '@/utils/dialogs'
 
 const route = useRoute()
 const router = useRouter()
@@ -165,7 +148,6 @@ const user = inject('$user')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const app = getCurrentInstance()
-const { $dialog } = app.appContext.config.globalProperties
 
 const props = defineProps({
 	courseName: {
@@ -200,8 +182,17 @@ const outline = createResource({
 	auto: true,
 })
 
+const course_title = createResource({
+	url: 'seminary.seminary.utils.get_course_title',
+	cache: ['course_title', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+})
+
 const deleteLesson = createResource({
-	url: 'seminary.seminary.utils.delete_lesson',
+	url: 'seminary.seminary.api.delete_lesson',
 	makeParams(values) {
 		return {
 			lesson: values.lesson,
@@ -230,14 +221,14 @@ const updateLessonIndex = createResource({
 })
 
 const trashLesson = (lessonName, chapterName) => {
-	$dialog({
-		title: ('Delete this lesson?'),
-		message: (
+	createDialog({
+		title: __('Delete this lesson?'),
+		message: __(
 			'Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{
-				label: ('Delete'),
+				label: __('Delete'),
 				theme: 'red',
 				variant: 'solid',
 				onClick(close) {
@@ -267,7 +258,7 @@ const getCurrentChapter = () => {
 
 const updateOutline = (e) => {
 	updateLessonIndex.submit({
-		lesson: e.item.draggable_context.element.name,
+		lesson: e.item.__draggable_context.element.name,
 		sourceChapter: e.from.dataset.chapter,
 		targetChapter: e.to.dataset.chapter,
 		idx: e.newIndex,
@@ -288,14 +279,15 @@ const deleteChapter = createResource({
 })
 
 const trashChapter = (chapterName) => {
-	$dialog({
-		title: ('Delete this chapter?'),
-		message: (
+	console.log('trashChapter called with:', chapterName); // Add this line for debugging
+	createDialog({
+		title: __('Delete this chapter?'),
+		message: __(
 			'Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?'
 		),
 		actions: [
 			{
-				label: ('Delete'),
+				label: __('Delete'),
 				theme: 'red',
 				variant: 'solid',
 				onClick(close) {
@@ -313,8 +305,8 @@ const redirectToChapter = (chapter) => {
 	if (props.allowEdit) return
 	if (!user.data) {
 		showToast(
-			('You are not enrolled'),
-			('Please enroll for this course to view this lesson'),
+			__('You are not enrolled'),
+			__('Please enroll for this course to view this lesson'),
 			'alert-circle'
 		)
 		return

@@ -71,7 +71,7 @@ const props = defineProps({
 })
 
 const submissions = createListResource({
-	doctype: 'LMS Quiz Submission',
+	doctype: 'Quiz Submission',
 	filters: {
 		quiz: props.quizID,
 	},

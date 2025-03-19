@@ -63,8 +63,8 @@
 						:label="__('Duration (in minutes)')"
 					/>
 					<FormControl
-						v-model="quiz.total_marks"
-						:label="__('Total Marks')"
+						v-model="quiz.total_points"
+						:label="__('Total Points')"
 						disabled
 					/>
 					<FormControl
@@ -105,7 +105,7 @@
 						<FormControl
 							v-if="quiz.shuffle_questions"
 							v-model="quiz.limit_questions_to"
-							:label="__('Limit Questions To')"
+							:label="__('Limit Questions To (on shuffle)')"
 						/>
 					</div>
 				</div>
@@ -278,7 +278,7 @@ watch(
 const quizDetails = createResource({
 	url: 'frappe.client.get',
 	makeParams(values) {
-		return { doctype: 'LMS Quiz', name: props.quizID }
+		return { doctype: 'Quiz', name: props.quizID }
 	},
 	auto: false,
 	onSuccess(data) {
@@ -304,7 +304,7 @@ const quizCreate = createResource({
 	makeParams(values) {
 		return {
 			doc: {
-				doctype: 'LMS Quiz',
+				doctype: 'Quiz',
 				...quiz,
 			},
 		}
@@ -316,7 +316,7 @@ const quizUpdate = createResource({
 	auto: false,
 	makeParams(values) {
 		return {
-			doctype: 'LMS Quiz',
+			doctype: 'Quiz',
 			name: values.quizID,
 			fieldname: {
 				total_marks: calculateTotalMarks(),
@@ -354,7 +354,7 @@ const updateQuiz = () => {
 		{ quizID: quizDetails.data?.name },
 		{
 			onSuccess(data) {
-				quiz.total_marks = data.total_marks
+				quiz.total_points = data.total_points
 				showToast(__('Success'), __('Quiz updated successfully'), 'check')
 			},
 			onError(err) {
@@ -408,10 +408,10 @@ const openQuestionModal = (question = null) => {
 }
 
 const deleteQuestionResource = createResource({
-	url: 'lms.lms.api.delete_documents',
+	url: 'seminary.seminary.api.delete_documents',
 	makeParams(values) {
 		return {
-			doctype: 'LMS Quiz Question',
+			doctype: 'Quiz Question',
 			documents: values.questions,
 		}
 	},

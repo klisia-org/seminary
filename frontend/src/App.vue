@@ -1,28 +1,33 @@
 <template>
-  <div>
-    <div class="flex h-screen w-screen">
-      <div class="h-full border-r bg-gray-50">
-        <Sidebar />
-      </div>
-      <div class="flex-1 flex flex-col h-full overflow-auto">
-        <Navbar />
-          <router-view  
-            class="flex-1 overflow-auto"
-          />
-      </div>
-    </div>
-  </div>
-  <Dialogs />
-  <Toasts />
+	<Layout>
+		<router-view />
+	</Layout>
+	
+	<Toasts />
+	<Dialogs /> <!-- Ensure this line is present -->
 </template>
 
 <script setup>
-import Sidebar from '@/components/Sidebar.vue'
-import Navbar from '@/components/Navbar.vue';
+import Sidebar from '@/components/AppSidebar.vue'
+// import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
 import { Toasts } from 'frappe-ui';
 import { Dialogs } from '@/utils/dialogs'
 import { usersStore } from '@/stores/user'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useScreenSize } from './utils/composables'
+import DesktopLayout from './components/DesktopLayout.vue'
 
+
+const screenSize = useScreenSize()
 let { userResource } = usersStore()
+
+const Layout = computed(() => {
+  if (screenSize.width < 1024) {
+    return DesktopLayout
+  }
+  return DesktopLayout
+})
+
+
 </script>

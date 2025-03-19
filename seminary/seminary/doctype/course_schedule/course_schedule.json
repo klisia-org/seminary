@@ -45,6 +45,9 @@
   "thursday_column",
   "thursday",
   "column_break_qewt",
+  "grading_tab",
+  "gradesc_cs",
+  "courseassescrit_sc",
   "lms_tab",
   "lms_configuration_section",
   "course_image",
@@ -52,9 +55,6 @@
   "short_introduction",
   "course_description_for_lms",
   "chapters",
-  "grading_tab",
-  "gradesc_cs",
-  "courseassescrit_sc",
   "meeting_dates_tab",
   "meeting_dates_section",
   "cs_meetinfo",
@@ -62,7 +62,10 @@
   "class_roster_tab",
   "class_roster_section",
   "csroster_html",
-  "grades_sent"
+  "grades_sent",
+  "section_break_adom",
+  "enrollments",
+  "lessons"
  ],
  "fields": [
   {
@@ -372,12 +375,28 @@
    "fieldname": "short_introduction",
    "fieldtype": "Small Text",
    "label": "Short Introduction"
+  },
+  {
+   "fieldname": "section_break_adom",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "enrollments",
+   "fieldtype": "Int",
+   "label": "Enrollments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lessons",
+   "fieldtype": "Int",
+   "label": "Lessons",
+   "read_only": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-09 14:26:32.741381",
+ "modified": "2025-03-13 17:52:16.728774",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
@@ -453,6 +472,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
