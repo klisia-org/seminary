@@ -15,7 +15,7 @@ from frappe.utils.file_manager import safe_b64decode
 from frappe.core.doctype.file.utils import get_random_filename
 
 
-class seminaryQuiz(Document):
+class Quiz(Document):
 	def validate(self):
 		self.validate_duplicate_questions()
 		self.validate_limit()
