@@ -1,18 +1,16 @@
 <template>
 	<div v-if="quiz.data">
 		<div
-			class="bg-surface-blue-2 space-y-1 py-2 px-2 mb-4 rounded-md text-sm text-ink-blue-800"
+			class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900"
 		>
 			<div class="leading-5">
 				{{
-					('This quiz consists of {0} questions.').format(questions.length)
+					`This quiz consists of ${questions.length} questions.`
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
 				{{
-					(
-						'Please ensure that you complete all the questions in {0} minutes.'
-					).format(quiz.data.duration)
+					`Please ensure that you complete all the questions in ${quiz.data.duration} minutes.`
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
@@ -24,18 +22,14 @@
 			</div>
 			<div v-if="quiz.data.passing_percentage" class="leading-relaxed">
 				{{
-					(
-						'You will have to get {0}% correct answers in order to pass the quiz.'
-					).format(quiz.data.passing_percentage)
+					`You will have to get ${quiz.data.passing_percentage}% correct answers in order to pass the quiz.`
 				}}
 			</div>
 			<div v-if="quiz.data.max_attempts" class="leading-relaxed">
 				{{
-					('You can attempt this quiz {0}.').format(
-						quiz.data.max_attempts == 1
-							? '1 time'
-							: `${quiz.data.max_attempts} times`
-					)
+					`You can attempt this quiz ${
+						quiz.data.max_attempts === 1 ? '1 time' : `${quiz.data.max_attempts} times`
+					}.`
 				}}
 			</div>
 		</div>
@@ -85,7 +79,7 @@
 					<div class="flex justify-between">
 						<div class="text-sm text-ink-gray-5">
 							<span class="mr-2">
-								{{ ('Question {0}').format(activeQuestion) }}:
+									{{ `Question ${activeQuestion}` }}:
 							</span>
 							<span>
 								{{ getInstructions(questionDetails.data) }}
@@ -185,13 +179,9 @@
 						/>
 					</div>
 					<div class="flex items-center justify-between mt-4">
+											
 						<div class="text-sm text-ink-gray-5">
-							{{
-								('Question {0} of {1}').format(
-									activeQuestion,
-									questions.length
-								)
-							}}
+							{{ `Question ${activeQuestion} of ${questions.length}` }}
 						</div>
 						<Button
 							v-if="
@@ -226,15 +216,7 @@
 				{{ ('Quiz Summary') }}
 			</div>
 			<div class="text-ink-gray-9">
-				{{
-					(
-						'You got {0}% correct answers with a score of {1} out of {2}'
-					).format(
-						Math.ceil(quizSubmission.data.percentage),
-						quizSubmission.data.score,
-						quizSubmission.data.score_out_of
-					)
-				}}
+    		{{ `You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of ${quizSubmission.data.score} out of ${quizSubmission.data.score_out_of}` }}
 			</div>
 			
 			<Button

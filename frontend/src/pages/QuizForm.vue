@@ -215,7 +215,7 @@ import { useRouter } from 'vue-router'
 const showQuestionModal = ref(false)
 const currentQuestion = reactive({
 	question: '',
-	marks: 0,
+	points: 0,
 	name: '',
 })
 const user = inject('$user')
@@ -230,7 +230,7 @@ const props = defineProps({
 
 const quiz = reactive({
 	title: '',
-	total_marks: 0,
+	total_points: 0,
 	passing_percentage: 0,
 	max_attempts: 0,
 	duration: 0,
@@ -319,7 +319,7 @@ const quizUpdate = createResource({
 			doctype: 'Quiz',
 			name: values.quizID,
 			fieldname: {
-				total_marks: calculateTotalMarks(),
+				total_points: calculateTotalpoints(),
 				...quiz,
 			},
 		}
@@ -364,14 +364,14 @@ const updateQuiz = () => {
 	)
 }
 
-const calculateTotalMarks = () => {
-	let totalMarks = 0
+const calculateTotalpoints = () => {
+	let totalpoints = 0
 	if (quiz.limit_questions_to && quiz.questions.length > 0)
-		return quiz.questions[0].marks * quiz.limit_questions_to
+		return quiz.questions[0].points * quiz.limit_questions_to
 	quiz.questions.forEach((question) => {
-		totalMarks += question.marks
+		totalpoints += question.points
 	})
-	return totalMarks
+	return totalpoints
 }
 
 const questionColumns = computed(() => {
@@ -387,8 +387,8 @@ const questionColumns = computed(() => {
 			width: '40rem',
 		},
 		{
-			label: __('Marks'),
-			key: 'marks',
+			label: __('Points'),
+			key: 'points',
 			width: '5rem',
 		},
 	]
@@ -397,11 +397,11 @@ const questionColumns = computed(() => {
 const openQuestionModal = (question = null) => {
 	if (question) {
 		currentQuestion.question = question.question
-		currentQuestion.marks = question.marks
+		currentQuestion.points = question.points
 		currentQuestion.name = question.name
 	} else {
 		currentQuestion.question = ''
-		currentQuestion.marks = 0
+		currentQuestion.points = 0
 		currentQuestion.name = ''
 	}
 	showQuestionModal.value = true

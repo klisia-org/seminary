@@ -24,7 +24,7 @@
 					<Link
 						v-else
 						v-model="assignment"
-						doctype="LMS Assignment"
+						doctype="Assignment"
 						:label="__('Select an assignment')"
 						:onCreate="(value, close) => redirectToForm()"
 					/>

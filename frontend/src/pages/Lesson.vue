@@ -131,6 +131,7 @@
 						v-if="lesson.data?.body"
 						:content="lesson.data.body"
 						:youtube="lesson.data.youtube"
+						:quizId="lesson.data.quiz_id"
 						
 					/>
 				</div>
