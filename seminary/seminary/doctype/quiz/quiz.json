@@ -13,9 +13,9 @@
   "quiz_configuration_section",
   "passing_percentage",
   "max_attempts",
+  "qbyquestion",
   "grading_basis",
   "column_break_7",
-  "is_time_bound",
   "show_answers",
   "show_submission_history",
   "shuffle_questions",
@@ -43,7 +43,7 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Max Attempts",
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "default": "Latest Highest Score",
@@ -57,14 +57,7 @@
    "report_hide": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_time_bound",
-   "fieldtype": "Check",
-   "label": "Is Time-Bound"
-  },
-  {
-   "depends_on": "is_time_bound",
-   "description": "in minutes",
+   "description": "in minutes. Leave blank for no time-limit",
    "fieldname": "duration",
    "fieldtype": "Duration",
    "label": "Duration"
@@ -119,8 +112,7 @@
    "fieldname": "questions",
    "fieldtype": "Table",
    "label": "Multiple Choices Questions",
-   "options": "Quiz Question",
-   "reqd": 1
+   "options": "Quiz Question"
   },
   {
    "description": "This refers to the Course itself, not the Course Schedule (so can be used for many CS)",
@@ -128,10 +120,17 @@
    "fieldtype": "Link",
    "label": "Course",
    "options": "Course"
+  },
+  {
+   "default": "0",
+   "description": "Check if you want to force the student to answer one question before moving to the next (each question on a page)",
+   "fieldname": "qbyquestion",
+   "fieldtype": "Check",
+   "label": "Question by Question"
   }
  ],
  "links": [],
- "modified": "2025-03-19 14:28:36.438749",
+ "modified": "2025-03-20 19:39:39.509739",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz",

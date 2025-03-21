@@ -12,6 +12,7 @@
   "column_break_3",
   "course",
   "course_name",
+  "course_assess",
   "section_break_5",
   "quiz",
   "column_break_7",
@@ -19,7 +20,7 @@
   "section_break_9",
   "result",
   "section_break_11",
-  "activity_date",
+  "submission_date",
   "score",
   "percentage",
   "column_break_14",
@@ -77,12 +78,6 @@
    "set_only_once": 1
   },
   {
-   "fieldname": "activity_date",
-   "fieldtype": "Data",
-   "label": "Activity Date",
-   "set_only_once": 1
-  },
-  {
    "fieldname": "score",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -91,8 +86,8 @@
   {
    "fieldname": "time_taken",
    "fieldtype": "Duration",
-   "label": "Time Taken",
-   "set_only_once": 1
+   "in_list_view": 1,
+   "label": "Time Taken"
   },
   {
    "fieldname": "section_break_11",
@@ -130,6 +125,7 @@
    "fetch_from": "quiz.title",
    "fieldname": "quiz_title",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Quiz Title",
    "read_only": 1
   },
@@ -154,10 +150,24 @@
    "fieldtype": "Float",
    "label": "Passing Percentage",
    "non_negative": 1
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Data",
+   "label": "Submission Date",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course Assessment",
+   "options": "Scheduled Course Assess Criteria"
   }
  ],
  "links": [],
- "modified": "2025-03-18 09:35:46.461794",
+ "modified": "2025-03-20 19:12:57.154240",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz Submission",

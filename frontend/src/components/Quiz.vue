@@ -1,5 +1,6 @@
 <template>
-	<div v-if="quiz.data">
+	<div v-if="isQuizLoaded">
+		<!-- Quiz Header -->
 		<div
 			class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900"
 		>
@@ -44,34 +45,35 @@
 			<ProgressBar :progress="timerProgress" />
 		</div>
 
-		<div v-if="activeQuestion == 0">
-			<div class="border text-center p-20 rounded-md">
-				<div class="font-semibold text-lg">
-					{{ quiz.data.title }}
-				</div>
-				<Button
-					v-if="
-						!quiz.data.max_attempts ||
-						attempts.data?.length < quiz.data.max_attempts
-					"
-					@click="startQuiz"
-					class="mt-2"
-				>
-					<span>
-						{{ ('Start') }}
-					</span>
-				</Button>
-				<div v-else>
-					{{
-						(
-							'You have already exceeded the maximum number of attempts allowed for this quiz.'
-						)
-					}}
-				</div>
-			</div>
-		</div>
-		<div v-else-if="!quizSubmission.data">
-			<div v-for="(question, qtidx) in questions">
+		<!-- Start Screen -->
+<div v-if="!fullQuizMode">
+  <div class="border text-center p-20 rounded-md">
+    <div class="font-semibold text-lg">
+      {{ quiz.data.title }}
+    </div>
+    <Button
+      v-if="(!quiz.data.max_attempts || attempts.data?.length < quiz.data.max_attempts) && quiz.data.qbyquestion"
+      @click="startQuiz"
+      class="mt-2"
+    >
+      <span>{{ ('Start') }}</span>
+    </Button>
+    <Button
+      v-else-if="(!quiz.data.max_attempts || attempts.data?.length < quiz.data.max_attempts)"
+      @click="startQuiz2"
+      class="mt-2"
+    >
+      <span>{{ ('Start full quiz') }}</span>
+    </Button>
+    <div v-else>
+      {{ 'You have already exceeded the maximum number of attempts allowed for this quiz.' }}
+    </div>
+  </div>
+</div>
+
+<!-- Question-by-Question Mode -->
+<div v-if="fullQuizMode === false && activeQuestion !== 0 && !quizSubmission.data && quiz.data.qbyquestion">
+	<div v-for="(question, qtidx) in questions">
 				<div
 					v-if="qtidx == activeQuestion - 1 && questionDetails.data"
 					class="border rounded-md p-5"
@@ -79,7 +81,7 @@
 					<div class="flex justify-between">
 						<div class="text-sm text-ink-gray-5">
 							<span class="mr-2">
-									{{ `Question ${activeQuestion}` }}:
+								{{ `Question ${activeQuestion}` }}:
 							</span>
 							<span>
 								{{ getInstructions(questionDetails.data) }}
@@ -121,7 +123,7 @@
 								<div v-if="index - 1 == idx">
 									<CheckCircle
 										v-if="answer == 1"
-										class="w-4 h-4 text-ink-green-2"
+										class="w-4 h-4 text-green-800"
 									/>
 									<MinusCircle
 										v-else-if="answer == 2"
@@ -129,7 +131,7 @@
 									/>
 									<XCircle
 										v-else-if="answer == 0"
-										class="w-4 h-4 text-ink-red-3"
+										class="w-4 h-4 text-red-600"
 									/>
 									<MinusCircle v-else class="w-4 h-4" />
 								</div>
@@ -179,7 +181,6 @@
 						/>
 					</div>
 					<div class="flex items-center justify-between mt-4">
-											
 						<div class="text-sm text-ink-gray-5">
 							{{ `Question ${activeQuestion} of ${questions.length}` }}
 						</div>
@@ -211,47 +212,110 @@
 				</div>
 			</div>
 		</div>
-		<div v-else class="border rounded-md p-20 text-center space-y-4">
-			<div class="text-lg font-semibold">
-				{{ ('Quiz Summary') }}
-			</div>
-			<div class="text-ink-gray-9">
-    		{{ `You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of ${quizSubmission.data.score} out of ${quizSubmission.data.score_out_of}` }}
-			</div>
-			
-			<Button
-				@click="resetQuiz()"
-				class="mt-2"
-				v-if="
-					!quiz.data.max_attempts ||
-					attempts?.data.length < quiz.data.max_attempts
-				"
-			>
-				<span>
-					{{ ('Try Again') }}
-				</span>
-			</Button>
-		</div>
-		<div
-			v-if="
-				quiz.data.show_submission_history &&
-				attempts?.data &&
-				attempts.data.length > 0
-			"
-			class="mt-10"
-		>
-			<ListView
-				:columns="getSubmissionColumns()"
-				:rows="attempts?.data"
-				row-key="name"
-				:options="{
-					selectable: false,
-					showTooltip: false,
-					emptyState: { title: ('No Quiz submissions found') },
-				}"
-			>
-			</ListView>
-		</div>
+
+<!-- Full Quiz Mode: All questions at once -->
+<div v-if="fullQuizMode && all_questions_details.data && all_questions_details.data.length > 0">
+  <div v-for="(question, qtidx) in all_questions_details.data" :key="question.name" class="border rounded-md p-5 mb-4">
+    <!-- Render each question header, text, and answer options -->
+    <div class="flex justify-between">
+      <div class="text-sm text-ink-gray-5">
+        <span class="mr-2">{{ `Question ${qtidx + 1}` }}:</span>
+        <span>{{ getInstructions(question) }}</span>
+      </div>
+      <div class="text-ink-gray-9 text-sm font-semibold item-left">
+        {{ question.points || 0 }} {{ question.points == 1 ? ('Point') : ('Points') }}
+      </div>
+    </div>
+    <div class="text-ink-gray-9 font-semibold mt-2 leading-5" v-html="question.question_detail"></div>
+    <!-- Answer Options -->
+    <div v-if="question.type == 'Choices'" v-for="index in 4">
+      <label
+        v-if="question[`option_${index}`]"
+        class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600"
+      >
+        <input
+          v-if="!question.multiple"
+          type="radio"
+          :name="`question_${qtidx}`"
+          class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
+          @change="recordAnswer(qtidx, question[`option_${index}`])"
+        />
+        <input
+          v-else-if="question.multiple"
+          type="checkbox"
+          :name="`question_${qtidx}`"
+          class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
+          @change="toggleAnswer(qtidx, question[`option_${index}`])"
+        />
+        <span class="ml-2" v-html="question[`option_${index}`]"></span>
+      </label>
+    </div>
+    <!-- User Input Option -->
+    <div v-else-if="question.type == 'User Input'">
+      <FormControl v-model="answers[qtidx]" type="textarea" class="my-2" />
+    </div>
+  </div>
+  <!-- Submit Button -->
+  <div class="text-center mt-4">
+    <Button @click="submitQuizComplete()">
+      <span>{{ ('Submit Your Quiz') }}</span>
+    </Button>
+  </div>
+</div>
+
+<!-- Quiz Summary (if quizSubmission.data exists) -->
+<div v-else-if="quizSubmission.data" class="border rounded-md p-20 text-center space-y-4">
+  <div class="text-lg font-semibold">{{ ('Quiz Summary') }}</div>
+  <div class="text-ink-gray-9">
+    {{ `You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of ${quizSubmission.data.score} out of ${quizSubmission.data.score_out_of}` }}
+  </div>
+  <div class="mt-6">
+    <div v-for="(question, qtidx) in detailedQuestions" :key="question.question_name" class="border rounded-md p-5 mb-4">
+      <!-- Question Header -->
+      <div class="flex justify-between">
+        <div class="text-lg text-ink-gray-5">
+          <span class="mr-2">{{ `Question ${qtidx + 1}` }}:</span>
+		  <span v-html="question.question_detail"></span>
+        </div>
+      </div>
+
+      <!-- User Answer -->
+      <div class="bg-surface-gray-3 rounded-md p-3 mt-4">
+        <strong>{{ ('Your Answer:') }}</strong> {{ question.user_answer || 'No Answer' }}
+      </div>
+
+      <!-- Correct Answer -->
+      <div class="bg-surface-gray-3 rounded-md p-3 mt-4">
+        <strong>{{ ('Correct Answer:') }}</strong> {{ question.correct_answer || 'No Correct Answer' }}
+      </div>
+
+      <!-- Explanation -->
+      <div v-if="question.explanation" class="bg-surface-gray-3 rounded-md p-3 mt-4">
+        <strong>{{ ('Explanation:') }}</strong> {{ question.explanation }}
+      </div>
+
+      <!-- Correct/Incorrect Indicator -->
+      <div class="mt-4">
+        <Badge v-if="quizResults[qtidx]?.is_correct?.[0] === 1" :label="('Correct')" theme="green">
+          <template #prefix>
+            <CheckCircle class="w-4 h-4 text-ink-green-2 mr-1" />
+          </template>
+        </Badge>
+        <Badge v-else :label="('Incorrect')" theme="red">
+          <template #prefix>
+            <XCircle class="w-4 h-4 text-ink-red-3 mr-1" />
+          </template>
+        </Badge>
+      </div>
+    </div>
+  </div>
+  <Button @click="resetQuiz()" class="mt-4">
+    <span>{{ ('Try Again') }}</span>
+  </Button>
+</div>
+	</div>
+	<div v-else>
+		<p>Loading quiz data...</p>
 	</div>
 </template>
 <script setup>
@@ -264,6 +328,7 @@ import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
 
 const user = inject('$user')
+const fullQuizMode = ref(false);
 const activeQuestion = ref(0)
 const currentQuestion = ref('')
 const selectedOptions = reactive([0, 0, 0, 0])
@@ -273,6 +338,9 @@ const possibleAnswer = ref(null)
 const timer = ref(0)
 let timerInterval = null
 const router = useRouter()
+const elapsedTime = ref(0); // Tracks the time taken in seconds
+const answers = reactive({}); // Stores the answers for each question
+
 
 const props = defineProps({
 	quizName: {
@@ -281,35 +349,55 @@ const props = defineProps({
 	},
 })
 
+// Ensure `quiz.data` is properly initialized and loaded
 const quiz = createResource({
-	url: 'frappe.client.get',
-	makeParams(values) {
-		return {
-			doctype: 'Quiz',
-			name: props.quizName,
-		}
-	},
-	cache: ['quiz', props.quizName],
-	auto: true,
-	transform(data) {
-		data.duration = parseInt(data.duration)
-	},
-	onSuccess(data) {
-		populateQuestions()
-		setupTimer()
-	},
-})
+    url: 'frappe.client.get',
+    makeParams(values) {
+        return {
+            doctype: 'Quiz',
+            name: props.quizName,
+        };
+    },
+    cache: ['quiz', props.quizName],
+    auto: true,
+    transform(data) {
+        if (!data) {
+            console.error("Quiz data is null or undefined."); // Debugging
+            return null;
+        }
+        data.duration = parseInt(data.duration) || 0; // Ensure duration is a valid number
+        return data;
+    },
+    onSuccess(data) {
+        if (data) {
+            populateQuestions();
+            setupTimer();
+        } else {
+            console.error("Failed to load quiz data."); // Debugging
+        }
+    },
+    onError(err) {
+        console.error("Error loading quiz data:", err); // Debugging
+    },
+});
+
+// Add a computed property to check if `quiz.data` is loaded
+const isQuizLoaded = computed(() => !!quiz.data);
 
 const populateQuestions = () => {
-	let data = quiz.data
-	if (data.shuffle_questions) {
-		questions = shuffleArray(data.questions)
-		if (data.limit_questions_to) {
-			questions = questions.slice(0, data.limit_questions_to)
-		}
-	} else {
-		questions = data.questions
-	}
+    let data = quiz.data;
+    if (data.shuffle_questions) {
+        // Shuffle the questions
+        const shuffledQuestions = shuffleArray([...data.questions]); // Use a copy of the array
+        // Limit the number of questions if required
+        questions = data.limit_questions_to
+            ? shuffledQuestions.slice(0, data.limit_questions_to)
+            : shuffledQuestions;
+    } else {
+        // Use the original questions if no shuffle is required
+        questions = data.questions;
+    }
+	
 }
 
 const setupTimer = () => {
@@ -319,14 +407,17 @@ const setupTimer = () => {
 }
 
 const startTimer = () => {
-	timerInterval = setInterval(() => {
-		timer.value--
-		if (timer.value == 0) {
-			clearInterval(timerInterval)
-			submitQuiz()
-		}
-	}, 1000)
-}
+    timerInterval = setInterval(() => {
+        if (quiz.data.duration) {
+            timer.value--;
+            if (timer.value == 0) {
+                clearInterval(timerInterval);
+                submitQuiz();
+            }
+        }
+        elapsedTime.value++; // Always increment elapsed time
+    }, 1000);
+};
 
 const formatTimer = (seconds) => {
 	const hrs = Math.floor(seconds / 3600)
@@ -393,14 +484,42 @@ watch(
 )
 
 const quizSubmission = createResource({
-	url: 'seminary.seminary.doctype.quiz.quiz.quiz_summary',
-	makeParams(values) {
-		return {
-			quiz: quiz.data.name,
-			results: localStorage.getItem(quiz.data.title),
-		}
-	},
-})
+    url: 'seminary.seminary.doctype.quiz.quiz.quiz_summary',
+    makeParams(values) {
+        // Add null-safe checks for `quiz.data`
+        if (!quiz.data) {
+        
+            return {}; // Return an empty object to avoid errors
+        }
+
+        const timeTaken = quiz.data.duration
+            ? quiz.data.duration * 60 - (timer.value || 0) // Use timer when duration is set
+            : elapsedTime.value || 0; // Use elapsedTime when duration is not set
+
+       
+
+        return {
+            quiz: quiz.data.name,
+            course: router.currentRoute.value.params.courseName,
+            results: values?.results || localStorage.getItem(`${quiz.data.name}_results`), // Ensure `results` is properly initialized
+            time_taken: timeTaken, // Pass the correct time_taken
+        };
+    },
+    onSuccess(data) {
+       
+        if (data.corrected_answers) {
+            all_questions_details.data = data.corrected_answers.map((question) => ({
+                ...question,
+                user_answer: question.user_answer || null, // Ensure user_answer is included
+                correct_answer: question.correct_answer || null, // Ensure correct_answer is included
+            }));
+        }
+    },
+    onError(err) {
+        console.error("Error loading quiz summary:", err); // Debugging
+    },
+    auto: true, // Re-enable auto-fetch
+});
 
 const questionDetails = createResource({
 	url: 'seminary.seminary.utils.get_question_details',
@@ -409,6 +528,7 @@ const questionDetails = createResource({
 			question: currentQuestion.value,
 		}
 	},
+	
 })
 
 watch(activeQuestion, (value) => {
@@ -427,11 +547,37 @@ watch(
 	}
 )
 
+const all_questions_details = createResource({
+	url: 'seminary.seminary.utils.get_all_questions_details',
+	makeParams(values) {
+		return {
+			questions: questions.map((q) => q.name), // Ensure only question names are sent
+		}
+	},
+	onSuccess(data) {
+		console.log("All questions details loaded:", data); // Debugging
+	},
+	onError(err) {
+		console.error("Error loading all questions details:", err); // Debugging
+	},
+})
+
+
+
 const startQuiz = () => {
 	activeQuestion.value = 1
 	localStorage.removeItem(quiz.data.title)
-	if (quiz.data.duration) startTimer()
+	startTimer()
 }
+
+const startQuiz2 = () => {
+    localStorage.removeItem(quiz.data.title);
+    fullQuizMode.value = true; // Set full quiz mode flag
+    startTimer();
+    all_questions_details.reload(); // Ensure the resource is reloaded
+    
+}
+
 
 const markAnswer = (index) => {
 	if (!questionDetails.data.multiple)
@@ -456,60 +602,73 @@ const getAnswers = () => {
 }
 
 const checkAnswer = () => {
-	let answers = getAnswers()
-	if (!answers.length) {
-		createToast({
-			title: 'Please select an option',
-			icon: 'alert-circle',
-			iconClasses: 'text-yellow-600 bg-yellow-100 rounded-full',
-			position: 'top-center',
-		})
-		return
-	}
+    let answers = getAnswers();
+    if (!answers.length) {
+        createToast({
+            title: 'Please select an option',
+            icon: 'alert-circle',
+            iconClasses: 'text-yellow-600 bg-yellow-100 rounded-full',
+            position: 'top-center',
+        });
+        return;
+    }
 
-	createResource({
-		url: 'seminary.seminary.doctype.quiz.quiz.check_answer',
-		params: {
-			question: currentQuestion.value,
-			type: questionDetails.data.type,
-			answers: JSON.stringify(answers),
-		},
-		auto: true,
-		onSuccess(data) {
-			let type = questionDetails.data.type
-			if (type == 'Choices') {
-				selectedOptions.forEach((option, index) => {
-					if (option) {
-						showAnswers[index] = option && data[index]
-					} else if (data[index] == 2) {
-						showAnswers[index] = 2
-					} else {
-						showAnswers[index] = undefined
-					}
-				})
-			} else {
-				showAnswers.push(data)
-			}
-			addToLocalStorage()
-			if (!quiz.data.show_answers) {
-				resetQuestion()
-			}
-		},
-	})
-}
+    createResource({
+        url: 'seminary.seminary.doctype.quiz.quiz.check_answer',
+        params: {
+            question: currentQuestion.value,
+            type: questionDetails.data.type,
+            answers: JSON.stringify(answers),
+        },
+        auto: true,
+        onSuccess(data) {
+            let type = questionDetails.data.type;
+            if (type === 'Choices') {
+                selectedOptions.forEach((option, index) => {
+                    if (option) {
+                        showAnswers[index] = option && data[index];
+                    } else if (data[index] === 2) {
+                        showAnswers[index] = 2;
+                    } else {
+                        showAnswers[index] = undefined;
+                    }
+                });
+            } else {
+                showAnswers.push(data);
+            }
+            addToLocalStorage();
+            if (!quiz.data.show_answers) {
+                resetQuestion();
+            }
+        },
+    });
+};
 
 const addToLocalStorage = () => {
-	let quizData = JSON.parse(localStorage.getItem(quiz.data.title))
-	let questionData = {
-		question_name: currentQuestion.value,
-		answer: getAnswers().join(),
-		is_correct: showAnswers.filter((answer) => {
+    let quizData = JSON.parse(localStorage.getItem(quiz.data.title)) || [];
+    let questionData = {
+        question_name: currentQuestion.value,
+        answer: getAnswers().join(),
+        is_correct: showAnswers.filter((answer) => {
 			return answer != undefined
 		}),
-	}
-	quizData ? quizData.push(questionData) : (quizData = [questionData])
-	localStorage.setItem(quiz.data.title, JSON.stringify(quizData))
-}
+    };
+
+    // Check if the question already exists in localStorage
+    const existingIndex = quizData.findIndex(
+        (item) => item.question_name === questionData.question_name
+    );
+
+    if (existingIndex !== -1) {
+        // Update the existing question data
+        quizData[existingIndex] = questionData;
+    } else {
+        // Add the new question data
+        quizData ? quizData.push(questionData) : (quizData = [questionData])
+    }
+
+    localStorage.setItem(quiz.data.title, JSON.stringify(quizData));
+};
 
 const nextQuestion = () => {
 	if (!quiz.data.show_answers) {
@@ -529,6 +688,7 @@ const resetQuestion = () => {
 }
 
 const submitQuiz = () => {
+	
 	if (!quiz.data.show_answers) {
 		checkAnswer()
 		setTimeout(() => {
@@ -538,6 +698,86 @@ const submitQuiz = () => {
 	}
 	createSubmission()
 }
+
+const submitQuizComplete = async () => {
+	const results = [];
+	const detailedQuestions = []; // Array to store detailed question data
+
+	// Iterate through all questions and collect answers
+	for (let i = 0; i < all_questions_details.data.length; i++) {
+		const question = all_questions_details.data[i];
+		const answer = answers[i]?.[0] || ""; // Get the first recorded answer or an empty string
+
+		
+
+		// Call the backend to validate the answer
+		const response = await call('seminary.seminary.doctype.quiz.quiz.check_answer', {
+			question: question.question, // Pass the unique question identifier
+			type: question.type,
+			answers: JSON.stringify([answer]), // Send the answer as an array
+		});
+
+		// Extract only the relevant value for `is_correct`
+		const is_correct = Array.isArray(response) ? [response.find((val) => val === 1) || 0] : [response];
+
+		results.push({
+			question_name: question.question, // Use the unique question identifier
+			answer: answer, // Use the single answer string
+			is_correct: is_correct, // Ensure this contains only the relevant value
+		});
+
+		// Add detailed question data (correct_answer will be fetched later)
+		detailedQuestions.push({
+			question_name: question.question,
+			question_detail: question.question_detail,
+			user_answer: answer,
+			correct_answer: null, // Placeholder for correct answer
+			explanation: question.explanation || null,
+		});
+	}
+
+
+	// Submit the quiz results
+	quizSubmission.submit(
+		{ results: JSON.stringify(results) }, // Ensure results is passed as a string
+		{
+			onSuccess: async (data) => {
+				
+
+				// Fetch correct answers from the backend
+				const correctAnswers = await call('seminary.seminary.doctype.quiz.quiz.get_all_question_results', {
+					questions: questions.map(q => q.question),
+				});
+
+				// Update detailedQuestions with correct answers and explanations
+				detailedQuestions.forEach((question) => {
+					const correctAnswer = correctAnswers.find((item) => item.name === question.question_name);
+					if (correctAnswer) {
+						question.correct_answer = correctAnswer.correct_option;
+						question.explanation = correctAnswer.correct_explanation || question.explanation;
+					}
+				});
+
+				// Store detailed question data in localStorage
+				localStorage.setItem(`${quiz.data.name}_questions`, JSON.stringify(detailedQuestions));
+				
+
+				// Store results in localStorage for use in `makeParams`
+				localStorage.setItem(`${quiz.data.name}_results`, JSON.stringify(results));
+
+				// Store the quiz summary in localStorage
+				localStorage.setItem(`${quiz.data.name}_summary`, JSON.stringify(data));
+				
+
+				quizSubmission.reload(); // Reload the quiz summary and corrected answers
+				fullQuizMode.value = false; // Exit full quiz mode to show the summary
+			},
+			onError(err) {
+				console.error("Error submitting quiz:", err);
+			},
+		}
+	);
+};
 
 const createSubmission = () => {
 	quizSubmission.submit(
@@ -569,6 +809,7 @@ const resetQuiz = () => {
 	quizSubmission.reset()
 	populateQuestions()
 	setupTimer()
+	elapsedTime.value = 0 // Reset elapsed time
 }
 
 const getInstructions = (question) => {
@@ -579,15 +820,19 @@ const getInstructions = (question) => {
 }
 
 const markLessonProgress = () => {
-	console.log(router)
-	if (router.currentRoute.value.name == 'Lesson') {
+	
+	if (router.currentRoute.value.name === 'Lesson') {
 		call('seminary.seminary.api.mark_lesson_progress', {
 			course: router.currentRoute.value.params.courseName,
 			chapter_number: router.currentRoute.value.params.chapterNumber,
 			lesson_number: router.currentRoute.value.params.lessonNumber,
-		})
+		}).then(() => {
+			if (fullQuizMode.value) {
+				quizSubmission.reload(); // Ensure the quiz summary is reloaded for full quiz mode
+			}
+		});
 	}
-}
+};
 
 const getSubmissionColumns = () => {
 	return [
@@ -613,7 +858,54 @@ const getSubmissionColumns = () => {
 			label: 'Percentage',
 			key: 'percentage',
 			align: 'center',
-		},
+		}
 	]
 }
+
+const recordAnswer = (qtidx, answer) => {
+	// Ensure `answers` is reactive and stores the selected answer
+	answers[qtidx] = [answer];
+	
+};
+
+const toggleAnswer = (qtidx, answer) => {
+	// Ensure `answers` is reactive and handles multiple answers
+	if (!answers[qtidx]) {
+		answers[qtidx] = [];
+	}
+	const index = answers[qtidx].indexOf(answer);
+	if (index === -1) {
+		answers[qtidx].push(answer); // Add the answer if not already selected
+	} else {
+		answers[qtidx].splice(index, 1); // Remove the answer if already selected
+	}
+	
+};
+
+watch(
+	() => all_questions_details.data,
+	(newData) => {
+		if (newData) {
+			console.log("All questions details updated"); // Debugging
+		} else {
+			console.warn("No data available in all_questions_details."); // Debugging
+		}
+	}
+)
+
+// Load detailed question data and results from localStorage
+const detailedQuestions = ref([]);
+const quizResults = ref([]);
+
+watch(
+  () => quizSubmission.data,
+  () => {
+    if (quizSubmission.data) {
+      const questions = localStorage.getItem(`${quiz.data.name}_questions`);
+      const results = localStorage.getItem(`${quiz.data.name}_results`);
+      detailedQuestions.value = questions ? JSON.parse(questions) : [];
+      quizResults.value = results ? JSON.parse(results) : [];
+    }
+  }
+);
 </script>

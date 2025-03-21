@@ -50,12 +50,19 @@
 				"
 				:required="true"
 			/>
+			<Link
+				v-model="quiz.course"
+				doctype="Course"
+				:label="__('Course where this quiz will be used - you may reuse this quiz in other schedules')"
+				:required="true"
+			/>
 			<div v-if="quizDetails.data?.name">
 				<div class="grid grid-cols-2 gap-5 mt-4 mb-8">
 					<FormControl
 						type="number"
 						v-model="quiz.max_attempts"
 						:label="__('Maximum Attempts')"
+						:default="1"
 					/>
 					<FormControl
 						type="number"
@@ -69,7 +76,7 @@
 					/>
 					<FormControl
 						v-model="quiz.passing_percentage"
-						:label="__('Passing Percentage')"
+						:label="__('Passing Percentage. Use this to force students to retake the quiz until they pass')"
 					/>
 				</div>
 
@@ -88,6 +95,11 @@
 							v-model="quiz.show_submission_history"
 							type="checkbox"
 							:label="__('Show Submission History')"
+						/>
+						<FormControl
+							v-model="quiz.qbyquestion"
+							type="checkbox"
+							:label="__('Force student to ansswer a question before moving on? Each question will have its own page and a next button')"
 						/>
 					</div>
 				</div>
@@ -211,6 +223,7 @@ import { Plus, Trash2 } from 'lucide-vue-next'
 import Question from '@/components/Modals/Question.vue'
 import { showToast, updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
+import Link from '@/components/Controls/Link.vue'
 
 const showQuestionModal = ref(false)
 const currentQuestion = reactive({
@@ -230,10 +243,12 @@ const props = defineProps({
 
 const quiz = reactive({
 	title: '',
+	course: '',
 	total_points: 0,
 	passing_percentage: 0,
 	max_attempts: 0,
 	duration: 0,
+	qbyquestion: false,
 	limit_questions_to: 0,
 	show_answers: true,
 	show_submission_history: false,

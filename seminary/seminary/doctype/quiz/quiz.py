@@ -81,7 +81,9 @@ def set_total_points(questions):
 
 
 @frappe.whitelist()
-def quiz_summary(quiz, results):
+def quiz_summary(quiz, course, time_taken, results):
+	print("Time Taken", time_taken)
+	print("Results", results)
 	score = 0
 	results = results and json.loads(results)
 	percentage = 0
@@ -132,7 +134,9 @@ def quiz_summary(quiz, results):
 		{
 			"doctype": "Quiz Submission",
 			"quiz": quiz,
+			"course": course,
 			"result": results,
+			"time_taken": time_taken,
 			"score": 0,
 			"score_out_of": score_out_of,
 			"member": frappe.session.user,
@@ -144,8 +148,7 @@ def quiz_summary(quiz, results):
 
 	if (
 		percentage >= quiz_details.passing_percentage
-		and quiz_details.lesson
-		and quiz_details.course
+		
 	):
 		save_progress(quiz_details.lesson, quiz_details.course)
 	elif not quiz_details.passing_percentage:
@@ -217,10 +220,43 @@ def get_question_details(question):
 		return frappe.db.get_value("Quiz Question", question, fields, as_dict=1)
 	return
 
+@frappe.whitelist()
+def get_all_question_results(questions):
+	if isinstance(questions, str):
+		questions = json.loads(questions)
+	results = []
+	for question in questions:
+		result = frappe.db.sql(
+			f"""
+			SELECT
+				name, question,
+				CASE
+					WHEN is_correct_1 THEN option_1
+					WHEN is_correct_2 THEN option_2
+					WHEN is_correct_3 THEN option_3
+					WHEN is_correct_4 THEN option_4
+				END AS correct_option,
+				CASE
+					WHEN is_correct_1 THEN explanation_1
+					WHEN is_correct_2 THEN explanation_2
+					WHEN is_correct_3 THEN explanation_3
+					WHEN is_correct_4 THEN explanation_4
+				END AS correct_explanation
+			FROM
+				`tabQuestion`
+			WHERE
+				name = '{question}'
+			""",
+			as_dict=1,
+		)
+		results.append(result[0])
+		print("Correct answers backend:", result)
+	return results
 
 @frappe.whitelist()
 def check_answer(question, type, answers):
 	answers = json.loads(answers)
+	print("Answers", answers)
 	if type == "Choices":
 		return check_choice_answers(question, answers)
 	else:

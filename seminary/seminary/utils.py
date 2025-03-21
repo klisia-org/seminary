@@ -814,6 +814,16 @@ def get_question_details(question):
 	return question_details
 
 @frappe.whitelist()
+def get_all_questions_details(questions):
+	
+	questions_str = "', '".join(questions)
+	all_question_details =  frappe.db.sql(
+			f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type, q.option_1, q.option_2, q.option_3, q.option_4, q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4 
+from `tabQuestion` q, `tabQuiz Question` qq
+where q.name = qq.question and qq.name in ('{questions_str}')""", as_dict=1)			
+	return all_question_details
+
+@frappe.whitelist()
 def get_assessments(course):
 	assessments = frappe.get_all(
 		"Scheduled Course Assess Criteria",

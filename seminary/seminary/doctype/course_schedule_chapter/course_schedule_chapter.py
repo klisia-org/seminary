@@ -21,5 +21,5 @@ class CourseScheduleChapter(Document):
 				"Scheduled Course Roster", {"course_sc": self.coursesc}, ["student", "name"]
 			)
 			for enrollment in enrolled_members:
-				new_progress = get_course_progress(self.course, enrollment.member)
+				new_progress = get_course_progress(self.coursesc, enrollment.member)
 				frappe.db.set_value("Scheduled Course Roster", enrollment.name, "progress", new_progress)

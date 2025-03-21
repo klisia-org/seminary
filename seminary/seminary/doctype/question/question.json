@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:QTS-{YYYY}-{#####}",
+ "autoname": "format:QTS-{course}-{#####}",
  "creation": "2018-10-01 15:58:00.696815",
  "default_view": "List",
  "doctype": "DocType",
@@ -173,7 +173,7 @@
   }
  ],
  "links": [],
- "modified": "2025-03-19 14:24:37.862797",
+ "modified": "2025-03-20 20:01:22.543954",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Question",
