@@ -1,18 +1,22 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{title}{###}",
- "creation": "2025-03-10 13:46:52.598184",
+ "creation": "2025-03-10 13:57:25.901720",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "id_section",
-  "title",
-  "questions_section",
-  "questions",
-  "exam_config_section",
-  "duration",
-  "max_points"
+  "course",
+  "exam",
+  "user",
+  "student",
+  "student_name",
+  "answers_section",
+  "answers",
+  "feedback_section",
+  "points",
+  "fudge_points",
+  "comments"
  ],
  "fields": [
   {
@@ -21,50 +25,76 @@
    "label": "ID"
   },
   {
-   "fieldname": "title",
-   "fieldtype": "Data",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "exam",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Exam Title",
+   "label": "Exam",
+   "options": "Exam Activity",
    "reqd": 1
   },
   {
-   "fieldname": "questions_section",
-   "fieldtype": "Section Break",
-   "label": "Questions"
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
   },
   {
-   "fieldname": "questions",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name"
+  },
+  {
+   "fieldname": "answers_section",
+   "fieldtype": "Section Break",
+   "label": "Answers"
+  },
+  {
+   "fieldname": "answers",
    "fieldtype": "Table",
-   "label": "questions",
-   "options": "Exam Question"
+   "label": "answers",
+   "options": "Exam Question Result"
   },
   {
-   "fieldname": "exam_config_section",
+   "fieldname": "feedback_section",
    "fieldtype": "Section Break",
-   "label": "Exam Config"
+   "label": "Feedback"
   },
   {
-   "fieldname": "max_points",
+   "fieldname": "points",
    "fieldtype": "Float",
-   "label": "Max Points"
+   "label": "Points"
   },
   {
-   "depends_on": "is_time_bound",
-   "description": "Leave empty for no limit",
-   "fieldname": "duration",
+   "fieldname": "fudge_points",
    "fieldtype": "Float",
-   "label": "Max time in minutes"
+   "label": "Fudge Points"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 16:21:48.385349",
+ "modified": "2025-03-22 16:24:33.292075",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Exam",
- "naming_rule": "Expression",
+ "name": "Exam Submission",
  "owner": "Administrator",
  "permissions": [
   {
@@ -116,18 +146,19 @@
    "write": 1
   },
   {
+   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "title_field": "title"
+ "states": []
 }

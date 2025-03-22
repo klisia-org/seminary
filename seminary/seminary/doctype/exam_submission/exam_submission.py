@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class Exam(Document):
+class ExamSubmission(Document):
 	pass
