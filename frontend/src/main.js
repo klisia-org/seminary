@@ -6,6 +6,7 @@ import App from './App.vue'
 import { createPinia } from 'pinia'
 import { usersStore } from './stores/user'
 import translationPlugin from './translation'
+import dayjs from '@/utils/dayjs'
 
 
 import {
@@ -35,6 +36,7 @@ app.component('Input', Input)
 app.mount('#app')
 
 const { userResource, allUsers } = usersStore()
+app.provide('$dayjs', dayjs)
 app.provide('$user', userResource)
 app.provide('$allUsers', allUsers)
 app.config.globalProperties.$user = userResource

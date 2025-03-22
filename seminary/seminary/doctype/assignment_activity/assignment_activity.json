@@ -9,7 +9,10 @@
   "assignment_section",
   "title",
   "question",
-  "type"
+  "type",
+  "show_answer",
+  "grade_assignment",
+  "answer"
  ],
  "fields": [
   {
@@ -38,13 +41,30 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Accepted file type",
-   "options": "PDF\nDocument\nImage\nURL",
+   "options": "PDF\nDocument\nImage\nURL\nText",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "show_answer",
+   "fieldtype": "Check",
+   "label": "Show Answer"
+  },
+  {
+   "default": "1",
+   "fieldname": "grade_assignment",
+   "fieldtype": "Check",
+   "label": "Grade Assignment"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Text Editor",
+   "label": "Correct Answer for Feedback"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:18:24.156868",
+ "modified": "2025-03-21 16:40:22.252433",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Activity",

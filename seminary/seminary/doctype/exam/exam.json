@@ -11,8 +11,7 @@
   "questions_section",
   "questions",
   "exam_config_section",
-  "is_time_bound",
-  "max_time",
+  "duration",
   "max_points"
  ],
  "fields": [
@@ -46,28 +45,22 @@
    "label": "Exam Config"
   },
   {
-   "default": "0",
-   "fieldname": "is_time_bound",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Is time-bound"
-  },
-  {
-   "depends_on": "is_time_bound",
-   "fieldname": "max_time",
-   "fieldtype": "Float",
-   "label": "Max time in minutes"
-  },
-  {
    "fieldname": "max_points",
    "fieldtype": "Float",
    "label": "Max Points"
+  },
+  {
+   "depends_on": "is_time_bound",
+   "description": "Leave empty for no limit",
+   "fieldname": "duration",
+   "fieldtype": "Float",
+   "label": "Max time in minutes"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:51:43.892810",
+ "modified": "2025-03-22 16:21:48.385349",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam",

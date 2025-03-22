@@ -30,7 +30,7 @@
 					</div>
 					<div class="flex items-center space-x-2">
 						<Badge v-if="isDirty" theme="orange">
-							{{ __('Not Saved') }}
+							{{ __('Not Saved') }} 
 						</Badge>
 						<Badge
 							v-else-if="submissionResource.doc?.status"
@@ -47,10 +47,10 @@
 				<div
 					v-if="
 						submissionName != 'new' &&
-						!['Pass', 'Fail'].includes(submissionResource.doc?.status) &&
+						!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
 						submissionResource.doc?.owner == user.data?.name
 					"
-					class="bg-surface-blue-2 p-3 rounded-md leading-5 text-sm mb-4"
+					class="bg-blue-200 p-3 rounded-md leading-5 text-sm mb-4"
 				>
 					{{ __("You've successfully submitted the assignment.") }}
 					{{
@@ -58,7 +58,7 @@
 							"Once the moderator grades your submission, you'll find the details here."
 						)
 					}}
-					{{ __('Feel free to make edits to your submission if needed.') }}
+					{{ __('Feel free to make edits to your submission if needed, until it is graded.') }}
 				</div>
 				<div v-if="showUploader()">
 					<div class="text-xs text-ink-gray-5 mt-1 mb-2">
@@ -133,13 +133,13 @@
 						user.data?.name == submissionResource.doc?.owner &&
 						submissionResource.doc?.comments
 					"
-					class="mt-8 p-3 bg-surface-blue-2 rounded-md"
+					class="mt-8 p-3 bg-blue-200 rounded-md"
 				>
 					<div class="text-sm text-ink-gray-5 font-medium mb-2">
-						{{ __('Comments by Evaluator') }}:
+						{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
 					</div>
 					<div class="leading-5">
-						{{ submissionResource.doc.comments }}
+						<div v-html="submissionResource.doc.comments"></div>
 					</div>
 				</div>
 
@@ -151,9 +151,15 @@
 					<FormControl
 						v-if="submissionResource.doc"
 						v-model="submissionResource.doc.status"
-						:label="__('Grade')"
+						:label="__('Grading Status')"
 						type="select"
 						:options="submissionStatusOptions"
+					/>
+					<FormControl
+						v-if="submissionResource.doc"
+						v-model="submissionResource.doc.grade"
+						:label="__('Score')"
+						type="number"
 					/>
 					<div>
 						<div class="text-sm text-ink-gray-5 mb-1">
@@ -214,6 +220,7 @@ const props = defineProps({
 
 onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
+	console.log('User: ', user.data)
 })
 
 const keyboardShortcut = (e) => {
@@ -378,6 +385,8 @@ const markLessonProgress = () => {
 		let courseName = router.currentRoute.value.params.courseName
 		let chapterNumber = router.currentRoute.value.params.chapterNumber
 		let lessonNumber = router.currentRoute.value.params.lessonNumber
+		console.log("Chapter Number: ", chapterNumber)
+		console.log("Lesson Number: ", lessonNumber)
 
 		call('seminary.seminary.api.mark_lesson_progress', {
 			course: courseName,
@@ -445,6 +454,7 @@ const canModifyAssignment = computed(() => {
 const submissionStatusOptions = computed(() => {
 	return [
 		{ label: 'Not Graded', value: 'Not Graded' },
+		{ label: 'Graded', value: 'Graded' },
 		{ label: 'Pass', value: 'Pass' },
 		{ label: 'Fail', value: 'Fail' },
 	]
@@ -453,7 +463,7 @@ const submissionStatusOptions = computed(() => {
 const statusTheme = computed(() => {
 	if (!submissionResource.doc) {
 		return 'orange'
-	} else if (submissionResource.doc.status == 'Pass') {
+	} else if (submissionResource.doc.status == 'Pass' || submissionResource.doc.status == 'Graded') {
 		return 'green'
 	} else if (submissionResource.doc.status == 'Not Graded') {
 		return 'blue'

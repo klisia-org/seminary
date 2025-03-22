@@ -1,14 +1,17 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:{assignment}-{####}",
  "creation": "2025-03-07 10:04:07.197858",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "id_section",
   "course_schedule",
+  "lesson",
   "student",
-  "user",
+  "member_name",
+  "member",
   "assignment",
   "type",
   "assignment_section",
@@ -30,23 +33,11 @@
    "label": "ID"
   },
   {
+   "fetch_from": "lesson.course_sc",
    "fieldname": "course_schedule",
    "fieldtype": "Link",
    "label": "Course Schedule",
    "options": "Course Schedule"
-  },
-  {
-   "fieldname": "student",
-   "fieldtype": "Link",
-   "label": "Student",
-   "options": "Scheduled Course Roster"
-  },
-  {
-   "fetch_from": "student.stuemail_rc",
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "options": "User"
   },
   {
    "fieldname": "assignment",
@@ -81,7 +72,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Not Graded\nGraded\nPass\nFail"
+   "options": "\nNot Graded\nGraded\nPass\nFail"
   },
   {
    "fieldname": "comments",
@@ -122,14 +113,42 @@
    "fieldname": "grade",
    "fieldtype": "Float",
    "label": "Grade"
+  },
+  {
+   "fetch_from": "member.full_name",
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User Full Name"
+  },
+  {
+   "fetch_from": "student.stuemail_rc",
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Link",
+   "label": "Course Lesson",
+   "options": "Course Lesson"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Scheduled Course Roster"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 13:33:06.781210",
+ "modified": "2025-03-22 09:44:40.437427",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -196,5 +215,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

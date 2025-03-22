@@ -688,6 +688,12 @@ def copy_data_to_scheduled_course_roster(doc, method):
 	if coursesc_ce and student_ce:
 		items = []
 		criteria = []
+		enrollments = frappe.db.get_value("Course Schedule", coursesc_ce, "enrollments")
+		if enrollments:
+			enrollments += 1
+		else:
+			enrollments = 1
+		frappe.db.set_value("Course Schedule", coursesc_ce, "enrollments", enrollments)
 		criteria = frappe.db.sql(
 			"""select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and

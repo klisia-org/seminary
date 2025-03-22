@@ -17,6 +17,7 @@
     "@editorjs/simple-image": "^1.6.0",
     "@editorjs/table": "^2.4.4",
     "@internationalized/date": "^3.7.0",
+    "dayjs": "^1.11.13",
     "feather-icons": "^4.29.2",
     "frappe-ui": "^0.1.72",
     "hljs": "^6.2.3",

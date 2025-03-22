@@ -88,6 +88,28 @@ const routes = [
 		component: () => import('@/pages/QuizSubmission.vue'),
 		props: true,
 	},
+	{
+		path: '/assignments',
+		name: 'Assignments',
+		component: () => import('@/pages/Assignments.vue'),
+	},
+	{
+		path: '/assignments/:assignmentID',
+		name: 'AssignmentForm',
+		component: () => import('@/pages/AssignmentForm.vue'),
+		props: true,
+	},
+	{
+		path: '/assignment-submission/:assignmentID/:submissionName',
+		name: 'AssignmentSubmission',
+		component: () => import('@/pages/AssignmentSubmission.vue'),
+		props: true,
+	},
+	{
+		path: '/assignment-submissions',
+		name: 'AssignmentSubmissionList',
+		component: () => import('@/pages/AssignmentSubmissionList.vue'),
+	},
   {
     path :'/:catchAll(.*)',
     redirect: '/courses',
