@@ -6,33 +6,28 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "question_short",
   "question",
-  "points"
+  "explanation"
  ],
  "fields": [
+  {
+   "description": "The student will see this as feedback, according to exam configurations.",
+   "fieldname": "explanation",
+   "fieldtype": "Text Editor",
+   "label": "Explanation"
+  },
   {
    "fieldname": "question",
    "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Question",
    "reqd": 1
-  },
-  {
-   "fieldname": "points",
-   "fieldtype": "Float",
-   "label": "Points"
-  },
-  {
-   "fieldname": "question_short",
-   "fieldtype": "Data",
-   "label": "Question short name"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 14:18:07.840680",
+ "modified": "2025-03-22 19:56:40.484382",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Open Question",
@@ -101,6 +96,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "question_short",
+ "title_field": "question",
  "track_changes": 1
 }

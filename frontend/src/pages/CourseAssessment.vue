@@ -69,7 +69,7 @@
                   <Link
                     v-else-if="criteria.type === 'Exam'"
                     v-model="criteria.exam"
-                    doctype="Exam"
+                    doctype="Exam Activity"
                     :label="__('Select an Exam')"
                     :required="true"
                   />

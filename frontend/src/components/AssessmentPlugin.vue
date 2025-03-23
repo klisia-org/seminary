@@ -10,6 +10,9 @@
 				<div v-if="type == 'quiz'" class="text-lg font-semibold">
 					{{ __('Add a quiz to your lesson') }}
 				</div>
+				<div v-else-if="type == 'exam'" class="text-lg font-semibold">
+					{{ __('Add an exam to your lesson') }}
+				</div>
 				<div v-else class="text-lg font-semibold">
 					{{ __('Add an assignment to your lesson') }}
 				</div>
@@ -19,6 +22,13 @@
 						v-model="quiz"
 						doctype="Quiz"
 						:label="__('Select a quiz')"
+						:onCreate="(value, close) => redirectToForm()"
+					/>
+					<Link
+						v-else-if="type == 'exam'"
+						v-model="exam"
+						doctype="Exam Activity"
+						:label="__('Select an exam')"
 						:onCreate="(value, close) => redirectToForm()"
 					/>
 					<Link
@@ -46,6 +56,7 @@ import Link from '@/components/Controls/Link.vue'
 const show = ref(false)
 const quiz = ref(null)
 const assignment = ref(null)
+const exam = ref(null)
 
 const props = defineProps({
 	type: {
@@ -70,6 +81,7 @@ const addAssessment = () => {
 
 const redirectToForm = () => {
 	if (props.type == 'quiz') window.open('/seminary/quizzes/new', '_blank')
+	else if (props.type == 'exam') window.open('/seminary/exams/new', '_blank')
 	else window.open('/seminary/assignments/new', '_blank')
 }
 </script>

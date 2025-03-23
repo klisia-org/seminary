@@ -80,6 +80,14 @@
 											v-else-if="lesson.icon === 'icon-quiz'"
 											class="h-4 w-4 stroke-1 mr-2"
 										/>
+										<BookOpenCheck
+											v-else-if="lesson.icon === 'icon-exam'"
+											class="h-4 w-4 stroke-1 mr-2"
+										/>
+										<FileUp
+											v-else-if="lesson.icon === 'icon-assignment'"
+											class="h-4 w-4 stroke-1 mr-2"
+										/>
 										<FileText
 											v-else-if="lesson.icon === 'icon-list'"
 											class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
@@ -135,7 +143,9 @@ import {
 	FilePenLine,
 	HelpCircle,
 	MonitorPlay,
+	BookOpenCheck,
 	Trash2,
+	FileUp,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'

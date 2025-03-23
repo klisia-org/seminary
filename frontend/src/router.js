@@ -110,6 +110,35 @@ const routes = [
 		name: 'AssignmentSubmissionList',
 		component: () => import('@/pages/AssignmentSubmissionList.vue'),
 	},
+	{
+		path: '/exams',
+		name: 'Exams',
+		component: () => import('@/pages/Exams.vue'),
+	},
+	{
+		path: '/exams/:examID',
+		name: 'ExamForm',
+		component: () => import('@/pages/ExamForm.vue'),
+		props: true,
+	},
+	{
+		path: '/exam/:examID',
+		name: 'ExamPage',
+		component: () => import('@/pages/ExamPage.vue'),
+		props: true,
+	},
+	{
+		path: '/exam-submissions/:examID',
+		name: 'ExamSubmissionList',
+		component: () => import('@/pages/ExamSubmissionList.vue'),
+		props: true,
+	},
+	{
+		path: '/exam-submission/:submission',
+		name: 'ExamSubmission',
+		component: () => import('@/pages/ExamSubmission.vue'),
+		props: true,
+	},
   {
     path :'/:catchAll(.*)',
     redirect: '/courses',

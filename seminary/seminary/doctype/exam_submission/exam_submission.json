@@ -1,21 +1,32 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format: {exam}-{YYYY}-{####}",
  "creation": "2025-03-10 13:57:25.901720",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "id_section",
-  "course",
   "exam",
-  "user",
+  "exam_title",
+  "member",
   "student",
-  "student_name",
+  "member_name",
+  "column_break_tlmo",
+  "course",
+  "course_name",
+  "course_assess",
   "answers_section",
-  "answers",
+  "result",
   "feedback_section",
-  "points",
+  "score",
+  "score_out_of",
+  "percentage",
+  "passing_percentage",
   "fudge_points",
+  "column_break_hfkj",
+  "submission_date",
+  "time_taken",
   "comments"
  ],
  "fields": [
@@ -27,7 +38,7 @@
   {
    "fieldname": "course",
    "fieldtype": "Link",
-   "label": "Course",
+   "label": "Course Schedule",
    "options": "Course Schedule"
   },
   {
@@ -39,22 +50,10 @@
    "reqd": 1
   },
   {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "options": "User"
-  },
-  {
    "fieldname": "student",
    "fieldtype": "Link",
    "label": "Student",
    "options": "Student"
-  },
-  {
-   "fetch_from": "student.student_name",
-   "fieldname": "student_name",
-   "fieldtype": "Data",
-   "label": "Student Name"
   },
   {
    "fieldname": "answers_section",
@@ -62,20 +61,9 @@
    "label": "Answers"
   },
   {
-   "fieldname": "answers",
-   "fieldtype": "Table",
-   "label": "answers",
-   "options": "Exam Question Result"
-  },
-  {
    "fieldname": "feedback_section",
    "fieldtype": "Section Break",
    "label": "Feedback"
-  },
-  {
-   "fieldname": "points",
-   "fieldtype": "Float",
-   "label": "Points"
   },
   {
    "fieldname": "fudge_points",
@@ -86,15 +74,94 @@
    "fieldname": "comments",
    "fieldtype": "Text Editor",
    "label": "Comments"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "label": "Score"
+  },
+  {
+   "fetch_from": "exam.total_points",
+   "fieldname": "score_out_of",
+   "fieldtype": "Float",
+   "label": "Max Possible Score"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "non_negative": 1
+  },
+  {
+   "fetch_from": "exam.passing_percentage",
+   "fieldname": "passing_percentage",
+   "fieldtype": "Float",
+   "label": "Passing Percentage"
+  },
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "label": "Student Name"
+  },
+  {
+   "fieldname": "column_break_tlmo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Course Assessment",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fetch_from": "exam.title",
+   "fieldname": "exam_title",
+   "fieldtype": "Data",
+   "label": "Exam Title"
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Table",
+   "label": "answers",
+   "options": "Exam Question Result"
+  },
+  {
+   "fieldname": "column_break_hfkj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Data",
+   "label": "Submission Date"
+  },
+  {
+   "fieldname": "time_taken",
+   "fieldtype": "Duration",
+   "label": "Time Taken"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 16:24:33.292075",
+ "modified": "2025-03-22 17:10:41.803768",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

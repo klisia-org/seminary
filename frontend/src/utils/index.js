@@ -2,6 +2,7 @@ import { toast } from 'frappe-ui'
 import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
+import { Exam} from '@/utils/exam'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
@@ -14,6 +15,7 @@ import { watch } from 'vue'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
+
 
 export function createToast(options) {
 	toast({
@@ -157,6 +159,7 @@ export function getEditorTools() {
 		},
 		quiz: Quiz,
 		assignment: Assignment,
+		exam: Exam,
 		upload: Upload,
 		markdown: Markdown,
 		image: SimpleImage,
@@ -471,24 +474,7 @@ export function getSidebarLinks() {
 				'LessonForm',
 			],
 		},
-		{
-			label: 'Batches',
-			icon: 'Users',
-			to: 'Batches',
-			activeFor: ['Batches', 'BatchDetail', 'Batch', 'BatchForm'],
-		},
-		{
-			label: 'Certified Participants',
-			icon: 'GraduationCap',
-			to: 'CertifiedParticipants',
-			activeFor: ['CertifiedParticipants'],
-		},
-		{
-			label: 'Jobs',
-			icon: 'Briefcase',
-			to: 'Jobs',
-			activeFor: ['Jobs', 'JobDetail'],
-		},
+	
 		{
 			label: 'Statistics',
 			icon: 'TrendingUp',

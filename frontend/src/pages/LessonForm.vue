@@ -285,6 +285,14 @@ const convertToJSON = (lessonData) => {
 					quiz: quiz,
 				},
 			})
+		} else if (block.includes('{{ Exam')) {
+			let exam = block.match(/\(["']([^"']+?)["']\)/)[1]
+			blocks.push({
+				type: 'exam',
+				data: {
+					exam: exam,
+				},
+			})
 		} else if (block.includes('{{ Video')) {
 			let video = block.match(/\(["']([^"']+?)["']\)/)[1]
 			blocks.push({
@@ -354,6 +362,14 @@ const convertToJSON = (lessonData) => {
 			type: 'quiz',
 			data: {
 				quiz: lessonData.quizId,
+			},
+		})
+	}
+	if (lessonData.examId) {
+		blocks.push({
+			type: 'exam',
+			data: {
+				exam: lessonData.examId,
 			},
 		})
 	}

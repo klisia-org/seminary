@@ -8,11 +8,19 @@
  "field_order": [
   "id_section",
   "title",
+  "course",
   "questions_section",
   "questions",
   "exam_config_section",
-  "duration",
-  "max_points"
+  "total_points",
+  "passing_percentage",
+  "max_attempts",
+  "column_break_jvja",
+  "qbyquestion",
+  "show_submission_history",
+  "shuffle_questions",
+  "limit_questions_to",
+  "duration"
  ],
  "fields": [
   {
@@ -36,7 +44,7 @@
   {
    "fieldname": "questions",
    "fieldtype": "Table",
-   "label": "questions",
+   "label": "All Possible Questions",
    "options": "Exam Question"
   },
   {
@@ -45,22 +53,70 @@
    "label": "Exam Config"
   },
   {
-   "fieldname": "max_points",
-   "fieldtype": "Float",
-   "label": "Max Points"
-  },
-  {
-   "depends_on": "is_time_bound",
    "description": "Leave empty for no limit",
    "fieldname": "duration",
    "fieldtype": "Float",
    "label": "Max time in minutes"
+  },
+  {
+   "description": "This refers to the Course itself, not the Course Schedule (so can be used for many CS)",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "total_points",
+   "fieldtype": "Float",
+   "label": "Total Points Possible",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "passing_percentage",
+   "fieldtype": "Float",
+   "label": "Passing Percentage"
+  },
+  {
+   "default": "1",
+   "fieldname": "max_attempts",
+   "fieldtype": "Int",
+   "label": "Max Attempts",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_jvja",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Check if you want to force the student to answer one question before moving to the next (each question on a page)",
+   "fieldname": "qbyquestion",
+   "fieldtype": "Check",
+   "label": "Question by Question"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_submission_history",
+   "fieldtype": "Check",
+   "label": "Show Submission History"
+  },
+  {
+   "default": "0",
+   "fieldname": "shuffle_questions",
+   "fieldtype": "Check",
+   "label": "Shuffle Questions"
+  },
+  {
+   "fieldname": "limit_questions_to",
+   "fieldtype": "Int",
+   "label": "Limit Questions to (on Shuffle)"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 16:21:48.385349",
+ "modified": "2025-03-22 16:51:13.122368",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Activity",

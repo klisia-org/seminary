@@ -9,7 +9,8 @@
   "question",
   "answer",
   "section_break_xnsz",
-  "points",
+  "score",
+  "score_out_of",
   "comments"
  ],
  "fields": [
@@ -31,21 +32,27 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "points",
-   "fieldtype": "Float",
-   "label": "Points"
-  },
-  {
    "fieldname": "comments",
    "fieldtype": "Text Editor",
    "label": "Question Comments"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "label": "Score"
+  },
+  {
+   "fetch_from": "question.points",
+   "fieldname": "score_out_of",
+   "fieldtype": "Float",
+   "label": "Score out of"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-10 13:56:46.169957",
+ "modified": "2025-03-22 17:55:22.982905",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question Result",
