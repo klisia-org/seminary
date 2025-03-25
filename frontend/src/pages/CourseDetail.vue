@@ -23,23 +23,19 @@
 						<div v-if="course.data.instructors.length === 1" class="text-lg font-semibold">Instructor</div>
 						<div v-else class="text-lg font-semibold">Instructors</div>
 					
-					<div v-for="instructor in course.data.instructors" class="flex items-center">
-						<br>
-						{{ instructor.instructor_name }}
-					
-							<span
-								class="h-6 mr-1 p-2"
-								:class="{
-									'avatar-group overlap': course.data.instructors.length > 1,
-								}"
-							>
-								<InstructorAvatar
-									:instructor="instructor"
-								/>
-								<br>
-							</span>
-						</div>				
+					<div class="flex flex-wrap gap-4">
+						<div
+							v-for="instructor in course.data.instructors"
+							:key="instructor.instructor_name"
+							class="flex flex-col items-center"
+						>
+							<InstructorAvatar :instructor="instructor" size="xl" class="mb-2" />
+							<div class="text-center text-sm font-medium">
+								{{ instructor.instructor_name }}
+							</div>
 						</div>
+					</div>
+					</div>
 					<div class="mt-10">
 						<CourseOutline
 							:title="('Course Outline')"

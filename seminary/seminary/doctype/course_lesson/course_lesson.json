@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{lesson_title}_{####}",
+ "autoname": "format:{course_code}-{lesson_title}_{####}",
  "creation": "2025-03-08 14:40:26.854417",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -8,6 +8,7 @@
   "chapter",
   "lesson_title",
   "course_sc",
+  "course_code",
   "is_scorm_package",
   "section_break_ksdk",
   "content_column",
@@ -128,11 +129,17 @@
    "fieldname": "instructor_notes",
    "fieldtype": "Text Editor",
    "label": "Instructor Notes"
+  },
+  {
+   "fetch_from": "chapter.course_code",
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course code"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-16 15:27:22.572104",
+ "modified": "2025-03-24 20:51:48.123931",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

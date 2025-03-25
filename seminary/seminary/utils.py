@@ -824,6 +824,23 @@ where q.name = qq.question and qq.name in ('{questions_str}')""", as_dict=1)
 	return all_question_details
 
 @frappe.whitelist()
+def get_open_question_details(question):
+	fields = ["question", "explanation"]
+	question_details = frappe.db.get_value("Open Question", question, fields, as_dict=1)
+	return question_details
+
+@frappe.whitelist()
+def get_all_open_questions_details(questions):
+	
+	questions_str = "', '".join(questions)
+	all_question_details =  frappe.db.sql(
+			f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.explanation
+from `tabOpen Question` q, `tabExam Question` qq
+where q.name = qq.question and qq.name in ('{questions_str}')""", as_dict=1)			
+	print("All questions details: " + str(all_question_details))
+	return all_question_details
+
+@frappe.whitelist()
 def get_assessments(course):
 	assessments = frappe.get_all(
 		"Scheduled Course Assess Criteria",

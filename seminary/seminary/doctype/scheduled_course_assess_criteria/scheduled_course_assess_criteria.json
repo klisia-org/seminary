@@ -12,6 +12,8 @@
   "type",
   "column_break_etid",
   "weight_scac",
+  "due_date",
+  "lesson",
   "linked_activity_section",
   "quiz",
   "assignment",
@@ -119,12 +121,22 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Datetime",
+   "label": "Due Date and time"
+  },
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Data",
+   "label": "Lesson"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-22 16:24:33.070398",
+ "modified": "2025-03-24 18:03:41.551708",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

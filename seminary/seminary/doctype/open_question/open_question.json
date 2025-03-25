@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "question",
+  "section_break",
   "explanation"
  ],
  "fields": [
@@ -22,12 +23,19 @@
    "in_list_view": 1,
    "label": "Question",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Use this if you want to insert explanations for the next section of the exam. ",
+   "fieldname": "section_break",
+   "fieldtype": "Check",
+   "label": "Is Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 19:56:40.484382",
+ "modified": "2025-03-24 08:43:03.485035",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Open Question",

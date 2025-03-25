@@ -75,7 +75,13 @@ onMounted(async () => {
 })
 
 const addAssessment = () => {
-	props.onAddition(props.type == 'quiz' ? quiz.value : assignment.value)
+	if (props.type == 'quiz') {
+		props.onAddition(quiz.value)
+	} else if (props.type == 'exam') {
+		props.onAddition(exam.value)
+	} else {
+		props.onAddition(assignment.value)
+	}
 	show.value = false
 }
 

@@ -1,13 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{chapter_title}{###}",
+ "autoname": "format:{course_code}-{chapter_title}{###}",
  "creation": "2025-03-10 11:17:17.690579",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "id_section",
   "coursesc",
+  "course_code",
   "course_title",
   "chapter_title",
   "lessons_section",
@@ -95,12 +96,18 @@
    "fieldtype": "Code",
    "label": "Launch File",
    "read_only": 1
+  },
+  {
+   "fetch_from": "coursesc.coursecode_cs",
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course Code"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-10 11:27:42.183079",
+ "modified": "2025-03-24 20:50:09.621230",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",

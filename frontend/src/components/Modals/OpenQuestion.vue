@@ -69,7 +69,7 @@
 					<Link
 						v-model="existingQuestion.question"
 						:label="__('Select a question')"
-						doctype="Question"
+						doctype="Open Question"
 					/>
 					<FormControl
 						v-model="existingQuestion.points"

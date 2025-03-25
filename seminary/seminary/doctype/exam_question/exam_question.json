@@ -7,7 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "question",
-  "question_text",
+  "question_detail",
+  "section_break",
   "points"
  ],
  "fields": [
@@ -20,24 +21,32 @@
    "reqd": 1
   },
   {
+   "fieldname": "points",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Question Points"
+  },
+  {
    "fetch_from": "question.question",
-   "fieldname": "question_text",
+   "fieldname": "question_detail",
    "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Question"
   },
   {
-   "fieldname": "points",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Question Points"
+   "default": "0",
+   "fetch_from": "question.section_break",
+   "fieldname": "section_break",
+   "fieldtype": "Check",
+   "label": "Is Section Break",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-22 20:23:48.417685",
+ "modified": "2025-03-24 08:43:58.000001",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question",

@@ -24,8 +24,8 @@
             </Button>
           </div>
         </header>
-        <div class="mt-5 mb-10">
-          <div class="container mb-5">
+        <div class="mt-5 mb-10 w-full px-5">
+          <div class="container max-w-full mb-5">
             <div v-if="!course.data" class="text-lg font-semibold mb-4">
               {{ __('Assessment Criteria') }}
             </div>
@@ -42,7 +42,7 @@
             </div>
             <div class="border border-gray-300 p-4 rounded-md">
               <div v-for="(criteria, index) in assessmentCriteria" :key="index" class="border border-gray-300 p-4 mb-4 rounded-md flex items-center">
-                <div class="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-[3fr,2fr,3fr,1fr,1fr,1fr,1fr] gap-4">
                   <FormControl
                     v-model="criteria.title"
                     :label="__('Title')"
@@ -111,6 +111,26 @@
                       :required="true"
                     />
                   </div>
+                    <DateTimePicker
+                    v-model="criteria.due_date"
+                    :label="__('Due Date')"
+                    variant="subtle"
+                    :required="false"
+                  
+                    />
+                      <!-- Trashcan Icon -->
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      theme="red"
+                      @click="removeCriteria(index)"
+                      >
+                      <Trash2 class="h-4 w-4 stroke-1.5" />
+         
+                  
+                      </Button>
+
+              
                 </div>
               </div>
             </div>
@@ -135,10 +155,12 @@
 import { createResource, Breadcrumbs, Button, FormControl, Tooltip } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Trash2 } from 'lucide-vue-next'
 import { showToast, updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
+import DateTimePicker from 'frappe-ui/src/components/DateTimePicker.vue'
 
 
 const route = useRoute()
@@ -252,7 +274,9 @@ function loadAssessmentCriteria() {
           name: item.name || '',
           parent: item.parent || '',
           parenttype: item.parenttype || '',
-          parentfield: item.parentfield || ''
+          parentfield: item.parentfield || '',
+          due_date: item.due_date || '',
+          lesson: item.lesson || ''
         });
       });
     } else {
@@ -270,13 +294,14 @@ function loadAssessmentCriteria() {
         name: assessments.data.name || '',
         parent: assessments.data.parent || '',
         parenttype: assessments.data.parenttype || '',
-        parentfield: assessments.data.parentfield || ''
+        parentfield: assessments.data.parentfield || '',
+        due_date: assessments.data.due_date || '',
+        lesson: assessments.data.lesson || ''
       });
     }
   } else {
     console.log('No assessments data found');
   }
-   addCriteria();
 }
 
 function addCriteria() {
@@ -292,7 +317,9 @@ function addCriteria() {
     fudgepoints_scac: '',
     parent: props.courseName,
     parenttype: 'Course Schedule',
-    parentfield: 'courseassescrit_sc'
+    parentfield: 'courseassescrit_sc',
+    due_date: '',
+    lesson: ''
   });
   
   // Add the new criteria to the reactive array.
@@ -311,7 +338,11 @@ function addCriteria() {
 }
 
 function removeCriteria(index) {
-  assessmentCriteria.splice(index, 1);
+  // Confirm deletion (optional)
+  if (confirm(__('Are you sure you want to delete this record?'))) {
+    assessmentCriteria.splice(index, 1); // Remove the record at the specified index
+    console.log(`Record at index ${index} removed.`);
+  }
 }
 
 function openCourseAssessmentModal() {
@@ -383,6 +414,7 @@ async function fetchType(criteria) {
     }
   }
 }
+
 
 
 function onAssessmentSaved() {

@@ -91,7 +91,7 @@ def exam_summary(exam, course, time_taken, results):
 	exam_details = frappe.db.get_value(
 		"Exam Activity",
 		exam,
-		["total_points", "passing_percentage"],
+		["total_points", "passing_percentage", "title", "course"],
 		as_dict=1,
 	)
 
@@ -101,27 +101,14 @@ def exam_summary(exam, course, time_taken, results):
 		question_details = frappe.db.get_value(
 			"Exam Question",
 			{"parent": exam, "question": result["question_name"]},
-			["question", "points", "question_detail", "type"],
+			["question", "points", "question_detail"],
 			as_dict=1,
 		)
 
 		result["question_name"] = question_details.question
 		result["question"] = question_details.question_detail
-		result["points_out_of"] = question_details.points
-
-		if question_details.type != "Open Ended":
-			correct = result["is_correct"][0]
-			for point in result["is_correct"]:
-				correct = correct and point
-			result["is_correct"] = correct
-
-			points = question_details.points if correct else 0
-			result["points"] = points
-			score += points
-
-		else:
-			result["is_correct"] = 0
-			
+		result["points"] = question_details.points
+		score += result["points"]	
 
 		percentage = (score / score_out_of) * 100
 		result["answer"] = re.sub(
@@ -135,6 +122,8 @@ def exam_summary(exam, course, time_taken, results):
 			"doctype": "Exam Submission",
 			"exam": exam,
 			"course": course,
+			"course_name": exam_details.course,
+			"exam_title": exam_details.title,
 			"result": results,
 			"time_taken": time_taken,
 			"score": 0,
@@ -210,7 +199,7 @@ def get_corrupted_image_msg():
 @frappe.whitelist()
 def get_question_details(question):
 	if frappe.db.exists("Exam Question", question):
-		fields = ["name", "question", "question_text", "points"]
+		fields = ["name", "question", "question_detail", "points"]
 
 		return frappe.db.get_value("Exam Question", question, fields, as_dict=1)
 	return
