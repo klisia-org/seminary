@@ -10,6 +10,7 @@
   "course_sc",
   "course_code",
   "is_scorm_package",
+  "allow_discuss",
   "section_break_ksdk",
   "content_column",
   "preview",
@@ -20,10 +21,13 @@
   "instructor_content",
   "instructor_notes",
   "assignments_section",
-  "assessment_criteria",
   "quiz_id",
   "assignment_id",
-  "exam"
+  "exam",
+  "column_break_otzq",
+  "assessment_criteria_quiz",
+  "assessment_criteria_assignment",
+  "assessment_criteria_exam"
  ],
  "fields": [
   {
@@ -90,12 +94,6 @@
    "label": "Assignment ID"
   },
   {
-   "fieldname": "assessment_criteria",
-   "fieldtype": "Link",
-   "label": "Assessment Criteria",
-   "options": "Scheduled Course Assess Criteria"
-  },
-  {
    "fetch_from": "assessment_criteria.exam",
    "fieldname": "exam",
    "fieldtype": "Data",
@@ -135,11 +133,40 @@
    "fieldname": "course_code",
    "fieldtype": "Data",
    "label": "Course code"
+  },
+  {
+   "fieldname": "assessment_criteria_quiz",
+   "fieldtype": "Link",
+   "label": "Assessment Criteria Quiz",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fieldname": "assessment_criteria_assignment",
+   "fieldtype": "Link",
+   "label": "Assessment Criteria Assignment",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fieldname": "assessment_criteria_exam",
+   "fieldtype": "Link",
+   "label": "Assessment Criteria Exam",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fieldname": "column_break_otzq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "If the lesson has quiz or exam, discussions will be automatically disabled.",
+   "fieldname": "allow_discuss",
+   "fieldtype": "Check",
+   "label": "Allow Discussions"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-24 20:51:48.123931",
+ "modified": "2025-03-27 14:04:54.981396",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",

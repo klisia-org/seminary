@@ -112,9 +112,15 @@ const routes = [
 		props: true,
 	},
 	{
-		path: '/assignment-submissions',
+		path:'/assignment-submissions', 
 		name: 'AssignmentSubmissionList',
 		component: () => import('@/pages/AssignmentSubmissionList.vue'),
+	},
+	{
+		path: '/gradebook/:courseName/assignment-submissions',
+		name: 'AssignmentSubmissionCS',
+		component: () => import('@/pages/AssignmentSubmissionCS.vue'),
+		props: true,
 	},
 	{
 		path: '/exams',

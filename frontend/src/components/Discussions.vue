@@ -129,7 +129,7 @@ const scrollToEnd = () => {
 }
 
 const topics = createResource({
-	url: 'lms.lms.utils.get_discussion_topics',
+	url: 'seminary.seminary.utils.get_discussion_topics',
 	cache: ['topics', props.doctype, props.docname],
 	makeParams() {
 		return {

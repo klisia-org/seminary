@@ -8,6 +8,7 @@
  "field_order": [
   "assignment_section",
   "title",
+  "course",
   "question",
   "type",
   "show_answer",
@@ -60,11 +61,17 @@
    "fieldname": "answer",
    "fieldtype": "Text Editor",
    "label": "Correct Answer for Feedback"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-21 16:40:22.252433",
+ "modified": "2025-03-27 08:51:48.850981",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Activity",

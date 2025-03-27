@@ -29,24 +29,68 @@ class CourseLesson(Document):
 		frappe.db.set_value("Course Schedule", self.course_sc, "lessons", lesson_count)
 		
 
-	# def on_update(self):
-	# 	dynamic_documents = ["Exam", "Quiz"]
-	# 	for section in dynamic_documents:
-	# 		self.update_lesson_name_in_document(section)
+	def on_update(self):
+		dynamic_documents = ["Exam", "Quiz", "Assignment"]
+		for section in dynamic_documents:
+			self.update_lesson_assessments(section)
 
-	# def update_lesson_name_in_document(self, section):
-	# 	doctype_map = {"Exercise": "LMS Exercise", "Quiz": "LMS Quiz"}
-	# 	macros = find_macros(self.body)
-	# 	documents = [value for name, value in macros if name == section]
-	# 	index = 1
-	# 	for name in documents:
-	# 		e = frappe.get_doc(doctype_map[section], name)
-	# 		e.lesson = self.name
-	# 		e.index_ = index
-	# 		e.course = self.course
-	# 		e.save(ignore_permissions=True)
-	# 		index += 1
-	# 	self.update_orphan_documents(doctype_map[section], documents)
+	def update_lesson_assessments(self, section):
+		"""
+		Updates the lesson's assessment criteria fields (quiz, assignment, exam)
+		by linking them to the corresponding Scheduled Course Assess Criteria.
+		"""
+		 # Check if the Course Lesson document exists
+		if not frappe.db.exists("Course Lesson", self.name):
+			print(f"Course Lesson {self.name} does not exist. Skipping updates for {section}.")
+			return
+
+		doctype_map = {"Exam": "Exam Activity", "Quiz": "Quiz", "Assignment": "Assignment Activity"}
+
+		# Parse lesson.content as JSON
+		documents = []
+		if self.content:
+			content = json.loads(self.content)
+			for block in content.get("blocks", []):
+				if block.get("type") == section.lower():  # Match section type (e.g., "quiz", "assignment", "exam")
+					documents.append(block.get("data").get(section.lower()))
+
+
+		for name in documents:
+			if section == "Quiz":
+				# Update quiz_id and assessment_criteria_quiz
+				frappe.db.set_value("Course Lesson", self.name, "quiz_id", name)
+				scheduled_criteria = frappe.db.get_value(
+					"Scheduled Course Assess Criteria",
+					{"quiz": name, "parent": self.course_sc},
+					"name",
+				)
+				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_quiz", scheduled_criteria)
+				print(f"Updated Quiz: {name}, Criteria: {scheduled_criteria}")
+
+			elif section == "Assignment":
+				# Update assignment_id and assessment_criteria_assignment
+				frappe.db.set_value("Course Lesson", self.name, "assignment_id", name)
+				scheduled_criteria = frappe.db.get_value(
+					"Scheduled Course Assess Criteria",
+					{"assignment": name, "parent": self.course_sc},
+					"name",
+				)
+				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_assignment", scheduled_criteria)
+				print(f"Updated Assignment: {name}, Criteria: {scheduled_criteria}")
+
+			elif section == "Exam":
+				# Update exam and assessment_criteria_exam
+				frappe.db.set_value("Course Lesson", self.name, "exam", name)
+				scheduled_criteria = frappe.db.get_value(
+					"Scheduled Course Assess Criteria",
+					{"exam": name, "parent": self.course_sc},
+					"name",
+				)
+				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_exam", scheduled_criteria)
+				print(f"Updated Exam: {name}, Criteria: {scheduled_criteria}")
+
+		
+
 
 	# def update_orphan_documents(self, doctype, documents):
 	# 	"""Updates the documents that were previously part of this lesson,
@@ -96,11 +140,11 @@ def save_progress(lesson, course):
 		"Course Schedule Progress", {"lesson": lesson, "member": frappe.session.user}
 	)
 
-	# quiz_completed = get_quiz_progress(lesson)
-	# assignment_completed = get_assignment_progress(lesson)
+	quiz_completed = get_quiz_progress(lesson)
+	assignment_completed = get_assignment_progress(lesson)
 	#when uncomment, add (and quiz_completed and assignment_completed) to the if condition below
 
-	if not already_completed:
+	if not already_completed and quiz_completed and assignment_completed:
 		frappe.get_doc(
 			{
 				"doctype": "Course Schedule Progress",
@@ -147,7 +191,7 @@ def get_quiz_progress(lesson):
 	for quiz in quizzes:
 		passing_percentage = frappe.db.get_value("Quiz", quiz, "passing_percentage")
 		if not frappe.db.exists(
-			"Quiz Activity",
+			"Quiz Submission",
 			{
 				"quiz": quiz,
 				"member": frappe.session.user,
@@ -181,6 +225,15 @@ def get_assignment_progress(lesson):
 			{"assignment": assignment, "member": frappe.session.user},
 		):
 			return False
+		else:
+			print("getting assignment")
+			assignment_doc = frappe.get_doc(
+				"Assignment Submission",
+				{"assignment": assignment, "member": frappe.session.user},
+			)
+			assignment_doc.lesson = lesson
+			assignment_doc.course_schedule = frappe.db.get_value("Course Lesson", lesson, "course_sc")
+			assignment_doc.save(ignore_permissions=True)
 	return True
 
 

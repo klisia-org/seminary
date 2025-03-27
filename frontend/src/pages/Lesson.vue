@@ -133,10 +133,20 @@
 						:content="lesson.data.body"
 						:youtube="lesson.data.youtube"
 						:quizId="lesson.data.quiz_id"
+						:exam="lesson.data.exam"
+						:assignmentID="lesson.data.assignment_id"
 						
 					/>
 				</div>
-			
+				<div class="mt-20">
+					<Discussions
+						v-if="allowDiscussions && lesson.data?.name"
+						:title="'Questions'"
+						:doctype="'Course Lesson'"
+						:docname="lesson.data.name"
+						:key="lesson.data.name"
+					/>
+				</div>
 			</div>
 			<div class="sticky top-10">
 				<div class="bg-surface-menu-bar py-5 px-2 border-b">
@@ -175,12 +185,13 @@ import EditorJS from '@editorjs/editorjs'
 import LessonContent from '@/components/LessonContent.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
+import Discussions from '@/components/Discussions.vue'
 
 
 const user = inject('$user')
 const router = useRouter()
 const route = useRoute()
-const allowDiscussions = ref(false)
+const allowDiscussions = ref(true)
 const editor = ref(null)
 const instructorEditor = ref(null)
 const lessonProgress = ref(0)
@@ -238,7 +249,9 @@ const lesson = createResource({
 			)
 	
 
-		
+			editor.value?.isReady.then(() => {
+			checkIfDiscussionsAllowed()
+		})
 	},
 })
 
@@ -356,6 +369,22 @@ const enrollment = createResource({
 		}
 	},
 })
+
+const checkIfDiscussionsAllowed = () => {
+	let quizPresent = false
+	JSON.parse(lesson.data?.content)?.blocks?.forEach((block) => {
+		if (block.type === 'quiz' || block.type === 'exam') quizPresent = true
+	})
+
+	if (
+		!quizPresent &&
+		(lesson.data?.membership ||
+			user.data?.is_moderator ||
+			user.data?.is_instructor) &&
+		lesson.data?.allow_discussions
+	)
+		allowDiscussions.value = true
+}
 
 const enrollStudent = () => {
 	enrollment.submit(

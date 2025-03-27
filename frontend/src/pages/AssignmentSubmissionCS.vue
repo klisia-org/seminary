@@ -67,7 +67,7 @@
 				{{ __('No submissions') }}
 			</div>
 			<div class="leading-5">
-				{{ __('There are no submissions for this assignment.') }}
+				{{ __('There are no submissions for this course.') }}
 			</div>
 		</div>
 	</div>
@@ -84,6 +84,7 @@ import {
 	ListRows,
 	ListRow,
 	ListRowItem,
+    createResource
 } from 'frappe-ui'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -101,14 +102,36 @@ onMounted(() => {
 	if (!user.data?.is_instructor && !user.data?.is_moderator) {
 		router.push({ name: 'Courses' })
 	}
-	assignmentID.value = router.currentRoute.value.query.assignmentID
+	assignmentID.value = props.assignmentID || router.currentRoute.value.query.assignmentID
 	member.value = router.currentRoute.value.query.member
 	status.value = router.currentRoute.value.query.status
 	reloadSubmissions()
 })
 
+const props = defineProps({
+	assignmentID: {
+		type: String,
+		required: false,
+	},
+    courseName: {
+        type: String,
+        required: true,
+    },
+})
+
+const course = createResource({
+	url: 'seminary.seminary.utils.get_course_details',
+	cache: ['course', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+}) //Neded for the breadcrumbs
+
 const getAssignmentFilters = () => {
-	let filters = {}
+	let filters = {
+    course: props.courseName, // Add filter for course_schedule
+  };
 	if (assignmentID.value) {
 		filters.assignment = assignmentID.value
 	}
@@ -132,6 +155,7 @@ const submissions = createListResource({
 		'status',
 		'grade',
 	],
+    filters: getAssignmentFilters(),
 	orderBy: 'creation desc',
 	transform(data) {
 		return data.map((row) => {
@@ -216,10 +240,18 @@ const getStatusTheme = (status) => {
 }
 
 const breadcrumbs = computed(() => {
-	return [
-		{
-			label: 'Assignment Submissions',
-		},
-	]
+	let items = [{ label: 'Courses', route: { name: 'Courses' } }]
+	items.push({
+		label: course?.data?.course,
+		route: { name: 'CourseDetail', params: { courseName: props.courseName } },
+	})
+    items.push({
+        label: 'Gradebook',
+        route: { name: 'Gradebook', params: { courseName: props.courseName} },
+    })
+    items.push({
+        label: 'Assignment Submissions',
+    })
+	return items
 })
 </script>

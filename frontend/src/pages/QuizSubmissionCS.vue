@@ -99,7 +99,7 @@ const submissions = createListResource({
 const quizColumns = computed(() => {
 	return [
 		{
-			label: __('Member'),
+			label: __('Student'),
 			key: 'member_name',
 			width: 1,
 		},

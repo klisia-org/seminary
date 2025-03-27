@@ -1,19 +1,22 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "format:{assignment}-{####}",
+ "autoname": "format:AS-{assignment}-{####}",
  "creation": "2025-03-07 10:04:07.197858",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "id_section",
-  "course_schedule",
-  "lesson",
   "student",
   "member_name",
   "member",
   "assignment",
   "type",
+  "column_break_cscc",
+  "course",
+  "course_name",
+  "course_assess",
+  "extra_credit",
+  "lesson",
   "assignment_section",
   "assignment_title",
   "question",
@@ -31,13 +34,6 @@
    "fieldname": "id_section",
    "fieldtype": "Section Break",
    "label": "ID"
-  },
-  {
-   "fetch_from": "lesson.course_sc",
-   "fieldname": "course_schedule",
-   "fieldtype": "Link",
-   "label": "Course Schedule",
-   "options": "Course Schedule"
   },
   {
    "fieldname": "assignment",
@@ -139,12 +135,44 @@
    "fieldname": "student",
    "fieldtype": "Link",
    "label": "Student",
-   "options": "Scheduled Course Roster"
+   "options": "Student"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "column_break_cscc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "course.course",
+   "fieldname": "course_name",
+   "fieldtype": "Link",
+   "label": "Course Name",
+   "options": "Course"
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Course Assessment",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "default": "0",
+   "fetch_from": "course_assess.extracredit_scac",
+   "fieldname": "extra_credit",
+   "fieldtype": "Check",
+   "label": "Is extra credit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 09:44:40.437427",
+ "modified": "2025-03-27 13:41:27.433615",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

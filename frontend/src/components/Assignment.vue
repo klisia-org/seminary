@@ -255,6 +255,7 @@ const newSubmission = createResource({
 			doctype: 'Assignment Submission',
 			assignment: props.assignmentID,
 			member: user.data?.name,
+			course: router.currentRoute.value.params.courseName
 		}
 		if (showUploader()) {
 			doc.assignment_attachment = submissionFile.value.file_url
@@ -345,6 +346,7 @@ const submitAssignment = () => {
 				evaluator: evaluator,
 				comments: comments.value,
 				answer: answer.value,
+				
 			},
 			{
 				onSuccess(data) {

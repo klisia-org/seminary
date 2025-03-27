@@ -951,7 +951,66 @@ def create_student_from_current_user():
 	return student
 
 
+@frappe.whitelist()
+def get_discussion_topics(doctype, docname, single_thread):
+	if single_thread:
+		filters = {
+			"reference_doctype": doctype,
+			"reference_docname": docname,
+		}
+		topic = frappe.db.exists("Discussion Topic", filters)
+		if topic:
+			return frappe.db.get_value("Discussion Topic", topic, ["name"], as_dict=1)
+		else:
+			return create_discussion_topic(doctype, docname)
+	topics = frappe.get_all(
+		"Discussion Topic",
+		{
+			"reference_doctype": doctype,
+			"reference_docname": docname,
+		},
+		["name", "title", "owner", "creation", "modified"],
+		order_by="creation desc",
+	)
 
+	for topic in topics:
+		topic.user = frappe.db.get_value(
+			"User", topic.owner, ["full_name", "user_image"], as_dict=True
+		)
+
+	return topics
+
+
+def create_discussion_topic(doctype, docname):
+	doc = frappe.new_doc("Discussion Topic")
+	doc.update(
+		{
+			"title": docname,
+			"reference_doctype": doctype,
+			"reference_docname": docname,
+		}
+	)
+	doc.insert()
+	return doc
+
+
+@frappe.whitelist()
+def get_discussion_replies(topic):
+	replies = frappe.get_all(
+		"Discussion Reply",
+		{
+			"topic": topic,
+		},
+		["name", "owner", "creation", "modified", "reply"],
+		order_by="creation",
+	)
+
+	for reply in replies:
+		reply.user = frappe.db.get_value(
+			"User", reply.owner, ["full_name", "user_image"], as_dict=True
+		)
+
+	return replies
 
 
 

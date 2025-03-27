@@ -16,6 +16,7 @@
   "course",
   "course_name",
   "course_assess",
+  "lesson",
   "answers_section",
   "result",
   "feedback_section",
@@ -152,12 +153,18 @@
    "fieldname": "time_taken",
    "fieldtype": "Duration",
    "label": "Time Taken"
+  },
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Link",
+   "label": "Lesson",
+   "options": "Course Lesson"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-22 17:10:41.803768",
+ "modified": "2025-03-27 10:03:23.898837",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",

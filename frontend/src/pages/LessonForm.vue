@@ -29,6 +29,11 @@
 							type="text"
 							label="Text for Preview on the Course Page"
 						/>
+						<FormControl
+							v-model="lesson.allow_discuss"
+							type="checkbox"
+							label="Allow Discussions? (Discussions will be automatically disabled for quizzes and exams)"
+						/>
 					</div>
 					<div class="border-t mt-4">
 						<div class="w-5/6 mx-auto pt-4">

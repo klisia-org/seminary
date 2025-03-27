@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:EDU-QA-{YYYY}-{#####}",
+ "autoname": "format:QS-{YYYY}-{#####}",
  "creation": "2018-10-15 15:48:40.482821",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -14,6 +14,7 @@
   "course_name",
   "course_assess",
   "extra_credit",
+  "lesson",
   "section_break_5",
   "quiz",
   "column_break_7",
@@ -173,10 +174,16 @@
    "fieldname": "extra_credit",
    "fieldtype": "Check",
    "label": "Is extra credit"
+  },
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Link",
+   "label": "Lesson",
+   "options": "Course Lesson"
   }
  ],
  "links": [],
- "modified": "2025-03-26 17:28:54.120372",
+ "modified": "2025-03-27 12:29:37.654177",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz Submission",

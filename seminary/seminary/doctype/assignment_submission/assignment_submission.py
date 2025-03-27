@@ -14,6 +14,7 @@ class AssignmentSubmission(Document):
 		self.validate_duplicates()
 		self.validate_url()
 		self.validate_status()
+		self.populate()
 
 	def after_insert(self):
 		if not frappe.flags.in_test:
@@ -38,6 +39,12 @@ class AssignmentSubmission(Document):
 	def validate_url(self):
 		if self.type == "URL" and not validate_url(self.answer):
 			frappe.throw(_("Please enter a valid URL."))
+
+	def populate(self):
+		self.student = frappe.db.get_value("Student", {"user": self.member})
+		self.course_assess = frappe.db.get_value("Scheduled Course Assess Criteria", {'assignment' : self.assignment, 'parent' : self.course}, "name")
+		self.extra_credit = frappe.db.get_value("Scheduled Course Assess Criteria", {'assignment' : self.assignment, 'parent' : self.course}, "extracredit_scac")
+
 
 	def send_mail(self):
 		subject = _("New Assignment Submission")
