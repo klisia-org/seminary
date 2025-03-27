@@ -49,8 +49,6 @@ class Quiz(Document):
 		else:
 			self.total_points = sum(cint(question.points) for question in self.questions)
 
-	
-
 	def autoname(self):
 		if not self.name:
 			self.name = generate_slug(self.title, "Quiz")
@@ -87,6 +85,7 @@ def quiz_summary(quiz, course, time_taken, results):
 	score = 0
 	results = results and json.loads(results)
 	percentage = 0
+	
 
 	quiz_details = frappe.db.get_value(
 		"Quiz",
@@ -128,6 +127,28 @@ def quiz_summary(quiz, course, time_taken, results):
 			r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, result["answer"]
 		)
 
+	#avoid duplication of quiz submission
+	existing_submission = frappe.get_value(
+        "Quiz Submission",
+        {
+            "quiz": quiz,
+            "owner": frappe.session.user,
+            "creation": [">=", frappe.utils.add_to_date(frappe.utils.now(), seconds=-5)],
+        },
+        "name"  # Fetch the name of the existing submission
+    )
+	if existing_submission:
+		print("Submission already exists, skipping")
+		# Fetch the existing submission details
+		submission = frappe.get_doc("Quiz Submission", existing_submission)
+		return {
+			"score": submission.score,
+			"score_out_of": submission.score_out_of,
+			"submission": submission.name,
+			"pass": submission.percentage >= submission.passing_percentage,
+			"percentage": submission.percentage,
+		}
+
 	submission = frappe.new_doc("Quiz Submission")
 	# Score and percentage are calculated by the controller function
 	submission.update(
@@ -145,6 +166,7 @@ def quiz_summary(quiz, course, time_taken, results):
 		}
 	)
 	submission.save(ignore_permissions=True)
+	print("Submission ", submission.name, " saved at ", submission.creation)
 
 	if (
 		percentage >= quiz_details.passing_percentage

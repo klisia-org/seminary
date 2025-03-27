@@ -85,11 +85,12 @@
 
 				<div v-for="instructor in lesson.data.instructors" class="flex items-center">
 						<br>
-						{{ instructor.instructor_name }}
+						
 					
 							
 								<InstructorAvatar
 									:instructor="instructor"
+									size="xl"
 								/>
 								<br>
 							

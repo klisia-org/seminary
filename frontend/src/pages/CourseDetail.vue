@@ -22,14 +22,14 @@
 					<div class="mt-10">
 						<div v-if="course.data.instructors.length === 1" class="text-lg font-semibold">Instructor</div>
 						<div v-else class="text-lg font-semibold">Instructors</div>
-					
+						<br />
 					<div class="flex flex-wrap gap-4">
 						<div
 							v-for="instructor in course.data.instructors"
 							:key="instructor.instructor_name"
 							class="flex flex-col items-center"
 						>
-							<InstructorAvatar :instructor="instructor" size="xl" class="mb-2" />
+							<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20" />
 							<div class="text-center text-sm font-medium">
 								{{ instructor.instructor_name }}
 							</div>

@@ -13,6 +13,7 @@
   "course",
   "course_name",
   "course_assess",
+  "extra_credit",
   "section_break_5",
   "quiz",
   "column_break_7",
@@ -163,11 +164,19 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Assessment",
-   "options": "Scheduled Course Assess Criteria"
+   "options": "Scheduled Course Assess Criteria",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "course_assess.extracredit_scac",
+   "fieldname": "extra_credit",
+   "fieldtype": "Check",
+   "label": "Is extra credit"
   }
  ],
  "links": [],
- "modified": "2025-03-20 19:12:57.154240",
+ "modified": "2025-03-26 17:28:54.120372",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Quiz Submission",

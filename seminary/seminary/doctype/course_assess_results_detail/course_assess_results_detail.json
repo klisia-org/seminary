@@ -11,6 +11,7 @@
   "section_break_ifok",
   "assessment_criteria",
   "maximum_score",
+  "assessment_title",
   "column_break_ayqu",
   "rawscore_card",
   "score",
@@ -113,12 +114,19 @@
    "label": "Actual Extra Points",
    "mandatory_depends_on": "extracredit_card==True",
    "non_negative": 1
+  },
+  {
+   "fetch_from": "assessment_criteria.title",
+   "fieldname": "assessment_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assessment Title"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-20 20:07:17.334058",
+ "modified": "2025-03-26 10:00:50.441856",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Assess Results Detail",

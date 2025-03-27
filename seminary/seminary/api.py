@@ -470,7 +470,23 @@ def get_payers(program_enrollment, method):
 			break
 	return
 				
-	
+@frappe.whitelist()
+def quizresult_to_card(doc, method):
+	# Fetch the corresponding Course Assess Results Detail record
+	cardname = frappe.db.get_value(
+		"Course Assess Results Detail",
+		{"assessment_criteria": doc.course_assess, "student_card": doc.student},
+		"name",
+	)
+	card = frappe.get_doc("Course Assess Results Detail", cardname)
+		
+	# Update the raw score and extra credit points
+	card.rawscore_card = doc.percentage if not doc.extra_credit else ""
+	card.actualextrapt_card = (
+		(doc.percentage/100) * card.maxextrapoints_card if doc.extra_credit else ""
+	)
+	# Save the updated card
+	card.save(ignore_permissions=True)
 	
 @frappe.whitelist()
 def get_payers_fees(pen):
@@ -752,6 +768,65 @@ def copy_data_to_program_enrollment_course(doc, method):
 			program_enrollment_course.credits = credits
 			program_enrollment_course.status = "Enrolled"
 			program_enrollment_course.insert()
+
+@frappe.whitelist()
+def update_card(doc, method):
+	#define who needs update
+	existings = frappe.db.sql(
+				"""
+				SELECT r.name
+				FROM `tabCourse Assess Results Detail` r, `tabScheduled Course Roster` cr
+				WHERE r.parent = cr.name 
+				AND cr.course_sc = %s
+				AND EXISTS (
+					SELECT 1
+					FROM `tabScheduled Course Assess Criteria` scac
+					WHERE scac.name = r.assessment_criteria 
+					AND scac.name = %s
+				)
+				""",
+				(doc.parent, doc.name),
+				as_dict=True
+			)
+	if existings:
+		for existing in existings:
+			# Update the existing record
+			changed = frappe.get_doc("Course Assess Results Detail",existing)
+			changed.maximum_score = doc.weight_scac
+			changed.extracredit_card = doc.extracredit_scac
+			changed.maxextrapoints_card = doc.fudgepoints_scac
+			changed.assessment_title = doc.title
+			changed.save()
+	else:
+		#Get need data for new records
+		new_records = frappe.db.sql(
+			"""
+			SELECT DISTINCT cr.name, cr.student
+			FROM `tabScheduled Course Roster` cr
+			WHERE cr.course_sc = %s
+			AND cr.name NOT IN (
+				SELECT r.parent
+				FROM `tabCourse Assess Results Detail` r
+				WHERE r.assessment_criteria = %s
+			)
+			""",
+			(doc.parent, doc.name),
+			as_dict=True
+		)
+
+		for record in new_records:
+			new = frappe.new_doc("Course Assess Results Detail")
+			new.parent = record.name
+			new.parenttype = "Scheduled Course Roster"
+			new.parentfield = "stdroster_grade"
+			new.student_card = record.student
+			new.assessment_criteria = doc.name
+			new.maximum_score = doc.weight_scac
+			new.extracredit_card = doc.extracredit_scac
+			new.maxextrapoints_card = doc.fudgepoints_scac
+			new.assessment_title = doc.title
+			new.insert()
+			
 
 
 @frappe.whitelist()
@@ -1517,6 +1592,6 @@ def delete_lesson(lesson, chapter):
 
 @frappe.whitelist()
 def delete_documents(doctype, documents):
-	frappe.only_for("Seminary Manager")
+	frappe.only_for(["Seminary Manager", "Academics User", "Instructor"])
 	for doc in documents:
 		frappe.delete_doc(doctype, doc)

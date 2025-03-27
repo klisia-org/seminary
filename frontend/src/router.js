@@ -83,6 +83,12 @@ const routes = [
 		props: true,
 	},
 	{
+		path: '/gradebook/:courseName/:quizID',
+		name: 'QuizSubmissionCS',
+		component: () => import('@/pages/QuizSubmissionCS.vue'),
+		props: true,
+	},
+	{
 		path: '/quiz-submission/:submission',
 		name: 'QuizSubmission',
 		component: () => import('@/pages/QuizSubmission.vue'),
@@ -138,6 +144,12 @@ const routes = [
 		name: 'ExamSubmission',
 		component: () => import('@/pages/ExamSubmission.vue'),
 		props: true,
+	},
+	{
+		path: '/gradebook/:courseName',
+		name: 'Gradebook',
+		component: () => import('@/pages/Gradebook.vue'),
+		props: true,	
 	},
   {
     path :'/:catchAll(.*)',

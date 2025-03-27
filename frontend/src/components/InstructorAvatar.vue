@@ -1,5 +1,5 @@
 <template>
-	<Tooltip :text="instructor_name">
+	<Tooltip :text="`${instructor_name} - Profile Page`">
 		<router-link
 			:to="{
 				name: 'InstructorProfile',

@@ -213,7 +213,13 @@ doc_events = {
 	},
 	"Program Enrollment": {
 		"on_submit": "seminary.seminary.api.get_payers",
-	}
+	},
+"Scheduled Course Assess Criteria": {
+	"on_update": "seminary.seminary.api.update_card",
+},
+"Quiz Submission": {
+	"on_update": "seminary.seminary.api.quizresult_to_card",
+},
 }
 
 # Scheduled Tasks

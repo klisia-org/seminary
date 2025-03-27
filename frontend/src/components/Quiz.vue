@@ -472,11 +472,12 @@ const attempts = createResource({
 
 watch(
 	() => quiz.data,
-	() => {
-		if (quiz.data) {
+	(newData) => {
+		if (newData) {
 			populateQuestions()
+			
 		}
-		if (quiz.data && quiz.data.max_attempts) {
+		if (newData && quiz.data.max_attempts) {
 			attempts.reload()
 			resetQuiz()
 		}
@@ -488,10 +489,8 @@ const quizSubmission = createResource({
     makeParams(values) {
         // Add null-safe checks for `quiz.data`
         if (!quiz.data) {
-        
             return {}; // Return an empty object to avoid errors
         }
-
         const timeTaken = quiz.data.duration
             ? quiz.data.duration * 60 - (timer.value || 0) // Use timer when duration is set
             : elapsedTime.value || 0; // Use elapsedTime when duration is not set
@@ -553,12 +552,6 @@ const all_questions_details = createResource({
 		return {
 			questions: questions.map((q) => q.name), // Ensure only question names are sent
 		}
-	},
-	onSuccess(data) {
-		console.log("All questions details loaded:", data); // Debugging
-	},
-	onError(err) {
-		console.error("Error loading all questions details:", err); // Debugging
 	},
 })
 
@@ -667,7 +660,10 @@ const addToLocalStorage = () => {
         quizData ? quizData.push(questionData) : (quizData = [questionData])
     }
 
-    localStorage.setItem(quiz.data.title, JSON.stringify(quizData));
+    
+  localStorage.setItem(quiz.data.title, JSON.stringify(quizData));
+  localStorage.setItem(`${quiz.data.name}_results`, JSON.stringify(quizData)); // Save results for submission
+
 };
 
 const nextQuestion = () => {
@@ -697,6 +693,7 @@ const submitQuiz = () => {
 		return
 	}
 	createSubmission()
+	console.log('Quiz submitted with Submit Quiz button and asnwers shown')
 }
 
 const submitQuizComplete = async () => {
@@ -780,8 +777,14 @@ const submitQuizComplete = async () => {
 };
 
 const createSubmission = () => {
-	quizSubmission.submit(
-		{},
+	const results = localStorage.getItem(`${quiz.data.name}_results`); // Retrieve results from localStorage
+  if (!results) {
+    console.error("No results found to submit."); // Debugging
+    return;
+  }
+
+  quizSubmission.submit(
+    { results }, // Pass results to the backend
 		{
 			onSuccess(data) {
 				markLessonProgress()

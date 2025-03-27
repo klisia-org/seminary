@@ -261,6 +261,7 @@ function loadAssessmentCriteria() {
     if (Array.isArray(assessments.data)) {
       assessments.data.forEach(item => {
         assessmentCriteria.push({
+          name: item.name || '',
           title: item.title || '',
           assesscriteria_scac: item.assesscriteria_scac || '',
           type: item.type || '',
@@ -281,6 +282,7 @@ function loadAssessmentCriteria() {
       });
     } else {
       assessmentCriteria.push({
+        name: assessments.data.name || '',
         title: assessments.data.title || '',
         assesscriteria_scac: assessments.data.assesscriteria_scac || '',
         type: assessments.data.type || '',
@@ -306,6 +308,7 @@ function loadAssessmentCriteria() {
 
 function addCriteria() {
   const newCriteria = reactive({
+    name: '',
     title: '',
     assesscriteria_scac: '',
     type: '',
@@ -337,13 +340,48 @@ function addCriteria() {
   );
 }
 
-function removeCriteria(index) {
+async function removeCriteria(index) {
+  const criteria = assessmentCriteria[index];
+
   // Confirm deletion (optional)
-  if (confirm(__('Are you sure you want to delete this record?'))) {
-    assessmentCriteria.splice(index, 1); // Remove the record at the specified index
-    console.log(`Record at index ${index} removed.`);
+  if (!confirm(__('Are you sure you want to delete this record?'))) {
+    return;
   }
+
+  // Check if the criteria has a `name` (only delete from backend if it exists)
+  if (criteria.name) {
+    try {
+      // Call the deleteAssessmentResource to delete the record from the backend
+      await deleteAssessmentResource.reload([criteria.name]);
+      console.log(`Record with name ${criteria.name} deleted from backend.`);
+      showToast('Success', 'Assessment criteria deleted successfully', 'check');
+    } catch (error) {
+      console.error('Error deleting assessment criteria:', error);
+      showToast('Error', 'Failed to delete assessment criteria', 'error');
+      return; // Stop further execution if backend deletion fails
+    }
+  }
+
+  // Remove the record from the frontend array
+  assessmentCriteria.splice(index, 1);
+  console.log(`Record at index ${index} removed from frontend.`);
 }
+
+const deleteAssessmentResource = createResource({
+  url: 'seminary.seminary.api.delete_documents',
+  makeParams(values) {
+    return {
+      doctype: 'Scheduled Course Assess Criteria',
+      documents: values, // Pass the array of document names
+    };
+  },
+  onSuccess(data) {
+    console.log('Delete successful:', data);
+  },
+  onError(err) {
+    console.error('Error deleting documents:', err);
+  },
+});
 
 function openCourseAssessmentModal() {
   showCourseAssessmentModal.value = true;

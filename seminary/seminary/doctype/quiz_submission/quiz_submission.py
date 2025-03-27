@@ -55,6 +55,7 @@ class QuizSubmission(Document):
 		self.student = frappe.db.get_value("Student", {"user": self.member})
 		self.submission_date = frappe.utils.now_datetime()
 		self.course_assess = frappe.db.get_value("Scheduled Course Assess Criteria", {'quiz' : self.quiz, 'parent' : self.course}, "name")
+		self.extra_credit = frappe.db.get_value("Scheduled Course Assess Criteria", {'quiz' : self.quiz, 'parent' : self.course}, "extracredit_scac")
 
 	def notify_member(self):
 		if self.score != 0 and self.has_value_changed("score"):

@@ -321,6 +321,16 @@ watch(submissionFile, () => {
 	}
 })
 
+watch(
+  () => submissionResource.doc?.grade,
+  (newGrade, oldGrade) => {
+    if (newGrade !== oldGrade && submissionResource.doc) {
+      submissionResource.doc.status = 'Graded'; // Automatically set status to "Graded"
+      isDirty.value = true; // Mark the form as dirty to indicate unsaved changes
+    }
+  }
+);
+
 const submitAssignment = () => {
 	if (props.submissionName != 'new') {
 		let evaluator =
@@ -339,6 +349,7 @@ const submitAssignment = () => {
 			{
 				onSuccess(data) {
 					showToast(__('Success'), __('Changes saved successfully'), 'check')
+					isDirty.value = false;
 				},
 			}
 		)
@@ -366,6 +377,7 @@ const addNewSubmission = () => {
 					router.go()
 				}
 				submissionResource.name = data.name
+				isDirty.value = false;
 				submissionResource.reload()
 			},
 			onError(err) {

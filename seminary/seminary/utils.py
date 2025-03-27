@@ -831,12 +831,16 @@ def get_open_question_details(question):
 
 @frappe.whitelist()
 def get_all_open_questions_details(questions):
-	
-	questions_str = "', '".join(questions)
+	if not questions:
+		frappe.throw(_("Questions parameter is required"))
+
+	    # Ensure questions is a list
+	if isinstance(questions, str):
+		questions = frappe.parse_json(questions)
 	all_question_details =  frappe.db.sql(
-			f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.explanation
+			f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question_name, q.explanation
 from `tabOpen Question` q, `tabExam Question` qq
-where q.name = qq.question and qq.name in ('{questions_str}')""", as_dict=1)			
+where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q in questions)})""", as_dict=1)			
 	print("All questions details: " + str(all_question_details))
 	return all_question_details
 
@@ -849,6 +853,23 @@ def get_assessments(course):
 	)
 	print(assessments)
 	return assessments
+
+@frappe.whitelist()
+def get_gradebook(course):
+	students = frappe.get_all(
+		"Scheduled Course Roster",
+		filters={"course_sc": course},
+		fields=["name", "stuname_roster", "stuemail_rc", "audit_bool", "active", "stuemail_rc", "program_std_scr", "progress"],
+	)
+	for student in students:
+		student["assessments"] = frappe.db.sql(
+			f"""select r.name, r.rawscore_card, r.actualextrapt_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment  
+	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
+	where r.assessment_criteria = scar.name and r.parent ='{student.name}'""",
+			as_dict=1,)
+		
+	print(students)
+	return students
 
 @frappe.whitelist()
 def enroll_in_program(program_name, student=None):
