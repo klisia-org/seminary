@@ -43,10 +43,11 @@
               <span>{{ student.stuname_roster }}</span>
               </Tooltip>
              <Tooltip :text="`Send Email to ${student.stuname_roster}`" placement="bottom" arrow-class="fill-surface-white">
-                <Send
-                class="absolute right-2 top-2 text-blue-300 cursor-pointer"
-                @click="sendEmail(student.stuemail_rc)"
-              />
+                <a :href="`mailto:${student.stuemail_rc}`">
+                  <Send
+                    class="absolute right-2 top-2 text-blue-300 cursor-pointer"
+                  />
+                </a>
               </Tooltip>
            
             </td>

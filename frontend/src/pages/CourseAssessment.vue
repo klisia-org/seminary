@@ -42,7 +42,7 @@
             </div>
             <div class="border border-gray-300 p-4 rounded-md">
               <div v-for="(criteria, index) in assessmentCriteria" :key="index" class="border border-gray-300 p-4 mb-4 rounded-md flex items-center">
-                <div class="flex-1 grid grid-cols-1 md:grid-cols-[3fr,2fr,3fr,1fr,1fr,1fr,1fr] gap-4">
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-[3fr,2fr,3fr,1fr,1fr,2fr,1fr] gap-4">
                   <FormControl
                     v-model="criteria.title"
                     :label="__('Title')"
@@ -111,12 +111,13 @@
                       :required="true"
                     />
                   </div>
-                    <DateTimePicker
-                    v-model="criteria.due_date"
-                    :label="__('Due Date')"
-                    variant="subtle"
-                    :required="false"
-                  
+                  <DateTimePicker
+                  v-model="criteria.due_date"
+                  :label="__('Due Date')"
+                  variant="subtle"
+                  :required="false"
+                  class="date-column"
+                  :formatter="formatDate"
                     />
                       <!-- Trashcan Icon -->
                     <Button
@@ -453,7 +454,15 @@ async function fetchType(criteria) {
   }
 }
 
-
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Month (MM)
+  const day = String(date.getDate()).padStart(2, '0'); // Day (DD)
+  const hours = String(date.getHours()).padStart(2, '0'); // Hours (HH)
+  const minutes = String(date.getMinutes()).padStart(2, '0'); // Minutes (mm)
+  return `${month}/${day} ${hours}:${minutes}`; // Format: MM/DD HH:mm
+}
 
 function onAssessmentSaved() {
   // Reload the parent's resource (e.g., assessments)
@@ -475,5 +484,8 @@ function onAssessmentSaved() {
 }
 .light-blue-bg {
   background-color: #E6F4FF;
+}
+.date-column {
+  max-width: 10ch; /* Adjust as needed */
 }
 </style>

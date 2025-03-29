@@ -104,7 +104,7 @@ const examFilter = computed(() => {
 const exams = createListResource({
 	doctype: 'Exam Activity',
 	filters: examFilter,
-	fields: ['name', 'title', 'passing_percentage', 'total_points'],
+	fields: ['name', 'title', 'total_points'],
 	auto: true,
 	cache: ['exams', user.data?.name],
 	orderBy: 'modified desc',
@@ -123,12 +123,7 @@ const examColumns = computed(() => {
 			width: 1,
 			align: 'center',
 		},
-		{
-			label: __('Passing Percentage'),
-			key: 'passing_percentage',
-			width: 1,
-			align: 'center',
-		},
+	
 	]
 })
 

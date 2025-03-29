@@ -50,20 +50,18 @@
 				"
 				:required="true"
 			/>
+			<br />
 			<Link
 				v-model="exam.course"
 				doctype="Course"
-				:label="__('Course where this exam will be used - you may reuse this exam in other schedules')"
+				:label="__('Course where this exam will be used - you may reuse this exam in other scheduled courses')"
+				:placeholder="__('Select a course')"
 				:required="true"
+			
 			/>
 			<div v-if="examDetails.data?.name">
 				<div class="grid grid-cols-2 gap-5 mt-4 mb-8">
-					<FormControl
-						type="number"
-						v-model="exam.max_attempts"
-						:label="__('Maximum Attempts')"
-						:default="1"
-					/>
+					
 					<FormControl
 						type="number"
 						v-model="exam.duration"
@@ -74,10 +72,7 @@
 						:label="__('Total Points')"
 						disabled
 					/>
-					<FormControl
-						v-model="exam.passing_percentage"
-						:label="__('Passing Percentage. Use this to force students to retake the exam until they pass')"
-					/>
+					
 				</div>
 
 				<!-- Settings -->
@@ -85,23 +80,14 @@
 					<div class="font-semibold mb-4">
 						{{ __('Settings') }}
 					</div>
-					<div class="grid grid-cols-3 gap-5 my-4">
-						<FormControl
-							v-model="exam.show_answers"
-							type="checkbox"
-							:label="__('Show Answers')"
-						/>
-						<FormControl
-							v-model="exam.show_submission_history"
-							type="checkbox"
-							:label="__('Show Submission History')"
-						/>
+					
+					
 						<FormControl
 							v-model="exam.qbyquestion"
 							type="checkbox"
 							:label="__('Force student to ansswer a question before moving on? Each question will have its own page and a next button')"
 						/>
-					</div>
+					
 				</div>
 
 				<div class="mb-8">
@@ -245,13 +231,10 @@ const exam = reactive({
 	title: '',
 	course: '',
 	total_points: 0,
-	passing_percentage: 0,
-	max_attempts: 1,
 	duration: 0,
 	qbyquestion: false,
 	limit_questions_to: 0,
 	show_answers: true,
-	show_submission_history: false,
 	shuffle_questions: false,
 	questions: [],
 })

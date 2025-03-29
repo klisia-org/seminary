@@ -517,6 +517,7 @@ def get_lesson(course, chapter, lesson):
 		lesson_name,
 		[
 			"name",
+			"allow_discuss",
 			"lesson_title",
 			"preview",	
 			"body",

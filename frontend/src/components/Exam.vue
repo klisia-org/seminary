@@ -25,7 +25,7 @@
     <!-- Full Exam Mode -->
     <div>
       <div class="border text-center p-20 rounded-md">
-  <div class="font-semibold text-lg mt-3 mb-3">
+  <div class="font-semibold text-lg text-ink-gray-9 mt-3 mb-3">
     {{ exam.data.title }}
   </div>
   <router-link

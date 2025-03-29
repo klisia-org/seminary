@@ -73,6 +73,7 @@ export class Exam {
 			},
 		})
 		app.use(translationPlugin)
+		app.use(router); // Explicitly provide the router
 		app.mount(this.wrapper)
 	}
 

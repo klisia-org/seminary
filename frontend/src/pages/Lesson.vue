@@ -191,7 +191,7 @@ import Discussions from '@/components/Discussions.vue'
 const user = inject('$user')
 const router = useRouter()
 const route = useRoute()
-const allowDiscussions = ref(true)
+const allowDiscussions = ref(false)
 const editor = ref(null)
 const instructorEditor = ref(null)
 const lessonProgress = ref(0)
@@ -371,20 +371,43 @@ const enrollment = createResource({
 })
 
 const checkIfDiscussionsAllowed = () => {
-	let quizPresent = false
-	JSON.parse(lesson.data?.content)?.blocks?.forEach((block) => {
-		if (block.type === 'quiz' || block.type === 'exam') quizPresent = true
-	})
+  console.log('Lesson Data:', lesson.data); // Debugging
+  console.log('allow_discuss:', lesson.data?.allow_discuss); // Debugging
 
-	if (
-		!quizPresent &&
-		(lesson.data?.membership ||
-			user.data?.is_moderator ||
-			user.data?.is_instructor) &&
-		lesson.data?.allow_discussions
-	)
-		allowDiscussions.value = true
-}
+  let quizPresent = false;
+
+  // Parse the content and check for blocks
+  if (lesson.data?.content) {
+    try {
+      const parsedContent = JSON.parse(lesson.data.content);
+    //   console.log('Parsed Content:', parsedContent); // Debugging
+
+      parsedContent.blocks?.forEach((block) => {
+        // Check if the block is of type 'quiz' or 'exam' and has meaningful data
+        if (
+          (block.type === 'quiz' || block.type === 'exam') &&
+          block.data &&
+          Object.keys(block.data).some((key) => block.data[key] !== null && block.data[key] !== '')
+        ) {
+          quizPresent = true;
+        }
+      });
+    } catch (error) {
+      console.error('Error parsing content:', error);
+    }
+  }
+
+//   console.log('Quiz or Exam Present:', quizPresent); // Debugging
+
+  // Set allowDiscussions based on conditions
+  if ((lesson.data?.allow_discuss === true || lesson.data?.allow_discuss === 1) && !quizPresent) {
+    allowDiscussions.value = true;
+  } else {
+    allowDiscussions.value = false;
+  }
+
+//   console.log('allowDiscussions:', allowDiscussions.value); // Debugging
+};
 
 const enrollStudent = () => {
 	enrollment.submit(

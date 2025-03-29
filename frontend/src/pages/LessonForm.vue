@@ -119,6 +119,8 @@ const props = defineProps({
 	},
 })
 
+localStorage.setItem('activeCourseName', props.courseName);
+
 onMounted(() => {
 	if (!user.data?.is_moderator && !user.data?.is_instructor) {
 		window.location.href = '/login'
@@ -128,6 +130,8 @@ onMounted(() => {
 	instructorEditor.value = renderEditor('instructor-notes')
 	window.addEventListener('keydown', keyboardShortcut)
 })
+
+
 
 const renderEditor = (holder) => {
 	return new EditorJS({
@@ -212,10 +216,13 @@ const keyboardShortcut = (e) => {
 	}
 }
 
+//Remove activeCourseName from local storage when the user leaves the page
 onBeforeUnmount(() => {
+	localStorage.removeItem('activeCourseName');
 	clearInterval(autoSaveInterval)
 	window.removeEventListener('keydown', keyboardShortcut)
 })
+
 
 const newLessonResource = createResource({
 	url: 'frappe.client.insert',

@@ -6,6 +6,7 @@
 		}"
 	>
 		<template #body>
+			<button style="opacity: 0; position: absolute;">Fallback Focus</button>
 			<div class="p-5 space-y-4">
 				<div v-if="type == 'quiz'" class="text-lg font-semibold">
 					{{ __('Add a quiz to your lesson') }}

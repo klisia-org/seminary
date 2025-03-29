@@ -161,12 +161,13 @@
    "description": "If the lesson has quiz or exam, discussions will be automatically disabled.",
    "fieldname": "allow_discuss",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Allow Discussions"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-27 14:04:54.981396",
+ "modified": "2025-03-29 15:17:19.190129",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",
