@@ -472,6 +472,8 @@ def get_payers(program_enrollment, method):
 				
 @frappe.whitelist()
 def quizresult_to_card(doc, method):
+	#Fetch max grade of the grading scale used for calculations
+	max_grade = frappe.db.get_value("Course Schedule", doc.course, "maxnumgrade")
 	# Fetch the corresponding Course Assess Results Detail record
 	cardname = frappe.db.get_value(
 		"Course Assess Results Detail",
@@ -483,7 +485,7 @@ def quizresult_to_card(doc, method):
 	# Update the raw score and extra credit points
 	card.rawscore_card = doc.percentage if not doc.extra_credit else ""
 	card.actualextrapt_card = (
-		(doc.percentage/100) * card.maxextrapoints_card if doc.extra_credit else ""
+		(doc.percentage/max_grade) * card.maxextrapoints_card if doc.extra_credit else ""
 	)
 	# Save the updated card
 	card.save(ignore_permissions=True)

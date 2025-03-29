@@ -25,6 +25,7 @@
   "percentage",
   "passing_percentage",
   "fudge_points",
+  "extra_credit",
   "column_break_hfkj",
   "submission_date",
   "time_taken",
@@ -103,7 +104,7 @@
    "fieldname": "course_name",
    "fieldtype": "Link",
    "label": "Course",
-   "options": "Course Schedule"
+   "options": "Course"
   },
   {
    "fieldname": "member",
@@ -159,12 +160,20 @@
    "fieldtype": "Link",
    "label": "Lesson",
    "options": "Course Lesson"
+  },
+  {
+   "default": "0",
+   "fetch_from": "course_assess.extracredit_scac",
+   "fieldname": "extra_credit",
+   "fieldtype": "Check",
+   "label": "Is Extra Credit",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-27 10:03:23.898837",
+ "modified": "2025-03-28 13:24:51.804143",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",

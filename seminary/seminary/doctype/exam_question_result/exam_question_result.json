@@ -19,12 +19,13 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Question",
-   "options": "Open Question",
+   "options": "Exam Question",
    "reqd": 1
   },
   {
    "fieldname": "answer",
    "fieldtype": "Text Editor",
+   "in_list_view": 1,
    "label": "Answer"
   },
   {
@@ -34,17 +35,20 @@
   {
    "fieldname": "comments",
    "fieldtype": "Text Editor",
+   "in_list_view": 1,
    "label": "Question Comments"
   },
   {
    "fieldname": "score",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Score"
   },
   {
    "fetch_from": "question.points",
    "fieldname": "score_out_of",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Score out of"
   }
  ],
@@ -52,7 +56,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-22 17:55:22.982905",
+ "modified": "2025-03-28 12:52:18.376006",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question Result",

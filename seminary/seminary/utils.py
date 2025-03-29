@@ -255,6 +255,7 @@ def get_course_card_details(courses):
 		course.instructors = get_instructors(course.name)
 	return courses
 
+@frappe.whitelist(allow_guest=True)
 def get_instructors(course):
 	instructor_details = []
 	instructors = frappe.get_all(

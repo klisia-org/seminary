@@ -47,6 +47,7 @@
   "column_break_qewt",
   "grading_tab",
   "gradesc_cs",
+  "maxnumgrade",
   "courseassescrit_sc",
   "lms_tab",
   "lms_configuration_section",
@@ -391,12 +392,21 @@
    "fieldtype": "Int",
    "label": "Lessons",
    "read_only": 1
+  },
+  {
+   "fetch_from": "gradesc_cs.maxnumgrade",
+   "fieldname": "maxnumgrade",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Max Grade in this scale",
+   "non_negative": 1,
+   "read_only": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-13 17:52:16.728774",
+ "modified": "2025-03-28 08:28:00.521700",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

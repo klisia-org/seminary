@@ -60,14 +60,14 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Type of Scale",
-   "options": "\nPoints\nDescriptive",
+   "options": "Points\nDescriptive",
    "reqd": 1,
    "translatable": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-14 14:42:04.749391",
+ "modified": "2025-03-28 08:26:23.584991",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Grading Scale",
@@ -90,6 +90,7 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

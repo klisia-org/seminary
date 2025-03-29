@@ -220,6 +220,12 @@ doc_events = {
 "Quiz Submission": {
 	"on_update": "seminary.seminary.api.quizresult_to_card",
 },
+"Assignment Submission": {
+	"on_update": "seminary.seminary.api.quizresult_to_card",
+},
+"Exam Submission": {
+	"on_update": "seminary.seminary.api.quizresult_to_card",
+}
 }
 
 # Scheduled Tasks

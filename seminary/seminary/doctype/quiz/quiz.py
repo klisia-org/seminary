@@ -111,7 +111,7 @@ def quiz_summary(quiz, course, time_taken, results):
 		if question_details.type != "Open Ended":
 			correct = result["is_correct"][0]
 			for point in result["is_correct"]:
-				correct = correct and point
+				correct = correct and point 
 			result["is_correct"] = correct
 
 			points = question_details.points if correct else 0

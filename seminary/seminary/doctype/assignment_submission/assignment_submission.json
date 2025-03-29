@@ -25,7 +25,9 @@
   "answer",
   "feedback_section",
   "grade",
+  "percentage",
   "status",
+  "late",
   "comments",
   "evaluator"
  ],
@@ -68,7 +70,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nNot Graded\nGraded\nPass\nFail"
+   "options": "\nNot Graded\nGraded\nNot Submitted"
   },
   {
    "fieldname": "comments",
@@ -168,11 +170,23 @@
    "fieldname": "extra_credit",
    "fieldtype": "Check",
    "label": "Is extra credit"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "late",
+   "fieldtype": "Duration",
+   "label": "Lateness",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-27 13:41:27.433615",
+ "modified": "2025-03-28 08:40:38.057456",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",
