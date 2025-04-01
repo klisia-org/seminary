@@ -152,6 +152,12 @@ const routes = [
 		props: true,
 	},
 	{
+		path: '/exam-graded',
+		name: 'ExamGraded',
+		component: () => import('@/components/ExamGraded.vue'), 
+		props: true,
+	  },
+	{
 		path: '/gradebook/:courseName',
 		name: 'Gradebook',
 		component: () => import('@/pages/Gradebook.vue'),

@@ -7,10 +7,12 @@
  "engine": "InnoDB",
  "field_order": [
   "question",
+  "question_name",
   "answer",
   "section_break_xnsz",
-  "score",
-  "score_out_of",
+  "points",
+  "graded",
+  "points_out_of",
   "comments"
  ],
  "fields": [
@@ -18,7 +20,7 @@
    "fieldname": "question",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Question",
+   "label": "Question Link",
    "options": "Exam Question",
    "reqd": 1
   },
@@ -39,24 +41,38 @@
    "label": "Question Comments"
   },
   {
-   "fieldname": "score",
+   "fetch_from": "question.question_detail",
+   "fieldname": "question_name",
+   "fieldtype": "Text Editor",
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "fieldname": "points",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Score"
   },
   {
    "fetch_from": "question.points",
-   "fieldname": "score_out_of",
+   "fieldname": "points_out_of",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Score out of"
+   "label": "Score out of",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "graded",
+   "fieldtype": "Check",
+   "label": "Graded"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-28 12:52:18.376006",
+ "modified": "2025-04-01 14:26:00.004752",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question Result",

@@ -19,11 +19,46 @@
 				}}
 			</div>
     </div>
-
-  
+    <div v-if="exam.data.duration" class="flex flex-col space-x-1 my-4">
+			<div class="mb-2">
+				<span class=""> {{ ('Time') }}: </span>
+				<span class="font-semibold">
+					{{ formatTimer(timer) }}
+				</span>
+			</div>
+			<ProgressBar :progress="timerProgress" />
+		</div>
+  		<!-- Start Screen -->
+<div v-if="!fullExamMode && !is_instructor()">
+  <div class="border text-center p-20 rounded-md">
+    <div class="font-semibold text-lg">
+      {{ exam.data.title }}
+    </div>
+    <Button
+      v-if="exam.data.qbyquestion && !hasSubmittedExam"
+      @click="startExam"
+      class="mt-2"
+    >
+      <span>{{ ('Start') }}</span>
+    </Button>
+    <Button
+      v-else-if="!hasSubmittedExam"
+      @click="startExam2"
+      class="mt-2"
+    >
+      <span>{{ ('Start Exam') }}</span>
+    </Button>
+    <div v-else-if="hasSubmittedExam && submission.data" class="w-full max-w-4xl mx-auto py-5">
+      <ExamGraded :submission="submission.data" />
+    </div>
+    <div v-else >
+      {{ 'You have already submitted this exam. As soon as it is graded, you will see the feedback here.' }}
+    </div>
+  </div>
+</div>
 
     <!-- Full Exam Mode -->
-    <div>
+    <div v-if="fullExamMode || is_instructor()">
       <div class="border text-center p-20 rounded-md">
   <div class="font-semibold text-lg text-ink-gray-9 mt-3 mb-3">
     {{ exam.data.title }}
@@ -81,6 +116,7 @@ import { CheckCircle, XCircle, MinusCircle, SquarePen } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
+import ExamGraded from '@/components/ExamGraded.vue'
 const user = inject('$user')
 const timer = ref(0);
 let timerInterval = null;
@@ -88,9 +124,10 @@ const elapsedTime = ref(0);
 const answer = ref('');
 const answers = ref({}); // Use ref instead of reactive
 const questions = ref([]);
-const fullExamMode = ref(true); // Always in full exam mode
+const fullExamMode = ref(false); // Always in full exam mode
 const router = useRouter()
 let user_is_instructor = false
+const socket = inject('$socket')
 // Props
 const props = defineProps({
 examName: {
@@ -121,6 +158,8 @@ transform(data) {
 onSuccess(data) {
       if (data) {
         console.log('Loaded exam data:', data); // Debugging
+        console.log('Exam Name:', exam.data?.name); // Debugging log
+        console.log('User Name:', user.data?.name); // Debugging log
         data.questions = data.questions || []; // Ensure questions is always an array
           // populateQuestions();
           // setupTimer();
@@ -137,6 +176,10 @@ onSuccess(data) {
 const isExamLoaded = computed(() => {
 console.log('Exam data on isExamLoaded:', exam.data); // Debugging
 return !!exam.data;
+});
+
+const hasSubmittedExam = computed(() => {
+  return attempts.data?.length > 0;
 });
 
 const instructors = createResource({
@@ -190,15 +233,23 @@ const is_instructor = () => {
 // };
 
 // Timer setup
-const setupTimer = () => {
+let timerStartTime = null; // Store the start time
+const startTimer = () => {
   if (exam.data.duration) {
-    timer.value = exam.data.duration * 60;
+    timer.value = exam.data.duration * 60; // Total duration in seconds
+    timerStartTime = Date.now(); // Record the start time
+    const endTime = timerStartTime + timer.value * 1000; // Calculate the end time
+
     timerInterval = setInterval(() => {
-      timer.value--;
-      elapsedTime.value++;
-      if (timer.value <= 0) {
+      const currentTime = Date.now();
+      const remainingTime = Math.max(0, Math.floor((endTime - currentTime) / 1000)); // Calculate remaining time
+
+      timer.value = remainingTime; // Update the timer value
+      elapsedTime.value = exam.data.duration * 60 - remainingTime; // Calculate elapsed time
+
+      if (remainingTime <= 0) {
         clearInterval(timerInterval);
-        submitExam();
+        submitExam(); // Automatically submit the exam when the timer ends
       }
     }, 1000);
   }
@@ -242,12 +293,45 @@ const updateAnswer = (questionName, value) => {
 answers[questionName] = value;
 };
 
+const attempts = createResource({
+  url: 'frappe.client.get_list',
+  makeParams(values) {
+    return {
+      doctype: 'Exam Submission',
+      filters: {
+        member: user.data?.name,
+        exam: exam.data?.name,
+      },
+      fields: ['name', 'creation'],
+      order_by: 'creation desc',
+    };
+  },
+  auto: true,
+  transform(data) {
+    console.log('Fetched attempts:', data); // Debugging log
+    data.forEach((submission, index) => {
+      submission.creation = timeAgo(submission.creation);
+      submission.idx = index + 1;
+    });
+  },
+});
+
+watch(
+  () => attempts.data,
+  (newData) => {
+    console.log('Attempts data updated:', newData); // Debugging log
+  }
+);
+
 // Submit exam
 const submitExam = async () => {
 try {
   const submittedAnswers = get_answers();
   console.log('Submitting exam with answers:', submittedAnswers);
   console.log("Course Name:", router.currentRoute.value.params.courseName);
+  const timeTaken = exam.data.duration
+            ? exam.data.duration * 60 - (timer.value || 0) // Use timer when duration is set
+            : elapsedTime.value || 0; // Use elapsedTime when duration is not set
 
   //  API call
   await call('seminary.seminary.doctype.exam_submission.exam_submission.create_exam_submission', {
@@ -255,6 +339,7 @@ try {
     course: router.currentRoute.value.params.courseName,
     member: user.data?.name,
     answers: submittedAnswers,
+    time_taken: timeTaken,
   });
 
   showToast('Success', 'Your exam was submitted successfully.', 'check');
@@ -265,7 +350,41 @@ try {
 }
 };
 
+const startExam = () => {
+	activeQuestion.value = 1
+	localStorage.removeItem(exam.data.title)
+	startTimer()
+}
 
+const startExam2 = () => {
+    localStorage.removeItem(exam.data.title);
+    fullExamMode.value = true; // Set full exam mode flag
+    startTimer();
+    // all_questions_details.reload(); // Ensure the resource is reloaded
+    
+}
+
+const submission = createResource({
+  url: 'frappe.client.get_value',
+  params: {
+    doctype: 'Exam Submission',
+    fieldname: 'name',
+    filters: {
+      exam: exam.data?.name,
+      member: user.data?.name,
+      status: 'Graded',
+    },
+  },
+  auto: true,
+  transform(data) {
+    console.log('Fetched submission:', data); // Debugging log
+    return data;
+  },
+  onError(err) {
+    console.error('Error fetching submission:', err); // Debugging log
+  },
+});
+	
 </script>
 
 <style>

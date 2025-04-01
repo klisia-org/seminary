@@ -17,6 +17,7 @@ import { Button } from 'frappe-ui'
 import Exam from '@/components/Exam.vue'
 
 const user = inject('$user')
+const socket = inject('$socket')
 const props = defineProps({
 	exam: {
 		type: String,

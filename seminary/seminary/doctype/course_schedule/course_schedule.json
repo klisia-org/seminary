@@ -75,6 +75,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Academic Term",
+   "link_filters": "[[\"Academic Term\",\"open\",\"=\",1]]",
    "options": "Academic Term",
    "reqd": 1
   },
@@ -406,7 +407,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-28 08:28:00.521700",
+ "modified": "2025-03-31 09:45:57.800971",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

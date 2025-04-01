@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 
 @frappe.whitelist()
-def create_exam_submission(exam, course, member, answers):
+def create_exam_submission(exam, course, member, answers, time_taken):
     """Create an Exam Submission for the given exam, course, student, and answers."""
     #Get SCAC, course_name
     scac = frappe.get_value("Scheduled Course Assess Criteria", {"exam": exam, "parent": course}, "name")
@@ -30,13 +30,15 @@ def create_exam_submission(exam, course, member, answers):
     exam_submission.exam_title = exam_title
     exam_submission.student = student
     exam_submission.member_name = member_name
+    exam_submission.time_taken = time_taken
     exam_submission.submission_date = frappe.utils.now_datetime()
 
     # Populate the child table with answers
     for answer in answers:
         exam_submission.append("result", {
             "question": answer.get("question"),
-            "answer": answer.get("answer")
+            "answer": answer.get("answer"),
+            "points": '',
         })
 
     # Insert the document into the database

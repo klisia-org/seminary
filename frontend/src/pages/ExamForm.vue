@@ -85,7 +85,7 @@
 						<FormControl
 							v-model="exam.qbyquestion"
 							type="checkbox"
-							:label="__('Force student to ansswer a question before moving on? Each question will have its own page and a next button')"
+							:label="__('Force student to answer a question before moving on? Each question will have its own page and a next button')"
 						/>
 					
 				</div>

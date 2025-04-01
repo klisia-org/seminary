@@ -92,6 +92,7 @@ class CourseSchedule(Document):
 			if calendar.day_name[getdate(current_date).weekday()] in days:
 				meeting_date = self.save_dates(current_date)
 				try:
+					meeting_date.flags.ignore_permissions = True
 					meeting_date.save()
 					frappe.db.set_value('Course Schedule', self, 'hasmtgdate', 1)
 				except OverlapError:

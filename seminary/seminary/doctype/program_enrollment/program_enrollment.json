@@ -68,7 +68,7 @@
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term on Enrollment",
-   "link_filters": "[[{\"fieldname\":\"academic_term\",\"field_option\":\"Academic Term\"},\"iscurrent_acterm\",\"=\",1]]",
+   "link_filters": "[[\"Academic Term\",\"open\",\"=\",1]]",
    "options": "Academic Term",
    "reqd": 1,
    "search_index": 1
@@ -204,7 +204,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2025-03-05 17:21:48.997298",
+ "modified": "2025-03-31 09:44:56.613274",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",
@@ -227,6 +227,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

@@ -1,14 +1,25 @@
 <template>
 	<div>
-		<Button v-if="!singleThread" class="float-right" @click="openTopicModal()">
+		<Button v-if="!singleThread && props.type === 'multi'"  class="float-right" @click="openTopicModal()">
 			{{ __('New {0}').format(singularize(title)) }}
 		</Button>
 		<div class="text-xl font-semibold text-ink-gray-9">
 			{{ __(title) }}
 		</div>
 	</div>
-	<div v-if="topics.data?.length && !singleThread">
-		<div v-if="showTopics" v-for="(topic, index) in topics.data">
+	<div v-if="loading && props.type === 'single'">
+		<div class="text-center py-10">
+			<span>Loading discussion...</span>
+		</div>
+	</div>
+	<div v-else-if="props.type === 'single' && currentTopic.value">
+		<div class="text-xl font-semibold text-ink-gray-9">
+			{{ __(title) }}
+		</div>
+		<DiscussionReplies :topic="currentTopic.value" :singleThread="true" />
+	</div>
+	<div v-else-if="topics.data?.length && !singleThread">
+		<div v-if="showTopics" v-for="(topic, index) in topics.data" :key="index">
 			<div
 				@click="showReplies(topic)"
 				class="flex items-center cursor-pointer py-5 w-full"
@@ -36,9 +47,6 @@
 				v-model:showTopics="showTopics"
 			/>
 		</div>
-	</div>
-	<div v-else-if="singleThread && topics.data">
-		<DiscussionReplies :topic="topics.data" :singleThread="singleThread" />
 	</div>
 	<div
 		v-else
@@ -77,6 +85,7 @@ const currentTopic = ref(null)
 const socket = inject('$socket')
 const user = inject('$user')
 const showTopicModal = ref(false)
+const loading = ref(true); // Add a loading state
 
 const props = defineProps({
 	title: {
@@ -107,26 +116,64 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	type: {
+    type: String,
+    default: 'multi', // Default to multi-topic mode but can be single for assignment feedback
+  },
 })
 
 onMounted(() => {
-	if (user.data) topics.reload()
+  console.log('Props:', props); // Debugging
+  if (user.data) {
+    if (props.type === 'single') {
+      console.log('Single-topic mode detected'); // Debugging
+      singleTopicResource.reload(); // Trigger the resource to fetch the single topic
+    } else {
+      loading.value = false; // Immediately stop loading for multi-topic mode
+    }
+    topics.reload();
+  }
 
-	socket.on('new_discussion_topic', (data) => {
-		topics.refresh()
-	})
+  socket.on('new_discussion_topic', (data) => {
+    topics.refresh();
+  });
 
-	if (props.scrollToBottom) {
-		setTimeout(() => {
-			scrollToEnd()
-		}, 100)
-	}
-})
+  if (props.scrollToBottom) {
+    setTimeout(() => {
+      scrollToEnd();
+    }, 100);
+  }
+});
 
 const scrollToEnd = () => {
 	let scrollContainer = getScrollContainer()
 	scrollContainer.scrollTop = scrollContainer.scrollHeight
 }
+
+const singleTopicResource = createResource({
+  url: 'seminary.seminary.utils.ensure_single_topic',
+  cache: false, // No need to cache this since it's a one-time call
+  makeParams() {
+    return {
+      doctype: props.doctype,
+      docname: props.docname,
+      title: props.title,
+    };
+  },
+  onSuccess(data) {
+    console.log('Ensure single topic response:', data); // Debugging
+    if (data) {
+      currentTopic.value = data; // Set the single topic as the current topic
+      showTopics.value = false; // Automatically show replies for the single topic
+    }
+    loading.value = false; // Mark loading as complete
+  },
+  onError(error) {
+    console.error('Error ensuring single topic:', error); // Log the error
+    loading.value = false; // Ensure loading is stopped even on error
+  },
+});
+
 
 const topics = createResource({
 	url: 'seminary.seminary.utils.get_discussion_topics',

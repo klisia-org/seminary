@@ -197,6 +197,7 @@ const instructorEditor = ref(null)
 const lessonProgress = ref(0)
 const timer = ref(0)
 let timerInterval
+const socket = inject('$socket')
 
 const props = defineProps({
 	courseName: {

@@ -60,7 +60,9 @@ frappe.ui.form.on("Instructor", {
 	onload: function(frm) {
 		let name = frm.doc.name;
 		console.log(name);
-		frm.call({method: "seminary.seminary.doctype.instructor.instructor.update_instructorlog", args: {doc: name}});
+		if (!frm.is_new()) {
+			frm.call({method: "seminary.seminary.doctype.instructor.instructor.update_instructorlog", args: {doc: name}});
+		}
 		console.log("Instructor Log updated");
 		frm.refresh();
 			}

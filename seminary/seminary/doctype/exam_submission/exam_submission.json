@@ -26,6 +26,7 @@
   "passing_percentage",
   "fudge_points",
   "extra_credit",
+  "status",
   "column_break_hfkj",
   "submission_date",
   "time_taken",
@@ -168,12 +169,18 @@
    "fieldtype": "Check",
    "label": "Is Extra Credit",
    "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Not Graded\nGraded"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-28 13:24:51.804143",
+ "modified": "2025-03-31 09:06:58.217315",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",

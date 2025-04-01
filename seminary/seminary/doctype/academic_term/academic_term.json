@@ -17,6 +17,7 @@
   "academic_year",
   "term_name",
   "iscurrent_acterm",
+  "open",
   "column_break_jhzu",
   "term_start_date",
   "term_end_date",
@@ -37,7 +38,8 @@
    "fieldname": "term_name",
    "fieldtype": "Data",
    "label": "Term Name",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "term_start_date",
@@ -77,8 +79,15 @@
    "fieldname": "iscurrent_acterm",
    "fieldtype": "Check",
    "label": "Current Academic Term?",
-   "read_only": 1,
-   "search_index": 1
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "open",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Open for Enrollment"
   }
  ],
  "links": [
@@ -87,7 +96,6 @@
    "link_doctype": "Student Applicant",
    "link_fieldname": "academic_term"
   },
-
   {
    "group": "Student",
    "link_doctype": "Student Log",
@@ -99,7 +107,7 @@
    "link_fieldname": "academic_term"
   }
  ],
- "modified": "2024-03-13 16:39:00.079769",
+ "modified": "2025-03-31 09:46:55.811322",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Term",
@@ -119,7 +127,7 @@
    "write": 1
   }
  ],
- "quick_entry": 0,
+ "row_format": "Dynamic",
  "sort_field": "name",
  "sort_order": "DESC",
  "states": [],

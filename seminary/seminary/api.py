@@ -1241,10 +1241,11 @@ def send_grades(doc=None,**kwargs):
 @frappe.whitelist()	
 def course_event(name):
 	course = frappe.get_doc("Course Schedule", name)
+	color = course.color
 	datest = str(course.c_datestart)  # Convert datest to a string
 	timest = str(course.from_time)  # Convert timest to a string
 	datetimest = datest + " " + timest
-	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S.%f") # Convert datetimest to a datetime object
+	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S") # Convert datetimest to a datetime object
 	print(datetimest)
 	datef = str(course.c_dateend)  # Convert datef to a string
 	timef = str(course.to_time)  # Convert timef to a string
@@ -1274,6 +1275,7 @@ def course_event(name):
 			"ends_on": datetimef,
 			"event_type": "Public",
 			"event_category": "Event",
+			"color": color,
 			"description": name + " Room: " + (course.room or "N/A"),
 			"event_participants": event_participants
 		})
@@ -1296,6 +1298,7 @@ def course_event(name):
 			"sunday": course.sunday,
 			"event_type": "Public",
 			"event_category": "Event",
+			"color": color,
 			"description": name + " Room: " + (course.room or "N/A"),
 			"event_participants": event_participants
 		})
@@ -1309,10 +1312,9 @@ def course_event(name):
 		
 @frappe.whitelist(allow_guest=True)
 def get_doctrinal_statement():
-	print("Method DS called")
 	doctrinal_statement = frappe.get_doc('Doctrinal Statement')
 	doctrinal_statement = doctrinal_statement.doctrinalst
-	print(doctrinal_statement)
+	
 	return doctrinal_statement
 
 @frappe.whitelist(allow_guest=True)

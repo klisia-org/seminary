@@ -9,7 +9,8 @@
   "question",
   "question_detail",
   "section_break",
-  "points"
+  "points",
+  "standard_comments"
  ],
  "fields": [
   {
@@ -40,13 +41,19 @@
    "fieldtype": "Check",
    "label": "Is Section Break",
    "read_only": 1
+  },
+  {
+   "description": "Use this to pre-populate comments about this question for students. You may edit these for each student.",
+   "fieldname": "standard_comments",
+   "fieldtype": "Text Editor",
+   "label": "Standard Comments"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-24 08:43:58.000001",
+ "modified": "2025-03-31 07:39:00.179577",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Question",

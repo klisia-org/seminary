@@ -1014,7 +1014,30 @@ def get_discussion_replies(topic):
 
 	return replies
 
+@frappe.whitelist()
+def ensure_single_topic(doctype, docname, title):
+	print("Ensuring single topic for:", doctype, docname, title)
+	existing_topic = frappe.get_all(
+		"Discussion Topic",
+		filters={"reference_doctype": doctype, "reference_docname": docname},
+		fields=["name", "title"],
+		limit=1,
+	)
 
+	if existing_topic:
+		print("Existing topic found:", existing_topic)
+		return existing_topic[0]
+
+	# Create a new topic if none exists
+	new_topic = frappe.get_doc({
+		"doctype": "Discussion Topic",
+		"reference_doctype": doctype,
+		"reference_docname": docname,
+		"title": title,
+	})
+	print("Creating new topic:", new_topic)
+	new_topic.insert(ignore_permissions=True)
+	return new_topic
 
 
 
