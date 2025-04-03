@@ -79,13 +79,21 @@ import DiscussionReplies from '@/components/DiscussionReplies.vue'
 import DiscussionModal from '@/components/Modals/DiscussionModal.vue'
 import { MessageSquareText } from 'lucide-vue-next'
 import { getScrollContainer } from '@/utils/scrollContainer'
+import { initSocket } from '@/socket'; // Import the socket initializer
 
 const showTopics = ref(true)
 const currentTopic = ref(null)
-const socket = inject('$socket')
 const user = inject('$user')
 const showTopicModal = ref(false)
 const loading = ref(true); // Add a loading state
+// Initialize the socket directly
+const socket = initSocket(); // Use the default namespace or specify one if needed
+
+if (!socket) {
+  console.error('Socket connection not initialized in Discussions.vue.');
+} else {
+  console.log('Socket connection initialized in Discussions.vue:', socket);
+}
 
 const props = defineProps({
 	title: {

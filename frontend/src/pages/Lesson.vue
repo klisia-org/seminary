@@ -135,6 +135,7 @@
 						:quizId="lesson.data.quiz_id"
 						:exam="lesson.data.exam"
 						:assignmentID="lesson.data.assignment_id"
+						:socket="socket"
 						
 					/>
 				</div>
@@ -198,6 +199,11 @@ const lessonProgress = ref(0)
 const timer = ref(0)
 let timerInterval
 const socket = inject('$socket')
+if (!socket) {
+  console.error('Socket connection not found in Lesson.vue.');
+} else {
+  console.log('Socket connection available in Lesson.vue:', socket);
+}
 
 const props = defineProps({
 	courseName: {
@@ -386,7 +392,7 @@ const checkIfDiscussionsAllowed = () => {
       parsedContent.blocks?.forEach((block) => {
         // Check if the block is of type 'quiz' or 'exam' and has meaningful data
         if (
-          (block.type === 'quiz' || block.type === 'exam') &&
+          (block.type === 'quiz' ) &&
           block.data &&
           Object.keys(block.data).some((key) => block.data[key] !== null && block.data[key] !== '')
         ) {

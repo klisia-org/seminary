@@ -90,7 +90,15 @@ import { createDocumentResource } from 'frappe-ui';
 import { watch, inject } from 'vue';
 import Discussions from '@/components/Discussions.vue'
 
-const socket = inject('$socket')
+// const socket = inject('$socket')
+// if (socket) {
+  
+//     console.log('ExamGraded socket :', socket); // Debugging log
+   
+//   } else {
+//     console.log('ExamGraded socket is not available'); // Debugging log
+//   }
+
 const props = defineProps({
   submission: {
     type: Object,

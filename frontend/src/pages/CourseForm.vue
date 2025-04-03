@@ -30,14 +30,22 @@
 							:label="__('Short Introduction')"
 							:placeholder="
 								__(
-									'A one line introduction to the course that appears on the course card'
+									'A one line introduction to the course that appears on the course card (less than 55 characters)'
 								)
 							"
-							class="mb-4"
+							class="mb-2"
 							:required="true"
 						/>
+						<div class="text-sm mt-1" :class="remainingCharacters < 0 ? 'text-red-500' : 'text-ink-gray-5'">
+							<span v-if="remainingCharacters >= 0">
+								{{ `${remainingCharacters} characters available` }}
+							</span>
+							<span v-else>
+								{{ __('This introduction may be truncated on the course card.') }}
+							</span>
+						</div>
 						<div class="mb-4">
-							<div class="mb-1.5 text-sm text-ink-gray-5">
+							<div class="mb-1.5 mt-4 text-sm text-ink-gray-5">
 								{{ __('Course Description') }}
 								<span class="text-ink-red-3">*</span>
 							</div>
@@ -191,8 +199,14 @@ const course = reactive({
 	published: false,
 })
 
+const maxShortIntroductionLength = 55;
+
+const remainingCharacters = computed(() => {
+  const typedLength = course.short_introduction.length || 0;
+  return maxShortIntroductionLength - typedLength;
+});
+
 onMounted(() => {
-	console.log('Mounted: courseName =', props.courseName)
 	courseResource.reload()
 	window.addEventListener('keydown', keyboardShortcut)
 })
@@ -245,7 +259,7 @@ const courseResource = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
-		console.log('courseResource onSuccess: data =', data)
+		
 		if (!data) {
 			console.error('No data received from courseResource')
 			return
@@ -283,7 +297,7 @@ const imageResource = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
-		console.log('imageResource onSuccess: data =', data)
+		
 		course.course_image = data
 	},
 	onError(err) {
@@ -292,35 +306,37 @@ const imageResource = createResource({
 })
 
 const submitCourse = () => {
-	if (courseResource.data) {
-		fetch('/api/method/seminary.seminary.api.save_course', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				course: courseResource.data.name,
-				course_data: course,
-			}),
-		})
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-			return response.json();
-		})
-		.then((data) => {
-			if (data.success) {
-				showToast('Success', 'Course updated successfully', 'check');
-			} else {
-				showToast('Error', data.message || 'An error occurred', 'x');
-			}
-		})
-		.catch((error) => {
-			console.error('Fetch error:', error);
-			showToast('Error', error.message || 'An error occurred', 'x');
-		});
-	}
+  if (courseResource.data) {
+    fetch('/api/method/seminary.seminary.api.save_course', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        course: courseResource.data.name,
+        course_data: course,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Check success in the nested message object
+        if (data.message && data.message.success) {
+          showToast('Success', 'Course updated successfully', 'check');
+        } else {
+          showToast('Error', data.message?.message || 'An error occurred', 'x');
+        }
+      })
+      .catch((error) => {
+        console.error('Fetch error:', error);
+        const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error.toString();
+        showToast('Error', errorMessage || 'An error occurred', 'x');
+      });
+  }
 };
 
 const validateFile = (file) => {
@@ -339,8 +355,6 @@ const removeImage = () => {
 }
 
 const check_permission = () => {
-	console.log('check_permission: user.data =', user.data)
-	console.log('check_permission: instructors.value =', instructors.value)
 	let user_is_instructor = false
 	if (user.data?.is_moderator) return
 
@@ -350,7 +364,7 @@ const check_permission = () => {
 		}
 	})
 
-	console.log('check_permission: user_is_instructor =', user_is_instructor)
+	
 	if (!user_is_instructor) {
 		console.log('Redirecting to Courses due to insufficient permissions')
 		router.push({ name: 'Courses' })

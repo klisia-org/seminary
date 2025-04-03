@@ -23,6 +23,7 @@ const pinia = createPinia()
 let app = createApp(App)
 
 
+
 setConfig('resourceFetcher', frappeRequest)
 
 app.use(router)

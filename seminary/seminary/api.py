@@ -59,6 +59,7 @@ def save_course(course, course_data):
 
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Error saving course')
+		print("Error saving course:", str(e))
 		return {"success": False, "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)

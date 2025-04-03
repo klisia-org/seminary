@@ -95,14 +95,16 @@ import { createResource, TextEditor, Button, Dropdown } from 'frappe-ui'
 import { timeAgo } from '../utils'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { ChevronLeft, MoreHorizontal } from 'lucide-vue-next'
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, onUnmounted } from 'vue'
 import { createToast } from '../utils'
+import { initSocket } from '@/socket'; // Import the socket initializer
 
+const socket = initSocket(); // Initialize the socket once
+const isLoadingUsers = ref(false); // Add a loading state
 const showTopics = defineModel('showTopics')
 const newReply = ref('')
-const socket = inject('$socket')
 const user = inject('$user')
-const allUsers = inject('$allUsers')
+console.log('User data:', user.data.is_student); // Debugging log
 const mentionUsers = ref([])
 const renderEditor = ref(false)
 
@@ -118,7 +120,21 @@ const props = defineProps({
 })
 
 onMounted(() => {
-	socket.on('publish_message', (data) => {
+  console.log('DiscussionReplies mounted. Registering socket listeners.');
+  console.log('Topic received:', props.topic.name); // Debugging log
+  replies.reload(
+	{},
+	{
+	  onSuccess(data) {
+		console.log('Replies fetched successfully:', data); // Debugging log
+	  },
+	  onError(error) {
+		console.error('Error fetching replies:', error); // Debugging log
+	  },
+	}
+  )
+
+  socket.on('publish_message', (data) => {
 		replies.reload()
 	})
 	socket.on('update_message', (data) => {
@@ -127,19 +143,32 @@ onMounted(() => {
 	socket.on('delete_message', (data) => {
 		replies.reload()
 	})
-	fetchMentionUsers()
-})
+
+  // Cleanup listeners on unmount
+//   onUnmounted(() => {
+//     console.log('DiscussionReplies unmounted. Cleaning up socket listeners.');
+//     socket.off('publish_message', reloadReplies);
+//     socket.off('update_message', reloadReplies);
+//     socket.off('delete_message', reloadReplies);
+//   });
+});
 
 const replies = createResource({
-	url: 'seminary.seminary.utils.get_discussion_replies',
-	cache: ['replies', props.topic],
-	makeParams(values) {
-		return {
-			topic: props.topic.name,
-		}
-	},
-	auto: true,
-})
+  url: 'seminary.seminary.utils.get_discussion_replies',
+  auto: false, // Do not fetch automatically
+  makeParams() {
+    return {
+      topic: props.topic.name,
+    };
+  },
+  onSuccess(data) {
+    console.log('Replies fetched successfully:', data); // Debugging log
+  },
+  onError(error) {
+    console.error('Error fetching replies:', error); // Debugging log
+  },
+});
+
 
 const newReplyResource = createResource({
 	url: 'frappe.client.insert',
@@ -155,25 +184,32 @@ const newReplyResource = createResource({
 })
 
 const fetchMentionUsers = () => {
-	if (user.data?.is_student) {
-		renderEditor.value = true
-	} else {
-		allUsers.reload(
-			{},
-			{
-				onSuccess(data) {
-					mentionUsers.value = Object.values(data).map((user) => {
-						return {
-							value: user.name,
-							label: user.full_name,
-						}
-					})
-					renderEditor.value = true
-				},
-			}
-		)
-	}
-}
+	console.log('User data:', user.data); // Debugging log
+  if (user.data?.is_student) {
+    renderEditor.value = true;
+  } else {
+    isLoadingUsers.value = true; // Set loading state
+    allUsers.reload(
+      {},
+      {
+        onSuccess(data) {
+          mentionUsers.value = Object.values(data).map((user) => {
+            return {
+              value: user.name,
+              label: user.full_name,
+            };
+          });
+          renderEditor.value = true; // Render the editor after users are loaded
+          isLoadingUsers.value = false; // Reset loading state
+        },
+        onError(err) {
+          console.error('Error fetching mention users:', err);
+          isLoadingUsers.value = false; // Reset loading state
+        },
+      }
+    );
+  }
+};
 
 const postReply = () => {
 	newReplyResource.submit(
@@ -256,4 +292,10 @@ const deleteReply = (reply) => {
 		}
 	)
 }
+
+const allUsers = createResource({
+		url: 'seminary.seminary.utils.get_all_users',
+		
+	})
+console.log('All Users:', allUsers) // Debugging log
 </script>

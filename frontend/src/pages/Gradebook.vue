@@ -25,8 +25,30 @@
                             :key="assessment.assessment_criteria"
                             class="border border-gray-300 px-4 py-2 bg-gray-100"
                         >
-                            {{ assessment.title }} 
-                            ({{ assessment.extracredit_scac ? `${assessment.fudgepoints_scac} extra points` : `${assessment.weight_scac}%` }})
+                            <router-link
+                                v-if="assessment.type === 'Exam'"
+                                :to="{ name: 'ExamSubmissionCS', params: { courseName: props.courseName, examID: assessment.exam } }"
+                                class="text-blue-500 underline"
+                            >
+                                {{ assessment.title }} (Exam)
+                            </router-link>
+                            <router-link
+                                v-else-if="assessment.type === 'Assignment'"
+                                :to="{ name: 'AssignmentSubmissionCS', params: { courseName: props.courseName, assignmentID: assessment.assignment } }"
+                                class="text-blue-500 underline"
+                            >
+                                {{ assessment.title }} (Assignment)
+                            </router-link>
+                            <router-link
+                                v-else-if="assessment.type === 'Quiz'"
+                                :to="{ name: 'QuizSubmissionCS', params: { courseName: props.courseName, quizID: assessment.quiz } }"
+                                class="text-blue-500 underline"
+                            >
+                                {{ assessment.title }} (Quiz)
+                            </router-link>
+                            <span v-else>
+                                {{ assessment.title }}
+                            </span>
                         </th>
                     </tr>
                 </thead>
@@ -109,6 +131,7 @@ import {
 	FileUp,
 } from 'lucide-vue-next'
 import { showToast } from '@/utils'
+
 
 const props = defineProps({
 	courseName: {

@@ -183,7 +183,6 @@ def get_all_users():
 		},
 		["name", "full_name", "user_image"],
 	)
-
 	return {user.name: user for user in users}
 
 @frappe.whitelist(allow_guest=True)
@@ -998,6 +997,7 @@ def create_discussion_topic(doctype, docname):
 
 @frappe.whitelist()
 def get_discussion_replies(topic):
+	print("Fetching replies for topic:", topic)  # Debugging log
 	replies = frappe.get_all(
 		"Discussion Reply",
 		{
@@ -1011,6 +1011,7 @@ def get_discussion_replies(topic):
 		reply.user = frappe.db.get_value(
 			"User", reply.owner, ["full_name", "user_image"], as_dict=True
 		)
+	print("Replies: ", replies)
 
 	return replies
 

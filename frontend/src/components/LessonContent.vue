@@ -60,9 +60,13 @@
 	<div v-if="quizId">
 		<Quiz :quiz="quizId" />
 	</div>
+	<div v-if="exam">
+		<Exam :exam="exam" />
+	</div>
 </template>
 <script setup>
 import Quiz from '@/components/QuizBlock.vue'
+import Exam from '@/components/ExamBlock.vue'
 import MarkdownIt from 'markdown-it'
 
 const markdown = new MarkdownIt({
@@ -83,7 +87,13 @@ const props = defineProps({
 		type: String,
 		required: false,
 	},
+	exam: {
+		type: String,
+		required: false,
+	},
+
 })
+
 
 const getYouTubeVideoSource = (block) => {
 	if (block.includes('{{')) {

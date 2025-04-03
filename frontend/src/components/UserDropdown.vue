@@ -46,7 +46,7 @@ import { School, ChevronDown, LogIn, LogOut, Moon, User, Settings, Sun, } from '
 import { useRouter } from 'vue-router'
 import ProfileModal from '@/components/ProfileModal.vue'
 
-const user = inject('$user')
+
 const router = useRouter()
 
 let { userResource } = usersStore()

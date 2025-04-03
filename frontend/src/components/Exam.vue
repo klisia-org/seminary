@@ -1,7 +1,7 @@
 <template>
   <div v-if="isExamLoaded">
     <!-- Exam Header -->
-    <div class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900">
+    <div  v-if="!hasSubmittedExam" class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900">
       <div class="leading-5">
         {{ `This exam consists of ${exam.data.questions.length}` }}
         {{ exam.data.questions.length === 1 ? 'question' : 'questions' }}.
@@ -19,7 +19,7 @@
 				}}
 			</div>
     </div>
-    <div v-if="exam.data.duration" class="flex flex-col space-x-1 my-4">
+    <div v-if="exam.data.duration && !hasSubmittedExam" class="flex flex-col space-x-1 my-4">
 			<div class="mb-2">
 				<span class=""> {{ ('Time') }}: </span>
 				<span class="font-semibold">
@@ -127,13 +127,24 @@ const questions = ref([]);
 const fullExamMode = ref(false); // Always in full exam mode
 const router = useRouter()
 let user_is_instructor = false
-const socket = inject('$socket')
+// const socket = inject('$socket')
+
+// if (!socket) {
+//   console.error('Socket connection not found in Exam.vue. Ensure $socket is provided.');
+// } else {
+//   console.log('Socket connection established in Exam.vue:', socket);
+
+//   socket.on('new_discussion_topic', (data) => {
+//     console.log('New discussion topic received:', data);
+//   });
+// }
 // Props
 const props = defineProps({
 examName: {
   type: String,
   required: true,
 },
+
 });
 
 // Exam resource
@@ -157,10 +168,11 @@ transform(data) {
 },
 onSuccess(data) {
       if (data) {
-        console.log('Loaded exam data:', data); // Debugging
-        console.log('Exam Name:', exam.data?.name); // Debugging log
-        console.log('User Name:', user.data?.name); // Debugging log
+        // console.log('Loaded exam data:', data); // Debugging
+        // console.log('Exam Name:', exam.data?.name); // Debugging log
+        // console.log('User Name:', user.data?.name); // Debugging log
         data.questions = data.questions || []; // Ensure questions is always an array
+        
           // populateQuestions();
           // setupTimer();
       } else {
@@ -174,7 +186,7 @@ onSuccess(data) {
 
 // Check if exam data is loaded
 const isExamLoaded = computed(() => {
-console.log('Exam data on isExamLoaded:', exam.data); // Debugging
+// console.log('Exam data on isExamLoaded:', exam.data); // Debugging
 return !!exam.data;
 });
 
@@ -198,7 +210,7 @@ const instructors = createResource({
 });
 
 const is_instructor = () => {
-  console.log('Fetching instructors of course:', router.currentRoute.value.params.courseName); // Debugging
+ // console.log('Fetching instructors of course:', router.currentRoute.value.params.courseName); // Debugging
   if (instructors.data) {
     instructors.data.forEach((instructor) => {
       if (instructor.user === user.data?.name) {
@@ -236,6 +248,7 @@ const is_instructor = () => {
 let timerStartTime = null; // Store the start time
 const startTimer = () => {
   if (exam.data.duration) {
+    // If duration is set, initialize the timer with the duration
     timer.value = exam.data.duration * 60; // Total duration in seconds
     timerStartTime = Date.now(); // Record the start time
     const endTime = timerStartTime + timer.value * 1000; // Calculate the end time
@@ -251,6 +264,13 @@ const startTimer = () => {
         clearInterval(timerInterval);
         submitExam(); // Automatically submit the exam when the timer ends
       }
+    }, 1000);
+  } else {
+    // If duration is null, track elapsed time only
+    timerStartTime = Date.now(); // Record the start time
+    timerInterval = setInterval(() => {
+      const currentTime = Date.now();
+      elapsedTime.value = Math.floor((currentTime - timerStartTime) / 1000); // Calculate elapsed time in seconds
     }, 1000);
   }
 };
@@ -277,7 +297,7 @@ const shuffleArray = (array) => {
 };
 
 watch(answers, (newAnswers) => {
-console.log('Answers updated:', newAnswers);
+//console.log('Answers updated:', newAnswers);
 }, { deep: true });
 
 const get_answers = () => {
@@ -308,7 +328,7 @@ const attempts = createResource({
   },
   auto: true,
   transform(data) {
-    console.log('Fetched attempts:', data); // Debugging log
+    //console.log('Fetched attempts:', data); // Debugging log
     data.forEach((submission, index) => {
       submission.creation = timeAgo(submission.creation);
       submission.idx = index + 1;
@@ -319,7 +339,7 @@ const attempts = createResource({
 watch(
   () => attempts.data,
   (newData) => {
-    console.log('Attempts data updated:', newData); // Debugging log
+    //console.log('Attempts data updated:', newData); // Debugging log
   }
 );
 
@@ -327,8 +347,8 @@ watch(
 const submitExam = async () => {
 try {
   const submittedAnswers = get_answers();
-  console.log('Submitting exam with answers:', submittedAnswers);
-  console.log("Course Name:", router.currentRoute.value.params.courseName);
+  //console.log('Submitting exam with answers:', submittedAnswers);
+  //console.log("Course Name:", router.currentRoute.value.params.courseName);
   const timeTaken = exam.data.duration
             ? exam.data.duration * 60 - (timer.value || 0) // Use timer when duration is set
             : elapsedTime.value || 0; // Use elapsedTime when duration is not set
@@ -376,13 +396,13 @@ const submission = createResource({
     },
   },
   auto: true,
-  transform(data) {
-    console.log('Fetched submission:', data); // Debugging log
-    return data;
-  },
-  onError(err) {
-    console.error('Error fetching submission:', err); // Debugging log
-  },
+  // transform(data) {
+  //   console.log('Fetched submission:', data); // Debugging log
+  //   return data;
+  // },
+  // onError(err) {
+  //   console.error('Error fetching submission:', err); // Debugging log
+  // },
 });
 	
 </script>

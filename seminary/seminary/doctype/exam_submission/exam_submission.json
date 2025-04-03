@@ -174,13 +174,13 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Not Graded\nGraded"
+   "options": "Not Submitted\nNot Graded\nGraded"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-31 09:06:58.217315",
+ "modified": "2025-04-02 19:40:35.755176",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",
