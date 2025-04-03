@@ -16,38 +16,50 @@
 
         <!-- Gradebook Table -->
         <div v-else class="overflow-auto">
-            <table class="table-auto border-collapse border border-gray-300 w-full">
+            <table class="table-auto border-collapse border border-gray-300  w-full">
                 <thead>
                     <tr>
                         <th class="border border-gray-300 px-4 py-2 bg-gray-100">Student</th>
                         <th
-                            v-for="assessment in assessments"
+                            v-for="assessment in sortedAssessments"
                             :key="assessment.assessment_criteria"
                             class="border border-gray-300 px-4 py-2 bg-gray-100"
                         >
                             <router-link
                                 v-if="assessment.type === 'Exam'"
                                 :to="{ name: 'ExamSubmissionCS', params: { courseName: props.courseName, examID: assessment.exam } }"
-                                class="text-blue-500 underline"
+                                class="underline"
                             >
-                                {{ assessment.title }} (Exam)
+                                {{ assessment.title }}
+                                <span v-if="assessment.due_date" class="block text-gray-500 text-sm">
+                                    ({{ formatDueDate(assessment.due_date) }})
+                                </span>
                             </router-link>
                             <router-link
                                 v-else-if="assessment.type === 'Assignment'"
                                 :to="{ name: 'AssignmentSubmissionCS', params: { courseName: props.courseName, assignmentID: assessment.assignment } }"
-                                class="text-blue-500 underline"
+                                class="underline"
                             >
-                                {{ assessment.title }} (Assignment)
+                                {{ assessment.title }}
+                                <span v-if="assessment.due_date" class="block text-gray-500 text-sm">
+                                    ({{ formatDueDate(assessment.due_date) }})
+                                </span>
                             </router-link>
                             <router-link
                                 v-else-if="assessment.type === 'Quiz'"
                                 :to="{ name: 'QuizSubmissionCS', params: { courseName: props.courseName, quizID: assessment.quiz } }"
-                                class="text-blue-500 underline"
+                                class="underline"
                             >
-                                {{ assessment.title }} (Quiz)
+                                {{ assessment.title }}
+                                <span v-if="assessment.due_date" class="block text-gray-500 text-sm">
+                                    ({{ formatDueDate(assessment.due_date) }})
+                                </span>
                             </router-link>
                             <span v-else>
                                 {{ assessment.title }}
+                                <span v-if="assessment.due_date" class="block text-gray-500 text-sm">
+                                    ({{ formatDueDate(assessment.due_date) }})
+                                </span>
                             </span>
                         </th>
                     </tr>
@@ -115,7 +127,7 @@
 
 <script setup>
 import { Button, Breadcrumbs, createResource, createDocumentResource,  Tooltip, Dialog, call } from 'frappe-ui'
-import { getCurrentInstance, inject, ref, computed } from 'vue'
+import { getCurrentInstance, inject, ref, computed, watch } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
@@ -131,8 +143,8 @@ import {
 	FileUp,
 } from 'lucide-vue-next'
 import { showToast } from '@/utils'
-
-
+import { useRoute } from 'vue-router';
+const route = useRoute();
 const props = defineProps({
 	courseName: {
 		type: String,
@@ -174,6 +186,24 @@ const gradebook = createResource({
   onError(err) {
     console.error('Error loading gradebook:', err);
   },
+});
+
+//Sort Assessments by due_date and alphabetically
+const sortedAssessments = computed(() => {
+  return [...assessments.value].sort((a, b) => {
+    // Sort by due_date (earlier dates first, null dates last)
+    if (!a.due_date && b.due_date) return 1; // `a` has no due_date, move it to the right
+    if (a.due_date && !b.due_date) return -1; // `b` has no due_date, move it to the right
+    if (a.due_date && b.due_date) {
+      const dateA = new Date(a.due_date);
+      const dateB = new Date(b.due_date);
+      if (dateA < dateB) return -1; // Earlier date first
+      if (dateA > dateB) return 1; // Later date last
+    }
+
+    // If due_date is the same or null, sort alphabetically by title
+    return a.title.localeCompare(b.title);
+  });
 });
 
 // Get cell data for a specific student and assessment
@@ -274,6 +304,24 @@ const saveCell = async (student, assessment) => {
     console.error('Error saving cell:', error);
     showToast('Error', error.messages?.[0] || error, 'x');
   }
+};
+
+watch(
+  () => route.fullPath,
+  (newVal, oldVal) => {
+    // Call your data loading function here
+    gradebook.reload();
+  },
+  { immediate: true }
+);
+const formatDueDate = (dateString) => {
+  if (!dateString) return ''; // Handle empty or undefined dates
+
+  const date = new Date(dateString); // Parse the date string
+  if (isNaN(date)) return ''; // Handle invalid dates
+
+  // Format the date to show only day and month
+  return new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' }).format(date);
 };
 
 const breadcrumbs = computed(() => {

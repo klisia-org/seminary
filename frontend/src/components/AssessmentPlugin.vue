@@ -69,6 +69,14 @@ const props = defineProps({
 		required: true,
 	},
 })
+const course = createResource({
+	url: 'seminary.seminary.utils.get_course_details',
+	cache: ['course', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+}) //Neded for the breadcrumbs
 
 onMounted(async () => {
 	await nextTick()

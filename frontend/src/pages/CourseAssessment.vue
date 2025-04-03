@@ -1,7 +1,5 @@
 <template>
-  <div class="">
-    <div class="grid md:grid-cols-[70%,30%] h-full">
-      <div>
+
         <header
           class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
         >
@@ -25,7 +23,7 @@
           </div>
         </header>
         <div class="mt-5 mb-10 w-full px-5">
-          <div class="container max-w-full mb-5">
+          <div class="container max-w-full mb-5 ">
             <div v-if="!course.data" class="text-lg font-semibold mb-4">
               {{ __('Assessment Criteria') }}
             </div>
@@ -40,110 +38,83 @@
                 <strong>{{ __('Max Fudge Points') }}:</strong> {{ maxFudgePoints }}
               </div>
             </div>
-            <div class="border border-gray-300 p-4 rounded-md">
-              <div v-for="(criteria, index) in assessmentCriteria" :key="index" class="border border-gray-300 p-4 mb-4 rounded-md flex items-center">
-                <div class="flex-1 grid grid-cols-1 md:grid-cols-[3fr,2fr,3fr,1fr,1fr,2fr,1fr] gap-4">
-                  <FormControl
-                    v-model="criteria.title"
-                    :label="__('Title')"
-                    class="mb-4"
-                    :required="false"
-                  />
-                  <Link
-                    v-model="criteria.assesscriteria_scac"
-                    :label="__('Assessment Criteria')"
-                    class="mb-4"
-                    doctype="Assessment Criteria"
-                    :required="true"
-                    @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
-                  />
-                  
-                  <Link
-                    v-if="criteria.type === 'Quiz'"
-                    v-model="criteria.quiz"
-                    doctype="Quiz"
-                    :label="__('Select a Quiz')"
-                    :required="true"
-                    :onCreate="(value, close) => redirectToForm()"
-                  />
-                  <Link
-                    v-else-if="criteria.type === 'Exam'"
-                    v-model="criteria.exam"
-                    doctype="Exam Activity"
-                    :label="__('Select an Exam')"
-                    :required="true"
-                  />
-                  <Link
-                    v-else-if="criteria.type === 'Assignment'"
-                    v-model="criteria.assignment"
-                    doctype="Assignment Activity"
-                    :label="__('Select an Assignment')"
-                    :required="true"
-                    :onCreate="(value, close) => redirectToForm()"
-                  />
-                  <template v-else>
-                    <p>Offline</p>
-                  </template>
-                 
-                  <FormControl
-                    v-model="criteria.extracredit_scac"
-                    :label="__('Is Extra Credit?')"
-                    type="checkbox"
-                    :required="false"
-                    class="mb-4"
-                    :default="false"
-                    />
-                    
-                    <div v-if="criteria.extracredit_scac" class="mb-4 light-blue-bg p-2 rounded">
-                    <FormControl
-                      v-model="criteria.fudgepoints_scac"
-                      :label="__('Fudge Points')"
-                      type="float"
-                      :required="true"
-                    />
-                  </div>
-                  <div v-else class="mb-4">
-                    <FormControl
-                      v-model="criteria.weight_scac"
-                      :label="__('Weight')"
-                      type="float"
-                      class="max-w-14ch"
-                      :required="true"
-                    />
-                  </div>
-                  <DateTimePicker
-                  v-model="criteria.due_date"
-                  :label="__('Due Date')"
-                  variant="subtle"
-                  :required="false"
-                  class="date-column"
-                  :formatter="formatDate"
-                    />
-                      <!-- Trashcan Icon -->
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      theme="red"
-                      @click="removeCriteria(index)"
-                      >
-                      <Trash2 class="h-4 w-4 stroke-1.5" />
-         
-                  
-                      </Button>
+          </div>
+          </div>
+       
+               
+          <table class="min-w-full table-auto border-collapse overflow-auto">
+  <thead>
+    <tr>
+      <th class="p-2 border">Title</th>
+      <th class="p-2 border">Assessment Criteria</th>
+      <th class="p-2 border">Activity Selection</th>
+      <th class="p-2 border">Extra Credit?</th>
+      <th class="p-2 border">Points</th>
+      <th class="p-2 border">Due Date</th>
+      <th class="p-2 border">Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <td class="p-2 border">
+        <FormControl v-model="criteria.title" class="mb-4 overflow-visible" :required="false" />
+      </td>
+      <td class="p-2 border">
+        <Link
+          v-model="criteria.assesscriteria_scac"
+          class="mb-4"
+          doctype="Assessment Criteria"
+          :required="true"
+          @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
+        />
+      </td>
+      <td class="p-2 border">
+        <template v-if="criteria.type === 'Quiz'">
+          <Link v-model="criteria.quiz" doctype="Quiz" :label="__('Select a Quiz')" :required="true" :onCreate="(value, close) => redirectToForm()" />
+        </template>
+        <template v-else-if="criteria.type === 'Exam'">
+          <Link v-model="criteria.exam" doctype="Exam Activity" :label="__('Select an Exam')" :required="true" />
+        </template>
+        <template v-else-if="criteria.type === 'Assignment'">
+          <Link v-model="criteria.assignment" doctype="Assignment Activity" :label="__('Select an Assignment')" :required="true" :onCreate="(value, close) => redirectToForm()" />
+        </template>
+        <template v-else>
+          <p>Offline</p>
+        </template>
+      </td>
+      <td class="p-2 border text-center">
+        <FormControl v-model="criteria.extracredit_scac" type="checkbox" :required="false" class="mb-4 inline-block" :default="false" />
+      </td>
+      <td class="p-2 border" style="width: 10%;">
+        <div v-if="criteria.extracredit_scac" class="mb-4 light-blue-bg p-2 rounded">
+          <FormControl v-model="criteria.fudgepoints_scac" :label="__('Fudge Points')" type="float" class="max-w-14ch" :required="true" />
+        </div>
+        <div v-else class="mb-4">
+          <FormControl v-model="criteria.weight_scac" :label="__('Weight')" type="float" class="max-w-14ch" :required="true" />
+        </div>
+      </td>
+      <td class="p-2 border">
+        <DateTimePicker v-model="criteria.due_date" :label="__('Due Date')" variant="subtle" :required="false" class="date-column" :formatter="formatDate" />
+      </td>
+      <td class="p-2 border flex justify-center items-center">
+        <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
+          <Trash2 class="h-4 w-4 stroke-1.5" />
+        </Button>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-              
-                </div>
-              </div>
-            </div>
+
+             
+            
             <br>
             <Button size="sm" @click="openCourseAssessmentModal">
               {{ __('Add Evaluation') }}
             </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+     
+ 
+ 
   <CourseAssessmentModal
     v-model="showCourseAssessmentModal"
     v-model:modalcriteria="modalcriteria"

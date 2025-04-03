@@ -78,12 +78,7 @@ const links = [
 		to: '/fees',
 		icon: Banknote,
 	},
-	
-	{
-		label: 'Quizzes',
-		to: '/quizzes',
-		icon: UserCheck,
-	},
+
 ]
 
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false)

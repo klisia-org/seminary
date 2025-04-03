@@ -572,6 +572,7 @@ def save_course_assessment(course, assessment_data):
             doc.quiz = data.get("quiz", "")
             doc.assignment = data.get("assignment", "")
             doc.exam = data.get("exam", "")
+            doc.due_date = data.get("due_date", None)
             # These are usually already set, but include them if needed:
             doc.parent = course
             doc.parentfield = "courseassescrit_sc"

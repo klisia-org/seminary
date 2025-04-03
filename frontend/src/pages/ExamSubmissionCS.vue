@@ -6,24 +6,61 @@
 	</header>
     <div class="md:w-3/4 md:mx-auto py-5 mx-5">
 		<div class="grid grid-cols-3 gap-5 mb-5">
-			<Link
-				doctype="Exam Activity"
-				v-model="examID"
-				:placeholder="__('Exam')"
-			/>
-			<Link doctype="User" v-model="member" :placeholder="__('Student')" />
-			<FormControl
-				v-model="status"
-				type="select"
-				:options="statusOptions"
-				:placeholder="__('Status')"
-			/>
+			<!-- Custom Dropdown for Exams -->
+  <div>
+    <label for="examDropdown" class="block text-sm font-medium text-gray-700">
+      {{ __('Exam') }}
+    </label>
+    <select
+      id="examDropdown"
+      v-model="examID"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+    >
+      <option value="">{{ __('All Exams') }}</option>
+      <option
+        v-for="exam in filteredExams"
+        :key="exam.value"
+        :value="exam.value"
+      >
+        {{ exam.label }}
+      </option>
+    </select>
+  </div>
+		  <!-- Existing Student Filter -->
+          <div>
+    <label for="studentDropdown" class="block text-sm font-medium text-gray-700">
+      {{ __('Student') }}
+    </label>
+    <Link
+      id="studentDropdown"
+      doctype="User"
+      v-model="member"
+      :placeholder="__('Student')"
+    />
+  </div>
+
+  <!-- Existing Status Filter -->
+  <div>
+    <label for="statusDropdown" class="block text-sm font-medium text-gray-700">
+      {{ __('Status') }}
+    </label>
+    <FormControl
+      id="statusDropdown"
+      v-model="status"
+      type="select"
+      :options="statusOptions"
+      :placeholder="__('Status')"
+    />
+  </div>
+
 		</div>
+        </div>
 	<div v-if="submissions.loading || submissions.data?.length" class="w-full">
 		
 		<ListView
 			:columns="examColumns"
 			:rows="submissions.data"
+            :options="{selectable: false}" 
 			row-key="name"
 			
 		>
@@ -78,7 +115,36 @@
 				{{ __('There are no submissions for this course.') }}
 			</div>
 		</div>
-    </div>
+    
+    <div class="mt-10">
+  <h2 class="text-lg font-semibold mb-4">{{ __('Students with No Submissions') }}</h2>
+  <table class="table-auto border-collapse w-full">
+    <thead>
+      <tr class="bg-gray-100">
+        <th class="border px-4 py-2">{{ __('Student Name') }}</th>
+        <th class="border px-4 py-2">{{ __('Program') }}</th>
+        <th class="border px-4 py-2">{{ __('Email') }}</th>
+        <th class="border px-4 py-2">{{ __('Exam') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="student in notSubmittedStudents"
+        :key="student.stuemail_rc"
+        class="hover:bg-gray-50"
+      >
+        <td class="border px-4 py-2">{{ student.stuname_roster}}</td>
+        <td class="border px-4 py-2">{{ student.program_std_scr }}</td>
+        <td class="border px-4 py-2">
+          <a :href="`mailto:${student.email}`" class="text-blue-500 underline">
+            {{ student.stuemail_rc }}
+          </a>
+        </td>
+        <td class="border px-4 py-2">{{ student.exam}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 </template>
 <script setup>
 import {
@@ -99,12 +165,14 @@ import { computed, onMounted, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { BookOpenCheck } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
+import Exam from '../components/Exam.vue'
 const dayjs = inject('$dayjs')
 const router = useRouter()
 const user = inject('$user')
 const examID = ref('')
 const member = ref('')
 const status = ref('')
+
 
 
 const props = defineProps({
@@ -124,12 +192,55 @@ onMounted(() => {
     examID.value = props.examID || router.currentRoute.value.params.examID
     member.value = router.currentRoute.value.query.member
 	status.value = router.currentRoute.value.query.status
+    
     reloadSubmissions()
+    fetchNotSubmittedStudents()
 })
 
+const notSubmittedStudents = ref([]); // Array to store students who didn't submit
 
+// Fetch students who didn't submit the assignment
+const fetchNotSubmittedStudents = async () => {
+  try {
+    const response = await fetch(`/api/method/seminary.seminary.utils.missing_exams?course=${props.courseName}`);
+    const data = await response.json();
+    console.log('Fetched data:', data);
 
+    // Filter students who didn't submit the assignment
+    if (!examID.value) {
+      notSubmittedStudents.value = data.message;
+      return;
+    } else {
+      notSubmittedStudents.value = data.message.filter(student => student.exam === examID.value);
+    }
+    
+  } catch (error) {
+    console.error('Error fetching not submitted students:', error);
+  }
+};
 
+const examlist = createResource({
+  url: '/api/method/seminary.seminary.utils.get_course_exams',
+  params: {
+    course: props.courseName,
+  },
+  auto: true,
+  onSuccess(data) {
+    console.log('Examlist fetched successfully:', data);
+  },
+  onError(error) {
+    console.error('Error fetching examlist:', error);
+  },
+});
+
+const filteredExams = computed(() => {
+  console.log('Exam list:', examlist.data);
+  return examlist.data?.map((exam) => ({
+    label: exam.title, // Use the `title` field for display
+    value: exam.exam,  // Use the `exam` field as the value
+  })) || [];
+});
+console.log('Filtered exams:', filteredExams);
 const getExamFilters = () => {
 	let filters = {
     course: props.courseName, // Add filter for course_schedule
@@ -155,6 +266,7 @@ watch([examID, member, status], () => {
 		},
 	})
 	reloadSubmissions()
+    fetchNotSubmittedStudents()
 })
 
 const reloadSubmissions = () => {
@@ -257,7 +369,6 @@ const examColumns = computed(() => {
 const statusOptions = computed(() => {
 	return [
 		{ label: '', value: '' },
-        { label: 'Not Submitted', value: 'Not Submitted' },
 		{ label: 'Not Graded', value: 'Not Graded' },
 		{ label: 'Graded', value: 'Graded' },
 	]
@@ -279,7 +390,7 @@ const breadcrumbs = computed(() => {
 	})
     items.push({
         label: 'Gradebook',
-        route: { name: 'Gradebook', params: { courseName: props.courseName} },
+        route: { name: 'Gradebook', params: { courseName: props.courseName}  },
     })
     items.push({
         label: 'Exam Submissions',

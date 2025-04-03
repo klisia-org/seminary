@@ -146,7 +146,7 @@ const routes = [
 		props: true,
 	},
 	{
-		path: '/exam-submission/:submission',
+		path: '/gradebook/:courseName/exam-submissions/:examID/:submission',
 		name: 'ExamSubmission',
 		component: () => import('@/pages/ExamSubmission.vue'),
 		props: true,

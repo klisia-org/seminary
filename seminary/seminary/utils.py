@@ -1040,6 +1040,33 @@ def ensure_single_topic(doctype, docname, title):
 	new_topic.insert(ignore_permissions=True)
 	return new_topic
 
+@frappe.whitelist()
+def missing_exams(course):
+	students_missing_exam = frappe.db.sql(
+		"""
+		select r.stuname_roster, r.stuemail_rc, r.stuimage, r.program_std_scr, c.exam
+		from `tabScheduled Course Roster` r, `tabScheduled Course Assess Criteria` c
+		where r.course_sc = c.parent and
+		c.exam <> '' and
+		r.course_sc = %(course)s and
+		r.stuemail_rc not in (
+			select member 
+			from `tabExam Submission` 
+			where course = %(course)s 
+		)
+		""",
+		{"course": course},
+		as_dict=True,
+	)
+	return students_missing_exam
 
+@frappe.whitelist()
+def get_course_exams(course):
+	exams = frappe.get_all(
+		"Scheduled Course Assess Criteria",
+		filters={"parent": course, "exam": ["!=", ""]},
+		fields=["name", "title", "due_date", "exam"],
+	)
+	return exams
 
 

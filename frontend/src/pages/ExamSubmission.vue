@@ -15,6 +15,46 @@
 			</Button>
 		</div>
 	</header>
+	<div class="flex items-center justify-between mb-5">
+  <!-- Previous Button -->
+  <Button
+    variant="subtle"
+    :disabled="currentIndex === 0"
+    @click="navigateToSubmission(currentIndex - 1)"
+  >
+    {{ __('Previous') }}
+  </Button>
+
+  <!-- Dropdown for All Submissions -->
+  <div class="w-1/3">
+    <label for="submissionDropdown" class="block text-sm font-medium text-gray-700">
+      {{ __('Select Submission') }}
+    </label>
+    <select
+      id="submissionDropdown"
+      v-model="currentSubmission"
+      @change="navigateToSubmissionByName(currentSubmission)"
+      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+    >
+      <option
+        v-for="submission in submissionlist.data"
+        :key="submission.name"
+        :value="submission.name"
+      >
+        {{ submission.member_name }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Next Button -->
+  <Button
+    variant="subtle"
+    :disabled="!submissionlist.data || currentIndex === submissionlist.data.length - 1"
+    @click="navigateToSubmission(currentIndex + 1)"
+  >
+    {{ __('Next') }}
+  </Button>
+</div>
 	<div v-if="submisisonDetails.doc" class="w-2/3 mx-auto py-5 space-y-5">
 		<div class="grid grid-cols-3 gap-5">
 			<!-- Left Section (2/3 width) -->
@@ -163,13 +203,14 @@
 <script setup>
 import {
 	createDocumentResource,
+	createResource,
 	Breadcrumbs,
 	FormControl,
 	Button,
 	Badge,
 	TextEditor
 } from 'frappe-ui'
-import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from '@/utils'
 import Discussions from '@/components/Discussions.vue'
@@ -205,7 +246,30 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	courseName: {
+		type: String,
+		required: true,
+	},
+	examID: {
+		type: String,
+		required: true,
+	},
 })
+
+const submissionlist = createResource({
+  url: 'frappe.client.get_list',
+  params: {
+    doctype: 'Exam Submission',
+    filters: [
+      ['exam', '=', props.examID],
+      ['course', '=', props.courseName],
+    ],
+    fields: ['name', 'member_name'], // Fetch only necessary fields
+    order_by: 'member_name asc', // Order by member name
+  },
+  auto: true,
+});
+console.log('Submission List:', submissionlist)
 
 const submisisonDetails = createDocumentResource({
   doctype: 'Exam Submission',
@@ -236,22 +300,34 @@ const submisisonDetails = createDocumentResource({
   },
 });
 
+const course = createResource({
+	url: 'seminary.seminary.utils.get_course_details',
+	cache: ['course', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+}) //Neded for the breadcrumbs
+
 const breadcrumbs = computed(() => {
-	return [
-		{
-			label: __('Exam Submissions'),
-			route: {
-				name: 'ExamSubmissionList',
-				params: {
-					examID: submisisonDetails.doc.exam,
-				},
-			},
-		},
-		{
-			label: submisisonDetails.doc.exam_title,
-		},
-	]
+	let items = [{ label: 'Courses', route: { name: 'Courses' } }]
+	items.push({
+		label: course?.data?.course,
+		route: { name: 'CourseDetail', params: { courseName: props.courseName } },
+	})
+    items.push({
+        label: 'Gradebook',
+        route: { name: 'Gradebook', params: { courseName: props.courseName} },
+    })
+	items.push({
+		label: 'Exam Submissions',
+		route: { name: 'ExamSubmissionCS', params: { courseName: props.courseName, examID: props.examID } },
+	})
+	return items
 })
+		
+					
+
 
 const formatTime = (seconds) => {
   if (!seconds) return '00:00:00'; // Handle null or undefined values
@@ -345,4 +421,45 @@ const saveSubmission = async () => {
     showToast(__('Error'), __(err.messages?.[0] || 'An error occurred while saving'), 'x');
   }
 };
+
+const currentSubmission = ref(props.submission); // Track the current submission
+const currentIndex = computed(() =>
+  submissionlist.data?.findIndex((submission) => submission.name === currentSubmission.value)
+);
+
+const navigateToSubmission = (index) => {
+  if (index >= 0 && index < submissionlist.data.length) {
+    const submission = submissionlist.data[index];
+    router.push({
+      name: 'ExamSubmission',
+      params: {
+        submission: submission.name,
+        courseName: props.courseName,
+        examID: props.examID,
+      },
+    });
+  }
+};
+
+const navigateToSubmissionByName = (submissionName) => {
+  const submission = submissionlist.data.find((sub) => sub.name === submissionName);
+  if (submission) {
+    router.push({
+      name: 'ExamSubmission',
+      params: {
+        submission: submission.name,
+        courseName: props.courseName,
+        examID: props.examID,
+      },
+    });
+  }
+};
+
+watch(currentSubmission, async (newSubmission) => {
+  if (newSubmission) {
+    console.log('Navigating to submission:', newSubmission); // Debugging log
+    submisisonDetails.name = newSubmission; // Update the document name
+    await submisisonDetails.reload(); // Reload the document
+  }
+});
 </script>

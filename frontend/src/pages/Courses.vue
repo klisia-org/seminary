@@ -1,15 +1,48 @@
 <template>
-    <header
-        class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5"
-      >
-        
-        <div class="flex items-center">
-          <h1 class="text-xl font-semibold text-ink-gray-9">{{ isStudent ? 'My Courses' : 'All Courses' }}</h1>
-        </div>
-    </header>
-    <div v-if="courses.data?.length" class="p-5 pb-10 flex flex-wrap justify-center gap-4">
+  <header
+    class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5"
+  >
+    <div class="flex items-center">
+      <h1 class="text-xl font-semibold text-ink-gray-9">{{ isStudent ? 'My Courses' : 'All Courses' }}</h1>
+    </div>
+  </header>
+
+  <!-- Parent container for filters and course cards -->
+  <div class="p-5 flex flex-col gap-4 max-w-7xl mx-auto">
+    <!-- Filters for non-student users -->
+    <div v-if="!isStudent" class="flex gap-4 mb-5">
+      <div>
+        <label for="courseFilter" class="block text-sm font-medium text-gray-700">Course</label>
+        <select
+          id="courseFilter"
+          v-model="filters.course"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
+          <option value="">All Courses</option>
+          <option v-for="course in uniqueCourses" :key="course" :value="course">
+            {{ course }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label for="academicTermFilter" class="block text-sm font-medium text-gray-700">Academic Term</label>
+        <select
+          id="academicTermFilter"
+          v-model="filters.academic_term"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
+          <option value="">All Terms</option>
+          <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
+            {{ term }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Course Cards -->
+    <div v-if="filteredCourses.length" class="flex flex-wrap justify-start gap-4">
       <router-link
-        v-for="course in courses.data"
+        v-for="course in filteredCourses"
         :to="{ name: 'CourseDetail', params: { courseName: course.name } }"
         :key="course.name"
         class="course_card"
@@ -32,159 +65,171 @@
         <span>No courses found</span>
       </div>
     </div>
-    
+  </div>
+</template>
 
-    
-    </template>
-    
-    <script setup>
-    
-    import { computed, inject, onMounted, ref, watch } from 'vue'
-    import { BookOpen, Plus } from 'lucide-vue-next'
-   
-    import { createResource } from 'frappe-ui'
-    import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
-    import { reactive } from 'vue'
-    import { usersStore} from '../stores/user'
-   
-    
-    
-    const user = inject('$user')
-  
-    const start = ref(0)
-    
-    let userResource = usersStore()
-    
-    let isStudent = user.data.is_student
-    let isModerator = user.data.is_moderator
-    let isInstructor = user.data.is_instructor
-    let isSystemManager = user.data.is_system_manager
-    
-   
-   
-    
-    const courses = createResource({
-      url: isStudent ? "seminary.seminary.utils.get_courses_for_student" : "seminary.seminary.utils.get_courses",
-      params: isStudent ? { student: user.data.name } : {},
-      onSuccess: (response) => {
-        tableData.rows = response.sort((a, b) => {
-          if (a.academic_term < b.academic_term) return -1;
-          if (a.academic_term > b.academic_term) return 1;
-          if (a.course_name < b.course_name) return -1;
-          if (a.course_name > b.course_name) return 1;
-          return 0;
-        });
-      },
-      auto: true
+<script setup>
+import { computed, inject, onMounted, ref, watch } from 'vue'
+import { BookOpen, Plus } from 'lucide-vue-next'
+import { createResource } from 'frappe-ui'
+import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
+import { reactive } from 'vue'
+import { usersStore } from '../stores/user'
+
+const user = inject('$user')
+
+const start = ref(0)
+
+let userResource = usersStore()
+
+let isStudent = user.data.is_student
+let isModerator = user.data.is_moderator
+let isInstructor = user.data.is_instructor
+let isSystemManager = user.data.is_system_manager
+
+const filters = reactive({
+  course: '',
+  academic_term: ''
+})
+
+const courses = createResource({
+  url: isStudent ? "seminary.seminary.utils.get_courses_for_student" : "seminary.seminary.utils.get_courses",
+  params: isStudent ? { student: user.data.name } : {},
+  onSuccess: (response) => {
+    tableData.rows = response.sort((a, b) => {
+      if (a.academic_term < b.academic_term) return -1;
+      if (a.academic_term > b.academic_term) return 1;
+      if (a.course < b.course) return -1;
+      if (a.course > b.course) return 1;
+      return 0;
     });
-    
-    const tableData = reactive({
-      rows: [],
-      columns: [
-        {
-          label: 'Name',
-          key: 'name',
-          width: 1,
-        },
-        {
-          label: 'Course',
-          key: 'course',
-          width: 1,
-        },
-        {
-          label: 'Academic Term',
-          key: 'academic_term',
-          width: 1,
-        },
-        {
-          label: 'Start Date',
-          key: 'c_datestart',
-          width: 1,
-        },
-        {
-          label: 'End Date',
-          key: 'c_dateend',
-          width: 1,
-        },
-        {
-          label: 'Image',
-          key: 'course_image',
-          width: 1,
-        }
-      ]
-    })
-    
-    const setQueryParams = () => {
-      let queries = new URLSearchParams(location.search)
-      let filterKeys = {
-        name: course?.name || '',
-      }
-    
-      Object.keys(filterKeys).forEach((key) => {
-        if (filterKeys[key]) {
-          queries.set(key, filterKeys[key])
-        } else {
-          queries.delete(key)
-        }
-      })
-    
-      history.replaceState({}, '', `${location.pathname}?${queries.toString()}`)
+  },
+  auto: true
+});
+
+const tableData = reactive({
+  rows: [],
+  columns: [
+    {
+      label: 'Name',
+      key: 'name',
+      width: 1,
+    },
+    {
+      label: 'Course',
+      key: 'course',
+      width: 1,
+    },
+    {
+      label: 'Academic Term',
+      key: 'academic_term',
+      width: 1,
+    },
+    {
+      label: 'Start Date',
+      key: 'c_datestart',
+      width: 1,
+    },
+    {
+      label: 'End Date',
+      key: 'c_dateend',
+      width: 1,
+    },
+    {
+      label: 'Image',
+      key: 'course_image',
+      width: 1,
     }
-    </script>
-    <style>
-    .course_card {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 400px;
-      height: 400px;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 0;
-      border-radius: 0.5rem;
-      box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
-      background-color: #fff;
-      transition: all 0.3s;
+  ]
+})
+
+const uniqueCourses = computed(() => {
+  return [...new Set(courses.data?.map(course => course.course))]
+})
+
+const uniqueAcademicTerms = computed(() => {
+  return [...new Set(courses.data?.map(course => course.academic_term))]
+})
+
+const filteredCourses = computed(() => {
+  return courses.data?.filter(course => {
+    return (!filters.course || course.course === filters.course) &&
+           (!filters.academic_term || course.academic_term === filters.academic_term)
+  }) || []
+})
+
+const setQueryParams = () => {
+  let queries = new URLSearchParams(location.search)
+  let filterKeys = {
+    name: course?.name || '',
+  }
+
+  Object.keys(filterKeys).forEach((key) => {
+    if (filterKeys[key]) {
+      queries.set(key, filterKeys[key])
+    } else {
+      queries.delete(key)
     }
-    .course-image {
-        width: 100%;
-        height: 66.67%; /* 4:3 aspect ratio */
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-    }
-    .text-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 33.33%; /* Bottom third of the card */
-        padding: 1rem;
-        width: 100%;
-    }
-    .short-introduction {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        text-overflow: ellipsis;
-        width: 100%;
-        overflow: hidden;
-        margin: 0.25rem 0 1.25rem;
-        line-height: 1.5;
-    }
-    @media (max-width: 640px) {
-      .course_card {
-        max-width: 100%;
-        height: auto;
-      }
-      .course-image {
-        height: auto;
-        aspect-ratio: 4 / 3;
-      }
-      .text-container {
-        height: auto;
-      }
-    }
-    </style>
+  })
+
+  history.replaceState({}, '', `${location.pathname}?${queries.toString()}`)
+}
+</script>
+
+<style>
+.course_card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  height: 400px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  transition: all 0.3s;
+}
+.course-image {
+    width: 100%;
+    height: 66.67%; /* 4:3 aspect ratio */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+.text-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 33.33%; /* Bottom third of the card */
+    padding: 1rem;
+    width: 100%;
+}
+.short-introduction {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow: hidden;
+    margin: 0.25rem 0 1.25rem;
+    line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .course_card {
+    max-width: 100%;
+    height: auto;
+  }
+  .course-image {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+  .text-container {
+    height: auto;
+  }
+}
+</style>
