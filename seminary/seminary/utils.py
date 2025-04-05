@@ -546,7 +546,7 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.instructors = get_instructors(course)
 	lesson_details.due_date = get_lesson_due_date(lesson_details.name)
 	lesson_details.course_title = frappe.db.get_value("Course Schedule", course, "course")
-	print(f"Lesson Details (third): {lesson_details}")  # Debug print
+	# print(f"Lesson Details (third): {lesson_details}")  # Debug print
 	
 	return lesson_details
 
@@ -621,7 +621,7 @@ def get_lesson_details(chapter, progress=False):
 		lesson_details.number = f"{chapter.idx}.{row.idx}"
 		lesson_details.icon = get_lesson_icon(lesson_details.body, lesson_details.content)
 		lesson_details.due_date = get_lesson_due_date(lesson_details.name)
-		print(f"Lesson Details: {lesson_details}")  # Debug print
+		# print(f"Lesson Details: {lesson_details}")  # Debug print
 
 		if progress:
 			lesson_details.is_complete = get_progress(lesson_details.course, lesson_details.name)
@@ -865,6 +865,7 @@ def get_assessments(course):
 		"Scheduled Course Assess Criteria",
 		filters={"parent": course},
 		fields=["*"],
+		order_by="due_date",
 	)
 	print(assessments)
 	return assessments
@@ -1092,3 +1093,63 @@ def get_course_meetingdates(course):
 		order_by="cs_meetdate asc",
 	)
 	return meetingdates
+
+@frappe.whitelist()
+def get_missingassessments(course, member):
+	student_email = member
+	course_name = course
+	print("Course Name: ", course_name)  # Debugging log
+	print("Student Email: ", student_email)  # Debugging log
+
+	missing_exams_query = """
+		select r.stuname_roster, r.stuemail_rc, r.stuimage, r.program_std_scr, c.title, c.due_date
+		from `tabScheduled Course Roster` r, `tabScheduled Course Assess Criteria` c
+		where r.course_sc = c.parent and
+		c.exam <> '' and
+		c.due_date < NOW() and
+		r.stuemail_rc = %(student_email)s and
+		r.course_sc = %(course_name)s and
+		r.stuemail_rc not in (
+			select member 
+			from `tabExam Submission` 
+			where course = %(course_name)s
+		)
+	"""
+
+	missing_quizzes_query = """
+		select r.stuname_roster, r.stuemail_rc, r.stuimage, r.program_std_scr, c.title, c.due_date
+		from `tabScheduled Course Roster` r, `tabScheduled Course Assess Criteria` c
+		where r.course_sc = c.parent and
+		c.quiz <> '' and
+		c.due_date < NOW() and
+		r.stuemail_rc = %(student_email)s and
+		r.course_sc = %(course_name)s and
+		r.stuemail_rc not in (
+			select member 
+			from `tabQuiz Submission` 
+			where course = %(course_name)s
+		)
+	"""
+
+	missing_assignments_query = """
+		select r.stuname_roster, r.stuemail_rc, r.stuimage, r.program_std_scr, c.title, c.due_date
+		from `tabScheduled Course Roster` r, `tabScheduled Course Assess Criteria` c
+		where r.course_sc = c.parent and
+		c.assignment <> '' and
+		c.due_date < NOW() and
+		r.stuemail_rc = %(student_email)s and
+		r.course_sc = %(course_name)s and
+		r.stuemail_rc not in (
+			select member 
+			from `tabAssignment Submission` 
+			where course = %(course_name)s
+		)
+	"""
+
+	result = frappe.db.sql(
+		f"({missing_exams_query}) UNION ({missing_quizzes_query}) UNION ({missing_assignments_query})",
+		{"student_email": student_email, "course_name": course_name},
+		as_dict=True,
+	)
+	print("Missing assessments: ", result)  # Debugging log
+	return result

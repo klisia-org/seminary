@@ -421,7 +421,18 @@ def get_course_schedule_events(start, end, filters=None):
 		where 
 		cs.name = cm.parent and
 		(cm.cs_meetdate between %(start)s and %(end)s )
-		{conditions}""".format(
+		{conditions}
+		union
+		SELECT CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title, 
+			cs.course as course,
+			(scac.due_date - INTERVAL 5 HOUR) as dtstart,
+			 scac.due_date as dtend,
+			0 as 'allDay',
+			cs.color as color
+		from `tabScheduled Course Assess Criteria` scac, `tabCourse Schedule` cs
+		where 
+		cs.name = scac.parent
+		and (scac.due_date between %(start)s and %(end)s )""".format(
 			conditions=conditions
 		),
 		{"start": start, "end": end},

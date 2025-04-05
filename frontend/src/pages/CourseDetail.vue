@@ -44,8 +44,12 @@
 						/>
 					</div>
 				</div>
+				
 				<div class="border-0 rounded-md min-w-80">
 					<CourseCardOverlay :course="course" class="mb-4" />
+					<div class="mt-5">
+						<CourseCardToDo :course="props.courseName" />
+					</div>
 				</div>
 			</div>
 		</div>
@@ -58,6 +62,7 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle } from '@/utils'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
+import CourseCardToDo from '@/components/CourseCardToDo.vue'
 
 const props = defineProps({
 	courseName: {
