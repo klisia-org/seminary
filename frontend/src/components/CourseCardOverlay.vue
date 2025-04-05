@@ -88,6 +88,21 @@
 					</span>
 				</Button>
 			</router-link>
+			<router-link
+				v-if="user?.data?.is_moderator || is_instructor()"
+				:to="{
+					name: 'StudentAttendanceCS',
+					params: {
+						courseName: course.data.name,
+					},
+				}"
+			>
+				<Button variant="subtle" class="w-full mt-2" size="md">
+					<span>
+						{{ ('Attendance') }}
+					</span>
+				</Button>
+			</router-link>
 			<div class="space-y-4">
 				<div class="mt-8 font-medium text-ink-gray-9">
 					{{ ('This course has:') }}

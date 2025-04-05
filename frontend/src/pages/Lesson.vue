@@ -30,7 +30,7 @@
 									<ChevronLeft class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ ('Previous') }}
+									{{ __('Previous') }}
 								</span>
 							</Button>
 						</router-link>
@@ -65,7 +65,7 @@
 									<ChevronRight class="w-4 h-4 stroke-1" />
 								</template>
 								<span>
-									{{ ('Next') }}
+									{{ __('Next') }}
 								</span>
 							</Button>
 						</router-link>
@@ -77,7 +77,7 @@
 							}"
 						>
 							<Button>
-								{{ ('Back to Course') }}
+								{{ __('Back to Course') }}
 							</Button>
 						</router-link>
 					</div>
@@ -105,7 +105,7 @@
 					class="bg-surface-gray-2 p-3 rounded-md mt-6"
 				>
 					<div class="text-ink-gray-5 font-medium">
-						{{ ('Instructor Notes') }}
+						{{ __('Instructor Notes') }}
 					</div>
 					<div
 						id="instructor-content"
@@ -117,6 +117,10 @@
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-6"
 				>
 					<LessonContent :content="lesson.data.instructor_notes" />
+				</div>
+				<div v-if="lesson.data.due_date" class="rounded-md bg-[#E6F7F4] p-2 mt-2">
+						{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', { dateStyle: 'medium' }).format(new Date(lesson.data.due_date)) }}
+					
 				</div>
 				<div
 					v-if="lesson.data.content"
@@ -390,7 +394,7 @@ const checkIfDiscussionsAllowed = () => {
     //   console.log('Parsed Content:', parsedContent); // Debugging
 
       parsedContent.blocks?.forEach((block) => {
-        // Check if the block is of type 'quiz' or 'exam' and has meaningful data
+        // Check if the block is of type 'quiz'  and has meaningful data
         if (
           (block.type === 'quiz' ) &&
           block.data &&
@@ -404,7 +408,7 @@ const checkIfDiscussionsAllowed = () => {
     }
   }
 
-//   console.log('Quiz or Exam Present:', quizPresent); // Debugging
+//   console.log('Quiz  Present:', quizPresent); // Debugging
 
   // Set allowDiscussions based on conditions
   if ((lesson.data?.allow_discuss === true || lesson.data?.allow_discuss === 1) && !quizPresent) {

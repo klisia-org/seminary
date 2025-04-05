@@ -306,18 +306,23 @@ def mark_attendance(
 	:param date: Date.
 	"""
 
+
 	if course_schedule:
-		present = json.loads(students_present)
-		absent = json.loads(students_absent)
+		present = students_present if isinstance(students_present, list) else json.loads(students_present)
+		absent = students_absent if isinstance(students_absent, list) else json.loads(students_absent)
+	print("Present: ", present)
+	print("Absent: ", absent)
 
 	for d in present:
+		status = "Present"
 		make_attendance_records(
-			d["student"], d["student_name"], "Present", course_schedule,  date
+			d["student"], d["stuname_roster"], status, course_schedule,  date
 		)
 
 	for d in absent:
+		status = "Absent"
 		make_attendance_records(
-			d["student"], d["student_name"], "Absent", course_schedule, date
+			d["student"], d["stuname_roster"], status, course_schedule, date
 		)
 
 	frappe.db.commit()
@@ -325,32 +330,56 @@ def mark_attendance(
 
 
 def make_attendance_records(
-	student, student_name, status, course_schedule=None, date=None
+    student, stuname_roster, status, course_schedule=None, date=None
 ):
-	"""Creates/Update Attendance Record.
+    """Creates/Update Attendance Record.
 
-	:param student: Student.
-	:param student_name: Student Name.
-	:param course_schedule: Course Schedule.
-	:param status: Status (Present/Absent)
-	"""
-	student_attendance = frappe.get_doc(
-		{
-			"doctype": "Student Attendance",
-			"student": student,
-			"course_schedule": course_schedule,
-			"date": date,
-		}
-	)
-	if not student_attendance:
-		student_attendance = frappe.new_doc("Student Attendance")
-	student_attendance.student = student
-	student_attendance.student_name = student_name
-	student_attendance.course_schedule = course_schedule
-	student_attendance.date = date
-	student_attendance.status = status
-	student_attendance.save()
-	student_attendance.submit()
+    :param student: Student.
+    :param stuname_roster: Student Name.
+    :param status: Status (Present/Absent).
+    :param course_schedule: Course Schedule.
+    :param date: Date.
+    """
+    print("Student: ", student, "Status: ", status, "Course Schedule: ", course_schedule, "Date: ", date)
+
+    # Check if the attendance record already exists
+    HasAttendance = frappe.db.exists(
+        "Student Attendance",
+        {
+            "student": student,
+            "course_schedule": course_schedule,
+            "date": date,
+            "docstatus": ("!=", 2),
+        },
+    )
+
+    if HasAttendance:
+        # Fetch the existing record and update it
+        student_attendance = frappe.get_doc("Student Attendance", HasAttendance)
+        student_attendance.status = status
+        student_attendance.stuname_roster = stuname_roster
+        student_attendance.save(ignore_permissions=True)
+        print(f"Updated existing attendance record for student: {student}")
+    else:
+        # Create a new attendance record
+        student_attendance = frappe.new_doc("Student Attendance")
+        student_attendance.student = student
+        student_attendance.stuname_roster = stuname_roster
+        student_attendance.course_schedule = course_schedule
+        student_attendance.date = date
+        student_attendance.status = status
+        student_attendance.insert(ignore_permissions=True)
+        print(f"Created new attendance record for student: {student}")
+
+    # Update the attendance field in Course Schedule Meeting Dates
+    csmtd = frappe.db.get_value("Course Schedule Meeting Dates", {"cs_meetdate": date, "parent": course_schedule}, "name")
+    frappe.db.set_value(
+        "Course Schedule Meeting Dates",
+        csmtd,
+        "attendance",
+        1,
+    )
+    return ("success") 
 
 
 @frappe.whitelist()
@@ -399,8 +428,6 @@ def get_course_schedule_events(start, end, filters=None):
 		as_dict=True,
 		update={"allDay": 0},
 	)
-	
-
 
 @frappe.whitelist()
 def get_assessment_criteria(course):
@@ -1258,7 +1285,7 @@ def course_event(name):
 	dateend = course.c_dateend
 	print(datetimef)
 	participants = []
-	participants = course_rosters = frappe.get_all(
+	participants = frappe.get_all(
 		"Scheduled Course Roster",
 		filters={"course_sc": name})
 	event_participants = []  # Create an empty list for event participants
@@ -1268,8 +1295,18 @@ def course_event(name):
 			"reference_docname": participant.name,
 			"email": participant.stuemail_rc
 		})
+	instructors = []
+	instructors = frappe.get_all(
+		"Course Schedule Instructor",
+		filters={"parent": name})
+	for instructor in instructors:
+		event_participants.append({
+			"reference_doctype": "Course Schedule Instructor",
+			"reference_docname": instructor.name,
+			"email": instructor.user
+		})
 	if datef == datest:
-		# Create a new calendar event
+		# Create a new single day calendar event
 		event = frappe.get_doc({
 			"doctype": "Event",
 			"subject": name,
@@ -1282,7 +1319,7 @@ def course_event(name):
 			"event_participants": event_participants
 		})
 	elif datef > datest:
-		# Create a new calendar event
+		# Create a new calendar event for meeting dates
 		event = frappe.get_doc({
 			"doctype": "Event",
 			"subject": name,

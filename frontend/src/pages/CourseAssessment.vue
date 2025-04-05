@@ -43,17 +43,18 @@
        
                
           <table class="min-w-full table-auto border-collapse overflow-auto">
-  <thead>
-    <tr>
-      <th class="p-2 border">Title</th>
-      <th class="p-2 border">Assessment Criteria</th>
-      <th class="p-2 border">Activity Selection</th>
-      <th class="p-2 border">Extra Credit?</th>
-      <th class="p-2 border">Points</th>
-      <th class="p-2 border">Due Date</th>
-      <th class="p-2 border">Delete</th>
-    </tr>
-  </thead>
+            <thead>
+  <tr>
+    <th class="p-2 border">{{ __('Title') }}</th>
+    <th class="p-2 border">{{ __('Assessment Criteria') }}</th>
+    <th class="p-2 border">{{ __('Activity Selection') }}</th>
+    <th class="p-2 border">{{ __('Extra Credit?') }}</th>
+    <th class="p-2 border">{{ __('Points') }}</th>
+    <th class="p-2 border">{{ __('Due Date') }}</th>
+    <th class="p-2 border">{{ __('In Lesson') }}</th>
+    <th class="p-2 border">{{ __('Delete') }}</th>
+  </tr>
+</thead>
   <tbody>
     <tr v-for="(criteria, index) in assessmentCriteria" :key="index">
       <td class="p-2 border">
@@ -94,9 +95,26 @@
         </div>
       </td>
       <td class="p-2 border">
-        <DateTimePicker v-model="criteria.due_date" :label="__('Due Date')" variant="subtle" :required="false" class="date-column" :formatter="formatDate" />
+        <DateTimePicker v-model="criteria.due_date" variant="subtle" :required="false" class="date-column" :formatter="formatDate" />
       </td>
-      <td class="p-2 border flex justify-center items-center">
+      <td class="p-2 border text-center">
+        <span v-if="criteria.lesson" class="checkmark">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-green-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+        <span v-else class="text-red-500">
+          ✘
+        </span>
+      </td>
+      <td class="p-2 border text-center align-middle">
         <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
           <Trash2 class="h-4 w-4 stroke-1.5" />
         </Button>
@@ -458,5 +476,11 @@ function onAssessmentSaved() {
 }
 .date-column {
   max-width: 10ch; /* Adjust as needed */
+}
+.checkmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #46B37E !important; /* Tailwind's green-500 color */
 }
 </style>

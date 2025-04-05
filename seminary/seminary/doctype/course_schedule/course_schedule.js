@@ -79,16 +79,16 @@ frappe.ui.form.on("Course Schedule", {
 
 
 		
-/* 		if (!frm.doc.__islocal) {
-				frm.add_custom_button(__("Mark Attendance"), function() {
-					frappe.route_options = {
+		// if (!frm.doc.__islocal) {
+		// 		frm.add_custom_button(__("Mark Attendance"), function() {
+		// 			frappe.route_options = {
 						
-						course_schedule: frm.doc.name
-					}
-					frappe.set_route("Form", "Student Attendance Tool");
-				});
+		// 				course_schedule: frm.doc.name
+		// 			}
+		// 			frappe.set_route("Form", "Student Attendance Tool");
+		// 		});
 				
-			}; */
+		// 	}; 
 /* 		if (!frm.doc.__islocal) {
 				frm.add_custom_button(__("Add Calendar"), function() {
 					frappe.call({
@@ -142,6 +142,7 @@ frappe.ui.form.on("Course Schedule", {
 					name: frm.doc.name
 				},
 				callback: function(r) {
+					
 					if (r.message) {
 						var enrollments = r.message;
 						var table = "<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
@@ -163,13 +164,13 @@ frappe.ui.form.on("Course Schedule", {
 						frm.set_df_property('csroster_html', 'options', table);
 						frm.refresh_field('csroster_html');
 					} else {
-						frm.set_df_property('csroster_html', 'options', "No course enrollments found");
+						frm.set_df_property('csroster_html', 'options', __('No student enrolled so far'));
 						frm.refresh_field('csroster_html');
 					}
 				}
 			});
 		} else {
-					frm.set_df_property('csroster_html', 'options', "No student enrolled so far");
+					frm.set_df_property('csroster_html', 'options', __('No student enrolled so far'));
 					frm.refresh_field('csroster_html');
 				};
 		

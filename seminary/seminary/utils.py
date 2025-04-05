@@ -491,7 +491,7 @@ def get_lesson(course, chapter, lesson):
 		["lesson_title", "is_scorm_package"],
 		as_dict=1,
 	)
-	print(f"Lesson Details (first): {lesson_details}")  # Debug print
+	
 
 	# if not lesson_details:
 	# 	return {}
@@ -508,8 +508,6 @@ def get_lesson(course, chapter, lesson):
 	# 		"course_title": course,
 	# 	}
 	
-
-	print(f"Fetching detailed lesson info for: {lesson_name}")  # Debug print
 
 	lesson_details = frappe.db.get_value(
 		"Course Lesson",
@@ -533,10 +531,7 @@ def get_lesson(course, chapter, lesson):
 		],
 		as_dict=True,
 	)
-	print(f"Lesson Details (second): {lesson_details}")  # Debug print
-
 	
-
 	if frappe.session.user == "Guest":
 		progress = 0
 	else:
@@ -549,6 +544,7 @@ def get_lesson(course, chapter, lesson):
 	lesson_details.prev = neighbours["prev"]
 	# lesson_details.membership = membership
 	lesson_details.instructors = get_instructors(course)
+	lesson_details.due_date = get_lesson_due_date(lesson_details.name)
 	lesson_details.course_title = frappe.db.get_value("Course Schedule", course, "course")
 	print(f"Lesson Details (third): {lesson_details}")  # Debug print
 	
@@ -624,6 +620,8 @@ def get_lesson_details(chapter, progress=False):
 		)
 		lesson_details.number = f"{chapter.idx}.{row.idx}"
 		lesson_details.icon = get_lesson_icon(lesson_details.body, lesson_details.content)
+		lesson_details.due_date = get_lesson_due_date(lesson_details.name)
+		print(f"Lesson Details: {lesson_details}")  # Debug print
 
 		if progress:
 			lesson_details.is_complete = get_progress(lesson_details.course, lesson_details.name)
@@ -634,10 +632,8 @@ def get_lesson_details(chapter, progress=False):
 
 def get_lesson_icon(body, content):
 	if content:
-		print("Content: ", content)
 		try:
-			content = json.loads(content)
-			print("Content JSONfied: ", content)
+			content = json.loads(content)	
 		except json.JSONDecodeError:
 			print("Invalid JSON content")
 			return "icon-list"
@@ -659,7 +655,11 @@ def get_lesson_icon(body, content):
 
 			if block.get("type") == "quiz":
 				return "icon-quiz"
-
+			if block.get("type") == "exam":
+				return "icon-exam"
+			if block.get("type") == "assignment":
+				return "icon-assignment"
+			
 		return "icon-list"
 
 	macros = find_macros(body)
@@ -671,7 +671,21 @@ def get_lesson_icon(body, content):
 
 	return "icon-list"
 
-
+@frappe.whitelist()
+def get_lesson_due_date(lesson):
+	due_date =frappe.db.sql(
+		"""
+		select scac.due_date 
+		from `tabScheduled Course Assess Criteria` scac, `tabCourse Schedule Chapter` c, `tabCourse Schedule Lesson Reference` r
+		where c.coursesc = scac.parent and
+		r.parent = c.name and
+		scac.lesson = r.lesson and
+		r.lesson = %(lesson)s
+		""",
+		{"lesson": lesson},
+		as_dict=True,
+	)
+	return due_date[0].due_date if due_date else None
 
 def render_html(lesson):
 	youtube = lesson.youtube
@@ -1069,4 +1083,12 @@ def get_course_exams(course):
 	)
 	return exams
 
-
+@frappe.whitelist()
+def get_course_meetingdates(course):
+	meetingdates = frappe.get_all(
+		"Course Schedule Meeting Dates",
+		fields=["name", "cs_meetdate", "cs_fromtime", "cs_totime", "attendance"],
+		filters={"parent": course},
+		order_by="cs_meetdate asc",
+	)
+	return meetingdates

@@ -47,7 +47,7 @@
 							<Trash2
 								
 								@click.prevent="trashChapter(chapter.name)"
-								class="h-4 w-4 text-ink-red-3 invisible group-hover:visible"
+								class="h-4 w-4 text-red-500 invisible group-hover:visible"
 								/>
 							
 						</Tooltip>
@@ -100,6 +100,9 @@
 									</div>
 									<div v-if="lesson.preview" class="rounded-md bg-[#E6F4FF] p-2 w-full mt-2">
 										{{ lesson.preview }}
+									</div>
+									<div v-if="lesson.due_date" class="rounded-md bg-[#E6F7F4] p-2 mt-2">
+										{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', { dateStyle: 'medium' }).format(new Date(lesson.due_date)) }}
 									</div>
 								</div>
 							</router-link>

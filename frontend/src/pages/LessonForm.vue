@@ -32,7 +32,7 @@
 						<FormControl
 							v-model="lesson.allow_discuss"
 							type="checkbox"
-							label="Allow Discussions? (Discussions will be automatically disabled for quizzes and exams)"
+							label="Allow Discussions? (Discussions will be automatically disabled for quizzes)"
 						/>
 					</div>
 					<div class="border-t mt-4">

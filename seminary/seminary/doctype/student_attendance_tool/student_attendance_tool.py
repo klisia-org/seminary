@@ -19,7 +19,7 @@ def get_student_attendance_records(
 	student_list = frappe.get_all(
 		"Scheduled Course Roster",
 		fields=["stuname_roster", "stuemail_rc", "program_std_scr", "audit_bool", "active"],
-		filters={"parent": course_schedule},
+		filters={"course_sc": course_schedule},
 		order_by="stuname_roster",
 	)
 

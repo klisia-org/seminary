@@ -102,16 +102,16 @@ seminary.StudentsEditor = class StudentsEditor {
 			.on("click", function() {
 				$(me.wrapper.find(".btn-mark-att")).attr("disabled", true);
 				var studs = [];
-				$(me.wrapper.find('input[type="checkbox"]')).each(function(i, check) {
+				$(me.wrapper.find('input[type="checkbox"]')).each(function (i, check) {
 					var $check = $(check);
 					studs.push({
-						student: $check.data().student,
-						student_name: $check.data().stuname_roster,
-						
-						disabled: $check.prop("disabled"),
-						checked: $check.is(":checked")
+						student: $check.attr('data-student'), // Use attr() to get the data-student attribute
+						stuname_roster: $check.attr('data-stuname_roster'), // Use attr() to get the data-student-name attribute
+						disabled: $check.prop('disabled'),
+						checked: $check.is(':checked'),
 					});
 				});
+			
 
 				var students_present = studs.filter(function(stud) {
 					return !stud.disabled && stud.checked;
@@ -120,7 +120,7 @@ seminary.StudentsEditor = class StudentsEditor {
 				var students_absent = studs.filter(function(stud) {
 					return !stud.disabled && !stud.checked;
 				});
-
+				console.log("Students Present: ", students_present, "Students Absernt: ", students_absent);
 				frappe.confirm(__("Do you want to update attendance? <br> Present: {0} <br> Absent: {1}",
 					[students_present.length, students_absent.length]),
 					function() {	//ifyes

@@ -66,6 +66,7 @@ class CourseLesson(Document):
 				)
 				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_quiz", scheduled_criteria)
 				print(f"Updated Quiz: {name}, Criteria: {scheduled_criteria}")
+				frappe.db.set_value("Scheduled Course Assess Criteria", scheduled_criteria, "lesson", self.name)
 
 			elif section == "Assignment":
 				# Update assignment_id and assessment_criteria_assignment
@@ -77,6 +78,8 @@ class CourseLesson(Document):
 				)
 				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_assignment", scheduled_criteria)
 				print(f"Updated Assignment: {name}, Criteria: {scheduled_criteria}")
+				frappe.db.set_value("Scheduled Course Assess Criteria", scheduled_criteria, "lesson", self.name)
+				print(f"Updated Scheduled Course Assess Criteria: {scheduled_criteria} with lesson: {self.name}")
 
 			elif section == "Exam":
 				# Update exam and assessment_criteria_exam
@@ -88,6 +91,8 @@ class CourseLesson(Document):
 				)
 				frappe.db.set_value("Course Lesson", self.name, "assessment_criteria_exam", scheduled_criteria)
 				print(f"Updated Exam: {name}, Criteria: {scheduled_criteria}")
+				frappe.db.set_value("Scheduled Course Assess Criteria", scheduled_criteria, "lesson", self.name)
+				print(f"Updated Scheduled Course Assess Criteria: {scheduled_criteria} with lesson: {self.name}")
 
 		
 
