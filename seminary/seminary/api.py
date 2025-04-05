@@ -305,7 +305,7 @@ def mark_attendance(
 	:param course_schedule: Course Schedule.
 	:param date: Date.
 	"""
-
+	print("Mark Attendance called with course_schedule: ", course_schedule, "date: ", date)
 
 	if course_schedule:
 		present = students_present if isinstance(students_present, list) else json.loads(students_present)
@@ -326,7 +326,7 @@ def mark_attendance(
 		)
 
 	frappe.db.commit()
-	frappe.msgprint(_("Attendance has been marked successfully."))
+	return {"success": True}
 
 
 def make_attendance_records(
@@ -379,7 +379,7 @@ def make_attendance_records(
         "attendance",
         1,
     )
-    return ("success") 
+    
 
 
 @frappe.whitelist()

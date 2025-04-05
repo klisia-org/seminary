@@ -20,27 +20,34 @@
     :title="new Date(meeting.cs_meetdate) > today ? __('Cannot set attendance of future dates') : ''"
   >
     <span>{{ formatDate(meeting.cs_meetdate) }}</span>
-    <span v-if="meeting.attendance === '1'" class="text-green-500">
-      <Check class="h-5 w-5" />
+    <span v-if="meeting.attendance === 1" class="text-green-500">
+      <Check class="h-5 w-5 text-green-500" />
     </span>
   </button>
 </div>
     </div>
 
     <!-- Right Side: Attendance for Selected Date -->
+    
     <div class="w-3/4 p-4">
+      <div v-if ="!students.data || students.data.length === 0" class="text-gray-500 text-lg font-semibold mb-4">
+        {{ __('There are no students enrolled in this course.') }}
+      </div>
+      <div v-else class="w-3/4 p-4">
       <h2 class="text-lg font-semibold mb-4">
         {{ __('Attendance for: ') }} {{ selectedDate?.cs_meetdate || __('Select a date') }}
       </h2>
 
       <!-- Edit Attendance Button -->
-      <div v-if="attendanceTaken" class="mb-4">
+      <div v-if="attendanceTaken && !editing" class="mb-4">
         <button
           class="p-2 bg-yellow-200 border rounded-md"
           @click="editAttendance"
           :title="__('All changes will be recorded for audit purposes')"
+          
         >
           {{ __('Edit Attendance') }}
+
         </button>
       </div>
 
@@ -53,18 +60,30 @@
             <th class="p-2 border">{{ __('Present') }}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody >
           <tr v-for="student in students.data" :key="student.student">
             <td class="p-2 border">
-              <img :src="student.stuimage" alt="Student Image" class="h-10 w-10 rounded-full" />
+              <div class="flex items-center justify-center space-x-4">
+              <Avatar :image="student.stuimage" :label="student.stuname_roster" size="md" class="avatar border border-outline-gray-2 cursor-auto" />
+              <Tooltip :text="`Send Email to ${student.stuname_roster}`" placement="bottom" arrow-class="fill-surface-white">
+                <a :href="`mailto:${student.stuemail_rc}`">
+                <Send class="w-5 h-5 text-blue-300" />
+                </a>
+              </Tooltip>
+              </div>
             </td>
             <td class="p-2 border">{{ student.stuname_roster }}</td>
             <td class="p-2 border text-center">
-              <input
-                type="checkbox"
-                v-model="attendance[student.student]"
-                :disabled="selectedDate?.attendance"
-              />
+              <template v-if="attendanceTaken && !editing">
+                <span v-if="attendance[student.student]" class="text-green-500 font-semibold">{{ __('Present') }}</span>
+                <span v-else class="text-red-500 font-semibold">{{ __('Absent') }}</span>
+              </template>
+              <template v-else>
+                <input
+                  type="checkbox"
+                  v-model="attendance[student.student]"
+                />
+              </template>
             </td>
           </tr>
         </tbody>
@@ -72,33 +91,35 @@
 
       <!-- Summary Above the Mark Attendance Button -->
       <div v-if="selectedDate" class="mb-4">
-        <p class="text-lg font-semibold">
-          {{ __('Summary: ') }}
+        <p class="text-lg font-semibold mt-4">
           <span class="text-green-500">{{ presentCount }}</span> {{ __('Present') }},
           <span class="text-red-500">{{ absentCount }}</span> {{ __('Absent') }}
         </p>
       </div>
 
       <!-- Mark Attendance Button -->
-      <div v-if="selectedDate" class="mt-4">
+      <div v-if="selectedDate && (!attendanceTaken || attendanceTaken && editing)" class="mt-4">
         <button
           class="p-2 bg-blue-500 text-white rounded-md"
           @click="markAttendance"
-          :disabled="presentCount === 0 || selectedDate?.attendance"
+          
         >
           {{ __('Mark Attendance') }}
         </button>
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { createResource, Breadcrumbs } from 'frappe-ui';
+import { Avatar, createResource, Breadcrumbs, Tooltip } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from '@/utils'
-import { Check} from 'lucide-vue-next'
+import { Check, Send } from 'lucide-vue-next'
+import dayjs from 'dayjs'
+
 const router = useRouter()
 const route = useRoute()
 
@@ -114,6 +135,7 @@ const selectedDate = ref(null);
 const attendance = ref({});
 const attendanceTaken = ref(false);
 const editing = ref(false);
+const tableRef = ref(null);
 
 // Fetch meeting dates
 const meetingDates = createResource({
@@ -126,7 +148,8 @@ const meetingDates = createResource({
   auto: true,
 });
 console.log("Meeting dates: ", meetingDates)
-// Fetch students
+
+// Fetch active students who are not auditing the course
 const students = createResource({
   url: 'frappe.client.get_list',
   makeParams() {
@@ -134,26 +157,19 @@ const students = createResource({
       doctype: 'Scheduled Course Roster',
       filters: {
         course_sc: props.courseName,
+        audit_bool: 0,
+        active: 1,
       },
-      fields: ['student', 'stuname_roster', 'stuimage'],
+      fields: ['student', 'stuname_roster', 'stuimage', 'stuemail_rc'],
       order_by: 'stuname_roster asc',
     };
   },
   auto: true,
 });
 
-const formatDate = (date) => {
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(date));
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return date; // Fallback to the raw date if formatting fails
-  }
-};
+const formatDate = (dateStr) => {
+  return dayjs(dateStr).format('MMM D') // e.g., "Apr 5"
+}
 
 // Fetch attendance for the selected date
 const attendanceResource = createResource({
@@ -163,13 +179,14 @@ const attendanceResource = createResource({
       doctype: 'Student Attendance',
       filters: {
         course_schedule: props.courseName,
-        date: selectedDate?.cs_meetdate,
+        date: selectedDate.value?.cs_meetdate, // Filter by selected date
       },
-      fields: ['student', 'status'],
+      fields: ['student', 'status', 'date'],
     };
   },
   auto: false, // Do not fetch automatically; fetch when a date is selected
 });
+
 onMounted(() => {
   if (presentCount.value === 0) {
     editing.value = true; // Allow editing if no students are marked as present
@@ -183,9 +200,31 @@ watch(
     if (data) {
       attendance.value = {};
       data.forEach((record) => {
-        attendance.value[record.student] = record.status === 'Present';
+        if (record.date === selectedDate.value?.cs_meetdate) { // Ensure filtering by date
+          attendance.value[record.student] = record.status === 'Present'; // Populate "Present" as true
+        } else {
+          attendance.value[record.student] = false; // Populate "Absent" as false
+        }
       });
-      attendanceTaken.value = data.length > 0;
+      attendanceTaken.value = Object.keys(attendance.value).length > 0;
+    }
+  }
+);
+
+watch(
+  () => selectedDate.value,
+  async (newDate) => {
+    if (newDate) {
+      attendanceResource.data = await attendanceResource.reload(); // Fetch attendance for the selected date
+      console.log("Attendance data reloaded: ", attendanceResource.data)
+      console.log("Selected date: ", selectedDate.value)
+      if (attendanceResource.data.length === 0) {
+        attendance.value = {};
+        students.data.forEach((student) => {
+          attendance.value[student.student] = false;
+        });
+      }
+      
     }
   }
 );
@@ -218,13 +257,10 @@ watch(presentCount, (newCount) => {
 
 // Mark attendance
 const markAttendance = async () => {
-  if (!students.data || students.data.length === 0) {
-    console.error("Students data is not loaded.");
-    return;
-  }
 
-  console.log("Attendance Value:", attendance.value);
-  console.log("Students Data:", students.data);
+
+  //console.log("Attendance Value:", attendance.value);
+  //console.log("Students Data:", students.data);
 
   const studentsPresent = Object.keys(attendance.value)
     .filter((student) => attendance.value[student])
@@ -256,10 +292,9 @@ const markAttendance = async () => {
     })
     .filter((student) => student !== null);
 
-  console.log("Students Present:", studentsPresent);
+  //console.log("Students Present:", studentsPresent);
 
-
-  try {
+ 
     const response = await fetch("/api/method/seminary.seminary.api.mark_attendance", {
       method: "POST",
       headers: {
@@ -271,19 +306,20 @@ const markAttendance = async () => {
         students_present: studentsPresent,
         students_absent: studentsAbsent,
       }),
-    });
+    })
 
-    const result = await response.json();
-    if (result.message === "success") {
-      selectedDate.value.attendance = true; // Update locally
-      await attendanceResource.reload(); // Refresh attendance
-      showToast(__('Success'), __('Attendance saved successfully'), 'check');
-    }
-  } catch (error) {
-    console.error("Error marking attendance:", error);
-    showToast(__('Error'), __(err.messages?.[0] || 'An error occurred while saving'), 'x');
-  }
-};
+    .then(response => response.json())
+    .then(data => {
+      if (data.message) {
+        showToast('Success', 'Attendance updated successfully', 'check');
+        meetingDates.reload();
+        attendanceResource.reload();
+      }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+}
 
 const course = createResource({
 	url: 'seminary.seminary.utils.get_course_details',
