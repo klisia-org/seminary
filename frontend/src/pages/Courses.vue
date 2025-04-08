@@ -8,89 +8,159 @@
   </header>
 
   <!-- Parent container for filters and course cards -->
-  <div class="p-5 flex flex-col gap-4 max-w-7xl mx-auto">
-    <!-- Filters for non-student users -->
-    <div v-if="!isStudent" class="flex gap-4 mb-5">
-      <div>
-        <label for="courseFilter" class="block text-sm font-medium text-gray-700">Course</label>
-        <select
-          id="courseFilter"
-          v-model="filters.course"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="">All Courses</option>
-          <option v-for="course in uniqueCourses" :key="course" :value="course">
-            {{ course }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label for="academicTermFilter" class="block text-sm font-medium text-gray-700">Academic Term</label>
-        <select
-          id="academicTermFilter"
-          v-model="filters.academic_term"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="">All Terms</option>
-          <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
-            {{ term }}
-          </option>
-        </select>
-      </div>
-    </div>
+  <div class="p-5 flex flex-row gap-4 w-full mx-auto">
+    <!-- To Do Column -->
+<div class="w-1/4 p-4">
+  <h2 class="text-lg font-semibold mb-4">To Do</h2>
+  <div v-if="isStudent || isInstructor">
+    <div v-for="entry in courseToDoList" :key="entry.course.name" >
+  <h3 class="text-md font-medium mb-2">{{ entry.course.name }}</h3>
+  <CourseCardToDo :course="entry.course.name" :singleCourse="false" />
+</div>
 
-    <!-- Course Cards -->
-    <div v-if="filteredCourses.length" class="flex flex-wrap justify-start gap-4">
-      <router-link
-        v-for="course in filteredCourses"
-        :to="{ name: 'CourseDetail', params: { courseName: course.name } }"
-        :key="course.name"
-        class="course_card"
-      >
-        <div class="course-image" :style="{ backgroundImage: `url(${encodeURI(course.course_image)})` }"></div>
-        <div class="p-4 text-container">
-          <h3 class="text-2xl font-semibold">{{ course.course }}</h3>
-          <div class="short-introduction text-ink-gray-7 text-sm">
-            {{ course.short_introduction }}
-          </div>
-          <div class="academic-term text-right mt-auto">
-            {{ course.academic_term }}
-          </div>
+<div v-if="courseToDoList.length === 0">
+  <PartyPopper class="size-20 mx-auto stroke-1 text-gray-500 mt-5" />
+  <h3 v-if="isStudent" class="text-xl text-center font-semibold text-gray-500 mt-5"> Congrats! No assessments to do!</h3>
+  <h3 v-if="isInstructor" class="text-xl text-center font-semibold text-gray-500 mt-5"> Congrats! No assessments to grade!</h3>
+</div>
+  </div>
+</div>
+
+    <!-- Main Content -->
+    <div class="w-3/4">
+      <!-- Filters for non-student users -->
+      <div class="flex gap-4 mb-5">
+        <div>
+          <label for="courseFilter" class="block text-sm font-medium text-gray-700">Course</label>
+          <select
+            id="courseFilter"
+            v-model="filters.course"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Courses</option>
+            <option v-for="course in uniqueCourses" :key="course" :value="course">
+              {{ course }}
+            </option>
+          </select>
         </div>
-      </router-link>
-    </div>
-    <div v-else class="flex flex-col items-center justify-center text-sm text-ink-gray-5 italic mt-48">
-      <BookOpen class="size-10 mx-auto stroke-1 text-ink-gray-4" />
-      <div class="text-2xl font-medium mb-1">
-        <span>No courses found</span>
+        <div>
+          <label for="academicTermFilter" class="block text-sm font-medium text-gray-700">Academic Term</label>
+          <select
+            id="academicTermFilter"
+            v-model="filters.academic_term"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Terms</option>
+            <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
+              {{ term }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Course Cards -->
+      <div v-if="filteredCourses.length" class="flex flex-wrap justify-start gap-4">
+        <router-link
+          v-for="course in filteredCourses"
+          :to="{ name: 'CourseDetail', params: { courseName: course.name } }"
+          :key="course.name"
+          class="course_card"
+        >
+          <div class="course-image" :style="{ backgroundImage: `url(${encodeURI(course.course_image)})` }"></div>
+          <div class="p-4 text-container">
+            <h3 class="text-2xl font-semibold">{{ course.course }}</h3>
+            <div class="short-introduction text-ink-gray-7 text-sm">
+              {{ course.short_introduction }}
+            </div>
+            <div class="academic-term text-right mt-auto">
+              {{ course.academic_term }}
+            </div>
+          </div>
+        </router-link>
+      </div>
+      <div v-else class="flex flex-col items-center justify-center text-sm text-ink-gray-5 italic mt-48">
+        <BookOpen class="size-10 mx-auto stroke-1 text-ink-gray-4" />
+        <div class="text-2xl font-medium mb-1">
+          <span>No courses found</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, inject, onMounted, ref, watch } from 'vue'
-import { BookOpen, Plus } from 'lucide-vue-next'
+import { computed, inject, onMounted, ref, watch, watchEffect, reactive, toRaw } from 'vue'
+import { BookOpen, Plus, PartyPopper } from 'lucide-vue-next'
 import { createResource } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
-import { reactive } from 'vue'
 import { usersStore } from '../stores/user'
+import CourseCardToDo from '@/components/CourseCardToDo.vue'
+ import { useCourseToDo } from '@/utils/useCourseToDo'
 
 const user = inject('$user')
-
 const start = ref(0)
 
 let userResource = usersStore()
-
 let isStudent = user.data.is_student
 let isModerator = user.data.is_moderator
 let isInstructor = user.data.is_instructor
 let isSystemManager = user.data.is_system_manager
 
+
+const current_AcademicTerm = createResource({
+  url: "frappe.client.get_value",
+  params: {
+    doctype: "Academic Term",
+    fieldname: "title",
+    filters: {
+      iscurrent_acterm: 1
+    }
+  },
+  auto: true
+
+})
+
+const cachedAcademicTerm = ref('');
+
+onMounted(() => {
+  current_AcademicTerm.reload()
+  if (current_AcademicTerm.data?.title) {
+    cachedAcademicTerm.value = current_AcademicTerm.data.title;
+  
+  }
+});
+
+
+
+
+
+watch(
+  () => current_AcademicTerm.data,
+  (newData) => {
+    if (newData?.title) {
+      cachedAcademicTerm.value = newData.title;
+    } else {
+      console.log("Current Academic Term: undefined");
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => cachedAcademicTerm.value,
+  (newTerm) => {
+    if (newTerm) {
+      filters.academic_term = newTerm;
+      console.log("Updated filters.academic_term:", filters.academic_term);
+    }
+  }
+);
+
 const filters = reactive({
   course: '',
-  academic_term: ''
-})
+  academic_term: current_AcademicTerm.data?.title || ''
+});
+console.log(filters.academic_term)
 
 const courses = createResource({
   url: isStudent ? "seminary.seminary.utils.get_courses_for_student" : "seminary.seminary.utils.get_courses",
@@ -158,6 +228,8 @@ const filteredCourses = computed(() => {
   }) || []
 })
 
+
+
 const setQueryParams = () => {
   let queries = new URLSearchParams(location.search)
   let filterKeys = {
@@ -174,6 +246,57 @@ const setQueryParams = () => {
 
   history.replaceState({}, '', `${location.pathname}?${queries.toString()}`)
 }
+
+// We'll store one instance per course (keyed by course name) in a map.
+const courseTodoInstances = ref({})
+const courseToDoList = ref([]);
+// When filteredCourses changes, add a to-do instance for any new course.
+// Populate the map when filteredCourses changes:
+watch(filteredCourses, (newCourses) => {
+  if (!newCourses) return;
+  const list = [];
+  newCourses.forEach(course => {
+    if (!courseTodoInstances.value[course.name]) {
+      courseTodoInstances.value[course.name] = useCourseToDo(course.name, user);
+      console.log('Created instance for course:', course.name, courseTodoInstances.value[course.name]);
+    }
+    const todoInstance = courseTodoInstances.value[course.name];
+    const count = todoInstance.countToDoItems;
+    console.log('Starting if statement with count:', count, 'for todoInstance:', todoInstance);
+    if (todoInstance && count > 0) {
+      list.push({ course: course, count: count });
+    }
+    });
+    console.log('List: ', list);
+    courseToDoList.value = list;
+    console.log('Updated courseToDoList:', courseToDoList.value);
+  });
+
+
+
+watch(
+  () => filteredCourses,
+  (newFilteredCourses) => {
+    if (!Array.isArray(newFilteredCourses)) {
+      console.error("newFilteredCourses is not an array:", newFilteredCourses);
+      newFilteredCourses = [];
+    }
+
+    const updatedList = newFilteredCourses.map(course => {
+      const todo = useCourseToDo(course.name, user);
+      return {
+        course,
+        count: todo.countToDoItems.value, // Accessing the value correctly
+        hasItems: todo.countToDoItems.value > 0, // Ensuring correct comparison
+      };
+    }).filter(entry => entry.hasItems);
+
+    courseToDoList.value = updatedList;
+    console.log("Updated courseToDoList:", courseToDoList.value);
+  },
+  { immediate: true }
+);
+
 </script>
 
 <style>

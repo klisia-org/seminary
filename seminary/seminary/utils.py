@@ -1153,3 +1153,25 @@ def get_missingassessments(course, member):
 	)
 	print("Missing assessments: ", result)  # Debugging log
 	return result
+
+@frappe.whitelist()
+def get_assessments_tograde(course):
+	print("Assessment to Grade from Course Name: ", course)  # Debugging log
+	#Query to get all assignments and exams that are not graded for the course card ToDo. Quizzes are auto-graded.
+	assignments_query = """
+		select "Assignment" as Type, assignment as assessmentID, assignment_title as title, count(name)  as ToGrade 
+		from `tabAssignment Submission` 
+		where course = %(course)s and status = 'Not Graded'
+		group by assignment, assignment_title"""
+	exams_query = """select "Exam" as Type, exam as assessmentID, exam_title as title, count(name)  as ToGrade
+		from `tabExam Submission` 
+		where course = %(course)s and status = 'Not Graded'
+		group by exam, exam_title"""
+	result = frappe.db.sql(
+		f"({assignments_query}) UNION ({exams_query})",
+		{"course": course},
+		as_dict=True,
+	)
+	print("Assessments to grade: ", result)
+	# Debugging log
+	return result
