@@ -11,11 +11,11 @@ import { CodeBox } from '@/utils/code'
 import NestedList from '@editorjs/nested-list'
 import InlineCode from '@editorjs/inline-code'
 import { watch } from 'vue'
-// import dayjs from '@/utils/dayjs'
+import dayjs from '@/utils/dayjs'
 import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
-
+import { FolderTool } from '@/utils/foldertool'
 
 export function createToast(options) {
 	toast({
@@ -157,8 +157,8 @@ export function getEditorTools() {
 				placeholder: 'Header',
 			},
 		},
-		quiz: Quiz,
 		assignment: Assignment,
+		quiz: Quiz,
 		exam: Exam,
 		upload: Upload,
 		markdown: Markdown,
@@ -196,7 +196,7 @@ export function getEditorTools() {
 		},
 		embed: {
 			class: Embed,
-			inlineToolbar: false,
+			inlineToolbar: true,
 			config: {
 				services: {
 					youtube: {
@@ -298,6 +298,16 @@ export function getEditorTools() {
 							'https://codesandbox.io/embed/<%= remote_id %>?view=editor+%2B+preview&module=%2Findex.html',
 						html: "<iframe style='width: 100%; height: 500px; border: 0; border-radius: 4px; overflow: hidden;' sandbox='allow-mods allow-forms allow-popups allow-scripts allow-same-origin' frameborder='0' allowfullscreen='true'></iframe>",
 					},
+				},
+			},
+		},
+		folder: {
+			class: FolderTool,
+			config: {
+				placeholder: 'Add a folder with files',
+				uploadEndpoint: '/api/upload-folder', // Example endpoint for folder uploads
+				renderFiles: (files) => {
+					return files.map(file => `<a href="${file.url}" download>${file.name}</a>`).join('<br>');
 				},
 			},
 		},

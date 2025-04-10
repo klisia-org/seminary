@@ -157,6 +157,17 @@ jinja = {
 	"filters": [],
 }
 
+## Markdown Macros for Lessons
+seminary_markdown_macro_renderers = {
+	
+	
+	"YouTubeVideo": "seminary.plugins.youtube_video_renderer",
+	"Video": "seminary.plugins.video_renderer",
+	"Embed": "seminary.plugins.embed_renderer",
+	"Audio": "reminary.plugins.audio_renderer",
+	"PDF": "seminary.plugins.pdf_renderer",
+}
+
 # Installation
 # ------------
 

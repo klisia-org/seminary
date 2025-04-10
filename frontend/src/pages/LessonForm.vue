@@ -305,6 +305,14 @@ const convertToJSON = (lessonData) => {
 					exam: exam,
 				},
 			})
+		} else if (block.includes('{{ Folder')) {
+			let folder = block.match(/\(["']([^"']+?)["']\)/)[1]
+			blocks.push({
+				type: 'folder',
+				data: {
+					folder: folder,
+				},
+			})
 		} else if (block.includes('{{ Video')) {
 			let video = block.match(/\(["']([^"']+?)["']\)/)[1]
 			blocks.push({
@@ -382,6 +390,14 @@ const convertToJSON = (lessonData) => {
 			type: 'exam',
 			data: {
 				exam: lessonData.examId,
+			},
+		})
+	}
+	if (lessonData.folder) {
+		blocks.push({
+			type: 'folder',
+			data: {
+				folder: lessonData.folder,
 			},
 		})
 	}
@@ -527,6 +543,7 @@ const pageMeta = computed(() => {
 })
 
 updateDocumentTitle(pageMeta)
+
 </script>
 <style>
 .embed-tool__caption,

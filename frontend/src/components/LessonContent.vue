@@ -63,10 +63,15 @@
 	<div v-if="exam">
 		<Exam :exam="exam" />
 	</div>
+	<div v-if="folder">
+		<Folder :folder="folder" />
+	</div>
 </template>
 <script setup>
 import Quiz from '@/components/QuizBlock.vue'
 import Exam from '@/components/ExamBlock.vue'
+import Folder from '@/components/FolderBlock.vue'
+
 import MarkdownIt from 'markdown-it'
 
 const markdown = new MarkdownIt({
@@ -88,6 +93,10 @@ const props = defineProps({
 		required: false,
 	},
 	exam: {
+		type: String,
+		required: false,
+	},
+	folder: {
 		type: String,
 		required: false,
 	},
