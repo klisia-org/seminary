@@ -1649,3 +1649,30 @@ def delete_documents(doctype, documents):
 	frappe.only_for(["Seminary Manager", "Academics User", "Instructor"])
 	for doc in documents:
 		frappe.delete_doc(doctype, doc)
+
+@frappe.whitelist()
+def get_announcements(cs):
+	communications = frappe.get_all(
+		"Communication",
+		filters={
+			"reference_doctype": "Course Schedule",
+			"reference_name": cs,
+		},
+		fields=[
+			"subject",
+			"content",
+			"recipients",
+			"cc",
+			"communication_date",
+			"sender",
+			"sender_full_name",
+		],
+		order_by="communication_date desc",
+	)
+
+	for communication in communications:
+		communication.image = frappe.get_cached_value(
+			"User", communication.sender, "user_image"
+		)
+
+	return communications

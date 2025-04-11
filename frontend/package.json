@@ -20,6 +20,7 @@
     "dayjs": "^1.11.13",
     "feather-icons": "^4.29.2",
     "frappe-ui": "^0.1.72",
+    "highlight.js": "^11.11.1",
     "hljs": "^6.2.3",
     "lucide-vue-next": "^0.479.0",
     "markdown-it": "^14.1.0",

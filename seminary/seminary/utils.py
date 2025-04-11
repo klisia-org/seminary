@@ -343,10 +343,6 @@ def get_enrollment_details(courses):
 
 	return courses
 
-
-
-
-
 def get_course_fields():
 	return [
 		"name",
@@ -404,6 +400,17 @@ def get_course_details(course):
 		)
 
 	return course_details
+
+@frappe.whitelist()
+def get_roster(course):
+	"""Returns the course roster."""
+	roster = frappe.get_all(
+		"Scheduled Course Roster",
+		{"course_sc": course},
+		["name", "stuname_roster", "stuemail_rc", "audit_bool", "active", "stuimage"],
+		order_by="stuname_roster",
+	)
+	return roster
 
 def get_lesson_index(lesson_name):
 	"""Returns the {chapter_index}.{lesson_index} for the lesson."""

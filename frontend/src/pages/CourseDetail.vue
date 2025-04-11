@@ -50,6 +50,24 @@
 					<div class="mt-5">
 						<CourseCardToDo :course="props.courseName" />
 					</div>
+					<div class="mt-5">
+						<Announcements :cs="props.courseName" />
+					</div>
+					<Button v-if="user.data?.is_moderator || user.data?.is_instructor" @click="openAnnouncementModal()">
+					<span>
+						{{ __('Make an Announcement') }}
+					</span>
+					<template #suffix>
+						<Send class="h-4 stroke-1.5" />
+					</template>
+				</Button>
+					<div class="mt-5">
+						<AnnouncementModal 
+						v-model="showAnnouncementModal"
+						:cs="props.courseName" 
+						:students="studentEmails" />
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -57,19 +75,24 @@
 </template>
 <script setup>
 import { createResource, Breadcrumbs, Badge, Tooltip } from 'frappe-ui'
-import { computed } from 'vue'
+import { computed, ref, inject } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle } from '@/utils'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
+import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
+import { Send } from 'lucide-vue-next'
+import Announcements from '../components/Announcements.vue'
 
+const user = inject('$user')
 const props = defineProps({
 	courseName: {
 		type: String,
 		required: true,
 	},
 })
+const showAnnouncementModal = ref(false)
 
 const course = createResource({
 	url: 'seminary.seminary.utils.get_course_details',
@@ -80,6 +103,24 @@ const course = createResource({
 	auto: true,
 })
 console.log(course)
+
+const students = createResource({
+	url: 'seminary.seminary.utils.get_roster',
+	cache: ['roster', props.courseName],
+	params: {
+		course: props.courseName,
+	},
+	auto: true,
+})
+const studentEmails = computed(() =>
+  (students.data || []).map(s => s.stuemail_rc)
+);
+console.log("Student Emails:", studentEmails.value)
+
+
+const openAnnouncementModal = () => {
+	showAnnouncementModal.value = true
+}
 
 const breadcrumbs = computed(() => {
 	let items = [{ label: 'Courses', route: { name: 'Courses' } }]
