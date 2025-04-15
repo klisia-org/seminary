@@ -7,6 +7,19 @@
 	<div class="md:w-7/12 md:mx-auto mx-4 py-10">
 		<Exam :examName="examID" />
 	</div>
+	      <!-- Right Section (1/3 width) -->
+		  <div class="col-span-1 space-y-4">
+        <div class="space-y-4 border p-5 rounded-md">
+          <Discussions
+			v-if="(user.data?.is_student && submisisonDetails.data?.name) || user.data?.is_instructor"
+            :title="'Exam Comments'"
+            :doctype="'Exam Submission'"
+            :docname="submisisonDetails.doc.name"
+            :key="submisisonDetails.doc.name"
+            type="single"
+          />
+        </div>
+      </div>
 </template>
 <script setup>
 import Exam from '@/components/Exam.vue'
@@ -14,6 +27,7 @@ import { createResource, Breadcrumbs } from 'frappe-ui'
 import { computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateDocumentTitle } from '@/utils'
+import Discussions from '@/components/Discussions.vue'
 
 const user = inject('$user')
 const router = useRouter()
@@ -43,6 +57,21 @@ const title = createResource({
 	auto: true,
 })
 
+
+const submissionDetails = createResource({
+	url: 'frappe.client.get_value',
+	params: {
+		doctype: 'Exam Submission',
+		fieldname: 'name',
+		filters: {
+			exam: props.examID,
+			member: user.data.name,
+		},
+	},
+	auto: true,
+	cache: ['exam-submission', props.examID],
+})
+console.log('User in Exam Page:', user.data)
 const breadcrumbs = computed(() => {
 	return [{ label: __('Exam Submission') }, { label: title.data?.title }]
 })

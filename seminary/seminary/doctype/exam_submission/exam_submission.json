@@ -171,16 +171,17 @@
    "read_only": 1
   },
   {
+   "default": "Not Graded",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Not Submitted\nNot Graded\nGraded"
+   "options": "Not Graded\nGraded"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-02 19:40:35.755176",
+ "modified": "2025-04-12 11:56:51.732315",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",

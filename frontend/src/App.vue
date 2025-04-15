@@ -5,6 +5,7 @@
 	
 	<Toasts />
 	<Dialogs /> <!-- Ensure this line is present -->
+	<Tiptap />
 </template>
 
 <script setup>
@@ -17,6 +18,7 @@ import { usersStore } from '@/stores/user'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
+import Tiptap  from './components/Tiptap.vue'
 
 
 const screenSize = useScreenSize()

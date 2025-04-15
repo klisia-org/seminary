@@ -11,7 +11,7 @@
 			</span>
 		</div>
 
-		<div v-for="(reply, index) in replies.data">
+		<div v-for="(reply, index) in replies.data" :key="reply.name">
 			<div
 				class="py-3"
 				:class="{ 'border-b': index + 1 != replies.data.length }"
@@ -20,7 +20,7 @@
 					<div class="flex items-center text-ink-gray-5">
 						<UserAvatar :user="reply.user" class="mr-2" />
 						<span>
-							{{ reply.user.full_name }}
+							{{ reply.user?.full_name || reply.owner }}
 						</span>
 						<span class="text-sm ml-2">
 							{{ timeAgo(reply.creation) }}
@@ -56,30 +56,29 @@
 						</Button>
 					</div>
 				</div>
-				<TextEditor
+				<div v-if="reply.editable">
+					<TextEditor
 					:content="reply.reply"
 					@change="(val) => (reply.reply = val)"
-					:editable="reply.editable || false"
-					:fixedMenu="reply.editable || false"
-					:editorClass="
-						reply.editable
-							? 'ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'
-							: 'prose-sm'
-					"
+					:editable="true"
+					:fixedMenu="true"
+					:editorClass="'ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'"
 				/>
+				</div>
+				<div v-else class="formatted-reply">
+					<div v-html="reply.reply" class="p-2"></div>
+				</div>
 			</div>
 		</div>
 
-		<TextEditor
-			v-if="renderEditor"
+		<textarea
+			v-show="renderEditor"
 			class="mt-5"
-			:content="newReply"
-			:mentions="mentionUsers"
-			@change="(val) => (newReply = val)"
+			:value="newReply"
+			@input="(value) => (newReply = value)"
 			placeholder="Type your reply here..."
 			:fixedMenu="true"
-			editorClass="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none border border-outline-gray-2 rounded-b-md min-h-[7rem] py-1 px-2"
-		/>
+					/>
 		<div class="flex justify-between mt-2">
 			<span> </span>
 			<Button @click="postReply()">
@@ -95,7 +94,7 @@ import { createResource, TextEditor, Button, Dropdown } from 'frappe-ui'
 import { timeAgo } from '../utils'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { ChevronLeft, MoreHorizontal } from 'lucide-vue-next'
-import { ref, inject, onMounted, onUnmounted } from 'vue'
+import { ref, inject, onMounted, onUnmounted, toRaw, watch } from 'vue'
 import { createToast } from '../utils'
 import { initSocket } from '@/socket'; // Import the socket initializer
 
@@ -106,7 +105,7 @@ const newReply = ref('')
 const user = inject('$user')
 console.log('User data:', user.data.is_student); // Debugging log
 const mentionUsers = ref([])
-const renderEditor = ref(false)
+const renderEditor = ref(false); // Keep it false initially
 
 const props = defineProps({
 	topic: {
@@ -118,40 +117,72 @@ const props = defineProps({
 		default: false,
 	},
 })
+const editorKey = `editor-${props.topic.name}`; // Set the key based on the topic name
 
 onMounted(() => {
-  console.log('DiscussionReplies mounted. Registering socket listeners.');
-  console.log('Topic received:', props.topic.name); // Debugging log
-  replies.reload(
-	{},
-	{
-	  onSuccess(data) {
-		console.log('Replies fetched successfully:', data); // Debugging log
-	  },
-	  onError(error) {
-		console.error('Error fetching replies:', error); // Debugging log
-	  },
-	}
-  )
+	console.log('DiscussionReplies mounted. Registering socket listeners.');
+	console.log('Topic received:', props.topic.name); // Debugging log
 
-  socket.on('publish_message', (data) => {
-		replies.reload()
-	})
+	// Call fetchMentionUsers to ensure renderEditor is updated
+	fetchMentionUsers();
+
+	replies.reload(
+		{},
+		{
+			onSuccess(data) {
+				console.log('Replies fetched successfully:', data); // Debugging log
+			},
+			onError(error) {
+				console.error('Error fetching replies:', error); // Debugging log
+			},
+		}
+	);
+
+	socket.on('publish_message', (data) => {
+		replies.reload();
+	});
 	socket.on('update_message', (data) => {
-		replies.reload()
-	})
+		replies.reload();
+	});
 	socket.on('delete_message', (data) => {
-		replies.reload()
-	})
+		replies.reload();
+	});
 
-  // Cleanup listeners on unmount
-//   onUnmounted(() => {
-//     console.log('DiscussionReplies unmounted. Cleaning up socket listeners.');
-//     socket.off('publish_message', reloadReplies);
-//     socket.off('update_message', reloadReplies);
-//     socket.off('delete_message', reloadReplies);
-//   });
+	// Defer rendering the editor until the component is fully mounted
+	renderEditor.value = true;
+	console.log('TextEditor renderEditor set to true.');
+	console.log('Editor key:', editorKey); // Debugging log
+	
 });
+
+watch(
+	props.topic,
+	(newTopic, oldTopic) => {
+		if (newTopic.name !== oldTopic.name) {
+			editorKey.value = `editor-${newTopic.name}`; // Update key when topic changes
+			console.log('Editor key updated:', editorKey.value);
+		}
+	}
+);
+
+watch(
+	newReply,
+	(value) => {
+		console.log('New reply value:', value); // Debugging log
+		if (!value) {
+			console.warn('Reply is empty. Ensure the input is being updated correctly.');
+		}
+	}
+);
+
+watch(
+	renderEditor,
+	(value) => {
+		if (value) {
+			console.log('TextEditor is now visible and ready for initialization.');
+		}
+	}
+);
 
 const replies = createResource({
   url: 'seminary.seminary.utils.get_discussion_replies',
@@ -171,20 +202,24 @@ const replies = createResource({
 
 
 const newReplyResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.utils.insert_discussion_reply',
 	makeParams(values) {
-		return {
-			doc: {
-				doctype: 'Discussion Reply',
-				reply: newReply.value,
+		return {		
+				reply: newReply.value, // Use newReply.value directly
 				topic: props.topic.name,
-			},
+			
 		}
 	},
-})
+	onSuccess(data) {
+    console.log('Discussion saved successfully:', data); // Debugging log
+  },
+  onError(error) {
+    console.error('Error inserting replies:', error); // Debugging log
+  },
+});
 
 const fetchMentionUsers = () => {
-	console.log('User data:', user.data); // Debugging log
+	console.log('User data in fetchMentionUsers:', user.data); // Debugging log
   if (user.data?.is_student) {
     renderEditor.value = true;
   } else {
@@ -215,11 +250,7 @@ const postReply = () => {
 	newReplyResource.submit(
 		{},
 		{
-			validate() {
-				if (!newReply.value) {
-					return 'Reply cannot be empty'
-				}
-			},
+		
 			onSuccess() {
 				newReply.value = ''
 				replies.reload()

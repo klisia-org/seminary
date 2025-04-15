@@ -12,13 +12,23 @@
 			<span>Loading discussion...</span>
 		</div>
 	</div>
-	<div v-else-if="props.type === 'single' && currentTopic.value">
-		<div class="text-xl font-semibold text-ink-gray-9">
-			{{ __(title) }}
-		</div>
-		<DiscussionReplies :topic="currentTopic.value" :singleThread="true" />
+	<div v-if="props.type === 'single' && !loading">
+		
+		<div
+		class="flex flex-col items-center justify-center"
+	>
+	
 	</div>
-	<div v-else-if="topics.data?.length && !singleThread">
+		<DiscussionModal
+		v-model="showTopicModal"
+		:title="title"
+		:doctype="props.doctype"
+		:docname="props.docname"
+		
+	/>
+		<DiscussionReplies v-if="currentTopic.value" :topic="currentTopic.value" :singleThread="true" v-model:showTopics="showTopics"/>
+	</div>
+	<div v-if="topics.data?.length && !singleThread">
 		<div v-if="showTopics" v-for="(topic, index) in topics.data" :key="index">
 			<div
 				@click="showReplies(topic)"
@@ -71,10 +81,12 @@
 	/>
 </template>
 <script setup>
+console.log('Discussions.vue script setup executed'); // Debugging: Ensure script is running
+
 import { createResource, Button } from 'frappe-ui'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { singularize, timeAgo } from '../utils'
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, watch } from 'vue'
 import DiscussionReplies from '@/components/DiscussionReplies.vue'
 import DiscussionModal from '@/components/Modals/DiscussionModal.vue'
 import { MessageSquareText } from 'lucide-vue-next'
@@ -86,6 +98,8 @@ const currentTopic = ref(null)
 const user = inject('$user')
 const showTopicModal = ref(false)
 const loading = ref(true); // Add a loading state
+const socketConnected = ref(false); // Track socket connection status
+
 // Initialize the socket directly
 const socket = initSocket(); // Use the default namespace or specify one if needed
 
@@ -93,6 +107,21 @@ if (!socket) {
   console.error('Socket connection not initialized in Discussions.vue.');
 } else {
   console.log('Socket connection initialized in Discussions.vue:', socket);
+
+  // Add event listeners for debugging and connection tracking
+  socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+    socketConnected.value = true; // Mark socket as connected
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.warn('Socket disconnected:', reason);
+    socketConnected.value = false; // Mark socket as disconnected
+  });
 }
 
 const props = defineProps({
@@ -130,12 +159,23 @@ const props = defineProps({
   },
 })
 
-onMounted(() => {
-  console.log('Props:', props); // Debugging
+// Watch for socket connection and execute onMounted logic once connected
+watch(socketConnected, (isConnected) => {
+  if (isConnected) {
+    console.log('Socket is connected, proceeding with onMounted logic.');
+    executeOnMountedLogic();
+  }
+});
+
+const executeOnMountedLogic = () => {
+  console.log('onMounted logic executed'); // Debugging: Ensure this is called
+  console.log('Props:', props); // Debugging: Log props
+
   if (user.data) {
     if (props.type === 'single') {
       console.log('Single-topic mode detected'); // Debugging
       singleTopicResource.reload(); // Trigger the resource to fetch the single topic
+	  console.log('Topic', currentTopic.value)
     } else {
       loading.value = false; // Immediately stop loading for multi-topic mode
     }
@@ -151,7 +191,7 @@ onMounted(() => {
       scrollToEnd();
     }, 100);
   }
-});
+};
 
 const scrollToEnd = () => {
 	let scrollContainer = getScrollContainer()
@@ -172,9 +212,11 @@ const singleTopicResource = createResource({
     console.log('Ensure single topic response:', data); // Debugging
     if (data) {
       currentTopic.value = data; // Set the single topic as the current topic
+	  console.log('Current topic set:', currentTopic.value); // Debugging
       showTopics.value = false; // Automatically show replies for the single topic
+	  loading.value = false; // Mark loading as complete
     }
-    loading.value = false; // Mark loading as complete
+    console.log('Changed loading to:', loading.value); // Debugging
   },
   onError(error) {
     console.error('Error ensuring single topic:', error); // Log the error

@@ -99,7 +99,8 @@
 					v-for="(row, index) in submisisonDetails.doc.result"
 					:key="index"
 					class="border p-5 rounded-md space-y-4"
-				>
+        >
+        {{ console.log(row) }}
 					  <!-- Question Title -->
   				  <!-- Question Title -->
   <div class="space-y-1">
@@ -141,23 +142,32 @@
     v-model="row.points"
     type="number"
     class="w-20 text-right"
-	@change="(val) => onPointsChange(row, val)"
-    
+	@change="(val) => onPointsChange(row, val)" 
   />
   <span class="text-sm text-ink-gray-7">
     / {{ parseInt(row.points_out_of, 10) }} {{ __('Points') }}
   </span>
 </div>
   </div>
-						<TextEditor
-							v-model="row.comments"
+						<!-- <TextEditor
+							:content="row.comments"
 							:label="__('Comment')"
 							:placeholder="__('Add a comment')"
+              :key="row.name"
 							:fixedMenu="true"
-							:editorClass="'h-32'"
-							@change="(val) => onCommentChange(row, val)" <!-- Pass the updated value -->
-						</TextEditor>
-						/>
+              :editable="true"
+							:editorClass="'ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none'"
+							@change="(val) => onCommentChange(row, val)" 
+						</TextEditor> -->
+						
+            <ExamQuestionEditor
+            :questionId="row.name"
+            :content="row.comments"
+            :editable="true"
+            @change="(val) => onCommentChange(row, val)" <!-- Pass the updated value -->
+          </ExamQuestionEditor>
+           
+
 					</div>
 				</div>
 			
@@ -214,6 +224,7 @@ import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect, ref }
 import { useRouter } from 'vue-router'
 import { showToast } from '@/utils'
 import Discussions from '@/components/Discussions.vue'
+import ExamQuestionEditor  from '@/components/ExamQuestionEditor.vue'
 import { Check, X } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -224,10 +235,13 @@ onMounted(() => {
 		router.push({ name: 'Courses' })
 
 	window.addEventListener('keydown', keyboardShortcut)
+  console.log('Keyboard shortcut listener added')
 })
 
 onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
+  console.log('Keyboard shortcut listener removed')
+  // Clean up any other resources or listeners if needed
 })
 
 const keyboardShortcut = (e) => {

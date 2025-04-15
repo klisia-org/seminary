@@ -70,7 +70,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nNot Graded\nGraded\nNot Submitted"
+   "options": "Not Graded\nGraded"
   },
   {
    "fieldname": "comments",
@@ -186,7 +186,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-28 08:40:38.057456",
+ "modified": "2025-04-12 11:57:14.634309",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

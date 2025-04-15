@@ -4,8 +4,8 @@
   </div>
   <div v-else-if="submisisonDetails.doc" class="space-y-5">
     <div class="grid grid-cols-3 gap-3">
-      <!-- Left Section (2/3 width) -->
-      <div class="col-span-2 space-y-4">
+      <!-- Left Section (3/3 width) -->
+      <div class="col-span-3 space-y-4">
         <div class="space-y-4 border p-2 rounded-md">
           <div class="flex items-center justify-between py-4">
             <!-- Exam Percentage -->
@@ -66,18 +66,6 @@
         </div>
       </div>
 
-      <!-- Right Section (1/3 width) -->
-      <div class="col-span-1 space-y-4">
-        <div class="space-y-4 border p-5 rounded-md">
-          <Discussions
-            :title="'Exam Comments'"
-            :doctype="'Exam Submission'"
-            :docname="submisisonDetails.doc.name"
-            :key="submisisonDetails.doc.name"
-            type="single"
-          />
-        </div>
-      </div>
     </div>
   </div>
   <div v-else>
@@ -88,7 +76,7 @@
 <script setup>
 import { createDocumentResource } from 'frappe-ui';
 import { watch, inject } from 'vue';
-import Discussions from '@/components/Discussions.vue'
+
 
 // const socket = inject('$socket')
 // if (socket) {

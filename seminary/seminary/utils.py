@@ -1182,3 +1182,19 @@ def get_assessments_tograde(course):
 	print("Assessments to grade: ", result)
 	# Debugging log
 	return result
+
+#debugging frappe.client.insert dict error
+@frappe.whitelist()
+def insert_discussion_reply(reply, topic):
+	print("Inserting reply:", reply)
+	print("Topic:", topic)	
+	doc =frappe.new_doc("Discussion Reply")
+	doc.update(
+		{
+			"reply": reply,
+			"topic": topic,
+			"owner": frappe.session.user,
+		}
+	)
+	doc.insert(ignore_permissions=True)
+	return doc.name

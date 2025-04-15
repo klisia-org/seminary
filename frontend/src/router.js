@@ -169,6 +169,11 @@ const routes = [
 		component: () => import('@/pages/StudentAttendanceCS.vue'),
 		props: true,	
 	},
+	{
+		path: '/mock',
+		name: 'Mock',
+		component: () => import('@/pages/Mock.vue'),
+	},
   {
     path :'/:catchAll(.*)',
     redirect: '/courses',

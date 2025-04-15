@@ -19,6 +19,17 @@
 				}}
 			</div>
     </div>
+    	      
+        <div v-if="hasSubmittedExam && (submission_anystatus?.data || attempts.data?.[0])" class="space-y-4 border p-5 rounded-md">
+          <Discussions
+            :title="'Exam Comments'"
+            :doctype="'Exam Submission'"
+            :docname="submission_anystatus?.data?.name || attempts.data?.[0]?.name"
+            :key="submission_anystatus?.data?.name || attempts.data?.[0]?.name"
+            type="single"
+          />
+        </div>
+      
     <div v-if="exam.data.duration && !hasSubmittedExam" class="flex flex-col space-x-1 my-4">
 			<div class="mb-2">
 				<span class=""> {{ ('Time') }}: </span>
@@ -48,8 +59,8 @@
     >
       <span>{{ ('Start Exam') }}</span>
     </Button>
-    <div v-else-if="hasSubmittedExam && submission.data" class="w-full max-w-4xl mx-auto py-5">
-      <ExamGraded :submission="submission.data" />
+    <div v-else-if="hasSubmittedExam && submission?.data?.name" class="w-full max-w-4xl mx-auto py-5">
+      <ExamGraded :submission="submission.data.name" />
     </div>
     <div v-else >
       {{ 'You have already submitted this exam. As soon as it is graded, you will see the feedback here.' }}
@@ -77,15 +88,16 @@
     <span class="tooltip" data-tooltip="Edit this exam">Edit</span>
   </router-link>
   
-      <div v-for="(question, index) in exam.data.questions" :key="question.name" class="border rounded-md p-5 mb-4">
-        <div class="flex justify-between">
-          <div class="text-sm text-ink-gray-5">
-            <span class="mr-2">{{ `Question ${index + 1}` }}:</span>
-          </div>
-          <div class="text-ink-gray-9 text-sm font-semibold">
+      <div v-for="(question, index) in exam.data.questions" :key="question.name" class="relative border rounded-md p-5 mb-4">
+        <div class="absolute -top-3 -left-3 bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+            {{ index + 1 }}
+        </div>
+        
+            
+          <div class="text-ink-gray-9 text-sm font-semibold text-right">
             {{ question.points }} {{ question.points === 1 ? 'Point' : 'Points' }}
           </div>
-        </div>
+        
         <div class="text-ink-gray-9 text-left font-semibold mt-2 leading-5">
           <div v-html="question.question_detail || 'No question detail provided.'"></div>
         </div>
@@ -110,13 +122,14 @@
 
 <script setup>
 import {Badge, Button, call, createResource, TextEditor, FormControl, frappeRequest} from 'frappe-ui'
-import { ref, watch, reactive, inject, computed, toRaw } from 'vue'
+import { ref, watch, reactive, inject, computed, toRaw, onMounted } from 'vue'
 import { createToast, showToast } from '@/utils/'
 import { CheckCircle, XCircle, MinusCircle, SquarePen } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ExamGraded from '@/components/ExamGraded.vue'
+import Discussions from '@/components/Discussions.vue'
 const user = inject('$user')
 const timer = ref(0);
 let timerInterval = null;
@@ -146,6 +159,7 @@ examName: {
 },
 
 });
+console.log('Exam Name (PROPS):', props.examName); // Debugging log
 
 // Exam resource
 const exam = createResource({
@@ -320,7 +334,7 @@ const attempts = createResource({
       doctype: 'Exam Submission',
       filters: {
         member: user.data?.name,
-        exam: exam.data?.name,
+        exam: props.examName,
       },
       fields: ['name', 'creation'],
       order_by: 'creation desc',
@@ -328,6 +342,7 @@ const attempts = createResource({
   },
   auto: true,
   transform(data) {
+   
     //console.log('Fetched attempts:', data); // Debugging log
     data.forEach((submission, index) => {
       submission.creation = timeAgo(submission.creation);
@@ -339,7 +354,7 @@ const attempts = createResource({
 watch(
   () => attempts.data,
   (newData) => {
-    //console.log('Attempts data updated:', newData); // Debugging log
+    console.log('Attempts data updated:', newData); // Debugging log
   }
 );
 
@@ -385,24 +400,53 @@ const startExam2 = () => {
 }
 
 const submission = createResource({
-  url: 'frappe.client.get_value',
-  params: {
-    doctype: 'Exam Submission',
-    fieldname: 'name',
-    filters: {
-      exam: exam.data?.name,
-      member: user.data?.name,
-      status: 'Graded',
-    },
-  },
-  auto: true,
-  // transform(data) {
-  //   console.log('Fetched submission:', data); // Debugging log
-  //   return data;
-  // },
-  // onError(err) {
-  //   console.error('Error fetching submission:', err); // Debugging log
-  // },
+	url: 'frappe.client.get_value',
+	params: {
+		doctype: 'Exam Submission',
+		fieldname: 'name',
+		filters: {
+			exam: props.examName,
+			member: user.data?.name,
+			status: 'Graded',
+		},
+	},
+	auto: false, // Disable auto-fetch
+	transform(data) {
+		console.log('Fetched submission data:', data); // Debugging log
+		return data;
+	},
+	onError(err) {
+		console.error('Error fetching submission:', err); // Debugging log
+	},
+});
+
+
+const submission_anystatus = createResource({
+	url: 'frappe.client.get_value',
+	params: {
+		doctype: 'Exam Submission',
+		fieldname: 'name',
+		filters: {
+			exam: props.examName,
+			member: user.data?.name,
+		},
+	},
+	auto: false, // Disable auto-fetch
+	transform(data) {
+		console.log('Fetched submission AnyStatus:', data.name); // Debugging log
+		return data;
+	},
+	onError(err) {
+		console.error('Error fetching submission:', err); // Debugging log
+	},
+});
+
+
+onMounted(() => {
+
+	// Load submission resources on mount
+	submission.reload();
+	submission_anystatus.reload();
 });
 	
 </script>
