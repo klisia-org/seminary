@@ -24,6 +24,12 @@
 		<div class="grid grid-cols-3 gap-5 mb-5">
 			<FormControl v-model="titleFilter" :placeholder="__('Search by title')" />
 			<FormControl
+				v-model="courseFilter"
+				type="select"
+				:options="coursesListed"
+				:placeholder="__('Course')"
+			/>
+			<FormControl
 				v-model="typeFilter"
 				type="select"
 				:options="assignmentTypes"
@@ -89,6 +95,7 @@ const user = inject('$user')
 const dayjs = inject('$dayjs')
 const titleFilter = ref('')
 const typeFilter = ref('')
+const courseFilter = ref('')
 const router = useRouter()
 
 onMounted(() => {
@@ -97,13 +104,15 @@ onMounted(() => {
 	}
 
 	titleFilter.value = router.currentRoute.value.query.title
+	courseFilter.value = router.currentRoute.value.query.course
 	typeFilter.value = router.currentRoute.value.query.type
 })
 
-watch([titleFilter, typeFilter], () => {
+watch([titleFilter, courseFilter, typeFilter], () => {
 	router.push({
 		query: {
 			title: titleFilter.value,
+			course: courseFilter.value,
 			type: typeFilter.value,
 		},
 	})
@@ -122,6 +131,9 @@ const assignmentFilter = computed(() => {
 	if (titleFilter.value) {
 		filters.title = ['like', `%${titleFilter.value}%`]
 	}
+	if (courseFilter.value) {
+		filters.course = courseFilter.value
+	}
 	if (typeFilter.value) {
 		filters.type = typeFilter.value
 	}
@@ -133,7 +145,7 @@ const assignmentFilter = computed(() => {
 
 const assignments = createListResource({
 	doctype: 'Assignment Activity',
-	fields: ['name', 'title', 'type', 'creation'],
+	fields: ['name', 'title', 'course', 'type', 'creation'],
 	orderBy: 'modified desc',
 	cache: ['assignments'],
 	transform(data) {
@@ -152,6 +164,12 @@ const assignmentColumns = computed(() => {
 			label: __('Title'),
 			key: 'title',
 			width: 2,
+		},
+		{
+			label: __('Course'),
+			key: 'course',
+			width: 1,
+			align: 'left',
 		},
 		{
 			label: __('Type'),
@@ -174,6 +192,19 @@ const assignmentTypes = computed(() => {
 		return {
 			label: __(type),
 			value: type,
+		}
+	})
+})
+
+const coursesListed = computed(() => {
+	if (!assignments.data) return []
+	let courses = Array.from(
+		new Set(assignments.data.map((assignment) => assignment.course))
+	)
+	return courses.map((course) => {
+		return {
+			label: course,
+			value: course,
 		}
 	})
 })

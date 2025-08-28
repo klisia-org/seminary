@@ -6,7 +6,7 @@
           <Breadcrumbs class="h-7" :items="breadcrumbs" />
           <div v-if="totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
             <Tooltip 
-              :text="__('Save only allowed when Total Points = 100')" placement="bottom">
+              :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
               <Button variant="subtle" class="ml-2">
                 <span>
                   {{ __('Adjust totals to save') }}
@@ -46,7 +46,7 @@
             <thead>
   <tr>
     <th class="p-2 border">{{ __('Title') }}</th>
-    <th class="p-2 border">{{ __('Assessment Criteria') }}</th>
+    <th class="p-2 border">{{ __('Assessment Type') }}</th>
     <th class="p-2 border">{{ __('Activity Selection') }}</th>
     <th class="p-2 border">{{ __('Extra Credit?') }}</th>
     <th class="p-2 border">{{ __('Points') }}</th>
@@ -71,13 +71,13 @@
       </td>
       <td class="p-2 border">
         <template v-if="criteria.type === 'Quiz'">
-          <Link v-model="criteria.quiz" doctype="Quiz" :label="__('Select a Quiz')" :required="true" :onCreate="(value, close) => redirectToForm()" />
+          <Link v-model="criteria.quiz" doctype="Quiz" :label="__('Select a Quiz')" :required="true" :filters="{ course: course.data.course }" :onCreate="(value, close) => redirectToForm()" />
         </template>
         <template v-else-if="criteria.type === 'Exam'">
-          <Link v-model="criteria.exam" doctype="Exam Activity" :label="__('Select an Exam')" :required="true" />
+          <Link v-model="criteria.exam" doctype="Exam Activity" :label="__('Select an Exam')" :required="true" :filters="{ course: course.data.course }" />
         </template>
         <template v-else-if="criteria.type === 'Assignment'">
-          <Link v-model="criteria.assignment" doctype="Assignment Activity" :label="__('Select an Assignment')" :required="true" :onCreate="(value, close) => redirectToForm()" />
+          <Link v-model="criteria.assignment" doctype="Assignment Activity" :label="__('Select an Assignment')" :required="true" :filters="{ course: course.data.course }" :onCreate="(value, close) => redirectToForm()" />
         </template>
         <template v-else>
           <p>Offline</p>

@@ -210,6 +210,8 @@ import OpenQuestion from '@/components/Modals/OpenQuestion.vue'
 import { showToast, updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
+import { examStore } from '@/stores/exam'
+
 
 const showOpenQuestionModal = ref(false)
 const currentQuestion = reactive({
@@ -223,7 +225,7 @@ const router = useRouter()
 const props = defineProps({
 	examID: {
 		type: String,
-		required: true,
+		required: false,
 	},
 })
 
@@ -240,6 +242,8 @@ const exam = reactive({
 })
 
 onMounted(() => {
+
+
 	if (
 		props.examID == 'new' &&
 		!user.data?.is_moderator &&
@@ -247,6 +251,15 @@ onMounted(() => {
 	) {
 		router.push({ name: 'Courses' })
 	}
+	if (props.examID === 'new') {
+	
+		if (examStore.prefillData.title) {
+       	 exam.title = examStore.prefillData.title; // Pre-fill the title if provided
+    	}
+		if (examStore.prefillData.course) {
+        exam.course = examStore.prefillData.course; // Pre-fill the course if provided
+    }
+}
 	if (props.examID !== 'new') {
 		examDetails.reload()
 	}
@@ -269,6 +282,7 @@ watch(
 	(newVal) => {
 		if (newVal) {
 			examDetails.reload()
+			examStore.clearPrefillData()
 		}
 	}
 )

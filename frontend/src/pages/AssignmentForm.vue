@@ -74,6 +74,7 @@ import {
 } from 'vue'
 import { showToast } from '@/utils'
 import { useRouter } from 'vue-router'
+import { examStore } from '@/stores/exam'
 
 const user = inject('$user')
 const router = useRouter()
@@ -81,7 +82,7 @@ const router = useRouter()
 const props = defineProps({
 	assignmentID: {
 		type: String,
-		required: true,
+		required: false,
 	},
 })
 
@@ -99,6 +100,15 @@ onMounted(() => {
 	) {
 		router.push({ name: 'Courses' })
 	}
+	if (props.assignmentID === 'new') {
+	
+		if (examStore.prefillData.title) {
+       	 model.title = examStore.prefillData.title; // Pre-fill the title if provided
+    	}
+		if (examStore.prefillData.course) {
+        model.course = examStore.prefillData.course; // Pre-fill the course if provided
+    }
+}
 	if (props.assignmentID !== 'new') {
 		assignment.reload()
 	}

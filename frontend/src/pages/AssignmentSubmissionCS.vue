@@ -126,7 +126,7 @@ const course = createResource({
 		course: props.courseName,
 	},
 	auto: true,
-}) //Neded for the breadcrumbs
+}) //Needed for the breadcrumbs
 
 const getAssignmentFilters = () => {
 	let filters = {

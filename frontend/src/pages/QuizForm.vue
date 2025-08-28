@@ -99,7 +99,7 @@
 						<FormControl
 							v-model="quiz.qbyquestion"
 							type="checkbox"
-							:label="__('Force student to ansswer a question before moving on? Each question will have its own page and a next button')"
+							:label="__('Force student to answer a question before moving on? Each question will have its own page and a next button')"
 						/>
 					</div>
 				</div>
@@ -117,7 +117,7 @@
 						<FormControl
 							v-if="quiz.shuffle_questions"
 							v-model="quiz.limit_questions_to"
-							:label="__('Limit Questions To (on shuffle)')"
+							:label="__('Limit Questions To (on shuffle). Leave as zero to shuffle all questions')"
 						/>
 					</div>
 				</div>
@@ -224,6 +224,7 @@ import Question from '@/components/Modals/Question.vue'
 import { showToast, updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
+import { examStore } from '@/stores/exam'
 
 const showQuestionModal = ref(false)
 const currentQuestion = reactive({
@@ -237,7 +238,7 @@ const router = useRouter()
 const props = defineProps({
 	quizID: {
 		type: String,
-		required: true,
+		required: false,
 	},
 })
 
@@ -264,6 +265,15 @@ onMounted(() => {
 	) {
 		router.push({ name: 'Courses' })
 	}
+	if (props.quizID === 'new') {
+	
+		if (examStore.prefillData.title) {
+       	 quiz.title = examStore.prefillData.title; // Pre-fill the title if provided
+    	}
+		if (examStore.prefillData.course) {
+        quiz.course = examStore.prefillData.course; // Pre-fill the course if provided
+    }
+}
 	if (props.quizID !== 'new') {
 		quizDetails.reload()
 	}
@@ -286,6 +296,7 @@ watch(
 	(newVal) => {
 		if (newVal) {
 			quizDetails.reload()
+			examStore.clearPrefillData()
 		}
 	}
 )

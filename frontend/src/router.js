@@ -65,7 +65,7 @@ const routes = [
 		component: () => import('@/pages/Quizzes.vue'),
 	},
 	{
-		path: '/quizzes/:quizID',
+		path: '/quizzes/:quizID?',
 		name: 'QuizForm',
 		component: () => import('@/pages/QuizForm.vue'),
 		props: true,
@@ -128,10 +128,10 @@ const routes = [
 		component: () => import('@/pages/Exams.vue'),
 	},
 	{
-		path: '/exams/:examID',
-		name: 'ExamForm',
-		component: () => import('@/pages/ExamForm.vue'),
-		props: true,
+  		path: '/exams/:examID?',
+  		name: 'ExamForm',
+  		component: () => import('@/pages/ExamForm.vue'),
+  		props: true,
 	},
 	{
 		path: '/exam/:examID',

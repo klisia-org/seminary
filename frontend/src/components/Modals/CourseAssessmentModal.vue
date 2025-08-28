@@ -10,6 +10,11 @@
           variant: 'solid',
           onClick: (close) => insertCriteria(close),
         },
+        {
+          label: 'Cancel',
+          variant: 'text',
+          onClick: (close) => close(),
+        },
       ],
     }"
   >
@@ -19,7 +24,7 @@
           v-model="criteria.title"
           :label="__('Title')"
           class="mb-4"
-          :required="false"
+          :required="true"
         />
         <Link
           v-model="criteria.assesscriteria_scac"
@@ -35,20 +40,24 @@
           v-model="criteria.quiz"
           doctype="Quiz"
           :label="__('Select a Quiz')"
-          :onCreate="(value, close) => redirectToForm()"
+          :filters="{ course: course?.data?.course }"
+          :onCreate="(value, close) => redirectToQuiz(value, close)"
         />
         <Link
           v-else-if="criteria.type === 'Exam'"
           v-model="criteria.exam"
           doctype="Exam Activity"
           :label="__('Select an Exam')"
+          :filters="{ course: course?.data?.course }"
+          :onCreate="(value, close) => redirectToExam(value, close)"
         />
         <Link
           v-else-if="criteria.type === 'Assignment'"
           v-model="criteria.assignment"
           doctype="Assignment Activity"
           :label="__('Select an Assignment')"
-          :onCreate="(value, close) => redirectToForm()"
+          :filters="{ course: course?.data?.course }"
+          :onCreate="(value, close) => redirectToAssignment(value, close)"
         />
         <template v-else>
           <p>Offline</p>
@@ -78,6 +87,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSettings } from '@/stores/settings'
 import { createDialog } from '@/utils/dialogs'
 import Link from '@/components/Controls/Link.vue'
+import { examStore } from '@/stores/exam'
 
 const $dialog = createDialog
 const route = useRoute()
@@ -93,7 +103,6 @@ const props = defineProps({
     required: true,
   },
 })
-
 
 const courseassess = reactive({
   title: '',
@@ -135,6 +144,66 @@ async function fetchType(criteria) {
       console.error('Error fetching type:', error);
     }
   }
+}
+const course = createResource({
+  url: 'seminary.seminary.utils.get_course_details',
+  cache: ['course', props.courseName],
+  params: {
+    course: props.courseName,
+  },
+  auto: true,
+})
+
+function redirectToExam(value, close) {
+  // Set the prefill data in store
+  examStore.setPrefillData({
+    title: criteria.title,
+    course: course?.data?.course,
+  })
+  // Navigate to the exam creation page
+  
+  router.push({
+    name: 'ExamForm',
+    params: { examID: 'new' },
+   
+  });
+  close();
+  console.log('Navigating to Exam creation page with prefill data:', examStore.prefillData);
+}
+
+
+function redirectToQuiz(value, close) {
+  // Set the prefill data in store
+  examStore.setPrefillData({
+    title: criteria.title,
+    course: course?.data?.course,
+  })
+  // Navigate to the quiz creation page
+
+  router.push({
+    name: 'QuizForm',
+    params: { quizID: 'new' },
+
+  });
+  close();
+  console.log('Navigating to Quiz creation page with prefill data:', examStore.prefillData);
+}
+
+const redirectToAssignment = (value, close) => {
+  // Set the prefill data in store
+  examStore.setPrefillData({
+    title: criteria.title,
+    course: course?.data?.course,
+  })
+  // Navigate to the assignment creation page
+
+  router.push({
+    name: 'AssignmentForm',
+    params: { assignmentID: 'new' },
+
+  });
+  close();
+  console.log('Navigating to Assignment creation page with prefill data:', examStore.prefillData);
 }
 
 const insertCriteria = () => {
