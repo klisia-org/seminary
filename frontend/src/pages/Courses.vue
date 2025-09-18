@@ -124,6 +124,7 @@ const cachedAcademicTerm = ref('');
 
 onMounted(() => {
   current_AcademicTerm.reload()
+  console.log("Current Academic Term on mount:", current_AcademicTerm.data);
   if (current_AcademicTerm.data?.title) {
     cachedAcademicTerm.value = current_AcademicTerm.data.title;
   

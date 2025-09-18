@@ -12,14 +12,13 @@
 import Sidebar from '@/components/AppSidebar.vue'
 // import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
-import { Toasts } from 'frappe-ui';
+// import { Toasts } from 'frappe-ui';
 import { Dialogs } from '@/utils/dialogs'
 import { usersStore } from '@/stores/user'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import Tiptap  from './components/Tiptap.vue'
-
 
 const screenSize = useScreenSize()
 let { userResource } = usersStore()

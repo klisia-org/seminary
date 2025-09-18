@@ -1,0 +1,47 @@
+File /home/drmrmelo/lms/apps/seminary/frontend/package.json
+
+
+Warnings :
+1 : the definition is not identified
+2 : the definition is not identified
+3 : the definition is not identified
+4 : the definition is not identified
+5 : the definition is not identified
+6 : the definition is not identified
+7 : the definition is not identified
+8 : the definition is not identified
+9 : the definition is not identified
+10 : the definition is not identified
+11 : the definition is not identified
+12 : the definition is not identified
+13 : the definition is not identified
+14 : the definition is not identified
+15 : the definition is not identified
+16 : the definition is not identified
+17 : the definition is not identified
+18 : the definition is not identified
+19 : the definition is not identified
+20 : the definition is not identified
+21 : the definition is not identified
+22 : the definition is not identified
+23 : the definition is not identified
+24 : the definition is not identified
+25 : the definition is not identified
+26 : the definition is not identified
+27 : the definition is not identified
+28 : the definition is not identified
+29 : the definition is not identified
+30 : the definition is not identified
+31 : the definition is not identified
+32 : the definition is not identified
+33 : the definition is not identified
+34 : the definition is not identified
+35 : the definition is not identified
+36 : the definition is not identified
+37 : the definition is not identified
+38 : the definition is not identified
+39 : the definition is not identified
+40 : the definition is not identified
+41 : the definition is not identified
+
+Your trace has 0 errors and 41 warnings.

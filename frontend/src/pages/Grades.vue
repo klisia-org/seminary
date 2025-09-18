@@ -25,10 +25,10 @@
 		<br>
 	  </div>
 	</div>
-    </div>
 	<div v-else>
 	  <MissingData message="No grades found" />
 	</div>
+  </div>
     <div v-else class="flex flex-col items-center justify-center">
 		<p class="text-lg font-bold text-gray-500">Individual Student Transcripts are only displayed for Students</p>
 	</div>

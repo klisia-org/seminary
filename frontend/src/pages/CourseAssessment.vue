@@ -150,7 +150,7 @@ import { showToast, updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
-import DateTimePicker from 'frappe-ui/src/components/DateTimePicker.vue'
+import DateTimePicker from 'frappe-ui/src/components/DatePicker/DateTimePicker.vue'
 
 
 const route = useRoute()

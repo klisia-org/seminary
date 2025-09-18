@@ -1,0 +1,1 @@
+input[type=radio]:checked{background-color:theme("colors.gray.900")!important;border-color:theme("colors.gray.900")!important;--tw-ring-color: theme("colors.gray.900") !important}
