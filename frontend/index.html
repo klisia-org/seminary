@@ -1,28 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/klisia_icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seminary ERP</title>
   </head>
   <body>
-    <div id="app">
-      	<div id="seo-content">
-				<h1>{{ meta.title }}</h1>
-				<p>
-					{{ meta.description }}
-				</p>
-				<a href="{{ meta.link }}">Know More</a>
-			</div>
-    </div>
-    <div id="modals"></div>
-    <div id="popovers"></div>
-
-    <script>
-      window.csrf_token = '{{ frappe.session.csrf_token }}'
-      document.getElementById('seo-content').style.display = 'none';
-    </script>
+    <div id="app"></div>
+		<script>window.csrf_token = '{{ frappe.session.csrf_token }}';</script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
