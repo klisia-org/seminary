@@ -18,7 +18,10 @@
     "@editorjs/simple-image": "^1.6.0",
     "@editorjs/table": "^2.4.4",
     "@internationalized/date": "^3.7.0",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.13",
+    "@tailwindcss/typography": "^0.5.18",
     "dayjs": "^1.11.13",
     "feather-icons": "^4.29.2",
     "frappe-ui": "^0.1.199",
@@ -30,7 +33,6 @@
     "showdown": "^2.1.0",
     "socket.io-client": "^4.8.1",
     "vite-plugin-icons": "^0.6.5",
-    "vite-plugin-vue2": "^2.0.3",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",
     "vuedraggable": "^2.24.3"
@@ -42,6 +44,6 @@
     "sass": "^1.92.1",
     "sass-embedded": "^1.86.3",
     "tailwindcss": "^4.1.13",
-    "vite": "^4.4.9"
+    "vite": "^5.4.20"
   }
 }
