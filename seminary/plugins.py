@@ -1,6 +1,6 @@
 """
 The plugins module provides various plugins to change the default
-behaviour some parts of the lms app.
+behaviour some parts of the Seminary app.
 
 A site specify what plugins to use using appropriate entries in the frappe
 hooks, written in the `hooks.py`.
@@ -81,12 +81,12 @@ class ProfileTab:
 
 class LiveCodeExtension(PageExtension):
 	def render_header(self):
-		livecode_url = frappe.get_value("LMS Settings", None, "livecode_url")
+		livecode_url = frappe.get_value("Seminary Settings", None, "livecode_url")
 		context = {"livecode_url": livecode_url}
 		return frappe.render_template("templates/livecode/extension_header.html", context)
 
 	def render_footer(self):
-		livecode_url = frappe.get_value("LMS Settings", None, "livecode_url")
+		livecode_url = frappe.get_value("Seminary Settings", None, "livecode_url")
 		context = {"livecode_url": livecode_url}
 		return frappe.render_template("templates/livecode/extension_footer.html", context)
 	

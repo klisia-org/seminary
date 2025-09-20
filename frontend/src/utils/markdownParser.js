@@ -8,6 +8,7 @@ export class Markdown {
 		this.config = config || {}
 		this.text = data.text || ''
 		this.readOnly = readOnly
+		this.placeholder = __("Type '/' for commands or select text to format")
 	}
 
 	static get isReadOnlySupported() {
@@ -83,6 +84,22 @@ export class Markdown {
 		}
 
 		return this.wrapper
+	}
+
+	_togglePlaceholder() {
+		const blocks = document.querySelectorAll(
+			'.cdx-block.ce-paragraph[data-placeholder]'
+		)
+		blocks.forEach((block) => {
+			if (block !== this.wrapper) {
+				delete block.dataset.placeholder
+			}
+		})
+		if (this.wrapper.innerHTML.trim() === '') {
+			this.wrapper.dataset.placeholder = this.placeholder
+		} else {
+			delete this.wrapper.dataset.placeholder
+		}
 	}
 
 	convertToHeader(event, value) {

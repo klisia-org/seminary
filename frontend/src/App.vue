@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import Sidebar from '@/components/AppSidebar.vue'
+// import Sidebar from '@/components/AppSidebar.vue'
 // import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
 // import { Toasts } from 'frappe-ui';
@@ -19,9 +19,11 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import Tiptap  from './components/Tiptap.vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const screenSize = useScreenSize()
-let { userResource } = usersStore()
+const { userResource } = usersStore()
 
 const Layout = computed(() => {
   if (screenSize.width < 1024) {
@@ -30,5 +32,10 @@ const Layout = computed(() => {
   return DesktopLayout
 })
 
+watch(userResource, () => {
+	if (userResource.data) {
+		posthogSettings.reload()
+	}
+})
 
 </script>

@@ -153,7 +153,7 @@ def validate_duplicate_student(students):
 	return None
 
 
-# LMS Utils
+# LMS Utils (Frontend)
 
 @frappe.whitelist(allow_guest=True)
 def get_user_info():

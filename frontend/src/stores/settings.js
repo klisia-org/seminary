@@ -13,7 +13,7 @@ export const useSettings = defineStore('settings', () => {
 
 
 	/* const onboardingDetails = createResource({
-		url: 'lms.lms.utils.is_onboarding_complete',
+		url: 'seminary.seminary.utils.is_onboarding_complete',
 		auto: isLoggedIn ? true : false,
 		cache: ['onboardingDetails'],
 	}) */
