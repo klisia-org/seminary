@@ -3,7 +3,7 @@
 		<div class="h-full flex-1">
 			<div class="flex h-screen text-base bg-surface-white">
 				<div
-					class="relative block min-h-0 flex-shrink-0 overflow-hidden hover:overflow-auto"
+					class="relative block h-full max-w-56"
 				>
 					<AppSidebar />
 				</div>

@@ -1,15 +1,16 @@
 <template>
 	<div
-	
 	  class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out"
 	  :class="isSidebarCollapsed ? 'w-12' : 'w-56'"
 	>
-	  <div class="flex flex-col overflow-hidden" >
-		<UserDropdown 
-			class="p-2"  
-			:isCollapsed="isSidebarCollapsed" 
-			:seminarySettings ="!seminarySettings.loading && seminarySettings.data"
-		/>
+	  <div class="flex flex-col overflow-hidden">
+		<div class="p-2 transition-all duration-300 ease-in-out"
+			:class="isSidebarCollapsed ? 'h-8 w-8' : 'h-16 w-16'">
+			<UserDropdown 
+				:isCollapsed="isSidebarCollapsed" 
+				:seminarySettings="!seminarySettings.loading && seminarySettings.data"
+			/>
+		</div>
 		<div class="flex flex-col overflow-y-auto">
 			<SidebarLink
 				:label="link.label"
@@ -37,37 +38,29 @@
 		</template>
 	  </SidebarLink>
 	</div>
-  </template>
-  
+</template>
 
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { LayoutDashboard,CalendarCheck,GraduationCap, Banknote, UserCheck, ArrowLeftToLine, BookOpen } from 'lucide-vue-next';
+import { LayoutDashboard, CalendarCheck, GraduationCap, Banknote, UserCheck, ArrowLeftToLine, BookOpen } from 'lucide-vue-next';
 import { usersStore } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const { userResource } = usersStore()
 const { user } = sessionStore()
 const isModerator = ref(false)
 const isInstructor = ref(false)
 
-
 const links = [
-	// {
-	// 	label: 'Dashboard',
-	// 	to: '/',
-	// 	icon: LayoutDashboard,
-	// },
 	{
 		label: 'Courses',
 		to: '/courses',
 		icon: BookOpen,
 	},
-	
 	{
 		label: 'Transcripts',
 		to: '/grades',
@@ -78,16 +71,12 @@ const links = [
 		to: '/fees',
 		icon: Banknote,
 	},
-
 ]
 
-const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false)
+const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false);
 
-// create a resource which call the function get_school_abbr_logo in api file using createResource
-const seminarySettings = createResource({	
+const seminarySettings = createResource({
 	url: 'seminary.seminary.api.get_school_abbr_logo',
 	auto: true,
-})
-
-
+});
 </script>

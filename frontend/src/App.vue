@@ -1,8 +1,10 @@
 <template>
 	<FrappeUIProvider>
-	<Sidebar />
 	<Layout>
+		
+		<div class="text-base">
 		<router-view :key="$route.fullPath" />
+		</div>
 	</Layout>
 	
 	<Dialogs /> <!-- Ensure this line is present -->
@@ -11,7 +13,7 @@
 </template>
 
 <script setup>
-import Sidebar from '@/components/AppSidebar.vue'
+// import Sidebar from '@/components/AppSidebar.vue'
 // import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
 import { FrappeUIProvider } from 'frappe-ui';
