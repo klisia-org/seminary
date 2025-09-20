@@ -1,21 +1,23 @@
 <template>
+	<FrappeUIProvider>
+	<Sidebar />
 	<Layout>
 		<router-view :key="$route.fullPath" />
 	</Layout>
 	
-	<Toasts />
 	<Dialogs /> <!-- Ensure this line is present -->
 	<Tiptap />
+	</FrappeUIProvider>
 </template>
 
 <script setup>
-// import Sidebar from '@/components/AppSidebar.vue'
+import Sidebar from '@/components/AppSidebar.vue'
 // import Navbar from '@/components/Navbar.vue';
 // import { RouterView } from 'vue-router';
-// import { Toasts } from 'frappe-ui';
+import { FrappeUIProvider } from 'frappe-ui';
 import { Dialogs } from '@/utils/dialogs'
 import { usersStore } from '@/stores/user'
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed} from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import Tiptap  from './components/Tiptap.vue'
@@ -32,10 +34,5 @@ const Layout = computed(() => {
   return DesktopLayout
 })
 
-watch(userResource, () => {
-	if (userResource.data) {
-		posthogSettings.reload()
-	}
-})
 
 </script>

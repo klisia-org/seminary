@@ -8,38 +8,41 @@ import { usersStore } from './stores/user'
 import translationPlugin from './translation'
 import { initSocket } from './socket'
 import dayjs from '@/utils/dayjs'
+import { createDialog } from '@/utils/dialogs'
 
 
 import {
+
   Button,
   Card,
   Input,
   setConfig,
   frappeRequest,
   resourcesPlugin,
+  pageMetaPlugin
 } from 'frappe-ui'
 
 const pinia = createPinia()
 let app = createApp(App)
 
-
-
 setConfig('resourceFetcher', frappeRequest)
+
 
 app.use(router)
 app.use(resourcesPlugin)
 app.use(pinia)
+app.use(pageMetaPlugin)
 app.use(translationPlugin)
 
 app.component('Button', Button)
 app.component('Card', Card)
 app.component('Input', Input)
-
+app.provide('$dayjs', dayjs)
+app.provide('$socket', initSocket())
 app.mount('#app')
 
 const { userResource, allUsers } = usersStore()
-app.provide('$dayjs', dayjs)
-app.provide('$socket', initSocket())
 app.provide('$user', userResource)
 app.provide('$allUsers', allUsers)
 app.config.globalProperties.$user = userResource
+app.config.globalProperties.$dialog = createDialog

@@ -107,6 +107,8 @@ let isInstructor = user.data.is_instructor
 let isSystemManager = user.data.is_system_manager
 
 
+const cachedAcademicTerm = ref('');
+
 const current_AcademicTerm = createResource({
   url: "frappe.client.get_value",
   params: {
@@ -116,24 +118,20 @@ const current_AcademicTerm = createResource({
       iscurrent_acterm: 1
     }
   },
-  auto: true
-
-})
-
-const cachedAcademicTerm = ref('');
-
-onMounted(() => {
-  current_AcademicTerm.reload()
-  console.log("Current Academic Term on mount:", current_AcademicTerm.data);
-  if (current_AcademicTerm.data?.title) {
-    cachedAcademicTerm.value = current_AcademicTerm.data.title;
-  
+  auto: true,
+  onSuccess: (data) => {
+    if (data?.title) {
+      cachedAcademicTerm.value = data.title;
+      console.log("Current Academic Term on success:", data.title);
+    } else {
+      console.log("Current Academic Term: undefined");
+    }
   }
 });
 
-
-
-
+onMounted(() => {
+  current_AcademicTerm.reload();
+});
 
 watch(
   () => current_AcademicTerm.data,
@@ -275,9 +273,16 @@ watch(filteredCourses, (newCourses) => {
 
 
 
+let isInitialLoad = true;
+
 watch(
   () => filteredCourses,
   (newFilteredCourses) => {
+    if (isInitialLoad) {
+      isInitialLoad = false; // Skip the first execution
+      return;
+    }
+
     if (!Array.isArray(newFilteredCourses)) {
       console.error("newFilteredCourses is not an array:", newFilteredCourses);
       newFilteredCourses = [];
@@ -297,7 +302,6 @@ watch(
   },
   { immediate: true }
 );
-
 </script>
 
 <style>
