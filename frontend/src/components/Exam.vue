@@ -121,9 +121,8 @@
 </template>
 
 <script setup>
-import {Badge, Button, call, createResource, TextEditor, FormControl, frappeRequest} from 'frappe-ui'
+import {Badge, Button, call, createResource, TextEditor, FormControl, frappeRequest, toast} from 'frappe-ui'
 import { ref, watch, reactive, inject, computed, toRaw, onMounted } from 'vue'
-import { createToast, showToast } from '@/utils/'
 import { CheckCircle, XCircle, MinusCircle, SquarePen } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
@@ -377,11 +376,11 @@ try {
     time_taken: timeTaken,
   });
 
-  showToast('Success', 'Your exam was submitted successfully.', 'check');
+  toast.success(__('Your exam was submitted successfully.')) ;
   clearInterval(timerInterval);
 } catch (error) {
   console.error('Error during exam submission:', error);
-  showToast('Error', 'Failed to submit the exam.', 'x');
+  toast.error(err.messages?.[0] || err)
 }
 };
 

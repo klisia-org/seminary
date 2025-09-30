@@ -130,7 +130,7 @@
 import { BookOpen, Users, Star, GraduationCap } from 'lucide-vue-next'
 import { computed, inject } from 'vue'
 import { Button, createResource, Tooltip } from 'frappe-ui'
-import { showToast, formatAmount } from '@/utils/'
+import { formatAmount } from '@/utils/'
 
 import { useRouter } from 'vue-router'
 
@@ -154,11 +154,7 @@ const video_link = computed(() => {
 
 function enrollStudent() {
 	if (!user.data) {
-		showToast(
-			__('Please Login'),
-			__('You need to login first to enroll for this course'),
-			'alert-circle'
-		)
+		toast.success(__('You need to login to access this course'))
 		setTimeout(() => {
 			window.location.href = `/login?redirect-to=${window.location.pathname}`
 		}, 2000)

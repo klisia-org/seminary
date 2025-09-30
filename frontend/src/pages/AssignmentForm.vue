@@ -63,6 +63,7 @@ import {
 	createResource,
 	FormControl,
 	TextEditor,
+	toast
 } from 'frappe-ui'
 import {
 	computed,
@@ -72,7 +73,6 @@ import {
 	reactive,
 	watch,
 } from 'vue'
-import { showToast } from '@/utils'
 import { useRouter } from 'vue-router'
 import { examStore } from '@/stores/exam'
 
@@ -143,11 +143,11 @@ const newAssignment = createResource({
 		}
 	},
 	onSuccess(data) {
-		showToast(__('Success'), __('Assignment saved successfully'), 'check')
+		toast.success(__('Assignment saved successfully'))
 		router.push({ name: 'AssignmentForm', params: { assignmentID: data.name } })
 	},
 	onError(err) {
-		showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+		toast.error(err.messages?.[0] || err)
 	},
 })
 
@@ -163,11 +163,11 @@ const saveAssignment = () => {
 			},
 			{
 				onSuccess(data) {
-					showToast(__('Success'), __('Assignment saved successfully'), 'check')
+					toast.success(__('Assignment saved successfully'))					
 					assignment.reload()
 				},
 				onError(err) {
-					showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+					toast.error(err.messages?.[0] || err)
 				},
 			}
 		)

@@ -1,27 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/assets/seminary/frontend/klisia_icon.png" />
+    <link rel="icon" type="image/png" href="/assets/seminary/images/klisia_icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seminary ERP</title>
-    <script type="module" crossorigin src="/assets/seminary/frontend/assets/index-BxfdauWF.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/index-DRn0WuIX.css">
+    <script type="module" crossorigin src="/assets/seminary/frontend/assets/index-Bp-UPm00.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/index-B3iuwHMq.css">
   </head>
   <body>
-    <div id="app">
-      	<div id="seo-content">
-				<h1>{{ "Seminary ERP" }}</h1>
-
-			</div>
-    </div>
-    <div id="modals"></div>
-    <div id="popovers"></div>
-
-    <script>
-      window.csrf_token = '{{ frappe.session.csrf_token }}'
-      document.getElementById('seo-content').style.display = 'none';
-    </script>
+    <div id="app"></div>
+		<script>window.csrf_token = '{{ frappe.session.csrf_token }}';</script>
   
           <script>
               {% for key in boot %}

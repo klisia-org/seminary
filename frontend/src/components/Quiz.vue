@@ -319,9 +319,9 @@
 	</div>
 </template>
 <script setup>
-import {Badge, Button, call, createResource, ListView, TextEditor, FormControl} from 'frappe-ui'
+import {Badge, Button, call, createResource, ListView, TextEditor, FormControl, toast} from 'frappe-ui'
 import { ref, watch, reactive, inject, computed } from 'vue'
-import { createToast, showToast } from '@/utils/'
+import { createToast } from '@/utils/'
 import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
@@ -795,7 +795,7 @@ const createSubmission = () => {
 				const errorTitle = err?.message || ''
 				if (errorTitle.includes('MaximumAttemptsExceededError')) {
 					const errorMessage = err.messages?.[0] || err
-					showToast(('Error'), (errorMessage), 'x')
+					toast.error(err.messages?.[0] || err)
 					setTimeout(() => {
 						window.location.reload()
 					}, 3000)

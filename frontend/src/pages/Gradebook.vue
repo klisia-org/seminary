@@ -126,7 +126,7 @@
 </template>
 
 <script setup>
-import { Button, Breadcrumbs, createResource, createDocumentResource,  Tooltip, Dialog, call } from 'frappe-ui'
+import { Button, Breadcrumbs, createResource, createDocumentResource,  Tooltip, Dialog, call, toast } from 'frappe-ui'
 import { getCurrentInstance, inject, ref, computed, watch } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
@@ -142,7 +142,6 @@ import {
 	Trash2,
 	FileUp,
 } from 'lucide-vue-next'
-import { showToast } from '@/utils'
 import { useRoute } from 'vue-router';
 const route = useRoute();
 const props = defineProps({
@@ -298,11 +297,10 @@ const saveCell = async (student, assessment) => {
 
     // Remove the cell from the changedCells tracker
     delete changedCells.value[cell.name];
-
-    showToast(__('Success'), __('Changes saved successfully'), 'check');
+    toast.success(__('Grade saved successfully'));
   } catch (error) {
     console.error('Error saving cell:', error);
-    showToast('Error', error.messages?.[0] || error, 'x');
+    toast.error(err.messages?.[0] || err)
   }
 };
 

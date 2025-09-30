@@ -7,9 +7,10 @@
     "dev": "vite --config vite.config.js",
     "build": "vite build --config vite.config.js --base=/assets/seminary/frontend/ && yarn copy-html-entry",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/frontend.html"
+    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
   },
   "dependencies": {
+    "@iconify/json": "^2.2.252",
     "@editorjs/embed": "^2.7.6",
     "@editorjs/header": "^2.8.8",
     "@editorjs/inline-code": "^1.5.1",
@@ -24,7 +25,7 @@
     "@tailwindcss/typography": "^0.5.18",
     "dayjs": "^1.11.13",
     "feather-icons": "^4.29.2",
-    "frappe-ui": "^0.1.199",
+    "frappe-ui": "^0.1.200",
     "highlight.js": "^11.11.1",
     "hljs": "^6.2.3",
     "lucide-vue-next": "^0.479.0",
@@ -32,6 +33,7 @@
     "pinia": "^3.0.1",
     "showdown": "^2.1.0",
     "socket.io-client": "^4.8.1",
+    "tailwindcss": "3.4.15",
     "vite-plugin-icons": "^0.6.5",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",
@@ -43,7 +45,6 @@
     "postcss": "^8.5.6",
     "sass": "^1.92.1",
     "sass-embedded": "^1.86.3",
-    "tailwindcss": "^4.1.13",
     "vite": "^5.4.20"
   }
 }

@@ -7,8 +7,11 @@ export const usersStore = defineStore('users', () => {
 		url: 'seminary.seminary.api.get_user_info',
 		cache: "User",
 		initialData: [],
+		onSuccess: (data) => {
+			console.log('User store: userResource loaded with data:', data)
+		},
 		onError(error) {
-			console.log(error)
+			console.log('User store error:', error)
 			console.log("aasass")
 			console.log(error.exc_type)
 			if (error && error.exc_type === 'AuthenticationError') {

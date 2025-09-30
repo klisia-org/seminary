@@ -152,8 +152,20 @@ def validate_duplicate_student(students):
 
 	return None
 
+def get_telemetry_boot_info():
+	POSTHOG_PROJECT_FIELD = "posthog_project_id"
+	POSTHOG_HOST_FIELD = "posthog_host"
 
-# LMS Utils (Frontend)
+	if not frappe.conf.get(POSTHOG_HOST_FIELD) or not frappe.conf.get(POSTHOG_PROJECT_FIELD):
+		return {}
+
+	return {
+		"posthog_host": frappe.conf.get(POSTHOG_HOST_FIELD),
+		"posthog_project_id": frappe.conf.get(POSTHOG_PROJECT_FIELD),
+		"enable_telemetry": 1,
+	}
+
+# Seminary Utils (Frontend)
 
 @frappe.whitelist(allow_guest=True)
 def get_user_info():
@@ -529,7 +541,9 @@ def get_lesson(course, chapter, lesson):
 			"youtube",
 			"quiz_id",
 			"exam",
-			"assessment_criteria",
+			"assessment_criteria_quiz",
+			"assessment_criteria_assignment",
+			"assessment_criteria_exam",
 			"assignment_id",
 			"course_sc",
 			"content",
@@ -615,7 +629,9 @@ def get_lesson_details(chapter, progress=False):
 				"body",
 				"creation",
 				"youtube",
-				"assessment_criteria",
+				"assessment_criteria_quiz",
+				"assessment_criteria_assignment",
+				"assessment_criteria_exam",
 				"quiz_id",
 				"assignment_id",
 				"exam",
@@ -808,7 +824,9 @@ def get_lesson_creation_details(course, chapter, lesson):
 				"content",
 				"instructor_notes",
 				"instructor_content",
-				"assessment_criteria",
+				"assessment_criteria_quiz",
+				"assessment_criteria_assignment",
+				"assessment_criteria_exam",
 				"youtube",
 				"quiz_id",
 				"assignment_id",

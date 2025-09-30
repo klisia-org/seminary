@@ -195,6 +195,7 @@ import {
 	ListRowItem,
 	ListSelectBanner,
 	Button,
+	toast,
 } from 'frappe-ui'
 import {
 	computed,
@@ -207,7 +208,7 @@ import {
 } from 'vue'
 import { Plus, Trash2 } from 'lucide-vue-next'
 import OpenQuestion from '@/components/Modals/OpenQuestion.vue'
-import { showToast, updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import { examStore } from '@/stores/exam'
@@ -348,14 +349,14 @@ const createExam = () => {
 		{},
 		{
 			onSuccess(data) {
-				showToast(__('Success'), __('Exam created successfully'), 'check')
+				toast.success(__('Course created successfully'));
 				router.push({
 					name: 'ExamForm',
 					params: { examID: data.name },
 				})
 			},
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)
@@ -367,10 +368,10 @@ const updateExam = () => {
 		{
 			onSuccess(data) {
 				exam.total_points = data.total_points
-				showToast(__('Success'), __('Exam updated successfully'), 'check')
+				toast.success(__('Exam updated successfully'));
 			},
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)
@@ -436,7 +437,7 @@ const deleteQuestions = (selections, unselectAll) => {
 		},
 		{
 			onSuccess() {
-				showToast(__('Success'), __('Questions deleted successfully'), 'check')
+				toast.success(__('Questions deleted successfully'));
 				examDetails.reload()
 				unselectAll()
 			},

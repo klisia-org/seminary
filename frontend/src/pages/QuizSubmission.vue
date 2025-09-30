@@ -79,10 +79,11 @@ import {
 	FormControl,
 	Button,
 	Badge,
+	toast
 } from 'frappe-ui'
 import { computed, onBeforeUnmount, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from '@/utils'
+
 
 const router = useRouter()
 const user = inject('$user')
@@ -144,7 +145,7 @@ const saveSubmission = () => {
 		{},
 		{
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)

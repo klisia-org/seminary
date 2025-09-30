@@ -7,8 +7,8 @@ export function initSocket(namespace = '') {
   let host = window.location.hostname
   let protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 
-  // Use the socketio_port if defined; otherwise, default to an empty string so that the URL uses the standard port.
-  let port = socketio_port ? `:${socketio_port}` : ''
+  // Use the socketio_port if defined; otherwise, default to 9000 (standard Frappe socketio port)
+  let port = socketio_port ? `:${socketio_port}` : ':9000'
 
   // Dynamically construct the WebSocket URL with the namespace
   let url = `${protocol}://${host}${port}${namespace ? `/${namespace}` : ''}`

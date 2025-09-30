@@ -142,11 +142,11 @@
 </template>
 
 <script setup>
-import { createResource, Breadcrumbs, Button, FormControl, Tooltip } from 'frappe-ui'
+import { createResource, Breadcrumbs, Button, FormControl, Tooltip, toast } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2 } from 'lucide-vue-next'
-import { showToast, updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
@@ -344,10 +344,10 @@ async function removeCriteria(index) {
       // Call the deleteAssessmentResource to delete the record from the backend
       await deleteAssessmentResource.reload([criteria.name]);
       console.log(`Record with name ${criteria.name} deleted from backend.`);
-      showToast('Success', 'Assessment criteria deleted successfully', 'check');
+      toast.success(__('Assessment criteria deleted successfully'));
     } catch (error) {
       console.error('Error deleting assessment criteria:', error);
-      showToast('Error', 'Failed to delete assessment criteria', 'error');
+      toast.error(__('Failed to delete assessment criteria'));
       return; // Stop further execution if backend deletion fails
     }
   }
@@ -404,7 +404,7 @@ function validateCriteria() {
 
 function submitCourseAssessment() {
   if (!validateCriteria()) {
-    showToast('Error', 'Please fill in all required fields', 'error');
+    toast.error(__('Please fill in all required fields'));
     return;
   }
 
@@ -423,7 +423,7 @@ function submitCourseAssessment() {
     .then(data => {
       console.log('Success:', data);
       if (data.message) {
-        showToast('Success', 'Course updated successfully', 'check');
+        toast.success(__('Course updated successfully'));
       }
     })
     .catch((error) => {

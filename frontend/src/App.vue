@@ -19,11 +19,12 @@
 import { FrappeUIProvider } from 'frappe-ui';
 import { Dialogs } from '@/utils/dialogs'
 import { usersStore } from '@/stores/user'
-import { computed} from 'vue'
+import { computed, watch} from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import Tiptap  from './components/Tiptap.vue'
 import { useRouter } from 'vue-router'
+import { posthogSettings } from '@/telemetry'
 
 const router = useRouter()
 const screenSize = useScreenSize()
@@ -36,5 +37,10 @@ const Layout = computed(() => {
   return DesktopLayout
 })
 
+watch(userResource, () => {
+	if (userResource.data) {
+		posthogSettings.reload()
+	}
+})
 
 </script>

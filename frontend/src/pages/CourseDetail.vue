@@ -41,6 +41,7 @@
 							:title="('Course Outline')"
 							:courseName="course.data.name"
 							:showOutline="true"
+							:allowEdit="canEditOutline"
 						/>
 					</div>
 				</div>
@@ -94,6 +95,8 @@ const props = defineProps({
 })
 const showAnnouncementModal = ref(false)
 
+console.log("CourseName prop:", props.courseName)
+
 const course = createResource({
 	url: 'seminary.seminary.utils.get_course_details',
 	cache: ['course', props.courseName],
@@ -103,6 +106,7 @@ const course = createResource({
 	auto: true,
 })
 console.log(course)
+console.log("Course props:", props.courseName)
 
 const students = createResource({
 	url: 'seminary.seminary.utils.get_roster',
@@ -121,6 +125,15 @@ console.log("Student Emails:", studentEmails.value)
 const openAnnouncementModal = () => {
 	showAnnouncementModal.value = true
 }
+
+const canEditOutline = computed(() => {
+	const roles = user?.data || {}
+	return Boolean(
+		roles.is_moderator ||
+		roles.is_instructor ||
+		roles.is_evaluator
+	)
+})
 
 const breadcrumbs = computed(() => {
 	let items = [{ label: 'Courses', route: { name: 'Courses' } }]

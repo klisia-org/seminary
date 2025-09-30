@@ -105,10 +105,9 @@
 	</Dialog>
 </template>
 <script setup>
-import { Dialog, FormControl, TextEditor, createResource } from 'frappe-ui'
+import { Dialog, FormControl, TextEditor, createResource, toast } from 'frappe-ui'
 import { computed, watch, reactive, ref } from 'vue'
 import Link from '@/components/Controls/Link.vue'
-import { showToast } from '@/utils'
 
 const show = defineModel()
 const quiz = defineModel('quiz')
@@ -246,7 +245,7 @@ const addQuestion = (close) => {
 					)
 				},
 				onError(err) {
-					showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+					toast.error(err.messages?.[0] || err)
 				},
 			}
 		)
@@ -261,12 +260,12 @@ const addQuestionRow = (question, close) => {
 		{
 			onSuccess() {
 				show.value = false
-				showToast(__('Success'), __('Question added successfully'), 'check')
+				toast.success(__('Question added successfully'))
 				quiz.value.reload()
 				close()
 			},
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+				toast.error(err.messages?.[0] || err)
 				close()
 			},
 		}
@@ -311,11 +310,7 @@ const updateQuestion = (close) => {
 					{
 						onSuccess() {
 							show.value = false
-							showToast(
-								__('Success'),
-								__('Question updated successfully'),
-								'check'
-							)
+							toast.success(__('Question updated successfully'))
 							quiz.value.reload()
 							close()
 						},
@@ -323,7 +318,7 @@ const updateQuestion = (close) => {
 				)
 			},
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)

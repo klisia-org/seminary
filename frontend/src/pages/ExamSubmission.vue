@@ -218,11 +218,11 @@ import {
 	FormControl,
 	Button,
 	Badge,
-	TextEditor
+	TextEditor,
+  toast
 } from 'frappe-ui'
 import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from '@/utils'
 import Discussions from '@/components/Discussions.vue'
 import ExamQuestionEditor  from '@/components/ExamQuestionEditor.vue'
 import { Check, X } from 'lucide-vue-next'
@@ -304,7 +304,7 @@ const submisisonDetails = createDocumentResource({
         submisisonDetails.isDirty = false;
 
         // Show a success message
-        showToast(__('Success'), __('Submission saved successfully'), 'check-circle');
+        toast.success(__('Submission saved successfully'));
       } catch (err) {
         // Handle errors
         console.error('Error saving submission:', err);
@@ -429,10 +429,10 @@ const saveSubmission = async () => {
   try {
     console.log('Saving submission:', submisisonDetails.doc); // Debugging log
     await submisisonDetails.save.submit(); // Save the document
-    showToast(__('Success'), __('Submission saved successfully'), 'check');
+    toast.success(__('Submission saved successfully'));
   } catch (err) {
     console.error('Error saving submission:', err); // Debugging log
-    showToast(__('Error'), __(err.messages?.[0] || 'An error occurred while saving'), 'x');
+    toast.error(err.messages?.[0] || err);
   }
 };
 

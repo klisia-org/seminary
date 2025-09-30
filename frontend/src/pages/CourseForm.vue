@@ -155,6 +155,7 @@ import {
 	createResource,
 	FormControl,
 	FileUploader,
+	toast,
 } from 'frappe-ui'
 import {
 	inject,
@@ -166,7 +167,7 @@ import {
 	watch,
 	getCurrentInstance,
 } from 'vue'
-import { showToast, updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import { Image, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
@@ -311,6 +312,7 @@ const submitCourse = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': window.csrf_token,
       },
       body: JSON.stringify({
         course: courseResource.data.name,
@@ -326,15 +328,15 @@ const submitCourse = () => {
       .then((data) => {
         // Check success in the nested message object
         if (data.message && data.message.success) {
-          showToast('Success', 'Course updated successfully', 'check');
+          toast.success(__('Course updated successfully'));
         } else {
-          showToast('Error', data.message?.message || 'An error occurred', 'x');
+          toast.error(err.messages?.[0] || err);
         }
       })
       .catch((error) => {
         console.error('Fetch error:', error);
         const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error.toString();
-        showToast('Error', errorMessage || 'An error occurred', 'x');
+        toast.error( errorMessage || __('An error occurred'));
       });
   }
 };

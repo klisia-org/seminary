@@ -79,10 +79,10 @@ import {
   Button,
   createResource,
   Dialog,
-  FormControl
+  FormControl,
+  toast
 } from 'frappe-ui'
 import { reactive, watch } from 'vue'
-import { showToast } from '@/utils/'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettings } from '@/stores/settings'
 import { createDialog } from '@/utils/dialogs'
@@ -218,14 +218,13 @@ const insertCriteria = () => {
     })
     .then(response => response.json())
     .then(data => {
-     
-      showToast('Success', 'Course Assessment added successfully', 'check');
+      toast.success(__('Course Assessment added successfully'))
       emit('assessment-saved');
       close();
     })
     .catch(error => {
       console.error('Error:', error)
-      showToast('Failed to add Course Assessment', 'error')
+      toast.error(err.messages?.[0] || err)
     })
   }
 }

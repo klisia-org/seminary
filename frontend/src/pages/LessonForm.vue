@@ -81,7 +81,7 @@
 	</div>
 </template>
 <script setup>
-import { Breadcrumbs, Button, createResource, FormControl } from 'frappe-ui'
+import { Breadcrumbs, Button, createResource, FormControl, toast } from 'frappe-ui'
 import {
 	computed,
 	reactive,
@@ -436,7 +436,7 @@ const createNewLesson = () => {
 					{
 						onSuccess() {
 							capture('lesson_created')
-							showToast('Success', 'Lesson created successfully', 'check')
+							toast.success(__('Lesson created successfully'));
 							/* if (!settingsStore.onboardingDetails.data?.is_onboarded) {
 								settingsStore.onboardingDetails.reload()
 							} */
@@ -446,7 +446,7 @@ const createNewLesson = () => {
 				)
 			},
 			onError(err) {
-				showToast('Error', err.message, 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)
@@ -463,11 +463,11 @@ const editCurrentLesson = () => {
 			},
 			onSuccess() {
 				showSuccessMessage
-					? showToast('Success', 'Lesson updated successfully', 'check')
+					? toast.success(__('Lesson updated successfully'))
 					: ''
 			},
 			onError(err) {
-				showToast('Error', err.message, 'x')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)

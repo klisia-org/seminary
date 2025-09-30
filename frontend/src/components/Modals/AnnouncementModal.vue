@@ -44,9 +44,8 @@
 </template>
 
 <script setup>
-import { Dialog, Input, TextEditor, createResource } from 'frappe-ui'
+import { Dialog, Input, TextEditor, createResource, toast } from 'frappe-ui'
 import { reactive } from 'vue'
-import { showToast } from '@/utils/'
 
 const show = defineModel()
 
@@ -96,14 +95,10 @@ const makeAnnouncement = (close) => {
 			},
 			onSuccess() {
 				close()
-				showToast(
-					__('Success'),
-					__('Announcement has been sent successfully'),
-					'check'
-				)
+				toast.success(__('Announcement has been sent successfully'))
 			},
 			onError(err) {
-				showToast(__('Error'), __(err.messages?.[0] || err), 'alert-circle')
+				toast.error(err.messages?.[0] || err)
 			},
 		}
 	)

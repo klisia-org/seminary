@@ -1,12 +1,16 @@
 <template>
-	<div class="text-base">
+		<div class="text-base">
 			<div class="grid grid-cols-[70%,30%] mb-4 px-2">
 				<div class="font-semibold text-lg leading-5 text-ink-gray-9">
 					<!-- {{ (course_title) }} -->
 				</div>
-				<Button size="sm"  @click="openChapterModal()">
-				{{ __('Add Chapter') }}
-			</Button>
+				<Button
+					size="sm"
+					@click="openChapterModal()"
+					v-if="props.allowEdit"
+				>
+					{{ __('Add Chapter') }}
+				</Button>
 			</div>
 			<div
 				:class="{
@@ -19,7 +23,7 @@
 					:key="chapter.name"
 					:defaultOpen="openChapterDetail(chapter.idx)"
 				>
-					<DisclosureButton ref="" class="flex items-center w-full p-2 group">
+					<DisclosureButton ref="" class="flex w-full items-center p-2 group">
 						<ChevronRight
 							:class="{
 								'rotate-90 transform duration-200': open,
@@ -30,100 +34,145 @@
 							class="h-4 w-4 text-ink-gray-9 stroke-1"
 						/>
 						<div
-							class="text-base text-left text-ink-gray-9 font-medium leading-5 ml-2"
+							class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9"
 							@click="redirectToChapter(chapter)"
 						>
 							{{ chapter.chapter_title }}
 						</div>
-						<div class="flex ml-auto space-x-4">
-						<Tooltip :text="__('Edit Chapter')" placement="bottom">
-							<FilePenLine
-								
-								@click.prevent="openChapterModal(chapter)"
-								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
-							/>
-						</Tooltip>
-						<Tooltip :text="__('Delete Chapter')" placement="bottom">
-							<Trash2
-								
-								@click.prevent="trashChapter(chapter.name)"
-								class="h-4 w-4 text-red-500 invisible group-hover:visible"
+						<div v-if="props.allowEdit" class="ml-auto flex space-x-4">
+							<Tooltip :text="__('Edit Chapter')" placement="bottom">
+								<FilePenLine
+									@click.prevent="openChapterModal(chapter)"
+									class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible"
 								/>
-							
-						</Tooltip>
-					</div>
+							</Tooltip>
+							<Tooltip :text="__('Delete Chapter')" placement="bottom">
+								<Trash2
+									@click.prevent="trashChapter(chapter.name)"
+									class="h-4 w-4 text-red-500 invisible group-hover:visible"
+								/>
+							</Tooltip>
+						</div>
 					</DisclosureButton>
 					<DisclosurePanel v-if="!chapter.is_scorm_package">
 						<div
-							v-for="lesson in chapter.lessons"
+							v-for="(lesson, lessonIndex) in chapter.lessons"
 							:key="lesson.name"
-							class="outline-lesson pl-8 py-2 pr-4 text-ink-gray-9"
-							:class="isActiveLesson(lesson.number) ? 'bg-surface-selected' : ''"
+							class="lesson-wrapper"
 						>
+							<div
+								v-if="props.allowEdit"
+								class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
+								@dragover.prevent="onDragOver($event)"
+								@drop.prevent="onDrop($event, chapter, lessonIndex)"
+							></div>
+							<div
+								class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-white p-4 transition hover:border-outline-gray-3"
+								:class="{
+									'bg-surface-selected': isActiveLesson(lesson.number),
+									'cursor-grab': props.allowEdit,
+								}"
+								:draggable="props.allowEdit"
+								@dragstart="onDragStart($event, chapter, lesson, lessonIndex)"
+								@dragend="onDragFinish"
+							>
+								<div class="flex items-start gap-3">
+									<div v-if="props.allowEdit">
+										<Tooltip :text="__('Delete Lesson')" placement="bottom">
+											<button
+												type="button"
+												class="rounded-md p-1 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50"
+												@click.prevent="trashLesson(lesson.name, chapter.name)"
+											>
+												<Trash2 class="h-4 w-4" />
+											</button>
+										</Tooltip>
+									</div>
+									<router-link
+										class="flex-1"
+										:to="{
+											name: 'Lesson',
+											params: {
+												courseName: courseName,
+												chapterNumber: lesson.number.split('.')[0],
+												lessonNumber: lesson.number.split('.')[1],
+											},
+										}"
+									>
+										<div class="flex flex-col items-start gap-2 text-sm leading-5">
+											<div class="flex items-center gap-2">
+												<MonitorPlay
+													v-if="lesson.icon === 'icon-youtube'"
+													class="h-4 w-4 stroke-1"
+												/>
+												<HelpCircle
+													v-else-if="lesson.icon === 'icon-quiz'"
+													class="h-4 w-4 stroke-1"
+												/>
+												<BookOpenCheck
+													v-else-if="lesson.icon === 'icon-exam'"
+													class="h-4 w-4 stroke-1"
+												/>
+												<FileUp
+													v-else-if="lesson.icon === 'icon-assignment'"
+													class="h-4 w-4 stroke-1"
+												/>
+												<FileText
+													v-else
+													class="h-4 w-4 text-ink-gray-7 stroke-1"
+												/>
+												<span>{{ lesson.lesson_title }}</span>
+												<Check
+													v-if="lesson.is_complete"
+													class="h-4 w-4 text-green-700"
+												/>
+											</div>
+											<div
+												v-if="lesson.preview"
+												class="w-full rounded-md bg-[#E6F4FF] p-2"
+											>
+												{{ lesson.preview }}
+											</div>
+											<div
+												v-if="lesson.due_date"
+												class="rounded-md bg-[#E6F7F4] p-2"
+											>
+												{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', { dateStyle: 'medium' }).format(new Date(lesson.due_date)) }}
+											</div>
+										</div>
+									</router-link>
+									<div v-if="props.allowEdit" class="ml-auto hidden items-center group-hover:flex">
+										<GripVertical class="h-4 w-4 text-ink-gray-5" aria-hidden="true" />
+									</div>
+								</div>
+							</div>
+						</div>
+						<div
+							v-if="props.allowEdit"
+							class="ml-8 mr-4 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
+							@dragover.prevent="onDragOver($event)"
+							@drop.prevent="onDrop($event, chapter, chapter.lessons?.length || 0)"
+						>
+							<span v-if="chapter.lessons?.length">{{ __('Drop here to move to the end of this chapter') }}</span>
+							<span v-else>{{ __('Drop a lesson here to start this chapter') }}</span>
+						</div>
+						<div v-if="props.allowEdit" class="flex mt-2 mb-4 pl-8">
 							<router-link
+								v-if="!chapter.is_scorm_package"
 								:to="{
-									name: 'Lesson',
+									name: 'LessonForm',
 									params: {
 										courseName: courseName,
-										chapterNumber: lesson.number.split('.')[0],
-										lessonNumber: lesson.number.split('.')[1],
+										chapterNumber: chapter.idx,
+										lessonNumber: chapter.lessons.length + 1,
 									},
 								}"
 							>
-								<div class="flex flex-col items-start text-sm leading-5 group">
-									<div class="flex items-center">
-										<MonitorPlay
-											v-if="lesson.icon === 'icon-youtube'"
-											class="h-4 w-4 stroke-1 mr-2"
-										/>
-										<HelpCircle
-											v-else-if="lesson.icon === 'icon-quiz'"
-											class="h-4 w-4 stroke-1 mr-2"
-										/>
-										<BookOpenCheck
-											v-else-if="lesson.icon === 'icon-exam'"
-											class="h-4 w-4 stroke-1 mr-2"
-										/>
-										<FileUp
-											v-else-if="lesson.icon === 'icon-assignment'"
-											class="h-4 w-4 stroke-1 mr-2"
-										/>
-										<FileText
-											v-else-if="lesson.icon === 'icon-list'"
-											class="h-4 w-4 text-ink-gray-9 stroke-1 mr-2"
-										/>
-										{{ lesson.lesson_title }}
-										<Check
-											v-if="lesson.is_complete"
-											class="h-4 w-4 text-green-700 ml-2"
-										/>
-									</div>
-									<div v-if="lesson.preview" class="rounded-md bg-[#E6F4FF] p-2 w-full mt-2">
-										{{ lesson.preview }}
-									</div>
-									<div v-if="lesson.due_date" class="rounded-md bg-[#E6F7F4] p-2 mt-2">
-										{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', { dateStyle: 'medium' }).format(new Date(lesson.due_date)) }}
-									</div>
-								</div>
+								<Button>
+									{{ __('Add Lesson') }}
+								</Button>
 							</router-link>
 						</div>
-						<div  class="flex mt-2 mb-4 pl-8">
-						<router-link
-							v-if="!chapter.is_scorm_package"
-							:to="{
-								name: 'LessonForm',
-								params: {
-									courseName: courseName,
-									chapterNumber: chapter.idx,
-									lessonNumber: chapter.lessons.length + 1,
-								},
-							}"
-						>
-							<Button>
-								{{ __('Add Lesson') }}
-							</Button>
-						</router-link>
-					</div>
 					</DisclosurePanel>
 				</Disclosure>
 			</div>
@@ -136,8 +185,8 @@
 	/>
 </template>
 <script setup>
-import { Button, createResource, Tooltip, Dialog } from 'frappe-ui'
-import { getCurrentInstance, inject, ref } from 'vue'
+import { Button, createResource, Tooltip, toast } from 'frappe-ui'
+import { inject, ref } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
 	Check,
@@ -149,10 +198,10 @@ import {
 	BookOpenCheck,
 	Trash2,
 	FileUp,
+	GripVertical,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
-import { showToast} from '@/utils'
 import { createDialog } from '@/utils/dialogs'
 
 const route = useRoute()
@@ -160,7 +209,7 @@ const router = useRouter()
 const user = inject('$user')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
-const app = getCurrentInstance()
+const draggedLesson = ref(null); // Use a ref to store the dragged lesson
 
 const props = defineProps({
 	courseName: {
@@ -214,7 +263,7 @@ const deleteLesson = createResource({
 	},
 	onSuccess() {
 		outline.reload()
-		showToast('Success', 'Lesson deleted successfully', 'check')
+		toast.success(__('Lesson deleted successfully'))
 	},
 })
 
@@ -223,13 +272,14 @@ const updateLessonIndex = createResource({
 	makeParams(values) {
 		return {
 			lesson: values.lesson,
-			sourceChapter: values.sourceChapter,
-			targetChapter: values.targetChapter,
-			idx: values.idx,
+			source_chapter: values.sourceChapter,
+			target_chapter: values.targetChapter,
+			idx: parseInt(values.idx, 10),
 		}
 	},
 	onSuccess() {
-		showToast('Success', 'Lesson moved successfully', 'check')
+		outline.reload()
+		toast.success(__('Lesson moved successfully'))
 	},
 })
 
@@ -261,21 +311,15 @@ const openChapterDetail = (index) => {
 }
 
 const openChapterModal = (chapter = null) => {
+	if (!props.allowEdit) {
+		return
+	}
 	currentChapter.value = chapter
 	showChapterModal.value = true
 }
 
 const getCurrentChapter = () => {
 	return currentChapter.value
-}
-
-const updateOutline = (e) => {
-	updateLessonIndex.submit({
-		lesson: e.item.__draggable_context.element.name,
-		sourceChapter: e.from.dataset.chapter,
-		targetChapter: e.to.dataset.chapter,
-		idx: e.newIndex,
-	})
 }
 
 const deleteChapter = createResource({
@@ -287,12 +331,14 @@ const deleteChapter = createResource({
 	},
 	onSuccess() {
 		outline.reload()
-		showToast('Success', 'Chapter deleted successfully', 'check')
+		toast.success(__('Chapter deleted successfully'))
 	},
 })
 
 const trashChapter = (chapterName) => {
-	console.log('trashChapter called with:', chapterName); // Add this line for debugging
+	if (!props.allowEdit) {
+		return
+	}
 	createDialog({
 		title: __('Delete this chapter?'),
 		message: __(
@@ -317,10 +363,9 @@ const redirectToChapter = (chapter) => {
 	event.preventDefault()
 	if (props.allowEdit) return
 	if (!user.data) {
-		showToast(
+		toast.warning(
 			__('You are not enrolled'),
-			__('Please enroll for this course to view this lesson'),
-			'alert-circle'
+			__('Please enroll for this course to view this lesson')
 		)
 		return
 	}
@@ -339,5 +384,65 @@ const isActiveLesson = (lessonNumber) => {
 		route.params.chapterNumber == lessonNumber.split('.')[0] &&
 		route.params.lessonNumber == lessonNumber.split('.')[1]
 	)
+}
+
+const onDragStart = (event, chapter, lesson, lessonIndex) => {
+	if (!props.allowEdit) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move'
+		event.dataTransfer.setData('text/plain', lesson.name)
+	}
+	draggedLesson.value = {
+		lessonName: lesson.name,
+		sourceChapter: chapter.name,
+		sourceIndex: lessonIndex,
+	}
+}
+
+const onDragOver = (event) => {
+	if (!props.allowEdit || !draggedLesson.value) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.dropEffect = 'move'
+	}
+}
+
+const onDrop = (event, chapter, targetIndex) => {
+	if (!props.allowEdit || !draggedLesson.value) {
+		return
+	}
+	event?.preventDefault?.()
+
+	const { lessonName, sourceChapter, sourceIndex } = draggedLesson.value
+	const targetChapter = chapter.name
+
+	let insertionIndex = targetIndex
+
+	if (sourceChapter === targetChapter && targetIndex > sourceIndex) {
+		insertionIndex = targetIndex - 1
+	}
+
+	if (sourceChapter === targetChapter && insertionIndex === sourceIndex) {
+		draggedLesson.value = null
+		return
+	}
+
+	const newIdx = insertionIndex + 1
+
+	updateLessonIndex.submit({
+		lesson: lessonName,
+		sourceChapter,
+		targetChapter,
+		idx: newIdx,
+	})
+
+	draggedLesson.value = null
+}
+
+const onDragFinish = () => {
+	draggedLesson.value = null
 }
 </script>

@@ -114,9 +114,8 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { Avatar, createResource, Breadcrumbs, Tooltip } from 'frappe-ui';
+import { Avatar, createResource, Breadcrumbs, Tooltip, toast } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'
-import { showToast } from '@/utils'
 import { Check, Send } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -311,7 +310,7 @@ const markAttendance = async () => {
     .then(response => response.json())
     .then(data => {
       if (data.message) {
-        showToast('Success', 'Attendance updated successfully', 'check');
+        toast.success(__('Attendance updated successfully'));
         meetingDates.reload();
         attendanceResource.reload();
       }

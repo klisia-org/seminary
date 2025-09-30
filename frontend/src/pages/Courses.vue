@@ -100,11 +100,19 @@ import CourseCardToDo from '@/components/CourseCardToDo.vue'
 const user = inject('$user')
 const start = ref(0)
 
-let userResource = usersStore()
-let isStudent = user.data.is_student
-let isModerator = user.data.is_moderator
-let isInstructor = user.data.is_instructor
-let isSystemManager = user.data.is_system_manager
+const { userResource } = usersStore()
+
+// Debug logging
+console.log('User from inject:', user)
+console.log('User data:', user.data)
+console.log('User resource:', userResource)
+console.log('User resource data:', userResource.data)
+
+// Make these computed properties that react to user.data changes
+const isStudent = computed(() => user.data?.is_student || false)
+const isModerator = computed(() => user.data?.is_moderator || false)
+const isInstructor = computed(() => user.data?.is_instructor || false)
+const isSystemManager = computed(() => user.data?.is_system_manager || false)
 
 
 const cachedAcademicTerm = ref('');
@@ -123,6 +131,7 @@ const current_AcademicTerm = createResource({
     if (data?.title) {
       cachedAcademicTerm.value = data.title;
       console.log("Current Academic Term on success:", data.title);
+      console.log('isStudent:', isStudent.value)
     } else {
       console.log("Current Academic Term: undefined");
     }
@@ -161,10 +170,25 @@ const filters = reactive({
 });
 console.log(filters.academic_term)
 
+// Ensure the URL is resolved as a string before passing to createResource
+const resolvedUrl = computed(() => {
+  return isStudent.value
+    ? "seminary.seminary.utils.get_courses_for_student"
+    : "seminary.seminary.utils.get_courses";
+});
+
+// Ensure params is resolved as a plain object to avoid circular references
+const resolvedParams = computed(() => {
+  return isStudent.value ? { student: user.data?.name } : {};
+});
+
+
+// Make courses resource reactive
 const courses = createResource({
-  url: isStudent ? "seminary.seminary.utils.get_courses_for_student" : "seminary.seminary.utils.get_courses",
-  params: isStudent ? { student: user.data.name } : {},
+  url: resolvedUrl.value, // Pass the resolved string value
+  params: resolvedParams.value, // Pass the resolved plain object
   onSuccess: (response) => {
+    console.log("Courses data:", response);
     tableData.rows = response.sort((a, b) => {
       if (a.academic_term < b.academic_term) return -1;
       if (a.academic_term > b.academic_term) return 1;
@@ -173,8 +197,10 @@ const courses = createResource({
       return 0;
     });
   },
-  auto: true
-});
+  auto: true,
+})
+
+
 
 const tableData = reactive({
   rows: [],

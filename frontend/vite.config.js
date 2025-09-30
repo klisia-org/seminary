@@ -15,7 +15,7 @@ export default defineConfig({
 				input: {},
 			},
 			buildConfig: {
-				indexHtmlPath: '../seminary/www/frontend.html',
+				indexHtmlPath: '../seminary/www/seminary.html',
 			},
 		}),
     vue()],

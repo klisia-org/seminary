@@ -4,14 +4,10 @@ import { sessionStore } from '@/stores/session'
 
 
 const routes = [
-
- 
-
   {
     path: "/fees",
     name: "Fees",
     component: () => import('@/pages/Fees.vue'),
-
   },
   {
     path: "/grades",

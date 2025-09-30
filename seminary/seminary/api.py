@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies and contributors
+# Copyright (c) 2025, Klisia, Frappe Technologies and contributors
 # For license information, please see license.txt
 
 
@@ -86,7 +86,7 @@ def get_instructor_info():
 	instructor = frappe.db.get_value(
 		"Instructor",
 		{"user": frappe.session.user},
-		["name", "instructor_name", "user", "status", "bio", "shortbio", "image"],
+		["name", "instructor_name", "user", "status", "bio", "shortbio", "profileimage"],
 		as_dict=1,
 	)
 	return instructor
@@ -1282,7 +1282,7 @@ def send_grades(doc=None,**kwargs):
 def course_event(name):
 	course = frappe.get_doc("Course Schedule", name)
 	color = course.color
-	datest = str(course.c_datestart)  # Convert datest to a string
+	datest = str(course.c_datestart)  # Convert datet to a string
 	timest = str(course.from_time)  # Convert timest to a string
 	datetimest = datest + " " + timest
 	datetimest = datetime.strptime(datetimest, "%Y-%m-%d %H:%M:%S") # Convert datetimest to a datetime object
@@ -1536,11 +1536,16 @@ def get_student_info():
 	email = frappe.session.user
 	if email == "Administrator":
 		return
-	student_info = frappe.db.get_list(
+	student_list = frappe.db.get_list(
 		"Student",
 		fields=["*"],
 		filters={"user": email},
-	)[0]
+	)
+	
+	if not student_list:
+		return None
+		
+	student_info = student_list[0]
 
 	program_enrollment_list = frappe.db.sql(
 		"""
@@ -1676,3 +1681,68 @@ def get_announcements(cs):
 		)
 
 	return communications
+
+@frappe.whitelist()
+def update_lesson_index(lesson, source_chapter, target_chapter, idx):
+	"""Update the order of a lesson inside or across chapters."""
+	idx = cint(idx) or 1
+	idx = max(idx, 1)
+
+	lesson_doc = frappe.get_doc("Course Lesson", lesson)
+	source_doc = frappe.get_doc("Course Schedule Chapter", source_chapter)
+	target_doc = source_doc if source_chapter == target_chapter else frappe.get_doc(
+		"Course Schedule Chapter", target_chapter
+	)
+
+	if source_chapter == target_chapter:
+		_reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
+	else:
+		_move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx)
+
+	frappe.db.commit()
+	return {"message": _("Lesson index updated successfully.")}
+
+
+def _clone_reference_rows(chapter_doc, exclude_lesson=None):
+	rows = []
+	for row in chapter_doc.lessons:
+		if exclude_lesson and row.lesson == exclude_lesson:
+			continue
+		rows.append({"lesson": row.lesson})
+	return rows
+
+
+def _save_chapter_lessons(chapter_doc, lessons):
+	chapter_doc.set("lessons", [])
+	for row in lessons:
+		chapter_doc.append("lessons", {"lesson": row["lesson"]})
+	chapter_doc.save(ignore_permissions=True)
+
+
+def _reorder_lessons_within_chapter(chapter_doc, lesson_name, idx):
+	rows = _clone_reference_rows(chapter_doc, exclude_lesson=lesson_name)
+	if len(rows) == len(chapter_doc.lessons):
+		frappe.throw(_("Lesson {0} not found in chapter {1}").format(lesson_name, chapter_doc.name))
+
+	idx = min(idx, len(rows) + 1)
+	rows.insert(idx - 1, {"lesson": lesson_name})
+	_save_chapter_lessons(chapter_doc, rows)
+
+
+
+
+def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
+	source_rows = _clone_reference_rows(source_doc, exclude_lesson=lesson_doc.name)
+	if len(source_rows) == len(source_doc.lessons):
+		frappe.throw(
+			_("Lesson {0} not linked to source chapter {1}").format(lesson_doc.name, source_doc.name)
+		)
+	_save_chapter_lessons(source_doc, source_rows)
+
+	target_rows = _clone_reference_rows(target_doc)
+	idx = min(idx, len(target_rows) + 1)
+	target_rows.insert(idx - 1, {"lesson": lesson_doc.name})
+	_save_chapter_lessons(target_doc, target_rows)
+
+	lesson_doc.chapter = target_doc.name
+	lesson_doc.save(ignore_permissions=True)
