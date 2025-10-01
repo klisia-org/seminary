@@ -7,6 +7,8 @@ export function initSocket(namespace = '') {
   let host = window.location.hostname
   let protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 
+  console.log('SocketIO Port from config:', socketio_port)
+
   // Use the socketio_port if defined; otherwise, default to 9000 (standard Frappe socketio port)
   let port = socketio_port ? `:${socketio_port}` : ':9000'
 

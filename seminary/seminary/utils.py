@@ -87,6 +87,39 @@ def validate_duplicate_student(students):
 		else:
 			unique_students.append(stud.student)
 
+def user_is_enrolled_in_course(course: str | None, user: str | None = None) -> bool:
+	"""Return True if the given user is enrolled in (or otherwise allowed to access) the course."""
+	if not course:
+		return False
+	user = user or frappe.session.user
+	if not user or user in {"Guest"}:
+		return False
+	if has_super_access(user):
+		return True
+	student = frappe.db.get_value("Student", {"user": user, "enabled": 1}, "name")
+	if not student:
+		student = frappe.db.get_value("Student", {"student_email_id": user}, "name")
+	if not student:
+		return False
+	schedule_names = frappe.get_all(
+		"Course Schedule",
+		filters={"course": course},
+		pluck="name",
+	)
+	if not schedule_names:
+		return False
+	return bool(
+		frappe.get_all(
+			"Scheduled Course Roster",
+			filters={
+				"student": student,
+				"course_sc": ["in", schedule_names],
+				"active": 1,
+			},
+			limit=1,
+		)
+	)
+
 	return None
 
 def validate_overlap_for(doc, doctype, fieldname, value=None):
@@ -954,13 +987,14 @@ def enroll_in_program(program_name, student=None):
 	return program_enrollment.name
 
 
-def has_super_access():
+def has_super_access(user: str | None = None):
 	"""Check if user has a role that allows full access to LMS
 
 	Returns:
 	        bool: true if user has access to all lms content
 	"""
-	current_user = frappe.get_doc("User", frappe.session.user)
+	user = user or frappe.session.user
+	current_user = frappe.get_doc("User", user)
 	roles = set([role.role for role in current_user.roles])
 	return bool(
 		roles

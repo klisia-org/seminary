@@ -7,7 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "course",
-  "foldername"
+  "foldername",
+  "file_reference",
+  "parent_folder"
  ],
  "fields": [
   {
@@ -24,13 +26,29 @@
    "in_list_view": 1,
    "label": "Folder Name",
    "reqd": 1
+  },
+  {
+   "description": "Link to Frappe file manager",
+   "fieldname": "file_reference",
+   "fieldtype": "Link",
+   "label": "File",
+   "options": "File",
+   "read_only": 1
+  },
+  {
+   "description": "Link to Frappe's file manager parent folder (file)",
+   "fieldname": "parent_folder",
+   "fieldtype": "Link",
+   "label": "Parent File",
+   "options": "File",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-10 12:09:42.835819",
- "modified_by": "Administrator",
+ "modified": "2025-10-01 10:27:50.985465",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Folder",
  "naming_rule": "Expression",
