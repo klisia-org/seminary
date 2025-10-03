@@ -1,13 +1,11 @@
 <template>
 	<Dialog
 		v-model="showProfileDialog"
-		:options="{
-			title: 'Profile',
-			size: 'xl',
-		  }"
+		:options="dialogOptions"
+		:disableOutsideClickToClose="true"
 	>
 	<template #body-content>
-			<div class="text-base" v-if="isStudent && studentInfo.student_name">
+		<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto" v-if="isStudent && studentInfo.student_name">
 				<div class="flex flex-col gap-4">
 					<div class="flex items-center border-b border-solid border-lightGray pb-4 gap-2">
 					  <Avatar
@@ -44,7 +42,7 @@
 					</div>
 				</div>				  
 			</div>
-			<div class="text-base" v-else-if="!isStudent && instructorInfo.instructor_name">
+			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto" v-else-if="!isStudent && instructorInfo.instructor_name">
 				<div class="flex flex-col gap-4">
 					<div class="flex items-center border-b border-solid border-lightGray pb-4 gap-2">
 					  <Avatar
@@ -83,12 +81,12 @@
 
 <script setup>
 import { Dialog, Avatar, FeatherIcon, createResource } from 'frappe-ui'
-import { inject, ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { usersStore } from '../stores/user'
 
 let userResource = usersStore()
 
-const showProfileDialog = inject('showProfileDialog')
+const showProfileDialog = defineModel({ default: false })
 
 const studentInfo = ref({
 	student_name: '',
@@ -237,5 +235,22 @@ function stripHtmlTags(str) {
 	div.innerHTML = str
 	return div.textContent || div.innerText || ''
 }
+
+const handleClose = (close) => {
+	showProfileDialog.value = false
+	close?.()
+}
+
+const dialogOptions = computed(() => ({
+	title: __('Profile'),
+	size: 'xl',
+	actions: [
+		{
+			label: __('Close'),
+			variant: 'text',
+			onClick: (close) => handleClose(close),
+		},
+	],
+}))
 
 </script>

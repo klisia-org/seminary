@@ -38,10 +38,40 @@ app.component('Button', Button)
 app.component('Card', Card)
 app.component('Input', Input)
 app.provide('$dayjs', dayjs)
-app.provide('$socket', initSocket())
-app.mount('#app')
 
 const { userResource, allUsers } = usersStore()
+
+// Initialize socket only after user is authenticated
+let socket = null
+const initializeSocket = () => {
+  try {
+    if (userResource.data && userResource.data.name !== 'Guest') {
+      socket = initSocket()
+      app.provide('$socket', socket)
+      app.config.globalProperties.$socket = socket
+      console.log('Socket initialized successfully')
+    } else {
+      console.warn('User not authenticated, skipping socket initialization')
+    }
+  } catch (err) {
+    console.error('Failed to initialize socket:', err)
+    // Don't throw - app can work without realtime updates
+  }
+}
+
+// Wait for router and user to be ready before initializing socket
+router.isReady().then(() => {
+  userResource.promise
+    .then(() => {
+      initializeSocket()
+    })
+    .catch(err => {
+      console.warn('User authentication check failed:', err)
+    })
+})
+
+app.mount('#app')
+
 app.provide('$user', userResource)
 app.provide('$allUsers', allUsers)
 app.config.globalProperties.$user = userResource

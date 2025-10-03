@@ -176,7 +176,7 @@ const routes = [
   }
 ]
 
-let router = createRouter({
+const router = createRouter({
   history: createWebHistory('/seminary/'),
   routes,
 })

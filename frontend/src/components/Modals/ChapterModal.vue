@@ -1,21 +1,11 @@
 <template>
 	<Dialog
 		v-model="show"
-		:options="{
-			title: chapterDetail ? __('Edit Chapter') : __('Add Chapter'),
-			size: 'lg',
-			actions: [
-				{
-					label: chapterDetail ? __('Edit') : __('Create'),
-					variant: 'solid',
-					onClick: (close) =>
-						chapterDetail ? editChapter(close) : addChapter(close),
-				},
-			],
-		}"
+		:options="dialogOptions"
+		:disableOutsideClickToClose="true"
 	>
 		<template #body-content>
-			<div class="space-y-4 text-base">
+			<div class="chapter-dialog space-y-4 text-base max-h-[70vh] overflow-y-auto">
 				<FormControl label="Title" v-model="chapter.chapter_title" :required="true" />
 				<Switch
 					size="sm"
@@ -78,7 +68,7 @@ import {
 	Switch,
 	toast
 } from 'frappe-ui'
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { getFileSize } from '@/utils/'
 import { capture } from '@/telemetry'
 import { FileText, X } from 'lucide-vue-next'
@@ -101,11 +91,17 @@ const props = defineProps({
 	},
 })
 
-const chapter = reactive({
-	title: '',
+const defaultChapterState = () => ({
+	chapter_title: '',
 	is_scorm_package: 0,
 	scorm_package: null,
 })
+
+const chapter = reactive(defaultChapterState())
+
+const resetChapter = () => {
+	Object.assign(chapter, defaultChapterState())
+}
 
 const chapterResource = createResource({
 	url: 'seminary.seminary.api.upsert_chapter',
@@ -147,14 +143,14 @@ const addChapter = async (close) => {
 				chapterReference.submit(
 					{ name: data.name },
 					{
-						onSuccess(data) {
-							cleanChapter()
+						onSuccess() {
+							resetChapter()
 							/* if (!settingsStore.onboardingDetails.data?.is_onboarded) {
-								settingsStore.onboardingDetails.reload()
-							} */
+							settingsStore.onboardingDetails.reload()
+						} */
 							outline.value.reload()
 							toast.success(__('Chapter added successfully'))
-							show.value = false // Close the dialog by updating the `show` state
+							show.value = false
 							close()
 						},
 						onError(err) {
@@ -179,12 +175,6 @@ const validateChapter = () => {
 	}
 }
 
-const cleanChapter = () => {
-	chapter.chapter_title = ''
-	chapter.is_scorm_package = 0
-	chapter.scorm_package = null
-}
-
 const editChapter = (close) => {
 	chapterResource.submit(
 		{},
@@ -195,6 +185,8 @@ const editChapter = (close) => {
 				}
 			},
 			onSuccess() {
+				show.value = false
+				resetChapter()
 				outline.value.reload()
 				toast.success(__('Chapter updated successfully'))
 				close()
@@ -206,12 +198,44 @@ const editChapter = (close) => {
 	)
 }
 
+const populateChapter = (detail) => {
+	if (!detail) {
+		resetChapter()
+		return
+	}
+	chapter.chapter_title = detail.chapter_title || ''
+	chapter.is_scorm_package = detail.is_scorm_package || 0
+	chapter.scorm_package = detail.scorm_package || null
+}
+
+const initializeState = () => {
+	if (props.chapterDetail) {
+		populateChapter(props.chapterDetail)
+	} else {
+		resetChapter()
+	}
+}
+
+const handleCancel = (close) => {
+	show.value = false
+	resetChapter()
+	close?.()
+}
+
+watch(show, (value) => {
+	if (value) {
+		initializeState()
+	} else {
+		resetChapter()
+	}
+})
+
 watch(
 	() => props.chapterDetail,
 	(newChapter) => {
-		chapter.chapter_title = newChapter?.chapter_title
-		chapter.is_scorm_package = newChapter?.is_scorm_package
-		chapter.scorm_package = newChapter?.scorm_package
+		if (show.value) {
+			populateChapter(newChapter)
+		}
 	}
 )
 
@@ -221,4 +245,22 @@ const validateFile = (file) => {
 		return __('Only zip files are allowed')
 	}
 }
+
+const dialogOptions = computed(() => ({
+	title: props.chapterDetail ? __('Edit Chapter') : __('Add Chapter'),
+	size: 'lg',
+	actions: [
+		{
+			label: props.chapterDetail ? __('Edit') : __('Create'),
+			variant: 'solid',
+			onClick: (close) =>
+				props.chapterDetail ? editChapter(close) : addChapter(close),
+		},
+		{
+			label: __('Cancel'),
+			variant: 'text',
+			onClick: (close) => handleCancel(close),
+		},
+	],
+}))
 </script>

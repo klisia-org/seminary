@@ -5,12 +5,22 @@
     <link rel="icon" type="image/png" href="/assets/seminary/images/klisia_icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seminary ERP</title>
-    <script type="module" crossorigin src="/assets/seminary/frontend/assets/index-CVWiL_Ou.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/index-B_BCF7pS.css">
+    <script type="module" crossorigin src="/assets/seminary/frontend/assets/index-B0k3CMx6.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/seminary/frontend/assets/vendor-IWZbD1HA.js">
+    <link rel="modulepreload" crossorigin href="/assets/seminary/frontend/assets/frappe-ui-BzEkZ7NZ.js">
+    <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/frappe-ui-BgBwpH5T.css">
+    <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/index-BEAfMkQw.css">
   </head>
   <body>
     <div id="app"></div>
-		<script>window.csrf_token = '{{ frappe.session.csrf_token }}';</script>
+    <script>
+      window.csrf_token = '{{ frappe.session.csrf_token }}'
+    </script>
+    <script>
+      {% for key in boot %}
+      window["{{ key }}"] = {{ boot[key] | tojson }};
+      {% endfor %}
+    </script>
   
           <script>
               {% for key in boot %}

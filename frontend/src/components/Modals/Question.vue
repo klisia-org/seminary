@@ -1,7 +1,11 @@
 <template>
-	<Dialog v-model="show" :options="dialogOptions">
+	<Dialog
+		v-model="show"
+		:options="dialogOptions"
+		:disableOutsideClickToClose="true"
+	>
 		<template #body-content>
-			<div class="space-y-4">
+			<div class="question-dialog space-y-4 max-h-[70vh] overflow-y-auto">
 				<div
 					v-if="!editMode"
 					class="flex items-center text-xs text-ink-gray-7 space-x-5"
@@ -106,36 +110,52 @@
 </template>
 <script setup>
 import { Dialog, FormControl, TextEditor, createResource, toast } from 'frappe-ui'
-import { computed, watch, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 
 const show = defineModel()
 const quiz = defineModel('quiz')
-const questionType = ref(null)
-const editMode = ref(false)
 
-const existingQuestion = reactive({
+const defaultExistingQuestion = () => ({
 	question: '',
 	points: 0,
 })
-const question = reactive({
+
+const defaultQuestionState = () => ({
 	question: '',
 	type: 'Choices',
 	points: 0,
+	option_1: '',
+	option_2: '',
+	option_3: '',
+	option_4: '',
+	explanation_1: '',
+	explanation_2: '',
+	explanation_3: '',
+	explanation_4: '',
+	is_correct_1: false,
+	is_correct_2: false,
+	is_correct_3: false,
+	is_correct_4: false,
+	possibility_1: '',
+	possibility_2: '',
+	possibility_3: '',
+	possibility_4: '',
 })
 
-const populateFields = () => {
-	let fields = ['option', 'is_correct', 'explanation', 'possibility']
-	let counter = 1
-	fields.forEach((field) => {
-		while (counter <= 4) {
-			question[`${field}_${counter}`] = field === 'is_correct' ? false : null
-			counter++
-		}
-	})
+const questionType = ref('new')
+const editMode = ref(false)
+
+const existingQuestion = reactive(defaultExistingQuestion())
+const question = reactive(defaultQuestionState())
+
+const resetQuestionState = () => {
+	Object.assign(question, defaultQuestionState())
 }
 
-populateFields()
+const resetExistingQuestion = () => {
+	Object.assign(existingQuestion, defaultExistingQuestion())
+}
 
 const props = defineProps({
 	title: {
@@ -150,43 +170,55 @@ const props = defineProps({
 
 const questionData = createResource({
 	url: 'frappe.client.get',
+	auto: false,
 	makeParams() {
 		return {
 			doctype: 'Question',
 			name: props.questionDetail.question,
 		}
 	},
-	auto: false,
 	onSuccess(data) {
-		let counter = 1
 		editMode.value = true
-		Object.keys(data).forEach((key) => {
-			if (Object.hasOwn(question, key)) question[key] = data[key]
+		questionType.value = 'new'
+		resetQuestionState()
+		Object.keys(question).forEach((key) => {
+			if (Object.hasOwn(data, key)) {
+				if (key.startsWith('is_correct_')) {
+					question[key] = Boolean(data[key])
+				} else if (data[key] !== undefined && data[key] !== null) {
+					question[key] = data[key]
+				}
+			}
 		})
-		while (counter <= 4) {
-			question[`is_correct_${counter}`] = data[`is_correct_${counter}`]
-				? true
-				: false
-			counter++
-		}
-		question.points = props.questionDetail.points
+		question.points = props.questionDetail.points ?? data.points ?? 0
 	},
 })
 
-watch(show, () => {
-	if (show.value) {
+const initializeState = () => {
+	if (props.questionDetail.question) {
+		editMode.value = true
+		questionType.value = 'new'
+		question.points = props.questionDetail.points ?? 0
+		questionData.fetch()
+	} else {
 		editMode.value = false
-		if (props.questionDetail.question) questionData.fetch()
-		else {
-			;(question.question = ''), (question.points = 0)
-			question.type = 'Choices'
-			existingQuestion.question = ''
-			existingQuestion.points = 0
-			questionType.value = null
-			populateFields()
-		}
+		resetForms()
+		questionType.value = 'new'
+	}
+}
 
-		if (props.questionDetail.points) question.points = props.questionDetail.points
+const resetForms = () => {
+	resetQuestionState()
+	resetExistingQuestion()
+}
+
+watch(show, (value) => {
+	if (value) {
+		initializeState()
+	} else {
+		resetForms()
+		editMode.value = false
+		questionType.value = 'new'
 	}
 })
 
@@ -207,7 +239,7 @@ const questionRow = createResource({
 
 const questionCreation = createResource({
 	url: 'frappe.client.insert',
-	makeParams(values) {
+	makeParams() {
 		return {
 			doc: {
 				doctype: 'Question',
@@ -223,7 +255,7 @@ const submitQuestion = (close) => {
 }
 
 const addQuestion = (close) => {
-	if (questionType.value == 'existing') {
+	if (questionType.value === 'existing') {
 		addQuestionRow(
 			{
 				question: existingQuestion.question,
@@ -252,16 +284,17 @@ const addQuestion = (close) => {
 	}
 }
 
-const addQuestionRow = (question, close) => {
+const addQuestionRow = (questionValues, close) => {
 	questionRow.submit(
 		{
-			...question,
+			...questionValues,
 		},
 		{
 			onSuccess() {
 				show.value = false
 				toast.success(__('Question added successfully'))
 				quiz.value.reload()
+				resetForms()
 				close()
 			},
 			onError(err) {
@@ -275,7 +308,7 @@ const addQuestionRow = (question, close) => {
 const questionUpdate = createResource({
 	url: 'frappe.client.set_value',
 	auto: false,
-	makeParams(values) {
+	makeParams() {
 		return {
 			doctype: 'Question',
 			name: questionData.data?.name,
@@ -289,7 +322,7 @@ const questionUpdate = createResource({
 const pointsUpdate = createResource({
 	url: 'frappe.client.set_value',
 	auto: false,
-	makeParams(values) {
+	makeParams() {
 		return {
 			doctype: 'Quiz Question',
 			name: props.questionDetail.name,
@@ -312,7 +345,11 @@ const updateQuestion = (close) => {
 							show.value = false
 							toast.success(__('Question updated successfully'))
 							quiz.value.reload()
+							resetForms()
 							close()
+						},
+						onError(err) {
+							toast.error(err.messages?.[0] || err)
 						},
 					}
 				)
@@ -324,26 +361,57 @@ const updateQuestion = (close) => {
 	)
 }
 
-const dialogOptions = computed(() => {
-	return {
-		title: __(props.title),
-		size: 'xl',
-		actions: [
-			{
-				label: __('Submit'),
-				variant: 'solid',
-				onClick: (close) => {
-					submitQuestion(close)
-				},
-			},
-		],
-	}
-})
+const handleCancel = (close) => {
+	show.value = false
+	resetForms()
+	editMode.value = false
+	questionType.value = 'new'
+	close?.()
+}
+
+const dialogOptions = computed(() => ({
+	title: __(props.title),
+	size: 'xl',
+	actions: [
+		{
+			label: __('Submit'),
+			variant: 'solid',
+			onClick: (close) => submitQuestion(close),
+		},
+		{
+			label: __('Cancel'),
+			variant: 'text',
+			onClick: (close) => handleCancel(close),
+		},
+	],
+}))
 </script>
 <style>
-input[type='radio']:checked {
-	background-color: theme('colors.gray.900') !important;
-	border-color: theme('colors.gray.900') !important;
-	--tw-ring-color: theme('colors.gray.900') !important;
+.question-dialog input[type='radio'],
+.question-dialog input[type='checkbox'] {
+	accent-color: theme('colors.gray.900');
+	width: 0.75rem;
+	height: 0.75rem;
+	border-radius: theme('borderRadius.full');
+}
+
+.question-dialog input[type='radio']:focus,
+.question-dialog input[type='radio']:focus-visible,
+.question-dialog input[type='checkbox']:focus,
+.question-dialog input[type='checkbox']:focus-visible {
+	outline: 2px solid theme('colors.gray.400');
+	outline-offset: 3px;
+	box-shadow: none;
+}
+
+.question-dialog input[type='number']::-webkit-inner-spin-button,
+.question-dialog input[type='number']::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.question-dialog input[type='number'] {
+	appearance: textfield;
+	-moz-appearance: textfield;
 }
 </style>

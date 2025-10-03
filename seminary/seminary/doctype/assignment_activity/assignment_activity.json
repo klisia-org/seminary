@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{title}-{###}",
+ "autoname": "format:{coursecode}-{title}-{###}",
  "creation": "2025-03-07 09:06:43.140515",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -9,6 +9,7 @@
   "assignment_section",
   "title",
   "course",
+  "coursecode",
   "question",
   "type",
   "show_answer",
@@ -65,14 +66,23 @@
   {
    "fieldname": "course",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.coursecode",
+   "fieldname": "coursecode",
+   "fieldtype": "Data",
+   "is_virtual": 1,
+   "label": "Course Code"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-27 08:51:48.850981",
- "modified_by": "Administrator",
+ "modified": "2025-10-02 07:32:33.620482",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Assignment Activity",
  "naming_rule": "Expression",

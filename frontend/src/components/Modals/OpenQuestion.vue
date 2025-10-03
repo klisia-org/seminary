@@ -1,7 +1,11 @@
 <template>
-	<Dialog v-model="show" :options="dialogOptions">
+	<Dialog
+		v-model="show"
+		:options="dialogOptions"
+		:disableOutsideClickToClose="true"
+	>
 		<template #body-content>
-			<div class="space-y-4">
+			<div class="open-question-dialog space-y-4 max-h-[70vh] overflow-y-auto">
 				<div
 					v-if="!editMode"
 					class="flex items-center text-xs text-ink-gray-7 space-x-5"
@@ -41,7 +45,7 @@
 							:content="question.question"
 							@change="(val) => (question.question = val)"
 							:editable="true"
-							:fixedMenu="true"                    
+							:fixedMenu="true"
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
@@ -89,7 +93,7 @@ import Link from '@/components/Controls/Link.vue'
 
 const show = defineModel()
 const exam = defineModel('exam')
-const questionType = ref(null)
+const questionType = ref('new')
 const editMode = ref(false)
 
 const existingQuestion = reactive({
@@ -98,6 +102,7 @@ const existingQuestion = reactive({
 })
 const question = reactive({
 	question: '',
+	explanation: '',
 	points: 0,
 })
 
@@ -124,29 +129,43 @@ const questionData = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
-		
 		editMode.value = true
-	
-		question.points = props.questionDetail.points
+		question.question = data.question || ''
+		question.explanation = data.explanation || ''
+		question.points = props.questionDetail.points ?? data.points ?? 0
 	},
 })
 
-watch(show, () => {
-	if (show.value) {
+watch(show, (value) => {
+	if (value) {
+		initializeState()
+	} else {
+		resetForms()
 		editMode.value = false
-		if (props.questionDetail.question) questionData.fetch()
-		else {
-			;(question.question = ''), (question.points = 0)
-			
-			existingQuestion.question = ''
-			existingQuestion.points = 0
-			questionType.value = null
-			
-		}
-
-		if (props.questionDetail.points) question.points = props.questionDetail.points
+		questionType.value = 'new'
 	}
 })
+
+	const initializeState = () => {
+		if (props.questionDetail.question) {
+			editMode.value = true
+			questionType.value = 'new'
+			question.points = props.questionDetail.points ?? 0
+			questionData.fetch()
+		} else {
+			editMode.value = false
+			resetForms()
+			questionType.value = 'new'
+		}
+	}
+
+	const resetForms = () => {
+		question.question = ''
+		question.explanation = ''
+		question.points = 0
+		existingQuestion.question = ''
+		existingQuestion.points = 0
+	}
 
 const questionRow = createResource({
 	url: 'frappe.client.insert',
@@ -212,9 +231,7 @@ const addQuestion = (close) => {
 }
 
 const addQuestionRow = (question, close) => {
-    console.log("Submitting Question Row:", question); // Debug the question object
-
-    questionRow.submit(
+	questionRow.submit(
         {
             ...question,
         },
@@ -297,14 +314,49 @@ const dialogOptions = computed(() => {
 					submitQuestion(close)
 				},
 			},
+			{
+				label: __('Cancel'),
+				variant: 'text',
+				onClick: (close) => handleCancel(close),
+			},
 		],
 	}
 })
+
+const handleCancel = (close) => {
+	show.value = false
+	close?.()
+	resetForms()
+	editMode.value = false
+	questionType.value = 'new'
+}
 </script>
 <style>
-input[type='radio']:checked {
-	background-color: theme('colors.gray.900') !important;
-	border-color: theme('colors.gray.900') !important;
-	--tw-ring-color: theme('colors.gray.900') !important;
+.open-question-dialog input[type='radio'],
+.open-question-dialog input[type='checkbox'] {
+	accent-color: theme('colors.gray.900');
+	width: 0.75rem;
+	height: 0.75rem;
+	border-radius: theme('borderRadius.full');
+}
+
+.open-question-dialog input[type='radio']:focus,
+.open-question-dialog input[type='radio']:focus-visible,
+.open-question-dialog input[type='checkbox']:focus,
+.open-question-dialog input[type='checkbox']:focus-visible {
+	outline: 2px solid theme('colors.gray.400');
+	outline-offset: 3px;
+	box-shadow: none;
+}
+
+.open-question-dialog input[type='number']::-webkit-inner-spin-button,
+.open-question-dialog input[type='number']::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.open-question-dialog input[type='number'] {
+	appearance: textfield;
+	-moz-appearance: textfield;
 }
 </style>

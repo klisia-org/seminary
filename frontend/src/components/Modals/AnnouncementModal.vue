@@ -1,20 +1,11 @@
 <template>
 	<Dialog
 		v-model="show"
-		:options="{
-			title: __('Make an Announcement'),
-			size: 'xl',
-			actions: [
-				{
-					label: 'Submit',
-					variant: 'solid',
-					onClick: (close) => makeAnnouncement(close),
-				},
-			],
-		}"
+		:options="dialogOptions"
+		:disableOutsideClickToClose="true"
 	>
 		<template #body-content>
-			<div class="flex flex-col gap-4">
+			<div class="announcement-dialog flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
 				<div class="">
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Subject') }}
@@ -33,6 +24,7 @@
 						{{ __('Announcement') }}
 					</div>
 					<TextEditor
+						:content="announcement.announcement"
 						:fixedMenu="true"
 						@change="(val) => (announcement.announcement = val)"
 						editorClass="prose-sm py-2 px-2 min-h-[200px] border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3"
@@ -45,7 +37,7 @@
 
 <script setup>
 import { Dialog, Input, TextEditor, createResource, toast } from 'frappe-ui'
-import { reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 
 const show = defineModel()
 
@@ -65,6 +57,12 @@ const announcement = reactive({
 	replyTo: '',
 	announcement: '',
 })
+
+const resetAnnouncement = () => {
+	announcement.subject = ''
+	announcement.replyTo = ''
+	announcement.announcement = ''
+}
 
 const announcementResource = createResource({
 	url: 'frappe.core.doctype.communication.email.make',
@@ -94,6 +92,8 @@ const makeAnnouncement = (close) => {
 				}
 			},
 			onSuccess() {
+				show.value = false
+				resetAnnouncement()
 				close()
 				toast.success(__('Announcement has been sent successfully'))
 			},
@@ -103,4 +103,33 @@ const makeAnnouncement = (close) => {
 		}
 	)
 }
+
+const handleCancel = (close) => {
+	show.value = false
+	resetAnnouncement()
+	close?.()
+}
+
+watch(show, (value) => {
+	if (!value) {
+		resetAnnouncement()
+	}
+})
+
+const dialogOptions = computed(() => ({
+	title: __('Make an Announcement'),
+	size: 'xl',
+	actions: [
+		{
+			label: __('Submit'),
+			variant: 'solid',
+			onClick: (close) => makeAnnouncement(close),
+		},
+		{
+			label: __('Cancel'),
+			variant: 'text',
+			onClick: (close) => handleCancel(close),
+		},
+	],
+}))
 </script>

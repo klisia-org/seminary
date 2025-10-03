@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/assets/seminary/images/klisia_icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seminary ERP — Dev</title>
+    <script type="module" src="{{ dev_server_url }}/@vite/client"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      window.csrf_token = '{{ frappe.session.csrf_token }}'
+      window.__SEMINARY_DEV__ = true
+      window.__SEMINARY_HISTORY_BASE__ = '{{ history_base }}'
+    </script>
+    <script>
+      {% for key in boot %}
+      window["{{ key }}"] = {{ boot[key] | tojson }};
+      {% endfor %}
+    </script>
+    <script type="module" src="{{ dev_server_url }}/src/main.js"></script>
+  </body>
+</html>

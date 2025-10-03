@@ -54,14 +54,16 @@
 					<div class="mt-5">
 						<Announcements :cs="props.courseName" />
 					</div>
-					<Button v-if="user.data?.is_moderator || user.data?.is_instructor" @click="openAnnouncementModal()">
-					<span>
-						{{ __('Make an Announcement') }}
-					</span>
-					<template #suffix>
-						<Send class="h-4 stroke-1.5" />
-					</template>
-				</Button>
+					<div v-if="user.data?.is_moderator || user.data?.is_instructor" class="mt-5 flex justify-center">
+						<Button @click="openAnnouncementModal()">
+							<span>
+								{{ __('Make an Announcement') }}
+							</span>
+							<template #suffix>
+								<Send class="h-4 stroke-1.5" />
+							</template>
+						</Button>
+					</div>
 					<div class="mt-5">
 						<AnnouncementModal 
 						v-model="showAnnouncementModal"

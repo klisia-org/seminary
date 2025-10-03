@@ -328,5 +328,6 @@ fixtures = ["Trigger Fee Events", "Grading Scale", "Grading Scale Interval", "It
 # translated_search_doctypes = []
 
 website_route_rules = [
-    {'from_route': '/seminary/<path:app_path>', 'to_route': 'seminary'},
+    {"from_route": "/seminary", "to_route": "seminary"},
+    {"from_route": "/seminary/<path:app_path>", "to_route": "seminary"},
 ]

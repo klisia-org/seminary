@@ -20,6 +20,13 @@ export function initSocket(namespace = '') {
     transports: ['websocket', 'polling'],
     withCredentials: true,
     reconnectionAttempts: 5,
+    autoConnect: true,
+    auth: (cb) => {
+      // Get session cookies for authentication
+      cb({
+        sitename: window.location.hostname
+      })
+    }
   })
 
   console.log('Connecting to WebSocket:', url)
@@ -33,7 +40,8 @@ export function initSocket(namespace = '') {
   })
 
   socket.on('connect_error', (error) => {
-    console.error('WebSocket connection failed:', error)
+    console.error('Error connecting to socket.io:', error.message || error)
+    // Don't throw error, just log it - the app can still work without realtime updates
   })
 
   socket.on('refetch_resource', (data) => {

@@ -71,13 +71,34 @@
       </td>
       <td class="p-2 border">
         <template v-if="criteria.type === 'Quiz'">
-          <Link v-model="criteria.quiz" doctype="Quiz" :label="__('Select a Quiz')" :required="true" :filters="{ course: course.data.course }" :onCreate="(value, close) => redirectToForm()" />
+          <Link
+            v-model="criteria.quiz"
+            doctype="Quiz"
+            :label="__('Select a Quiz')"
+            :required="true"
+            :filters="{ course: course.data.course }"
+            :onCreate="(value, close) => redirectToForm('quiz', close)"
+          />
         </template>
         <template v-else-if="criteria.type === 'Exam'">
-          <Link v-model="criteria.exam" doctype="Exam Activity" :label="__('Select an Exam')" :required="true" :filters="{ course: course.data.course }" />
+          <Link
+            v-model="criteria.exam"
+            doctype="Exam Activity"
+            :label="__('Select an Exam')"
+            :required="true"
+            :filters="{ course: course.data.course }"
+            :onCreate="(value, close) => redirectToForm('exam', close)"
+          />
         </template>
         <template v-else-if="criteria.type === 'Assignment'">
-          <Link v-model="criteria.assignment" doctype="Assignment Activity" :label="__('Select an Assignment')" :required="true" :filters="{ course: course.data.course }" :onCreate="(value, close) => redirectToForm()" />
+          <Link
+            v-model="criteria.assignment"
+            doctype="Assignment Activity"
+            :label="__('Select an Assignment')"
+            :required="true"
+            :filters="{ course: course.data.course }"
+            :onCreate="(value, close) => redirectToForm('assignment', close)"
+          />
         </template>
         <template v-else>
           <p>Offline</p>
@@ -458,6 +479,21 @@ function onAssessmentSaved() {
   assessments.reload()
   // Now, close the Modal
   showCourseAssessmentModal.value = false;
+}
+
+function redirectToForm(type, close) {
+  const routeMap = {
+    quiz: '/seminary/quizzes/new',
+    exam: '/seminary/exams/new',
+    assignment: '/seminary/assignments/new',
+  }
+  const target = routeMap?.[String(type || '').toLowerCase()]
+  if (typeof close === 'function') {
+    close()
+  }
+  if (target) {
+    window.open(target, '_blank')
+  }
 }
 </script>
 

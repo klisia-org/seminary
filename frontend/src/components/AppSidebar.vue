@@ -1,59 +1,52 @@
 <template>
 	<div
-	  class="flex h-full flex-col justify-between transition-all duration-300 ease-in-out"
-	  :class="isSidebarCollapsed ? 'w-12' : 'w-56'"
+	  class="relative z-20 flex h-full flex-shrink-0 flex-col justify-between border-r border-gray-200 bg-[#f8f8f8] text-gray-900 transition-all duration-300 ease-in-out"
+	  :class="isSidebarCollapsed ? 'w-16' : 'w-64'"
 	>
 	  <div class="flex flex-col overflow-hidden">
-		<div class="p-2 transition-all duration-300 ease-in-out"
-			:class="isSidebarCollapsed ? 'h-8 w-8' : 'h-16 w-16'">
-			<UserDropdown 
-				:isCollapsed="isSidebarCollapsed" 
+		<div class="px-3 pt-6 pb-4">
+			<UserDropdown
+				:isCollapsed="isSidebarCollapsed"
 				:seminarySettings="!seminarySettings.loading && seminarySettings.data"
 			/>
 		</div>
-		<div class="flex flex-col overflow-y-auto">
+		<nav class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
 			<SidebarLink
+				v-for="link in links"
+				:key="link.to"
 				:label="link.label"
 				:to="link.to"
-				v-for="link in links"
 				:isCollapsed="isSidebarCollapsed"
 				:icon="link.icon"
-				class="mx-2 my-0.5"
 			/>
-		</div>
+		</nav>
 	  </div>
-	  <SidebarLink
-		:label="isSidebarCollapsed ? 'Expand' : 'Collapse'"
-		:isCollapsed="isSidebarCollapsed"
-		@click="isSidebarCollapsed = !isSidebarCollapsed"
-		class="m-2"
-	  >
-		<template #icon>
-		  <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
-			<ArrowLeftToLine
-			  class="h-4.5 w-4.5 text-gray-700 duration-300 ease-in-out"
-			  :class="{ '[transform:rotateY(180deg)]': isSidebarCollapsed }"
-			/>
-		  </span>
-		</template>
-	  </SidebarLink>
+	  <div class="px-3 pb-6">
+		<SidebarLink
+			:label="isSidebarCollapsed ? 'Expand' : 'Collapse'"
+			:isCollapsed="isSidebarCollapsed"
+			@click="isSidebarCollapsed = !isSidebarCollapsed"
+		>
+			<template #icon>
+				<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
+					<component
+						:is="collapseIcon"
+						class="h-4.5 w-4.5 text-gray-700 transition-transform duration-300"
+					/>
+				</span>
+			</template>
+		</SidebarLink>
+	  </div>
 	</div>
 </template>
 
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { LayoutDashboard, CalendarCheck, GraduationCap, Banknote, UserCheck, ArrowLeftToLine, BookOpen } from 'lucide-vue-next';
-import { usersStore } from '@/stores/user'
-import { sessionStore } from '@/stores/session'
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
-import { ref } from 'vue';
-
-const { userResource } = usersStore()
-const { user } = sessionStore()
-const isModerator = ref(false)
-const isInstructor = ref(false)
+import { computed } from 'vue';
 
 const links = [
 	{
@@ -74,6 +67,8 @@ const links = [
 ]
 
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false);
+
+const collapseIcon = computed(() => (isSidebarCollapsed.value ? ArrowRightToLine : ArrowLeftToLine));
 
 const seminarySettings = createResource({
 	url: 'seminary.seminary.api.get_school_abbr_logo',

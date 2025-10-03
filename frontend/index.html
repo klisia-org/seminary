@@ -8,7 +8,14 @@
   </head>
   <body>
     <div id="app"></div>
-		<script>window.csrf_token = '{{ frappe.session.csrf_token }}';</script>
+    <script>
+      window.csrf_token = '{{ frappe.session.csrf_token }}'
+    </script>
+    <script>
+      {% for key in boot %}
+      window["{{ key }}"] = {{ boot[key] | tojson }};
+      {% endfor %}
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

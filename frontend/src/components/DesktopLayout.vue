@@ -2,12 +2,10 @@
 	<div class="relative flex h-full flex-col">
 		<div class="h-full flex-1">
 			<div class="flex h-screen text-base bg-surface-white">
-				<div
-					class="relative block h-full max-w-56"
-				>
+				<div class="relative h-full">
 					<AppSidebar />
 				</div>
-				<div class="w-full overflow-auto" id="scrollContainer">
+				<div class="relative flex-1 overflow-auto" id="scrollContainer">
 					<slot />
 				</div>
 			</div>

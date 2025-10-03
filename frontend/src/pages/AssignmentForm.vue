@@ -24,7 +24,7 @@
 	</header>
 	<div class="w-3/4 mx-auto py-5">
 		<div class="font-semibold mb-4">
-			{{ __('Details') }}
+			{{ __('Assignment Details') }}
 		</div>
 		<div class="grid grid-cols-2 gap-5 mt-4 mb-8">
 			<FormControl
@@ -32,11 +32,20 @@
 				:label="__('Title')"
 				:required="true"
 			/>
+
 			<FormControl
 				v-model="model.type"
 				type="select"
 				:options="assignmentOptions"
 				:label="__('Type')"
+				:required="true"
+			/>
+		</div>
+		<div class="mb-8">
+			<LinkControl
+				v-model="model.course"
+				doctype="Course"
+				:label="__('Course where this assignment will be used. You may reuse this assignment in other course offerings')"
 				:required="true"
 			/>
 		</div>
@@ -46,7 +55,8 @@
 				<span class="text-ink-red-3">*</span>
 			</div>
 			<TextEditor
-				:content="model.question"
+				v-if="model.question !== undefined"
+				:content="model.question || ''"
 				@change="(val) => (model.question = val)"
 				:editable="true"
 				:fixedMenu="true"
@@ -63,7 +73,7 @@ import {
 	createResource,
 	FormControl,
 	TextEditor,
-	toast
+	toast,
 } from 'frappe-ui'
 import {
 	computed,
@@ -72,24 +82,26 @@ import {
 	onBeforeUnmount,
 	reactive,
 	watch,
+	ref
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { examStore } from '@/stores/exam'
+import LinkControl from '@/components/Controls/Link.vue'
 
 const user = inject('$user')
 const router = useRouter()
-
 const props = defineProps({
-	assignmentID: {
-		type: String,
-		required: false,
-	},
+    assignmentID: {
+        type: String,
+        required: false,
+    },
 })
 
 const model = reactive({
-	title: '',
-	type: 'PDF',
-	question: '',
+    title: '',
+    course: '',
+    type: 'PDF',
+    question: '',
 })
 
 onMounted(() => {
@@ -182,15 +194,34 @@ watch(assignment, () => {
     }
 });
 
-const breadcrumbs = computed(() => [
-	{
-		label: __('Assignments'),
-		route: { name: 'Assignments' },
-	},
-	{
-		label: assignment.doc ? assignment.doc.title : __('New Assignment'),
-	},
-])
+const breadcrumbs = computed(() => {
+	const items = [
+		{
+			label: __('Assignments'),
+			route: { name: 'Assignments' },
+		},
+	]
+
+	if (assignment.doc?.name) {
+		items.push({
+			label: assignment.doc.title,
+			route: {
+				name: 'AssignmentForm',
+				params: { assignmentID: assignment.doc.name },
+			},
+		})
+	} else {
+		items.push({
+			label: __('New Assignment'),
+			route: {
+				name: 'AssignmentForm',
+				params: { assignmentID: props.assignmentID || 'new' },
+			},
+		})
+	}
+
+	return items
+})
 
 const assignmentOptions = computed(() => {
 	return [

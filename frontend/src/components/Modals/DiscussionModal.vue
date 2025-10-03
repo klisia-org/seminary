@@ -1,19 +1,11 @@
 <template>
 	<Dialog
-		:options="{
-			title: singularize(props.title),
-			size: '2xl',
-			actions: [
-				{
-					label: 'Post',
-					variant: 'solid',
-					onClick: (close) => submitTopic(close),
-				},
-			],
-		}"
+		v-model="show"
+		:disableOutsideClickToClose="true"
+		:options="dialogOptions"
 	>
 		<template #body-content>
-			<div class="flex flex-col gap-4">
+			<div class="discussion-dialog flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
 				<div>
 					<FormControl v-model="topic.title" :label="__('Title')" type="text" />
 				</div>
@@ -35,9 +27,10 @@
 </template>
 <script setup>
 import { Dialog, FormControl, TextEditor, createResource, toast } from 'frappe-ui'
-import { reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { singularize } from '@/utils'
 
+const show = defineModel()
 const topics = defineModel('reloadTopics')
 
 const props = defineProps({
@@ -59,6 +52,11 @@ const topic = reactive({
 	title: '',
 	reply: '',
 })
+
+const resetTopic = () => {
+	topic.title = ''
+	topic.reply = ''
+}
 
 const topicResource = createResource({
 	url: 'frappe.client.insert',
@@ -106,10 +104,10 @@ const submitTopic = (close) => {
 					},
 					{
 						onSuccess() {
-							topic.title = ''
-							topic.reply = ''
-							topics.value.reload()
-							close()
+						show.value = false
+						topics.value.reload()
+						resetTopic()
+						close()
 						},
 					}
 				)
@@ -120,4 +118,33 @@ const submitTopic = (close) => {
 		}
 	)
 }
+
+const handleCancel = (close) => {
+	show.value = false
+	resetTopic()
+	close?.()
+}
+
+watch(show, (value) => {
+	if (!value) {
+		resetTopic()
+	}
+})
+
+const dialogOptions = computed(() => ({
+	title: singularize(props.title),
+	size: '2xl',
+	actions: [
+		{
+			label: __('Post'),
+			variant: 'solid',
+			onClick: (close) => submitTopic(close),
+		},
+		{
+			label: __('Cancel'),
+			variant: 'text',
+			onClick: (close) => handleCancel(close),
+		},
+	],
+}))
 </script>
