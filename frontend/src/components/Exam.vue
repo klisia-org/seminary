@@ -103,10 +103,12 @@
         </div>
         <div class="mt-4">
           <textarea
+            v-if="answers && answers[question.name] !== undefined"
             v-model="answers[question.name]"
-            class="border rounded-md p-2 w-full"
+            rows="7"
+            class="border rounded-md p-2 w-full resize-y"
             placeholder="Type your answer here"
-            @change="(val) => updateAnswer(question.name, val)" 
+            @input="(event) => updateAnswer(question.name, event.target.value)"
           />
         </div>
       </div>
@@ -121,8 +123,8 @@
 </template>
 
 <script setup>
-import {Badge, Button, call, createResource, TextEditor, FormControl, frappeRequest, toast} from 'frappe-ui'
-import { ref, watch, reactive, inject, computed, toRaw, onMounted } from 'vue'
+import { Button, call, createResource, toast } from 'frappe-ui'
+import { ref, watch, inject, computed, toRaw, onMounted, onBeforeUnmount } from 'vue'
 import { CheckCircle, XCircle, MinusCircle, SquarePen } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
@@ -139,6 +141,18 @@ const questions = ref([]);
 const fullExamMode = ref(false); // Always in full exam mode
 const router = useRouter()
 let user_is_instructor = false
+
+const ensureAnswersInitialized = (questionsList = []) => {
+  const existingAnswers = { ...answers.value };
+  const initialized = {};
+
+  questionsList.forEach((question) => {
+    const current = existingAnswers[question.name];
+    initialized[question.name] = typeof current === 'string' ? current : '';
+  });
+
+  answers.value = initialized;
+};
 // const socket = inject('$socket')
 
 // if (!socket) {
@@ -185,6 +199,7 @@ onSuccess(data) {
         // console.log('Exam Name:', exam.data?.name); // Debugging log
         // console.log('User Name:', user.data?.name); // Debugging log
         data.questions = data.questions || []; // Ensure questions is always an array
+        ensureAnswersInitialized(data.questions);
         
           // populateQuestions();
           // setupTimer();
@@ -221,6 +236,20 @@ const instructors = createResource({
   },
   auto: true,
 });
+
+watch(
+  () => instructors.data,
+  (list) => {
+    if (!Array.isArray(list)) {
+      return;
+    }
+    const wasInstructor = user_is_instructor;
+    user_is_instructor = list.some((instructor) => instructor.user === user.data?.name);
+    if (!wasInstructor && user_is_instructor && exam.data?.questions?.length) {
+      ensureAnswersInitialized(exam.data.questions);
+    }
+  },
+);
 
 const is_instructor = () => {
  // console.log('Fetching instructors of course:', router.currentRoute.value.params.courseName); // Debugging
@@ -323,7 +352,7 @@ return Object.entries(rawAnswers).map(([questionName, answer]) => ({
 };
 
 const updateAnswer = (questionName, value) => {
-answers[questionName] = value;
+  answers.value[questionName] = value;
 };
 
 const attempts = createResource({
@@ -388,12 +417,14 @@ const startExam = () => {
 	activeQuestion.value = 1
 	localStorage.removeItem(exam.data.title)
 	startTimer()
+  ensureAnswersInitialized(exam.data?.questions || []);
 }
 
 const startExam2 = () => {
     localStorage.removeItem(exam.data.title);
     fullExamMode.value = true; // Set full exam mode flag
     startTimer();
+    ensureAnswersInitialized(exam.data?.questions || []);
     // all_questions_details.reload(); // Ensure the resource is reloaded
     
 }
@@ -446,6 +477,12 @@ onMounted(() => {
 	// Load submission resources on mount
 	submission.reload();
 	submission_anystatus.reload();
+});
+
+onBeforeUnmount(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
 });
 	
 </script>

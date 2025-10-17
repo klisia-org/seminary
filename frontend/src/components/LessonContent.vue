@@ -63,6 +63,9 @@
 	<div v-if="exam">
 		<Exam :exam="exam" />
 	</div>
+	<div v-if="discussionID">
+		<DiscussionActivity :discussion="discussionID" />
+	</div>
 	<div v-if="folder">
 		<Folder :folder="folder" />
 	</div>
@@ -70,6 +73,7 @@
 <script setup>
 import Quiz from '@/components/QuizBlock.vue'
 import Exam from '@/components/ExamBlock.vue'
+import DiscussionActivity from '@/components/DiscussionActivityBlock.vue'
 import Folder from '@/components/FolderBlock.vue'
 
 import MarkdownIt from 'markdown-it'
@@ -93,6 +97,10 @@ const props = defineProps({
 		required: false,
 	},
 	exam: {
+		type: String,
+		required: false,
+	},
+	discussionID: {
 		type: String,
 		required: false,
 	},

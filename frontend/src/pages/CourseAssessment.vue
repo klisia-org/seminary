@@ -9,7 +9,7 @@
               :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
               <Button variant="subtle" class="ml-2">
                 <span>
-                  {{ __('Adjust totals to save') }}
+                  {{ __('Save only allowed when Total Points = 100') }}
                 </span>
               </Button>
             </Tooltip>
@@ -30,7 +30,7 @@
             <div v-else class="text-lg font-semibold mb-4">
               {{ __('Assessment Criteria for ' + course.data.course) }}
             </div>
-            <div :class="{'flex justify-between mb-4 p-3 text-xl': true, 'bg-red-400 rounded': totalPoints !== 100}">
+            <div :class="{'max-w-full flex justify-between mb-4 mt-5 text-xl': true, 'bg-red-400 rounded': totalPoints !== 100}">
               <div>
                 <strong>{{ __('Total Points') }}:</strong> {{ totalPoints }}
               </div>
@@ -39,10 +39,8 @@
               </div>
             </div>
           </div>
-          </div>
-       
-               
-          <table class="min-w-full table-auto border-collapse overflow-auto">
+        </div>
+    <table class="min-w-full table-auto border-collapse overflow-auto">
             <thead>
   <tr>
     <th class="p-2 border">{{ __('Title') }}</th>
@@ -66,7 +64,7 @@
           class="mb-4"
           doctype="Assessment Criteria"
           :required="true"
-          @update:modelValue="(val) => { console.log('update:modelValue triggered:', val); fetchType(criteria); }"
+          @update:modelValue="() => fetchType(criteria)"
         />
       </td>
       <td class="p-2 border">
@@ -100,8 +98,18 @@
             :onCreate="(value, close) => redirectToForm('assignment', close)"
           />
         </template>
+        <template v-else-if="criteria.type === 'Discussion'">
+          <Link
+            v-model="criteria.discussion"
+            doctype="Discussion Activity"
+            :label="__('Select a Discussion Activity')"
+            :required="true"
+            :filters="{ course: course.data.course }"
+            :onCreate="(value, close) => redirectToForm('discussion', close)"
+          />
+        </template>
         <template v-else>
-          <p>Offline</p>
+          <p>{{ __('Offline') }}</p>
         </template>
       </td>
       <td class="p-2 border text-center">
@@ -144,11 +152,11 @@
   </tbody>
 </table>
 
-
+  <div class="mt-5 mb-10 max-w-full px-15">
              
             
             <br>
-            <Button size="sm" @click="openCourseAssessmentModal">
+            <Button class="mb-4" size="sm" @click="openCourseAssessmentModal">
               {{ __('Add Evaluation') }}
             </Button>
      
@@ -160,6 +168,7 @@
     :courseName="props.courseName"
     @assessment-saved="onAssessmentSaved" 
   />
+ </div>
 </template>
 
 <script setup>
@@ -196,6 +205,7 @@ const modalcriteria = reactive({
   quiz: '',
   exam: '',
   assignment: '',
+  discussion: '',
   extracredit_scac: 0,
   fudgepoints_scac: '',
   parent: props.courseName,
@@ -280,6 +290,7 @@ function loadAssessmentCriteria() {
           quiz: item.quiz || '',
           exam: item.exam || '',
           assignment: item.assignment || '',
+          discussion: item.discussion || '',
           creator: item.creator || '',
           extracredit_scac: item.extracredit_scac || 0,
           fudgepoints_scac: item.fudgepoints_scac || '',
@@ -301,6 +312,7 @@ function loadAssessmentCriteria() {
         quiz: assessments.data.quiz || '',
         exam: assessments.data.exam || '',
         assignment: assessments.data.assignment || '',
+        discussion: assessments.data.discussion || '',
         creator: assessments.data.creator || '',
         extracredit_scac: assessments.data.extracredit_scac || 0,
         fudgepoints_scac: assessments.data.fudgepoints_scac || '',
@@ -327,6 +339,7 @@ function addCriteria() {
     quiz: '',
     exam: '',
     assignment: '',
+    discussion: '',
     extracredit_scac: 0,
     fudgepoints_scac: '',
     parent: props.courseName,
@@ -344,8 +357,7 @@ function addCriteria() {
     () => newCriteria.assesscriteria_scac,
     (newVal) => {
       if (newVal) {
-        fetchType(newCriteria);
-        console.log('New Criteria:', newCriteria);
+        fetchType(newCriteria)
       }
     }
   );
@@ -412,6 +424,9 @@ function validateCriteria() {
     if (criteria.type === 'Assignment' && !criteria.assignment) {
       return false;
     }
+    if (criteria.type === 'Discussion' && !criteria.discussion) {
+      return false;
+    }
     if (!criteria.extracredit_scac && !criteria.weight_scac) {
       return false;
     }
@@ -457,10 +472,29 @@ async function fetchType(criteria) {
     try {
       const response = await fetch(`/api/resource/Assessment Criteria/${criteria.assesscriteria_scac}`);
       const data = await response.json();
-      criteria.type = data.data.type;
+      const resolvedType = data?.data?.type || '';
+      criteria.type = resolvedType;
+      if (resolvedType !== 'Quiz') {
+        criteria.quiz = '';
+      }
+      if (resolvedType !== 'Exam') {
+        criteria.exam = '';
+      }
+      if (resolvedType !== 'Assignment') {
+        criteria.assignment = '';
+      }
+      if (resolvedType !== 'Discussion') {
+        criteria.discussion = '';
+      }
     } catch (error) {
       console.error('Error fetching type:', error);
     }
+  } else {
+    criteria.type = '';
+    criteria.quiz = '';
+    criteria.exam = '';
+    criteria.assignment = '';
+    criteria.discussion = '';
   }
 }
 
@@ -486,6 +520,7 @@ function redirectToForm(type, close) {
     quiz: '/seminary/quizzes/new',
     exam: '/seminary/exams/new',
     assignment: '/seminary/assignments/new',
+    discussion: '/seminary/discussion-activities/new',
   }
   const target = routeMap?.[String(type || '').toLowerCase()]
   if (typeof close === 'function') {

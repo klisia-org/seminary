@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "autoname": "format:{disc_activity}-{YYYY}-{####}",
+ "creation": "2025-10-07 08:01:59.159235",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "id_section",
+  "disc_activity",
+  "disc_title",
+  "member",
+  "student",
+  "student_name",
+  "column_break_ccuv",
+  "coursesc",
+  "course",
+  "course_assess",
+  "participation_section",
+  "original_post",
+  "original_attachment",
+  "replies",
+  "feedback_section",
+  "grade",
+  "score_out_of",
+  "percentage",
+  "late",
+  "column_break_mqxy",
+  "fudge_points",
+  "extra_credit",
+  "status",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fieldname": "id_section",
+   "fieldtype": "Section Break",
+   "label": "ID"
+  },
+  {
+   "fieldname": "disc_activity",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Discussion Activity",
+   "options": "Discussion Activity",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "disc_activity.discussion_name",
+   "fieldname": "disc_title",
+   "fieldtype": "Data",
+   "label": "Discussion Activity Title"
+  },
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name"
+  },
+  {
+   "fieldname": "column_break_ccuv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "coursesc",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Course Assessment",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fieldname": "participation_section",
+   "fieldtype": "Section Break",
+   "label": "Participation"
+  },
+  {
+   "fieldname": "original_post",
+   "fieldtype": "Text Editor",
+   "label": "Original Post",
+   "reqd": 1
+  },
+  {
+   "fieldname": "replies",
+   "fieldtype": "Table",
+   "label": "Replies received",
+   "options": "Discussion Submission Replies"
+  },
+  {
+   "fieldname": "feedback_section",
+   "fieldtype": "Section Break",
+   "label": "Feedback"
+  },
+  {
+   "fieldname": "score_out_of",
+   "fieldtype": "Float",
+   "label": "Max Possible Score"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage"
+  },
+  {
+   "fieldname": "column_break_mqxy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fudge_points",
+   "fieldtype": "Float",
+   "label": "Fudge Points"
+  },
+  {
+   "default": "0",
+   "fieldname": "extra_credit",
+   "fieldtype": "Check",
+   "label": "Is Extra Credit"
+  },
+  {
+   "default": "Not Graded",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Not Graded\nGraded"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "original_attachment",
+   "fieldtype": "Attach",
+   "label": "Original Post Attachment"
+  },
+  {
+   "fieldname": "late",
+   "fieldtype": "Duration",
+   "label": "Lateness",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Float",
+   "label": "Grade",
+   "non_negative": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-10-10 11:22:43.168958",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Discussion Submission",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

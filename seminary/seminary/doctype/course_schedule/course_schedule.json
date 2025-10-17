@@ -64,6 +64,8 @@
   "class_roster_section",
   "csroster_html",
   "grades_sent",
+  "student_groups_section",
+  "stu_groups_course",
   "section_break_adom",
   "enrollments",
   "lessons"
@@ -402,12 +404,23 @@
    "label": "Max Grade in this scale",
    "non_negative": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "student_groups_section",
+   "fieldtype": "Section Break",
+   "label": "Student Groups"
+  },
+  {
+   "fieldname": "stu_groups_course",
+   "fieldtype": "Table",
+   "label": "Student Groups",
+   "options": "Student Group Link"
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-03-31 09:45:57.800971",
+ "modified": "2025-10-07 09:21:02.699831",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
@@ -484,6 +497,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

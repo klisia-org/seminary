@@ -10,8 +10,8 @@
     "build": "cd frontend && yarn build"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Klisia, Frappe, and contributors",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
     "vite": "^7.1.6"

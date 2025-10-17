@@ -74,4 +74,5 @@ const seminarySettings = createResource({
 	url: 'seminary.seminary.api.get_school_abbr_logo',
 	auto: true,
 });
+console.log("Seminary Settings:", seminarySettings);
 </script>

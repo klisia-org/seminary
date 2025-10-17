@@ -29,7 +29,7 @@ Here are some of the standout features of the Frappe Education module:
 
 ## License
 
-GNU GPL V3. See [license.txt](https://github.com/frappe/agriculture/blob/develop/license.txt) for more information.
+GNU Affero General Public License v3.0. See [license.txt](https://github.com/klisia-org/seminary/license.txt) for more information.
 
 ## Thanks
 This project was originally a forked version of Frappe Education, but we unforked it as the workflow changed significantly. We are wholeheartedly thankful for the excellent team at Frappe.

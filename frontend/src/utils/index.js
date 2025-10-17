@@ -3,6 +3,7 @@ import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
+import { DiscussionActivity } from '@/utils/discussionactivity'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
@@ -160,6 +161,7 @@ export function getEditorTools() {
 		assignment: Assignment,
 		quiz: Quiz,
 		exam: Exam,
+		discussionActivity: DiscussionActivity,
 		upload: Upload,
 		markdown: {
 			class: Markdown,

@@ -165,29 +165,29 @@ const reloadSubmissions = () => {
 const submissionColumns = computed(() => {
 	return [
 		{
-			label: 'Student',
+			label: __('Student'),
 			key: 'member_name',
 			width: 1,
 		},
 		{
-			label: 'Assignment',
+			label: __('Assignment'),
 			key: 'assignment_title',
 			width: 2,
 		},
 		{
-			label: 'Submitted',
+			label: __('Submitted'),
 			key: 'creation',
 			width: 1,
 			align: 'left',
 		},
 		{
-			label: 'Grade',
+			label: __('Grade'),
 			key: 'grade',
 			width: 1,
 			align: 'center',
 		},
 		{
-			label: 'Status',
+			label: __('Status'),
 			key: 'status',
 			width: 1,
 			align: 'center',

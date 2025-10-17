@@ -9,6 +9,7 @@
 	
 	<Dialogs /> <!-- Ensure this line is present -->
 	<Tiptap />
+	
 	</FrappeUIProvider>
 </template>
 

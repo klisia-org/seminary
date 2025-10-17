@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "Klisia, Frappe and Contributors",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "vite --config vite.config.js",
     "build": "vite build --config vite.config.js --base=/assets/seminary/frontend/ && yarn copy-html-entry",
@@ -25,7 +27,7 @@
     "@tailwindcss/typography": "^0.5.18",
     "dayjs": "^1.11.13",
     "feather-icons": "^4.29.2",
-    "frappe-ui": "^0.1.200",
+    "frappe-ui": "^0.1.201",
     "highlight.js": "^11.11.1",
     "hljs": "^6.2.3",
     "lucide-vue-next": "^0.479.0",

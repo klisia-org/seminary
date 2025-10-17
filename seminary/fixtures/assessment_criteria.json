@@ -29,7 +29,15 @@
   "doctype": "Assessment Criteria",
   "modified": "2025-03-07 07:38:13.003019",
   "name": "Exam",
-  "type": "Quiz"
+    "type": "Exam"
+ },
+  {
+  "assessment_criteria": "Discussion",
+  "docstatus": 0,
+  "doctype": "Discussion Activity",
+  "modified": "2025-03-07 07:38:13.003019",
+  "name": "Discussion",
+    "type": "Discussion"
  },
  {
   "assessment_criteria": "Academic Paper with Online Submission",

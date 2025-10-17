@@ -73,6 +73,21 @@
 					</span>
 				</Button>
 			</router-link>
+				<router-link
+				v-if="user?.data?.is_moderator || is_instructor()"
+				:to="{
+					name: 'StudentGroup',
+					params: {
+						courseName: course.data.name,
+					},
+				}"
+			>
+				<Button variant="subtle" class="w-full mt-2" size="md">
+					<span>
+						{{ ('Configure Student Groups') }}
+					</span>
+				</Button>
+			</router-link>
 			<router-link
 				v-if="user?.data?.is_moderator || is_instructor()"
 				:to="{

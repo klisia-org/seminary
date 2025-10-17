@@ -452,7 +452,7 @@ def get_roster(course):
 	roster = frappe.get_all(
 		"Scheduled Course Roster",
 		{"course_sc": course},
-		["name", "stuname_roster", "stuemail_rc", "audit_bool", "active", "stuimage"],
+		["name", "stuname_roster", "stuemail_rc", "audit_bool", "active", "stuimage", "student"],
 		order_by="stuname_roster",
 	)
 	return roster
@@ -578,6 +578,7 @@ def get_lesson(course, chapter, lesson):
 			"assessment_criteria_assignment",
 			"assessment_criteria_exam",
 			"assignment_id",
+			"discussion_id",
 			"course_sc",
 			"content",
 			"instructor_content",
@@ -1250,3 +1251,48 @@ def insert_discussion_reply(reply, topic):
 	)
 	doc.insert(ignore_permissions=True)
 	return doc.name
+
+# Student Group Utils
+@frappe.whitelist()
+def get_student_groups(course):
+	groups = frappe.db.sql(
+		"""select lk.student_group, lk.group_instructor, sgm.student, sgm.student_name, sg.group_name 
+from `tabCourse Schedule` cs, `tabStudent Group Link` lk, `tabStudent Group` sg, `tabStudent Group Members` sgm 
+where lk.parent = cs.name and
+sg.name = lk.student_group and
+sg.name = sgm.parent and cs.name = %s""",
+		(course,),
+		as_dict=True,
+	)
+	return groups
+
+@frappe.whitelist()
+def create_student_group(course, group_name, group_instructor, members):
+	course_doc = frappe.get_doc("Course Schedule", course)
+	student_group = frappe.new_doc("Student Group")
+	student_group.group_name = group_name
+	student_group.mentor = group_instructor
+	student_group.insert(ignore_permissions=True)
+
+	course_doc.append("stu_groups_course", {})
+	course_doc.stu_groups_course[-1].student_group = student_group.name
+	course_doc.stu_groups_course[-1].group_instructor = group_instructor
+	course_doc.save(ignore_permissions=True)
+
+	for member in members:
+			# Extract the 'member' key if member is a dictionary
+			if isinstance(member, dict):
+				member = member.get('member', '')
+
+			if not member:
+				frappe.throw("Invalid member data: 'member' field is missing.")
+
+			group_member = frappe.new_doc("Student Group Members")
+			group_member.parent = student_group.name
+			group_member.parentfield = "group_members"
+			group_member.parenttype = "Student Group"
+			group_member.student = member
+			group_member.student_name = frappe.db.get_value("Student", {"name": member}, "student_name")
+			group_member.insert(ignore_permissions=True)
+
+	return student_group.name

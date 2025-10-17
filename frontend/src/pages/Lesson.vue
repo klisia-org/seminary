@@ -139,6 +139,7 @@
 						:quizId="lesson.data.quiz_id"
 						:exam="lesson.data.exam"
 						:assignmentID="lesson.data.assignment_id"
+						:discussionID="lesson.data.discussion_id"
 						:socket="socket"
 						
 					/>

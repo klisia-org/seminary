@@ -24,10 +24,12 @@
   "quiz_id",
   "assignment_id",
   "exam",
+  "discussion_id",
   "column_break_otzq",
   "assessment_criteria_quiz",
   "assessment_criteria_assignment",
-  "assessment_criteria_exam"
+  "assessment_criteria_exam",
+  "assessment_criteria_discussion"
  ],
  "fields": [
   {
@@ -163,11 +165,22 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Allow Discussions"
+  },
+  {
+   "fieldname": "discussion_id",
+   "fieldtype": "Data",
+   "label": "Discussion Activity"
+  },
+  {
+   "fieldname": "assessment_criteria_discussion",
+   "fieldtype": "Link",
+   "label": "Assessment Criteria Discussion",
+   "options": "Scheduled Course Assess Criteria"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-04 07:50:30.565052",
+ "modified": "2025-10-09 18:15:20.787165",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Lesson",
@@ -222,6 +235,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

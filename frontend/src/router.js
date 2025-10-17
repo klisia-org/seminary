@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { usersStore } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
+import path from 'path'
 
 
 const routes = [
@@ -166,9 +167,44 @@ const routes = [
 		props: true,	
 	},
 	{
+  		path: '/discussion-activity/:discussionID?',
+  		name: 'DiscussionActivityForm',
+  		component: () => import('@/pages/DiscussionActivityForm.vue'),
+  		props: true,
+	},
+	{
+		path: '/gradebook/:courseName/discussion-submissions/:discussionID/:submissionName',
+		name: 'DiscussionActivitySubmission',
+		component: () => import('@/pages/DiscussionActivitySubmission.vue'),
+		props: true,
+	},
+	{
+		path: '/discussion-activity-submissions',
+		name: 'DiscussionActivitySubmissionList',
+		component: () => import('@/pages/DiscussionActivitySubmissionList.vue'),
+		
+	},
+	{
+		path: '/discussion-activities',
+		name: 'DiscussionActivities',
+		component: () => import('@/pages/DiscussionActivities.vue'),
+	},
+		{
+		path: '/gradebook/:courseName/discussion-submissions/:discussionID',
+		name: 'DiscussionActivitySubmissionCS',
+		component: () => import('@/pages/DiscussionActivitySubmissionCS.vue'),
+		props: true,
+	},
+	{
 		path: '/mock',
 		name: 'Mock',
 		component: () => import('@/pages/Mock.vue'),
+	},
+	{
+		path: '/courses/:courseName/student-group',
+		name: 'StudentGroup',
+		component: () => import('@/pages/StudentGroup.vue'),
+		props: true,
 	},
   {
     path :'/:catchAll(.*)',

@@ -77,7 +77,7 @@
 	</div>
 </template>
 <script setup>
-import { createResource, Breadcrumbs, Badge, Tooltip } from 'frappe-ui'
+import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle } from '@/utils'

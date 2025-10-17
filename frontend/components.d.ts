@@ -22,6 +22,8 @@ declare module 'vue' {
     CourseCardToDo: typeof import('./src/components/CourseCardToDo.vue')['default']
     CourseOutline: typeof import('./src/components/CourseOutline.vue')['default']
     DesktopLayout: typeof import('./src/components/DesktopLayout.vue')['default']
+    DiscussionActivity: typeof import('./src/components/DiscussionActivity.vue')['default']
+    DiscussionActivityBlock: typeof import('./src/components/DiscussionActivityBlock.vue')['default']
     DiscussionModal: typeof import('./src/components/Modals/DiscussionModal.vue')['default']
     DiscussionReplies: typeof import('./src/components/DiscussionReplies.vue')['default']
     Discussions: typeof import('./src/components/Discussions.vue')['default']

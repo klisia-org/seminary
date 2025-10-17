@@ -25,6 +25,115 @@ import xml.etree.ElementTree as ET
 from xml.dom.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 
+@frappe.whitelist()
+def get_student_group(course_name: str | None = None, user: str | None = None):
+	group = frappe.db.sql("""
+		select r.stuname_roster, r.student, r.stuemail_rc, k.student_group, k.group_instructor 
+		from `tabScheduled Course Roster` r, `tabStudent Group Link` k, `tabStudent Group` g, `tabStudent Group Members` m 
+		where r.course_sc = %s and k.parent = r.course_sc and k.student_group = g.name and g.name = m.parent and m.student = r.student and r.stuemail_rc = %s""", (course_name, user), as_dict=1)
+	print("Group fetched: ", group)
+	return group[0] if group else {}
+
+@frappe.whitelist()
+def get_student_groups_simple(course_name: str | None = None):
+	groups = frappe.db.sql("""
+		select k.student_group, k.group_instructor 
+		from `tabCourse Schedule` cs, `tabStudent Group Link` k, `tabStudent Group` g  
+		where cs.name = %s and k.parent = cs.name and k.student_group = g.name""", course_name, as_dict=1)
+	return groups
+
+@frappe.whitelist()
+def get_student_groups(course_name: str | None = None):
+	groups = frappe.db.sql("""
+		select k.student_group, k.group_instructor, m.student, m.student_name 
+		from `tabCourse Schedule` cs, `tabStudent Group Link` k, `tabStudent Group` g, `tabStudent Group Members` m  
+		where cs.name = %s and k.parent = cs.name and k.student_group = g.name and g.name = m.parent""", course_name, as_dict=1)
+	return groups
+
+def _get_discussion_replies(parent_name: str) -> list[dict]:
+	"""Return replies for a given discussion submission."""
+	replies = frappe.get_all(
+		"Discussion Submission Replies",
+		filters={"parent": parent_name},
+		fields=["reply","reply_attach", "member_name", "owner", "creation", "reply_dt"],
+		order_by="creation asc",
+	)
+	return replies
+
+
+@frappe.whitelist()
+def get_discussion_submissions(course_name: str | None = None, discussion_id: str | None = None):
+	"""Fetch submissions for a discussion activity within a course."""
+	if not course_name or not discussion_id:
+		raise frappe.ValidationError(_("Course and discussion are required."))
+
+	submissions = frappe.get_all(
+		"Discussion Submission",
+		filters={
+			"coursesc": course_name,
+			"disc_activity": discussion_id,
+		},
+		fields=[
+			"name",
+			"student_name",
+			"student",
+			"student_name",
+			"original_post",
+			"original_attachment",
+			"owner",
+			"creation",
+		],
+		order_by="creation desc",
+	)
+
+	# Fetch student groups for the course
+	student_groups = get_student_groups(course_name)
+
+	# Append student group and group instructor to each submission
+	for submission in submissions:
+		submission["replies"] = _get_discussion_replies(submission["name"])
+		submission["student_group"] = None
+		submission["group_instructor"] = None
+		for group in student_groups:
+			if group["student"] == submission["student"]:
+				submission["student_group"] = group["student_group"]
+				submission["group_instructor"] = group["group_instructor"]
+				break
+
+	return submissions
+
+
+
+
+@frappe.whitelist()
+def get_user_discussion_submission(course_name: str | None = None, discussion_id: str | None = None, owner: str | None = None):
+
+
+	submissions = frappe.get_all(
+		"Discussion Submission",
+		filters={
+			"coursesc": course_name,
+			"disc_activity": discussion_id,
+			"owner": owner,
+		},
+		fields=[
+			"name",
+			"student_name",
+			"student",
+			"student_name",
+			"original_post",
+			"original_attachment",
+			"owner",
+			"creation",
+		],
+		order_by="creation desc",
+	)
+
+	for submission in submissions:
+		submission["replies"] = _get_discussion_replies(submission["name"])
+
+	return submissions
+
 @frappe.whitelist(allow_guest=True)
 def get_translations():
 	if frappe.session.user != "Guest":
@@ -609,6 +718,7 @@ def save_course_assessment(course, assessment_data):
             doc.fudgepoints_scac = data.get("fudgepoints_scac", "")
             doc.quiz = data.get("quiz", "")
             doc.assignment = data.get("assignment", "")
+            doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
             # These are usually already set, but include them if needed:
@@ -633,6 +743,7 @@ def save_course_assessment(course, assessment_data):
                 "quiz": data.get("quiz", ""),
                 "assignment": data.get("assignment", ""),
                 "exam": data.get("exam", ""),
+				"discussion": data.get("discussion", ""),
             })
             doc.insert(ignore_permissions=True)
             print("Created new doc:", doc.name)

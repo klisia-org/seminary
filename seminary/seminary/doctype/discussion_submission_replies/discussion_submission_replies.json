@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-07 08:17:52.938957",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "member",
+  "student",
+  "member_name",
+  "reply",
+  "reply_attach",
+  "reply_dt"
+ ],
+ "fields": [
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name"
+  },
+  {
+   "fieldname": "reply",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Reply"
+  },
+  {
+   "fieldname": "reply_attach",
+   "fieldtype": "Attach",
+   "label": "Reply Attachment"
+  },
+  {
+   "fieldname": "reply_dt",
+   "fieldtype": "Datetime",
+   "label": "Submitted on"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-10-10 17:57:45.624325",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Discussion Submission Replies",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

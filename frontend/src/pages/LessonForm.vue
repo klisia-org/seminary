@@ -148,6 +148,7 @@ const lesson = reactive({
 	body: '',
 	instructor_notes: '',
 	content: '',
+	discussion_id: null,
 })
 
 const lessonDetails = createResource({
@@ -305,6 +306,14 @@ const convertToJSON = (lessonData) => {
 					exam: exam,
 				},
 			})
+		} else if (block.includes('{{ DiscussionActivity')) {
+			let discussionActivity = block.match(/\(["']([^"']+?)["']\)/)[1]
+			blocks.push({
+				type: 'discussionActivity',
+				data: {
+					discussionID: discussionActivity,
+				},
+			})
 		} else if (block.includes('{{ Folder')) {
 			let folder = block.match(/\(["']([^"']+?)["']\)/)[1]
 			blocks.push({
@@ -393,6 +402,14 @@ const convertToJSON = (lessonData) => {
 			},
 		})
 	}
+	if (lessonData.discussionID) {
+		blocks.push({
+			type: 'discussionActivity',
+			data: {
+				discussionID: lessonData.discussionID,
+			},
+		})
+	}
 	if (lessonData.folder) {
 		blocks.push({
 			type: 'folder',
@@ -406,21 +423,39 @@ const convertToJSON = (lessonData) => {
 }
 
 const saveLesson = (e) => {
-	showSuccessMessage = false
+	showSuccessMessage = false;
 	if (typeof e != 'undefined' && e.showSuccessMessage) {
-		showSuccessMessage = true
+		showSuccessMessage = true;
 	}
+
 	editor.value.save().then((outputData) => {
-		lesson.content = JSON.stringify(outputData)
+		console.log("Editor Output Data:", outputData); // Debugging log
+		lesson.content = JSON.stringify(outputData);
+
 		instructorEditor.value.save().then((outputData) => {
-			lesson.instructor_content = JSON.stringify(outputData)
-			if (lessonDetails.data?.lesson) {
-				editCurrentLesson()
-			} else {
-				createNewLesson()
+			console.log("Instructor Editor Output Data:", outputData); // Debugging log
+			lesson.instructor_content = JSON.stringify(outputData);
+
+			// Ensure discussion_id is included in the lesson object
+			const discussionBlock = outputData.blocks.find(
+				(block) =>
+					['discussionActivity', 'discussionactivity'].includes(block.type) &&
+					block.data?.discussionID
+			)
+			lesson.discussion_id = discussionBlock ? discussionBlock.data.discussionID : null;
+
+			// Log only if discussion_id is null or during manual save
+			if (!lesson.discussion_id || showSuccessMessage) {
+				console.log("Lesson Object Before Save:", lesson);
 			}
-		})
-	})
+
+			if (lessonDetails.data?.lesson) {
+				editCurrentLesson();
+			} else {
+				createNewLesson();
+			}
+		});
+	});
 }
 
 const createNewLesson = () => {
@@ -462,6 +497,7 @@ const editCurrentLesson = () => {
 				return validateLesson()
 			},
 			onSuccess() {
+				console.log("Lesson updated successfully"); // Debugging log
 				showSuccessMessage
 					? toast.success(__('Lesson updated successfully'))
 					: ''

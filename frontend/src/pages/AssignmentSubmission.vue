@@ -148,7 +148,5 @@ const breadcrumbs = computed(() => {
 	return items
 })
 
-console.log("Attendance:", attendance.value);
-console.log("Students Data:", students.data);
-console.log("Students Absent:", studentsAbsent);
+
 </script>

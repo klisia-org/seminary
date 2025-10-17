@@ -44,6 +44,14 @@
           :filters="{ course: course?.data?.course }"
           :onCreate="(value, close) => redirectToAssignment(value, close)"
         />
+        <Link
+          v-else-if="criteria.type === 'Discussion'"
+          v-model="criteria.discussion"
+          doctype="Discussion Activity"
+          :label="__('Select a Discussion Activity')"
+          :filters="{ course: course?.data?.course }"
+          :onCreate="(value, close) => redirectToDiscussion(value, close)"
+        />
         <template v-else>
           <p>Offline</p>
         </template>
@@ -87,6 +95,7 @@ const defaultCriteriaState = () => ({
   quiz: '',
   exam: '',
   assignment: '',
+  discussion: '',
   extracredit_scac: '',
   fudgepoints_scac: '',
   parent: props.courseName,
@@ -124,13 +133,26 @@ const course = createResource({
 })
 
 const fetchType = async () => {
-  if (!criteria.assesscriteria_scac) return
+  if (!criteria.assesscriteria_scac) {
+    criteria.type = ''
+    return
+  }
   try {
     const response = await fetch(
       `/api/resource/Assessment Criteria/${criteria.assesscriteria_scac}`
     )
     const data = await response.json()
-    criteria.type = data.data.type
+    const resolvedType = data?.data?.type || ''
+    criteria.type = resolvedType
+    if (resolvedType !== 'Quiz') {
+      criteria.quiz = ''
+    }
+    if (resolvedType !== 'Exam') {
+      criteria.exam = ''
+    }
+    if (resolvedType !== 'Assignment') {
+      criteria.assignment = ''
+    }
   } catch (error) {
     console.error('Error fetching type:', error)
   }
@@ -144,6 +166,7 @@ watch(
       criteria.quiz = ''
       criteria.exam = ''
       criteria.assignment = ''
+      criteria.discussion = ''
       return
     }
     fetchType()
@@ -182,6 +205,18 @@ const redirectToAssignment = (value, close) => {
   router.push({
     name: 'AssignmentForm',
     params: { assignmentID: 'new' },
+  })
+  close()
+}
+
+const redirectToDiscussion = (value, close) => {
+  examStore.setPrefillData({
+    title: criteria.title,
+    course: course?.data?.course,
+  })
+  router.push({
+    name: 'DiscussionActivityForm',
+    params: { discussionID: 'new' },
   })
   close()
 }

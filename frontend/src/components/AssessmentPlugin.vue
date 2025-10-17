@@ -14,6 +14,9 @@
 				<div v-else-if="type == 'exam'" class="text-lg font-semibold">
 					{{ __('Add an exam to your lesson') }}
 				</div>
+				<div v-else-if="type == 'discussionactivity'" class="text-lg font-semibold">
+					{{ __('Add a discussion activity to your lesson') }}
+				</div>
 				<div v-else class="text-lg font-semibold">
 					{{ __('Add an assignment to your lesson') }}
 				</div>
@@ -30,6 +33,13 @@
 						v-model="exam"
 						doctype="Exam Activity"
 						:label="__('Select an exam')"
+						:onCreate="(value, close) => redirectToForm()"
+					/>
+					<Link
+						v-else-if="type == 'discussionactivity'"
+						v-model="discussionactivity"
+						doctype="Discussion Activity"
+						:label="__('Select a discussion activity')"
 						:onCreate="(value, close) => redirectToForm()"
 					/>
 					<Link
@@ -58,6 +68,7 @@ const show = ref(false)
 const quiz = ref(null)
 const assignment = ref(null)
 const exam = ref(null)
+const discussionactivity = ref(null)
 
 const props = defineProps({
 	type: {
@@ -81,6 +92,8 @@ const addAssessment = () => {
 		props.onAddition(quiz.value)
 	} else if (props.type == 'exam') {
 		props.onAddition(exam.value)
+	} else if (props.type == 'discussionactivity') {
+		props.onAddition(discussionactivity.value)
 	} else {
 		props.onAddition(assignment.value)
 	}
@@ -90,6 +103,7 @@ const addAssessment = () => {
 const redirectToForm = () => {
 	if (props.type == 'quiz') window.open('/seminary/quizzes/new', '_blank')
 	else if (props.type == 'exam') window.open('/seminary/exams/new', '_blank')
+	else if (props.type == 'discussionactivity') window.open('/seminary/discussion-activity/new', '_blank')
 	else window.open('/seminary/assignments/new', '_blank')
 }
 </script>
