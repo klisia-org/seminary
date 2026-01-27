@@ -1,0 +1,20 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 09:53:06.630460",
+ "description": "Useful for different prices for the same item. E.g., if your seminary uses different prices for Nationals and Foreigners, you would use two price lists. You can have as many as you want, but be wise as it's harder to maintain a large number of price lists. ",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 09:55:42.222830",
+ "modified_by": "Administrator",
+ "name": "Price Lists",
+ "owner": "Administrator",
+ "reference_document": "Price List",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Define your price lists",
+ "validate_action": 1
+}

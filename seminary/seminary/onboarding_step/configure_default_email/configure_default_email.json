@@ -1,0 +1,18 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 10:10:29.116154",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 10:10:29.116154",
+ "modified_by": "Administrator",
+ "name": "Configure default email",
+ "owner": "Administrator",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Configure default email",
+ "validate_action": 1
+}

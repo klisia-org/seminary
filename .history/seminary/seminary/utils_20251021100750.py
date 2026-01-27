@@ -1040,7 +1040,7 @@ def get_discussion_topics(doctype, docname, single_thread):
 		else:
 			return create_discussion_topic(doctype, docname)
 	else:
-		topics = frappe.get_all(
+	topics = frappe.get_all(
 		"Discussion Topic",
 		{
 			"reference_doctype": doctype,

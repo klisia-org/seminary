@@ -1,0 +1,20 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 10:24:34.846365",
+ "description": "",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 10:24:34.846365",
+ "modified_by": "Administrator",
+ "name": "Instructor",
+ "owner": "Administrator",
+ "reference_document": "Instructor",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Add Instructors",
+ "validate_action": 1
+}

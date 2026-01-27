@@ -35,7 +35,11 @@
         </div>
 
         <!-- Questions Section -->
-        <div v-for="(row, index) in submisisonDetails.doc.result" :key="index" class="border p-5 rounded-md space-y-4 ">
+        <div
+          v-for="(row, index) in submisisonDetails.doc.result"
+          :key="index"
+          class="border p-5 rounded-md space-y-4 "
+        >
           <!-- Question Title -->
           <div class="space-y-1">
             <div class="font-semibold text-ink-gray-9 text-left">
@@ -76,16 +80,16 @@ import { watch, inject } from 'vue';
 
 // const socket = inject('$socket')
 // if (socket) {
-
+  
 //     console.log('ExamGraded socket :', socket); // Debugging log
-
+   
 //   } else {
 //     console.log('ExamGraded socket is not available'); // Debugging log
 //   }
 
 const props = defineProps({
   submission: {
-    type: String,
+    type: Str,
     required: true,
   },
 });

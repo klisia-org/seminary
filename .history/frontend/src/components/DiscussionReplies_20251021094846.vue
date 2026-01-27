@@ -83,37 +83,14 @@ import { initSocket } from '@/socket'; // Import the socket initializer
 
 const showTopics = defineModel('showTopics')
 const newReply = ref('')
+const socket = inject('$socket')
 const user = inject('$user')
 const allUsers = inject('$allUsers')
 const mentionUsers = ref([])
 const renderEditor = ref(false)
 const readOnlyMode = window.read_only_mode
 
-const socketConnected = ref(false); // Track socket connection status
 
-// Initialize the socket directly
-const socket = initSocket(); // Use the default namespace or specify one if needed
-
-if (!socket) {
-	console.error('Socket connection not initialized in Discussions.vue.');
-} else {
-	console.log('Socket connection initialized in Discussions.vue:', socket);
-
-	// Add event listeners for debugging and connection tracking
-	socket.on('connect', () => {
-		console.log('Socket connected:', socket.id);
-		socketConnected.value = true; // Mark socket as connected
-	});
-
-	socket.on('connect_error', (error) => {
-		console.error('Socket connection error:', error);
-	});
-
-	socket.on('disconnect', (reason) => {
-		console.warn('Socket disconnected:', reason);
-		socketConnected.value = false; // Mark socket as disconnected
-	});
-}
 
 const props = defineProps({
 	topic: {

@@ -1,0 +1,18 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 10:02:39.920006",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 10:02:39.920006",
+ "modified_by": "Administrator",
+ "name": "Payment Terms",
+ "owner": "Administrator",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Define Payment Terms",
+ "validate_action": 1
+}

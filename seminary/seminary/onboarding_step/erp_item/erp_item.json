@@ -1,0 +1,19 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 09:46:01.028290",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 09:47:10.884783",
+ "modified_by": "Administrator",
+ "name": "ERP Item",
+ "owner": "Administrator",
+ "reference_document": "Item",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Define Billable Items on the ERP",
+ "validate_action": 1
+}

@@ -1,0 +1,112 @@
+{
+ "app": "seminary",
+ "charts": [],
+ "content": "[{\"id\":\"malWhn43hN\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Initial Guided Setup</span>\",\"col\":12}},{\"id\":\"fpgAcwpqjD\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"Seminary Setup\",\"col\":12}},{\"id\":\"dOLLS7mNRk\",\"type\":\"card\",\"data\":{\"card_name\":\"Input or Import Data\",\"col\":4}},{\"id\":\"uN7hlWI8Ge\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Data Import Tool\",\"col\":3}}]",
+ "creation": "2025-11-28 09:25:20.495436",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "tool",
+ "idx": 0,
+ "indicator_color": "orange",
+ "is_hidden": 0,
+ "label": "Initial Setup",
+ "link_type": "DocType",
+ "links": [
+  {
+   "description": "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import).",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Input or Import Data",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Input Users",
+   "link_count": 0,
+   "link_to": "User",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Input Customers",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Input Students",
+   "link_count": 0,
+   "link_to": "Student",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Input Courses",
+   "link_count": 0,
+   "link_to": "Course",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Create your holiday list",
+   "link_count": 0,
+   "link_to": "Holiday List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2025-11-28 10:20:41.095283",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Initial Setup",
+ "number_cards": [],
+ "owner": "murilomelodts@gmail.com",
+ "parent_page": "Seminary",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Seminary Manager"
+  }
+ ],
+ "sequence_id": 23.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "New",
+   "label": "Data Import Tool",
+   "link_to": "Data Import",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Initial Setup",
+ "type": "Workspace"
+}

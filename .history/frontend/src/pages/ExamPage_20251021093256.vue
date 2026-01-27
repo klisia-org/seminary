@@ -8,7 +8,7 @@
 	<!-- Right Section (1/3 width) -->
 	<div class="col-span-1 space-y-4">
 		<div class="space-y-4 border p-5 rounded-md">
-			<Discussions v-if="(user.data?.is_student && submisisonDetails.data?.name) || user.data?.is_instructor"
+			<Feedback v-if="(user.data?.is_student && submisisonDetails.data?.name) || user.data?.is_instructor"
 				:title="'Exam Comments'" :doctype="'Exam Submission'" :docname="submisisonDetails.doc.name"
 				:key="submisisonDetails.doc.name" type="single" />
 		</div>
@@ -20,7 +20,7 @@ import { createResource, Breadcrumbs } from 'frappe-ui'
 import { computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateDocumentTitle } from '@/utils'
-import Discussions from '@/components/Discussions.vue'
+import Feedback from '@/components/Feedback.vue'
 
 const user = inject('$user')
 const router = useRouter()

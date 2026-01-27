@@ -1,0 +1,18 @@
+{
+ "action": "Show Form Tour",
+ "creation": "2025-11-28 10:04:37.489632",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2025-11-28 10:04:37.489632",
+ "modified_by": "Administrator",
+ "name": "Academic Year",
+ "owner": "Administrator",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Create Academic Years",
+ "validate_action": 1
+}

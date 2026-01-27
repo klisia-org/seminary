@@ -1,0 +1,65 @@
+{
+ "allow_roles": [
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
+ "creation": "2025-11-28 09:43:01.946507",
+ "docstatus": 0,
+ "doctype": "Module Onboarding",
+ "documentation_url": "https://seminaryerp.org/docs/setup",
+ "idx": 0,
+ "is_complete": 0,
+ "modified": "2025-11-28 10:29:31.758322",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Setup",
+ "owner": "Administrator",
+ "steps": [
+  {
+   "step": "Grading Scale"
+  },
+  {
+   "step": "Settings"
+  },
+  {
+   "step": "ERP Item"
+  },
+  {
+   "step": "UOM"
+  },
+  {
+   "step": "Price Lists"
+  },
+  {
+   "step": "Item Price"
+  },
+  {
+   "step": "Payment Terms"
+  },
+  {
+   "step": "Fee Categories"
+  },
+  {
+   "step": "Academic Year"
+  },
+  {
+   "step": "Academic Terms"
+  },
+  {
+   "step": "Program"
+  },
+  {
+   "step": "Instructor"
+  },
+  {
+   "step": "Configure default email"
+  }
+ ],
+ "subtitle": "This is for the initial setup but some actions will need to be repeated",
+ "success_message": "Great work!",
+ "title": "Initial Seminary Setup"
+}
