@@ -1,9 +1,14 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
- "custom_blocks": [],
+ "custom_blocks": [
+  {
+   "custom_block_name": "Frontend",
+   "label": "Frontend"
+  }
+ ],
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
@@ -351,8 +356,8 @@
    "type": "Link"
   }
  ],
- "modified": "2025-03-13 09:37:33.164998",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-01-27 14:36:57.291686",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
  "number_cards": [],

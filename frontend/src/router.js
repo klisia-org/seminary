@@ -5,6 +5,14 @@ import path from 'path'
 
 
 const routes = [
+	{
+		path: "/app/seminary",
+		name: "Desk",
+		beforeEnter() {
+			window.location.href = '/app/seminary';
+		},
+		meta: { requiresAuth: true },
+		},
   {
     path: "/fees",
     name: "Fees",
