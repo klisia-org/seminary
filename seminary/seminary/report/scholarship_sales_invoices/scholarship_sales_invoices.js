@@ -8,7 +8,7 @@ frappe.query_reports["Scholarship Sales Invoices"] = {
 			"label": __("From Date"),
 			"fieldtype": "Date",
 			"reqd": 0
-		},	
+		},
 		{
 			"fieldname":"end_date",
 			"label": __("To Date"),
@@ -22,7 +22,7 @@ frappe.query_reports["Scholarship Sales Invoices"] = {
 			"options": "Customer",
 			"reqd": 0
 		}
-	
+
 
 	]
 };

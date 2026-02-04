@@ -7,4 +7,4 @@ import unittest
 
 
 class TestAcademicTerm(unittest.TestCase):
-	pass
+    pass

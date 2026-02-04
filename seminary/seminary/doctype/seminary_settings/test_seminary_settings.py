@@ -5,4 +5,4 @@ import unittest
 
 
 class TestSeminarySettings(unittest.TestCase):
-	pass
+    pass

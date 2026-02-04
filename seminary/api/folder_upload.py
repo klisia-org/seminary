@@ -16,7 +16,9 @@ def _resolve_folder(foldername: str | None = None, folder_id: str | None = None)
         frappe.throw(f"Folder with id '{folder_id}' not found.")
 
     if foldername:
-        folder = frappe.db.get_value("File", {"file_name": foldername, "is_folder": 1}, "name")
+        folder = frappe.db.get_value(
+            "File", {"file_name": foldername, "is_folder": 1}, "name"
+        )
         if folder:
             return folder
         frappe.throw(f"Folder '{foldername}' not found.")
@@ -57,7 +59,11 @@ def _link_file_to_course_folder(file_name: str, course_folder_name: str) -> None
         ["attached_to_doctype", "attached_to_name"],
         as_dict=True,
     )
-    if current and current.attached_to_doctype == "Course Folder" and current.attached_to_name == course_folder_name:
+    if (
+        current
+        and current.attached_to_doctype == "Course Folder"
+        and current.attached_to_name == course_folder_name
+    ):
         return
     frappe.db.set_value(
         "File",
@@ -188,7 +194,9 @@ def create_subfolder(
         },
     )
     if existing:
-        frappe.throw(f"A folder named '{subfoldername}' already exists in this location.")
+        frappe.throw(
+            f"A folder named '{subfoldername}' already exists in this location."
+        )
 
     folder_doc = frappe.get_doc(
         {

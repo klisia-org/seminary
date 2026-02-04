@@ -17,6 +17,6 @@ frappe.ui.form.on('Academic Term', {
         });
         frm.reload_doc();
     }
-    
+
 });
 

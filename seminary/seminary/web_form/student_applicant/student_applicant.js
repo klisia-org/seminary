@@ -1,6 +1,6 @@
 frappe.ready(function () {
     console.log("frappe.ready function executed");
-    
+
     frappe.call("seminary.seminary.api.active_term")
         .then(r => {
             if (r.message) {

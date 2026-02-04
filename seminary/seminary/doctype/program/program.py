@@ -7,19 +7,17 @@ from frappe.website.website_generator import WebsiteGenerator
 
 
 class Program(WebsiteGenerator):
-	#def validate(self):
-		#self.validate_courses_pgmtrack()
+    # def validate(self):
+    # self.validate_courses_pgmtrack()
 
+    def get_course_list(self):
+        program_course_list = self.courses
+        course_list = [
+            frappe.get_doc("Course", program_course.course)
+            for program_course in program_course_list
+        ]
+        return course_list
 
-		
-		
-	def get_course_list(self):
-		program_course_list = self.courses
-		course_list = [
-			frappe.get_doc("Course", program_course.course)
-			for program_course in program_course_list
-		]
-		return course_list
 
 """ 	def validate_courses_pgmtrack(self):
 		program_course_list = self.courses

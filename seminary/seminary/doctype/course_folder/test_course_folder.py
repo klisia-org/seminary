@@ -13,18 +13,18 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 class UnitTestCourseFolder(UnitTestCase):
-	"""
-	Unit tests for CourseFolder.
-	Use this class for testing individual functions and methods.
-	"""
+    """
+    Unit tests for CourseFolder.
+    Use this class for testing individual functions and methods.
+    """
 
-	pass
+    pass
 
 
 class IntegrationTestCourseFolder(IntegrationTestCase):
-	"""
-	Integration tests for CourseFolder.
-	Use this class for testing interactions between multiple components.
-	"""
+    """
+    Integration tests for CourseFolder.
+    Use this class for testing interactions between multiple components.
+    """
 
-	pass
+    pass

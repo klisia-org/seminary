@@ -15,6 +15,8 @@ from frappe.utils import date_diff, flt, get_link_to_form, getdate
 
 class StudentLeaveApplication(Document):
     pass
+
+
 # 	def validate(self):
 # 		self.validate_holiday_list()
 # 		self.validate_duplicate()
@@ -134,4 +136,3 @@ class StudentLeaveApplication(Document):
 # 	number_of_days = flt(number_of_days) - flt(holidays)
 
 # 	return number_of_days
-

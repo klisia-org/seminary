@@ -1,0 +1,4 @@
+[bandit]
+
+[DEFAULT]
+ignore = B608

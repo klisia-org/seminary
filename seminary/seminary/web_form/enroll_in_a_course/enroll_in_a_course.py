@@ -6,6 +6,7 @@ import frappe
 def get_context(context):
     pass
 
+
 @frappe.whitelist()
 def get_student_name():
     user = frappe.session.user

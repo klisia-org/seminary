@@ -24,7 +24,7 @@ frappe.ui.form.on("Scheduled Course Roster", {
             })
         })}
 
-}); 
+});
 function afterSubmit(frm) {
     // This function will be called after the document is submitted
         var name = frm.doc.name;

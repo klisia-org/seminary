@@ -1,5 +1,6 @@
 import frappe
 
+
 @frappe.whitelist()
 def create_student_groups(course_name, groups):
     """
@@ -17,26 +18,34 @@ def create_student_groups(course_name, groups):
     try:
         for group in groups:
             # Create Student Group
-            student_group = frappe.get_doc({
-                "doctype": "Student Group",
-                "group_name": group["group_name"],
-                "course": course_name,
-                "reuse": False,
-                "active": False,
-            })
+            student_group = frappe.get_doc(
+                {
+                    "doctype": "Student Group",
+                    "group_name": group["group_name"],
+                    "course": course_name,
+                    "reuse": False,
+                    "active": False,
+                }
+            )
             student_group.insert()
 
             # Add Student Group Members
             for student in group["students"]:
-                student_group.append("members", {
-                    "student": student,
-                })
+                student_group.append(
+                    "members",
+                    {
+                        "student": student,
+                    },
+                )
 
             # Link to Course Schedule
             for schedule in group["schedules"]:
-                student_group.append("course_schedule_links", {
-                    "course_schedule": schedule,
-                })
+                student_group.append(
+                    "course_schedule_links",
+                    {
+                        "course_schedule": schedule,
+                    },
+                )
 
             student_group.save()
 

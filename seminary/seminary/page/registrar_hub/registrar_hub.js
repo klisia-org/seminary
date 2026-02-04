@@ -30,6 +30,6 @@ frappe.pages['registrar-hub'].on_page_load = function(wrapper) {
 				}
 			});
 	};
-	
+
 
 }

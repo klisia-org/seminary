@@ -3,7 +3,7 @@
 
 
 frappe.ui.form.on('Course Gradebook', {
-	
+
 
 	refresh: function(frm) {
 		if (frappe.route_options) {

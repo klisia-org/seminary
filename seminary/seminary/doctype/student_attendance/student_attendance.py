@@ -4,16 +4,17 @@
 
 import frappe
 from erpnext import get_default_company
+
 # from erpnext.setup.doctype.holiday_list.holiday_list import is_holiday
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import formatdate, get_link_to_form, getdate
 
 
-
-
 class StudentAttendance(Document):
     pass
+
+
 # 	def validate(self):
 # 		self.set_date()
 # 		self.validate_student()
@@ -23,7 +24,7 @@ class StudentAttendance(Document):
 # 	def set_date(self):
 # 		if self.course_schedule:
 # 			self.date = frappe.db.sql(
-# 				"""select min(smd.cs_meetdate) 
+# 				"""select min(smd.cs_meetdate)
 # 				from `tabCourse Schedule`cs, `tabCourse Schedule Meeting Dates` smd
 # 				where smd.parent = cs.name and
 # 				smd.attendance = 0 and
@@ -32,7 +33,6 @@ class StudentAttendance(Document):
 # 			frappe.throw(_("There is no date to take attendance for."))
 
 
-	
 # 	def validate_student(self):
 # 		if self.course_schedule:
 # 			students = frappe.get_all(
@@ -41,7 +41,7 @@ class StudentAttendance(Document):
 # 				fields=["student"],
 # 			)
 # 			students = [student.student for student in students]
-			
+
 
 # 	def validate_duplication(self):
 # 		"""Check if the Attendance Record is Unique"""
@@ -55,7 +55,7 @@ class StudentAttendance(Document):
 # 					"name": ("!=", self.name),
 # 				},
 # 			)
-	
+
 
 # 		if attendance_record:
 # 			record = get_link_to_form("Student Attendance", attendance_record)

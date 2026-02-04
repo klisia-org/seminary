@@ -17,10 +17,10 @@ frappe.ui.form.on("Payers Fee Category PE", {
                     .catch(e => {
                         frappe.msgprint("Error creating Sales Invoice(s)!");
                     });
-            }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"}); 
+            }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
             console.log("Sales Invoice button added");
         }
-    },      
+    },
 
     after_save(frm) {
         console.log("Calling check_percentages");
@@ -42,7 +42,7 @@ frappe.ui.form.on("Payers Fee Category PE", {
                 frm.save()
                     .then(() => {
                         frm.reload_doc(); // Reload the form after saving
-                    }); 
+                    });
             })
             .catch(e => {
                 console.log("Error calling add_scholarship:", e);
@@ -54,7 +54,7 @@ frappe.ui.form.on("Payers Fee Category PE", {
             let row = frappe.get_doc(cdt, cdn);
             return {
                 query: "seminary.seminary.api.get_scholarships"
-            };      
+            };
         });
     }
 });

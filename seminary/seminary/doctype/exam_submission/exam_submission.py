@@ -4,14 +4,17 @@
 import frappe
 from frappe.model.document import Document
 
+
 @frappe.whitelist()
 def create_exam_submission(exam, course, member, answers, time_taken):
     """Create an Exam Submission for the given exam, course, student, and answers."""
-    #Get SCAC, course_name
-    scac = frappe.get_value("Scheduled Course Assess Criteria", {"exam": exam, "parent": course}, "name")
+    # Get SCAC, course_name
+    scac = frappe.get_value(
+        "Scheduled Course Assess Criteria", {"exam": exam, "parent": course}, "name"
+    )
     print(scac)
     print(course)
-        
+
     course_name = frappe.get_value("Course Schedule", course, "course")
     print(course_name)
     exam_title = frappe.get_value("Exam Activity", exam, "title")
@@ -35,16 +38,20 @@ def create_exam_submission(exam, course, member, answers, time_taken):
 
     # Populate the child table with answers
     for answer in answers:
-        exam_submission.append("result", {
-            "question": answer.get("question"),
-            "answer": answer.get("answer"),
-            "points": '',
-        })
+        exam_submission.append(
+            "result",
+            {
+                "question": answer.get("question"),
+                "answer": answer.get("answer"),
+                "points": "",
+            },
+        )
 
     # Insert the document into the database
     exam_submission.flags.ignore_permissions = True
     exam_submission.insert()
     return exam_submission
+
 
 class ExamSubmission(Document):
     pass

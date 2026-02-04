@@ -1,0 +1,3 @@
+[DEFAULT]
+ignore = B608
+exclude_dirs = .git,.svn,.mypy_cache,.tox,.venv,venv

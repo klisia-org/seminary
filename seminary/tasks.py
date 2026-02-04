@@ -15,17 +15,21 @@ from datetime import datetime
 # This file is for scheduler hooks
 # Documentation: https://frappeframework.com/docs/user/en/api/background_jobs
 
-#Daily
+# Daily
 @frappe.whitelist()
 def daily():
     set_iscurrent_acterm()
-    
+
 
 @frappe.whitelist()
 def set_iscurrent_acterm(academic_term=None):
-    academic_terms = frappe.get_all("Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date", "iscurrent_acterm"])
+    academic_terms = frappe.get_all(
+        "Academic Term",
+        filters={},
+        fields=["name", "term_start_date", "term_end_date", "iscurrent_acterm"],
+    )
     today = getdate()
-    #check if outgoing email is set
+    # check if outgoing email is set
     outgoing_email = frappe.db.get_all("Email Account", {"enable_outgoing": 1}, "name")
 
     # Update academic terms
@@ -41,10 +45,18 @@ def set_iscurrent_acterm(academic_term=None):
                 frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
                 advance_pe()
 
+
 def advance_pe():
-    pe = frappe.get_all("Program Enrollment", filters={"pgmenrol_active": 1}, fields=["name", "current_std_term"])
+    pe = frappe.get_all(
+        "Program Enrollment",
+        filters={"pgmenrol_active": 1},
+        fields=["name", "current_std_term"],
+    )
     for p in pe:
-        frappe.db.set_value("Program Enrollment", p.name, "current_std_term", p.current_std_term + 1)
+        frappe.db.set_value(
+            "Program Enrollment", p.name, "current_std_term", p.current_std_term + 1
+        )
+
 
 def need_acadterm():
     today = getdate()
@@ -52,20 +64,32 @@ def need_acadterm():
     # Check if outgoing email is enabled
     outgoing_email = frappe.db.get_all("Email Account", {"enable_outgoing": 1}, "name")
     if not outgoing_email:
-        frappe.log_error("No outgoing email account is configured.", "Need Academic Term")
+        frappe.log_error(
+            "No outgoing email account is configured.", "Need Academic Term"
+        )
         return
 
-    terms = frappe.db.sql("""SELECT COUNT(name) FROM `tabAcademic Term` WHERE term_start_date >= %s""", (today,))
+    terms = frappe.db.sql(
+        """SELECT COUNT(name) FROM `tabAcademic Term` WHERE term_start_date >= %s""",
+        (today,),
+    )
     if terms[0][0] < 2:
-        users1 = frappe.db.sql("""SELECT DISTINCT parent FROM `tabUserRole` WHERE role = 'Academics User'""", as_dict=True)
-        users1 = [d['parent'] for d in users1]
+        users1 = frappe.db.sql(
+            """SELECT DISTINCT parent FROM `tabUserRole` WHERE role = 'Academics User'""",
+            as_dict=True,
+        )
+        users1 = [d["parent"] for d in users1]
         if not users1:
-            frappe.log_error("No users found with the Academics User role.", "Need Academic Term")
+            frappe.log_error(
+                "No users found with the Academics User role.", "Need Academic Term"
+            )
             return
 
         users = frappe.db.sql(
-            """SELECT email FROM `tabUser` WHERE name IN ({})""".format(', '.join(['%s'] * len(users1))),
-            tuple(users1)
+            """SELECT email FROM `tabUser` WHERE name IN ({})""".format(
+                ", ".join(["%s"] * len(users1))
+            ),
+            tuple(users1),
         )
         terms_count = terms[0][0]
         subject = "Few Academic Terms"
@@ -75,7 +99,10 @@ def need_acadterm():
             try:
                 frappe.sendmail(recipients=user.email, subject=subject, message=body)
             except Exception as e:
-                frappe.log_error(f"Failed to send email to {user.email}: {str(e)}", "Need Academic Term")
-			
-#Monthly
+                frappe.log_error(
+                    f"Failed to send email to {user.email}: {str(e)}",
+                    "Need Academic Term",
+                )
 
+
+# Monthly

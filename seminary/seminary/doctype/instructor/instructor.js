@@ -23,8 +23,8 @@ frappe.ui.form.on("Instructor", {
 	},
 	refresh: function(frm) {
 
-	
-	
+
+
 		frm.set_query("employee", function(doc) {
 			return {
 				"filters": {
@@ -43,7 +43,7 @@ frappe.ui.form.on("Instructor", {
 		});
 
 		// Example frontend code to debug heatmap data
-	
+
 		// console.log("Heatmap Data:", timeline_data);  // Add this line to verify the data being passed to the heatmap component
 
 
@@ -66,6 +66,6 @@ frappe.ui.form.on("Instructor", {
 		console.log("Instructor Log updated");
 		frm.refresh();
 			}
-		
-	}	
+
+	}
 );

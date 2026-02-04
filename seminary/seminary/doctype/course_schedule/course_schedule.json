@@ -60,6 +60,7 @@
   "meeting_dates_section",
   "cs_meetinfo",
   "hasmtgdate",
+  "calendar_token",
   "class_roster_tab",
   "class_roster_section",
   "csroster_html",
@@ -415,12 +416,19 @@
    "fieldtype": "Table",
    "label": "Student Groups",
    "options": "Student Group Link"
+  },
+  {
+   "fieldname": "calendar_token",
+   "fieldtype": "Data",
+   "label": "Calendar Token",
+   "length": 64,
+   "read_only": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2025-10-07 09:21:02.699831",
+ "modified": "2026-02-03 08:54:36.664634",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

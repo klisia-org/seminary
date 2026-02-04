@@ -8,7 +8,7 @@ frappe.ui.form.on('Student', {
 				filters: {
 					ignore_user_type: 1,
 				},
-			};  
+			};
 		});
 
 		if(!frm.is_new()) {
@@ -18,18 +18,18 @@ frappe.ui.form.on('Student', {
 			});
 		};
 	},
-		
 
-		
-	
+
+
+
 /* 	frm.add_custom_button('Get Program Enrollments', function() {
-			
+
 		frappe.call({
-			method:"seminary.seminary.doctype.student.get_pgmenrollments", 
+			method:"seminary.seminary.doctype.student.get_pgmenrollments",
 			args: {
 				doc: frm.doc}
 		.then(r => {
-				
+
 				if (r.message) {
 					var enrollments = r.message;
 					var table = "<table><thead><tr><th>Program</th><th>Active</th><th>Enrollment Date</th><th>Conclusion Date</th></tr></thead><tbody>";
@@ -80,6 +80,6 @@ frappe.ui.form.on('Student', {
 				frm.refresh_field('pe_html');
 			};
 		}},
-				
+
 
 );

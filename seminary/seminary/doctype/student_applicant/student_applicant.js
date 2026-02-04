@@ -50,7 +50,7 @@ frappe.ui.form.on("Student Applicant", {
 			}
 		});
 
-		
+
 	},
 
 	enroll: function(frm) {

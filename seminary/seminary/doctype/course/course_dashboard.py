@@ -5,14 +5,12 @@ from frappe import _
 
 
 def get_data():
-	return {
-		"fieldname": "course",
-		"transactions": [
-			{
-				"label": _("Program and Course"),
-				"items": ["Program", "Course Enrollment", "Course Schedule"],
-			},
-			
-			
-		],
-	}
+    return {
+        "fieldname": "course",
+        "transactions": [
+            {
+                "label": _("Program and Course"),
+                "items": ["Program", "Course Enrollment", "Course Schedule"],
+            },
+        ],
+    }

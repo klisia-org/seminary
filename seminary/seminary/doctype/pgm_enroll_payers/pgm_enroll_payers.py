@@ -6,4 +6,4 @@ from frappe.model.document import Document
 
 
 class pgm_enroll_payers(Document):
-	pass
+    pass

@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "general_tab",
   "auto_submit_sales_invoice",
   "logo_portal",
   "column_break_4",
@@ -30,7 +31,9 @@
   "block_cei_pay",
   "min_perc_enroll",
   "section_break_7",
-  "instructor_created_by"
+  "instructor_created_by",
+  "portal_tab",
+  "calendar_instructions"
  ],
  "fields": [
   {
@@ -192,11 +195,27 @@
    "fieldname": "logo_portal",
    "fieldtype": "Attach Image",
    "label": "Seminary Logo (round)"
+  },
+  {
+   "fieldname": "general_tab",
+   "fieldtype": "Tab Break",
+   "label": "General"
+  },
+  {
+   "fieldname": "portal_tab",
+   "fieldtype": "Tab Break",
+   "label": "Portal"
+  },
+  {
+   "description": "The app has a default instruction on how students and staff can import calendars to Google, Apple, Microsoft and Others. Any text here will completely override that description.",
+   "fieldname": "calendar_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Calendar Instructions"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-03-05 11:31:51.754778",
+ "modified": "2026-02-04 06:29:51.925645",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
@@ -231,6 +250,8 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

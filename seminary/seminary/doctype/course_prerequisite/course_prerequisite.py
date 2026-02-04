@@ -6,4 +6,4 @@ from frappe.model.document import Document
 
 
 class Course_prerequisite(Document):
-	pass
+    pass

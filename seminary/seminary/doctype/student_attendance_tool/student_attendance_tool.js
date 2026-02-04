@@ -11,7 +11,7 @@ frappe.ui.form.on('Student Attendance Tool', {
 
 	refresh: function(frm) {
 		if (frappe.route_options) {
-			
+
 			frm.set_value("course_schedule", frappe.route_options.course_schedule);
 			frappe.route_options = null;
 		}
@@ -26,7 +26,7 @@ frappe.ui.form.on('Student Attendance Tool', {
 			frappe.call({
 				method: method,
 				args: {
-					
+
 					date: frm.doc.date,
 					course_schedule: frm.doc.course_schedule
 				},
@@ -42,8 +42,8 @@ frappe.ui.form.on('Student Attendance Tool', {
 		if (frm.doc.date > frappe.datetime.get_today())
 			frappe.throw(__("Cannot mark attendance for future dates."));
 		frm.trigger("student_roster");
-		
-			
+
+
 	},
 
 	course_schedule: function(frm) {
@@ -111,7 +111,7 @@ seminary.StudentsEditor = class StudentsEditor {
 						checked: $check.is(':checked'),
 					});
 				});
-			
+
 
 				var students_present = studs.filter(function(stud) {
 					return !stud.disabled && stud.checked;

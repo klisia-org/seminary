@@ -7,4 +7,4 @@ import unittest
 
 
 class TestGradingScale(unittest.TestCase):
-	pass
+    pass

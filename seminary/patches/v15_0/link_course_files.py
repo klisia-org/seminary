@@ -30,7 +30,11 @@ def _link_file(file_name: str, course_folder_name: str) -> None:
         ["attached_to_doctype", "attached_to_name"],
         as_dict=True,
     )
-    if current and current.attached_to_doctype == "Course Folder" and current.attached_to_name == course_folder_name:
+    if (
+        current
+        and current.attached_to_doctype == "Course Folder"
+        and current.attached_to_name == course_folder_name
+    ):
         return
     frappe.db.set_value(
         "File",
