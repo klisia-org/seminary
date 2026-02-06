@@ -3,4 +3,4 @@ erpnext
 markdown
 fuzzywuzzy
 ics
-defusedxml
+defusedxml>=0.7.1
