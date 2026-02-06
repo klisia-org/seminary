@@ -1,5 +1,8 @@
 {
     "search.useParentIgnoreFiles": true,
     "search.useGlobalIgnoreFiles": true,
-"python.pythonPath": "/home/drmrmelo/lms/env/bin/python"
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "git.showUnpublishedCommits": true
 }
