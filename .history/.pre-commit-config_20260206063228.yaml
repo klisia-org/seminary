@@ -11,7 +11,7 @@ repos:
         files: "seminary.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-yaml
-        exclude: '.history/.*'
+          exclude: '.history/.*'
       - id: check-merge-conflict
       - id: check-ast
         exclude: '.history/.*'
