@@ -1,9 +1,0 @@
-bac1f1395a5c1e0d390ff181c481d8a376183887	refs/heads/develop
-dcba021a4591c0b7e78c88be5ebb47a4f844a5da	refs/heads/frontend1
-bac1f1395a5c1e0d390ff181c481d8a376183887	refs/remotes/upstream/HEAD
-bac1f1395a5c1e0d390ff181c481d8a376183887	refs/remotes/upstream/develop
-df8fb502250aef8e5f29daefd62e9d72fe604ef1	refs/tags/v.1.0.0
-4ecb3b8c3d248adc1728dd12d318adedac4e37f8	refs/tags/v.1.1.0
-d65eb2e5b600c860ea812c2c4741dd08b881c81e	refs/tags/v15.0.0
-e7af91a89052fa91f8eb962acb478d0768051c3c	refs/tags/v15.1.0
-570cf9c4ffc5d62ad803a5b04a5d80dd6894d336	refs/tags/v15.1.1
