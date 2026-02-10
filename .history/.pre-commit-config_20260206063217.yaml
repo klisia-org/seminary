@@ -11,7 +11,7 @@ repos:
         files: "seminary.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-yaml
-      
+
       - id: check-merge-conflict
       - id: check-ast
         exclude: '.history/.*'
@@ -30,7 +30,7 @@ repos:
         additional_dependencies: ["flake8-bugbear"]
         args: ["--config", ".github/helper/flake8.conf"]
         exclude: '.history/.*'
-  
+
   - repo: https://github.com/pycqa/bandit
     rev: 1.9.3
     hooks:

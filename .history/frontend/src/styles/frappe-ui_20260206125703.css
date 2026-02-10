@@ -1,0 +1,4 @@
+@import 'frontend/src/assets/Inter/inter.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

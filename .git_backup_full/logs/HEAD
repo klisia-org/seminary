@@ -1,0 +1,23 @@
+d9244c450499c7f9f696111eb0e211651355cdc4 ad89363e8d766ab4e6887a55012eedab40304219 drmurilomelo <drmrmelo@MU-GamingCP1> 1769538621 -0600	commit: Added pt and es translations
+ad89363e8d766ab4e6887a55012eedab40304219 aad1e53d5896244d2cd60d3aece2267f0304d04d drmurilomelo <drmrmelo@MU-GamingCP1> 1769546898 -0600	commit: Desk to Frontend bi-directional link
+aad1e53d5896244d2cd60d3aece2267f0304d04d bb38bd1c11fc4a29960862617c0249f1f4a910fd drmurilomelo <drmrmelo@MU-GamingCP1> 1770232322 -0600	commit: Added icalendar for courses and fixed minor security issues
+bb38bd1c11fc4a29960862617c0249f1f4a910fd 1649bf5648f547297cc606c4b15d507c2dae2488 drmurilomelo <drmrmelo@MU-GamingCP1> 1770381194 -0600	commit: icalendar for courses' meeting dates and assignment due dates
+1649bf5648f547297cc606c4b15d507c2dae2488 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770381695 -0600	commit: Add defusedxml to requirements
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770384107 -0600	checkout: moving from develop to develop
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770384136 -0600	checkout: moving from develop to main
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770385196 -0600	checkout: moving from main to develop
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770385365 -0600	checkout: moving from develop to develop
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770387024 -0600	checkout: moving from develop to main
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 5070bead1b35e8e51b06e6e5ae589eb0c223d022 drmurilomelo <drmrmelo@MU-GamingCP1> 1770387150 -0600	checkout: moving from main to develop
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 50fd2b1be49df5d25b2d41261507c6cd44f58a61 Murilo R. Melo <drmurilomelo@github.com> 1770387579 -0600	commit: Added documentation for contributing to this repo
+50fd2b1be49df5d25b2d41261507c6cd44f58a61 5070bead1b35e8e51b06e6e5ae589eb0c223d022 Murilo R. Melo <drmurilomelo@github.com> 1770388278 -0600	checkout: moving from develop to main
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 50fd2b1be49df5d25b2d41261507c6cd44f58a61 Murilo R. Melo <drmurilomelo@github.com> 1770394587 -0600	checkout: moving from main to develop
+50fd2b1be49df5d25b2d41261507c6cd44f58a61 50fd2b1be49df5d25b2d41261507c6cd44f58a61 Murilo R. Melo <drmurilomelo@github.com> 1770394694 -0600	reset: moving to HEAD
+50fd2b1be49df5d25b2d41261507c6cd44f58a61 5070bead1b35e8e51b06e6e5ae589eb0c223d022 Murilo R. Melo <drmurilomelo@github.com> 1770394734 -0600	checkout: moving from develop to main
+5070bead1b35e8e51b06e6e5ae589eb0c223d022 50fd2b1be49df5d25b2d41261507c6cd44f58a61 Murilo R. Melo <drmurilomelo@github.com> 1770395072 -0600	pull origin develop: Fast-forward
+50fd2b1be49df5d25b2d41261507c6cd44f58a61 46a4a5c8095b286c2bede18a82875ee52b451cf6 Murilo R. Melo <drmurilomelo@github.com> 1770396250 -0600	commit: Updated dependencies to mitigate vulnerabilities
+46a4a5c8095b286c2bede18a82875ee52b451cf6 50fd2b1be49df5d25b2d41261507c6cd44f58a61 Murilo R. Melo <drmurilomelo@github.com> 1770397959 -0600	checkout: moving from main to develop
+50fd2b1be49df5d25b2d41261507c6cd44f58a61 e1fdac5a8daff7381408d06796a89351d63d4f8d Murilo R. Melo <drmurilomelo@github.com> 1770397976 -0600	pull origin develop: Fast-forward
+e1fdac5a8daff7381408d06796a89351d63d4f8d e1fdac5a8daff7381408d06796a89351d63d4f8d Murilo R. Melo <drmurilomelo@github.com> 1770657090 -0600	reset: moving to HEAD
+e1fdac5a8daff7381408d06796a89351d63d4f8d 1ebd743ae50d077a76b328b46bb051ef7e9fd3db Murilo R. Melo <drmurilomelo@github.com> 1770657239 -0600	pull origin main: Fast-forward
+1ebd743ae50d077a76b328b46bb051ef7e9fd3db 58de59046e96452c4fcd33282d69a1311f4d9e37 Murilo R. Melo <drmurilomelo@github.com> 1770659602 -0600	reset: moving to origin/develop

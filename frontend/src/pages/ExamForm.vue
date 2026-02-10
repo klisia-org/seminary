@@ -57,11 +57,11 @@
 				:label="__('Course where this exam will be used - you may reuse this exam in other scheduled courses')"
 				:placeholder="__('Select a course')"
 				:required="true"
-			
+
 			/>
 			<div v-if="examDetails.data?.name">
 				<div class="grid grid-cols-2 gap-5 mt-4 mb-8">
-					
+
 					<FormControl
 						type="number"
 						v-model="exam.duration"
@@ -72,7 +72,7 @@
 						:label="__('Total Points')"
 						disabled
 					/>
-					
+
 				</div>
 
 				<!-- Settings -->
@@ -80,14 +80,14 @@
 					<div class="font-semibold mb-4">
 						{{ __('Settings') }}
 					</div>
-					
-					
+
+
 						<FormControl
 							v-model="exam.qbyquestion"
 							type="checkbox"
 							:label="__('Force student to answer a question before moving on? Each question will have its own page and a next button')"
 						/>
-					
+
 				</div>
 
 				<div class="mb-8">
@@ -253,7 +253,7 @@ onMounted(() => {
 		router.push({ name: 'Courses' })
 	}
 	if (props.examID === 'new') {
-	
+
 		if (examStore.prefillData.title) {
        	 exam.title = examStore.prefillData.title; // Pre-fill the title if provided
     	}

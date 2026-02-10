@@ -66,7 +66,7 @@ const props = defineProps({
 
 const CalendarInstructions = createResource({
     url: 'seminary.seminary.calendar.get_calendar_instructions',
-    
+
     auto: true,
 })
 console.log('Calendar Instructions:', CalendarInstructions);

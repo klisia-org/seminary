@@ -20,7 +20,7 @@ const props = defineProps({
     type: String,
     required: true,
   },
- 
+
   content: {
     type: String,
     default: '',

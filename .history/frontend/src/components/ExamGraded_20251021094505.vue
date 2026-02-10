@@ -80,9 +80,9 @@ import { watch, inject } from 'vue';
 
 // const socket = inject('$socket')
 // if (socket) {
-  
+
 //     console.log('ExamGraded socket :', socket); // Debugging log
-   
+
 //   } else {
 //     console.log('ExamGraded socket is not available'); // Debugging log
 //   }

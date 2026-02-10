@@ -7,7 +7,7 @@ import { ref, computed } from 'vue'
 
 export const sessionStore = defineStore('seminary-session', () => {
 	let { userResource} = usersStore()
-	
+
 
 	function sessionUser() {
 		let cookies = new URLSearchParams(document.cookie.split('; ').join('&'))
@@ -26,7 +26,7 @@ export const sessionStore = defineStore('seminary-session', () => {
 			throw new Error('Invalid email or password')
 		},
 		onSuccess() {
-			userResource.reload()			
+			userResource.reload()
 			user.value = sessionUser()
 			login.reset()
 			router.replace({ path: '/' })

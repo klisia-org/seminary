@@ -3,7 +3,7 @@
 			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
 		>
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			
+
 		</header>
   <div class="flex flex-row h-full">
     <!-- Left Side: Course Schedule Meeting Dates -->
@@ -28,7 +28,7 @@
     </div>
 
     <!-- Right Side: Attendance for Selected Date -->
-    
+
     <div class="w-3/4 p-4">
       <div v-if ="!students.data || students.data.length === 0" class="text-gray-500 text-lg font-semibold mb-4">
         {{ __('There are no students enrolled in this course.') }}
@@ -44,7 +44,7 @@
           class="p-2 bg-yellow-200 border rounded-md"
           @click="editAttendance"
           :title="__('All changes will be recorded for audit purposes')"
-          
+
         >
           {{ __('Edit Attendance') }}
 
@@ -102,7 +102,7 @@
         <button
           class="p-2 bg-blue-500 text-white rounded-md"
           @click="markAttendance"
-          
+
         >
           {{ __('Mark Attendance') }}
         </button>
@@ -223,7 +223,7 @@ watch(
           attendance.value[student.student] = false;
         });
       }
-      
+
     }
   }
 );
@@ -293,7 +293,7 @@ const markAttendance = async () => {
 
   //console.log("Students Present:", studentsPresent);
 
- 
+
     const response = await fetch("/api/method/seminary.seminary.api.mark_attendance", {
       method: "POST",
       headers: {

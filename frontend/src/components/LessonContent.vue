@@ -20,7 +20,7 @@
 				allowfullscreen
 			></iframe>
 		</div>
-		
+
 		<div v-else-if="block.includes('{{ Video')">
 			<video
 				controls

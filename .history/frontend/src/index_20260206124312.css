@@ -1,0 +1,24 @@
+@import 'assets/Inter/inter.css';
+@import './styles/frappe-ui.css';
+@import './styles/codemirror.css';
+
+:root {
+	--app-topbar-height: 4rem;
+}
+
+#scrollContainer > header.sticky {
+	min-height: var(--app-topbar-height);
+	display: flex;
+	align-items: center;
+}
+h1 {
+  margin-bottom: 1rem;
+  font-size: x-large;
+  font-weight: 800;
+}
+
+h2 {
+  margin-bottom: 1rem;
+  font-size: large;
+  font-weight: 700;
+}

@@ -66,7 +66,7 @@ const props = defineProps({
 
 const CalendarInstructions = createResource({
     url: '/api/method/seminary.seminary.calendar.get_calendar_instructions',
-    
+
     auto: true,
 })
 

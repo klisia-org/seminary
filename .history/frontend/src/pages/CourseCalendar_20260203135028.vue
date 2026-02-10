@@ -53,7 +53,7 @@ const subscribeCourseCalendar = () => {
         return response.blob();
     });
     console.log('Calendar URL:', calendarUrl);
-    
+
     navigator.clipboard.writeText(calendarUrl).then(() => {
         alert(__('Calendar URL copied to clipboard! You can now add it to your calendar application.'));
     }, () => {

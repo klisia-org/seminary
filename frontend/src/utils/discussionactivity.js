@@ -78,7 +78,7 @@ export class DiscussionActivity {
 				this.data.discussionID = discussion
 				this.renderDiscussionActivity(discussion)
 			},
-			
+
 		})
 		app.use(translationPlugin)
 		app.use(router) // Explicitly provide the router

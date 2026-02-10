@@ -15,7 +15,7 @@
         </Button>
 
         <div class="space-y-4">
-            
+
             <div>
                 <h4 class="text-lg font-semibold">{{ __('Google Calendar') }}</h4>
                 <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Google Calendar by ' +

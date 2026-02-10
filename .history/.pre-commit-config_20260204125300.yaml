@@ -30,7 +30,7 @@ repos:
         additional_dependencies: ["flake8-bugbear"]
         args: ["--config", ".github/helper/flake8.conf"]
         exclude: '.history/.*'
-  
+
   - repo: https://github.com/pycqa/bandit
     rev: 1.9.3
     hooks:

@@ -2,7 +2,7 @@
 	<DiscussionActivity
 		v-if="user.data"
 		:discussionID="discussionID"
-		
+
 	/>
 	<div v-else class="border rounded-md text-center py-20">
 		<div>

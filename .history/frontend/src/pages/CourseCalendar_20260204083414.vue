@@ -15,7 +15,7 @@
         </Button>
 
         <div class="space-y-4">
-            
+
             <div v-if="CalendarInstructions.data">
                 <p class="text-sm text-gray-600" v-html="CalendarInstructions.data"></p>
             </div>

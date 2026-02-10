@@ -123,7 +123,7 @@ const examColumns = computed(() => {
 			width: 1,
 			align: 'center',
 		},
-	
+
 	]
 })
 

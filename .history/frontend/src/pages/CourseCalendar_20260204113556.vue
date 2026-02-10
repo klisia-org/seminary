@@ -7,7 +7,7 @@
     <div class="mt-5 mb-10 w-full px-5">
         <h3 class="text-2xl font-bold mb-3">{{ __('Course Calendar') }}</h3>
         <p class="text-gray-700 mb-5">{{ __('Subscribe to this course calendar to stay updated with assignments'
-        + 
+        +
             'due dates and class schedule.') }}</p>
         <Button variant="solid" @click="subscribeCourseCalendar()" class="mt-5 mb-5">
             <span>

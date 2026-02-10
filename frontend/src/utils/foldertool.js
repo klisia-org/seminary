@@ -96,7 +96,7 @@ export class FolderTool {
     this.vueApp.use(router)
     this.vueApp.mount(this.wrapper)
   }
-  
+
     save(blockContent) {
       return {
         folder: this.data?.folder,

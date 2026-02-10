@@ -84,7 +84,7 @@ const course = createResource({
 console.log('Course Data:', course);
 
 const subscribeCourseCalendar = () => {
-    
+
     const calendarUrl = `${window.location.origin}/api/method/seminary.seminary.calendar.course_ics?course_schedule=${encodeURIComponent(props.courseName)}&token=${encodeURIComponent(course.data.calendar_token)}`;
     const calendardata = fetch(calendarUrl).then(response => {
         if (!response.ok) {

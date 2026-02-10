@@ -46,7 +46,7 @@ console.log('Course Data:', course);
 
 const subscribeCourseCalendar = () => {
     const calendarUrl = `${window.location.origin}/api/method/seminary.calendar.course_ics?course_schedule=${props.courseName}&token=${course.data.calendar_token}`;
-    
+
     console.log('Calendar URL:', calendarUrl);
     navigator.clipboard.writeText(calendarUrl).then(() => {
         alert(__('Calendar URL copied to clipboard! You can now add it to your calendar application.'));

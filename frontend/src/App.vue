@@ -1,15 +1,15 @@
 <template>
 	<FrappeUIProvider>
 	<Layout>
-		
+
 		<div class="text-base">
 		<router-view :key="$route.fullPath" />
 		</div>
 	</Layout>
-	
+
 	<Dialogs /> <!-- Ensure this line is present -->
 	<Tiptap />
-	
+
 	</FrappeUIProvider>
 </template>
 
