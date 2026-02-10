@@ -168,7 +168,7 @@ export class CodeBox {
 		this.codeArea.removeAttribute('class');
 		this.data.language = language[0];
 		this.codeArea.setAttribute('class', `codeBoxTextArea ${this.config.useDefaultTheme} ${this.data.language}`);
-	
+
 		hljs.highlightElement(this.codeArea);
 	}
 

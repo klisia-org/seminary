@@ -3,7 +3,7 @@ import { createResource } from 'frappe-ui'
 import { computed } from 'vue'
 
 export function useCourseToDo(courseName, user) {
- 
+
   const isStudent =  user?.data?.is_student
   const isInstructor =  user?.data?.is_instructor
     console.log("useCourseToDo", courseName, user?.data?.name, isStudent, isInstructor)
@@ -35,7 +35,7 @@ export function useCourseToDo(courseName, user) {
     params: { course: courseName },
   })
 
-  
+
   const countToDoItems = computed(() => {
     const countMissing = missingAssessments.data?.length || 0
     const countDueSoon = (assessments.data || []).filter(a => new Date(a.due_date) >= new Date()).length
@@ -45,7 +45,7 @@ export function useCourseToDo(courseName, user) {
     }
     if (isInstructor) {
       return countToGrade
-    } 
+    }
   })
   console.log("Course: ", courseName, 'countToDoItems', countToDoItems.value)
   return {

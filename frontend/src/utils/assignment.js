@@ -71,7 +71,7 @@ export class Assignment {
 				this.data.assignment = assignment
 				this.renderAssignment(assignment)
 			},
-			
+
 		})
 		app.use(translationPlugin)
 		app.use(router) // Explicitly provide the router

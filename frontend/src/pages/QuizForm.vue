@@ -267,7 +267,7 @@ onMounted(() => {
 		router.push({ name: 'Courses' })
 	}
 	if (props.quizID === 'new') {
-	
+
 		if (examStore.prefillData.title) {
        	 quiz.title = examStore.prefillData.title; // Pre-fill the title if provided
     	}
@@ -451,7 +451,7 @@ const deleteQuestions = (selections, unselectAll) => {
 		},
 		{
 			onSuccess() {
-				toast.success(__('Questions deleted successfully'));			
+				toast.success(__('Questions deleted successfully'));
 				quizDetails.reload()
 				unselectAll()
 			},

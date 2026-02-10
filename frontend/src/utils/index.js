@@ -489,7 +489,7 @@ export function getSidebarLinks() {
 				'LessonForm',
 			],
 		},
-	
+
 		{
 			label: 'Statistics',
 			icon: 'TrendingUp',

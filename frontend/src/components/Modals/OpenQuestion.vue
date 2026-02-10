@@ -66,8 +66,8 @@
 						:label="__('Points')"
 						type="number"
 					/>
-					
-				
+
+
 				</div>
 				<div v-else-if="questionType == 'existing'" class="space-y-2">
 					<Link

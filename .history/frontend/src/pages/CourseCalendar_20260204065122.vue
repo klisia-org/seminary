@@ -29,7 +29,7 @@
 
                 <div>
                     <h4 class="text-lg font-semibold">{{ __('Outlook Calendar') }}</h4>
-                    <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Outlook ' 
+                    <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Outlook '
                     + 'Calendar by'
                     +
                         ' selecting "Add Calendar" > "Subscribe from Web".') }}</p>

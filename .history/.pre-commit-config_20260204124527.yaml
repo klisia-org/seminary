@@ -29,7 +29,7 @@ repos:
       - id: flake8
         additional_dependencies: ["flake8-bugbear"]
         args: ["--config", ".github/helper/flake8.conf"]
-  
+
   - repo: https://github.com/pycqa/bandit
     rev: 1.9.3
     hooks:
@@ -38,7 +38,7 @@ repos:
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-  
+
 ci:
     autoupdate_schedule: weekly
     skip: []

@@ -69,7 +69,7 @@ const userDropdownOptions = [
 		icon: 'user',
 		label: 'Profile',
 		onClick: () => (showProfileDialog.value = true),
-		
+
 	},
 	{
 		icon: 'log-out',

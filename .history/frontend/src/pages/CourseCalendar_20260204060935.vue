@@ -54,7 +54,7 @@ const props = defineProps({
     },
 })
 
-cont 
+cont
 
 const course = createResource({
     url: 'seminary.seminary.utils.get_course_details',

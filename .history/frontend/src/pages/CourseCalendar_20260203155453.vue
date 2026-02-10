@@ -8,7 +8,7 @@
         <h3 class="text-2xl font-bold mb-3">{{ __('Course Calendar') }}</h3>
         <p class="text-gray-700 mb-5">{{ __('Subscribe to this course calendar to stay updated with events and ' +
             'schedules.') }}</p>
-            
+
 
         <div class="space-y-4">
             <div>

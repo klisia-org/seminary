@@ -15,13 +15,13 @@
         </Button>
 
         <div class="space-y-4">
-            
+
             <div v-if="CalendarInstructions.data">
                 <p class="text-sm text-gray-600" v-html="CalendarInstructions.data"></p>
             </div>
             <div v-else>
                 <div>
-                    
+
                     <h4 class="text-lg font-semibold mt-3">{{ __('Google Calendar') }}</h4>
                     <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Google Calendar by'
                         +

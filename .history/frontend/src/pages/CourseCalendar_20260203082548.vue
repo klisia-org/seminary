@@ -12,7 +12,7 @@
                   {{ __('Subscribe to this course calendar.') }}
                 </span>
               </Button>
-      
+
     </div>
 </template>
 <script setup>

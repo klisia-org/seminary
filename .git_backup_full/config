@@ -1,0 +1,28 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/klisia-org/seminary
+	fetch = +refs/heads/develop:refs/remotes/origin/develop
+[branch "develop"]
+	remote = origin
+	merge = refs/heads/develop
+	vscode-merge-base = upstream/develop
+	gk-last-accessed = 2026-02-10T23:20:56.697Z
+	gk-last-modified = 2026-02-10T23:20:56.697Z
+	vscode-merge-base = origin/develop
+	github-pr-owner-number = "klisia-org#seminary#8"
+	github-pr-owner-number = "klisia-org#seminary#8"
+	github-pr-owner-number = "klisia-org#seminary#12"
+	github-pr-owner-number = "klisia-org#seminary#12"
+	github-pr-owner-number = "klisia-org#seminary#12"
+[lfs]
+	repositoryformatversion = 0
+[pull]
+	rebase = false
+[branch "main"]
+	vscode-merge-base = origin/develop
+	gk-last-accessed = 2026-02-06T16:29:35.006Z
+	gk-last-modified = 2026-02-06T16:29:35.006Z

@@ -1,0 +1,53 @@
+{
+  "name": "seminary-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "author": "Klisia, Frappe and Contributors",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "dev": "vite --config vite.config.js",
+    "build": "vite build --config vite.config.js --base=/assets/seminary/frontend/ && yarn copy-html-entry",
+    "preview": "vite preview",
+    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
+  },
+  "dependencies": {
+    "@editorjs/embed": "^2.7.6",
+    "@editorjs/header": "^2.8.8",
+    "@editorjs/inline-code": "^1.5.1",
+    "@editorjs/nested-list": "^1.4.3",
+    "@editorjs/paragraph": "^2.11.7",
+    "@editorjs/simple-image": "^1.6.0",
+    "@editorjs/table": "^2.4.4",
+    "@iconify/json": "^2.2.252",
+    "@internationalized/date": "^3.7.0",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/typography": "^0.5.19",
+    "dayjs": "^1.11.13",
+    "feather-icons": "^4.29.2",
+    "frappe-ui": "^0.1.261",
+    "highlight.js": "^11.11.1",
+    "hljs": "^6.2.3",
+    "lucide-vue-next": "^0.563.0",
+    "markdown-it": "^14.1.0",
+    "pinia": "^3.0.4",
+    "showdown": "^2.1.0",
+    "socket.io-client": "^4.8.1",
+    "tailwindcss": "3.4.15",
+    "vite-plugin-icons": "^0.6.5",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5",
+    "vuedraggable": "^2.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "sass": "^1.92.1",
+    "sass-embedded": "^1.86.3",
+    "vite": "^5.4.20"
+  }
+}

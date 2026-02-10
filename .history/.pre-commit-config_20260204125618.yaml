@@ -15,7 +15,7 @@ repos:
         args: ['--branch', 'develop']
       - id: check-merge-conflict
       - id: check-ast
-      
+
 
   - repo: https://github.com/adityahase/black
     rev: 22.1.0
@@ -31,7 +31,7 @@ repos:
         additional_dependencies: ["flake8-bugbear"]
         args: ["--config", ".github/helper/flake8.conf"]
         exclude: '.history/.*'
-  
+
   - repo: https://github.com/pycqa/bandit
     rev: 1.9.3
     hooks:

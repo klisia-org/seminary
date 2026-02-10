@@ -13,7 +13,7 @@
                 {{ __('Subscribe to this course calendar') }}
             </span>
         </Button>
-        
+
         <div class="space-y-4">
 
             <div v-if="CalendarInstructions.data">

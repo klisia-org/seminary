@@ -8,7 +8,7 @@ const routes = [
 	{
 		path: "/app/seminary",
 		name: "Desk",
-		
+
 		},
   {
     path: "/fees",
@@ -23,7 +23,7 @@ const routes = [
   {
     path: "/courses",
     name: "Courses",
-    component: () => import('@/pages/Courses.vue'), 
+    component: () => import('@/pages/Courses.vue'),
   },
 	{
 		path: '/courses/:courseName',
@@ -114,7 +114,7 @@ const routes = [
 		props: true,
 	},
 	{
-		path:'/assignment-submissions', 
+		path:'/assignment-submissions',
 		name: 'AssignmentSubmissionList',
 		component: () => import('@/pages/AssignmentSubmissionList.vue'),
 	},
@@ -163,13 +163,13 @@ const routes = [
 		path: '/gradebook/:courseName',
 		name: 'Gradebook',
 		component: () => import('@/pages/Gradebook.vue'),
-		props: true,	
+		props: true,
 	},
 	{
 		path: '/attendance/:courseName',
 		name: 'StudentAttendanceCS',
 		component: () => import('@/pages/StudentAttendanceCS.vue'),
-		props: true,	
+		props: true,
 	},
 	{
   		path: '/discussion-activity/:discussionID?',
@@ -187,7 +187,7 @@ const routes = [
 		path: '/discussion-activity-submissions',
 		name: 'DiscussionActivitySubmissionList',
 		component: () => import('@/pages/DiscussionActivitySubmissionList.vue'),
-		
+
 	},
 	{
 		path: '/discussion-activities',
@@ -225,7 +225,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
 	const { userResource } = usersStore()
 	let { isLoggedIn } = sessionStore()
-	
+
 
 	try {
 		if (isLoggedIn) {

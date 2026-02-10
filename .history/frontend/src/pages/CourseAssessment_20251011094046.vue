@@ -5,7 +5,7 @@
         >
           <Breadcrumbs class="h-7" :items="breadcrumbs" />
           <div v-if="totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
-            <Tooltip 
+            <Tooltip
               :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
               <Button variant="subtle" class="ml-2">
                 <span>
@@ -153,20 +153,20 @@
 </table>
 
   <div class="mt-5 mb-10 max-w-full px-15">
-             
-            
+
+
             <br>
             <Button class="mb-4" size="sm" @click="openCourseAssessmentModal">
               {{ __('Add Evaluation') }}
             </Button>
-     
- 
- 
+
+
+
   <CourseAssessmentModal
     v-model="showCourseAssessmentModal"
     v-model:modalcriteria="modalcriteria"
     :courseName="props.courseName"
-    @assessment-saved="onAssessmentSaved" 
+    @assessment-saved="onAssessmentSaved"
   />
  </div>
 </template>
@@ -348,10 +348,10 @@ function addCriteria() {
     due_date: '',
     lesson: ''
   });
-  
+
   // Add the new criteria to the reactive array.
   assessmentCriteria.push(newCriteria);
-  
+
   // Attach a watcher to this new criteria.
   watch(
     () => newCriteria.assesscriteria_scac,

@@ -27,10 +27,10 @@
 						</span>
 					</Button>
 				</router-link>
-				
+
 			</div>
-			
-			
+
+
 			<Button
 				v-else
 				@click="enrollStudent()"
@@ -42,7 +42,7 @@
 					{{ ('Start Learning') }}
 				</span>
 			</Button>
-			
+
 			<router-link
 				v-if="user?.data?.is_moderator || is_instructor()"
 				:to="{
@@ -58,7 +58,7 @@
 					</span>
 				</Button>
 			</router-link>
-			
+
 			<router-link
 				v-if="user?.data?.is_moderator || is_instructor()"
 				:to="{
@@ -136,8 +136,8 @@
 						{{ ('Enrolled Students') }}
 					</span>
 				</div>
-				
-				
+
+
 			</div>
 		</div>
 	</div>
@@ -175,7 +175,7 @@ function enrollStudent() {
 			window.location.href = `/login?redirect-to=${window.location.pathname}`
 		}, 2000)
 	} else {
-		
+
 				setTimeout(() => {
 					router.push({
 						name: 'Lesson',
@@ -186,7 +186,7 @@ function enrollStudent() {
 						},
 					})
 				}, 2000)
-			
+
 	}
 }
 

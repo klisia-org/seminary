@@ -30,17 +30,17 @@ repos:
         additional_dependencies: ["flake8-bugbear"]
         args: ["--config", ".github/helper/flake8.conf"]
         exclude: '.history/.*'
-  
+
   - repo: https://github.com/pycqa/bandit
     rev: 1.9.3
     hooks:
       - id: bandit
-      
+
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-  
+
 ci:
     autoupdate_schedule: weekly
     skip: []
