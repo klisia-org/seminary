@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "format:{course}-{discussion_name}-{##}",
  "creation": "2025-10-07 07:45:54.407934",
  "doctype": "DocType",
