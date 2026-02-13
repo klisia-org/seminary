@@ -221,21 +221,15 @@ def update_company_in_item_details():
         "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
     )
     default_income_account = frappe.db.get_value("Company", {"company_name": default_company}, "default_income_account")
-    # Update the company in the "Item Default" table
-
-    items_to_update = frappe.db.sql(
-        "SELECT name FROM `tabItem Default` WHERE company = 'ToBeReplaced'"
+    # Update the company in the "Item Details" table
+    frappe.db.sql(
+        """
+        UPDATE `tabItem Default`
+        SET company = %s, default_price_list = %s, income_account = %s
+        WHERE company = 'ToBeReplaced'
+        """,
+        (default_company, default_price_list, default_income_account)
     )
-
-    if items_to_update:
-        frappe.db.sql(
-            """
-            UPDATE `tabItem Default`
-            SET company = %s, default_price_list = %s, income_account = %s
-            WHERE company = 'ToBeReplaced'
-            """,
-            (default_company, default_price_list, default_income_account)
-        )
 
     frappe.db.commit()
 

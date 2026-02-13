@@ -178,7 +178,7 @@ seminary_markdown_macro_renderers = {
 
 before_install = "seminary.install.before_install"
 after_install = "seminary.install.after_install"
-after_migrate = "seminary.install.after_migrate"
+a
 
 # Uninstallation
 # ------------

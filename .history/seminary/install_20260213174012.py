@@ -212,7 +212,7 @@ def get_custom_fields():
 
 def update_company_in_item_details():
     """
-    Update the company in the "Item Default" table to use the default company
+    Update the company in the "Item Details" table to use the default company
     instead of the hardcoded value 'ToBeReplaced' in fixtures.
     """
     # Get the default company
@@ -221,42 +221,16 @@ def update_company_in_item_details():
         "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
     )
     default_income_account = frappe.db.get_value("Company", {"company_name": default_company}, "default_income_account")
-    # Update the company in the "Item Default" table
-
-    items_to_update = frappe.db.sql(
-        "SELECT name FROM `tabItem Default` WHERE company = 'ToBeReplaced'"
-    )
-
-    if items_to_update:
-        frappe.db.sql(
-            """
-            UPDATE `tabItem Default`
-            SET company = %s, default_price_list = %s, income_account = %s
-            WHERE company = 'ToBeReplaced'
-            """,
-            (default_company, default_price_list, default_income_account)
-        )
-
-    frappe.db.commit()
-
-
-def after_migrate():
-    setup_genders()
-
-def setup_genders():
-    """Disable non-binary genders. Runs after fixtures are loaded."""
-
-    # Check if our custom "enabled" field exists yet
-    if not frappe.db.has_column("Gender", "enabled"):
-        return
-
-    # Disable all genders first
-    frappe.db.sql("UPDATE `tabGender` SET enabled = 0")
-
-    # Enable only Male and Female
+    # Update the company in the "Item Details" table
     frappe.db.sql(
-        "UPDATE `tabGender` SET enabled = 1 WHERE name IN (%s, %s)",
-        (_("Male"), _("Female")),
+        """
+        UPDATE `tabItem Details`
+        SET company = %s, default_price_list = %s, income_account = %s
+        WHERE company = 'ToBeReplaced'
+        """,
+        (default_company, default_price_list, default_income_account)
     )
 
     frappe.db.commit()
+
+
