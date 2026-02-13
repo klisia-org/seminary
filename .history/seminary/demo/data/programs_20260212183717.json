@@ -1,0 +1,46 @@
+[
+    {
+        "program_name": "DEMO-Master of Divinity",
+        "program_abbreviation": "DEMO-MDiv",
+        "credits_complete": 90,
+        "program_description": "A comprehensive graduate program preparing students for pastoral ministry.",
+        "pgm_pgmfees": [
+            {
+                "pgm_feecategory": "Tuition",
+                "amount": 15000,
+                "description": "Tuition fee for the Master of Divinity program."
+            },
+            {
+                "pgm_feecategory": "Library Fee",
+                "amount": 500,
+                "description": "Annual library fee for access to resources."
+            }
+        ],
+        "courses": [
+            {
+                "course_code": "MDIV-101",
+                "course_name": "Introduction to Theology",
+                "credits": 3,
+                "description": "An overview of key theological concepts and traditions."
+            },
+            {
+                "course_code": "MDIV-102",
+                "course_name": "Biblical Studies",
+                "credits": 3,
+                "description": "In-depth study of the Old and New Testaments."
+            }
+        ]
+    },
+    {
+        "program_name": "DEMO-Master of Arts in Biblical Studies",
+        "program_abbreviation": "DEMO-MABS",
+        "credits_complete": 60,
+        "program_description": "Focused study of Old and New Testament with original languages."
+    },
+    {
+        "program_name": "DEMO-Master of Theology",
+        "program_abbreviation": "DEMO-ThM",
+        "credits_complete": 120,
+        "program_description": "Advanced theological research and writing."
+    }
+]

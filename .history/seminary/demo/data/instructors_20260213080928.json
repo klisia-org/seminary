@@ -1,0 +1,11 @@
+[
+        {
+        "first_name": "Martin",
+        "last_name": "Luther",
+        "student_email_id": "demo.mluther@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1993-11-10",
+        "student_mobile_number": "555-0104",
+        "user": "demo.mluther@seminary.edu"
+    }
+]

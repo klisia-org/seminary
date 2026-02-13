@@ -1,0 +1,130 @@
+[
+    {
+        "program_name": "DEMO-Master of Divinity",
+        "program_abbreviation": "DEMO-MDiv",
+        "credits_complete": 90,
+        "program_description": "A comprehensive graduate program preparing students for pastoral ministry.",
+        "pgm_pgmfees": [
+            {
+                "pgm_feecategory": "Credit hour",
+                "pgm_feeevent": "Course Enrollment"
+            },
+            {
+                "pgm_feecategory": "Program Admission Fee",
+                "pgm_feeevent": "Program Enrollment"
+            }
+        ],
+        "courses": [
+            {
+                "course": "DEMO-Systematic Theology I",
+                "course_name": "DEMO-Systematic Theology I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 1
+            },
+            {
+                "course": "DEMO-Greek Exegesis I",
+                "course_name": "DEMO-Greek Exegesis I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 2
+            }
+        ]
+    },
+    {
+        "program_name": "DEMO-Master of Arts in Biblical Studies",
+        "program_abbreviation": "DEMO-MABS",
+        "credits_complete": 60,
+        "program_description": "Focused study of Old and New Testament with original languages.",
+                "pgm_pgmfees": [
+            {
+                "pgm_feecategory": "Credit hour",
+                "pgm_feeevent": "Course Enrollment"
+            },
+            {
+                "pgm_feecategory": "Program Admission Fee",
+                "pgm_feeevent": "Program Enrollment"
+            }
+        ],
+        "courses": [
+            {
+                "course": "DEMO-Systematic Theology I",
+                "course_name": "DEMO-Systematic Theology I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 1
+            },
+            {
+                "course": "DEMO-Old Testament Survey",
+                "course_name": "DEMO-Greek Exegesis I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 2
+            }
+        ]
+    },
+    {
+        "program_name": "DEMO-Bachelor of Theology",
+        "program_abbreviation": "DEMO-BTh",
+        "credits_complete": 120,
+        "program_description": "Undergraduate program providing foundational theological education.",
+                "pgm_pgmfees": [
+            {
+                "pgm_feecategory": "Credit hour",
+                "pgm_feeevent": "Course Enrollment"
+            },
+            {
+                "pgm_feecategory": "Program Admission Fee",
+                "pgm_feeevent": "Program Enrollment"
+            }
+        ],
+        "courses": [
+            {
+                "course": "DEMO-Systematic Theology I",
+                "course_name": "DEMO-Systematic Theology I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 1
+            },
+            {
+                "course": "DEMO-Greek Exegesis I",
+                "course_name": "DEMO-Greek Exegesis I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 2
+            }
+        ]
+    },
+    {
+        "program_name": "DEMO-Master of Theology",
+        "program_abbreviation": "DEMO-ThM",
+        "credits_complete": 120,
+        "program_description": "Advanced theological research and writing.",
+                "pgm_pgmfees": [
+            {
+                "pgm_feecategory": "Credit hour",
+                "pgm_feeevent": "Course Enrollment"
+            },
+            {
+                "pgm_feecategory": "Program Admission Fee",
+                "pgm_feeevent": "Program Enrollment"
+            }
+        ],
+        "courses": [
+            {
+                "course": "DEMO-Systematic Theology I",
+                "course_name": "DEMO-Systematic Theology I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 1
+            },
+            {
+                "course": "DEMO-Greek Exegesis I",
+                "course_name": "DEMO-Greek Exegesis I",
+                "required": 1,
+                "pgmcourse_credits": 3,
+                "course_term": 2
+            }
+        ]
+    }
+]

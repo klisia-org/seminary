@@ -1,0 +1,20 @@
+[
+    {
+        "program_name": "DEMO-Master of Divinity",
+        "program_abbreviation": "DEMO-MDiv",
+        "department": "Theology",
+        "description": "A comprehensive graduate program preparing students for pastoral ministry."
+    },
+    {
+        "program_name": "DEMO-Master of Arts in Biblical Studies",
+        "program_abbreviation": "DEMO-MABS",
+        "department": "Biblical Studies",
+        "description": "Focused study of Old and New Testament with original languages."
+    },
+    {
+        "program_name": "DEMO-Master of Theology",
+        "program_abbreviation": "DEMO-ThM",
+        "department": "Theology",
+        "description": "Advanced theological research and writing."
+    }
+]

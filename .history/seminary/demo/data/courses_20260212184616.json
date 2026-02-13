@@ -1,0 +1,32 @@
+[
+    {
+        "course_name": "DEMO-Systematic Theology I",
+        "coursecode": "DEMO-ST501",
+        "department": "Theology",
+        "description": "Prolegomena, Theology Proper, Christology"
+    },
+    {
+        "course_name": "DEMO-Greek Exegesis I",
+        "coursecode": "DEMO-NT501",
+        "department": "New Testament",
+        "description": "Introduction to Koine Greek grammar and syntax"
+    },
+    {
+        "course_name": "DEMO-Old Testament Survey",
+        "course_abbreviation": "DEMO-OT501",
+        "department": "Old Testament",
+        "description": "Survey of the Old Testament canon, structure, and theology"
+    },
+    {
+        "course_name": "DEMO-Homiletics",
+        "course_abbreviation": "DEMO-PM501",
+        "department": "Pastoral Ministry",
+        "description": "Principles and practice of expository preaching"
+    },
+    {
+        "course_name": "DEMO-Church History I",
+        "course_abbreviation": "DEMO-CH501",
+        "department": "Church History",
+        "description": "Early church through the Reformation"
+    }
+]
