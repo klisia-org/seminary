@@ -32,6 +32,10 @@
   "min_perc_enroll",
   "section_break_7",
   "instructor_created_by",
+  "demo_section",
+  "demo_data_installed",
+  "column_break_xyvi",
+  "no_more_demo",
   "portal_tab",
   "calendar_instructions"
  ],
@@ -211,11 +215,37 @@
    "fieldname": "calendar_instructions",
    "fieldtype": "Text Editor",
    "label": "Calendar Instructions"
+  },
+  {
+   "fieldname": "demo_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Demo"
+  },
+  {
+   "default": "0",
+   "fieldname": "demo_data_installed",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Data Installed",
+   "show_on_timeline": 1
+  },
+  {
+   "fieldname": "column_break_xyvi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "no_more_demo",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Remove Button Demo",
+   "show_on_timeline": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-04 06:29:51.925645",
+ "modified": "2026-02-12 18:21:32.604767",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

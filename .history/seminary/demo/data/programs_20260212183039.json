@@ -1,0 +1,20 @@
+[
+    {
+        "program_name": "DEMO-Master of Divinity",
+        "program_abbreviation": "DEMO-MDiv",
+        "credits_complete": 90,
+        "description": "A comprehensive graduate program preparing students for pastoral ministry."
+    },
+    {
+        "program_name": "DEMO-Master of Arts in Biblical Studies",
+        "program_abbreviation": "DEMO-MABS",
+        "credits_complete": 60,
+        "description": "Focused study of Old and New Testament with original languages."
+    },
+    {
+        "program_name": "DEMO-Master of Theology",
+        "program_abbreviation": "DEMO-ThM",
+        "credits_complete": 120,
+        "program_description": "Advanced theological research and writing."
+    }
+]

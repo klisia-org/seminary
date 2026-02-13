@@ -1,0 +1,83 @@
+[
+    {
+        "first_name": "Jonathan",
+        "last_name": "Edwards",
+        "student_email_id": "demo.jedwards@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1995-03-15",
+        "student_mobile_number": "555-0101",
+        "user": "demo.jedwards@seminary.edu"
+    },
+    {
+        "first_name": "Charles",
+        "last_name": "Spurgeon",
+        "student_email_id": "demo.cspurgeon@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1994-07-22",
+        "student_mobile_number": "555-0102",
+        "user": "demo.cspurgeon@seminary.edu"
+    },
+    {
+        "first_name": "Elisabeth",
+        "last_name": "Elliot",
+        "student_email_id": "demo.eelliot@seminary.edu",
+        "gender": "Female",
+        "date_of_birth": "1996-01-10",
+        "student_mobile_number": "555-0103",
+        "user": "demo.eelliot@seminary.edu"
+    },
+    {
+        "first_name": "Martin",
+        "last_name": "Luther",
+        "student_email_id": "demo.mluther@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1993-11-10",
+        "student_mobile_number": "555-0104",
+        "user": "demo.mluther@seminary.edu"
+    },
+    {
+        "first_name": "John",
+        "last_name": "Calvin",
+        "student_email_id": "demo.jcalvin@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1992-07-10",
+        "student_mobile_number": "555-0105",
+        "user": "demo.jcalvin@seminary.edu"
+    },
+    {
+        "first_name": "Dietrich",
+        "last_name": "Bonhoeffer",
+        "student_email_id": "demo.dbonhoeffer@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1991-02-04",
+        "student_mobile_number": "555-0106",
+        "user": "demo.dbonhoeffer@seminary.edu"
+    },
+    {
+        "first_name": "John",
+        "last_name": "Wesley",
+        "student_email_id": "demo.jwesley@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1990-06-28",
+        "student_mobile_number": "555-0107",
+        "user": "demo.jwesley@seminary.edu"
+    },
+    {
+        "first_name": "Francis",
+        "last_name": "Schaeffer",
+        "student_email_id": "demo.fschaeffer@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1989-01-30",
+        "student_mobile_number": "555-0108",
+        "user": "demo.fschaeffer@seminary.edu"
+    },
+    {
+        "first_name": "Augustine",
+        "last_name": "Hippo",
+        "student_email_id": "demo.augustine@seminary.edu",
+        "gender": "Male",
+        "date_of_birth": "1988-11-13",
+        "student_mobile_number": "555-0109",
+        "user": "demo.augustine@seminary.edu"
+    }
+]

@@ -1,0 +1,17 @@
+console.log("Custom js called");
+const original_setup = frappe.ui.form.Form.prototype.setup;
+frappe.ui.form.Form.prototype.setup = function() {
+    original_setup.call(this);
+    
+    const frm = this;
+    (frm.meta.fields || []).forEach(df => {
+        if (df.fieldtype === 'Link' && df.options === 'Gender') {
+            frm.set_query(df.fieldname, () => ({
+                filters: { 'name': ['in', ['Male','Female']] }
+            }));
+        }
+    });
+};
+
+
+src="https://kit.fontawesome.com/01787f5cbf.js", crossorigin="anonymous"

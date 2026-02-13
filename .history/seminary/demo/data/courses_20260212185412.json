@@ -1,0 +1,65 @@
+[
+    {
+        "course_name": "DEMO-Systematic Theology I",
+        "coursecode": "DEMO-ST501",
+        "course_credits": 3,
+        "description": "Prolegomena, Theology Proper, Christology",
+        "default_grading_scale": "Default Numeric Scale",
+        "assessment_criteria": [
+            {
+                "criteria_name": "Exam",
+                "weightage": 30
+            },
+            {
+                "criteria_name": "Academic Paper with Online Submission",
+                "weightage": 40
+            },
+            {
+                "criteria_name": "Quiz",
+                "weightage": 30
+            }
+        ]
+    },
+    {
+        "course_name": "DEMO-Greek Exegesis I",
+        "coursecode": "DEMO-NT501",
+        "course_credits": 3,
+        "description": "Introduction to Koine Greek grammar and syntax",
+        "default_grading_scale": "Default Numeric Scale",
+        "assessment_criteria": [
+            {
+                "criteria_name": "Exam",
+                "weightage": 30
+            },
+            {
+                "criteria_name": "Academic Paper with Online Submission",
+                "weightage": 40
+            },
+            {
+                "criteria_name": "Quiz",
+                "weightage": 30
+            }
+        ]
+    },
+    {
+        "course_name": "DEMO-Old Testament Survey",
+        "coursecode": "DEMO-OT501",
+        "course_credits": 2,
+        "description": "Survey of the Old Testament canon, structure, and theology",
+        "default_grading_scale": "Default Numeric Scale"
+    },
+    {
+        "course_name": "DEMO-Homiletics",
+        "coursecode": "DEMO-PM501",
+        "course_credits": 2,
+        "description": "Principles and practice of expository preaching",
+        "default_grading_scale": "Default Numeric Scale"
+    },
+    {
+        "course_name": "DEMO-Church History I",
+        "coursecode": "DEMO-CH501",
+        "course_credits": 3,
+        "description": "Early church through the Reformation",
+        "default_grading_scale": "Default Numeric Scale"
+    }
+]
