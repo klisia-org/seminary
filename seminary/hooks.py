@@ -12,7 +12,7 @@ source_link = "https://github.com/klisia-org/seminary"
 app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
 app_license = "GNU GPL V3"
-app_home = "/app/seminary"
+app_home = "/desk/seminary"
 
 required_apps = ["erpnext"]
 
@@ -23,7 +23,7 @@ add_to_apps_screen = [
         "name": "seminary",
         "logo": "/assets/seminary/images/klisia_icon.png",  # Update this path to your custom app's logo
         "title": "Seminary ERP",
-        "route": "/app/seminary",
+        "route": "/desk/seminary",
     }
 ]
 
@@ -329,6 +329,7 @@ fixtures = [
     "Fee Category",
     "Program Level",
     "Assessment Criteria",
+    "Custom HTML Block",
 ]
 
 

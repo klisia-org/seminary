@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"XNuc7qTnWB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Setup</b></span>\",\"col\":12}},{\"id\":\"eNKYjoSQs4\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"T8RpwIf-RM\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Setup\",\"col\":4}},{\"id\":\"oiozhym6f5\",\"type\":\"card\",\"data\":{\"card_name\":\"Miscellaneous Setup\",\"col\":4}},{\"id\":\"YOrCNG78iK\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
  "custom_blocks": [
   {
@@ -78,45 +78,6 @@
    "type": "Link"
   },
   {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Schedule",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Course Schedule",
-   "link_count": 0,
-   "link_to": "Course Schedule",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Year",
-   "link_count": 0,
-   "link_to": "Academic Year",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Term",
-   "link_count": 0,
-   "link_to": "Academic Term",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
    "description": "Access is restricted for some user groups.",
    "hidden": 0,
    "is_query_report": 0,
@@ -132,25 +93,6 @@
    "label": "Sales Invoices",
    "link_count": 0,
    "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Miscellaneous Setup",
-   "link_count": 1,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Doctrinal Statement",
-   "link_count": 0,
-   "link_to": "Doctrinal Statement",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -216,11 +158,10 @@
    "type": "Link"
   },
   {
-   "description": "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data.",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Academic Setup",
-   "link_count": 5,
+   "label": "Schedule",
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -228,9 +169,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Programs",
+   "label": "Course Schedule",
    "link_count": 0,
-   "link_to": "Program",
+   "link_to": "Course Schedule",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -238,9 +179,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Courses",
+   "label": "Academic Year",
    "link_count": 0,
-   "link_to": "Course",
+   "link_to": "Academic Year",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -248,9 +189,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Grading Scale",
+   "label": "Academic Term",
    "link_count": 0,
-   "link_to": "Grading Scale",
+   "link_to": "Academic Term",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -258,105 +199,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Instructor",
+   "label": "Instructors",
    "link_count": 0,
    "link_to": "Instructor",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Settings",
-   "link_count": 0,
-   "link_to": "Seminary Settings",
-   "link_type": "DocType",
-   "onboard": 1,
-   "type": "Link"
-  },
-  {
-   "description": "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items).",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Financial Setup",
-   "link_count": 7,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fee Category",
-   "link_count": 0,
-   "link_to": "Fee Category",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customers",
-   "link_count": 0,
-   "link_to": "Customer",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customer Group",
-   "link_count": 0,
-   "link_to": "Customer Group",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "ERP Item",
-   "link_count": 0,
-   "link_to": "Item",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Item Price",
-   "link_count": 0,
-   "link_to": "Item Price",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Price List",
-   "link_count": 0,
-   "link_to": "Price List",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Payers for a Student",
-   "link_count": 0,
-   "link_to": "Payers Fee Category PE",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-01-27 14:36:57.291686",
+ "modified": "2026-02-14 12:13:40.614689",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
@@ -365,7 +216,23 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Instructor"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
  "sequence_id": 1.0,
  "shortcuts": [
   {

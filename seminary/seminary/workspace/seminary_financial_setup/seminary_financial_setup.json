@@ -1,0 +1,121 @@
+{
+ "app": "seminary",
+ "charts": [],
+ "content": "[{\"id\":\"dWUF0dOApg\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Financial Setup</span>\",\"col\":12}},{\"id\":\"BKlddDTC9z\",\"type\":\"paragraph\",\"data\":{\"text\":\"Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. \",\"col\":12}},{\"id\":\"MON2p0igia\",\"type\":\"paragraph\",\"data\":{\"text\":\"Each student created automatically creates a customer, but you may want to create other customers for churches who want to pay part of the tuition of their pastors, etc. Then, you can assign more payers for an individual program enrollment (e.g., student and church will be invoiced separately if you so choose). Scholarships should be used for those sponsored by the Seminary (e.g., from donations to a fund/cost-center that the seminary has freedom to manage).&nbsp;\",\"col\":12}},{\"id\":\"jWo3-Lhvn2\",\"type\":\"card\",\"data\":{\"card_name\":\"Payers Setup\",\"col\":4}},{\"id\":\"iD08IvBTdA\",\"type\":\"paragraph\",\"data\":{\"text\":\"Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items).\",\"col\":12}},{\"id\":\"PERiQY5BzP\",\"type\":\"card\",\"data\":{\"card_name\":\"Prices Setup\",\"col\":4}}]",
+ "creation": "2026-02-14 11:54:22.277064",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "circle-dollar-sign",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Seminary Financial Setup",
+ "link_type": "DocType",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payers Setup",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customers",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer Groups",
+   "link_count": 0,
+   "link_to": "Customer Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 0,
+   "link_to": "Scholarships",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Prices Setup",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "ERP Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Categories",
+   "link_count": 0,
+   "link_to": "Fee Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Price Lists",
+   "link_count": 0,
+   "link_to": "Price List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item Price",
+   "link_count": 0,
+   "link_to": "Item Price",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-14 12:25:04.226487",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Financial Setup",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Seminary",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 24.0,
+ "shortcuts": [],
+ "title": "Seminary Financial Setup",
+ "type": "Workspace"
+}
