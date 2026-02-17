@@ -59,7 +59,7 @@ def user_has_only_instructor_role(user):
     roles, don't restrict them.
     """
     user_roles = frappe.get_roles(user)
-    #print(f"User Roles for {user}: {user_roles}")
+    print(f"User Roles for {user}: {user_roles}")
     write_roles = get_roles_with_write_permission()
     # print(f"Write Roles for {user}: {write_roles}")
 
