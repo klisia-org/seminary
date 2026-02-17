@@ -12,7 +12,7 @@
    "icon": "app-window-mac",
    "indent": 0,
    "keep_closed": 0,
-   "label": "{{ _(\"Go to Portal\") }}",
+   "label": "{{ _(\"Go to Frontend\") }}",
    "link_type": "URL",
    "show_arrow": 0,
    "type": "Link",

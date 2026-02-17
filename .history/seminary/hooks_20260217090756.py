@@ -201,7 +201,7 @@ permission_query_conditions = {
  }
 # Instructors can only see their own records
 has_permission = {
- 	"Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+ 	"Instructor": "frappe.desk.doctype.instructor.instructor.has_permission",
  }
 
 # DocType Class
