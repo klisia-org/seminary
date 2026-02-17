@@ -12,7 +12,7 @@
    "icon": "app-window-mac",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Portal",
+   "label": "Go to Portal",
    "link_type": "URL",
    "show_arrow": 0,
    "type": "Link",
@@ -85,7 +85,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-17 11:24:17.449217",
+ "modified": "2026-02-14 12:11:17.328174",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
