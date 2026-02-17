@@ -62,7 +62,7 @@ msgstr "<div>tabla</div>"
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "<span class=\"h4\"><b>Setup</b></span>"
-msgstr ""
+msgstr "<span class=\"h4\"><b>Configurar</b></span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -72,7 +72,7 @@ msgstr "<span class=\"h4\"><b>Gestión de la matrícula</b></span>"
 #. Header text in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "<span class=\"h4\">Initial Guided Setup</span>"
-msgstr ""
+msgstr "<span class=\"h4\">Configuración guiada inicial</span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -2072,7 +2072,7 @@ msgstr "Crea tus programas"
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Create your holiday list"
-msgstr ""
+msgstr "Crea tu lista de vacaciones"
 
 #: frontend/src/pages/Assignments.vue:156
 #: frontend/src/pages/DiscussionActivities.vue:158
@@ -2165,7 +2165,7 @@ msgstr "Grupo de clientes"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
-msgstr ""
+msgstr "Los grupos de clientes pueden tener una lista de precios predeterminada, así usted puede tener precios para nacionales y extranjeros, por ejemplo. El ERP seminario se instala con algunos elementos por defecto, excepto por el precio del artículo. Necesitas introducirlos para cada lista de precios (la venta predeterminada ya existe y tiene algunos elementos)."
 
 #: seminary/seminary/doctype/student/student.py:155
 msgid "Customer {0} created and linked to Student"
@@ -2188,7 +2188,7 @@ msgstr "Tablero"
 #. Label of a shortcut in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Data Import Tool"
-msgstr ""
+msgstr "Herramienta de importación de datos"
 
 #. Label of the date (Date) field in DocType 'Student Attendance'
 #. Label of the date (Date) field in DocType 'Student Attendance Tool'
@@ -2263,7 +2263,7 @@ msgstr "Definir términos de pago"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Define Scholarships"
-msgstr ""
+msgstr "Definir Becas"
 
 #. Title of an Onboarding Step
 #: seminary/seminary/onboarding_step/uom/uom.json
@@ -3229,7 +3229,7 @@ msgstr "Enlaces financieros"
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Financial Setup"
-msgstr ""
+msgstr "Configuración financiera"
 
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
@@ -3850,32 +3850,32 @@ msgstr "Configuración inicial del seminario"
 #. Name of a Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Initial Setup"
-msgstr ""
+msgstr "Configuración inicial"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Courses"
-msgstr ""
+msgstr "Cursos de Entrada"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Customers"
-msgstr ""
+msgstr "Clientes de entrada"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Students"
-msgstr ""
+msgstr "Entrada de estudiantes"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Users"
-msgstr ""
+msgstr "Entrada de Usuarios"
 
 #. Label of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input or Import Data"
-msgstr ""
+msgstr "Datos de entrada o importación"
 
 #. Label of the question (Text Editor) field in DocType 'Assignment Activity'
 #. Label of the question (Text Editor) field in DocType 'Assignment Submission'
@@ -4597,7 +4597,7 @@ msgstr "Se requieren dos opciones mínimas para las preguntas de elección múlt
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Miscellaneous Setup"
-msgstr ""
+msgstr "Configuración Viscellana"
 
 #: frontend/src/components/CourseCardToDo.vue:10
 #: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
@@ -4990,7 +4990,7 @@ msgstr "Desconectado"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data."
-msgstr ""
+msgstr "En la primera configuración, es posible que desee importar cursos (después de comprobar la escala de calificación predeterminada). Para hacerlo, vaya a Inicio/Importar datos."
 
 #: frontend/src/components/Assignment.vue:45
 #: seminary/public/frontend/assets/index--ad6OvCj.js:7
@@ -5258,7 +5258,7 @@ msgstr "Categoría de cuota de pagador"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Payers for a Student"
-msgstr ""
+msgstr "Pagadores de un estudiante"
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:38
 msgid "Payers for this Program"
@@ -5587,7 +5587,7 @@ msgstr "Educación previa"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Price List"
-msgstr ""
+msgstr "Lista de precios"
 
 #. Label of the print_uom_after_quantity (Check) field in DocType 'Print
 #. Settings'
@@ -6351,7 +6351,7 @@ msgstr "Becas"
 #: seminary/seminary/workspace/seminary/seminary.json
 #, python-format
 msgid "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings"
-msgstr ""
+msgstr "Las becas se definen por Programa Académico, ya que cada programa tiene diferentes categorías de tarifas. Puedes definir un descuento (%) por categoría de tarifa. Esto sólo se aplicará a la parte del pago debido al estudiante. Por lo tanto, si la iglesia paga la mitad de la matrícula y el estudiante recibe una beca del 50%, pagará el 25%. Además, configure el centro de costes y el cliente por defecto para las becas en la Configuración de Seminario"
 
 #. Label of the school (Data) field in DocType 'Student Education'
 #: seminary/seminary/doctype/student_education/student_education.json
@@ -7540,7 +7540,7 @@ msgstr "Esto se puede utilizar para filtrar u ordenar programas."
 #. Description of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import)."
-msgstr ""
+msgstr "Esto debe hacerse en este orden. Los siguientes enlaces son para la entrada manual. SeminaryERP tiene una herramienta para importar datos (la misma herramienta para todos, solo un desplegable para seleccionar qué \"Doctype\" para importar)."
 
 #: seminary/public/frontend/assets/index--ad6OvCj.js:1
 msgid "This quiz consists of '${a(b).length}' questions"

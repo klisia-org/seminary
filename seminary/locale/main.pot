@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Seminary VERSION\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
-"POT-Creation-Date: 2026-02-10 16:03-0609\n"
-"PO-Revision-Date: 2026-02-10 16:03-0609\n"
+"POT-Creation-Date: 2026-02-17 10:15-0609\n"
+"PO-Revision-Date: 2026-02-17 10:15-0609\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: support@seminaryerp.org\n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:43
 #: frontend/src/components/CourseCardToDo.vue:50
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid " to grade"
 msgstr ""
 
@@ -59,17 +59,12 @@ msgstr ""
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
-msgid "<span class=\"h4\"><b>Setup</b></span>"
-msgstr ""
-
-#. Header text in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
 msgid "<span class=\"h4\"><b>Tuition Management</b></span>"
 msgstr ""
 
-#. Header text in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "<span class=\"h4\">Initial Guided Setup</span>"
+#. Header text in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "<span class=\"h4\">Academic Setup</span>"
 msgstr ""
 
 #. Header text in the Seminary Workspace
@@ -77,8 +72,13 @@ msgstr ""
 msgid "<span class=\"h4\">Seminary Academic Operations</span>"
 msgstr ""
 
+#. Header text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "<span class=\"h4\">Seminary Financial Setup</span>"
+msgstr ""
+
 #: frontend/src/pages/CourseForm.vue:22
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "A one line introduction to the course that appears on the course card (less than 55 characters)"
 msgstr ""
 
@@ -127,7 +127,7 @@ msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:79
 #: frontend/src/pages/StudentAttendanceCS.vue:96
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/student_attendance/student_attendance_list.js:5
 msgid "Absent"
 msgstr ""
@@ -142,8 +142,13 @@ msgstr ""
 msgid "Academic"
 msgstr ""
 
-#. Label of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/install.py:157
+msgid "Academic Event"
+msgstr ""
+
+#. Name of a Workspace
+#. Label of a Card Break in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Academic Setup"
 msgstr ""
 
@@ -158,11 +163,12 @@ msgstr ""
 #. Label of the academic_term (Link) field in DocType 'Student Log'
 #. Label of a field in the enroll-in-a-course Web Form
 #. Label of a list column in the enroll-in-a-course Web Form
+#. Label of a Link in the Academic Setup Workspace
 #. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/Courses.vue:44 frontend/src/pages/Courses.vue:210
 #: frontend/src/pages/Grades.vue:69 frontend/src/pages/Grades.vue:106
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -171,6 +177,7 @@ msgstr ""
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.json
 #: seminary/seminary/doctype/student_log/student_log.json
 #: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Academic Term"
 msgstr ""
@@ -200,11 +207,13 @@ msgstr ""
 #. Name of a DocType
 #. Label of the academic_year (Link) field in DocType 'Student Admission'
 #. Label of the academic_year (Link) field in DocType 'Student Log'
+#. Label of a Link in the Academic Setup Workspace
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/academic_year/academic_year.json
 #: seminary/seminary/doctype/student_admission/student_admission.json
 #: seminary/seminary/doctype/student_log/student_log.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Academic Year"
 msgstr ""
@@ -342,7 +351,7 @@ msgstr ""
 #. Label of the active (Check) field in DocType 'Student Group'
 #. Label of the active (Check) field in DocType 'Trigger Fee Events'
 #: frontend/src/pages/Gradebook.vue:69
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 #: seminary/seminary/doctype/instructor/instructor.json
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 #: seminary/seminary/doctype/student_group/student_group.json
@@ -391,7 +400,7 @@ msgid "Activity Date"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:47
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Activity Selection"
 msgstr ""
 
@@ -412,12 +421,12 @@ msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:8
 #: frontend/src/components/Modals/ChapterModal.vue:250
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Add Chapter"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:264
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Add Course Assessment"
 msgstr ""
 
@@ -426,7 +435,7 @@ msgid "Add Course to Programs"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:130
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Add Evaluation"
 msgstr ""
 
@@ -436,7 +445,7 @@ msgid "Add Instructors"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:116
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Add Lesson"
 msgstr ""
 
@@ -449,37 +458,37 @@ msgid "Add a comment"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:18
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Add a discussion activity to your lesson"
 msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:114
 #: frontend/src/components/Modals/Question.vue:163
 #: frontend/src/pages/ExamForm.vue:181 frontend/src/pages/QuizForm.vue:195
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Add a new question"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:12
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Add a quiz to your lesson"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:21
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Add an assignment to your lesson"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:15
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Add an exam to your lesson"
 msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:22
 #: frontend/src/components/Modals/Question.vue:22
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Add an existing question"
 msgstr ""
 
@@ -496,7 +505,7 @@ msgid "Add to Topics"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:53
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Add your assignment as {0}"
 msgstr ""
 
@@ -504,7 +513,7 @@ msgstr ""
 #. Label of the address_tab (Tab Break) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/components/ProfileModal.vue:124
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/student/student.json
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
@@ -578,17 +587,17 @@ msgid "All Active Scholarships"
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:4
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "All Courses"
 msgstr ""
 
 #: frontend/src/pages/ExamSubmissionCS.vue:14
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 msgid "All Exams"
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:28
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "All Groups"
 msgstr ""
 
@@ -602,12 +611,12 @@ msgid "All Student Admissions"
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:48
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "All Terms"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:46
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "All changes will be recorded for audit purposes"
 msgstr ""
 
@@ -649,29 +658,29 @@ msgid "An academic term with this 'Academic Year' {0} and 'Term Name' {1} alread
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:297
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "An error occurred"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:380
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "An error occurred while uploading files."
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:20
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Announcement"
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:91
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Announcement has been sent successfully"
 msgstr ""
 
 #. Label of the answer (Text Editor) field in DocType 'Assignment Submission'
 #. Label of the answer (Text Editor) field in DocType 'Exam Question Result'
 #: frontend/src/pages/QuizSubmission.vue:35
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/exam_question_result/exam_question_result.json
 msgid "Answer"
@@ -689,12 +698,12 @@ msgid "Answers"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:62 frontend/src/pages/CourseForm.vue:77
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Appears on the course card in the course list"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:42
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Apple Calendar"
 msgstr ""
 
@@ -752,7 +761,7 @@ msgid "Are you disabled?"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:336
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Are you sure you want to delete this record?"
 msgstr ""
 
@@ -770,14 +779,14 @@ msgstr ""
 #. Label of the assessment_tab (Tab Break) field in DocType 'Course'
 #: frontend/src/pages/CourseAssessment.vue:207
 #: frontend/src/pages/StudentGroup.vue:133
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 #: seminary/seminary/doctype/course/course.json
 msgid "Assessment"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:216
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Assessment Configuration for the course"
 msgstr ""
 
@@ -793,7 +802,7 @@ msgstr ""
 #. Assess Criteria'
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:17
 #: frontend/src/pages/CourseAssessment.vue:26
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/course/course.json
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
@@ -831,7 +840,7 @@ msgstr ""
 msgid "Assessment Criteria Type"
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Assessment Criteria for "
 msgstr ""
 
@@ -842,12 +851,12 @@ msgid "Assessment Title"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:46
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Assessment Type"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:346
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Assessment criteria deleted successfully"
 msgstr ""
 
@@ -869,9 +878,9 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmissionList.vue:7
 #: frontend/src/pages/AssignmentSubmissionList.vue:150
 #: frontend/src/utils/assignment.js:25
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
@@ -891,7 +900,7 @@ msgid "Assignment Attachment"
 msgstr ""
 
 #: frontend/src/pages/AssignmentForm.vue:22
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 msgid "Assignment Details"
 msgstr ""
 
@@ -907,8 +916,8 @@ msgstr ""
 
 #: frontend/src/pages/AssignmentSubmissionCS.vue:230
 #: frontend/src/pages/AssignmentSubmissionList.vue:198
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
 msgid "Assignment Submissions"
 msgstr ""
 
@@ -930,12 +939,12 @@ msgstr ""
 
 #: frontend/src/pages/AssignmentForm.vue:136
 #: frontend/src/pages/AssignmentForm.vue:156
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 msgid "Assignment saved successfully"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:321
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Assignment submitted successfully"
 msgstr ""
 
@@ -943,8 +952,8 @@ msgstr ""
 #. Lesson'
 #: frontend/src/pages/AssignmentForm.vue:178
 #: frontend/src/pages/Assignments.vue:189
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 msgid "Assignments"
 msgstr ""
@@ -955,7 +964,7 @@ msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:76
 #: frontend/src/components/DiscussionActivity.vue:230
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Attach File"
 msgstr ""
 
@@ -967,7 +976,7 @@ msgstr ""
 #. Label of the attendance (Section Break) field in DocType 'Student Attendance
 #. Tool'
 #: frontend/src/components/CourseCardOverlay.vue:103
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.json
 msgid "Attendance"
 msgstr ""
@@ -983,7 +992,7 @@ msgid "Attendance Marked"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:38
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "Attendance for: "
 msgstr ""
 
@@ -994,12 +1003,12 @@ msgid "Attendance taken"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:313
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "Attendance updated successfully"
 msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:69
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Audit"
 msgstr ""
 
@@ -1046,12 +1055,12 @@ msgid "Bachelor"
 msgstr ""
 
 #: frontend/src/pages/Lesson.vue:66
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
 msgid "Back to Course"
 msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:175
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Bio"
 msgstr ""
 
@@ -1121,7 +1130,7 @@ msgid "Calendar Token"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:99
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Calendar URL copied to clipboard! You can now add it to your calendar application."
 msgstr ""
 
@@ -1135,12 +1144,12 @@ msgstr ""
 #: frontend/src/components/Modals/DiscussionModal.vue:136
 #: frontend/src/components/Modals/OpenQuestion.vue:318
 #: frontend/src/components/Modals/Question.vue:382
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Cancel"
 msgstr ""
 
@@ -1149,7 +1158,7 @@ msgid "Cannot mark attendance for future dates."
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:20
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "Cannot set attendance of future dates"
 msgstr ""
 
@@ -1160,8 +1169,8 @@ msgstr ""
 
 #: frontend/src/components/Assignment.vue:306
 #: frontend/src/components/DiscussionActivity.vue:697
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Changed successfully"
 msgstr ""
 
@@ -1186,22 +1195,22 @@ msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:171
 #: frontend/src/components/Modals/ChapterModal.vue:184
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Chapter Title is required"
 msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:152
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Chapter added successfully"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:274
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Chapter deleted successfully"
 msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:191
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Chapter updated successfully"
 msgstr ""
 
@@ -1210,8 +1219,8 @@ msgstr ""
 msgid "Chapters"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:145 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2
+#: frontend/src/components/Quiz.vue:145
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "Check"
 msgstr ""
 
@@ -1239,12 +1248,12 @@ msgid "Check this box if this is a Program Emphasis. Students may have only one 
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:47
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Check this if you want discussion to be done in student groups. Otherwise, all students will participate in the same thread."
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:49
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Check this if you want students to post before seeing other posts."
 msgstr ""
 
@@ -1264,13 +1273,13 @@ msgstr ""
 msgid "Choices"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:761 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:1
+#: frontend/src/components/Quiz.vue:761
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "Choose all answers that apply"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:762 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:1
+#: frontend/src/components/Quiz.vue:762
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "Choose one answer"
 msgstr ""
 
@@ -1325,7 +1334,7 @@ msgid "Class Roster and Grades"
 msgstr ""
 
 #: frontend/src/components/Controls/Link.vue:49
-#: seminary/public/frontend/assets/Link-p3cJtAMT.js:1
+#: seminary/public/frontend/assets/Link-B7-sIXzn.js:1
 msgid "Clear"
 msgstr ""
 
@@ -1336,7 +1345,7 @@ msgid "Click on Grades to see/edit grades of a particular student. When you clic
 msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:243
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Close"
 msgstr ""
 
@@ -1355,9 +1364,9 @@ msgstr ""
 #: frontend/src/components/Assignment.vue:123
 #: frontend/src/components/DiscussionActivity.vue:124
 #: frontend/src/components/ExamGraded.vue:59
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
@@ -1366,8 +1375,8 @@ msgstr ""
 
 #: frontend/src/components/Assignment.vue:105
 #: frontend/src/components/DiscussionActivity.vue:264
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Comments by"
 msgstr ""
 
@@ -1392,12 +1401,12 @@ msgid "Conclusion Date (aprox.)"
 msgstr ""
 
 #: frontend/src/pages/StudentGroup.vue:142
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 msgid "Configuration of Student Groups for the course"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:67
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Configure Assessments"
 msgstr ""
 
@@ -1412,7 +1421,7 @@ msgid "Configure Settings"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:79
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Configure Student Groups"
 msgstr ""
 
@@ -1427,22 +1436,22 @@ msgid "Configure the Price of ERP Items"
 msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:30
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Congrats! No assessments for now."
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:22
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "Congrats! No assessments to do!"
 msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:59
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Congrats! No assessments to grade for now."
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:24
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "Congrats! No assessments to grade!"
 msgstr ""
 
@@ -1497,7 +1506,7 @@ msgstr ""
 #. Label of the content_column (Column Break) field in DocType 'Course Lesson'
 #. Label of the content (Text) field in DocType 'Course Lesson'
 #: frontend/src/pages/LessonForm.vue:44
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 #: seminary/seminary/doctype/article/article.json
 #: seminary/seminary/doctype/course_activity/course_activity.json
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
@@ -1510,35 +1519,35 @@ msgid "Content Type"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:491
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Content is required"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:20
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Continue Learning"
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Copy the calendar URL and add it to your Apple Calendar by selecting \"File\" > \"New Calendar Subscription\"."
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Copy the calendar URL and add it to your Google Calendar by selecting \"Other Calendars\" > \"From URL\"."
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Copy the calendar URL and add it to your Outlook Calendar by selecting \"Add Calendar\" > \"Subscribe from Web\"."
 msgstr ""
 
 #: frontend/src/components/Quiz.vue:119 frontend/src/components/Quiz.vue:240
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Correct"
 msgstr ""
 
 #: frontend/src/components/Modals/Question.vue:77
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Correct Answer"
 msgstr ""
 
@@ -1547,8 +1556,8 @@ msgstr ""
 msgid "Correct Answer for Feedback"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:229 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: frontend/src/components/Quiz.vue:229
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Correct Answer:"
 msgstr ""
 
@@ -1599,10 +1608,10 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivities.vue:22
 #: frontend/src/pages/DiscussionActivities.vue:140
 #: frontend/src/pages/Grades.vue:65 frontend/src/pages/Grades.vue:101
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 #: seminary/seminary/doctype/course/course.json
 #: seminary/seminary/doctype/course_activity/course_activity.json
@@ -1661,16 +1670,16 @@ msgid "Course Assessment Criteria"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:234
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Course Assessment added successfully"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:8
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Course Calendar"
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Course Calendar for the course "
 msgstr ""
 
@@ -1700,7 +1709,7 @@ msgid "Course Defaults"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:36
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Course Description"
 msgstr ""
 
@@ -1746,7 +1755,7 @@ msgid "Course Gradebook"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:46
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Course Image"
 msgstr ""
 
@@ -1780,6 +1789,12 @@ msgstr ""
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Course Name"
+msgstr ""
+
+#. Label of a Card Break in the Academic Setup Workspace
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Course Offerings"
 msgstr ""
 
 #. Label of the course_prerequisite (Table) field in DocType 'Course'
@@ -1819,9 +1834,8 @@ msgstr ""
 #. Leave Application'
 #. Label of the course_schedule (Link) field in DocType 'Student Leave
 #. Application'
-#. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/StudentAttendanceCS.vue:11
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -1833,7 +1847,6 @@ msgstr ""
 #: seminary/seminary/doctype/student_attendance/student_attendance.json
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.json
 #: seminary/seminary/doctype/student_leave_application/student_leave_application.json
-#: seminary/seminary/workspace/seminary/seminary.json
 msgid "Course Schedule"
 msgstr ""
 
@@ -1907,34 +1920,34 @@ msgid "Course code"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:352
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Course created successfully"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:428
 #: frontend/src/pages/CourseForm.vue:289
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Course updated successfully"
 msgstr ""
 
 #: frontend/src/pages/AssignmentForm.vue:32
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 msgid "Course where this assignment will be used. You may reuse this assignment in other course offerings"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:33
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Course where this discussion will be used - you may reuse this discussion in other scheduled courses"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:57
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Course where this exam will be used - you may reuse this exam in other scheduled courses"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:56
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Course where this quiz will be used - you may reuse this quiz in other schedules"
 msgstr ""
 
@@ -1948,7 +1961,7 @@ msgid "Course_prerequisite"
 msgstr ""
 
 #. Label of the courses (Table) field in DocType 'Program Enrollment'
-#. Label of a Link in the Seminary Workspace
+#. Label of a Link in the Academic Setup Workspace
 #: frontend/src/components/AppSidebar.vue:45
 #: frontend/src/pages/AssignmentSubmissionCS.vue:220
 #: frontend/src/pages/CourseAssessment.vue:201
@@ -1963,23 +1976,23 @@ msgstr ""
 #: frontend/src/pages/LessonForm.vue:512
 #: frontend/src/pages/QuizSubmissionCS.vue:111
 #: frontend/src/pages/StudentGroup.vue:127
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Courses"
 msgstr ""
 
@@ -2012,8 +2025,8 @@ msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:254
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:268
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Create"
 msgstr ""
 
@@ -2028,39 +2041,39 @@ msgid "Create Academic Years"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:22
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Create Folder"
 msgstr ""
 
 #: frontend/src/pages/StudentGroup.vue:65
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 msgid "Create Groups"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:535
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Create Lesson"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:11
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Create New Folder"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:44
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Create Sub-folder"
 msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:35
 #: frontend/src/components/Modals/Question.vue:35
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Create a new question"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:551
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Create and edit lessons for your course"
 msgstr ""
 
@@ -2069,16 +2082,15 @@ msgstr ""
 msgid "Create your Programs"
 msgstr ""
 
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Create your holiday list"
-msgstr ""
-
 #: frontend/src/pages/Assignments.vue:156
 #: frontend/src/pages/DiscussionActivities.vue:158
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Created"
+msgstr ""
+
+#: seminary/install.py:158
+msgid "Credit hour"
 msgstr ""
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
@@ -2091,7 +2103,7 @@ msgstr ""
 #. Label of the credits (Int) field in DocType 'Program Enrollment Course'
 #. Label of a field in the enroll-in-a-course Web Form
 #: frontend/src/pages/Grades.vue:111
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
 #: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
@@ -2124,7 +2136,7 @@ msgid "Current Academic Term?"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:27
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Current Folder"
 msgstr ""
 
@@ -2141,7 +2153,7 @@ msgstr ""
 
 #. Label of the customer (Link) field in DocType 'Student'
 #: frontend/src/pages/Fees.vue:138
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 #: seminary/seminary/doctype/student/student.json
 #: seminary/seminary/report/scholarship_sales_invoices/scholarship_sales_invoices.js:20
 msgid "Customer"
@@ -2155,28 +2167,31 @@ msgstr ""
 
 #. Label of the pf_custgroup (Link) field in DocType 'Payers Fee Category PE'
 #. Label of the customer_group (Link) field in DocType 'Student'
-#. Label of a Link in the Seminary Workspace
 #: seminary/seminary/doctype/payers_fee_category_pe/payers_fee_category_pe.json
 #: seminary/seminary/doctype/student/student.json
-#: seminary/seminary/workspace/seminary/seminary.json
 msgid "Customer Group"
 msgstr ""
 
-#. Description of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Customer Groups"
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:155
+#. Paragraph text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. "
+msgstr ""
+
+#: seminary/seminary/doctype/student/student.py:157
 msgid "Customer {0} created and linked to Student"
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:139
+#: seminary/seminary/doctype/student/student.py:141
 msgid "Customer {0} updated"
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Customers"
 msgstr ""
 
@@ -2185,9 +2200,10 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#. Label of a shortcut in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Data Import Tool"
+#. Label of the demo_data_installed (Check) field in DocType 'Seminary
+#. Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Data Installed"
 msgstr ""
 
 #. Label of the date (Date) field in DocType 'Student Attendance'
@@ -2206,18 +2222,18 @@ msgstr ""
 #. Label of the date_of_birth (Date) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/components/ProfileModal.vue:120
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/student/student.json
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Date of Birth"
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:52
+#: seminary/seminary/doctype/student/student.py:54
 msgid "Date of Birth cannot be greater than Joining Date."
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:47
+#: seminary/seminary/doctype/student/student.py:49
 #: seminary/seminary/doctype/student_applicant/student_applicant.py:49
 msgid "Date of Birth cannot be greater than today."
 msgstr ""
@@ -2260,11 +2276,6 @@ msgstr ""
 msgid "Define Payment Terms"
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Define Scholarships"
-msgstr ""
-
 #. Title of an Onboarding Step
 #: seminary/seminary/onboarding_step/uom/uom.json
 msgid "Define Units of Measure (UOM)"
@@ -2284,45 +2295,53 @@ msgstr ""
 #: frontend/src/components/CourseOutline.vue:289
 #: frontend/src/components/DiscussionReplies.vue:36
 #: frontend/src/pages/CourseAssessment.vue:52
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Delete"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:32
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Delete Chapter"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:75
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Delete File"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:52
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Delete Lesson"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:283
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Delete this chapter?"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:228
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Delete this lesson?"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:284
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Deleting this chapter will also delete all its lessons and permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:229
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?"
+msgstr ""
+
+#. Label of the demo_section (Section Break) field in DocType 'Seminary
+#. Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:30
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:44
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Demo"
 msgstr ""
 
 #. Label of the department (Link) field in DocType 'Course'
@@ -2360,7 +2379,7 @@ msgid "Descriptive"
 msgstr ""
 
 #: frontend/src/components/AppSidebar.vue:13
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Desk"
 msgstr ""
 
@@ -2368,11 +2387,11 @@ msgstr ""
 #: frontend/src/pages/CourseForm.vue:19
 #: frontend/src/pages/DiscussionActivityForm.vue:25
 #: frontend/src/pages/ExamForm.vue:42 frontend/src/pages/QuizForm.vue:42
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Details"
 msgstr ""
 
@@ -2392,7 +2411,7 @@ msgid "Disabilities"
 msgstr ""
 
 #: frontend/src/components/DiscussionReplies.vue:51
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Discard"
 msgstr ""
 
@@ -2410,14 +2429,14 @@ msgstr ""
 #. Label of the discussion (Link) field in DocType 'Scheduled Course Assess
 #. Criteria'
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:12
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json
 msgid "Discussion"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivities.vue:183
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Discussion Activities"
 msgstr ""
 
@@ -2427,9 +2446,9 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivityForm.vue:259
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:7
 #: frontend/src/utils/discussionactivity.js:25
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 #: seminary/seminary/doctype/discussion_activity/discussion_activity.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
@@ -2437,7 +2456,7 @@ msgid "Discussion Activity"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:15
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Discussion Activity Submission"
 msgstr ""
 
@@ -2454,8 +2473,8 @@ msgstr ""
 #. Label of the prompt (Text Editor) field in DocType 'Discussion Activity'
 #: frontend/src/components/DiscussionActivity.vue:13
 #: frontend/src/pages/DiscussionActivityForm.vue:62
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/discussion_activity/discussion_activity.json
 msgid "Discussion Prompt"
 msgstr ""
@@ -2473,31 +2492,31 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmission.vue:281
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:223
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:213
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
 msgid "Discussion Submissions"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:166
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:166
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
 msgid "Discussion Title"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:226
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Discussion created successfully"
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:713
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Discussion submitted successfully"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:245
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Discussion updated successfully"
 msgstr ""
 
@@ -2537,9 +2556,9 @@ msgstr ""
 #. Name of a DocType
 #. Label of the doctrinalst (Text Editor) field in DocType 'Doctrinal
 #. Statement'
-#. Label of a Link in the Seminary Workspace
+#. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/doctype/doctrinal_statement/doctrinal_statement.json
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Doctrinal Statement"
 msgstr ""
 
@@ -2553,7 +2572,7 @@ msgstr ""
 #. Option for the 'Accepted file type' (Select) field in DocType 'Assignment
 #. Activity'
 #: frontend/src/pages/AssignmentForm.vue:208
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 msgid "Document"
 msgstr ""
@@ -2565,28 +2584,28 @@ msgid "Don't check pre-requisites"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:104
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Drop a lesson here to start this chapter"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:87
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Drop files here or click to upload"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:102
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Drop here to move to the end of this chapter"
 msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:13
 #: frontend/src/components/CourseCardToDo.vue:23
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Due"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:50
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Due Date"
 msgstr ""
 
@@ -2597,14 +2616,14 @@ msgid "Due Date and time"
 msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:19
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Due Soon"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:86
 #: frontend/src/pages/Lesson.vue:99
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
 msgid "Due: "
 msgstr ""
 
@@ -2618,8 +2637,8 @@ msgid "Duration"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:68 frontend/src/pages/QuizForm.vue:70
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Duration (in minutes)"
 msgstr ""
 
@@ -2634,52 +2653,65 @@ msgid "Duration (unit of measure)"
 msgstr ""
 
 #. Label of the item (Link) field in DocType 'Fee Category'
-#. Label of a Link in the Seminary Workspace
+#. Label of a Link in the Seminary Financial Setup Workspace
 #: seminary/seminary/doctype/fee_category/fee_category.json
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "ERP Item"
+msgstr ""
+
+#: seminary/install.py:46
+msgid "ERPNext must be installed before installing {0}"
+msgstr ""
+
+#: seminary/install.py:36
+msgid "ERPNext setup is incomplete. Please complete the setup before installing {0}"
+msgstr ""
+
+#. Paragraph text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Each student created automatically creates a customer, but you may want to create other customers for churches who want to pay part of the tuition of their pastors, etc. Then, you can assign more payers for an individual program enrollment (e.g., student and church will be invoiced separately if you so choose). Scholarships should be used for those sponsored by the Seminary (e.g., from donations to a fund/cost-center that the seminary has freedom to manage).&nbsp;"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:42
 #: frontend/src/components/DiscussionReplies.vue:30
 #: frontend/src/components/Modals/ChapterModal.vue:254
 #: frontend/src/pages/Lesson.vue:41
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Edit"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:49
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "Edit Attendance"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:28
 #: frontend/src/components/Modals/ChapterModal.vue:250
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Edit Chapter"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:348 frontend/src/pages/CourseForm.vue:356
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Edit Course"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:535
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Edit Lesson"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:357
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Edit a course for your learning system."
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:180 frontend/src/pages/QuizForm.vue:194
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Edit the question"
 msgstr ""
 
@@ -2699,7 +2731,7 @@ msgstr ""
 #. Label of the emailchurch (Data) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/pages/ExamSubmissionCS.vue:93
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Email"
@@ -2770,11 +2802,13 @@ msgid "Enable Admission Application"
 msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:14
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Enable this only if you want to upload a SCORM package as a chapter."
 msgstr ""
 
+#. Label of the enabled (Check) field in DocType 'Gender'
 #. Label of the enabled (Check) field in DocType 'Student'
+#: seminary/fixtures/custom_field.json
 #: seminary/seminary/doctype/student/student.json
 msgid "Enabled"
 msgstr ""
@@ -2784,7 +2818,7 @@ msgstr ""
 #. Enrollment'
 #. Label of the end_date (Date) field in DocType 'Student Services'
 #: frontend/src/pages/Courses.vue:220
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 #: seminary/seminary/doctype/student_logding_enrollment/student_logding_enrollment.json
 #: seminary/seminary/doctype/student_services/student_services.json
@@ -2817,7 +2851,7 @@ msgid "Enroll me!"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:121
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Enrolled Students"
 msgstr ""
 
@@ -2839,11 +2873,11 @@ msgstr ""
 msgid "Enrollment Date"
 msgstr ""
 
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:43
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:45
 msgid "Enrollment Date cannot be after the End Date of the Academic Term {0}"
 msgstr ""
 
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:36
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:38
 msgid "Enrollment Date cannot be before today"
 msgstr ""
 
@@ -2869,32 +2903,32 @@ msgid "Enter 0 to waive limit"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:88
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Enter a URL"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:65
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Enter a prompt for the discussion."
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:29
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Enter a title and save the discussion to proceed"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:49
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Enter a title and save the exam to proceed"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:49
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Enter a title and save the quiz to proceed"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:20
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Enter folder name"
 msgstr ""
 
@@ -2916,8 +2950,8 @@ msgstr ""
 
 #: frontend/src/components/Assignment.vue:105
 #: frontend/src/components/DiscussionActivity.vue:264
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Evaluator"
 msgstr ""
 
@@ -2940,8 +2974,8 @@ msgstr ""
 #: frontend/src/pages/ExamSubmissionCS.vue:10
 #: frontend/src/pages/ExamSubmissionCS.vue:94
 #: frontend/src/pages/ExamSubmissionCS.vue:288 frontend/src/utils/exam.js:25
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
@@ -2955,8 +2989,8 @@ msgid "Exam Activity"
 msgstr ""
 
 #: frontend/src/pages/ExamPage.vue:12 frontend/src/pages/ExamSubmission.vue:149
-#: seminary/public/frontend/assets/ExamPage-BsCmVqto.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/ExamPage-CRtpAj8w.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "Exam Comments"
 msgstr ""
 
@@ -2978,7 +3012,7 @@ msgstr ""
 
 #. Name of a DocType
 #: frontend/src/pages/ExamPage.vue:69 frontend/src/pages/ExamPage.vue:75
-#: seminary/public/frontend/assets/ExamPage-BsCmVqto.js:1
+#: seminary/public/frontend/assets/ExamPage-CRtpAj8w.js:1
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 msgid "Exam Submission"
 msgstr ""
@@ -2986,9 +3020,9 @@ msgstr ""
 #: frontend/src/pages/ExamSubmission.vue:280
 #: frontend/src/pages/ExamSubmissionCS.vue:359
 #: frontend/src/pages/ExamSubmissionList.vue:106
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/ExamSubmissionList-d1crlzny.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/ExamSubmissionList-Co1qeo4g.js:1
 msgid "Exam Submissions"
 msgstr ""
 
@@ -3000,14 +3034,14 @@ msgid "Exam Title"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:371
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Exam updated successfully"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:451 frontend/src/pages/Exams.vue:133
 #: frontend/src/pages/Exams.vue:143
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
 msgid "Exams"
 msgstr ""
 
@@ -3043,12 +3077,12 @@ msgid "Explanation 4"
 msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:54
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Explanation for this Question"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:235 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: frontend/src/components/Quiz.vue:235
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Explanation:"
 msgstr ""
 
@@ -3059,7 +3093,7 @@ msgid "Extra Credit"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:48
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Extra Credit?"
 msgstr ""
 
@@ -3077,43 +3111,43 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmissionList.vue:179
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:196
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:196
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/grading_scale_interval/grading_scale_interval.json
 msgid "Fail"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:101
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Failed to copy calendar URL. Please try again."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:289
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Failed to create folder."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:504
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Failed to create sub-folder."
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:349
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Failed to delete assessment criteria"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:266
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Failed to save grade: {0}"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:369
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Failed to upload files."
 msgstr ""
 
@@ -3125,17 +3159,20 @@ msgstr ""
 msgid "Faith and Practice"
 msgstr ""
 
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Fee Categories"
+msgstr ""
+
 #. Name of a DocType
 #. Label of the fee_category (Link) field in DocType 'pgm_enroll_payers'
 #. Label of the pgm_feecategory (Link) field in DocType 'Program Fees'
 #. Label of the stu_lodg_fee (Link) field in DocType 'Student Logding
 #. Enrollment'
-#. Label of a Link in the Seminary Workspace
 #: seminary/seminary/doctype/fee_category/fee_category.json
 #: seminary/seminary/doctype/pgm_enroll_payers/pgm_enroll_payers.json
 #: seminary/seminary/doctype/program_fees/program_fees.json
 #: seminary/seminary/doctype/student_logding_enrollment/student_logding_enrollment.json
-#: seminary/seminary/workspace/seminary/seminary.json
 msgid "Fee Category"
 msgstr ""
 
@@ -3152,16 +3189,17 @@ msgid "Feedback"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:49
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Feel free to make edits to your submission if needed, until it is graded."
 msgstr ""
 
 #: frontend/src/components/AppSidebar.vue:55
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Fees"
 msgstr ""
 
 #. Option for the 'Gender' (Select) field in DocType 'Student Applicant'
+#: seminary/install.py:259
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 msgid "Female"
 msgstr ""
@@ -3173,17 +3211,17 @@ msgstr ""
 
 #: frontend/src/components/FolderBlock.vue:51
 #: frontend/src/components/FolderPlugin.vue:65
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Files"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:89
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Files will be added to "
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:24
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Filter by Group"
 msgstr ""
 
@@ -3226,11 +3264,6 @@ msgstr ""
 msgid "Financial Links"
 msgstr ""
 
-#. Label of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Financial Setup"
-msgstr ""
-
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
@@ -3254,7 +3287,7 @@ msgid "Folder created successfully"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:250
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Folder name is required"
 msgstr ""
 
@@ -3263,23 +3296,23 @@ msgid "Following meeting dates were created"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:88 frontend/src/pages/QuizForm.vue:102
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Force student to answer a question before moving on? Each question will have its own page and a next button"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:280
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "Form to create and edit discussions"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:472
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Form to create and edit exams"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:486
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Form to create and edit quizzes"
 msgstr ""
 
@@ -3305,7 +3338,7 @@ msgstr ""
 msgid "From Time"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:81
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:83
 msgid "From Time cannot be greater than To Time."
 msgstr ""
 
@@ -3320,9 +3353,9 @@ msgstr ""
 #: frontend/src/pages/CourseAssessment.vue:93
 #: frontend/src/pages/ExamSubmission.vue:136
 #: frontend/src/pages/ExamSubmissionCS.vue:306
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 msgid "Fudge Points"
@@ -3339,7 +3372,7 @@ msgstr ""
 #. Label of the gender (Select) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/components/ProfileModal.vue:140
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/instructor/instructor.json
 #: seminary/seminary/doctype/student/student.json
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
@@ -3366,7 +3399,7 @@ msgid "Github ID"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:27
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Google Calendar"
 msgstr ""
 
@@ -3377,10 +3410,10 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmissionList.vue:161
 #: frontend/src/pages/DiscussionActivitySubmission.vue:76
 #: frontend/src/pages/Grades.vue:121
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
@@ -3399,7 +3432,7 @@ msgid "Grade Assignment"
 msgstr ""
 
 #: frontend/src/pages/Grades.vue:116
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 msgid "Grade Code"
 msgstr ""
 
@@ -3432,8 +3465,8 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmission.vue:256
 #: frontend/src/pages/DiscussionActivitySubmission.vue:263
 #: frontend/src/pages/Gradebook.vue:281
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Grade saved successfully"
 msgstr ""
 
@@ -3446,14 +3479,14 @@ msgstr ""
 #: frontend/src/pages/ExamSubmissionCS.vue:355
 #: frontend/src/pages/Gradebook.vue:313
 #: frontend/src/pages/QuizSubmissionCS.vue:117
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
 #: seminary/seminary/doctype/course_gradebook/course_gradebook.json
 msgid "Gradebook"
 msgstr ""
@@ -3464,7 +3497,7 @@ msgid "Gradebook Course Schedule"
 msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:7
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Gradebook for"
 msgstr ""
 
@@ -3480,14 +3513,14 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:198
 #: frontend/src/pages/ExamSubmission.vue:143
 #: frontend/src/pages/ExamSubmissionCS.vue:336
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/exam_question_result/exam_question_result.json
@@ -3509,9 +3542,9 @@ msgstr ""
 #: frontend/src/components/Assignment.vue:115
 #: frontend/src/components/DiscussionActivity.vue:116
 #: frontend/src/pages/DiscussionActivitySubmission.vue:72
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Grading"
 msgstr ""
 
@@ -3522,10 +3555,10 @@ msgstr ""
 
 #. Label of the gradesc_cs (Link) field in DocType 'Course Schedule'
 #. Name of a DocType
-#. Label of a Link in the Seminary Workspace
+#. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 #: seminary/seminary/doctype/grading_scale/grading_scale.json
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Grading Scale"
 msgstr ""
 
@@ -3547,8 +3580,8 @@ msgstr ""
 
 #: frontend/src/components/Assignment.vue:118
 #: frontend/src/components/DiscussionActivity.vue:119
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Grading Status"
 msgstr ""
 
@@ -3608,6 +3641,11 @@ msgstr ""
 msgid "Hispanic"
 msgstr ""
 
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Holiday List"
+msgstr ""
+
 #. Label of the testimony (Long Text) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
@@ -3623,7 +3661,7 @@ msgid "How enrolling in this program will help you serve the church?"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:25
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "How to Import the Calendar in the Major Platforms"
 msgstr ""
 
@@ -3705,8 +3743,8 @@ msgstr ""
 #. Label of the id_section (Section Break) field in DocType 'Exam Activity'
 #. Label of the id_section (Section Break) field in DocType 'Exam Submission'
 #: frontend/src/pages/ExamForm.vue:393 frontend/src/pages/QuizForm.vue:407
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/course_schedule_chapter/course_schedule_chapter.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
@@ -3746,13 +3784,13 @@ msgstr ""
 msgid "If you are disabled, what accommodations will you require?"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:17 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:17
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "If you fail to do so, the exam will be automatically submitted when the timer ends."
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:17 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:1
+#: frontend/src/components/Quiz.vue:17
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "If you fail to do so, the quiz will be automatically submitted when the timer ends."
 msgstr ""
 
@@ -3764,9 +3802,9 @@ msgstr ""
 #. Label of the image (Attach Image) field in DocType 'Student Applicant'
 #: frontend/src/pages/AssignmentForm.vue:207 frontend/src/pages/Courses.vue:225
 #: frontend/src/pages/StudentAttendanceCS.vue:58
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 #: seminary/seminary/doctype/instructor/instructor.json
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
@@ -3786,17 +3824,17 @@ msgid "Image: Corrupted Data Stream"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:51
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "In Lesson"
 msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:35
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "In case of any incorrect details, please contact the school admin."
 msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:68
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "In case of any incorrect details, please make the adjustments on the portal backend."
 msgstr ""
 
@@ -3832,13 +3870,13 @@ msgid "Incomplete"
 msgstr ""
 
 #: frontend/src/components/Quiz.vue:124 frontend/src/components/Quiz.vue:245
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Incorrect"
 msgstr ""
 
 #: frontend/src/pages/Grades.vue:34
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 msgid "Individual Student Transcripts are only displayed for Students"
 msgstr ""
 
@@ -3847,34 +3885,12 @@ msgstr ""
 msgid "Initial Seminary Setup"
 msgstr ""
 
-#. Name of a Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Initial Setup"
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:18
+msgid "Install Demo Data"
 msgstr ""
 
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Courses"
-msgstr ""
-
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Customers"
-msgstr ""
-
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Students"
-msgstr ""
-
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Users"
-msgstr ""
-
-#. Label of a Card Break in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input or Import Data"
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:25
+msgid "Installing demo data..."
 msgstr ""
 
 #. Label of the question (Text Editor) field in DocType 'Assignment Activity'
@@ -3889,12 +3905,12 @@ msgstr ""
 #. Instructors'
 #. Name of a DocType
 #. Label of the group_instructor (Data) field in DocType 'Student Group Link'
-#. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/CourseDetail.vue:22
 #: frontend/src/pages/StudentGroup.vue:53
-#: frontend/src/pages/StudentGroup.vue:165 seminary/install.py:108
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: frontend/src/pages/StudentGroup.vue:165 seminary/install.py:185
+#: seminary/install.py:187
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/article/article.json
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
@@ -3912,6 +3928,7 @@ msgstr ""
 #: seminary/seminary/doctype/exam_activity/exam_activity.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 #: seminary/seminary/doctype/instructor/instructor.json
+#: seminary/seminary/doctype/instructor/instructor.py:71
 #: seminary/seminary/doctype/open_question/open_question.json
 #: seminary/seminary/doctype/program/program.json
 #: seminary/seminary/doctype/question/question.json
@@ -3924,7 +3941,6 @@ msgstr ""
 #: seminary/seminary/doctype/student_group/student_group.json
 #: seminary/seminary/doctype/student_group_link/student_group_link.json
 #: seminary/seminary/doctype/student_leave_application/student_leave_application.json
-#: seminary/seminary/workspace/seminary/seminary.json
 msgid "Instructor"
 msgstr ""
 
@@ -3943,15 +3959,15 @@ msgstr ""
 
 #. Label of the instructor_name (Data) field in DocType 'Instructor'
 #: frontend/src/components/ProfileModal.vue:167
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/instructor/instructor.json
 msgid "Instructor Name"
 msgstr ""
 
 #. Label of the instructor_notes (Text Editor) field in DocType 'Course Lesson'
 #: frontend/src/pages/Lesson.vue:88 frontend/src/pages/LessonForm.vue:29
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 msgid "Instructor Notes"
 msgstr ""
@@ -3968,10 +3984,14 @@ msgid "Instructor of Record"
 msgstr ""
 
 #. Label of the instructor1 (Table) field in DocType 'Course Schedule'
+#. Label of a Link in the Academic Setup Workspace
+#. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/CourseDetail.vue:23 frontend/src/pages/CourseForm.vue:85
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+#: seminary/seminary/workspace/seminary/seminary.json
 msgid "Instructors"
 msgstr ""
 
@@ -3999,7 +4019,7 @@ msgid "Invalid calendar token provided."
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:163
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 msgid "Invoice"
 msgstr ""
 
@@ -4080,8 +4100,8 @@ msgstr ""
 msgid "Is instructor of record?"
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Item Price"
 msgstr ""
 
@@ -4091,17 +4111,17 @@ msgstr ""
 
 #. Label of the joining_date (Date) field in DocType 'Student'
 #: frontend/src/components/ProfileModal.vue:116
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/student/student.json
 msgid "Joining Date"
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:59
+#: seminary/seminary/doctype/student/student.py:61
 msgid "Joining Date can not be greater than Leaving Date"
 msgstr ""
 
 #: frontend/src/pages/InstructorProfile.vue:22
-#: seminary/public/frontend/assets/InstructorProfile-BH_mhqY7.js:1
+#: seminary/public/frontend/assets/InstructorProfile-zC7sUR7L.js:1
 msgid "Know your Professor"
 msgstr ""
 
@@ -4189,7 +4209,7 @@ msgid "Lesson Content Body"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:550
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Lesson Editor"
 msgstr ""
 
@@ -4199,34 +4219,34 @@ msgid "Lesson Title"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:448
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Lesson created successfully"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:206
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Lesson deleted successfully"
 msgstr ""
 
-#: seminary/seminary/api.py:2180
+#: seminary/seminary/api.py:2184
 msgid "Lesson index updated successfully."
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:222
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Lesson moved successfully"
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:476
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Lesson updated successfully"
 msgstr ""
 
-#: seminary/seminary/api.py:2203
+#: seminary/seminary/api.py:2207
 msgid "Lesson {0} not found in chapter {1}"
 msgstr ""
 
-#: seminary/seminary/api.py:2217
+#: seminary/seminary/api.py:2221
 msgid "Lesson {0} not linked to source chapter {1}"
 msgstr ""
 
@@ -4235,19 +4255,19 @@ msgstr ""
 #. Schedule Chapter'
 #. Label of the lessons (Table) field in DocType 'Course Schedule Chapter'
 #: frontend/src/components/CourseCardOverlay.vue:114
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 #: seminary/seminary/doctype/course_schedule_chapter/course_schedule_chapter.json
 msgid "Lessons"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:106
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
 msgid "Limit Questions To (on shuffle)"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:120
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Limit Questions To (on shuffle). Leave as zero to shuffle all questions"
 msgstr ""
 
@@ -4288,12 +4308,12 @@ msgid "LinkedIn ID"
 msgstr ""
 
 #: frontend/src/pages/Exams.vue:144
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
 msgid "List of exams"
 msgstr ""
 
 #: frontend/src/pages/Quizzes.vue:149
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "List of quizzes"
 msgstr ""
 
@@ -4314,14 +4334,14 @@ msgstr ""
 #: frontend/src/pages/QuizSubmissionCS.vue:28
 #: frontend/src/pages/QuizSubmissionList.vue:39
 #: frontend/src/pages/Quizzes.vue:51
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/ExamSubmissionList-d1crlzny.js:1
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/QuizSubmissionList-CHIJzdHy.js:1
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/ExamSubmissionList-Co1qeo4g.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/QuizSubmissionList-CSxGJq8V.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "Load More"
 msgstr ""
 
@@ -4330,12 +4350,12 @@ msgid "Loading folder contents…"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:95
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Loading submission data..."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:847
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Loading..."
 msgstr ""
 
@@ -4345,7 +4365,7 @@ msgid "Log"
 msgstr ""
 
 #: frontend/src/components/UserDropdown.vue:58
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Log out"
 msgstr ""
 
@@ -4353,10 +4373,10 @@ msgstr ""
 #: frontend/src/components/DiscussionActivityBlock.vue:13
 #: frontend/src/components/ExamBlock.vue:9
 #: frontend/src/components/QuizBlock.vue:9
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Login"
 msgstr ""
 
@@ -4367,17 +4387,23 @@ msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:113
 #: frontend/src/pages/CourseDetail.vue:52
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Make an Announcement"
 msgstr ""
 
+#. Description of a Card Break in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Make sure you have valida Academic Year and Academic Terms to schedule new courses."
+msgstr ""
+
 #. Option for the 'Gender' (Select) field in DocType 'Student Applicant'
+#: seminary/install.py:259
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 msgid "Male"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Manage Course Folders"
 msgstr ""
 
@@ -4429,7 +4455,7 @@ msgid "Marital Status"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:107
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.js:100
 msgid "Mark Attendance"
 msgstr ""
@@ -4466,7 +4492,7 @@ msgid "Max Attempts"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:37
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Max Fudge Points"
 msgstr ""
 
@@ -4509,7 +4535,7 @@ msgid "Maximum Age"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:64
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Maximum Attempts"
 msgstr ""
 
@@ -4551,8 +4577,8 @@ msgstr ""
 
 #: frontend/src/pages/ExamSubmissionList.vue:86
 #: frontend/src/pages/QuizSubmissionList.vue:86
-#: seminary/public/frontend/assets/ExamSubmissionList-d1crlzny.js:1
-#: seminary/public/frontend/assets/QuizSubmissionList-CHIJzdHy.js:1
+#: seminary/public/frontend/assets/ExamSubmissionList-Co1qeo4g.js:1
+#: seminary/public/frontend/assets/QuizSubmissionList-CSxGJq8V.js:1
 msgid "Member"
 msgstr ""
 
@@ -4594,18 +4620,17 @@ msgstr ""
 msgid "Minimum two options are required for multiple choice questions."
 msgstr ""
 
-#. Label of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Miscellaneous Setup"
-msgstr ""
-
 #: frontend/src/components/CourseCardToDo.vue:10
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Missing Assessments"
 msgstr ""
 
+#: seminary/install.py:47
+msgid "Missing Dependency"
+msgstr ""
+
 #: frontend/src/components/ProfileModal.vue:112
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Mobile Number"
 msgstr ""
 
@@ -4634,24 +4659,24 @@ msgid "Multiple Correct Answers"
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:4
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "My Courses"
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:6
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:5
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:5
 msgid "My Financial Status"
 msgstr ""
 
 #: frontend/src/pages/Grades.vue:6
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 msgid "My Transcripts"
 msgstr ""
 
 #. Label of the category_name (Data) field in DocType 'Fee Category'
 #: frontend/src/pages/Courses.vue:200 frontend/src/pages/Fees.vue:132
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 #: seminary/seminary/doctype/fee_category/fee_category.json
 msgid "Name"
 msgstr ""
@@ -4683,7 +4708,7 @@ msgstr ""
 #. Label of the nationality (Link) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/components/ProfileModal.vue:144
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/student/student.json
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
@@ -4699,13 +4724,13 @@ msgstr ""
 
 #: frontend/src/pages/Assignments.vue:14
 #: frontend/src/pages/DiscussionActivities.vue:14
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "New"
 msgstr ""
 
 #: frontend/src/pages/AssignmentForm.vue:193
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 msgid "New Assignment"
 msgstr ""
 
@@ -4719,38 +4744,38 @@ msgstr ""
 
 #: frontend/src/pages/DiscussionActivityForm.vue:271
 #: frontend/src/pages/DiscussionActivityForm.vue:279
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
 msgid "New Discussion"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:463 frontend/src/pages/ExamForm.vue:471
 #: frontend/src/pages/Exams.vue:18
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
 msgid "New Exam"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:121 frontend/src/pages/QuizForm.vue:135
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "New Question"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:477 frontend/src/pages/QuizForm.vue:485
 #: frontend/src/pages/Quizzes.vue:18
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "New Quiz"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:41
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "New sub-folder name"
 msgstr ""
 
 #: frontend/src/components/Discussions.vue:4
 #: frontend/src/components/Discussions.vue:59
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "New {0}"
 msgstr ""
 
@@ -4758,27 +4783,35 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmission.vue:43
 #: frontend/src/pages/DiscussionActivitySubmission.vue:31
 #: frontend/src/pages/ExamSubmission.vue:34 frontend/src/pages/Lesson.vue:57
-#: seminary/public/frontend/assets/AssignmentSubmission-zOYgf4Lv.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
+#: seminary/public/frontend/assets/AssignmentSubmission-B1ys_E-_.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "Next"
 msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:69
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "No"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:224 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: frontend/src/components/Quiz.vue:224
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "No Answer"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:230 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: seminary/install.py:73
+msgid "No Company found. Please complete the ERPNext Setup Wizard first."
+msgstr ""
+
+#: frontend/src/components/Quiz.vue:230
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "No Correct Answer"
+msgstr ""
+
+#: seminary/install.py:80
+msgid "No Fiscal Year found."
 msgstr ""
 
 #: seminary/seminary/doctype/course_gradebook/course_gradebook.js:170
@@ -4789,13 +4822,21 @@ msgstr ""
 msgid "No Students in"
 msgstr ""
 
+#: seminary/install.py:98
+msgid "No active Buying Price List found."
+msgstr ""
+
+#: seminary/install.py:89
+msgid "No active Selling Price List found."
+msgstr ""
+
 #: frontend/src/components/Announcements.vue:25
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "No announcements"
 msgstr ""
 
 #: frontend/src/pages/Assignments.vue:40
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
 msgid "No assignments found"
 msgstr ""
 
@@ -4804,27 +4845,27 @@ msgid "No attendance has been marked for {0} as it is a Holiday"
 msgstr ""
 
 #: frontend/src/pages/Courses.vue:75
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "No courses found"
 msgstr ""
 
 #: frontend/src/components/MissingData.vue:10
-#: seminary/public/frontend/assets/MissingData-C67MiSvq.js:1
+#: seminary/public/frontend/assets/MissingData-BReUdTsw.js:1
 msgid "No data found"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivities.vue:40
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "No discussion activities found"
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:109
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "No discussions available yet."
 msgstr ""
 
 #: frontend/src/pages/Exams.vue:61
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
 msgid "No exams found"
 msgstr ""
 
@@ -4833,12 +4874,12 @@ msgid "No files available in this folder."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:67
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "No files found in this folder."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:849
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "No group assigned"
 msgstr ""
 
@@ -4848,13 +4889,13 @@ msgstr ""
 msgid "No more than 2 lines"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:90 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:90
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "No question detail provided."
 msgstr ""
 
 #: frontend/src/pages/Quizzes.vue:61
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "No quizzes found"
 msgstr ""
 
@@ -4864,7 +4905,7 @@ msgid "No student enrolled so far"
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:81
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "No students in this course"
 msgstr ""
 
@@ -4873,7 +4914,7 @@ msgid "No sub-folders in this location."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:51
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "No sub-folders yet."
 msgstr ""
 
@@ -4882,11 +4923,11 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:45
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:67
 #: frontend/src/pages/ExamSubmissionCS.vue:79
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 msgid "No submissions"
 msgstr ""
 
@@ -4910,14 +4951,14 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:197
 #: frontend/src/pages/ExamSubmission.vue:139
 #: frontend/src/pages/ExamSubmissionCS.vue:335
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
@@ -4928,10 +4969,10 @@ msgstr ""
 #: frontend/src/components/DiscussionActivity.vue:138
 #: frontend/src/pages/ExamSubmission.vue:5
 #: frontend/src/pages/QuizSubmission.vue:5
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Not Saved"
 msgstr ""
 
@@ -4982,18 +5023,13 @@ msgstr ""
 
 #. Option for the 'Type' (Select) field in DocType 'Assessment Criteria'
 #: frontend/src/pages/CourseAssessment.vue:84
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 msgid "Offline"
 msgstr ""
 
-#. Description of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data."
-msgstr ""
-
 #: frontend/src/components/Assignment.vue:45
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Once the moderator grades your submission, you'll find the details here."
 msgstr ""
 
@@ -5004,7 +5040,7 @@ msgid "Once you allow audits, you will need to create a Fee Category, Item, and 
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:394
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Only PDF file is allowed."
 msgstr ""
 
@@ -5016,30 +5052,30 @@ msgid "Only audit"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:392
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Only document file is allowed."
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:387
 #: frontend/src/pages/CourseForm.vue:305 frontend/src/utils/index.js:550
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Only image file is allowed."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:779
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Only images, PDF, or Word documents are allowed."
 msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:245
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Only zip files are allowed"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:17 frontend/src/pages/QuizForm.vue:17
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Open"
 msgstr ""
 
@@ -5067,7 +5103,7 @@ msgstr ""
 
 #. Label of the option (Small Text) field in DocType 'Options'
 #: frontend/src/components/Modals/Question.vue:68
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/options/options.json
 msgid "Option"
 msgstr ""
@@ -5130,14 +5166,16 @@ msgid "Original Post Attachment"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:39
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Original Post(s) by"
 msgstr ""
 
 #. Option for the 'Ethnic Group' (Select) field in DocType 'Student Applicant'
 #. Option in a Select field in the student-applicant Web Form
+#. Label of a Card Break in the Academic Setup Workspace
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Other"
 msgstr ""
 
@@ -5147,17 +5185,17 @@ msgid "Other details"
 msgstr ""
 
 #: frontend/src/pages/ExamSubmission.vue:62
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "Out of"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:34
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Outlook Calendar"
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:153
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 msgid "Outstanding Amount"
 msgstr ""
 
@@ -5204,12 +5242,12 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmissionList.vue:178
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:195
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:195
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/grading_scale_interval/grading_scale_interval.json
 msgid "Pass"
 msgstr ""
@@ -5229,14 +5267,14 @@ msgstr ""
 #. Label of the passing_percentage (Float) field in DocType 'Exam Submission'
 #. Label of the passing_percentage (Float) field in DocType 'Quiz Submission'
 #: frontend/src/pages/Quizzes.vue:127
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Passing Percentage"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:79
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Passing Percentage. Use this to force students to retake the quiz until they pass"
 msgstr ""
 
@@ -5255,9 +5293,9 @@ msgstr ""
 msgid "Payers Fee Category PE"
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Payers for a Student"
+#. Label of a Card Break in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Payers Setup"
 msgstr ""
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:38
@@ -5289,11 +5327,11 @@ msgstr ""
 #: frontend/src/pages/QuizSubmission.vue:23
 #: frontend/src/pages/QuizSubmissionCS.vue:102
 #: frontend/src/pages/QuizSubmissionList.vue:97
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/ExamSubmissionList-d1crlzny.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/QuizSubmissionList-CHIJzdHy.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/ExamSubmissionList-Co1qeo4g.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/QuizSubmissionList-CSxGJq8V.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
@@ -5358,11 +5396,11 @@ msgid "Please define grade for Threshold 0%"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:308
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Please enroll for this course to view this lesson"
 msgstr ""
 
-#: seminary/public/frontend/assets/index--ad6OvCj.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "Please ensure that you complete all the questions in ${a(y).data.duration} minutes."
 msgstr ""
 
@@ -5383,7 +5421,7 @@ msgid "Please explain your understanding of the gospel and the Christian life."
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:409
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Please fill in all required fields"
 msgstr ""
 
@@ -5393,22 +5431,22 @@ msgid "Please input the User in the system."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivityBlock.vue:9
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Please login to access the Discussion Activity."
 msgstr ""
 
 #: frontend/src/components/AssignmentBlock.vue:9
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Please login to access the assignment."
 msgstr ""
 
 #: frontend/src/components/ExamBlock.vue:5
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Please login to access the exam."
 msgstr ""
 
 #: frontend/src/components/QuizBlock.vue:5
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Please login to access the quiz."
 msgstr ""
 
@@ -5422,30 +5460,30 @@ msgstr ""
 msgid "Please read carefully and check if you agree with our doctrinal statement."
 msgstr ""
 
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:80
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:105
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:82
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:107
 msgid "Please select a Program first."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:259
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Please select a course before creating a folder."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:434
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Please select a folder before uploading."
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:335
 #: frontend/src/components/FolderPlugin.vue:446
 #: frontend/src/components/FolderPlugin.vue:488
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Please select a folder first."
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:542 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:1
+#: frontend/src/components/Quiz.vue:542
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "Please select an option"
 msgstr ""
 
@@ -5454,7 +5492,7 @@ msgid "Please select date"
 msgstr ""
 
 #: frontend/src/components/Modals/ChapterModal.vue:174
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Please upload a SCORM package or uncheck the SCORM package option"
 msgstr ""
 
@@ -5463,8 +5501,9 @@ msgid "Please upload the assignment file."
 msgstr ""
 
 #: frontend/src/components/Exam.vue:86 frontend/src/components/Quiz.vue:82
-#: frontend/src/components/Quiz.vue:174 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2 seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: frontend/src/components/Quiz.vue:174
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Point"
 msgstr ""
 
@@ -5482,13 +5521,13 @@ msgstr ""
 #: frontend/src/pages/ExamForm.vue:403 frontend/src/pages/ExamSubmission.vue:62
 #: frontend/src/pages/ExamSubmission.vue:109
 #: frontend/src/pages/QuizForm.vue:417 frontend/src/pages/QuizSubmission.vue:39
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 #: seminary/seminary/doctype/grading_scale/grading_scale.json
 #: seminary/seminary/doctype/quiz_question/quiz_question.json
 #: seminary/seminary/doctype/quiz_result/quiz_result.json
@@ -5501,7 +5540,7 @@ msgstr ""
 
 #. Label of the points_out_of (Float) field in DocType 'Quiz Result'
 #: frontend/src/pages/QuizSubmission.vue:40
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
 #: seminary/seminary/doctype/quiz_result/quiz_result.json
 msgid "Points out of"
 msgstr ""
@@ -5519,14 +5558,14 @@ msgid "Position"
 msgstr ""
 
 #: frontend/src/components/Modals/Question.vue:89
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Possibility"
 msgstr ""
 
 #: frontend/src/components/DiscussionReplies.vue:48
 #: frontend/src/components/DiscussionReplies.vue:70
 #: frontend/src/components/Modals/DiscussionModal.vue:131
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Post"
 msgstr ""
 
@@ -5536,18 +5575,18 @@ msgid "Post Before Reply Mandatory"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivities.vue:146
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Post Before Reply is Mandatory"
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:99
 #: frontend/src/components/DiscussionActivity.vue:252
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Post Reply"
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:143
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 msgid "Posting Date"
 msgstr ""
 
@@ -5559,7 +5598,7 @@ msgstr ""
 #: frontend/src/pages/StudentAttendanceCS.vue:60
 #: frontend/src/pages/StudentAttendanceCS.vue:78
 #: frontend/src/pages/StudentAttendanceCS.vue:95
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/student_attendance/student_attendance_list.js:8
 msgid "Present"
 msgstr ""
@@ -5572,10 +5611,10 @@ msgstr ""
 #: frontend/src/pages/AssignmentSubmission.vue:14
 #: frontend/src/pages/DiscussionActivitySubmission.vue:9
 #: frontend/src/pages/ExamSubmission.vue:14 frontend/src/pages/Lesson.vue:28
-#: seminary/public/frontend/assets/AssignmentSubmission-zOYgf4Lv.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
+#: seminary/public/frontend/assets/AssignmentSubmission-B1ys_E-_.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
 msgid "Previous"
 msgstr ""
 
@@ -5584,9 +5623,14 @@ msgstr ""
 msgid "Previous Education"
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Price List"
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Price Lists"
+msgstr ""
+
+#. Label of a Card Break in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Prices Setup"
 msgstr ""
 
 #. Label of the print_uom_after_quantity (Check) field in DocType 'Print
@@ -5603,17 +5647,17 @@ msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:239
 #: frontend/src/components/UserDropdown.vue:52
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Profile"
 msgstr ""
 
 #: frontend/src/components/InstructorAvatar.vue:2
-#: seminary/public/frontend/assets/InstructorAvatar-CUGcoi5g.js:1
+#: seminary/public/frontend/assets/InstructorAvatar-C2skgsTV.js:1
 msgid "Profile Page"
 msgstr ""
 
 #: frontend/src/pages/InstructorProfile.vue:8
-#: seminary/public/frontend/assets/InstructorProfile-BH_mhqY7.js:1
+#: seminary/public/frontend/assets/InstructorProfile-zC7sUR7L.js:1
 msgid "Profile page of"
 msgstr ""
 
@@ -5630,8 +5674,8 @@ msgstr ""
 #. Label of a field in the enroll-in-a-program Web Form
 #: frontend/src/pages/ExamSubmissionCS.vue:92
 #: frontend/src/pages/Gradebook.vue:69
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/program/program.json
@@ -5756,10 +5800,10 @@ msgid "Program of Interest"
 msgstr ""
 
 #. Label of the pe_html (HTML) field in DocType 'Student'
-#. Label of a Link in the Seminary Workspace
+#. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/doctype/course/course.js:24
 #: seminary/seminary/doctype/student/student.json
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Programs"
 msgstr ""
 
@@ -5798,7 +5842,7 @@ msgstr ""
 
 #. Label of the published (Check) field in DocType 'Course Schedule'
 #: frontend/src/pages/CourseForm.vue:95
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 msgid "Published"
 msgstr ""
@@ -5819,14 +5863,14 @@ msgstr ""
 #: frontend/src/components/Quiz.vue:170 frontend/src/components/Quiz.vue:217
 #: frontend/src/pages/AssignmentForm.vue:37 frontend/src/pages/ExamForm.vue:398
 #: frontend/src/pages/ExamSubmission.vue:83 frontend/src/pages/QuizForm.vue:412
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 #: seminary/seminary/doctype/exam_question/exam_question.json
 #: seminary/seminary/doctype/exam_question_result/exam_question_result.json
 #: seminary/seminary/doctype/open_question/open_question.json
@@ -5865,8 +5909,8 @@ msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:241
 #: frontend/src/components/Modals/Question.vue:295
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Question added successfully"
 msgstr ""
 
@@ -5879,8 +5923,8 @@ msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:291
 #: frontend/src/components/Modals/Question.vue:346
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Question updated successfully"
 msgstr ""
 
@@ -5888,16 +5932,16 @@ msgstr ""
 #. Activity'
 #: frontend/src/pages/ExamForm.vue:115 frontend/src/pages/Lesson.vue:116
 #: frontend/src/pages/QuizForm.vue:129
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/exam_activity/exam_activity.json
 msgid "Questions"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:440 frontend/src/pages/QuizForm.vue:454
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Questions deleted successfully"
 msgstr ""
 
@@ -5910,8 +5954,8 @@ msgstr ""
 #. Label of the quiz (Link) field in DocType 'Quiz Submission'
 #. Label of the quiz (Link) field in DocType 'Scheduled Course Assess Criteria'
 #: frontend/src/pages/QuizSubmission.vue:17 frontend/src/utils/quiz.js:25
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/quiz/quiz.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
@@ -5942,7 +5986,7 @@ msgstr ""
 
 #. Name of a DocType
 #: frontend/src/pages/QuizPage.vue:47 frontend/src/pages/QuizPage.vue:53
-#: seminary/public/frontend/assets/QuizPage-D3hiGP7r.js:1
+#: seminary/public/frontend/assets/QuizPage-Cldu4BSZ.js:1
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Quiz Submission"
 msgstr ""
@@ -5950,14 +5994,14 @@ msgstr ""
 #: frontend/src/pages/QuizSubmission.vue:99
 #: frontend/src/pages/QuizSubmissionCS.vue:121
 #: frontend/src/pages/QuizSubmissionList.vue:106
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/QuizSubmissionList-CHIJzdHy.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/QuizSubmissionList-CSxGJq8V.js:1
 msgid "Quiz Submissions"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:206 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2
+#: frontend/src/components/Quiz.vue:206
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "Quiz Summary"
 msgstr ""
 
@@ -5967,19 +6011,19 @@ msgid "Quiz Title"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:366
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Quiz created successfully"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:385
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Quiz updated successfully"
 msgstr ""
 
 #: frontend/src/pages/QuizForm.vue:465 frontend/src/pages/Quizzes.vue:138
 #: frontend/src/pages/Quizzes.vue:148
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "Quizzes"
 msgstr ""
 
@@ -6039,7 +6083,7 @@ msgid "Regenerate Calendar Token (This will invalidate existing calendar subscri
 msgstr ""
 
 #. Name of a role
-#: seminary/install.py:101
+#: seminary/install.py:178 seminary/install.py:180
 #: seminary/seminary/doctype/scholarships/scholarships.json
 #: seminary/seminary/doctype/student_group/student_group.json
 msgid "Registrar"
@@ -6076,13 +6120,26 @@ msgstr ""
 #: frontend/src/components/DiscussionActivity.vue:93
 #: frontend/src/components/DiscussionActivity.vue:246
 #: frontend/src/pages/CourseForm.vue:74
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Remove"
 msgstr ""
 
+#. Label of the no_more_demo (Check) field in DocType 'Seminary Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Remove Button Demo"
+msgstr ""
+
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:32
+msgid "Remove Demo Data"
+msgstr ""
+
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:39
+msgid "Removing demo data..."
+msgstr ""
+
 #: frontend/src/pages/DiscussionActivitySubmission.vue:54
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Replies by"
 msgstr ""
 
@@ -6104,28 +6161,28 @@ msgid "Reply Attachment"
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:14
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Reply To"
 msgstr ""
 
 #: frontend/src/components/DiscussionReplies.vue:193
 #: frontend/src/components/DiscussionReplies.vue:228
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Reply cannot be empty"
 msgstr ""
 
 #: frontend/src/components/Modals/DiscussionModal.vue:89
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Reply cannot be empty."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:439
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Reply posted successfully"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:58
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Reply to:"
 msgstr ""
 
@@ -6211,7 +6268,7 @@ msgstr ""
 
 #. Label of the scorm_package (Link) field in DocType 'Course Schedule Chapter'
 #: frontend/src/components/Modals/ChapterModal.vue:12
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 #: seminary/seminary/doctype/course_schedule_chapter/course_schedule_chapter.json
 msgid "SCORM Package"
 msgstr ""
@@ -6253,29 +6310,29 @@ msgstr ""
 #: frontend/src/pages/ExamForm.vue:34 frontend/src/pages/ExamSubmission.vue:7
 #: frontend/src/pages/LessonForm.vue:9 frontend/src/pages/QuizForm.vue:34
 #: frontend/src/pages/QuizSubmission.vue:7
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Save"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:7
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Save is only allowed when Total Points = 100"
 msgstr ""
 
 #: frontend/src/pages/CourseAssessment.vue:10
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Save only allowed when Total Points = 100"
 msgstr ""
 
@@ -6284,7 +6341,7 @@ msgstr ""
 msgid "Schedule"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:67
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:69
 msgid "Schedule date selected does not lie within the Academic Term: {}"
 msgstr ""
 
@@ -6304,6 +6361,11 @@ msgstr ""
 msgid "Scheduled Course Roster"
 msgstr ""
 
+#. Label of a Link in the Seminary Workspace
+#: seminary/seminary/workspace/seminary/seminary.json
+msgid "Scheduled Courses"
+msgstr ""
+
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:26
 msgid "Scheduling..."
 msgstr ""
@@ -6311,7 +6373,7 @@ msgstr ""
 #. Label of the scholarship (Link) field in DocType 'Payers Fee Category PE'
 #. Label of the scholarship (Data) field in DocType 'Scholarships'
 #: frontend/src/pages/Fees.vue:13
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:5
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:5
 #: seminary/seminary/doctype/payers_fee_category_pe/payers_fee_category_pe.json
 #: seminary/seminary/doctype/scholarships/scholarships.json
 msgid "Scholarship"
@@ -6341,16 +6403,17 @@ msgstr ""
 #. Label of the scholarships_section (Section Break) field in DocType 'Seminary
 #. Settings'
 #. Label of a Card Break in the Seminary Workspace
+#. Label of a Link in the Seminary Financial Setup Workspace
 #: seminary/seminary/doctype/scholarships/scholarships.json
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 #: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Scholarships"
 msgstr ""
 
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
-#, python-format
-msgid "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings"
+msgid "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes."
 msgstr ""
 
 #. Label of the school (Data) field in DocType 'Student Education'
@@ -6371,15 +6434,15 @@ msgstr ""
 #: frontend/src/pages/QuizSubmission.vue:22
 #: frontend/src/pages/QuizSubmissionCS.vue:96
 #: frontend/src/pages/QuizSubmissionList.vue:91
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/ExamSubmissionList-d1crlzny.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/QuizSubmissionList-CHIJzdHy.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/ExamSubmissionList-Co1qeo4g.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/QuizSubmissionList-CSxGJq8V.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 #: seminary/seminary/doctype/exam_question_result/exam_question_result.json
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
@@ -6399,8 +6462,8 @@ msgstr ""
 
 #: frontend/src/pages/Assignments.vue:21
 #: frontend/src/pages/DiscussionActivities.vue:21
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Search by title"
 msgstr ""
 
@@ -6410,86 +6473,86 @@ msgid "Seating Capacity"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Select Existing Folder"
 msgstr ""
 
 #: frontend/src/pages/AssignmentSubmission.vue:20
 #: frontend/src/pages/DiscussionActivitySubmission.vue:18
 #: frontend/src/pages/ExamSubmission.vue:20
-#: seminary/public/frontend/assets/AssignmentSubmission-zOYgf4Lv.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/AssignmentSubmission-B1ys_E-_.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "Select Submission"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:51
 #: frontend/src/pages/CourseAssessment.vue:80
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Select a Discussion Activity"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:27
 #: frontend/src/pages/CourseAssessment.vue:66
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Select a Quiz"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:21
 #: frontend/src/pages/DiscussionActivityForm.vue:34
 #: frontend/src/pages/ExamForm.vue:58
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Select a course"
 msgstr ""
 
 #: frontend/src/pages/StudentAttendanceCS.vue:38
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "Select a date"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:42
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Select a discussion activity"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:16
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Select a folder"
 msgstr ""
 
 #: frontend/src/components/Modals/OpenQuestion.vue:75
 #: frontend/src/components/Modals/Question.vue:98
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Select a question"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:28
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Select a quiz"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:43
 #: frontend/src/pages/CourseAssessment.vue:74
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Select an Assignment"
 msgstr ""
 
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:35
 #: frontend/src/pages/CourseAssessment.vue:70
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 msgid "Select an Exam"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:49
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Select an assignment"
 msgstr ""
 
 #: frontend/src/components/AssessmentPlugin.vue:35
-#: seminary/public/frontend/assets/index--ad6OvCj.js:3
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Select an exam"
 msgstr ""
 
@@ -6510,9 +6573,18 @@ msgid "Semesters"
 msgstr ""
 
 #. Name of a Workspace
-#: seminary/config/desktop.py:11
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Seminary"
+msgstr ""
+
+#. Paragraph text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
+msgstr ""
+
+#. Name of a Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Seminary Financial Setup"
 msgstr ""
 
 #. Label of the logo_portal (Attach Image) field in DocType 'Seminary Settings'
@@ -6544,12 +6616,14 @@ msgid "Seminary Manager"
 msgstr ""
 
 #. Name of a DocType
+#. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Seminary Settings"
 msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:73
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:3
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:3
 msgid "Send Email to"
 msgstr ""
 
@@ -6578,31 +6652,33 @@ msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:353
 #: frontend/src/components/FolderPlugin.vue:389
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Session expired. Refresh the page and try again."
 msgstr ""
 
-#. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/CourseForm.vue:91
 #: frontend/src/pages/DiscussionActivityForm.vue:41
 #: frontend/src/pages/ExamForm.vue:81 frontend/src/pages/QuizForm.vue:86
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/seminary/workspace/seminary/seminary.json
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Settings"
 msgstr ""
 
+#: seminary/install.py:37
+msgid "Setup Incomplete"
+msgstr ""
+
 #: frontend/src/components/ProfileModal.vue:179
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Short Bio"
 msgstr ""
 
 #. Label of the short_introduction (Small Text) field in DocType 'Course
 #. Schedule'
 #: frontend/src/pages/CourseForm.vue:22
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 msgid "Short Introduction"
 msgstr ""
@@ -6624,14 +6700,14 @@ msgstr ""
 
 #. Label of the show_answers (Check) field in DocType 'Quiz'
 #: frontend/src/pages/QuizForm.vue:92
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/quiz/quiz.json
 msgid "Show Answers"
 msgstr ""
 
 #. Label of the show_submission_history (Check) field in DocType 'Quiz'
 #: frontend/src/pages/QuizForm.vue:97
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/quiz/quiz.json
 msgid "Show Submission History"
 msgstr ""
@@ -6639,16 +6715,16 @@ msgstr ""
 #. Label of the shuffle_questions (Check) field in DocType 'Exam Activity'
 #. Label of the shuffle_questions (Check) field in DocType 'Quiz'
 #: frontend/src/pages/ExamForm.vue:101 frontend/src/pages/QuizForm.vue:115
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/exam_activity/exam_activity.json
 #: seminary/seminary/doctype/quiz/quiz.json
 msgid "Shuffle Questions"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:95 frontend/src/pages/QuizForm.vue:109
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Shuffle Settings"
 msgstr ""
 
@@ -6690,8 +6766,8 @@ msgid "Standard Comments"
 msgstr ""
 
 #: frontend/src/components/Exam.vue:47 frontend/src/components/Quiz.vue:55
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Start"
 msgstr ""
 
@@ -6702,7 +6778,7 @@ msgstr ""
 #. Label of the start_date (Date) field in DocType 'Student Services'
 #. Label of a field in the student-applicant Web Form
 #: frontend/src/pages/Courses.vue:215
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/doctype/student_logding_enrollment/student_logding_enrollment.json
@@ -6711,18 +6787,18 @@ msgstr ""
 msgid "Start Date"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:50 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:50
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Start Exam"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:30
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Start Learning"
 msgstr ""
 
 #: frontend/src/components/Discussions.vue:125
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Start a discussion"
 msgstr ""
 
@@ -6760,14 +6836,14 @@ msgstr ""
 #: frontend/src/pages/ExamSubmissionCS.vue:34
 #: frontend/src/pages/ExamSubmissionCS.vue:293 frontend/src/pages/Fees.vue:158
 #: frontend/src/pages/Grades.vue:126
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
-#: seminary/public/frontend/assets/Grades-BM9Je1FA.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
+#: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/building_rooms/building_rooms.json
 #: seminary/seminary/doctype/course_schedule_progress/course_schedule_progress.json
@@ -6816,16 +6892,17 @@ msgstr ""
 #: frontend/src/pages/Gradebook.vue:20 frontend/src/pages/QuizSubmission.vue:18
 #: frontend/src/pages/QuizSubmissionCS.vue:91
 #: frontend/src/pages/StudentGroup.vue:155 seminary/fixtures/custom_field.json
-#: seminary/install.py:94
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
-#: seminary/public/frontend/assets/QuizSubmission-DzGfEc4Q.js:1
-#: seminary/public/frontend/assets/QuizSubmissionCS-CQmmim1-.js:1
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/install.py:171 seminary/install.py:173 seminary/install.py:205
+#: seminary/install.py:206
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
+#: seminary/public/frontend/assets/QuizSubmission-BzDn5Sb8.js:1
+#: seminary/public/frontend/assets/QuizSubmissionCS-6Qire0sM.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 #: seminary/seminary/custom/sales_invoice.json
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/academic_year/academic_year.json
@@ -6855,6 +6932,8 @@ msgstr ""
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
 #: seminary/seminary/doctype/student/student.json
+#: seminary/seminary/doctype/student/student.py:37
+#: seminary/seminary/doctype/student/student.py:38
 #: seminary/seminary/doctype/student_attendance/student_attendance.json
 #: seminary/seminary/doctype/student_group_members/student_group_members.json
 #: seminary/seminary/doctype/student_leave_application/student_leave_application.json
@@ -6893,7 +6972,7 @@ msgstr ""
 #. Label of the student_applicant (Link) field in DocType 'Student'
 #. Name of a DocType
 #. Label of a Link in the Seminary Workspace
-#: seminary/install.py:87
+#: seminary/install.py:164 seminary/install.py:166
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/doctrinal_statement/doctrinal_statement.json
 #: seminary/seminary/doctype/student/student.json
@@ -6931,7 +7010,7 @@ msgid "Student Email Address"
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:53
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:5
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:5
 msgid "Student Financial Status are only displayed for Students"
 msgstr ""
 
@@ -6940,7 +7019,7 @@ msgstr ""
 #. Option for the 'Attendance Based On' (Select) field in DocType 'Student
 #. Leave Application'
 #: frontend/src/pages/StudentGroup.vue:160
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 #: seminary/seminary/doctype/student_group/student_group.json
 #: seminary/seminary/doctype/student_group_link/student_group_link.json
 #: seminary/seminary/doctype/student_leave_application/student_leave_application.json
@@ -6953,7 +7032,7 @@ msgstr ""
 msgid "Student Group Link"
 msgstr ""
 
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 msgid "Student Group Management for "
 msgstr ""
 
@@ -6986,6 +7065,7 @@ msgstr ""
 #. Schedule Progress'
 #. Label of the student_info_section (Section Break) field in DocType
 #. 'Scheduled Course Roster'
+#: seminary/install.py:198
 #: seminary/seminary/doctype/course_schedule_progress/course_schedule_progress.json
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
 msgid "Student Info"
@@ -7055,8 +7135,8 @@ msgstr ""
 #. Label of the student_name (Read Only) field in DocType 'Student Log'
 #: frontend/src/pages/ExamSubmissionCS.vue:91
 #: frontend/src/pages/StudentAttendanceCS.vue:59
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
 #: seminary/seminary/doctype/discussion_submission_replies/discussion_submission_replies.json
@@ -7104,7 +7184,7 @@ msgstr ""
 msgid "Student email"
 msgstr ""
 
-#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:60
+#: seminary/seminary/doctype/program_enrollment/program_enrollment.py:62
 msgid "Student is already enrolled."
 msgstr ""
 
@@ -7112,7 +7192,7 @@ msgstr ""
 msgid "Student {0} - {1} appears Multiple times in row {2} & {3}"
 msgstr ""
 
-#: seminary/seminary/doctype/student/student.py:93
+#: seminary/seminary/doctype/student/student.py:95
 msgid "Student {0} exist against student applicant {1}"
 msgstr ""
 
@@ -7127,7 +7207,7 @@ msgid "Students HTML"
 msgstr ""
 
 #: frontend/src/pages/StudentGroup.vue:220
-#: seminary/public/frontend/assets/StudentGroup-BoWoCv8t.js:1
+#: seminary/public/frontend/assets/StudentGroup-EXDV8Cxb.js:1
 msgid "Students data is not available or not an array."
 msgstr ""
 
@@ -7138,35 +7218,35 @@ msgid "Students will not see this on the LMS. This field can be accessed through
 msgstr ""
 
 #: frontend/src/pages/ExamSubmissionCS.vue:87
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 msgid "Students with No Submissions"
 msgstr ""
 
 #: frontend/src/components/FolderPlugin.vue:483
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Sub-folder name is required."
 msgstr ""
 
 #: frontend/src/components/FolderBlock.vue:28
 #: frontend/src/components/FolderPlugin.vue:49
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Sub-folders"
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:7
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Subject"
 msgstr ""
 
 #: frontend/src/components/Modals/AnnouncementModal.vue:84
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Subject is required"
 msgstr ""
 
 #. Label of the submission_section (Section Break) field in DocType 'Assignment
 #. Submission'
 #: frontend/src/components/Assignment.vue:24
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 msgid "Submission"
 msgstr ""
@@ -7181,10 +7261,10 @@ msgstr ""
 #: frontend/src/pages/AssignmentForm.vue:12
 #: frontend/src/pages/DiscussionActivityForm.vue:13
 #: frontend/src/pages/ExamForm.vue:30 frontend/src/pages/QuizForm.vue:30
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "Submission List"
 msgstr ""
 
@@ -7192,8 +7272,8 @@ msgstr ""
 #: frontend/src/components/Assignment.vue:9
 #: frontend/src/components/DiscussionActivity.vue:6
 #: frontend/src/components/DiscussionActivity.vue:9
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Submission by"
 msgstr ""
 
@@ -7203,7 +7283,7 @@ msgstr ""
 
 #: frontend/src/pages/ExamSubmission.vue:250
 #: frontend/src/pages/ExamSubmission.vue:375
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "Submission saved successfully"
 msgstr ""
 
@@ -7211,10 +7291,10 @@ msgstr ""
 #: frontend/src/components/Modals/OpenQuestion.vue:311
 #: frontend/src/components/Modals/Question.vue:377
 #: frontend/src/components/Quiz.vue:155
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 #: seminary/seminary/doctype/course_gradebook/course_gradebook.js:159
 msgid "Submit"
 msgstr ""
@@ -7225,13 +7305,13 @@ msgstr ""
 msgid "Submit Sales Invoice from Enrollments"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:100 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:100
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Submit Your Exam"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:199 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2
+#: frontend/src/components/Quiz.vue:199
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "Submit Your Quiz"
 msgstr ""
 
@@ -7245,11 +7325,11 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:171
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:171
 #: frontend/src/pages/ExamSubmissionCS.vue:318
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 msgid "Submitted"
 msgstr ""
 
@@ -7260,16 +7340,16 @@ msgid "Submitted on"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:55
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Subscribe to the course calendar"
 msgstr ""
 
 #: frontend/src/pages/CourseCalendar.vue:14
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Subscribe to this course calendar"
 msgstr ""
 
-#: seminary/public/frontend/assets/CourseCalendar-BVUmlHoX.js:1
+#: seminary/public/frontend/assets/CourseCalendar-D2ShbbUN.js:1
 msgid "Subscribe to this course calendar to stay updated with assignments due dates and class schedule."
 msgstr ""
 
@@ -7278,7 +7358,7 @@ msgstr ""
 msgid "Sunday"
 msgstr ""
 
-#: seminary/seminary/api.py:1886
+#: seminary/seminary/api.py:1887
 msgid "Suspicious pattern found in {0}: {1}"
 msgstr ""
 
@@ -7353,7 +7433,7 @@ msgstr ""
 #. Option for the 'Accepted file type' (Select) field in DocType 'Assignment
 #. Activity'
 #: frontend/src/pages/AssignmentForm.vue:209
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 msgid "Text"
 msgstr ""
@@ -7392,7 +7472,7 @@ msgid "The app has a default instruction on how students and staff can import ca
 msgstr ""
 
 #: frontend/src/pages/ExamSubmission.vue:350
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "The following questions need grading: {questions}. Do you want to save anyway?"
 msgstr ""
 
@@ -7410,27 +7490,27 @@ msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:12
 #: frontend/src/pages/StudentAttendanceCS.vue:34
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
-#: seminary/public/frontend/assets/StudentAttendanceCS-DCCMvlWL.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
+#: seminary/public/frontend/assets/StudentAttendanceCS-DB-Hva5U.js:1
 msgid "There are no students enrolled in this course."
 msgstr ""
 
 #: frontend/src/pages/AssignmentSubmissionList.vue:47
-#: seminary/public/frontend/assets/AssignmentSubmissionList-wAtfPS2J.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionList-DFlcjFR5.js:1
 msgid "There are no submissions for this assignment."
 msgstr ""
 
 #: frontend/src/pages/AssignmentSubmissionCS.vue:47
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:48
 #: frontend/src/pages/ExamSubmissionCS.vue:82
-#: seminary/public/frontend/assets/AssignmentSubmissionCS-CVV5r3CN.js:1
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-Dx2P5RDz.js:1
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/AssignmentSubmissionCS-DIWEyb7J.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionCS-CMyjRevZ.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 msgid "There are no submissions for this course."
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivitySubmissionList.vue:70
-#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-BPVUNATh.js:1
+#: seminary/public/frontend/assets/DiscussionActivitySubmissionList-wL2bEzs2.js:1
 msgid "There are no submissions for this discussion activity."
 msgstr ""
 
@@ -7465,7 +7545,7 @@ msgid "This article is already added to the existing topics"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:109
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "This course has:"
 msgstr ""
 
@@ -7484,13 +7564,13 @@ msgstr ""
 msgid "This email must be of someone who can endorse your active involvement in a local church."
 msgstr ""
 
-#: frontend/src/components/Exam.vue:6 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:6
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "This exam consists of "
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:31
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "This introduction may be truncated on the course card."
 msgstr ""
 
@@ -7537,12 +7617,7 @@ msgstr ""
 msgid "This may be used to filter or sort programs."
 msgstr ""
 
-#. Description of a Card Break in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import)."
-msgstr ""
-
-#: seminary/public/frontend/assets/index--ad6OvCj.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "This quiz consists of '${a(b).length}' questions"
 msgstr ""
 
@@ -7612,22 +7687,22 @@ msgid "Thursday"
 msgstr ""
 
 #: frontend/src/components/Exam.vue:33 frontend/src/components/Quiz.vue:38
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Time"
 msgstr ""
 
 #. Label of the time_taken (Duration) field in DocType 'Exam Submission'
 #. Label of the time_taken (Duration) field in DocType 'Quiz Submission'
 #: frontend/src/pages/ExamSubmissionCS.vue:312
-#: seminary/public/frontend/assets/ExamSubmissionCS-cCFhv-b3.js:1
+#: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Time Taken"
 msgstr ""
 
 #: frontend/src/pages/ExamSubmission.vue:70
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
 msgid "Time taken"
 msgstr ""
 
@@ -7660,17 +7735,17 @@ msgstr ""
 #: frontend/src/pages/DiscussionActivityForm.vue:28
 #: frontend/src/pages/ExamForm.vue:48 frontend/src/pages/Exams.vue:116
 #: frontend/src/pages/QuizForm.vue:48 frontend/src/pages/Quizzes.vue:116
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
-#: seminary/public/frontend/assets/DiscussionActivityForm-CT5yQfgt.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
+#: seminary/public/frontend/assets/DiscussionActivityForm-Yf_7JwA0.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 #: seminary/seminary/doctype/academic_term/academic_term.json
 #: seminary/seminary/doctype/article/article.json
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
@@ -7683,12 +7758,12 @@ msgid "Title"
 msgstr ""
 
 #: frontend/src/components/Modals/DiscussionModal.vue:86
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Title cannot be empty."
 msgstr ""
 
 #: frontend/src/pages/LessonForm.vue:488
-#: seminary/public/frontend/assets/LessonForm-Cl-Iwr5E.js:2
+#: seminary/public/frontend/assets/LessonForm-BSwoaDc3.js:2
 msgid "Title is required"
 msgstr ""
 
@@ -7713,8 +7788,8 @@ msgstr ""
 
 #: frontend/src/components/CourseCardToDo.vue:4
 #: frontend/src/pages/Courses.vue:12
-#: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
-#: seminary/public/frontend/assets/Courses-Z10akJKC.js:1
+#: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
+#: seminary/public/frontend/assets/Courses-CDocSyrR.js:1
 msgid "To Do"
 msgstr ""
 
@@ -7742,7 +7817,7 @@ msgid "Total Absent"
 msgstr ""
 
 #: frontend/src/pages/Fees.vue:148
-#: seminary/public/frontend/assets/Fees-Bql8ie8t.js:1
+#: seminary/public/frontend/assets/Fees-r5FdhnRK.js:1
 msgid "Total Amount"
 msgstr ""
 
@@ -7760,11 +7835,11 @@ msgstr ""
 #: frontend/src/pages/CourseAssessment.vue:34
 #: frontend/src/pages/ExamForm.vue:72 frontend/src/pages/Exams.vue:121
 #: frontend/src/pages/QuizForm.vue:74 frontend/src/pages/Quizzes.vue:121
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "Total Points"
 msgstr ""
 
@@ -7779,7 +7854,7 @@ msgstr ""
 msgid "Total Present"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:40
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:42
 msgid "Total Weight of all Assessment Criteria must total 100%"
 msgstr ""
 
@@ -7820,7 +7895,7 @@ msgid "Tracks of this Program"
 msgstr ""
 
 #: frontend/src/components/AppSidebar.vue:50
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Transcripts"
 msgstr ""
 
@@ -7838,8 +7913,8 @@ msgstr ""
 msgid "Trigger Fee Events"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:254 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: frontend/src/components/Quiz.vue:254
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Try Again"
 msgstr ""
 
@@ -7854,9 +7929,9 @@ msgstr ""
 #: frontend/src/components/Modals/Question.vue:58
 #: frontend/src/pages/AssignmentForm.vue:27
 #: frontend/src/pages/Assignments.vue:23 frontend/src/pages/Assignments.vue:150
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 #: seminary/seminary/doctype/assessment_criteria/assessment_criteria.json
 #: seminary/seminary/doctype/question/question.json
 #: seminary/seminary/doctype/student_log/student_log.json
@@ -7864,7 +7939,7 @@ msgid "Type"
 msgstr ""
 
 #: frontend/src/utils/markdownParser.js:11
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Type '/' for commands or select text to format"
 msgstr ""
 
@@ -7873,13 +7948,13 @@ msgstr ""
 msgid "Type of Scale"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:763 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:1
+#: frontend/src/components/Quiz.vue:763
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "Type your answer"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:94 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:94
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Type your answer here"
 msgstr ""
 
@@ -7891,13 +7966,13 @@ msgstr ""
 #. Option for the 'Accepted file type' (Select) field in DocType 'Assignment
 #. Activity'
 #: frontend/src/pages/AssignmentForm.vue:210
-#: seminary/public/frontend/assets/AssignmentForm-DO3xQHBp.js:1
+#: seminary/public/frontend/assets/AssignmentForm-BizfozFg.js:1
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
 msgid "URL"
 msgstr ""
 
 #: frontend/src/components/FolderBlock.vue:157
-#: seminary/public/frontend/assets/index--ad6OvCj.js:19
+#: seminary/public/frontend/assets/index-CedffXRa.js:19
 msgid "Unable to load folder contents."
 msgstr ""
 
@@ -7912,14 +7987,14 @@ msgid "Unweighted Score"
 msgstr ""
 
 #: frontend/src/pages/CourseForm.vue:58
-#: seminary/public/frontend/assets/CourseForm-D1Yjauq3.js:1
+#: seminary/public/frontend/assets/CourseForm-Dh19hMlq.js:1
 msgid "Upload"
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:62
 #: frontend/src/components/DiscussionActivity.vue:164
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Upload File"
 msgstr ""
 
@@ -7927,13 +8002,13 @@ msgstr ""
 #: frontend/src/components/DiscussionActivity.vue:75
 #: frontend/src/components/DiscussionActivity.vue:163
 #: frontend/src/components/DiscussionActivity.vue:229
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Uploading {0}%"
 msgstr ""
 
 #: frontend/src/pages/DiscussionActivities.vue:152
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Use Student Group"
 msgstr ""
 
@@ -7977,7 +8052,7 @@ msgstr ""
 #. Label of the member (Link) field in DocType 'Discussion Submission Replies'
 #. Label of the member (Link) field in DocType 'Exam Submission'
 #: frontend/src/components/ProfileModal.vue:171
-#: seminary/public/frontend/assets/index-1rBEzVPM.js:2
+#: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/course_schedule_instructors/course_schedule_instructors.json
 #: seminary/seminary/doctype/discussion_submission/discussion_submission.json
@@ -8004,6 +8079,11 @@ msgstr ""
 msgid "User Input"
 msgstr ""
 
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Users"
+msgstr ""
+
 #. Option for the 'Content Type' (Select) field in DocType 'Course Activity'
 #: seminary/seminary/doctype/course_activity/course_activity.json
 msgid "Video"
@@ -8015,8 +8095,8 @@ msgstr ""
 #: frontend/src/components/DiscussionActivity.vue:213
 #: frontend/src/pages/DiscussionActivitySubmission.vue:48
 #: frontend/src/pages/DiscussionActivitySubmission.vue:66
-#: seminary/public/frontend/assets/DiscussionActivitySubmission-Btm7hRBP.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "View Attachment"
 msgstr ""
 
@@ -8047,7 +8127,7 @@ msgstr ""
 #. Criteria'
 #: frontend/src/components/Modals/CourseAssessmentModal.vue:60
 #: frontend/src/pages/CourseAssessment.vue:97
-#: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
+#: seminary/public/frontend/assets/CourseAssessment-C5DUs1HS.js:1
 #: seminary/seminary/doctype/course_assessment_criteria/course_assessment_criteria.json
 #: seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json
 msgid "Weight"
@@ -8095,17 +8175,17 @@ msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:64
 #: frontend/src/components/DiscussionActivity.vue:218
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Write a reply..."
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:94
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Write your answer here"
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:150
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Write your main post here"
 msgstr ""
 
@@ -8120,7 +8200,7 @@ msgid "Years"
 msgstr ""
 
 #: frontend/src/pages/Gradebook.vue:69
-#: seminary/public/frontend/assets/Gradebook-DXxRiAOf.js:1
+#: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Yes"
 msgstr ""
 
@@ -8134,7 +8214,7 @@ msgid "You are not allowed to enroll for this course"
 msgstr ""
 
 #: frontend/src/components/CourseOutline.vue:307
-#: seminary/public/frontend/assets/CourseOutline-C0nWZUsP.js:1
+#: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "You are not enrolled"
 msgstr ""
 
@@ -8149,20 +8229,20 @@ msgstr ""
 msgid "You can specify courses per program track"
 msgstr ""
 
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 #, python-format
 msgid ""
 "You got ${Math.ceil(a(re).data.percentage)}% correct answers with a score of\n"
 "\t\t\t\t${a(re).data.score} out of ${a(re).data.score_out_of}"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:62 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2
+#: frontend/src/components/Quiz.vue:62
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "You have already exceeded the maximum number of attempts allowed for this quiz."
 msgstr ""
 
-#: frontend/src/components/Exam.vue:56 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:56
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "You have already submitted this exam. As soon as it is graded, you will see the feedback here."
 msgstr ""
 
@@ -8175,21 +8255,21 @@ msgid "You have got a score of {0} for the quiz {1}"
 msgstr ""
 
 #: frontend/src/pages/Assignments.vue:44
-#: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
+#: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
 msgid "You have not created any assignments yet. To create a new assignment, click on the \"New\" button above."
 msgstr ""
 
-#: seminary/public/frontend/assets/DiscussionActivities-Bk2mfYQk.js:1
+#: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "You have not created any discussion activities yet. To create a new discussion activity, click on the \"New\" button above."
 msgstr ""
 
 #: frontend/src/pages/Exams.vue:65
-#: seminary/public/frontend/assets/Exams-CyadkFNN.js:1
+#: seminary/public/frontend/assets/Exams-RxX1L32X.js:1
 msgid "You have not created any exams yet. To create a new exam, click on the \"New Exam\" button above."
 msgstr ""
 
 #: frontend/src/pages/Quizzes.vue:65
-#: seminary/public/frontend/assets/Quizzes-BzLpH-VW.js:1
+#: seminary/public/frontend/assets/Quizzes-CCXFBt0J.js:1
 msgid "You have not created any quizzes yet. To create a new quiz, click on the \"New Quiz\" button above."
 msgstr ""
 
@@ -8201,17 +8281,17 @@ msgid ""
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:106
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "You have to make your original post before seeing other posts."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:155
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "You may also add an attachment"
 msgstr ""
 
 #: frontend/src/components/CourseCardOverlay.vue:158
-#: seminary/public/frontend/assets/CourseDetail-DGZRF5Dq.js:1
+#: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "You need to login to access this course"
 msgstr ""
 
@@ -8220,7 +8300,7 @@ msgstr ""
 msgid "You now will define the price for each ERP Item in the price lists you created."
 msgstr ""
 
-#: seminary/public/frontend/assets/index--ad6OvCj.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:1
 #, python-format
 msgid "You will have to get ${a(y).data.passing_percentage}% correct answers in order to pass the quiz."
 msgstr ""
@@ -8233,7 +8313,7 @@ msgid ""
 msgstr ""
 
 #: frontend/src/components/Assignment.vue:43
-#: seminary/public/frontend/assets/index--ad6OvCj.js:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "You've successfully submitted the assignment."
 msgstr ""
 
@@ -8244,13 +8324,13 @@ msgstr ""
 
 #: frontend/src/components/ExamGraded.vue:48
 #: frontend/src/pages/ExamSubmission.vue:89
-#: seminary/public/frontend/assets/ExamSubmission-dS1LL7NX.js:1
-#: seminary/public/frontend/assets/index--ad6OvCj.js:11
+#: seminary/public/frontend/assets/ExamSubmission-Dw48JT9k.js:1
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Your Answer"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:224 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:3
+#: frontend/src/components/Quiz.vue:224
+#: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "Your Answer:"
 msgstr ""
 
@@ -8269,13 +8349,13 @@ msgstr ""
 msgid "Your best Email"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:391 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:391
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "Your exam was submitted successfully."
 msgstr ""
 
 #: frontend/src/components/DiscussionActivity.vue:193
-#: seminary/public/frontend/assets/index--ad6OvCj.js:15
+#: seminary/public/frontend/assets/index-CedffXRa.js:15
 msgid "Your submission has been saved:"
 msgstr ""
 
@@ -8297,7 +8377,7 @@ msgid "answers"
 msgstr ""
 
 #: frontend/src/pages/Lesson.vue:126
-#: seminary/public/frontend/assets/Lesson-DVa1mZLQ.js:3
+#: seminary/public/frontend/assets/Lesson-CvMllgJ8.js:3
 msgid "completed"
 msgstr ""
 
@@ -8306,8 +8386,8 @@ msgstr ""
 msgid "in minutes. Leave blank for no time-limit"
 msgstr ""
 
-#: frontend/src/components/Quiz.vue:138 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:2
+#: frontend/src/components/Quiz.vue:138
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "of"
 msgstr ""
 
@@ -8316,19 +8396,19 @@ msgstr ""
 msgid "pgm_enroll_payers"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:7 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "question"
 msgstr ""
 
 #: frontend/src/pages/ExamForm.vue:399 frontend/src/pages/QuizForm.vue:413
-#: seminary/public/frontend/assets/ExamForm-CTbIX4c8.js:1
-#: seminary/public/frontend/assets/QuizForm-IU2h2e0i.js:1
+#: seminary/public/frontend/assets/ExamForm-DkYFzWHO.js:1
+#: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
 msgid "question_detail"
 msgstr ""
 
-#: frontend/src/components/Exam.vue:7 seminary/public/frontend/assets/index--
-#: ad6OvCj.js:11
+#: frontend/src/components/Exam.vue:7
+#: seminary/public/frontend/assets/index-CedffXRa.js:11
 msgid "questions"
 msgstr ""
 
@@ -8336,7 +8416,7 @@ msgstr ""
 msgid "{0} Result submittted"
 msgstr ""
 
-#: seminary/public/frontend/assets/index--ad6OvCj.js:2
+#: seminary/public/frontend/assets/index-CedffXRa.js:2
 msgid "}."
 msgstr ""
 

@@ -196,12 +196,12 @@ after_migrate = "seminary.install.after_migrate"
 # -----------
 # Permissions evaluated in scripted ways
 
-permission_query_conditions = {
- 	"Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
- }
-# Instructors can only see their own records
+# permission_query_conditions = {
+# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
+# }
+#
 has_permission = {
- 	"Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+ 	"Instructor": "frappe.desk.doctype.event.event.has_permission",
  }
 
 # DocType Class

@@ -38,60 +38,11 @@ class Instructor(Document):
     # 	):
     # 		frappe.throw(_("Employee ID is linked with another instructor"))
 
-def get_roles_with_write_permission():
-    """Get all roles that have write permission on Instructors DocType."""
-    writable_roles = frappe.get_all(
-        "DocPerm",
-        filters={
-            "parent": "Instructor",
-            "write": 1,
-            "permlevel": 0,
-        },
-        pluck="role",
-    )
-    # print(f"Roles with write permission on Instructors: {writable_roles}")
-    return writable_roles
-
-def user_has_only_instructor_role(user):
-    """
-    Check if 'Instructor' is the ONLY role granting write access
-    to this DocType for this user. If they have other write-capable
-    roles, don't restrict them.
-    """
-    user_roles = frappe.get_roles(user)
-    #print(f"User Roles for {user}: {user_roles}")
-    write_roles = get_roles_with_write_permission()
-    # print(f"Write Roles for {user}: {write_roles}")
-
-    # Roles this user has that grant write access to Instructors
-    user_write_roles = set(user_roles) & set(write_roles)
-    #print(f"User Write Roles for {user}: {user_write_roles}")
-
-    # Only restrict if "Instructor" is the sole write role they have
-    instructor_role = frappe._("Instructor")  # translatable
-    return user_write_roles == {instructor_role}
-
-
 def has_permission(doc, ptype, user):
-    if not user:
-        user = frappe.session.user
-
-    # Only apply filtering for users whose sole write role is "Instructor"
-    if not user_has_only_instructor_role(user):
-        return True
-
-    # Instructor can only access their own record
-    return doc.user == user
-
-
-def get_permission_query_conditions(user):
-    if not user:
-        user = frappe.session.user
-
-    if not user_has_only_instructor_role(user):
-        return ""
-
-    return f"(`tabInstructor`.user = {frappe.db.escape(user)})" 
+    """Permission query conditions for Instructor doctype"""
+    if ptype in ("read", "write", "delete"):
+        return f"""`tabInstructor`.name = (SELECT parent FROM `tabCourse Schedule Instructors` WHERE instructor = '{user}')"""
+    
 
 def get_timeline_data(doctype, name):
     """Return timeline for course schedule meeting dates"""

@@ -49,7 +49,7 @@ def get_roles_with_write_permission():
         },
         pluck="role",
     )
-    # print(f"Roles with write permission on Instructors: {writable_roles}")
+    print(f"Roles with write permission on Instructors: {writable_roles}")
     return writable_roles
 
 def user_has_only_instructor_role(user):
@@ -59,13 +59,13 @@ def user_has_only_instructor_role(user):
     roles, don't restrict them.
     """
     user_roles = frappe.get_roles(user)
-    #print(f"User Roles for {user}: {user_roles}")
+    print(f"User Roles for {user}: {user_roles}")
     write_roles = get_roles_with_write_permission()
-    # print(f"Write Roles for {user}: {write_roles}")
+    print(f"Write Roles for {user}: {write_roles}")
 
     # Roles this user has that grant write access to Instructors
     user_write_roles = set(user_roles) & set(write_roles)
-    #print(f"User Write Roles for {user}: {user_write_roles}")
+    print(f"User Write Roles for {user}: {user_write_roles}")
 
     # Only restrict if "Instructor" is the sole write role they have
     instructor_role = frappe._("Instructor")  # translatable
@@ -84,14 +84,14 @@ def has_permission(doc, ptype, user):
     return doc.user == user
 
 
-def get_permission_query_conditions(user):
-    if not user:
-        user = frappe.session.user
+# def get_permission_query_conditions(user):
+#     if not user:
+#         user = frappe.session.user
 
-    if not user_has_only_instructor_role(user):
-        return ""
+#     if not user_has_only_instructor_role(user):
+#         return ""
 
-    return f"(`tabInstructor`.user = {frappe.db.escape(user)})" 
+#     return f"(`tabInstructors`.user = {frappe.db.escape(user)})" 
 
 def get_timeline_data(doctype, name):
     """Return timeline for course schedule meeting dates"""
