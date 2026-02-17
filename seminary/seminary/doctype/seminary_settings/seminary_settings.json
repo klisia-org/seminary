@@ -37,7 +37,8 @@
   "column_break_xyvi",
   "no_more_demo",
   "portal_tab",
-  "calendar_instructions"
+  "calendar_instructions",
+  "show_student_application_on_login"
  ],
  "fields": [
   {
@@ -241,11 +242,17 @@
    "hidden": 1,
    "label": "Remove Button Demo",
    "show_on_timeline": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "show_student_application_on_login",
+   "fieldtype": "Check",
+   "label": "Show Student Application button on login"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-12 18:21:32.604767",
+ "modified": "2026-02-17 13:39:19.244254",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
