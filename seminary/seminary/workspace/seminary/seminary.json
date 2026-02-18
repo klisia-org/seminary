@@ -118,46 +118,6 @@
    "type": "Link"
   },
   {
-   "description": "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Scholarships",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Define Scholarships",
-   "link_count": 0,
-   "link_to": "Scholarships",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Assign Scholarships in the Payers for Program Enrollment",
-   "link_count": 0,
-   "link_to": "Program Enrollment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Active Scholarship List",
-   "link_count": 0,
-   "link_to": "All Active Scholarships",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
    "hidden": 0,
    "is_query_report": 0,
    "label": "Schedule",
@@ -169,7 +129,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Course Schedule",
+   "label": "Scheduled Courses",
    "link_count": 0,
    "link_to": "Course Schedule",
    "link_type": "DocType",
@@ -205,9 +165,39 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "description": "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Assign Scholarships in the Payers for Program Enrollment",
+   "link_count": 0,
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Active Scholarship List",
+   "link_count": 0,
+   "link_to": "All Active Scholarships",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-14 12:13:40.614689",
+ "modified": "2026-02-17 08:32:38.307313",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",

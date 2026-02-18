@@ -1,0 +1,7 @@
+{
+    "name": "Frontend",
+    "modified": "2026-02-14 11:14:06.764840",
+    "doctype": "Custom HTML Block",
+    "docstatus": 0,
+    "html": "<div style=\"margin: 15px 0;\"><a href=\"/seminary/courses\" class=\"btn btn-primary btn-md\">{{ _(\"Go to Frontend\") }}</a></div>"
+}

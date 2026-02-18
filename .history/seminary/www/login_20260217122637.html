@@ -1,0 +1,20 @@
+{% extends "frappe/www/login.html" %}
+
+{% block logo %}
+    <div class="text-center" style="margin-bottom: 20px;">
+        <img src="/assets/klisia_icon.png" alt="SeminaryERP" 
+             style="max-height: 80px;">
+    </div>
+{% endblock %}
+
+{% block title %}{{ _("Login to SeminaryERP") }}{% endblock %}
+
+{% block page_content %}
+    {{ super() }}
+    <div class="text-center" style="margin-top: 20px;">
+        <p>{{ _("Want to join us?") }}</p>
+        <a href="/student-applicant/new" class="btn btn-primary btn-md">
+            {{ _("Apply to be our Student") }}
+        </a>
+    </div>
+{% endblock %}
