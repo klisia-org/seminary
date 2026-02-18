@@ -26,14 +26,11 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
-        self.save()
-        self.clean_name()
-        self.save()
         
     def clean_name(self):
-        if self.name and ("/" in self.name or "\\" in self.name):
+        if self.course_schedule_name:
            # Just remove forward slashes and let Frappe handle the rest
-           self.name = self.name.replace("/", "-").replace("\\", "-")
+           self.course_schedule_name = self.course_schedule_name.replace("/", "-").replace("\\", "-")
 
     def validate_assessment_criteria(self):
         """Validates if the total weightage of all assessment criteria is 100%"""

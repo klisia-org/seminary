@@ -1628,7 +1628,7 @@ def fgrade_this_std(name):
         print(fscore)
         fgrade = get_grade(grading_scale.name, fscore)
         frappe.db.set_value("Scheduled Course Roster", name, "fgrade", fgrade)
-        fgradepass = get_gradepass(grading_scale.name, fscore)
+        fgradepass = get_gradepass(grading_scale, fscore)
         print(fgradepass)
         frappe.db.set_value("Scheduled Course Roster", name, "fgradepass", fgradepass)
         return "done"

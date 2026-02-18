@@ -26,8 +26,7 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
-        self.save()
-        self.clean_name()
+        
         self.save()
         
     def clean_name(self):
