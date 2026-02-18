@@ -3,7 +3,11 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-02-10 16:03-0609\n"
+<<<<<<< l10n_crowdin_translations
 "PO-Revision-Date: 2026-02-18 22:24\n"
+=======
+"PO-Revision-Date: 2026-02-17 16:41\n"
+>>>>>>> develop
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Portuguese, Brazilian\n"
 "MIME-Version: 1.0\n"
@@ -62,7 +66,7 @@ msgstr "<div>tabela</div>"
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "<span class=\"h4\"><b>Setup</b></span>"
-msgstr ""
+msgstr "<span class=\"h4\"><b>Configuração</b></span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -72,7 +76,7 @@ msgstr "<span class=\"h4\"><b>Gestão de Mensalidades</b></span>"
 #. Header text in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "<span class=\"h4\">Initial Guided Setup</span>"
-msgstr ""
+msgstr "<span class=\"h4\">Configuração Guiada Inicial</span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -2072,7 +2076,7 @@ msgstr "Crie seus Programas"
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Create your holiday list"
-msgstr ""
+msgstr "Crie sua lista de feriados"
 
 #: frontend/src/pages/Assignments.vue:156
 #: frontend/src/pages/DiscussionActivities.vue:158
@@ -2165,7 +2169,7 @@ msgstr "Grupo de Clientes"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
-msgstr ""
+msgstr "Grupos de Clientes podem ter uma lista de preços padrão, então você pode ter preços para alunos nacionais e estrangeiros, por exemplo. O SeminaryERP é instalado com alguns itens padrão, exceto pelo preço dos itens. Você precisa inserir esses preços para cada lista de preços (a venda padrão já existe e tem alguns itens)."
 
 #: seminary/seminary/doctype/student/student.py:155
 msgid "Customer {0} created and linked to Student"
@@ -2188,7 +2192,7 @@ msgstr "Painel de Controle"
 #. Label of a shortcut in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Data Import Tool"
-msgstr ""
+msgstr "Ferramenta de Importação de Dados"
 
 #. Label of the date (Date) field in DocType 'Student Attendance'
 #. Label of the date (Date) field in DocType 'Student Attendance Tool'
@@ -2263,7 +2267,7 @@ msgstr "Definir Termos de Pagamento"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Define Scholarships"
-msgstr ""
+msgstr "Definir Bolsas de Estudo"
 
 #. Title of an Onboarding Step
 #: seminary/seminary/onboarding_step/uom/uom.json
@@ -3229,7 +3233,7 @@ msgstr "Links Financeiros"
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Financial Setup"
-msgstr ""
+msgstr "Configuração Financeira"
 
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
@@ -3850,32 +3854,32 @@ msgstr "Configuração Inicial do Seminário"
 #. Name of a Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Initial Setup"
-msgstr ""
+msgstr "Configuração Inicial"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Courses"
-msgstr ""
+msgstr "Inserir Cursos"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Customers"
-msgstr ""
+msgstr "Inserir Clientes"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Students"
-msgstr ""
+msgstr "Inserir Alunos"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Users"
-msgstr ""
+msgstr "Inserir Usuários"
 
 #. Label of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input or Import Data"
-msgstr ""
+msgstr "Inserir ou Importar Dados"
 
 #. Label of the question (Text Editor) field in DocType 'Assignment Activity'
 #. Label of the question (Text Editor) field in DocType 'Assignment Submission'
@@ -4597,7 +4601,7 @@ msgstr "São necessárias no mínimo duas opções para questões de múltipla e
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Miscellaneous Setup"
-msgstr ""
+msgstr "Configuração Adicional"
 
 #: frontend/src/components/CourseCardToDo.vue:10
 #: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
@@ -4990,7 +4994,7 @@ msgstr "Offline"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data."
-msgstr ""
+msgstr "No primeiro setup, você pode querer importar cursos (após verificar a escala de avaliação padrão). Para isso, vá para Home/Importar Dados."
 
 #: frontend/src/components/Assignment.vue:45
 #: seminary/public/frontend/assets/index--ad6OvCj.js:7
@@ -5258,7 +5262,7 @@ msgstr "Categoria de Taxas de Pagamentos PE"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Payers for a Student"
-msgstr ""
+msgstr "Pagadores de um Aluno"
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:38
 msgid "Payers for this Program"
@@ -5587,7 +5591,7 @@ msgstr "Escolaridade Anterior"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Price List"
-msgstr ""
+msgstr "Lista de Preços"
 
 #. Label of the print_uom_after_quantity (Check) field in DocType 'Print
 #. Settings'
@@ -6351,7 +6355,7 @@ msgstr "Bolsas de Estudos"
 #: seminary/seminary/workspace/seminary/seminary.json
 #, python-format
 msgid "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings"
-msgstr ""
+msgstr "As bolsas de estudos são definidas por Programa Acadêmico, pois cada programa possui diferentes categorias de taxas. Você pode definir um desconto (%) por categoria de taxa. Isso só se aplicará à parte do pagamento devida ao estudante. Portanto, se a igreja pagar metade da mensalidade e o estudante obtiver uma bolsa de 50%, ele/ela pagará 25%. Também, configure o centro de custo e o cliente padrão para bolsas de estudos nas Configurações do Seminário"
 
 #. Label of the school (Data) field in DocType 'Student Education'
 #: seminary/seminary/doctype/student_education/student_education.json
@@ -7540,7 +7544,7 @@ msgstr "Isso pode ser usado para filtrar ou classificar programas."
 #. Description of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import)."
-msgstr ""
+msgstr "Isso deve ser feito nesta ordem. Os links abaixo são para entrada manual. O SeminaryERP tem uma ferramenta para importar dados (a mesma ferramenta para todos, apenas um menu suspenso para selecionar qual \"Doctype\" importar)."
 
 #: seminary/public/frontend/assets/index--ad6OvCj.js:1
 msgid "This quiz consists of '${a(b).length}' questions"

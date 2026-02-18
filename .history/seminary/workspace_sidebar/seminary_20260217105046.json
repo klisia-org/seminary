@@ -1,0 +1,95 @@
+{
+ "app": "seminary",
+ "creation": "2026-02-10 09:55:33.362551",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "school",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "app-window-mac",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Go to Portal",
+   "link_type": "URL",
+   "show_arrow": 0,
+   "type": "Link",
+   "url": "/seminary/courses"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Home",
+   "link_to": "Seminary",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "Seminary",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Spacer"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Spacer"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "project-2",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Academic Setup",
+   "link_to": "Academic Setup",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "circle-dollar-sign",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Financial Setup",
+   "link_to": "Seminary Financial Setup",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-14 12:11:17.328174",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Seminary"
+}

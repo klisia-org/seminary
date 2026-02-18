@@ -1,0 +1,12 @@
+{% extends "frappe/www/login.html" %}
+
+
+{% block page_content %}
+    {{ super() }}
+    <div class="text-center" style="margin-top: 30px;">
+        <p>{{ _("Want to join us?") }}</p>
+        <a href="/student-applicant/new" class="btn btn-primary btn-md">
+            {{ _("Apply to be our Student") }}
+        </a>
+    </div>
+{% endblock %}

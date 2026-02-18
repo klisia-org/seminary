@@ -3,7 +3,11 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-02-10 16:03-0609\n"
+<<<<<<< l10n_crowdin_translations
 "PO-Revision-Date: 2026-02-18 22:24\n"
+=======
+"PO-Revision-Date: 2026-02-17 16:41\n"
+>>>>>>> develop
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Spanish\n"
 "MIME-Version: 1.0\n"
@@ -39,17 +43,29 @@ msgstr "1 vez"
 #. Introduction text of the enroll-in-a-course Web Form
 #: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "<div class=\"ql-editor read-mode\"><h2>It is easy to enroll online!</h2><p><br></p><ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select your program (if you are currently enrolled in more than one)</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select the Course scheduled</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Click enroll</li></ol></div>"
+<<<<<<< l10n_crowdin_translations
 msgstr "<div class=\"ql-editor read-mode\"><h2>¡Es fácil inscribirse en línea!</h2><p><br></p><ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Seleccione su programa (si actualmente está inscrito en más de uno)</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Seleccione el curso programado</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Haga clic en inscribir</li></ol></div>"
+=======
+msgstr "<div class=\\\"ql-editor read-mode\\\"><h2>¡Es fácil inscribirse en línea!</h2><p><br></p><ol><li data-list=\\\"ordered\\\"><span class=\\\"ql-ui\\\" contenteditable=\\\"false\\\"></span>Selecciona tu programa (si actualmente estás inscrito en más de uno)</li><li data-list=\\\"ordered\\\"><span class=\\\"ql-ui\\\" contenteditable=\\\"false\\\"></span>Selecciona el curso programado</li><li data-list=\\\"ordered\\\"><span class=\\\"ql-ui\\\" contenteditable=\\\"false\\\"></span>Haz clic en Inscribirse</li></ol></div>"
+>>>>>>> develop
 
 #. Introduction text of the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "<div class=\"ql-editor read-mode\"><h3>We rejoice in the Lord that you are seeking to grow in the love and knowledge of our triune God alongside us!</h3><p><br></p><p>Please fill this form and we will get back to you, as soon as we prayerfully consider your application.</p></div>"
+<<<<<<< l10n_crowdin_translations
 msgstr "<div class=\"ql-editor read-mode\"><h3>Nos regocijamos en el Señor de que estés buscando crecer en el amor y conocimiento de nuestro Dios trino junto a nosotros!</h3><p><br></p><p>Rellena este formulario y nos pondremos en contacto contigo, tan pronto como oremos y consideremos su solicitud.</p></div>"
+=======
+msgstr "<div class=\\\"ql-editor read-mode\\\"><h3>¡Nos regocijamos en el Señor de que estés buscando crecer en el amor y el conocimiento de nuestro Dios trino junto a nosotros!</h3><p><br></p><p>Completa este formulario y nos pondremos en contacto contigo en cuanto consideremos en oración tu solicitud.</p></div>"
+>>>>>>> develop
 
 #. Introduction text of the enroll-in-a-program Web Form
 #: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
 msgid "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">We rejoice in the Lord you decided to enroll in one of our programs.</span></p><p><span style=\"font-size: 14px;\">Please fill this form and we will get back to you.</span></p></div>"
+<<<<<<< l10n_crowdin_translations
 msgstr "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">Nos regocijamos en el Señor que has decidido inscribirte en uno de nuestros programas.</span></p><p><span style=\"font-size: 14px;\">Rellena este formulario y nos pondremos en contacto contigo.</span></p></div>"
+=======
+msgstr "<div class=\\\"ql-editor read-mode\\\"><p><span style=\\\"font-size: 14px;\\\">Nos regocijamos en el Señor de que hayas decidido inscribirte en uno de nuestros programas.</span></p><p><span style=\\\"font-size: 14px;\\\">Completa este formulario y nos pondremos en contacto contigo.</span></p></div>"
+>>>>>>> develop
 
 #. Content of the 'Class Roster and Grades' (HTML) field in DocType 'Course
 #. Schedule'
@@ -62,7 +78,7 @@ msgstr "<div>tabla</div>"
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "<span class=\"h4\"><b>Setup</b></span>"
-msgstr ""
+msgstr "<span class=\"h4\"><b>Configurar</b></span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -72,7 +88,7 @@ msgstr "<span class=\"h4\"><b>Gestión de la matrícula</b></span>"
 #. Header text in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "<span class=\"h4\">Initial Guided Setup</span>"
-msgstr ""
+msgstr "<span class=\"h4\">Configuración guiada inicial</span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -626,7 +642,11 @@ msgstr "Permitir discusiones"
 #. Label of the allow_audit (Check) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Allow audits?"
+<<<<<<< l10n_crowdin_translations
 msgstr "¿Permitir oyentes?"
+=======
+msgstr "¿Permitir auditorías?"
+>>>>>>> develop
 
 #. Label of the amended_from (Link) field in DocType 'Course Enrollment
 #. Individual'
@@ -831,7 +851,11 @@ msgstr "Cuestionario de criterios de evaluación"
 #. Label of the type (Data) field in DocType 'Scheduled Course Assess Criteria'
 #: seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json
 msgid "Assessment Criteria Type"
+<<<<<<< l10n_crowdin_translations
 msgstr "Tipo de criterio de evaluación"
+=======
+msgstr "Tipo de criterio de examen"
+>>>>>>> develop
 
 #: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
 msgid "Assessment Criteria for "
@@ -841,12 +865,20 @@ msgstr "Criterios de Evaluación para "
 #. Detail'
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
 msgid "Assessment Title"
+<<<<<<< l10n_crowdin_translations
 msgstr "Título de evaluación"
+=======
+msgstr "Título del examen"
+>>>>>>> develop
 
 #: frontend/src/pages/CourseAssessment.vue:46
 #: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
 msgid "Assessment Type"
+<<<<<<< l10n_crowdin_translations
 msgstr "Tipo de evaluación"
+=======
+msgstr "Tipo de examen"
+>>>>>>> develop
 
 #: frontend/src/pages/CourseAssessment.vue:346
 #: seminary/public/frontend/assets/CourseAssessment-BcqoLt--.js:1
@@ -856,7 +888,11 @@ msgstr "Criterios de evaluación eliminados correctamente"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Assign Scholarships in the Payers for Program Enrollment"
+<<<<<<< l10n_crowdin_translations
 msgstr "Asignar Becas en pagadores de inscriptos en el programa"
+=======
+msgstr "Asignar Becas en el programa de inscripción de pagadores"
+>>>>>>> develop
 
 #. Option for the 'Type' (Select) field in DocType 'Assessment Criteria'
 #. Label of the assignment_section (Section Break) field in DocType 'Assignment
@@ -879,7 +915,11 @@ msgstr "Asignar Becas en pagadores de inscriptos en el programa"
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.json
 #: seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json
 msgid "Assignment"
+<<<<<<< l10n_crowdin_translations
 msgstr "Tarea"
+=======
+msgstr "Asignación"
+>>>>>>> develop
 
 #. Name of a DocType
 #: seminary/seminary/doctype/assignment_activity/assignment_activity.json
@@ -949,7 +989,11 @@ msgstr "Tarea enviada con éxito"
 #: seminary/public/frontend/assets/Assignments-CKNd6FpK.js:1
 #: seminary/seminary/doctype/course_lesson/course_lesson.json
 msgid "Assignments"
+<<<<<<< l10n_crowdin_translations
 msgstr "Tareas"
+=======
+msgstr "Asignaciones"
+>>>>>>> develop
 
 #: seminary/seminary/doctype/question/question.py:47
 msgid "At least one option must be correct for this question."
@@ -1009,7 +1053,11 @@ msgstr "Oyente"
 #. 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Audit Settings"
+<<<<<<< l10n_crowdin_translations
 msgstr "Ajustes de Oyentes"
+=======
+msgstr "Ajustes de auditoría"
+>>>>>>> develop
 
 #. Label of the author (Data) field in DocType 'Article'
 #: seminary/seminary/doctype/article/article.json
@@ -1067,7 +1115,11 @@ msgstr "Negro"
 #. Label of the block_cei_pay (Check) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Block Course Enrollment until paid?"
+<<<<<<< l10n_crowdin_translations
 msgstr "¿Bloquear la inscripción en cursos hasta pagar?"
+=======
+msgstr "¿Bloquear la inscripción en el curso hasta pagar?"
+>>>>>>> develop
 
 #. Label of the blood_group (Select) field in DocType 'Student'
 #. Label of the blood_group (Select) field in DocType 'Student Applicant'
@@ -1092,7 +1144,11 @@ msgstr "Nombre del edificio"
 #. Name of a DocType
 #: seminary/seminary/doctype/building_rooms/building_rooms.json
 msgid "Building Rooms"
+<<<<<<< l10n_crowdin_translations
 msgstr "Salas en Edificios"
+=======
+msgstr "Edificios"
+>>>>>>> develop
 
 #. Name of a DocType
 #: seminary/seminary/doctype/buildings/buildings.json
@@ -1215,7 +1271,11 @@ msgstr "Capítulos"
 #: frontend/src/components/Quiz.vue:145 seminary/public/frontend/assets/index--
 #: ad6OvCj.js:2
 msgid "Check"
+<<<<<<< l10n_crowdin_translations
 msgstr "Chequear"
+=======
+msgstr "Comprobar"
+>>>>>>> develop
 
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.js:80
 msgid "Check all"
@@ -2072,7 +2132,7 @@ msgstr "Crea tus programas"
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Create your holiday list"
-msgstr ""
+msgstr "Crea tu lista de vacaciones"
 
 #: frontend/src/pages/Assignments.vue:156
 #: frontend/src/pages/DiscussionActivities.vue:158
@@ -2165,7 +2225,7 @@ msgstr "Grupo de clientes"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
-msgstr ""
+msgstr "Los grupos de clientes pueden tener una lista de precios predeterminada, así usted puede tener precios para nacionales y extranjeros, por ejemplo. El ERP seminario se instala con algunos elementos por defecto, excepto por el precio del artículo. Necesitas introducirlos para cada lista de precios (la venta predeterminada ya existe y tiene algunos elementos)."
 
 #: seminary/seminary/doctype/student/student.py:155
 msgid "Customer {0} created and linked to Student"
@@ -2188,7 +2248,7 @@ msgstr "Tablero"
 #. Label of a shortcut in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Data Import Tool"
-msgstr ""
+msgstr "Herramienta de importación de datos"
 
 #. Label of the date (Date) field in DocType 'Student Attendance'
 #. Label of the date (Date) field in DocType 'Student Attendance Tool'
@@ -2263,7 +2323,7 @@ msgstr "Definir términos de pago"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Define Scholarships"
-msgstr ""
+msgstr "Definir Becas"
 
 #. Title of an Onboarding Step
 #: seminary/seminary/onboarding_step/uom/uom.json
@@ -3229,7 +3289,7 @@ msgstr "Enlaces financieros"
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Financial Setup"
-msgstr ""
+msgstr "Configuración financiera"
 
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
@@ -3850,32 +3910,32 @@ msgstr "Configuración inicial del seminario"
 #. Name of a Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Initial Setup"
-msgstr ""
+msgstr "Configuración inicial"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Courses"
-msgstr ""
+msgstr "Cursos de Entrada"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Customers"
-msgstr ""
+msgstr "Clientes de entrada"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Students"
-msgstr ""
+msgstr "Entrada de estudiantes"
 
 #. Label of a Link in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input Users"
-msgstr ""
+msgstr "Entrada de Usuarios"
 
 #. Label of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "Input or Import Data"
-msgstr ""
+msgstr "Datos de entrada o importación"
 
 #. Label of the question (Text Editor) field in DocType 'Assignment Activity'
 #. Label of the question (Text Editor) field in DocType 'Assignment Submission'
@@ -4597,7 +4657,7 @@ msgstr "Se requieren dos opciones mínimas para las preguntas de elección múlt
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Miscellaneous Setup"
-msgstr ""
+msgstr "Configuración Viscellana"
 
 #: frontend/src/components/CourseCardToDo.vue:10
 #: seminary/public/frontend/assets/CourseCardToDo-C0ykwZLD.js:1
@@ -4990,7 +5050,7 @@ msgstr "Desconectado"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data."
-msgstr ""
+msgstr "En la primera configuración, es posible que desee importar cursos (después de comprobar la escala de calificación predeterminada). Para hacerlo, vaya a Inicio/Importar datos."
 
 #: frontend/src/components/Assignment.vue:45
 #: seminary/public/frontend/assets/index--ad6OvCj.js:7
@@ -5258,7 +5318,7 @@ msgstr "Categoría de cuota de pagador"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Payers for a Student"
-msgstr ""
+msgstr "Pagadores de un estudiante"
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:38
 msgid "Payers for this Program"
@@ -5587,7 +5647,7 @@ msgstr "Educación previa"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Price List"
-msgstr ""
+msgstr "Lista de precios"
 
 #. Label of the print_uom_after_quantity (Check) field in DocType 'Print
 #. Settings'
@@ -6351,7 +6411,7 @@ msgstr "Becas"
 #: seminary/seminary/workspace/seminary/seminary.json
 #, python-format
 msgid "Scholarships are defined per Academic Program as each program has different fee categories. You can define a discount (%) per fee category. This will only apply to the portion of payment due to the student. So, if the church is paying half of the tuition and the student gets a 50% scholarship, he/she will pay 25%. Also, configure cost center and default customer for scholarships in Seminary Settings"
-msgstr ""
+msgstr "Las becas se definen por Programa Académico, ya que cada programa tiene diferentes categorías de tarifas. Puedes definir un descuento (%) por categoría de tarifa. Esto sólo se aplicará a la parte del pago debido al estudiante. Por lo tanto, si la iglesia paga la mitad de la matrícula y el estudiante recibe una beca del 50%, pagará el 25%. Además, configure el centro de costes y el cliente por defecto para las becas en la Configuración de Seminario"
 
 #. Label of the school (Data) field in DocType 'Student Education'
 #: seminary/seminary/doctype/student_education/student_education.json
@@ -7540,7 +7600,7 @@ msgstr "Esto se puede utilizar para filtrar u ordenar programas."
 #. Description of a Card Break in the Initial Setup Workspace
 #: seminary/seminary/workspace/initial_setup/initial_setup.json
 msgid "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import)."
-msgstr ""
+msgstr "Esto debe hacerse en este orden. Los siguientes enlaces son para la entrada manual. SeminaryERP tiene una herramienta para importar datos (la misma herramienta para todos, solo un desplegable para seleccionar qué \"Doctype\" para importar)."
 
 #: seminary/public/frontend/assets/index--ad6OvCj.js:1
 msgid "This quiz consists of '${a(b).length}' questions"

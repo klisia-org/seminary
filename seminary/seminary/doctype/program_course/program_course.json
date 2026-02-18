@@ -9,6 +9,7 @@
   "course_name",
   "pgm_course_reqonenroll",
   "required",
+  "repeatable",
   "course_term",
   "pgmcourse_credits"
  ],
@@ -58,16 +59,25 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Mandatory on program enrollment"
+  },
+  {
+   "default": "0",
+   "description": "Check here if you allow this course to be taken more than once for credit (course audits will not be blocked by this setting)",
+   "fieldname": "repeatable",
+   "fieldtype": "Check",
+   "label": "Allow more than once"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-02-26 18:00:20.399911",
+ "modified": "2026-02-18 15:21:30.455172",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Course",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
