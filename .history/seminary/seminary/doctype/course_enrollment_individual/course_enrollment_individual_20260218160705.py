@@ -45,7 +45,7 @@ class CourseEnrollmentIndividual(Document):
                 c.program_ce = %s""", (self.course_data, self.program_ce))
         if CEI:
             frappe.throw(
-                _("Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable.").format(
+                _("Student already enrolled in {0} for credit. If students should be able to enroll again, please adjust the program course settings to make this course repeatable.").format(
                     getlink("Course Enrollment Individual", CEI[0][0])
                 )
             )
