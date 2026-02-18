@@ -1,0 +1,22 @@
+{% extends "frappe/www/login.html" %}
+
+{% block script %}
+{{ super() }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% if show_student_application %}
+    var loginContainer = document.querySelector(".page-card");
+    if (loginContainer) {
+        var div = document.createElement("div");
+        div.className = "text-center";
+        div.style.marginTop = "20px";
+        div.innerHTML = '<p>{{ _("Want to join us?") }}</p>' +
+            '<a href="/student-applicant/new" class="btn btn-primary btn-md">' +
+            '{{ _("Apply to be our Student") }}</a>';
+        loginContainer.appendChild(div);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}
