@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Seminary VERSION\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
-"POT-Creation-Date: 2026-02-17 10:15-0609\n"
-"PO-Revision-Date: 2026-02-17 10:15-0609\n"
+"POT-Creation-Date: 2026-02-18 16:53-0609\n"
+"PO-Revision-Date: 2026-02-18 16:53-0609\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: support@seminaryerp.org\n"
 "MIME-Version: 1.0\n"
@@ -34,19 +34,9 @@ msgstr ""
 msgid "1 time"
 msgstr ""
 
-#. Introduction text of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "<div class=\"ql-editor read-mode\"><h2>It is easy to enroll online!</h2><p><br></p><ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select your program (if you are currently enrolled in more than one)</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select the Course scheduled</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Click enroll</li></ol></div>"
-msgstr ""
-
 #. Introduction text of the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "<div class=\"ql-editor read-mode\"><h3>We rejoice in the Lord that you are seeking to grow in the love and knowledge of our triune God alongside us!</h3><p><br></p><p>Please fill this form and we will get back to you, as soon as we prayerfully consider your application.</p></div>"
-msgstr ""
-
-#. Introduction text of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">We rejoice in the Lord you decided to enroll in one of our programs.</span></p><p><span style=\"font-size: 14px;\">Please fill this form and we will get back to you.</span></p></div>"
 msgstr ""
 
 #. Content of the 'Class Roster and Grades' (HTML) field in DocType 'Course
@@ -161,8 +151,6 @@ msgstr ""
 #. Course'
 #. Label of the academic_term (Link) field in DocType 'Student Attendance Tool'
 #. Label of the academic_term (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-course Web Form
-#. Label of a list column in the enroll-in-a-course Web Form
 #. Label of a Link in the Academic Setup Workspace
 #. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/Courses.vue:44 frontend/src/pages/Courses.vue:210
@@ -176,7 +164,6 @@ msgstr ""
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.json
 #: seminary/seminary/doctype/student_log/student_log.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Academic Term"
@@ -635,6 +622,11 @@ msgstr ""
 msgid "Allow audits?"
 msgstr ""
 
+#. Label of the repeatable (Check) field in DocType 'Program Course'
+#: seminary/seminary/doctype/program_course/program_course.json
+msgid "Allow more than once"
+msgstr ""
+
 #. Label of the amended_from (Link) field in DocType 'Course Enrollment
 #. Individual'
 #. Label of the amended_from (Link) field in DocType 'Grading Scale'
@@ -737,6 +729,7 @@ msgid "Apply Now"
 msgstr ""
 
 #. Title of the student-applicant Web Form
+#: seminary/overrides.py:31
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Apply to be our Student"
 msgstr ""
@@ -1228,6 +1221,12 @@ msgstr ""
 msgid "Check all"
 msgstr ""
 
+#. Description of the 'Allow more than once' (Check) field in DocType 'Program
+#. Course'
+#: seminary/seminary/doctype/program_course/program_course.json
+msgid "Check here if you allow this course to be taken more than once for credit (course audits will not be blocked by this setting)"
+msgstr ""
+
 #. Description of the 'Question by Question' (Check) field in DocType 'Exam
 #. Activity'
 #. Description of the 'Question by Question' (Check) field in DocType 'Quiz'
@@ -1601,8 +1600,6 @@ msgstr ""
 #. Courses'
 #. Label of the course (Link) field in DocType 'Question'
 #. Label of the course (Link) field in DocType 'Quiz'
-#. Label of a field in the enroll-in-a-course Web Form
-#. Label of a list column in the enroll-in-a-course Web Form
 #: frontend/src/pages/Assignments.vue:22 frontend/src/pages/Assignments.vue:144
 #: frontend/src/pages/Courses.vue:205
 #: frontend/src/pages/DiscussionActivities.vue:22
@@ -1632,7 +1629,6 @@ msgstr ""
 #: seminary/seminary/doctype/question/question.json
 #: seminary/seminary/doctype/quiz/quiz.json
 #: seminary/seminary/doctype/room/room_dashboard.py:11
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Course"
 msgstr ""
 
@@ -1951,7 +1947,7 @@ msgstr ""
 msgid "Course where this quiz will be used - you may reuse this quiz in other schedules"
 msgstr ""
 
-#: seminary/seminary/doctype/course/course.py:46
+#: seminary/seminary/doctype/course/course.py:52
 msgid "Course {0} has been added to all the selected programs successfully."
 msgstr ""
 
@@ -2005,11 +2001,6 @@ msgstr ""
 #. Description of the 'Courses' (Table) field in DocType 'Program Enrollment'
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 msgid "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades."
-msgstr ""
-
-#. List title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "Courses available to you"
 msgstr ""
 
 #. Label of the section_break_courses (Section Break) field in DocType
@@ -2101,12 +2092,10 @@ msgstr ""
 
 #. Label of the credits (Int) field in DocType 'Course Enrollment Individual'
 #. Label of the credits (Int) field in DocType 'Program Enrollment Course'
-#. Label of a field in the enroll-in-a-course Web Form
 #: frontend/src/pages/Grades.vue:111
 #: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Credits"
 msgstr ""
 
@@ -2833,23 +2822,6 @@ msgstr ""
 msgid "Enroll"
 msgstr ""
 
-#. Title of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Enroll in a Program"
-msgstr ""
-
-#. Title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "Enroll in a course"
-msgstr ""
-
-#. Button label of the enroll-in-a-course Web Form
-#. Button label of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Enroll me!"
-msgstr ""
-
 #: frontend/src/components/CourseCardOverlay.vue:121
 #: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Enrolled Students"
@@ -2867,9 +2839,7 @@ msgid "Enrollment"
 msgstr ""
 
 #. Label of the enrollment_date (Date) field in DocType 'Program Enrollment'
-#. Label of a field in the enroll-in-a-program Web Form
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
 msgid "Enrollment Date"
 msgstr ""
 
@@ -3338,7 +3308,7 @@ msgstr ""
 msgid "From Time"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:83
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:90
 msgid "From Time cannot be greater than To Time."
 msgstr ""
 
@@ -5045,9 +5015,7 @@ msgid "Only PDF file is allowed."
 msgstr ""
 
 #. Label of the audit (Check) field in DocType 'Course Enrollment Individual'
-#. Label of a field in the enroll-in-a-course Web Form
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Only audit"
 msgstr ""
 
@@ -5671,7 +5639,6 @@ msgstr ""
 #. Label of the program (Link) field in DocType 'Scholarships'
 #. Label of the program (Link) field in DocType 'Student Admission Program'
 #. Label of the program (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-program Web Form
 #: frontend/src/pages/ExamSubmissionCS.vue:92
 #: frontend/src/pages/Gradebook.vue:69
 #: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
@@ -5684,7 +5651,6 @@ msgstr ""
 #: seminary/seminary/doctype/scholarships/scholarships.json
 #: seminary/seminary/doctype/student_admission_program/student_admission_program.json
 #: seminary/seminary/doctype/student_log/student_log.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
 msgid "Program"
 msgstr ""
 
@@ -5719,13 +5685,11 @@ msgstr ""
 #. Name of a DocType
 #. Label of the program_enrollment_section (Section Break) field in DocType
 #. 'Student'
-#. Label of a field in the enroll-in-a-course Web Form
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/payers_fee_category_pe/payers_fee_category_pe.json
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 #: seminary/seminary/doctype/student/student.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Program Enrollment"
 msgstr ""
@@ -5807,7 +5771,7 @@ msgstr ""
 msgid "Programs"
 msgstr ""
 
-#: seminary/seminary/doctype/course/course.py:49
+#: seminary/seminary/doctype/course/course.py:55
 msgid "Programs updated"
 msgstr ""
 
@@ -6341,7 +6305,7 @@ msgstr ""
 msgid "Schedule"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:69
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:76
 msgid "Schedule date selected does not lie within the Academic Term: {}"
 msgstr ""
 
@@ -6705,6 +6669,12 @@ msgstr ""
 msgid "Show Answers"
 msgstr ""
 
+#. Label of the show_student_application_on_login (Check) field in DocType
+#. 'Seminary Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Show Student Application button on login"
+msgstr ""
+
 #. Label of the show_submission_history (Check) field in DocType 'Quiz'
 #: frontend/src/pages/QuizForm.vue:97
 #: seminary/public/frontend/assets/QuizForm-CmwmZ86-.js:1
@@ -6876,7 +6846,6 @@ msgstr ""
 #. Label of the student (Link) field in DocType 'Student Group Members'
 #. Label of the student (Link) field in DocType 'Student Leave Application'
 #. Label of the student (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-course Web Form
 #. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/AssignmentSubmissionCS.vue:8
 #: frontend/src/pages/AssignmentSubmissionCS.vue:169
@@ -6940,7 +6909,6 @@ msgstr ""
 #: seminary/seminary/doctype/student_log/student_log.json
 #: seminary/seminary/report/absent_student_report/absent_student_report.py:66
 #: seminary/seminary/report/student_monthly_attendance_sheet/student_monthly_attendance_sheet.py:72
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Student"
 msgstr ""
@@ -7177,6 +7145,10 @@ msgstr ""
 #: seminary/seminary/doctype/course_schedule_progress/course_schedule_progress.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Student User"
+msgstr ""
+
+#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:48
+msgid "Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable."
 msgstr ""
 
 #. Label of the stuemail_rc (Data) field in DocType 'Scheduled Course Roster'
@@ -7526,7 +7498,7 @@ msgstr ""
 msgid "There were errors creating Course Schedule"
 msgstr ""
 
-#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:29
+#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:30
 msgid "This Course Enrollment {0} already exists."
 msgstr ""
 
@@ -7854,11 +7826,11 @@ msgstr ""
 msgid "Total Present"
 msgstr ""
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:42
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:49
 msgid "Total Weight of all Assessment Criteria must total 100%"
 msgstr ""
 
-#: seminary/seminary/doctype/course/course.py:23
+#: seminary/seminary/doctype/course/course.py:29
 msgid "Total Weightage of all Assessment Criteria must be 100%"
 msgstr ""
 
@@ -8105,6 +8077,10 @@ msgstr ""
 msgid "Virtual"
 msgstr ""
 
+#: seminary/overrides.py:30
+msgid "Want to join us?"
+msgstr ""
+
 #. Label of the web_tab (Tab Break) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
 msgid "Web"
@@ -8143,11 +8119,6 @@ msgstr ""
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "What is your highest academic degree?"
-msgstr ""
-
-#. Label of a field in the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "What will be your first Academic Term?"
 msgstr ""
 
 #. Option for the 'Ethnic Group' (Select) field in DocType 'Student Applicant'
@@ -8202,11 +8173,6 @@ msgstr ""
 #: frontend/src/pages/Gradebook.vue:69
 #: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Yes"
-msgstr ""
-
-#. Success title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "You are enrolled!"
 msgstr ""
 
 #: seminary/seminary/utils.py:1122 seminary/seminary/utils.py:1136
@@ -8305,13 +8271,6 @@ msgstr ""
 msgid "You will have to get ${a(y).data.passing_percentage}% correct answers in order to pass the quiz."
 msgstr ""
 
-#. Success message of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid ""
-"You will receive an welcome email from the professor as soon as registration ends.\n"
-"May this be a time of growth in your faith and in your service to our Lord!"
-msgstr ""
-
 #: frontend/src/components/Assignment.vue:43
 #: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "You've successfully submitted the assignment."
@@ -8337,11 +8296,6 @@ msgstr ""
 #. Label of a field in the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Your Mobile Number"
-msgstr ""
-
-#. Label of a field in the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Your Student Account"
 msgstr ""
 
 #. Label of a field in the student-applicant Web Form
