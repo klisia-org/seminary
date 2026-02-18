@@ -3,7 +3,11 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-02-10 16:03-0609\n"
+<<<<<<< l10n_crowdin_translations
+"PO-Revision-Date: 2026-02-18 22:24\n"
+=======
 "PO-Revision-Date: 2026-02-17 16:41\n"
+>>>>>>> develop
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Portuguese, Brazilian\n"
 "MIME-Version: 1.0\n"
