@@ -99,35 +99,51 @@ class CourseSchedule(Document):
 
     @frappe.whitelist()
     def schedule_dates(self, days):
-        """Returns a list of meeting dates and also creates child documents for each meeting date"""
+        # Clear existing meeting dates
+        frappe.db.sql(
+            "DELETE FROM `tabCourse Schedule Meeting Dates` WHERE parent=%s", self.name
+        )
+
+        """Returns a list of meeting dates and also creates a child document for each meeting date with meeting time"""
         meeting_dates = []
         meeting_dates_errors = []
-
-    # Remove existing meeting dates through the ORM (not raw SQL)
-        self.set("cs_meetinfo", [])
-
+        # days_of_week = [self.monday, self.tuesday, self.wednesday, self.thursday, self.friday, self.saturday, self.sunday]
         current_date = self.c_datestart
 
         while current_date <= self.c_dateend:
             if calendar.day_name[getdate(current_date).weekday()] in days:
+                meeting_date = self.save_dates(current_date)
                 try:
-                    meeting_date = self.append("cs_meetinfo", {
-                        "cs_meetdate": current_date,
-                        "cs_fromtime": self.from_time,
-                        "cs_totime": self.to_time,
-                    })
-                    meeting_dates.append(meeting_date)
+                    meeting_date.flags.ignore_permissions = True
+                    meeting_date.save()
+                    frappe.db.insert(meeting_date.as_dict())
+                    frappe.db.set_value("Course Schedule", self.name, "hasmtgdate", 1)
                 except OverlapError:
                     meeting_dates_errors.append(current_date)
-
+                else:
+                    meeting_dates.append(meeting_date)
             current_date = add_days(current_date, 1)
-
-    # Save the parent once — this persists all children and updates the timestamp
-        self.hasmtgdate = 1 if meeting_dates else 0
-        self.flags.ignore_permissions = True
-        self.save()
 
         return dict(
             meeting_dates=meeting_dates,
             meeting_dates_errors=meeting_dates_errors,
         )
+
+    @frappe.whitelist()
+    def save_dates(self, current_date):
+        """Define variables"""
+        cs = self.name
+        pt = "Course Schedule"
+        pf = "cs_meetinfo"
+        name = cs + "-" + str(current_date)
+
+        # Create new meeting date
+        meeting_date = frappe.new_doc("Course Schedule Meeting Dates")
+        meeting_date.name = name
+        meeting_date.parent = cs
+        meeting_date.parentfield = pf
+        meeting_date.parenttype = pt
+        meeting_date.cs_meetdate = current_date
+        meeting_date.cs_fromtime = self.from_time
+        meeting_date.cs_totime = self.to_time
+        return meeting_date

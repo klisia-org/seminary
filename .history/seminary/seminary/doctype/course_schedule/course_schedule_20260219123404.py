@@ -114,20 +114,20 @@ class CourseSchedule(Document):
                     meeting_date = self.append("cs_meetinfo", {
                         "cs_meetdate": current_date,
                         "cs_fromtime": self.from_time,
-                        "cs_totime": self.to_time,
-                    })
-                    meeting_dates.append(meeting_date)
-                except OverlapError:
-                    meeting_dates_errors.append(current_date)
+                    "cs_totime": self.to_time,
+                })
+                meeting_dates.append(meeting_date)
+            except OverlapError:
+                meeting_dates_errors.append(current_date)
 
-            current_date = add_days(current_date, 1)
+        current_date = add_days(current_date, 1)
 
     # Save the parent once — this persists all children and updates the timestamp
-        self.hasmtgdate = 1 if meeting_dates else 0
-        self.flags.ignore_permissions = True
-        self.save()
+    self.hasmtgdate = 1 if meeting_dates else 0
+    self.flags.ignore_permissions = True
+    self.save()
 
-        return dict(
-            meeting_dates=meeting_dates,
-            meeting_dates_errors=meeting_dates_errors,
-        )
+    return dict(
+        meeting_dates=meeting_dates,
+        meeting_dates_errors=meeting_dates_errors,
+    )

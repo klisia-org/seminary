@@ -129,5 +129,5 @@ class CourseSchedule(Document):
 
         return dict(
             meeting_dates=meeting_dates,
-            meeting_dates_errors=meeting_dates_errors,
-        )
+        meeting_dates_errors=meeting_dates_errors,
+    )
