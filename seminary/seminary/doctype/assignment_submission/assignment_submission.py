@@ -159,9 +159,11 @@ def upload_assignment(
     doc.update(
         {
             "assignment_attachment": assignment_attachment,
-            "status": "Not Applicable"
-            if assignment_type == "Text" and not assignment_details.grade_assignment
-            else status,
+            "status": (
+                "Not Applicable"
+                if assignment_type == "Text" and not assignment_details.grade_assignment
+                else status
+            ),
             "comments": comments,
             "answer": answer,
         }

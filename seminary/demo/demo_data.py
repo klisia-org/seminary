@@ -6,6 +6,7 @@ from itertools import cycle
 DEMO_PREFIX = "DEMO-"
 DEMO_TAG = "Seminary Demo Data"
 
+
 def install_demo_data():
     """Main entry point to install all demo data."""
     if frappe.db.exists("Academic Year", f"{DEMO_PREFIX}2024-25"):
@@ -60,11 +61,13 @@ def insert_demo_doc(doctype, data):
 
     return doc
 
+
 def create_academic_years():
     years = load_json("academic_years.json")
     for year in years:
         if not frappe.db.exists("Academic Year", year["academic_year_name"]):
             insert_demo_doc("Academic Year", year)
+
 
 def create_academic_terms():
     terms = load_json("terms.json")
@@ -72,22 +75,26 @@ def create_academic_terms():
         if not frappe.db.exists("Academic Term", term.get("term_name")):
             insert_demo_doc("Academic Term", term)
 
+
 def create_programs():
     programs = load_json("programs.json")
     for program in programs:
         if not frappe.db.exists("Program", program["program_name"]):
-            doc =insert_demo_doc("Program", {
-                **program,
-                "name": program["program_name"]
-            })
-            frappe.logger().info(f"Created program: '{doc.name}' / '{doc.program_name}'")
+            doc = insert_demo_doc(
+                "Program", {**program, "name": program["program_name"]}
+            )
+            frappe.logger().info(
+                f"Created program: '{doc.name}' / '{doc.program_name}'"
+            )
             print(f"Created program: '{doc.name}' / '{doc.program_name}'")
+
 
 def create_courses():
     courses = load_json("courses.json")
     for course in courses:
         if not frappe.db.exists("Course", course["course_name"]):
             insert_demo_doc("Course", course)
+
 
 def create_users():
     """
@@ -103,20 +110,22 @@ def create_users():
         if frappe.db.exists("User", email):
             continue
 
-        user = insert_demo_doc("User", {
-            "email": email,
-            "first_name": s["first_name"],
-            "last_name": s["last_name"],
-            "enabled": 1,
-            "send_welcome_email": 0,
-            "user_type": "Website User",
-            "roles": [
-                {"role": "Student"}
-            ]
-        })
+        user = insert_demo_doc(
+            "User",
+            {
+                "email": email,
+                "first_name": s["first_name"],
+                "last_name": s["last_name"],
+                "enabled": 1,
+                "send_welcome_email": 0,
+                "user_type": "Website User",
+                "roles": [{"role": "Student"}],
+            },
+        )
 
         # Set a default password (won't send email since send_welcome_email=0)
         from frappe.utils.password import update_password
+
         update_password(email, "Demo@1234")
 
         frappe.logger().info(f"Created user: {email}")
@@ -124,35 +133,42 @@ def create_users():
     # Instructor user (Martin Luther)
     instructor_email = "demo.mluther@seminary.edu"
     if not frappe.db.exists("User", instructor_email):
-        user = insert_demo_doc("User", {
-            "email": instructor_email,
-            "first_name": "Martin",
-            "last_name": "Luther",
-            "enabled": 1,
-            "send_welcome_email": 0,
-            "user_type": "System User",
-            "roles": [
-                {"role": "Instructor"},
-                {"role": "Academics User"}
-            ]
-        })
+        user = insert_demo_doc(
+            "User",
+            {
+                "email": instructor_email,
+                "first_name": "Martin",
+                "last_name": "Luther",
+                "enabled": 1,
+                "send_welcome_email": 0,
+                "user_type": "System User",
+                "roles": [{"role": "Instructor"}, {"role": "Academics User"}],
+            },
+        )
 
         from frappe.utils.password import update_password
+
         update_password(instructor_email, "Demo@1234")
 
         frappe.logger().info(f"Created instructor user: {instructor_email}")
 
+
 def create_students():
     students = load_json("students.json")
     for student_data in students:
-        if not frappe.db.exists("Student", {"student_email_id": student_data.get("student_email_id")}):
+        if not frappe.db.exists(
+            "Student", {"student_email_id": student_data.get("student_email_id")}
+        ):
             doc = insert_demo_doc("Student", student_data)
             # Store generated student ID for enrollment
             student_data["name"] = doc.name
             # Tag auto-created Customer
-            customer = frappe.db.get_value("Customer", {"customer_name": doc.student_name})
+            customer = frappe.db.get_value(
+                "Customer", {"customer_name": doc.student_name}
+            )
             if customer:
                 frappe.get_doc("Customer", customer).add_tag(DEMO_TAG)
+
 
 def create_instructors():
     instructors = load_json("instructors.json")
@@ -178,14 +194,13 @@ def create_program_enrollments():
             "Student",
             {"student_email_id": s["student_email_id"]},
             ["name", "student_name"],
-            as_dict=True
+            as_dict=True,
         )
         if student:
             students.append(student)
         else:
             frappe.log_error(
-                f"Demo student not found: {s['student_email_id']}",
-                "Demo Data"
+                f"Demo student not found: {s['student_email_id']}", "Demo Data"
             )
 
     if not students:
@@ -196,14 +211,14 @@ def create_program_enrollments():
     for p in programs_json:
         print(f"Looking up program: {p['program_name']}")  # Debug log
         program_name = frappe.db.get_value(
-            "Program",
-            {"program_name": p["program_name"]},
-            "name"
+            "Program", {"program_name": p["program_name"]}, "name"
         )
         if program_name:
             programs.append(program_name)
         else:
-            print(f"Program not found with program_name, retrying with slug: {p['program_name']}")  # Debug log
+            print(
+                f"Program not found with program_name, retrying with slug: {p['program_name']}"
+            )  # Debug log
             slug = p["program_name"].lower().replace(" ", "-")
             program_name = frappe.db.get_value("Program", slug, "name")
             if program_name:
@@ -211,7 +226,7 @@ def create_program_enrollments():
             else:
                 frappe.log_error(
                     f"Demo program not found: {p['program_name']} (tried: {slug})",
-                    "Demo Data"
+                    "Demo Data",
                 )
 
     if not programs:
@@ -224,29 +239,31 @@ def create_program_enrollments():
         program = next(program_cycle)
 
         # Skip if enrollment already exists
-        existing = frappe.db.exists("Program Enrollment", {
-            "student": student.name,
-            "program": program
-        })
+        existing = frappe.db.exists(
+            "Program Enrollment", {"student": student.name, "program": program}
+        )
 
         if existing:
             continue
 
-        enrollment = insert_demo_doc("Program Enrollment", {
-            "student": student.name,           # e.g. "EDU-STU-2024-00001"
-            "student_name": student.student_name,  # e.g. "Jonathan Edwards"
-            "program": program,
-            "enrollment_date": "2024-08-01",
-            "academic_term": "DEMO-2024-25 (DEMO-Fall24)",
-        })
+        enrollment = insert_demo_doc(
+            "Program Enrollment",
+            {
+                "student": student.name,  # e.g. "EDU-STU-2024-00001"
+                "student_name": student.student_name,  # e.g. "Jonathan Edwards"
+                "program": program,
+                "enrollment_date": "2024-08-01",
+                "academic_term": "DEMO-2024-25 (DEMO-Fall24)",
+            },
+        )
 
         # Program Enrollment is submittable — submit it
         enrollment.submit()
 
         frappe.logger().info(
-            f"Enrolled {student.student_name} ({student.name}) "
-            f"in {program}"
+            f"Enrolled {student.student_name} ({student.name}) " f"in {program}"
         )
+
 
 def create_course_schedules():
     """
@@ -256,24 +273,21 @@ def create_course_schedules():
     """
     courses_json = load_json("courses.json")
     terms_json = load_json("terms.json")
-    assess_criteria = frappe.db.get_value("Assessment Criteria", "Academic Paper with Online Submission", "name")
+    assess_criteria = frappe.db.get_value(
+        "Assessment Criteria", "Academic Paper with Online Submission", "name"
+    )
     print(f"Assessment Criteria: {assess_criteria}")  # Debug log
 
     # Look up actual course names from DB
     courses = []
     for c in courses_json:
         course_name = frappe.db.get_value(
-            "Course",
-            {"course_name": c["course_name"]},
-            "name"
+            "Course", {"course_name": c["course_name"]}, "name"
         )
         if course_name:
             courses.append(course_name)
         else:
-            frappe.log_error(
-                f"Demo course not found: {c['course_name']}",
-                "Demo Data"
-            )
+            frappe.log_error(f"Demo course not found: {c['course_name']}", "Demo Data")
 
     if not courses:
         frappe.throw("No demo courses found. Install courses first.")
@@ -288,7 +302,7 @@ def create_course_schedules():
             "Academic Term",
             {"term_name": t["term_name"]},
             ["name", "term_start_date", "term_end_date"],
-            as_dict=True
+            as_dict=True,
         )
         if not term:
             # Fallback: try slugified
@@ -297,15 +311,12 @@ def create_course_schedules():
                 "Academic Term",
                 slug,
                 ["name", "term_start_date", "term_end_date"],
-                as_dict=True
+                as_dict=True,
             )
         if term:
             terms.append(term)
         else:
-            frappe.log_error(
-                f"Demo term not found: {t['term_name']}",
-                "Demo Data"
-            )
+            frappe.log_error(f"Demo term not found: {t['term_name']}", "Demo Data")
 
     if not terms:
         frappe.throw("No demo terms found in database.")
@@ -318,38 +329,39 @@ def create_course_schedules():
             course = next(course_cycle)
 
             # Skip if already exists for this course + term
-            if frappe.db.exists("Course Schedule", {
-                "course": course,
-               "academic_term": term.name
-            }):
+            if frappe.db.exists(
+                "Course Schedule", {"course": course, "academic_term": term.name}
+            ):
                 continue
 
-            insert_demo_doc("Course Schedule", {
-                "course": course,
-                "academic_term": term.name,          # ← from DB
-                "c_datestart": term.term_start_date,  # ← from DB
-                "c_dateend": term.term_end_date,      # ← from DB
-                "modality": "Virtual",
-                "gradesc_cs": "Default Numeric Scale",
-                "published": 1,
-                "courseassescrit_sc": [
-                    {
-                        "title": "Academic Paper with Online Submission",
-                        "assesscriteria_scac": assess_criteria,
-                        "weight_scac": 100,
-                    }
-                ],
-                "instructor1": [
-                    {
-                        "instructor": "Martin Luther",
-                        "user": "demo.mluther@seminary.edu",
-                    }
-                ],
-            })
-
-            frappe.logger().info(
-                f"Scheduled {course} for {term.name}"
+            insert_demo_doc(
+                "Course Schedule",
+                {
+                    "course": course,
+                    "academic_term": term.name,  # ← from DB
+                    "c_datestart": term.term_start_date,  # ← from DB
+                    "c_dateend": term.term_end_date,  # ← from DB
+                    "modality": "Virtual",
+                    "gradesc_cs": "Default Numeric Scale",
+                    "published": 1,
+                    "courseassescrit_sc": [
+                        {
+                            "title": "Academic Paper with Online Submission",
+                            "assesscriteria_scac": assess_criteria,
+                            "weight_scac": 100,
+                        }
+                    ],
+                    "instructor1": [
+                        {
+                            "instructor": "Martin Luther",
+                            "user": "demo.mluther@seminary.edu",
+                        }
+                    ],
+                },
             )
+
+            frappe.logger().info(f"Scheduled {course} for {term.name}")
+
 
 def create_course_enrollments():
     """
@@ -367,31 +379,26 @@ def create_course_enrollments():
             "Student",
             {"student_email_id": s["student_email_id"]},
             ["name", "student_name"],
-            as_dict=True
+            as_dict=True,
         )
 
         if not student:
             frappe.log_error(
-                f"Demo student not found: {s['student_email_id']}",
-                "Demo Data"
+                f"Demo student not found: {s['student_email_id']}", "Demo Data"
             )
             continue
 
         # Find their program enrollment
         program_enrollment = frappe.db.get_value(
             "Program Enrollment",
-            {
-                "student": student.name,
-                "docstatus": 1
-            },
+            {"student": student.name, "docstatus": 1},
             ["name", "program"],
-            as_dict=True
+            as_dict=True,
         )
 
         if not program_enrollment:
             frappe.log_error(
-                f"No program enrollment found for {student.student_name}",
-                "Demo Data"
+                f"No program enrollment found for {student.student_name}", "Demo Data"
             )
             continue
 
@@ -399,24 +406,21 @@ def create_course_enrollments():
         program_courses = frappe.get_all(
             "Program Course",
             filters={"parent": program_enrollment.program},
-            pluck="course"
+            pluck="course",
         )
 
         if not program_courses:
             frappe.log_error(
-                f"No courses found in program {program_enrollment.program}",
-                "Demo Data"
+                f"No courses found in program {program_enrollment.program}", "Demo Data"
             )
             continue
 
         # Find Course Schedules that match these program courses
         course_schedules = frappe.get_all(
             "Course Schedule",
-            filters={
-                "course": ["in", program_courses]
-            },
+            filters={"course": ["in", program_courses]},
             fields=["name", "course"],
-            order_by="c_datestart asc"
+            order_by="c_datestart asc",
         )
 
         # Also check by tag to only get demo ones
@@ -427,8 +431,8 @@ def create_course_enrollments():
                 filters={
                     "document_type": "Course Schedule",
                     "document_name": cs.name,
-                    "tag": DEMO_TAG
-                }
+                    "tag": DEMO_TAG,
+                },
             )
             if tags:
                 demo_schedules.append(cs)
@@ -437,19 +441,22 @@ def create_course_enrollments():
             # Fallback: get all demo course schedules for these courses
             demo_schedules = get_demo_course_schedules(program_courses)
 
-         # Create one enrollment per matching course schedule
+        # Create one enrollment per matching course schedule
         for cs in demo_schedules:
-            if frappe.db.exists("Course Enrollment Individual", {
-                "student_ce": student.name,
-                "coursesc_ce": cs.name
-            }):
+            if frappe.db.exists(
+                "Course Enrollment Individual",
+                {"student_ce": student.name, "coursesc_ce": cs.name},
+            ):
                 continue
 
-            cei = insert_demo_doc("Course Enrollment Individual", {
-                "program_ce": program_enrollment.name,
-                "student_ce": student.name,
-                "coursesc_ce": cs.name,
-            })
+            cei = insert_demo_doc(
+                "Course Enrollment Individual",
+                {
+                    "program_ce": program_enrollment.name,
+                    "student_ce": student.name,
+                    "coursesc_ce": cs.name,
+                },
+            )
             cei.submit()
 
         frappe.logger().info(
@@ -458,18 +465,14 @@ def create_course_enrollments():
         )
 
 
-
 def get_demo_course_schedules(program_courses):
     """
     Helper: get all demo-tagged Course Schedules for a list of courses.
     """
     tagged_names = frappe.get_all(
         "Tag Link",
-        filters={
-            "document_type": "Course Schedule",
-            "tag": DEMO_TAG
-        },
-        pluck="document_name"
+        filters={"document_type": "Course Schedule", "tag": DEMO_TAG},
+        pluck="document_name",
     )
 
     if not tagged_names:
@@ -477,10 +480,7 @@ def get_demo_course_schedules(program_courses):
 
     return frappe.get_all(
         "Course Schedule",
-        filters={
-            "name": ["in", tagged_names],
-            "course": ["in", program_courses]
-        },
+        filters={"name": ["in", tagged_names], "course": ["in", program_courses]},
         fields=["name", "course"],
-        order_by="c_datestart asc"
+        order_by="c_datestart asc",
     )

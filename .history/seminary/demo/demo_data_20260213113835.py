@@ -203,7 +203,7 @@ def create_program_enrollments():
         if program_name:
             programs.append(program_name)
         else:
-            
+
             frappe.log_error(
                 f"Demo program not found: {p['program_name']}",
                 "Demo Data"

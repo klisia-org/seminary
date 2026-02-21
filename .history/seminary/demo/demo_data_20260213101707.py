@@ -19,9 +19,9 @@ def install_demo_data():
         create_academic_terms()
         create_courses()
         create_programs()
-        
+
         create_students()
-        
+
         create_program_enrollments()
         create_course_schedules()
         create_course_enrollments()

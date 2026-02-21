@@ -12,7 +12,7 @@ from frappe.utils import comma_and, get_link_to_form, getdate
 
 class ProgramEnrollment(Document):
     def validate(self):
-        
+
         self.set_student_name()
         self.validate_duplication()
         self.validate_academic_term()

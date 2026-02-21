@@ -178,24 +178,6 @@ def get_overlap_for(doc, doctype, fieldname, value=None):
     return existing[0] if existing else None
 
 
-def validate_duplicate_student(students):
-    unique_students = []
-    for stud in students:
-        if stud.student in unique_students:
-            frappe.throw(
-                _("Student {0} - {1} appears Multiple times in row {2} & {3}").format(
-                    stud.student,
-                    stud.student_name,
-                    unique_students.index(stud.student) + 1,
-                    stud.idx,
-                )
-            )
-        else:
-            unique_students.append(stud.student)
-
-    return None
-
-
 def get_telemetry_boot_info():
     POSTHOG_PROJECT_FIELD = "posthog_project_id"
     POSTHOG_HOST_FIELD = "posthog_host"
@@ -307,7 +289,6 @@ and cei.stu_user = %s""",
 
 @frappe.whitelist(allow_guest=True)
 def get_courses(filters=None, start=0, page_length=20):
-
     """Returns the list of courses."""
 
     if not filters:

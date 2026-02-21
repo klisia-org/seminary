@@ -142,7 +142,7 @@ def create_students():
             doc = insert_demo_doc("Student", student_data)
             # Store generated student ID for enrollment
             student_data["name"] = doc.name
-            
+
 
 def create_instructors():
     instructors = load_json("instructors.json")

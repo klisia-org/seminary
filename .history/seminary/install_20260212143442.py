@@ -228,7 +228,7 @@ def update_company_in_item_details():
     default_price_list = frappe.db.get_value(
         "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
     )
-    
+
     # Update the company in the "Item Details" table
     frappe.db.sql(
         """

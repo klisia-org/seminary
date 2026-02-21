@@ -43,7 +43,7 @@ app_include_css = "assets/seminary/css/seminary.css"
 # website_theme_scss = "seminary/public/scss/website"
 
 # website
-update_website_context = ["seminary.overrides.update_website_context"] 
+update_website_context = ["seminary.overrides.update_website_context"]
 
 website_generators = ["Student Admission"]
 

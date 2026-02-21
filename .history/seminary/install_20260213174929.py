@@ -222,7 +222,7 @@ def update_company_in_item_details():
     )
     default_income_account = frappe.db.get_value("Company", {"company_name": default_company}, "default_income_account")
     # Update the company in the "Item Default" table
-    
+
     frappe.db.sql(
         """
         UPDATE `tabItem Default`

@@ -58,7 +58,7 @@ def remove_demo_data():
 
     # Mark demo as uninstalled
     frappe.db.set_single_value("Seminary Settings", "demo_data_installed", 0)
-    
+
     frappe.db.commit()
 
     summary = "\n".join(f"  • {dt}: {c} deleted" for dt, c in deleted_counts.items())

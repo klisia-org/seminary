@@ -14,7 +14,7 @@ DEMO_DOCTYPES = [
     "Customer",
     # 3. Core demo records
     "Instructor",
-    
+
     "Program",
     "Academic Term",
     "Academic Year",

@@ -43,7 +43,7 @@ app_include_js = "seminary/js/global_seminary.js"
 # website_theme_scss = "seminary/public/scss/website"
 
 # website
-update_website_context = [] 
+update_website_context = []
 
 website_generators = ["Student Admission"]
 

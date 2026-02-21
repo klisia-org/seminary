@@ -277,7 +277,7 @@ def create_course_schedules():
 
     if not terms_json:
         frappe.throw("No demo terms found. Install terms first.")
-    
+
 
     # Round-robin: cycle through courses, 3 per term
     course_cycle = cycle(courses)

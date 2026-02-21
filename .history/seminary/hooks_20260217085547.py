@@ -43,7 +43,7 @@ app_include_css = "assets/seminary/css/seminary.css"
 # website_theme_scss = "seminary/public/scss/website"
 
 # website
-update_website_context = [] 
+update_website_context = []
 
 website_generators = ["Student Admission"]
 
@@ -199,7 +199,7 @@ after_migrate = "seminary.install.after_migrate"
 # permission_query_conditions = {
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
-# 
+#
 has_permission = {
  	"Instructor": "frappe.desk.doctype.instructor.instructor.has_permission",
  }

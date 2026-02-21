@@ -31,8 +31,10 @@ class CourseEnrollmentIndividual(Document):
                     getlink("Course Enrollment Individual", CEI[0].name)
                 )
             )
+
     def validate_duplicate_course(self):
-        CEI = frappe.db.sql("""select c.coursesc_ce 
+        CEI = frappe.db.sql(
+            """select c.coursesc_ce
                 from `tabProgram Course` a, `tabCourse Enrollment Individual` c, `tabProgram Enrollment Course` p
                 where c.course_data = a.course AND
                 a.repeatable = '0' AND
@@ -42,12 +44,14 @@ class CourseEnrollmentIndividual(Document):
                 c.program_ce = p.parent AND
                 p.course_name = c.course_data AND
                 p.status = "Pass" AND
-                c.program_ce = %s""", (self.course_data, self.program_ce))
+                c.program_ce = %s""",
+            (self.course_data, self.program_ce),
+        )
         if CEI:
             frappe.throw(
-                _("Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable.").format(
-                    getlink("Course Enrollment Individual", CEI[0][0])
-                )
+                _(
+                    "Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable."
+                ).format(getlink("Course Enrollment Individual", CEI[0][0]))
             )
 
     @frappe.whitelist()

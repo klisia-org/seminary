@@ -17,7 +17,7 @@ def install_demo_data():
     try:
         create_academic_years()
         create_academic_terms()
-        
+
         create_courses()
         create_students()
         create_program_enrollments()

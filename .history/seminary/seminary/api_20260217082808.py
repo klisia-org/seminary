@@ -2101,7 +2101,7 @@ def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
         """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
         (f"%{txt}%",),
     )[0][0]
-    
+
     if not pe_query or not pe_query[0][0]:
         return []
     program_enrollment = pe_query[0][0]

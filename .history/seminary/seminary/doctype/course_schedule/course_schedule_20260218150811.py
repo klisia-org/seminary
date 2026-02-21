@@ -26,8 +26,8 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
-        
-    
+
+
 
     def validate_assessment_criteria(self):
         """Validates if the total weightage of all assessment criteria is 100%"""

@@ -249,9 +249,11 @@ def save_course(course, course_data):
             "Course Schedule",
             course,
             "course_image",
-            course_data["course_image"]["file_url"]
-            if course_data["course_image"]
-            else None,
+            (
+                course_data["course_image"]["file_url"]
+                if course_data["course_image"]
+                else None
+            ),
         )
         frappe.db.set_value(
             "Course Schedule", course, "published", course_data["published"]
@@ -2098,9 +2100,10 @@ def get_fields(doctype, fields=None):
 @frappe.whitelist()
 def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
     pe_query = frappe.db.sql(
-        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""", (f"%{txt}%",),
+        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
+        (f"%{txt}%",),
     )
-    #Adding check to ensure pe_query has results before accessing [0][0]
+    # Adding check to ensure pe_query has results before accessing [0][0]
     if not pe_query or not pe_query[0][0]:
         return []
     program_enrollment = pe_query[0][0]

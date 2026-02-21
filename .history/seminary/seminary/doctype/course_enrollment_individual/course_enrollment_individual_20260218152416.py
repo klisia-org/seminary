@@ -30,7 +30,7 @@ class CourseEnrollmentIndividual(Document):
                     getlink("Course Enrollment Individual", CEI[0].name)
                 )
             )
-    
+
     @frappe.whitelist()
     def get_credits(self):
         pe = self.program_data

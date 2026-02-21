@@ -26,7 +26,7 @@ def after_install():
     get_custom_fields()
     delete_genders()
 
-    
+
 
 
 def setup_fixtures():

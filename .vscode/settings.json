@@ -1,8 +1,10 @@
 {
-    "search.useParentIgnoreFiles": true,
-    "search.useGlobalIgnoreFiles": true,
-    "git.autofetch": true,
-    "git.confirmSync": false,
-    "git.enableSmartCommit": true,
-    "git.showUnpublishedCommits": true
+    "python.defaultInterpreterPath": "/home/drmrmelo/lms/env/bin/python",
+    "python.analysis.extraPaths": [
+        "/home/drmrmelo/lms/apps/frappe",
+        "/home/drmrmelo/lms/apps/erpnext",
+        "/home/drmrmelo/lms/apps/seminary",
+        "/home/drmrmelo/lms/env/lib/python3.14/site-packages"
+    ],
+    "python-envs.pythonProjects": []
 }

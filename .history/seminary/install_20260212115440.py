@@ -17,7 +17,7 @@ from frappe import _
 
 
 def after_install():
-    
+
     setup_fixtures()
     create_studentappl_role()
     create_student_role()

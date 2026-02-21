@@ -30,8 +30,8 @@ class CourseSchedule(Document):
 
     def clean_name(self):
         if self.name and ("/" in self.name or "\\" in self.name):
-           # Just remove forward slashes and let Frappe handle the rest
-           self.name = self.name.replace("/", "-").replace("\\", "-")
+            # Just remove forward slashes and let Frappe handle the rest
+            self.name = self.name.replace("/", "-").replace("\\", "-")
 
     def validate_assessment_criteria(self):
         """Validates if the total weightage of all assessment criteria is 100%"""
@@ -103,7 +103,7 @@ class CourseSchedule(Document):
         meeting_dates = []
         meeting_dates_errors = []
 
-    # Remove existing meeting dates through the ORM (not raw SQL)
+        # Remove existing meeting dates through the ORM (not raw SQL)
         self.set("cs_meetinfo", [])
 
         current_date = self.c_datestart
@@ -111,18 +111,21 @@ class CourseSchedule(Document):
         while current_date <= self.c_dateend:
             if calendar.day_name[getdate(current_date).weekday()] in days:
                 try:
-                    meeting_date = self.append("cs_meetinfo", {
-                        "cs_meetdate": current_date,
-                        "cs_fromtime": self.from_time,
-                        "cs_totime": self.to_time,
-                    })
+                    meeting_date = self.append(
+                        "cs_meetinfo",
+                        {
+                            "cs_meetdate": current_date,
+                            "cs_fromtime": self.from_time,
+                            "cs_totime": self.to_time,
+                        },
+                    )
                     meeting_dates.append(meeting_date)
                 except OverlapError:
                     meeting_dates_errors.append(current_date)
 
             current_date = add_days(current_date, 1)
 
-    # Save the parent once — this persists all children and updates the timestamp
+        # Save the parent once — this persists all children and updates the timestamp
         self.hasmtgdate = 1 if meeting_dates else 0
         self.flags.ignore_permissions = True
         self.save()

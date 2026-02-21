@@ -8,7 +8,7 @@ DEMO_DOCTYPES = [
     "Course Enrollment Individual",  # ← first
     "Course Schedule",
     "Program Enrollment",
-    
+
     "Customer",
     "Student",
     "Instructor",

@@ -78,7 +78,7 @@ def create_programs():
         if not frappe.db.exists("Program", program["program_name"]):
             doc = insert_demo_doc("Program", program)
             frappe.logger().info(f"Created program: '{doc.name}' / '{doc.program_name}'")
-            
+
 
 def create_courses():
     courses = load_json("courses.json")

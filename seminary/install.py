@@ -15,8 +15,10 @@ from frappe import _
 # TODO: Remove all Items created when Fee Category is created
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
 
+
 def before_install():
     check_erpnext()
+
 
 def after_install():
     check_erpnext()
@@ -28,12 +30,15 @@ def after_install():
     get_custom_fields()
     update_company_in_item_details()
 
+
 def check_erpnext():
     check_erpnext_installed()
     status = check_erpnext_setup_complete()
     if status["errors"]:
         frappe.throw(
-            _("ERPNext setup is incomplete. Please complete the setup before installing {0}").format("SeminaryERP"),
+            _(
+                "ERPNext setup is incomplete. Please complete the setup before installing {0}"
+            ).format("SeminaryERP"),
             title=_("Setup Incomplete"),
         )
 
@@ -80,18 +85,14 @@ def check_erpnext_setup_complete():
         status["errors"].append(_("No Fiscal Year found."))
 
     # Check for Selling Price List
-    selling_pl = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name"
-    )
+    selling_pl = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
     if selling_pl:
         status["selling_price_list_exists"] = True
     else:
         status["errors"].append(_("No active Selling Price List found."))
 
     # Check for Buying Price List
-    buying_pl = frappe.db.get_value(
-        "Price List", {"buying": 1, "enabled": 1}, "name"
-    )
+    buying_pl = frappe.db.get_value("Price List", {"buying": 1, "enabled": 1}, "name")
     if buying_pl:
         status["buying_price_list_exists"] = True
     else:
@@ -202,7 +203,7 @@ def get_custom_fields():
             {
                 "fieldname": "student",
                 "fieldtype": "Link",
-                "label":_("Student"),
+                "label": _("Student"),
                 "options": _("Student"),
                 "insert_after": "student_info_section",
             },
@@ -220,7 +221,9 @@ def update_company_in_item_details():
     default_price_list = frappe.db.get_value(
         "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
     )
-    default_income_account = frappe.db.get_value("Company", {"company_name": default_company}, "default_income_account")
+    default_income_account = frappe.db.get_value(
+        "Company", {"company_name": default_company}, "default_income_account"
+    )
     # Update the company in the "Item Default" table
 
     items_to_update = frappe.db.sql(
@@ -234,7 +237,7 @@ def update_company_in_item_details():
             SET company = %s, default_price_list = %s, income_account = %s
             WHERE company = 'ToBeReplaced'
             """,
-            (default_company, default_price_list, default_income_account)
+            (default_company, default_price_list, default_income_account),
         )
 
     frappe.db.commit()
@@ -242,6 +245,7 @@ def update_company_in_item_details():
 
 def after_migrate():
     setup_genders()
+
 
 def setup_genders():
     """Disable non-binary genders. Runs after fixtures are loaded."""

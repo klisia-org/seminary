@@ -43,7 +43,7 @@ app_include_css = "assets/seminary/css/seminary.css"
 # website_theme_scss = "seminary/public/scss/website"
 
 # website
-update_website_context = ["seminary.overrides.update_website_context"] 
+update_website_context = ["seminary.overrides.update_website_context"]
 
 website_generators = ["Student Admission"]
 
@@ -126,7 +126,7 @@ domains = {
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Customer" : "seminary/public/js/customer.js"}
+doctype_js = {"Customer": "seminary/public/js/customer.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -197,12 +197,12 @@ after_migrate = "seminary.install.after_migrate"
 # Permissions evaluated in scripted ways
 
 permission_query_conditions = {
- 	"Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
- }
+    "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
+}
 # Instructors can only see their own records
 has_permission = {
- 	"Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
- }
+    "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+}
 
 # DocType Class
 # ---------------

@@ -11,7 +11,7 @@ DEMO_DOCTYPES = [
     "Program Enrollment",
     # 2. Auto-created by scripts/hooks
     "Customer",
-    
+
     "Student",
     "Instructor",
     "Course",

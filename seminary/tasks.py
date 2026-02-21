@@ -15,6 +15,7 @@ from datetime import datetime
 # This file is for scheduler hooks
 # Documentation: https://frappeframework.com/docs/user/en/api/background_jobs
 
+
 # Daily
 @frappe.whitelist()
 def daily():

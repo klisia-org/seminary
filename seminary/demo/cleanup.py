@@ -27,6 +27,7 @@ DEMO_DOCTYPES = [
 # - Scheduled Course Assess Criteria (child of Course Schedule)
 # - coursesc_ce child table (child of Course Enrollment Individual)
 
+
 def remove_demo_data():
     """Remove all records tagged as demo data."""
     frappe.only_for(["Administrator", "System Manager"])
@@ -37,11 +38,8 @@ def remove_demo_data():
         # Find all docs with the demo tag
         tagged_docs = frappe.get_all(
             "Tag Link",
-            filters={
-                "document_type": doctype,
-                "tag": DEMO_TAG
-            },
-            pluck="document_name"
+            filters={"document_type": doctype, "tag": DEMO_TAG},
+            pluck="document_name",
         )
 
         count = 0
@@ -59,7 +57,7 @@ def remove_demo_data():
                     doc_name,
                     force=True,
                     ignore_permissions=True,
-                    delete_permanently=True
+                    delete_permanently=True,
                 )
                 count += 1
             except Exception:

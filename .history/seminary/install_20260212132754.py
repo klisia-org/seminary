@@ -225,7 +225,7 @@ def update_company_in_item_details():
     """
     # Get the default company
     default_company = frappe.db.get_single_value("Global Defaults", "default_company")
-    
+
 
     # Update the company in the "Item Details" table
     frappe.db.sql(

@@ -20,13 +20,13 @@ import secrets
 class CourseSchedule(Document):
     @frappe.whitelist()
     def validate(self):
-        
+
         if frappe.flags.in_demo_install:
             return
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
-        
+
 
     def validate_assessment_criteria(self):
         """Validates if the total weightage of all assessment criteria is 100%"""

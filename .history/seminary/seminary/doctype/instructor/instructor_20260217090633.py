@@ -38,7 +38,7 @@ class Instructor(Document):
     # 	):
     # 		frappe.throw(_("Employee ID is linked with another instructor"))
 
- 
+
 
 def get_timeline_data(doctype, name):
     """Return timeline for course schedule meeting dates"""

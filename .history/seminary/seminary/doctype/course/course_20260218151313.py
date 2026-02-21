@@ -14,7 +14,7 @@ class Course(Document):
         self.validate_assessment_criteria()
         self.clean_name()
 
-    
+
 
     def validate_assessment_criteria(self):
         if self.assessment_criteria:
