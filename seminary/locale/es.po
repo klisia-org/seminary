@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
-"POT-Creation-Date: 2026-02-10 16:03-0609\n"
-"PO-Revision-Date: 2026-02-18 23:02\n"
+"POT-Creation-Date: 2026-02-18 16:53-0609\n"
+"PO-Revision-Date: 2026-02-21 04:35\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Spanish\n"
 "MIME-Version: 1.0\n"
@@ -36,20 +36,10 @@ msgstr "...Añadiendo curso a programas"
 msgid "1 time"
 msgstr "1 vez"
 
-#. Introduction text of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "<div class=\"ql-editor read-mode\"><h2>It is easy to enroll online!</h2><p><br></p><ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select your program (if you are currently enrolled in more than one)</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Select the Course scheduled</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Click enroll</li></ol></div>"
-msgstr "<div class=\"ql-editor read-mode\"><h2>¡Es fácil inscribirse en línea!</h2><p><br></p><ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Seleccione su programa (si actualmente está inscrito en más de uno)</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Seleccione el curso programado</li><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>Haga clic en inscribir</li></ol></div>"
-
 #. Introduction text of the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "<div class=\"ql-editor read-mode\"><h3>We rejoice in the Lord that you are seeking to grow in the love and knowledge of our triune God alongside us!</h3><p><br></p><p>Please fill this form and we will get back to you, as soon as we prayerfully consider your application.</p></div>"
 msgstr "<div class=\"ql-editor read-mode\"><h3>Nos regocijamos en el Señor de que estés buscando crecer en el amor y conocimiento de nuestro Dios trino junto a nosotros!</h3><p><br></p><p>Rellena este formulario y nos pondremos en contacto contigo, tan pronto como oremos y consideremos su solicitud.</p></div>"
-
-#. Introduction text of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">We rejoice in the Lord you decided to enroll in one of our programs.</span></p><p><span style=\"font-size: 14px;\">Please fill this form and we will get back to you.</span></p></div>"
-msgstr "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">Nos regocijamos en el Señor que has decidido inscribirte en uno de nuestros programas.</span></p><p><span style=\"font-size: 14px;\">Rellena este formulario y nos pondremos en contacto contigo.</span></p></div>"
 
 #. Content of the 'Class Roster and Grades' (HTML) field in DocType 'Course
 #. Schedule'
@@ -58,11 +48,6 @@ msgstr "<div class=\"ql-editor read-mode\"><p><span style=\"font-size: 14px;\">N
 #: seminary/seminary/doctype/student/student.json
 msgid "<div>table</div>"
 msgstr "<div>tabla</div>"
-
-#. Header text in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "<span class=\"h4\"><b>Setup</b></span>"
-msgstr ""
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -149,6 +134,10 @@ msgstr "Informe del estudiante ausente"
 msgid "Academic"
 msgstr "Académico"
 
+#: seminary/install.py:157
+msgid "Academic Event"
+msgstr ""
+
 #. Name of a Workspace
 #. Label of a Card Break in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
@@ -164,8 +153,6 @@ msgstr "Configuración Académica"
 #. Course'
 #. Label of the academic_term (Link) field in DocType 'Student Attendance Tool'
 #. Label of the academic_term (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-course Web Form
-#. Label of a list column in the enroll-in-a-course Web Form
 #. Label of a Link in the Academic Setup Workspace
 #. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/Courses.vue:44 frontend/src/pages/Courses.vue:210
@@ -179,7 +166,6 @@ msgstr "Configuración Académica"
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.json
 #: seminary/seminary/doctype/student_log/student_log.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Academic Term"
@@ -638,6 +624,11 @@ msgstr "Permitir discusiones"
 msgid "Allow audits?"
 msgstr "¿Permitir oyentes?"
 
+#. Label of the repeatable (Check) field in DocType 'Program Course'
+#: seminary/seminary/doctype/program_course/program_course.json
+msgid "Allow more than once"
+msgstr ""
+
 #. Label of the amended_from (Link) field in DocType 'Course Enrollment
 #. Individual'
 #. Label of the amended_from (Link) field in DocType 'Grading Scale'
@@ -740,6 +731,7 @@ msgid "Apply Now"
 msgstr "Aplicar ahora"
 
 #. Title of the student-applicant Web Form
+#: seminary/overrides.py:31
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Apply to be our Student"
 msgstr "Solicita ser nuestro estudiante"
@@ -1231,6 +1223,12 @@ msgstr "Chequear"
 msgid "Check all"
 msgstr "Marcar todo"
 
+#. Description of the 'Allow more than once' (Check) field in DocType 'Program
+#. Course'
+#: seminary/seminary/doctype/program_course/program_course.json
+msgid "Check here if you allow this course to be taken more than once for credit (course audits will not be blocked by this setting)"
+msgstr ""
+
 #. Description of the 'Question by Question' (Check) field in DocType 'Exam
 #. Activity'
 #. Description of the 'Question by Question' (Check) field in DocType 'Quiz'
@@ -1602,8 +1600,6 @@ msgstr "País"
 #. Courses'
 #. Label of the course (Link) field in DocType 'Question'
 #. Label of the course (Link) field in DocType 'Quiz'
-#. Label of a field in the enroll-in-a-course Web Form
-#. Label of a list column in the enroll-in-a-course Web Form
 #: frontend/src/pages/Assignments.vue:22 frontend/src/pages/Assignments.vue:144
 #: frontend/src/pages/Courses.vue:205
 #: frontend/src/pages/DiscussionActivities.vue:22
@@ -1633,7 +1629,6 @@ msgstr "País"
 #: seminary/seminary/doctype/question/question.json
 #: seminary/seminary/doctype/quiz/quiz.json
 #: seminary/seminary/doctype/room/room_dashboard.py:11
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Course"
 msgstr "Curso"
 
@@ -1792,6 +1787,12 @@ msgstr "Lección del curso"
 msgid "Course Name"
 msgstr "Nombre del curso"
 
+#. Label of a Card Break in the Academic Setup Workspace
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Course Offerings"
+msgstr ""
+
 #. Label of the course_prerequisite (Table) field in DocType 'Course'
 #: seminary/seminary/doctype/course/course.json
 msgid "Course Prerequisites"
@@ -1946,7 +1947,7 @@ msgstr "Curso donde se utilizará este examen - puedes reutilizar este examen en
 msgid "Course where this quiz will be used - you may reuse this quiz in other schedules"
 msgstr "Curso donde se utilizará este cuestionario - puedes reutilizar este cuestionario en otros programas"
 
-#: seminary/seminary/doctype/course/course.py:46
+#: seminary/seminary/doctype/course/course.py:52
 msgid "Course {0} has been added to all the selected programs successfully."
 msgstr "Curso {0} se ha añadido con éxito a todos los programas seleccionados."
 
@@ -2001,11 +2002,6 @@ msgstr "Cursos tomados"
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 msgid "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades."
 msgstr "Los cursos están poblados a medida que los estudiantes se inscriben en ellos. Las calificaciones son pobladas solo cuando el instructor envía las calificaciones finales."
-
-#. List title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "Courses available to you"
-msgstr "Cursos disponibles para ti"
 
 #. Label of the section_break_courses (Section Break) field in DocType
 #. 'Program'
@@ -2077,17 +2073,16 @@ msgstr "Crea y edita lecciones para tu curso"
 msgid "Create your Programs"
 msgstr "Crea tus programas"
 
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Create your holiday list"
-msgstr ""
-
 #: frontend/src/pages/Assignments.vue:156
 #: frontend/src/pages/DiscussionActivities.vue:158
 #: seminary/public/frontend/assets/Assignments-CjBZ5ett.js:1
 #: seminary/public/frontend/assets/DiscussionActivities-Dc8AUYL-.js:1
 msgid "Created"
 msgstr "Creado"
+
+#: seminary/install.py:158
+msgid "Credit hour"
+msgstr ""
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
 #. 'Program'
@@ -2097,12 +2092,10 @@ msgstr "Horas de crédito"
 
 #. Label of the credits (Int) field in DocType 'Course Enrollment Individual'
 #. Label of the credits (Int) field in DocType 'Program Enrollment Course'
-#. Label of a field in the enroll-in-a-course Web Form
 #: frontend/src/pages/Grades.vue:111
 #: seminary/public/frontend/assets/Grades-PQY2c-f0.js:1
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/program_enrollment_course/program_enrollment_course.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Credits"
 msgstr "Crédito"
 
@@ -2167,6 +2160,11 @@ msgstr "Detalles del cliente"
 #: seminary/seminary/doctype/student/student.json
 msgid "Customer Group"
 msgstr "Grupo de clientes"
+
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Customer Groups"
+msgstr ""
 
 #. Paragraph text in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
@@ -2267,11 +2265,6 @@ msgstr "Definir elementos facturables en el ERP"
 msgid "Define Payment Terms"
 msgstr "Definir términos de pago"
 
-#. Label of a Link in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Define Scholarships"
-msgstr ""
-
 #. Title of an Onboarding Step
 #: seminary/seminary/onboarding_step/uom/uom.json
 msgid "Define Units of Measure (UOM)"
@@ -2331,6 +2324,14 @@ msgstr "Eliminar este capítulo también eliminará todas sus lecciones y la eli
 #: seminary/public/frontend/assets/CourseOutline-CeQ5zHmd.js:1
 msgid "Deleting this lesson will permanently remove it from the course. This action cannot be undone. Are you sure you want to continue?"
 msgstr "Eliminar esta lección permanentemente la eliminará del curso. Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?"
+
+#. Label of the demo_section (Section Break) field in DocType 'Seminary
+#. Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:30
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:44
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Demo"
+msgstr ""
 
 #. Label of the department (Link) field in DocType 'Course'
 #. Label of the department (Link) field in DocType 'Instructor'
@@ -2647,6 +2648,19 @@ msgstr "Duración (unidad de medida)"
 msgid "ERP Item"
 msgstr "Elemento ERP"
 
+#: seminary/install.py:46
+msgid "ERPNext must be installed before installing {0}"
+msgstr ""
+
+#: seminary/install.py:36
+msgid "ERPNext setup is incomplete. Please complete the setup before installing {0}"
+msgstr ""
+
+#. Paragraph text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Each student created automatically creates a customer, but you may want to create other customers for churches who want to pay part of the tuition of their pastors, etc. Then, you can assign more payers for an individual program enrollment (e.g., student and church will be invoiced separately if you so choose). Scholarships should be used for those sponsored by the Seminary (e.g., from donations to a fund/cost-center that the seminary has freedom to manage).&nbsp;"
+msgstr ""
+
 #: frontend/src/components/CourseCardOverlay.vue:42
 #: frontend/src/components/DiscussionReplies.vue:30
 #: frontend/src/components/Modals/ChapterModal.vue:254
@@ -2808,23 +2822,6 @@ msgstr "Terminar el"
 msgid "Enroll"
 msgstr "Inscribirse"
 
-#. Title of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Enroll in a Program"
-msgstr "Inscribirse en un programa"
-
-#. Title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "Enroll in a course"
-msgstr "Inscribirse en un curso"
-
-#. Button label of the enroll-in-a-course Web Form
-#. Button label of the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Enroll me!"
-msgstr "¡Inscribirme!"
-
 #: frontend/src/components/CourseCardOverlay.vue:121
 #: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
 msgid "Enrolled Students"
@@ -2842,9 +2839,7 @@ msgid "Enrollment"
 msgstr "Inscripción"
 
 #. Label of the enrollment_date (Date) field in DocType 'Program Enrollment'
-#. Label of a field in the enroll-in-a-program Web Form
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
 msgid "Enrollment Date"
 msgstr "Fecha de inscripción"
 
@@ -3134,6 +3129,11 @@ msgstr "No se pudieron subir los archivos."
 msgid "Faith and Practice"
 msgstr "Fe y Práctica"
 
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Fee Categories"
+msgstr ""
+
 #. Name of a DocType
 #. Label of the fee_category (Link) field in DocType 'pgm_enroll_payers'
 #. Label of the pgm_feecategory (Link) field in DocType 'Program Fees'
@@ -3234,11 +3234,6 @@ msgstr "Financiero"
 msgid "Financial Links"
 msgstr "Enlaces financieros"
 
-#. Label of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Financial Setup"
-msgstr ""
-
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
@@ -3313,7 +3308,7 @@ msgstr "Desde fecha"
 msgid "From Time"
 msgstr "Desde tiempo"
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:83
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:90
 msgid "From Time cannot be greater than To Time."
 msgstr "Desde el tiempo no puede ser mayor que el tiempo."
 
@@ -3616,6 +3611,11 @@ msgstr "Puntaje más alto"
 msgid "Hispanic"
 msgstr "Hispano"
 
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Holiday List"
+msgstr ""
+
 #. Label of the testimony (Long Text) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
@@ -3854,21 +3854,6 @@ msgstr "Los historiales académicos individuales solo se muestran a los estudian
 #: seminary/seminary/module_onboarding/seminary_setup/seminary_setup.json
 msgid "Initial Seminary Setup"
 msgstr "Configuración inicial del seminario"
-
-#. Name of a Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Initial Setup"
-msgstr ""
-
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Courses"
-msgstr ""
-
-#. Label of a Link in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "Input Customers"
-msgstr ""
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:18
 msgid "Install Demo Data"
@@ -4376,6 +4361,11 @@ msgstr "Hacer que el término académico sea obligatorio"
 msgid "Make an Announcement"
 msgstr "Hacer un anuncio"
 
+#. Description of a Card Break in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Make sure you have valida Academic Year and Academic Terms to schedule new courses."
+msgstr ""
+
 #. Option for the 'Gender' (Select) field in DocType 'Student Applicant'
 #: seminary/install.py:259
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
@@ -4600,15 +4590,14 @@ msgstr "Porcentaje mínimo pagado por la inscripción"
 msgid "Minimum two options are required for multiple choice questions."
 msgstr "Se requieren dos opciones mínimas para las preguntas de elección múltiple."
 
-#. Label of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "Miscellaneous Setup"
-msgstr ""
-
 #: frontend/src/components/CourseCardToDo.vue:10
 #: seminary/public/frontend/assets/CourseCardToDo-CNR7mc9v.js:1
 msgid "Missing Assessments"
 msgstr "Valoraciones faltantes"
+
+#: seminary/install.py:47
+msgid "Missing Dependency"
+msgstr ""
 
 #: frontend/src/components/ProfileModal.vue:112
 #: seminary/public/frontend/assets/index-C-gjsqqd.js:2
@@ -4782,10 +4771,18 @@ msgstr "No"
 msgid "No Answer"
 msgstr "Sin respuesta"
 
+#: seminary/install.py:73
+msgid "No Company found. Please complete the ERPNext Setup Wizard first."
+msgstr ""
+
 #: frontend/src/components/Quiz.vue:230
 #: seminary/public/frontend/assets/index-CedffXRa.js:3
 msgid "No Correct Answer"
 msgstr "Sin respuesta correcta"
+
+#: seminary/install.py:80
+msgid "No Fiscal Year found."
+msgstr ""
 
 #: seminary/seminary/doctype/course_gradebook/course_gradebook.js:170
 msgid "No Result to submit"
@@ -4794,6 +4791,14 @@ msgstr "Ningún resultado para enviar"
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.js:176
 msgid "No Students in"
 msgstr "No hay estudiantes en"
+
+#: seminary/install.py:98
+msgid "No active Buying Price List found."
+msgstr ""
+
+#: seminary/install.py:89
+msgid "No active Selling Price List found."
+msgstr ""
 
 #: frontend/src/components/Announcements.vue:25
 #: seminary/public/frontend/assets/CourseDetail-C56WAijp.js:1
@@ -4993,11 +4998,6 @@ msgstr "Ocupación"
 msgid "Offline"
 msgstr "Desconectado"
 
-#. Description of a Card Break in the Seminary Workspace
-#: seminary/seminary/workspace/seminary/seminary.json
-msgid "On first setup, you may want to import courses (after checking the default grading scale). To do so, go to Home/Import Data."
-msgstr ""
-
 #: frontend/src/components/Assignment.vue:45
 #: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "Once the moderator grades your submission, you'll find the details here."
@@ -5015,9 +5015,7 @@ msgid "Only PDF file is allowed."
 msgstr "Solo se permite el archivo PDF."
 
 #. Label of the audit (Check) field in DocType 'Course Enrollment Individual'
-#. Label of a field in the enroll-in-a-course Web Form
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 msgid "Only audit"
 msgstr "Solo oyente"
 
@@ -5593,6 +5591,11 @@ msgstr "Anterior"
 msgid "Previous Education"
 msgstr "Educación previa"
 
+#. Label of a Link in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Price Lists"
+msgstr ""
+
 #. Label of a Card Break in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Prices Setup"
@@ -5636,7 +5639,6 @@ msgstr "Página de perfil de"
 #. Label of the program (Link) field in DocType 'Scholarships'
 #. Label of the program (Link) field in DocType 'Student Admission Program'
 #. Label of the program (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-program Web Form
 #: frontend/src/pages/ExamSubmissionCS.vue:92
 #: frontend/src/pages/Gradebook.vue:69
 #: seminary/public/frontend/assets/ExamSubmissionCS-DZZBNPvt.js:1
@@ -5649,7 +5651,6 @@ msgstr "Página de perfil de"
 #: seminary/seminary/doctype/scholarships/scholarships.json
 #: seminary/seminary/doctype/student_admission_program/student_admission_program.json
 #: seminary/seminary/doctype/student_log/student_log.json
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
 msgid "Program"
 msgstr "Programa"
 
@@ -5684,13 +5685,11 @@ msgstr "¿Programa vacío?"
 #. Name of a DocType
 #. Label of the program_enrollment_section (Section Break) field in DocType
 #. 'Student'
-#. Label of a field in the enroll-in-a-course Web Form
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/payers_fee_category_pe/payers_fee_category_pe.json
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 #: seminary/seminary/doctype/student/student.json
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Program Enrollment"
 msgstr "Inscripción al programa"
@@ -5772,7 +5771,7 @@ msgstr "Programa de Interés"
 msgid "Programs"
 msgstr "Programas"
 
-#: seminary/seminary/doctype/course/course.py:49
+#: seminary/seminary/doctype/course/course.py:55
 msgid "Programs updated"
 msgstr "Programas actualizados"
 
@@ -6090,6 +6089,19 @@ msgstr "Relativo"
 msgid "Remove"
 msgstr "Eliminar"
 
+#. Label of the no_more_demo (Check) field in DocType 'Seminary Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Remove Button Demo"
+msgstr ""
+
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:32
+msgid "Remove Demo Data"
+msgstr ""
+
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.js:39
+msgid "Removing demo data..."
+msgstr ""
+
 #: frontend/src/pages/DiscussionActivitySubmission.vue:54
 #: seminary/public/frontend/assets/DiscussionActivitySubmission-BBro59oD.js:1
 msgid "Replies by"
@@ -6293,7 +6305,7 @@ msgstr "Guardar solo cuando el total de puntos = 100"
 msgid "Schedule"
 msgstr "Programar"
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:69
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:76
 msgid "Schedule date selected does not lie within the Academic Term: {}"
 msgstr "La fecha de la programación seleccionada no se encuentra dentro del término académico: {}"
 
@@ -6312,6 +6324,11 @@ msgstr "Criterios de evaluación de cursos programados"
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
 msgid "Scheduled Course Roster"
 msgstr "Curso programado"
+
+#. Label of a Link in the Seminary Workspace
+#: seminary/seminary/workspace/seminary/seminary.json
+msgid "Scheduled Courses"
+msgstr ""
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:26
 msgid "Scheduling..."
@@ -6524,6 +6541,16 @@ msgstr "Semestres"
 msgid "Seminary"
 msgstr "Seminario"
 
+#. Paragraph text in the Seminary Financial Setup Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
+msgstr ""
+
+#. Name of a Workspace
+#: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
+msgid "Seminary Financial Setup"
+msgstr ""
+
 #. Label of the logo_portal (Attach Image) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Seminary Logo (round)"
@@ -6603,6 +6630,10 @@ msgstr "La sesión ha expirado. Actualiza la página e inténtalo de nuevo."
 msgid "Settings"
 msgstr "Ajustes"
 
+#: seminary/install.py:37
+msgid "Setup Incomplete"
+msgstr ""
+
 #: frontend/src/components/ProfileModal.vue:179
 #: seminary/public/frontend/assets/index-C-gjsqqd.js:2
 msgid "Short Bio"
@@ -6637,6 +6668,12 @@ msgstr "Mostrar respuesta"
 #: seminary/seminary/doctype/quiz/quiz.json
 msgid "Show Answers"
 msgstr "Mostrar respuestas"
+
+#. Label of the show_student_application_on_login (Check) field in DocType
+#. 'Seminary Settings'
+#: seminary/seminary/doctype/seminary_settings/seminary_settings.json
+msgid "Show Student Application button on login"
+msgstr ""
 
 #. Label of the show_submission_history (Check) field in DocType 'Quiz'
 #: frontend/src/pages/QuizForm.vue:97
@@ -6809,7 +6846,6 @@ msgstr "Estado"
 #. Label of the student (Link) field in DocType 'Student Group Members'
 #. Label of the student (Link) field in DocType 'Student Leave Application'
 #. Label of the student (Link) field in DocType 'Student Log'
-#. Label of a field in the enroll-in-a-course Web Form
 #. Label of a Link in the Seminary Workspace
 #: frontend/src/pages/AssignmentSubmissionCS.vue:8
 #: frontend/src/pages/AssignmentSubmissionCS.vue:169
@@ -6873,7 +6909,6 @@ msgstr "Estado"
 #: seminary/seminary/doctype/student_log/student_log.json
 #: seminary/seminary/report/absent_student_report/absent_student_report.py:66
 #: seminary/seminary/report/student_monthly_attendance_sheet/student_monthly_attendance_sheet.py:72
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Student"
 msgstr "Estudiante"
@@ -7111,6 +7146,10 @@ msgstr "Servicios de estudiantes"
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Student User"
 msgstr "Usuario del estudiante"
+
+#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:48
+msgid "Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable."
+msgstr ""
 
 #. Label of the stuemail_rc (Data) field in DocType 'Scheduled Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
@@ -7459,7 +7498,7 @@ msgstr "Ha habido una actualización en tu envío. Tienes una puntuación de {0}
 msgid "There were errors creating Course Schedule"
 msgstr "Hubo errores al crear el horario del curso"
 
-#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:29
+#: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:30
 msgid "This Course Enrollment {0} already exists."
 msgstr "Inscripción al curso {0} ya existe"
 
@@ -7549,11 +7588,6 @@ msgstr "Este es el nombre que aparecerá en el LMS."
 #: seminary/seminary/doctype/program/program.json
 msgid "This may be used to filter or sort programs."
 msgstr "Esto se puede utilizar para filtrar u ordenar programas."
-
-#. Description of a Card Break in the Initial Setup Workspace
-#: seminary/seminary/workspace/initial_setup/initial_setup.json
-msgid "This must be done in this order. The links below are for manual input. SeminaryERP has a tool to import data (the same tool for all, just a dropdown to select which \"Doctype\" to import)."
-msgstr ""
 
 #: seminary/public/frontend/assets/index-CedffXRa.js:1
 msgid "This quiz consists of '${a(b).length}' questions"
@@ -7792,11 +7826,11 @@ msgstr "Total de puntos posibles"
 msgid "Total Present"
 msgstr "Total Presentes"
 
-#: seminary/seminary/doctype/course_schedule/course_schedule.py:42
+#: seminary/seminary/doctype/course_schedule/course_schedule.py:49
 msgid "Total Weight of all Assessment Criteria must total 100%"
 msgstr "El peso total de todos los criterios de evaluación debe total del 100%"
 
-#: seminary/seminary/doctype/course/course.py:23
+#: seminary/seminary/doctype/course/course.py:29
 msgid "Total Weightage of all Assessment Criteria must be 100%"
 msgstr "El peso total de todos los criterios de evaluación debe ser 100%"
 
@@ -8017,6 +8051,11 @@ msgstr "ID Usuario"
 msgid "User Input"
 msgstr "Entrada de usuario"
 
+#. Label of a Link in the Academic Setup Workspace
+#: seminary/seminary/workspace/academic_setup/academic_setup.json
+msgid "Users"
+msgstr ""
+
 #. Option for the 'Content Type' (Select) field in DocType 'Course Activity'
 #: seminary/seminary/doctype/course_activity/course_activity.json
 msgid "Video"
@@ -8037,6 +8076,10 @@ msgstr "Ver adjunto"
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 msgid "Virtual"
 msgstr "Virtual"
+
+#: seminary/overrides.py:30
+msgid "Want to join us?"
+msgstr ""
 
 #. Label of the web_tab (Tab Break) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
@@ -8077,11 +8120,6 @@ msgstr "Puntuación ponderada"
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "What is your highest academic degree?"
 msgstr "¿Cuál es tu título académico más alto?"
-
-#. Label of a field in the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "What will be your first Academic Term?"
-msgstr "¿Cuál será tu primer período académico?"
 
 #. Option for the 'Ethnic Group' (Select) field in DocType 'Student Applicant'
 #. Option in a Select field in the student-applicant Web Form
@@ -8136,11 +8174,6 @@ msgstr "Años"
 #: seminary/public/frontend/assets/Gradebook-B393_hM3.js:1
 msgid "Yes"
 msgstr "Sí"
-
-#. Success title of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "You are enrolled!"
-msgstr "¡Estás inscrito!"
 
 #: seminary/seminary/utils.py:1122 seminary/seminary/utils.py:1136
 msgid "You are not allowed to enroll for this course"
@@ -8238,13 +8271,6 @@ msgstr "Ahora definirá el precio de cada artículo ERP en las listas de precios
 msgid "You will have to get ${a(y).data.passing_percentage}% correct answers in order to pass the quiz."
 msgstr "Deberás obtener ${a(y).data.passing_percentage}% de respuestas correctas para aprobar el cuestionario."
 
-#. Success message of the enroll-in-a-course Web Form
-#: seminary/seminary/web_form/enroll_in_a_course/enroll_in_a_course.json
-msgid "You will receive an welcome email from the professor as soon as registration ends.\n"
-"May this be a time of growth in your faith and in your service to our Lord!"
-msgstr "Recibirás un correo de bienvenida del profesor tan pronto como termine la inscripción.\n"
-"¡Que este sea un tiempo de crecimiento en tu fe y en tu servicio a nuestro Señor!"
-
 #: frontend/src/components/Assignment.vue:43
 #: seminary/public/frontend/assets/index-CedffXRa.js:7
 msgid "You've successfully submitted the assignment."
@@ -8271,11 +8297,6 @@ msgstr "Tu respuesta:"
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
 msgid "Your Mobile Number"
 msgstr "Tu número de móvil"
-
-#. Label of a field in the enroll-in-a-program Web Form
-#: seminary/seminary/web_form/enroll_in_a_program/enroll_in_a_program.json
-msgid "Your Student Account"
-msgstr "Tu cuenta de estudiante"
 
 #. Label of a field in the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
