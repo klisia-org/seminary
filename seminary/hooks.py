@@ -243,6 +243,14 @@ doc_events = {
     "Exam Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
+    "Discussion Submission": {
+        "before_insert": "seminary.seminary.api.sanitize_submission",
+        "before_save": "seminary.seminary.api.sanitize_submission",
+    },
+    "Discussion Submission Replies": {
+        "before_insert": "seminary.seminary.api.sanitize_reply",
+        "before_save": "seminary.seminary.api.sanitize_reply",
+    },
 }
 
 # Scheduled Tasks

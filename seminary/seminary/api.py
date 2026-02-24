@@ -36,6 +36,50 @@ import shutil
 import defusedxml.ElementTree as ET
 from defusedxml.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
+import bleach
+
+ALLOWED_TAGS = [
+    "p",
+    "br",
+    "strong",
+    "em",
+    "u",
+    "ol",
+    "ul",
+    "li",
+    "blockquote",
+    "a",
+    "h1",
+    "h2",
+    "h3",
+    "span",
+]
+
+ALLOWED_ATTRIBUTES = {
+    "a": ["href", "target", "rel"],
+    "span": ["class"],
+}
+
+
+@frappe.whitelist()
+def sanitize_html(html):
+    if not html:
+        return html
+    return bleach.clean(
+        html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True
+    )
+
+
+@frappe.whitelist()
+def sanitize_submission(doc, method):
+    if doc.original_post:
+        doc.original_post = sanitize_html(doc.original_post)
+
+
+@frappe.whitelist()
+def sanitize_reply(doc, method):
+    if doc.reply:
+        doc.reply = sanitize_html(doc.reply)
 
 
 @frappe.whitelist()
