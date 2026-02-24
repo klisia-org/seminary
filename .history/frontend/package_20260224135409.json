@@ -11,9 +11,6 @@
     "preview": "vite preview",
     "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
   },
-  "engines": {
-        "npm": "please-use-yarn"
-    },
   "dependencies": {
     "@editorjs/embed": "^2.7.6",
     "@editorjs/header": "^2.8.8",
@@ -59,7 +56,6 @@
     "esbuild": "^0.25.0",
     "tar": "^7.5.7",
     "glob": "^10.5.0",
-    "minimatch": "^10.2.1",
-    "markdown-it": "^14.1.1"
+    "minimatch": "^5.1.2"
   }
 }
