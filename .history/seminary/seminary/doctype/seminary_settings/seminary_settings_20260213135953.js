@@ -43,6 +43,6 @@ frappe.ui.form.on('Seminary Settings', {
                 );
             }, __('Demo'));
         }
-		
+
     }
 });

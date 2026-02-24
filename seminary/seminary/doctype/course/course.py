@@ -16,8 +16,8 @@ class Course(Document):
 
     def clean_name(self):
         if self.course_name and ("/" in self.course_name or "\\" in self.course_name):
-           # Just remove forward slashes and let Frappe handle the rest
-           self.course_name = self.course_name.replace("/", "-").replace("\\", "-")
+            # Just remove forward slashes and let Frappe handle the rest
+            self.course_name = self.course_name.replace("/", "-").replace("\\", "-")
 
     def validate_assessment_criteria(self):
         if self.assessment_criteria:

@@ -12,7 +12,7 @@ DEMO_DOCTYPES = [
     "Student",
         # 2. Auto-created by scripts/hooks
     "Customer",
-    
+
     "Instructor",
     "Course",
     "Program",

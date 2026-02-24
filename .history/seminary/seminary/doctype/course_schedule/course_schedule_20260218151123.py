@@ -27,7 +27,7 @@ class CourseSchedule(Document):
         self.validate_time()
         self.validate_assessment_criteria()
         self.save
-        
+
     def clean_name(self):
         if self.name and ("/" in self.name or "\\" in self.name):
            # Just remove forward slashes and let Frappe handle the rest

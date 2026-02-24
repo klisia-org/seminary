@@ -19,7 +19,7 @@ def install_demo_data():
         create_academic_terms()
         create_courses()
         create_programs()
-        
+
         create_students()
         create_instructors()
         create_program_enrollments()

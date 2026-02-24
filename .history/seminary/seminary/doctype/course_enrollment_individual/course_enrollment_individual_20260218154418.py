@@ -31,7 +31,7 @@ class CourseEnrollmentIndividual(Document):
                 )
             )
     def validate_duplicate_course(self):
-        CEI = frappe.db.sql("""select c.course_data 
+        CEI = frappe.db.sql("""select c.course_data
 from `tabProgram Course` a, `tabCourse Enrollment Individual` c
 where c.course_data = a.course AND
 a.repeatable = '0' AND

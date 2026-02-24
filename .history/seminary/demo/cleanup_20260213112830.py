@@ -11,7 +11,7 @@ DEMO_DOCTYPES = [
     "Program Enrollment",
     # 3. Core demo records
     "Student",
-    
+
     "Instructor",
     "Course",
     "Program",

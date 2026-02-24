@@ -11,7 +11,7 @@ DEMO_DOCTYPES = [
     "Student",
     "Instructor",
     "Course",
-    
+
     "Program",
     "Academic Term",
     "Academic Year",

@@ -101,7 +101,7 @@ def check_erpnext_setup_complete():
 
 
 def setup_fixtures():
-    
+
     records = [
         # Item Group Records
         {"doctype": "Item Group", "item_group_name": "Tuition"},

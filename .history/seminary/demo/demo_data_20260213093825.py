@@ -21,7 +21,7 @@ def install_demo_data():
         create_courses()
         create_students()
         create_program_enrollments()
-        
+
         create_course_enrollments()
 
         # Mark demo as installed

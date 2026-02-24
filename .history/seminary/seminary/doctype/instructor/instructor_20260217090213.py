@@ -42,7 +42,7 @@ def has_permission(doc, ptype, user):
     """Permission query conditions for Instructor doctype"""
     if ptype in ("read", "write", "delete"):
         return f"""`tabInstructor`.name = (SELECT parent FROM `tabCourse Schedule Instructors` WHERE instructor = '{user}')"""
-    
+
 
 def get_timeline_data(doctype, name):
     """Return timeline for course schedule meeting dates"""

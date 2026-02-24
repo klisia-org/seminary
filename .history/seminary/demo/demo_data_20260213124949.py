@@ -454,7 +454,7 @@ def create_course_enrollments():
         insert_demo_doc("Course Enrollment Individual", {
             "program_ce": program_enrollment.name,
             "student_ce": student.name,
-            "coursesc_ce": cs.name,  
+            "coursesc_ce": cs.name,
         })
 
         frappe.logger().info(

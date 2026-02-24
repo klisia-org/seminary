@@ -1,5 +1,6 @@
 import frappe
 
+
 def update_website_context(context):
     try:
         context.show_student_application = frappe.db.get_single_value(
@@ -28,7 +29,7 @@ def update_website_context(context):
         </script>
         """ % (
             frappe._("Want to join us?"),
-            frappe._("Apply to be our Student")
+            frappe._("Apply to be our Student"),
         )
 
         context.setdefault("head_html", "")

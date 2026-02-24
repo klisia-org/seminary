@@ -20,7 +20,7 @@ import secrets
 class CourseSchedule(Document):
     @frappe.whitelist()
     def validate(self):
-        
+
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()

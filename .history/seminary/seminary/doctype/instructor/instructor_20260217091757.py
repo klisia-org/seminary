@@ -88,7 +88,7 @@ def get_permission_query_conditions(user):
     if not user_has_only_instructor_role(user):
         return ""
 
-    return f"(`tabInstructors`.user = {frappe.db.escape(user)})" 
+    return f"(`tabInstructors`.user = {frappe.db.escape(user)})"
 
 def get_timeline_data(doctype, name):
     """Return timeline for course schedule meeting dates"""

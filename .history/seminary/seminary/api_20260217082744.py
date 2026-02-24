@@ -2103,7 +2103,7 @@ def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
     )[0][0]
     if not pe_query or not pe_query[0][0]:
         return []
-    
+
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = pe.program
     scholarships = frappe.db.sql(

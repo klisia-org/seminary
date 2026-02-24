@@ -36,6 +36,50 @@ import shutil
 import defusedxml.ElementTree as ET
 from defusedxml.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
+import bleach
+
+ALLOWED_TAGS = [
+    "p",
+    "br",
+    "strong",
+    "em",
+    "u",
+    "ol",
+    "ul",
+    "li",
+    "blockquote",
+    "a",
+    "h1",
+    "h2",
+    "h3",
+    "span",
+]
+
+ALLOWED_ATTRIBUTES = {
+    "a": ["href", "target", "rel"],
+    "span": ["class"],
+}
+
+
+@frappe.whitelist()
+def sanitize_html(html):
+    if not html:
+        return html
+    return bleach.clean(
+        html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True
+    )
+
+
+@frappe.whitelist()
+def sanitize_submission(doc, method):
+    if doc.original_post:
+        doc.original_post = sanitize_html(doc.original_post)
+
+
+@frappe.whitelist()
+def sanitize_reply(doc, method):
+    if doc.reply:
+        doc.reply = sanitize_html(doc.reply)
 
 
 @frappe.whitelist()
@@ -249,9 +293,11 @@ def save_course(course, course_data):
             "Course Schedule",
             course,
             "course_image",
-            course_data["course_image"]["file_url"]
-            if course_data["course_image"]
-            else None,
+            (
+                course_data["course_image"]["file_url"]
+                if course_data["course_image"]
+                else None
+            ),
         )
         frappe.db.set_value(
             "Course Schedule", course, "published", course_data["published"]
@@ -2098,9 +2144,10 @@ def get_fields(doctype, fields=None):
 @frappe.whitelist()
 def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
     pe_query = frappe.db.sql(
-        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""", (f"%{txt}%",),
+        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
+        (f"%{txt}%",),
     )
-    #Adding check to ensure pe_query has results before accessing [0][0]
+    # Adding check to ensure pe_query has results before accessing [0][0]
     if not pe_query or not pe_query[0][0]:
         return []
     program_enrollment = pe_query[0][0]

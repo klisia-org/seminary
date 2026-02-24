@@ -2098,7 +2098,7 @@ def get_fields(doctype, fields=None):
 @frappe.whitelist()
 def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
     pe_query = frappe.db.sql(
-        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""", 
+        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
         (f"%{txt}%",),
     )[0][0]
     #Adding check to ensure pe_query has results before accessing [0][0]

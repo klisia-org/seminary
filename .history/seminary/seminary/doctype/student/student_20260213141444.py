@@ -31,7 +31,7 @@ class Student(Document):
             self.create_customer()
 
     def set_customer_group(self):
-        
+
         if not self.customer_group:
             self.customer_group = _("Student")
             frappe.db.set_value("Student", self.name, "customer_group", _("Student"))

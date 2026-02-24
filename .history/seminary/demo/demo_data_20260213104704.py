@@ -22,7 +22,7 @@ def install_demo_data():
         create_users()
         create_students()
         create_instructors()
-        
+
         create_program_enrollments()
         create_course_schedules()
         create_course_enrollments()

@@ -116,7 +116,7 @@ class CourseSchedule(Document):
                 try:
                     # meeting_date.flags.ignore_permissions = True
                     # meeting_date.save()
-                    
+
                     frappe.db.set_value("Course Schedule", self.name, "hasmtgdate", 1)
                 except OverlapError:
                     meeting_dates_errors.append(current_date)

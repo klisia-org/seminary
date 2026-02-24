@@ -9,7 +9,7 @@ DEMO_DOCTYPES = [
     "Course Schedule",
     "Program Enrollment",
     "Student",
-    
+
     "Course",
     "Program",
     "Academic Term",

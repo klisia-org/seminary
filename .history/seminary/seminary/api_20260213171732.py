@@ -946,7 +946,7 @@ def save_course_assessment(course, assessment_data):
                     "discussion": data.get("discussion", ""),
                 }
             )
-            
+
             doc.insert(ignore_permissions=True)
             print("Created new doc:", doc.name)
 

@@ -2101,7 +2101,7 @@ def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
         """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
         (f"%{txt}%",),
     )[0][0]
-    
+
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = pe.program
     scholarships = frappe.db.sql(

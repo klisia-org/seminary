@@ -277,7 +277,7 @@ def create_course_schedules():
 
     if not terms_json:
         frappe.throw("No demo terms found. Install terms first.")
-        
+
         # Look up actual term names from DB
     terms = []
     for t in terms_json:
