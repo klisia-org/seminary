@@ -1,7 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "format: {exam}-{YYYY}-{####}",
+ "autoname": "hash",
  "creation": "2025-03-10 13:57:25.901720",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -30,7 +29,10 @@
   "column_break_hfkj",
   "submission_date",
   "time_taken",
-  "comments"
+  "comments",
+  "amended_from",
+  "section_break_akrj",
+  "answer_log"
  ],
  "fields": [
   {
@@ -171,21 +173,42 @@
    "read_only": 1
   },
   {
-   "default": "Not Graded",
+   "default": "Not Submitted",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Not Graded\nGraded"
+   "options": "Not Submitted\nNot Graded\nGraded",
+   "translatable": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Exam Submission",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_akrj",
+   "fieldtype": "Section Break",
+   "label": "Log"
+  },
+  {
+   "fieldname": "answer_log",
+   "fieldtype": "Long Text",
+   "label": "Answer Log"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-12 11:56:51.732315",
+ "modified": "2026-02-24 12:07:11.549364",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Submission",
- "naming_rule": "Expression",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
@@ -249,7 +272,9 @@
   }
  ],
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
