@@ -1,34 +1,54 @@
-name: Crowdin Action
+name: Crowdin Sync
 
 on:
   push:
-    branches: [ develop ]
+    branches:
+      - main
+    paths:
+      - 'seminary/locale/main.pot'
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours
+  workflow_dispatch:
 
 jobs:
-  synchronize-with-crowdin:
+  upload-sources:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: crowdin action
-        uses: crowdin/github-action@v2.14.0
+      - name: Upload sources to Crowdin
+        uses: crowdin/github-action@v2
         with:
           upload_sources: true
           upload_translations: false
-          download_translations: true
-          localization_branch_name: l10n_crowdin_translations
-          create_pull_request: true
-          pull_request_title: 'New Crowdin Translations'
-          pull_request_body: 'New Crowdin translations by [Crowdin GH Action](https://github.com/crowdin/github-action)'
-          pull_request_base_branch_name: 'develop'
+          download_translations: false
+          config: 'crowdin.yml'
         env:
-          # Automatic token.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          # A numeric ID, found at https://crowdin.com/project/<projectName>/tools/api
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-          # Visit https://crowdin.com/settings#api-key to create this token
+  download-translations:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download translations from Crowdin
+        uses: crowdin/github-action@v2
+        with:
+          upload_sources: false
+          upload_translations: false
+          download_translations: true
+          create_pull_request: true
+          pull_request_title: 'chore: sync translations from crowdin'
+          pull_request_labels: 'translation'
+          commit_message: 'chore: %language% translations'
+          config: 'crowdin.yml'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
