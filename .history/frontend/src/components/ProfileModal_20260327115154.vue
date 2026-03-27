@@ -1,6 +1,7 @@
 <template>
 	<Dialog v-model="showProfileDialog" :options="dialogOptions" :disableOutsideClickToClose="true">
 		<template #body-content>
+			<!-- Student view (read-only) -->
 			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto"
 				v-if="isStudent && studentInfo.student_name">
 				<div class="flex flex-col gap-4">
@@ -29,15 +30,15 @@
 							<p class="w-full text-gray-900">{{ infoFormat[0].fields[3].value }}</p>
 						</div>
 					</div>
-
 					<div class="flex items-center bg-gray-50 p-2 text-gray-600 text-sm rounded-md">
 						<FeatherIcon name="info" class="h-4 mr-2" />
 						{{ __('In case of any incorrect details, please contact the school admin.') }}
 					</div>
 				</div>
 			</div>
-			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto"
-				v-else-if="!isStudent && instructorInfo.instructor_name">
+
+			<!-- Instructor view (editable) -->
+			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto" v-else-if="!isStudent">
 				<div class="flex flex-col gap-4">
 					<div class="flex items-center border-b border-solid border-lightGray pb-4 gap-2">
 						<Avatar size="3xl" class="h-12 w-12" :label="instructorInfo.instructor_name"
@@ -47,25 +48,21 @@
 							<p class="text-gray-600">{{ instructorInfo.user }}</p>
 						</div>
 					</div>
-					<div>
-						<div class="flex gap-4">
-							<div v-for="section in instructorInfoFormat" :key="section.section"
-								class="flex-1 flex flex-col gap-4">
-								<div v-for="field in section.fields" :key="field.label">
-									<div class="flex items-center">
-										<p class="w-1/2 text-sm text-gray-600">{{ field.label }}:&nbsp;</p>
-										<p class="w-1/2 text-gray-900"
-											v-html="field.label === 'Bio' ? stripHtmlTags(field.value) : field.value">
-										</p>
-									</div>
-								</div>
-							</div>
+					<div class="flex flex-col gap-3">
+						<div>
+							<label class="text-sm text-gray-600">{{ __('Name') }}</label>
+							<input v-model="editName" type="text"
+								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						</div>
-					</div>
-
-					<div class="flex items-center bg-gray-50 p-2 text-gray-600 text-sm rounded-md">
-						<FeatherIcon name="info" class="h-4 mr-2" />
-						{{ __('In case of any incorrect details, please make the adjustments on the portal backend.') }}
+						<div>
+							<label class="text-sm text-gray-600">{{ __('Short Bio') }}</label>
+							<input v-model="editShortbio" type="text"
+								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+						</div>
+						<div>
+							<label class="text-sm text-gray-600 mb-1 block">{{ __('Bio') }}</label>
+							<div ref="bioEditorDiv"></div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -74,9 +71,11 @@
 </template>
 
 <script setup>
-import { Dialog, Avatar, FeatherIcon, createResource } from 'frappe-ui'
-import { ref, computed, watchEffect } from 'vue'
+import { Dialog, Avatar, FeatherIcon, createResource, Toast } from 'frappe-ui'
+import { ref, computed, watchEffect, watch } from 'vue'
 import { usersStore } from '../stores/user'
+import Quill from 'quill'
+import 'quill/dist/quill.snow.css'
 
 let userResource = usersStore()
 
@@ -154,37 +153,14 @@ const instructorInfo = ref({
 	user: '',
 	bio: '',
 	shortbio: '',
+	profileimage: '',
 })
 
-const instructorInfoFormat = ref([])
+const editName = ref('')
+const editShortbio = ref('')
+const bioEditorDiv = ref(null)
+let bioQuill = null
 
-watchEffect(() => {
-	instructorInfoFormat.value = [
-		{
-			section: 'section 1',
-			fields: [
-				{
-					label: __('Instructor Name'),
-					value: instructorInfo.value.instructor_name,
-				},
-				{
-					label: __('User'),
-					value: instructorInfo.value.user,
-				},
-				{
-					label: __('Bio'),
-					value: instructorInfo.value.bio,
-				},
-				{
-					label: __('Short Bio'),
-					value: instructorInfo.value.shortbio,
-				},
-			]
-		},
-	]
-})
-
-// Watch for changes in userResource to set isStudent and user
 const isStudent = ref(false)
 const user = ref('')
 
@@ -193,13 +169,10 @@ watchEffect(() => {
 		isStudent.value = userResource.userResource.data.is_student
 		user.value = userResource.userResource.data.name
 
-		// Initialize studentResource if isStudent is true and studentResource is not already created
 		if (isStudent.value && !studentResource.value) {
 			studentResource.value = createResource({
 				url: 'seminary.seminary.api.get_student_info',
-				params: {
-					student: user.value,
-				},
+				params: { student: user.value },
 				onSuccess: (response) => {
 					Object.assign(studentInfo.value, response)
 				},
@@ -207,15 +180,15 @@ watchEffect(() => {
 			})
 		}
 
-		// Initialize instructorResource if isStudent is false and instructorResource is not already created
 		if (!isStudent.value && !instructorResource.value) {
 			instructorResource.value = createResource({
 				url: 'seminary.seminary.api.get_instructor_info',
-				params: {
-					instructor: user.value,
-				},
+				params: { instructor: user.value },
 				onSuccess: (response) => {
 					Object.assign(instructorInfo.value, response)
+					editName.value = response.instructor_name || ''
+					editShortbio.value = response.shortbio || ''
+					if (bioQuill) bioQuill.root.innerHTML = response.bio || ''
 				},
 				auto: true,
 			})
@@ -223,11 +196,37 @@ watchEffect(() => {
 	}
 })
 
-// Function to strip HTML tags from a string
-function stripHtmlTags(str) {
-	const div = document.createElement('div')
-	div.innerHTML = str
-	return div.textContent || div.innerText || ''
+watch(bioEditorDiv, (el) => {
+	if (el) {
+		bioQuill = new Quill(el, {
+			theme: 'snow',
+			modules: {
+				toolbar: [['bold', 'italic'], [{ list: 'ordered' }, { list: 'bullet' }], ['link']],
+			},
+		})
+		bioQuill.root.innerHTML = instructorInfo.value.bio || ''
+	} else {
+		bioQuill = null
+	}
+})
+
+const saveResource = createResource({
+	url: 'seminary.seminary.api.save_instructor_profile',
+	onSuccess(data) {
+		Object.assign(instructorInfo.value, data)
+		Toast.success(__('Profile saved'))
+	},
+	onError(err) {
+		Toast.error(err.messages?.[0] || err)
+	},
+})
+
+const saveInstructor = () => {
+	saveResource.submit({
+		instructor_name: editName.value,
+		shortbio: editShortbio.value,
+		bio: bioQuill?.root.innerHTML || '',
+	})
 }
 
 const handleClose = (close) => {
@@ -239,6 +238,11 @@ const dialogOptions = computed(() => ({
 	title: __('Profile'),
 	size: 'xl',
 	actions: [
+		...(!isStudent.value ? [{
+			label: __('Save'),
+			variant: 'solid',
+			onClick: saveInstructor,
+		}] : []),
 		{
 			label: __('Close'),
 			variant: 'text',
@@ -246,5 +250,4 @@ const dialogOptions = computed(() => ({
 		},
 	],
 }))
-
 </script>

@@ -38,7 +38,8 @@
   "no_more_demo",
   "portal_tab",
   "calendar_instructions",
-  "show_student_application_on_login"
+  "show_student_application_on_login",
+  "support_user"
  ],
  "fields": [
   {
@@ -248,12 +249,19 @@
    "fieldname": "show_student_application_on_login",
    "fieldtype": "Check",
    "label": "Show Student Application button on login"
+  },
+  {
+   "description": "This is the system user for portal support for students.",
+   "fieldname": "support_user",
+   "fieldtype": "Link",
+   "label": "Support User",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-17 13:39:19.244254",
- "modified_by": "Administrator",
+ "modified": "2026-03-27 12:07:43.040161",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary Settings",
  "owner": "Administrator",

@@ -368,11 +368,52 @@ def get_instructor_info():
     return instructor
 
 
+@frappe.whitelist()
+def save_student_profile(
+    mobile, address_line_1, address_line_2, city, pincode, state, country, image=None
+):
+    student_name = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+    if not student_name:
+        frappe.throw("Student record not found")
+
+    update_fields = {
+        "student_mobile_number": mobile,
+        "address_line_1": address_line_1,
+        "address_line_2": address_line_2,
+        "city": city,
+        "pincode": pincode,
+        "state": state,
+        "country": country,
+    }
+    if image:
+        update_fields["image"] = image
+
+    frappe.db.set_value("Student", student_name, update_fields)
+    return frappe.db.get_value(
+        "Student", student_name, list(update_fields.keys()), as_dict=1
+    )
+
+
+@frappe.whitelist()
+def save_instructor_profile(instructor_name, shortbio, bio):
+    doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
+    doc.instructor_name = instructor_name
+    doc.shortbio = shortbio
+    doc.bio = bio
+    doc.save(ignore_permissions=False)
+    return {
+        "instructor_name": doc.instructor_name,
+        "shortbio": doc.shortbio,
+        "bio": doc.bio,
+    }
+
+
 @frappe.whitelist(allow_guest=True)
 def get_school_abbr_logo():
     abbr = frappe.db.get_single_value("Website Settings", "app_name")
     logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
-    return {"name": abbr, "logo": logo}
+    support_user = frappe.db.get_single_value("Seminary Settings", "support_user")
+    return {"name": abbr, "logo": logo, "support_user": support_user}
 
 
 @frappe.whitelist()

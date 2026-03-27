@@ -12,7 +12,8 @@
 						<div class="relative group flex-shrink-0">
 							<Avatar size="3xl" class="h-12 w-12" :label="studentInfo.student_name"
 								:image="editImage || studentInfo.image || null" />
-							<FileUploader :fileTypes="['image/*']" @success="(f) => { editImage = f.file_url }">
+							<FileUploader :fileTypes="['image/*']"
+								@success="(f) => { editImage = f.file_url }">
 								<template #default="{ uploading, openFileSelector }">
 									<button @click="openFileSelector"
 										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -74,8 +75,8 @@
 						<FeatherIcon name="info" class="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
 						<span>
 							{{ __('In case of any incorrect details, please contact') }}
-							<a v-if="supportUser" :href="`mailto:${supportUser}`" class="text-blue-600 underline ml-1">
-								{{ __(' the school admin') }}</a>
+							<a v-if="supportUser" :href="`mailto:${supportUser}`"
+								class="text-blue-600 underline ml-1">{{ supportUser }}</a>
 							<span v-else>{{ __(' the school admin') }}</span>.
 						</span>
 					</div>
