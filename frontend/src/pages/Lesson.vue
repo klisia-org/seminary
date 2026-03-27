@@ -41,7 +41,7 @@
 								{{ __('Edit') }}
 							</Button>
 						</router-link>
-						<router-link v-if="lesson.data.next" :to="{
+						<router-link v-if="lesson.data.next" @click="onNextClick" :to="{
 							name: 'Lesson',
 							params: {
 								courseName: courseName,
@@ -110,7 +110,7 @@
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-5">
 					<LessonContent v-if="lesson.data?.body" :content="lesson.data.body" :youtube="lesson.data.youtube"
 						:quizId="lesson.data.quiz_id" :exam="lesson.data.exam" :assignmentID="lesson.data.assignment_id"
-						:discussionID="lesson.data.discussion_id" :socket="socket" />
+						:discussionID="lesson.data.discussion_id" :courseName="props.courseName" :socket="socket" />
 				</div>
 				<div class="mt-20">
 					<Discussions v-if="allowDiscussions && lesson.data?.name" :title="__('Questions')"
@@ -196,6 +196,10 @@ const lesson = createResource({
 	},
 	auto: true,
 	onSuccess(data) {
+		if (data && user.data?.is_student && !data.membership) {
+			router.push({ name: 'Courses' })
+			return
+		}
 		if (Object.keys(data).length === 0) {
 			router.push({
 				name: 'CourseDetail',
@@ -206,9 +210,10 @@ const lesson = createResource({
 		lessonProgress.value = data.membership?.progress
 
 		const course = data.course_title // e.g., "BE101"
+		const courseName = props.courseName 
 
 		if (data.content)
-			editor.value = renderEditor('editor', data.content, course)
+			editor.value = renderEditor('editor', data.content, course, courseName)
 		if (
 			data.instructor_content &&
 			JSON.parse(data.instructor_content)?.blocks?.length > 1
@@ -225,13 +230,13 @@ const lesson = createResource({
 	},
 })
 
-const renderEditor = (holder, content, course = null) => {
+const renderEditor = (holder, content, course = null,  courseName = null) => {
 	// empty the holder
 	if (document.getElementById(holder))
 		document.getElementById(holder).innerHTML = ''
 	return new EditorJS({
 		holder: holder,
-		tools: getEditorTools(course),
+		tools: getEditorTools(course, courseName),
 		data: JSON.parse(content),
 		readOnly: true,
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed
@@ -244,11 +249,25 @@ const markProgress = () => {
 	}
 }
 
+const isInformational = computed(() =>
+	!lesson.data?.quiz_id &&
+	!lesson.data?.assignment_id &&
+	!lesson.data?.exam &&
+	!lesson.data?.discussion_id
+)
+
+const onNextClick = () => {
+	if (isInformational.value && !lesson.data?.progress) {
+		progress.submit()
+	}
+}
+
 const progress = createResource({
 	url: 'seminary.seminary.doctype.course_lesson.course_lesson.save_progress',
 	makeParams() {
 		return {
 			lesson: lesson.data.name,
+			chapter: lesson.data.chapter_name,
 			course: props.courseName,
 		}
 

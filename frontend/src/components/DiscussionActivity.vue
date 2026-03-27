@@ -1,5 +1,5 @@
 <template v-if="discussionReady">
-	<div v-if="discussion.data" class="grid grid-cols-[65%,35%] h-full" :class="{ 'border rounded-lg': !showTitle }">
+	<div v-if="discussion.doc" class="grid grid-cols-[65%,35%] h-full" :class="{ 'border rounded-lg': !showTitle }">
 		<div class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
 			<div v-if="showTitle" class="text-lg font-semibold mb-5 text-ink-gray-9">
 				<div v-if="submissionName === 'new'">
@@ -12,197 +12,42 @@
 			<div class="text-lg text-ink-gray-7 font-medium mb-2">
 				{{ __('Discussion Prompt') }}:
 			</div>
-			<div v-html="discussion.data.prompt"
-				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal"
-				</div>
-
-				<div v-if="
-					all_discussions.data && (hasSavedSubmission || (!hasSavedSubmission && !post_before) || !isStudent)
-				" class="flex-1 border-l p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
-					<div v-if="!isStudent" class="mb-4 mt-4">
-						<label for="groupFilter" class="block text-sm font-medium text-gray-700">
-							{{ __('Filter by Group') }}
-						</label>
-						<select id="groupFilter" v-model="selectedGroupFilter"
-							class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-							<option value="all">{{ __('All Groups') }}</option>
-							<option v-for="group in studentGroups" :key="group.student_group"
-								:value="group.student_group">
-								{{ group.student_group || 'No group' }}
-							</option>
-						</select>
-					</div>
-
-
-					<div v-for="discussion in filteredDiscussions" :key="discussion.name"
-						class="mb-6 border-round border-gray-300 p-4 bg-surface-white shadow-sm">
-						<div class="original-post mb-4">
-							<div class="font-semibold">{{ discussion.student_name }}</div>
-							<div v-html="discussion.original_post" class="text-sm"></div>
-							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
-								{{ formatDate(discussion.creation) }}
-							</div>
-							<a v-if="discussion.original_attachment" :href="discussion.original_attachment"
-								target="_blank" class="text-blue-500 underline">
-								{{ __('View Attachment') }}
-							</a>
-						</div>
-						<div class="replies pl-4 border-l border-gray-300">
-							<div v-for="reply in discussion.replies" :key="reply.creation" class="mb-2">
-								<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
-								<div class="text-sm text-ink-gray-5 mt-1 mb-2">
-									{{ formatDate(reply.reply_dt) }}
-								</div>
-								<div v-html="reply.reply" class="text-sm"></div>
-								<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-									class="text-blue-500 underline">
-									{{ __('View Attachment') }}
-								</a>
-							</div>
-						</div>
-						<div class="new-reply mt-4 space-y-2">
-							<!-- This is the post below the discussion in the main area -->
-							<RichTextInput :key="editorKey[discussion.name]" :content="discussion.new_reply || ''"
-								:id="discussion.name" :placeholder="__('Write a reply...')"
-								@change="(val) => { editorValues[discussion.name] = val }" />
-							<div class="flex items-center justify-between">
-								<div class="flex items-center space-x-3">
-									<FileUploader v-if="!replyFiles[discussion.name]" :fileTypes="getType()"
-										:validateFile="validateFile"
-										@success="(file) => saveReplyAttachment(discussion.name, file)">
-										<template #default="{ uploading, progress, openFileSelector }">
-											<Button @click="openFileSelector" :loading="uploading" variant="outline">
-												{{
-													uploading
-														? __('Uploading {0}%').format(progress)
-														: __('Attach File')
-												}}
-											</Button>
-										</template>
-									</FileUploader>
-									<div v-else class="flex items-center space-x-2 text-ink-gray-7">
-										<div class="border rounded-md p-2">
-											<FileText class="h-4 w-4" />
-										</div>
-										<div class="flex flex-col leading-5">
-											<span class="text-sm">{{ replyFiles[discussion.name].file_name }}</span>
-											<span class="text-xs text-ink-gray-5">
-												{{ getFileSize(replyFiles[discussion.name].file_size) }}
-											</span>
-										</div>
-										<Button variant="subtle" size="sm"
-											@click="removeReplyAttachment(discussion.name)">
-											{{ __('Remove') }}
-										</Button>
-									</div>
-								</div>
-								<Button variant="solid" @click="handleReplySubmit(discussion)">
-									{{ __('Post Reply') }}
-								</Button>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div v-else-if="!hasSavedSubmission && post_before && isStudent" class="text-ink-gray-5 mt-5">
-					{{ __('You have to make your original post before seeing other posts.') }}
-				</div>
-				<div v-else class="text-ink-gray-5 mt-5">
-					{{ __('No discussions available yet.') }}
-					{{ 'All discussions', all_discussions.data }}
-					{{ 'hasSavedSubmission', hasSavedSubmission }}
-				</div>
+			<div v-html="discussion.doc.prompt"
+				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
 			</div>
-			<div v-if="canGradeSubmission" class="mt-8 space-y-4">
-				<div class="font-semibold mb-2 text-ink-gray-9">
-					{{ __('Grading') }}
-				</div>
-				<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.status"
-					:label="__('Grading Status')" type="select" :options="submissionStatusOptions" />
-				<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.grade" :label="__('Score')"
-					type="number" />
-				<div>
-					<div class="text-sm text-ink-gray-5 mb-1">
-						{{ __('Comments') }}
-					</div>
-					<RichTextInput :content="comments || ''" @change="(val) => { comments = val; isDirty = true }" />
-				</div>
-			</div>
-			<div v-if="!hasSavedSubmission" class="text-md mb-4">
-				<div class="flex flex-col">
 
-					<div class="p-5">
-						<div class="flex items-center justify-between mb-4">
+			<div v-if="
+				all_discussions.data && (hasSavedSubmission || (!hasSavedSubmission && !post_before) || !isStudent)
+			" class="flex-1 border-l p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
+				<div v-if="!isStudent && studentGroups.length > 1" class="mb-4 mt-4">
+					<label for="groupFilter" class="block text-sm font-medium text-gray-700">
+						{{ __('Filter by Group') }}
+					</label>
+					<select id="groupFilter" v-model="selectedGroupFilter"
+						class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+						<option value="all">{{ __('All Groups') }}</option>
+						<option v-for="group in studentGroups" :key="group.student_group" :value="group.student_group">
+							{{ group.student_group || 'No group' }}
+						</option>
+					</select>
+				</div>
 
-							<div class="flex items-center space-x-2">
-								<Badge v-if="isDirty" theme="orange">
-									{{ __('Not Saved') }}
-								</Badge>
-								<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
-									{{ submissionResource.doc?.status }}
-								</Badge>
-								<Button variant="solid" @click="submitDiscussion()">
-									{{ __('Save') }}
-								</Button>
-							</div>
+
+				<div v-for="discussion in filteredDiscussions" :key="discussion.name"
+					class="mb-6 border-round border-gray-300 p-4 bg-surface-white shadow-sm">
+					<div class="original-post mb-4">
+						<div class="font-semibold">{{ discussion.student_name }}</div>
+						<div v-html="discussion.original_post" class="text-sm"></div>
+						<div class="text-sm text-ink-gray-5 mt-1 mb-2">
+							{{ formatDate(discussion.creation) }}
 						</div>
-
-						<div v-if="!hasSavedSubmission" class="text-md mb-4">
-							{{ __('Write your main post here') }}
-							<RichTextInput :content="original_post || ''"
-								@change="(val) => { original_post = val; isDirty = true }" />
-
-							<div class="text-md text-ink-gray-5 mt-1 mb-2">
-								{{ __('You may also add an attachment') }}
-							</div>
-							<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
-								@success="(file) => saveSubmission(file)">
-								<template #default="{ uploading, progress, openFileSelector }">
-									<Button @click="openFileSelector" :loading="uploading">
-										{{
-											uploading
-												? __('Uploading {0}%').format(progress)
-												: __('Upload File')
-										}}
-									</Button>
-								</template>
-							</FileUploader>
-							<div v-else>
-								<div class="flex text-ink-gray-7">
-									<div class="border self-start rounded-md p-2 mr-2">
-										<FileText class="h-5 w-5 stroke-1.5" />
-									</div>
-									<a :href="submissionFile.file_url" target="_blank"
-										class="flex flex-col cursor-pointer !no-underline">
-										<span class="text-sm leading-5">
-											{{ submissionFile.file_name }}
-										</span>
-										<span class="text-sm text-ink-gray-5 mt-1">
-											{{ getFileSize(submissionFile.file_size) }}
-										</span>
-									</a>
-									<X v-if="canModifyDiscussion" @click="removeSubmission()"
-										class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
-								</div>
-							</div>
-						</div>
+						<a v-if="discussion.original_attachment" :href="discussion.original_attachment" target="_blank"
+							class="text-blue-500 underline">
+							{{ __('View Attachment') }}
+						</a>
 					</div>
-				</div>
-			</div>
-			<div v-else class="text-md mb-4 ml-2">
-				<div class="text-sm text-ink-gray-5 font-medium mb-2 mt-4">
-					{{ __('Your submission has been saved:') }}
-				</div>
-				<div v-for="submission in savedsubmission.data" :key="submission.name || submission.creation">
-					<div class="font-semibold mb-1">
-						{{ formatDate(submission.creation) }}
-					</div>
-					<div>{{ submission.original_post }}</div>
-					<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
-						class="text-blue-500 underline">
-						{{ __('View Attachment') }}
-					</a>
 					<div class="replies pl-4 border-l border-gray-300">
-						<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
+						<div v-for="reply in discussion.replies" :key="reply.creation" class="mb-2">
 							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
 							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
 								{{ formatDate(reply.reply_dt) }}
@@ -215,16 +60,16 @@
 						</div>
 					</div>
 					<div class="new-reply mt-4 space-y-2">
-						<div class="text-sm text-ink-gray-5 mb-1">
-							{{ __('Write a reply line 222...') }}
-						</div>
-						<RichTextInput :content="submission.new_reply || ''"
-							@change="(val) => { submission.new_reply = val }" :placeholder="__('Write a reply...')" />
+						<!-- This is the post below the discussion in the main area -->
+						<RichTextInput :id="'reply-saved-' + (editorKey[discussion.name])"
+							:key="'reply-saved-' + (editorKey[discussion.name])" :content="discussion.new_reply || ''"
+							:placeholder="__('Write a reply...')"
+							@change="(val) => { editorValues[discussion.name] = val }" />
 						<div class="flex items-center justify-between">
 							<div class="flex items-center space-x-3">
-								<FileUploader v-if="!replyFiles[submission.name]" :fileTypes="getType()"
+								<FileUploader v-if="!replyFiles[discussion.name]" :fileTypes="getType()"
 									:validateFile="validateFile"
-									@success="(file) => saveReplyAttachment(submission.name, file)">
+									@success="(file) => saveReplyAttachment(discussion.name, file)">
 									<template #default="{ uploading, progress, openFileSelector }">
 										<Button @click="openFileSelector" :loading="uploading" variant="outline">
 											{{
@@ -240,39 +85,201 @@
 										<FileText class="h-4 w-4" />
 									</div>
 									<div class="flex flex-col leading-5">
-										<span class="text-sm">{{ replyFiles[submission.name].file_name }}</span>
+										<span class="text-sm">{{ replyFiles[discussion.name].file_name }}</span>
 										<span class="text-xs text-ink-gray-5">
-											{{ getFileSize(replyFiles[submission.name].file_size) }}
+											{{ getFileSize(replyFiles[discussion.name].file_size) }}
 										</span>
 									</div>
-									<Button variant="subtle" size="sm" @click="removeReplyAttachment(submission.name)">
+									<Button variant="subtle" size="sm" @click="removeReplyAttachment(discussion.name)">
 										{{ __('Remove') }}
 									</Button>
 								</div>
 							</div>
-							<Button variant="solid" @click="handleReplySubmit(submission)">
+							<Button variant="solid" @click="handleReplySubmit(discussion)">
 								{{ __('Post Reply') }}
 							</Button>
 						</div>
 					</div>
 				</div>
 			</div>
-
-			<div v-if="
-				user.data?.name == submissionResource.doc?.owner &&
-				submissionResource.doc?.comments
-			" class="mt-8 p-3 bg-blue-200 rounded-md">
-				<div class="text-sm text-ink-gray-5 font-medium mb-2">
-					{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
+			<div v-else-if="!hasSavedSubmission && post_before && isStudent" class="text-ink-gray-5 mt-5">
+				{{ __('You have to make your original post before seeing other posts.') }}
+			</div>
+			<div v-else class="text-ink-gray-5 mt-5">
+				{{ __('No discussions available yet.') }}
+				{{ 'All discussions', all_discussions.data }}
+				{{ 'hasSavedSubmission', hasSavedSubmission }}
+			</div>
+		</div>
+		<div v-if="canGradeSubmission" class="mt-8 space-y-4">
+			<div class="font-semibold mb-2 text-ink-gray-9">
+				{{ __('Grading') }}
+			</div>
+			<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.status"
+				:label="__('Grading Status')" type="select" :options="submissionStatusOptions" />
+			<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.grade" :label="__('Score')"
+				type="number" />
+			<div>
+				<div class="text-sm text-ink-gray-5 mb-1">
+					{{ __('Comments') }}
 				</div>
-				<div class="leading-5">
-					<div v-html="submissionResource.doc.comments"></div>
+				<RichTextInput :content="comments || ''" @change="(val) => { comments = val; isDirty = true }" />
+			</div>
+		</div>
+		<div v-if="!hasSavedSubmission" class="text-md mb-4">
+			<div class="flex flex-col">
+
+				<div class="p-5">
+					<div class="flex items-center justify-between mb-4">
+
+						<div class="flex items-center space-x-2">
+							<Badge v-if="isDirty" theme="orange">
+								{{ __('Not Saved') }}
+							</Badge>
+							<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
+								{{ submissionResource.doc?.status }}
+							</Badge>
+							<Button variant="solid" @click="submitDiscussion()">
+								{{ __('Save') }}
+							</Button>
+						</div>
+					</div>
+
+					<div v-if="!hasSavedSubmission" class="text-md mb-4">
+						{{ __('Write your main post here') }}
+						<RichTextInput :content="original_post || ''"
+							@change="(val) => { original_post = val; isDirty = true }" />
+
+						<div class="text-md text-ink-gray-5 mt-1 mb-2">
+							{{ __('You may also add an attachment') }}
+						</div>
+						<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
+							@success="(file) => saveSubmission(file)">
+							<template #default="{ uploading, progress, openFileSelector }">
+								<Button @click="openFileSelector" :loading="uploading">
+									{{
+										uploading
+											? __('Uploading {0}%').format(progress)
+											: __('Upload File')
+									}}
+								</Button>
+							</template>
+						</FileUploader>
+						<div v-else>
+							<div class="flex text-ink-gray-7">
+								<div class="border self-start rounded-md p-2 mr-2">
+									<FileText class="h-5 w-5 stroke-1.5" />
+								</div>
+								<a :href="submissionFile.file_url" target="_blank"
+									class="flex flex-col cursor-pointer !no-underline">
+									<span class="text-sm leading-5">
+										{{ submissionFile.file_name }}
+									</span>
+									<span class="text-sm text-ink-gray-5 mt-1">
+										{{ getFileSize(submissionFile.file_size) }}
+									</span>
+								</a>
+								<X v-if="canModifyDiscussion" @click="removeSubmission()"
+									class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
+		</div>
+		<div v-else class="text-md mb-4 ml-2">
+			<div class="text-sm text-ink-gray-5 font-medium mb-2 mt-4">
+				{{ __('Your submission has been saved.') }}
+				<br>
 
+				{{ __('In this area, you can interact with replies to your submission')
+				}}
+			</div>
+			<div v-for="submission in savedsubmission.data" :key="submission.name || submission.creation">
+				<div class="font-semibold mb-2">
+					{{ formatDate(submission.creation) }}
+					<br>
+					{{ __('Your Original Post') }}:
+				</div>
+				<div v-html="submission.original_post" class="text-sm"></div>
 
+				<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
+					class="text-blue-500 underline">
+					{{ __('View Attachment') }}
+				</a>
+				<div class="replies pl-4 border-l border-gray-300">
+					<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
+						<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
+						<div class="text-sm text-ink-gray-5 mt-1 mb-2">
+							{{ formatDate(reply.reply_dt) }}
+						</div>
+						<div v-html="reply.reply" class="text-sm"></div>
+						<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
+							class="text-blue-500 underline">
+							{{ __('View Attachment') }}
+						</a>
+					</div>
+				</div>
+				<div class="new-reply mt-4 space-y-2">
+					<RichTextInput :key="editorKey[submission.name]"
+						:id="'original-post-' + (editorKey[submission.name])" :content="submission.new_reply || ''"
+						@change="(val) => { editorValues[submission.name] = val }"
+						:placeholder="__('Write a reply...')" />
+					<div class="flex items-center justify-between">
+						<div class="flex items-center space-x-3">
+							<FileUploader v-if="!replyFiles[submission.name]" :fileTypes="getType()"
+								:validateFile="validateFile"
+								@success="(file) => saveReplyAttachment(submission.name, file)">
+								<template #default="{ uploading, progress, openFileSelector }">
+									<Button @click="openFileSelector" :loading="uploading" variant="outline">
+										{{
+											uploading
+												? __('Uploading {0}%').format(progress)
+												: __('Attach File')
+										}}
+									</Button>
+								</template>
+							</FileUploader>
+							<div v-else class="flex items-center space-x-2 text-ink-gray-7">
+								<div class="border rounded-md p-2">
+									<FileText class="h-4 w-4" />
+								</div>
+								<div class="flex flex-col leading-5">
+									<span class="text-sm">{{ replyFiles[submission.name].file_name }}</span>
+									<span class="text-xs text-ink-gray-5">
+										{{ getFileSize(replyFiles[submission.name].file_size) }}
+									</span>
+								</div>
+								<Button variant="subtle" size="sm" @click="removeReplyAttachment(submission.name)">
+									{{ __('Remove') }}
+								</Button>
+							</div>
+						</div>
+						<Button variant="solid" @click="handleReplySubmit(submission)">
+							{{ __('Post Reply') }}
+						</Button>
+					</div>
+				</div>
+			</div>
 		</div>
 
+		<div v-if="
+			user.data?.name == submissionResource.doc?.owner &&
+			submissionResource.doc?.comments
+		" class="mt-8 p-3 bg-blue-200 rounded-md">
+			<div class="text-sm text-ink-gray-5 font-medium mb-2">
+				{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
+			</div>
+			<div class="leading-5">
+				<div v-html="submissionResource.doc.comments"></div>
+			</div>
+		</div>
+
+
+	</div>
+	<div v-else class="p-5 text-center">
+		{{ __('Loading discussion...') }}
+	</div>
 </template>
 <script setup>
 import {
@@ -294,6 +301,7 @@ import { useRouter } from 'vue-router'
 import RichTextInput from '@/components/RichTextInput.vue'
 
 
+
 let isReloading = false
 const editorKey = ref({}); // This will hold unique keys for each editor instance
 const dayjs = typeof dayjsModule === 'function' ? dayjsModule : dayjsModule.default
@@ -311,29 +319,17 @@ const isStudent = computed(() => user.data?.is_student || false)
 const studentGroups = ref([]);
 const selectedGroupFilter = ref('all')
 const Student = ref('');
-const courseName = computed(() => router.currentRoute.value.params.courseName)
-const discussionID = computed(() => props.discussionID)
+const courseName = router.currentRoute.value.params.courseName
 const owner = computed(() => user.data?.name)
-const editorValues = {}
+const editorValues = ref({})
 
-const saveReplyAttachment = (itemName, file) => {
-	replyFiles.value = {
-		...replyFiles.value,
-		[itemName]: file,
-	}
-}
-
-const discussionReady = computed(() => {
-	courseName.value && discussionID.value && owner.value
-})
-
-const removeReplyAttachment = (itemName) => {
-	const { [itemName]: _removed, ...rest } = replyFiles.value
-	replyFiles.value = rest
-}
 
 
 const props = defineProps({
+	courseName: {
+		type: String,
+		required: true,
+	},
 	discussionID: {
 		type: String,
 		required: true,
@@ -348,14 +344,12 @@ const props = defineProps({
 		required: false,
 	},
 })
-
-
+const discussionID = props.discussionID
+console.log('Props in DiscussionActivity outside onMounted:', props)
 
 onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
 	console.log('User: ', user.data?.name)
-	console.log('Discussion ID: ', props.discussionID)
-	console.log("Course Name: ", router.currentRoute.value.params.courseName)
 	reloadDiscussionLists()
 	StudentData.reload().then(() => {
 		console.log('Student data after reload:', Student.value)
@@ -367,6 +361,21 @@ onMounted(() => {
 	filteredDiscussions.value; // Trigger initial computation
 })
 
+const saveReplyAttachment = (itemName, file) => {
+	replyFiles.value = {
+		...replyFiles.value,
+		[itemName]: file,
+	}
+}
+
+const discussionReady = computed(() => {
+	return !!(courseName && discussionID && owner.value)
+})
+console.log('Discussion Ready:', discussionReady.value, 'Course Name:', courseName, 'Discussion ID:', discussionID, 'Owner:', owner.value)
+const removeReplyAttachment = (itemName) => {
+	const { [itemName]: _removed, ...rest } = replyFiles.value
+	replyFiles.value = rest
+}
 
 const keyboardShortcut = (e) => {
 	if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
@@ -379,22 +388,20 @@ onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
 })
 
-const discussion = createResource({
-	url: 'frappe.client.get',
-	params: {
-		doctype: 'Discussion Activity',
-		name: props.discussionID,
-	},
+const discussion = createDocumentResource({
+	doctype: 'Discussion Activity',
+	name: props.discussionID,
 	auto: true,
 	onSuccess(data) {
 		if (props.submissionName != 'new') {
+			submissionResource.name = props.submissionName
 			submissionResource.reload()
 		}
 	},
 })
 
 const post_before = computed(() => {
-	return discussion.data?.post_before
+	return discussion.doc?.post_before
 })
 
 const formatDate = (dateString) => {
@@ -414,8 +421,9 @@ function getFrappeDateTime() {
 
 	return formatted;
 }
+
 const handleReplySubmit = (item) => {
-	const replyContent = editorValues[item.name]
+	const replyContent = editorValues.value[item.name]
 
 	if (!replyContent || replyContent === '<p><br></p>') {
 		toast.error(__('Please write a reply before posting.'))
@@ -443,7 +451,7 @@ const handleReplySubmit = (item) => {
 			onSuccess() {
 				toast.success(__('Reply posted successfully'))
 				// Clear the editor after successful submit
-				delete editorValues[item.name]
+				delete editorValues.value[item.name]
 				editorKey.value[item.name] = Date.now(); // Update key to force re-render
 				if (attachment) {
 					removeReplyAttachment(item.name)
@@ -462,8 +470,9 @@ const all_discussions = createResource({
 	url: 'seminary.seminary.api.get_discussion_submissions',
 	makeParams(values) {
 		return {
-			course_name: router.currentRoute.value.params.courseName,
+			course_name: courseName,
 			discussion_id: props.discussionID,
+			member: user.data?.name,
 		}
 	},
 	auto: false,
@@ -484,7 +493,7 @@ const StudentData = createResource({
 	url: 'seminary.seminary.api.get_student_group',
 	makeParams(values) {
 		return {
-			course_name: router.currentRoute.value.params.courseName,
+			course_name: courseName,
 			user: user.data?.name,
 		}
 	},
@@ -502,7 +511,7 @@ const savedsubmission = createResource({
 	url: 'seminary.seminary.api.get_user_discussion_submission',
 	makeParams(values) {
 		return {
-			course_name: router.currentRoute.value.params.courseName,
+			course_name: courseName,
 			discussion_id: props.discussionID,
 			owner: user.data?.name,
 		}
@@ -518,6 +527,17 @@ const hasSavedSubmission = computed(() =>
 )
 
 
+// When submissionName prop resolves late (parent fetches it async), sync the resource name
+watch(
+	() => props.submissionName,
+	(newName) => {
+		if (newName && newName !== 'new') {
+			submissionResource.name = newName
+			submissionResource.reload()
+		}
+	}
+)
+
 // Watch for when all required data becomes available
 watch(discussionReady, async (hasData) => {
 	if (hasData) {
@@ -531,12 +551,12 @@ const reloadDiscussionLists = async () => {
 
 	try {
 		await all_discussions.reload({
-			course_name: courseName.value,
-			discussion_id: discussionID.value,
+			course_name: courseName,
+			discussion_id: discussionID,
 		})
 		await savedsubmission.reload({
-			course_name: courseName.value,
-			discussion_id: discussionID.value,
+			course_name: courseName,
+			discussion_id: discussionID,
 			owner: owner.value,
 		})
 	} catch (error) {
@@ -549,25 +569,20 @@ const reloadDiscussionLists = async () => {
 
 
 const filteredDiscussions = computed(() => {
-
 	let filter_discussions = toRaw(all_discussions.data)
-	console.log("Discussions before filtering: ", filter_discussions)
-	// For students - show only their group if use_studentgroup is enabled
+	if (!filter_discussions) return []
 
 	if (isStudent.value) {
-		if (discussion.data?.use_studentgroup) {
-			let selectedGroupFilter = studentGroup
-			return filter_discussions.filter(discussion =>
-				discussion.student_group === selectedGroupFilter.value
+		if (discussion.doc?.use_studentgroup) {
+			return filter_discussions.filter(item =>
+				item.student_group === studentGroup.value
 			)
-		} else {
-			return filter_discussions
 		}
+		return filter_discussions
 	} else {
-		// For instructors - apply group filter
-		if (!isStudent.value && selectedGroupFilter.value !== 'all') {
-			return filter_discussions.filter(discussion =>
-				discussion.student_group === selectedGroupFilter.value
+		if (selectedGroupFilter.value !== 'all') {
+			return filter_discussions.filter(item =>
+				item.student_group === selectedGroupFilter.value
 			)
 		}
 		return filter_discussions
@@ -587,9 +602,9 @@ const newSubmission = createResource({
 		let doc = {
 			doctype: 'Discussion Submission',
 			disc_activity: props.discussionID,
-			disc_title: discussion.data?.discussion_name,
+			disc_title: discussion.doc?.discussion_name,
 			member: user.data?.name,
-			coursesc: router.currentRoute.value.params.courseName,
+			coursesc: courseName,
 			original_post: original_post.value,
 			original_attachment: submissionFile.value?.file_url || null,
 			student_name: Student.value?.student_name || user.data?.full_name,
@@ -835,13 +850,13 @@ const statusTheme = computed(() => {
 })
 
 const fetchStudentGroups = () => {
-	if (!router.currentRoute.value.params.courseName) {
+	if (!courseName) {
 		console.warn('Cannot fetch student groups: Missing course name.');
 		return;
 	}
 
 	call('seminary.seminary.api.get_student_groups_simple', {
-		course_name: router.currentRoute.value.params.courseName,
+		course_name: courseName,
 	})
 		.then((response) => {
 			studentGroups.value = response || [];

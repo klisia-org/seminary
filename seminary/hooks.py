@@ -32,6 +32,7 @@ add_to_apps_screen = [
 
 # include js, css files in header of desk.html
 app_include_css = "assets/seminary/css/seminary.css"
+app_include_js = "assets/seminary/js/login_redirect.js"
 # app_include_js = "/assets/seminary/js/seminary.js"
 # app_include_js = "seminary/public/js/global_seminary.js"
 
@@ -137,10 +138,12 @@ doctype_js = {"Customer": "seminary/public/js/customer.js"}
 # application home page (will override Website Settings)
 # home_page = "login"
 
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
+# website user home page (by Role) — works for Website Users only
+role_home_page = {"Student": "/seminary/courses"}
+
+# Authentication hooks
+after_login = "seminary.seminary.auth.redirect_student_on_login"
+
 
 # Generators
 # ----------
@@ -244,6 +247,7 @@ doc_events = {
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
+        # "on_update": "seminary.seminary.api.quizresult_to_card",
         "before_insert": "seminary.seminary.api.sanitize_submission",
         "before_save": "seminary.seminary.api.sanitize_submission",
     },

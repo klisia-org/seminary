@@ -142,21 +142,28 @@ def _get_discussion_replies(parent_name: str) -> list[dict]:
 
 @frappe.whitelist()
 def get_discussion_submissions(
-    course_name: str | None = None, discussion_id: str | None = None
+    course_name: str | None = None,
+    discussion_id: str | None = None,
+    member: str | None = None,
 ):
     """Fetch submissions for a discussion activity within a course."""
     if not course_name or not discussion_id:
         raise frappe.ValidationError(_("Course and discussion are required."))
 
+    filters = {
+        "coursesc": course_name,
+        "disc_activity": discussion_id,
+    }
+
+    if member:
+        filters["member"] = ["!=", member]
+
     submissions = frappe.get_all(
         "Discussion Submission",
-        filters={
-            "coursesc": course_name,
-            "disc_activity": discussion_id,
-        },
+        filters=filters,
         fields=[
             "name",
-            "student_name",
+            "member",
             "student",
             "student_name",
             "original_post",
