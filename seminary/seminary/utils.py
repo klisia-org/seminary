@@ -584,7 +584,7 @@ def get_chapters(course):
     return chapters
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_lesson(course, chapter, lesson):
     chapter_name = frappe.db.get_value(
         "Course Schedule Chapter Reference",
@@ -603,27 +603,12 @@ def get_lesson(course, chapter, lesson):
     if not lesson_name:
         return {}
 
-    lesson_details = frappe.db.get_value(
-        "Course Lesson",
-        lesson_name,
-        ["lesson_title", "is_scorm_package"],
-        as_dict=1,
-    )
-
-    # if not lesson_details:
-    # 	return {}
-
-    # membership = get_membership(course)
-
-    # if (
-    # 	not membership
-    # 	and not has_course_moderator_role()
-    # 	and not is_instructor(course)
-    # ):
-    # 	return {
-    # 		"lesson_title": lesson_details.lesson_title,
-    # 		"course_title": course,
-    # 	}
+    if not (has_super_access() or has_course_moderator_role() or is_instructor(course)):
+        if not frappe.db.exists(
+            "Scheduled Course Roster",
+            {"stuemail_rc": frappe.session.user, "course_sc": course},
+        ):
+            return {}
 
     lesson_details = frappe.db.get_value(
         "Course Lesson",
@@ -661,13 +646,24 @@ def get_lesson(course, chapter, lesson):
     lesson_details.next = neighbours["next"]
     lesson_details.progress = progress
     lesson_details.prev = neighbours["prev"]
-    # lesson_details.membership = membership
     lesson_details.instructors = get_instructors(course)
     lesson_details.due_date = get_lesson_due_date(lesson_details.name)
     lesson_details.course_title = frappe.db.get_value(
         "Course Schedule", course, "course"
     )
     # print(f"Lesson Details (third): {lesson_details}")  # Debug print
+
+    if frappe.session.user == "Guest":
+        lesson_details.membership = None
+    else:
+        lesson_details.membership = frappe.db.get_value(
+            "Scheduled Course Roster",
+            {"stuemail_rc": frappe.session.user, "course_sc": course},
+            ["name", "course_sc", "current_lesson", "progress", "stuemail_rc"],
+            as_dict=1,
+        )
+
+    lesson_details.chapter_name = chapter_name
 
     return lesson_details
 

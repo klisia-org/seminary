@@ -5,6 +5,5 @@
         "/home/drmrmelo/lms/apps/erpnext",
         "/home/drmrmelo/lms/apps/seminary",
         "/home/drmrmelo/lms/env/lib/python3.14/site-packages"
-    ],
-    "python-envs.pythonProjects": []
+    ]
 }

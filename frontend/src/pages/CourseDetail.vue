@@ -68,9 +68,10 @@
 </template>
 <script setup>
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
-import { computed, ref, inject } from 'vue'
+import { computed, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle } from '@/utils'
+import { useRouter } from 'vue-router'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
@@ -79,6 +80,7 @@ import { Send } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
 
 const user = inject('$user')
+const router = useRouter()
 const props = defineProps({
 	courseName: {
 		type: String,
@@ -99,6 +101,15 @@ const course = createResource({
 })
 console.log(course)
 console.log("Course props:", props.courseName)
+
+watch(
+	() => course.data,
+	(data) => {
+		if (data && user.data?.is_student && !data.membership) {
+			router.push({ name: 'Courses' })
+		}
+	}
+)
 
 const students = createResource({
 	url: 'seminary.seminary.utils.get_roster',
