@@ -40,23 +40,28 @@ import { usersStore } from '@/stores/user';
 
 const { userResource } = usersStore();
 
-const links = [
-	{
-		label: __('Courses'),
-		to: '/courses',
-		icon: BookOpen,
-	},
-	{
-		label: __('Transcripts'),
-		to: '/grades',
-		icon: GraduationCap,
-	},
-	{
-		label: __('Fees'),
-		to: '/fees',
-		icon: Banknote,
-	},
-]
+const links = computed(() => {
+	const isStudent = userResource?.data?.is_student
+	return [
+		{
+			label: __('Courses'),
+			to: '/courses',
+			icon: BookOpen,
+		},
+		...(isStudent ? [
+			{
+				label: __('Transcripts'),
+				to: '/grades',
+				icon: GraduationCap,
+			},
+			{
+				label: __('Fees'),
+				to: '/fees',
+				icon: Banknote,
+			},
+		] : []),
+	]
+})
 
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false);
 

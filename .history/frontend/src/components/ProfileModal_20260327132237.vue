@@ -74,8 +74,9 @@
 						<FeatherIcon name="info" class="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
 						<span>
 							{{ __('In case of any incorrect details, please contact') }}
-							<a v-if="supportUser" :href="`mailto:${supportUser}`" class="text-blue-600 underline ml-1">
-								{{ __(' the school admin') }}</a>
+							<a v-if="supportUser" :href="`mailto:${supportUser}`"
+								class="text-blue-600 underline ml-1">{{ __(' the school
+								admin') }}</a>
 							<span v-else>{{ __(' the school admin') }}</span>.
 						</span>
 					</div>

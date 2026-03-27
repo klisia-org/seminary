@@ -28,7 +28,7 @@
 				<span>{{ option.label }}</span>
 			</div>
 		</div>
-		<ProfileModal v-if="showProfileDialog" @close="() => (showProfileDialog.value = false)" />
+		<ProfileModal v-if="showProfileDialog" v-model="showProfileDialog" />
 	</div>
 </template>
 
