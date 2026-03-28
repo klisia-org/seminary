@@ -25,6 +25,23 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      // Force all prosemirror/tiptap imports (including from frappe-ui source)
+      // to resolve to the same module instances
+      'prosemirror-commands': path.resolve(__dirname, 'node_modules/prosemirror-commands'),
+      'prosemirror-dropcursor': path.resolve(__dirname, 'node_modules/prosemirror-dropcursor'),
+      'prosemirror-gapcursor': path.resolve(__dirname, 'node_modules/prosemirror-gapcursor'),
+      'prosemirror-history': path.resolve(__dirname, 'node_modules/prosemirror-history'),
+      'prosemirror-inputrules': path.resolve(__dirname, 'node_modules/prosemirror-inputrules'),
+      'prosemirror-keymap': path.resolve(__dirname, 'node_modules/prosemirror-keymap'),
+      'prosemirror-model': path.resolve(__dirname, 'node_modules/prosemirror-model'),
+      'prosemirror-schema-list': path.resolve(__dirname, 'node_modules/prosemirror-schema-list'),
+      'prosemirror-state': path.resolve(__dirname, 'node_modules/prosemirror-state'),
+      'prosemirror-tables': path.resolve(__dirname, 'node_modules/prosemirror-tables'),
+      'prosemirror-transform': path.resolve(__dirname, 'node_modules/prosemirror-transform'),
+      'prosemirror-view': path.resolve(__dirname, 'node_modules/prosemirror-view'),
+      '@tiptap/pm': path.resolve(__dirname, 'node_modules/@tiptap/pm'),
+      '@tiptap/core': path.resolve(__dirname, 'node_modules/@tiptap/core'),
+      '@tiptap/vue-3': path.resolve(__dirname, 'node_modules/@tiptap/vue-3'),
     },
   },
   build: {

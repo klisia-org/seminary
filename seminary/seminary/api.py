@@ -243,6 +243,103 @@ def get_user_discussion_replies(
 
 
 @frappe.whitelist()
+def get_discussion_submission_summary(
+    course_name: str,
+    discussion_id: str,
+):
+    """Per-student summary for the discussion submissions list view.
+
+    Returns one row per student in the roster with:
+    - submission info (name, creation, grade, status) or None if not submitted
+    - reply_count: number of replies BY the student on other students' posts
+    - student_group info
+    """
+    if not course_name or not discussion_id:
+        frappe.throw(_("Course and discussion are required."))
+
+    # 1. All students in roster
+    roster_rows = frappe.db.sql(
+        """
+        SELECT r.stuemail_rc AS member, r.stuname_roster AS student_name, r.student
+        FROM `tabScheduled Course Roster` r
+        WHERE r.course_sc = %s
+        """,
+        course_name,
+        as_dict=True,
+    )
+
+    # Build student-to-group mapping from get_student_groups
+    group_data = get_student_groups(course_name)
+    student_to_group = {}
+    for g in group_data:
+        student_to_group[g["student"]] = g["student_group"]
+
+    roster = []
+    for r in roster_rows:
+        r["student_group"] = student_to_group.get(r["student"], "")
+        roster.append(r)
+
+    # 2. Submissions for this discussion + course schedule
+    submissions = frappe.get_all(
+        "Discussion Submission",
+        filters={"coursesc": course_name, "disc_activity": discussion_id},
+        fields=[
+            "name",
+            "member",
+            "student_name",
+            "creation",
+            "grade",
+            "percentage",
+            "status",
+            "extra_credit",
+            "fudge_points",
+            "late",
+        ],
+    )
+    sub_by_member = {s["member"]: s for s in submissions}
+
+    # 3. Reply counts BY each student (replies they wrote on others' posts)
+    reply_counts = frappe.db.sql(
+        """
+        SELECT r.member, COUNT(*) AS reply_count
+        FROM `tabDiscussion Submission Replies` r
+        JOIN `tabDiscussion Submission` s ON s.name = r.parent
+        WHERE s.coursesc = %s AND s.disc_activity = %s
+        GROUP BY r.member
+        """,
+        (course_name, discussion_id),
+        as_dict=True,
+    )
+    replies_by_member = {rc["member"]: rc["reply_count"] for rc in reply_counts}
+
+    # 4. Merge into one row per student
+    result = []
+    for student in roster:
+        member = student["member"]
+        sub = sub_by_member.get(member)
+        result.append(
+            {
+                "member": member,
+                "student_name": student["student_name"],
+                "student_group": student["student_group"],
+                "submission_name": sub["name"] if sub else None,
+                "original_post_date": sub["creation"] if sub else None,
+                "grade": sub["grade"] if sub else None,
+                "percentage": sub["percentage"] if sub else None,
+                "status": sub["status"] if sub else "Not Submitted",
+                "extra_credit": sub.get("extra_credit") if sub else None,
+                "fudge_points": sub.get("fudge_points") if sub else None,
+                "late": sub.get("late") if sub else None,
+                "reply_count": replies_by_member.get(member, 0),
+            }
+        )
+
+    # Sort: submitted first (by date desc), then not submitted (alphabetical)
+    result.sort(key=lambda x: (x["original_post_date"] is None, x["student_name"]))
+    return result
+
+
+@frappe.whitelist()
 def save_discussion_submission_grade(submission_name: str, grade: float):
     """Save grade for a discussion submission."""
     if not submission_name:

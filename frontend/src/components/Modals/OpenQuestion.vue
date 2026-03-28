@@ -24,7 +24,7 @@
 						<label class="block text-xs text-ink-gray-5 mb-1">
 							{{ __('Question') }}
 						</label>
-						<RichTextInput v-if="question.question !== undefined"
+						<RichTextEditor :teleport="false" v-if="question.question !== undefined"
 							:key="'question-' + (question.name || 'new')" :id="'question-' + (question.name || 'new')"
 							:content="question.question || ''" @change="(val) => (question.question = val)"
 							:editable="true" />
@@ -33,7 +33,7 @@
 						<label class="block text-xs text-ink-gray-5 mb-1">
 							{{ __('Explanation for this Question') }}
 						</label>
-						<RichTextInput v-if="question.question !== undefined" :key="'expl' + (question.name || 'new')"
+						<RichTextEditor :teleport="false" v-if="question.question !== undefined" :key="'expl' + (question.name || 'new')"
 							:id="'explanation-' + (question.name || 'new')" :content="question.explanation || ''"
 							@change="(val) => (question.explanation = val)" :editable="true" />
 					</div>
@@ -54,7 +54,7 @@
 import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import { computed, watch, reactive, ref } from 'vue'
 import Link from '@/components/Controls/Link.vue'
-import RichTextInput from '@/components/RichTextInput.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 
 const show = defineModel()

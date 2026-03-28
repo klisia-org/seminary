@@ -97,7 +97,7 @@
             <div v-html="question.question_detail || __('No question detail provided.')"></div>
           </div>
           <div class="mt-4">
-            <RichTextInput v-if="answers && answers[question.name] !== undefined" :content="answers[question.name]"
+            <LightEditor v-if="answers && answers[question.name] !== undefined" :content="answers[question.name]"
               :id="question.name" :placeholder="__('Type your answer here')"
               @change="(val) => updateAnswer(question.name, val)" />
           </div>
@@ -121,7 +121,7 @@ import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ExamGraded from '@/components/ExamGraded.vue'
 import Discussions from '@/components/Discussions.vue'
-import RichTextInput from '@/components/RichTextInput.vue'
+import LightEditor from '@/components/LightEditor.vue'
 
 const user = inject('$user')
 const timer = ref(0);

@@ -61,9 +61,9 @@
 					</div>
 					<div class="new-reply mt-4 space-y-2">
 						<!-- This is the post below the discussion in the main area -->
-						<RichTextInput :id="'reply-saved-' + (editorKey[discussion.name])"
+						<LightEditor :id="'reply-saved-' + (editorKey[discussion.name])"
 							:key="'reply-saved-' + (editorKey[discussion.name])" :content="discussion.new_reply || ''"
-							:placeholder="__('Write a reply...')"
+							:placeholder="__('Write a reply...')" :lazy="true"
 							@change="(val) => { editorValues[discussion.name] = val }" />
 						<div class="flex items-center justify-between">
 							<div class="flex items-center space-x-3">
@@ -123,7 +123,7 @@
 				<div class="text-sm text-ink-gray-5 mb-1">
 					{{ __('Comments') }}
 				</div>
-				<RichTextInput :content="comments || ''" @change="(val) => { comments = val; isDirty = true }" />
+				<LightEditor id="grading-comments" :content="comments || ''" @change="(val) => { comments = val; isDirty = true }" />
 			</div>
 		</div>
 		<div v-if="!hasSavedSubmission" class="text-md mb-4">
@@ -147,7 +147,7 @@
 
 					<div v-if="!hasSavedSubmission" class="text-md mb-4">
 						{{ __('Write your main post here') }}
-						<RichTextInput :content="original_post || ''"
+						<RichTextEditor id="original-post" :content="original_post || ''"
 							@change="(val) => { original_post = val; isDirty = true }" />
 
 						<div class="text-md text-ink-gray-5 mt-1 mb-2">
@@ -221,10 +221,10 @@
 					</div>
 				</div>
 				<div class="new-reply mt-4 space-y-2">
-					<RichTextInput :key="editorKey[submission.name]"
+					<LightEditor :key="editorKey[submission.name]"
 						:id="'original-post-' + (editorKey[submission.name])" :content="submission.new_reply || ''"
 						@change="(val) => { editorValues[submission.name] = val }"
-						:placeholder="__('Write a reply...')" />
+						:placeholder="__('Write a reply...')" :lazy="true" />
 					<div class="flex items-center justify-between">
 						<div class="flex items-center space-x-3">
 							<FileUploader v-if="!replyFiles[submission.name]" :fileTypes="getType()"
@@ -298,7 +298,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { FileText, X } from 'lucide-vue-next'
 import { getFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
-import RichTextInput from '@/components/RichTextInput.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
+import LightEditor from '@/components/LightEditor.vue'
 
 
 
@@ -901,26 +902,3 @@ watch(
 // );
 
 </script>
-<style scoped>
-.ql-toolbar.ql-snow {
-	border-radius: 0.375rem 0.375rem 0 0;
-	border-color: var(--gray-300, #d1d5db);
-}
-
-.ql-container.ql-snow {
-	border-radius: 0 0 0.375rem 0.375rem;
-	border-color: var(--gray-300, #d1d5db);
-	min-height: 7rem;
-	font-family: inherit;
-}
-
-.ql-editor {
-	font-size: 0.875rem;
-	line-height: 1.5;
-}
-
-.ql-editor.ql-blank::before {
-	color: var(--gray-400, #9ca3af);
-	font-style: normal;
-}
-</style>

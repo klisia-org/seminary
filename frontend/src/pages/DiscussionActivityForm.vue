@@ -50,19 +50,15 @@
 				</div>
 			</div>
 			<!-- Prompt -->
-			<!-- <TextEditor
-				:content="discussion.prompt || ''"
-				@change="(val) => (discussion.prompt = val)"
-				:editable="true"
-				:fixedMenu="true"
-                :placeholder="__('Enter prompt for the discussion activity...')"
-				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
-			/> -->
 			<label for="discussion-prompt" class="block text-lg font-medium text-gray-700 mb-4">
 				{{ __('Discussion Prompt') }}
 			</label>
-			<FormControl v-model="discussion.prompt" type="textarea" :label="__('Discussion Prompt')"
-				:placeholder="__('Enter a prompt for the discussion.')" :rows="6" />
+			<RichTextEditor :teleport="false"
+				id="discussion-prompt"
+				:content="discussion.prompt || ''"
+				@change="(val) => (discussion.prompt = val)"
+				:placeholder="__('Enter a prompt for the discussion...')"
+			/>
 		</div>
 	</div>
 
@@ -73,7 +69,6 @@ import {
 	createResource,
 	FormControl,
 	Button,
-	TextEditor,
 	toast,
 } from 'frappe-ui'
 import {
@@ -89,6 +84,7 @@ import {
 import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 
 

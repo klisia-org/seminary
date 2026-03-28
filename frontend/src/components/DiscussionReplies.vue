@@ -52,12 +52,12 @@
 						</Button>
 					</div>
 				</div>
-				<RichTextInput :id="`reply-${reply.name}`" :content="reply.reply" @change="(val) => (reply.reply = val)"
+				<LightEditor :id="`reply-${reply.name}`" :content="reply.reply" @change="(val) => (reply.reply = val)"
 					:editable="reply.editable || false" />
 			</div>
 		</div>
 
-		<RichTextInput v-if="renderEditor && !readOnlyMode" class="mt-5" :id="`new-reply-${props.topic.name}`"
+		<LightEditor v-if="renderEditor && !readOnlyMode" class="mt-5" :id="`new-reply-${props.topic.name}`"
 			:content="newReply" @change="(val) => (newReply = val)" placeholder="Type your reply here..." />
 		<div v-if="!readOnlyMode" class="flex justify-between mt-2">
 			<span> </span>
@@ -76,7 +76,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import { ChevronLeft, MoreHorizontal } from 'lucide-vue-next'
 import { ref, inject, onMounted, onUnmounted } from 'vue'
 import { initSocket } from '@/socket'; // Import the socket initializer
-import RichTextInput from '@/components/RichTextInput.vue'
+import LightEditor from '@/components/LightEditor.vue'
 
 
 const showTopics = defineModel('showTopics')

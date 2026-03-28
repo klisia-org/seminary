@@ -12,7 +12,7 @@
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Details') }}
 					</div>
-					<RichTextInput :id="'new-topic'" :content="topic.reply" @change="(val) => (topic.reply = val)"
+					<LightEditor :id="'new-topic'" :content="topic.reply" @change="(val) => (topic.reply = val)"
 						:editable="true" />
 				</div>
 			</div>
@@ -23,7 +23,7 @@
 import { Dialog, FormControl, createResource, toast } from 'frappe-ui'
 import { computed, reactive, watch } from 'vue'
 import { singularize } from '@/utils'
-import RichTextInput from '@/components/RichTextInput.vue'
+import LightEditor from '@/components/LightEditor.vue'
 
 const show = defineModel()
 const topics = defineModel('reloadTopics')
