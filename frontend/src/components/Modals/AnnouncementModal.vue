@@ -19,9 +19,16 @@
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Announcement') }}
 					</div>
-					<TextEditor :content="announcement.announcement" :fixedMenu="true"
-						@change="(val) => (announcement.announcement = val)"
-						editorClass="prose-sm py-2 px-2 min-h-[200px] border-outline-gray-2 hover:border-outline-gray-3 rounded-b-md bg-surface-gray-3" />
+					<div v-if="editorReady && editor" class="border rounded-md">
+						<TextEditorFixedMenu
+							class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
+							:buttons="true"
+						/>
+						<EditorContent :editor="editor" class="prose-sm py-2 px-2 min-h-[200px]" />
+					</div>
+					<div v-else class="border rounded-md py-2 px-2 min-h-[200px] bg-surface-gray-3 text-ink-gray-4 text-sm">
+						{{ __('Loading editor...') }}
+					</div>
 				</div>
 			</div>
 		</template>
@@ -29,8 +36,10 @@
 </template>
 
 <script setup>
-import { Dialog, Input, TextEditor, createResource, toast } from 'frappe-ui'
-import { computed, reactive, watch } from 'vue'
+import { Dialog, Input, TextEditorFixedMenu, createResource, toast } from 'frappe-ui'
+import { Editor, EditorContent } from '@tiptap/vue-3'
+import { getTextEditorExtensions } from '@/utils/textEditorFull'
+import { computed, provide, reactive, ref, watch, onBeforeUnmount } from 'vue'
 
 const show = defineModel()
 
@@ -45,6 +54,11 @@ const props = defineProps({
 	},
 })
 
+const editorReady = ref(false)
+const editor = ref(null)
+
+provide('editor', editor)
+
 const announcement = reactive({
 	subject: '',
 	replyTo: '',
@@ -55,6 +69,26 @@ const resetAnnouncement = () => {
 	announcement.subject = ''
 	announcement.replyTo = ''
 	announcement.announcement = ''
+}
+
+const initEditor = () => {
+	destroyEditor()
+	editor.value = new Editor({
+		content: announcement.announcement || '',
+		extensions: getTextEditorExtensions({
+			placeholder: __('Write your announcement...'),
+		}),
+		onUpdate: ({ editor: e }) => {
+			announcement.announcement = e.getHTML()
+		},
+	})
+}
+
+const destroyEditor = () => {
+	if (editor.value) {
+		editor.value.destroy()
+		editor.value = null
+	}
 }
 
 const announcementResource = createResource({
@@ -104,9 +138,20 @@ const handleCancel = (close) => {
 }
 
 watch(show, (value) => {
-	if (!value) {
+	if (value) {
+		setTimeout(() => {
+			initEditor()
+			editorReady.value = true
+		}, 150)
+	} else {
+		editorReady.value = false
+		destroyEditor()
 		resetAnnouncement()
 	}
+})
+
+onBeforeUnmount(() => {
+	destroyEditor()
 })
 
 const dialogOptions = computed(() => ({

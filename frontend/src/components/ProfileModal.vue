@@ -111,7 +111,12 @@
 						</div>
 						<div>
 							<label class="text-sm text-gray-600 mb-1 block">{{ __('Bio') }}</label>
-							<div ref="bioEditorDiv"></div>
+							<LightEditor
+								id="instructor-bio"
+								:content="editBio"
+								:placeholder="__('Write your bio...')"
+								@change="(val) => (editBio = val)"
+							/>
 						</div>
 					</div>
 				</div>
@@ -123,10 +128,9 @@
 
 <script setup>
 import { Dialog, Avatar, FeatherIcon, FileUploader, createResource } from 'frappe-ui'
-import { ref, computed, watchEffect, watch } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { usersStore } from '../stores/user'
-import Quill from 'quill'
-import 'quill/dist/quill.snow.css'
+import LightEditor from '@/components/LightEditor.vue'
 
 const { userResource } = usersStore()
 
@@ -207,22 +211,7 @@ const instructorInfo = ref({
 
 const editName = ref('')
 const editShortbio = ref('')
-const bioEditorDiv = ref(null)
-let bioQuill = null
-
-watch(bioEditorDiv, (el) => {
-	if (el) {
-		bioQuill = new Quill(el, {
-			theme: 'snow',
-			modules: {
-				toolbar: [['bold', 'italic'], [{ list: 'ordered' }, { list: 'bullet' }], ['link']],
-			},
-		})
-		bioQuill.root.innerHTML = instructorInfo.value.bio || ''
-	} else {
-		bioQuill = null
-	}
-})
+const editBio = ref('')
 
 const saveInstructorResource = createResource({
 	url: 'seminary.seminary.api.save_instructor_profile',
@@ -240,7 +229,7 @@ const saveInstructor = () => {
 	saveInstructorResource.submit({
 		instructor_name: editName.value,
 		shortbio: editShortbio.value,
-		bio: bioQuill?.root.innerHTML || '',
+		bio: editBio.value || '',
 	})
 }
 
@@ -281,7 +270,7 @@ watchEffect(() => {
 				Object.assign(instructorInfo.value, response)
 				editName.value = response.instructor_name || ''
 				editShortbio.value = response.shortbio || ''
-				if (bioQuill) bioQuill.root.innerHTML = response.bio || ''
+				editBio.value = response.bio || ''
 			},
 		})
 	}

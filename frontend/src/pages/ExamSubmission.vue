@@ -114,7 +114,7 @@
             </div>
           </div>
           <span> {{ __('Comments for this question') }}: </span>
-          <RichTextInput :key="row.name" :id="row.name" :content="row.comments" :editable="true"
+          <LightEditor :key="row.name" :id="row.name" :content="row.comments" :editable="true"
             @change="(val) => onCommentChange(row, val)" />
 
 
@@ -158,7 +158,7 @@ import {
 import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Discussions from '@/components/Discussions.vue'
-import RichTextInput from '@/components/RichTextInput.vue'
+import LightEditor from '@/components/LightEditor.vue'
 import { Check, X } from 'lucide-vue-next'
 
 const router = useRouter()
