@@ -2,10 +2,18 @@
 <!-- Uses Teleport when in deeply nested DOM, renders inline when inside a Dialog -->
 <template>
     <div>
-        <!-- Before activation: clickable placeholder -->
-        <div v-if="!active" @click="activate" ref="anchorEl"
-            class="border rounded-md py-2 px-2 min-h-[7rem] text-sm text-ink-gray-4 cursor-text prose-sm">
-            {{ placeholder || __('Click to write...') }}
+        <!-- Before activation: show existing content or placeholder -->
+        <div v-if="!active" ref="anchorEl">
+            <div v-if="content" class="border rounded-md py-2 px-2 min-h-[7rem]">
+                <div v-html="content" class="prose-sm"></div>
+                <Button variant="subtle" size="sm" class="mt-2" @click="activate">
+                    {{ __('Edit') }}
+                </Button>
+            </div>
+            <div v-else @click="activate"
+                class="border rounded-md py-2 px-2 min-h-[7rem] text-sm text-ink-gray-4 cursor-text prose-sm">
+                {{ placeholder || __('Click to write...') }}
+            </div>
         </div>
 
         <!-- Inline mode (inside Dialogs — already teleported to body by Dialog) -->
@@ -43,6 +51,7 @@
 
 <script setup>
 import { ref, watch, provide, onMounted, onBeforeUnmount, nextTick, computed, shallowRef } from 'vue'
+import { Button } from 'frappe-ui'
 
 const props = defineProps({
     content: { type: String, default: '' },

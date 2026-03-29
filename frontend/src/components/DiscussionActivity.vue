@@ -111,171 +111,213 @@
 				{{ 'hasSavedSubmission', hasSavedSubmission }}
 			</div>
 		</div>
-		<div v-if="canGradeSubmission" class="mt-8 space-y-4">
-			<div class="font-semibold mb-2 text-ink-gray-9">
-				{{ __('Grading') }}
-			</div>
-			<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.status"
-				:label="__('Grading Status')" type="select" :options="submissionStatusOptions" />
-			<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.grade" :label="__('Score')"
-				type="number" />
-			<div>
-				<div class="text-sm text-ink-gray-5 mb-1">
-					{{ __('Comments') }}
-				</div>
-				<LightEditor id="grading-comments" :content="comments || ''" @change="(val) => { comments = val; isDirty = true }" />
-			</div>
-		</div>
-		<div v-if="!hasSavedSubmission" class="text-md mb-4">
-			<div class="flex flex-col">
-
-				<div class="p-5">
-					<div class="flex items-center justify-between mb-4">
-
-						<div class="flex items-center space-x-2">
-							<Badge v-if="isDirty" theme="orange">
-								{{ __('Not Saved') }}
-							</Badge>
-							<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
-								{{ submissionResource.doc?.status }}
-							</Badge>
-							<Button variant="solid" @click="submitDiscussion()">
-								{{ __('Save') }}
-							</Button>
-						</div>
+		<!-- Right column wrapper -->
+		<div class="p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
+			<!-- Instructor Dashboard (only show when there are student submissions) -->
+			<div v-if="isInstructorView && dashboardStats.submission_count > 0" class="mb-6">
+				<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Discussion Dashboard') }}</h3>
+				<div class="grid grid-cols-2 gap-4 mb-4">
+					<div class="border rounded-lg p-4 text-center">
+						<div class="text-2xl font-bold text-ink-gray-9">{{ dashboardStats.submission_count }}</div>
+						<div class="text-xs text-ink-gray-5 mt-1">{{ __('Students with Original Submissions') }}</div>
 					</div>
-
-					<div v-if="!hasSavedSubmission" class="text-md mb-4">
-						{{ __('Write your main post here') }}
-						<RichTextEditor id="original-post" :content="original_post || ''"
-							@change="(val) => { original_post = val; isDirty = true }" />
-
-						<div class="text-md text-ink-gray-5 mt-1 mb-2">
-							{{ __('You may also add an attachment') }}
+					<div class="border rounded-lg p-4 text-center">
+						<div class="text-2xl font-bold text-ink-gray-9">{{ dashboardStats.avg_replies }}</div>
+						<div class="text-xs text-ink-gray-5 mt-1">{{ __('Average Number of Replies') }}</div>
+					</div>
+				</div>
+				<router-link :to="{
+					name: 'DiscussionActivitySubmissionCS',
+					params: { courseName: props.courseName, discussionID: props.discussionID },
+				}">
+					<Button variant="solid" class="w-full">
+						{{ __('Grade this Discussion') }}
+					</Button>
+				</router-link>
+			</div>
+			<!-- Edit link when no submissions yet -->
+			<div v-else-if="isInstructorView" class="mb-6">
+				<router-link :to="{
+					name: 'DiscussionActivityForm',
+					params: { discussionID: props.discussionID },
+				}">
+					<Button variant="outline" class="w-full">
+						{{ __('Edit Discussion Activity') }}
+					</Button>
+				</router-link>
+			</div>
+			<!-- Student Grade Display -->
+			<div v-if="isStudent && submissionResource.doc?.status === 'Graded'"
+				class="mb-4 p-4 border rounded-lg bg-surface-white">
+				<div class="text-sm text-ink-gray-5">{{ __('Grade') }}</div>
+				<div class="text-2xl font-bold text-ink-gray-9">{{ submissionResource.doc?.grade }}</div>
+			</div>
+			<!-- Grading Feedback Thread (visible to student when graded or has comments) -->
+			<div v-if="isStudent && (gradingComments.length > 0 || submissionResource.doc?.status === 'Graded')"
+				class="mb-6 border rounded-lg p-4 bg-surface-white">
+				<h3 class="text-md font-semibold mb-3 text-ink-gray-7">{{ __('Feedback') }}</h3>
+				<div v-if="gradingComments.length" class="space-y-3 mb-4">
+					<div v-for="c in gradingComments" :key="c.name" class="p-3 rounded-lg text-sm" :class="c.author === user.data?.name
+						? 'bg-blue-50 border border-blue-200 ml-4'
+						: 'bg-gray-50 border border-gray-200 mr-4'">
+						<div class="flex items-center justify-between mb-1">
+							<span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
+							<span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
 						</div>
-						<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
-							@success="(file) => saveSubmission(file)">
-							<template #default="{ uploading, progress, openFileSelector }">
-								<Button @click="openFileSelector" :loading="uploading">
-									{{
-										uploading
-											? __('Uploading {0}%').format(progress)
-											: __('Upload File')
-									}}
+						<div v-html="c.comment" class="prose-sm"></div>
+					</div>
+				</div>
+				<div v-else class="text-sm text-ink-gray-4 mb-4">
+					{{ __('No feedback yet.') }}
+				</div>
+				<LightEditor :id="'student-feedback-' + submissionResource.doc?.name"
+					:key="'sf-' + submissionResource.doc?.name" ref="studentCommentEditor"
+					:placeholder="__('Reply to feedback...')" @change="(val) => studentNewComment = val" />
+				<Button variant="solid" size="sm" class="mt-2" @click="postStudentComment"
+					:disabled="!studentNewComment || addStudentCommentResource.loading">
+					{{ __('Send') }}
+				</Button>
+			</div>
+
+			<div v-if="!hasSavedSubmission" class="text-md mb-4">
+				<div class="flex flex-col">
+
+					<div class="p-5">
+						<div class="flex items-center justify-between mb-4">
+
+							<div class="flex items-center space-x-2">
+								<Badge v-if="isDirty" theme="orange">
+									{{ __('Not Saved') }}
+								</Badge>
+								<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
+									{{ submissionResource.doc?.status }}
+								</Badge>
+								<Button variant="solid" @click="submitDiscussion()">
+									{{ __('Save') }}
 								</Button>
-							</template>
-						</FileUploader>
-						<div v-else>
-							<div class="flex text-ink-gray-7">
-								<div class="border self-start rounded-md p-2 mr-2">
-									<FileText class="h-5 w-5 stroke-1.5" />
-								</div>
-								<a :href="submissionFile.file_url" target="_blank"
-									class="flex flex-col cursor-pointer !no-underline">
-									<span class="text-sm leading-5">
-										{{ submissionFile.file_name }}
-									</span>
-									<span class="text-sm text-ink-gray-5 mt-1">
-										{{ getFileSize(submissionFile.file_size) }}
-									</span>
-								</a>
-								<X v-if="canModifyDiscussion" @click="removeSubmission()"
-									class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div v-else class="text-md mb-4 ml-2">
-			<div class="text-sm text-ink-gray-5 font-medium mb-2 mt-4">
-				{{ __('Your submission has been saved.') }}
-				<br>
 
-				{{ __('In this area, you can interact with replies to your submission')
-				}}
-			</div>
-			<div v-for="submission in savedsubmission.data" :key="submission.name || submission.creation">
-				<div class="font-semibold mb-2">
-					{{ formatDate(submission.creation) }}
-					<br>
-					{{ __('Your Original Post') }}:
-				</div>
-				<div v-html="submission.original_post" class="text-sm"></div>
+						<div v-if="!hasSavedSubmission" class="text-md mb-4">
+							{{ __('Write your main post here') }}
+							<RichTextEditor id="original-post" :content="original_post || ''"
+								@change="(val) => { original_post = val; isDirty = true }" />
 
-				<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
-					class="text-blue-500 underline">
-					{{ __('View Attachment') }}
-				</a>
-				<div class="replies pl-4 border-l border-gray-300">
-					<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
-						<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
-						<div class="text-sm text-ink-gray-5 mt-1 mb-2">
-							{{ formatDate(reply.reply_dt) }}
-						</div>
-						<div v-html="reply.reply" class="text-sm"></div>
-						<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-							class="text-blue-500 underline">
-							{{ __('View Attachment') }}
-						</a>
-					</div>
-				</div>
-				<div class="new-reply mt-4 space-y-2">
-					<LightEditor :key="editorKey[submission.name]"
-						:id="'original-post-' + (editorKey[submission.name])" :content="submission.new_reply || ''"
-						@change="(val) => { editorValues[submission.name] = val }"
-						:placeholder="__('Write a reply...')" :lazy="true" />
-					<div class="flex items-center justify-between">
-						<div class="flex items-center space-x-3">
-							<FileUploader v-if="!replyFiles[submission.name]" :fileTypes="getType()"
-								:validateFile="validateFile"
-								@success="(file) => saveReplyAttachment(submission.name, file)">
+							<div class="text-md text-ink-gray-5 mt-1 mb-2">
+								{{ __('You may also add an attachment') }}
+							</div>
+							<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
+								@success="(file) => saveSubmission(file)">
 								<template #default="{ uploading, progress, openFileSelector }">
-									<Button @click="openFileSelector" :loading="uploading" variant="outline">
+									<Button @click="openFileSelector" :loading="uploading">
 										{{
 											uploading
 												? __('Uploading {0}%').format(progress)
-												: __('Attach File')
+												: __('Upload File')
 										}}
 									</Button>
 								</template>
 							</FileUploader>
-							<div v-else class="flex items-center space-x-2 text-ink-gray-7">
-								<div class="border rounded-md p-2">
-									<FileText class="h-4 w-4" />
+							<div v-else>
+								<div class="flex text-ink-gray-7">
+									<div class="border self-start rounded-md p-2 mr-2">
+										<FileText class="h-5 w-5 stroke-1.5" />
+									</div>
+									<a :href="submissionFile.file_url" target="_blank"
+										class="flex flex-col cursor-pointer !no-underline">
+										<span class="text-sm leading-5">
+											{{ submissionFile.file_name }}
+										</span>
+										<span class="text-sm text-ink-gray-5 mt-1">
+											{{ getFileSize(submissionFile.file_size) }}
+										</span>
+									</a>
+									<X v-if="canModifyDiscussion" @click="removeSubmission()"
+										class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
 								</div>
-								<div class="flex flex-col leading-5">
-									<span class="text-sm">{{ replyFiles[submission.name].file_name }}</span>
-									<span class="text-xs text-ink-gray-5">
-										{{ getFileSize(replyFiles[submission.name].file_size) }}
-									</span>
-								</div>
-								<Button variant="subtle" size="sm" @click="removeReplyAttachment(submission.name)">
-									{{ __('Remove') }}
-								</Button>
 							</div>
 						</div>
-						<Button variant="solid" @click="handleReplySubmit(submission)">
-							{{ __('Post Reply') }}
-						</Button>
 					</div>
 				</div>
 			</div>
-		</div>
+			<div v-else class="text-md mb-4 ml-2">
+				<div class="text-sm text-ink-gray-5 font-medium mb-2 mt-4">
+					{{ __('Your submission has been saved.') }}
+					<br>
 
-		<div v-if="
-			user.data?.name == submissionResource.doc?.owner &&
-			submissionResource.doc?.comments
-		" class="mt-8 p-3 bg-blue-200 rounded-md">
-			<div class="text-sm text-ink-gray-5 font-medium mb-2">
-				{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
+					{{ __('In this area, you can interact with replies to your submission')
+					}}
+				</div>
+				<div v-for="submission in savedsubmission.data" :key="submission.name || submission.creation">
+					<div class="font-semibold mb-2">
+						{{ formatDate(submission.creation) }}
+						<br>
+						{{ __('Your Original Post') }}:
+					</div>
+					<div v-html="submission.original_post" class="text-sm"></div>
+
+					<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
+						class="text-blue-500 underline">
+						{{ __('View Attachment') }}
+					</a>
+					<div class="replies pl-4 border-l border-gray-300">
+						<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
+							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
+							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
+								{{ formatDate(reply.reply_dt) }}
+							</div>
+							<div v-html="reply.reply" class="text-sm"></div>
+							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
+								class="text-blue-500 underline">
+								{{ __('View Attachment') }}
+							</a>
+						</div>
+					</div>
+					<div class="new-reply mt-4 space-y-2">
+						<LightEditor :key="editorKey[submission.name]"
+							:id="'original-post-' + (editorKey[submission.name])" :content="submission.new_reply || ''"
+							@change="(val) => { editorValues[submission.name] = val }"
+							:placeholder="__('Write a reply...')" :lazy="true" />
+						<div class="flex items-center justify-between">
+							<div class="flex items-center space-x-3">
+								<FileUploader v-if="!replyFiles[submission.name]" :fileTypes="getType()"
+									:validateFile="validateFile"
+									@success="(file) => saveReplyAttachment(submission.name, file)">
+									<template #default="{ uploading, progress, openFileSelector }">
+										<Button @click="openFileSelector" :loading="uploading" variant="outline">
+											{{
+												uploading
+													? __('Uploading {0}%').format(progress)
+													: __('Attach File')
+											}}
+										</Button>
+									</template>
+								</FileUploader>
+								<div v-else class="flex items-center space-x-2 text-ink-gray-7">
+									<div class="border rounded-md p-2">
+										<FileText class="h-4 w-4" />
+									</div>
+									<div class="flex flex-col leading-5">
+										<span class="text-sm">{{ replyFiles[submission.name].file_name }}</span>
+										<span class="text-xs text-ink-gray-5">
+											{{ getFileSize(replyFiles[submission.name].file_size) }}
+										</span>
+									</div>
+									<Button variant="subtle" size="sm" @click="removeReplyAttachment(submission.name)">
+										{{ __('Remove') }}
+									</Button>
+								</div>
+							</div>
+							<Button variant="solid" @click="handleReplySubmit(submission)">
+								{{ __('Post Reply') }}
+							</Button>
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="leading-5">
-				<div v-html="submissionResource.doc.comments"></div>
-			</div>
+
 		</div>
-
-
+		<!-- End right column wrapper -->
 	</div>
 	<div v-else class="p-5 text-center">
 		{{ __('Loading discussion...') }}
@@ -289,7 +331,6 @@ import {
 	createResource,
 	createDocumentResource,
 	FileUploader,
-	FormControl,
 	toast,
 } from 'frappe-ui'
 import { computed, inject, onMounted, onBeforeUnmount, ref, watch, toRaw } from 'vue'
@@ -300,6 +341,7 @@ import { getFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import LightEditor from '@/components/LightEditor.vue'
+import DiscussionModal from './Modals/DiscussionModal.vue'
 
 
 
@@ -317,12 +359,20 @@ const showTitle = router.currentRoute.value.name == 'DiscussionActivitySubmissio
 const isDirty = ref(false)
 const replyFiles = ref({})
 const isStudent = computed(() => user.data?.is_student || false)
+const isInstructorView = computed(() =>
+	user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
+)
 const studentGroups = ref([]);
 const selectedGroupFilter = ref('all')
 const Student = ref('');
 const courseName = router.currentRoute.value.params.courseName
 const owner = computed(() => user.data?.name)
+const dashboardStats = ref({ submission_count: null, avg_replies: null })
+const showDiscussionModal = ref(false)
 const editorValues = ref({})
+const gradingComments = ref([])
+const studentNewComment = ref('')
+const studentCommentEditor = ref(null)
 
 
 
@@ -398,6 +448,19 @@ const discussion = createDocumentResource({
 			submissionResource.name = props.submissionName
 			submissionResource.reload()
 		}
+		// Fetch dashboard stats for instructors
+		dashboardResource.submit({
+			course_name: props.courseName,
+			discussion_id: props.discussionID,
+		})
+	},
+})
+
+const dashboardResource = createResource({
+	url: 'seminary.seminary.api.get_discussion_dashboard',
+	auto: false,
+	onSuccess(data) {
+		dashboardStats.value = data || { submission_count: 0, avg_replies: 0 }
 	},
 })
 
@@ -593,6 +656,10 @@ const filteredDiscussions = computed(() => {
 
 const refreshDiscussionLists = () => {
 	reloadDiscussionLists()
+	dashboardResource.submit({
+		course_name: props.courseName,
+		discussion_id: props.discussionID,
+	})
 }
 
 
@@ -670,7 +737,6 @@ watch(submissionResource, () => {
 			})
 		}
 		original_post.value = submissionResource.doc.original_post || ''
-		console.log("Original Post: ", original_post.value)
 		comments.value = submissionResource.doc.comments || ''
 		const hasFile = Boolean(submissionFile.value)
 		const hasOriginalPost = Boolean(original_post.value)
@@ -682,8 +748,50 @@ watch(submissionResource, () => {
 		} else {
 			isDirty.value = false
 		}
+
+		// Fetch grading comments for student view
+		if (submissionResource.doc.name) {
+			fetchGradingComments(submissionResource.doc.name)
+		}
 	}
 })
+
+// Grading comments (student view)
+const gradingCommentsResource = createResource({
+	url: 'seminary.seminary.api.get_grading_comments',
+	auto: false,
+	onSuccess(data) {
+		gradingComments.value = data || []
+	},
+})
+
+const fetchGradingComments = (name) => {
+	gradingCommentsResource.submit({ submission_name: name })
+}
+
+const addStudentCommentResource = createResource({
+	url: 'seminary.seminary.api.add_grading_comment',
+})
+
+const postStudentComment = () => {
+	if (!studentNewComment.value || !submissionResource.doc?.name) return
+	addStudentCommentResource.submit(
+		{
+			submission_name: submissionResource.doc.name,
+			comment: studentNewComment.value,
+		},
+		{
+			onSuccess() {
+				studentNewComment.value = ''
+				studentCommentEditor.value?.clear()
+				fetchGradingComments(submissionResource.doc.name)
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+			},
+		}
+	)
+}
 
 
 watch(submissionFile, () => {
@@ -816,7 +924,6 @@ const canGradeSubmission = computed(() => {
 		(user.data?.is_moderator ||
 			user.data?.is_evaluator ||
 			user.data?.is_instructor) &&
-		props.submissionName != 'new' &&
 		router.currentRoute.value.name == 'DiscussionActivitySubmission'
 	)
 })

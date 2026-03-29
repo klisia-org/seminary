@@ -352,6 +352,110 @@ def save_discussion_submission_grade(submission_name: str, grade: float):
     return {"status": "success", "message": "Grade saved successfully."}
 
 
+@frappe.whitelist()
+def add_grading_comment(submission_name: str, comment: str):
+    """Add a grading comment to a discussion submission."""
+    if not submission_name or not comment:
+        frappe.throw(_("Submission name and comment are required."))
+
+    submission = frappe.get_doc("Discussion Submission", submission_name)
+
+    # Permission: must be the submission owner OR an instructor/moderator/evaluator
+    user = frappe.session.user
+    user_doc = frappe.get_doc("User", user)
+    is_owner = submission.member == user
+    is_staff = any(
+        r.role in ("Instructor", "Course Moderator", "Evaluator", "System Manager")
+        for r in user_doc.roles
+    )
+    if not is_owner and not is_staff:
+        frappe.throw(_("You do not have permission to comment on this submission."))
+
+    author_name = frappe.db.get_value("User", user, "full_name") or user
+    submission.append(
+        "grading_comments",
+        {
+            "author": user,
+            "author_name": author_name,
+            "comment": comment,
+            "comment_dt": frappe.utils.now_datetime(),
+        },
+    )
+    submission.save(ignore_permissions=True)
+    return submission.grading_comments[-1].as_dict()
+
+
+@frappe.whitelist()
+def get_grading_comments(submission_name: str):
+    """Get all grading comments for a discussion submission."""
+    if not submission_name:
+        frappe.throw(_("Submission name is required."))
+
+    comments = frappe.get_all(
+        "Grading Comment",
+        filters={"parent": submission_name},
+        fields=["author", "author_name", "comment", "comment_dt", "name"],
+        order_by="comment_dt asc",
+    )
+    return comments
+
+
+@frappe.whitelist()
+def get_discussion_dashboard(course_name: str, discussion_id: str):
+    """Mini dashboard stats for instructor view of a discussion activity.
+
+    Only counts submissions and replies by students in the course roster
+    (excludes instructor/moderator posts).
+    """
+    if not course_name or not discussion_id:
+        frappe.throw(_("Course and discussion are required."))
+
+    # Get student emails from roster to filter out instructor posts
+    roster_emails = frappe.db.sql_list(
+        """
+        SELECT r.stuemail_rc
+        FROM `tabScheduled Course Roster` r
+        WHERE r.course_sc = %s
+        """,
+        course_name,
+    )
+
+    if not roster_emails:
+        return {"submission_count": 0, "avg_replies": 0}
+
+    submission_count = frappe.db.count(
+        "Discussion Submission",
+        filters={
+            "coursesc": course_name,
+            "disc_activity": discussion_id,
+            "member": ["in", roster_emails],
+        },
+    )
+
+    reply_count = 0
+    if submission_count:
+        placeholders = ", ".join(["%s"] * len(roster_emails))
+        reply_count = (
+            frappe.db.sql(
+                f"""
+            SELECT COUNT(*) FROM `tabDiscussion Submission Replies` r
+            JOIN `tabDiscussion Submission` s ON s.name = r.parent
+            WHERE s.coursesc = %s AND s.disc_activity = %s
+            AND r.member IN ({placeholders})
+            """,
+                [course_name, discussion_id] + roster_emails,
+            )[0][0]
+            or 0
+        )
+
+    avg_replies = round(reply_count / submission_count, 1) if submission_count else 0
+
+    return {
+        "submission_count": submission_count,
+        "avg_replies": avg_replies,
+    }
+
+
 @frappe.whitelist(allow_guest=True)
 def get_translations():
     if frappe.session.user != "Guest":

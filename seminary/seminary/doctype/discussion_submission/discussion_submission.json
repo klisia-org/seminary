@@ -28,7 +28,8 @@
   "fudge_points",
   "extra_credit",
   "status",
-  "comments"
+  "comments",
+  "grading_comments"
  ],
  "fields": [
   {
@@ -166,6 +167,12 @@
    "fieldtype": "Float",
    "label": "Grade",
    "non_negative": 1
+  },
+  {
+   "fieldname": "grading_comments",
+   "fieldtype": "Table",
+   "label": "Grading Comments",
+   "options": "Grading Comment"
   }
  ],
  "grid_page_length": 50,
