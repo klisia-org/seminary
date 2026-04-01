@@ -9,7 +9,20 @@ def redirect_student_on_login(login_manager):
     mechanism: set_user_info() reads it and emits it as `redirect_to` in the response,
     which the login page JS prioritises over `home_page`.
     """
-    if "Student" in frappe.get_roles(login_manager.user):
+    roles = frappe.get_roles(login_manager.user)
+    is_student = "Student" in roles
+    is_staff = bool(
+        {
+            "Instructor",
+            "System Manager",
+            "Administrator",
+            "Seminary Manager",
+            "Course Moderator",
+            "Evaluator",
+        }
+        & set(roles)
+    )
+    if is_student and not is_staff:
         frappe.cache.hset(
             "redirect_after_login", login_manager.user, "/seminary/courses"
         )

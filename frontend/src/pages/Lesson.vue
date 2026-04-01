@@ -6,7 +6,7 @@
 
 		</header>
 		<div class="grid md:grid-cols-[70%,30%] h-screen">
-			<div class="border-r container pt-5 pb-10 px-5">
+			<div class="border-r pt-5 pb-10 px-5">
 				<div class="flex flex-col md:flex-row md:items-center justify-between">
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ lesson.data.lesson_title }}
@@ -158,11 +158,6 @@ const lessonProgress = ref(0)
 const timer = ref(0)
 let timerInterval
 const socket = inject('$socket')
-if (!socket) {
-	console.error('Socket connection not found in Lesson.vue.');
-} else {
-	console.log('Socket connection available in Lesson.vue:', socket);
-}
 
 const props = defineProps({
 	courseName: {
@@ -242,7 +237,6 @@ const renderEditor = (holder, content, course = null,  courseName = null) => {
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed
 	})
 }
-console.log(lesson)
 const markProgress = () => {
 	if (user.data && lesson.data && !lesson.data.progress) {
 		progress.submit()
@@ -360,9 +354,6 @@ const enrollment = createResource({
 })
 
 const checkIfDiscussionsAllowed = () => {
-	console.log('Lesson Data:', lesson.data); // Debugging
-	console.log('allow_discuss:', lesson.data?.allow_discuss); // Debugging
-
 	let quizPresent = false;
 
 	// Parse the content and check for blocks

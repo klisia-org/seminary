@@ -346,8 +346,20 @@ def save_discussion_submission_grade(submission_name: str, grade: float):
         raise frappe.ValidationError(_("Submission name is required."))
 
     submission = frappe.get_doc("Discussion Submission", submission_name)
-    submission.grade = grade
+    submission.grade = float(grade)
     submission.status = "Graded"
+
+    # Compute score_out_of from the grading scale max
+    max_grade = frappe.db.get_value(
+        "Course Schedule", submission.coursesc, "maxnumgrade"
+    )
+    if max_grade:
+        submission.score_out_of = float(max_grade)
+        fudge = float(submission.fudge_points or 0)
+        submission.percentage = round(
+            (float(grade) / float(max_grade)) * 100 + fudge, 2
+        )
+
     submission.save()
     return {"status": "success", "message": "Grade saved successfully."}
 
@@ -1107,13 +1119,18 @@ def get_payers(program_enrollment, method):
 @frappe.whitelist()
 def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
-    max_grade = frappe.db.get_value("Course Schedule", doc.course, "maxnumgrade")
+    # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
+    course_schedule = getattr(doc, "coursesc", None) or doc.course
+    max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
     # Fetch the corresponding Course Assess Results Detail record
     cardname = frappe.db.get_value(
         "Course Assess Results Detail",
         {"assessment_criteria": doc.course_assess, "student_card": doc.student},
         "name",
     )
+    if not cardname:
+        print("***NO CARDNAME***")
+        return
     card = frappe.get_doc("Course Assess Results Detail", cardname)
 
     # Update the raw score and extra credit points
@@ -2527,3 +2544,17 @@ def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
 
     lesson_doc.chapter = target_doc.name
     lesson_doc.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def GradeableDiscussion(courseName, discussionID):
+    count = frappe.db.sql(
+        """select count(c.name)
+from `tabScheduled Course Assess Criteria` c,
+`tabCourse Schedule` cs
+where cs.name = %s and
+cs.name = c.parent and
+c.discussion = %s""",
+        (courseName, discussionID),
+    )
+    return count[0][0] > 0 if count else False

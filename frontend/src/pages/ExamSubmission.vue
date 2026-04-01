@@ -9,7 +9,7 @@
     </div>
   </header>
   <div class="flex justify-center text-xl font-bold text-gray-900 mt-3">
-    {{ ExamTitle.data.title }}
+    {{ ExamTitle.data?.title }}
   </div>
   <div class="flex items-center justify-between mb-5">
     <!-- Previous Button -->
@@ -78,8 +78,6 @@
 
         <!-- Questions Section -->
         <div v-for="(row, index) in submisisonDetails.doc.result" :key="index" class="border p-5 rounded-md space-y-4">
-          {{ console.log(row) }}
-          <!-- Question Title -->
           <!-- Question Title -->
           <div class="space-y-1">
             <div class="font-semibold text-ink-gray-9">
@@ -105,11 +103,19 @@
             </div>
 
             <!-- Points Input -->
-            <div class="flex items-center space-x-2">
-              <FormControl v-model="row.points" type="number" class="w-20 text-right"
-                @change="(val) => onPointsChange(row, val)" />
-              <span class="text-sm text-ink-gray-7">
-                / {{ parseInt(row.points_out_of, 10) }} {{ __('Points') }}
+            <div class="flex flex-col items-end space-y-1">
+              <div class="flex items-center space-x-2">
+                <FormControl v-model="row.points" type="number" class="w-20 text-right"
+                  @change="(val) => onPointsChange(row, val)" />
+                <span class="text-sm text-ink-gray-7">
+                  / {{ parseInt(row.points_out_of, 10) }} {{ __('Points') }}
+                </span>
+              </div>
+              <span v-if="Number(row.points) > Number(row.points_out_of)" class="text-xs text-ink-red-3">
+                {{ __('Grade cannot be greater than maximum') }}
+              </span>
+              <span v-else-if="Number(row.points) < 0" class="text-xs text-ink-red-3">
+                {{ __('Grade cannot be negative') }}
               </span>
             </div>
           </div>
@@ -125,6 +131,9 @@
       <!-- Right Section (1/3 width) -->
       <div class="col-span-1 space-y-4">
         <div class="space-y-4 border p-5 rounded-md">
+          <div class="text-sm text-ink-gray-7">
+            {{ __('Final grade is auto-calculated') }}
+          </div>
           <FormControl v-model="submisisonDetails.doc.fudge_points" :label="__('Fudge Points')" :disabled="false" />
           <FormControl v-model="submisisonDetails.doc.status" :label="__('Status')" type="select" :options="[
             {
@@ -137,9 +146,35 @@
             },
           ]" :disabled="false" />
         </div>
-        <div class="space-y-4 border p-5 rounded-md">
-          <Discussions :title="__('Exam Comments')" :doctype="'Exam Submission'" :docname="submisisonDetails.doc.name"
-            :key="submisisonDetails.doc.name" type="single" />
+        <div class="border rounded-lg p-5 bg-surface-white shadow-sm">
+          <h3 class="text-lg font-semibold mb-3 text-ink-gray-9">{{ __('Exam Comments') }}</h3>
+          <div v-if="gradingComments.length" class="space-y-3 mb-4">
+            <div v-for="c in gradingComments" :key="c.name"
+              class="p-3 rounded-lg text-sm"
+              :class="c.author === user.data?.name
+                ? 'bg-blue-50 border border-blue-200 ml-4'
+                : 'bg-gray-50 border border-gray-200 mr-4'">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
+                <span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
+              </div>
+              <div v-html="c.comment" class="prose-sm"></div>
+            </div>
+          </div>
+          <div v-else class="text-sm text-ink-gray-4 mb-4">
+            {{ __('No comments yet.') }}
+          </div>
+          <LightEditor
+            :id="'exam-gc-' + currentSubmission"
+            :key="'egc-' + currentSubmission"
+            ref="gcEditor"
+            :placeholder="__('Write a comment...')"
+            @change="(val) => newGradingComment = val"
+          />
+          <Button variant="solid" size="sm" class="mt-2" @click="postGradingComment"
+            :disabled="!newGradingComment || addGradingCommentResource.loading">
+            {{ __('Send') }}
+          </Button>
         </div>
       </div>
     </div>
@@ -155,9 +190,8 @@ import {
   Badge,
   toast, call
 } from 'frappe-ui'
-import { computed, onBeforeUnmount, onMounted, inject, watch, watchEffect, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, inject, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Discussions from '@/components/Discussions.vue'
 import LightEditor from '@/components/LightEditor.vue'
 import { Check, X } from 'lucide-vue-next'
 
@@ -169,13 +203,10 @@ onMounted(() => {
     router.push({ name: 'Courses' })
 
   window.addEventListener('keydown', keyboardShortcut)
-  console.log('Keyboard shortcut listener added')
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', keyboardShortcut)
-  console.log('Keyboard shortcut listener removed')
-  // Clean up any other resources or listeners if needed
 })
 
 const keyboardShortcut = (e) => {
@@ -215,7 +246,6 @@ const ExamTitle = createResource({
   },
   auto: true,
 })
-console.log('Exam Title:', ExamTitle)
 
 const submissionlist = createResource({
   url: 'frappe.client.get_list',
@@ -230,7 +260,6 @@ const submissionlist = createResource({
   },
   auto: true,
 });
-console.log('Submission List:', submissionlist)
 
 const submisisonDetails = createDocumentResource({
   doctype: 'Exam Submission',
@@ -275,9 +304,17 @@ const formatTime = (seconds) => {
   const secs = (seconds % 60).toString().padStart(2, '0');
   return `${hrs}:${mins}:${secs}`;
 };
+const clampPoints = (row) => {
+  const max = Number(row.points_out_of)
+  const val = Number(row.points)
+  if (val > max) row.points = max
+  else if (val < 0) row.points = 0
+}
+
 const setPoints = (row, points) => {
   row.points = points;
-  row.graded = true; // Mark the question as graded
+  row.graded = true;
+  updateScoreAndPercentage()
 };
 
 const updateScoreAndPercentage = () => {
@@ -297,28 +334,36 @@ const updateScoreAndPercentage = () => {
   submisisonDetails.doc.percentage = parseFloat(percentage.toFixed(2)); // Ensure it's a float and round to 2 decimal places
 };
 
-// Watch for changes in row.points or fudge_points
-const pointsArray = computed(() => {
-  return submisisonDetails.doc.result ? submisisonDetails.doc.result.map((row) => row.points) : [];
-});
-
-watchEffect(() => {
-  if (submisisonDetails.doc && submisisonDetails.doc.result) {
-    updateScoreAndPercentage(); // Recalculate score and percentage
+// Recalculate only on fudge_points user edits (not initial load)
+let fudgeInitialized = false
+watch(
+  () => submisisonDetails.doc?.fudge_points,
+  () => {
+    if (!fudgeInitialized) {
+      fudgeInitialized = true
+      return
+    }
+    updateScoreAndPercentage()
   }
-});
+)
 
-// Watch for changes in fudge_points
-watchEffect(() => {
-  if (submisisonDetails.doc && typeof submisisonDetails.doc.fudge_points !== 'undefined') {
-    updateScoreAndPercentage(); // Recalculate score and percentage
-  }
-});
+const commentTimers = {}
 
 const onCommentChange = (row, value) => {
-  row.comments = value; // Update the row.comments field
-
-};
+  row.comments = value
+  clearTimeout(commentTimers[row.name])
+  commentTimers[row.name] = setTimeout(async () => {
+    try {
+      await call('seminary.seminary.doctype.exam_submission.exam_submission.save_exam_comment', {
+        submission_name: props.submission,
+        row_name: row.name,
+        comments: value,
+      })
+    } catch (e) {
+      console.error('Failed to auto-save comment:', e)
+    }
+  }, 1500)
+}
 
 const validateSubmission = async () => {
   // Find ungraded questions
@@ -352,25 +397,74 @@ const validateSubmission = async () => {
 };
 
 const onPointsChange = (row, value) => {
-  row.graded = true; // Mark the question as graded
-  console.log(`Updated Points for Question: ${row.points}`); // Debugging log
+  clampPoints(row)
+  row.graded = true
+  updateScoreAndPercentage()
 };
 
 const saveSubmission = async () => {
-  // Use frappe-ui's call to save, then reload the resource
-  const { call } = await import('frappe-ui')
-  const result = await call('frappe.client.save', {
-    doc: JSON.parse(JSON.stringify(submisisonDetails.doc))
+  await call('seminary.seminary.doctype.exam_submission.exam_submission.save_exam_grade', {
+    submission_name: props.submission,
+    status: submisisonDetails.doc.status,
+    score: submisisonDetails.doc.score,
+    percentage: submisisonDetails.doc.percentage,
+    fudge_points: submisisonDetails.doc.fudge_points,
+    result: submisisonDetails.doc.result.map(row => ({
+      name: row.name,
+      points: row.points,
+      graded: row.graded,
+      comments: row.comments || '',
+    })),
   })
-
-  // Update local doc with saved data and reset dirty state
-  submisisonDetails.doc = result
-  submisisonDetails.isDirty = false
-
-  return result
+  await submisisonDetails.reload()
 }
 
-const currentSubmission = ref(props.submission); // Track the current submission
+// Grading comments
+const gradingComments = ref([])
+const newGradingComment = ref('')
+const gcEditor = ref(null)
+
+const gradingCommentsResource = createResource({
+  url: 'seminary.seminary.doctype.exam_submission.exam_submission.get_exam_grading_comments',
+  auto: false,
+  onSuccess(data) {
+    gradingComments.value = data || []
+  },
+})
+
+const fetchGradingComments = () => {
+  if (currentSubmission.value) {
+    gradingCommentsResource.submit({ submission_name: currentSubmission.value })
+  }
+}
+
+const addGradingCommentResource = createResource({
+  url: 'seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment',
+  onSuccess() {
+    newGradingComment.value = ''
+    gcEditor.value?.clear()
+    fetchGradingComments()
+  },
+  onError(err) {
+    toast.error(err.messages?.[0] || err)
+  },
+})
+
+const postGradingComment = () => {
+  if (!newGradingComment.value || !currentSubmission.value) return
+  addGradingCommentResource.submit({
+    submission_name: currentSubmission.value,
+    comment: newGradingComment.value,
+  })
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const d = new Date(dateString)
+  return d.toLocaleDateString(undefined, { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(undefined, { timeStyle: 'short' })
+}
+
+const currentSubmission = ref(props.submission);
 const currentIndex = computed(() =>
   submissionlist.data?.findIndex((submission) => submission.name === currentSubmission.value)
 );
@@ -405,9 +499,9 @@ const navigateToSubmissionByName = (submissionName) => {
 
 watch(currentSubmission, async (newSubmission) => {
   if (newSubmission) {
-    console.log('Navigating to submission:', newSubmission); // Debugging log
-    submisisonDetails.name = newSubmission; // Update the document name
-    await submisisonDetails.reload(); // Reload the document
+    submisisonDetails.name = newSubmission;
+    await submisisonDetails.reload();
+    fetchGradingComments();
   }
-});
+}, { immediate: true });
 </script>

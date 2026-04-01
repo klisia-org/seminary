@@ -30,7 +30,6 @@ class CourseLesson(Document):
             lesson_count = frappe.db.count(
                 "Course Lesson", filters={"course_sc": self.course_sc}
             )
-        print(lesson_count)
         frappe.db.set_value("Course Schedule", self.course_sc, "lessons", lesson_count)
 
     def on_update(self):
@@ -43,11 +42,7 @@ class CourseLesson(Document):
         Updates the lesson's assessment criteria fields (quiz, assignment, exam, discussion)
         by linking them to the corresponding Scheduled Course Assess Criteria.
         """
-        # Check if the Course Lesson document exists
         if not frappe.db.exists("Course Lesson", self.name):
-            print(
-                f"Course Lesson {self.name} does not exist. Skipping updates for {section}."
-            )
             return
 
         doctype_map = {
@@ -55,6 +50,14 @@ class CourseLesson(Document):
             "Quiz": "Quiz",
             "Assignment": "Assignment Activity",
             "Discussion": "Discussion Activity",
+        }
+
+        # Field mapping for clearing stale links
+        lesson_field_map = {
+            "Exam": ("exam", "assessment_criteria_exam"),
+            "Quiz": ("quiz_id", "assessment_criteria_quiz"),
+            "Assignment": ("assignment_id", "assessment_criteria_assignment"),
+            "Discussion": ("discussion_id", "assessment_criteria_discussion"),
         }
 
         # Parse lesson.content as JSON
@@ -76,6 +79,21 @@ class CourseLesson(Document):
                 ):  # Match section type (e.g., "quiz", "assignment", "exam")
                     documents.append(block_data.get(section.lower()))
 
+        # Clear stale links: if this section's assessment is no longer in the content,
+        # reset the lesson's field and clear the SCAC's lesson pointer
+        activity_field, criteria_field = lesson_field_map[section]
+        if not documents:
+            old_criteria = frappe.db.get_value(
+                "Course Lesson", self.name, criteria_field
+            )
+            if old_criteria:
+                frappe.db.set_value(
+                    "Scheduled Course Assess Criteria", old_criteria, "lesson", None
+                )
+            frappe.db.set_value("Course Lesson", self.name, activity_field, None)
+            frappe.db.set_value("Course Lesson", self.name, criteria_field, None)
+            return
+
         for name in documents:
             if section == "Quiz":
                 # Update quiz_id and assessment_criteria_quiz
@@ -91,16 +109,15 @@ class CourseLesson(Document):
                     "assessment_criteria_quiz",
                     scheduled_criteria,
                 )
-                print(f"Updated Quiz: {name}, Criteria: {scheduled_criteria}")
-                frappe.db.set_value(
-                    "Scheduled Course Assess Criteria",
-                    scheduled_criteria,
-                    "lesson",
-                    self.name,
-                )
+                if scheduled_criteria:
+                    frappe.db.set_value(
+                        "Scheduled Course Assess Criteria",
+                        scheduled_criteria,
+                        "lesson",
+                        self.name,
+                    )
 
             elif section == "Assignment":
-                # Update assignment_id and assessment_criteria_assignment
                 frappe.db.set_value("Course Lesson", self.name, "assignment_id", name)
                 scheduled_criteria = frappe.db.get_value(
                     "Scheduled Course Assess Criteria",
@@ -113,19 +130,15 @@ class CourseLesson(Document):
                     "assessment_criteria_assignment",
                     scheduled_criteria,
                 )
-                print(f"Updated Assignment: {name}, Criteria: {scheduled_criteria}")
-                frappe.db.set_value(
-                    "Scheduled Course Assess Criteria",
-                    scheduled_criteria,
-                    "lesson",
-                    self.name,
-                )
-                print(
-                    f"Updated Scheduled Course Assess Criteria: {scheduled_criteria} with lesson: {self.name}"
-                )
+                if scheduled_criteria:
+                    frappe.db.set_value(
+                        "Scheduled Course Assess Criteria",
+                        scheduled_criteria,
+                        "lesson",
+                        self.name,
+                    )
 
             elif section == "Exam":
-                # Update exam and assessment_criteria_exam
                 frappe.db.set_value("Course Lesson", self.name, "exam", name)
                 scheduled_criteria = frappe.db.get_value(
                     "Scheduled Course Assess Criteria",
@@ -138,19 +151,15 @@ class CourseLesson(Document):
                     "assessment_criteria_exam",
                     scheduled_criteria,
                 )
-                print(f"Updated Exam: {name}, Criteria: {scheduled_criteria}")
-                frappe.db.set_value(
-                    "Scheduled Course Assess Criteria",
-                    scheduled_criteria,
-                    "lesson",
-                    self.name,
-                )
-                print(
-                    f"Updated Scheduled Course Assess Criteria: {scheduled_criteria} with lesson: {self.name}"
-                )
+                if scheduled_criteria:
+                    frappe.db.set_value(
+                        "Scheduled Course Assess Criteria",
+                        scheduled_criteria,
+                        "lesson",
+                        self.name,
+                    )
 
             elif section == "Discussion":
-                # Update discussion and assessment_criteria_discussion
                 frappe.db.set_value("Course Lesson", self.name, "discussion_id", name)
                 scheduled_criteria = frappe.db.get_value(
                     "Scheduled Course Assess Criteria",
@@ -163,16 +172,13 @@ class CourseLesson(Document):
                     "assessment_criteria_discussion",
                     scheduled_criteria,
                 )
-                print(f"Updated Discussion: {name}, Criteria: {scheduled_criteria}")
-                frappe.db.set_value(
-                    "Scheduled Course Assess Criteria",
-                    scheduled_criteria,
-                    "lesson",
-                    self.name,
-                )
-                print(
-                    f"Updated Scheduled Course Assess Criteria: {scheduled_criteria} with lesson: {self.name}"
-                )
+                if scheduled_criteria:
+                    frappe.db.set_value(
+                        "Scheduled Course Assess Criteria",
+                        scheduled_criteria,
+                        "lesson",
+                        self.name,
+                    )
 
     # def update_orphan_documents(self, doctype, documents):
     # 	"""Updates the documents that were previously part of this lesson,
@@ -317,7 +323,6 @@ def get_assignment_progress(lesson):
         ):
             return False
         else:
-            print("getting assignment")
             assignment_doc = frappe.get_doc(
                 "Assignment Submission",
                 {"assignment": assignment, "member": frappe.session.user},

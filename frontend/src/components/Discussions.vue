@@ -84,25 +84,22 @@ const socketConnected = ref(false); // Track socket connection status
 const socket = initSocket(); // Use the default namespace or specify one if needed
 const showing = ref(false)
 
-if (!socket) {
-	console.error('Socket connection not initialized in Discussions.vue.');
-} else {
-	console.log('Socket connection initialized in Discussions.vue:', socket);
-
-	// Add event listeners for debugging and connection tracking
+if (socket) {
 	socket.on('connect', () => {
-		console.log('Socket connected:', socket.id);
-		socketConnected.value = true; // Mark socket as connected
+		socketConnected.value = true;
 	});
 
 	socket.on('connect_error', (error) => {
 		console.error('Socket connection error:', error);
 	});
 
-	socket.on('disconnect', (reason) => {
-		console.warn('Socket disconnected:', reason);
-		socketConnected.value = false; // Mark socket as disconnected
+	socket.on('disconnect', () => {
+		socketConnected.value = false;
 	});
+
+	if (socket.connected) {
+		socketConnected.value = true;
+	}
 }
 
 const props = defineProps({
@@ -139,26 +136,18 @@ const props = defineProps({
 		default: 'multi', // Default to multi-topic mode but can be single for assignment feedback
 	},
 })
-console.log('Discussions.vue props:', props) // Debugging: Check if props are received correctly
-// Watch for socket connection and execute onMounted logic once connected
 watch(socketConnected, (isConnected) => {
 	if (isConnected) {
-		console.log('Socket is connected, proceeding with onMounted logic.');
 		executeOnMountedLogic();
 	}
-});
+}, { immediate: true });
 
 const executeOnMountedLogic = () => {
-	console.log('onMounted logic executed'); // Debugging: Ensure this is called
-	console.log('Props:', props); // Debugging: Log props
-
 	if (user.data) {
 		if (props.type === 'single') {
-			console.log('Single-topic mode detected'); // Debugging
-			singleTopicResource.reload(); // Trigger the resource to fetch the single topic
-			console.log('Topic', currentTopic.value)
+			singleTopicResource.reload();
 		} else {
-			loading.value = false; // Immediately stop loading for multi-topic mode
+			loading.value = false;
 		}
 		topics.reload();
 	}
@@ -190,18 +179,14 @@ const singleTopicResource = createResource({
 		};
 	},
 	onSuccess(data) {
-		console.log('Ensure single topic response:', data); // Debugging
 		if (data) {
-			currentTopic.value = data; // Set the single topic as the current topic
-			console.log('Current topic set:', currentTopic.value); // Debugging
-			showTopics.value = false; // Automatically show replies for the single topic
-			loading.value = false; // Mark loading as complete
+			currentTopic.value = data;
+			showTopics.value = false;
+			loading.value = false;
 		}
-		console.log('Changed loading to:', loading.value); // Debugging
 	},
-	onError(error) {
-		console.error('Error ensuring single topic:', error); // Log the error
-		loading.value = false; // Ensure loading is stopped even on error
+	onError() {
+		loading.value = false;
 	},
 });
 

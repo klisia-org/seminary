@@ -35,7 +35,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fetch_from": "question.standard_comments",
    "fieldname": "comments",
    "fieldtype": "Text Editor",
    "in_list_view": 1,

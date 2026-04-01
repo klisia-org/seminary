@@ -5,8 +5,8 @@
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 		</header>
 		<div class="m-5">
-			<div class="flex justify-between w-full">
-				<div class="md:w-2/3">
+			<div class="grid md:grid-cols-[1fr,auto] gap-5">
+				<div>
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.course }}
 					</div>

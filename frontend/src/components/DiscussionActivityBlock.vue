@@ -31,7 +31,6 @@ const props = defineProps({
 	},
 })
 
-console.log('Props in DiscussionActivityBlock:', props)
 const submission = createResource({
 	url: 'frappe.client.get_value',
 	makeParams(values) {
@@ -46,6 +45,5 @@ const submission = createResource({
 	},
 	auto: true,
 })
-console.log(submission)
 
 </script>

@@ -134,6 +134,10 @@ watch(() => props.content, (newContent) => {
 
 onBeforeUnmount(() => {
     clearTimeout(debounceTimer)
+    if (editorEl.value) {
+        editorEl.value.blur()
+        editorEl.value.innerHTML = ''
+    }
 })
 
 defineExpose({ clear })

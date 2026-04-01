@@ -813,16 +813,31 @@ def get_lesson_icon(body, content):
 
 @frappe.whitelist()
 def get_lesson_due_date(lesson):
+    criteria_fields = frappe.db.get_value(
+        "Course Lesson",
+        lesson,
+        [
+            "assessment_criteria_exam",
+            "assessment_criteria_quiz",
+            "assessment_criteria_assignment",
+            "assessment_criteria_discussion",
+        ],
+        as_dict=True,
+    )
+    if not criteria_fields:
+        return None
+
+    linked = [v for v in criteria_fields.values() if v]
+    if not linked:
+        return None
+
     due_date = frappe.db.sql(
         """
-		select scac.due_date
-		from `tabScheduled Course Assess Criteria` scac, `tabCourse Schedule Chapter` c, `tabCourse Schedule Lesson Reference` r
-		where c.coursesc = scac.parent and
-		r.parent = c.name and
-		scac.lesson = r.lesson and
-		r.lesson = %(lesson)s
-		""",
-        {"lesson": lesson},
+        SELECT due_date FROM `tabScheduled Course Assess Criteria`
+        WHERE name IN %(names)s AND due_date IS NOT NULL
+        ORDER BY due_date ASC LIMIT 1
+        """,
+        {"names": linked},
         as_dict=True,
     )
     return due_date[0].due_date if due_date else None

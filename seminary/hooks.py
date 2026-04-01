@@ -247,7 +247,7 @@ doc_events = {
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
-        # "on_update": "seminary.seminary.api.quizresult_to_card",
+        "on_update": "seminary.seminary.api.quizresult_to_card",
         "before_insert": "seminary.seminary.api.sanitize_submission",
         "before_save": "seminary.seminary.api.sanitize_submission",
     },
