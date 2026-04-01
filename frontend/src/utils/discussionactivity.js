@@ -11,9 +11,9 @@ export class DiscussionActivity {
 	constructor({ data, api, readOnly, config }) {
 		this.data = data
 		this.readOnly = readOnly
-		this.course = config?.course || null  // capture course from config
+		this.course = config?.course || null
 		this.courseName = config?.courseName || null
-		console.log('DiscussionActivity tool initialized with course:', this.course) // Debugging
+		this._app = null
 	}
 
 	static get toolbox() {
@@ -52,12 +52,9 @@ export class DiscussionActivity {
 			return
 		}
 		if (this.readOnly) {
-			// Get courseName from the current route
-           
-			console.log('Rendering DiscussionActivity in read-only mode for discussion:', discussion, 'in course:', this.courseName) // Debugging
 			const app = createApp(DiscussionActivityBlock, {
 				discussionID: discussion,
-				courseName: this.courseName,  // Pass courseName to the block component
+				courseName: this.courseName,
 			})
 			app.use(translationPlugin)
 			app.use(FrappeUI)
@@ -65,6 +62,7 @@ export class DiscussionActivity {
 			const { userResource } = usersStore()
 			app.provide('$user', userResource)
 			app.mount(this.wrapper)
+			this._app = app
 			return
 		}
 		this.wrapper.innerHTML = `<div class='border rounded-md p-10 text-center bg-surface-menu-bar mb-2'>
@@ -94,7 +92,14 @@ export class DiscussionActivity {
 		app.mount(this.wrapper)
 	}
 
-		save(blockContent) {
+	destroy() {
+		if (this._app) {
+			this._app.unmount()
+			this._app = null
+		}
+	}
+
+	save(blockContent) {
 		return {
 			discussion: this.data.discussion,
 		}

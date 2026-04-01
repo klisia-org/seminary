@@ -19,11 +19,11 @@ class DiscussionSubmission(Document):
             )
         self.course_assess = frappe.db.get_value(
             "Scheduled Course Assess Criteria",
-            {"discussion": self.disc_activity, "parent": self.course},
+            {"discussion": self.disc_activity, "parent": self.coursesc},
             "name",
         )
         self.extra_credit = frappe.db.get_value(
             "Scheduled Course Assess Criteria",
-            {"discussion": self.disc_activity, "parent": self.course},
+            {"discussion": self.disc_activity, "parent": self.coursesc},
             "extracredit_scac",
         )

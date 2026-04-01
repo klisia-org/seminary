@@ -107,8 +107,6 @@
 			</div>
 			<div v-else class="text-ink-gray-5 mt-5">
 				{{ __('No discussions available yet.') }}
-				{{ 'All discussions', all_discussions.data }}
-				{{ 'hasSavedSubmission', hasSavedSubmission }}
 			</div>
 		</div>
 		<!-- Right column wrapper -->
@@ -146,14 +144,29 @@
 					</Button>
 				</router-link>
 			</div>
-			<!-- Student Grade Display -->
-			<div v-if="isStudent && submissionResource.doc?.status === 'Graded'"
+			<!-- Instructor: Edit Course Assessments button (always available) -->
+			<div v-if="isInstructorView" class="mb-6">
+				<div v-if="!isGradedActivity"
+					class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3 text-sm text-blue-800">
+					{{ __('This Discussion Activity is currently not associated with a grading criteria.') }}
+				</div>
+				<router-link :to="{
+					name: 'CourseAssessment',
+					params: { courseName: props.courseName },
+				}">
+					<Button variant="outline" class="w-full">
+						{{ __('Edit Course Assessments') }}
+					</Button>
+				</router-link>
+			</div>
+			<!-- Student Grade Display (only for graded activities) -->
+			<div v-if="isStudent && isGradedActivity && submissionResource.doc?.status === 'Graded'"
 				class="mb-4 p-4 border rounded-lg bg-surface-white">
 				<div class="text-sm text-ink-gray-5">{{ __('Grade') }}</div>
 				<div class="text-2xl font-bold text-ink-gray-9">{{ submissionResource.doc?.grade }}</div>
 			</div>
-			<!-- Grading Feedback Thread (visible to student when graded or has comments) -->
-			<div v-if="isStudent && (gradingComments.length > 0 || submissionResource.doc?.status === 'Graded')"
+			<!-- Grading Feedback Thread (only for graded activities) -->
+			<div v-if="isStudent && isGradedActivity && (gradingComments.length > 0 || submissionResource.doc?.status === 'Graded')"
 				class="mb-6 border rounded-lg p-4 bg-surface-white">
 				<h3 class="text-md font-semibold mb-3 text-ink-gray-7">{{ __('Feedback') }}</h3>
 				<div v-if="gradingComments.length" class="space-y-3 mb-4">
@@ -189,7 +202,7 @@
 								<Badge v-if="isDirty" theme="orange">
 									{{ __('Not Saved') }}
 								</Badge>
-								<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
+								<Badge v-else-if="isGradedActivity && submissionResource.doc?.status" :theme="statusTheme" size="lg">
 									{{ submissionResource.doc?.status }}
 								</Badge>
 								<Button variant="solid" @click="submitDiscussion()">
@@ -365,7 +378,6 @@ const isInstructorView = computed(() =>
 const studentGroups = ref([]);
 const selectedGroupFilter = ref('all')
 const Student = ref('');
-const courseName = router.currentRoute.value.params.courseName
 const owner = computed(() => user.data?.name)
 const dashboardStats = ref({ submission_count: null, avg_replies: null })
 const showDiscussionModal = ref(false)
@@ -395,21 +407,26 @@ const props = defineProps({
 		required: false,
 	},
 })
-const discussionID = props.discussionID
-console.log('Props in DiscussionActivity outside onMounted:', props)
+
+// Check if this discussion is linked to a grading criteria
+const gradingCriteriaResource = createResource({
+	url: 'seminary.seminary.api.GradeableDiscussion',
+	makeParams() {
+		return {
+			courseName: props.courseName,
+			discussionID: props.discussionID,
+		}
+	},
+	auto: true,
+})
+const isGradedActivity = computed(() => !!gradingCriteriaResource.data)
 
 onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
-	console.log('User: ', user.data?.name)
 	reloadDiscussionLists()
-	StudentData.reload().then(() => {
-		console.log('Student data after reload:', Student.value)
-		console.log('Student group:', Student.value?.student_group)
-	})
-	console.log('Saved Submission Data on Mount:', savedsubmission.data)
-	console.log('hasSavedSubmission:', hasSavedSubmission.value)
+	StudentData.reload()
 	fetchStudentGroups()
-	filteredDiscussions.value; // Trigger initial computation
+	filteredDiscussions.value;
 })
 
 const saveReplyAttachment = (itemName, file) => {
@@ -420,9 +437,8 @@ const saveReplyAttachment = (itemName, file) => {
 }
 
 const discussionReady = computed(() => {
-	return !!(courseName && discussionID && owner.value)
+	return !!(props.courseName && props.discussionID && owner.value)
 })
-console.log('Discussion Ready:', discussionReady.value, 'Course Name:', courseName, 'Discussion ID:', discussionID, 'Owner:', owner.value)
 const removeReplyAttachment = (itemName) => {
 	const { [itemName]: _removed, ...rest } = replyFiles.value
 	replyFiles.value = rest
@@ -437,6 +453,16 @@ const keyboardShortcut = (e) => {
 
 onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
+	// Clear state to prevent stale data on remount
+	gradingComments.value = []
+	studentNewComment.value = ''
+	studentCommentEditor.value?.clear()
+	editorValues.value = {}
+	editorKey.value = {}
+	submissionResource.doc = null
+	original_post.value = ''
+	isDirty.value = false
+	submissionFile.value = null
 })
 
 const discussion = createDocumentResource({
@@ -534,7 +560,7 @@ const all_discussions = createResource({
 	url: 'seminary.seminary.api.get_discussion_submissions',
 	makeParams(values) {
 		return {
-			course_name: courseName,
+			course_name: props.courseName,
 			discussion_id: props.discussionID,
 			member: user.data?.name,
 		}
@@ -546,7 +572,6 @@ const all_discussions = createResource({
 				discussion.new_reply = ''
 			}
 		})
-		console.log("All Discussions Data Fetched: ", data)
 
 	},
 })
@@ -557,14 +582,13 @@ const StudentData = createResource({
 	url: 'seminary.seminary.api.get_student_group',
 	makeParams(values) {
 		return {
-			course_name: courseName,
+			course_name: props.courseName,
 			user: user.data?.name,
 		}
 	},
 	auto: false,
 	onSuccess(data) {
 		Student.value = data
-		console.log('Student fetched:', Student.value)
 	}
 })
 
@@ -575,14 +599,13 @@ const savedsubmission = createResource({
 	url: 'seminary.seminary.api.get_user_discussion_submission',
 	makeParams(values) {
 		return {
-			course_name: courseName,
+			course_name: props.courseName,
 			discussion_id: props.discussionID,
 			owner: user.data?.name,
 		}
 	},
 	auto: false,
 	onSuccess(data) {
-		console.log('Saved submission fetched:', data)
 	}
 })
 
@@ -602,6 +625,24 @@ watch(
 	}
 )
 
+// Clear stale state when switching between different discussions
+watch(
+	() => props.discussionID,
+	() => {
+		gradingComments.value = []
+		studentNewComment.value = ''
+		studentCommentEditor.value?.clear()
+		editorValues.value = {}
+		editorKey.value = {}
+		// Reset submission resource to avoid stale doc (grade, status, editor lock)
+		submissionResource.name = props.submissionName || 'new'
+		submissionResource.doc = null
+		original_post.value = ''
+		isDirty.value = false
+		submissionFile.value = null
+	}
+)
+
 // Watch for when all required data becomes available
 watch(discussionReady, async (hasData) => {
 	if (hasData) {
@@ -615,12 +656,12 @@ const reloadDiscussionLists = async () => {
 
 	try {
 		await all_discussions.reload({
-			course_name: courseName,
-			discussion_id: discussionID,
+			course_name: props.courseName,
+			discussion_id: props.discussionID,
 		})
 		await savedsubmission.reload({
-			course_name: courseName,
-			discussion_id: discussionID,
+			course_name: props.courseName,
+			discussion_id: props.discussionID,
 			owner: owner.value,
 		})
 	} catch (error) {
@@ -672,7 +713,7 @@ const newSubmission = createResource({
 			disc_activity: props.discussionID,
 			disc_title: discussion.doc?.discussion_name,
 			member: user.data?.name,
-			coursesc: courseName,
+			coursesc: props.courseName,
 			original_post: original_post.value,
 			original_attachment: submissionFile.value?.file_url || null,
 			student_name: Student.value?.student_name || user.data?.full_name,
@@ -726,7 +767,6 @@ const submissionResource = createDocumentResource({
 		toast.error(err.messages?.[0] || err)
 	},
 	auto: false,
-	cache: [user.data?.name, props.discussionID],
 })
 
 watch(submissionResource, () => {
@@ -749,14 +789,13 @@ watch(submissionResource, () => {
 			isDirty.value = false
 		}
 
-		// Fetch grading comments for student view
 		if (submissionResource.doc.name) {
 			fetchGradingComments(submissionResource.doc.name)
 		}
 	}
 })
 
-// Grading comments (student view)
+// Grading comments (student view, only for graded activities)
 const gradingCommentsResource = createResource({
 	url: 'seminary.seminary.api.get_grading_comments',
 	auto: false,
@@ -792,7 +831,6 @@ const postStudentComment = () => {
 		}
 	)
 }
-
 
 watch(submissionFile, () => {
 	if (props.submissionName == 'new' && submissionFile.value) {
@@ -879,8 +917,6 @@ const markLessonProgress = () => {
 		let courseName = router.currentRoute.value.params.courseName
 		let chapterNumber = router.currentRoute.value.params.chapterNumber
 		let lessonNumber = router.currentRoute.value.params.lessonNumber
-		console.log("Chapter Number: ", chapterNumber)
-		console.log("Lesson Number: ", lessonNumber)
 
 		call('seminary.seminary.api.mark_lesson_progress', {
 			course: courseName,
@@ -958,17 +994,16 @@ const statusTheme = computed(() => {
 })
 
 const fetchStudentGroups = () => {
-	if (!courseName) {
+	if (!props.courseName) {
 		console.warn('Cannot fetch student groups: Missing course name.');
 		return;
 	}
 
 	call('seminary.seminary.api.get_student_groups_simple', {
-		course_name: courseName,
+		course_name: props.courseName,
 	})
 		.then((response) => {
 			studentGroups.value = response || [];
-			console.log('Student groups fetched:', studentGroups.value);
 		})
 		.catch((error) => {
 			console.error('Error fetching student groups:', error);
@@ -986,7 +1021,6 @@ watch(
 	() => StudentData.loading,
 	(loading) => {
 		if (!loading) {
-			console.log('Student data loaded on watch:', StudentData.data);
 		}
 	}
 );
@@ -994,7 +1028,6 @@ watch(
 watch(
 	() => selectedGroupFilter.value,
 	(newGroup) => {
-		console.log('Selected group changed to:', newGroup);
 		filteredDiscussions.value; // Trigger recomputation
 	}
 );

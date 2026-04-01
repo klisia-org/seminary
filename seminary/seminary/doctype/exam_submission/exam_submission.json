@@ -31,6 +31,8 @@
   "time_taken",
   "comments",
   "amended_from",
+  "grading_comments_section",
+  "grading_comments",
   "section_break_akrj",
   "answer_log"
  ],
@@ -189,6 +191,17 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "grading_comments_section",
+   "fieldtype": "Section Break",
+   "label": "Grading Comments"
+  },
+  {
+   "fieldname": "grading_comments",
+   "fieldtype": "Table",
+   "label": "Grading Comments",
+   "options": "Grading Comment"
   },
   {
    "fieldname": "section_break_akrj",

@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}}]",
+ "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}}]",
  "creation": "2026-02-14 11:35:51.601440",
  "custom_blocks": [],
  "docstatus": 0,
@@ -11,7 +11,7 @@
  "icon": "cog",
  "idx": 0,
  "indicator_color": "green",
- "is_hidden": 0,
+ "is_hidden": 1,
  "label": "Academic Setup",
  "link_type": "DocType",
  "links": [
@@ -154,8 +154,8 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-14 11:52:34.788899",
- "modified_by": "Administrator",
+ "modified": "2026-03-30 09:36:33.390607",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Academic Setup",
  "number_cards": [],
@@ -163,9 +163,41 @@
  "parent_page": "Seminary",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "Registrar"
+  },
+  {
+   "role": "Seminary Manager"
+  }
+ ],
  "sequence_id": 23.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Portal",
+   "type": "URL",
+   "url": "/seminary/courses"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Seminary Main Page",
+   "type": "URL",
+   "url": "/desk/seminary"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Financial Setup",
+   "type": "URL",
+   "url": "/desk/seminary-financial-setup"
+  }
+ ],
  "title": "Academic Setup",
  "type": "Workspace"
 }

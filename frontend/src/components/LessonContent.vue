@@ -35,7 +35,7 @@
 		<Exam :exam="exam" />
 	</div>
 	<div v-if="discussionID">
-		<DiscussionActivity :discussion="discussionID" :courseName="props.courseName" />
+		<DiscussionActivity :discussionID="discussionID" :courseName="props.courseName" />
 	</div>
 	<div v-if="folder">
 		<Folder :folder="folder" />
