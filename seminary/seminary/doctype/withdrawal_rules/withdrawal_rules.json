@@ -1,0 +1,182 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:rule_name",
+ "creation": "2026-04-02 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rule_name",
+  "exclude_from_grade_calculation",
+  "grading_symbol",
+  "column_break_grade",
+  "consider_grade_as",
+  "allow_partial_credit",
+  "section_break_term",
+  "term_based_date",
+  "dynamic_date_section",
+  "day_of_week",
+  "days_after_term_start",
+  "column_break_dynamic",
+  "adjust_for_holidays",
+  "refund_section",
+  "has_refund",
+  "withdrawal_refunds"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Rule Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "exclude_from_grade_calculation",
+   "fieldtype": "Check",
+   "label": "Exclude from Grade Calculation"
+  },
+  {
+   "depends_on": "eval:doc.exclude_from_grade_calculation==1",
+   "fieldname": "grading_symbol",
+   "fieldtype": "Data",
+   "label": "Grading Symbol",
+   "mandatory_depends_on": "eval:doc.exclude_from_grade_calculation==1",
+   "description": "The symbol that will appear on the transcript (e.g. W, WP)"
+  },
+  {
+   "fieldname": "column_break_grade",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.exclude_from_grade_calculation==0",
+   "description": "Select the grade interval this withdrawal will count as for GPA calculation",
+   "fieldname": "consider_grade_as",
+   "fieldtype": "Link",
+   "label": "Consider Grade As",
+   "mandatory_depends_on": "eval:doc.exclude_from_grade_calculation==0",
+   "options": "Grading Scale Interval"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_partial_credit",
+   "fieldtype": "Check",
+   "label": "Allow Partial Credit",
+   "description": "When enabled, allows partial credit for work completed before withdrawal"
+  },
+  {
+   "fieldname": "section_break_term",
+   "fieldtype": "Section Break",
+   "label": "Term-Based Date"
+  },
+  {
+   "default": "0",
+   "description": "Enable to use this rule with Term Withdrawal Rules for automatic date-based assignment",
+   "fieldname": "term_based_date",
+   "fieldtype": "Check",
+   "label": "Term-Based Date"
+  },
+  {
+   "depends_on": "eval:doc.term_based_date==1",
+   "fieldname": "dynamic_date_section",
+   "fieldtype": "Section Break",
+   "label": "Dynamic Date Calculation",
+   "description": "Define a formula to auto-populate the 'Applies Until' date in Term Withdrawal Rules"
+  },
+  {
+   "depends_on": "eval:doc.term_based_date==1",
+   "fieldname": "day_of_week",
+   "fieldtype": "Select",
+   "label": "Day of the Week",
+   "options": "Any\nMonday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday"
+  },
+  {
+   "depends_on": "eval:doc.term_based_date==1",
+   "fieldname": "days_after_term_start",
+   "fieldtype": "Int",
+   "label": "Days After Term Starts",
+   "description": "Number of days after the term start date"
+  },
+  {
+   "fieldname": "column_break_dynamic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.term_based_date==1",
+   "fieldname": "adjust_for_holidays",
+   "fieldtype": "Select",
+   "label": "Adjust for Holidays",
+   "options": "No adjustment\nSubtract one day\nAdd one day",
+   "description": "Adjustment if the calculated date falls on a holiday"
+  },
+  {
+   "fieldname": "refund_section",
+   "fieldtype": "Section Break",
+   "label": "Refund"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_refund",
+   "fieldtype": "Check",
+   "label": "Has Refund"
+  },
+  {
+   "depends_on": "eval:doc.has_refund==1",
+   "fieldname": "withdrawal_refunds",
+   "fieldtype": "Table",
+   "label": "Withdrawal Refunds",
+   "options": "Withdrawal Refunds"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Withdrawal Rules",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

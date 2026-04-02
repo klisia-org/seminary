@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "creation": "2026-04-02 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course_enrollment_individual",
+  "course_withdrawal_request"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_enrollment_individual",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Enrollment Individual",
+   "options": "Course Enrollment Individual",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_withdrawal_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Withdrawal Request",
+   "options": "Course Withdrawal Request"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Withdrawal Courses",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

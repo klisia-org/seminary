@@ -3,6 +3,16 @@
 
 frappe.ui.form.on('Academic Term', {
 
+    refresh: function(frm) {
+        if (!frm.is_new()) {
+            frm.add_custom_button(__('Configure Withdrawal Dates'), function() {
+                frappe.set_route('List', 'Term Withdrawal Rules', {
+                    academic_term: frm.doc.name
+                });
+            }, __('Actions'));
+        }
+    },
+
     after_save: function(frm) {
         console.log("After Save was called");
         console.log(frm.doc.name);

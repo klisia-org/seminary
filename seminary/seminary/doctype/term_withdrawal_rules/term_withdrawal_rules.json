@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "autoname": "format:{academic_term}-{withdrawal_rule}-{####}",
+ "creation": "2026-04-02 12:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_term",
+  "withdrawal_rule",
+  "column_break_date",
+  "applies_until"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Term",
+   "options": "Academic Term",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "withdrawal_rule",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Withdrawal Rule",
+   "options": "Withdrawal Rules",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_date",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "This rule applies to withdrawals requested on or before this date. Cannot exceed the term end date.",
+   "fieldname": "applies_until",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Applies Until",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-02 12:32:19.879278",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Seminary",
+ "name": "Term Withdrawal Rules",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "applies_until",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

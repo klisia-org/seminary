@@ -1,0 +1,321 @@
+{
+ "actions": [],
+ "autoname": "WDR-.{YYYY}-.####",
+ "creation": "2026-04-02 12:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program_enrollment",
+  "student",
+  "student_name",
+  "column_break_course",
+  "course_enrollment_individual",
+  "course_schedule",
+  "course_name",
+  "section_break_scope",
+  "withdrawal_scope",
+  "is_parent",
+  "has_parent",
+  "parent_withdrawal",
+  "column_break_reason",
+  "withdrawal_reason",
+  "student_documentation",
+  "section_break_comments",
+  "student_comment",
+  "section_break_rule",
+  "withdrawal_rule",
+  "withdrawal_effective_date",
+  "column_break_grade",
+  "resulting_grade",
+  "section_break_courses",
+  "withdrawal_courses",
+  "section_break_processing",
+  "academic_processed_by",
+  "column_break_financial",
+  "financial_processed_by",
+  "amended_from",
+  "workflow_state"
+ ],
+ "fields": [
+  {
+   "fetch_from": "program_enrollment.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_course",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_enrollment_individual",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Enrollment Individual",
+   "options": "Course Enrollment Individual",
+   "reqd": 1,
+   "link_filters": "[[{\"fieldname\":\"course_enrollment_individual\",\"field_option\":\"Course Enrollment Individual\"},\"docstatus\",\"=\",1],[{\"fieldname\":\"course_enrollment_individual\",\"field_option\":\"Course Enrollment Individual\"},\"withdrawn\",\"=\",0]]"
+  },
+  {
+   "fetch_from": "course_enrollment_individual.coursesc_ce",
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "course_enrollment_individual.course_data",
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "label": "Course Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_scope",
+   "fieldtype": "Section Break",
+   "label": "Withdrawal Scope"
+  },
+  {
+   "default": "Single Course",
+   "fieldname": "withdrawal_scope",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Withdrawal Scope",
+   "options": "Single Course\nAll Courses This Term\nFull Program Withdrawal",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Set to 1 on manually created requests with multi-course scope",
+   "fieldname": "is_parent",
+   "fieldtype": "Check",
+   "label": "Is Parent Request"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_parent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Has Parent Request"
+  },
+  {
+   "depends_on": "eval:doc.has_parent==1",
+   "fieldname": "parent_withdrawal",
+   "fieldtype": "Link",
+   "label": "Parent Withdrawal Request",
+   "options": "Course Withdrawal Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_reason",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "withdrawal_reason",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Withdrawal Reason",
+   "options": "Withdrawal Reasons",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_documentation",
+   "fieldtype": "Attach",
+   "label": "Student Documentation"
+  },
+  {
+   "fieldname": "section_break_comments",
+   "fieldtype": "Section Break",
+   "label": "Student Comment"
+  },
+  {
+   "fieldname": "student_comment",
+   "fieldtype": "Text Editor",
+   "label": "Student Comment"
+  },
+  {
+   "fieldname": "section_break_rule",
+   "fieldtype": "Section Break",
+   "label": "Withdrawal Rule & Date"
+  },
+  {
+   "description": "Auto-assigned based on term withdrawal dates if configured. Can be manually overridden.",
+   "fieldname": "withdrawal_rule",
+   "fieldtype": "Link",
+   "label": "Withdrawal Rule",
+   "options": "Withdrawal Rules"
+  },
+  {
+   "default": "Today",
+   "description": "Defaults to request creation date. Registrar can override.",
+   "fieldname": "withdrawal_effective_date",
+   "fieldtype": "Date",
+   "label": "Withdrawal Effective Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_grade",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Grade resulting from the withdrawal rule",
+   "fieldname": "resulting_grade",
+   "fieldtype": "Data",
+   "label": "Resulting Grade",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.is_parent==1 && doc.docstatus==1",
+   "fieldname": "section_break_courses",
+   "fieldtype": "Section Break",
+   "label": "Withdrawal Courses"
+  },
+  {
+   "depends_on": "eval:doc.is_parent==1 && doc.docstatus==1",
+   "fieldname": "withdrawal_courses",
+   "fieldtype": "Table",
+   "label": "Withdrawal Courses",
+   "options": "Withdrawal Courses"
+  },
+  {
+   "fieldname": "section_break_processing",
+   "fieldtype": "Section Break",
+   "label": "Processing"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "academic_processed_by",
+   "fieldtype": "Link",
+   "label": "Academic Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_financial",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "financial_processed_by",
+   "fieldtype": "Link",
+   "label": "Financial Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Course Withdrawal Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-02 12:55:28.178455",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Seminary",
+ "name": "Course Withdrawal Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Student",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}
