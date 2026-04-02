@@ -22,10 +22,38 @@
   "no_prereq",
   "column_break_jfah",
   "cei_si",
+  "withdrawal_section",
+  "withdrawn",
+  "column_break_withdrawal",
+  "withdrawal_request",
   "section_break_ogto",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "withdrawal_section",
+   "fieldtype": "Section Break",
+   "label": "Withdrawal"
+  },
+  {
+   "default": "0",
+   "fieldname": "withdrawn",
+   "fieldtype": "Check",
+   "label": "Withdrawn",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_withdrawal",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.withdrawn==1",
+   "fieldname": "withdrawal_request",
+   "fieldtype": "Link",
+   "label": "Withdrawal Request",
+   "options": "Course Withdrawal Request",
+   "read_only": 1
+  },
   {
    "fieldname": "section_break_ogto",
    "fieldtype": "Section Break"

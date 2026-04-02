@@ -105,6 +105,11 @@
    "group": "Program",
    "link_doctype": "Program Enrollment",
    "link_fieldname": "academic_term"
+  },
+  {
+   "group": "Withdrawal",
+   "link_doctype": "Term Withdrawal Rules",
+   "link_fieldname": "academic_term"
   }
  ],
  "modified": "2025-04-07 15:48:07.116405",

@@ -1,0 +1,132 @@
+[
+ {
+  "creation": "2026-04-02 12:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Course Withdrawal Request",
+  "is_active": 1,
+  "name": "Course Withdrawal",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_name": "Course Withdrawal",
+  "workflow_state_field": "workflow_state",
+  "states": [
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Submitted",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Academic Review",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Academically Approved",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Financial Review",
+    "allow_edit": "Accounts User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Financially Approved",
+    "allow_edit": "Accounts User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Completed",
+    "allow_edit": "Seminary Manager"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Rejected",
+    "allow_edit": "Academics User"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit",
+    "allowed": "Academics User",
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allowed": "Student",
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Send for Academic Review",
+    "allowed": "Academics User",
+    "next_state": "Academic Review",
+    "state": "Submitted"
+   },
+   {
+    "action": "Reject",
+    "allowed": "Academics User",
+    "next_state": "Rejected",
+    "state": "Submitted"
+   },
+   {
+    "action": "Approve Academically",
+    "allowed": "Academics User",
+    "next_state": "Academically Approved",
+    "state": "Academic Review"
+   },
+   {
+    "action": "Reject",
+    "allowed": "Academics User",
+    "next_state": "Rejected",
+    "state": "Academic Review"
+   },
+   {
+    "action": "Send for Financial Review",
+    "allowed": "Academics User",
+    "next_state": "Financial Review",
+    "state": "Academically Approved"
+   },
+   {
+    "action": "Complete",
+    "allowed": "Academics User",
+    "next_state": "Completed",
+    "state": "Academically Approved"
+   },
+   {
+    "action": "Approve Financially",
+    "allowed": "Accounts User",
+    "next_state": "Financially Approved",
+    "state": "Financial Review"
+   },
+   {
+    "action": "Reject",
+    "allowed": "Accounts User",
+    "next_state": "Rejected",
+    "state": "Financial Review"
+   },
+   {
+    "action": "Complete",
+    "allowed": "Accounts User",
+    "next_state": "Completed",
+    "state": "Financially Approved"
+   }
+  ]
+ }
+]

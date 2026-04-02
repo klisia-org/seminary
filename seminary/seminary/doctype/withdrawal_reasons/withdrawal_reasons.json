@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:label",
+ "creation": "2026-04-02 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "description",
+  "column_break_docs",
+  "requires_documentation",
+  "documentation_label",
+  "section_break_instructions",
+  "student_instructions",
+  "column_break_protocol",
+  "staff_protocol"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_docs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_documentation",
+   "fieldtype": "Check",
+   "label": "Requires Documentation"
+  },
+  {
+   "depends_on": "eval:doc.requires_documentation==1",
+   "description": "This will show in the Portal, so students know exactly what they need to submit",
+   "fieldname": "documentation_label",
+   "fieldtype": "Data",
+   "label": "Label for Required Documentation",
+   "mandatory_depends_on": "eval:doc.requires_documentation==1"
+  },
+  {
+   "fieldname": "section_break_instructions",
+   "fieldtype": "Section Break",
+   "label": "Instructions"
+  },
+  {
+   "description": "Shown to students on the Portal",
+   "fieldname": "student_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Student Instructions"
+  },
+  {
+   "fieldname": "column_break_protocol",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Internal protocol for staff processing this withdrawal reason",
+   "fieldname": "staff_protocol",
+   "fieldtype": "Text Editor",
+   "label": "Staff Protocol"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Withdrawal Reasons",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

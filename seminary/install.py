@@ -243,8 +243,51 @@ def update_company_in_item_details():
     frappe.db.commit()
 
 
+def setup_withdrawal_workflow():
+    """Create the Course Withdrawal workflow and its dependencies if they don't exist."""
+    import json
+
+    fixtures_dir = os.path.join(os.path.dirname(__file__), "fixtures")
+
+    # Create workflow states
+    states_path = os.path.join(fixtures_dir, "workflow_state.json")
+    if os.path.exists(states_path):
+        with open(states_path) as f:
+            states = json.load(f)
+        for state_data in states:
+            if not frappe.db.exists("Workflow State", state_data["name"]):
+                doc = frappe.get_doc(state_data)
+                doc.insert(ignore_permissions=True)
+
+    # Create workflow actions
+    actions_path = os.path.join(fixtures_dir, "workflow_action_master.json")
+    if os.path.exists(actions_path):
+        with open(actions_path) as f:
+            actions = json.load(f)
+        for action_data in actions:
+            if not frappe.db.exists("Workflow Action Master", action_data["name"]):
+                doc = frappe.get_doc(action_data)
+                doc.insert(ignore_permissions=True)
+
+    # Create workflow
+    if not frappe.db.exists("Workflow", "Course Withdrawal"):
+        wf_path = os.path.join(fixtures_dir, "workflow.json")
+        if os.path.exists(wf_path):
+            with open(wf_path) as f:
+                workflows = json.load(f)
+            for wf_data in workflows:
+                wf_data.pop("creation", None)
+                wf_data.pop("modified", None)
+                wf_data.pop("modified_by", None)
+                doc = frappe.get_doc(wf_data)
+                doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+
+
 def after_migrate():
     setup_genders()
+    setup_withdrawal_workflow()
 
 
 def setup_genders():

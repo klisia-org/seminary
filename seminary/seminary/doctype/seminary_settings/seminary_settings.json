@@ -36,6 +36,11 @@
   "demo_data_installed",
   "column_break_xyvi",
   "no_more_demo",
+  "withdrawal_section",
+  "allow_portal_withdrawal",
+  "term_based_withdrawal_dates",
+  "column_break_withdrawal",
+  "default_scholarship_withdrawal_procedure",
   "portal_tab",
   "calendar_instructions",
   "show_student_application_on_login",
@@ -256,6 +261,36 @@
    "fieldtype": "Link",
    "label": "Support User",
    "options": "User"
+  },
+  {
+   "fieldname": "withdrawal_section",
+   "fieldtype": "Section Break",
+   "label": "Course Withdrawal"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_portal_withdrawal",
+   "fieldtype": "Check",
+   "label": "Allow students to request course withdrawal on Portal"
+  },
+  {
+   "default": "1",
+   "description": "Setting dates per term allows the system to automatically apply withdrawal rules, that can be overridden manually",
+   "fieldname": "term_based_withdrawal_dates",
+   "fieldtype": "Check",
+   "label": "Set Withdrawal dates per Academic Term"
+  },
+  {
+   "fieldname": "column_break_withdrawal",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Refund to Scholarship Fund",
+   "description": "This setting will determine what needs to occur when there is a payment from the Scholarship Customer; all the specifics are handled by Withdrawal Rules",
+   "fieldname": "default_scholarship_withdrawal_procedure",
+   "fieldtype": "Select",
+   "label": "Default Scholarship Procedure on Withdrawals",
+   "options": "Refund to Scholarship Fund\nRefund to Scholarship Fund and Create Invoice for Student"
   }
  ],
  "issingle": 1,
