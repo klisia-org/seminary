@@ -35,6 +35,18 @@ const routes = [
 		props: true,
 	},
   {
+    path: '/courses/:courseName/status',
+    name: 'CourseStatus',
+    component: () => import('@/pages/CourseStatus.vue'),
+    props: true,
+  },
+  {
+    path: '/courses/:courseName/withdraw',
+    name: 'CourseWithdrawalRequest',
+    component: () => import('@/pages/CourseWithdrawalRequest.vue'),
+    props: true,
+  },
+  {
     path: "/courses/:courseName/assessment",
     name: "CourseAssessment",
     component: () => import('@/pages/CourseAssessment.vue'),

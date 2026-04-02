@@ -92,6 +92,10 @@
    "write": 1
   },
   {
+   "read": 1,
+   "role": "Student"
+  },
+  {
    "create": 1,
    "delete": 1,
    "email": 1,

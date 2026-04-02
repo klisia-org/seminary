@@ -1092,6 +1092,127 @@ def get_gradebook(course):
 
 
 @frappe.whitelist()
+def get_student_course_status(course):
+    """Returns the current student's course status including grades, progress, and class statistics."""
+    import statistics
+
+    user = frappe.session.user
+
+    # Get student's roster record
+    roster = frappe.db.get_value(
+        "Scheduled Course Roster",
+        {"course_sc": course, "stuemail_rc": user},
+        [
+            "name",
+            "progress",
+            "fscore",
+            "fgrade",
+            "fgradepass",
+            "active",
+            "audit_bool",
+            "student",
+            "stuname_roster",
+        ],
+        as_dict=True,
+    )
+    print("Roster of Course Status", roster)
+    if not roster:
+        frappe.throw("You are not enrolled in this course.", frappe.PermissionError)
+
+    # Get all assessments for this course, LEFT JOIN with student's grades
+    roster["assessments"] = frappe.db.sql(
+        """select scar.name as assessment_criteria, scar.title, scar.type, scar.due_date,
+            scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac,
+            r.name as grade_name, r.rawscore_card, r.actualextrapt_card
+        from `tabScheduled Course Assess Criteria` scar
+        left join `tabCourse Assess Results Detail` r
+            on r.assessment_criteria = scar.name and r.parent = %s
+        where scar.parent = %s
+        order by scar.idx""",
+        (roster.name, course),
+        as_dict=1,
+    )
+
+    # Add status field per assessment
+    for a in roster["assessments"]:
+        if a.rawscore_card is None:
+            a["status"] = "Not Submitted"
+        elif a.rawscore_card == 0:
+            a["status"] = "Not Graded"
+        else:
+            a["status"] = "Graded"
+
+    # Get class statistics per assessment
+    all_rosters = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course, "active": 1},
+        pluck="name",
+    )
+
+    for assessment in roster["assessments"]:
+        if not all_rosters:
+            assessment["class_median"] = None
+            assessment["percentile"] = None
+            continue
+        # Get all scores for this assessment across the class
+        roster_placeholders = ", ".join(["%s"] * len(all_rosters))
+        all_scores = frappe.db.sql(
+            f"""select rawscore_card from `tabCourse Assess Results Detail`
+            where assessment_criteria = %s and parent in ({roster_placeholders}) and rawscore_card > 0""",
+            [assessment.assessment_criteria] + all_rosters,
+            as_list=1,
+        )
+        scores = [s[0] for s in all_scores if s[0] is not None]
+
+        if scores:
+            assessment["class_median"] = round(statistics.median(scores), 1)
+            student_score = assessment.rawscore_card or 0
+            if student_score > 0:
+                below_count = sum(1 for s in scores if s <= student_score)
+                assessment["percentile"] = round(below_count / len(scores) * 100)
+            else:
+                assessment["percentile"] = None
+        else:
+            assessment["class_median"] = None
+            assessment["percentile"] = None
+
+    # Get CEI and PE for withdrawal form
+    cei = frappe.db.get_value(
+        "Course Enrollment Individual",
+        {
+            "coursesc_ce": course,
+            "student_ce": roster.student,
+            "docstatus": 1,
+            "withdrawn": 0,
+        },
+        ["name", "program_ce"],
+        as_dict=True,
+    )
+    roster["course_enrollment_individual"] = cei.name if cei else None
+    roster["program_enrollment"] = cei.program_ce if cei else None
+
+    # Check for active withdrawal request
+    withdrawal = frappe.db.get_value(
+        "Course Withdrawal Request",
+        {
+            "course_enrollment_individual": cei.name if cei else "",
+            "docstatus": ("!=", 2),
+        },
+        ["name", "workflow_state"],
+        as_dict=True,
+    )
+    roster["withdrawal_request"] = withdrawal
+
+    # Get max grade for scale reference
+    cs = frappe.db.get_value(
+        "Course Schedule", course, ["gradesc_cs", "maxnumgrade"], as_dict=True
+    )
+    roster["maxnumgrade"] = cs.maxnumgrade if cs else 100
+    print("FInal Roster for debug", roster)
+    return roster
+
+
+@frappe.whitelist()
 def enroll_in_program(program_name, student=None):
     """Enroll student in program
 
