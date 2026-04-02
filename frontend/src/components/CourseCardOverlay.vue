@@ -21,6 +21,18 @@
 						</span>
 					</Button>
 				</router-link>
+				<router-link :to="{
+					name: 'CourseStatus',
+					params: {
+						courseName: course.data.name,
+					},
+				}">
+					<Button variant="subtle" class="w-full mt-2" size="md">
+						<span>
+							{{ __('My Status') }}
+						</span>
+					</Button>
+				</router-link>
 
 			</div>
 
