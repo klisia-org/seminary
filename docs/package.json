@@ -1,0 +1,13 @@
+{
+  "name": "seminary-docs",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "medium-zoom": "^1.1.0",
+    "vitepress": "^1.6.4"
+  }
+}
