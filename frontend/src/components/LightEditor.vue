@@ -29,6 +29,7 @@
             <div
                 ref="editorEl"
                 contenteditable="true"
+                autocomplete="off"
                 class="light-editor-content prose-sm py-2 px-2 min-h-[7rem] outline-none text-left"
                 :data-placeholder="placeholder"
                 @input="onInput"
@@ -103,6 +104,7 @@ function activate() {
     activated.value = true
     nextTick(() => {
         if (editorEl.value) {
+            editorEl.value.innerHTML = '' // Clear any browser-restored content
             setContent(props.content)
             editorEl.value.focus()
         }
@@ -113,6 +115,7 @@ onMounted(() => {
     if (props.editable && !props.lazy) {
         nextTick(() => {
             if (editorEl.value) {
+                editorEl.value.innerHTML = '' // Clear any browser-restored content
                 setContent(props.content)
             }
         })
@@ -121,7 +124,10 @@ onMounted(() => {
 
 watch(() => props.id, () => {
     if (!props.editable) return
-    if (props.lazy && !activated.value) return
+    if (props.lazy) {
+        activated.value = false // Reset to placeholder state on id change
+        return
+    }
     nextTick(() => setContent(props.content))
 })
 

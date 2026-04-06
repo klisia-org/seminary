@@ -1,0 +1,81 @@
+site_name: SeminaryERP Documentation
+site_description: Documentation for SeminaryERP — a theological seminary management system built on Frappe/ERPNext
+site_url: https://klisia-org.github.io/seminary/
+repo_url: https://github.com/klisia-org/seminary
+repo_name: klisia-org/seminary
+edit_uri: edit/develop/docs/en/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      reconfigure_material: true
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: pt
+          name: Portugues
+          build: true
+        - locale: fr
+          name: Francais
+          build: true
+        - locale: sw
+          name: Kiswahili
+          build: false  # Material theme lacks sw locale template; enable when supported
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Initial Setup: getting-started/initial-setup.md
+      - Your First Term: getting-started/first-term.md
+      - Translations: getting-started/translations.md
+  - Modules:
+      - Enrollment: modules/enrollment.md
+      - Withdrawal: modules/withdrawal.md
+      - Academic Calendar: modules/academic-calendar.md
+      - Grading: modules/grading.md
+      - Discussions: modules/discussions.md
+  - Administration:
+      - User Roles: administration/user-roles.md
+      - Customization: administration/customization.md
