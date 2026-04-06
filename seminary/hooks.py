@@ -32,7 +32,10 @@ add_to_apps_screen = [
 
 # include js, css files in header of desk.html
 app_include_css = "assets/seminary/css/seminary.css"
-app_include_js = "assets/seminary/js/login_redirect.js"
+app_include_js = [
+    "assets/seminary/js/login_redirect.js",
+    "assets/seminary/js/seminary_help.js",
+]
 # app_include_js = "/assets/seminary/js/seminary.js"
 # app_include_js = "seminary/public/js/global_seminary.js"
 
@@ -346,6 +349,7 @@ fixtures = [
     "Program Level",
     "Assessment Criteria",
     "Custom HTML Block",
+    "Seminary Help Entry",
 ]
 
 

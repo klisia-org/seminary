@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}}]",
+ "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"daBrF0hOuf\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Withdrawal Configuration\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}}]",
  "creation": "2026-02-14 11:35:51.601440",
  "custom_blocks": [],
  "docstatus": 0,
@@ -152,9 +152,49 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "description": "Term Withdrawal Rules are automatically created for Academic Terms, but it is advised to confirm these dates.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Withdrawal Configuration",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Withdrawal Reasons",
+   "link_count": 0,
+   "link_to": "Withdrawal Reasons",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Withdrawal Rules",
+   "link_count": 0,
+   "link_to": "Withdrawal Rules",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Term Withdrawal Rules",
+   "link_count": 0,
+   "link_to": "Term Withdrawal Rules",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-03-30 09:36:33.390607",
+ "modified": "2026-04-06 12:08:14.846383",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Academic Setup",

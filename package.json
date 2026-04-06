@@ -7,7 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "cd frontend && yarn install",
     "dev": "cd frontend && yarn dev",
-    "build": "cd frontend && yarn build"
+    "build": "cd frontend && yarn build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [],
   "author": "Klisia, Frappe, and contributors",
@@ -19,5 +22,8 @@
   "resolutions": {
     "picomatch": "^2.3.2",
     "rollup": "^4.59.0"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
   }
 }
