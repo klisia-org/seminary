@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "autoname": "",
+ "creation": "2026-04-06 12:15:51.732987",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "help_target_section",
+  "document_type",
+  "frontend_page",
+  "column_break_1",
+  "mkdocs_url",
+  "is_active",
+  "show_students",
+  "notes_section",
+  "local_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "help_target_section",
+   "fieldtype": "Section Break",
+   "label": "Help Target"
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "DocType"
+  },
+  {
+   "description": "Vue page component name, e.g. CourseDetail, Lesson, Grades",
+   "fieldname": "frontend_page",
+   "fieldtype": "Data",
+   "label": "Frontend Page"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mkdocs_url",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Documentation URL",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "default": "0",
+   "depends_on": "frontend_page",
+   "description": "Show help icon to students on the LMS frontend",
+   "fieldname": "show_students",
+   "fieldtype": "Check",
+   "label": "Show to Students"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Local Notes"
+  },
+  {
+   "description": "How we do it at this seminary \u2014 institution-specific instructions",
+   "fieldname": "local_notes",
+   "fieldtype": "Text Editor",
+   "label": "Local Notes"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-06 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Help Entry",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
