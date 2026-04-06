@@ -61,8 +61,8 @@
 					</div>
 					<div class="new-reply mt-4 space-y-2">
 						<!-- This is the post below the discussion in the main area -->
-						<LightEditor :id="'reply-saved-' + (editorKey[discussion.name])"
-							:key="'reply-saved-' + (editorKey[discussion.name])" :content="discussion.new_reply || ''"
+						<LightEditor :id="'reply-saved-' + getEditorKey(discussion.name)"
+							:key="'reply-saved-' + getEditorKey(discussion.name)" :content="discussion.new_reply || ''"
 							:placeholder="__('Write a reply...')" :lazy="true"
 							@change="(val) => { editorValues[discussion.name] = val }" />
 						<div class="flex items-center justify-between">
@@ -160,13 +160,13 @@
 				</router-link>
 			</div>
 			<!-- Student Grade Display (only for graded activities) -->
-			<div v-if="isStudent && isGradedActivity && submissionResource.doc?.status === 'Graded'"
+			<div v-if="isStudent && hasSavedSubmission && isGradedActivity && submissionResource.doc?.status === 'Graded'"
 				class="mb-4 p-4 border rounded-lg bg-surface-white">
 				<div class="text-sm text-ink-gray-5">{{ __('Grade') }}</div>
 				<div class="text-2xl font-bold text-ink-gray-9">{{ submissionResource.doc?.grade }}</div>
 			</div>
 			<!-- Grading Feedback Thread (only for graded activities) -->
-			<div v-if="isStudent && isGradedActivity && (gradingComments.length > 0 || submissionResource.doc?.status === 'Graded')"
+			<div v-if="isStudent && hasSavedSubmission && isGradedActivity && (gradingComments.length > 0 || submissionResource.doc?.status === 'Graded')"
 				class="mb-6 border rounded-lg p-4 bg-surface-white">
 				<h3 class="text-md font-semibold mb-3 text-ink-gray-7">{{ __('Feedback') }}</h3>
 				<div v-if="gradingComments.length" class="space-y-3 mb-4">
@@ -202,7 +202,8 @@
 								<Badge v-if="isDirty" theme="orange">
 									{{ __('Not Saved') }}
 								</Badge>
-								<Badge v-else-if="isGradedActivity && submissionResource.doc?.status" :theme="statusTheme" size="lg">
+								<Badge v-else-if="isGradedActivity && submissionResource.doc?.status"
+									:theme="statusTheme" size="lg">
 									{{ submissionResource.doc?.status }}
 								</Badge>
 								<Button variant="solid" @click="submitDiscussion()">
@@ -213,7 +214,7 @@
 
 						<div v-if="!hasSavedSubmission" class="text-md mb-4">
 							{{ __('Write your main post here') }}
-							<RichTextEditor id="original-post" :content="original_post || ''"
+							<RichTextEditor :id="'original-post-' + (user.data?.name || 'anon') + '-' + discussionID" :content="original_post"
 								@change="(val) => { original_post = val; isDirty = true }" />
 
 							<div class="text-md text-ink-gray-5 mt-1 mb-2">
@@ -287,8 +288,8 @@
 						</div>
 					</div>
 					<div class="new-reply mt-4 space-y-2">
-						<LightEditor :key="editorKey[submission.name]"
-							:id="'original-post-' + (editorKey[submission.name])" :content="submission.new_reply || ''"
+						<LightEditor :key="getEditorKey(submission.name)"
+							:id="'original-post-' + getEditorKey(submission.name)" :content="submission.new_reply || ''"
 							@change="(val) => { editorValues[submission.name] = val }"
 							:placeholder="__('Write a reply...')" :lazy="true" />
 						<div class="flex items-center justify-between">
@@ -359,7 +360,14 @@ import DiscussionModal from './Modals/DiscussionModal.vue'
 
 
 let isReloading = false
-const editorKey = ref({}); // This will hold unique keys for each editor instance
+const editorKey = ref({})
+
+function getEditorKey(name) {
+	if (!editorKey.value[name]) {
+		editorKey.value[name] = `${name}-${user.data?.name || 'anon'}-${Date.now()}`
+	}
+	return editorKey.value[name]
+}
 const dayjs = typeof dayjsModule === 'function' ? dayjsModule : dayjsModule.default
 dayjs.extend(relativeTime)
 
@@ -618,9 +626,21 @@ const hasSavedSubmission = computed(() =>
 watch(
 	() => props.submissionName,
 	(newName) => {
+		// Clear editor state to prevent content leaking between sessions
+		original_post.value = ''
+		isDirty.value = false
+		submissionFile.value = null
+		editorValues.value = {}
+		editorKey.value = {}
+		gradingComments.value = []
+		studentNewComment.value = ''
+		studentCommentEditor.value?.clear()
+
 		if (newName && newName !== 'new') {
 			submissionResource.name = newName
 			submissionResource.reload()
+		} else {
+			submissionResource.doc = null
 		}
 	}
 )
@@ -771,6 +791,10 @@ const submissionResource = createDocumentResource({
 
 watch(submissionResource, () => {
 	if (submissionResource.doc) {
+		// Guard against stale cached doc when submission is 'new'
+		if (props.submissionName === 'new' && submissionResource.doc.name) {
+			return
+		}
 		if (submissionResource.doc.original_attachment) {
 			imageResource.reload({
 				image: submissionResource.doc.original_attachment,
