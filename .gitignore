@@ -11,3 +11,4 @@ __pycache__/
 .history/
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/node_modules

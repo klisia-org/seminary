@@ -7,6 +7,11 @@
   --vp-button-brand-hover-bg: #1a4a6b;
 }
 
+.medium-zoom-overlay,
+.medium-zoom-image--opened {
+  z-index: 999;
+}
+
 .dark {
   --vp-c-brand-1: #44b2f7;
   --vp-c-brand-2: #6bc4f9;
