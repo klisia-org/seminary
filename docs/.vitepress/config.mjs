@@ -8,11 +8,11 @@ export default defineConfig({
   outDir: '.vitepress/dist',
 
   head: [
-    ['link', { rel: 'icon', href: '/assets/klisia_icon.png' }],
+    ['link', { rel: 'icon', href: '/klisia_icon.png' }],
   ],
 
   themeConfig: {
-    logo: '/assets/klisia_icon.png',
+    logo: '/klisia_icon.png',
 
     nav: [
       { text: 'Home', link: '/' },

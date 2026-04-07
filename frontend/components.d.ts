@@ -39,6 +39,7 @@ declare module 'vue' {
     Link: typeof import('./src/components/Controls/Link.vue')['default']
     MissingData: typeof import('./src/components/MissingData.vue')['default']
     MultiSelect: typeof import('./src/components/Controls/MultiSelect.vue')['default']
+    Notes: typeof import('./src/components/Notes.vue')['default']
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
     ProfileModal: typeof import('./src/components/ProfileModal.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']
