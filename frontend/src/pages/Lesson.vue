@@ -128,6 +128,8 @@
 
 					<ProgressBar v-if="user && lesson.data.membership" :progress="lessonProgress" />
 				</div>
+				<Notes v-if="user?.data?.is_student && lesson.data.membership"
+					:lesson="lesson.data.name" :courseName="courseName" />
 				<CourseOutline :courseName="courseName" :key="chapterNumber"
 					:getProgress="lesson.data.membership ? true : false" />
 			</div>
@@ -146,6 +148,7 @@ import LessonContent from '@/components/LessonContent.vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import Discussions from '@/components/Discussions.vue'
+import Notes from '@/components/Notes.vue'
 
 
 const user = inject('$user')
