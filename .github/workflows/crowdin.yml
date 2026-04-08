@@ -1,24 +1,49 @@
-name: Crowdin Action
+name: Crowdin Sync
 
 on:
+  # A) Upload sources to Crowdin when main changes
   push:
-    branches: [ develop ]
+    branches: [ main ]
     paths:
       - 'seminary/locale/main.pot'
       - 'docs/en/**/*.md'
 
+  # B) Download translations on a schedule
+  schedule:
+    - cron: '0 4 * * *'   # daily at 04:00 UTC
+
+  workflow_dispatch:
+
 jobs:
-  synchronize-with-crowdin:
+  # Upload sources only on push to main
+  upload-sources:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: crowdin action
+      - name: Upload sources to Crowdin
         uses: crowdin/github-action@v2.14.0
         with:
           upload_sources: true
+          upload_translations: false
+          download_translations: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+  # Download translations on schedule (or manual trigger)
+  download-translations:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download translations from Crowdin
+        uses: crowdin/github-action@v2.14.0
+        with:
+          upload_sources: false
           upload_translations: false
           download_translations: true
           localization_branch_name: l10n_crowdin_translations
@@ -27,11 +52,21 @@ jobs:
           pull_request_body: 'New Crowdin translations by [Crowdin GH Action](https://github.com/crowdin/github-action)'
           pull_request_base_branch_name: 'develop'
         env:
-          # Automatic token.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          # A numeric ID, found at https://crowdin.com/project/<projectName>/tools/api
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-
-          # Visit https://crowdin.com/settings#api-key to create this token
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Remove non-.po files from translation branch
+        run: |
+          git fetch origin l10n_crowdin_translations || exit 0
+          git checkout l10n_crowdin_translations || exit 0
+
+          # Find and remove any non-.po files that Crowdin may have added under locale/
+          UNWANTED=$(git diff --name-only develop...HEAD -- seminary/locale/ | grep -v '\.po$' || true)
+          if [ -n "$UNWANTED" ]; then
+            echo "Removing non-.po files from translation PR:"
+            echo "$UNWANTED"
+            echo "$UNWANTED" | xargs git rm -f
+            git commit -m "chore: remove non-.po translation files"
+            git push origin l10n_crowdin_translations
+          fi
