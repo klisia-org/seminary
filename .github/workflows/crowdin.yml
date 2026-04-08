@@ -1,6 +1,7 @@
 name: Crowdin Sync
 
 on:
+  # A) Upload sources to Crowdin when main changes
   push:
     branches:
       - main
@@ -15,8 +16,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Upload sources to Crowdin
         uses: crowdin/github-action@v2
@@ -52,3 +52,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Remove non-.po files from translation branch
+        run: |
+          git fetch origin l10n_crowdin_translations || exit 0
+          git checkout l10n_crowdin_translations || exit 0
+
+          # Find and remove any non-.po files that Crowdin may have added under locale/
+          UNWANTED=$(git diff --name-only develop...HEAD -- seminary/locale/ | grep -v '\.po$' || true)
+          if [ -n "$UNWANTED" ]; then
+            echo "Removing non-.po files from translation PR:"
+            echo "$UNWANTED"
+            echo "$UNWANTED" | xargs git rm -f
+            git commit -m "chore: remove non-.po translation files"
+            git push origin l10n_crowdin_translations
+          fi

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/bump.sh 1.2.0
-# Updates version in all files, commits, and tags.
+# Updates version in all files, commits, pushes, and creates a GitHub Release.
 set -euo pipefail
 
 VERSION="${1:-}"
@@ -11,14 +11,11 @@ if [[ -z "$VERSION" ]] || ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 cd "$(git rev-parse --show-toplevel)"
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# 1. Python source of truth
+# 1. Update version in all files
 sed -i "s/__version__ = \".*\"/__version__ = \"$VERSION\"/" seminary/__init__.py
-
-# 2. Root package.json
 sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
-
-# 3. Frontend package.json
 sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" frontend/package.json
 
 echo "Version bumped to $VERSION in:"
@@ -26,7 +23,20 @@ echo "  - seminary/__init__.py"
 echo "  - package.json"
 echo "  - frontend/package.json"
 echo ""
-echo "Next steps:"
-echo "  git add seminary/__init__.py package.json frontend/package.json"
-echo "  git commit -m 'Bump version to $VERSION'"
-echo "  git tag v$VERSION"
+
+# 2. Commit
+git add seminary/__init__.py package.json frontend/package.json
+git commit -m "Bump version to $VERSION"
+
+# 3. Push
+git push origin "$BRANCH"
+
+# 4. Create GitHub Release (also creates the tag)
+echo "Creating GitHub Release v$VERSION..."
+gh release create "v$VERSION" \
+  --target "$BRANCH" \
+  --title "v$VERSION" \
+  --generate-notes
+
+echo ""
+echo "Done! Release v$VERSION created with auto-generated notes from merged PRs."

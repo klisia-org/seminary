@@ -1205,7 +1205,10 @@ def get_student_course_status(course):
 
     # Get max grade for scale reference
     cs = frappe.db.get_value(
-        "Course Schedule", course, ["gradesc_cs", "maxnumgrade"], as_dict=True
+        "Course Schedule",
+        course,
+        ["gradesc_cs", "maxnumgrade", "academic_term"],
+        as_dict=True,
     )
     roster["maxnumgrade"] = cs.maxnumgrade if cs else 100
 
@@ -1219,6 +1222,17 @@ def get_student_course_status(course):
         )
     else:
         roster["grading_scale_intervals"] = []
+
+    # Get term withdrawal rules for the course's academic term
+    if cs and cs.academic_term:
+        roster["withdrawal_rules"] = frappe.get_all(
+            "Term Withdrawal Rules",
+            filters={"academic_term": cs.academic_term},
+            fields=["withdrawal_rule", "applies_until"],
+            order_by="applies_until asc",
+        )
+    else:
+        roster["withdrawal_rules"] = []
 
     return roster
 

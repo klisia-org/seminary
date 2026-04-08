@@ -37,12 +37,13 @@
   "column_break_xyvi",
   "no_more_demo",
   "withdrawal_section",
-  "allow_portal_withdrawal",
   "term_based_withdrawal_dates",
   "column_break_withdrawal",
   "default_scholarship_withdrawal_procedure",
   "portal_tab",
   "calendar_instructions",
+  "allow_portal_enroll",
+  "allow_portal_withdrawal",
   "show_student_application_on_login",
   "support_user"
  ],
@@ -268,7 +269,8 @@
    "label": "Course Withdrawal"
   },
   {
-   "default": "0",
+   "default": "1",
+   "description": "When checked, students will see the withdrawal dates for the course (defined per academic term) and have a button to request course withdrawal.",
    "fieldname": "allow_portal_withdrawal",
    "fieldtype": "Check",
    "label": "Allow students to request course withdrawal on Portal"
@@ -291,11 +293,18 @@
    "fieldtype": "Select",
    "label": "Default Scholarship Procedure on Withdrawals",
    "options": "Refund to Scholarship Fund\nRefund to Scholarship Fund and Create Invoice for Student"
+  },
+  {
+   "default": "1",
+   "description": "When checked, students will have access to Enrollment page listing only courses available for their program, which they have not yet taken.",
+   "fieldname": "allow_portal_enroll",
+   "fieldtype": "Check",
+   "label": "Allow students to request course enrollment on Portal"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-27 12:07:43.040161",
+ "modified": "2026-04-08 16:00:03.340456",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary Settings",
