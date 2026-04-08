@@ -22,6 +22,48 @@
         </p>
       </div>
 
+      <!-- My Enrollments for this Term -->
+      <div v-if="myEnrollments.data && myEnrollments.data.length" class="mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('My Enrollments This Term') }}</h3>
+        <div class="border rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+              <tr>
+                <th class="text-left px-3 py-2 font-medium">{{ __('Course') }}</th>
+                <th class="text-left px-3 py-2 font-medium">{{ __('Credits') }}</th>
+                <th class="text-left px-3 py-2 font-medium">{{ __('Status') }}</th>
+                <th class="text-right px-3 py-2 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cei in myEnrollments.data" :key="cei.name"
+                :class="cei.status === 'Withdrawn' ? 'text-gray-400 line-through' : ''">
+                <td class="px-3 py-2">{{ cei.course_data }}</td>
+                <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
+                <td class="px-3 py-2">
+                  <Badge
+                    :theme="cei.status === 'Enrolled' ? 'green' : cei.status === 'Draft' ? 'orange' : 'gray'"
+                    :label="cei.status === 'Draft' ? __('Pending') : __(cei.status)" />
+                </td>
+                <td class="px-3 py-2 text-right">
+                  <Button v-if="cei.status === 'Draft'" size="sm" variant="ghost" theme="red"
+                    @click="cancelEnrollment(cei.name)" :loading="cancelling === cei.name">
+                    {{ __('Cancel') }}
+                  </Button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot v-if="totalCredits > 0" class="bg-gray-50">
+              <tr>
+                <td class="px-3 py-2 font-medium text-gray-700">{{ __('Total') }}</td>
+                <td class="px-3 py-2 font-medium text-gray-700">{{ totalCredits }}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
       <!-- Loading -->
       <div v-if="courses.loading" class="flex justify-center py-12">
         <LoadingIndicator class="w-8 h-8" />
@@ -53,6 +95,7 @@
                   <span v-if="cs.section" class="font-semibold text-gray-700">{{ cs.section }}</span>
                   <Badge v-if="cs.modality" :theme="cs.modality === 'Virtual' ? 'blue' : cs.modality === 'Hybrid' ? 'orange' : 'gray'" :label="cs.modality" />
                   <span v-if="cs.days" class="text-xs text-gray-500 font-mono">{{ cs.days }}</span>
+                  <span v-if="cs.time_range" class="text-xs text-gray-500">{{ cs.time_range }}</span>
                 </div>
                 <div class="text-xs text-gray-500 mt-0.5">
                   <span v-if="cs.instructors">{{ cs.instructors }}</span>
@@ -95,6 +138,7 @@ const student = user.data?.student
 
 const selectedPE = ref(null)
 const enrolling = ref(null)
+const cancelling = ref(null)
 
 const enrollments = createResource({
   url: 'seminary.seminary.api.get_pgmenrollments',
@@ -129,8 +173,26 @@ const courses = createResource({
   auto: false,
 })
 
+const myEnrollments = createResource({
+  url: 'seminary.seminary.api.get_student_enrollments_for_term',
+  makeParams() {
+    return { program_enrollment: selectedPE.value }
+  },
+  auto: false,
+})
+
+const totalCredits = computed(() => {
+  if (!myEnrollments.data) return 0
+  return myEnrollments.data
+    .filter(c => c.status !== 'Withdrawn')
+    .reduce((sum, c) => sum + (c.credits || 0), 0)
+})
+
 watch(selectedPE, (val) => {
-  if (val) courses.reload()
+  if (val) {
+    courses.reload()
+    myEnrollments.reload()
+  }
 })
 
 function loadCourses() {
@@ -163,8 +225,24 @@ function enrollInCourse(courseSchedule) {
   }).then(() => {
     enrolling.value = null
     courses.reload()
+    myEnrollments.reload()
   }).catch(() => {
     enrolling.value = null
+  })
+}
+
+const cancelAction = createResource({
+  url: 'seminary.seminary.api.cancel_draft_enrollment',
+})
+
+function cancelEnrollment(ceiName) {
+  cancelling.value = ceiName
+  cancelAction.submit({ cei_name: ceiName }).then(() => {
+    cancelling.value = null
+    myEnrollments.reload()
+    courses.reload()
+  }).catch(() => {
+    cancelling.value = null
   })
 }
 </script>

@@ -646,7 +646,19 @@ def get_school_abbr_logo():
     abbr = frappe.db.get_single_value("Website Settings", "app_name")
     logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
     support_user = frappe.db.get_single_value("Seminary Settings", "support_user")
-    return {"name": abbr, "logo": logo, "support_user": support_user}
+    date_format = (
+        frappe.db.get_single_value("System Settings", "date_format") or "yyyy-mm-dd"
+    )
+    allow_portal_enroll = (
+        frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll") or 0
+    )
+    return {
+        "name": abbr,
+        "logo": logo,
+        "support_user": support_user,
+        "date_format": date_format,
+        "allow_portal_enroll": allow_portal_enroll,
+    }
 
 
 @frappe.whitelist()
@@ -845,20 +857,94 @@ def petb_enroll(pe_name, pe_term):
 
 @frappe.whitelist()
 def course_enroll(pe_name, course):
-    # This is called for each student in petb_enroll
+    """Enroll student in a course schedule. Creates a draft CEI document."""
     student = frappe.get_value("Program Enrollment", pe_name, "student")
-    cs = frappe.db.sql(
-        """select distinct name from `tabCourse Schedule`
-	where academic_term in (select name from `tabAcademic Term` where iscurrent_acterm = 1) and open_enroll = 1 and
-	course = %s""",
-        course,
-    )[0][0]
+    if not student:
+        frappe.throw(_("Invalid Program Enrollment"))
+
+    # Validate the Course Schedule exists and is open for enrollment
+    cs = frappe.db.get_value(
+        "Course Schedule", course, ["name", "open_enroll"], as_dict=True
+    )
+    if not cs:
+        frappe.throw(_("Course Schedule not found"))
+    if not cs.open_enroll:
+        frappe.throw(_("This course is not open for enrollment"))
+
     doc = frappe.new_doc("Course Enrollment Individual")
     doc.program_ce = pe_name
     doc.student_ce = student
-    doc.coursesc_ce = cs
+    doc.coursesc_ce = cs.name
     doc.docstatus = 0
     doc.insert()
+    return {
+        "name": doc.name,
+        "course_data": doc.course_data,
+        "academic_term": doc.academic_term,
+    }
+
+
+@frappe.whitelist()
+def get_student_enrollments_for_term(program_enrollment):
+    """Return the student's CEIs for the current academic term."""
+    student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
+    if not student:
+        return []
+
+    current_terms = frappe.get_all(
+        "Academic Term", filters={"iscurrent_acterm": 1}, pluck="name"
+    )
+    if not current_terms:
+        return []
+
+    ceis = frappe.get_all(
+        "Course Enrollment Individual",
+        filters={
+            "student_ce": student,
+            "program_ce": program_enrollment,
+            "academic_term": ["in", current_terms],
+            "docstatus": ["!=", 2],
+        },
+        fields=[
+            "name",
+            "course_data",
+            "academic_term",
+            "coursesc_ce",
+            "docstatus",
+            "audit",
+            "withdrawn",
+            "credits",
+        ],
+        order_by="docstatus asc, course_data asc",
+    )
+
+    # Add start date from Course Schedule for confirmed enrollments
+    for cei in ceis:
+        cei["start_date"] = frappe.db.get_value(
+            "Course Schedule", cei.coursesc_ce, "c_datestart"
+        )
+        if cei.docstatus == 0:
+            cei["status"] = "Draft"
+        elif cei.withdrawn:
+            cei["status"] = "Withdrawn"
+        else:
+            cei["status"] = "Enrolled"
+
+    return ceis
+
+
+@frappe.whitelist()
+def cancel_draft_enrollment(cei_name):
+    """Cancel (delete) a draft CEI. Only works on draft documents."""
+    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+    if doc.docstatus != 0:
+        frappe.throw(_("Only draft enrollments can be cancelled"))
+    if doc.student_ce != frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, "name"
+    ):
+        frappe.throw(_("You can only cancel your own enrollments"))
+    doc.delete()
+    return {"success": True}
 
 
 @frappe.whitelist()
@@ -1257,6 +1343,8 @@ def get_available_courses_categorized(program_enrollment):
             "friday",
             "saturday",
             "sunday",
+            "from_time",
+            "to_time",
         ],
     )
     schedule_map = {}
@@ -1274,6 +1362,16 @@ def get_available_courses_categorized(program_enrollment):
                 (cs.sunday, "Su"),
             ]
             days = "".join(abbr for checked, abbr in day_map if checked)
+
+        # Format time range for presential/hybrid
+        time_range = ""
+        if cs.modality in ("Presential", "Hybrid") and cs.from_time:
+            from_t = frappe.utils.format_time(cs.from_time, "h:mm a")
+            if cs.to_time:
+                to_t = frappe.utils.format_time(cs.to_time, "h:mm a")
+                time_range = f"{from_t} – {to_t}"
+            else:
+                time_range = from_t
 
         # Get instructors
         instructors = frappe.get_all(
@@ -1301,6 +1399,7 @@ def get_available_courses_categorized(program_enrollment):
                 "instructors": instructor_names,
                 "date_range": date_range,
                 "days": days,
+                "time_range": time_range,
             }
         )
 

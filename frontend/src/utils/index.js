@@ -500,6 +500,22 @@ export function getSidebarLinks() {
 	]
 }
 
+// Frappe date_format → dayjs token mapping
+const FRAPPE_TO_DAYJS = {
+	'yyyy-mm-dd': 'YYYY-MM-DD',
+	'dd-mm-yyyy': 'DD-MM-YYYY',
+	'dd/mm/yyyy': 'DD/MM/YYYY',
+	'dd.mm.yyyy': 'DD.MM.YYYY',
+	'mm/dd/yyyy': 'MM/DD/YYYY',
+	'mm-dd-yyyy': 'MM-DD-YYYY',
+}
+
+export function formatDate(dateStr) {
+	if (!dateStr) return '-'
+	const fmt = FRAPPE_TO_DAYJS[window.__dateFormat] || 'YYYY-MM-DD'
+	return dayjs(dateStr).format(fmt)
+}
+
 export function getFormattedDateRange(
 	startDate,
 	endDate,

@@ -10,6 +10,11 @@ import { usersStore } from './stores/user'
 import { initSocket } from './socket'
 import { FrappeUI, setConfig, frappeRequest, pageMetaPlugin } from 'frappe-ui'
 
+// Fetch system date format early so formatDate() works everywhere
+frappeRequest({ url: '/api/method/seminary.seminary.api.get_school_abbr_logo' }).then(data => {
+	window.__dateFormat = data.date_format || 'yyyy-mm-dd'
+})
+
 let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)

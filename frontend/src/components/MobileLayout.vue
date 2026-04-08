@@ -36,6 +36,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usersStore } from '@/stores/user'
+import { createResource } from 'frappe-ui'
 import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound } from 'lucide-vue-next'
 import ProfileModal from '@/components/ProfileModal.vue'
 
@@ -43,17 +44,25 @@ const router = useRouter()
 const { userResource } = usersStore()
 const showProfile = ref(false)
 
+const seminarySettings = createResource({
+	url: 'seminary.seminary.api.get_school_abbr_logo',
+	auto: true,
+})
+
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
 	const isModerator = userResource?.data?.is_moderator
 	const isSystemManager = userResource?.data?.is_system_manager
+	const allowEnroll = seminarySettings.data?.allow_portal_enroll
 
 	return [
 		{ label: __('Courses'), to: '/courses', icon: BookOpen, activeFor: ['Courses', 'CourseDetail', 'Lesson', 'CourseForm', 'LessonForm'] },
 		...(isStudent ? [
 			{ label: __('Grades'), to: '/grades', icon: GraduationCap, activeFor: ['Transcripts'] },
 			{ label: __('Audit'), to: '/program-audit', icon: ClipboardCheck, activeFor: ['ProgramAudit'] },
-			{ label: __('Enroll'), to: '/enrollment', icon: ListChecks, activeFor: ['Enrollment'] },
+			...(allowEnroll ? [
+				{ label: __('Enroll'), to: '/enrollment', icon: ListChecks, activeFor: ['Enrollment'] },
+			] : []),
 			{ label: __('Fees'), to: '/fees', icon: Banknote, activeFor: ['Fees'] },
 		] : []),
 		...((isModerator || isSystemManager) ? [

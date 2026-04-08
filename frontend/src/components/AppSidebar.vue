@@ -42,6 +42,7 @@ const { userResource } = usersStore();
 
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
+	const allowEnroll = seminarySettings.data?.allow_portal_enroll
 	return [
 		{
 			label: __('Courses'),
@@ -59,11 +60,11 @@ const links = computed(() => {
 				to: '/program-audit',
 				icon: ClipboardCheck,
 			},
-			{
+			...(allowEnroll ? [{
 				label: __('Enrollment'),
 				to: '/enrollment',
 				icon: ListChecks,
-			},
+			}] : []),
 			{
 				label: __('Fees'),
 				to: '/fees',
