@@ -1,0 +1,148 @@
+<template>
+  <div v-if="isStudent">
+    <h2
+      class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+      {{ __('Courses Open for Enrollment') }}
+    </h2>
+
+    <div class="px-5 py-4">
+      <!-- PE Selector -->
+      <div v-if="enrollments.data && enrollments.data.length > 1" class="mb-4">
+        <label class="text-sm font-medium text-gray-600 mb-1 block">{{ __('Program Enrollment') }}</label>
+        <select v-model="selectedPE" @change="loadCourses"
+          class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-md">
+          <option v-for="pe in activeEnrollments" :key="pe.name" :value="pe.name">
+            {{ pe.program }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="courses.loading" class="flex justify-center py-12">
+        <LoadingIndicator class="w-8 h-8" />
+      </div>
+
+      <!-- Course Cards -->
+      <div v-else-if="courses.data && courses.data.length" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-for="course in courses.data" :key="course.course" class="border rounded-lg p-4 bg-white">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <h3 class="font-semibold text-gray-800">{{ course.course_name || course.course }}</h3>
+              <span class="text-sm text-gray-500">{{ course.credits }} {{ __('credits') }}</span>
+            </div>
+          </div>
+
+          <!-- Category Badges -->
+          <div class="flex flex-wrap gap-1 mb-3">
+            <Badge v-for="(cat, idx) in course.categories" :key="idx"
+              :theme="badgeTheme(cat.type)"
+              :label="badgeLabel(cat)" />
+          </div>
+
+          <!-- Available Schedules -->
+          <div v-if="course.course_schedules && course.course_schedules.length">
+            <div v-for="cs in course.course_schedules" :key="cs.name"
+              class="flex items-center justify-between py-1 border-t text-sm">
+              <span class="text-gray-600">{{ cs.academic_term }}</span>
+              <Button size="sm" variant="subtle" @click="enrollInCourse(cs.name)"
+                :loading="enrolling === cs.name">
+                {{ __('Enroll') }}
+              </Button>
+            </div>
+          </div>
+          <div v-else class="text-xs text-gray-400 mt-2">
+            {{ __('No scheduled sections available') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="!enrollments.loading">
+        <MissingData :message="__('No courses available for enrollment')" />
+      </div>
+    </div>
+  </div>
+  <div v-else class="flex flex-col items-center justify-center py-20">
+    <p class="text-lg font-bold text-gray-500">{{ __('Course enrollment is only available for Students') }}</p>
+  </div>
+</template>
+
+<script setup>
+import { Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
+import { computed, inject, ref, watch } from 'vue'
+
+import MissingData from '@/components/MissingData.vue'
+
+const user = inject('$user')
+const isStudent = user.data?.is_student
+const student = user.data?.student
+
+const selectedPE = ref(null)
+const enrolling = ref(null)
+
+const enrollments = createResource({
+  url: 'seminary.seminary.api.get_pgmenrollments',
+  makeParams() {
+    return { name: student }
+  },
+  onSuccess(data) {
+    if (data && data.length) {
+      // Pick first active enrollment
+      const active = data.find(pe => pe.pgmenrol_active) || data[0]
+      selectedPE.value = active.name
+    }
+  },
+  auto: !!student,
+})
+
+const activeEnrollments = computed(() => {
+  return (enrollments.data || []).filter(pe => pe.pgmenrol_active)
+})
+
+const courses = createResource({
+  url: 'seminary.seminary.api.get_available_courses_categorized',
+  makeParams() {
+    return { program_enrollment: selectedPE.value }
+  },
+  auto: false,
+})
+
+watch(selectedPE, (val) => {
+  if (val) courses.reload()
+})
+
+function loadCourses() {
+  if (selectedPE.value) courses.reload()
+}
+
+function badgeTheme(type) {
+  if (type === 'Program Mandatory') return 'red'
+  if (type === 'Track Mandatory') return 'blue'
+  if (type === 'Track Elective') return 'blue'
+  return 'gray'
+}
+
+function badgeLabel(cat) {
+  if (cat.type === 'Program Mandatory') return __('Required')
+  if (cat.type === 'Track Mandatory') return cat.track_name || __('Track Required')
+  if (cat.type === 'Track Elective') return cat.track_name || __('Track Elective')
+  return __('Elective')
+}
+
+const enrollAction = createResource({
+  url: 'seminary.seminary.api.course_enroll',
+})
+
+function enrollInCourse(courseSchedule) {
+  enrolling.value = courseSchedule
+  enrollAction.submit({
+    pe_name: selectedPE.value,
+    course: courseSchedule,
+  }).then(() => {
+    enrolling.value = null
+    courses.reload()
+  }).catch(() => {
+    enrolling.value = null
+  })
+}
+</script>

@@ -19,13 +19,23 @@ class Program(WebsiteGenerator):
         return course_list
 
 
-""" 	def validate_courses_pgmtrack(self):
-		program_course_list = self.courses
-		pgm_track_list = self.pgm_courses_track
-		if pgm_track_list:
-			for pgm_track in pgm_track_list:
-				if pgm_track not in program_course_list:
-					frappe.throw(
-						"Course {0} is in the Program Track but not in Courses for this Program".format(pgm_track.program_track_course)
-					)
-		return """
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_program_tracks(doctype, txt, searchfield, start, page_len, filters):
+    if not filters.get("program"):
+        return []
+
+    return frappe.db.sql(
+        """SELECT name, track_name
+        FROM `tabProgram Track`
+        WHERE parent = %(program)s
+            AND name LIKE %(txt)s
+        ORDER BY track_name
+        LIMIT %(start)s, %(page_len)s""",
+        {
+            "program": filters["program"],
+            "txt": "%{0}%".format(txt),
+            "start": start,
+            "page_len": page_len,
+        },
+    )

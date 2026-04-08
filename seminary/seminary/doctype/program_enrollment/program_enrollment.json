@@ -13,17 +13,19 @@
   "date_of_conclusion",
   "column_break_4",
   "program",
-  "emphasis_program_track",
+  "emphases_section",
+  "emphases",
   "academic_term",
   "image",
   "section_break_tfcw",
   "pgmenrol_active",
   "current_std_term",
   "totalcredits",
-  "trackcredits",
   "column_break_unkt",
   "inactiveuntil",
   "inactive_motive",
+  "audit_section",
+  "audit_summary",
   "enrolled_courses",
   "courses",
   "section_break_uzvb",
@@ -79,6 +81,16 @@
    "fieldtype": "Date",
    "label": "Enrollment Date",
    "reqd": 1
+  },
+  {
+   "fieldname": "audit_section",
+   "fieldtype": "Section Break",
+   "label": "Program Progress"
+  },
+  {
+   "fieldname": "audit_summary",
+   "fieldtype": "HTML",
+   "label": "Audit Summary"
   },
   {
    "fieldname": "enrolled_courses",
@@ -150,15 +162,17 @@
    "label": "Reason for being inactive"
   },
   {
+   "fieldname": "emphases_section",
+   "fieldtype": "Section Break",
+   "label": "Emphases"
+  },
+  {
    "allow_on_submit": 1,
-   "fieldname": "emphasis_program_track",
-   "fieldtype": "Link",
-   "in_filter": 1,
-   "in_global_search": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Emphasis (Program track)",
-   "options": "Program Track"
+   "description": "Declare one or more program emphases for this student.",
+   "fieldname": "emphases",
+   "fieldtype": "Table",
+   "label": "Emphases",
+   "options": "Program Enrollment Emphasis"
   },
   {
    "fieldname": "section_break_uzvb",
@@ -187,12 +201,6 @@
    "fieldtype": "Int",
    "label": "Total Credits Taken (Passed)",
    "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "trackcredits",
-   "fieldtype": "Int",
-   "label": "Track Credits Taken (Passed)"
   }
  ],
  "image_field": "image",
@@ -204,7 +212,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2025-03-31 09:44:56.613274",
+ "modified": "2026-04-07 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

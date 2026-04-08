@@ -75,7 +75,7 @@
               :class="assessment.extracredit_scac ? 'bg-blue-50' : 'bg-gray-50'"
               class="border border-gray-300 px-2 py-1 text-center text-xs text-gray-500 font-medium">
               <span v-if="assessment.extracredit_scac" class="italic">
-                {{ __('Extra') }}
+                {{ __('Max Extra: ') }} {{ assessment.fudgepoints_scac }}
               </span>
               <span v-else>
                 {{ assessment.weight_scac }}%

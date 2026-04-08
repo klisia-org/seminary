@@ -49,7 +49,9 @@
             <ListHeader>
               <ListHeaderItem v-for="column in assessmentColumns" :key="column.key" :item="column" />
             </ListHeader>
-            <ListRow v-for="row in assessmentRows" :key="row.name" :row="row" v-slot="{ column, item }">
+            <ListRow v-for="row in assessmentRows" :key="row.name" :row="row"
+              :class="row.isExtraCredit ? 'bg-blue-50' : ''"
+              v-slot="{ column, item }">
               <ListRowItem :item="item" :align="column.align" />
             </ListRow>
           </ListView>
@@ -57,24 +59,60 @@
         <div v-else class="text-gray-500 text-sm">{{ __('No assessments available yet.') }}</div>
       </div>
 
-      <!-- Final Grade -->
-      <div v-if="status.data.fgrade">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Final Grade') }}</h3>
-        <div class="flex gap-6 items-center">
-          <div class="text-center">
-            <p class="text-3xl font-bold text-gray-800">{{ status.data.fgrade }}</p>
-            <p class="text-sm text-gray-500">{{ __('Grade') }}</p>
+      <!-- Grade Section -->
+      <div v-if="currentGrade || projectedGrade">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Your Grade') }}</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- Current Grade (as-is) -->
+          <div class="rounded-lg border p-4 bg-gray-50">
+            <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('Current Grade') }}</h4>
+            <p class="text-xs text-gray-500 mb-3">{{ __('Your final grade as of today, including zeros for unsubmitted work.') }}</p>
+            <div class="flex gap-6 items-center">
+              <div class="text-center">
+                <p class="text-3xl font-bold text-gray-800">{{ currentGrade.grade }}</p>
+                <p class="text-xs text-gray-500">{{ __('Grade') }}</p>
+              </div>
+              <div class="text-center">
+                <p class="text-3xl font-bold text-gray-800">{{ currentGrade.percentage }}</p>
+                <p class="text-xs text-gray-500">{{ __('Score') }}</p>
+              </div>
+              <div class="text-center">
+                <Badge :variant="currentGrade.gradePass === 'Pass' ? 'success' : 'warning'"
+                  :label="currentGrade.gradePass" />
+              </div>
+            </div>
           </div>
-          <div class="text-center">
-            <p class="text-3xl font-bold text-gray-800">{{ status.data.fscore }}</p>
-            <p class="text-sm text-gray-500">{{ __('Score') }}</p>
+
+          <!-- Projected Grade (on-track) -->
+          <div v-if="projectedGrade" class="rounded-lg border border-blue-200 p-4 bg-blue-50">
+            <h4 class="text-sm font-semibold text-blue-800 mb-1">{{ __('Projected Grade') }}</h4>
+            <p class="text-sm text-blue-700 mb-3">
+              {{ __('You are on track for') }}
+              <strong>{{ projectedGrade.grade }}</strong>
+              {{ __('if you keep your efforts like this in future assessments.') }}
+            </p>
+            <div class="flex gap-6 items-center">
+              <div class="text-center">
+                <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.grade }}</p>
+                <p class="text-xs text-blue-500">{{ __('Projected') }}</p>
+              </div>
+              <div class="text-center">
+                <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.percentage }}%</p>
+                <p class="text-xs text-blue-500">{{ __('Based on due assessments') }}</p>
+              </div>
+            </div>
           </div>
-          <div class="text-center">
-            <Badge :variant="status.data.fgradepass === 'Pass' ? 'success' : 'warning'"
-              :label="status.data.fgradepass" />
+          <div v-else class="rounded-lg border border-dashed p-4 bg-gray-50">
+            <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('Projected Grade') }}</h4>
+            <p class="text-sm text-gray-500">
+              {{ __('No assessments are due yet. Your projected grade will appear once the first assessment due date passes.') }}
+            </p>
           </div>
+
         </div>
       </div>
+      <div v-else class="text-gray-500 text-sm">{{ __('No assessments available yet to calculate your grade.') }}</div>
 
       <!-- Withdrawal Button -->
       <div v-if="allowWithdrawal && !status.data.withdrawal_request" class="border-t pt-4">
@@ -155,18 +193,109 @@ const assessmentColumns = [
 const assessmentRows = computed(() => {
   if (!status.data?.assessments) return []
   const maxGrade = status.data.maxnumgrade || 100
-  return status.data.assessments.map(a => ({
+
+  const sorted = [...status.data.assessments].sort((a, b) => {
+    if (!a.due_date && b.due_date) return 1
+    if (a.due_date && !b.due_date) return -1
+    if (a.due_date && b.due_date) {
+      const dateA = new Date(a.due_date)
+      const dateB = new Date(b.due_date)
+      if (dateA < dateB) return -1
+      if (dateA > dateB) return 1
+    }
+    return (a.title || '').localeCompare(b.title || '')
+  })
+
+  return sorted.map(a => ({
     name: a.grade_name || a.assessment_criteria,
     title: a.title || a.assessment_criteria,
     type: a.type || '-',
     status: a.status || '-',
     due_date: a.due_date || '-',
-    score_display: a.rawscore_card != null && a.rawscore_card > 0 ? `${a.rawscore_card} / ${maxGrade}` : '-',
-    weight_display: a.weight_scac ? `${a.weight_scac}%` : (a.extracredit_scac ? 'Extra' : '-'),
+    isExtraCredit: !!a.extracredit_scac,
+    score_display: a.extracredit_scac
+      ? (a.actualextrapt_card != null && a.actualextrapt_card > 0 ? `+${a.actualextrapt_card} pts` : '-')
+      : (a.rawscore_card != null && a.rawscore_card > 0 ? `${a.rawscore_card} / ${maxGrade}` : '-'),
+    weight_display: a.weight_scac ? `${a.weight_scac}%` : (a.extracredit_scac ? `Extra ${a.fudgepoints_scac} pts` : '-'),
     median_display: a.class_median != null ? `${a.class_median} / ${maxGrade}` : '-',
     percentile: a.percentile != null ? `Top ${100 - a.percentile}%` : '-',
     rawPercentile: a.percentile,
   }))
+})
+
+const currentGrade = computed(() => {
+  const assessments = status.data?.assessments
+  const intervals = status.data?.grading_scale_intervals
+  const maxGrade = status.data?.maxnumgrade || 100
+  if (!assessments || !intervals || assessments.length === 0) return null
+
+  const regular = assessments.filter(a => !a.extracredit_scac)
+  const weightedScoreSum = regular.reduce((sum, a) => {
+    const raw = a.rawscore_card || 0
+    return sum + (raw / maxGrade) * (a.weight_scac || 0)
+  }, 0)
+
+  const extraPoints = assessments
+    .filter(a => a.extracredit_scac)
+    .reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
+
+  let percentage = Math.min(weightedScoreSum + extraPoints, 100)
+
+  const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
+  let grade = ''
+  let gradePass = ''
+  for (const interval of sorted) {
+    if (percentage >= interval.threshold) {
+      grade = interval.grade_code
+      gradePass = interval.grade_pass
+      break
+    }
+  }
+
+  return { percentage: Math.round(percentage * 100) / 100, grade, gradePass }
+})
+
+const projectedGrade = computed(() => {
+  const assessments = status.data?.assessments
+  const intervals = status.data?.grading_scale_intervals
+  const maxGrade = status.data?.maxnumgrade || 100
+  if (!assessments || !intervals || assessments.length === 0) return null
+
+  const today = new Date().toISOString().slice(0, 10)
+
+  const dueRegular = assessments.filter(a =>
+    a.due_date && a.due_date.slice(0, 10) <= today && !a.extracredit_scac
+  )
+  if (dueRegular.length === 0) return null
+
+  const weightedScoreSum = dueRegular.reduce((sum, a) => {
+    const raw = a.rawscore_card || 0
+    return sum + (raw / maxGrade) * (a.weight_scac || 0)
+  }, 0)
+
+  const weightSum = dueRegular.reduce((sum, a) => sum + (a.weight_scac || 0), 0)
+  if (weightSum === 0) return null
+
+  let percentage = (weightedScoreSum / weightSum) * 100
+
+  const dueExtraCredit = assessments.filter(a =>
+    a.due_date && a.due_date.slice(0, 10) <= today && a.extracredit_scac
+  )
+  const extraPoints = dueExtraCredit.reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
+  percentage = Math.min(percentage + extraPoints, 100)
+
+  const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
+  let grade = ''
+  let gradePass = ''
+  for (const interval of sorted) {
+    if (percentage >= interval.threshold) {
+      grade = interval.grade_code
+      gradePass = interval.grade_pass
+      break
+    }
+  }
+
+  return { percentage: Math.round(percentage * 100) / 100, grade, gradePass }
 })
 
 function percentileClass(percentile) {

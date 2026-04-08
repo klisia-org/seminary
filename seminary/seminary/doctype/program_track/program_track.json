@@ -10,7 +10,13 @@
   "column_break_zlpi",
   "track_name",
   "addcredits",
+  "max_credits",
   "is_emphasis",
+  "is_fallback",
+  "emphasis_settings_column",
+  "emphasis_declaration",
+  "min_credits_to_declare",
+  "advisory_only",
   "tdescription"
  ],
  "fields": [
@@ -34,12 +40,22 @@
   },
   {
    "default": "0",
+   "description": "Minimum credits the student must earn from courses in this track. These count toward the program's total credits for completion.",
    "fieldname": "addcredits",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Track-specific credits",
+   "label": "Track Credits Required",
    "non_negative": 1,
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Maximum credits from this track that count toward the degree (0 = unlimited). Credits beyond this cap are earned but do not count toward the program total.",
+   "fieldname": "max_credits",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Track Credits Ceiling",
+   "non_negative": 1
   },
   {
    "fieldname": "tdescription",
@@ -48,7 +64,7 @@
   },
   {
    "default": "0",
-   "description": "Check this box if this is a Program Emphasis. Students may have only one Program Emphasis. If not checked, this track will serve to organize number of credits for this track (e.g. the program requires 6 hours in Greek, but 8 different courses may be chosen to fill this requirement).",
+   "description": "Check this box if this is a Program Emphasis. If not checked, this track will serve to organize number of credits for this track (e.g. the program requires 6 hours in Greek, but 8 different courses may be chosen to fill this requirement).",
    "fieldname": "is_emphasis",
    "fieldtype": "Check",
    "in_filter": 1,
@@ -56,18 +72,58 @@
    "in_preview": 1,
    "in_standard_filter": 1,
    "label": "Program Emphasis?"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_emphasis",
+   "description": "Mark this as the fallback emphasis (e.g. General Studies) for students who do not declare or meet a specific emphasis. Only one per program.",
+   "fieldname": "is_fallback",
+   "fieldtype": "Check",
+   "label": "Fallback Emphasis?"
+  },
+  {
+   "fieldname": "emphasis_settings_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "At Enrollment",
+   "depends_on": "eval:doc.is_emphasis",
+   "description": "At Enrollment: student must choose before submitting enrollment. Anytime: can be declared at any point. Auto-grant: automatically assigned when track requirements are met.",
+   "fieldname": "emphasis_declaration",
+   "fieldtype": "Select",
+   "label": "Emphasis Declaration",
+   "options": "At Enrollment\nAnytime\nAuto-grant"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_emphasis && doc.emphasis_declaration != 'At Enrollment'",
+   "description": "Minimum total program credits the student must have earned before declaring this emphasis.",
+   "fieldname": "min_credits_to_declare",
+   "fieldtype": "Int",
+   "label": "Min Credits to Declare",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_emphasis",
+   "description": "If checked, this emphasis is informational only and does not affect graduation requirements.",
+   "fieldname": "advisory_only",
+   "fieldtype": "Check",
+   "label": "Advisory Only"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-03 08:07:37.238488",
+ "modified": "2026-04-07 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Track",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

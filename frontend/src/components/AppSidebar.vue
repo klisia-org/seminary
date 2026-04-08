@@ -32,7 +32,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed } from 'vue';
@@ -53,6 +53,16 @@ const links = computed(() => {
 				label: __('Transcripts'),
 				to: '/grades',
 				icon: GraduationCap,
+			},
+			{
+				label: __('Program Audit'),
+				to: '/program-audit',
+				icon: ClipboardCheck,
+			},
+			{
+				label: __('Enrollment'),
+				to: '/enrollment',
+				icon: ListChecks,
 			},
 			{
 				label: __('Fees'),

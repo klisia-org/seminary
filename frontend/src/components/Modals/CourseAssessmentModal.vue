@@ -59,8 +59,29 @@
           v-model="criteria.weight_scac"
           :label="__('Weight')"
           class="mb-4"
-          :required="true"
+          :required="!criteria.extracredit_scac"
+          :disabled="!!criteria.extracredit_scac"
           maxlength="10"
+        />
+        <div class="flex items-center gap-2 mb-4 pl-1">
+          <input
+            type="checkbox"
+            id="extracredit_scac"
+            :checked="criteria.extracredit_scac"
+            @change="toggleExtraCredit($event.target.checked)"
+            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-1"
+          />
+          <label for="extracredit_scac" class="text-sm font-medium text-gray-700">
+            {{ __('Is extra-credit?') }}
+          </label>
+        </div>
+        <FormControl
+          v-if="criteria.extracredit_scac"
+          v-model="criteria.fudgepoints_scac"
+          :label="__('Max extra-credit points possible')"
+          class="mb-4"
+          :required="true"
+          type="number"
         />
       </div>
     </template>
@@ -96,7 +117,7 @@ const defaultCriteriaState = () => ({
   exam: '',
   assignment: '',
   discussion: '',
-  extracredit_scac: '',
+  extracredit_scac: 0,
   fudgepoints_scac: '',
   parent: props.courseName,
   parenttype: 'Course Schedule',
@@ -219,6 +240,15 @@ const redirectToDiscussion = (value, close) => {
     params: { discussionID: 'new' },
   })
   close()
+}
+
+const toggleExtraCredit = (checked) => {
+  criteria.extracredit_scac = checked ? 1 : 0
+  if (checked) {
+    criteria.weight_scac = ''
+  } else {
+    criteria.fudgepoints_scac = ''
+  }
 }
 
 const insertCriteria = (close) => {
