@@ -1,9 +1,10 @@
-import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 
 export function useScreenSize() {
 	const size = reactive({
 		width: window.innerWidth,
 		height: window.innerHeight,
+		isMobile: computed(() => size.width < 1024),
 	})
 
 	const onResize = () => {

@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"daBrF0hOuf\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Withdrawal Configuration\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}}]",
+ "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"daBrF0hOuf\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Withdrawal Configuration\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}},{\"id\":\"701xO9uPlH\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"-XT3-gVIcM\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>How to contribute to SeminaryERP and make it better for everyone</b></span>\",\"col\":12}},{\"id\":\"Ua2zlFkMDs\",\"type\":\"paragraph\",\"data\":{\"text\":\"There are ways to contribute to this Free Open-Source Software: \",\"col\":12}},{\"id\":\"rrTtpY1Mmp\",\"type\":\"paragraph\",\"data\":{\"text\":\"a) Create an Issue on GitHub detailing the problem, when it happens, and the expected behavior&nbsp;\",\"col\":12}},{\"id\":\"KOkG71OEkw\",\"type\":\"paragraph\",\"data\":{\"text\":\"b) Help us with translations\",\"col\":12}},{\"id\":\"IBCxBDB9zn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SeminaryERP Translations\",\"col\":4}},{\"id\":\"UfxkcE-JCp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Issues and Code\",\"col\":4}}]",
  "creation": "2026-02-14 11:35:51.601440",
  "custom_blocks": [],
  "docstatus": 0,
@@ -115,45 +115,6 @@
    "type": "Link"
   },
   {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Other",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Doctrinal Statement",
-   "link_count": 0,
-   "link_to": "Doctrinal Statement",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Seminary Settings",
-   "link_count": 0,
-   "link_to": "Seminary Settings",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Grading Scale",
-   "link_count": 0,
-   "link_to": "Grading Scale",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
    "description": "Term Withdrawal Rules are automatically created for Academic Terms, but it is advised to confirm these dates.",
    "hidden": 0,
    "is_query_report": 0,
@@ -192,9 +153,58 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Other",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Doctrinal Statement",
+   "link_count": 0,
+   "link_to": "Doctrinal Statement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Seminary Settings",
+   "link_count": 0,
+   "link_to": "Seminary Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Grading Scale",
+   "link_count": 0,
+   "link_to": "Grading Scale",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Languages",
+   "link_count": 0,
+   "link_to": "Language",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-06 12:08:14.846383",
+ "modified": "2026-04-08 08:46:14.566573",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Academic Setup",
@@ -219,6 +229,13 @@
   {
    "color": "Grey",
    "doc_view": "List",
+   "label": "Issues and Code",
+   "type": "URL",
+   "url": "https://github.com/klisia-org/seminary"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "Portal",
    "type": "URL",
    "url": "/seminary/courses"
@@ -236,6 +253,13 @@
    "label": "Financial Setup",
    "type": "URL",
    "url": "/desk/seminary-financial-setup"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "SeminaryERP Translations",
+   "type": "URL",
+   "url": "https://crowdin.com/project/seminary-erp"
   }
  ],
  "title": "Academic Setup",

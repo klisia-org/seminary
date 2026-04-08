@@ -23,6 +23,7 @@ import { usersStore } from '@/stores/user'
 import { computed, watch} from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
+import MobileLayout from './components/MobileLayout.vue'
 import Tiptap  from './components/Tiptap.vue'
 import { useRouter } from 'vue-router'
 import { posthogSettings } from '@/telemetry'
@@ -32,9 +33,7 @@ const screenSize = useScreenSize()
 const { userResource } = usersStore()
 
 const Layout = computed(() => {
-  if (screenSize.width < 1024) {
-    return DesktopLayout
-  }
+  if (screenSize.isMobile) return MobileLayout
   return DesktopLayout
 })
 
