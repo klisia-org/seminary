@@ -18,12 +18,6 @@
    "fieldtype": "Int",
    "label": "Credits taken",
    "width": 0
-  },
-  {
-   "fieldname": "trackcredits",
-   "fieldtype": "Int",
-   "label": "Track credits",
-   "width": 0
   }
  ],
  "creation": "2024-06-11 15:17:25.759317",
@@ -43,7 +37,7 @@
  "is_standard": "Yes",
  "json": "{}",
  "letterhead": null,
- "modified": "2024-06-11 16:16:44.800406",
+ "modified": "2026-04-07 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Credits passed per student",

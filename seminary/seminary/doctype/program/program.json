@@ -23,6 +23,11 @@
   "tracks_tab",
   "tracks_section",
   "pgm_pgmtracks",
+  "emphasis_settings_section",
+  "allow_multiple_emphases",
+  "fallback_emphasis",
+  "column_break_emphasis",
+  "emphasis_overlap_policy",
   "you_can_specify_courses_per_program_track_section",
   "pgm_courses_track",
   "web_tab",
@@ -158,6 +163,38 @@
    "options": "Program Track Courses"
   },
   {
+   "fieldname": "emphasis_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Emphasis Settings"
+  },
+  {
+   "default": "0",
+   "description": "Allow students to declare more than one emphasis in this program.",
+   "fieldname": "allow_multiple_emphases",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Emphases"
+  },
+  {
+   "description": "If set, students who do not declare or meet a specific emphasis will fall back to this track (e.g. General Studies).",
+   "fieldname": "fallback_emphasis",
+   "fieldtype": "Link",
+   "label": "Fallback Emphasis",
+   "options": "Program Track"
+  },
+  {
+   "fieldname": "column_break_emphasis",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Shared Credit Pool",
+   "depends_on": "eval:doc.allow_multiple_emphases",
+   "description": "Shared Credit Pool: all emphases share the same credit total. Additional Credits Required: 2nd+ emphases add their track credits on top of the program total.",
+   "fieldname": "emphasis_overlap_policy",
+   "fieldtype": "Select",
+   "label": "Emphasis Overlap Policy",
+   "options": "Shared Credit Pool\nAdditional Credits Required"
+  },
+  {
    "description": "Note: The courses available on the previous page should be ALL the courses in the program. Use this only to specify what is mandatory for students on a particular track.",
    "fieldname": "you_can_specify_courses_per_program_track_section",
    "fieldtype": "Section Break",
@@ -242,7 +279,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2025-02-26 12:37:53.740432",
+ "modified": "2026-04-07 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

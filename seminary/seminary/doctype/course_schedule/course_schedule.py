@@ -21,12 +21,20 @@ class CourseSchedule(Document):
     @frappe.whitelist()
     def validate(self):
         self.generate_token()
+        self.set_title()
         if frappe.flags.in_demo_install:
             return
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
         self.clean_name()
+
+    def set_title(self):
+        section = self.section if hasattr(self, "section") and self.section else ""
+        parts = [self.course or "", self.academic_term or ""]
+        if section:
+            parts.append(section)
+        self.title = " - ".join(p for p in parts if p)
 
     def clean_name(self):
         if self.name and ("/" in self.name or "\\" in self.name):

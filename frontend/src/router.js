@@ -235,6 +235,16 @@ const routes = [
 		props: true,
 	},
   {
+    path: "/program-audit",
+    name: "ProgramAudit",
+    component: () => import('@/pages/ProgramAudit.vue'),
+  },
+  {
+    path: "/enrollment",
+    name: "Enrollment",
+    component: () => import('@/pages/Enrollment.vue'),
+  },
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }

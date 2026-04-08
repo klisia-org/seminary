@@ -8,7 +8,15 @@
     <div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
       <div v-for="(group, program) in sortedGroupedData" :key="program">
         <h2 class="text-lg font-bold text-gray-700">{{ program }}</h2>
-        <br>
+        <!-- Credit summary -->
+        <div v-if="group[0] && group[0].credits_complete" class="flex flex-wrap gap-4 mt-1 mb-2 text-sm text-gray-600">
+          <span class="font-medium">
+            {{ group[0].totalcredits || 0 }} / {{ group[0].credits_complete }} {{ __('credits') }}
+          </span>
+          <span v-for="emph in (group[0].emphases || [])" :key="emph.track_name" class="text-gray-500">
+            | {{ emph.track_name }}: {{ emph.trackcredits }} / {{ emph.credits_required }}
+          </span>
+        </div>
 
         <ListView :columns="tableData.columns" :rows="group" :options="{
           selectable: false,

@@ -17,6 +17,7 @@ class ProgramEnrollment(Document):
         self.set_student_name()
         self.validate_duplication()
         self.validate_academic_term()
+        self.validate_emphases()
 
     def set_student_name(self):
         if not self.student_name:
@@ -61,6 +62,102 @@ class ProgramEnrollment(Document):
         if enrollment:
             frappe.throw(_("Student is already enrolled."))
 
+    def validate_emphases(self):
+        if not self.emphases:
+            return
+
+        program = frappe.get_cached_doc("Program", self.program)
+        allow_multiple = program.allow_multiple_emphases
+
+        active_emphases = [e for e in self.emphases if e.status == "Active"]
+
+        if not allow_multiple and len(active_emphases) > 1:
+            frappe.throw(
+                _(
+                    "Program {0} does not allow multiple emphases. Only one active emphasis is permitted."
+                ).format(self.program)
+            )
+
+        # Validate each emphasis row
+        for emphasis in self.emphases:
+            track = frappe.db.get_value(
+                "Program Track",
+                emphasis.emphasis_track,
+                [
+                    "is_emphasis",
+                    "emphasis_declaration",
+                    "min_credits_to_declare",
+                    "parent",
+                ],
+                as_dict=True,
+            )
+            if not track:
+                frappe.throw(
+                    _("Emphasis track {0} not found.").format(emphasis.emphasis_track)
+                )
+
+            if track.parent != self.program:
+                frappe.throw(
+                    _("Track {0} does not belong to program {1}.").format(
+                        emphasis.emphasis_track, self.program
+                    )
+                )
+
+            if not track.is_emphasis:
+                frappe.throw(
+                    _("Track {0} is not marked as an emphasis.").format(
+                        emphasis.emphasis_track
+                    )
+                )
+
+            # Check declaration timing
+            if (
+                emphasis.status == "Active"
+                and track.emphasis_declaration == "At Enrollment"
+            ):
+                if self.docstatus == 1:
+                    frappe.throw(
+                        _(
+                            "Emphasis {0} can only be declared at enrollment time (before submission)."
+                        ).format(emphasis.emphasis_track)
+                    )
+
+            # Check minimum credits for declaration
+            if (
+                emphasis.status == "Active"
+                and track.min_credits_to_declare
+                and (self.totalcredits or 0) < track.min_credits_to_declare
+            ):
+                frappe.throw(
+                    _(
+                        "Student needs at least {0} credits before declaring emphasis {1}. Current credits: {2}"
+                    ).format(
+                        track.min_credits_to_declare,
+                        emphasis.emphasis_track,
+                        self.totalcredits or 0,
+                    )
+                )
+
+            # Check auto-grant tracks cannot be manually added as Active
+            if (
+                emphasis.status == "Active"
+                and track.emphasis_declaration == "Auto-grant"
+            ):
+                frappe.throw(
+                    _(
+                        "Emphasis {0} is set to Auto-grant and cannot be manually declared. It will be assigned automatically when requirements are met."
+                    ).format(emphasis.emphasis_track)
+                )
+
+            # Set dropped_date when status changes to Dropped
+            if emphasis.status == "Dropped" and not emphasis.dropped_date:
+                emphasis.dropped_date = getdate()
+
+        # Check for duplicate active emphases on the same track
+        active_tracks = [e.emphasis_track for e in active_emphases]
+        if len(active_tracks) != len(set(active_tracks)):
+            frappe.throw(_("Cannot have duplicate active emphases on the same track."))
+
     def update_student_joining_date(self):
         table = frappe.qb.DocType("Program Enrollment")
         date = (
@@ -102,24 +199,27 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
 
 
 @frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
 def get_emphasis(doctype, txt, searchfield, start, page_len, filters):
     if not filters.get("program"):
         frappe.msgprint(_("Please select a Program first."))
         return []
 
-    doctype = "Program Track"
-    options = frappe.db.sql(
-        """select name from `tabProgram Track`
-        where  parent = %(program)s and is_emphasis = 1
-        limit {start}, {page_len}""".format(
-            match_cond=get_match_cond(doctype), start=start, page_len=page_len
-        ),
+    return frappe.db.sql(
+        """SELECT name, track_name
+        FROM `tabProgram Track`
+        WHERE parent = %(program)s
+            AND is_emphasis = 1
+            AND (name LIKE %(txt)s OR track_name LIKE %(txt)s)
+        ORDER BY track_name
+        LIMIT %(start)s, %(page_len)s""",
         {
             "program": filters["program"],
+            "txt": "%{0}%".format(txt),
+            "start": start,
+            "page_len": page_len,
         },
     )
-    print("Options:", options)  # Debugging statement
-    return options
 
 
 @frappe.whitelist()

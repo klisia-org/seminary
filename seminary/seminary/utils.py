@@ -1208,7 +1208,18 @@ def get_student_course_status(course):
         "Course Schedule", course, ["gradesc_cs", "maxnumgrade"], as_dict=True
     )
     roster["maxnumgrade"] = cs.maxnumgrade if cs else 100
-    print("FInal Roster for debug", roster)
+
+    # Get grading scale intervals for frontend grade mapping
+    if cs and cs.gradesc_cs:
+        roster["grading_scale_intervals"] = frappe.get_all(
+            "Grading Scale Interval",
+            fields=["grade_code", "threshold", "grade_pass"],
+            filters={"parent": cs.gradesc_cs},
+            order_by="threshold desc",
+        )
+    else:
+        roster["grading_scale_intervals"] = []
+
     return roster
 
 

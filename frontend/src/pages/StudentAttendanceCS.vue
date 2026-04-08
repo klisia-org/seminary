@@ -5,7 +5,10 @@
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 
 		</header>
-  <div class="flex flex-row h-full">
+  <div v-if="!meetingDates.loading && (!meetingDates.data || meetingDates.data.length === 0)" class="px-5 py-10">
+    <p class="text-gray-500">{{ __('This course does not have meeting dates set for attendance.') }}</p>
+  </div>
+  <div v-else class="flex flex-row h-full">
     <!-- Left Side: Course Schedule Meeting Dates -->
     <div class="w-1/4 p-4 border-r">
       <h2 class="text-lg font-semibold mb-4">{{ __('Course Schedule') }}</h2>
