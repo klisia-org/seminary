@@ -61,6 +61,21 @@
 							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
 					</div>
 
+					<!-- Language preference -->
+					<div>
+						<label class="text-sm text-gray-600">{{ __('Language') }}</label>
+						<select v-model="selectedLanguage"
+							class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+							<option value="">{{ __('Default') }}</option>
+							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
+								{{ lang.language_name }}
+							</option>
+						</select>
+						<p class="mt-1 text-xs text-gray-400">
+							{{ __('Available languages are configured by your seminary administrator.') }}
+						</p>
+					</div>
+
 					<!-- Read-only fields -->
 					<div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
 						<div v-for="field in readOnlyFields" :key="field.label" class="flex">
@@ -118,6 +133,20 @@
 								@change="(val) => (editBio = val)"
 							/>
 						</div>
+						<!-- Language preference -->
+						<div>
+							<label class="text-sm text-gray-600">{{ __('Language') }}</label>
+							<select v-model="selectedLanguage"
+								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+								<option value="">{{ __('Default') }}</option>
+								<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
+									{{ lang.language_name }}
+								</option>
+							</select>
+							<p class="mt-1 text-xs text-gray-400">
+								{{ __('Available languages are configured by your seminary administrator.') }}
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -146,6 +175,27 @@ const handleClose = (close) => {
 	saveSuccess.value = false
 	close?.()
 }
+
+// ── Language ─────────────────────────────────────────────────────────────────
+const selectedLanguage = ref('')
+const originalLanguage = ref('')
+const languages = ref([])
+
+const languageResource = createResource({
+	url: 'seminary.seminary.api.get_enabled_languages',
+	auto: true,
+	onSuccess(data) {
+		languages.value = data.languages || []
+		selectedLanguage.value = data.current || ''
+		originalLanguage.value = data.current || ''
+	},
+})
+
+const saveLanguageResource = createResource({
+	url: 'seminary.seminary.api.set_user_language',
+})
+
+const languageChanged = computed(() => selectedLanguage.value !== originalLanguage.value)
 
 // ── Seminary settings (support_user) ─────────────────────────────────────────
 const supportUser = ref('')
@@ -184,7 +234,11 @@ const saveStudentResource = createResource({
 	onSuccess(data) {
 		Object.assign(studentInfo.value, data)
 		saveSuccess.value = true
-		setTimeout(() => handleClose(), 1000)
+		if (languageChanged.value) {
+			setTimeout(() => window.location.reload(), 1000)
+		} else {
+			setTimeout(() => handleClose(), 1000)
+		}
 	},
 	onError(err) {
 		console.error(err.messages?.[0] || err)
@@ -192,6 +246,9 @@ const saveStudentResource = createResource({
 })
 
 const saveStudent = () => {
+	if (languageChanged.value) {
+		saveLanguageResource.submit({ language: selectedLanguage.value })
+	}
 	saveStudentResource.submit({
 		mobile: editMobile.value,
 		address_line_1: editAddr.value.address_line_1,
@@ -218,7 +275,11 @@ const saveInstructorResource = createResource({
 	onSuccess(data) {
 		Object.assign(instructorInfo.value, data)
 		saveSuccess.value = true
-		setTimeout(() => handleClose(), 1000)
+		if (languageChanged.value) {
+			setTimeout(() => window.location.reload(), 1000)
+		} else {
+			setTimeout(() => handleClose(), 1000)
+		}
 	},
 	onError(err) {
 		console.error(err.messages?.[0] || err)
@@ -226,6 +287,9 @@ const saveInstructorResource = createResource({
 })
 
 const saveInstructor = () => {
+	if (languageChanged.value) {
+		saveLanguageResource.submit({ language: selectedLanguage.value })
+	}
 	saveInstructorResource.submit({
 		instructor_name: editName.value,
 		shortbio: editShortbio.value,

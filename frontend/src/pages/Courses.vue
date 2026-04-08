@@ -6,9 +6,9 @@
   </header>
 
   <!-- Parent container for filters and course cards -->
-  <div class="p-5 flex flex-row gap-4 w-full mx-auto">
+  <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
     <!-- To Do Column -->
-    <div class="w-1/4 p-4">
+    <div class="w-full lg:w-1/4 p-4">
       <h2 class="text-lg font-semibold mb-4">{{ __('To Do') }}</h2>
       <div v-if="isStudent || isInstructor">
         <div v-for="entry in courseToDoList" :key="entry.course.name">
@@ -27,7 +27,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="w-3/4">
+    <div class="w-full lg:w-3/4">
       <!-- Filters for non-student users -->
       <div class="flex gap-4 mb-5">
         <div>

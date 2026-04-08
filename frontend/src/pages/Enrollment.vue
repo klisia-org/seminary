@@ -16,6 +16,11 @@
           </option>
         </select>
       </div>
+      <div v-else-if="selectedProgram" class="mb-4">
+        <p class="text-sm font-medium text-gray-600">
+          {{ __('Program') }}: <span class="font-bold text-gray-800">{{ selectedProgram }}</span>
+        </p>
+      </div>
 
       <!-- Loading -->
       <div v-if="courses.loading" class="flex justify-center py-12">
@@ -42,8 +47,19 @@
           <!-- Available Schedules -->
           <div v-if="course.course_schedules && course.course_schedules.length">
             <div v-for="cs in course.course_schedules" :key="cs.name"
-              class="flex items-center justify-between py-1 border-t text-sm">
-              <span class="text-gray-600">{{ cs.academic_term }}</span>
+              class="flex items-center justify-between py-2 border-t text-sm gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span v-if="cs.section" class="font-semibold text-gray-700">{{ cs.section }}</span>
+                  <Badge v-if="cs.modality" :theme="cs.modality === 'Virtual' ? 'blue' : cs.modality === 'Hybrid' ? 'orange' : 'gray'" :label="cs.modality" />
+                  <span v-if="cs.days" class="text-xs text-gray-500 font-mono">{{ cs.days }}</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-0.5">
+                  <span v-if="cs.instructors">{{ cs.instructors }}</span>
+                  <span v-if="cs.instructors && cs.date_range"> · </span>
+                  <span v-if="cs.date_range">{{ cs.date_range }}</span>
+                </div>
+              </div>
               <Button size="sm" variant="subtle" @click="enrollInCourse(cs.name)"
                 :loading="enrolling === cs.name">
                 {{ __('Enroll') }}
@@ -97,6 +113,12 @@ const enrollments = createResource({
 
 const activeEnrollments = computed(() => {
   return (enrollments.data || []).filter(pe => pe.pgmenrol_active)
+})
+
+const selectedProgram = computed(() => {
+  if (!enrollments.data || !selectedPE.value) return ''
+  const pe = enrollments.data.find(p => p.name === selectedPE.value)
+  return pe ? pe.program : ''
 })
 
 const courses = createResource({

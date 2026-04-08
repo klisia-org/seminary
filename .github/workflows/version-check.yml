@@ -1,0 +1,42 @@
+name: Version Consistency Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          # Extract versions from all three files
+          PY_VERSION=$(grep -oP '__version__ = "\K[^"]+' seminary/__init__.py)
+          ROOT_VERSION=$(grep -oP '"version": "\K[^"]+' package.json | head -1)
+          FE_VERSION=$(grep -oP '"version": "\K[^"]+' frontend/package.json | head -1)
+
+          echo "seminary/__init__.py:    $PY_VERSION"
+          echo "package.json:            $ROOT_VERSION"
+          echo "frontend/package.json:   $FE_VERSION"
+
+          MISMATCH=0
+          if [ "$PY_VERSION" != "$ROOT_VERSION" ]; then
+            echo "::error::Version mismatch: seminary/__init__.py ($PY_VERSION) != package.json ($ROOT_VERSION)"
+            MISMATCH=1
+          fi
+          if [ "$PY_VERSION" != "$FE_VERSION" ]; then
+            echo "::error::Version mismatch: seminary/__init__.py ($PY_VERSION) != frontend/package.json ($FE_VERSION)"
+            MISMATCH=1
+          fi
+
+          if [ "$MISMATCH" -eq 1 ]; then
+            echo ""
+            echo "Fix with: ./scripts/bump.sh $PY_VERSION"
+            exit 1
+          fi
+
+          echo "All version files are in sync: $PY_VERSION"

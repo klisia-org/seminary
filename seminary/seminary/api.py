@@ -478,6 +478,26 @@ def get_translations():
 
 
 @frappe.whitelist()
+def get_enabled_languages():
+    """Return all enabled languages and the current user's language preference."""
+    languages = frappe.get_all(
+        "Language",
+        filters={"enabled": 1},
+        fields=["name as language_code", "language_name"],
+        order_by="language_name asc",
+    )
+    current = frappe.db.get_value("User", frappe.session.user, "language") or ""
+    return {"languages": languages, "current": current}
+
+
+@frappe.whitelist()
+def set_user_language(language):
+    """Set the current user's UI language preference."""
+    frappe.db.set_value("User", frappe.session.user, "language", language)
+    return {"success": True}
+
+
+@frappe.whitelist()
 def get_file_info(file_url):
     print("Get File Info called with file_url: ", file_url)
     """Get file info for the given file URL."""
@@ -1222,16 +1242,65 @@ def get_available_courses_categorized(program_enrollment):
             "course": ["in", available_courses],
             "open_enroll": 1,
         },
-        fields=["name", "course", "academic_term"],
+        fields=[
+            "name",
+            "course",
+            "academic_term",
+            "section",
+            "modality",
+            "c_datestart",
+            "c_dateend",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ],
     )
     schedule_map = {}
     for cs in course_schedules:
+        # Build day initials for presential/hybrid
+        days = ""
+        if cs.modality in ("Presential", "Hybrid"):
+            day_map = [
+                (cs.monday, "M"),
+                (cs.tuesday, "T"),
+                (cs.wednesday, "W"),
+                (cs.thursday, "Th"),
+                (cs.friday, "F"),
+                (cs.saturday, "Sa"),
+                (cs.sunday, "Su"),
+            ]
+            days = "".join(abbr for checked, abbr in day_map if checked)
+
+        # Get instructors
+        instructors = frappe.get_all(
+            "Course Schedule Instructors",
+            filters={"parent": cs.name},
+            fields=["instructor"],
+        )
+        instructor_names = ", ".join(i.instructor for i in instructors if i.instructor)
+
+        # Format dates as short form
+        date_range = ""
+        if cs.c_datestart and cs.c_dateend:
+            date_range = f"{frappe.utils.formatdate(cs.c_datestart, 'MMM d')} – {frappe.utils.formatdate(cs.c_dateend, 'MMM d, yyyy')}"
+        elif cs.c_datestart:
+            date_range = frappe.utils.formatdate(cs.c_datestart, "MMM d, yyyy")
+
         if cs.course not in schedule_map:
             schedule_map[cs.course] = []
         schedule_map[cs.course].append(
             {
                 "name": cs.name,
                 "academic_term": cs.academic_term,
+                "section": cs.section or "",
+                "modality": cs.modality or "",
+                "instructors": instructor_names,
+                "date_range": date_range,
+                "days": days,
             }
         )
 

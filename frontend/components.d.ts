@@ -38,6 +38,7 @@ declare module 'vue' {
     LightEditor: typeof import('./src/components/LightEditor.vue')['default']
     Link: typeof import('./src/components/Controls/Link.vue')['default']
     MissingData: typeof import('./src/components/MissingData.vue')['default']
+    MobileLayout: typeof import('./src/components/MobileLayout.vue')['default']
     MultiSelect: typeof import('./src/components/Controls/MultiSelect.vue')['default']
     Notes: typeof import('./src/components/Notes.vue')['default']
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
