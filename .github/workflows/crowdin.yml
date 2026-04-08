@@ -3,6 +3,9 @@ name: Crowdin Action
 on:
   push:
     branches: [ develop ]
+    paths:
+      - 'seminary/locale/main.pot'
+      - 'docs/en/**/*.md'
 
 jobs:
   synchronize-with-crowdin:

@@ -1,4 +1,11 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const initPy = readFileSync(resolve(__dirname, '../../seminary/__init__.py'), 'utf-8')
+const appVersion = 'v' + initPy.match(/__version__ = "(.+)"/)[1]
 
 export default defineConfig({
   title: 'SeminaryERP Docs',
@@ -19,6 +26,7 @@ export default defineConfig({
       { text: 'Getting Started', link: '/getting-started/installation' },
       { text: 'Modules', link: '/modules/enrollment' },
       { text: 'Administration', link: '/administration/user-roles' },
+      { text: appVersion, link: 'https://github.com/klisia-org/seminary/releases' },
     ],
 
     sidebar: [
@@ -67,7 +75,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'Released under the MIT License.',
+      message: `Released under the GNU Affero General Public License. | ${appVersion}`,
       copyright: 'Copyright © Klisia / SeminaryERP',
     },
   },

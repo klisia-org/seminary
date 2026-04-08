@@ -74,7 +74,7 @@
                 <p class="text-xs text-gray-500">{{ __('Grade') }}</p>
               </div>
               <div class="text-center">
-                <p class="text-3xl font-bold text-gray-800">{{ currentGrade.percentage }}</p>
+                <p class="text-3xl font-bold text-gray-800">{{ currentGrade.score }} / {{ currentGrade.maxGrade }}</p>
                 <p class="text-xs text-gray-500">{{ __('Score') }}</p>
               </div>
               <div class="text-center">
@@ -98,7 +98,7 @@
                 <p class="text-xs text-blue-500">{{ __('Projected') }}</p>
               </div>
               <div class="text-center">
-                <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.percentage }}%</p>
+                <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.score }} / {{ projectedGrade.maxGrade }}</p>
                 <p class="text-xs text-blue-500">{{ __('Based on due assessments') }}</p>
               </div>
             </div>
@@ -230,29 +230,29 @@ const currentGrade = computed(() => {
   if (!assessments || !intervals || assessments.length === 0) return null
 
   const regular = assessments.filter(a => !a.extracredit_scac)
-  const weightedScoreSum = regular.reduce((sum, a) => {
+  const weightedSum = regular.reduce((sum, a) => {
     const raw = a.rawscore_card || 0
-    return sum + (raw / maxGrade) * (a.weight_scac || 0)
+    return sum + raw * (a.weight_scac || 0)
   }, 0)
 
   const extraPoints = assessments
     .filter(a => a.extracredit_scac)
     .reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
 
-  let percentage = Math.min(weightedScoreSum + extraPoints, 100)
+  const score = (weightedSum + extraPoints) / maxGrade
 
   const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
   let grade = ''
   let gradePass = ''
   for (const interval of sorted) {
-    if (percentage >= interval.threshold) {
+    if (score >= interval.threshold) {
       grade = interval.grade_code
       gradePass = interval.grade_pass
       break
     }
   }
 
-  return { percentage: Math.round(percentage * 100) / 100, grade, gradePass }
+  return { score: Math.round(score * 100) / 100, maxGrade, grade, gradePass }
 })
 
 const projectedGrade = computed(() => {
@@ -261,41 +261,38 @@ const projectedGrade = computed(() => {
   const maxGrade = status.data?.maxnumgrade || 100
   if (!assessments || !intervals || assessments.length === 0) return null
 
-  const today = new Date().toISOString().slice(0, 10)
+  const regular = assessments.filter(a => !a.extracredit_scac)
+  const graded = regular.filter(a => a.rawscore_card != null && a.rawscore_card > 0)
+  if (graded.length === 0) return null
 
-  const dueRegular = assessments.filter(a =>
-    a.due_date && a.due_date.slice(0, 10) <= today && !a.extracredit_scac
-  )
-  if (dueRegular.length === 0) return null
+  // Unweighted average of graded assessments
+  const avgRawScore = graded.reduce((sum, a) => sum + a.rawscore_card, 0) / graded.length
 
-  const weightedScoreSum = dueRegular.reduce((sum, a) => {
-    const raw = a.rawscore_card || 0
-    return sum + (raw / maxGrade) * (a.weight_scac || 0)
+  // Actual score for graded, average for ungraded
+  const weightedSum = regular.reduce((sum, a) => {
+    const hasScore = a.rawscore_card != null && a.rawscore_card > 0
+    const raw = hasScore ? a.rawscore_card : avgRawScore
+    return sum + raw * (a.weight_scac || 0)
   }, 0)
 
-  const weightSum = dueRegular.reduce((sum, a) => sum + (a.weight_scac || 0), 0)
-  if (weightSum === 0) return null
+  const extraPoints = assessments
+    .filter(a => a.extracredit_scac)
+    .reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
 
-  let percentage = (weightedScoreSum / weightSum) * 100
-
-  const dueExtraCredit = assessments.filter(a =>
-    a.due_date && a.due_date.slice(0, 10) <= today && a.extracredit_scac
-  )
-  const extraPoints = dueExtraCredit.reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
-  percentage = Math.min(percentage + extraPoints, 100)
+  const score = (weightedSum + extraPoints) / maxGrade
 
   const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
   let grade = ''
   let gradePass = ''
   for (const interval of sorted) {
-    if (percentage >= interval.threshold) {
+    if (score >= interval.threshold) {
       grade = interval.grade_code
       gradePass = interval.grade_pass
       break
     }
   }
 
-  return { percentage: Math.round(percentage * 100) / 100, grade, gradePass }
+  return { score: Math.round(score * 100) / 100, maxGrade, grade, gradePass }
 })
 
 function percentileClass(percentile) {
