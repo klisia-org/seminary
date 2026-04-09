@@ -5,7 +5,7 @@
 			params: { instructorName: instructor_name },
 
 		}">
-			<Avatar class="avatar border border-outline-gray-2 cursor-auto" v-if="instructor_name"
+			<Avatar class="avatar border border-outline-gray-2 cursor-pointer" v-if="instructor_name"
 				:label="instructor_name" :image="encodedProfileImage" :size="size" v-bind="$attrs" />
 		</router-link>
 	</Tooltip>

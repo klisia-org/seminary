@@ -75,6 +75,10 @@
 												class="h-4 w-4 stroke-1" />
 											<FileUp v-else-if="lesson.icon === 'icon-assignment'"
 												class="h-4 w-4 stroke-1" />
+											<MessageSquare v-else-if="lesson.icon === 'icon-discussion'"
+												class="h-4 w-4 stroke-1" />
+											<FolderOpen v-else-if="lesson.icon === 'icon-folder'"
+												class="h-4 w-4 stroke-1" />
 											<FileText v-else class="h-4 w-4 text-ink-gray-7 stroke-1" />
 											<span>{{ lesson.lesson_title }}</span>
 											<Check v-if="lesson.is_complete" class="h-4 w-4 text-green-700" />
@@ -83,9 +87,7 @@
 											{{ lesson.preview }}
 										</div>
 										<div v-if="lesson.due_date" class="rounded-md bg-[#E6F7F4] p-2">
-											{{ __('Due: ') + new Intl.DateTimeFormat(user.data.language || 'en-US', {
-												dateStyle: 'medium'
-											}).format(new Date(lesson.due_date)) }}
+											{{ __('Due: ') + formatDate(lesson.due_date) }}
 										</div>
 									</div>
 								</router-link>
@@ -133,7 +135,9 @@ import {
 	ChevronRight,
 	FileText,
 	FilePenLine,
+	FolderOpen,
 	HelpCircle,
+	MessageSquare,
 	MonitorPlay,
 	BookOpenCheck,
 	Trash2,
@@ -141,6 +145,7 @@ import {
 	GripVertical,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
+import { formatDate } from '@/utils'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
 import { createDialog } from '@/utils/dialogs'
 

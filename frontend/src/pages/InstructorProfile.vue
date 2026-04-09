@@ -1,5 +1,5 @@
 <template>
-    <div if="instructor_name">
+    <div v-if="instructor.data">
         <header
             class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
             :aria-label="`Profile page for ${instructorName}`">
@@ -13,8 +13,22 @@
             <img :src="instructor.data.profileimage" alt="Instructor Image" class="rounded-full h-40 w-40" />
         </div>
         <div class="m-5">
-            <div class="text-lg font-semibold text-blue-900">
-                Contact: <a :href="`mailto:${instructor.data.user}`">{{ instructor.data.user }}</a>
+            <div class="text-lg font-semibold text-blue-900 flex items-center gap-3">
+                <Mail class="h-5 w-5 text-gray-500" />
+                <a :href="`mailto:${instructor.data.prof_email || instructor.data.user}`">
+                    {{ instructor.data.prof_email || instructor.data.user }}
+                </a>
+            </div>
+            <div v-if="instructor.data.phone_message && instructor.data.messaging_apps?.length"
+                class="flex items-center gap-3 mt-2">
+                <template v-for="app in instructor.data.messaging_apps" :key="app.app_name">
+                    <a :href="`${app.url_prefix}${instructor.data.phone_message.replace(/\D/g, '')}`"
+                        target="_blank"
+                        class="flex items-center gap-1 text-blue-900 hover:text-green-600 transition-colors">
+                        <span v-html="app.svg_icon" class="inline-block h-5 w-5 [&>svg]:h-full [&>svg]:w-full"></span>
+                        {{ app.app_name }}
+                    </a>
+                </template>
             </div>
         </div>
         <div v-if="instructor.data.bio" class="m-5">
@@ -35,7 +49,7 @@
 import { Breadcrumbs, createResource, Button, TabButtons } from 'frappe-ui'
 import { computed, inject, watch, ref, onMounted, watchEffect } from 'vue'
 
-import { Edit } from 'lucide-vue-next'
+import { Mail } from 'lucide-vue-next'
 
 import { useRoute, useRouter } from 'vue-router'
 

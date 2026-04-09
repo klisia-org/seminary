@@ -326,14 +326,22 @@ def get_instructors(course):
     )
 
     for instructor in instructors:
-        instructor_details.append(
-            frappe.db.get_value(
-                "Instructor",
-                instructor,
-                ["instructor_name", "user", "profileimage", "shortbio", "bio"],
-                as_dict=True,
-            )
+        details = frappe.db.get_value(
+            "Instructor",
+            instructor,
+            [
+                "instructor_name",
+                "user",
+                "profileimage",
+                "shortbio",
+                "bio",
+                "prof_email",
+                "phone_message",
+            ],
+            as_dict=True,
         )
+        details["messaging_apps"] = get_instructor_messaging_apps(instructor)
+        instructor_details.append(details)
     return instructor_details
 
 
@@ -342,11 +350,40 @@ def get_instructor(instructorName):
     instructor = frappe.db.get_value(
         "Instructor",
         instructorName,
-        ["instructor_name", "user", "profileimage", "shortbio", "bio"],
+        [
+            "instructor_name",
+            "user",
+            "profileimage",
+            "shortbio",
+            "bio",
+            "prof_email",
+            "phone_message",
+        ],
         as_dict=True,
     )
-    print(instructor)
+    if not instructor:
+        frappe.throw(f"Instructor {instructorName} not found", frappe.DoesNotExistError)
+    instructor["messaging_apps"] = get_instructor_messaging_apps(instructorName)
     return instructor
+
+
+def get_instructor_messaging_apps(instructor_name):
+    apps = frappe.get_all(
+        "Instructor Messaging App",
+        filters={"parent": instructor_name, "parenttype": "Instructor"},
+        fields=["messaging_app"],
+    )
+    result = []
+    for app in apps:
+        app_details = frappe.db.get_value(
+            "Messaging App",
+            app.messaging_app,
+            ["app_name", "svg_icon", "url_prefix"],
+            as_dict=True,
+        )
+        if app_details:
+            result.append(app_details)
+    return result
 
 
 def get_course_or_filters(filters):
@@ -798,6 +835,14 @@ def get_lesson_icon(body, content):
                 return "icon-exam"
             if block.get("type") == "assignment":
                 return "icon-assignment"
+            if block.get("type") in (
+                "discussion",
+                "discussionActivity",
+                "discussionactivity",
+            ):
+                return "icon-discussion"
+            if block.get("type") == "folder":
+                return "icon-folder"
 
         return "icon-list"
 

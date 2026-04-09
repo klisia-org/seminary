@@ -147,6 +147,35 @@
 								{{ __('Available languages are configured by your seminary administrator.') }}
 							</p>
 						</div>
+						<!-- Communication Preferences -->
+						<div class="border-t border-gray-200 pt-3 mt-1">
+							<p class="text-sm font-semibold text-gray-700 mb-2">{{ __('Communication Preferences') }}</p>
+							<div>
+								<label class="text-sm text-gray-600">{{ __('E-mail for student contact') }}</label>
+								<input v-model="editProfEmail" type="email"
+									class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							</div>
+							<div class="mt-2">
+								<label class="text-sm text-gray-600">{{ __('Phone for messaging') }}</label>
+								<input v-model="editPhoneMessage" type="tel"
+									class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							</div>
+							<div v-if="instructorInfo.available_messaging_apps?.length" class="mt-2">
+								<label class="text-sm text-gray-600 mb-1 block">{{ __('Messaging Apps') }}</label>
+								<div class="flex flex-wrap gap-2">
+									<label v-for="app in instructorInfo.available_messaging_apps" :key="app.app_name"
+										class="flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-sm cursor-pointer transition-colors"
+										:class="editSelectedApps.includes(app.app_name) ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-600 hover:border-gray-400'">
+										<input type="checkbox" :value="app.app_name" v-model="editSelectedApps" class="sr-only" />
+										<span v-if="app.svg_icon" v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-4 [&>svg]:w-4"></span>
+										{{ app.app_name }}
+									</label>
+								</div>
+								<p class="mt-1 text-xs text-gray-400">
+									{{ __('Select which messaging apps students can use to contact you.') }}
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -264,11 +293,15 @@ const saveStudent = () => {
 // ── Instructor ────────────────────────────────────────────────────────────────
 const instructorInfo = ref({
 	instructor_name: '', user: '', bio: '', shortbio: '', profileimage: '',
+	prof_email: '', phone_message: '', messaging_apps: [], available_messaging_apps: [],
 })
 
 const editName = ref('')
 const editShortbio = ref('')
 const editBio = ref('')
+const editProfEmail = ref('')
+const editPhoneMessage = ref('')
+const editSelectedApps = ref([])
 
 const saveInstructorResource = createResource({
 	url: 'seminary.seminary.api.save_instructor_profile',
@@ -294,6 +327,9 @@ const saveInstructor = () => {
 		instructor_name: editName.value,
 		shortbio: editShortbio.value,
 		bio: editBio.value || '',
+		prof_email: editProfEmail.value,
+		phone_message: editPhoneMessage.value,
+		messaging_apps: JSON.stringify(editSelectedApps.value),
 	})
 }
 
@@ -335,6 +371,9 @@ watchEffect(() => {
 				editName.value = response.instructor_name || ''
 				editShortbio.value = response.shortbio || ''
 				editBio.value = response.bio || ''
+				editProfEmail.value = response.prof_email || ''
+				editPhoneMessage.value = response.phone_message || ''
+				editSelectedApps.value = (response.messaging_apps || []).map(a => a.app_name)
 			},
 		})
 	}

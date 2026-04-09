@@ -23,13 +23,34 @@
 						<div v-else class="text-lg font-semibold">{{ __('Instructors') }}</div>
 						<br />
 						<div class="flex flex-wrap gap-4">
-							<div v-for="instructor in course.data.instructors" :key="instructor.instructor_name"
-								class="flex flex-col items-center">
-								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20" />
-								<div class="text-center text-sm font-medium">
+							<router-link v-for="instructor in course.data.instructors" :key="instructor.instructor_name"
+								:to="{ name: 'InstructorProfile', params: { instructorName: instructor.instructor_name } }"
+								class="flex flex-col items-center group cursor-pointer no-underline">
+								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-blue-300 rounded-full transition-all" />
+								<div class="text-center text-sm font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
 									{{ instructor.instructor_name }}
 								</div>
-							</div>
+								<div class="text-xs text-gray-400 group-hover:text-blue-500 transition-colors">
+									{{ __('View profile') }}
+								</div>
+								<div class="flex gap-2 mt-1" @click.stop>
+									<a v-if="instructor.prof_email"
+										:href="`mailto:${instructor.prof_email}?subject=[${course.data.name}] ${user.data?.full_name || ''}`"
+										:title="__('Send email')"
+										class="text-gray-400 hover:text-blue-600 transition-colors">
+										<Mail class="h-4 w-4" />
+									</a>
+									<template v-if="instructor.phone_message && instructor.messaging_apps?.length">
+										<a v-for="app in instructor.messaging_apps" :key="app.app_name"
+											:href="`${app.url_prefix}${instructor.phone_message.replace(/\D/g, '')}`"
+											target="_blank"
+											:title="app.app_name"
+											class="inline-flex items-center justify-center h-4 w-4">
+											<span v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-full [&>svg]:w-full"></span>
+										</a>
+									</template>
+								</div>
+							</router-link>
 						</div>
 					</div>
 					<div class="mt-10">
@@ -76,7 +97,7 @@ import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
-import { Send } from 'lucide-vue-next'
+import { Send, Mail } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
 
 const user = inject('$user')

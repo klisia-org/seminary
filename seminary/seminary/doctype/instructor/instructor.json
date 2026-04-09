@@ -15,6 +15,11 @@
   "department",
   "profileimage",
   "employee",
+  "communication_preferences_section",
+  "prof_email",
+  "column_break_srsj",
+  "phone_message",
+  "messaging_apps",
   "mini_bio_section",
   "bio",
   "shortbio",
@@ -110,15 +115,42 @@
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
+  },
+  {
+   "fieldname": "communication_preferences_section",
+   "fieldtype": "Section Break",
+   "label": "Communication Preferences"
+  },
+  {
+   "fieldname": "prof_email",
+   "fieldtype": "Data",
+   "label": "E-mail for student communication",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_srsj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Include country code, e.g. +15551234567",
+   "fieldname": "phone_message",
+   "fieldtype": "Data",
+   "label": "Phone for messaging students"
+  },
+  {
+   "fieldname": "messaging_apps",
+   "fieldtype": "Table",
+   "label": "Messaging Apps",
+   "options": "Instructor Messaging App"
   }
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2025-03-13 18:35:55.057758",
- "modified_by": "Administrator",
+ "modified": "2026-04-08 17:22:02.760407",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Instructor",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -156,6 +188,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

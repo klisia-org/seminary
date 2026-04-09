@@ -595,9 +595,21 @@ def get_instructor_info():
             "bio",
             "shortbio",
             "profileimage",
+            "prof_email",
+            "phone_message",
         ],
         as_dict=1,
     )
+    if instructor:
+        from seminary.seminary.utils import get_instructor_messaging_apps
+
+        instructor["messaging_apps"] = get_instructor_messaging_apps(instructor.name)
+        # Also return all available messaging apps for the edit form
+        instructor["available_messaging_apps"] = frappe.get_all(
+            "Messaging App",
+            fields=["app_name", "svg_icon", "url_prefix"],
+            order_by="app_name",
+        )
     return instructor
 
 
@@ -628,16 +640,37 @@ def save_student_profile(
 
 
 @frappe.whitelist()
-def save_instructor_profile(instructor_name, shortbio, bio):
+def save_instructor_profile(
+    instructor_name,
+    shortbio,
+    bio,
+    prof_email=None,
+    phone_message=None,
+    messaging_apps=None,
+):
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
     doc.instructor_name = instructor_name
     doc.shortbio = shortbio
     doc.bio = bio
+    if prof_email is not None:
+        doc.prof_email = prof_email
+    if phone_message is not None:
+        doc.phone_message = phone_message
+    if messaging_apps is not None:
+        import json
+
+        if isinstance(messaging_apps, str):
+            messaging_apps = json.loads(messaging_apps)
+        doc.messaging_apps = []
+        for app_name in messaging_apps:
+            doc.append("messaging_apps", {"messaging_app": app_name})
     doc.save(ignore_permissions=False)
     return {
         "instructor_name": doc.instructor_name,
         "shortbio": doc.shortbio,
         "bio": doc.bio,
+        "prof_email": doc.prof_email,
+        "phone_message": doc.phone_message,
     }
 
 
