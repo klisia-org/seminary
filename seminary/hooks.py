@@ -350,6 +350,7 @@ fixtures = [
     "Assessment Criteria",
     "Custom HTML Block",
     "Seminary Help Entry",
+    "Messaging App",
 ]
 
 
