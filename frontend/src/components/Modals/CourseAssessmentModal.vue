@@ -69,9 +69,9 @@
             id="extracredit_scac"
             :checked="criteria.extracredit_scac"
             @change="toggleExtraCredit($event.target.checked)"
-            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-1"
+            class="h-4 w-4 rounded border-outline-gray-2 bg-surface-white text-ink-blue-2 focus:ring-outline-blue-1 focus:ring-offset-1"
           />
-          <label for="extracredit_scac" class="text-sm font-medium text-gray-700">
+          <label for="extracredit_scac" class="text-sm font-medium text-ink-gray-7">
             {{ __('Is extra-credit?') }}
           </label>
         </div>

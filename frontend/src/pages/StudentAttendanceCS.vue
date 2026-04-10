@@ -6,7 +6,7 @@
 
 		</header>
   <div v-if="!meetingDates.loading && (!meetingDates.data || meetingDates.data.length === 0)" class="px-5 py-10">
-    <p class="text-gray-500">{{ __('This course does not have meeting dates set for attendance.') }}</p>
+    <p class="text-ink-gray-5">{{ __('This course does not have meeting dates set for attendance.') }}</p>
   </div>
   <div v-else class="flex flex-row h-full">
     <!-- Left Side: Course Schedule Meeting Dates -->
@@ -17,8 +17,11 @@
     v-for="meeting in meetingDates.data"
     :key="meeting.name"
     :disabled="new Date(meeting.cs_meetdate) > today"
-    class="p-2 border rounded-md text-left flex justify-between items-center"
-    :class="{ 'bg-gray-200': new Date(meeting.cs_meetdate) > today, 'bg-blue-100': selectedDate?.name === meeting.name }"
+    class="p-2 border border-outline-gray-2 rounded-md text-left flex justify-between items-center transition-colors"
+    :class="{
+      'bg-surface-gray-3 text-ink-gray-5 cursor-not-allowed': new Date(meeting.cs_meetdate) > today,
+      'bg-surface-blue-2 text-ink-blue-2 border-outline-blue-1 font-semibold': selectedDate?.name === meeting.name,
+    }"
     @click="selectDate(meeting)"
     :title="new Date(meeting.cs_meetdate) > today ? __('Cannot set attendance of future dates') : ''"
   >
@@ -33,7 +36,7 @@
     <!-- Right Side: Attendance for Selected Date -->
 
     <div class="w-3/4 p-4">
-      <div v-if ="!students.data || students.data.length === 0" class="text-gray-500 text-lg font-semibold mb-4">
+      <div v-if ="!students.data || students.data.length === 0" class="text-ink-gray-5 text-lg font-semibold mb-4">
         {{ __('There are no students enrolled in this course.') }}
       </div>
       <div v-else class="w-3/4 p-4">
@@ -44,7 +47,7 @@
       <!-- Edit Attendance Button -->
       <div v-if="attendanceTaken && !editing" class="mb-4">
         <button
-          class="p-2 bg-yellow-200 border rounded-md"
+          class="p-2 bg-surface-amber-2 text-ink-amber-3 border border-outline-amber-1 rounded-md"
           @click="editAttendance"
           :title="__('All changes will be recorded for audit purposes')"
 
@@ -70,7 +73,7 @@
               <Avatar :image="student.stuimage" :label="student.stuname_roster" size="md" class="avatar border border-outline-gray-2 cursor-auto" />
               <Tooltip :text="`Send Email to ${student.stuname_roster}`" placement="bottom" arrow-class="fill-surface-white">
                 <a :href="`mailto:${student.stuemail_rc}`">
-                <Send class="w-5 h-5 text-blue-300" />
+                <Send class="w-5 h-5 text-ink-blue-2" />
                 </a>
               </Tooltip>
               </div>

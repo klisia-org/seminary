@@ -6,7 +6,7 @@
     </header>
     <div class="mt-5 mb-10 w-full px-5">
         <h3 class="text-2xl font-bold mb-3">{{ __('Course Calendar') }}</h3>
-        <p class="text-gray-700 mb-5">{{ __('Subscribe to this course calendar to stay updated with assignments'
+        <p class="text-ink-gray-7 mb-5">{{ __('Subscribe to this course calendar to stay updated with assignments'
             +
             ' due dates and class schedule.') }}</p>
         <Button variant="solid" @click="subscribeCourseCalendar()" class="mt-5 mb-5">
@@ -18,21 +18,21 @@
         <div class="space-y-4">
 
             <div v-if="CalendarInstructions.data">
-                <p class="text-sm text-gray-600" v-html="CalendarInstructions.data"></p>
+                <p class="text-sm text-ink-gray-6" v-html="CalendarInstructions.data"></p>
             </div>
             <div v-else>
                 <div>
                     <h3 class="text-2xl font-bold mt-8 mb-3">{{ __('How to Import the Calendar in the Major Platforms')
                         }}</h3>
                     <h4 class="text-lg font-semibold mt-3">{{ __('Google Calendar') }}</h4>
-                    <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Google Calendar by'
+                    <p class="text-sm text-ink-gray-6">{{ __('Copy the calendar URL and add it to your Google Calendar by'
                         +
                         ' selecting "Other Calendars" > "From URL".') }}</p>
                 </div>
 
                 <div>
                     <h4 class="text-lg font-semibold mt-3">{{ __('Outlook Calendar') }}</h4>
-                    <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Outlook '
+                    <p class="text-sm text-ink-gray-6">{{ __('Copy the calendar URL and add it to your Outlook '
                         + 'Calendar by'
                         +
                         ' selecting "Add Calendar" > "Subscribe from Web".') }}</p>
@@ -40,7 +40,7 @@
 
                 <div>
                     <h4 class="text-lg font-semibold mt-3">{{ __('Apple Calendar') }}</h4>
-                    <p class="text-sm text-gray-600">{{ __('Copy the calendar URL and add it to your Apple Calendar by'
+                    <p class="text-sm text-ink-gray-6">{{ __('Copy the calendar URL and add it to your Apple Calendar by'
                         +
                         ' selecting "File" > "New Calendar Subscription".') }}</p>
                 </div>

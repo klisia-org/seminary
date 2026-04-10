@@ -1,6 +1,6 @@
 <template lang="">
     <div class="flex items-center justify-center h-[250px]">
-      <p class="text-gray-500">{{message}}</p>
+      <p class="text-ink-gray-5">{{message}}</p>
     </div>
   </template>
 <script setup>

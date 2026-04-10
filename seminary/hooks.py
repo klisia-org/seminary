@@ -205,10 +205,13 @@ after_migrate = "seminary.install.after_migrate"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
+    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
 }
 # Instructors can only see their own records
+# Students can only see Sales Invoices where custom_student matches their own Student record
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
 }
 
 # DocType Class

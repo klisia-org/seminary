@@ -18,7 +18,7 @@
 							:label="__('Text for Preview on the Course Page')" />
 						<label class="flex items-center gap-2 mt-2 cursor-pointer">
 							<input type="checkbox" v-model="lesson.allow_discuss"
-								class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900" />
+								class="h-4 w-4 rounded border-outline-gray-2 bg-surface-white text-ink-gray-9 focus:ring-outline-gray-3" />
 							<span class="text-sm text-ink-gray-7">
 								{{ __('Allow Discussions? (Discussions will be automatically disabled for quizzes)') }}
 							</span>

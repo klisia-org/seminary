@@ -1,16 +1,16 @@
 <template>
   <button
-    class="group flex w-full min-h-[44px] cursor-pointer items-center rounded-lg text-gray-800 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+    class="group flex w-full min-h-[44px] cursor-pointer items-center rounded-lg text-ink-gray-8 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
     :class="[
   isCollapsed ? 'justify-center px-0 py-2' : 'justify-start px-3 py-2',
-      isActive ? 'bg-white shadow-sm ring-1 ring-gray-200' : 'hover:bg-[#f3f3f3]'
+      isActive ? 'bg-surface-white shadow-sm ring-1 ring-outline-gray-1' : 'hover:bg-surface-gray-2'
     ]"
     @click="handleClick"
   >
     <Tooltip :text="label" placement="right">
       <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
         <slot name="icon">
-          <component :is="icon" class="h-4.5 w-4.5 text-gray-700" />
+          <component :is="icon" class="h-4.5 w-4.5 text-ink-gray-7" />
         </slot>
       </span>
     </Tooltip>

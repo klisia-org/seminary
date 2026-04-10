@@ -39,7 +39,7 @@
 					submissionName != 'new' &&
 					!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
 					submissionResource.doc?.owner == user.data?.name
-				" class="bg-blue-200 p-3 rounded-md leading-5 text-sm mb-4">
+				" class="bg-surface-blue-2 text-ink-blue-2 p-3 rounded-md leading-5 text-sm mb-4">
 					{{ __("You've successfully submitted the assignment.") }}
 					{{
 						__(
@@ -100,7 +100,7 @@
 				<div v-if="
 					user.data?.name == submissionResource.doc?.owner &&
 					submissionResource.doc?.comments
-				" class="mt-8 p-3 bg-blue-200 rounded-md">
+				" class="mt-8 p-3 bg-surface-blue-2 text-ink-blue-2 rounded-md">
 					<div class="text-sm text-ink-gray-5 font-medium mb-2">
 						{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
 					</div>

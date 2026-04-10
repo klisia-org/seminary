@@ -6,11 +6,11 @@
     <div class="grid grid-cols-3 gap-5 mb-5">
       <!-- Custom Dropdown for Exams -->
       <div>
-        <label for="examDropdown" class="block text-sm font-medium text-gray-700">
+        <label for="examDropdown" class="block text-sm font-medium text-ink-gray-7">
           {{ __('Exam') }}
         </label>
         <select id="examDropdown" v-model="examID"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+          class="mt-1 block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
           <option value="">{{ __('All Exams') }}</option>
           <option v-for="exam in filteredExams" :key="exam.value" :value="exam.value">
             {{ exam.label }}
@@ -19,7 +19,7 @@
       </div>
       <!-- Existing Student Filter -->
       <div>
-        <label for="studentDropdown" class="block text-sm font-medium text-gray-700">
+        <label for="studentDropdown" class="block text-sm font-medium text-ink-gray-7">
           {{ __('Student') }}
         </label>
         <Link id="studentDropdown" doctype="User" v-model="member" :placeholder="__('Student')" />
@@ -27,7 +27,7 @@
 
       <!-- Existing Status Filter -->
       <div>
-        <label for="statusDropdown" class="block text-sm font-medium text-gray-700">
+        <label for="statusDropdown" class="block text-sm font-medium text-ink-gray-7">
           {{ __('Status') }}
         </label>
         <FormControl id="statusDropdown" v-model="status" type="select" :options="statusOptions"
@@ -87,7 +87,7 @@
     <h2 class="text-lg font-semibold mb-4">{{ __('Students with No Submissions') }}</h2>
     <table class="table-auto border-collapse w-full">
       <thead>
-        <tr class="bg-gray-100">
+        <tr class="bg-surface-gray-2">
           <th class="border px-4 py-2">{{ __('Student Name') }}</th>
           <th class="border px-4 py-2">{{ __('Program') }}</th>
           <th class="border px-4 py-2">{{ __('Email') }}</th>
@@ -95,7 +95,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="student in notSubmittedStudents" :key="student.stuemail_rc" class="hover:bg-gray-50">
+        <tr v-for="student in notSubmittedStudents" :key="student.stuemail_rc" class="hover:bg-surface-gray-1">
           <td class="border px-4 py-2">{{ student.stuname_roster }}</td>
           <td class="border px-4 py-2">{{ student.program_std_scr }}</td>
           <td class="border px-4 py-2">

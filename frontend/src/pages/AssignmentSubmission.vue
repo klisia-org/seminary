@@ -16,13 +16,13 @@
 
   <!-- Dropdown for All Submissions -->
   <div class="w-1/3">
-    <label for="submissionDropdown" class="block text-sm font-medium text-gray-700">
+    <label for="submissionDropdown" class="block text-sm font-medium text-ink-gray-7">
       {{ __('Select Submission') }}
     </label>
     <select
       id="submissionDropdown"
       v-model="currentSubmission"
-      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+      class="mt-1 block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm"
     >
       <option
         v-for="submission in submissionlist.data"

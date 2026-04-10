@@ -5,18 +5,18 @@
     </div>
 
     <!-- Student View -->
-    <div v-if="course.data?.course && isStudent" class="text-ink-gray-7">
+    <div v-if="course.data?.course && isStudent" class="text-ink-gray-8">
       <section v-if="missingAssessments.data?.length" class="missing-assessments mt-4">
         <h3 class="text-xl font-semibold text-ink-gray-9">{{ __("Missing Assessments") }}</h3>
         <ul>
-          <li v-for="assessment in missingAssessments.data" :key="assessment.id" class="text-ink-gray-7">
+          <li v-for="assessment in missingAssessments.data" :key="assessment.id" class="text-ink-gray-8">
             {{ assessment.title }} ({{ __('Due') }}: {{ formatDate(assessment.due_date) }})
           </li>
         </ul>
       </section>
 
       <section v-if="assessments?.data?.length" class="due-soon mt-4">
-        <h3>{{ __('Due Soon') }}</h3>
+        <h3 class="text-xl font-semibold text-ink-gray-9">{{ __('Due Soon') }}</h3>
         <ul>
           <li v-for="assessment in assessments.data.filter(a => new Date(a.due_date) >= new Date()).slice(0, 5)"
             :key="assessment.id">
@@ -33,19 +33,19 @@
     </div>
 
     <!-- Instructor View -->
-    <div v-if="course.data?.course && isInstructor && assessmentsToGrade.data?.length" class="text-ink-gray-7">
-      <div v-for="assessmentTG in assessmentsToGrade.data" :key="assessmentTG.title" class="text-ink-gray-7 mt-4">
+    <div v-if="course.data?.course && isInstructor && assessmentsToGrade.data?.length" class="text-ink-gray-8">
+      <div v-for="assessmentTG in assessmentsToGrade.data" :key="assessmentTG.title" class="text-ink-gray-8 mt-4">
         <ul>
           <router-link v-if="assessmentTG.Type === 'Exam'"
             :to="{ name: 'ExamSubmissionCS', params: { courseName: props.course, examID: assessmentTG.assessmentID } }"
-            class="text-ink-gray-7 mt-4 flex items-center space-x-2">
+            class="text-ink-gray-8 mt-4 flex items-center space-x-2">
             <BookOpenCheck class="h-4 w-4 stroke-1.5" />
             <span>{{ assessmentTG.title }} ({{ assessmentTG.ToGrade }} {{ __(" to grade") }})</span>
           </router-link>
 
           <router-link v-else-if="assessmentTG.Type === 'Assignment'"
             :to="{ name: 'AssignmentSubmissionCS', params: { courseName: props.course, assignmentID: assessmentTG.assessmentID } }"
-            class="text-ink-gray-7 flex items-center space-x-2">
+            class="text-ink-gray-8 flex items-center space-x-2">
             <FileUp class="h-4 w-4 stroke-1.5" />
             <span>{{ assessmentTG.title }} ({{ assessmentTG.ToGrade }} {{ __(" to grade") }})</span>
           </router-link>
@@ -53,9 +53,9 @@
       </div>
     </div>
 
-    <div v-if="course.data?.course && isInstructor && !assessmentsToGrade.data?.length" class="text-ink-gray-7">
-      <PartyPopper class="size-20 mx-auto stroke-1 text-gray-500 mt-5" />
-      <h3 class="text-xl text-center font-semibold text-gray-500 mt-5">
+    <div v-if="course.data?.course && isInstructor && !assessmentsToGrade.data?.length" class="text-ink-gray-8">
+      <PartyPopper class="size-20 mx-auto stroke-1 text-ink-gray-5 mt-5" />
+      <h3 class="text-xl text-center font-semibold text-ink-gray-5 mt-5">
         {{ __('Congrats! No assessments to grade for now.') }}
       </h3>
     </div>

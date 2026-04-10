@@ -678,6 +678,7 @@ def save_instructor_profile(
 def get_school_abbr_logo():
     abbr = frappe.db.get_single_value("Website Settings", "app_name")
     logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
+    logo_dark = frappe.db.get_single_value("Seminary Settings", "logo_dark")
     support_user = frappe.db.get_single_value("Seminary Settings", "support_user")
     date_format = (
         frappe.db.get_single_value("System Settings", "date_format") or "yyyy-mm-dd"
@@ -688,6 +689,7 @@ def get_school_abbr_logo():
     return {
         "name": abbr,
         "logo": logo,
+        "logo_dark": logo_dark,
         "support_user": support_user,
         "date_format": date_format,
         "allow_portal_enroll": allow_portal_enroll,
@@ -1945,8 +1947,22 @@ def get_scholarship(student):
 
 
 @frappe.whitelist()
-def get_student_invoices(student):
-    sales_invoice_list = []
+def get_student_invoices(student=None):
+    # If the caller is a student user, always scope to their own Student
+    # record — ignore any client-supplied `student` parameter to prevent a
+    # student from querying someone else's invoices.
+    from seminary.seminary.sales_invoice_permissions import (
+        _current_student,
+        _should_restrict,
+    )
+
+    if _should_restrict(frappe.session.user):
+        student = _current_student(frappe.session.user)
+        if not student:
+            return []
+
+    if not student:
+        frappe.throw("student is required")
 
     sales_invoice_list = frappe.get_all(
         "Sales Invoice",

@@ -53,7 +53,7 @@
         <ul v-else class="space-y-2">
           <li v-for="folder in subfolders" :key="folder.name"
             class="flex items-center justify-between rounded border border-outline-gray-2 px-3 py-2 transition hover:border-outline-gray-3">
-            <button type="button" class="flex-1 text-left text-sm font-medium text-blue-600 hover:underline"
+            <button type="button" class="flex-1 text-left text-sm font-medium text-ink-blue-link hover:underline"
               @click="openSubfolder(folder)">
               {{ folder.file_name }}
             </button>
@@ -69,7 +69,7 @@
         <ul v-else class="space-y-2">
           <li v-for="file in files" :key="file.file_url || file.name"
             class="flex items-center gap-3 rounded border border-outline-gray-2 px-3 py-2 transition hover:border-outline-gray-3">
-            <a :href="file.file_url" download class="flex-1 truncate text-sm text-blue-600 hover:underline">
+            <a :href="file.file_url" download class="flex-1 truncate text-sm text-ink-blue-link hover:underline">
               {{ file.file_name }}
             </a>
             <Tooltip :text="__('Delete File')" placement="bottom">
@@ -81,7 +81,7 @@
 
       <div
         class="rounded-md border-2 border-dashed border-outline-gray-3 p-6 text-center text-sm transition-colors duration-200 hover:border-outline-gray-4"
-        :class="{ 'bg-blue-50 border-blue-500 text-blue-700': isDragActive }" @dragenter.prevent.stop="onDragEnter"
+        :class="{ 'bg-surface-blue-1 border-outline-blue-1 text-ink-blue-2': isDragActive }" @dragenter.prevent.stop="onDragEnter"
         @dragover.prevent.stop="onDragOver" @dragleave.prevent.stop="onDragLeave" @drop.prevent.stop="onDrop"
         @click="triggerFileSelect">
         <p class="font-medium">{{ __('Drop files here or click to upload') }}</p>

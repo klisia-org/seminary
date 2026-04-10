@@ -1,7 +1,7 @@
 <template>
 	<div v-if="isQuizLoaded">
 		<!-- Quiz Header -->
-		<div class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900">
+		<div class="bg-surface-blue-2 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-2">
 			<div class="leading-5">
 				{{
 					__(`This quiz consists of '${questions.length}' questions`)
@@ -98,9 +98,9 @@
 								@change="markAnswer(index)" />
 							<div v-else-if="quiz.data.show_answers" v-for="(answer, idx) in showAnswers">
 								<div v-if="index - 1 == idx">
-									<CheckCircle v-if="answer == 1" class="w-4 h-4 text-green-800" />
+									<CheckCircle v-if="answer == 1" class="w-4 h-4 text-ink-green-3" />
 									<MinusCircle v-else-if="answer == 2" class="w-4 h-4 text-ink-green-2" />
-									<XCircle v-else-if="answer == 0" class="w-4 h-4 text-red-600" />
+									<XCircle v-else-if="answer == 0" class="w-4 h-4 text-ink-red-3" />
 									<MinusCircle v-else class="w-4 h-4" />
 								</div>
 							</div>
@@ -541,7 +541,7 @@ const checkAnswer = () => {
 		createToast({
 			title: __('Please select an option'),
 			icon: 'alert-circle',
-			iconClasses: 'text-yellow-600 bg-yellow-100 rounded-full',
+			iconClasses: 'text-ink-amber-3 bg-surface-amber-2 rounded-full',
 			position: 'top-center',
 		});
 		return;

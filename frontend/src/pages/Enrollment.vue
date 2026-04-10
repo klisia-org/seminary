@@ -1,33 +1,33 @@
 <template>
   <div v-if="isStudent">
     <h2
-      class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+      class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
       {{ __('Courses Open for Enrollment') }}
     </h2>
 
     <div class="px-5 py-4">
       <!-- PE Selector -->
       <div v-if="enrollments.data && enrollments.data.length > 1" class="mb-4">
-        <label class="text-sm font-medium text-gray-600 mb-1 block">{{ __('Program Enrollment') }}</label>
+        <label class="text-sm font-medium text-ink-gray-6 mb-1 block">{{ __('Program Enrollment') }}</label>
         <select v-model="selectedPE" @change="loadCourses"
-          class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-md">
+          class="border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md px-3 py-2 text-sm w-full max-w-md">
           <option v-for="pe in activeEnrollments" :key="pe.name" :value="pe.name">
             {{ pe.program }}
           </option>
         </select>
       </div>
       <div v-else-if="selectedProgram" class="mb-4">
-        <p class="text-sm font-medium text-gray-600">
-          {{ __('Program') }}: <span class="font-bold text-gray-800">{{ selectedProgram }}</span>
+        <p class="text-sm font-medium text-ink-gray-6">
+          {{ __('Program') }}: <span class="font-bold text-ink-gray-8">{{ selectedProgram }}</span>
         </p>
       </div>
 
       <!-- My Enrollments for this Term -->
       <div v-if="myEnrollments.data && myEnrollments.data.length" class="mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('My Enrollments This Term') }}</h3>
+        <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('My Enrollments This Term') }}</h3>
         <div class="border rounded-lg overflow-hidden">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600">
+            <thead class="bg-surface-gray-1 text-ink-gray-6">
               <tr>
                 <th class="text-left px-3 py-2 font-medium">{{ __('Course') }}</th>
                 <th class="text-left px-3 py-2 font-medium">{{ __('Credits') }}</th>
@@ -37,12 +37,12 @@
             </thead>
             <tbody>
               <tr v-for="cei in myEnrollments.data" :key="cei.name"
-                :class="cei.status === 'Withdrawn' ? 'text-gray-400 line-through' : ''">
+                :class="cei.status === 'Withdrawn' ? 'text-ink-gray-4 line-through' : ''">
                 <td class="px-3 py-2">{{ cei.course_data }}</td>
                 <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
                 <td class="px-3 py-2">
                   <Badge
-                    :theme="cei.status === 'Enrolled' ? 'green' : cei.status === 'Draft' ? 'orange' : 'gray'"
+                    :theme="statusTheme(cei.status)"
                     :label="cei.status === 'Draft' ? __('Pending') : __(cei.status)" />
                 </td>
                 <td class="px-3 py-2 text-right">
@@ -53,10 +53,10 @@
                 </td>
               </tr>
             </tbody>
-            <tfoot v-if="totalCredits > 0" class="bg-gray-50">
+            <tfoot v-if="totalCredits > 0" class="bg-surface-gray-1">
               <tr>
-                <td class="px-3 py-2 font-medium text-gray-700">{{ __('Total') }}</td>
-                <td class="px-3 py-2 font-medium text-gray-700">{{ totalCredits }}</td>
+                <td class="px-3 py-2 font-medium text-ink-gray-7">{{ __('Total') }}</td>
+                <td class="px-3 py-2 font-medium text-ink-gray-7">{{ totalCredits }}</td>
                 <td colspan="2"></td>
               </tr>
             </tfoot>
@@ -71,11 +71,11 @@
 
       <!-- Course Cards -->
       <div v-else-if="courses.data && courses.data.length" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div v-for="course in courses.data" :key="course.course" class="border rounded-lg p-4 bg-white">
+        <div v-for="course in courses.data" :key="course.course" class="border rounded-lg p-4 bg-surface-white">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <h3 class="font-semibold text-gray-800">{{ course.course_name || course.course }}</h3>
-              <span class="text-sm text-gray-500">{{ course.credits }} {{ __('credits') }}</span>
+              <h3 class="font-semibold text-ink-gray-8">{{ course.course_name || course.course }}</h3>
+              <span class="text-sm text-ink-gray-5">{{ course.credits }} {{ __('credits') }}</span>
             </div>
           </div>
 
@@ -92,12 +92,12 @@
               class="flex items-center justify-between py-2 border-t text-sm gap-3">
               <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="cs.section" class="font-semibold text-gray-700">{{ cs.section }}</span>
+                  <span v-if="cs.section" class="font-semibold text-ink-gray-7">{{ cs.section }}</span>
                   <Badge v-if="cs.modality" :theme="cs.modality === 'Virtual' ? 'blue' : cs.modality === 'Hybrid' ? 'orange' : 'gray'" :label="cs.modality" />
-                  <span v-if="cs.days" class="text-xs text-gray-500 font-mono">{{ cs.days }}</span>
-                  <span v-if="cs.time_range" class="text-xs text-gray-500">{{ cs.time_range }}</span>
+                  <span v-if="cs.days" class="text-xs text-ink-gray-5 font-mono">{{ cs.days }}</span>
+                  <span v-if="cs.time_range" class="text-xs text-ink-gray-5">{{ cs.time_range }}</span>
                 </div>
-                <div class="text-xs text-gray-500 mt-0.5">
+                <div class="text-xs text-ink-gray-5 mt-0.5">
                   <span v-if="cs.instructors">{{ cs.instructors }}</span>
                   <span v-if="cs.instructors && cs.date_range"> · </span>
                   <span v-if="cs.date_range">{{ cs.date_range }}</span>
@@ -109,7 +109,7 @@
               </Button>
             </div>
           </div>
-          <div v-else class="text-xs text-gray-400 mt-2">
+          <div v-else class="text-xs text-ink-gray-4 mt-2">
             {{ __('No scheduled sections available') }}
           </div>
         </div>
@@ -122,7 +122,7 @@
     </div>
   </div>
   <div v-else class="flex flex-col items-center justify-center py-20">
-    <p class="text-lg font-bold text-gray-500">{{ __('Course enrollment is only available for Students') }}</p>
+    <p class="text-lg font-bold text-ink-gray-5">{{ __('Course enrollment is only available for Students') }}</p>
   </div>
 </template>
 
@@ -131,6 +131,7 @@ import { Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
 
 import MissingData from '@/components/MissingData.vue'
+import { statusTheme } from '@/utils/statusTheme'
 
 const user = inject('$user')
 const isStudent = user.data?.is_student

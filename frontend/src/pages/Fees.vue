@@ -2,47 +2,52 @@
 	<div v-if="isStudent">
 
 		<h2
-			class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+			class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
 			{{ __('My Financial Status') }}
 		</h2>
 
-
 		<div v-if="studentInfo.scholarships && studentInfo.scholarships?.[0]?.scholarship"
 			class="flex flex-col items-center justify-center p-3">
-			<h2 class="text-lg font-bold text-gray-800">
+			<h3 class="text-lg font-bold text-ink-gray-8">
 				{{ __('Scholarship') }}: {{ studentInfo.scholarships[0].scholarship }}
-			</h2>
-			<br>
-		</div>
-		<div v-else class="flex flex-col items-center justify-center">
-			<p class="text-lg font-bold text-gray-800"> </p>
+			</h3>
 		</div>
 
 		<div v-if="tableData.rows.length > 0" class="px-5 py-4">
-			<ListView :columns="tableData.columns" :rows="tableData.rows" :options="{
-				selectable: false,
-				showTooltip: false,
-				onRowClick: () => { },
-			}" row-key="id" v-if="tableData.rows.length > 0">
-				<ListHeader>
-					<ListHeaderItem v-for="column in tableData.columns" :key="column.key" :item="column" />
-				</ListHeader>
-				<ListRow v-for="row in tableData.rows" :key="row.id" :row="row" v-slot="{ column, item }">
-					<ListRowItem :item="item" :align="column.align">
-						<Badge v-if="column.key === 'status'" variant="subtle" :theme="row.status === 'Paid' ? (bg_color = 'green') : (bg_color = 'red')
-							" size="md" :label="item" />
-						<Button v-if="column.key === 'cta' && row.status === 'Paid'" @click="openInvoicePDF(row)"
-							class="hover:bg-gray-900 hover:text-white" icon-left="download" label="Download Invoice" />
-
-						<Button v-if="column.key === 'cta' &&
-							(row.status === 'Unpaid' || row.status === 'Overdue')
-						" @click="openModal(row)" class="hover:bg-gray-900 hover:text-white flex flex-column items-center justify-center"
-							icon-left="credit-card" label="Pay Now" />
-					</ListRowItem>
-				</ListRow>
-			</ListView>
-			<!-- <FeesPaymentDialog v-if="currentRow" :row="currentRow" :student="studentInfo" v-model="showPaymentDialog"
-				@success="success()" /> -->
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="border-b text-left text-ink-gray-6">
+						<th class="py-2 px-3 font-medium">{{ __('Invoice') }}</th>
+						<th class="py-2 px-3 font-medium text-right">{{ __('Amount') }}</th>
+						<th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
+						<th class="py-2 px-3 font-medium text-right"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="row in tableData.rows" :key="row.name" class="border-b">
+						<td class="py-2 px-3">
+							<div class="text-ink-gray-9">{{ row.name }}</div>
+							<div class="text-xs text-ink-gray-5">{{ row.posting_date }}</div>
+						</td>
+						<td class="py-2 px-3 text-right">
+							<div class="text-ink-gray-9">{{ row.total }}</div>
+							<div v-if="row.outstanding_amount && row.status !== 'Paid'"
+								class="text-xs text-ink-gray-5">
+								{{ __('Outstanding') }}: {{ row.outstanding_amount }}
+							</div>
+						</td>
+						<td class="py-2 px-3">
+							<Badge :theme="statusTheme(row.status)" :label="row.status" />
+						</td>
+						<td class="py-2 px-3 text-right">
+							<Button v-if="row.status === 'Paid'" size="sm" variant="subtle"
+								@click="openInvoicePDF(row)" icon-left="download" :label="__('Download')" />
+							<Button v-else size="sm" variant="solid" theme="blue"
+								@click="openModal(row)" icon-left="credit-card" :label="__('Pay')" />
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 
 		<div v-else>
@@ -50,31 +55,20 @@
 		</div>
 	</div>
 	<div v-else class="flex flex-col items-center justify-center">
-		<p class="text-lg font-bold text-gray-500">{{ __('Student Financial Status are only displayed for Students') }}
+		<p class="text-lg font-bold text-ink-gray-5">{{ __('Student Financial Status are only displayed for Students') }}
 		</p>
 	</div>
 </template>
 
 <script setup>
 
-import {
-	ListView,
-	ListHeader,
-	ListHeaderItem,
-	ListRow,
-	ListRowItem,
-	Badge,
-	createResource,
-	Toast,
-	FeatherIcon,
-} from 'frappe-ui'
+import { Badge, Button, createResource } from 'frappe-ui'
 import { reactive, ref, inject } from 'vue'
 
-// import FeesPaymentDialog from '@/components/FeesPaymentDialog.vue'
-// import { studentStore } from '@/stores/student'
 import MissingData from '@/components/MissingData.vue'
 import { createToast } from '@/utils'
 import { usersStore } from '../stores/user'
+import { statusTheme } from '@/utils/statusTheme'
 
 
 let studentInfo = usersStore()
@@ -125,47 +119,7 @@ const feesResource = createResource({
 	auto: true,
 })
 
-const tableData = reactive({
-	rows: [],
-	columns: [
-		{
-			label: __('Name'),
-			key: 'name',
-			width: 1,
-		},
-
-		{
-			label: __('Customer'),
-			key: 'customer',
-			width: 1,
-		},
-		{
-			label: __('Posting Date'),
-			key: 'posting_date',
-			width: 1,
-		},
-		{
-			label: __('Total Amount'),
-			key: 'total',
-			width: 1,
-		},
-		{
-			label: __('Outstanding Amount'),
-			key: 'outstanding_amount',
-			width: 1,
-		},
-		{
-			label: __('Status'),
-			key: 'status',
-			width: 1,
-		},
-		{
-			label: __('Invoice'),
-			key: 'cta',
-			width: 1,
-		},
-	],
-})
+const tableData = reactive({ rows: [] })
 
 const currentRow = ref(null)
 const showPaymentDialog = ref(false)
@@ -189,7 +143,7 @@ const success = () => {
 	createToast({
 		title: __('Payment Successful'),
 		icon: 'check',
-		iconClasses: 'text-green-600',
+		iconClasses: 'text-ink-green-3',
 	})
 }
 </script>

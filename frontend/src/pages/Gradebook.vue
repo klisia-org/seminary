@@ -12,53 +12,53 @@
         </template>
         {{ __('Save All Changes') }} ({{ Object.keys(changedCells).length }})
       </Button>
-      <span v-if="hasUnsavedChanges" class="text-sm text-gray-500">
+      <span v-if="hasUnsavedChanges" class="text-sm text-ink-gray-5">
         {{ __('or press Ctrl+S') }}
       </span>
     </div>
     <!-- No Students Message -->
-    <div v-if="students.length === 0" class="text-gray-500 text-center mt-4">
+    <div v-if="students.length === 0" class="text-ink-gray-5 text-center mt-4">
       {{ __('There are no students enrolled in this course.') }}
     </div>
 
     <!-- Gradebook Table -->
     <div v-else class="overflow-x-auto mx-2 sm:mx-5">
-      <table class="min-w-full border-collapse border border-gray-300">
+      <table class="min-w-full border-collapse border border-outline-gray-2">
         <thead>
           <!-- Assessment Titles Row -->
           <tr>
-            <th class="sticky left-0 z-10 border border-gray-300 bg-gray-100 px-2 py-2 sm:px-4 min-w-[180px]">
+            <th class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 sm:px-4 min-w-[180px]">
               {{ __('Student') }}
             </th>
             <th v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
-              :class="assessment.extracredit_scac ? 'bg-blue-50' : 'bg-gray-100'"
-              class="border border-gray-300 px-2 py-2 sm:px-4 min-w-[120px] text-sm">
+              :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : 'bg-surface-gray-2'"
+              class="border border-outline-gray-2 px-2 py-2 sm:px-4 min-w-[120px] text-sm">
               <div class="flex flex-col items-center gap-0.5">
                 <router-link v-if="assessment.type === 'Exam' && assessment.exam"
                   :to="{ name: 'ExamSubmissionCS', params: { courseName: props.courseName, examID: assessment.exam } }"
-                  class="text-blue-600 hover:text-blue-800 underline text-center">
+                  class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
                   {{ assessment.title }}
                 </router-link>
                 <router-link v-else-if="assessment.type === 'Assignment' && assessment.assignment"
                   :to="{ name: 'AssignmentSubmissionCS', params: { courseName: props.courseName, assignmentID: assessment.assignment } }"
-                  class="text-blue-600 hover:text-blue-800 underline text-center">
+                  class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
                   {{ assessment.title }}
                 </router-link>
                 <router-link v-else-if="assessment.type === 'Quiz' && assessment.quiz"
                   :to="{ name: 'QuizSubmissionCS', params: { courseName: props.courseName, quizID: assessment.quiz } }"
-                  class="text-blue-600 hover:text-blue-800 underline text-center">
+                  class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
                   {{ assessment.title }}
                 </router-link>
                 <router-link v-else-if="assessment.type === 'Discussion' && assessment.discussion"
                   :to="{ name: 'DiscussionActivitySubmissionCS', params: { courseName: props.courseName, discussionID: assessment.discussion } }"
-                  class="text-blue-600 hover:text-blue-800 underline text-center">
+                  class="text-ink-blue-link hover:text-ink-blue-3 underline text-center">
                   {{ assessment.title }}
                 </router-link>
                 <span v-else class="text-center">
                   {{ assessment.title }}
                 </span>
 
-                <span v-if="assessment.due_date" class="text-xs text-gray-400">
+                <span v-if="assessment.due_date" class="text-xs text-ink-gray-4">
                   {{ formatDueDate(assessment.due_date) }}
                 </span>
               </div>
@@ -68,12 +68,12 @@
           <!-- Weight Row -->
           <tr>
             <td
-              class="sticky left-0 z-10 border border-gray-300 bg-gray-50 px-2 py-1 sm:px-4 text-xs text-gray-500 font-medium">
+              class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 sm:px-4 text-xs text-ink-gray-5 font-medium">
               {{ __('Weight') }}
             </td>
             <td v-for="assessment in sortedAssessments" :key="'weight-' + assessment.assessment_criteria"
-              :class="assessment.extracredit_scac ? 'bg-blue-50' : 'bg-gray-50'"
-              class="border border-gray-300 px-2 py-1 text-center text-xs text-gray-500 font-medium">
+              :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : 'bg-surface-gray-1'"
+              class="border border-outline-gray-2 px-2 py-1 text-center text-xs text-ink-gray-5 font-medium">
               <span v-if="assessment.extracredit_scac" class="italic">
                 {{ __('Max Extra: ') }} {{ assessment.fudgepoints_scac }}
               </span>
@@ -85,9 +85,9 @@
         </thead>
 
         <tbody>
-          <tr v-for="student in students" :key="student.student_card" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="student in students" :key="student.student_card" class="hover:bg-surface-gray-1 transition-colors">
             <!-- Student Name -->
-            <td class="sticky left-0 z-10 border border-gray-300 bg-white px-2 py-2 sm:px-4">
+            <td class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-white px-2 py-2 sm:px-4">
               <div class="flex items-center justify-between gap-1">
                 <Tooltip
                   :text="`${__('Program')}: ${student.program_std_scr}\n${__('Audit')}: ${student.audit_bool ? __('Yes') : __('No')}\n${__('Active')}: ${student.active ? __('Yes') : __('No')}`"
@@ -100,7 +100,7 @@
                 <Tooltip :text="`${__('Send Email to')} ${student.stuname_roster}`" placement="bottom"
                   arrow-class="fill-surface-white">
                   <a :href="`mailto:${student.stuemail_rc}`"
-                    class="shrink-0 rounded p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500">
+                    class="shrink-0 rounded p-1 text-ink-gray-4 transition-colors hover:bg-surface-blue-1 hover:text-ink-blue-2">
                     <Send class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </a>
                 </Tooltip>
@@ -109,18 +109,18 @@
 
             <!-- Grade Cells -->
             <td v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
-              :class="assessment.extracredit_scac ? 'bg-blue-50' : ''"
-              class="border border-gray-300 px-1 py-1.5 sm:px-2">
+              :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : ''"
+              class="border border-outline-gray-2 px-1 py-1.5 sm:px-2">
               <div class="flex items-center gap-1">
                 <input type="number"
-                  class="w-full min-w-[50px] text-center text-sm border border-gray-200 rounded px-1 py-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-colors"
-                  :class="isCellChanged(student, assessment) ? 'border-blue-400 bg-blue-50' : ''"
+                  class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors"
+                  :class="isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : ''"
                   :value="assessment.extracredit_scac ? getExtraCredit(student, assessment) : getRegularGrade(student, assessment)"
                   @input="assessment.extracredit_scac
                     ? markExtraCreditAsChanged(student, assessment, $event.target.value)
                     : markRegularGradeAsChanged(student, assessment, $event.target.value)" />
                 <button v-if="isCellChanged(student, assessment)"
-                  class="shrink-0 rounded p-0.5 text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                  class="shrink-0 rounded p-0.5 text-ink-blue-2 hover:text-ink-blue-3 hover:bg-surface-blue-2 transition-colors"
                   @click="saveCell(student, assessment)">
                   <Save class="h-3.5 w-3.5" />
                 </button>

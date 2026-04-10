@@ -8,7 +8,7 @@
       </Button>
     </div>
   </header>
-  <div class="flex justify-center text-xl font-bold text-gray-900 mt-3">
+  <div class="flex justify-center text-xl font-bold text-ink-gray-9 mt-3">
     {{ ExamTitle.data?.title }}
   </div>
   <div class="flex items-center justify-between mb-5">
@@ -19,12 +19,12 @@
 
     <!-- Dropdown for All Submissions -->
     <div class="w-1/3 mt-5">
-      <label for="submissionDropdown" class="block text-sm font-medium text-gray-700">
+      <label for="submissionDropdown" class="block text-sm font-medium text-ink-gray-7">
         {{ __('Select Submission') }}
       </label>
       <select id="submissionDropdown" v-model="currentSubmission"
         @change="navigateToSubmissionByName(currentSubmission)"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        class="mt-1 block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
         <option v-for="submission in submissionlist.data" :key="submission.name" :value="submission.name">
           {{ submission.member_name }}
         </option>
@@ -152,8 +152,8 @@
             <div v-for="c in gradingComments" :key="c.name"
               class="p-3 rounded-lg text-sm"
               :class="c.author === user.data?.name
-                ? 'bg-blue-50 border border-blue-200 ml-4'
-                : 'bg-gray-50 border border-gray-200 mr-4'">
+                ? 'bg-surface-blue-1 text-ink-blue-2 border border-outline-blue-1 ml-4'
+                : 'bg-surface-gray-1 text-ink-gray-8 border border-outline-gray-1 mr-4'">
               <div class="flex items-center justify-between mb-1">
                 <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
                 <span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>

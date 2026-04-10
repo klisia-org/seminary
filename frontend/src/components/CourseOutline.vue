@@ -41,7 +41,7 @@
 							class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
 							@dragover.prevent="onDragOver($event)" @drop.prevent="onDrop($event, chapter, lessonIndex)">
 						</div>
-						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-white p-4 transition hover:border-outline-gray-3"
+						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3"
 							:class="{
 								'bg-surface-selected': isActiveLesson(lesson.number),
 								'cursor-grab': props.allowEdit,
@@ -51,7 +51,7 @@
 								<div v-if="props.allowEdit">
 									<Tooltip :text="__('Delete Lesson')" placement="bottom">
 										<button type="button"
-											class="rounded-md p-1 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50"
+											class="rounded-md p-1 text-ink-red-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-red-1"
 											@click.prevent="trashLesson(lesson.name, chapter.name)">
 											<Trash2 class="h-4 w-4" />
 										</button>
@@ -81,12 +81,12 @@
 												class="h-4 w-4 stroke-1" />
 											<FileText v-else class="h-4 w-4 text-ink-gray-7 stroke-1" />
 											<span>{{ lesson.lesson_title }}</span>
-											<Check v-if="lesson.is_complete" class="h-4 w-4 text-green-700" />
+											<Check v-if="lesson.is_complete" class="h-4 w-4 text-ink-green-3" />
 										</div>
-										<div v-if="lesson.preview" class="w-full rounded-md bg-[#E6F4FF] p-2">
+										<div v-if="lesson.preview" class="w-full rounded-md bg-surface-blue-1 text-ink-blue-2 p-2">
 											{{ lesson.preview }}
 										</div>
-										<div v-if="lesson.due_date" class="rounded-md bg-[#E6F7F4] p-2">
+										<div v-if="lesson.due_date" class="rounded-md bg-surface-green-1 text-ink-green-3 p-2">
 											{{ __('Due: ') + formatDate(lesson.due_date) }}
 										</div>
 									</div>

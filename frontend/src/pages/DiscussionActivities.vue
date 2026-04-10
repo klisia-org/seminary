@@ -25,7 +25,7 @@
 			/>
 			<select
 				v-model="courseFilter"
-				class="form-select border-gray-300 rounded-md text-sm text-gray-800 placeholder-gray-500 focus:border-gray-500 focus:ring-0"
+				class="form-select border border-outline-gray-2 bg-surface-white rounded-md text-sm text-ink-gray-9 placeholder-ink-gray-5 focus:border-outline-gray-3 focus:ring-0"
 			>
 				<option value="">{{ __('All Courses') }}</option>
 				<option
