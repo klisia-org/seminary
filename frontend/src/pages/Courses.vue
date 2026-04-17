@@ -9,18 +9,18 @@
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
     <!-- To Do Column -->
     <div class="w-full lg:w-1/4 p-4">
-      <h2 class="text-lg font-semibold mb-4">{{ __('To Do') }}</h2>
+      <h2 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('To Do') }}</h2>
       <div v-if="isStudent || isInstructor">
         <div v-for="entry in courseToDoList" :key="entry.course.name">
-          <h3 class="text-md font-medium mb-2">{{ entry.course.name }}</h3>
+          <h3 class="text-md font-medium mb-2 text-ink-gray-9">{{ entry.course.name }}</h3>
           <CourseCardToDo :course="entry.course.name" :singleCourse="false" />
         </div>
 
         <div v-if="courseToDoList.length === 0">
-          <PartyPopper class="size-20 mx-auto stroke-1 text-gray-500 mt-5" />
-          <h3 v-if="isStudent && !isInstructor" class="text-xl text-center font-semibold text-gray-500 mt-5">
+          <PartyPopper class="size-20 mx-auto stroke-1 text-ink-gray-5 mt-5" />
+          <h3 v-if="isStudent && !isInstructor" class="text-xl text-center font-semibold text-ink-gray-5 mt-5">
             {{ __('Congrats! No assessments to do!') }}</h3>
-          <h3 v-if="isInstructor" class="text-xl text-center font-semibold text-gray-500 mt-5">
+          <h3 v-if="isInstructor" class="text-xl text-center font-semibold text-ink-gray-5 mt-5">
             {{ __('Congrats! No assessments to grade!') }}</h3>
         </div>
       </div>
@@ -31,9 +31,9 @@
       <!-- Filters for non-student users -->
       <div class="flex gap-4 mb-5">
         <div>
-          <label for="courseFilter" class="block text-sm font-medium text-gray-700">Course</label>
+          <label for="courseFilter" class="block text-sm font-medium text-ink-gray-7">Course</label>
           <select id="courseFilter" v-model="filters.course"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
             <option value="">All Courses</option>
             <option v-for="course in uniqueCourses" :key="course" :value="course">
               {{ course }}
@@ -41,10 +41,10 @@
           </select>
         </div>
         <div>
-          <label for="academicTermFilter" class="block text-sm font-medium text-gray-700">{{ __('Academic Term')
+          <label for="academicTermFilter" class="block text-sm font-medium text-ink-gray-7">{{ __('Academic Term')
             }}</label>
           <select id="academicTermFilter" v-model="filters.academic_term"
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
             <option value="">{{ __('All Terms') }}</option>
             <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
               {{ term }}
@@ -333,7 +333,8 @@ watch(
   padding: 0;
   border-radius: 0.5rem;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  background-color: var(--surface-cards, #fff);
+  color: var(--ink-gray-9, inherit);
   transition: all 0.3s;
 }
 

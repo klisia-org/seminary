@@ -1,12 +1,12 @@
 <template>
-	<div class="flex h-full flex-col relative">
+	<div class="flex h-full flex-col relative bg-surface-white text-ink-gray-9">
 		<div class="h-full pb-16 overflow-y-auto" id="scrollContainer">
 			<slot />
 		</div>
 
 		<!-- Fixed bottom navigation -->
 		<div
-			class="fixed bottom-0 left-0 w-full flex items-center justify-around border-t border-gray-200 bg-[#f8f8f8] standalone:pb-4 z-20"
+			class="fixed bottom-0 left-0 w-full flex items-center justify-around border-t border-outline-gray-1 bg-surface-menu-bar standalone:pb-4 z-20"
 		>
 			<button
 				v-for="link in visibleLinks"
@@ -17,11 +17,11 @@
 				<component
 					:is="link.icon"
 					class="h-5 w-5 stroke-1.5"
-					:class="isActive(link) ? 'text-gray-900' : 'text-gray-400'"
+					:class="isActive(link) ? 'text-ink-gray-9' : 'text-ink-gray-4'"
 				/>
 				<span
 					class="text-[10px] mt-0.5 truncate max-w-full"
-					:class="isActive(link) ? 'text-gray-900 font-medium' : 'text-gray-400'"
+					:class="isActive(link) ? 'text-ink-gray-9 font-medium' : 'text-ink-gray-4'"
 				>
 					{{ link.label }}
 				</span>

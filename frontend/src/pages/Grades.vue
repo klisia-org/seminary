@@ -2,36 +2,50 @@
   <div v-if="isStudent">
 
     <h2
-      class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+      class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
       {{ __('My Transcripts') }}
     </h2>
     <div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
-      <div v-for="(group, program) in sortedGroupedData" :key="program">
-        <h2 class="text-lg font-bold text-gray-700">{{ program }}</h2>
+      <div v-for="(group, program) in sortedGroupedData" :key="program" class="mb-6">
+        <h3 class="text-lg font-bold text-ink-gray-7">{{ program }}</h3>
         <!-- Credit summary -->
-        <div v-if="group[0] && group[0].credits_complete" class="flex flex-wrap gap-4 mt-1 mb-2 text-sm text-gray-600">
+        <div v-if="group[0] && group[0].credits_complete" class="flex flex-wrap gap-4 mt-1 mb-3 text-sm text-ink-gray-6">
           <span class="font-medium">
             {{ group[0].totalcredits || 0 }} / {{ group[0].credits_complete }} {{ __('credits') }}
           </span>
-          <span v-for="emph in (group[0].emphases || [])" :key="emph.track_name" class="text-gray-500">
+          <span v-for="emph in (group[0].emphases || [])" :key="emph.track_name" class="text-ink-gray-5">
             | {{ emph.track_name }}: {{ emph.trackcredits }} / {{ emph.credits_required }}
           </span>
         </div>
 
-        <ListView :columns="tableData.columns" :rows="group" :options="{
-          selectable: false,
-          showTooltip: false,
-          onRowClick: () => { },
-        }" row-key="id">
-          <ListHeader>
-            <ListHeaderItem v-for="column in tableData.columns" :key="column.key" :item="column" />
-          </ListHeader>
-          <ListRow v-for="row in group" :key="row.id" :row="row" v-slot="{ column, item }">
-            <ListRowItem :item="item" :align="column.align">
-            </ListRowItem>
-          </ListRow>
-        </ListView>
-        <br>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b text-left text-ink-gray-6">
+              <th class="py-2 px-3 font-medium">{{ __('Course') }}</th>
+              <th class="py-2 px-3 font-medium">{{ __('Credits') }}</th>
+              <th class="py-2 px-3 font-medium">{{ __('Grade') }}</th>
+              <th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in group" :key="row.id" class="border-b">
+              <td class="py-2 px-3">
+                <div class="text-ink-gray-9">{{ row.course_name }}</div>
+                <div class="text-xs text-ink-gray-5">{{ row.academic_term }}</div>
+              </td>
+              <td class="py-2 px-3">{{ row.credits || '—' }}</td>
+              <td class="py-2 px-3">
+                <span class="text-ink-gray-9">{{ row.pec_finalgradecode || '—' }}</span>
+                <span v-if="row.pec_finalgradenum" class="text-xs text-ink-gray-5 ml-1">
+                  ({{ row.pec_finalgradenum }})
+                </span>
+              </td>
+              <td class="py-2 px-3">
+                <Badge :theme="statusTheme(row.status)" :label="row.status" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     <div v-else>
@@ -39,16 +53,17 @@
     </div>
   </div>
   <div v-else class="flex flex-col items-center justify-center">
-    <p class="text-lg font-bold text-gray-500">{{ __('Individual Student Transcripts are only displayed for Students')
+    <p class="text-lg font-bold text-ink-gray-5">{{ __('Individual Student Transcripts are only displayed for Students')
       }}</p>
   </div>
 </template>
 
 <script setup>
-import { Dropdown, FeatherIcon, ListView, createResource, createListResource, ListHeader, ListHeaderItem, ListRow, ListRowItem, Button } from 'frappe-ui';
+import { Badge, createResource } from 'frappe-ui';
 import { reactive, ref, computed, inject } from 'vue';
 import MissingData from '@/components/MissingData.vue';
 import { usersStore } from '../stores/user'
+import { statusTheme } from '@/utils/statusTheme'
 
 
 let studentInfo = usersStore()

@@ -5,49 +5,49 @@
     </header>
 
     <div v-if="!allowWithdrawal" class="px-5 py-10">
-      <p class="text-gray-500">{{ __('Course withdrawal requests are not available on the Portal. Please contact the registrar.') }}</p>
+      <p class="text-ink-gray-5">{{ __('Course withdrawal requests are not available on the Portal. Please contact the registrar.') }}</p>
     </div>
 
     <div v-else-if="submitted" class="px-5 py-10 text-center space-y-4">
-      <div class="text-green-600">
+      <div class="text-ink-green-3">
         <CheckCircle class="w-16 h-16 mx-auto" />
       </div>
-      <h2 class="text-xl font-bold text-gray-800">{{ __('Withdrawal Request Submitted') }}</h2>
-      <p class="text-gray-600">{{ __('Your request has been submitted and is pending review.') }}</p>
+      <h2 class="text-xl font-bold text-ink-gray-8">{{ __('Withdrawal Request Submitted') }}</h2>
+      <p class="text-ink-gray-6">{{ __('Your request has been submitted and is pending review.') }}</p>
       <Button variant="solid" @click="goBack">{{ __('Back to Course Status') }}</Button>
     </div>
 
     <div v-else class="px-5 py-4 max-w-2xl space-y-6">
 
       <!-- Course Info (read-only) -->
-      <div class="rounded-lg border bg-gray-50 p-4 space-y-2">
-        <h3 class="font-semibold text-gray-800">{{ __('Course Information') }}</h3>
+      <div class="rounded-lg border border-outline-gray-1 bg-surface-gray-1 p-4 space-y-2">
+        <h3 class="font-semibold text-ink-gray-8">{{ __('Course Information') }}</h3>
         <div class="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <span class="text-gray-500">{{ __('Student') }}:</span>
-            <span class="ml-1 text-gray-800">{{ user.data?.full_name }}</span>
+            <span class="text-ink-gray-5">{{ __('Student') }}:</span>
+            <span class="ml-1 text-ink-gray-8">{{ user.data?.full_name }}</span>
           </div>
           <div>
-            <span class="text-gray-500">{{ __('Course') }}:</span>
-            <span class="ml-1 text-gray-800">{{ course.data?.title || courseName }}</span>
+            <span class="text-ink-gray-5">{{ __('Course') }}:</span>
+            <span class="ml-1 text-ink-gray-8">{{ course.data?.title || courseName }}</span>
           </div>
         </div>
       </div>
 
       <!-- Withdrawal Reason -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">{{ __('Reason for Withdrawal') }} *</label>
+        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} *</label>
         <FormControl type="select" v-model="form.withdrawal_reason" :options="reasonOptions"
           :placeholder="__('Select a reason...')" />
         <div v-if="selectedReasonDetails?.student_instructions"
-          class="text-sm text-gray-600 bg-blue-50 rounded-lg p-3 border border-blue-100"
+          class="text-sm text-ink-blue-2 bg-surface-blue-1 rounded-lg p-3 border border-outline-blue-1"
           v-html="selectedReasonDetails.student_instructions">
         </div>
       </div>
 
       <!-- Documentation Upload -->
       <div v-if="selectedReasonDetails?.requires_documentation" class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">
+        <label class="block text-sm font-medium text-ink-gray-7">
           {{ selectedReasonDetails.documentation_label || __('Required Documentation') }} *
         </label>
         <FormControl type="file" v-model="form.student_documentation" />
@@ -55,16 +55,16 @@
 
       <!-- Comment -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">{{ __('Comment (optional)') }}</label>
+        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Comment (optional)') }}</label>
         <FormControl type="textarea" v-model="form.student_comment" rows="4"
           :placeholder="__('Any additional information you would like to share...')" />
       </div>
 
       <!-- Withdrawal Scope -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">{{ __('Withdrawal Scope') }} *</label>
+        <label class="block text-sm font-medium text-ink-gray-7">{{ __('Withdrawal Scope') }} *</label>
         <FormControl type="select" v-model="form.withdrawal_scope" :options="scopeOptions" />
-        <p class="text-xs text-gray-500">
+        <p class="text-xs text-ink-gray-5">
           <span v-if="form.withdrawal_scope === 'Single Course'">{{ __('Only this course will be affected.') }}</span>
           <span v-else-if="form.withdrawal_scope === 'All Courses This Term'">{{ __('A withdrawal request will be created for all your courses this term.') }}</span>
           <span v-else>{{ __('You will be withdrawn from all courses and your program enrollment will be deactivated.') }}</span>
@@ -80,7 +80,7 @@
         <Button variant="subtle" @click="goBack">{{ __('Cancel') }}</Button>
       </div>
 
-      <div v-if="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</div>
+      <div v-if="errorMessage" class="text-ink-red-3 text-sm">{{ errorMessage }}</div>
     </div>
   </div>
 </template>

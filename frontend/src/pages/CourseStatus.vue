@@ -12,26 +12,26 @@
 
       <!-- Withdrawal Status Banner -->
       <div v-if="status.data.withdrawal_request"
-        class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 flex items-center justify-between">
+        class="rounded-lg border border-outline-amber-1 bg-surface-amber-1 p-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <AlertTriangle class="w-5 h-5 text-yellow-600" />
+          <AlertTriangle class="w-5 h-5 text-ink-amber-3" />
           <div>
-            <p class="font-semibold text-yellow-800">{{ __('Withdrawal Request') }}</p>
-            <p class="text-sm text-yellow-700">{{ __('Status') }}: {{ status.data.withdrawal_request.workflow_state }}</p>
+            <p class="font-semibold text-ink-amber-3">{{ __('Withdrawal Request') }}</p>
+            <p class="text-sm text-ink-amber-3">{{ __('Status') }}: {{ status.data.withdrawal_request.workflow_state }}</p>
           </div>
         </div>
       </div>
 
       <!-- Progress Section -->
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Progress') }}</h3>
+        <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Progress') }}</h3>
         <div class="flex items-center gap-4">
-          <div class="flex-1 bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div class="flex-1 bg-surface-gray-3 rounded-full h-4 overflow-hidden">
             <div class="bg-blue-500 h-4 rounded-full transition-all duration-300"
               :style="{ width: Math.min(status.data.progress || 0, 100) + '%' }">
             </div>
           </div>
-          <span class="text-sm font-semibold text-gray-600 w-12 text-right">
+          <span class="text-sm font-semibold text-ink-gray-6 w-12 text-right">
             {{ Math.min(Math.ceil(status.data.progress || 0), 100) }}%
           </span>
         </div>
@@ -40,7 +40,7 @@
       <!-- Assessments Table -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <h3 class="text-lg font-semibold text-gray-800">{{ __('Assessments') }}</h3>
+          <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Assessments') }}</h3>
           <Button v-if="status.data.assessments?.length" :variant="simulating ? 'solid' : 'outline'"
             :theme="simulating ? 'orange' : 'gray'" size="sm" @click="toggleSimulation">
             {{ simulating ? __('Exit Simulation') : __('Simulate Grades') }}
@@ -58,16 +58,16 @@
               <ListHeaderItem v-for="column in assessmentColumns" :key="column.key" :item="column" />
             </ListHeader>
             <ListRow v-for="row in assessmentRows" :key="row.name" :row="row"
-              :class="row.isExtraCredit ? 'bg-blue-50' : ''"
+              :class="row.isExtraCredit ? 'bg-surface-blue-1' : ''"
               v-slot="{ column, item }">
               <ListRowItem :item="item" :align="column.align" />
             </ListRow>
           </ListView>
 
           <!-- Simulation table with editable scores -->
-          <div v-else class="rounded-lg border border-orange-200 overflow-hidden">
+          <div v-else class="rounded-lg border border-outline-amber-2 overflow-hidden">
             <table class="w-full text-sm">
-              <thead class="bg-orange-50 text-gray-600">
+              <thead class="bg-surface-amber-2 text-ink-amber-3">
                 <tr>
                   <th class="text-left px-3 py-2 font-medium">{{ __('Assessment') }}</th>
                   <th class="text-left px-3 py-2 font-medium">{{ __('Weight') }}</th>
@@ -76,15 +76,15 @@
               </thead>
               <tbody>
                 <tr v-for="a in simAssessments" :key="a.key"
-                  :class="a.isExtraCredit ? 'bg-orange-50/50' : ''">
+                  :class="a.isExtraCredit ? 'bg-surface-amber-1' : ''">
                   <td class="px-3 py-2">{{ a.title }}</td>
                   <td class="px-3 py-2">{{ a.weight }}</td>
                   <td class="px-3 py-2 text-right">
                     <div class="inline-flex items-center gap-1">
                       <input type="number" :min="0" :max="a.maxGrade"
                         v-model.number="simScores[a.key]"
-                        class="w-16 rounded border border-orange-300 px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-orange-400" />
-                      <span class="text-gray-400">/ {{ a.maxGrade }}</span>
+                        class="w-16 rounded border border-outline-amber-2 bg-surface-white text-ink-gray-9 px-2 py-1 text-sm text-right focus:outline-none focus:ring-1 focus:ring-outline-amber-2" />
+                      <span class="text-ink-gray-4">/ {{ a.maxGrade }}</span>
                     </div>
                   </td>
                 </tr>
@@ -92,36 +92,36 @@
             </table>
           </div>
         </div>
-        <div v-else class="text-gray-500 text-sm">{{ __('No assessments available yet.') }}</div>
+        <div v-else class="text-ink-gray-5 text-sm">{{ __('No assessments available yet.') }}</div>
       </div>
 
       <!-- Grade Section -->
       <div v-if="currentGrade || projectedGrade">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Your Grade') }}</h3>
+        <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Your Grade') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <!-- Current / Simulated Grade -->
-          <div class="rounded-lg border p-4" :class="simulating ? 'border-orange-200 bg-orange-50' : 'bg-gray-50'">
-            <h4 class="text-sm font-semibold mb-1" :class="simulating ? 'text-orange-800' : 'text-gray-700'">
+          <div class="rounded-lg border p-4" :class="simulating ? 'border-outline-amber-2 bg-surface-amber-1' : 'bg-surface-gray-1'">
+            <h4 class="text-sm font-semibold mb-1" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-7'">
               {{ simulating ? __('Simulated Grade') : __('Current Grade') }}
             </h4>
-            <p class="text-xs mb-3" :class="simulating ? 'text-orange-600' : 'text-gray-500'">
+            <p class="text-xs mb-3" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-5'">
               {{ simulating
                 ? __('Edit scores above and see the result here.')
                 : __('Your final grade as of today, including zeros for unsubmitted work.') }}
             </p>
             <div class="flex gap-6 items-center">
               <div class="text-center">
-                <p class="text-3xl font-bold" :class="simulating ? 'text-orange-800' : 'text-gray-800'">
+                <p class="text-3xl font-bold" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-8'">
                   {{ (simulating ? simulatedGrade : currentGrade)?.grade }}
                 </p>
-                <p class="text-xs" :class="simulating ? 'text-orange-500' : 'text-gray-500'">{{ __('Grade') }}</p>
+                <p class="text-xs" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-5'">{{ __('Grade') }}</p>
               </div>
               <div class="text-center">
-                <p class="text-3xl font-bold" :class="simulating ? 'text-orange-800' : 'text-gray-800'">
+                <p class="text-3xl font-bold" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-8'">
                   {{ (simulating ? simulatedGrade : currentGrade)?.score }} / {{ (simulating ? simulatedGrade : currentGrade)?.maxGrade }}
                 </p>
-                <p class="text-xs" :class="simulating ? 'text-orange-500' : 'text-gray-500'">{{ __('Score') }}</p>
+                <p class="text-xs" :class="simulating ? 'text-ink-amber-3' : 'text-ink-gray-5'">{{ __('Score') }}</p>
               </div>
               <div class="text-center">
                 <Badge :variant="(simulating ? simulatedGrade : currentGrade)?.gradePass === 'Pass' ? 'success' : 'warning'"
@@ -132,27 +132,27 @@
 
           <!-- Projected Grade (hidden during simulation) -->
           <template v-if="!simulating">
-            <div v-if="projectedGrade" class="rounded-lg border border-blue-200 p-4 bg-blue-50">
-              <h4 class="text-sm font-semibold text-blue-800 mb-1">{{ __('Projected Grade') }}</h4>
-              <p class="text-sm text-blue-700 mb-3">
+            <div v-if="projectedGrade" class="rounded-lg border border-outline-blue-1 p-4 bg-surface-blue-1">
+              <h4 class="text-sm font-semibold text-ink-blue-2 mb-1">{{ __('Projected Grade') }}</h4>
+              <p class="text-sm text-ink-blue-2 mb-3">
                 {{ __('You are on track for') }}
                 <strong>{{ projectedGrade.grade }}</strong>
                 {{ __('if you keep your efforts like this in future assessments.') }}
               </p>
               <div class="flex gap-6 items-center">
                 <div class="text-center">
-                  <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.grade }}</p>
-                  <p class="text-xs text-blue-500">{{ __('Projected') }}</p>
+                  <p class="text-3xl font-bold text-ink-blue-2">{{ projectedGrade.grade }}</p>
+                  <p class="text-xs text-ink-blue-2">{{ __('Projected') }}</p>
                 </div>
                 <div class="text-center">
-                  <p class="text-3xl font-bold text-blue-800">{{ projectedGrade.score }} / {{ projectedGrade.maxGrade }}</p>
-                  <p class="text-xs text-blue-500">{{ __('Based on due assessments') }}</p>
+                  <p class="text-3xl font-bold text-ink-blue-2">{{ projectedGrade.score }} / {{ projectedGrade.maxGrade }}</p>
+                  <p class="text-xs text-ink-blue-2">{{ __('Based on due assessments') }}</p>
                 </div>
               </div>
             </div>
-            <div v-else class="rounded-lg border border-dashed p-4 bg-gray-50">
-              <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('Projected Grade') }}</h4>
-              <p class="text-sm text-gray-500">
+            <div v-else class="rounded-lg border border-dashed p-4 bg-surface-gray-1">
+              <h4 class="text-sm font-semibold text-ink-gray-7 mb-1">{{ __('Projected Grade') }}</h4>
+              <p class="text-sm text-ink-gray-5">
                 {{ __('No assessments are due yet. Your projected grade will appear once the first assessment due date passes.') }}
               </p>
             </div>
@@ -160,17 +160,17 @@
 
         </div>
       </div>
-      <div v-else class="text-gray-500 text-sm">{{ __('No assessments available yet to calculate your grade.') }}</div>
+      <div v-else class="text-ink-gray-5 text-sm">{{ __('No assessments available yet to calculate your grade.') }}</div>
 
       <!-- Withdrawal Rules & Button -->
       <div v-if="allowWithdrawal && !status.data.withdrawal_request && withdrawalRules.length > 0" class="border-t pt-4 space-y-3">
-        <h3 class="text-lg font-semibold text-gray-800">{{ __('Key dates for withdrawal') }}</h3>
+        <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Key dates for withdrawal') }}</h3>
         <div class="inline-flex flex-col space-y-1">
           <div v-for="rule in withdrawalRules" :key="rule.withdrawal_rule"
             class="flex items-center gap-3 text-sm px-2 py-1 rounded"
-            :class="rule.expired ? 'text-gray-400' : 'text-gray-700'">
+            :class="rule.expired ? 'text-ink-gray-4' : 'text-ink-gray-7'">
             <span>{{ rule.withdrawal_rule }}</span>
-            <span class="text-gray-400">—</span>
+            <span class="text-ink-gray-4">—</span>
             <span>{{ formatDate(rule.applies_until) }}</span>
           </div>
         </div>
@@ -181,11 +181,11 @@
     </div>
 
     <div v-else class="px-5 py-10">
-      <p class="text-gray-500">{{ __('You are not enrolled in this course.') }}</p>
+      <p class="text-ink-gray-5">{{ __('You are not enrolled in this course.') }}</p>
     </div>
   </div>
   <div v-else class="flex flex-col items-center justify-center py-20">
-    <p class="text-lg font-bold text-gray-500">{{ __('This page is only available for students.') }}</p>
+    <p class="text-lg font-bold text-ink-gray-5">{{ __('This page is only available for students.') }}</p>
   </div>
 </template>
 
@@ -442,10 +442,10 @@ const simulatedGrade = computed(() => {
 })
 
 function percentileClass(percentile) {
-  if (percentile == null || percentile === '-') return 'text-gray-500'
+  if (percentile == null || percentile === '-') return 'text-ink-gray-5'
   const raw = typeof percentile === 'string' ? parseInt(percentile) : percentile
-  if (raw >= 50) return 'text-green-600 font-medium'
-  return 'text-gray-600'
+  if (raw >= 50) return 'text-ink-green-3 font-medium'
+  return 'text-ink-gray-6'
 }
 
 function goToWithdrawal() {

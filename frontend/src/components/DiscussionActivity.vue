@@ -20,11 +20,11 @@
 				all_discussions.data && (hasSavedSubmission || (!hasSavedSubmission && !post_before) || !isStudent)
 			" class="flex-1 border-l p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
 				<div v-if="!isStudent && studentGroups.length > 1" class="mb-4 mt-4">
-					<label for="groupFilter" class="block text-sm font-medium text-gray-700">
+					<label for="groupFilter" class="block text-sm font-medium text-ink-gray-7">
 						{{ __('Filter by Group') }}
 					</label>
 					<select id="groupFilter" v-model="selectedGroupFilter"
-						class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+						class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-outline-gray-2 bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-outline-blue-1 focus:border-outline-blue-1 sm:text-sm rounded-md">
 						<option value="all">{{ __('All Groups') }}</option>
 						<option v-for="group in studentGroups" :key="group.student_group" :value="group.student_group">
 							{{ group.student_group || 'No group' }}
@@ -34,7 +34,7 @@
 
 
 				<div v-for="discussion in filteredDiscussions" :key="discussion.name"
-					class="mb-6 border-round border-gray-300 p-4 bg-surface-white shadow-sm">
+					class="mb-6 border-round border-outline-gray-2 p-4 bg-surface-white shadow-sm">
 					<div class="original-post mb-4">
 						<div class="font-semibold">{{ discussion.student_name }}</div>
 						<div v-html="discussion.original_post" class="text-sm"></div>
@@ -46,7 +46,7 @@
 							{{ __('View Attachment') }}
 						</a>
 					</div>
-					<div class="replies pl-4 border-l border-gray-300">
+					<div class="replies pl-4 border-l border-outline-gray-2">
 						<div v-for="reply in discussion.replies" :key="reply.creation" class="mb-2">
 							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
 							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
@@ -147,7 +147,7 @@
 			<!-- Instructor: Edit Course Assessments button (always available) -->
 			<div v-if="isInstructorView" class="mb-6">
 				<div v-if="!isGradedActivity"
-					class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3 text-sm text-blue-800">
+					class="bg-surface-blue-1 border border-outline-blue-1 rounded-md p-3 mb-3 text-sm text-ink-blue-2">
 					{{ __('This Discussion Activity is currently not associated with a grading criteria.') }}
 				</div>
 				<router-link :to="{
@@ -171,8 +171,8 @@
 				<h3 class="text-md font-semibold mb-3 text-ink-gray-7">{{ __('Feedback') }}</h3>
 				<div v-if="gradingComments.length" class="space-y-3 mb-4">
 					<div v-for="c in gradingComments" :key="c.name" class="p-3 rounded-lg text-sm" :class="c.author === user.data?.name
-						? 'bg-blue-50 border border-blue-200 ml-4'
-						: 'bg-gray-50 border border-gray-200 mr-4'">
+						? 'bg-surface-blue-1 text-ink-blue-2 border border-outline-blue-1 ml-4'
+						: 'bg-surface-gray-1 text-ink-gray-8 border border-outline-gray-1 mr-4'">
 						<div class="flex items-center justify-between mb-1">
 							<span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
 							<span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
@@ -274,7 +274,7 @@
 						class="text-blue-500 underline">
 						{{ __('View Attachment') }}
 					</a>
-					<div class="replies pl-4 border-l border-gray-300">
+					<div class="replies pl-4 border-l border-outline-gray-2">
 						<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
 							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
 							<div class="text-sm text-ink-gray-5 mt-1 mb-2">

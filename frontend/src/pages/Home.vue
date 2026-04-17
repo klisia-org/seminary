@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-3xl py-12 mx-auto">
-    <h2 class="font-bold text-lg text-gray-600 mb-4">
+    <h2 class="font-bold text-lg text-ink-gray-6 mb-4">
       Welcome {{ session.user }}!
     </h2>
 

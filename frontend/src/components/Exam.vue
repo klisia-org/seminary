@@ -3,7 +3,7 @@
     <!-- Left / Main column -->
     <div>
       <!-- Exam Header -->
-      <div v-if="!hasSubmittedExam" class="bg-blue-200 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-900">
+      <div v-if="!hasSubmittedExam" class="bg-surface-blue-2 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-2">
         <div class="leading-5">
           {{ __('This exam consists of ') + exam.data.questions.length }}
           {{ exam.data.questions.length === 1 ? __('question') : __('questions') }}.
@@ -54,22 +54,22 @@
           <router-link v-if="is_instructor()" :to="{
             name: 'ExamForm',
             params: { examID: exam.data.name },
-          }" class="flex items-center text-gray-400 mb-3 mr-4 hover:text-gray-600">
+          }" class="flex items-center text-ink-gray-4 mb-3 mr-4 hover:text-ink-gray-6">
             <SquarePen class="w-5 h-5 mr-2" />
             <span class="tooltip" data-tooltip="Edit this exam">Edit</span>
           </router-link>
           <div v-if="fullExamMode && !hasSubmittedExam" class="flex items-center gap-2 mb-4">
-            <div v-if="isSaving" class="text-sm text-gray-500">
+            <div v-if="isSaving" class="text-sm text-ink-gray-5">
               {{ __('Saving...') }}
             </div>
-            <div v-else-if="submissionName" class="text-sm text-green-600">
+            <div v-else-if="submissionName" class="text-sm text-ink-green-3">
               {{ __('Draft saved') }}
             </div>
           </div>
           <div v-for="(question, index) in exam.data.questions" :key="question.name"
             class="relative border rounded-md p-5 mb-4">
             <div
-              class="absolute -top-3 -left-3 bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+              class="absolute -top-3 -left-3 bg-surface-gray-7 text-ink-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
               {{ index + 1 }}
             </div>
             <div class="text-ink-gray-9 text-sm font-semibold text-right">
@@ -100,8 +100,8 @@
         <div v-for="c in gradingComments" :key="c.name"
           class="p-3 rounded-lg text-sm"
           :class="c.author === user.data?.name
-            ? 'bg-blue-50 border border-blue-200 ml-4'
-            : 'bg-gray-50 border border-gray-200 mr-4'">
+            ? 'bg-surface-blue-1 text-ink-blue-2 border border-outline-blue-1 ml-4'
+            : 'bg-surface-gray-1 text-ink-gray-8 border border-outline-gray-1 mr-4'">
           <div class="flex items-center justify-between mb-1">
             <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
             <span class="text-xs text-ink-gray-4">{{ timeAgo(c.comment_dt) }}</span>

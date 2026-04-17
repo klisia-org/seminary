@@ -158,6 +158,31 @@ class Student(Document):
             alert=True,
         )
 
+        self._create_contact(customer.name)
+
+    def _create_contact(self, customer_name):
+        contact = frappe.get_doc(
+            {
+                "doctype": "Contact",
+                "first_name": self.first_name,
+                "last_name": self.last_name,
+                "is_primary_contact": 1,
+                "email_ids": [{"email_id": self.student_email_id, "is_primary": 1}],
+                "links": [
+                    {
+                        "link_doctype": "Customer",
+                        "link_name": customer_name,
+                    }
+                ],
+            }
+        )
+        contact.insert(ignore_permissions=True)
+
+        frappe.msgprint(
+            _("Contact {0} created and linked to Customer").format(contact.name),
+            alert=True,
+        )
+
     def enroll_in_program(self, program_name):
         try:
             enrollment = frappe.get_doc(

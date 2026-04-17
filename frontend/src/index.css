@@ -6,6 +6,11 @@
 	--app-topbar-height: 4rem;
 }
 
+html,
+body {
+	background-color: var(--surface-white);
+}
+
 #scrollContainer > header.sticky {
 	min-height: var(--app-topbar-height);
 	display: flex;

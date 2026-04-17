@@ -27,17 +27,17 @@
 								:to="{ name: 'InstructorProfile', params: { instructorName: instructor.instructor_name } }"
 								class="flex flex-col items-center group cursor-pointer no-underline">
 								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-blue-300 rounded-full transition-all" />
-								<div class="text-center text-sm font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+								<div class="text-center text-sm font-medium text-ink-gray-8 group-hover:text-ink-blue-link transition-colors">
 									{{ instructor.instructor_name }}
 								</div>
-								<div class="text-xs text-gray-400 group-hover:text-blue-500 transition-colors">
+								<div class="text-xs text-ink-gray-4 group-hover:text-ink-blue-link transition-colors">
 									{{ __('View profile') }}
 								</div>
 								<div class="flex gap-2 mt-1" @click.stop>
 									<a v-if="instructor.prof_email"
 										:href="`mailto:${instructor.prof_email}?subject=[${course.data.name}] ${user.data?.full_name || ''}`"
 										:title="__('Send email')"
-										class="text-gray-400 hover:text-blue-600 transition-colors">
+										class="text-ink-gray-4 hover:text-ink-blue-link transition-colors">
 										<Mail class="h-4 w-4" />
 									</a>
 									<template v-if="instructor.phone_message && instructor.messaging_apps?.length">

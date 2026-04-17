@@ -29,7 +29,7 @@
         {{ __('Assessment Criteria for ' + course.data.course) }}
       </div>
       <div
-        :class="{ 'max-w-full flex justify-between mb-4 mt-5 text-xl': true, 'bg-red-400 rounded': totalPoints !== 100 }">
+        :class="{ 'max-w-full flex justify-between mb-4 mt-5 text-xl': true, 'bg-surface-red-3 text-ink-red-3 rounded px-2': totalPoints !== 100 }">
         <div>
           <strong>{{ __('Total Points') }}:</strong> {{ totalPoints }}
         </div>

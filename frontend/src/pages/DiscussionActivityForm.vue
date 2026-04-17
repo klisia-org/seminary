@@ -50,7 +50,7 @@
 				</div>
 			</div>
 			<!-- Prompt -->
-			<label for="discussion-prompt" class="block text-lg font-medium text-gray-700 mb-4">
+			<label for="discussion-prompt" class="block text-lg font-medium text-ink-gray-7 mb-4">
 				{{ __('Discussion Prompt') }}
 			</label>
 			<RichTextEditor :teleport="false"

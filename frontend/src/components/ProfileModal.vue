@@ -3,12 +3,12 @@
 		<template #body-content>
 
 			<!-- Student view (editable) -->
-			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto"
+			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto"
 				v-if="isStudent && studentInfo.student_name">
 				<div class="flex flex-col gap-4">
 
 					<!-- Header with editable avatar -->
-					<div class="flex items-center border-b border-solid border-lightGray pb-4 gap-2">
+					<div class="flex items-center border-b border-solid border-outline-gray-1 pb-4 gap-2">
 						<div class="relative group flex-shrink-0">
 							<Avatar size="3xl" class="h-12 w-12" :label="studentInfo.student_name"
 								:image="editImage || studentInfo.image || null" />
@@ -24,54 +24,71 @@
 						</div>
 						<div class="flex flex-col ml-2 gap-1">
 							<p class="text-lg font-semibold">{{ studentInfo.student_name }}</p>
-							<p class="text-gray-600">{{ studentInfo.student_email_id }}</p>
+							<p class="text-ink-gray-6">{{ studentInfo.student_email_id }}</p>
 						</div>
 					</div>
 
 					<!-- Success message -->
 					<div v-if="saveSuccess"
-						class="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+						class="flex items-center gap-2 rounded-md bg-surface-green-1 px-3 py-2 text-sm text-ink-green-3">
 						<FeatherIcon name="check-circle" class="h-4 w-4 flex-shrink-0" />
 						{{ __('Profile saved successfully.') }}
 					</div>
 
 					<!-- Editable: Mobile -->
 					<div>
-						<label class="text-sm text-gray-600">{{ __('Mobile Number') }}</label>
+						<label class="text-sm text-ink-gray-6">{{ __('Mobile Number') }}</label>
 						<input v-model="editMobile" type="text"
-							class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 					</div>
 
 					<!-- Editable: Address -->
 					<div class="flex flex-col gap-2">
-						<label class="text-sm text-gray-600">{{ __('Address') }}</label>
+						<label class="text-sm text-ink-gray-6">{{ __('Address') }}</label>
 						<input v-model="editAddr.address_line_1" type="text" :placeholder="__('Address Line 1')"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						<input v-model="editAddr.address_line_2" type="text" :placeholder="__('Address Line 2')"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						<div class="grid grid-cols-3 gap-2">
 							<input v-model="editAddr.city" type="text" :placeholder="__('City')"
-								class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 							<input v-model="editAddr.state" type="text" :placeholder="__('State')"
-								class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 							<input v-model="editAddr.pincode" type="text" :placeholder="__('Pincode')"
-								class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						</div>
 						<input v-model="editAddr.country" type="text" :placeholder="__('Country')"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+					</div>
+
+					<!-- Appearance preference -->
+					<div>
+						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
+						<div class="mt-1 flex gap-2 px-1">
+							<button type="button" @click="setTheme('light')"
+								:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+								{{ __('Light') }}
+							</button>
+							<button type="button" @click="setTheme('dark')"
+								:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+								{{ __('Dark') }}
+							</button>
+						</div>
 					</div>
 
 					<!-- Language preference -->
 					<div>
-						<label class="text-sm text-gray-600">{{ __('Language') }}</label>
+						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 						<select v-model="selectedLanguage"
-							class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
 								{{ lang.language_name }}
 							</option>
 						</select>
-						<p class="mt-1 text-xs text-gray-400">
+						<p class="mt-1 text-xs text-ink-gray-4">
 							{{ __('Available languages are configured by your seminary administrator.') }}
 						</p>
 					</div>
@@ -79,17 +96,17 @@
 					<!-- Read-only fields -->
 					<div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
 						<div v-for="field in readOnlyFields" :key="field.label" class="flex">
-							<span class="text-gray-500 w-32 flex-shrink-0">{{ field.label }}:</span>
-							<span class="text-gray-900">{{ field.value }}</span>
+							<span class="text-ink-gray-5 w-32 flex-shrink-0">{{ field.label }}:</span>
+							<span class="text-ink-gray-9">{{ field.value }}</span>
 						</div>
 					</div>
 
 					<!-- Note with support mailto -->
-					<div class="flex items-start bg-gray-50 p-2 text-gray-600 text-sm rounded-md">
+					<div class="flex items-start bg-surface-gray-1 p-2 text-ink-gray-6 text-sm rounded-md">
 						<FeatherIcon name="info" class="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
 						<span>
 							{{ __('In case of any incorrect details, please contact') }}
-							<a v-if="supportUser" :href="`mailto:${supportUser}`" class="text-blue-600 underline ml-1">
+							<a v-if="supportUser" :href="`mailto:${supportUser}`" class="text-ink-blue-link underline ml-1">
 								{{ __(' the school admin') }}</a>
 							<span v-else>{{ __(' the school admin') }}</span>.
 						</span>
@@ -98,34 +115,34 @@
 			</div>
 
 			<!-- Instructor view (editable) -->
-			<div class="profile-dialog text-base max-h-[70vh] overflow-y-auto" v-else-if="!isStudent">
+			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto" v-else-if="!isStudent">
 				<div class="flex flex-col gap-4">
-					<div class="flex items-center border-b border-solid border-lightGray pb-4 gap-2">
+					<div class="flex items-center border-b border-solid border-outline-gray-1 pb-4 gap-2">
 						<Avatar size="3xl" class="h-12 w-12" :label="instructorInfo.instructor_name"
 							:image="instructorInfo.profileimage || null" />
 						<div class="flex flex-col ml-2 gap-1">
 							<p class="text-lg font-semibold">{{ instructorInfo.instructor_name }}</p>
-							<p class="text-gray-600">{{ instructorInfo.user }}</p>
+							<p class="text-ink-gray-6">{{ instructorInfo.user }}</p>
 						</div>
 					</div>
 					<div v-if="saveSuccess"
-						class="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+						class="flex items-center gap-2 rounded-md bg-surface-green-1 px-3 py-2 text-sm text-ink-green-3">
 						<FeatherIcon name="check-circle" class="h-4 w-4 flex-shrink-0" />
 						{{ __('Profile saved successfully.') }}
 					</div>
 					<div class="flex flex-col gap-3">
 						<div>
-							<label class="text-sm text-gray-600">{{ __('Name') }}</label>
+							<label class="text-sm text-ink-gray-6">{{ __('Name') }}</label>
 							<input v-model="editName" type="text"
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						</div>
 						<div>
-							<label class="text-sm text-gray-600">{{ __('Short Bio') }}</label>
+							<label class="text-sm text-ink-gray-6">{{ __('Short Bio') }}</label>
 							<input v-model="editShortbio" type="text"
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 						</div>
 						<div>
-							<label class="text-sm text-gray-600 mb-1 block">{{ __('Bio') }}</label>
+							<label class="text-sm text-ink-gray-6 mb-1 block">{{ __('Bio') }}</label>
 							<LightEditor
 								id="instructor-bio"
 								:content="editBio"
@@ -133,45 +150,61 @@
 								@change="(val) => (editBio = val)"
 							/>
 						</div>
+						<!-- Appearance preference -->
+						<div>
+							<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
+							<div class="mt-1 flex gap-2 px-1">
+								<button type="button" @click="setTheme('light')"
+									:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+									class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+									{{ __('Light') }}
+								</button>
+								<button type="button" @click="setTheme('dark')"
+									:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+									class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+									{{ __('Dark') }}
+								</button>
+							</div>
+						</div>
 						<!-- Language preference -->
 						<div>
-							<label class="text-sm text-gray-600">{{ __('Language') }}</label>
+							<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 							<select v-model="selectedLanguage"
-								class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
 									{{ lang.language_name }}
 								</option>
 							</select>
-							<p class="mt-1 text-xs text-gray-400">
+							<p class="mt-1 text-xs text-ink-gray-4">
 								{{ __('Available languages are configured by your seminary administrator.') }}
 							</p>
 						</div>
 						<!-- Communication Preferences -->
-						<div class="border-t border-gray-200 pt-3 mt-1">
-							<p class="text-sm font-semibold text-gray-700 mb-2">{{ __('Communication Preferences') }}</p>
+						<div class="border-t border-outline-gray-1 pt-3 mt-1">
+							<p class="text-sm font-semibold text-ink-gray-7 mb-2">{{ __('Communication Preferences') }}</p>
 							<div>
-								<label class="text-sm text-gray-600">{{ __('E-mail for student contact') }}</label>
+								<label class="text-sm text-ink-gray-6">{{ __('E-mail for student contact') }}</label>
 								<input v-model="editProfEmail" type="email"
-									class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 							</div>
 							<div class="mt-2">
-								<label class="text-sm text-gray-600">{{ __('Phone for messaging') }}</label>
+								<label class="text-sm text-ink-gray-6">{{ __('Phone for messaging') }}</label>
 								<input v-model="editPhoneMessage" type="tel"
-									class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 							</div>
 							<div v-if="instructorInfo.available_messaging_apps?.length" class="mt-2">
-								<label class="text-sm text-gray-600 mb-1 block">{{ __('Messaging Apps') }}</label>
+								<label class="text-sm text-ink-gray-6 mb-1 block">{{ __('Messaging Apps') }}</label>
 								<div class="flex flex-wrap gap-2">
 									<label v-for="app in instructorInfo.available_messaging_apps" :key="app.app_name"
 										class="flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-sm cursor-pointer transition-colors"
-										:class="editSelectedApps.includes(app.app_name) ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-600 hover:border-gray-400'">
+										:class="editSelectedApps.includes(app.app_name) ? 'border-outline-blue-1 bg-surface-blue-1 text-ink-blue-2' : 'border-outline-gray-2 text-ink-gray-6 hover:border-outline-gray-3'">
 										<input type="checkbox" :value="app.app_name" v-model="editSelectedApps" class="sr-only" />
 										<span v-if="app.svg_icon" v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-4 [&>svg]:w-4"></span>
 										{{ app.app_name }}
 									</label>
 								</div>
-								<p class="mt-1 text-xs text-gray-400">
+								<p class="mt-1 text-xs text-ink-gray-4">
 									{{ __('Select which messaging apps students can use to contact you.') }}
 								</p>
 							</div>
@@ -189,6 +222,9 @@ import { Dialog, Avatar, FeatherIcon, FileUploader, createResource } from 'frapp
 import { ref, computed, watchEffect } from 'vue'
 import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
+import { useTheme } from '@/composables/useTheme'
+
+const { theme, setTheme } = useTheme()
 
 const { userResource } = usersStore()
 
@@ -391,7 +427,7 @@ const dialogOptions = computed(() => ({
 		},
 		{
 			label: __('Close'),
-			variant: 'text',
+			variant: 'ghost',
 			onClick: (close) => handleClose(close),
 		},
 	],

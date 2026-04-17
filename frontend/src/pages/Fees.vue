@@ -2,79 +2,150 @@
 	<div v-if="isStudent">
 
 		<h2
-			class="text-xl font-bold text-gray-800 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
+			class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
 			{{ __('My Financial Status') }}
 		</h2>
 
+		<!-- Payment success banner -->
+		<div v-if="paymentSuccess"
+			class="mx-5 mt-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+			<svg class="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+			</svg>
+			<span class="font-medium">{{ __('Payment successful! Your balance has been updated.') }}</span>
+		</div>
 
 		<div v-if="studentInfo.scholarships && studentInfo.scholarships?.[0]?.scholarship"
 			class="flex flex-col items-center justify-center p-3">
-			<h2 class="text-lg font-bold text-gray-800">
+			<h3 class="text-lg font-bold text-ink-gray-8">
 				{{ __('Scholarship') }}: {{ studentInfo.scholarships[0].scholarship }}
-			</h2>
-			<br>
-		</div>
-		<div v-else class="flex flex-col items-center justify-center">
-			<p class="text-lg font-bold text-gray-800"> </p>
+			</h3>
 		</div>
 
 		<div v-if="tableData.rows.length > 0" class="px-5 py-4">
-			<ListView :columns="tableData.columns" :rows="tableData.rows" :options="{
-				selectable: false,
-				showTooltip: false,
-				onRowClick: () => { },
-			}" row-key="id" v-if="tableData.rows.length > 0">
-				<ListHeader>
-					<ListHeaderItem v-for="column in tableData.columns" :key="column.key" :item="column" />
-				</ListHeader>
-				<ListRow v-for="row in tableData.rows" :key="row.id" :row="row" v-slot="{ column, item }">
-					<ListRowItem :item="item" :align="column.align">
-						<Badge v-if="column.key === 'status'" variant="subtle" :theme="row.status === 'Paid' ? (bg_color = 'green') : (bg_color = 'red')
-							" size="md" :label="item" />
-						<Button v-if="column.key === 'cta' && row.status === 'Paid'" @click="openInvoicePDF(row)"
-							class="hover:bg-gray-900 hover:text-white" icon-left="download" label="Download Invoice" />
+			<!-- Summary bar -->
+			<div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-gray-2 px-4 py-3 mb-4">
+				<div class="flex flex-wrap gap-4 text-sm">
+					<div>
+						<span class="text-ink-gray-5">{{ __('Total') }}:</span>
+						<span class="ml-1 font-semibold text-ink-gray-8">{{ formatCurrency(totalOutstanding) }}</span>
+					</div>
+					<div v-if="totalCredits < 0">
+						<span class="text-ink-gray-5">{{ __('Credits') }}:</span>
+						<span class="ml-1 font-semibold text-ink-red-3">{{ formatCurrency(totalCredits) }}</span>
+					</div>
+					<div>
+						<span class="text-ink-gray-5">{{ __('Net Payable') }}:</span>
+						<span class="ml-1 font-bold text-ink-gray-9">{{ formatCurrency(netPayableAmount) }}</span>
+					</div>
+				</div>
+				<div v-if="paymentEnabled && netPayableAmount > 0" class="flex gap-2">
+					<Button size="sm" variant="solid" theme="blue"
+						@click="payFullBalance" icon-left="credit-card"
+						:label="payingAll ? __('Redirecting...') : __('Pay Full Balance')"
+						:disabled="payingAll" />
+					<Button size="sm" variant="outline"
+						@click="showPartialDialog = true" icon-left="credit-card"
+						:label="__('Pay Partial')"
+						:disabled="payingAll" />
+				</div>
+			</div>
 
-						<Button v-if="column.key === 'cta' &&
-							(row.status === 'Unpaid' || row.status === 'Overdue')
-						" @click="openModal(row)" class="hover:bg-gray-900 hover:text-white flex flex-column items-center justify-center"
-							icon-left="credit-card" label="Pay Now" />
-					</ListRowItem>
-				</ListRow>
-			</ListView>
-			<!-- <FeesPaymentDialog v-if="currentRow" :row="currentRow" :student="studentInfo" v-model="showPaymentDialog"
-				@success="success()" /> -->
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="border-b text-left text-ink-gray-6">
+						<th class="py-2 px-3 font-medium">{{ __('Invoice') }}</th>
+						<th class="py-2 px-3 font-medium text-right">{{ __('Amount') }}</th>
+						<th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
+						<th class="py-2 px-3 font-medium text-right"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="row in tableData.rows" :key="row.name" class="border-b">
+						<td class="py-2 px-3">
+							<div class="text-ink-gray-9">{{ row.name }}</div>
+							<div class="text-xs text-ink-gray-5">{{ row.posting_date }}</div>
+						</td>
+						<td class="py-2 px-3 text-right">
+							<div class="text-ink-gray-9">{{ row.total }}</div>
+							<div v-if="row.status === 'Unpaid' && row.outstanding_amount"
+								class="text-xs text-ink-gray-5">
+								{{ __('Outstanding') }}: {{ row.outstanding_amount }}
+							</div>
+						</td>
+						<td class="py-2 px-3">
+							<Badge :theme="statusTheme(row.status)" :label="row.status" />
+						</td>
+						<td class="py-2 px-3 text-right">
+							<Button v-if="row.status === 'Paid'" size="sm" variant="subtle"
+								@click="openInvoicePDF(row)" icon-left="download" :label="__('Download')" />
+							<Button v-else-if="paymentEnabled && row.status === 'Unpaid'" size="sm" variant="solid" theme="blue"
+								@click="payInvoice(row)" icon-left="credit-card"
+								:label="payingInvoice === row.name ? __('Redirecting...') : __('Pay')"
+								:disabled="payingInvoice === row.name || payingAll" />
+							<span v-else-if="row.status === 'Unpaid'" class="text-xs text-ink-gray-5">{{ __('Awaits payment') }}</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 
 		<div v-else>
 			<MissingData message="No Fees found" />
 		</div>
+
+		<!-- Partial payment dialog -->
+		<Dialog v-model="showPartialDialog" :options="{ title: __('Pay Partial Amount'), size: 'sm' }">
+			<template #body-content>
+				<div class="space-y-4">
+					<FormControl
+						type="number"
+						:label="__('Amount to pay')"
+						v-model="partialAmount"
+						:min="0"
+						:max="netPayableAmount"
+						:placeholder="__('Enter amount')"
+					/>
+					<p class="text-xs text-ink-gray-5">
+						{{ __('Amount will be allocated to invoices by due date, earliest first.') }}
+					</p>
+				</div>
+			</template>
+			<template #actions>
+				<Button variant="solid" theme="blue" class="w-full"
+					@click="payPartialBalance"
+					:label="payingAll ? __('Redirecting...') : __('Pay')"
+					:disabled="payingAll || !partialAmount || partialAmount <= 0" />
+			</template>
+		</Dialog>
 	</div>
 	<div v-else class="flex flex-col items-center justify-center">
-		<p class="text-lg font-bold text-gray-500">{{ __('Student Financial Status are only displayed for Students') }}
+		<p class="text-lg font-bold text-ink-gray-5">{{ __('Student Financial Status are only displayed for Students') }}
 		</p>
 	</div>
 </template>
 
 <script setup>
 
-import {
-	ListView,
-	ListHeader,
-	ListHeaderItem,
-	ListRow,
-	ListRowItem,
-	Badge,
-	createResource,
-	Toast,
-	FeatherIcon,
-} from 'frappe-ui'
-import { reactive, ref, inject } from 'vue'
+import { Badge, Button, Dialog, FormControl, createResource } from 'frappe-ui'
+import { computed, onMounted, reactive, ref, inject } from 'vue'
 
-// import FeesPaymentDialog from '@/components/FeesPaymentDialog.vue'
-// import { studentStore } from '@/stores/student'
 import MissingData from '@/components/MissingData.vue'
 import { createToast } from '@/utils'
 import { usersStore } from '../stores/user'
+import { statusTheme } from '@/utils/statusTheme'
+
+const paymentSuccess = ref(false)
+
+onMounted(() => {
+	if (window.location.href.includes('payment=success')) {
+		paymentSuccess.value = true
+		// Clean the URL without reloading
+		window.history.replaceState({}, '', window.location.pathname)
+		// Auto-dismiss after 10 seconds
+		setTimeout(() => { paymentSuccess.value = false }, 10000)
+	}
+})
 
 
 let studentInfo = usersStore()
@@ -103,6 +174,19 @@ const scholarshipsResource = createResource({
 
 console.log("Student Scholarships:", studentInfo.scholarships)
 
+const seminarySettings = createResource({
+	url: 'frappe.client.get_value',
+	params: {
+		doctype: 'Seminary Settings',
+		fieldname: 'portal_payment_enable',
+	},
+	auto: true,
+})
+
+const paymentEnabled = computed(() => {
+	return seminarySettings.data?.portal_payment_enable === 1
+})
+
 const feesResource = createResource({
 	url: 'seminary.seminary.api.get_student_invoices',
 	params: {
@@ -110,10 +194,10 @@ const feesResource = createResource({
 	},
 	onSuccess: (response) => {
 		response = response.sort((a, b) => {
-			const statusOrder = { Unpaid: 0, Paid: 1 }
+			const statusOrder = { Return: -1, Unpaid: 0, Paid: 1 }
 
-			const statusA = statusOrder[a.status]
-			const statusB = statusOrder[b.status]
+			const statusA = statusOrder[a.status] ?? 0
+			const statusB = statusOrder[b.status] ?? 0
 
 			if (statusA !== statusB) {
 				return statusA - statusB
@@ -125,50 +209,33 @@ const feesResource = createResource({
 	auto: true,
 })
 
-const tableData = reactive({
-	rows: [],
-	columns: [
-		{
-			label: __('Name'),
-			key: 'name',
-			width: 1,
-		},
+const tableData = reactive({ rows: [] })
 
-		{
-			label: __('Customer'),
-			key: 'customer',
-			width: 1,
-		},
-		{
-			label: __('Posting Date'),
-			key: 'posting_date',
-			width: 1,
-		},
-		{
-			label: __('Total Amount'),
-			key: 'total',
-			width: 1,
-		},
-		{
-			label: __('Outstanding Amount'),
-			key: 'outstanding_amount',
-			width: 1,
-		},
-		{
-			label: __('Status'),
-			key: 'status',
-			width: 1,
-		},
-		{
-			label: __('Invoice'),
-			key: 'cta',
-			width: 1,
-		},
-	],
+const payingInvoice = ref(null)
+const payingAll = ref(false)
+const showPartialDialog = ref(false)
+const partialAmount = ref(null)
+
+// Computed totals from raw numeric values
+const totalOutstanding = computed(() => {
+	return tableData.rows
+		.filter(r => !r.is_return && r.status !== 'Paid')
+		.reduce((sum, r) => sum + parseFloat(r.outstanding_raw || 0), 0)
 })
 
-const currentRow = ref(null)
-const showPaymentDialog = ref(false)
+const totalCredits = computed(() => {
+	return tableData.rows
+		.filter(r => r.is_return)
+		.reduce((sum, r) => sum + parseFloat(r.outstanding_raw || 0), 0)
+})
+
+const netPayableAmount = computed(() => {
+	return Math.max(0, totalOutstanding.value + totalCredits.value)
+})
+
+const formatCurrency = (value) => {
+	return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 const openInvoicePDF = (row) => {
 	let url = `/api/method/frappe.utils.print_format.download_pdf?
@@ -179,17 +246,72 @@ const openInvoicePDF = (row) => {
 	window.open(url, '_blank')
 }
 
-const openModal = (row) => {
-	currentRow.value = row
-	showPaymentDialog.value = true
+const payInvoice = (row) => {
+	payingInvoice.value = row.name
+	createResource({
+		url: 'seminary.seminary.api.get_invoice_payment_url',
+		params: { invoice_name: row.name },
+		onSuccess: (data) => {
+			if (data.payment_url) {
+				window.location.href = data.payment_url
+			}
+		},
+		onError: () => {
+			payingInvoice.value = null
+			createToast({
+				title: __('Payment Error'),
+				text: __('Could not initiate payment. Please try again.'),
+				icon: 'x',
+				iconClasses: 'text-ink-red-3',
+			})
+		},
+		auto: true,
+	})
 }
 
-const success = () => {
-	feesResource.reload()
-	createToast({
-		title: __('Payment Successful'),
-		icon: 'check',
-		iconClasses: 'text-green-600',
+const payFullBalance = () => {
+	payingAll.value = true
+	createResource({
+		url: 'seminary.seminary.api.get_student_balance_payment_url',
+		onSuccess: (data) => {
+			if (data.payment_url) {
+				window.location.href = data.payment_url
+			}
+		},
+		onError: () => {
+			payingAll.value = false
+			createToast({
+				title: __('Payment Error'),
+				text: __('Could not initiate payment. Please try again.'),
+				icon: 'x',
+				iconClasses: 'text-ink-red-3',
+			})
+		},
+		auto: true,
+	})
+}
+
+const payPartialBalance = () => {
+	payingAll.value = true
+	showPartialDialog.value = false
+	createResource({
+		url: 'seminary.seminary.api.get_student_partial_balance_payment_url',
+		params: { amount: partialAmount.value },
+		onSuccess: (data) => {
+			if (data.payment_url) {
+				window.location.href = data.payment_url
+			}
+		},
+		onError: () => {
+			payingAll.value = false
+			createToast({
+				title: __('Payment Error'),
+				text: __('Could not initiate payment. Please try again.'),
+				icon: 'x',
+				iconClasses: 'text-ink-red-3',
+			})
+		},
+		auto: true,
 	})
 }
 </script>

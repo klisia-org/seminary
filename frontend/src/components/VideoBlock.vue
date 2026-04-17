@@ -5,7 +5,7 @@
 			@ended="videoEnded"
 			@click="togglePlay"
 			oncontextmenu="return false"
-			class="rounded-lg border border-gray-100 group cursor-pointer"
+			class="rounded-lg border border-outline-gray-1 group cursor-pointer"
 			ref="videoRef"
 		>
 			<source :src="fileURL" :type="type" />

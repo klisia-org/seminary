@@ -6,9 +6,10 @@
  "engine": "InnoDB",
  "field_order": [
   "general_tab",
-  "auto_submit_sales_invoice",
   "logo_portal",
+  "auto_submit_sales_invoice",
   "column_break_4",
+  "logo_dark",
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
@@ -41,9 +42,14 @@
   "column_break_withdrawal",
   "default_scholarship_withdrawal_procedure",
   "portal_tab",
-  "calendar_instructions",
+  "student_course_management_section",
   "allow_portal_enroll",
+  "portal_payment_enable",
+  "column_break_smoh",
   "allow_portal_withdrawal",
+  "payment_gateway",
+  "section_break_fxlm",
+  "calendar_instructions",
   "show_student_application_on_login",
   "support_user"
  ],
@@ -203,10 +209,10 @@
    "options": "Customer"
   },
   {
-   "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal.",
+   "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
    "fieldname": "logo_portal",
    "fieldtype": "Attach Image",
-   "label": "Seminary Logo (round)"
+   "label": "Seminary Logo (light theme)"
   },
   {
    "fieldname": "general_tab",
@@ -222,7 +228,7 @@
    "description": "The app has a default instruction on how students and staff can import calendars to Google, Apple, Microsoft and Others. Any text here will completely override that description.",
    "fieldname": "calendar_instructions",
    "fieldtype": "Text Editor",
-   "label": "Calendar Instructions"
+   "label": "Course Calendar Instructions"
   },
   {
    "fieldname": "demo_section",
@@ -296,15 +302,49 @@
   },
   {
    "default": "1",
-   "description": "When checked, students will have access to Enrollment page listing only courses available for their program, which they have not yet taken.",
+   "description": "When checked, students will have access to Enrollment page listing only courses available for their program, which they have not yet taken. They will be able to cancel the enrollment before it is submitted.",
    "fieldname": "allow_portal_enroll",
    "fieldtype": "Check",
    "label": "Allow students to request course enrollment on Portal"
+  },
+  {
+   "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the dark theme,",
+   "fieldname": "logo_dark",
+   "fieldtype": "Attach Image",
+   "label": "Seminary logo (dark theme)"
+  },
+  {
+   "fieldname": "student_course_management_section",
+   "fieldtype": "Section Break",
+   "label": "Student Course Management"
+  },
+  {
+   "fieldname": "column_break_smoh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
+   "fieldname": "portal_payment_enable",
+   "fieldtype": "Check",
+   "label": "Enable Online Payments"
+  },
+  {
+   "fieldname": "section_break_fxlm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.portal_payment_enable",
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Payment Gateway",
+   "options": "Payment Gateway"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-08 16:00:03.340456",
+ "modified": "2026-04-17 08:06:52.121188",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary Settings",

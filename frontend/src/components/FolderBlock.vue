@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-4 rounded-lg border-2 border-gray-200 p-4 mb-4">
+  <div class="flex flex-col gap-4 rounded-lg border-2 border-outline-gray-1 p-4 mb-4">
     <div class="flex flex-col gap-1">
       <h4 class="text-lg font-semibold text-ink-gray-9">{{ currentFolderName || folderName }}</h4>
       <div class="text-sm text-ink-gray-6 flex flex-wrap items-center gap-1" v-if="breadcrumbStack.length">
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div v-if="errorMessage" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div v-if="errorMessage" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
       {{ errorMessage }}
     </div>
     <div v-else-if="isLoading" class="text-sm text-ink-gray-6">
@@ -37,7 +37,7 @@
           >
             <button
               type="button"
-              class="text-left text-sm font-medium text-blue-600 hover:underline"
+              class="text-left text-sm font-medium text-ink-blue-link hover:underline"
               @click="openSubfolder(folder)"
             >
               {{ folder.file_name }}
@@ -58,7 +58,7 @@
             :key="file.file_url || file.name"
             class="flex items-center gap-3 rounded border border-outline-gray-2 px-3 py-2 transition hover:border-outline-gray-3"
           >
-            <a :href="file.file_url" download class="flex-1 truncate text-sm text-blue-600 hover:underline">
+            <a :href="file.file_url" download class="flex-1 truncate text-sm text-ink-blue-link hover:underline">
               {{ file.file_name }}
             </a>
             <span class="text-xs text-ink-gray-5">{{ humanFileSize(file.file_size) }}</span>

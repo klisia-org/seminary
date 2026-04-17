@@ -34,21 +34,21 @@
 
       <!-- Unsaved changes banner -->
       <div v-if="hasUnsavedChanges"
-        class="mx-5 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-center gap-2">
-        <span class="text-yellow-600 text-sm font-medium">
+        class="mx-5 mb-4 p-3 bg-surface-amber-1 border border-outline-amber-1 rounded-md flex items-center gap-2">
+        <span class="text-ink-amber-3 text-sm font-medium">
           ⚠️ You have unsaved changes. Click "Save Changes" to apply them.
         </span>
       </div>
 
       <!-- Unassigned Students Section -->
-      <div v-if="unassignedStudents.length > 0" class="mx-5 mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-        <h3 class="text-md font-semibold text-orange-800 mb-3">
+      <div v-if="unassignedStudents.length > 0" class="mx-5 mb-6 p-4 bg-surface-amber-2 border border-outline-amber-2 rounded-lg">
+        <h3 class="text-md font-semibold text-ink-amber-3 mb-3">
           ⚠️ Unassigned Students ({{ unassignedStudents.length }})
         </h3>
         <div class="space-y-2">
           <div v-for="student in unassignedStudents" :key="student.student"
-            class="flex items-center justify-between bg-white p-2 rounded border border-orange-100">
-            <span class="text-sm font-medium text-gray-700">
+            class="flex items-center justify-between bg-surface-white p-2 rounded border border-outline-amber-1">
+            <span class="text-sm font-medium text-ink-gray-7">
               {{ student.student_name }}
             </span>
             <div class="flex items-center gap-2">
@@ -65,10 +65,10 @@
           <!-- Group Header -->
           <div class="bg-surface-gray-2 px-4 py-3 flex items-center justify-between">
             <div>
-              <h3 class="text-md font-semibold text-gray-800">
+              <h3 class="text-md font-semibold text-ink-gray-8">
                 {{ groupName }}
               </h3>
-              <span class="text-xs text-gray-500">
+              <span class="text-xs text-ink-gray-5">
                 {{ group.instructor }} · {{ group.students.length }}
                 {{ group.students.length === 1 ? 'student' : 'students' }}
               </span>
@@ -78,8 +78,8 @@
           <!-- Student List -->
           <div class="divide-y">
             <div v-for="student in group.students" :key="student.student"
-              class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
-              <span class="text-sm text-gray-700">
+              class="flex items-center justify-between px-4 py-2.5 hover:bg-surface-gray-1 transition-colors">
+              <span class="text-sm text-ink-gray-7">
                 {{ student.student_name }}
               </span>
               <div class="flex items-center gap-2">
@@ -93,7 +93,7 @@
                   @click="removeStudentFromGroup(student, groupName)" />
               </div>
             </div>
-            <div v-if="group.students.length === 0" class="px-4 py-3 text-sm text-gray-400 italic">
+            <div v-if="group.students.length === 0" class="px-4 py-3 text-sm text-ink-gray-4 italic">
               No students in this group
             </div>
           </div>
@@ -106,20 +106,20 @@
     <!-- ============================================ -->
     <div v-else class="mt-8 ml-5">
       <div class="mb-4">
-        <label for="groupCount" class="block text-lg font-medium text-gray-700 mb-4">
+        <label for="groupCount" class="block text-lg font-medium text-ink-gray-7 mb-4">
           How many student groups should be created?
         </label>
         <input id="groupCount" type="number" v-model="groupCount" :min="2" :max="course.data.enrollments"
-          class="mt-1 mb-4 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          class="mt-1 mb-4 block w-full border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md shadow-sm focus:ring-outline-blue-1 focus:border-outline-blue-1 sm:text-sm" />
       </div>
 
       <!-- Instructor selection -->
       <div v-if="hasInstructors" class="mb-4">
-        <p class="text-lg font-medium text-gray-700 mb-2">
+        <p class="text-lg font-medium text-ink-gray-7 mb-2">
           Please, select the instructor for each group:
         </p>
         <div v-for="(group, index) in groupCount" :key="index" class="mb-2">
-          <label :for="`instructor-${index}`" class="block text-sm font-medium text-gray-700">
+          <label :for="`instructor-${index}`" class="block text-sm font-medium text-ink-gray-7">
             Group {{ index + 1 }} Instructor
           </label>
           <FormControl v-model="selectedInstructors[index]" :label="__('Instructor')" type="select"
@@ -127,7 +127,7 @@
         </div>
       </div>
       <div v-else class="mb-4">
-        <p class="text-lg font-medium text-gray-700 mb-2">
+        <p class="text-lg font-medium text-ink-gray-7 mb-2">
           Only one instructor is assigned to this course. Student groups will be
           created with instructor:
           {{ instructors.data[0].instructor_name }}

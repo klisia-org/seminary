@@ -1,5 +1,9 @@
 import './index.css'
+import { applyInitialTheme } from './composables/useTheme'
 import { createApp } from 'vue'
+
+applyInitialTheme()
+
 import router from './router'
 import App from './App.vue'
 import { createPinia } from 'pinia'

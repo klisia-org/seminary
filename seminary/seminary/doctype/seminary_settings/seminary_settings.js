@@ -12,8 +12,35 @@ frappe.ui.form.on('Seminary Settings', {
 		});
 	}
 });
+function check_and_toggle_payment_gateway(frm) {
+	if (frm.doc.portal_payment_enable) {
+		frappe.call({
+			method: "seminary.seminary.doctype.seminary_settings.seminary_settings.check_payments_app",
+			callback: (data) => {
+				if (data.message) {
+					frm.set_df_property("payment_gateway", "hidden", 0);
+					frm.set_df_property("payment_gateway", "reqd", 1);
+				} else {
+					frm.set_df_property("payment_gateway", "hidden", 1);
+					frm.set_df_property("payment_gateway", "reqd", 0);
+					frappe.msgprint({
+						title: __("Payments App Not Installed"),
+						message: __("To enable online payments, please install Frappe Payments on this site."),
+						indicator: "orange",
+					});
+				}
+			},
+		});
+	} else {
+		frm.set_df_property("payment_gateway", "hidden", 1);
+		frm.set_df_property("payment_gateway", "reqd", 0);
+	}
+}
+
 frappe.ui.form.on('Seminary Settings', {
     refresh: function(frm) {
+        check_and_toggle_payment_gateway(frm);
+
         if (!frm.doc.demo_data_installed && !frm.doc.no_more_demo) {
             frm.add_custom_button(__('Install Demo Data'), () => {
                 frappe.confirm(
@@ -46,11 +73,15 @@ frappe.ui.form.on('Seminary Settings', {
 		}
 
 		// Withdrawal Workflow button
-		frm.add_custom_button(__('Configure Withdrawal Workflow'), function() {
+		frm.add_custom_button(__("Configure Withdrawal Workflow"), function() {
 			frappe.set_route('List', 'Workflow', {
 				document_type: 'Course Withdrawal Request'
 			});
 		}, __('Withdrawal'));
 
+    },
+
+    portal_payment_enable: function(frm) {
+        check_and_toggle_payment_gateway(frm);
     }
 });

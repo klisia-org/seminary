@@ -15,7 +15,7 @@
         </h1>
         <div class="mt-2 w-64 mx-auto">
           <select v-model="currentSubmission"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+            class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 text-sm">
             <option v-for="submission in submissionlist.data" :key="submission.name" :value="submission.name">
               {{ submission.student_name }}
             </option>
@@ -75,10 +75,10 @@
       <div class="space-y-6">
         <div class="border rounded-lg p-5 bg-surface-white shadow-sm">
           <h2 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Grading') }}</h2>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Grade') }}</label>
+          <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
           <input v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
-            class="block w-full rounded-md border-gray-300 shadow-sm text-sm mb-3"
-            :class="gradeLocked ? 'bg-gray-100 text-ink-gray-5 cursor-not-allowed' : 'focus:border-indigo-500 focus:ring-indigo-500'" />
+            class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm text-sm mb-3"
+            :class="gradeLocked ? '!bg-surface-gray-2 text-ink-gray-5 cursor-not-allowed' : 'focus:border-outline-blue-1 focus:ring-outline-blue-1'" />
           <Button :variant="gradeLocked ? 'subtle' : 'solid'" @click="gradeLocked ? unlockGrade() : saveGrade()" class="w-full">
             {{ gradeLocked ? __('Edit Grade') : __('Save Grade') }}
           </Button>
@@ -92,8 +92,8 @@
             <div v-for="c in gradingComments" :key="c.name"
               class="p-3 rounded-lg text-sm"
               :class="c.author === user.data?.name
-                ? 'bg-blue-50 border border-blue-200 ml-4'
-                : 'bg-gray-50 border border-gray-200 mr-4'">
+                ? 'bg-surface-blue-1 text-ink-blue-2 border border-outline-blue-1 ml-4'
+                : 'bg-surface-gray-1 text-ink-gray-8 border border-outline-gray-1 mr-4'">
               <div class="flex items-center justify-between mb-1">
                 <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
                 <span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
