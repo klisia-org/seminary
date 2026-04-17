@@ -9,8 +9,8 @@
   "logo_portal",
   "auto_submit_sales_invoice",
   "column_break_4",
-  "academic_term_reqd",
   "logo_dark",
+  "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
   "advancetb",
@@ -42,13 +42,16 @@
   "column_break_withdrawal",
   "default_scholarship_withdrawal_procedure",
   "portal_tab",
-  "calendar_instructions",
-  "show_student_application_on_login",
-  "support_user",
   "student_course_management_section",
   "allow_portal_enroll",
+  "portal_payment_enable",
   "column_break_smoh",
-  "allow_portal_withdrawal"
+  "allow_portal_withdrawal",
+  "payment_gateway",
+  "section_break_fxlm",
+  "calendar_instructions",
+  "show_student_application_on_login",
+  "support_user"
  ],
  "fields": [
   {
@@ -318,11 +321,30 @@
   {
    "fieldname": "column_break_smoh",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
+   "fieldname": "portal_payment_enable",
+   "fieldtype": "Check",
+   "label": "Enable Online Payments"
+  },
+  {
+   "fieldname": "section_break_fxlm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.portal_payment_enable",
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Payment Gateway",
+   "options": "Payment Gateway"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-10 14:07:22.016384",
+ "modified": "2026-04-17 08:06:52.121188",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary Settings",

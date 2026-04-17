@@ -206,12 +206,14 @@ after_migrate = "seminary.install.after_migrate"
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
+    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
+    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
 }
 
 # DocType Class
@@ -219,9 +221,9 @@ has_permission = {
 # Override standard doctype classes
 
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest"
+}
 
 
 # Document Events
@@ -264,6 +266,13 @@ doc_events = {
     },
     "Course Withdrawal Request": {
         "on_update_after_submit": "seminary.seminary.withdrawal.on_withdrawal_workflow_update",
+    },
+    "Student": {
+        "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
+    },
+    "Sales Invoice": {
+        "on_submit": "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
+        "on_update_after_submit": "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
     },
 }
 
