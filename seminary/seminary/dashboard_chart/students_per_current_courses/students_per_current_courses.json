@@ -1,28 +1,38 @@
 {
  "based_on": "",
- "chart_name": "Students per current course",
+ "chart_name": "Students per current courses",
  "chart_type": "Custom",
- "color": "#44b2f7",
+ "color": "#4F9DD9",
  "creation": "2024-05-20 16:18:45.692350",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "document_type": "Scheduled Course Roster",
  "dynamic_filters_json": "[]",
- "filters_json": "[]",
+ "filters_json": "[[\"Scheduled Course Roster\",\"active\",\"=\",1,false]]",
  "group_by_based_on": "",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
  "last_synced_on": "2026-04-18 12:00:00",
- "modified": "2026-04-18 12:24:46.766031",
+ "modified": "2026-04-18 12:38:54.677809",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Students per current course",
+ "name": "Students per current courses",
  "number_of_groups": 0,
  "owner": "Administrator",
  "parent_document_type": "",
- "roles": [],
+ "roles": [
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "Seminary Manager"
+  }
+ ],
  "show_values_over_chart": 0,
  "source": "Students per Current Courses",
  "time_interval": "Yearly",

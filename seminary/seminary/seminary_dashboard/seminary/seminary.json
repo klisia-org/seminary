@@ -10,18 +10,18 @@
    "width": "Half"
   },
   {
-   "chart": "Students per current course",
-   "width": "Half"
+   "chart": "Students per current courses",
+   "width": "Full"
   }
  ],
  "creation": "2024-05-20 16:12:43.450220",
  "dashboard_name": "Seminary",
  "docstatus": 0,
  "doctype": "Dashboard",
- "idx": 0,
+ "idx": 1,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2025-02-27 11:17:51.789843",
+ "modified": "2026-04-18 13:57:47.451445",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",

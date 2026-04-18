@@ -14,6 +14,7 @@ from dateutil import relativedelta
 from frappe.utils import add_days, getdate
 
 from seminary.seminary.utils import OverlapError
+import json
 import secrets
 
 
@@ -142,3 +143,27 @@ class CourseSchedule(Document):
             meeting_dates=meeting_dates,
             meeting_dates_errors=meeting_dates_errors,
         )
+
+
+@frappe.whitelist()
+def bulk_close_enrollment(names):
+    """Set open_enroll = 0 on the given Course Schedules.
+
+    Mirrors the closure path used after grade submission in
+    api.py: direct db update, no full save (skips unrelated
+    validate() checks that can throw on legacy rows).
+    """
+    if isinstance(names, str):
+        names = json.loads(names)
+
+    closed, skipped = [], []
+    for name in names:
+        if not frappe.has_permission("Course Schedule", "write", doc=name):
+            skipped.append(name)
+            continue
+        if frappe.db.get_value("Course Schedule", name, "open_enroll"):
+            frappe.db.set_value("Course Schedule", name, "open_enroll", 0)
+            closed.append(name)
+        else:
+            skipped.append(name)
+    return {"closed": closed, "skipped": skipped}
