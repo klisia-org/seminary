@@ -69,7 +69,18 @@ frappe.ui.form.on("Course Enrollment Individual", {
                     });
             }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});};
 
-
+        if (frm.doc.docstatus === 1 && !frm.doc.withdrawn && !frm.doc.withdrawal_request) {
+            frm.add_custom_button(__("Request Withdrawal"), function() {
+                frappe.model.with_doctype("Course Withdrawal Request", function() {
+                    const wr = frappe.model.get_new_doc("Course Withdrawal Request");
+                    wr.program_enrollment = frm.doc.program_ce;
+                    wr.student = frm.doc.student_ce;
+                    wr.course_enrollment_individual = frm.doc.name;
+                    wr.withdrawal_scope = "Single Course";
+                    frappe.set_route("Form", "Course Withdrawal Request", wr.name);
+                });
+            }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
+        }
 
 
 
