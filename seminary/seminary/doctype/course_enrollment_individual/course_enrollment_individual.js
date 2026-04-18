@@ -41,31 +41,19 @@ frappe.ui.form.on("Course Enrollment Individual", {
 
     },
     refresh(frm) {
-
-
-
         frm.set_query("coursesc_ce", () => {
-            if (frm.doc.no_prereq === 1 || frm.doc.audit === 1) {
-                // Return unfiltered results
-                return {
-                    filters: {
-                        open_enroll: 1
-                    }
-                };
+            if (!frm.doc.program_ce) {
+                // No program selected — show nothing
+                return { filters: { name: "" } };
             }
-            else {
-              //if frm.courses is empty, trigger get_courses
-            if (!frm.courses) {
-                frm.trigger('get_courses')
-                console.log("Triggered get_courses");
-            } return {
-
-                filters: {
-                    course: ["in", frm.courses]
-                }
-            }}
-
-
+            if (frm.doc.no_prereq === 1 || frm.doc.audit === 1) {
+                return { filters: { open_enroll: 1 } };
+            }
+            if (frm.courses && frm.courses.length) {
+                return { filters: { course: ["in", frm.courses], open_enroll: 1 } };
+            }
+            // Courses not loaded yet — show nothing until get_courses resolves
+            return { filters: { name: "" } };
         });
         if (!frm.doc.cei_si) {
 
@@ -95,27 +83,27 @@ frappe.ui.form.on("Course Enrollment Individual", {
 
     },
     program_ce(frm) {
-        frm.set_query("student_ce", function() {
-            return {
-                filters: {
-                program: frm.doc.program_ce
-            }
-            };
-        });
-        frm.trigger('get_courses');
+        // Clear stale course selection when program changes
+        frm.set_value("coursesc_ce", "");
+        frm.courses = null;
+
+        if (frm.doc.program_ce) {
+            frm.trigger("get_courses");
+        }
     },
 
     get_courses(frm) {
+        if (!frm.doc.program_ce) return;
         frappe.call({
-        method: "seminary.seminary.api.courses_for_student",
-        args: {
-
-            program_ce: frm.doc.program_ce
-            },
-            callback: function(response) {
-                // Store the list of courses in a variable
+            method: "seminary.seminary.api.courses_for_student",
+            args: { program_ce: frm.doc.program_ce },
+            callback: function (response) {
                 frm.courses = response.message;
-            }})},
+                // Refresh the query now that courses are loaded
+                frm.refresh_field("coursesc_ce");
+            },
+        });
+    },
 
 
 

@@ -911,11 +911,18 @@ def course_enroll(pe_name, course):
     doc.student_ce = student
     doc.coursesc_ce = cs.name
     doc.docstatus = 0
+
+    # Populate fetch_from fields so get_credits() can resolve them
+    doc.program_data = frappe.db.get_value("Program Enrollment", pe_name, "program")
+    doc.course_data = frappe.db.get_value("Course Schedule", cs.name, "course")
+
+    doc.credits = doc.get_credits()
     doc.insert()
     return {
         "name": doc.name,
         "course_data": doc.course_data,
         "academic_term": doc.academic_term,
+        "credits": doc.credits,
     }
 
 
@@ -1964,9 +1971,16 @@ def get_student_invoices(student=None):
     if not student:
         frappe.throw("student is required")
 
+    # Only show invoices where the student is the customer (not church/scholarship)
+    student_customer = frappe.db.get_value("Student", student, "customer")
+
+    si_filters = {"custom_student": student, "docstatus": 1}
+    if student_customer:
+        si_filters["customer"] = student_customer
+
     sales_invoice_list = frappe.get_all(
         "Sales Invoice",
-        filters={"custom_student": student},
+        filters=si_filters,
         fields=[
             "name",
             "customer",
@@ -1977,6 +1991,7 @@ def get_student_invoices(student=None):
             "status",
             "is_return",
             "return_against",
+            "custom_cei",
         ],
     )
     for invoice in sales_invoice_list:
@@ -1984,13 +1999,18 @@ def get_student_invoices(student=None):
         invoice["customer"] = frappe.get_value(
             "Customer", invoice["customer"], "customer_name"
         )
+        # Get course name from CEI if linked
+        if invoice.get("custom_cei"):
+            invoice["course"] = frappe.db.get_value(
+                "Course Enrollment Individual", invoice["custom_cei"], "course_data"
+            )
+        else:
+            invoice["course"] = None
         invoice["posting_date"] = frappe.utils.formatdate(invoice["posting_date"])
         invoice["outstanding_raw"] = invoice["outstanding_amount"]
         invoice["total_raw"] = invoice["total"]
         if invoice["is_return"]:
             invoice["status"] = "Return"
-        else:
-            invoice["status"] = "Paid" if invoice["status"] == "Paid" else "Unpaid"
         invoice["total"] = "{:,.2f}".format(invoice["total"])
         invoice["outstanding_amount"] = "{:,.2f}".format(invoice["outstanding_amount"])
     sales_invoice_list = sorted(

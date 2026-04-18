@@ -3,7 +3,18 @@
 
 frappe.ui.form.on("Student Balance", {
 	refresh: function (frm) {
-		if (!frm.doc.is_open || frm.doc.net_outstanding <= 0) {
+		if (!frm.doc.is_open) {
+			return;
+		}
+
+		// Refresh from Sales Invoices (always available on open balances)
+		frm.add_custom_button(
+			__("Refresh from Sales Invoices"),
+			() => refresh_from_invoices(frm),
+			__("Actions")
+		);
+
+		if (frm.doc.net_outstanding <= 0) {
 			return;
 		}
 
@@ -20,6 +31,32 @@ frappe.ui.form.on("Student Balance", {
 		);
 	},
 });
+
+function refresh_from_invoices(frm) {
+	frappe.confirm(
+		__("Rebuild the invoice list from current Sales Invoices? Any unsaved changes will be lost."),
+		() => {
+			frappe.call({
+				method: "seminary.seminary.doctype.student_balance.student_balance.refresh_from_sales_invoices",
+				args: { student_balance: frm.doc.name },
+				freeze: true,
+				freeze_message: __("Refreshing..."),
+				callback: (r) => {
+					if (r.message) {
+						frappe.show_alert({
+							message: __("Refreshed. {0} invoices, net outstanding {1}", [
+								r.message.invoices,
+								r.message.net_outstanding,
+							]),
+							indicator: "green",
+						});
+						frm.reload_doc();
+					}
+				},
+			});
+		}
+	);
+}
 
 function show_payment_dialog(frm, prefill_amount, is_full) {
 	const dialog = new frappe.ui.Dialog({

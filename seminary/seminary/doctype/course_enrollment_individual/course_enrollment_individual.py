@@ -15,6 +15,45 @@ class CourseEnrollmentIndividual(Document):
         self.validate_duplicate()
         self.validate_duplicate_course()
 
+    def on_submit(self):
+        if not self.cei_si:
+            self.get_inv_data_ce()
+            self.cei_si = 1
+            self.db_set("cei_si", 1)
+
+    def before_cancel(self):
+        """Block cancellation if the course has already started."""
+        from frappe.utils import getdate
+
+        if self.coursesc_ce:
+            start_date = frappe.db.get_value(
+                "Course Schedule", self.coursesc_ce, "c_datestart"
+            )
+            if start_date and getdate(start_date) <= getdate(frappe.utils.today()):
+                frappe.throw(
+                    _(
+                        "Cannot cancel enrollment after course has started ({0}). "
+                        "Please use a Course Withdrawal Request instead."
+                    ).format(start_date)
+                )
+
+    def on_cancel(self):
+        """Cancel linked Sales Invoices when CEI is cancelled."""
+        invoices = frappe.get_all(
+            "Sales Invoice",
+            filters={
+                "custom_cei": self.name,
+                "docstatus": 1,
+                "is_return": 0,
+            },
+            pluck="name",
+        )
+
+        for inv_name in invoices:
+            si = frappe.get_doc("Sales Invoice", inv_name)
+            si.flags.ignore_permissions = True
+            si.cancel()
+
     def validate_duplicate(self):
         CEI = frappe.get_list(
             "Course Enrollment Individual",
@@ -204,6 +243,7 @@ class CourseEnrollmentIndividual(Document):
                     "items": items,
                     "cost_center": cost_center,
                     "custom_student": stulink,
+                    "custom_cei": self.name,
                     "additional_discount_percentage": discount,
                 }
             )
