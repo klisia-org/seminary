@@ -95,7 +95,7 @@ def process_financial_approval(doc):
     invoices = frappe.get_all(
         "Sales Invoice",
         filters={
-            "remarks": ("like", f"Fee for {cei_name}"),
+            "custom_cei": cei_name,
             "docstatus": 1,
             "is_return": 0,
         },

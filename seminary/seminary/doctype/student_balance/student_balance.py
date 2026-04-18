@@ -80,10 +80,11 @@ class StudentBalance(Document):
         self.status = status
         self.save()
 
-        # Collect rows to carry forward
+        # Collect rows to carry forward — include both unpaid invoices
+        # and unsettled credit notes (outstanding != 0)
         carry_forward = []
         for row in self.invoices:
-            if flt(row.outstanding_amount) > 0:
+            if flt(row.outstanding_amount) != 0:
                 carry_forward.append(
                     {
                         "sales_invoice": row.sales_invoice,
@@ -212,7 +213,29 @@ class StudentBalance(Document):
         for row in self.invoices:
             row.allocated_amount = 0
 
-        remaining = flt(amount)
+        # Phase 1: apply credit notes (negative outstanding) first.
+        # These settle the credit note and reduce the cash needed.
+        credits_applied = 0
+        for row in self.invoices:
+            if row.is_return and flt(row.outstanding_amount) < 0:
+                credit_alloc = flt(row.outstanding_amount)  # negative
+                row.allocated_amount = credit_alloc
+                pe.append(
+                    "references",
+                    {
+                        "reference_doctype": "Sales Invoice",
+                        "reference_name": row.sales_invoice,
+                        "total_amount": flt(row.grand_total),
+                        "outstanding_amount": flt(row.outstanding_amount),
+                        "allocated_amount": credit_alloc,
+                    },
+                )
+                credits_applied += credit_alloc  # accumulates negative
+
+        # Phase 2: allocate cash (amount) plus the absolute value of credits
+        # to unpaid invoices by due date. The gross allocated to unpaid
+        # = cash + |credits|.
+        remaining = flt(amount) + abs(credits_applied)
         sorted_rows = sorted(self.invoices, key=lambda r: r.due_date or "9999-12-31")
         for row in sorted_rows:
             if row.is_return or flt(row.outstanding_amount) <= 0:
@@ -249,6 +272,71 @@ class StudentBalance(Document):
 # ---------------------------------------------------------------------------
 # Whitelisted methods for Desk
 # ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def refresh_from_sales_invoices(student_balance):
+    """Rebuild the child table from current Sales Invoice state.
+
+    Clears all child rows and re-queries Sales Invoices for the student
+    where customer = balance's customer, including credit notes. Used to
+    recover from data drift.
+    """
+    sb = frappe.get_doc("Student Balance", student_balance)
+
+    if not sb.is_open:
+        frappe.throw(_("Can only refresh an open Student Balance."))
+
+    if not sb.customer:
+        frappe.throw(_("Student Balance has no customer set."))
+
+    # Get all submitted SIs for this student with matching customer
+    invoices = frappe.get_all(
+        "Sales Invoice",
+        filters={
+            "custom_student": sb.student,
+            "customer": sb.customer,
+            "docstatus": 1,
+        },
+        fields=[
+            "name",
+            "posting_date",
+            "due_date",
+            "grand_total",
+            "outstanding_amount",
+            "is_return",
+            "return_against",
+        ],
+        order_by="posting_date asc",
+    )
+
+    # Only keep rows with outstanding != 0 (unpaid or unsettled credits)
+    sb.invoices = []
+    for inv in invoices:
+        if flt(inv.outstanding_amount) == 0:
+            continue
+        sb.append(
+            "invoices",
+            {
+                "sales_invoice": inv.name,
+                "posting_date": inv.posting_date,
+                "due_date": inv.due_date,
+                "grand_total": inv.grand_total,
+                "outstanding_amount": inv.outstanding_amount,
+                "allocated_amount": 0,
+                "is_return": inv.is_return,
+                "return_against": inv.return_against,
+            },
+        )
+
+    sb.recalculate_totals()
+    sb.save(ignore_permissions=True)
+
+    # Auto-close if nothing left to pay
+    if flt(sb.net_outstanding) <= 0 and len(sb.invoices) == 0:
+        sb.close_and_rotate()
+
+    return {"invoices": len(sb.invoices), "net_outstanding": sb.net_outstanding}
 
 
 @frappe.whitelist()
@@ -322,9 +410,17 @@ def create_student_balance(doc, method=None):
 
 
 def add_invoice_to_student_balance(doc, method=None):
-    """Hook: Sales Invoice.on_submit — append invoice to student's open balance."""
+    """Hook: Sales Invoice.on_submit — append invoice to student's open balance.
+
+    Only adds invoices where the customer is the student's own customer.
+    Church/scholarship invoices are not part of the student's personal balance.
+    """
     student = doc.get("custom_student")
     if not student:
+        return
+
+    student_customer = frappe.db.get_value("Student", student, "customer")
+    if not student_customer or doc.customer != student_customer:
         return
 
     sb_name = frappe.db.get_value(
@@ -373,6 +469,11 @@ def refresh_balance_on_invoice_update(doc, method=None):
         if not student:
             return
 
+    # Only act on invoices billed to the student's own customer
+    student_customer = frappe.db.get_value("Student", student, "customer")
+    if not student_customer or doc.customer != student_customer:
+        return
+
     sb_name = frappe.db.get_value(
         "Student Balance", {"student": student, "is_open": 1}, "name"
     )
@@ -400,3 +501,32 @@ def refresh_balance_on_invoice_update(doc, method=None):
             )
 
     sb.refresh_outstanding()
+
+
+def remove_cancelled_invoice_from_balance(doc, method=None):
+    """Hook: Sales Invoice.on_cancel — remove cancelled SI from Student Balance."""
+    student = doc.get("custom_student")
+    if not student:
+        if doc.is_return and doc.return_against:
+            student = frappe.db.get_value(
+                "Sales Invoice", doc.return_against, "custom_student"
+            )
+        if not student:
+            return
+
+    sb_name = frappe.db.get_value(
+        "Student Balance", {"student": student, "is_open": 1}, "name"
+    )
+    if not sb_name:
+        return
+
+    sb = frappe.get_doc("Student Balance", sb_name)
+
+    # Remove the cancelled invoice row
+    sb.invoices = [row for row in sb.invoices if row.sales_invoice != doc.name]
+
+    sb.recalculate_totals()
+    sb.save(ignore_permissions=True)
+
+    if sb.net_outstanding <= 0:
+        sb.close_and_rotate()

@@ -32,7 +32,7 @@
 					</div>
 					<div v-if="totalCredits < 0">
 						<span class="text-ink-gray-5">{{ __('Credits') }}:</span>
-						<span class="ml-1 font-semibold text-ink-red-3">{{ formatCurrency(totalCredits) }}</span>
+						<span class="ml-1 font-semibold text-ink-green-3">{{ formatAbs(totalCredits) }} {{ __('Cr') }}</span>
 					</div>
 					<div>
 						<span class="text-ink-gray-5">{{ __('Net Payable') }}:</span>
@@ -55,6 +55,7 @@
 				<thead>
 					<tr class="border-b text-left text-ink-gray-6">
 						<th class="py-2 px-3 font-medium">{{ __('Invoice') }}</th>
+						<th class="py-2 px-3 font-medium">{{ __('Course') }}</th>
 						<th class="py-2 px-3 font-medium text-right">{{ __('Amount') }}</th>
 						<th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
 						<th class="py-2 px-3 font-medium text-right"></th>
@@ -63,14 +64,27 @@
 				<tbody>
 					<tr v-for="row in tableData.rows" :key="row.name" class="border-b">
 						<td class="py-2 px-3">
-							<div class="text-ink-gray-9">{{ row.name }}</div>
+							<a class="text-ink-blue-3 hover:underline cursor-pointer" @click="openInvoicePDF(row)">
+								{{ row.name }}
+							</a>
 							<div class="text-xs text-ink-gray-5">{{ row.posting_date }}</div>
 						</td>
+						<td class="py-2 px-3">
+							<span v-if="row.course" class="text-ink-gray-7">{{ row.course }}</span>
+							<span v-else class="text-ink-gray-4">-</span>
+						</td>
 						<td class="py-2 px-3 text-right">
-							<div class="text-ink-gray-9">{{ row.total }}</div>
-							<div v-if="row.status === 'Unpaid' && row.outstanding_amount"
+							<div v-if="row.is_return" class="text-ink-green-3 font-medium">
+								{{ formatAbs(row.total_raw) }} {{ __('Cr') }}
+							</div>
+							<div v-else class="text-ink-gray-9">{{ row.total }}</div>
+							<div v-if="parseFloat(row.outstanding_raw) !== parseFloat(row.total_raw) && row.status !== 'Paid' && !row.is_return"
 								class="text-xs text-ink-gray-5">
 								{{ __('Outstanding') }}: {{ row.outstanding_amount }}
+							</div>
+							<div v-if="row.is_return" class="text-xs text-ink-gray-5">
+								<span v-if="parseFloat(row.outstanding_raw) === 0">{{ __('Credit already applied') }}</span>
+								<span v-else>{{ __('Credit available') }}: {{ formatAbs(row.outstanding_raw) }}</span>
 							</div>
 						</td>
 						<td class="py-2 px-3">
@@ -79,18 +93,18 @@
 						<td class="py-2 px-3 text-right">
 							<Button v-if="row.status === 'Paid'" size="sm" variant="subtle"
 								@click="openInvoicePDF(row)" icon-left="download" :label="__('Download')" />
-							<Button v-else-if="paymentEnabled && row.status === 'Unpaid'" size="sm" variant="solid" theme="blue"
+							<Button v-else-if="paymentEnabled && !row.is_return" size="sm" variant="solid" theme="blue"
 								@click="payInvoice(row)" icon-left="credit-card"
 								:label="payingInvoice === row.name ? __('Redirecting...') : __('Pay')"
 								:disabled="payingInvoice === row.name || payingAll" />
-							<span v-else-if="row.status === 'Unpaid'" class="text-xs text-ink-gray-5">{{ __('Awaits payment') }}</span>
+							<span v-else-if="!row.is_return" class="text-xs text-ink-gray-5">{{ __('Awaits payment') }}</span>
 						</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
 
-		<div v-else>
+		<div v-else-if="!feesResource.loading">
 			<MissingData message="No Fees found" />
 		</div>
 
@@ -140,9 +154,7 @@ const paymentSuccess = ref(false)
 onMounted(() => {
 	if (window.location.href.includes('payment=success')) {
 		paymentSuccess.value = true
-		// Clean the URL without reloading
 		window.history.replaceState({}, '', window.location.pathname)
-		// Auto-dismiss after 10 seconds
 		setTimeout(() => { paymentSuccess.value = false }, 10000)
 	}
 })
@@ -172,8 +184,6 @@ const scholarshipsResource = createResource({
 	auto: true,
 })
 
-console.log("Student Scholarships:", studentInfo.scholarships)
-
 const seminarySettings = createResource({
 	url: 'frappe.client.get_value',
 	params: {
@@ -193,16 +203,20 @@ const feesResource = createResource({
 		student: student,
 	},
 	onSuccess: (response) => {
+		// Sort: unpaid (with outstanding) first, then returns, then paid (newest first)
 		response = response.sort((a, b) => {
-			const statusOrder = { Return: -1, Unpaid: 0, Paid: 1 }
-
-			const statusA = statusOrder[a.status] ?? 0
-			const statusB = statusOrder[b.status] ?? 0
-
-			if (statusA !== statusB) {
-				return statusA - statusB
+			const statusRank = (r) => {
+				if (r.status === 'Paid') return 2
+				if (r.is_return) return 1
+				return 0
 			}
-
+			const rankA = statusRank(a)
+			const rankB = statusRank(b)
+			if (rankA !== rankB) return rankA - rankB
+			// Within same group, newest first
+			if (a.posting_date > b.posting_date) return -1
+			if (a.posting_date < b.posting_date) return 1
+			return 0
 		})
 		tableData.rows = response
 	},
@@ -237,12 +251,12 @@ const formatCurrency = (value) => {
 	return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const formatAbs = (value) => {
+	return Math.abs(parseFloat(value || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 const openInvoicePDF = (row) => {
-	let url = `/api/method/frappe.utils.print_format.download_pdf?
-		doctype=${encodeURIComponent('Sales Invoice')}
-		&name=${encodeURIComponent(row.name)}
-		&format=${encodeURIComponent('Standard')}
-	`
+	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&format=${encodeURIComponent('Standard')}`
 	window.open(url, '_blank')
 }
 

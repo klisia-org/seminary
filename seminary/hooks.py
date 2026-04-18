@@ -273,6 +273,7 @@ doc_events = {
     "Sales Invoice": {
         "on_submit": "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
         "on_update_after_submit": "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
+        "on_cancel": "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
     },
 }
 
