@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:policy_name",
+ "creation": "2026-04-20 12:00:00.000000",
+ "description": "Relationship-specific policy that converts grades from a source Grading Scale to a target Grading Scale. See ADR 006.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "policy_name",
+  "conversion_method",
+  "column_break_header",
+  "source_grading_scale",
+  "target_grading_scale",
+  "method_section",
+  "multiplier",
+  "offset",
+  "conversion_map",
+  "notes_section",
+  "notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "policy_name",
+   "fieldtype": "Data",
+   "label": "Policy Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "conversion_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Conversion Method",
+   "options": "identity\nlinear_multiplier\nlinear_with_offset\ninterval_map\nmanual_per_course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_grading_scale",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Grading Scale",
+   "options": "Grading Scale",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_grading_scale",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target Grading Scale",
+   "options": "Grading Scale",
+   "reqd": 1
+  },
+  {
+   "fieldname": "method_section",
+   "fieldtype": "Section Break",
+   "label": "Method Parameters"
+  },
+  {
+   "depends_on": "eval:['linear_multiplier','linear_with_offset'].includes(doc.conversion_method)",
+   "description": "Target value = source value × multiplier (+ offset, if set).",
+   "fieldname": "multiplier",
+   "fieldtype": "Float",
+   "label": "Multiplier",
+   "mandatory_depends_on": "eval:['linear_multiplier','linear_with_offset'].includes(doc.conversion_method)"
+  },
+  {
+   "depends_on": "eval:doc.conversion_method=='linear_with_offset'",
+   "fieldname": "offset",
+   "fieldtype": "Float",
+   "label": "Offset"
+  },
+  {
+   "depends_on": "eval:doc.conversion_method=='interval_map'",
+   "description": "Maps each source-scale symbol to a target-scale symbol. The target grade-point value is resolved at conversion time from the target scale's threshold.",
+   "fieldname": "conversion_map",
+   "fieldtype": "Table",
+   "label": "Conversion Map",
+   "mandatory_depends_on": "eval:doc.conversion_method=='interval_map'",
+   "options": "Grade Conversion Map"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Registrar's rationale for this policy, visible to future reviewers.",
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Grade Conversion Policy",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grade Conversion Policy",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

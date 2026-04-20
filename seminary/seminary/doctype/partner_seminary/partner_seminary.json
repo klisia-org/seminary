@@ -1,0 +1,169 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:partner_seminary_name",
+ "creation": "2026-04-20 12:00:00",
+ "description": "An external or self-referential (legacy) institution whose coursework is recognized by this seminary. See ADR 005.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_seminary_name",
+  "status",
+  "is_internal_legacy",
+  "column_break_header",
+  "country",
+  "customer",
+  "accreditation_status",
+  "defaults_section",
+  "default_grading_scale",
+  "credit_unit_ratio",
+  "counts_in_gpa",
+  "column_break_defaults",
+  "default_conversion_policy",
+  "minimum_transferable_grade",
+  "evidence_section",
+  "supporting_document",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_seminary_name",
+   "fieldtype": "Data",
+   "label": "Partner Seminary Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Active",
+   "description": "Inactive partners cannot be referenced by new Course Equivalences. Archived hides from default list views.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nInactive\nArchived",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Identifies this seminary's own pre-SeminaryERP history. Read-only after creation. Filtered out of default list views.",
+   "fieldname": "is_internal_legacy",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Is Internal Legacy"
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "description": "Optional link to a Customer record for registering contacts and other partner-institution information.",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "accreditation_status",
+   "fieldtype": "Data",
+   "label": "Accreditation Status"
+  },
+  {
+   "fieldname": "defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Defaults"
+  },
+  {
+   "description": "The scale on which this partner records grades. Must be a Submitted Grading Scale.",
+   "fieldname": "default_grading_scale",
+   "fieldtype": "Link",
+   "label": "Default Grading Scale",
+   "options": "Grading Scale",
+   "reqd": 1
+  },
+  {
+   "default": "1.0",
+   "description": "Internal credit hours awarded per 1 partner credit unit. Identity (1.0) for legacy self-referential seminaries.",
+   "fieldname": "credit_unit_ratio",
+   "fieldtype": "Float",
+   "label": "Credit Unit Ratio",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "When checked, converted grades from this partner participate in the student's GPA. Typically checked for legacy self-referential records, unchecked for external transfer.",
+   "fieldname": "counts_in_gpa",
+   "fieldtype": "Check",
+   "label": "Counts in GPA"
+  },
+  {
+   "fieldname": "column_break_defaults",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Default conversion policy applied to this partner's grades. Must be a Submitted Grade Conversion Policy.",
+   "fieldname": "default_conversion_policy",
+   "fieldtype": "Link",
+   "label": "Default Conversion Policy",
+   "options": "Grade Conversion Policy",
+   "reqd": 1
+  },
+  {
+   "description": "Grade code on the receiving/internal scale below which transferred grades are blocked (can be overridden by elevated-permission registrar). Evaluated post-conversion.",
+   "fieldname": "minimum_transferable_grade",
+   "fieldtype": "Data",
+   "label": "Minimum Transferable Grade"
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "description": "Optional decision artifact (partnership agreement, accreditor letter, director approval) documenting the relationship.",
+   "fieldname": "supporting_document",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-20 08:12:31.257038",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Partner Seminary",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

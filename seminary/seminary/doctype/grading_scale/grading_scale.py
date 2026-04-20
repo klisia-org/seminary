@@ -5,18 +5,18 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint
+from frappe.utils import flt
 
 
 class GradingScale(Document):
     def validate(self):
         thresholds = []
         for d in self.intervals:
-            if d.threshold in thresholds:
+            threshold = flt(d.threshold)
+            if threshold in thresholds:
                 frappe.throw(
-                    _("Treshold {0}% appears more than once").format(d.threshold)
+                    _("Threshold {0} appears more than once").format(threshold)
                 )
-            else:
-                thresholds.append(cint(d.threshold))
-        if 0 not in thresholds:
-            frappe.throw(_("Please define grade for Threshold 0%"))
+            thresholds.append(threshold)
+        if self.grscale_type == "Points" and 0 not in thresholds:
+            frappe.throw(_("Please define a grade for Threshold 0"))

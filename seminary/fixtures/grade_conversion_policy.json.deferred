@@ -1,0 +1,15 @@
+[
+ {
+  "amended_from": null,
+  "conversion_method": "identity",
+  "conversion_map": [],
+  "docstatus": 1,
+  "doctype": "Grade Conversion Policy",
+  "multiplier": 0.0,
+  "notes": "<p>Identity policy: source grade is emitted unchanged on the target scale. Used for self-referential legacy Partner Seminary records where both scales are the institution's own internal scale. Required as the default_conversion_policy on any Partner Seminary with is_internal_legacy = 1. See ADR 005 'Legacy Bulk Import Workflow' and ADR 006 'Submittable Doctype for Change Traceability'.</p>",
+  "offset": 0.0,
+  "policy_name": "Identity (Internal)",
+  "source_grading_scale": "Default Numeric Scale",
+  "target_grading_scale": "Default Numeric Scale"
+ }
+]

@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-04-20 12:00:00",
+ "description": "Child table of Partner Transcript Import Batch. One row per student-course grade being imported.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_email",
+  "source_course_code",
+  "source_course_name",
+  "source_term",
+  "source_grade",
+  "source_credit_value",
+  "external_reference",
+  "resolved_section",
+  "resolved_internal_course",
+  "resolved_credit",
+  "resolved_grade_code",
+  "resolved_grade_threshold",
+  "warning",
+  "override_note",
+  "committed_program_enrollment"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "description": "Required unless a Student Email is provided. Resolved from Student Email during Dry-Run when left blank.",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "mandatory_depends_on": "eval:!doc.student_email",
+   "options": "Student"
+  },
+  {
+   "columns": 1,
+   "description": "Autocompletes from submitted Partner Seminary Course Equivalences for the selected partner. Selecting a value auto-fills Source Course Name and Source Credit Value.",
+   "fieldname": "source_course_code",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Source Course Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_course_name",
+   "fieldtype": "Data",
+   "label": "Source Course Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "source_term",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source Term"
+  },
+  {
+   "columns": 1,
+   "description": "Autocompletes from the partner's default grading scale grade codes.",
+   "fieldname": "source_grade",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Source Grade",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_credit_value",
+   "fieldtype": "Float",
+   "label": "Source Credit Value"
+  },
+  {
+   "description": "Source-system ID if available; takes precedence over the natural key for idempotency.",
+   "fieldname": "external_reference",
+   "fieldtype": "Data",
+   "label": "External Reference"
+  },
+  {
+   "collapsible": 1,
+   "description": "Fields populated by the dry-run pass. Editable only via registrar override workflow.",
+   "fieldname": "resolved_section",
+   "fieldtype": "Section Break",
+   "label": "Resolved (Dry-Run Output)"
+  },
+  {
+   "fieldname": "resolved_internal_course",
+   "fieldtype": "Link",
+   "label": "Resolved Internal Course",
+   "options": "Course",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolved_credit",
+   "fieldtype": "Float",
+   "label": "Resolved Credit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resolved_grade_code",
+   "fieldtype": "Data",
+   "label": "Resolved Grade Code",
+   "read_only": 1
+  },
+  {
+   "description": "Target-scale threshold (serving grade-point role) corresponding to the resolved grade code at entry time.",
+   "fieldname": "resolved_grade_threshold",
+   "fieldtype": "Float",
+   "label": "Resolved Grade Threshold",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "warning",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Warning",
+   "read_only": 1
+  },
+  {
+   "description": "Registrar-provided reason for accepting a row that the dry-run flagged. Unblocks commit when a warning is raised.",
+   "fieldname": "override_note",
+   "fieldtype": "Small Text",
+   "label": "Override Note"
+  },
+  {
+   "description": "Back-pointer to the Program Enrollment that received this row post-commit.",
+   "fieldname": "committed_program_enrollment",
+   "fieldtype": "Link",
+   "label": "Committed Program Enrollment",
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "description": "CSV-friendly alternative to the Student link. Resolved to a Student record via Student.user during Dry-Run. Required unless a Student is set directly.",
+   "fieldname": "student_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student email",
+   "mandatory_depends_on": "eval:!doc.student",
+   "read_only_depends_on": "eval:!doc.student;"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-20 11:59:19.366956",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Partner Transcript Import Row",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

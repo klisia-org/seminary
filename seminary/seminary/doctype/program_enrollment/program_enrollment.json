@@ -98,7 +98,8 @@
    "label": "Courses Taken"
   },
   {
-   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades.",
+   "allow_on_submit": 1,
+   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades. Transferred/legacy rows may be appended via Partner Transcript Import Batch after submission.",
    "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",

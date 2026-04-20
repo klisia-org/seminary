@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:TRIM-{YY}-{#####}",
+ "creation": "2026-04-20 12:00:00",
+ "description": "Orchestrates the stage \u2192 resolve \u2192 dry-run \u2192 commit workflow for both legacy bulk import and single-student external transfer. See ADR 005 'Legacy Bulk Import Workflow'.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_seminary",
+  "batch_status",
+  "column_break_header",
+  "target_program",
+  "target_academic_term",
+  "rows_section",
+  "rows",
+  "audit_section",
+  "committed_on",
+  "committed_by",
+  "support_doc",
+  "column_break_audit",
+  "notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_seminary",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Seminary",
+   "options": "Partner Seminary",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "description": "Draft \u2192 Dry-Run Clean (validation passed or overridden) \u2192 Committed (submitted).",
+   "fieldname": "batch_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch Status",
+   "options": "Draft\nDry-Run Clean\nCommitted",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The program at this institution the credits apply toward. Each row's resolved internal course should be a course in this program's catalog.",
+   "fieldname": "target_program",
+   "fieldtype": "Link",
+   "label": "Target Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "description": "For legacy imports, rows may override this with their own source_term (mapped to a historical Academic Term). For external transfer, this is typically the student's current term or a designated 'Transfer Credit' term.",
+   "fieldname": "target_academic_term",
+   "fieldtype": "Link",
+   "label": "Target Academic Term",
+   "options": "Academic Term"
+  },
+  {
+   "fieldname": "rows_section",
+   "fieldtype": "Section Break",
+   "label": "Rows"
+  },
+  {
+   "fieldname": "rows",
+   "fieldtype": "Table",
+   "label": "Rows",
+   "options": "Partner Transcript Import Row"
+  },
+  {
+   "fieldname": "audit_section",
+   "fieldtype": "Section Break",
+   "label": "Audit"
+  },
+  {
+   "fieldname": "committed_on",
+   "fieldtype": "Datetime",
+   "label": "Committed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_by",
+   "fieldtype": "Link",
+   "label": "Committed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Partner Transcript Import Batch",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "support_doc",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-20 09:53:12.933708",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Partner Transcript Import Batch",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

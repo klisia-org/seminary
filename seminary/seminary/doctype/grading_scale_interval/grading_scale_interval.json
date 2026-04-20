@@ -20,8 +20,9 @@
   },
   {
    "default": "0",
+   "description": "Minimum numeric value (in the scale's native units) that earns this Grade Code. For Descriptive scales, populate with the grade-point value (e.g., Distinction = 4.0) when GPA participation is desired.",
    "fieldname": "threshold",
-   "fieldtype": "Percent",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Threshold",
    "mandatory_depends_on": "parent.grscale_type==Points"
