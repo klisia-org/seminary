@@ -87,9 +87,9 @@ Partner Transcript Import Batch drives both the manual single-student case and t
 3. You can download a CSV template from the tool to upload your data. Note that you do not need to repeat the initial fields (parent seminary, target program, and target academic term)
 
     ```csv
-Partner Seminary,Target Program,Target Academic Term,Source Course Code (Rows),Source Grade (Rows),Source Term (Rows),Student email (Rows)
-T-LINK,Master of Divinity,2025-2026 (SP26),SFD-101,A,1S 24,modest@gmail.com
-,,,THM-201,A,1S24,modest@gmail.com
+    Partner Seminary,Target Program,Target Academic Term,Source Course Code (Rows),Source Grade (Rows),Source Term (Rows),Student email (Rows)
+    T-LINK,Master of Divinity,2025-2026 (SP26),SFD-101,A,1S 24,modest@gmail.com
+    ,,,THM-201,A,1S24,modest@gmail.com
     ```
 
 4. Upon successful import, Open the Batch — all rows should be in the grid with `Student` blank and `Student Email` populated.
