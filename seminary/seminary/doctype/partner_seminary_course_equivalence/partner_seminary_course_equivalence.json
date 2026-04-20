@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:{partner_seminary}-{source_course_code}-{##}",
+ "creation": "2026-04-20 12:00:00.000000",
+ "description": "Submittable registrar decision that a specific course at a Partner Seminary is equivalent to a course in this institution's catalog. See ADRs 005 & 006.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_seminary",
+  "mapping_type",
+  "column_break_header",
+  "internal_course",
+  "source_section",
+  "source_course_code",
+  "source_course_name",
+  "source_credit_value",
+  "overrides_section",
+  "credit_override",
+  "conversion_policy_override",
+  "evidence_section",
+  "supporting_document",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_seminary",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Seminary",
+   "options": "Partner Seminary",
+   "reqd": 1
+  },
+  {
+   "default": "equivalence",
+   "fieldname": "mapping_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Mapping Type",
+   "options": "legacy_identity\nequivalence",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The course in this institution's catalog that the partner course maps to.",
+   "fieldname": "internal_course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Internal Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source Course"
+  },
+  {
+   "fieldname": "source_course_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source Course Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "source_course_name",
+   "fieldtype": "Data",
+   "label": "Source Course Name"
+  },
+  {
+   "description": "Credits on the partner's side (before credit_unit_ratio is applied).",
+   "fieldname": "source_credit_value",
+   "fieldtype": "Float",
+   "label": "Source Credit Value"
+  },
+  {
+   "fieldname": "overrides_section",
+   "fieldtype": "Section Break",
+   "label": "Overrides"
+  },
+  {
+   "description": "Optional override for the resolved internal credit. If blank, uses Partner Seminary.credit_unit_ratio \u00d7 source_credit_value.",
+   "fieldname": "credit_override",
+   "fieldtype": "Float",
+   "label": "Credit Override"
+  },
+  {
+   "description": "Optional per-course conversion policy override. Rare; used when a specific course uses a different scale than the partner's default (e.g., a music department using pass/fail).",
+   "fieldname": "conversion_policy_override",
+   "fieldtype": "Link",
+   "label": "Conversion Policy Override",
+   "options": "Grade Conversion Policy"
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "description": "Decision artifact (director approval email, committee minutes, accreditor letter) authorizing this equivalence.",
+   "fieldname": "supporting_document",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Partner Seminary Course Equivalence",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Partner Seminary Course Equivalence",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

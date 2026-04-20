@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2017-04-10 19:28:19.616308",
- "description": "This is a child table of Program Enrollment",
+ "description": "This is a child table of Program Enrollment. Rows may represent internal course offerings (populated via Course Schedule) or transferred/legacy grades from a Partner Seminary.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -9,26 +9,39 @@
   "course",
   "course_name",
   "academic_term",
-  "pec_finalgradenum",
   "pec_finalgradecode",
+  "pec_finalgradenum",
   "credits",
-  "status"
+  "status",
+  "is_transfer",
+  "transfer_section",
+  "partner_seminary",
+  "mapping_type",
+  "course_equivalence",
+  "conversion_policy_applied",
+  "column_break_transfer",
+  "source_course_code",
+  "source_term",
+  "source_grade",
+  "external_reference",
+  "conversion_warning",
+  "conversion_override_note"
  ],
  "fields": [
   {
    "columns": 2,
-   "description": "This should bring Course Schedule where the program_enrollment.student is enrolled.",
+   "description": "Course Schedule for an internal course offering the student attended. Leave blank for transferred/legacy rows.",
    "fieldname": "course",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Course",
-   "options": "Course Schedule",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.partner_seminary",
+   "options": "Course Schedule"
   },
   {
    "fetch_from": "course.course",
    "fieldname": "course_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Course Name",
    "read_only": 1
   },
@@ -70,17 +83,106 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Pass/Fail"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:!doc.partner_seminary",
+   "description": "Fields populated only when this row represents a transferred or legacy grade from a Partner Seminary. See ADRs 005 & 006.",
+   "fieldname": "transfer_section",
+   "fieldtype": "Section Break",
+   "label": "Transfer / Legacy"
+  },
+  {
+   "description": "Presence of this field flags the row as transferred/legacy rather than an internal course offering.",
+   "fieldname": "partner_seminary",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Partner Seminary",
+   "options": "Partner Seminary"
+  },
+  {
+   "fieldname": "mapping_type",
+   "fieldtype": "Select",
+   "label": "Mapping Type",
+   "mandatory_depends_on": "eval:!!doc.partner_seminary",
+   "options": "\nlegacy_identity\nequivalence"
+  },
+  {
+   "description": "The submitted equivalence record that authorized this mapping.",
+   "fieldname": "course_equivalence",
+   "fieldtype": "Link",
+   "label": "Course Equivalence",
+   "mandatory_depends_on": "eval:!!doc.partner_seminary",
+   "options": "Partner Seminary Course Equivalence"
+  },
+  {
+   "description": "Submitted conversion policy applied at grade-entry time (stable via Frappe's amendment pattern).",
+   "fieldname": "conversion_policy_applied",
+   "fieldtype": "Link",
+   "label": "Conversion Policy Applied",
+   "mandatory_depends_on": "eval:!!doc.partner_seminary",
+   "options": "Grade Conversion Policy"
+  },
+  {
+   "fieldname": "column_break_transfer",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Course code as recorded by the partner. Part of the idempotency key for re-importable batches.",
+   "fieldname": "source_course_code",
+   "fieldtype": "Data",
+   "label": "Source Course Code"
+  },
+  {
+   "description": "Partner's term label (free text; partner terms are not tracked as Academic Term records).",
+   "fieldname": "source_term",
+   "fieldtype": "Data",
+   "label": "Source Term"
+  },
+  {
+   "description": "Original grade as recorded by the partner, pre-conversion.",
+   "fieldname": "source_grade",
+   "fieldtype": "Data",
+   "label": "Source Grade"
+  },
+  {
+   "description": "Source-system ID when available; takes precedence over the natural key for idempotency.",
+   "fieldname": "external_reference",
+   "fieldtype": "Data",
+   "label": "External Reference"
+  },
+  {
+   "default": "None",
+   "description": "Warning raised during conversion (per ADR 006 rounding/out-of-range rules).",
+   "fieldname": "conversion_warning",
+   "fieldtype": "Select",
+   "label": "Conversion Warning",
+   "options": "None\nclamped_high\nclamped_low\nminimum_transferable_override"
+  },
+  {
+   "description": "Reason captured when a registrar overrode a minimum-transferable-grade block.",
+   "fieldname": "conversion_override_note",
+   "fieldtype": "Small Text",
+   "label": "Conversion Override Note"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_transfer",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Transfer"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2024-06-08 17:49:03.288115",
+ "modified": "2026-04-20 10:14:45.403898",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment Course",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

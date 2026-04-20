@@ -36,6 +36,8 @@ export default defineConfig({
         items: [
           { text: 'Installation', link: '/getting-started/installation' },
           { text: 'Initial Setup', link: '/getting-started/initial-setup' },
+          { text: 'Pricing Strategy', link: '/getting-started/pricing-strategy' },
+          { text: 'Legacy Grade Import', link: '/getting-started/legacy-grade-import' },
           { text: 'Your First Term', link: '/getting-started/first-term' },
           { text: 'Translations', link: '/getting-started/translations' },
         ],

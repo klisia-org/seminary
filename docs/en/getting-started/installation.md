@@ -1,28 +1,30 @@
 # Installation
 
-!!! note "Prerequisites"
-    SeminaryERP requires a working [Frappe Bench](https://frappeframework.com/docs/user/en/installation) environment with ERPNext installed.
+::: info Prerequisites
+SeminaryERP requires a working [Frappe Bench](https://frappeframework.com/docs/user/en/installation) environment with ERPNext installed.
+:::
 
 ## Install the app
 
 ```bash
 bench get-app https://github.com/klisia-org/seminary.git
-bench --site your-site.localhost install-app seminary
-bench --site your-site.localhost migrate
+bench --site your-site install-app seminary
+bench --site your-site migrate
 ```
 
 ## Install the LMS frontend
 
 ```bash
-cd apps/seminary
+cd apps/seminary/frontend
 yarn install
 ```
 
-## Development mode
+## For online payments, install Payments
 
-```bash
-bench --site your-site.localhost set-config developer_mode 1
-bench start
+ ```bash
+bench get-app payments
+bench --site your-site install-app payments
+bench --site your-site migrate
 ```
 
 The LMS frontend is available at `/seminary` on your site.

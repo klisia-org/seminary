@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-04-20 12:00:00",
+ "description": "Child table of Grade Conversion Policy (interval_map method). Maps a source-scale symbol to a target-scale symbol. The target-scale grade-point value is resolved at conversion time from the target Grading Scale Interval's threshold.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "source_symbol",
+  "target_symbol",
+  "notes"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "source_symbol",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Source Symbol",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "target_symbol",
+   "fieldtype": "Autocomplete",
+   "in_list_view": 1,
+   "label": "Target Symbol",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-20 09:10:30.634384",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grade Conversion Map",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
