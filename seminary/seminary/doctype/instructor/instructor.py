@@ -2,41 +2,65 @@
 # For license information, please see license.txt
 
 
+import time
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.model.naming import set_name_by_naming_series
-import time
 
 
 class Instructor(Document):
-    pass
-    # def autoname(self):
-    # 	naming_method = frappe.db.get_value(
-    # 		"Seminary Settings", None, "instructor_created_by"
-    # 	)
-    # 	if not naming_method:
-    # 		frappe.throw(
-    # 			_("Please setup Instructor Naming System in Seminary > Seminary Settings")
-    # 		)
-    # 	else:
-    # 		if naming_method == "Naming Series":
-    # 			set_name_by_naming_series(self)
-    # 		elif naming_method == "Employee Number":
-    # 			if not self.employee:
-    # 				frappe.throw(_("Please select Employee"))
-    # 			self.name = self.employee
-    # 		elif naming_method == "Full Name":
-    # 			self.name = self.instructor_name
+    def validate(self):
+        self.validate_payroll_link()
 
-    # def validate(self):
-    # 	self.validate_duplicate_employee()
+    def validate_payroll_link(self):
+        if not self.instructor_type:
+            return
+        if self.instructor_type == "Volunteer":
+            return
+        if not self.employee:
+            frappe.throw(
+                _("Instructor Type {0} requires an Employee link for payroll.").format(
+                    self.instructor_type
+                )
+            )
 
-    # def validate_duplicate_employee(self):
-    # 	if self.employee and frappe.db.get_value(
-    # 		"Instructor", {"employee": self.employee, "name": ["!=", self.name]}, "name"
-    # 	):
-    # 		frappe.throw(_("Employee ID is linked with another instructor"))
+    @frappe.whitelist()
+    def create_supplier(self, supplier_group=None):
+        """Create a Supplier from this Instructor and link it back.
+
+        Used for Volunteer / honorarium billing via Purchase Invoice.
+        """
+        if self.supplier:
+            frappe.msgprint(
+                _("Supplier {0} is already linked to this Instructor.").format(
+                    self.supplier
+                )
+            )
+            return self.supplier
+
+        group = supplier_group or (
+            "Instructor"
+            if frappe.db.exists("Supplier Group", "Instructor")
+            else frappe.db.get_single_value("Buying Settings", "supplier_group")
+        )
+
+        supplier = frappe.get_doc(
+            {
+                "doctype": "Supplier",
+                "supplier_name": self.instructor_name,
+                "supplier_group": group,
+                "supplier_type": "Individual",
+                "email_id": self.prof_email,
+                "mobile_no": self.phone_message,
+            }
+        ).insert(ignore_permissions=True)
+
+        self.db_set("supplier", supplier.name)
+        frappe.msgprint(
+            _("Supplier {0} created and linked.").format(supplier.name), alert=True
+        )
+        return supplier.name
 
 
 def get_roles_with_write_permission():
@@ -50,7 +74,6 @@ def get_roles_with_write_permission():
         },
         pluck="role",
     )
-    # print(f"Roles with write permission on Instructors: {writable_roles}")
     return writable_roles
 
 
@@ -61,16 +84,11 @@ def user_has_only_instructor_role(user):
     roles, don't restrict them.
     """
     user_roles = frappe.get_roles(user)
-    # print(f"User Roles for {user}: {user_roles}")
     write_roles = get_roles_with_write_permission()
-    # print(f"Write Roles for {user}: {write_roles}")
 
-    # Roles this user has that grant write access to Instructors
     user_write_roles = set(user_roles) & set(write_roles)
-    # print(f"User Write Roles for {user}: {user_write_roles}")
 
-    # Only restrict if "Instructor" is the sole write role they have
-    instructor_role = frappe._("Instructor")  # translatable
+    instructor_role = frappe._("Instructor")
     return user_write_roles == {instructor_role}
 
 
@@ -78,11 +96,9 @@ def has_permission(doc, ptype, user):
     if not user:
         user = frappe.session.user
 
-    # Only apply filtering for users whose sole write role is "Instructor"
     if not user_has_only_instructor_role(user):
         return True
 
-    # Instructor can only access their own record
     return doc.user == user
 
 
@@ -111,25 +127,21 @@ def get_timeline_data(doctype, name):
             name,
         )
     )
-    print(timeline_data)
     if not timeline_data:
-        timeline_data = {
-            int(time.time()): 0
-        }  # Set current date as cs_meetdate if timeline_data is empty
+        timeline_data = {int(time.time()): 0}
     return timeline_data
 
 
 @frappe.whitelist()
 def update_instructorlog(doc):
-    """Update Instructor Log"""
+    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster."""
 
     inst = frappe.get_doc("Instructor", doc)
     instructor = inst.name
-    print("Instructor: " + instructor)
-    """Update Instructor log"""
+
     current_instructor_log = frappe.db.sql(
         """
-		select course, academic_term, inst_record, n_students
+		select course, academic_term, instructor_category, n_students
 		from `tabInstructor Log`
 		where parent = %s
 		""",
@@ -138,10 +150,10 @@ def update_instructorlog(doc):
     )
     full_instructor_log = frappe.db.sql(
         """
-		select cs.name, cs.academic_term, csi.inst_record, count(r.name) as students
+		select cs.name, cs.academic_term, csi.instructor_category, count(r.name) as students
 		from `tabCourse Schedule Instructors` csi, `tabCourse Schedule` cs, `tabScheduled Course Roster` r
 		where csi.parent = cs.name and cs.name = r.course_sc and csi.instructor = %s
-		group by cs.name, cs.academic_term, csi.inst_record
+		group by cs.name, cs.academic_term, csi.instructor_category
 		""",
         instructor,
         as_list=1,
@@ -154,18 +166,17 @@ def update_instructorlog(doc):
         else:
             instructor_log.append(log)
 
-    if instructor_log:
-        for log in instructor_log:
-            doc = frappe.new_doc("Instructor Log")
-            doc.course = log[0]
-            doc.academic_term = log[1]
-            doc.inst_record = log[2]
-            doc.n_students = log[3]
-            doc.parent = instructor
-            doc.parentfield = "instructor_log"
-            doc.parenttype = "Instructor"
-            doc.save()
-            frappe.db.commit()
-
-    else:
+    if not instructor_log:
         return
+
+    for log in instructor_log:
+        row = frappe.new_doc("Instructor Log")
+        row.course = log[0]
+        row.academic_term = log[1]
+        row.instructor_category = log[2]
+        row.n_students = log[3]
+        row.parent = instructor
+        row.parentfield = "instructor_log"
+        row.parenttype = "Instructor"
+        row.save()
+        frappe.db.commit()

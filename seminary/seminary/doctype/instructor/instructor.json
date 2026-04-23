@@ -14,7 +14,11 @@
   "status",
   "department",
   "profileimage",
+  "hr_payroll_section",
+  "instructor_type",
   "employee",
+  "column_break_hr",
+  "supplier",
   "communication_preferences_section",
   "prof_email",
   "column_break_srsj",
@@ -39,11 +43,37 @@
    "search_index": 1
   },
   {
+   "fieldname": "hr_payroll_section",
+   "fieldtype": "Section Break",
+   "label": "HR / Payroll"
+  },
+  {
+   "default": "Volunteer",
+   "description": "Drives how this instructor is compensated. Volunteer uses Supplier + Purchase Invoice; Salaried and Per-Course use HRMS Employee + Salary Slip.",
+   "fieldname": "instructor_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Instructor Type",
+   "options": "Volunteer\nSalaried\nPer-Course"
+  },
+  {
+   "depends_on": "eval:doc.instructor_type && doc.instructor_type != \"Volunteer\"",
    "fieldname": "employee",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Employee",
    "options": "Employee"
+  },
+  {
+   "fieldname": "column_break_hr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.instructor_type == \"Volunteer\"",
+   "description": "Used to bill honoraria or love offerings via Purchase Invoice. Click \"Create Supplier\" in the form menu to auto-create.",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "Supplier"
   },
   {
    "fieldname": "column_break_5",
@@ -146,8 +176,8 @@
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-04-08 17:22:02.760407",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-04-23 08:01:48.583428",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
  "naming_rule": "Expression (old style)",

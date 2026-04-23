@@ -19,6 +19,7 @@ Open **Seminary Settings** in the Desk. This is the seminary-wide control panel:
 - **Scholarships** — Cost Center and Default Customer
 - **Audits** — whether to allow non-credit students, and how they are charged (flat fee or per-credit hour)
 - **Course withdrawal** — baseline policy (detailed rules are configured in the [Withdrawal module](../modules/withdrawal.md))
+- **HR/Payroll** - You may extend SeminaryERP functionality with our integration with Frappe HRMS to process payroll. In order to do this, click on [Enable HRMS Payroll](../modules/instructor-payment.md)
 - **Student Portal** — toggle each capability students will have:
     - Request course enrollments
     - Request course withdrawals

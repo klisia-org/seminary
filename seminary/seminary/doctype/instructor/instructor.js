@@ -23,7 +23,14 @@ frappe.ui.form.on("Instructor", {
 	},
 	refresh: function(frm) {
 
-
+		if (!frm.is_new() && frm.doc.instructor_type === "Volunteer" && !frm.doc.supplier) {
+			frm.add_custom_button(__("Create Supplier"), function() {
+				frm.call({
+					method: "create_supplier",
+					doc: frm.doc,
+				}).then(() => frm.reload_doc());
+			}, __("Actions"));
+		}
 
 		frm.set_query("employee", function(doc) {
 			return {

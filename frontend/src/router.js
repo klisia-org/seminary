@@ -245,6 +245,11 @@ const routes = [
     component: () => import('@/pages/Enrollment.vue'),
   },
   {
+    path: "/announcements",
+    name: "Announcements",
+    component: () => import('@/pages/Announcements.vue'),
+  },
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }

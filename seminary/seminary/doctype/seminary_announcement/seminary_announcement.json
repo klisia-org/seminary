@@ -1,0 +1,229 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:ANN-{academic_term}-{####}",
+ "creation": "2026-04-23 00:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "subject",
+  "academic_term",
+  "column_break_hdr",
+  "status",
+  "scheduled_datetime",
+  "sent_datetime",
+  "recipient_count",
+  "message_section",
+  "message",
+  "audience_section",
+  "audience_students_enrolled",
+  "audience_instructors_teaching",
+  "column_break_audience",
+  "programs",
+  "courses",
+  "custom_filter_section",
+  "custom_filter_doctype",
+  "custom_email_field",
+  "custom_filters",
+  "recipients_tab",
+  "recipients_section",
+  "recipients",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_global_search": 1,
+   "label": "Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Term",
+   "options": "Academic Term",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nQueued\nSending\nSent\nFailed",
+   "read_only": 1
+  },
+  {
+   "description": "Leave blank to send immediately on submit.",
+   "fieldname": "scheduled_datetime",
+   "fieldtype": "Datetime",
+   "label": "Send At"
+  },
+  {
+   "fieldname": "sent_datetime",
+   "fieldtype": "Datetime",
+   "label": "Sent At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "recipient_count",
+   "fieldtype": "Int",
+   "label": "Recipients",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_section",
+   "fieldtype": "Section Break",
+   "label": "Message"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Text Editor",
+   "label": "Message",
+   "reqd": 1
+  },
+  {
+   "fieldname": "audience_section",
+   "fieldtype": "Section Break",
+   "label": "Audience"
+  },
+  {
+   "default": "0",
+   "description": "All students with a non-withdrawn Course Enrollment for a Course Schedule in the selected term.",
+   "fieldname": "audience_students_enrolled",
+   "fieldtype": "Check",
+   "label": "All students enrolled this term"
+  },
+  {
+   "default": "0",
+   "description": "All instructors listed on a Course Schedule in the selected term.",
+   "fieldname": "audience_instructors_teaching",
+   "fieldtype": "Check",
+   "label": "All instructors teaching this term"
+  },
+  {
+   "fieldname": "column_break_audience",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "If set, narrows the student audience to these programs. Leave empty for all programs.",
+   "fieldname": "programs",
+   "fieldtype": "Table",
+   "label": "Only these Programs",
+   "options": "Seminary Announcement Program"
+  },
+  {
+   "description": "If set, narrows to these course schedules: their students (and, if the instructor checkbox is on, their instructors).",
+   "fieldname": "courses",
+   "fieldtype": "Table",
+   "label": "Only these Course Schedules",
+   "options": "Seminary Announcement Course"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "custom_filter_section",
+   "fieldtype": "Section Break",
+   "label": "Custom Filter (advanced)"
+  },
+  {
+   "description": "Advanced: pick any doctype and filter it. Matching records will also receive the announcement.",
+   "fieldname": "custom_filter_doctype",
+   "fieldtype": "Link",
+   "label": "Filter DocType",
+   "options": "DocType"
+  },
+  {
+   "default": "email",
+   "description": "Name of the email field on the selected doctype (e.g., student_email_id, prof_email, email).",
+   "fieldname": "custom_email_field",
+   "fieldtype": "Data",
+   "label": "Email Field"
+  },
+  {
+   "description": "JSON list of filters, e.g. [[\"Student\",\"enabled\",\"=\",1]].",
+   "fieldname": "custom_filters",
+   "fieldtype": "Code",
+   "label": "Filters (JSON)",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "recipients_tab",
+   "fieldtype": "Tab Break",
+   "label": "Recipients"
+  },
+  {
+   "fieldname": "recipients_section",
+   "fieldtype": "Section Break",
+   "label": "Resolved Recipients"
+  },
+  {
+   "description": "Populated on submit. Reflects everyone this announcement was sent to, with per-recipient delivery status.",
+   "fieldname": "recipients",
+   "fieldtype": "Table",
+   "label": "Recipients",
+   "options": "Seminary Announcement Recipient",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Seminary Announcement",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Announcement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "subject",
+ "track_changes": 1
+}

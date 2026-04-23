@@ -34,6 +34,10 @@
   "min_perc_enroll",
   "section_break_7",
   "instructor_created_by",
+  "hr_payroll_section",
+  "hrms_enable",
+  "instructor_payment_split",
+  "hrms_live_date",
   "demo_section",
   "demo_data_installed",
   "column_break_xyvi",
@@ -348,6 +352,34 @@
    "hidden": 1,
    "label": "Payment Gateway",
    "options": "Payment Gateway"
+  },
+  {
+   "fieldname": "hr_payroll_section",
+   "fieldtype": "Section Break",
+   "label": "HR / Payroll"
+  },
+  {
+   "default": "0",
+   "description": "This requires the installation of another app \"HRMS\" by Frappe. HRMS enables payroll for salaried and per-course instructors via Salary Structure, Payroll Entry, and Salary Slip.",
+   "fieldname": "hrms_enable",
+   "fieldtype": "Check",
+   "label": "Enable HRMS Payroll"
+  },
+  {
+   "default": "End of period",
+   "depends_on": "eval:doc.hrms_enable",
+   "description": "Controls when per-course instructor pay is released across Salary Slips. 'End of period' pays the full amount on the slip whose period contains the course's term end date. '50% at start + 50% at end' splits the pay between the term-start and term-end slips.",
+   "fieldname": "instructor_payment_split",
+   "fieldtype": "Select",
+   "label": "Instructor Payment Split",
+   "options": "End of period\n50% at start + 50% at end"
+  },
+  {
+   "depends_on": "eval:doc.hrms_enable",
+   "description": "Cutoff for HRMS-driven instructor pay. Only courses whose start date is on or after this date are considered. Leave blank to include all history. Use this to adopt HRMS mid-operation without sweeping legacy courses into the first payroll run.",
+   "fieldname": "hrms_live_date",
+   "fieldtype": "Date",
+   "label": "HRMS Live Date (Pay Cutoff)"
   }
  ],
  "issingle": 1,
