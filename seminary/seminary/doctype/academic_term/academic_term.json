@@ -1,9 +1,9 @@
 {
  "actions": [
   {
-   "action": "seminary.seminary.api.set_iscurrent_acterm",
+   "action": "seminary.seminary.api.roll_students",
    "action_type": "Server Action",
-   "label": "Roll Terms"
+   "label": "Advance Students"
   }
  ],
  "allow_import": 1,
@@ -22,6 +22,7 @@
   "term_start_date",
   "term_end_date",
   "title",
+  "invoiced_nat_on",
   "connections_tab"
  ],
  "fields": [
@@ -88,6 +89,14 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Open for Enrollment"
+  },
+  {
+   "description": "Date the New-Academic-Term invoices were generated for this term. Clear to re-run.",
+   "fieldname": "invoiced_nat_on",
+   "fieldtype": "Date",
+   "label": "NAT Invoices Generated On",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "links": [

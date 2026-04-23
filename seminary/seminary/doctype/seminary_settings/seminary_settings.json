@@ -8,6 +8,7 @@
   "general_tab",
   "logo_portal",
   "auto_submit_sales_invoice",
+  "billing_automation_enabled",
   "column_break_4",
   "logo_dark",
   "academic_term_reqd",
@@ -83,6 +84,13 @@
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
    "label": "Submit Sales Invoice from Enrollments"
+  },
+  {
+   "default": "1",
+   "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
+   "fieldname": "billing_automation_enabled",
+   "fieldtype": "Check",
+   "label": "Enable Automated Billing"
   },
   {
    "fieldname": "accounts_section",

@@ -15,7 +15,9 @@
   "pf_payers",
   "section_break_jxev",
   "stu_link",
-  "si_created"
+  "si_created",
+  "section_break_pbgg",
+  "change_reason"
  ],
  "fields": [
   {
@@ -90,15 +92,25 @@
    "in_list_view": 1,
    "label": "Scholarship",
    "options": "Scholarships"
+  },
+  {
+   "fieldname": "section_break_pbgg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Required when you change payer shares. Auto-cleared after save \u2014 enter a fresh reason for each edit. Examples: 'Pastor Joe (Oak St Church) called 2026-05-15 \u2014 church stops paying after May.', 'Scholarship awarded.'",
+   "fieldname": "change_reason",
+   "fieldtype": "Small Text",
+   "label": "Change reason"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-27 11:20:41.462568",
+ "modified": "2026-04-22 17:22:53.949392",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Payers Fee Category PE",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -114,7 +126,10 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

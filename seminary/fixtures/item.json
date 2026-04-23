@@ -196,7 +196,7 @@
   "serial_no_series": null,
   "shelf_life_in_days": 0,
   "standard_rate": 0.0,
-  "stock_uom": "Unit",
+  "stock_uom": "Fee",
   "supplier_items": [],
   "taxes": [],
   "total_projected_qty": 0.0,
@@ -206,7 +206,7 @@
     "parent": "Admission Fee",
     "parentfield": "uoms",
     "parenttype": "Item",
-    "uom": "Unit"
+    "uom": "Fee"
    }
   ],
   "valuation_method": "",
@@ -314,7 +314,7 @@
   "serial_no_series": null,
   "shelf_life_in_days": 0,
   "standard_rate": 0.0,
-  "stock_uom": "Unit",
+  "stock_uom": "Fee",
   "supplier_items": [],
   "taxes": [],
   "total_projected_qty": 0.0,
@@ -324,7 +324,7 @@
     "parent": "Donations - Scholarships",
     "parentfield": "uoms",
     "parenttype": "Item",
-    "uom": "Unit"
+    "uom": "Fee"
    }
   ],
   "valuation_method": "",

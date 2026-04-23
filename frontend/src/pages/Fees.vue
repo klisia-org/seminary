@@ -70,7 +70,7 @@
 							<div class="text-xs text-ink-gray-5">{{ row.posting_date }}</div>
 						</td>
 						<td class="py-2 px-3">
-							<span v-if="row.course" class="text-ink-gray-7">{{ row.course }}</span>
+							<span v-if="row.summary || row.course" class="text-ink-gray-7">{{ row.summary || row.course }}</span>
 							<span v-else class="text-ink-gray-4">-</span>
 						</td>
 						<td class="py-2 px-3 text-right">
