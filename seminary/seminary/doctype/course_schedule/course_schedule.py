@@ -28,7 +28,21 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
+        self.validate_instructor_categories()
         self.clean_name()
+
+    def validate_instructor_categories(self):
+        """When HRMS payroll is enabled, every instructor row needs a category."""
+        if not frappe.db.get_single_value("Seminary Settings", "hrms_enable"):
+            return
+        for row in self.get("instructor1", []):
+            if not row.instructor_category:
+                frappe.throw(
+                    _(
+                        "Instructor {0} (row {1}) is missing an Instructor Category. "
+                        "Category is required while HRMS Payroll is enabled."
+                    ).format(row.instructor or "?", row.idx)
+                )
 
     def set_title(self):
         section = self.section if hasattr(self, "section") and self.section else ""

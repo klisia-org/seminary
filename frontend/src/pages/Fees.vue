@@ -256,7 +256,7 @@ const formatAbs = (value) => {
 }
 
 const openInvoicePDF = (row) => {
-	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&format=${encodeURIComponent('Standard')}`
+	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}`
 	window.open(url, '_blank')
 }
 

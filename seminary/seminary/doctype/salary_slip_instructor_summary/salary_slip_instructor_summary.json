@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "creation": "2026-04-23 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "instructor_log",
+  "course",
+  "instructor_category",
+  "pay_mode",
+  "courses_count",
+  "students_count",
+  "payment_event",
+  "portion",
+  "rate_applied",
+  "subtotal"
+ ],
+ "fields": [
+  {
+   "fieldname": "instructor_log",
+   "fieldtype": "Data",
+   "label": "Instructor Log Row",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Category",
+   "options": "Instructor Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pay_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Pay Mode",
+   "options": "Per-Course\nPer-Student"
+  },
+  {
+   "default": "0",
+   "fieldname": "courses_count",
+   "fieldtype": "Int",
+   "label": "Courses",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "students_count",
+   "fieldtype": "Int",
+   "label": "Students",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "payment_event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event",
+   "options": "\nStart\nEnd\nFull"
+  },
+  {
+   "default": "100",
+   "fieldname": "portion",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Portion"
+  },
+  {
+   "fieldname": "rate_applied",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate"
+  },
+  {
+   "fieldname": "subtotal",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Subtotal"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-23 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Salary Slip Instructor Summary",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

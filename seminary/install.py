@@ -157,6 +157,34 @@ def setup_fixtures():
         # UOM
         {"doctype": "UOM", "uom_name": _("Academic Event"), "must_be_whole_number": 0},
         {"doctype": "UOM", "uom_name": _("Credit hour"), "must_be_whole_number": 0},
+        # Supplier Group for non-employee instructors (volunteers, guest lecturers)
+        {"doctype": "Supplier Group", "supplier_group_name": _("Instructor")},
+        # Instructor Category defaults — schools can add/remove
+        {
+            "doctype": "Instructor Category",
+            "category_name": _("Instructor of Record"),
+            "is_instructor_of_record": 1,
+            "description": _(
+                "Primary instructor responsible for the course for accreditation purposes."
+            ),
+        },
+        {
+            "doctype": "Instructor Category",
+            "category_name": _("Co-Instructor"),
+            "description": _("Shares teaching duties with the Instructor of Record."),
+        },
+        {
+            "doctype": "Instructor Category",
+            "category_name": _("Graduate Teaching Assistant"),
+            "description": _(
+                "Graduate student assisting with teaching and grading under faculty supervision."
+            ),
+        },
+        {
+            "doctype": "Instructor Category",
+            "category_name": _("Grader"),
+            "description": _("Grades assignments and assessments only."),
+        },
     ]
     make_records(records)
 

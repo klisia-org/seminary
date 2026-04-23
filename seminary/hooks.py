@@ -275,6 +275,15 @@ doc_events = {
         "on_update_after_submit": "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
         "on_cancel": "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
     },
+    "Seminary Settings": {
+        "validate": "seminary.seminary.overrides.seminary_settings.validate",
+        "on_update": "seminary.seminary.overrides.seminary_settings.on_update",
+    },
+    "Salary Slip": {
+        "before_validate": "seminary.seminary.overrides.salary_slip.populate_instructor_summary",
+        "on_submit": "seminary.seminary.overrides.salary_slip.post_submit_instructor_log_payments",
+        "on_cancel": "seminary.seminary.overrides.salary_slip.cancel_instructor_log_payments",
+    },
 }
 
 # Scheduled Tasks
@@ -360,6 +369,7 @@ fixtures = [
     "Payment Terms Template",
     "Fee Category",
     "Program Level",
+    "Instructor Category",
     "Assessment Criteria",
     "Custom HTML Block",
     "Seminary Help Entry",
