@@ -13,6 +13,7 @@
   "date_of_conclusion",
   "column_break_4",
   "program",
+  "email",
   "emphases_section",
   "emphases",
   "academic_term",
@@ -123,7 +124,9 @@
   {
    "fieldname": "date_of_conclusion",
    "fieldtype": "Date",
-   "label": "Date of Conclusion"
+   "hidden": 1,
+   "label": "Date of Conclusion",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_tfcw",
@@ -211,6 +214,12 @@
    "fieldtype": "Int",
    "label": "Total Credits Taken (Passed)",
    "read_only": 1
+  },
+  {
+   "fetch_from": "student.student_email_id",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Student email"
   }
  ],
  "image_field": "image",
@@ -222,11 +231,11 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-04-07 15:00:00.000000",
+ "modified": "2026-04-23 17:19:36.376541",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

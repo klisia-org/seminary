@@ -51,6 +51,8 @@ export default defineConfig({
           { text: 'Academic Calendar', link: '/modules/academic-calendar' },
           { text: 'Grading', link: '/modules/grading' },
           { text: 'Discussions', link: '/modules/discussions' },
+          { text: 'Announcements', link: '/modules/announcements' },
+          { text: 'Instructor Payment', link: '/modules/instructor-payment' },
         ],
       },
       {

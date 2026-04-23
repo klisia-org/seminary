@@ -26,6 +26,15 @@ def daily():
         generate_monthly_invoices(today)
 
 
+@frappe.whitelist()
+def hourly():
+    from seminary.seminary.doctype.seminary_announcement.seminary_announcement import (
+        process_scheduled_announcements,
+    )
+
+    process_scheduled_announcements()
+
+
 def _update_term_flags(today):
     """Flip Academic Term.iscurrent_acterm / open based on today's date.
 

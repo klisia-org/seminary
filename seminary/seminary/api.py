@@ -3657,3 +3657,55 @@ def _create_balance_payment_request(sb, amount, settings):
 
     sb.db_set("payment_request", pr.name)
     return pr
+
+
+@frappe.whitelist()
+def get_my_announcements(limit=100):
+    """Return announcements sent to the current user.
+
+    Joined via Seminary Announcement Recipient matched by user or email.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please log in."), frappe.AuthenticationError)
+
+    return frappe.db.sql(
+        """
+        SELECT
+            sa.name,
+            sa.subject,
+            sa.message,
+            sa.sent_datetime,
+            sa.academic_term
+        FROM `tabSeminary Announcement Recipient` r
+        JOIN `tabSeminary Announcement` sa ON r.parent = sa.name
+        WHERE sa.docstatus = 1
+          AND sa.status = 'Sent'
+          AND r.delivery_status = 'Sent'
+          AND (r.user = %(user)s OR r.email = %(user)s)
+        ORDER BY sa.sent_datetime DESC
+        LIMIT %(limit)s
+        """,
+        {"user": frappe.session.user, "limit": cint(limit)},
+        as_dict=True,
+    )
+
+
+@frappe.whitelist()
+def preview_announcement_recipients(name):
+    """Resolve the recipient list for a draft Seminary Announcement without sending.
+
+    Returns {total, sample} where sample is the first 50 resolved rows.
+    """
+    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+        resolve_recipients,
+    )
+
+    doc = frappe.get_doc("Seminary Announcement", name)
+    if doc.docstatus != 0:
+        frappe.throw(_("Preview is only available on draft announcements."))
+
+    resolved = resolve_recipients(doc)
+    return {
+        "total": len(resolved),
+        "sample": resolved[:50],
+    }

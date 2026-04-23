@@ -294,9 +294,7 @@ scheduler_events = {
     # 		"seminary.tasks.all"
     # 	],
     "daily": ["seminary.tasks.daily"],
-    # 	"hourly": [
-    # 		"seminary.tasks.hourly"
-    # 	],
+    "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [
     # 		"seminary.tasks.weekly"
     # 	],
