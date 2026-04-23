@@ -1,6 +1,6 @@
 # Enrollment
 
-Enrollment manages how students register for courses within an academic term.
+Enrollment manages how students register for programs and courses within an academic term.
 
 ## Overview
 

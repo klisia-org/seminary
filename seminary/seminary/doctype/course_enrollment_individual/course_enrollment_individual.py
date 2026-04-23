@@ -211,13 +211,15 @@ class CourseEnrollmentIndividual(Document):
                 cost_center if inv_data[i][5] != sch_customer else sch_cost_center
             )
             discount = 0 if inv_data[i][5] != sch_customer else 100
+            audit_suffix = _(" (Audit)") if is_audit == 1 else ""
+            summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
             items.append(
                 {
-                    "doctype:": "Sales Invoice Item",
-                    "item_name": inv_data[i][12],
+                    "doctype": "Sales Invoice Item",
+                    "item_code": inv_data[i][12],
                     "qty": qty,
                     "rate": 0,
-                    "description": "Fee for " + self.name,
+                    "description": summary,
                     "income_account": income_account,
                     "cost_center": cost_center,
                     "base_rate": 0,
@@ -239,12 +241,13 @@ class CourseEnrollmentIndividual(Document):
                     "selling_price_list": inv_data[i][13],
                     "base_grand_total": gt,
                     "payment_terms_template": inv_data[i][8],
-                    "remarks": "Fee for " + self.name,
+                    "remarks": summary,
                     "items": items,
                     "cost_center": cost_center,
                     "custom_student": stulink,
                     "custom_cei": self.name,
                     "additional_discount_percentage": discount,
+                    "seminary_summary": summary,
                 }
             )
             sales_invoice.insert()

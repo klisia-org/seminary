@@ -30,6 +30,7 @@
   "courses",
   "section_break_uzvb",
   "amended",
+  "last_monthly_invoiced_on",
   "connections_tab",
   "amended_from"
  ],
@@ -184,6 +185,14 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "description": "Last calendar-1st that a Monthly-event invoice was generated for this enrollment. Clear to allow re-billing in the current month.",
+   "fieldname": "last_monthly_invoiced_on",
+   "fieldtype": "Date",
+   "label": "Last Monthly Invoiced On",
+   "no_copy": 1,
    "read_only": 1
   },
   {

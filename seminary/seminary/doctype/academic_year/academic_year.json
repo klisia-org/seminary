@@ -10,6 +10,7 @@
   "academic_year_name",
   "year_start_date",
   "year_end_date",
+  "invoiced_nay_on",
   "connections_tab"
  ],
  "fields": [
@@ -39,6 +40,14 @@
    "in_list_view": 1,
    "label": "Academic Year End Date",
    "reqd": 1
+  },
+  {
+   "description": "Date the New-Academic-Year invoices were generated for this year. Clear to re-run.",
+   "fieldname": "invoiced_nay_on",
+   "fieldtype": "Date",
+   "label": "NAY Invoices Generated On",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "fieldname": "connections_tab",

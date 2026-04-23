@@ -41,10 +41,17 @@ class Course(Document):
 @frappe.whitelist()
 def add_course_to_programs(course, programs, mandatory=False):
     programs = json.loads(programs)
+    credits = frappe.db.get_value("Course", course, "course_credits")
     for entry in programs:
         program = frappe.get_doc("Program", entry)
         program.append(
-            "courses", {"course": course, "course_name": course, "mandatory": mandatory}
+            "courses",
+            {
+                "course": course,
+                "course_name": course,
+                "required": mandatory,
+                "pgmcourse_credits": credits,
+            },
         )
         program.flags.ignore_mandatory = True
         program.save()
@@ -55,6 +62,49 @@ def add_course_to_programs(course, programs, mandatory=False):
         title=_("Programs updated"),
         indicator="green",
     )
+
+
+@frappe.whitelist()
+def bulk_add_courses_to_program(courses, program, mandatory=False):
+    if isinstance(courses, str):
+        courses = json.loads(courses)
+
+    if not frappe.has_permission("Program", "write", doc=program):
+        frappe.throw(_("Not permitted to modify Program {0}").format(program))
+
+    program_doc = frappe.get_doc("Program", program)
+    existing = {c.course for c in program_doc.courses}
+
+    credits_by_course = {
+        row.name: row.course_credits
+        for row in frappe.get_all(
+            "Course",
+            filters={"name": ["in", courses]},
+            fields=["name", "course_credits"],
+        )
+    }
+
+    added, skipped = [], []
+    for course in courses:
+        if course in existing:
+            skipped.append(course)
+            continue
+        program_doc.append(
+            "courses",
+            {
+                "course": course,
+                "course_name": course,
+                "required": mandatory,
+                "pgmcourse_credits": credits_by_course.get(course),
+            },
+        )
+        added.append(course)
+
+    if added:
+        program_doc.flags.ignore_mandatory = True
+        program_doc.save()
+
+    return {"added": added, "skipped": skipped}
 
 
 @frappe.whitelist()

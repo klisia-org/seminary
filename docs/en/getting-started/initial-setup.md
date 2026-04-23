@@ -52,23 +52,39 @@ Before entering numbers, read [Pricing Strategy](pricing-strategy.md) — how gr
 
 ## 7. Payment Terms
 
-A [Payment Terms Template](https://docs.frappe.io/erpnext/payment-terms-template) bundles one or more [Payment Terms](https://docs.frappe.io/erpnext/payment-terms) (e.g. *50% at enrollment, 50% mid-term*). Templates are attached to Fee Categories and to invoices, so create the templates you actually need before setting up Fee Categories.
+A [Payment Terms Template](https://docs.frappe.io/erpnext/payment-terms-template) bundles one or more [Payment Terms](https://docs.frappe.io/erpnext/payment-terms) (e.g. *50% at enrollment, 50% mid-term*). 
+Therefore, templates are a simple and practical way to set up **when** and **the invoice portion (%)** of an invoice should be paid.
 
-## 8. Academic Year
+Payment terms will define the due date of a invoice based on the date of its creation, as well as the percentage of the invoice to be paid.
+Templates are attached to Fee Categories and to invoices, so create the templates you actually need before setting up Fee Categories.
 
-Create your first **Academic Year**. It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
-
-## 9. Fee Category
+## 8. Fee Category
 
 A **Fee Category** is SeminaryERP's billing automation unit. Each category links:
 
 - An **ERP Item** (what is billed)
 - A **Payment Terms Template** (how it is billed)
 - A **Category Type** (Item Group) for reporting
-- A **Trigger Event** (when the charge is created — e.g. program enrollment, term enrollment, per-credit)
+- A **Event to Charge** (when the charge is created)
 - Flags for **Is Academic Credit** and **Is Audit** --Only fee categories with these indicators will be calculated per credit hour (in the case of audits, see also Seminary Settings)
 
+SeminaryERP defines the **Event to charge** and they are called programmatically. The following triggers are available for the creation of Fee Categories:
+
+- **Program Enrollment** — fires once on Program Enrollment submission.
+- **Course Enrollment** — fires once per course, on Course Enrollment submission.
+- **New Academic Term** — daily scheduler fires on the Academic Term's start date (or the next day the job runs, if cron missed).
+- **New Academic Year** — daily scheduler fires on the Academic Year's start date (or the next day the job runs, if cron missed).
+- **Monthly** — daily scheduler fires on the calendar 1st of every month for every active Program Enrollment. A `Effective From` date on the Fee Category restricts billing to program enrollments whose Enrollment Date is strictly after that date (leave blank to bill everyone currently enrolled).
+
+The three time-driven triggers (NAT / NAY / Monthly) are idempotent: the scheduler records that a period has been invoiced (via `invoiced_nat_on`, `invoiced_nay_on`, `last_monthly_invoiced_on` flags) and won't bill it twice. If a cron run is missed, the next daily run picks up any pending period. Billing can be paused globally via **Seminary Settings → Enable Automated Billing**. For one-off recovery, use **Registrar Hub → Regenerate Current-Term Invoices**.
+
 Set up one Fee Category per chargeable event so SeminaryERP can post invoices automatically when the event happens. This is why Items, Price Lists, and Payment Terms must exist first.
+
+Once Fee Categories are created, you will use them during the creation of Programs and courses.
+
+## 9. Academic Year
+
+Create your first **Academic Year**. It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
 
 ## 10. Academic Term
 
@@ -79,7 +95,10 @@ Create your first **Academic Term** inside the Academic Year:
 
 ## 11. Program
 
-A **Program** is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment. Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md).
+A **Program** is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment. 
+Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md). During enrollment, it will also be established **who** pays each fee category and what percentage (Payers Fee Category).
+
+All Fee Categories for any course of that program **must** first be linked in the Program level. 
 
 ## 12. User Roles
 
@@ -87,17 +106,26 @@ See [User Roles](../administration/user-roles.md) for configuring instructor, st
 
 ## 13. Manual Input OR Import the following data
 
-The following must be present for you to start your first term:
-1. Users
-2. Customers
-3. Students
-4. Courses (Need to link them to programs)
-5. Holiday List
-
+The following must be present for you to start your first term. 
 If you have a small numer of students and prefer to do it manually, upon creation of a Student, SeminaryERP may create both a linked user and customer. However, it is also easy to import this data. You can follow [these instructions](https://docs.frappe.io/erpnext/data-import).
 
+| ***Import*** in this order | ***Input manually*** in this order |
+| --- | --- |
+| 1. Users | 1. Students |
+| 2. Customers | 2. Courses |
+| 3. Students | 3. Holiday List |
+| 4. Courses | 4. Program Enrollment |
+| 5. Holiday List |  |
+| 6. Program Enrollment |  |
+
+Then, you need to link courses to your programs.
+It is **strongly recommended** to double-check the import and **complement** the information on Courses before adding them to Programs. Courses will propagate several pieces of information to **Course Schedule**, so its completeness of information will expedite the work every term. 
+To add them in bulk, navigate to Courses, select all courses you want to add to a Program, and click on **Actions** &rArr; **Add to Program**. A pop-up window will open where you need to select the Program that these courses should be added to. The window also has a checkbox to indicate if all the selected courses should be mandatory for this program or not.  
+
 ## 14. Import existing grades
+
 SeminaryERP uses a single process to accept grades from other seminaries that also serves to import grades from any legacy system, manually or via CSV. See [Legacy Grade Import](legacy-grade-import.md) for the full workflow — one-time Partner Seminary setup, bulk equivalence creation, dry-run validation, and idempotent commit.
+
 ---
 
 Once the above is in place, proceed to [Your First Term](first-term.md).

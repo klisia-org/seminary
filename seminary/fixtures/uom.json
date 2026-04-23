@@ -1,0 +1,9 @@
+[
+ {
+  "doctype": "UOM",
+  "enabled": 1,
+  "must_be_whole_number": 0,
+  "name": "Fee",
+  "uom_name": "Fee"
+ }
+]

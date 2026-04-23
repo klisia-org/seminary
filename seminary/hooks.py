@@ -364,6 +364,8 @@ fixtures = [
     "Custom HTML Block",
     "Seminary Help Entry",
     "Messaging App",
+    {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
+    {"dt": "Print Format", "filters": [["name", "=", "Seminary Sales Invoice"]]},
 ]
 
 

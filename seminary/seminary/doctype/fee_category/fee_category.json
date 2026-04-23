@@ -16,10 +16,12 @@
   "is_audit",
   "section_break_pziy",
   "fc_event",
+  "effective_from",
   "column_break_vahg",
   "payment_term_template",
   "section_break_sdur",
-  "description"
+  "description",
+  "amended_from"
  ],
  "fields": [
   {
@@ -96,15 +98,33 @@
    "options": "Trigger Fee Events"
   },
   {
+   "depends_on": "eval:doc.fc_event==\"Monthly\"",
+   "description": "Only bill Program Enrollments whose Enrollment Date is strictly after this date. Leave blank to bill all active enrollments.",
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "label": "Effective From"
+  },
+  {
    "default": "0",
    "fieldname": "is_audit",
    "fieldtype": "Check",
    "label": "Is Audit?"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fee Category",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "icon": "fa fa-flag",
+ "is_submittable": 1,
  "links": [],
- "modified": "2024-03-25 20:26:53.661866",
+ "modified": "2026-04-21 13:01:45.808506",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Fee Category",
@@ -148,6 +168,8 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "search_fields": "description",
  "show_name_in_global_search": 1,
  "sort_field": "modified",

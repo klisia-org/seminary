@@ -32,7 +32,7 @@
    "read_only": 1
   },
   {
-   "default": "1",
+   "default": "0",
    "fieldname": "required",
    "fieldtype": "Check",
    "in_list_view": 1,
@@ -73,8 +73,8 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-04-07 15:34:56.128391",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-04-21 06:26:47.936412",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Course",
  "owner": "Administrator",
