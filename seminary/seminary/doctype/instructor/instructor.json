@@ -27,6 +27,10 @@
   "mini_bio_section",
   "bio",
   "shortbio",
+  "education_section",
+  "education",
+  "education_last_pulled_on",
+  "education_last_pushed_on",
   "log_details",
   "instructor_log"
  ],
@@ -172,11 +176,36 @@
    "fieldtype": "Table",
    "label": "Messaging Apps",
    "options": "Instructor Messaging App"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "education_section",
+   "fieldtype": "Section Break",
+   "label": "Education"
+  },
+  {
+   "description": "Formal education history for accreditation. When an Employee is linked, use the Education menu to pull from or push to HRMS.",
+   "fieldname": "education",
+   "fieldtype": "Table",
+   "label": "Education",
+   "options": "Instructor Education"
+  },
+  {
+   "fieldname": "education_last_pulled_on",
+   "fieldtype": "Datetime",
+   "label": "Education Last Pulled from Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "education_last_pushed_on",
+   "fieldtype": "Datetime",
+   "label": "Education Last Pushed to Employee",
+   "read_only": 1
   }
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-04-23 08:01:48.583428",
+ "modified": "2026-04-24 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
