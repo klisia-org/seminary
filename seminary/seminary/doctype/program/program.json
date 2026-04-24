@@ -10,10 +10,11 @@
  "field_order": [
   "program_name",
   "department",
-  "program_type",
+  "program_director",
   "column_break_3",
   "program_abbreviation",
   "program_level",
+  "program_type",
   "section_break_pgmtype",
   "terms_complete",
   "column_break_voqj",
@@ -255,6 +256,12 @@
    "fieldname": "route",
    "fieldtype": "Data",
    "label": "Route (slug)"
+  },
+  {
+   "fieldname": "program_director",
+   "fieldtype": "Link",
+   "label": "Program Director",
+   "options": "User"
   }
  ],
  "has_web_view": 1,
@@ -279,7 +286,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-04-07 15:00:00.000000",
+ "modified": "2026-04-24 08:02:46.647989",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",
@@ -340,6 +347,7 @@
   }
  ],
  "route": "program",
+ "row_format": "Dynamic",
  "search_fields": "program_name",
  "show_name_in_global_search": 1,
  "show_title_field_in_link": 1,

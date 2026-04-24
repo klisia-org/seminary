@@ -127,6 +127,15 @@ To add them in bulk, navigate to Courses, select all courses you want to add to 
 
 SeminaryERP uses a single process to accept grades from other seminaries that also serves to import grades from any legacy system, manually or via CSV. See [Legacy Grade Import](legacy-grade-import.md) for the full workflow — one-time Partner Seminary setup, bulk equivalence creation, dry-run validation, and idempotent commit.
 
+## 15. Add Instructors
+
+Create an **Instructor** record for every person who will teach. Each instructor needs a linked **System User** (so they can log in to the Desk and LMS) and an **Instructor Type** that reflects how they are paid:
+
+- **Volunteer** — unpaid or honorarium only. Click *Create Supplier* on the form to enable honorarium billing through Purchase Invoice.
+- **Salaried** or **Per-Course** — requires [HRMS Payroll enabled](../modules/instructor-payment.md) and a linked Employee record.
+
+For accreditation, fill in the **Education** section with each instructor's degrees, institutions, and supporting documents. When an Employee is linked, use *Education → Pull from Employee* to copy education already recorded in HRMS instead of re-entering it.
+
 ---
 
 Once the above is in place, proceed to [Your First Term](first-term.md).

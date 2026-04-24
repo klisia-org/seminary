@@ -32,6 +32,32 @@ frappe.ui.form.on("Instructor", {
 			}, __("Actions"));
 		}
 
+		if (!frm.is_new() && frm.doc.employee) {
+			frappe.db.get_single_value("Seminary Settings", "hrms_enable").then((enabled) => {
+				if (!enabled) return;
+
+				frm.add_custom_button(__("Pull from Employee"), function() {
+					frappe.confirm(
+						__("Replace the current Education table with Employee's education? Seminary-only fields on existing rows will be lost."),
+						() => frm.call({
+							method: "pull_education_from_employee",
+							doc: frm.doc,
+						}).then(() => frm.reload_doc())
+					);
+				}, __("Education"));
+
+				frm.add_custom_button(__("Push to Employee"), function() {
+					frappe.confirm(
+						__("Overwrite Employee's education with this table? Accreditation-only fields are not copied."),
+						() => frm.call({
+							method: "push_education_to_employee",
+							doc: frm.doc,
+						}).then(() => frm.reload_doc())
+					);
+				}, __("Education"));
+			});
+		}
+
 		frm.set_query("employee", function(doc) {
 			return {
 				"filters": {
