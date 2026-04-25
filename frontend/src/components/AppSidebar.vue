@@ -16,6 +16,9 @@
 			</nav>
 		</div>
 		<div class="px-3 pb-6 flex flex-col gap-1">
+			<div v-if="!isSidebarCollapsed" class="px-1 pb-1">
+				<PortalSwitcher :portals="visiblePortals" />
+			</div>
 			<button
 				type="button"
 				@click="toggleTheme"
@@ -56,6 +59,17 @@ import { createResource } from 'frappe-ui';
 import { computed } from 'vue';
 import { usersStore } from '@/stores/user';
 import { useTheme } from '@/composables/useTheme';
+import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell';
+
+const portalConfig = getPortalConfig();
+
+const visiblePortals = computed(() => {
+	const roles = userResource?.data?.roles || [];
+	return portalConfig.portals.filter((p) => {
+		if (!p.roles || p.roles.length === 0) return true;
+		return p.roles.some((r) => roles.includes(r));
+	});
+});
 
 const { theme, toggleTheme } = useTheme();
 

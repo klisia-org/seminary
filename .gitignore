@@ -12,3 +12,7 @@ __pycache__/
 docs/.vitepress/dist
 docs/.vitepress/cache
 docs/node_modules
+
+# Private design notes (closed-source product integrations, business-sensitive
+# decisions). Anything in this directory is intentionally not committed.
+/privatedocs/

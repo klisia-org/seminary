@@ -1,0 +1,6 @@
+export { configurePortals, getPortalConfig } from './config.js'
+export { useSession } from './composables/useSession.js'
+export { useTheme } from './composables/useTheme.js'
+export { default as PortalHeader } from './components/PortalHeader.vue'
+export { default as PortalSwitcher } from './components/PortalSwitcher.vue'
+export { default as UserMenu } from './components/UserMenu.vue'
