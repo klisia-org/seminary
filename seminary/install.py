@@ -235,6 +235,14 @@ def get_custom_fields():
                 "options": _("Student"),
                 "insert_after": "student_info_section",
             },
+            {
+                "fieldname": "custom_cei",
+                "fieldtype": "Link",
+                "options": "Course Enrollment Individual",
+                "label": _("Course Enrollment Individual"),
+                "insert_after": "custom_student",
+                "read_only": 1,
+            },
         ],
     }
 

@@ -250,6 +250,21 @@ const routes = [
     component: () => import('@/pages/Announcements.vue'),
   },
   {
+    path: "/alumni",
+    name: "AlumniHome",
+    component: () => import('@/pages/AlumniHome.vue'),
+  },
+  {
+    path: "/alumni/directory",
+    name: "AlumniDirectory",
+    component: () => import('@/pages/AlumniDirectory.vue'),
+  },
+  {
+    path: "/alumni/profile",
+    name: "AlumniProfile",
+    component: () => import('@/pages/AlumniProfile.vue'),
+  },
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }

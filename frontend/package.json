@@ -23,6 +23,7 @@
     "@editorjs/simple-image": "^1.6.0",
     "@editorjs/table": "^2.4.4",
     "@iconify/json": "^2.2.252",
+    "@seminary/portal-shell": "link:../portal-shell",
     "@internationalized/date": "^3.7.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",

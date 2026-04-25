@@ -58,6 +58,8 @@ website_route_rules = [
         "to_route": "Program",
         "defaults": {"my-account-header.title": "Programs"},
     },
+    {"from_route": "/seminary", "to_route": "seminary"},
+    {"from_route": "/seminary/<path:app_path>", "to_route": "seminary"},
 ]
 
 # treeviews = ["Assessment Group"]
@@ -80,6 +82,12 @@ standard_portal_menu_items = [
         "role": "Student",
         "condition": "frappe.get_all('Sales Invoice', filters={'custom_student': frappe.session.user})",
     },
+    {
+        "title": "Alumni",
+        "route": "/seminary/alumni",
+        "reference_doctype": "Alumni Profile",
+        "role": "Alumni",
+    },
 ]
 
 default_roles = [
@@ -87,6 +95,11 @@ default_roles = [
         "role": "Student Applicant",
         "doctype": "Student Applicant",
         "email_field": "student_email_id",
+    },
+    {
+        "role": "Alumni",
+        "doctype": "Alumni Profile",
+        "email_field": "email",
     },
 ]
 
@@ -116,6 +129,7 @@ global_search_doctypes = {
         {"doctype": "Academic Term", "index": 21},
         {"doctype": "Academic Year", "index": 22},
         {"doctype": "Course Withdrawal Request", "index": 23},
+        {"doctype": "Alumni Profile", "index": 24},
     ]
 }
 
@@ -143,7 +157,10 @@ doctype_js = {"Customer": "seminary/public/js/customer.js"}
 # home_page = "login"
 
 # website user home page (by Role) — works for Website Users only
-role_home_page = {"Student": "/seminary/courses"}
+role_home_page = {
+    "Student": "/seminary/courses",
+    "Alumni": "/seminary/alumni",
+}
 
 # Authentication hooks
 after_login = "seminary.seminary.auth.redirect_student_on_login"
@@ -384,8 +401,3 @@ fixtures = [
 # Recommended only for DocTypes which have limited documents with untranslated names
 # For example: Role, Gender, etc.
 # translated_search_doctypes = []
-
-website_route_rules = [
-    {"from_route": "/seminary", "to_route": "seminary"},
-    {"from_route": "/seminary/<path:app_path>", "to_route": "seminary"},
-]

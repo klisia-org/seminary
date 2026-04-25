@@ -52,6 +52,7 @@ frappe.ui.form.on('Program Enrollment', {
 				callback: function(r) {
 					if (r.message) {
 						render_audit_summary(frm, r.message);
+						maybe_add_alumni_button(frm, r.message);
 					}
 				}
 			});
@@ -59,6 +60,41 @@ frappe.ui.form.on('Program Enrollment', {
 	}
 
 });
+
+function maybe_add_alumni_button(frm, audit) {
+	if (!audit.graduation_eligible) return;
+
+	frm.add_custom_button(__('Mark as Alumni'), function() {
+		frappe.confirm(
+			__('Create an Alumni Profile for {0} and grant them the Alumni role?',
+				[frm.doc.student_name]),
+			function() {
+				frappe.call({
+					method: 'seminary.alumni.api.mark_as_alumni',
+					args: { program_enrollment: frm.doc.name },
+					freeze: true,
+					freeze_message: __('Creating alumni profile...'),
+					callback: function(r) {
+						if (!r.message) return;
+						if (r.message.already_existed) {
+							frappe.msgprint({
+								title: __('Already an Alumnus'),
+								message: __('This student already has an alumni profile.'),
+								indicator: 'orange',
+							});
+						} else {
+							frappe.show_alert({
+								message: __('Alumni profile created.'),
+								indicator: 'green',
+							});
+						}
+						frappe.set_route('Form', 'Alumni Profile', r.message.name);
+					},
+				});
+			}
+		);
+	}, __('Graduation'));
+}
 
 function render_audit_summary(frm, audit) {
 	let pct = audit.effective_credits_required

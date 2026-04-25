@@ -16,6 +16,9 @@
 			</nav>
 		</div>
 		<div class="px-3 pb-6 flex flex-col gap-1">
+			<div v-if="!isSidebarCollapsed" class="px-1 pb-1">
+				<PortalSwitcher :portals="visiblePortals" />
+			</div>
 			<button
 				type="button"
 				@click="toggleTheme"
@@ -50,12 +53,23 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Megaphone } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Megaphone, Users } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed } from 'vue';
 import { usersStore } from '@/stores/user';
 import { useTheme } from '@/composables/useTheme';
+import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell';
+
+const portalConfig = getPortalConfig();
+
+const visiblePortals = computed(() => {
+	const roles = userResource?.data?.roles || [];
+	return portalConfig.portals.filter((p) => {
+		if (!p.roles || p.roles.length === 0) return true;
+		return p.roles.some((r) => roles.includes(r));
+	});
+});
 
 const { theme, toggleTheme } = useTheme();
 
@@ -97,6 +111,11 @@ const links = computed(() => {
 			label: __('Announcements'),
 			to: '/announcements',
 			icon: Megaphone,
+		}] : []),
+		...(userResource?.data?.is_alumni ? [{
+			label: __('Alumni'),
+			to: '/alumni',
+			icon: Users,
 		}] : []),
 	]
 })

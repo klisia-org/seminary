@@ -575,6 +575,7 @@ def get_user_info():
     user.is_moderator = "Seminary Manager" in user.roles
     user.is_evaluator = "Instructor" in user.roles
     user.is_student = "Student" in user.roles
+    user.is_alumni = "Alumni" in user.roles
     user.is_system_manager = "System Manager" in user.roles
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
