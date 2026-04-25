@@ -1,0 +1,223 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:email",
+ "creation": "2026-04-25 00:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "user",
+  "email",
+  "full_name",
+  "column_break_identity",
+  "student",
+  "image",
+  "enabled",
+  "show_in_directory",
+  "academic_section",
+  "program_completed",
+  "class_year",
+  "column_break_academic",
+  "graduated_from_enrollment",
+  "professional_section",
+  "current_role",
+  "current_organization",
+  "linkedin_url",
+  "column_break_professional",
+  "city",
+  "country",
+  "bio_section",
+  "bio"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "search_index": 1,
+   "unique": 1
+  },
+  {
+   "description": "Used as the unique name. Set automatically from User on save.",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Email",
+   "options": "Email",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Full Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional. Empty for non-student alumni (e.g. honorary, transfer, board).",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Original Student Record",
+   "options": "Student",
+   "search_index": 1
+  },
+  {
+   "fetch_from": "student.image",
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Enabled"
+  },
+  {
+   "default": "1",
+   "description": "If unchecked, this profile is hidden from the public alumni directory.",
+   "fieldname": "show_in_directory",
+   "fieldtype": "Check",
+   "label": "Show in Directory"
+  },
+  {
+   "fieldname": "academic_section",
+   "fieldtype": "Section Break",
+   "label": "Academic"
+  },
+  {
+   "fieldname": "program_completed",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program Completed",
+   "options": "Program"
+  },
+  {
+   "fieldname": "class_year",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Class Year",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_academic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The Program Enrollment that triggered the alumni transition.",
+   "fieldname": "graduated_from_enrollment",
+   "fieldtype": "Link",
+   "label": "Graduated From Enrollment",
+   "no_copy": 1,
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "professional_section",
+   "fieldtype": "Section Break",
+   "label": "Professional"
+  },
+  {
+   "fieldname": "current_role",
+   "fieldtype": "Data",
+   "label": "Current Role"
+  },
+  {
+   "fieldname": "current_organization",
+   "fieldtype": "Data",
+   "label": "Current Organization"
+  },
+  {
+   "fieldname": "linkedin_url",
+   "fieldtype": "Data",
+   "label": "LinkedIn URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "column_break_professional",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "bio_section",
+   "fieldtype": "Section Break",
+   "label": "Bio"
+  },
+  {
+   "fieldname": "bio",
+   "fieldtype": "Long Text",
+   "label": "Bio"
+  }
+ ],
+ "image_field": "image",
+ "links": [],
+ "modified": "2026-04-25 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Alumni",
+ "name": "Alumni Profile",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  },
+  {
+   "if_owner": 1,
+   "read": 1,
+   "role": "Alumni",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_name_in_global_search": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 1
+}

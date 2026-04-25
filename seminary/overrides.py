@@ -32,5 +32,7 @@ def update_website_context(context):
             frappe._("Apply to be our Student"),
         )
 
-        context.setdefault("head_html", "")
-        context["head_html"] += script
+        # Guard against `context["head_html"]` being explicitly None
+        # (Builder pages initialise it that way). `setdefault` leaves an
+        # existing None value alone, which would TypeError on the +=.
+        context["head_html"] = (context.get("head_html") or "") + script
