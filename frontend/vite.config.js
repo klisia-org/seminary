@@ -64,6 +64,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['frappe-ui > feather-icons', 'showdown', 'engine.io-client', 'tailwind.config.js', 'interactjs', 'highlight.js'],
+    include: ['frappe-ui > feather-icons', 'engine.io-client', 'tailwind.config.js', 'interactjs', 'highlight.js'],
   },
 })
