@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "creation": "2026-04-25 21:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "round",
+  "submission_type",
+  "submitted_by",
+  "submitted_on",
+  "section_break_attach",
+  "attachment",
+  "student_note",
+  "section_break_review",
+  "reviewer",
+  "reviewer_decision",
+  "column_break_review",
+  "reviewed_on",
+  "reviewer_comment"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "fieldname": "round",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Round"
+  },
+  {
+   "fieldname": "submission_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Proposal\nDraft\nRevision\nFinal",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_attach",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_note",
+   "fieldtype": "Small Text",
+   "label": "Student Note"
+  },
+  {
+   "fieldname": "section_break_review",
+   "fieldtype": "Section Break",
+   "label": "Reviewer"
+  },
+  {
+   "fieldname": "reviewer",
+   "fieldtype": "Link",
+   "label": "Reviewer",
+   "options": "Instructor"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "reviewer_decision",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Decision",
+   "options": "Pending\nAccepted\nRevisions Required\nRejected"
+  },
+  {
+   "fieldname": "column_break_review",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Reviewed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewer_comment",
+   "fieldtype": "Text Editor",
+   "label": "Reviewer Comment"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-25 21:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Culminating Project Submission",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

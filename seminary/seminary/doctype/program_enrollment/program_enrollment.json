@@ -10,6 +10,7 @@
   "student",
   "student_name",
   "enrollment_date",
+  "expected_graduation_date",
   "date_of_conclusion",
   "column_break_4",
   "program",
@@ -27,6 +28,9 @@
   "inactive_motive",
   "audit_section",
   "audit_summary",
+  "grad_requirements_section",
+  "graduation_policy",
+  "graduation_requirements",
   "enrolled_courses",
   "courses",
   "section_break_uzvb",
@@ -220,6 +224,34 @@
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Student email"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Anchor used by Time Offset graduation requirements (e.g. 'Recommendation Letter due 30 days before graduation'). Defaulted from program length on enrollment; registrar may override.",
+   "fieldname": "expected_graduation_date",
+   "fieldtype": "Date",
+   "label": "Expected Graduation Date"
+  },
+  {
+   "fieldname": "grad_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Graduation Requirements"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The Program Graduation Requirement policy this enrollment is bound to. Snapshotted on submit; change only via registrar re-snapshot.",
+   "fieldname": "graduation_policy",
+   "fieldtype": "Link",
+   "label": "Graduation Policy",
+   "options": "Program Graduation Requirement",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "graduation_requirements",
+   "fieldtype": "Table",
+   "label": "Graduation Requirements",
+   "options": "Student Graduation Requirement"
   }
  ],
  "image_field": "image",

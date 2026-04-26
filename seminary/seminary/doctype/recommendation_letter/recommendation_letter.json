@@ -1,0 +1,284 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "RL-.######",
+ "creation": "2026-04-25 17:03:46.967406",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "program_enrollment",
+  "student",
+  "column_break_pe",
+  "student_grad_requirement",
+  "slot_index",
+  "section_break_recommender",
+  "recommender_name",
+  "recommender_email",
+  "column_break_recommender",
+  "recommender_role",
+  "delivery_method",
+  "section_break_request",
+  "request_token",
+  "request_sent_on",
+  "column_break_request",
+  "token_expires_on",
+  "submitted_on",
+  "section_break_letter",
+  "letter_body",
+  "letter_attachment",
+  "section_break_review",
+  "reviewed_by",
+  "review_notes",
+  "column_break_review",
+  "communication",
+  "section_break_status",
+  "workflow_state",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program_enrollment.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Identifier of the Student Graduation Requirement row this letter fulfills.",
+   "fieldname": "student_grad_requirement",
+   "fieldtype": "Data",
+   "label": "Graduation Requirement Row",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "slot_index",
+   "fieldtype": "Int",
+   "label": "Slot",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_recommender",
+   "fieldtype": "Section Break",
+   "label": "Recommender"
+  },
+  {
+   "fieldname": "recommender_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Recommender Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recommender_email",
+   "fieldtype": "Data",
+   "label": "Recommender Email",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_recommender",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "e.g. Pastor, Mentor, Employer.",
+   "fieldname": "recommender_role",
+   "fieldtype": "Data",
+   "label": "Relationship"
+  },
+  {
+   "default": "Portal Form",
+   "fieldname": "delivery_method",
+   "fieldtype": "Select",
+   "label": "Delivery Method",
+   "options": "Portal Form\nEmail Reply\nManual Upload"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_request",
+   "fieldtype": "Section Break",
+   "label": "Request"
+  },
+  {
+   "description": "Generated automatically on submit; included in the email link to the recommender.",
+   "fieldname": "request_token",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Request Token",
+   "no_copy": 1,
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "request_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Request Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_request",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "token_expires_on",
+   "fieldtype": "Date",
+   "label": "Token Expires On"
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Letter Received On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_letter",
+   "fieldtype": "Section Break",
+   "label": "Letter Content"
+  },
+  {
+   "fieldname": "letter_body",
+   "fieldtype": "Text Editor",
+   "label": "Letter Body"
+  },
+  {
+   "fieldname": "letter_attachment",
+   "fieldtype": "Attach",
+   "label": "Letter Attachment"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_review",
+   "fieldtype": "Section Break",
+   "label": "Review"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_notes",
+   "fieldtype": "Small Text",
+   "label": "Review Notes"
+  },
+  {
+   "fieldname": "column_break_review",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Linked Communication when delivery is via email reply.",
+   "fieldname": "communication",
+   "fieldtype": "Link",
+   "label": "Communication",
+   "options": "Communication",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Recommendation Letter",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-25 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Recommendation Letter",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

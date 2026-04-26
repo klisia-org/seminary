@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PGR-.#####",
+ "creation": "2026-04-25 14:47:15.333793",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program_name",
+  "active",
+  "column_break_mlpo",
+  "active_from",
+  "active_until",
+  "section_break_cqwz",
+  "pgr_items"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_mlpo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "active_from",
+   "fieldtype": "Date",
+   "label": "Active from",
+   "search_index": 1
+  },
+  {
+   "fieldname": "active_until",
+   "fieldtype": "Date",
+   "label": "Active Until"
+  },
+  {
+   "fieldname": "section_break_cqwz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pgr_items",
+   "fieldtype": "Table",
+   "label": "Program Requirement Items",
+   "options": "Program Grad Req Items"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-25 16:52:51.836337",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Graduation Requirement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "program_name"
+}
