@@ -310,7 +310,6 @@ doc_events = {
     # doc's doctype isn't a registered Linked Document target.
     "*": {
         "on_update_after_submit": "seminary.seminary.graduation.reflect_linked_doc_status",
-        "on_update": "seminary.seminary.graduation.reflect_linked_doc_status",
     },
 }
 

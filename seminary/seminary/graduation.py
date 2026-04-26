@@ -403,6 +403,9 @@ def _linked_doctypes():
     if cached is not None:
         return set(cached)
 
+    if not frappe.db.table_exists("Graduation Requirement Item"):
+        return set()
+
     doctypes = frappe.get_all(
         "Graduation Requirement Item",
         filters={"requirement_type": "Linked Document", "link_doctype": ("is", "set")},
