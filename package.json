@@ -12,10 +12,7 @@
   "keywords": [],
   "author": "Klisia, Frappe, and contributors",
   "license": "AGPL-3.0-only",
-  "dependencies": {
-    "@vitejs/plugin-vue": "^5.2.4",
-    "vite": "^7.1.6"
-  },
+  "dependencies": {},
   "resolutions": {
     "picomatch": "^2.3.2",
     "rollup": "^4.59.0"
