@@ -1291,6 +1291,48 @@ def get_program_audit(program_enrollment):
             if fallback_credits < (fallback_track.addcredits or 0):
                 graduation_eligible = False
 
+    # Graduation requirements (non-course evidence: letters, theses, manual
+    # verifications, etc.) — see seminary/seminary/graduation.py
+    from seminary.seminary.graduation import evaluate_activation
+
+    grad_requirements = []
+    grad_requirements_blocking = False
+    for sgr in pe.graduation_requirements or []:
+        active = evaluate_activation(sgr, pe)
+        satisfied = sgr.status in ("Fulfilled", "Waived")
+        if sgr.mandatory and active and not satisfied:
+            grad_requirements_blocking = True
+        grad_requirements.append(
+            {
+                "name": sgr.name,
+                "requirement_name": sgr.requirement_name,
+                "requirement_type": sgr.requirement_type,
+                "mandatory": bool(sgr.mandatory),
+                "slot_index": sgr.slot_index or 1,
+                "status": sgr.status,
+                "active": active,
+                "due_date": sgr.due_date,
+                "fulfilled_on": sgr.fulfilled_on,
+                "link_doctype": sgr.link_doctype,
+                "linked_doc": sgr.linked_doc,
+                "student_evidence_attachment": sgr.student_evidence_attachment,
+                "staff_evidence_attachment": sgr.staff_evidence_attachment,
+                "verified_by": sgr.verified_by,
+                "verified_on": sgr.verified_on,
+                "waived": bool(sgr.waived),
+                "waiver_reason": sgr.waiver_reason,
+                "notes": sgr.notes,
+                "grad_requirement_item": sgr.grad_requirement_item,
+            }
+        )
+
+    result["graduation_requirements"] = grad_requirements
+    result["graduation_policy"] = pe.graduation_policy
+    result["expected_graduation_date"] = pe.expected_graduation_date
+
+    if grad_requirements_blocking:
+        graduation_eligible = False
+
     result["graduation_eligible"] = graduation_eligible
 
     return result

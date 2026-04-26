@@ -265,6 +265,13 @@ const routes = [
     component: () => import('@/pages/AlumniProfile.vue'),
   },
   {
+    path: '/recommender-form/:name',
+    name: 'RecommenderForm',
+    component: () => import('@/pages/RecommenderForm.vue'),
+    meta: { guest: true },
+    props: true,
+  },
+  {
     path :'/:catchAll(.*)',
     redirect: '/courses',
   }
@@ -287,6 +294,10 @@ router.beforeEach(async (to, from, next) => {
 	} catch (error) {
 		isLoggedIn = false
 	}
+
+  if (to.meta?.guest) {
+    return next()
+  }
 
   if (!isLoggedIn) {
     window.location.href = '/login'

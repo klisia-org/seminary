@@ -1,0 +1,32 @@
+{
+ "actions": [],
+ "creation": "2026-04-25 20:20:15.094425",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "graduation_requirement_item"
+ ],
+ "fields": [
+  {
+   "fieldname": "graduation_requirement_item",
+   "fieldtype": "Link",
+   "label": "Graduation Requirement Item",
+   "options": "Graduation Requirement Item"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-25 20:23:23.576650",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Grad Req Item Prerequisite",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

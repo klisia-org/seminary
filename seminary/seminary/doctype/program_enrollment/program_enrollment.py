@@ -18,6 +18,7 @@ class ProgramEnrollment(Document):
         self.validate_duplication()
         self.validate_academic_term()
         self.validate_emphases()
+        self.set_expected_graduation_date()
 
     def set_student_name(self):
         if not self.student_name:
@@ -25,8 +26,29 @@ class ProgramEnrollment(Document):
                 "Student", self.student, "student_name"
             )
 
+    def before_submit(self):
+        self.snapshot_graduation_requirements()
+
     def on_submit(self):
         self.update_student_joining_date()
+
+    def set_expected_graduation_date(self):
+        if self.expected_graduation_date:
+            return
+        from seminary.seminary.graduation import compute_expected_graduation_date
+
+        default = compute_expected_graduation_date(self)
+        if default:
+            self.expected_graduation_date = default
+
+    def snapshot_graduation_requirements(self):
+        from seminary.seminary.graduation import (
+            snapshot_graduation_requirements as _snapshot,
+        )
+
+        if self.graduation_requirements:
+            return
+        _snapshot(self)
 
     def validate_academic_term(self):
         today = getdate()

@@ -1,0 +1,253 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CP-.#######",
+ "creation": "2026-04-25 17:06:03.296800",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "program_enrollment",
+  "student",
+  "column_break_pe",
+  "student_grad_requirement",
+  "project_type",
+  "section_break_about",
+  "project_title",
+  "abstract",
+  "section_break_advisors",
+  "advisor",
+  "column_break_advisors",
+  "second_reader",
+  "section_break_dates",
+  "proposal_approved_on",
+  "defended_on",
+  "column_break_dates",
+  "current_round",
+  "final_grade",
+  "section_break_submissions",
+  "submissions",
+  "section_break_status",
+  "workflow_state",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program_enrollment.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student_grad_requirement",
+   "fieldtype": "Data",
+   "label": "Graduation Requirement Row",
+   "read_only": 1
+  },
+  {
+   "default": "Thesis",
+   "fieldname": "project_type",
+   "fieldtype": "Select",
+   "label": "Project Type",
+   "options": "Thesis\nCapstone\nDissertation"
+  },
+  {
+   "fieldname": "section_break_about",
+   "fieldtype": "Section Break",
+   "label": "Project"
+  },
+  {
+   "fieldname": "project_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "abstract",
+   "fieldtype": "Text Editor",
+   "label": "Abstract"
+  },
+  {
+   "fieldname": "section_break_advisors",
+   "fieldtype": "Section Break",
+   "label": "Advisors"
+  },
+  {
+   "fieldname": "advisor",
+   "fieldtype": "Link",
+   "label": "Advisor",
+   "options": "Instructor",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_advisors",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "second_reader",
+   "fieldtype": "Link",
+   "label": "Second Reader",
+   "options": "Instructor"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_dates",
+   "fieldtype": "Section Break",
+   "label": "Milestones"
+  },
+  {
+   "fieldname": "proposal_approved_on",
+   "fieldtype": "Date",
+   "label": "Proposal Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "defended_on",
+   "fieldtype": "Date",
+   "label": "Defended On"
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "current_round",
+   "fieldtype": "Int",
+   "label": "Current Round",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_grade",
+   "fieldtype": "Data",
+   "label": "Final Grade"
+  },
+  {
+   "fieldname": "section_break_submissions",
+   "fieldtype": "Section Break",
+   "label": "Submissions"
+  },
+  {
+   "fieldname": "submissions",
+   "fieldtype": "Table",
+   "label": "Submissions",
+   "options": "Culminating Project Submission"
+  },
+  {
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Culminating Project",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-25 21:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Culminating Project",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

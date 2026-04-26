@@ -301,6 +301,17 @@ doc_events = {
         "on_submit": "seminary.seminary.overrides.salary_slip.post_submit_instructor_log_payments",
         "on_cancel": "seminary.seminary.overrides.salary_slip.cancel_instructor_log_payments",
     },
+    "Graduation Requirement Item": {
+        "on_update": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
+        "on_trash": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
+    },
+    # Wildcard hook reflects linked-document status changes back onto the
+    # student's graduation requirement snapshot. Cheap short-circuit when the
+    # doc's doctype isn't a registered Linked Document target.
+    "*": {
+        "on_update_after_submit": "seminary.seminary.graduation.reflect_linked_doc_status",
+        "on_update": "seminary.seminary.graduation.reflect_linked_doc_status",
+    },
 }
 
 # Scheduled Tasks

@@ -34,5 +34,71 @@
   "doctype": "Workflow Action Master",
   "name": "Complete",
   "workflow_action_name": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Reject",
+  "workflow_action_name": "Reject"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Approve",
+  "workflow_action_name": "Approve"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Mark Awaiting Response",
+  "workflow_action_name": "Mark Awaiting Response"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Mark Submitted",
+  "workflow_action_name": "Mark Submitted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Send for Review",
+  "workflow_action_name": "Send for Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Resend Request",
+  "workflow_action_name": "Resend Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Submit Proposal",
+  "workflow_action_name": "Submit Proposal"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Approve Proposal",
+  "workflow_action_name": "Approve Proposal"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Begin Drafting",
+  "workflow_action_name": "Begin Drafting"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Request Revisions",
+  "workflow_action_name": "Request Revisions"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Mark Defended",
+  "workflow_action_name": "Mark Defended"
  }
 ]

@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"daBrF0hOuf\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Withdrawal Configuration\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}},{\"id\":\"RXbT_HRHGz\",\"type\":\"card\",\"data\":{\"card_name\":\"Credit Transfer\",\"col\":4}},{\"id\":\"701xO9uPlH\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"-XT3-gVIcM\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>How to contribute to SeminaryERP and make it better for everyone</b></span>\",\"col\":12}},{\"id\":\"Ua2zlFkMDs\",\"type\":\"paragraph\",\"data\":{\"text\":\"There are ways to contribute to this Free Open-Source Software: \",\"col\":12}},{\"id\":\"rrTtpY1Mmp\",\"type\":\"paragraph\",\"data\":{\"text\":\"a) Create an Issue on GitHub detailing the problem, when it happens, and the expected behavior&nbsp;\",\"col\":12}},{\"id\":\"KOkG71OEkw\",\"type\":\"paragraph\",\"data\":{\"text\":\"b) Help us with translations\",\"col\":12}},{\"id\":\"IBCxBDB9zn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SeminaryERP Translations\",\"col\":4}},{\"id\":\"UfxkcE-JCp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Issues and Code\",\"col\":4}}]",
+ "content": "[{\"id\":\"U9aAJSs09K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"CI_jMcxpQt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"YFxs5Me4ac\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Financial Setup\",\"col\":3}},{\"id\":\"JlEKzcv8n9\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Academic Setup</span>\",\"col\":12}},{\"id\":\"4CsOxTeH9s\",\"type\":\"card\",\"data\":{\"card_name\":\"Academic Setup\",\"col\":4}},{\"id\":\"CVUyvucJlZ\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Offerings\",\"col\":4}},{\"id\":\"daBrF0hOuf\",\"type\":\"card\",\"data\":{\"card_name\":\"Course Withdrawal Configuration\",\"col\":4}},{\"id\":\"XvhIcG0AFE\",\"type\":\"card\",\"data\":{\"card_name\":\"Other\",\"col\":4}},{\"id\":\"RXbT_HRHGz\",\"type\":\"card\",\"data\":{\"card_name\":\"Credit Transfer\",\"col\":4}},{\"id\":\"qzyjHgQ_m4\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation Configuration\",\"col\":4}},{\"id\":\"701xO9uPlH\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"-XT3-gVIcM\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>How to contribute to SeminaryERP and make it better for everyone</b></span>\",\"col\":12}},{\"id\":\"Ua2zlFkMDs\",\"type\":\"paragraph\",\"data\":{\"text\":\"There are ways to contribute to this Free Open-Source Software: \",\"col\":12}},{\"id\":\"rrTtpY1Mmp\",\"type\":\"paragraph\",\"data\":{\"text\":\"a) Create an Issue on GitHub detailing the problem, when it happens, and the expected behavior&nbsp;\",\"col\":12}},{\"id\":\"KOkG71OEkw\",\"type\":\"paragraph\",\"data\":{\"text\":\"b) Help us with translations\",\"col\":12}},{\"id\":\"IBCxBDB9zn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"SeminaryERP Translations\",\"col\":4}},{\"id\":\"UfxkcE-JCp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Issues and Code\",\"col\":4}}]",
  "creation": "2026-02-14 11:35:51.601440",
  "custom_blocks": [],
  "docstatus": 0,
@@ -252,9 +252,38 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Graduation Configuration",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Library of Graduation Requirements",
+   "link_count": 0,
+   "link_to": "Graduation Requirement Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Graduation Requirements",
+   "link_count": 0,
+   "link_to": "Program Graduation Requirement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-20 14:04:50.931950",
+ "modified": "2026-04-25 19:42:04.732250",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Setup",

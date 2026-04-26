@@ -1,0 +1,227 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SGR-.#######",
+ "creation": "2026-04-25 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "requirement_name",
+  "requirement_type",
+  "mandatory",
+  "slot_index",
+  "column_break_status",
+  "status",
+  "due_date",
+  "fulfilled_on",
+  "section_break_link",
+  "link_doctype",
+  "linked_doc",
+  "section_break_evidence",
+  "student_evidence_attachment",
+  "column_break_evidence",
+  "staff_evidence_attachment",
+  "verified_by",
+  "verified_on",
+  "section_break_waiver",
+  "waived",
+  "waiver_reason",
+  "column_break_waiver",
+  "waived_by",
+  "waived_on",
+  "section_break_notes",
+  "notes",
+  "section_break_provenance",
+  "grad_requirement_item",
+  "pgr_item"
+ ],
+ "fields": [
+  {
+   "fieldname": "requirement_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Requirement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "requirement_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Position when the same requirement has multiple slots (e.g. 'Letter 2 of 3').",
+   "fieldname": "slot_index",
+   "fieldtype": "Int",
+   "label": "Slot",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Not Started",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Not Started\nIn Progress\nSubmitted\nFulfilled\nWaived\nFailed",
+   "search_index": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "fulfilled_on",
+   "fieldtype": "Date",
+   "label": "Fulfilled On"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Linked Document'",
+   "fieldname": "section_break_link",
+   "fieldtype": "Section Break",
+   "label": "Linked Document"
+  },
+  {
+   "fieldname": "link_doctype",
+   "fieldtype": "Data",
+   "label": "Link DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "linked_doc",
+   "fieldtype": "Dynamic Link",
+   "label": "Linked Document",
+   "options": "link_doctype"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
+   "fieldname": "section_break_evidence",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "fieldname": "student_evidence_attachment",
+   "fieldtype": "Attach",
+   "label": "Student Evidence"
+  },
+  {
+   "fieldname": "column_break_evidence",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "staff_evidence_attachment",
+   "fieldtype": "Attach",
+   "label": "Staff Evidence"
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Verified By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_waiver",
+   "fieldtype": "Section Break",
+   "label": "Waiver"
+  },
+  {
+   "default": "0",
+   "fieldname": "waived",
+   "fieldtype": "Check",
+   "label": "Waived"
+  },
+  {
+   "depends_on": "waived",
+   "fieldname": "waiver_reason",
+   "fieldtype": "Small Text",
+   "label": "Waiver Reason"
+  },
+  {
+   "fieldname": "column_break_waiver",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "waived",
+   "fieldname": "waived_by",
+   "fieldtype": "Link",
+   "label": "Waived By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "waived",
+   "fieldname": "waived_on",
+   "fieldtype": "Datetime",
+   "label": "Waived On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_provenance",
+   "fieldtype": "Section Break",
+   "label": "Provenance"
+  },
+  {
+   "fieldname": "grad_requirement_item",
+   "fieldtype": "Link",
+   "label": "Library Item",
+   "options": "Graduation Requirement Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pgr_item",
+   "fieldtype": "Data",
+   "label": "Source Policy Row",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-25 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Graduation Requirement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

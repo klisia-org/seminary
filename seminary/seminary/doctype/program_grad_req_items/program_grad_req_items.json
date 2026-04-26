@@ -1,0 +1,228 @@
+{
+ "actions": [],
+ "autoname": "PGRI-.#######",
+ "creation": "2026-04-25 14:52:34.754916",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "grad_requirement_item",
+  "grad_req_name",
+  "requirement_type",
+  "column_break_ibds",
+  "activation_mode",
+  "mandatory",
+  "quantity_required",
+  "section_break_pwhj",
+  "on_document",
+  "column_break_kagr",
+  "linked_doc_status",
+  "section_break_rbiw",
+  "offset_anchor",
+  "column_break_opdu",
+  "offset_value",
+  "column_break_okrs",
+  "offset_unit",
+  "section_break_odat",
+  "prerequisite_requirement",
+  "section_break_evid",
+  "student_evidence_required",
+  "student_evidence_label",
+  "column_break_evid",
+  "staff_evidence_required",
+  "staff_evidence_label"
+ ],
+ "fields": [
+  {
+   "fieldname": "grad_requirement_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Graduation Requirement",
+   "options": "Graduation Requirement Item",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "grad_requirement_item.requirement_name",
+   "fieldname": "grad_req_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Graduation Requirement Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "grad_requirement_item.requirement_type",
+   "fieldname": "requirement_type",
+   "fieldtype": "Data",
+   "label": "Requirement Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ibds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Always Active",
+   "fieldname": "activation_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Activation Mode",
+   "options": "Always Active\nAfter Requirement\nOn Document Status\nTime Offset"
+  },
+  {
+   "default": "0",
+   "fetch_from": "grad_requirement_item.mandatory",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Mandatory"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
+   "description": "How many instances the student must satisfy. Only meaningful for Manual Verification (e.g. '8 chapel attendances'). Event Attendance and Linked Document always count as 1.",
+   "fetch_from": "grad_requirement_item.default_quantity",
+   "fetch_if_empty": 1,
+   "fieldname": "quantity_required",
+   "fieldtype": "Int",
+   "label": "Quantity Required"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='After Requirement'",
+   "fieldname": "section_break_odat",
+   "fieldtype": "Section Break",
+   "label": "Prerequisites"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='After Requirement'",
+   "description": "This requirement becomes active only after every selected library requirement (in this same program's policy) reaches Fulfilled or Waived status.",
+   "fieldname": "prerequisite_requirement",
+   "fieldtype": "Table MultiSelect",
+   "is_virtual": 1,
+   "label": "Prerequisite Requirement",
+   "options": "Program Grad Req Items"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='On Document Status'",
+   "fieldname": "section_break_pwhj",
+   "fieldtype": "Section Break",
+   "label": "On Document Status"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='On Document Status'",
+   "fetch_from": "grad_requirement_item.link_doctype",
+   "fieldname": "on_document",
+   "fieldtype": "Link",
+   "label": "On Document",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='On Document Status'",
+   "fieldname": "column_break_kagr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='On Document Status'",
+   "description": "Status value (e.g. 'Approved', 'Completed') that indicates the linked document fulfills this requirement. Checked first against workflow_state, then against status. Capitalization matters.",
+   "fieldname": "linked_doc_status",
+   "fieldtype": "Data",
+   "label": "On Document Status"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "fieldname": "section_break_rbiw",
+   "fieldtype": "Section Break",
+   "label": "Time Offset"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "fieldname": "offset_anchor",
+   "fieldtype": "Select",
+   "label": "Offset Anchor",
+   "options": "Expected Graduation Date\nLast Term Starts\nProgram Starts",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "fieldname": "column_break_opdu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "description": "Use positive or negative whole numbers",
+   "fieldname": "offset_value",
+   "fieldtype": "Int",
+   "label": "Offset Value"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "fieldname": "column_break_okrs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Time Offset'",
+   "fieldname": "offset_unit",
+   "fieldtype": "Select",
+   "label": "Offset Unit",
+   "options": "Days\nAcademic Term"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
+   "fieldname": "section_break_evid",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "default": "0",
+   "fetch_from": "grad_requirement_item.default_student_evidence_required",
+   "fetch_if_empty": 1,
+   "fieldname": "student_evidence_required",
+   "fieldtype": "Check",
+   "label": "Evidence Submitted by Student"
+  },
+  {
+   "depends_on": "student_evidence_required",
+   "fetch_from": "grad_requirement_item.default_student_evidence_label",
+   "fetch_if_empty": 1,
+   "fieldname": "student_evidence_label",
+   "fieldtype": "Data",
+   "label": "Student Upload Label"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
+   "fieldname": "column_break_evid",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fetch_from": "grad_requirement_item.default_staff_evidence_required",
+   "fetch_if_empty": 1,
+   "fieldname": "staff_evidence_required",
+   "fieldtype": "Check",
+   "label": "Evidence Required by Staff"
+  },
+  {
+   "depends_on": "staff_evidence_required",
+   "fetch_from": "grad_requirement_item.default_staff_evidence_label",
+   "fetch_if_empty": 1,
+   "fieldname": "staff_evidence_label",
+   "fieldtype": "Data",
+   "label": "Staff Verification Label"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-25 20:30:32.612635",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Grad Req Items",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

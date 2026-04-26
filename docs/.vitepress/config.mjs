@@ -50,6 +50,7 @@ export default defineConfig({
           { text: 'Withdrawal', link: '/modules/withdrawal' },
           { text: 'Academic Calendar', link: '/modules/academic-calendar' },
           { text: 'Grading', link: '/modules/grading' },
+          { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },
           { text: 'Discussions', link: '/modules/discussions' },
           { text: 'Announcements', link: '/modules/announcements' },
           { text: 'Instructor Payment', link: '/modules/instructor-payment' },
