@@ -298,19 +298,30 @@ def get_discussion_submission_summary(
     )
     sub_by_member = {s["member"]: s for s in submissions}
 
-    # 3. Reply counts BY each student (replies they wrote on others' posts)
+    # 3. Qualifying reply counts BY each student: distinct *other-student*
+    # Submissions on which this student has at least one reply row.
+    # Self-replies (member == parent submission's author) never count.
     reply_counts = frappe.db.sql(
         """
-        SELECT r.member, COUNT(*) AS reply_count
+        SELECT r.member, COUNT(DISTINCT r.parent) AS reply_count
         FROM `tabDiscussion Submission Replies` r
         JOIN `tabDiscussion Submission` s ON s.name = r.parent
-        WHERE s.coursesc = %s AND s.disc_activity = %s
+        WHERE s.coursesc = %s
+          AND s.disc_activity = %s
+          AND s.member <> r.member
         GROUP BY r.member
         """,
         (course_name, discussion_id),
         as_dict=True,
     )
     replies_by_member = {rc["member"]: rc["reply_count"] for rc in reply_counts}
+
+    min_replies_required = (
+        frappe.db.get_value(
+            "Discussion Activity", discussion_id, "min_replies_required"
+        )
+        or 0
+    )
 
     # 4. Merge into one row per student
     result = []
@@ -331,6 +342,7 @@ def get_discussion_submission_summary(
                 "fudge_points": sub.get("fudge_points") if sub else None,
                 "late": sub.get("late") if sub else None,
                 "reply_count": replies_by_member.get(member, 0),
+                "min_replies_required": min_replies_required,
             }
         )
 

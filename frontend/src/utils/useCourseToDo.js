@@ -18,27 +18,29 @@ export function useCourseToDo(courseName, user) {
     url: 'seminary.seminary.utils.get_assessments',
     cache: ['assessments', courseName],
     params: { course: courseName },
+    auto: true,
   })
 
   const missingAssessments = createResource({
     url: 'seminary.seminary.utils.get_missingassessments',
     cache: ['missingassessments', courseName],
-    params: {
-      course: courseName,
+    params: { course: courseName, 
       member: user?.data?.name,
-    },
+     },
+    auto: true,
   })
 
   const assessmentsToGrade = createResource({
     url: 'seminary.seminary.utils.get_assessments_tograde',
     cache: ['assessments_tograde', courseName],
     params: { course: courseName },
+    auto: true,
   })
 
 
   const countToDoItems = computed(() => {
     const countMissing = missingAssessments.data?.length || 0
-    const countDueSoon = (assessments.data || []).filter(a => new Date(a.due_date) >= new Date()).length
+    const countDueSoon = (assessments.data || []).filter(a => !a.submitted && a.due_date && new Date(a.due_date) >= new Date()).length
     const countToGrade = assessmentsToGrade.data?.length || 0
     if (isStudent) {
       return countMissing + countDueSoon

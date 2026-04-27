@@ -91,7 +91,6 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
-   "link_filters": "[[{\"fieldname\":\"coursesc_ce\",\"field_option\":\"Course Schedule\"},\"open_enroll\",\"=\",1]]",
    "options": "Course Schedule",
    "reqd": 1
   },

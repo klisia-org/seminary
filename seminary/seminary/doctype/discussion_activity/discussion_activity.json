@@ -10,6 +10,7 @@
   "course",
   "post_before",
   "use_studentgroup",
+  "min_replies_required",
   "prompt"
  ],
  "fields": [
@@ -47,6 +48,13 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Use Student Groups"
+  },
+  {
+   "default": "0",
+   "description": "Minimum number of distinct classmates the student must reply to (in addition to posting their own position) for this discussion to count as complete. Set 0 to require only the initial post.",
+   "fieldname": "min_replies_required",
+   "fieldtype": "Int",
+   "label": "Minimum replies to other students"
   }
  ],
  "grid_page_length": 50,

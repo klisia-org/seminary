@@ -48,6 +48,11 @@
 					<FormControl v-model="discussion.post_before" type="checkbox"
 						:label="__('Check this if you want students to post before seeing other posts.')" />
 				</div>
+				<div class="mt-4">
+					<FormControl v-model.number="discussion.min_replies_required" type="number" min="0"
+						:label="__('Minimum replies to other students (0 = only the initial post is required)')"
+						:description="__('Distinct classmates the student must reply to (in addition to posting their position) for this discussion to count as complete. Self-replies do not count.')" />
+				</div>
 			</div>
 			<!-- Prompt -->
 			<label for="discussion-prompt" class="block text-lg font-medium text-ink-gray-7 mb-4">
@@ -104,6 +109,7 @@ const discussion = reactive({
 	course: '',
 	post_before: false,
 	use_studentgroup: false,
+	min_replies_required: 0,
 	prompt: '',
 })
 

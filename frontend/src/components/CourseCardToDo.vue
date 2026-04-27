@@ -1,5 +1,5 @@
 <template>
-  <div v-if="course" class="border-2 rounded-md min-w-80 p-5">
+  <div v-if="course" class="border-2 rounded-md min-w-80 p-5 mt-2 mb-3">
     <div v-if="singleCourse" class="text-3xl font-semibold text-ink-gray-9 text-center">
       {{ __("To Do") }}
     </div>
@@ -18,7 +18,8 @@
       <section v-if="assessments?.data?.length" class="due-soon mt-4">
         <h3 class="text-xl font-semibold text-ink-gray-9">{{ __('Due Soon') }}</h3>
         <ul>
-          <li v-for="assessment in assessments.data.filter(a => new Date(a.due_date) >= new Date()).slice(0, 5)"
+          <li
+            v-for="assessment in assessments.data.filter(a => !a.submitted && a.due_date && new Date(a.due_date) >= new Date()).slice(0, 5)"
             :key="assessment.id">
             {{ assessment.title }} ({{ __('Due') }}: {{ formatDate(assessment.due_date) }})
           </li>
