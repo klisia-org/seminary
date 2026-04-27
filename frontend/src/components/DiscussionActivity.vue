@@ -15,6 +15,16 @@
 			<div v-html="discussion.doc.prompt"
 				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
 			</div>
+			<div v-if="isStudent && minRepliesRequired > 0"
+				class="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm"
+				:class="participationMet
+					? 'border-outline-green-2 bg-surface-green-1 text-ink-green-3'
+					: 'border-outline-yellow-2 bg-surface-amber-1 text-ink-yellow-3'"
+				:title="__('Reply to {0} other students’ original posts to complete this discussion.').format(minRepliesRequired)">
+				<span>{{ __('Replies') }}:</span>
+				<span class="font-semibold">{{ qualifyingReplyCount }} / {{ minRepliesRequired }}</span>
+				<span v-if="participationMet">✓</span>
+			</div>
 
 			<div v-if="
 				all_discussions.data && (hasSavedSubmission || (!hasSavedSubmission && !post_before) || !isStudent)
@@ -619,6 +629,32 @@ const savedsubmission = createResource({
 
 const hasSavedSubmission = computed(() =>
 	Array.isArray(savedsubmission.data) && savedsubmission.data.length > 0
+)
+
+const minRepliesRequired = computed(() => {
+	const n = parseInt(discussion.doc?.min_replies_required, 10)
+	return Number.isFinite(n) && n > 0 ? n : 0
+})
+
+// Count of distinct other-student Submissions on which the current user has
+// at least one reply row. Self-replies (replying on your own post, e.g.
+// "thanks!") never count.
+const qualifyingReplyCount = computed(() => {
+	const me = user.data?.name
+	if (!me || !Array.isArray(all_discussions.data)) return 0
+	let count = 0
+	for (const sub of all_discussions.data) {
+		if (!sub || sub.member === me) continue
+		if (Array.isArray(sub.replies) && sub.replies.some(r => r.member === me)) {
+			count += 1
+		}
+	}
+	return count
+})
+
+const participationMet = computed(
+	() => minRepliesRequired.value === 0
+		|| qualifyingReplyCount.value >= minRepliesRequired.value
 )
 
 

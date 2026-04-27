@@ -9,6 +9,11 @@ import re
 
 
 class ExamSubmission(Document):
+    def validate(self):
+        from seminary.seminary.utils import backfill_submission_course_if_missing
+
+        backfill_submission_course_if_missing(self)
+
     def before_save(self):
         # Pre-populate empty comments from standard_comments / explanation
         for row in self.result:

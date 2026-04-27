@@ -11,18 +11,21 @@ from frappe.desk.doctype.notification_log.notification_log import make_notificat
 
 class AssignmentSubmission(Document):
     def validate(self):
+        from seminary.seminary.utils import backfill_submission_course_if_missing
+
+        backfill_submission_course_if_missing(self)
         self.validate_duplicates()
         self.validate_url()
         self.validate_status()
         self.populate()
 
-    def after_insert(self):
-        if not frappe.flags.in_test:
-            outgoing_email_account = frappe.get_cached_value(
-                "Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "name"
-            )
-            if outgoing_email_account or frappe.conf.get("mail_login"):
-                self.send_mail()
+    # def after_insert(self):
+    #     if not frappe.flags.in_test:
+    #         outgoing_email_account = frappe.get_cached_value(
+    #             "Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "name"
+    #         )
+    #         if outgoing_email_account or frappe.conf.get("mail_login"):
+    #             self.send_mail()
 
     def validate_duplicates(self):
         if frappe.db.exists(
@@ -57,37 +60,30 @@ class AssignmentSubmission(Document):
             "extracredit_scac",
         )
 
-    def send_mail(self):
-        subject = _("New Assignment Submission")
-        template = "assignment_submission"
-        custom_template = frappe.db.get_single_value(
-            "Seminary Settings", "assignment_submission_template"
-        )
+    # def send_mail(self):
+    #     subject = _("New Assignment Submission")
+    #     template = "assignment_submission"
 
-        args = {
-            "member_name": self.member_name,
-            "assignment_name": self.assignment,
-            "assignment_title": self.assignment_title,
-            "submission_name": self.name,
-        }
+    #     args = {
+    #         "member_name": self.member_name,
+    #         "assignment_name": self.assignment,
+    #         "assignment_title": self.assignment_title,
+    #         "submission_name": self.name,
+    #     }
 
-        moderators = frappe.get_all("Has Role", {"role": "Moderator"}, pluck="parent")
-        for moderator in moderators:
-            if not validate_email_address(moderator):
-                moderators.remove(moderator)
+    #     moderators = frappe.get_all("Has Role", {"role": "Moderator"}, pluck="parent")
+    #     for moderator in moderators:
+    #         if not validate_email_address(moderator):
+    #             moderators.remove(moderator)
 
-        if custom_template:
-            email_template = get_email_template(custom_template, args)
-            subject = email_template.get("subject")
-            content = email_template.get("message")
-        frappe.sendmail(
-            recipients=moderators,
-            subject=subject,
-            template=template if not custom_template else None,
-            content=content if custom_template else None,
-            args=args,
-            header=[subject, "green"],
-        )
+    #     frappe.sendmail(
+    #         recipients=moderators,
+    #         subject=subject,
+    #         template=template if not custom_template else None,
+    #         content=content if custom_template else None,
+    #         args=args,
+    #         header=[subject, "green"],
+    #     )
 
     def validate_status(self):
         if not self.is_new():

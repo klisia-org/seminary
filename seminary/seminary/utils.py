@@ -793,11 +793,13 @@ def get_lesson_details(chapter, progress=False):
             lesson_details.body, lesson_details.content
         )
         lesson_details.due_date = get_lesson_due_date(lesson_details.name)
-        # print(f"Lesson Details: {lesson_details}")  # Debug print
+        lesson_details.assessments_submitted = _lesson_assessments_submitted(
+            lesson_details
+        )
 
         if progress:
             lesson_details.is_complete = get_progress(
-                lesson_details.course, lesson_details.name
+                lesson_details.course_sc, lesson_details.name
             )
 
         lessons.append(lesson_details)
@@ -858,31 +860,57 @@ def get_lesson_icon(body, content):
 
 @frappe.whitelist()
 def get_lesson_due_date(lesson):
-    criteria_fields = frappe.db.get_value(
-        "Course Lesson",
-        lesson,
-        [
-            "assessment_criteria_exam",
-            "assessment_criteria_quiz",
-            "assessment_criteria_assignment",
-            "assessment_criteria_discussion",
-        ],
-        as_dict=True,
+    """Earliest SCAC due date among activities embedded in this lesson's
+    content. Resolved on read against the live content + SCAC rows so it
+    cannot drift like a denormalized field would."""
+    lesson_doc = frappe.db.get_value(
+        "Course Lesson", lesson, ["content", "course_sc"], as_dict=True
     )
-    if not criteria_fields:
+    if not lesson_doc or not lesson_doc.content or not lesson_doc.course_sc:
         return None
 
-    linked = [v for v in criteria_fields.values() if v]
-    if not linked:
+    try:
+        content = json.loads(lesson_doc.content)
+    except (ValueError, TypeError):
+        return None
+
+    activities_by_type = {}
+    for block in content.get("blocks", []) or []:
+        block_type = block.get("type")
+        block_data = block.get("data") or {}
+        for scac_type, pairs in _LESSON_BLOCK_LOOKUP.items():
+            for bt, bk in pairs:
+                if block_type != bt:
+                    continue
+                activity = block_data.get(bk)
+                if activity:
+                    activities_by_type.setdefault(scac_type, []).append(activity)
+
+    if not activities_by_type:
+        return None
+
+    scac_names = []
+    for scac_type, activities in activities_by_type.items():
+        scac_names.extend(
+            frappe.get_all(
+                "Scheduled Course Assess Criteria",
+                filters={
+                    "parent": lesson_doc.course_sc,
+                    scac_type.lower(): ["in", activities],
+                },
+                pluck="name",
+                ignore_permissions=True,
+            )
+        )
+
+    if not scac_names:
         return None
 
     due_date = frappe.db.sql(
-        """
-        SELECT due_date FROM `tabScheduled Course Assess Criteria`
-        WHERE name IN %(names)s AND due_date IS NOT NULL
-        ORDER BY due_date ASC LIMIT 1
-        """,
-        {"names": linked},
+        """SELECT due_date FROM `tabScheduled Course Assess Criteria`
+           WHERE name IN %(names)s AND due_date IS NOT NULL
+           ORDER BY due_date ASC LIMIT 1""",
+        {"names": scac_names},
         as_dict=True,
     )
     return due_date[0].due_date if due_date else None
@@ -1103,9 +1131,314 @@ def get_assessments(course):
         filters={"parent": course},
         fields=["*"],
         order_by="due_date",
+        ignore_permissions=True,
     )
-    print(assessments)
+
+    activity_to_lesson = _build_lesson_index_for_course(course)
+    submitted_index = _build_user_submission_index(course)
+    for a in assessments:
+        key = _scac_activity_key(a)
+        a["lesson"] = activity_to_lesson.get(key)
+        a["submitted"] = bool(key and submitted_index.get(key))
+
     return assessments
+
+
+@frappe.whitelist()
+def get_assessment_due_date(course, activity_type, activity_id):
+    """Return the due date for an SCAC row matching (course schedule,
+    activity type, activity id), or None. Bypasses the child-table permission
+    check that `frappe.client.get_value` enforces on Scheduled Course Assess
+    Criteria so callers don't need explicit SCAC roles."""
+    if not course or not activity_type or not activity_id:
+        return None
+    field = (activity_type or "").strip().lower()
+    if field not in {"quiz", "assignment", "exam", "discussion"}:
+        return None
+    return frappe.db.get_value(
+        "Scheduled Course Assess Criteria",
+        {"parent": course, field: activity_id},
+        "due_date",
+    )
+
+
+def _build_user_submission_index(course_sc, member=None):
+    """{(scac_type, activity_name): True} for activities the user has
+    submitted in this Course Schedule. For Discussion, "submitted" means
+    the student has met any per-activity participation requirement (initial
+    post plus the configured number of distinct other-student replies)."""
+    member = member or frappe.session.user
+    if member == "Guest":
+        return {}
+    index = {}
+    for scac_type, (
+        doctype,
+        activity_field,
+        course_field,
+    ) in _LESSON_SUBMISSION_LOOKUP.items():
+        rows = frappe.get_all(
+            doctype,
+            filters={"member": member, course_field: course_sc},
+            pluck=activity_field,
+        )
+        for activity in rows:
+            if not activity:
+                continue
+            if scac_type == "Discussion":
+                if not _discussion_meets_participation(member, activity, course_sc):
+                    continue
+            index[(scac_type, activity)] = True
+    return index
+
+
+def _discussion_meets_participation(member, disc_activity, course_sc):
+    """True iff `member` has (a) a Discussion Submission with a non-empty
+    `original_post` for this discussion in this Course Schedule and (b) at
+    least `min_replies_required` distinct *other* students whose Submissions
+    have at least one reply row authored by `member`. Self-replies (the
+    student replying on their own Submission) never count."""
+    if not member or not disc_activity or not course_sc:
+        return False
+
+    submission = frappe.db.get_value(
+        "Discussion Submission",
+        {"disc_activity": disc_activity, "coursesc": course_sc, "member": member},
+        ["name", "original_post"],
+        as_dict=True,
+    )
+    if not submission or not (submission.original_post or "").strip():
+        return False
+
+    min_required = (
+        frappe.db.get_value(
+            "Discussion Activity", disc_activity, "min_replies_required"
+        )
+        or 0
+    )
+    if min_required <= 0:
+        return True
+
+    qualifying = frappe.db.sql(
+        """SELECT COUNT(DISTINCT r.parent)
+           FROM `tabDiscussion Submission Replies` r
+           JOIN `tabDiscussion Submission` s ON s.name = r.parent
+           WHERE s.disc_activity = %(disc)s
+             AND s.coursesc = %(course_sc)s
+             AND s.member <> %(member)s
+             AND r.member = %(member)s""",
+        {"disc": disc_activity, "course_sc": course_sc, "member": member},
+    )
+    count = (qualifying[0][0] if qualifying and qualifying[0] else 0) or 0
+    return count >= min_required
+
+
+# Maps SCAC.type → block-type/data-key pairs to scan in lesson content JSON.
+# Discussion has two shapes because graded discussions and free-form
+# discussions register different Editor.js tools.
+_LESSON_BLOCK_LOOKUP = {
+    "Quiz": [("quiz", "quiz")],
+    "Assignment": [("assignment", "assignment")],
+    "Exam": [("exam", "exam")],
+    "Discussion": [
+        ("discussion", "discussion"),
+        ("discussionActivity", "discussionID"),
+        ("discussionActivity", "discussion"),
+    ],
+}
+
+# Maps SCAC.type → (Submission DocType, activity field, course-schedule field).
+# Discussion Submission uses `coursesc` for the Course Schedule link
+# because its `course` field stores the parent Course instead.
+_LESSON_SUBMISSION_LOOKUP = {
+    "Assignment": ("Assignment Submission", "assignment", "course"),
+    "Exam": ("Exam Submission", "exam", "course"),
+    "Quiz": ("Quiz Submission", "quiz", "course"),
+    "Discussion": ("Discussion Submission", "disc_activity", "coursesc"),
+}
+
+# Reverse lookup keyed by Submission DocType, used by the controller-side
+# backfill helper.
+_SUBMISSION_BACKFILL_CONFIG = {
+    config[0]: (scac_type, config[1], config[2])
+    for scac_type, config in _LESSON_SUBMISSION_LOOKUP.items()
+}
+
+
+def backfill_submission_course_if_missing(submission):
+    """Defensive validate-time guard: if a submission is being saved without
+    its Course Schedule field set, infer it from the SCAC that owns the
+    activity and the student's roster, then log so the gap can be diagnosed.
+    Never throws — submissions still save in the worst case so users aren't
+    blocked.
+    """
+    config = _SUBMISSION_BACKFILL_CONFIG.get(submission.doctype)
+    if not config:
+        return
+    scac_type, activity_field, course_field = config
+
+    if submission.get(course_field):
+        return
+
+    activity = submission.get(activity_field)
+    member = submission.get("member")
+    if not activity or not member:
+        # Other validators will surface this; nothing for us to backfill from.
+        return
+
+    candidate_schedules = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={scac_type.lower(): activity},
+        pluck="parent",
+        ignore_permissions=True,
+    )
+    if not candidate_schedules:
+        frappe.log_error(
+            title=f"{submission.doctype} missing {course_field} (no SCAC)",
+            message=(
+                f"Submission for activity {activity!r} by {member!r} has "
+                f"no {course_field} and no Scheduled Course Assess Criteria "
+                f"references this {scac_type}. Cannot backfill."
+            ),
+        )
+        return
+
+    enrolled = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={
+            "stuemail_rc": member,
+            "course_sc": ["in", list(set(candidate_schedules))],
+        },
+        pluck="course_sc",
+    )
+
+    if len(set(enrolled)) == 1:
+        inferred = enrolled[0]
+        submission.set(course_field, inferred)
+        frappe.log_error(
+            title=f"{submission.doctype} {course_field} backfilled",
+            message=(
+                f"Submission for activity {activity!r} by {member!r} was "
+                f"saved without {course_field}; backfilled to {inferred!r} "
+                f"based on the student's roster and the SCAC for this "
+                f"{scac_type}. Investigate the create path that produced "
+                f"the missing field."
+            ),
+        )
+    else:
+        frappe.log_error(
+            title=f"{submission.doctype} {course_field} backfill ambiguous",
+            message=(
+                f"Submission for activity {activity!r} by {member!r} has "
+                f"no {course_field}. Found {len(set(candidate_schedules))} "
+                f"candidate Course Schedule(s) for this {scac_type}; "
+                f"student is enrolled in {sorted(set(enrolled))!r}. "
+                f"Not backfilling. Investigate manually."
+            ),
+        )
+
+
+def _lesson_activities_by_type(content_json):
+    """Parse a Course Lesson.content JSON and return
+    {scac_type: set(activity_name)} for every gradable activity embedded."""
+    activities = {}
+    if not content_json:
+        return activities
+    try:
+        content = json.loads(content_json)
+    except (ValueError, TypeError):
+        return activities
+    for block in content.get("blocks", []) or []:
+        block_type = block.get("type")
+        block_data = block.get("data") or {}
+        for scac_type, pairs in _LESSON_BLOCK_LOOKUP.items():
+            for bt, bk in pairs:
+                if block_type != bt:
+                    continue
+                activity = block_data.get(bk)
+                if activity:
+                    activities.setdefault(scac_type, set()).add(activity)
+    return activities
+
+
+def _lesson_assessments_submitted(lesson_row, member=None):
+    """True iff the lesson contains at least one gradable activity AND the
+    student has at least one submission for every one of them. Returns False
+    for Guest, lessons with no gradable activities, and lessons missing a
+    course schedule."""
+    member = member or frappe.session.user
+    if member == "Guest":
+        return False
+    if not lesson_row.get("content") or not lesson_row.get("course_sc"):
+        return False
+
+    activities_by_type = _lesson_activities_by_type(lesson_row.content)
+    if not activities_by_type:
+        return False
+
+    for scac_type, activities in activities_by_type.items():
+        if scac_type == "Discussion":
+            for activity in activities:
+                if not _discussion_meets_participation(
+                    member, activity, lesson_row.course_sc
+                ):
+                    return False
+            continue
+
+        dt, activity_field, course_field = _LESSON_SUBMISSION_LOOKUP[scac_type]
+        submitted = set(
+            frappe.get_all(
+                dt,
+                filters={
+                    course_field: lesson_row.course_sc,
+                    "member": member,
+                    activity_field: ["in", list(activities)],
+                },
+                pluck=activity_field,
+            )
+        )
+        if not activities <= submitted:
+            return False
+    return True
+
+
+def _scac_activity_key(scac_row):
+    scac_type = scac_row.get("type")
+    if not scac_type:
+        return None
+    activity = scac_row.get(scac_type.lower())
+    if not activity:
+        return None
+    return (scac_type, activity)
+
+
+def _build_lesson_index_for_course(course_sc):
+    """Walk every Course Lesson under a Course Schedule once, return a
+    {(type, activity_name) -> lesson_name} index built from the lessons'
+    content JSON. First match wins per activity."""
+    index = {}
+    lessons = frappe.get_all(
+        "Course Lesson",
+        filters={"course_sc": course_sc},
+        fields=["name", "content"],
+    )
+    for lesson in lessons:
+        if not lesson.content:
+            continue
+        try:
+            content = json.loads(lesson.content)
+        except (ValueError, TypeError):
+            continue
+        for block in content.get("blocks", []) or []:
+            block_type = block.get("type")
+            block_data = block.get("data") or {}
+            for scac_type, pairs in _LESSON_BLOCK_LOOKUP.items():
+                for bt, bk in pairs:
+                    if block_type != bt:
+                        continue
+                    activity = block_data.get(bk)
+                    if activity:
+                        index.setdefault((scac_type, activity), lesson.name)
+    return index
 
 
 @frappe.whitelist()
@@ -1482,6 +1815,7 @@ def get_course_exams(course):
         "Scheduled Course Assess Criteria",
         filters={"parent": course, "exam": ["!=", ""]},
         fields=["name", "title", "due_date", "exam"],
+        ignore_permissions=True,
     )
     return exams
 
@@ -1498,12 +1832,18 @@ def get_course_meetingdates(course):
 
 
 @frappe.whitelist()
-def get_missingassessments(course, member):
-    student_email = member
+def get_missingassessments(course, member=None):
+    # Default to the logged-in user when the caller omits `member`.
+    # The frontend can't reliably pass it on first render because the
+    # user resource resolves asynchronously.
+    student_email = member or frappe.session.user
     course_name = course
-    print("Course Name: ", course_name)  # Debugging log
-    print("Student Email: ", student_email)  # Debugging log
 
+    # Per-row correlated NOT EXISTS: an assessment is "missing" only when
+    # *this* student has no submission for *that specific* activity. The
+    # previous `not in (... where course=X)` form excluded the student from
+    # every missing row the moment they submitted a single assessment of
+    # that type anywhere in the course.
     missing_exams_query = """
 		select r.stuname_roster, r.stuemail_rc, r.stuimage, r.program_std_scr, c.title, c.due_date
 		from `tabScheduled Course Roster` r, `tabScheduled Course Assess Criteria` c
@@ -1512,10 +1852,11 @@ def get_missingassessments(course, member):
 		c.due_date < NOW() and
 		r.stuemail_rc = %(student_email)s and
 		r.course_sc = %(course_name)s and
-		r.stuemail_rc not in (
-			select member
-			from `tabExam Submission`
-			where course = %(course_name)s
+		not exists (
+			select 1 from `tabExam Submission` es
+			where es.course = c.parent
+			and es.exam = c.exam
+			and es.member = r.stuemail_rc
 		)
 	"""
 
@@ -1527,10 +1868,11 @@ def get_missingassessments(course, member):
 		c.due_date < NOW() and
 		r.stuemail_rc = %(student_email)s and
 		r.course_sc = %(course_name)s and
-		r.stuemail_rc not in (
-			select member
-			from `tabQuiz Submission`
-			where course = %(course_name)s
+		not exists (
+			select 1 from `tabQuiz Submission` qs
+			where qs.course = c.parent
+			and qs.quiz = c.quiz
+			and qs.member = r.stuemail_rc
 		)
 	"""
 
@@ -1542,10 +1884,11 @@ def get_missingassessments(course, member):
 		c.due_date < NOW() and
 		r.stuemail_rc = %(student_email)s and
 		r.course_sc = %(course_name)s and
-		r.stuemail_rc not in (
-			select member
-			from `tabAssignment Submission`
-			where course = %(course_name)s
+		not exists (
+			select 1 from `tabAssignment Submission` asub
+			where asub.course = c.parent
+			and asub.assignment = c.assignment
+			and asub.member = r.stuemail_rc
 		)
 	"""
 

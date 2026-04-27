@@ -194,7 +194,6 @@ const is_instructor = () => {
 			user_is_instructor = true
 		}
 	})
-	console.log(user_is_instructor)
 	return user_is_instructor
 }
 

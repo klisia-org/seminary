@@ -8,6 +8,9 @@ from frappe.model.document import Document
 
 class DiscussionSubmission(Document):
     def validate(self):
+        from seminary.seminary.utils import backfill_submission_course_if_missing
+
+        backfill_submission_course_if_missing(self)
         self.populate()
 
     def populate(self):

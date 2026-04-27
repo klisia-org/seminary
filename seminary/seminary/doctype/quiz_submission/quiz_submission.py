@@ -10,6 +10,9 @@ from frappe.desk.doctype.notification_log.notification_log import make_notificat
 
 class QuizSubmission(Document):
     def validate(self):
+        from seminary.seminary.utils import backfill_submission_course_if_missing
+
+        backfill_submission_course_if_missing(self)
         self.validate_if_max_attempts_exceeded()
         self.validate_points()
         self.set_percentage()

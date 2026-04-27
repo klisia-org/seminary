@@ -81,7 +81,9 @@
 												class="h-4 w-4 stroke-1" />
 											<FileText v-else class="h-4 w-4 text-ink-gray-7 stroke-1" />
 											<span>{{ lesson.lesson_title }}</span>
-											<Check v-if="lesson.is_complete" class="h-4 w-4 text-ink-green-3" />
+											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
+												class="h-4 w-4 text-ink-green-3"
+												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />
 										</div>
 										<div v-if="lesson.preview" class="w-full rounded-md bg-surface-blue-1 text-ink-blue-2 p-2">
 											{{ lesson.preview }}

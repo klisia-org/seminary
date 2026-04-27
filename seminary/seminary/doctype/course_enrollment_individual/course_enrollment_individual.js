@@ -6,6 +6,18 @@
 
 // 	},
 // });
+function load_courses_for_program(frm) {
+    if (!frm.doc.program_ce) return;
+    frappe.call({
+        method: "seminary.seminary.api.courses_for_student",
+        args: { program_ce: frm.doc.program_ce },
+        callback: function (response) {
+            frm.courses = response.message || [];
+            frm.refresh_field("coursesc_ce");
+        },
+    });
+}
+
 frappe.ui.form.on("Course Enrollment Individual", {
     onload(frm) {
 
@@ -42,19 +54,25 @@ frappe.ui.form.on("Course Enrollment Individual", {
     },
     refresh(frm) {
         frm.set_query("coursesc_ce", () => {
+            const NO_MATCH = { filters: { course: ["in", ["__none__"]], open_enroll: 1 } };
+            let q;
             if (!frm.doc.program_ce) {
-                // No program selected — show nothing
-                return { filters: { name: "" } };
+                q = NO_MATCH;
+            } else if (frm.doc.no_prereq === 1 || frm.doc.audit === 1) {
+                q = { filters: { open_enroll: 1 } };
+            } else if (frm.courses && frm.courses.length) {
+                q = { filters: { course: ["in", frm.courses], open_enroll: 1 } };
+            } else {
+                q = NO_MATCH;
             }
-            if (frm.doc.no_prereq === 1 || frm.doc.audit === 1) {
-                return { filters: { open_enroll: 1 } };
-            }
-            if (frm.courses && frm.courses.length) {
-                return { filters: { course: ["in", frm.courses], open_enroll: 1 } };
-            }
-            // Courses not loaded yet — show nothing until get_courses resolves
-            return { filters: { name: "" } };
+            console.log("coursesc_ce set_query →", q.filters);
+            return q;
         });
+
+        // Existing record: program is already set but field event never fired.
+        if (frm.doc.program_ce && !frm.courses) {
+            load_courses_for_program(frm);
+        }
         if (!frm.doc.cei_si) {
 
             frm.add_custom_button("Create Sales Invoice(s)", function() {
@@ -82,16 +100,6 @@ frappe.ui.form.on("Course Enrollment Individual", {
             }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
         }
 
-
-
-      /* This needs to be fixed for webform only
-       frm.call('get_user')
-        .then(r => {
-            if (r.message) {
-                frm.set_value('user', r.message);
-            }
-        }); */
-
     },
     program_ce(frm) {
         // Clear stale course selection when program changes
@@ -99,21 +107,8 @@ frappe.ui.form.on("Course Enrollment Individual", {
         frm.courses = null;
 
         if (frm.doc.program_ce) {
-            frm.trigger("get_courses");
+            load_courses_for_program(frm);
         }
-    },
-
-    get_courses(frm) {
-        if (!frm.doc.program_ce) return;
-        frappe.call({
-            method: "seminary.seminary.api.courses_for_student",
-            args: { program_ce: frm.doc.program_ce },
-            callback: function (response) {
-                frm.courses = response.message;
-                // Refresh the query now that courses are loaded
-                frm.refresh_field("coursesc_ce");
-            },
-        });
     },
 
 

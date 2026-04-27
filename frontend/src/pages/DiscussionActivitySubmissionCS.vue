@@ -59,13 +59,20 @@
 				} : ''" :class="{ 'pointer-events-none': !row.submission_name }">
 					<ListRow :row="row">
 						<template #default="{ column }">
-							<ListRowItem :item="row[column.key]" :align="column.align">
+							<ListRowItem :item="row[column.key] == null ? '' : String(row[column.key])" :align="column.align">
 								<div v-if="column.key === 'original_post_date'">
 									<span v-if="row.original_post_date"
 										:class="{ 'text-ink-red-3': dueDate && dayjs(row.original_post_date).isAfter(dayjs(dueDate)) }">
 										{{ dayjs(row.original_post_date).format('MMM D, YYYY h:mm A') }}
 									</span>
 									<Badge v-else theme="orange">{{ __('Not Submitted') }}</Badge>
+								</div>
+								<div v-else-if="column.key === 'reply_count'">
+									<span v-if="row.min_replies_required && row.min_replies_required > 0"
+										:class="row.reply_count >= row.min_replies_required ? 'text-ink-green-3' : 'text-ink-yellow-3'">
+										{{ row.reply_count ?? 0 }} / {{ row.min_replies_required }}
+									</span>
+									<span v-else>{{ row.reply_count ?? 0 }}</span>
 								</div>
 								<div v-else-if="column.key === 'status'">
 									<Badge :theme="getStatusTheme(row.status)">{{ row.status }}</Badge>
@@ -139,11 +146,13 @@ const discussionDocResource = createResource({
 	onSuccess(data) { discussionDoc.value = data },
 })
 
-// Due date from Scheduled Course Assess Criteria
+// Due date from Scheduled Course Assess Criteria. Fetched via a whitelisted
+// helper because `frappe.client.get_value` enforces a doctype-level perm
+// check that fails on SCAC (child table without explicit roles).
 const dueDate = ref(null)
 const dueDateResource = createResource({
-	url: 'frappe.client.get_value',
-	onSuccess(data) { dueDate.value = data?.due_date || null },
+	url: 'seminary.seminary.utils.get_assessment_due_date',
+	onSuccess(data) { dueDate.value = data || null },
 })
 
 // Roster with groups (for student filter + group filter)
@@ -196,9 +205,9 @@ function fetchDiscussionData(id) {
 		name: id,
 	})
 	dueDateResource.submit({
-		doctype: 'Scheduled Course Assess Criteria',
-		filters: { discussion: id, parent: props.courseName },
-		fieldname: 'due_date',
+		course: props.courseName,
+		activity_type: 'discussion',
+		activity_id: id,
 	})
 	summaryResource.submit({
 		course_name: props.courseName,

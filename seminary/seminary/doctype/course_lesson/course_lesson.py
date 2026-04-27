@@ -45,13 +45,6 @@ class CourseLesson(Document):
         if not frappe.db.exists("Course Lesson", self.name):
             return
 
-        doctype_map = {
-            "Exam": "Exam Activity",
-            "Quiz": "Quiz",
-            "Assignment": "Assignment Activity",
-            "Discussion": "Discussion Activity",
-        }
-
         # Field mapping for clearing stale links
         lesson_field_map = {
             "Exam": ("exam", "assessment_criteria_exam"),
@@ -79,106 +72,36 @@ class CourseLesson(Document):
                 ):  # Match section type (e.g., "quiz", "assignment", "exam")
                     documents.append(block_data.get(section.lower()))
 
-        # Clear stale links: if this section's assessment is no longer in the content,
-        # reset the lesson's field and clear the SCAC's lesson pointer
+        # SCAC's `lesson` field is now computed on read in
+        # `seminary.seminary.utils.get_assessments`, so we do not write to it
+        # here. We still maintain the lesson-side denormalization
+        # (`assignment_id`, `assessment_criteria_*`, etc.) because
+        # `get_lesson_due_date` and other read paths use it.
         activity_field, criteria_field = lesson_field_map[section]
         if not documents:
-            old_criteria = frappe.db.get_value(
-                "Course Lesson", self.name, criteria_field
-            )
-            if old_criteria:
-                frappe.db.set_value(
-                    "Scheduled Course Assess Criteria", old_criteria, "lesson", None
-                )
             frappe.db.set_value("Course Lesson", self.name, activity_field, None)
             frappe.db.set_value("Course Lesson", self.name, criteria_field, None)
             return
 
+        scac_activity_field = {
+            "Exam": "exam",
+            "Quiz": "quiz",
+            "Assignment": "assignment",
+            "Discussion": "discussion",
+        }[section]
+
         for name in documents:
-            if section == "Quiz":
-                # Update quiz_id and assessment_criteria_quiz
-                frappe.db.set_value("Course Lesson", self.name, "quiz_id", name)
-                scheduled_criteria = frappe.db.get_value(
-                    "Scheduled Course Assess Criteria",
-                    {"quiz": name, "parent": self.course_sc},
-                    "name",
-                )
-                frappe.db.set_value(
-                    "Course Lesson",
-                    self.name,
-                    "assessment_criteria_quiz",
-                    scheduled_criteria,
-                )
-                if scheduled_criteria:
-                    frappe.db.set_value(
-                        "Scheduled Course Assess Criteria",
-                        scheduled_criteria,
-                        "lesson",
-                        self.name,
-                    )
-
-            elif section == "Assignment":
-                frappe.db.set_value("Course Lesson", self.name, "assignment_id", name)
-                scheduled_criteria = frappe.db.get_value(
-                    "Scheduled Course Assess Criteria",
-                    {"assignment": name, "parent": self.course_sc},
-                    "name",
-                )
-                frappe.db.set_value(
-                    "Course Lesson",
-                    self.name,
-                    "assessment_criteria_assignment",
-                    scheduled_criteria,
-                )
-                if scheduled_criteria:
-                    frappe.db.set_value(
-                        "Scheduled Course Assess Criteria",
-                        scheduled_criteria,
-                        "lesson",
-                        self.name,
-                    )
-
-            elif section == "Exam":
-                frappe.db.set_value("Course Lesson", self.name, "exam", name)
-                scheduled_criteria = frappe.db.get_value(
-                    "Scheduled Course Assess Criteria",
-                    {"exam": name, "parent": self.course_sc},
-                    "name",
-                )
-                frappe.db.set_value(
-                    "Course Lesson",
-                    self.name,
-                    "assessment_criteria_exam",
-                    scheduled_criteria,
-                )
-                if scheduled_criteria:
-                    frappe.db.set_value(
-                        "Scheduled Course Assess Criteria",
-                        scheduled_criteria,
-                        "lesson",
-                        self.name,
-                    )
-
-            elif section == "Discussion":
-                frappe.db.set_value("Course Lesson", self.name, "discussion_id", name)
-                scheduled_criteria = frappe.db.get_value(
-                    "Scheduled Course Assess Criteria",
-                    {"discussion": name, "parent": self.course_sc},
-                    "name",
-                )
-                frappe.db.set_value(
-                    "Course Lesson",
-                    self.name,
-                    "assessment_criteria_discussion",
-                    scheduled_criteria,
-                )
-                if scheduled_criteria:
-                    frappe.db.set_value(
-                        "Scheduled Course Assess Criteria",
-                        scheduled_criteria,
-                        "lesson",
-                        self.name,
-                    )
+            if not name:
+                continue
+            frappe.db.set_value("Course Lesson", self.name, activity_field, name)
+            scheduled_criteria = frappe.db.get_value(
+                "Scheduled Course Assess Criteria",
+                {scac_activity_field: name, "parent": self.course_sc},
+                "name",
+            )
+            frappe.db.set_value(
+                "Course Lesson", self.name, criteria_field, scheduled_criteria
+            )
 
     # def update_orphan_documents(self, doctype, documents):
     # 	"""Updates the documents that were previously part of this lesson,
@@ -336,8 +259,10 @@ def get_assignment_progress(lesson):
 
 
 def get_discussion_progress(lesson):
+    from seminary.seminary.utils import _discussion_meets_participation
+
     lesson_details = frappe.db.get_value(
-        "Course Lesson", lesson, ["body", "content"], as_dict=1
+        "Course Lesson", lesson, ["body", "content", "course_sc"], as_dict=1
     )
     discussions = []
 
@@ -351,7 +276,9 @@ def get_discussion_progress(lesson):
             if block_type == "discussion":
                 discussion_id = block_data.get("discussion")
             elif block_type == "discussionActivity":
-                discussion_id = block_data.get("discussionID")
+                discussion_id = block_data.get("discussionID") or block_data.get(
+                    "discussion"
+                )
             else:
                 discussion_id = None
 
@@ -363,9 +290,8 @@ def get_discussion_progress(lesson):
         discussions = [value for name, value in macros if name == "Discussion"]
 
     for discussion in discussions:
-        if not frappe.db.exists(
-            "Discussion Submission",
-            {"disc_activity": discussion, "member": frappe.session.user},
+        if not _discussion_meets_participation(
+            frappe.session.user, discussion, lesson_details.course_sc
         ):
             return False
     return True
