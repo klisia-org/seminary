@@ -9,6 +9,16 @@
   "logo_portal",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
+  "auto_advance_course_schedule",
+  "enrollment_window_rules_section",
+  "enrollment_open_anchor",
+  "enrollment_open_offset_days",
+  "column_break_window_1",
+  "enrollment_close_anchor",
+  "enrollment_close_offset_days",
+  "column_break_window_2",
+  "grade_close_anchor",
+  "grade_close_offset_days",
   "column_break_4",
   "logo_dark",
   "academic_term_reqd",
@@ -95,6 +105,63 @@
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
    "label": "Enable Automated Billing"
+  },
+  {
+   "default": "1",
+   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft → Open for Enrollment, Open for Enrollment → Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
+   "fieldname": "auto_advance_course_schedule",
+   "fieldtype": "Check",
+   "label": "Auto-advance Course Schedule states"
+  },
+  {
+   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window — Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
+   "fieldname": "enrollment_window_rules_section",
+   "fieldtype": "Section Break",
+   "label": "Enrollment Window Rules"
+  },
+  {
+   "fieldname": "enrollment_open_anchor",
+   "fieldtype": "Select",
+   "label": "Enrollment Open Anchor",
+   "options": "\nterm_start\nterm_end\nclasses_start\nclasses_end"
+  },
+  {
+   "default": "0",
+   "fieldname": "enrollment_open_offset_days",
+   "fieldtype": "Int",
+   "label": "Enrollment Open Offset (days)"
+  },
+  {
+   "fieldname": "column_break_window_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enrollment_close_anchor",
+   "fieldtype": "Select",
+   "label": "Enrollment Close Anchor",
+   "options": "\nterm_start\nterm_end\nclasses_start\nclasses_end"
+  },
+  {
+   "default": "0",
+   "fieldname": "enrollment_close_offset_days",
+   "fieldtype": "Int",
+   "label": "Enrollment Close Offset (days)"
+  },
+  {
+   "fieldname": "column_break_window_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grade_close_anchor",
+   "fieldtype": "Select",
+   "label": "Grade Close Anchor",
+   "options": "\nterm_start\nterm_end\nclasses_start\nclasses_end"
+  },
+  {
+   "default": "0",
+   "fieldname": "grade_close_offset_days",
+   "fieldtype": "Int",
+   "label": "Grade Close Offset (days)"
   },
   {
    "fieldname": "accounts_section",

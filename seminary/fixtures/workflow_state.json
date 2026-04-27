@@ -142,5 +142,45 @@
   "name": "Defended",
   "style": "Info",
   "workflow_state_name": "Defended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-unlock",
+  "name": "Open for Enrollment",
+  "style": "Primary",
+  "workflow_state_name": "Open for Enrollment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-lock",
+  "name": "Enrollment Closed",
+  "style": "Warning",
+  "workflow_state_name": "Enrollment Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-pencil-square",
+  "name": "Grading",
+  "style": "Info",
+  "workflow_state_name": "Grading"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-archive",
+  "name": "Closed",
+  "style": "Success",
+  "workflow_state_name": "Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-ban",
+  "name": "Cancelled",
+  "style": "Danger",
+  "workflow_state_name": "Cancelled"
  }
 ]

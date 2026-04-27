@@ -1,0 +1,37 @@
+[
+ {
+  "doctype": "Course Cancellation Reason",
+  "name": "Insufficient Enrollment",
+  "reason_name": "Insufficient Enrollment",
+  "is_active": 1,
+  "description": "The course did not reach the minimum number of enrolled students by the enrollment deadline."
+ },
+ {
+  "doctype": "Course Cancellation Reason",
+  "name": "Instructor Unavailable",
+  "reason_name": "Instructor Unavailable",
+  "is_active": 1,
+  "description": "The instructor cannot teach the course (illness, leave, departure, scheduling conflict)."
+ },
+ {
+  "doctype": "Course Cancellation Reason",
+  "name": "Curriculum Change",
+  "reason_name": "Curriculum Change",
+  "is_active": 1,
+  "description": "The course was removed from or changed in the curriculum after the schedule was published."
+ },
+ {
+  "doctype": "Course Cancellation Reason",
+  "name": "Administrative Decision",
+  "reason_name": "Administrative Decision",
+  "is_active": 1,
+  "description": "The course is cancelled by administrative or departmental decision (resource constraints, restructuring)."
+ },
+ {
+  "doctype": "Course Cancellation Reason",
+  "name": "Force Majeure",
+  "reason_name": "Force Majeure",
+  "is_active": 1,
+  "description": "The course is cancelled due to circumstances beyond the seminary's control (natural disaster, public health, civil unrest)."
+ }
+]

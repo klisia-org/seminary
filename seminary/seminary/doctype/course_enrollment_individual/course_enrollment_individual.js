@@ -54,14 +54,14 @@ frappe.ui.form.on("Course Enrollment Individual", {
     },
     refresh(frm) {
         frm.set_query("coursesc_ce", () => {
-            const NO_MATCH = { filters: { course: ["in", ["__none__"]], open_enroll: 1 } };
+            const NO_MATCH = { filters: { course: ["in", ["__none__"]], workflow_state: "Open for Enrollment" } };
             let q;
             if (!frm.doc.program_ce) {
                 q = NO_MATCH;
             } else if (frm.doc.no_prereq === 1 || frm.doc.audit === 1) {
-                q = { filters: { open_enroll: 1 } };
+                q = { filters: { workflow_state: "Open for Enrollment" } };
             } else if (frm.courses && frm.courses.length) {
-                q = { filters: { course: ["in", frm.courses], open_enroll: 1 } };
+                q = { filters: { course: ["in", frm.courses], workflow_state: "Open for Enrollment" } };
             } else {
                 q = NO_MATCH;
             }

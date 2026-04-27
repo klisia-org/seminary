@@ -5,7 +5,7 @@
  "doctype": "Number Card",
  "document_type": "Course Schedule",
  "dynamic_filters_json": "[]",
- "filters_json": "[[\"Course Schedule\",\"open_enroll\",\"=\",1,false]]",
+ "filters_json": "[[\"Course Schedule\",\"workflow_state\",\"=\",\"Open for Enrollment\",false]]",
  "function": "Count",
  "idx": 0,
  "is_public": 1,

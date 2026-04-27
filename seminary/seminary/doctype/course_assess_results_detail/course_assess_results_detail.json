@@ -16,6 +16,7 @@
   "rawscore_card",
   "score",
   "grade",
+  "graded_card",
   "section_break_htxj",
   "extracredit_card",
   "column_break_kpfm",
@@ -58,6 +59,15 @@
    "in_list_view": 1,
    "label": "Grade",
    "read_only_depends_on": "rawscore_card!=null"
+  },
+  {
+   "default": "0",
+   "description": "Set when a real grade has been propagated (vs. the Float column's NOT NULL DEFAULT 0). Distinguishes ungraded cells from graded zeros.",
+   "fieldname": "graded_card",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Graded",
+   "read_only": 1
   },
   {
    "fieldname": "student_card",

@@ -121,7 +121,7 @@
    "label": "User Full Name"
   },
   {
-   "fetch_from": "student.stuemail_rc",
+   "fetch_from": "student.student_email_id",
    "fieldname": "member",
    "fieldtype": "Link",
    "label": "User",

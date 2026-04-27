@@ -1,11 +1,5 @@
 {
- "actions": [
-  {
-   "action": "seminary.seminary.api.send_grades",
-   "action_type": "Server Action",
-   "label": "Send Grades"
-  }
- ],
+ "actions": [],
  "allow_events_in_timeline": 1,
  "allow_import": 1,
  "autoname": "format:{course}-{academic_term}-{section}",
@@ -22,7 +16,6 @@
   "column_break_2",
   "coursecode_cs",
   "modality",
-  "open_enroll",
   "color",
   "syllabus",
   "section_break_6",
@@ -63,9 +56,24 @@
   "hasmtgdate",
   "calendar_token",
   "class_roster_tab",
+  "lifecycle_section",
+  "workflow_state",
+  "cancellation_reason",
+  "column_break_lifecycle_1",
+  "cancelled_on",
+  "cancelled_by",
+  "late_grade_nag_sent",
+  "minimum_enrollment",
+  "enrollment_dates_section",
+  "enrollment_open_date_override",
+  "enrollment_close_date_override",
+  "grade_close_date_override",
+  "column_break_dates_1",
+  "enrollment_open_date",
+  "enrollment_close_date",
+  "grade_close_date",
   "class_roster_section",
   "csroster_html",
-  "grades_sent",
   "student_groups_section",
   "stu_groups_course",
   "section_break_adom",
@@ -306,15 +314,7 @@
    "label": "Class Roster"
   },
   {
-   "default": "1",
-   "fieldname": "open_enroll",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Open for Enrollment?"
-  },
-  {
-   "description": "Click on Grades to see/edit grades of a particular student. When you click on the button \"Send Grades,\" all students' grades will be sent to the registrar and will no longer be editable.",
+   "description": "Click on Grades to see/edit grades of a particular student. Send Grades is available from the frontend gradebook when the course is in the Grading state.",
    "fieldname": "csroster_html",
    "fieldtype": "HTML",
    "label": "Class Roster and Grades",
@@ -332,15 +332,110 @@
    "label": "Meeting Dates Created"
   },
   {
-   "default": "0",
-   "fieldname": "grades_sent",
-   "fieldtype": "Check",
-   "label": "Grades sent",
+   "fieldname": "column_break_qewt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lifecycle_section",
+   "fieldtype": "Section Break",
+   "label": "Lifecycle"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Status",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Cancelled\"",
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Link",
+   "label": "Cancellation Reason",
+   "options": "Course Cancellation Reason",
    "read_only": 1
   },
   {
-   "fieldname": "column_break_qewt",
+   "fieldname": "column_break_lifecycle_1",
    "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Cancelled\"",
+   "fieldname": "cancelled_on",
+   "fieldtype": "Datetime",
+   "label": "Cancelled On",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.workflow_state==\"Cancelled\"",
+   "fieldname": "cancelled_by",
+   "fieldtype": "Link",
+   "label": "Cancelled By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "late_grade_nag_sent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Late-grade nag sent",
+   "read_only": 1
+  },
+  {
+   "description": "Override the Course default minimum enrollment for this schedule. Informational — used by the Term Enrollment Status report.",
+   "fieldname": "minimum_enrollment",
+   "fieldtype": "Int",
+   "label": "Minimum Enrollment",
+   "non_negative": 1
+  },
+  {
+   "description": "Resolved from the Program enrollment date rule unless overridden below. Recomputed on save.",
+   "fieldname": "enrollment_dates_section",
+   "fieldtype": "Section Break",
+   "label": "Enrollment Dates"
+  },
+  {
+   "description": "Override the Program rule for this course schedule.",
+   "fieldname": "enrollment_open_date_override",
+   "fieldtype": "Date",
+   "label": "Enrollment Open Date (Override)"
+  },
+  {
+   "fieldname": "enrollment_close_date_override",
+   "fieldtype": "Date",
+   "label": "Enrollment Close Date (Override)"
+  },
+  {
+   "description": "Informational deadline for sending final grades. After this date, instructors are reminded by email if the course is still in the Grading state.",
+   "fieldname": "grade_close_date_override",
+   "fieldtype": "Date",
+   "label": "Grade Close Date (Override)"
+  },
+  {
+   "fieldname": "column_break_dates_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enrollment_open_date",
+   "fieldtype": "Date",
+   "label": "Enrollment Open Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "enrollment_close_date",
+   "fieldtype": "Date",
+   "label": "Enrollment Close Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grade_close_date",
+   "fieldtype": "Date",
+   "label": "Grade Close Date",
+   "read_only": 1
   },
   {
    "description": "This will appear on the first page of the course",

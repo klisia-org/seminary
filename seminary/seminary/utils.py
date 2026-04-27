@@ -1459,7 +1459,7 @@ def get_gradebook(course):
     )
     for student in students:
         student["assessments"] = frappe.db.sql(
-            f"""select r.name, r.rawscore_card, r.actualextrapt_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            f"""select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent ='{student.name}'""",
             as_dict=1,

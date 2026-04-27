@@ -92,6 +92,70 @@ frappe.ui.form.on("Course Schedule", {
 		});
 	}
 
+	const can_send_grades = frappe.user.has_role('Instructor') || frappe.user.has_role('Academics User');
+	if (!frm.is_new() && frm.doc.workflow_state === 'Grading' && can_send_grades) {
+		frm.add_custom_button(__('Send Grades'), function() {
+			frappe.confirm(
+				__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone from Desk.'),
+				function() {
+					frappe.dom.freeze(__('Sending grades…'));
+					frappe.call({
+						method: 'seminary.seminary.api.send_grades',
+						args: { doc: JSON.stringify({ name: frm.doc.name }) }
+					})
+						.then(() => {
+							frappe.dom.unfreeze();
+							frappe.show_alert({ message: __('Grades sent.'), indicator: 'green' });
+							frm.reload_doc();
+						})
+						.catch(() => {
+							frappe.dom.unfreeze();
+						});
+				}
+			);
+		}, __('Status'));
+	}
+
+	const cancellable = ['Open for Enrollment', 'Enrollment Closed'].includes(frm.doc.workflow_state);
+	const can_cancel = frappe.user.has_role('Registrar') || frappe.user.has_role('Seminary Manager');
+	if (!frm.is_new() && cancellable && can_cancel) {
+		frm.add_custom_button(__('Cancel Course'), function() {
+			frappe.prompt(
+				[
+					{
+						fieldname: 'reason',
+						fieldtype: 'Link',
+						options: 'Course Cancellation Reason',
+						label: __('Cancellation Reason'),
+						reqd: 1,
+						get_query: () => ({ filters: { is_active: 1 } })
+					},
+					{
+						fieldname: 'warning_html',
+						fieldtype: 'HTML',
+						options: `<div class="text-muted small" style="margin-top: 8px;">
+							${__('Cancellation cannot be undone. Enrolled students will be notified and their Program Enrollment Course rows for this course will be removed.')}
+						</div>`
+					}
+				],
+				(values) => {
+					frappe.dom.freeze(__('Cancelling course…'));
+					frm.call('cancel_course', { reason: values.reason })
+						.then(() => {
+							frappe.dom.unfreeze();
+							frappe.show_alert({ message: __('Course cancelled.'), indicator: 'orange' });
+							frm.reload_doc();
+						})
+						.catch(() => {
+							frappe.dom.unfreeze();
+						});
+				},
+				__('Cancel Course'),
+				__('Cancel Course')
+			);
+		}, __('Status'));
+	}
+
 
 
 
