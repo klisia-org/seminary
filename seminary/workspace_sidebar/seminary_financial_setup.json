@@ -1,0 +1,53 @@
+{
+ "app": "seminary",
+ "creation": "2026-02-19 08:48:46.621520",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "circle-dollar-sign",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "circle-dollar-sign",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seminary Financial Settings",
+   "link_to": "Seminary Financial Setup",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "school",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seminary Home",
+   "link_to": "Seminary",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "cog",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seminary Settings",
+   "link_to": "Seminary Settings",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-04-28 15:57:54.128943",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Financial Setup",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Seminary Financial Setup"
+}
