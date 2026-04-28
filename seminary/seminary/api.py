@@ -870,7 +870,10 @@ def petb_enroll(pe_name, pe_term):
     )
     cs = frappe.get_all(
         "Course Schedule",
-        filters={"academic_term": currentterm, "open_enroll": 1},
+        filters={
+            "academic_term": currentterm,
+            "workflow_state": "Open for Enrollment",
+        },
         fields=["name", "course"],
     )
     for pec in pecs:
@@ -897,11 +900,11 @@ def course_enroll(pe_name, course):
 
     # Validate the Course Schedule exists and is open for enrollment
     cs = frappe.db.get_value(
-        "Course Schedule", course, ["name", "open_enroll"], as_dict=True
+        "Course Schedule", course, ["name", "workflow_state"], as_dict=True
     )
     if not cs:
         frappe.throw(_("Course Schedule not found"))
-    if not cs.open_enroll:
+    if cs.workflow_state != "Open for Enrollment":
         frappe.throw(_("This course is not open for enrollment"))
 
     doc = frappe.new_doc("Course Enrollment Individual")
@@ -944,6 +947,7 @@ def get_student_enrollments_for_term(program_enrollment):
             "program_ce": program_enrollment,
             "academic_term": ["in", current_terms],
             "docstatus": ["!=", 2],
+            "course_cancelled": 0,
         },
         fields=[
             "name",
@@ -1091,6 +1095,7 @@ def get_program_audit(program_enrollment):
             "program_ce": pe.name,
             "docstatus": 1,
             "withdrawn": 0,
+            "course_cancelled": 0,
         },
         fields=["course_data", "coursesc_ce"],
     )
@@ -1408,7 +1413,7 @@ def get_available_courses_categorized(program_enrollment):
         "Course Schedule",
         filters={
             "course": ["in", available_courses],
-            "open_enroll": 1,
+            "workflow_state": "Open for Enrollment",
         },
         fields=[
             "name",
@@ -1846,7 +1851,15 @@ def quizresult_to_card(doc, method):
         "name",
     )
     if not cardname:
-        print("***NO CARDNAME***")
+        frappe.log_error(
+            (
+                f"No Course Assess Results Detail found for "
+                f"{doc.doctype} {doc.name}: assessment_criteria={doc.course_assess!r}, "
+                f"student={doc.student!r}, course={course_schedule!r}. "
+                f"Grade was not propagated to the gradebook."
+            ),
+            "quizresult_to_card: missing CARD row",
+        )
         return
     card = frappe.get_doc("Course Assess Results Detail", cardname)
 
@@ -1857,6 +1870,9 @@ def quizresult_to_card(doc, method):
         if doc.extra_credit
         else ""
     )
+    # Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
+    # default 0). Cleared if the prof unsets the submission grade.
+    card.graded_card = 1 if doc.percentage not in (None, "") else 0
     # Save the updated card
     card.save(ignore_permissions=True)
 
@@ -2089,7 +2105,7 @@ def courses_for_student(program_ce):
         """SELECT cs.course
         FROM `tabCourse Schedule` cs
         INNER JOIN `tabAcademic Term` aterm ON aterm.name = cs.academic_term
-        WHERE cs.open_enroll = '1'
+        WHERE cs.workflow_state = 'Open for Enrollment'
             AND aterm.iscurrent_acterm = '1'
             AND cs.course IN (
                 (SELECT pc.course
@@ -2143,6 +2159,7 @@ def courses_for_student(program_ce):
                 FROM `tabCourse Enrollment Individual`
                 WHERE audit = 0
                     AND docstatus != '2'
+                    AND course_cancelled = 0
                     AND program_ce = %s
             )""",
         (pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
@@ -2719,7 +2736,44 @@ def send_grades(doc=None, **kwargs):
     else:
         # Use doc.get("name") if it's already a dictionary (fallback)
         docname = doc.get("name")
-    print(docname)
+
+    state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
+    if state == "Closed":
+        return "All grades sent"
+    if state != "Grading":
+        frappe.throw(
+            _(
+                "Send Grades is only available while the course is in the "
+                "Grading state. Current state: {0}."
+            ).format(state or _("(none)"))
+        )
+
+    missing = frappe.db.sql(
+        """
+        SELECT COUNT(DISTINCT scr.name)
+        FROM `tabCourse Assess Results Detail` card
+        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+        LEFT JOIN `tabCourse Enrollment Individual` cei
+            ON cei.coursesc_ce = scr.course_sc
+           AND cei.student_ce = scr.student
+           AND cei.docstatus = 1
+        WHERE scr.course_sc = %s
+          AND scr.active = 1
+          AND scr.audit_bool = 0
+          AND COALESCE(cei.course_cancelled, 0) = 0
+          AND COALESCE(card.graded_card, 0) = 0
+        """,
+        (docname,),
+    )
+    missing_count = missing[0][0] if missing else 0
+    if missing_count:
+        frappe.throw(
+            _(
+                "Cannot send grades: {0} student(s) still have ungraded "
+                "assessments. Fill in all grades (or 0 explicitly) before sending."
+            ).format(missing_count)
+        )
+
     records = frappe.get_all(
         "Scheduled Course Roster",
         filters={"course_sc": docname},
@@ -2773,16 +2827,15 @@ def send_grades(doc=None, **kwargs):
                 },
             )
             frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
-            frappe.db.set_value(
-                "Scheduled Course Roster", named, {"active": "0", "docstatus": "1"}
-            )
+            frappe.db.set_value("Scheduled Course Roster", named, "active", 0)
         else:
             continue
-    frappe.db.set_value(
-        "Course Schedule",
-        docname,
-        {"grades_sent": "1", "open_enroll": "0", "docstatus": "1"},
-    )
+
+    # System-driven transition: bypass the workflow validator (the "Send
+    # Grades" transition is intentionally absent from the workflow fixture
+    # so the Desk Action menu can't bypass the grade computation and PEC
+    # update above). Mirrors the cancel_course pattern.
+    frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
 
     # After grades are sent, recalculate track credits and check auto-grant emphases
     affected_pes = set()

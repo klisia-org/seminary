@@ -5,15 +5,36 @@
 
     </header>
     <h1 class="text-2xl font-bold mt-5 mb-4 ml-5">{{ __('Gradebook for') }} {{ course?.data?.course }}</h1>
+    <div v-if="isFinalized" class="mx-5 mb-4 rounded-md bg-surface-blue-1 px-4 py-3 text-sm text-ink-blue-3">
+      {{ finalizedMessage }}
+    </div>
     <div class="flex items-center gap-2 mb-4 ml-5">
-      <Button v-if="hasUnsavedChanges" variant="solid" @click="saveAllChanges">
+      <Button v-if="hasUnsavedChanges && !isFinalized" variant="solid" @click="saveAllChanges">
         <template #prefix>
           <Save class="h-4 w-4" />
         </template>
         {{ __('Save All Changes') }} ({{ Object.keys(changedCells).length }})
       </Button>
-      <span v-if="hasUnsavedChanges" class="text-sm text-ink-gray-5">
+      <span v-if="hasUnsavedChanges && !isFinalized" class="text-sm text-ink-gray-5">
         {{ __('or press Ctrl+S') }}
+      </span>
+      <Button
+        v-if="canSendGrades"
+        variant="solid"
+        theme="blue"
+        :disabled="hasNullGrades || hasUnsavedChanges || sendingGrades"
+        @click="sendGrades"
+      >
+        <template #prefix>
+          <Send class="h-4 w-4" />
+        </template>
+        {{ __('Send Grades') }}
+      </Button>
+      <span v-if="canSendGrades && hasNullGrades" class="text-sm text-ink-gray-6">
+        {{ __('Fill in all grades before sending.') }}
+      </span>
+      <span v-else-if="canSendGrades && hasUnsavedChanges" class="text-sm text-ink-gray-6">
+        {{ __('Save changes before sending.') }}
       </span>
     </div>
     <!-- No Students Message -->
@@ -113,13 +134,14 @@
               class="border border-outline-gray-2 px-1 py-1.5 sm:px-2">
               <div class="flex items-center gap-1">
                 <input type="number"
-                  class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors"
+                  :disabled="isFinalized"
+                  class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors disabled:bg-surface-gray-1 disabled:text-ink-gray-6 disabled:cursor-not-allowed"
                   :class="isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : ''"
                   :value="assessment.extracredit_scac ? getExtraCredit(student, assessment) : getRegularGrade(student, assessment)"
                   @input="assessment.extracredit_scac
                     ? markExtraCreditAsChanged(student, assessment, $event.target.value)
                     : markRegularGradeAsChanged(student, assessment, $event.target.value)" />
-                <button v-if="isCellChanged(student, assessment)"
+                <button v-if="isCellChanged(student, assessment) && !isFinalized"
                   class="shrink-0 rounded p-0.5 text-ink-blue-2 hover:text-ink-blue-3 hover:bg-surface-blue-2 transition-colors"
                   @click="saveCell(student, assessment)">
                   <Save class="h-3.5 w-3.5" />
@@ -137,10 +159,11 @@
 
 <script setup>
 import { Breadcrumbs, Button, createResource, Tooltip, call, toast } from 'frappe-ui'
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { Send, Save } from 'lucide-vue-next'
 import { useRoute } from 'vue-router';
 const route = useRoute();
+const user = inject('$user');
 const props = defineProps({
   courseName: {
     type: String,
@@ -151,6 +174,7 @@ const props = defineProps({
 const students = ref([]); // Array of students
 const assessments = ref([]); // Array of assessment criteria
 const changedCells = ref({}); // Track changed cells
+const sendingGrades = ref(false);
 
 // onMounted(() => {
 //   if (!user.data?.is_moderator && !user.data?.is_instructor) {
@@ -168,6 +192,67 @@ const course = createResource({
   auto: true,
 })
 
+const courseSchedule = createResource({
+  url: 'frappe.client.get_value',
+  params: {
+    doctype: 'Course Schedule',
+    fieldname: 'workflow_state',
+    filters: { name: props.courseName },
+  },
+  auto: true,
+})
+
+const canSendGrades = computed(() => {
+  if (!user?.data) return false;
+  const hasRole =
+    user.data.is_evaluator ||
+    user.data.is_instructor ||
+    user.data.is_moderator;
+  return hasRole && courseSchedule.data?.workflow_state === 'Grading';
+})
+
+const isFinalized = computed(() => {
+  const state = courseSchedule.data?.workflow_state;
+  return state === 'Closed' || state === 'Cancelled';
+})
+
+const finalizedMessage = computed(() => {
+  if (courseSchedule.data?.workflow_state === 'Cancelled') {
+    return __('This course has been cancelled. The gradebook is read-only.');
+  }
+  return __('Grades for this course have already been sent. The gradebook is read-only.');
+})
+
+const hasNullGrades = computed(() => {
+  for (const student of students.value) {
+    if (!student.active || student.audit_bool) continue;
+    for (const def of assessments.value) {
+      const cell = student.assessments.find(
+        (a) => a.assessment_criteria === def.assessment_criteria
+      );
+      if (!cell || !cell.graded_card) return true;
+    }
+  }
+  return false;
+})
+
+const sendGrades = async () => {
+  if (!confirm(__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone.'))) return;
+  sendingGrades.value = true;
+  try {
+    await call('seminary.seminary.api.send_grades', {
+      doc: JSON.stringify({ name: props.courseName }),
+    });
+    toast.success(__('Grades sent successfully'));
+    courseSchedule.reload();
+    gradebook.reload();
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Failed to send grades'));
+  } finally {
+    sendingGrades.value = false;
+  }
+}
+
 const gradebook = createResource({
   url: 'seminary.seminary.utils.get_gradebook',
   params: {
@@ -184,8 +269,9 @@ const gradebook = createResource({
       ...student,
       assessments: student.assessments.map((assessment) => ({
         ...assessment,
-        rawscore_card: assessment.rawscore_card || 0,
-        actualextrapt_card: assessment.actualextrapt_card || 0,
+        rawscore_card: assessment.rawscore_card ?? null,
+        actualextrapt_card: assessment.actualextrapt_card ?? null,
+        graded_card: assessment.graded_card ? 1 : 0,
       })),
     }))
     assessments.value = data[0]?.assessments || []
@@ -221,12 +307,27 @@ const getCellData = (student, assessment) => {
   return assessment.extracredit_scac ? cell.actualextrapt_card : cell.rawscore_card;
 };
 
+// Empty input renders as blank when the cell isn't graded; an actual graded
+// zero renders as "0". The graded_card flag is the source of truth (the Float
+// column on CARD is NOT NULL DEFAULT 0 — see ADR 013).
+const cellInputValue = (cell, field) => {
+  if (!cell || !cell.graded_card) return '';
+  const raw = cell[field];
+  return raw === null || raw === undefined ? '' : raw;
+};
+
+const parseGradeInput = (value) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const num = parseFloat(value);
+  return isNaN(num) ? null : num;
+};
+
 // Get extra credit for a specific student and assessment
 const getExtraCredit = (student, assessment) => {
   const cell = student.assessments.find(
     (a) => a.assessment_criteria === assessment.assessment_criteria
   );
-  return cell ? cell.actualextrapt_card : 0;
+  return cellInputValue(cell, 'actualextrapt_card');
 };
 
 // Get regular grade for a specific student and assessment
@@ -234,7 +335,14 @@ const getRegularGrade = (student, assessment) => {
   const cell = student.assessments.find(
     (a) => a.assessment_criteria === assessment.assessment_criteria
   );
-  return cell ? cell.rawscore_card : 0;
+  return cellInputValue(cell, 'rawscore_card');
+};
+
+const applyCellChange = (cell, field, value) => {
+  const parsed = parseGradeInput(value);
+  cell[field] = parsed;
+  cell.graded_card = parsed === null ? 0 : 1;
+  changedCells.value[cell.name] = true;
 };
 
 // Mark a cell as changed
@@ -243,12 +351,8 @@ const markCellAsChanged = (student, assessment, value) => {
     (a) => a.assessment_criteria === assessment.assessment_criteria
   );
   if (cell) {
-    if (assessment.extracredit_scac) {
-      cell.actualextrapt_card = parseFloat(value) || 0; // Update extra credit points
-    } else {
-      cell.rawscore_card = parseFloat(value) || 0; // Update regular score
-    }
-    changedCells.value[cell.name] = true; // Mark the cell as changed
+    const field = assessment.extracredit_scac ? 'actualextrapt_card' : 'rawscore_card';
+    applyCellChange(cell, field, value);
   }
 };
 
@@ -258,8 +362,7 @@ const markExtraCreditAsChanged = (student, assessment, value) => {
     (a) => a.assessment_criteria === assessment.assessment_criteria
   );
   if (cell) {
-    cell.actualextrapt_card = parseFloat(value) || 0; // Update extra credit points
-    changedCells.value[cell.name] = true; // Mark the cell as changed
+    applyCellChange(cell, 'actualextrapt_card', value);
   }
 };
 
@@ -269,8 +372,7 @@ const markRegularGradeAsChanged = (student, assessment, value) => {
     (a) => a.assessment_criteria === assessment.assessment_criteria
   );
   if (cell) {
-    cell.rawscore_card = parseFloat(value) || 0; // Update regular score
-    changedCells.value[cell.name] = true; // Mark the cell as changed
+    applyCellChange(cell, 'rawscore_card', value);
   }
 };
 
@@ -292,12 +394,17 @@ const saveCell = async (student, assessment) => {
   try {
     const fieldToUpdate = assessment.extracredit_scac ? 'actualextrapt_card' : 'rawscore_card'
     const valueToUpdate = assessment.extracredit_scac ? cell.actualextrapt_card : cell.rawscore_card
+    // CARD's grade column is NOT NULL DEFAULT 0; coerce null to 0 at the
+    // boundary and let graded_card carry the real "ungraded" signal.
+    const dbValue = valueToUpdate === null || valueToUpdate === undefined ? 0 : valueToUpdate
 
     await call('frappe.client.set_value', {
       doctype: 'Course Assess Results Detail',
       name: cell.name,
-      fieldname: fieldToUpdate,
-      value: valueToUpdate,
+      fieldname: {
+        [fieldToUpdate]: dbValue,
+        graded_card: cell.graded_card,
+      },
     })
 
     delete changedCells.value[cell.name]
@@ -331,12 +438,15 @@ const saveAllChanges = async () => {
 
         const fieldToUpdate = isExtraCredit ? 'actualextrapt_card' : 'rawscore_card'
         const valueToUpdate = isExtraCredit ? cell.actualextrapt_card : cell.rawscore_card
+        const dbValue = valueToUpdate === null || valueToUpdate === undefined ? 0 : valueToUpdate
 
         await call('frappe.client.set_value', {
           doctype: 'Course Assess Results Detail',
           name: cell.name,
-          fieldname: fieldToUpdate,
-          value: valueToUpdate,
+          fieldname: {
+            [fieldToUpdate]: dbValue,
+            graded_card: cell.graded_card,
+          },
         })
 
         delete changedCells.value[cell.name]

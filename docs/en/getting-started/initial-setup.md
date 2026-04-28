@@ -19,6 +19,9 @@ Open **Seminary Settings** in the Desk. This is the seminary-wide control panel:
 - **Scholarships** — Cost Center and Default Customer
 - **Audits** — whether to allow non-credit students, and how they are charged (flat fee or per-credit hour)
 - **Course withdrawal** — baseline policy (detailed rules are configured in the [Withdrawal module](../modules/withdrawal.md))
+- **Course Schedule lifecycle**:
+    - **Auto-advance Course Schedule states** (default on) — when checked, the daily scheduler advances Course Schedules automatically based on the dates below (Draft → Open for Enrollment → Enrollment Closed) and emails instructors who haven't sent grades by the deadline. Uncheck if your seminary prefers fully manual control.
+    - **Enrollment Window Rules** — three pairs of (anchor, offset in days) that define when each Course Schedule opens for enrollment, closes enrollment, and expects grades. Anchors: `term_start`, `term_end`, `classes_start` (= each Course Schedule's start date), `classes_end` (= each Course Schedule's end date). Negative offset = before the anchor; positive = after. A blank anchor opts a window out — affected Course Schedules need explicit overrides on their own form (Lifecycle section) or land directly in Open for Enrollment with no enrollment deadline. See [Section 12](#_12-course-schedule-lifecycle).
 - **HR/Payroll** - You may extend SeminaryERP functionality with our integration with Frappe HRMS to process payroll. In order to do this, click on [Enable HRMS Payroll](../modules/instructor-payment.md)
 - **Student Portal** — toggle each capability students will have:
     - Request course enrollments
@@ -101,11 +104,79 @@ Detailed program modeling (tracks, emphases, credit requirements) is covered und
 
 All Fee Categories for any course of that program **must** first be linked in the Program level. 
 
-## 12. User Roles
+## 12. Course Schedule Lifecycle
+
+Each **Course Schedule** moves through a six-state workflow that the daily scheduler advances automatically (when [Section 2](#_2-seminary-settings) "Auto-advance" is on) or that registrars walk through manually:
+
+```
+Draft → Open for Enrollment → Enrollment Closed → Grading → Closed
+            ↓                       ↓
+        Cancelled               Cancelled (terminal)
+```
+
+- **Draft** — created, not yet visible to students. The scheduler promotes to Open for Enrollment when the resolved enrollment-open date arrives.
+- **Open for Enrollment** — students can request enrollment from the portal.
+- **Enrollment Closed** — registration window has passed, term is running, prof is teaching.
+- **Grading** — the system enters this state automatically the first time a non-null grade is saved against any active student (whether via Quiz/Assignment/Exam/Discussion submission or directly in the gradebook). No registrar action needed.
+- **Closed** — final state, set when the prof clicks **Send Grades** on the gradebook (or, in the Desk, on the Course Schedule form). Final grades are written to the transcript at this moment.
+- **Cancelled** — terminal. Reachable only before grading begins (see *Cancelling a Course* below).
+
+### Per-Course-Schedule date overrides
+
+Each Course Schedule's **Lifecycle** section (in the Class Roster tab) shows the resolved enrollment open / close / grade-close dates from the Seminary Settings rule, plus three optional **override** date fields. Filling an override replaces the rule for that one schedule — useful for late-added courses, intensives, or one-off exceptions.
+
+### Course Cancellation Reasons
+
+Cancellations require a **reason** chosen from a configurable list. SeminaryERP ships with five seeded reasons:
+
+- Insufficient Enrollment
+- Instructor Unavailable
+- Curriculum Change
+- Administrative Decision
+- Force Majeure
+
+To add or rename reasons, open **Course Cancellation Reason** in the Desk (search bar). Mark old reasons as inactive rather than deleting them so historical cancellations keep a valid label.
+
+### Cancelling a Course (registrar workflow)
+
+A course can be cancelled only while it is in **Open for Enrollment** or **Enrollment Closed**. Once any grade is entered, the system moves the course to **Grading** and cancellation is no longer offered — at that point cancelling would risk losing transcript data.
+
+Steps:
+
+1. Open the Course Schedule form (Desk).
+2. **Status** action group → **Cancel Course**.
+3. Pick a Cancellation Reason in the dialog and confirm.
+
+The system will:
+
+- Mark every enrolled student's Course Enrollment Individual with `Course Cancelled`, the chosen reason, and a timestamp (distinct from a student-initiated withdrawal).
+- Remove the affected Program Enrollment Course rows so cancelled courses don't appear in transcripts or progress audits. Rows that came from a partner seminary's transferred grades are preserved.
+- Send a Seminary Announcement to all enrolled students explaining the cancellation.
+- Free the students to enroll in another section or course immediately — duplicate-enrollment checks and "courses available" lists ignore cancelled-course CEIs.
+
+Cancellation cannot be undone in this version. The dialog warns about this, so verify before confirming.
+
+::: tip Emergency: cancel after grading started
+If a course must be retired after grading has begun (e.g., the instructor dies mid-term), the procedure is: withdraw each enrolled student through the standard withdrawal flow, then have the prof (or registrar) click **Send Grades** on the empty roster. The course closes cleanly with no grades to dispute.
+:::
+
+::: warning Sales Invoices are NOT touched on cancellation
+This version does not touch Sales Invoices when a course is cancelled. Reconcile manually — typically by cancelling the per-course invoice and creating a credit note. A future iteration may automate this; until then, treat invoice cleanup as a separate registrar task.
+:::
+
+### Minimum enrollment
+
+Each **Course** has an optional **Default Minimum Enrollment** field. Each Course Schedule has its own **Minimum Enrollment** override (in the Lifecycle section). Both are *informational only* — the system does not auto-cancel courses that miss the threshold. Use the **Term Enrollment Status** report (Desk → Reports) to see, per Academic Term, every Course Schedule with its minimum, current enrollment, and the gap. Below-minimum courses are highlighted; cancel them via the workflow above before classes start.
+
+### Late-grade reminders
+
+When **Auto-advance** is on, every day the scheduler emails any instructor whose Course Schedule is past its grade-close deadline and still hasn't reached **Closed** state. The Registrar role is CC'd. The reminder is sent once per Course Schedule (idempotent flag prevents repeat sends).
+
+## 13. User Roles
 
 See [User Roles](../administration/user-roles.md) for configuring instructor, student, and administrator access.
 
-## 13. Manual Input OR Import the following data
+## 14. Manual Input OR Import the following data
 
 The following must be present for you to start your first term. 
 If you have a small numer of students and prefer to do it manually, upon creation of a Student, SeminaryERP may create both a linked user and customer. However, it is also easy to import this data. You can follow [these instructions](https://docs.frappe.io/erpnext/data-import).
@@ -123,11 +194,11 @@ Then, you need to link courses to your programs.
 It is **strongly recommended** to double-check the import and **complement** the information on Courses before adding them to Programs. Courses will propagate several pieces of information to **Course Schedule**, so its completeness of information will expedite the work every term. 
 To add them in bulk, navigate to Courses, select all courses you want to add to a Program, and click on **Actions** &rArr; **Add to Program**. A pop-up window will open where you need to select the Program that these courses should be added to. The window also has a checkbox to indicate if all the selected courses should be mandatory for this program or not.  
 
-## 14. Import existing grades
+## 15. Import existing grades
 
 SeminaryERP uses a single process to accept grades from other seminaries that also serves to import grades from any legacy system, manually or via CSV. See [Legacy Grade Import](legacy-grade-import.md) for the full workflow — one-time Partner Seminary setup, bulk equivalence creation, dry-run validation, and idempotent commit.
 
-## 15. Add Instructors
+## 16. Add Instructors
 
 Create an **Instructor** record for every person who will teach. Each instructor needs a linked **System User** (so they can log in to the Desk and LMS) and an **Instructor Type** that reflects how they are paid:
 

@@ -62,6 +62,7 @@ class CourseEnrollmentIndividual(Document):
                 "coursesc_ce": self.coursesc_ce,
                 "docstatus": ("=", 1),
                 "audit": ("=", 0),
+                "course_cancelled": ("=", 0),
             },
         )
         if CEI:

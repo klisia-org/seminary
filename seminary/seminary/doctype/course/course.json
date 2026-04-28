@@ -11,6 +11,7 @@
   "coursecode",
   "department",
   "course_credits",
+  "default_minimum_enrollment",
   "hero_image",
   "column_break_tflc",
   "description",
@@ -46,6 +47,13 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Course Credits (Default)"
+  },
+  {
+   "description": "Optional advisory minimum number of enrolled students for a Course Schedule of this course. Informational only — used by the Term Enrollment Status report. Course Schedules can override this.",
+   "fieldname": "default_minimum_enrollment",
+   "fieldtype": "Int",
+   "label": "Default Minimum Enrollment",
+   "non_negative": 1
   },
   {
    "fieldname": "hero_image",

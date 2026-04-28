@@ -412,5 +412,75 @@
     "state": "Approved"
    }
   ]
+ },
+ {
+  "creation": "2026-04-27 12:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Course Schedule",
+  "is_active": 1,
+  "name": "Course Schedule Lifecycle",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_name": "Course Schedule Lifecycle",
+  "workflow_state_field": "workflow_state",
+  "states": [
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Open for Enrollment",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Enrollment Closed",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Grading",
+    "allow_edit": "Instructor"
+   },
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Closed",
+    "allow_edit": "Registrar"
+   },
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Cancelled",
+    "allow_edit": "Registrar"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Open Enrollment",
+    "allowed": "Academics User",
+    "next_state": "Open for Enrollment",
+    "state": "Draft"
+   },
+   {
+    "action": "Close Enrollment",
+    "allowed": "Academics User",
+    "next_state": "Enrollment Closed",
+    "state": "Open for Enrollment"
+   },
+   {
+    "action": "Begin Grading",
+    "allowed": "Academics User",
+    "next_state": "Grading",
+    "state": "Enrollment Closed"
+   }
+  ]
  }
 ]

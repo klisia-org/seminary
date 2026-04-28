@@ -100,5 +100,35 @@
   "doctype": "Workflow Action Master",
   "name": "Mark Defended",
   "workflow_action_name": "Mark Defended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Open Enrollment",
+  "workflow_action_name": "Open Enrollment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Close Enrollment",
+  "workflow_action_name": "Close Enrollment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Cancel Course",
+  "workflow_action_name": "Cancel Course"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Begin Grading",
+  "workflow_action_name": "Begin Grading"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Send Grades",
+  "workflow_action_name": "Send Grades"
  }
 ]

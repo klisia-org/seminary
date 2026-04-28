@@ -284,6 +284,12 @@ doc_events = {
     "Course Withdrawal Request": {
         "on_update_after_submit": "seminary.seminary.withdrawal.on_withdrawal_workflow_update",
     },
+    "Course Assess Results Detail": {
+        "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
+    },
+    "Scheduled Course Roster": {
+        "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
+    },
     "Student": {
         "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
     },
@@ -399,6 +405,7 @@ fixtures = [
     "Custom HTML Block",
     "Seminary Help Entry",
     "Messaging App",
+    "Course Cancellation Reason",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {"dt": "Print Format", "filters": [["name", "=", "Seminary Sales Invoice"]]},
 ]

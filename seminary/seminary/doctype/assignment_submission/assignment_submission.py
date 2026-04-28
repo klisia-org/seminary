@@ -18,6 +18,16 @@ class AssignmentSubmission(Document):
         self.validate_url()
         self.validate_status()
         self.populate()
+        self.sync_percentage_from_grade()
+
+    def sync_percentage_from_grade(self):
+        """Mirror grade → percentage so quizresult_to_card can propagate the
+        score to the gradebook. The Assignment Submission UI only sets `grade`
+        but the bridge to Course Assess Results Detail reads `percentage`
+        (kept consistent with Exam/Quiz/Discussion submissions, which
+        compute percentage on their own)."""
+        if self.grade is not None:
+            self.percentage = self.grade
 
     # def after_insert(self):
     #     if not frappe.flags.in_test:

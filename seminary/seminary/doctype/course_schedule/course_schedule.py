@@ -8,14 +8,19 @@ from datetime import datetime
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.model.workflow import apply_workflow
+from frappe.utils import add_days, getdate, now
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
-from frappe.utils import add_days, getdate
 
 from seminary.seminary.utils import OverlapError
 import json
 import secrets
+
+
+CANCELLABLE_STATES = ("Open for Enrollment", "Enrollment Closed")
+CANCEL_ROLES = ("Registrar", "Seminary Manager")
 
 
 class CourseSchedule(Document):
@@ -30,6 +35,30 @@ class CourseSchedule(Document):
         self.validate_assessment_criteria()
         self.validate_instructor_categories()
         self.clean_name()
+        self._resolve_dates_if_needed()
+
+    def before_insert(self):
+        if not self.workflow_state:
+            from seminary.seminary.cs_lifecycle import get_default_initial_state
+
+            self.workflow_state = get_default_initial_state(self)
+
+    def on_trash(self):
+        if self.workflow_state and self.workflow_state != "Draft":
+            frappe.throw(
+                _(
+                    "Only Course Schedules in the Draft state can be deleted. "
+                    "Use Cancel Course to retire a course that has opened for enrollment."
+                )
+            )
+
+    def _resolve_dates_if_needed(self):
+        from seminary.seminary.cs_lifecycle import resolve_window_dates
+
+        dates = resolve_window_dates(self)
+        self.enrollment_open_date = dates.get("enrollment_open")
+        self.enrollment_close_date = dates.get("enrollment_close")
+        self.grade_close_date = dates.get("grade_close")
 
     def validate_instructor_categories(self):
         """When HRMS payroll is enabled, every instructor row needs a category."""
@@ -158,14 +187,145 @@ class CourseSchedule(Document):
             meeting_dates_errors=meeting_dates_errors,
         )
 
+    @frappe.whitelist()
+    def cancel_course(self, reason):
+        """Transition a Course Schedule to Cancelled and run the cascade.
+
+        Permitted only from Open for Enrollment or Enrollment Closed (the
+        state machine forbids cancellation once grading has started). Marks
+        each non-withdrawn Course Enrollment Individual as course_cancelled,
+        deletes the auto-populated Program Enrollment Course rows (preserving
+        partner-seminary rows per ADR 005), and submits a Seminary
+        Announcement to enrolled students.
+        """
+        roles = set(frappe.get_roles(frappe.session.user))
+        if not roles.intersection(CANCEL_ROLES):
+            frappe.throw(
+                _("Only Registrar or Seminary Manager can cancel a course."),
+                frappe.PermissionError,
+            )
+
+        if self.workflow_state not in CANCELLABLE_STATES:
+            frappe.throw(
+                _(
+                    "Cannot cancel a course in state {0}. Cancellation is "
+                    "only allowed before grading starts."
+                ).format(self.workflow_state or _("(none)"))
+            )
+
+        if not frappe.db.exists("Course Cancellation Reason", reason):
+            frappe.throw(_("Cancellation reason {0} does not exist.").format(reason))
+
+        # Cancellation isn't a regular workflow transition (intentionally
+        # absent from the workflow fixture so the Desk Action menu cannot
+        # bypass this method). Use db.set_value to skip Frappe's
+        # transition validator — the role/state gates above are the
+        # authoritative checks.
+        cancelled_at = now()
+        user = frappe.session.user
+        frappe.db.set_value(
+            "Course Schedule",
+            self.name,
+            {
+                "cancellation_reason": reason,
+                "cancelled_on": cancelled_at,
+                "cancelled_by": user,
+                "workflow_state": "Cancelled",
+            },
+        )
+        self.cancellation_reason = reason
+        self.cancelled_on = cancelled_at
+        self.cancelled_by = user
+        self.workflow_state = "Cancelled"
+
+        _cascade_cancel_pec_and_cei(self.name, reason)
+        _create_cancellation_announcement(self, reason)
+
+
+def _cascade_cancel_pec_and_cei(cs_name, reason):
+    """Mark CEIs as course-cancelled and hard-delete the auto-populated PECs.
+
+    Mirrors the direct ``db.set_value`` pattern used in withdrawal.py to avoid
+    re-running CEI validate() on every flip. Partner-seminary PEC rows (per
+    ADR 005) are preserved by the COALESCE filter — those rows reuse the same
+    course link with a different meaning and are not part of this cascade.
+    """
+    cei_names = frappe.get_all(
+        "Course Enrollment Individual",
+        filters={
+            "coursesc_ce": cs_name,
+            "withdrawn": 0,
+            "docstatus": 1,
+        },
+        pluck="name",
+    )
+    cancelled_at = now()
+    for cei in cei_names:
+        frappe.db.set_value(
+            "Course Enrollment Individual",
+            cei,
+            {
+                "course_cancelled": 1,
+                "course_cancellation_reason": reason,
+                "course_cancelled_on": cancelled_at,
+            },
+        )
+
+    frappe.db.sql(
+        """
+        DELETE FROM `tabProgram Enrollment Course`
+        WHERE course = %s
+          AND COALESCE(partner_seminary, '') = ''
+        """,
+        (cs_name,),
+    )
+
+
+def _create_cancellation_announcement(cs, reason):
+    """Submit a Seminary Announcement notifying enrolled students.
+
+    Skipped when there are no enrolled students — Seminary Announcement
+    rejects empty audiences and the throw would roll back the cancellation
+    transaction. A cancellation with nobody to notify is still a valid
+    cancellation.
+    """
+    if not frappe.db.count(
+        "Course Enrollment Individual",
+        {"coursesc_ce": cs.name, "withdrawn": 0, "docstatus": 1},
+    ):
+        return
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Seminary Announcement",
+            "subject": _("Course cancelled: {0}").format(cs.title or cs.name),
+            "academic_term": cs.academic_term,
+            "message": _(
+                "<p>The course <b>{course}</b> ({term}) has been cancelled.</p>"
+                "<p><b>Reason:</b> {reason}</p>"
+                "<p>Please contact the registrar about rescheduling or "
+                "alternative enrollment options.</p>"
+            ).format(
+                course=cs.title or cs.name,
+                term=cs.academic_term,
+                reason=reason,
+            ),
+            "audience_students_enrolled": 1,
+            "courses": [{"course_schedule": cs.name}],
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    doc.submit()
+
 
 @frappe.whitelist()
 def bulk_close_enrollment(names):
-    """Set open_enroll = 0 on the given Course Schedules.
+    """Drive selected Course Schedules from Open for Enrollment to Enrollment Closed.
 
-    Mirrors the closure path used after grade submission in
-    api.py: direct db update, no full save (skips unrelated
-    validate() checks that can throw on legacy rows).
+    Used by the registrar to mass-close enrollment at the end of the
+    registration window when a manual sweep is preferred over the daily
+    scheduler. Skips schedules that are not in Open for Enrollment or that
+    the caller cannot edit.
     """
     if isinstance(names, str):
         names = json.loads(names)
@@ -175,9 +335,17 @@ def bulk_close_enrollment(names):
         if not frappe.has_permission("Course Schedule", "write", doc=name):
             skipped.append(name)
             continue
-        if frappe.db.get_value("Course Schedule", name, "open_enroll"):
-            frappe.db.set_value("Course Schedule", name, "open_enroll", 0)
+        state = frappe.db.get_value("Course Schedule", name, "workflow_state")
+        if state != "Open for Enrollment":
+            skipped.append(name)
+            continue
+        try:
+            apply_workflow(frappe.get_doc("Course Schedule", name), "Close Enrollment")
             closed.append(name)
-        else:
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"bulk_close_enrollment failed: {name}",
+            )
             skipped.append(name)
     return {"closed": closed, "skipped": skipped}

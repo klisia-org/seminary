@@ -190,7 +190,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 2,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -215,10 +215,20 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Enrollment Status",
+   "link_count": 0,
+   "link_to": "Term Enrollment Status",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-07 18:55:57.835094",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-04-27 18:47:10.109989",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
  "number_cards": [],

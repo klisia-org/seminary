@@ -13,17 +13,23 @@ from seminary.seminary.api import (
 
 @frappe.whitelist()
 def daily():
-    if not frappe.db.get_single_value(
-        "Seminary Settings", "billing_automation_enabled"
-    ):
-        return
-
     today = getdate()
-    _update_term_flags(today)
-    _run_nat_for_due_terms(today)
-    _run_nay_for_due_years(today)
-    if today.day == 1:
-        generate_monthly_invoices(today)
+
+    if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
+        _update_term_flags(today)
+        _run_nat_for_due_terms(today)
+        _run_nay_for_due_years(today)
+        if today.day == 1:
+            generate_monthly_invoices(today)
+
+    if frappe.db.get_single_value("Seminary Settings", "auto_advance_course_schedule"):
+        from seminary.seminary.cs_lifecycle import (
+            advance_due_course_schedules,
+            nag_late_graders,
+        )
+
+        advance_due_course_schedules(today)
+        nag_late_graders(today)
 
 
 @frappe.whitelist()
