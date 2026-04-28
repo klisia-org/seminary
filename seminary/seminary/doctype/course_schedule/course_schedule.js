@@ -116,6 +116,61 @@ frappe.ui.form.on("Course Schedule", {
 		}, __('Status'));
 	}
 
+	const importable = ['Draft', 'Open for Enrollment'].includes(frm.doc.workflow_state);
+	const can_import = frappe.user.has_role('Academics User')
+		|| frappe.user.has_role('Seminary Manager')
+		|| frappe.user.has_role('Registrar');
+	const no_chapters = !frm.doc.chapters || frm.doc.chapters.length === 0;
+	if (!frm.is_new() && importable && can_import && no_chapters) {
+		frm.add_custom_button(__('Import Course Template'), function() {
+			frappe.db.get_value('Course', frm.doc.course, 'default_cs_template').then(r => {
+				const default_template = (r && r.message && r.message.default_cs_template) || null;
+				frappe.prompt(
+					[
+						{
+							fieldname: 'source_cs',
+							fieldtype: 'Link',
+							options: 'Course Schedule',
+							label: __('Source Course Schedule'),
+							reqd: 1,
+							default: default_template,
+							get_query: () => ({
+								filters: { course: frm.doc.course, name: ['!=', frm.doc.name] }
+							})
+						},
+						{
+							fieldname: 'warning_html',
+							fieldtype: 'HTML',
+							options: `<div class="text-muted small" style="margin-top: 8px;">
+								${__('Copies chapters, lessons, and assessment criteria from the source schedule. Roster, grades, dates, and enrollment counts are not copied. Existing assessment criteria on this schedule will be replaced.')}
+							</div>`
+						}
+					],
+					(values) => {
+						frappe.dom.freeze(__('Importing template…'));
+						frm.call('import_template', { source_cs: values.source_cs })
+							.then(r => {
+								frappe.dom.unfreeze();
+								if (r && r.message) {
+									const { chapters, lessons, scac } = r.message;
+									frappe.show_alert({
+										message: __('Imported {0} chapters, {1} lessons, {2} assessment criteria.', [chapters, lessons, scac]),
+										indicator: 'green'
+									});
+								}
+								frm.reload_doc();
+							})
+							.catch(() => {
+								frappe.dom.unfreeze();
+							});
+					},
+					__('Import Course Template'),
+					__('Import')
+				);
+			});
+		}, __('Actions'));
+	}
+
 	const cancellable = ['Open for Enrollment', 'Enrollment Closed'].includes(frm.doc.workflow_state);
 	const can_cancel = frappe.user.has_role('Registrar') || frappe.user.has_role('Seminary Manager');
 	if (!frm.is_new() && cancellable && can_cancel) {

@@ -21,6 +21,7 @@
   "assessment",
   "default_grading_scale",
   "assessment_criteria",
+  "default_cs_template",
   "connections_tab"
  ],
  "fields": [
@@ -77,6 +78,13 @@
    "fieldtype": "Table",
    "label": "Assessment Criteria",
    "options": "Course Assessment Criteria"
+  },
+  {
+   "description": "Pre-selected source schedule when 'Import Course Template' is run on a Course Schedule of this course. Optional — the import dialog still allows picking any schedule.",
+   "fieldname": "default_cs_template",
+   "fieldtype": "Link",
+   "label": "Default Course Schedule Template",
+   "options": "Course Schedule"
   },
   {
    "fieldname": "description",

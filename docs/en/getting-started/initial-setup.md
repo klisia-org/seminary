@@ -172,6 +172,54 @@ Each **Course** has an optional **Default Minimum Enrollment** field. Each Cours
 
 When **Auto-advance** is on, every day the scheduler emails any instructor whose Course Schedule is past its grade-close deadline and still hasn't reached **Closed** state. The Registrar role is CC'd. The reminder is sent once per Course Schedule (idempotent flag prevents repeat sends).
 
+### Auto-seeding assessment criteria from the Course
+
+A new Course Schedule does not start empty. As soon as you save a fresh Course Schedule, its **Assessment Criteria** table auto-populates from the parent Course's `Assessment Criteria` (set up under **Course → Assessment** tab). The mapping copies title, criterion link, and weight verbatim — so if your Course has 100% of weight assigned, the new Schedule starts ready to teach without manual data entry.
+
+If you change the Course on an existing schedule, the seeding does **not** re-run — it only fires once on creation. To pull a fresh copy, use **Import Course Template** below.
+
+::: tip Set up Course assessments first
+Configure the parent Course's Assessment Criteria (Course → Assessment tab) with weights summing to 100% before creating any Course Schedule. The same setup carries over automatically every term.
+:::
+
+### Reusing a Schedule as a Template
+
+The auto-seed above covers the assessment criteria, but a fully-built Course Schedule typically has more: chapters, lessons (with videos, PDFs, instructor notes), and assessment links wired into specific lessons. To reuse all of that across terms:
+
+1. Open the parent Course (Desk → Course → *your course*).
+2. In the **Assessment** tab, set **Default Course Schedule Template** to the Course Schedule you want to use as the canonical structure.
+
+Then, when creating a new Course Schedule for that course:
+
+1. Save the new Course Schedule as usual (assessment criteria seed automatically — no manual entry needed).
+2. On the new schedule's form, click **Actions → Import Course Template**.
+3. The dialog pre-fills with the Course's default template; you can pick any other same-course Schedule. Click **Import**.
+
+The import copies:
+
+- **Chapters** (including SCORM packages, file references shared between schedules)
+- **Lessons** — every one, regardless of whether it has an assessment link. Videos, PDFs, instructor notes, content, allow-discuss flag — all carry over.
+- **Assessment criteria** — replaces what's on the new schedule (so the auto-seeded rows are overwritten by the template's). Lesson-level assessment links are remapped to the new schedule's criteria automatically.
+
+The import does **not** copy:
+
+- Roster, enrollments, or graded data
+- Assessment due dates (stay null until you set them per-term)
+- Cancellation history or workflow timestamps
+
+A timeline Comment on the new schedule records what was imported, from where, when, and by whom.
+
+**Constraints:**
+
+- Available in **Draft** or **Open for Enrollment** state only — once enrollment closes, the structure is committed.
+- Permitted to **Academics User**, **Seminary Manager**, or **Registrar**.
+- Refuses if the target schedule already has chapters (one-shot operation, not a merge). To re-import, delete chapters first.
+- Refuses if the source schedule has no assessment criteria, or if its weights don't sum to 100% — fix the source first.
+
+::: warning Import is not reversible
+There is no "undo" for the import. The dialog warns about this. If you imported the wrong template, delete the chapters and try again.
+:::
+
 ## 13. User Roles
 
 See [User Roles](../administration/user-roles.md) for configuring instructor, student, and administrator access.

@@ -9,5 +9,8 @@
   "devDependencies": {
     "medium-zoom": "^1.1.0",
     "vitepress": "^1.6.4"
+  },
+  "resolutions": {
+    "esbuild": "^0.25.0"
   }
 }
