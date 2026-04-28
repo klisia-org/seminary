@@ -9,7 +9,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, getdate, now
+from frappe.utils import add_days, formatdate, getdate, now
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
@@ -21,6 +21,13 @@ import secrets
 
 CANCELLABLE_STATES = ("Open for Enrollment", "Enrollment Closed")
 CANCEL_ROLES = ("Registrar", "Seminary Manager")
+
+# Import only into pre-enrollment-close states. Once enrollment has closed,
+# the prof has effectively committed to the structure for the term. If the
+# workflow's Draft / Open for Enrollment state names ever change in
+# cs_lifecycle.py / workflow.json, update this list.
+TEMPLATE_IMPORT_STATES = ("Draft", "Open for Enrollment")
+TEMPLATE_IMPORT_ROLES = ("Academics User", "Seminary Manager", "Registrar")
 
 
 class CourseSchedule(Document):
@@ -42,6 +49,41 @@ class CourseSchedule(Document):
             from seminary.seminary.cs_lifecycle import get_default_initial_state
 
             self.workflow_state = get_default_initial_state(self)
+
+        self._seed_assessment_criteria_from_course()
+
+    def _seed_assessment_criteria_from_course(self):
+        """Auto-populate courseassescrit_sc from Course.assessment_criteria.
+
+        Runs only on a fresh CS (SCAC empty, course set). Maps Course
+        Assessment Criteria → Scheduled Course Assess Criteria field by
+        field. Includes ``title`` (mandatory on SCAC). ``type`` is
+        intentionally omitted — SCAC.type is fetch_from
+        assesscriteria_scac.type and resolves on save.
+        """
+        if self.courseassescrit_sc or not self.course:
+            return
+
+        for cc in frappe.get_all(
+            "Course Assessment Criteria",
+            filters={"parent": self.course, "parenttype": "Course"},
+            fields=["title", "assessment_criteria", "weightage"],
+            order_by="idx asc",
+        ):
+            self.append(
+                "courseassescrit_sc",
+                {
+                    "title": cc.title,
+                    "assesscriteria_scac": cc.assessment_criteria,
+                    "weight_scac": cc.weightage,
+                    # Explicit 0 — validate_assessment_criteria's if/elif on
+                    # extracredit_scac silently skips rows where the value
+                    # is None, causing the weight sum to drop and fail the
+                    # 100% check. Course Assessment Criteria has no extra-
+                    # credit field; everything copied here is non-extra-credit.
+                    "extracredit_scac": 0,
+                },
+            )
 
     def on_trash(self):
         if self.workflow_state and self.workflow_state != "Draft":
@@ -241,6 +283,124 @@ class CourseSchedule(Document):
         _cascade_cancel_pec_and_cei(self.name, reason)
         _create_cancellation_announcement(self, reason)
 
+    @frappe.whitelist()
+    def import_template(self, source_cs):
+        """Copy LMS structure (chapters, lessons, assessment criteria) from
+        another Course Schedule of the same course into this one.
+
+        All validations (target + source) run as cheap reads up-front. Only
+        when every check passes does the write phase begin — there are no
+        expected rollbacks. Frappe's request-level transaction still rolls
+        back on genuine exceptions.
+
+        Replaces the target's SCAC rows (so the placeholder satisfying
+        ``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
+        already has chapters or any graded data. Roster, grades, and SCAC
+        due_dates are NOT copied.
+        """
+        self._validate_target_for_import(source_cs)
+        _validate_source_for_import(source_cs)
+
+        # All persistence is via direct child-doc inserts. self.save() is
+        # avoided on purpose: Course Lesson.updates_lessons (and any other
+        # denorm hook chain) bumps target fields via db.set_value during
+        # the inserts below, and a parent save would race that — both on
+        # the modified timestamp (TimestampMismatchError) and on stale
+        # denorm field values (lessons count getting overwritten with the
+        # in-memory 0). Source weights are validated up-front, so we don't
+        # lose any meaningful save-time check.
+        scac_name_map = _replace_scac_rows(source_cs, self.name)
+        n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
+            source_cs, self.name
+        )
+        _remap_lesson_scac_links(lesson_name_map, scac_name_map)
+
+        n_scac = len(scac_name_map)
+        self.add_comment(
+            "Info",
+            _(
+                "Imported template from {0} on {1} by {2}. "
+                "Copied: {3} chapters, {4} lessons, {5} assessment criteria."
+            ).format(
+                source_cs,
+                formatdate(now()),
+                frappe.session.user,
+                n_chapters,
+                n_lessons,
+                n_scac,
+            ),
+        )
+
+        return {
+            "chapters": n_chapters,
+            "lessons": n_lessons,
+            "scac": n_scac,
+        }
+
+    def _validate_target_for_import(self, source_cs):
+        """Read-only checks on the target side. Throws on any violation."""
+        roles = set(frappe.get_roles(frappe.session.user))
+        if not roles.intersection(TEMPLATE_IMPORT_ROLES):
+            frappe.throw(
+                _(
+                    "Only Academics User, Seminary Manager, or Registrar can "
+                    "import a course template."
+                ),
+                frappe.PermissionError,
+            )
+
+        if self.workflow_state not in TEMPLATE_IMPORT_STATES:
+            frappe.throw(
+                _(
+                    "Cannot import a template while the course is in state {0}. "
+                    "Allowed states: Draft, Open for Enrollment."
+                ).format(self.workflow_state or _("(none)"))
+            )
+
+        if source_cs == self.name:
+            frappe.throw(_("A schedule cannot be imported into itself."))
+
+        if not frappe.db.exists("Course Schedule", source_cs):
+            frappe.throw(
+                _("Source Course Schedule {0} does not exist.").format(source_cs)
+            )
+
+        source_course = frappe.db.get_value("Course Schedule", source_cs, "course")
+        if source_course != self.course:
+            frappe.throw(
+                _(
+                    "Source schedule belongs to course {0}; this schedule "
+                    "belongs to {1}. Templates can only be imported between "
+                    "schedules of the same course."
+                ).format(source_course, self.course)
+            )
+
+        n_chapters = len(self.chapters or [])
+        if n_chapters > 0:
+            frappe.throw(
+                _(
+                    "Target schedule already has {0} chapter(s). Clear them "
+                    "first or import into a fresh schedule."
+                ).format(n_chapters)
+            )
+
+        graded_count = frappe.db.sql(
+            """
+            SELECT COUNT(*)
+            FROM `tabCourse Assess Results Detail` card
+            JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+            WHERE scr.course_sc = %s AND COALESCE(card.graded_card, 0) = 1
+            """,
+            (self.name,),
+        )[0][0]
+        if graded_count:
+            frappe.throw(
+                _(
+                    "Target schedule already has graded assessments and cannot "
+                    "be overwritten by a template import."
+                )
+            )
+
 
 def _cascade_cancel_pec_and_cei(cs_name, reason):
     """Mark CEIs as course-cancelled and hard-delete the auto-populated PECs.
@@ -349,3 +509,248 @@ def bulk_close_enrollment(names):
             )
             skipped.append(name)
     return {"closed": closed, "skipped": skipped}
+
+
+# ── Course Template Import helpers ──────────────────────────────────────────
+
+
+def _validate_source_for_import(source_cs):
+    """Read-only checks on the source side. Throws on any violation."""
+    scac_count = frappe.db.count(
+        "Scheduled Course Assess Criteria", {"parent": source_cs}
+    )
+    if not scac_count:
+        frappe.throw(
+            _(
+                "Source schedule {0} has no assessment criteria; "
+                "nothing structural to import."
+            ).format(source_cs)
+        )
+
+    weight_total = (
+        frappe.db.sql(
+            """
+            SELECT COALESCE(SUM(weight_scac), 0)
+            FROM `tabScheduled Course Assess Criteria`
+            WHERE parent = %s AND COALESCE(extracredit_scac, 0) = 0
+            """,
+            (source_cs,),
+        )[0][0]
+        or 0
+    )
+    if int(weight_total) != 100:
+        frappe.throw(
+            _(
+                "Source schedule {0}'s non-extra-credit weights total {1}% "
+                "(must be 100% before it can be used as a template). "
+                "Fix source first."
+            ).format(source_cs, weight_total)
+        )
+
+
+# Fields excluded when copying a SCAC row:
+#   - due_date: per-CS state; stays null on target until set
+#   - lesson:   free-text label of the source lesson; not valid on target
+_SCAC_COPYABLE_FIELDS = (
+    "assesscriteria_scac",
+    "title",
+    "weight_scac",
+    "quiz",
+    "assignment",
+    "exam",
+    "discussion",
+    "extracredit_scac",
+    "fudgepoints_scac",
+)
+
+
+def _replace_scac_rows(source_cs_name, target_cs_name):
+    """Delete target's SCAC rows and insert fresh copies from source via
+    direct child-doc inserts (bypasses parent save).
+
+    Returns ``{source_scac_name: new_scac_name}`` for the lesson Link remap.
+    """
+    frappe.db.delete(
+        "Scheduled Course Assess Criteria",
+        {"parent": target_cs_name, "parenttype": "Course Schedule"},
+    )
+
+    source_rows = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+        fields=["name", "idx"] + list(_SCAC_COPYABLE_FIELDS),
+        order_by="idx asc",
+    )
+
+    name_map = {}
+    for row in source_rows:
+        new_row = frappe.get_doc(
+            {
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": target_cs_name,
+                "parenttype": "Course Schedule",
+                "parentfield": "courseassescrit_sc",
+                "idx": row.idx,
+                **{field: row.get(field) for field in _SCAC_COPYABLE_FIELDS},
+            }
+        )
+        new_row.flags.ignore_permissions = True
+        new_row.insert()
+        name_map[row.name] = new_row.name
+    return name_map
+
+
+# Course Schedule Chapter fields copied verbatim (besides chapter_title and
+# the back-reference coursesc which are set explicitly). SCORM file references
+# are shared between CSes — the underlying File doc is independent of any CS.
+_CHAPTER_COPYABLE_FIELDS = (
+    "is_scorm_package",
+    "scorm_package",
+    "scorm_package_path",
+    "manifest_file",
+    "launch_file",
+)
+
+# Course Lesson content fields copied verbatim. assessment_criteria_* fields
+# are NOT copied here — they're handled by _remap_lesson_scac_links after the
+# target SCAC rows have names. course_sc, course_code, is_scorm_package
+# auto-fetch from the new chapter.
+_LESSON_COPYABLE_FIELDS = (
+    "lesson_title",
+    "body",
+    "content",
+    "preview",
+    "youtube",
+    "instructor_notes",
+    "instructor_content",
+    "allow_discuss",
+)
+
+
+def _copy_chapters_and_lessons(source_cs_name, target_cs_name):
+    """Clone Course Schedule Chapter + Course Lesson docs from source to target.
+
+    All child-table refs (chapter refs on the CS, lesson refs on each new
+    chapter) are inserted as direct child docs — no parent save. This is
+    deliberate: ``Course Lesson.updates_lessons`` (and any other denorm
+    hook) writes back to the target via ``db.set_value`` during the lesson
+    inserts, and a subsequent parent save would race those writes. See
+    ``import_template`` for the full rationale.
+
+    Returns ``(n_chapters, n_lessons, lesson_name_map)``. The map is
+    ``{source_lesson_name: new_lesson_name}`` — used by the SCAC link remap.
+    """
+    n_chapters = 0
+    n_lessons = 0
+    lesson_name_map = {}
+
+    chapter_refs = frappe.get_all(
+        "Course Schedule Chapter Reference",
+        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+        fields=["chapter", "idx"],
+        order_by="idx asc",
+    )
+    for ref in chapter_refs:
+        if not ref.chapter:
+            continue
+        src_chapter = frappe.get_doc("Course Schedule Chapter", ref.chapter)
+
+        new_chapter = frappe.new_doc("Course Schedule Chapter")
+        new_chapter.coursesc = target_cs_name
+        new_chapter.chapter_title = src_chapter.chapter_title
+        for field in _CHAPTER_COPYABLE_FIELDS:
+            new_chapter.set(field, src_chapter.get(field))
+        new_chapter.flags.ignore_permissions = True
+        new_chapter.insert()
+        n_chapters += 1
+
+        lesson_refs = frappe.get_all(
+            "Course Schedule Lesson Reference",
+            filters={
+                "parent": src_chapter.name,
+                "parenttype": "Course Schedule Chapter",
+            },
+            fields=["lesson", "idx"],
+            order_by="idx asc",
+        )
+        for lesson_idx, lref in enumerate(lesson_refs, start=1):
+            if not lref.lesson:
+                continue
+            src_lesson = frappe.get_doc("Course Lesson", lref.lesson)
+            new_lesson = frappe.new_doc("Course Lesson")
+            new_lesson.chapter = new_chapter.name
+            for field in _LESSON_COPYABLE_FIELDS:
+                new_lesson.set(field, src_lesson.get(field))
+            new_lesson.flags.ignore_permissions = True
+            new_lesson.insert()
+            n_lessons += 1
+            lesson_name_map[src_lesson.name] = new_lesson.name
+
+            # Direct child insert into Course Schedule Chapter.lessons —
+            # skips a chapter parent save.
+            lesson_ref = frappe.get_doc(
+                {
+                    "doctype": "Course Schedule Lesson Reference",
+                    "parent": new_chapter.name,
+                    "parenttype": "Course Schedule Chapter",
+                    "parentfield": "lessons",
+                    "idx": lesson_idx,
+                    "lesson": new_lesson.name,
+                }
+            )
+            lesson_ref.flags.ignore_permissions = True
+            lesson_ref.insert()
+
+        # Direct child insert into Course Schedule.chapters — skips the CS
+        # parent save (which would race the denorm hooks above).
+        chapter_ref = frappe.get_doc(
+            {
+                "doctype": "Course Schedule Chapter Reference",
+                "parent": target_cs_name,
+                "parenttype": "Course Schedule",
+                "parentfield": "chapters",
+                "idx": ref.idx,
+                "chapter": new_chapter.name,
+            }
+        )
+        chapter_ref.flags.ignore_permissions = True
+        chapter_ref.insert()
+
+    return n_chapters, n_lessons, lesson_name_map
+
+
+_LESSON_SCAC_LINK_FIELDS = (
+    "assessment_criteria_quiz",
+    "assessment_criteria_assignment",
+    "assessment_criteria_exam",
+    "assessment_criteria_discussion",
+)
+
+
+def _remap_lesson_scac_links(lesson_name_map, scac_name_map):
+    """Rewrite each new lesson's assessment_criteria_* Links to point at the
+    target CS's SCAC rows (not the source CS's).
+
+    Reads source's Links, looks up the new SCAC name in scac_name_map, writes
+    via ``frappe.db.set_value`` (which bypasses ``Course Lesson.on_update``
+    so we don't race ``update_lesson_assessments``). Skips nulls.
+    """
+    for src_lesson_name, new_lesson_name in lesson_name_map.items():
+        src_links = frappe.db.get_value(
+            "Course Lesson",
+            src_lesson_name,
+            list(_LESSON_SCAC_LINK_FIELDS),
+            as_dict=True,
+        )
+        if not src_links:
+            continue
+        update = {}
+        for field in _LESSON_SCAC_LINK_FIELDS:
+            old_scac = src_links.get(field)
+            if not old_scac:
+                continue
+            new_scac = scac_name_map.get(old_scac)
+            if new_scac:
+                update[field] = new_scac
+        if update:
+            frappe.db.set_value("Course Lesson", new_lesson_name, update)

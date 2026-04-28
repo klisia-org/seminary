@@ -13,6 +13,10 @@ frappe.ui.form.on('Course', {
 				}
 			}
 		});
+
+		frm.set_query('default_cs_template', function() {
+			return { filters: { course: frm.doc.name } };
+		});
 	},
 
 	add_course_to_programs: function(frm) {

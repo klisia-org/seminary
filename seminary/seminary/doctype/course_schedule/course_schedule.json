@@ -305,8 +305,7 @@
    "fieldtype": "Table",
    "label": "Course Assessment Criteria",
    "options": "Scheduled Course Assess Criteria",
-   "permlevel": 1,
-   "reqd": 1
+   "permlevel": 1
   },
   {
    "fieldname": "class_roster_tab",
@@ -343,12 +342,12 @@
   {
    "fieldname": "workflow_state",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
    "options": "Workflow State",
-   "read_only": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.workflow_state==\"Cancelled\"",
@@ -386,7 +385,7 @@
    "read_only": 1
   },
   {
-   "description": "Override the Course default minimum enrollment for this schedule. Informational — used by the Term Enrollment Status report.",
+   "description": "Override the Course default minimum enrollment for this schedule. Informational \u2014 used by the Term Enrollment Status report.",
    "fieldname": "minimum_enrollment",
    "fieldtype": "Int",
    "label": "Minimum Enrollment",
@@ -531,8 +530,8 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-04-07 19:19:46.765997",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-04-27 21:36:40.065427",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
  "naming_rule": "Expression (old style)",
