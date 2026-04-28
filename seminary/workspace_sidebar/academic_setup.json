@@ -1,30 +1,18 @@
 {
  "app": "seminary",
- "creation": "2026-02-10 09:55:33.362551",
+ "creation": "2026-02-19 08:48:46.611743",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "school",
+ "header_icon": "book-open-text",
  "idx": 0,
  "items": [
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "app-window-mac",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Portal",
-   "link_type": "URL",
-   "show_arrow": 0,
-   "type": "Link",
-   "url": "/seminary/courses"
-  },
   {
    "child": 0,
    "collapsible": 1,
    "icon": "school",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Home",
+   "label": "Seminary Home",
    "link_to": "Seminary",
    "link_type": "Workspace",
    "show_arrow": 0,
@@ -33,40 +21,10 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "chart-no-axes-combined",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Dashboard",
-   "link_to": "Seminary",
-   "link_type": "Dashboard",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Spacer"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Spacer"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Academic Setup",
+   "label": "Academic Setup Home",
    "link_to": "Academic Setup",
    "link_type": "Workspace",
    "show_arrow": 0,
@@ -75,14 +33,15 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "circle-dollar-sign",
+   "icon": "app-window-mac",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Financial Setup",
-   "link_to": "Seminary Financial Setup",
-   "link_type": "Workspace",
+   "label": "Portal",
+   "link_to": "",
+   "link_type": "URL",
    "show_arrow": 0,
-   "type": "Link"
+   "type": "Link",
+   "url": "/seminary/courses"
   },
   {
    "child": 0,
@@ -95,13 +54,58 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Spacer"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "notebook-pen",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Course Enrollment",
+   "link_to": "Course Enrollment Individual",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "graduation-cap",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Program Enrollment",
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "calendar-cog",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Course Schedule",
+   "link_to": "Course Schedule",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-28 15:58:06.513616",
+ "modified": "2026-04-28 15:56:43.184748",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Seminary",
+ "name": "Academic Setup",
  "owner": "Administrator",
  "standard": 1,
- "title": "Seminary"
+ "title": "Academic Setup"
 }
