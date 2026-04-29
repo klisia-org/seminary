@@ -7,6 +7,9 @@ from frappe.website.website_generator import WebsiteGenerator
 
 
 class Program(WebsiteGenerator):
+    def autoname(self):
+        self.name = self.program_name
+
     # def validate(self):
     # self.validate_courses_pgmtrack()
 

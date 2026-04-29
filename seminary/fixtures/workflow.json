@@ -465,18 +465,21 @@
   "transitions": [
    {
     "action": "Open Enrollment",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Open for Enrollment",
     "state": "Draft"
    },
    {
     "action": "Close Enrollment",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Enrollment Closed",
     "state": "Open for Enrollment"
    },
    {
     "action": "Begin Grading",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Grading",
     "state": "Enrollment Closed"

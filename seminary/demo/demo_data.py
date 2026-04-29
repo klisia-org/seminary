@@ -22,6 +22,7 @@ def install_demo_data():
         create_programs()
         create_users()
         create_students()
+        create_instructor_categories()
         create_instructors()
         # Commit so subsequent lookups can find the records
         frappe.db.commit()
@@ -168,6 +169,19 @@ def create_students():
             )
             if customer:
                 frappe.get_doc("Customer", customer).add_tag(DEMO_TAG)
+
+
+def create_instructor_categories():
+    categories = [
+        {
+            "category_name": "Instructor of Record",
+            "is_instructor_of_record": 1,
+            "description": "Lead instructor responsible for the course.",
+        },
+    ]
+    for cat in categories:
+        if not frappe.db.exists("Instructor Category", cat["category_name"]):
+            insert_demo_doc("Instructor Category", cat)
 
 
 def create_instructors():
@@ -341,6 +355,7 @@ def create_course_schedules():
                     "academic_term": term.name,  # ← from DB
                     "c_datestart": term.term_start_date,  # ← from DB
                     "c_dateend": term.term_end_date,  # ← from DB
+                    "section": "A",
                     "modality": "Virtual",
                     "gradesc_cs": "Default Numeric Scale",
                     "published": 1,
@@ -354,6 +369,7 @@ def create_course_schedules():
                     "instructor1": [
                         {
                             "instructor": "Martin Luther",
+                            "instructor_category": "Instructor of Record",
                             "user": "demo.mluther@seminary.edu",
                         }
                     ],
