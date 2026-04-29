@@ -408,6 +408,88 @@ fixtures = [
     "Course Cancellation Reason",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {"dt": "Print Format", "filters": [["name", "=", "Seminary Sales Invoice"]]},
+    {
+        "dt": "Workflow",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Course Withdrawal",
+                    "Recommendation Letter Workflow",
+                    "Culminating Project Workflow",
+                    "Course Schedule Lifecycle",
+                ],
+            ]
+        ],
+    },
+    {
+        "dt": "Workflow State",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Draft",
+                    "Submitted",
+                    "Academic Review",
+                    "Academically Approved",
+                    "Financial Review",
+                    "Financially Approved",
+                    "Completed",
+                    "Rejected",
+                    "Requested",
+                    "Awaiting Response",
+                    "Under Review",
+                    "Approved",
+                    "Resend Required",
+                    "Proposal Submitted",
+                    "Proposal Approved",
+                    "Drafting",
+                    "Revisions Required",
+                    "Defended",
+                    "Open for Enrollment",
+                    "Enrollment Closed",
+                    "Grading",
+                    "Closed",
+                    "Cancelled",
+                ],
+            ]
+        ],
+    },
+    {
+        "dt": "Workflow Action Master",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Submit",
+                    "Send for Academic Review",
+                    "Approve Academically",
+                    "Send for Financial Review",
+                    "Approve Financially",
+                    "Complete",
+                    "Reject",
+                    "Approve",
+                    "Mark Awaiting Response",
+                    "Mark Submitted",
+                    "Send for Review",
+                    "Resend Request",
+                    "Submit Proposal",
+                    "Approve Proposal",
+                    "Begin Drafting",
+                    "Request Revisions",
+                    "Mark Defended",
+                    "Open Enrollment",
+                    "Close Enrollment",
+                    "Cancel Course",
+                    "Begin Grading",
+                    "Send Grades",
+                ],
+            ]
+        ],
+    },
 ]
 
 
