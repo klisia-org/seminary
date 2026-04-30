@@ -23,6 +23,8 @@
   "pgmenrol_active",
   "current_std_term",
   "totalcredits",
+  "current_gpa",
+  "current_honor",
   "column_break_unkt",
   "inactiveuntil",
   "inactive_motive",
@@ -217,6 +219,22 @@
    "fieldname": "totalcredits",
    "fieldtype": "Int",
    "label": "Total Credits Taken (Passed)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Recomputed from PEC rows that have count_in_gpa=1 and a numeric grade. Updated on grade send, withdrawal academic approval, and transcript import.",
+   "fieldname": "current_gpa",
+   "fieldtype": "Float",
+   "label": "Current GPA",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "Highest level on the Program's Honors Levels table whose Minimum GPA is met by the student's current_gpa.",
+   "fieldname": "current_honor",
+   "fieldtype": "Data",
+   "label": "Current Honor",
    "read_only": 1
   },
   {

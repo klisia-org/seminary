@@ -13,6 +13,7 @@
   "pec_finalgradenum",
   "credits",
   "status",
+  "count_in_gpa",
   "is_transfer",
   "transfer_section",
   "partner_seminary",
@@ -83,6 +84,13 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Pass/Fail"
+  },
+  {
+   "default": "1",
+   "description": "Whether this row contributes to GPA calculation. Set to 0 for withdrawals using a notation (WP/WF) whose Grading Scale flag (wp_gpa / wf_gpa) excludes it.",
+   "fieldname": "count_in_gpa",
+   "fieldtype": "Check",
+   "label": "Count in GPA"
   },
   {
    "collapsible": 1,

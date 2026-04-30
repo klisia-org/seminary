@@ -10,6 +10,12 @@
   "grading_scale_name",
   "maxnumgrade",
   "grscale_type",
+  "section_break_rgjl",
+  "wp_code",
+  "wp_gpa",
+  "column_break_wvdd",
+  "wf_code",
+  "wf_gpa",
   "grading_intervals_section",
   "intervals",
   "amended_from",
@@ -63,11 +69,45 @@
    "options": "Points\nDescriptive",
    "reqd": 1,
    "translatable": 1
+  },
+  {
+   "description": "This is for one type of Withdrawal Rule: Calculated with special notation.",
+   "fieldname": "section_break_rgjl",
+   "fieldtype": "Section Break",
+   "label": "Transcript Notation for Calculated Grade on Withdraw"
+  },
+  {
+   "description": "e.g., WP",
+   "fieldname": "wp_code",
+   "fieldtype": "Data",
+   "label": "Code for Withdraw Passing"
+  },
+  {
+   "fieldname": "column_break_wvdd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "e.g., WF",
+   "fieldname": "wf_code",
+   "fieldtype": "Data",
+   "label": "Code for Withdraw Failing"
+  },
+  {
+   "default": "0",
+   "fieldname": "wp_gpa",
+   "fieldtype": "Check",
+   "label": "Consider WP in GPA"
+  },
+  {
+   "default": "0",
+   "fieldname": "wf_gpa",
+   "fieldtype": "Check",
+   "label": "Consider WF in GPA"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-03-28 08:26:23.584991",
+ "modified": "2026-04-30 15:49:11.463072",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Grading Scale",
@@ -91,6 +131,7 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

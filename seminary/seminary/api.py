@@ -2849,9 +2849,12 @@ def send_grades(doc=None, **kwargs):
             if pe_name:
                 affected_pes.add(pe_name)
 
+    from seminary.seminary.gpa import recompute_program_enrollment_gpa
+
     for pe_name in affected_pes:
         _recalculate_emphasis_credits(pe_name)
         _check_auto_grant_emphases(pe_name)
+        recompute_program_enrollment_gpa(pe_name)
 
     return "All grades sent"
 

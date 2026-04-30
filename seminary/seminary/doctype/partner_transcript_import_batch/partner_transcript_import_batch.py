@@ -165,6 +165,7 @@ class PartnerTranscriptImportBatch(Document):
             _check_auto_grant_emphases,
             _recalculate_emphasis_credits,
         )
+        from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
         partner = frappe.get_cached_doc("Partner Seminary", self.partner_seminary)
         affected_pes = set()
@@ -191,6 +192,7 @@ class PartnerTranscriptImportBatch(Document):
             _refresh_totalcredits(pe_name)
             _recalculate_emphasis_credits(pe_name)
             _check_auto_grant_emphases(pe_name)
+            recompute_program_enrollment_gpa(pe_name)
 
 
 def _resolve_student(row):
@@ -356,6 +358,11 @@ def _upsert_transcript_row(program_enrollment, row, partner, batch):
     )
     mapping_type = "legacy_identity" if partner.is_internal_legacy else "equivalence"
 
+    program_doc = frappe.get_cached_doc("Program", program_enrollment.program)
+    counts_in_gpa = (
+        1 if (partner.counts_in_gpa and program_doc.accept_transfer_gpa) else 0
+    )
+
     values = {
         "course_name": row.resolved_internal_course,
         "academic_term": batch.target_academic_term,
@@ -363,6 +370,7 @@ def _upsert_transcript_row(program_enrollment, row, partner, batch):
         "pec_finalgradenum": row.resolved_grade_threshold,
         "credits": int(flt(row.resolved_credit)),
         "status": "Pass",
+        "count_in_gpa": counts_in_gpa,
         "is_transfer": 1,
         "partner_seminary": partner.name,
         "mapping_type": mapping_type,

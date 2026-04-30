@@ -11,6 +11,7 @@
     "vitepress": "^1.6.4"
   },
   "resolutions": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "postcss": "^8.5.10"
   }
 }

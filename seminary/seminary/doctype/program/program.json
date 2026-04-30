@@ -19,6 +19,12 @@
   "terms_complete",
   "column_break_voqj",
   "credits_complete",
+  "section_break_gpa",
+  "basis_for_gpa",
+  "is_weighted",
+  "accept_transfer_gpa",
+  "column_break_gpa",
+  "honors_levels",
   "section_break_courses",
   "courses",
   "tracks_tab",
@@ -95,6 +101,44 @@
    "in_list_view": 1,
    "label": "Credits for completion",
    "mandatory_depends_on": "program_type==\"Credits-based\""
+  },
+  {
+   "fieldname": "section_break_gpa",
+   "fieldtype": "Section Break",
+   "label": "GPA & Honors"
+  },
+  {
+   "default": "4.0",
+   "description": "Top of the GPA scale (US = 4, others vary).",
+   "fieldname": "basis_for_gpa",
+   "fieldtype": "Float",
+   "label": "Basis for GPA",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "When checked, GPA is credit-weighted: Σ(points × credits) / Σ(credits). When unchecked, GPA is the simple mean of points across counted rows.",
+   "fieldname": "is_weighted",
+   "fieldtype": "Check",
+   "label": "Credit-weighted GPA"
+  },
+  {
+   "default": "0",
+   "description": "Second gate for transferred PEC rows: a transfer counts in GPA only when this Program AND the source Partner Seminary's `Counts in GPA` are both checked.",
+   "fieldname": "accept_transfer_gpa",
+   "fieldtype": "Check",
+   "label": "Accept Transfer Grades in GPA"
+  },
+  {
+   "fieldname": "column_break_gpa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Honors levels for this program. The highest level whose Minimum GPA is met by the student is shown as `current_honor` on Program Enrollment.",
+   "fieldname": "honors_levels",
+   "fieldtype": "Table",
+   "label": "Honors Levels",
+   "options": "Honors Levels"
   },
   {
    "fieldname": "section_break_pgmtype",
