@@ -6,8 +6,8 @@ app_name = "seminary"
 app_title = "Seminary"
 app_publisher = "Klisia / SeminaryERP"
 app_description = "Seminary Management System"
-app_icon = "klisia_icon.png"
-app_logo_url = "/assets/seminary/images/klisia_icon.png"
+app_icon = "SeminaryERP_tile.png"
+app_logo_url = "/assets/seminary/images/SeminaryERP_tile.png"
 source_link = "https://github.com/klisia-org/seminary"
 app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
@@ -21,7 +21,7 @@ required_apps = ["erpnext"]
 add_to_apps_screen = [
     {
         "name": "seminary",
-        "logo": "/assets/seminary/images/klisia_icon.png",  # Update this path to your custom app's logo
+        "logo": "/assets/seminary/images/SeminaryERP_tile.png",  # Update this path to your custom app's logo
         "title": "Seminary ERP",
         "route": "/desk/seminary",
     }
