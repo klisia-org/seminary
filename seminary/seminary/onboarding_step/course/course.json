@@ -1,0 +1,21 @@
+{
+ "action": "Create Entry",
+ "action_label": "Create a Course",
+ "creation": "2026-04-29 14:50:12.630943",
+ "description": "A subject taught (e.g. NT Greek I). Set Assessment Criteria now to save work every term",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2026-04-29 14:50:30.391471",
+ "modified_by": "Administrator",
+ "name": "Course",
+ "owner": "Administrator",
+ "reference_document": "Course",
+ "show_form_tour": 0,
+ "show_full_form": 1,
+ "title": "Create a Course",
+ "validate_action": 1
+}

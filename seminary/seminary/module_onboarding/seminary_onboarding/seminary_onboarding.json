@@ -1,0 +1,80 @@
+{
+ "allow_roles": [
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Registrar"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Administrator"
+  }
+ ],
+ "creation": "2026-04-29 14:30:01.977434",
+ "docstatus": 0,
+ "doctype": "Module Onboarding",
+ "idx": 0,
+ "is_complete": 0,
+ "modified": "2026-04-29 15:51:03.545916",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Seminary Onboarding",
+ "owner": "Administrator",
+ "steps": [
+  {
+   "step": "Grading Scale"
+  },
+  {
+   "step": "Seminary Settings"
+  },
+  {
+   "step": "Academic Year"
+  },
+  {
+   "step": "Academic Terms"
+  },
+  {
+   "step": "Holiday List"
+  },
+  {
+   "step": "ERP Item"
+  },
+  {
+   "step": "Item Price"
+  },
+  {
+   "step": "Payment Terms"
+  },
+  {
+   "step": "Fee Categories"
+  },
+  {
+   "step": "Program"
+  },
+  {
+   "step": "Course"
+  },
+  {
+   "step": "Instructor"
+  },
+  {
+   "step": "Course Schedule"
+  },
+  {
+   "step": "Student"
+  },
+  {
+   "step": "Program Enrollment"
+  },
+  {
+   "step": "Course Enrollment"
+  },
+  {
+   "step": "Migrating"
+  }
+ ],
+ "title": "SeminaryERP Onboarding"
+}

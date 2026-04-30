@@ -1,0 +1,21 @@
+{
+ "action": "Create Entry",
+ "action_label": "Register a Student for a Course",
+ "creation": "2026-04-29 15:05:10.885468",
+ "description": "Enrolls a student only on courses available (pre-requisites, program) and creates invoices automatically via your Fee Categories. ",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2026-04-29 15:10:23.013286",
+ "modified_by": "Administrator",
+ "name": "Course Enrollment",
+ "owner": "Administrator",
+ "reference_document": "Course Enrollment Individual",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Register for a Course",
+ "validate_action": 1
+}

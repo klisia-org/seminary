@@ -1,0 +1,18 @@
+{
+ "action": "Create Entry",
+ "creation": "2026-04-29 14:31:26.528118",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2026-04-29 14:31:26.528118",
+ "modified_by": "Administrator",
+ "name": "Holiday List",
+ "owner": "Administrator",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Add a Holiday List",
+ "validate_action": 1
+}
