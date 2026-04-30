@@ -1,0 +1,21 @@
+{
+ "action": "Go to Page",
+ "action_label": "Check the Data Import tool",
+ "creation": "2026-04-29 15:08:46.112542",
+ "description": "Use csv templates to see the format and the information you may import",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2026-04-29 15:08:46.112542",
+ "modified_by": "Administrator",
+ "name": "Migrating",
+ "owner": "Administrator",
+ "path": "/desk/data-import",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Migrating from another system?",
+ "validate_action": 1
+}

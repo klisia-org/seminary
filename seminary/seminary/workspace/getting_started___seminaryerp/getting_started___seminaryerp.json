@@ -1,0 +1,412 @@
+{
+ "app": "seminary",
+ "charts": [],
+ "content": "[{\"id\":\"tx-UtW4_36\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Portal\",\"col\":3}},{\"id\":\"wkMsodZzgh\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seminary Main Page\",\"col\":3}},{\"id\":\"v61RT5Ao06\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Setup\",\"col\":3}},{\"id\":\"dWUF0dOApg\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h2\\\">Getting Started with Seminary ERP</span>\",\"col\":12}},{\"id\":\"pOf4GLoo8J\",\"type\":\"paragraph\",\"data\":{\"text\":\"This is for a real implementation of the system. If you only want to look around and test, you may import DEMO data via a buttom on top of Seminary Settings.\",\"col\":12}},{\"id\":\"w7gXrQDKLF\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"1 . Set up how you grade (Grading Scale)\",\"col\":3}},{\"id\":\"baMg-0VAzU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"2. Tailor the Settings for your Seminary\",\"col\":3}},{\"id\":\"MI3-vb2jT9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"3. Create Academic Years (container for terms)\",\"col\":3}},{\"id\":\"JVt5zt6Wnb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"4. Create Academic Terms (and which terms are open for enrollment)\",\"col\":3}},{\"id\":\"sDCpdWuIhV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"5. Define Holidays\",\"col\":3}},{\"id\":\"k-1XTmAlUs\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Financial setup</b></span>\",\"col\":12}},{\"id\":\"iD08IvBTdA\",\"type\":\"paragraph\",\"data\":{\"text\":\"Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items).\",\"col\":12}},{\"id\":\"BKlddDTC9z\",\"type\":\"paragraph\",\"data\":{\"text\":\"Customer Groups can have their default price list, so you can have prices for nationals and foreigners, for instance. \",\"col\":12}},{\"id\":\"wy2Exgbote\",\"type\":\"card\",\"data\":{\"card_name\":\"Set up your prices\",\"col\":4}},{\"id\":\"KXmExFM4ja\",\"type\":\"card\",\"data\":{\"card_name\":\"Set up how you get paid\",\"col\":4}},{\"id\":\"rFRu1rqsAh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Academic Setup</b></span>\",\"col\":12}},{\"id\":\"E0OR-vcB9m\",\"type\":\"card\",\"data\":{\"card_name\":\"The Academic Foundation\",\"col\":4}},{\"id\":\"K0HVd1q8Oc\",\"type\":\"card\",\"data\":{\"card_name\":\"The Academic Engine\",\"col\":4}},{\"id\":\"KXOMQ7kHPa\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":4}},{\"id\":\"MON2p0igia\",\"type\":\"paragraph\",\"data\":{\"text\":\"Each student created automatically creates a customer, but you may want to create other customers for churches who want to pay part of the tuition of their pastors, etc. Then, you can assign more payers for an individual program enrollment (e.g., student and church will be invoiced separately if you so choose). Scholarships should be used for those sponsored by the Seminary (e.g., from donations to a fund/cost-center that the seminary has freedom to manage).&nbsp;\",\"col\":12}},{\"id\":\"eN_mktrAXr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"21. Customers (not students)\",\"col\":3}},{\"id\":\"IniDnIiEAG\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Optional</b></span>\",\"col\":12}},{\"id\":\"jlkx0S7ghb\",\"type\":\"card\",\"data\":{\"card_name\":\"Payment Gateways\",\"col\":4}},{\"id\":\"LCUIH-mjIL\",\"type\":\"card\",\"data\":{\"card_name\":\"Data Import\",\"col\":4}}]",
+ "creation": "2026-02-14 11:54:22.277064",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "plane-takeoff",
+ "idx": 1,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Getting Started - SeminaryERP",
+ "link_type": "DocType",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Prices Setup",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "ERP Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Categories",
+   "link_count": 0,
+   "link_to": "Fee Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Price Lists",
+   "link_count": 0,
+   "link_to": "Price List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item Price",
+   "link_count": 0,
+   "link_to": "Item Price",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Set up your prices",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "6. Items you charge",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "7. Price Lists",
+   "link_count": 0,
+   "link_to": "Price List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "8. Item prices per price list",
+   "link_count": 0,
+   "link_to": "Item Price",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "9. Customer Goups",
+   "link_count": 0,
+   "link_to": "Customer Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "In Fee Categories you will wire up the automation of events to charge (e.g., on course enrollment) with the Item and a Payment Term Template. ",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Set up how you get paid",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "10. Payment Terms - when you get paid",
+   "link_count": 0,
+   "link_to": "Payment Terms Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "11. Fee Categories to wire it up- ",
+   "link_count": 0,
+   "link_to": "Fee Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "The Academic Foundation",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "12. Programs (curriculum and fee categories)",
+   "link_count": 0,
+   "link_to": "Program",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "13. Courses (Subject taught with reusable elements)",
+   "link_count": 0,
+   "link_to": "Course",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "14. Instructors",
+   "link_count": 0,
+   "link_to": "Instructor",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "15. Instructor Category for payment and reports",
+   "link_count": 0,
+   "link_to": "Instructor Category",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "When a Student is created, SeminaryERP automatically creates a user and a customer. A student can be enrolled in one or more programs, retaining the same student id.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "The Academic Engine",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "16. Schedule Courses",
+   "link_count": 0,
+   "link_to": "Course Schedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "17. Students",
+   "link_count": 0,
+   "link_to": "Student",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "18. Program Enrollment",
+   "link_count": 0,
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "19. Course Enrollment",
+   "link_count": 0,
+   "link_to": "Course Enrollment Individual",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "Scholarships are configured here and applied to students on their Program Enrollment.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "20. Define Scholarships",
+   "link_count": 0,
+   "link_to": "Scholarships",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "This require the installation of the app Payments and, if used for student portal, a configuration under Seminary Settings.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Gateways",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Gateways",
+   "link_count": 0,
+   "link_to": "Payment Gateway",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Gateway Accounts",
+   "link_count": 0,
+   "link_to": "Payment Gateway Account",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "You can import data from another system through CSV files using this tool. You can download a template file so to organize how data must be structured for a successful import.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Data Import",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Import Data",
+   "link_count": 0,
+   "link_to": "Data Import",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-04-30 13:10:22.624232",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Getting Started - SeminaryERP",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Seminary",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 24.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Portal",
+   "type": "URL",
+   "url": "/seminary/courses"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "21. Customers (not students)",
+   "link_to": "Customer",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "1 . Set up how you grade (Grading Scale)",
+   "link_to": "Grading Scale",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Seminary Main Page",
+   "type": "URL",
+   "url": "/desk/seminary"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "2. Tailor the Settings for your Seminary",
+   "link_to": "Seminary Settings",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Academic Setup",
+   "type": "URL",
+   "url": "/desk/academic-setup"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "3. Create Academic Years (container for terms)",
+   "link_to": "Academic Year",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "4. Create Academic Terms (and which terms are open for enrollment)",
+   "link_to": "Academic Term",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "5. Define Holidays",
+   "link_to": "Holiday List",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Getting Started - SeminaryERP",
+ "type": "Workspace"
+}

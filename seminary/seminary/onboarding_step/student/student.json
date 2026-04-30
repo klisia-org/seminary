@@ -1,0 +1,21 @@
+{
+ "action": "Create Entry",
+ "action_label": "Add a Student",
+ "creation": "2026-04-29 14:54:41.774768",
+ "description": "Adding a student will automatically create a customer and a user.",
+ "docstatus": 0,
+ "doctype": "Onboarding Step",
+ "idx": 0,
+ "is_complete": 0,
+ "is_single": 0,
+ "is_skipped": 0,
+ "modified": "2026-04-29 14:54:41.774768",
+ "modified_by": "Administrator",
+ "name": "Student",
+ "owner": "Administrator",
+ "reference_document": "Student",
+ "show_form_tour": 0,
+ "show_full_form": 0,
+ "title": "Add a Student",
+ "validate_action": 1
+}

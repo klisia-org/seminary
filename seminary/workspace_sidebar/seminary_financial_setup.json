@@ -9,11 +9,11 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "circle-dollar-sign",
+   "icon": "plane-takeoff",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Seminary Financial Settings",
-   "link_to": "Seminary Financial Setup",
+   "label": "Getting Started SeminaryERP",
+   "link_to": "Getting Started - SeminaryERP",
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
@@ -43,11 +43,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-28 15:57:54.128943",
+ "modified": "2026-04-30 12:57:37.548607",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Seminary Financial Setup",
+ "name": "Getting Started - SeminaryERP",
  "owner": "Administrator",
  "standard": 1,
- "title": "Seminary Financial Setup"
+ "title": "Getting Started - SeminaryERP"
 }
