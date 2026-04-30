@@ -21,11 +21,44 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "school",
+   "icon": "home",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Home",
+   "label": "Home SeminaryERP",
    "link_to": "Seminary",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book-open-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Academic Setup",
+   "link_to": "Academic Setup",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Spacer"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "plane-takeoff",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Getting Started",
+   "link_to": "Getting Started - SeminaryERP",
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
@@ -54,39 +87,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Spacer"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "book-open-text",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Academic Setup",
-   "link_to": "Academic Setup",
-   "link_type": "Workspace",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "circle-dollar-sign",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Financial Setup",
-   "link_to": "Seminary Financial Setup",
-   "link_type": "Workspace",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "cog",
    "indent": 0,
    "keep_closed": 0,
@@ -97,7 +97,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-28 15:58:06.513616",
+ "modified": "2026-04-30 13:03:27.463913",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
