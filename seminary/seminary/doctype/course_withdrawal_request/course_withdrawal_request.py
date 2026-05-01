@@ -34,16 +34,14 @@ class CourseWithdrawalRequest(Document):
             frappe.throw(f"This withdrawal reason requires {doc_label}.")
 
     def set_resulting_grade(self):
+        # Flat Symbol resolves at validate. Calculated * resolve at academic approval
+        # (when grade calc runs). Clean Drop never has a resulting grade.
         if not self.withdrawal_rule:
             self.resulting_grade = ""
             return
         rule = frappe.get_doc("Withdrawal Rules", self.withdrawal_rule)
-        if rule.exclude_from_grade_calculation and rule.grading_symbol:
-            self.resulting_grade = rule.grading_symbol
-        elif not rule.exclude_from_grade_calculation and rule.consider_grade_as:
-            self.resulting_grade = frappe.db.get_value(
-                "Grading Scale Interval", rule.consider_grade_as, "grade_code"
-            )
+        if rule.grade_treatment == "Flat Symbol":
+            self.resulting_grade = rule.transcript_symbol or ""
         else:
             self.resulting_grade = ""
 

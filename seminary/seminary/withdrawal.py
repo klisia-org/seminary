@@ -13,11 +13,29 @@ def on_withdrawal_workflow_update(doc, method):
 
 
 def process_academic_approval(doc):
-    """Write withdrawal grade to Scheduled Course Roster and Program Enrollment Course."""
+    """Apply the withdrawal rule's grade treatment to the academic record.
+
+    Treatments:
+      - Clean Drop: delete roster and PEC rows so no transcript record remains.
+        The Course Withdrawal Request is the audit trail.
+      - Flat Symbol: write the rule's transcript_symbol (e.g. "W") to the roster
+        and PEC. count_in_gpa = 0 (no numeric, not in GPA).
+      - Calculated As-Is: run grade_thisstudent + fgrade_this_std (ungraded work
+        sums as 0). Use the calculated letter and numeric directly. count_in_gpa = 1.
+      - Calculated WP/WF: same calculation, then look up wp_code / wf_code on the
+        course's Grading Scale by Pass/Fail. count_in_gpa follows wp_gpa / wf_gpa
+        on the scale. The numeric (fscore) is preserved on PEC for transcript truth.
+    """
+    from seminary.seminary.api import grade_thisstudent, fgrade_this_std
+    from seminary.seminary.gpa import recompute_program_enrollment_gpa
+
     doc.academic_processed_by = frappe.session.user
 
-    if not doc.resulting_grade:
+    if not doc.withdrawal_rule:
         return
+
+    rule = frappe.get_doc("Withdrawal Rules", doc.withdrawal_rule)
+    treatment = rule.grade_treatment
 
     cei = doc.course_enrollment_individual
     course_schedule = frappe.db.get_value(
@@ -25,53 +43,116 @@ def process_academic_approval(doc):
     )
     student = frappe.db.get_value("Course Enrollment Individual", cei, "student_ce")
 
+    if treatment == "Clean Drop":
+        frappe.db.delete(
+            "Scheduled Course Roster",
+            {"course_sc": course_schedule, "student": student},
+        )
+        frappe.db.delete(
+            "Program Enrollment Course",
+            {"course": course_schedule, "parent": doc.program_enrollment},
+        )
+        _mark_cei_withdrawn(cei, doc.name)
+        recompute_program_enrollment_gpa(doc.program_enrollment)
+        return
+
     roster_name = frappe.db.get_value(
         "Scheduled Course Roster",
         {"course_sc": course_schedule, "student": student},
         "name",
     )
-
-    if roster_name:
-        rule = frappe.get_doc("Withdrawal Rules", doc.withdrawal_rule)
-        grade_pass = ""  # nosec B105
-        if rule.exclude_from_grade_calculation:
-            grade_pass = "Withdrawn"  # nosec B105
-        elif rule.consider_grade_as:
-            grade_pass = frappe.db.get_value(
-                "Grading Scale Interval", rule.consider_grade_as, "grade_pass"
-            )
-
-        frappe.db.set_value(
-            "Scheduled Course Roster",
-            roster_name,
-            {
-                "active": 0,
-                "fgrade": doc.resulting_grade,
-                "fgradepass": grade_pass,
-            },
-        )
-
     pec = frappe.db.get_value(
         "Program Enrollment Course",
         {"course": course_schedule, "parent": doc.program_enrollment},
         "name",
+    )
+
+    if treatment == "Flat Symbol":
+        symbol = rule.transcript_symbol or ""
+        if roster_name:
+            frappe.db.set_value(
+                "Scheduled Course Roster",
+                roster_name,
+                {
+                    "active": 0,
+                    "fgrade": symbol,
+                    "fgradepass": "Withdrawn",  # nosec B105
+                },
+            )
+        if pec:
+            frappe.db.set_value(
+                "Program Enrollment Course",
+                pec,
+                {
+                    "pec_finalgradecode": symbol,
+                    "status": "Withdrawn",  # nosec B105
+                    "count_in_gpa": 0,
+                },
+            )
+        doc.db_set("resulting_grade", symbol, update_modified=False)
+        _mark_cei_withdrawn(cei, doc.name)
+        recompute_program_enrollment_gpa(doc.program_enrollment)
+        return
+
+    # Calculated * — needs a roster to score against.
+    if not roster_name:
+        return
+
+    grade_thisstudent(roster_name)
+    fgrade_this_std(roster_name)
+    fscore, calc_grade, fgradepass = frappe.db.get_value(
+        "Scheduled Course Roster",
+        roster_name,
+        ["fscore", "fgrade", "fgradepass"],
+    )
+
+    final_code = calc_grade
+    count_in_gpa = 1
+    if treatment == "Calculated WP/WF":
+        gscale_name = frappe.db.get_value(
+            "Course Schedule", course_schedule, "gradesc_cs"
+        )
+        if gscale_name:
+            scale = frappe.get_cached_doc("Grading Scale", gscale_name)
+            if fgradepass == "Pass" and scale.wp_code:
+                final_code = scale.wp_code
+                count_in_gpa = 1 if scale.wp_gpa else 0
+            elif fgradepass == "Fail" and scale.wf_code:
+                final_code = scale.wf_code
+                count_in_gpa = 1 if scale.wf_gpa else 0
+
+    frappe.db.set_value(
+        "Scheduled Course Roster",
+        roster_name,
+        {
+            "active": 0,
+            "fgrade": final_code,
+            "fgradepass": "Withdrawn",  # nosec B105
+        },
     )
     if pec:
         frappe.db.set_value(
             "Program Enrollment Course",
             pec,
             {
-                "pec_finalgradecode": doc.resulting_grade,
+                "pec_finalgradecode": final_code,
+                "pec_finalgradenum": fscore,
                 "status": "Withdrawn",  # nosec B105
+                "count_in_gpa": count_in_gpa,
             },
         )
+    doc.db_set("resulting_grade", final_code, update_modified=False)
+    _mark_cei_withdrawn(cei, doc.name)
+    recompute_program_enrollment_gpa(doc.program_enrollment)
 
+
+def _mark_cei_withdrawn(cei, withdrawal_request):
     frappe.db.set_value(
         "Course Enrollment Individual",
         cei,
         {
             "withdrawn": 1,
-            "withdrawal_request": doc.name,
+            "withdrawal_request": withdrawal_request,
         },
     )
 
