@@ -249,13 +249,7 @@ override_doctype_class = {
 
 doc_events = {
     "Course Enrollment Individual": {
-        "on_submit": [
-            "seminary.seminary.api.copy_data_to_scheduled_course_roster",
-            "seminary.seminary.api.copy_data_to_program_enrollment_course",
-        ]
-        # ,
-        # "on_cancel": "method",
-        # "on_trash": "method"
+        "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
     "Program Enrollment": {
         "on_submit": "seminary.seminary.api.get_payers",
@@ -294,9 +288,22 @@ doc_events = {
         "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
     },
     "Sales Invoice": {
-        "on_submit": "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
-        "on_update_after_submit": "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
-        "on_cancel": "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
+        "on_submit": [
+            "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
+            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
+        ],
+        "on_update_after_submit": [
+            "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
+            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
+        ],
+        "on_cancel": [
+            "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
+            "seminary.seminary.cei_lifecycle.maybe_notify_registrar_on_invoice_cancel",
+        ],
+    },
+    "Payment Entry": {
+        "on_submit": "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
+        "on_cancel": "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
     },
     "Seminary Settings": {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",
@@ -419,6 +426,7 @@ fixtures = [
                     "Recommendation Letter Workflow",
                     "Culminating Project Workflow",
                     "Course Schedule Lifecycle",
+                    "Course Enrollment Lifecycle",
                 ],
             ]
         ],
@@ -453,6 +461,8 @@ fixtures = [
                     "Grading",
                     "Closed",
                     "Cancelled",
+                    "Awaiting Payment",
+                    "Withdrawn",
                 ],
             ]
         ],
@@ -486,6 +496,9 @@ fixtures = [
                     "Cancel Course",
                     "Begin Grading",
                     "Send Grades",
+                    "Submit & Skip Academic Review",
+                    "Submit & Complete",
+                    "Mark as Paid",
                 ],
             ]
         ],

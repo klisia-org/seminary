@@ -88,3 +88,29 @@ class AcademicTerm(Document):
                     frappe.bold(self.academic_year)
                 )
             )
+
+
+@frappe.whitelist()
+def get_academic_year_context(academic_year, exclude_term=None):
+    """Return year date range and sibling terms to help users pick valid term dates."""
+    year = frappe.db.get_value(
+        "Academic Year",
+        academic_year,
+        ["year_start_date", "year_end_date"],
+        as_dict=1,
+    )
+    if not year:
+        return {"year": None, "terms": []}
+
+    filters = {"academic_year": academic_year}
+    if exclude_term:
+        filters["name"] = ["!=", exclude_term]
+
+    terms = frappe.get_all(
+        "Academic Term",
+        filters=filters,
+        fields=["name", "term_name", "term_start_date", "term_end_date"],
+        order_by="term_start_date asc",
+    )
+
+    return {"year": year, "terms": terms}

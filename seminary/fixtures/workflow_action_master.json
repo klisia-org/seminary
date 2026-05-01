@@ -130,5 +130,23 @@
   "doctype": "Workflow Action Master",
   "name": "Send Grades",
   "workflow_action_name": "Send Grades"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Submit & Skip Academic Review",
+  "workflow_action_name": "Submit & Skip Academic Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Submit & Complete",
+  "workflow_action_name": "Submit & Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Mark as Paid",
+  "workflow_action_name": "Mark as Paid"
  }
 ]

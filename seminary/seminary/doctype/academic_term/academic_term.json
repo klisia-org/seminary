@@ -23,6 +23,8 @@
   "term_end_date",
   "title",
   "invoiced_nat_on",
+  "year_context_section",
+  "year_context_html",
   "connections_tab"
  ],
  "fields": [
@@ -96,7 +98,17 @@
    "fieldtype": "Date",
    "label": "NAT Invoices Generated On",
    "no_copy": 1,
-   "read_only": 1
+   "permlevel": 1
+  },
+  {
+   "fieldname": "year_context_section",
+   "fieldtype": "Section Break",
+   "label": "Academic Year Context"
+  },
+  {
+   "fieldname": "year_context_html",
+   "fieldtype": "HTML",
+   "label": "Year Context"
   }
  ],
  "links": [
@@ -121,7 +133,7 @@
    "link_fieldname": "academic_term"
   }
  ],
- "modified": "2025-04-07 15:48:07.116405",
+ "modified": "2026-05-01 10:00:09.567736",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Term",
@@ -178,11 +190,48 @@
    "report": 1,
    "role": "Student Applicant",
    "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "name",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title"
+ "title_field": "title",
+ "track_changes": 1
 }

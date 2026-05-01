@@ -29,8 +29,13 @@ def resolve_policy(program, on_date):
     Picks the policy whose [active_from, active_until] interval covers on_date.
     If multiple match (data-entry bug; PGR.validate prevents this on the same
     program), the one with the latest active_from wins.
+
+    Returns None for ongoing programs (no graduation concept).
     """
     if not program or not on_date:
+        return None
+
+    if frappe.db.get_value("Program", program, "is_ongoing"):
         return None
 
     on_date = getdate(on_date)
@@ -335,6 +340,8 @@ def compute_expected_graduation_date(program_enrollment):
         return None
 
     program = frappe.get_cached_doc("Program", program_enrollment.program)
+    if program.is_ongoing:
+        return None
     terms = int(program.get("terms_complete") or 0)
     enrollment_date = program_enrollment.get("enrollment_date")
 

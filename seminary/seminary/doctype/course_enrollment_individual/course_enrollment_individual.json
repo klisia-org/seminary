@@ -13,6 +13,9 @@
   "section_break_qhjs",
   "student_name",
   "program_data",
+  "is_free",
+  "require_pay_submit",
+  "percent_to_pay",
   "course_data",
   "academic_term",
   "credits",
@@ -22,6 +25,12 @@
   "no_prereq",
   "column_break_jfah",
   "cei_si",
+  "payment_status_section",
+  "total_invoiced",
+  "total_paid",
+  "column_break_payment",
+  "paid_percent",
+  "paid_threshold_met_on",
   "withdrawal_section",
   "withdrawn",
   "column_break_withdrawal",
@@ -32,7 +41,8 @@
   "course_cancellation_reason",
   "course_cancelled_on",
   "section_break_ogto",
-  "amended_from"
+  "amended_from",
+  "workflow_state"
  ],
  "fields": [
   {
@@ -189,6 +199,83 @@
    "fieldname": "cei_si",
    "fieldtype": "Check",
    "label": "Sales Invoice Created?"
+  },
+  {
+   "default": "0",
+   "fetch_from": "program_data.is_free",
+   "fieldname": "is_free",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Free",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fetch_from": "program_data.require_pay_submit",
+   "fieldname": "require_pay_submit",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Require Payment Before Enrollment",
+   "read_only": 1
+  },
+  {
+   "default": "100",
+   "fetch_from": "program_data.percent_to_pay",
+   "fieldname": "percent_to_pay",
+   "fieldtype": "Percent",
+   "hidden": 1,
+   "label": "Minimum Payment %",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "payment_status_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Status"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_invoiced",
+   "fieldtype": "Currency",
+   "label": "Total Invoiced",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_paid",
+   "fieldtype": "Currency",
+   "label": "Total Paid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_payment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "(total_paid / total_invoiced) × 100",
+   "fieldname": "paid_percent",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Paid %",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "When paid_percent first met percent_to_pay and the system advanced this CEI to Submitted. Empty for manual overrides and free programs.",
+   "fieldname": "paid_threshold_met_on",
+   "fieldtype": "Datetime",
+   "label": "Threshold Met On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
   },
   {
    "default": "0",

@@ -98,6 +98,9 @@ def mark_as_alumni(program_enrollment: str) -> dict:
             _("Program Enrollment must be submitted before transitioning to alumni.")
         )
 
+    if frappe.db.get_value("Program", pe.program, "is_ongoing"):
+        frappe.throw(_("Ongoing programs do not transition to alumni status."))
+
     audit = get_program_audit(program_enrollment=program_enrollment)
     if not audit.get("graduation_eligible"):
         frappe.throw(

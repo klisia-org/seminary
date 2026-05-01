@@ -10,8 +10,13 @@ class Program(WebsiteGenerator):
     def autoname(self):
         self.name = self.program_name
 
-    # def validate(self):
-    # self.validate_courses_pgmtrack()
+    def validate(self):
+        # Free programs cannot gate enrollment on payment — there are no invoices.
+        # Force the gating fields off so the CEI workflow conditions evaluate
+        # cleanly regardless of fetch_from chain timing.
+        if self.is_free:
+            self.require_pay_submit = 0
+            self.percent_to_pay = 0
 
     def get_course_list(self):
         program_course_list = self.courses

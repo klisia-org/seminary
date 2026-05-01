@@ -3,3 +3,7 @@
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
 seminary.seminary.patches.enable_cs_lifecycle_self_approval
+seminary.seminary.patches.submit_program_levels
+seminary.seminary.patches.backfill_cei_workflow_state
+seminary.seminary.patches.clear_pay_gate_on_free_programs
+seminary.seminary.patches.backfill_pe_max_graduation_date
