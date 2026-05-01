@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "pgm_level",
+  "ongoing",
   "description"
  ],
  "fields": [
@@ -24,18 +25,28 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "default": "0",
+   "description": "Check this ONLY if the Program has no definitive end (no graduation, credits, etc.) Useful for free courses, continuous education, etc.",
+   "fieldname": "ongoing",
+   "fieldtype": "Check",
+   "label": "Is Ongoing"
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2025-02-28 15:42:45.984332",
+ "modified": "2026-05-01 12:16:57.044581",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Level",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -45,9 +56,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

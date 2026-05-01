@@ -64,13 +64,36 @@
    {
     "action": "Submit",
     "allowed": "Academics User",
+    "condition": "not doc.is_ongoing",
     "next_state": "Submitted",
     "state": "Draft"
    },
    {
     "action": "Submit",
     "allowed": "Student",
+    "condition": "not (doc.is_ongoing and doc.is_free)",
     "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit & Skip Academic Review",
+    "allowed": "Academics User",
+    "condition": "doc.is_ongoing and not doc.is_free",
+    "next_state": "Academically Approved",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit & Complete",
+    "allowed": "Academics User",
+    "condition": "doc.is_ongoing and doc.is_free",
+    "next_state": "Completed",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit & Complete",
+    "allowed": "Student",
+    "condition": "doc.is_ongoing and doc.is_free",
+    "next_state": "Completed",
     "state": "Draft"
    },
    {
@@ -483,6 +506,85 @@
     "allowed": "Academics User",
     "next_state": "Grading",
     "state": "Enrollment Closed"
+   }
+  ]
+ },
+ {
+  "creation": "2026-05-01 14:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Course Enrollment Individual",
+  "is_active": 1,
+  "name": "Course Enrollment Lifecycle",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_name": "Course Enrollment Lifecycle",
+  "workflow_state_field": "workflow_state",
+  "states": [
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Awaiting Payment",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Submitted",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Withdrawn",
+    "allow_edit": "Seminary Manager"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "condition": "doc.is_free or not doc.require_pay_submit",
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": "doc.is_free or not doc.require_pay_submit",
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "condition": "doc.require_pay_submit and not doc.is_free",
+    "next_state": "Awaiting Payment",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": "doc.require_pay_submit and not doc.is_free",
+    "next_state": "Awaiting Payment",
+    "state": "Draft"
+   },
+   {
+    "action": "Mark as Paid",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Submitted",
+    "state": "Awaiting Payment"
    }
   ]
  }

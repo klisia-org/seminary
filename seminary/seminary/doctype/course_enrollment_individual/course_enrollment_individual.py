@@ -14,12 +14,46 @@ class CourseEnrollmentIndividual(Document):
     def validate(self):
         self.validate_duplicate()
         self.validate_duplicate_course()
+        self._hydrate_program_flags()
+
+    def _hydrate_program_flags(self):
+        """Mirror payment-gating flags from the linked Program.
+
+        We can't rely on JSON `fetch_from: program_data.<field>` because
+        `program_data` is itself a fetch_from of `program_ce.program`, and
+        Frappe's two-level chain doesn't always resolve in a single validate
+        pass. Reading the source live keeps the workflow conditions honest.
+        """
+        program = self.program_data
+        if not program and self.program_ce:
+            program = frappe.db.get_value(
+                "Program Enrollment", self.program_ce, "program"
+            )
+            self.program_data = program
+        if not program:
+            return
+        flags = frappe.db.get_value(
+            "Program",
+            program,
+            ["is_free", "require_pay_submit", "percent_to_pay"],
+            as_dict=True,
+        )
+        if not flags:
+            return
+        self.is_free = flags.is_free or 0
+        self.require_pay_submit = flags.require_pay_submit or 0
+        self.percent_to_pay = flags.percent_to_pay or 0
 
     def on_submit(self):
-        if not self.cei_si:
-            self.get_inv_data_ce()
+        if self.cei_si:
+            return
+        if frappe.db.get_value("Program", self.program_data, "is_free"):
             self.cei_si = 1
             self.db_set("cei_si", 1)
+            return
+        self.get_inv_data_ce()
+        self.cei_si = 1
+        self.db_set("cei_si", 1)
 
     def before_cancel(self):
         """Block cancellation if the course has already started."""

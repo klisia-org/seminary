@@ -182,5 +182,21 @@
   "name": "Cancelled",
   "style": "Danger",
   "workflow_state_name": "Cancelled"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-clock-o",
+  "name": "Awaiting Payment",
+  "style": "Warning",
+  "workflow_state_name": "Awaiting Payment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-sign-out",
+  "name": "Withdrawn",
+  "style": "Danger",
+  "workflow_state_name": "Withdrawn"
  }
 ]

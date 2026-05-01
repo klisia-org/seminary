@@ -14,11 +14,16 @@
   "column_break_3",
   "program_abbreviation",
   "program_level",
+  "is_ongoing",
+  "is_free",
+  "require_pay_submit",
+  "percent_to_pay",
   "program_type",
   "section_break_pgmtype",
   "terms_complete",
   "column_break_voqj",
   "credits_complete",
+  "max_time_enrolled",
   "section_break_gpa",
   "basis_for_gpa",
   "is_weighted",
@@ -61,6 +66,7 @@
    "unique": 1
   },
   {
+   "description": "ERPNext Department is all about HR. Instead of deleting the field, it is hidden until a definition of Academic Departments is made.",
    "fieldname": "department",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -79,6 +85,7 @@
    "label": "Program Abbreviation"
   },
   {
+   "depends_on": "eval:!doc.is_ongoing",
    "description": "Time-based: use terms for student progress; Credit-based: students may enroll in courses for any term; track credit completion",
    "fieldname": "program_type",
    "fieldtype": "Select",
@@ -89,41 +96,56 @@
    "translatable": 1
   },
   {
+   "depends_on": "eval:!doc.is_ongoing",
    "fieldname": "terms_complete",
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Terms for completion",
-   "mandatory_depends_on": "program_type==\"Time-based\""
+   "mandatory_depends_on": "eval:!doc.is_ongoing && doc.program_type==\"Time-based\""
   },
   {
+   "depends_on": "eval:!doc.is_ongoing",
    "fieldname": "credits_complete",
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Credits for completion",
-   "mandatory_depends_on": "program_type==\"Credits-based\""
+   "mandatory_depends_on": "eval:!doc.is_ongoing && doc.program_type==\"Credits-based\""
   },
   {
+   "default": "0",
+   "depends_on": "eval:!doc.is_ongoing",
+   "description": "Maximum number of years a student may stay enrolled in this program before they must graduate (fractional years supported, e.g. 7.5). 0 = no limit. The Program Enrollment's max graduation date is auto-set to enrollment_date + this many years on submission.",
+   "fieldname": "max_time_enrolled",
+   "fieldtype": "Float",
+   "label": "Max Years to Graduate",
+   "precision": "1"
+  },
+  {
+   "depends_on": "eval:!doc.is_ongoing",
    "fieldname": "section_break_gpa",
    "fieldtype": "Section Break",
    "label": "GPA & Honors"
   },
   {
    "default": "4.0",
+   "depends_on": "eval:!doc.is_ongoing",
    "description": "Top of the GPA scale (US = 4, others vary).",
    "fieldname": "basis_for_gpa",
    "fieldtype": "Float",
    "label": "Basis for GPA",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.is_ongoing"
   },
   {
    "default": "1",
-   "description": "When checked, GPA is credit-weighted: Σ(points × credits) / Σ(credits). When unchecked, GPA is the simple mean of points across counted rows.",
+   "depends_on": "eval:!doc.is_ongoing",
+   "description": "When checked, GPA is credit-weighted: \u03a3(points \u00d7 credits) / \u03a3(credits). When unchecked, GPA is the simple mean of points across counted rows.",
    "fieldname": "is_weighted",
    "fieldtype": "Check",
    "label": "Credit-weighted GPA"
   },
   {
    "default": "0",
+   "depends_on": "eval:!doc.is_ongoing",
    "description": "Second gate for transferred PEC rows: a transfer counts in GPA only when this Program AND the source Partner Seminary's `Counts in GPA` are both checked.",
    "fieldname": "accept_transfer_gpa",
    "fieldtype": "Check",
@@ -134,6 +156,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:!doc.is_ongoing",
    "description": "Honors levels for this program. The highest level whose Minimum GPA is met by the student is shown as `current_honor` on Program Enrollment.",
    "fieldname": "honors_levels",
    "fieldtype": "Table",
@@ -141,6 +164,7 @@
    "options": "Honors Levels"
   },
   {
+   "depends_on": "eval:!doc.is_ongoing",
    "fieldname": "section_break_pgmtype",
    "fieldtype": "Section Break",
    "label": "Enrollment Type will regulate which of the options below will be used for student progress (the other may be used for statistical purposes)"
@@ -253,6 +277,39 @@
    "options": "Program Level"
   },
   {
+   "default": "0",
+   "description": "Mirrored from Program Level. Programs with no graduation/transcript concept skip GPA, graduation audit, alumni transition, and Academic Review on withdrawal.",
+   "fetch_from": "program_level.ongoing",
+   "fieldname": "is_ongoing",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Ongoing",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Bypass enrollment invoicing and skip Financial Review on withdrawal.",
+   "fieldname": "is_free",
+   "fieldtype": "Check",
+   "label": "Free Program"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:!doc.is_free",
+   "description": "When checked, a Course Enrollment in this program lands at 'Awaiting Payment' until the student pays the invoice (or meets the percent below). Forced off for Free Programs.",
+   "fieldname": "require_pay_submit",
+   "fieldtype": "Check",
+   "label": "Require Payment Before Enrollment"
+  },
+  {
+   "default": "100",
+   "depends_on": "eval:!doc.is_free && doc.require_pay_submit",
+   "description": "Minimum cumulative payment (as a percentage of the CEI's invoiced total) required to advance from 'Awaiting Payment' to 'Submitted'. 100 = fully paid; 50 = half-down accepted.",
+   "fieldname": "percent_to_pay",
+   "fieldtype": "Percent",
+   "label": "Minimum Payment %"
+  },
+  {
    "fieldname": "column_break_voqj",
    "fieldtype": "Column Break"
   },
@@ -267,16 +324,18 @@
    "options": "Program Track"
   },
   {
+   "depends_on": "eval:!doc.is_free",
    "fieldname": "financial_tab",
    "fieldtype": "Tab Break",
    "label": "Financial"
   },
   {
+   "depends_on": "eval:!doc.is_free",
    "fieldname": "pgm_pgmfees",
    "fieldtype": "Table",
    "label": "Program Fees",
-   "options": "Program Fees",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.is_free",
+   "options": "Program Fees"
   },
   {
    "default": "1",
@@ -330,7 +389,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-04-24 08:02:46.647989",
+ "modified": "2026-05-01 11:14:15.667048",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

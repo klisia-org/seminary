@@ -31,6 +31,34 @@ class ProgramEnrollment(Document):
 
     def on_submit(self):
         self.update_student_joining_date()
+        self.set_max_graduation_date()
+
+    def set_max_graduation_date(self):
+        """Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.
+
+        No-op when:
+          - max_graduation_date already set (registrar override / amendment)
+          - program is ongoing (no graduation concept)
+          - max_time_enrolled is 0 or unset (no time limit)
+        """
+        if self.max_graduation_date:
+            return
+        program = frappe.db.get_value(
+            "Program",
+            self.program,
+            ["max_time_enrolled", "is_ongoing"],
+            as_dict=True,
+        )
+        if not program or program.is_ongoing:
+            return
+        years = float(program.max_time_enrolled or 0)
+        if years <= 0 or not self.enrollment_date:
+            return
+        from frappe.utils import add_days
+
+        days = int(round(years * 365.25))
+        max_date = add_days(self.enrollment_date, days)
+        self.db_set("max_graduation_date", max_date, update_modified=False)
 
     def set_expected_graduation_date(self):
         if self.expected_graduation_date:

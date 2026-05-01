@@ -6,6 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "program_enrollment",
+  "program",
+  "is_ongoing",
+  "is_free",
   "student",
   "student_name",
   "column_break_course",
@@ -60,6 +63,33 @@
    "label": "Program Enrollment",
    "options": "Program Enrollment",
    "reqd": 1
+  },
+  {
+   "fetch_from": "program_enrollment.program",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "program.is_ongoing",
+   "fieldname": "is_ongoing",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Ongoing",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "program.is_free",
+   "fieldname": "is_free",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Free",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_course",

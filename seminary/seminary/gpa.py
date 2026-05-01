@@ -25,6 +25,8 @@ def recompute_program_enrollment_gpa(pe_name):
 
     pe = frappe.get_doc("Program Enrollment", pe_name)
     program = frappe.get_cached_doc("Program", pe.program)
+    if program.is_ongoing:
+        return
     basis = float(program.basis_for_gpa or 0)
     if basis <= 0:
         return

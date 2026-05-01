@@ -104,6 +104,40 @@ Detailed program modeling (tracks, emphases, credit requirements) is covered und
 
 All Fee Categories for any course of that program **must** first be linked in the Program level. 
 
+### Program Level
+
+Every Program links to a **Program Level** (e.g. *Bachelors*, *Masters*, *Doctorate*, *Certificate*, *Non Formal Program*). Levels are **submittable**: once submitted, a level is locked and visible in the Program form's level picker. To change the gating fields on a level after the fact, amend it (creating a new revision) and re-point Programs as needed — this gives you a clean audit trail and prevents silent behavior changes on programs already in flight.
+
+The level carries one behavior-shaping flag:
+
+- **Is Ongoing** — check this only when the program has no definitive end (continuous education, free auditing, devotional courses). Ongoing programs skip GPA, graduation, alumni transition, and the Academic Review step on withdrawal. The flag is mirrored from Program Level onto every Program at that level (read-only on the Program form).
+
+When *Is Ongoing* is set, the GPA & Honors section, *Enrollment Type*, *Terms for completion*, and *Credits for completion* fields disappear from the Program form — they have no meaning for ongoing programs.
+
+### Free Program
+
+A separate, per-Program checkbox **Free Program** decouples the financial side from the academic side:
+
+- When checked, the Program **does not** generate enrollment Sales Invoices (CEI submission, New Academic Term / New Academic Year / Monthly billing triggers all skip free programs), and withdrawal requests skip the Financial Review step.
+- The *Financial* tab and *Program Fees* table hide on the Program form when *Free Program* is set.
+
+The two flags are orthogonal: a paid-but-ongoing program (e.g. paid one-off seminars in a continuing-ed track) leaves *Free Program* unchecked, so per-course fees and refund flows still work; a free degree program leaves *Is Ongoing* unchecked so graduation logic still runs. See [Withdrawal → Fast-paths for Ongoing and Free programs](../modules/withdrawal.md#fast-paths-for-ongoing-and-free-programs) for how the two flags combine to shape the withdrawal buttons.
+
+### Payment Gating (paid programs)
+
+For paid programs, two more fields control whether a Course Enrollment requires payment before the student is fully enrolled:
+
+- **Require Payment Before Enrollment** (default on, hidden when *Free Program* is checked) — when set, a new Course Enrollment lands at *Awaiting Payment* on submit. The student is invoiced but not added to the course roster until they pay.
+- **Minimum Payment %** (default 100) — the minimum cumulative payment, as a percentage of the Course Enrollment's invoiced total, that must clear before the system advances the enrollment to *Submitted*. Set 50 if half-down enrolls; leave at 100 to require full payment.
+
+Both fields are hidden for ongoing programs (no enrollment gating concept). See [Enrollment → Course Enrollment lifecycle](../modules/enrollment.md#course-enrollment-lifecycle) for the full state machine.
+
+### Maximum Enrollment Duration (Time Cap)
+
+**Max Years to Graduate** (Float, fractional values supported) is the maximum time a student may stay enrolled before they must graduate. 0 means no limit (the default). When set, every new Program Enrollment for this Program gets a **Max Graduation Date** auto-computed as `enrollment_date + Max Years to Graduate`; registrars can edit that date later to grant extensions.
+
+The companion **Time-to-Graduate Risk** report (Reports → Seminary) lists active enrollments whose Program has a non-zero Max Years, ranks them by the credits-per-year pace they need to finish on time, and flags overdue students at the top.
+
 ## 12. Course Schedule Lifecycle
 
 Each **Course Schedule** moves through a six-state workflow that the daily scheduler advances automatically (when [Section 2](#_2-seminary-settings) "Auto-advance" is on) or that registrars walk through manually:

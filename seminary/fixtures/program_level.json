@@ -1,7 +1,7 @@
 [
  {
   "description": null,
-  "docstatus": 0,
+  "docstatus": 1,
   "doctype": "Program Level",
   "modified": "2025-02-28 09:17:47.586148",
   "name": "Masters",
@@ -9,7 +9,7 @@
  },
  {
   "description": null,
-  "docstatus": 0,
+  "docstatus": 1,
   "doctype": "Program Level",
   "modified": "2025-02-28 15:43:33.637288",
   "name": "Bachelors",
@@ -17,7 +17,7 @@
  },
  {
   "description": null,
-  "docstatus": 0,
+  "docstatus": 1,
   "doctype": "Program Level",
   "modified": "2025-02-28 15:43:42.594876",
   "name": "Doctorate",
@@ -25,7 +25,7 @@
  },
  {
   "description": null,
-  "docstatus": 0,
+  "docstatus": 1,
   "doctype": "Program Level",
   "modified": "2025-02-28 15:43:49.321084",
   "name": "Certificate",
@@ -33,7 +33,7 @@
  },
  {
   "description": null,
-  "docstatus": 0,
+  "docstatus": 1,
   "doctype": "Program Level",
   "modified": "2025-02-28 15:44:00.190826",
   "name": "Non Formal Program",

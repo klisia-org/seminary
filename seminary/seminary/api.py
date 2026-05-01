@@ -1260,6 +1260,16 @@ def get_program_audit(program_enrollment):
         else 0
     )
 
+    # Ongoing programs have no graduation concept — short-circuit the eligibility
+    # block and return `graduation_eligible=None` so frontends can distinguish
+    # "not applicable" from "blocked".
+    if program.is_ongoing:
+        result["graduation_requirements"] = []
+        result["graduation_policy"] = pe.graduation_policy
+        result["expected_graduation_date"] = pe.expected_graduation_date
+        result["graduation_eligible"] = None
+        return result
+
     # Graduation eligibility check
     graduation_eligible = True
 
@@ -2417,9 +2427,12 @@ def generate_nat_invoices(academic_term):
         INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
         INNER JOIN `tabItem Price` ip
                 ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
+        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
+        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'New Academic Term'
+          AND COALESCE(pgm.is_free, 0) = 0
         """,
         as_dict=True,
     )
@@ -2464,9 +2477,12 @@ def generate_nay_invoices(academic_year):
         INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
         INNER JOIN `tabItem Price` ip
                 ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
+        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
+        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'New Academic Year'
+          AND COALESCE(pgm.is_free, 0) = 0
         """,
         as_dict=True,
     )
@@ -2538,10 +2554,12 @@ def generate_monthly_invoices(as_of=None):
         INNER JOIN `tabpgm_enroll_payers` pep ON pep.parent = pfc.name
         INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
         INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
+        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'Monthly'
           AND pe.pgmenrol_active = 1
+          AND COALESCE(pgm.is_free, 0) = 0
           AND (pe.last_monthly_invoiced_on IS NULL OR pe.last_monthly_invoiced_on < %s)
           AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)
         """,

@@ -3,7 +3,11 @@ from frappe import _
 
 
 def on_withdrawal_workflow_update(doc, method):
-    """Handle workflow state transitions for Course Withdrawal Request."""
+    """Handle workflow state transitions for Course Withdrawal Request.
+
+    Fast-paths for ongoing/free programs are declared as conditional
+    transitions in the Course Withdrawal workflow (see fixtures/workflow.json).
+    """
     if doc.workflow_state == "Academically Approved":
         process_academic_approval(doc)
     elif doc.workflow_state == "Financially Approved":
@@ -30,6 +34,13 @@ def process_academic_approval(doc):
     from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
     doc.academic_processed_by = frappe.session.user
+
+    # Ongoing programs reach this state via the workflow's "Submit & Skip
+    # Academic Review" fast-path. They have no transcript/GPA concept, so
+    # short-circuit any grade-treatment work and just mark the CEI withdrawn.
+    if doc.is_ongoing:
+        _mark_cei_withdrawn(doc.course_enrollment_individual, doc.name)
+        return
 
     if not doc.withdrawal_rule:
         return
@@ -153,6 +164,7 @@ def _mark_cei_withdrawn(cei, withdrawal_request):
         {
             "withdrawn": 1,
             "withdrawal_request": withdrawal_request,
+            "workflow_state": "Withdrawn",
         },
     )
 

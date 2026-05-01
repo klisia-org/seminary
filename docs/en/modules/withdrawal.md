@@ -65,3 +65,23 @@ If there is a need for manual adjustment of the dates a rule apply, this can be 
 Most seminaries will not need to edit the pre-configured workflow. However, it is possible to do so and larger institutions may particularly benefit from customizations. Since this is a ERPNext feature, their [documentation](https://docs.frappe.io/erpnext/workflows) may prove useful.
 
 ![Withdrawal Workflow screen](/modules/withdrawal/img/withdrawal-workflow.png)
+
+### Fast-paths for Ongoing and Free programs
+
+Two flags on the underlying Program change the buttons shown on a withdrawal request, so users do not have to click through review states that have nothing to evaluate:
+
+- **Is Ongoing** — a property of the **Program Level**, mirrored onto every Program at that level. Ongoing programs have no graduation, GPA, or transcript concept, so there is nothing to academically review on a withdrawal.
+- **Free Program** — a per-Program checkbox. When set, enrollment generates no Sales Invoices, so there is nothing to financially review on a withdrawal.
+
+The buttons available on a Draft Course Withdrawal Request adapt automatically:
+
+| Program flags | Button shown on Draft | Lands at |
+| --- | --- | --- |
+| Neither flag | **Submit** (standard) | Submitted → standard Academic Review → Financial Review chain |
+| Free only | **Submit** (standard) | Submitted → Academic Review → Academically Approved; from there the academic user can pick *Complete* to skip Financial Review |
+| Ongoing only | **Submit & Skip Academic Review** (Academics User) | Academically Approved → Financial Review (one-off paid courses still settle) |
+| Ongoing **and** Free | **Submit & Complete** (Student or Academics User) | Completed (no review at all) |
+
+When a request lands at *Academically Approved* via the **Submit & Skip Academic Review** path, no grade treatment is applied — the system simply marks the underlying Course Enrollment as withdrawn.
+
+If a student initiates a withdrawal for an ongoing-but-paid program, they still see the standard **Submit** button; the academic user later walks the request through Academic Review, where the academic processing for ongoing programs is a no-op by design.

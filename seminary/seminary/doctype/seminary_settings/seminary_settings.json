@@ -6,7 +6,11 @@
  "engine": "InnoDB",
  "field_order": [
   "general_tab",
+  "branding_section",
   "logo_portal",
+  "column_break_icme",
+  "logo_dark",
+  "section_break_qcbp",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
   "auto_advance_course_schedule",
@@ -20,7 +24,6 @@
   "grade_close_anchor",
   "grade_close_offset_days",
   "column_break_4",
-  "logo_dark",
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
@@ -108,13 +111,13 @@
   },
   {
    "default": "1",
-   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft → Open for Enrollment, Open for Enrollment → Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
+   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft \u2192 Open for Enrollment, Open for Enrollment \u2192 Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
    "fieldname": "auto_advance_course_schedule",
    "fieldtype": "Check",
    "label": "Auto-advance Course Schedule states"
   },
   {
-   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window — Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
+   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window \u2014 Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
    "fieldname": "enrollment_window_rules_section",
    "fieldtype": "Section Break",
    "label": "Enrollment Window Rules"
@@ -217,7 +220,7 @@
    "fieldname": "block_cei_pay",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Block Course Enrollment until paid?"
+   "label": "Block Course Enrollment Submission until paid?"
   },
   {
    "depends_on": "doc.block_cei_pay==1",
@@ -447,12 +450,25 @@
    "fieldname": "hrms_live_date",
    "fieldtype": "Date",
    "label": "HRMS Live Date (Pay Cutoff)"
+  },
+  {
+   "fieldname": "branding_section",
+   "fieldtype": "Section Break",
+   "label": "Branding"
+  },
+  {
+   "fieldname": "column_break_icme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_qcbp",
+   "fieldtype": "Section Break"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-17 08:06:52.121188",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-05-01 11:18:27.745938",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
  "owner": "Administrator",

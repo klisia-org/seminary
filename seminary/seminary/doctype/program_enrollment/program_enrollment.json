@@ -11,6 +11,7 @@
   "student_name",
   "enrollment_date",
   "expected_graduation_date",
+  "max_graduation_date",
   "date_of_conclusion",
   "column_break_4",
   "program",
@@ -249,6 +250,13 @@
    "fieldname": "expected_graduation_date",
    "fieldtype": "Date",
    "label": "Expected Graduation Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Latest date by which the student must graduate. Auto-set on enrollment submission to enrollment_date + Program.max_time_enrolled years. Editable by the registrar to grant extensions.",
+   "fieldname": "max_graduation_date",
+   "fieldtype": "Date",
+   "label": "Max Graduation Date"
   },
   {
    "fieldname": "grad_requirements_section",
