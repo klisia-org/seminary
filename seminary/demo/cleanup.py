@@ -34,6 +34,39 @@ def remove_demo_data():
 
     deleted_counts = {}
 
+    # Sales Invoices are auto-created when CEIs are submitted (not tagged as demo).
+    # Delete them first so CEI deletion isn't blocked by FK references.
+    demo_ceis = frappe.get_all(
+        "Tag Link",
+        filters={"document_type": "Course Enrollment Individual", "tag": DEMO_TAG},
+        pluck="document_name",
+    )
+    if demo_ceis:
+        linked_invoices = frappe.get_all(
+            "Sales Invoice",
+            filters={"custom_cei": ("in", demo_ceis)},
+            pluck="name",
+        )
+        si_count = 0
+        for inv_name in linked_invoices:
+            try:
+                # Force docstatus=2 directly to bypass GL validations / payment checks
+                frappe.db.set_value(
+                    "Sales Invoice", inv_name, "docstatus", 2, update_modified=False
+                )
+                frappe.delete_doc(
+                    "Sales Invoice",
+                    inv_name,
+                    force=True,
+                    ignore_permissions=True,
+                    delete_permanently=True,
+                )
+                si_count += 1
+            except Exception:
+                frappe.log_error(f"Failed to delete Sales Invoice {inv_name}")
+        if si_count:
+            deleted_counts["Sales Invoice"] = si_count
+
     for doctype in DEMO_DOCTYPES:
         # Find all docs with the demo tag
         tagged_docs = frappe.get_all(
@@ -42,15 +75,18 @@ def remove_demo_data():
             pluck="document_name",
         )
 
+        meta = frappe.get_meta(doctype) if tagged_docs else None
+
         count = 0
         for doc_name in tagged_docs:
             try:
-                doc = frappe.get_doc(doctype, doc_name)
-
-                # Cancel if submittable and submitted
-                if doc.meta.is_submittable and doc.docstatus == 1:
-                    doc.flags.ignore_permissions = True
-                    doc.cancel()
+                # For submittable docs, force docstatus=2 directly to bypass
+                # before_cancel / on_cancel hooks (e.g. CEI blocks cancellation
+                # after course start date and cascades to Sales Invoices).
+                if meta and meta.is_submittable:
+                    frappe.db.set_value(
+                        doctype, doc_name, "docstatus", 2, update_modified=False
+                    )
 
                 frappe.delete_doc(
                     doctype,
