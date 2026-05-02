@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "PGR-.#####",
  "creation": "2026-04-25 14:47:15.333793",
+ "description": "A program's graduation policy. Submittable for traceability: to retire a policy, cancel it (this auto-clears 'Is Active' and stamps 'Active Until' to today). To change requirements, amend the cancelled policy and submit the amendment with a new 'Active From' date.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -12,7 +13,8 @@
   "active_from",
   "active_until",
   "section_break_cqwz",
-  "pgr_items"
+  "pgr_items",
+  "amended_from"
  ],
  "fields": [
   {
@@ -24,6 +26,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fieldname": "active",
    "fieldtype": "Check",
@@ -40,6 +43,7 @@
    "search_index": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "active_until",
    "fieldtype": "Date",
    "label": "Active Until"
@@ -53,12 +57,23 @@
    "fieldtype": "Table",
    "label": "Program Requirement Items",
    "options": "Program Grad Req Items"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Graduation Requirement",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-04-25 16:52:51.836337",
+ "modified": "2026-05-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Graduation Requirement",
@@ -66,6 +81,8 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -75,9 +92,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -87,6 +107,7 @@
    "report": 1,
    "role": "Registrar",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -98,9 +119,12 @@
    "report": 1,
    "role": "Academics User",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -110,6 +134,7 @@
    "report": 1,
    "role": "Seminary Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
@@ -118,5 +143,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "program_name"
+ "title_field": "program_name",
+ "track_changes": 1
 }

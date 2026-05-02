@@ -182,6 +182,14 @@ function render_audit_summary(frm, audit) {
 }
 
 function show_full_audit(frm) {
+	// Fetch the configured letterhead in parallel with the audit so the
+	// printable view leads with school branding when one is set.
+	let letterhead_promise = frappe.db
+		.get_single_value('Seminary Settings', 'letterhead')
+		.then(name => name
+			? frappe.db.get_value('Letter Head', name, 'content').then(r => (r.message && r.message.content) || '')
+			: '');
+
 	frappe.call({
 		method: 'seminary.seminary.api.get_program_audit',
 		args: { program_enrollment: frm.doc.name },
@@ -189,8 +197,13 @@ function show_full_audit(frm) {
 			if (!r.message) return;
 			let audit = r.message;
 
+			letterhead_promise.then(function(letterhead_html) {
 			let today = frappe.datetime.nowdate();
 			let html = '<div id="audit-print-content">';
+
+			if (letterhead_html) {
+				html += '<div style="margin-bottom:12px">' + letterhead_html + '</div>';
+			}
 
 			// Header with student info
 			html += '<div style="margin-bottom:12px">'
@@ -260,6 +273,62 @@ function show_full_audit(frm) {
 			html += '<h4>' + __('Elective Credits') + '</h4>';
 			html += '<p>' + elec_earned + ' / ' + elec_needed + '</p>';
 
+			// Graduation Requirements (non-course evidence: letters, theses, manual verifications)
+			let grad_reqs = audit.graduation_requirements || [];
+			if (grad_reqs.length) {
+				let active_reqs = grad_reqs.filter(r => r.active);
+				let pending_reqs = grad_reqs.filter(r => !r.active);
+				let status_color = function(status) {
+					if (status === 'Fulfilled') return 'green';
+					if (status === 'Waived') return '#2563eb';
+					if (status === 'Submitted') return '#d97706';
+					if (status === 'In Progress') return 'orange';
+					if (status === 'Failed') return '#dc2626';
+					return 'gray';
+				};
+
+				html += '<h4>' + __('Graduation Requirements') + '</h4>';
+				if (audit.expected_graduation_date) {
+					html += '<p style="font-size:11px;color:#999;font-style:italic">'
+						+ __('Expected graduation') + ': ' + audit.expected_graduation_date + '</p>';
+				}
+
+				if (active_reqs.length) {
+					html += '<table class="table table-bordered table-condensed">'
+						+ '<thead><tr>'
+						+ '<th>' + __('Requirement') + '</th>'
+						+ '<th>' + __('Type') + '</th>'
+						+ '<th>' + __('Status') + '</th>'
+						+ '<th>' + __('Mandatory') + '</th>'
+						+ '<th>' + __('Due Date') + '</th>'
+						+ '<th>' + __('Linked Document') + '</th>'
+						+ '</tr></thead><tbody>';
+					active_reqs.forEach(function(req) {
+						html += '<tr>'
+							+ '<td>' + (req.requirement_name || req.name) + (req.waived ? ' <em>(' + __('waived') + ')</em>' : '') + '</td>'
+							+ '<td>' + (req.requirement_type || '—') + '</td>'
+							+ '<td style="color:' + status_color(req.status) + ';font-weight:bold">' + (req.status || '—') + '</td>'
+							+ '<td>' + (req.mandatory ? __('Yes') : __('No')) + '</td>'
+							+ '<td>' + (req.due_date || '—') + '</td>'
+							+ '<td>' + (req.linked_doc || '—') + '</td>'
+							+ '</tr>';
+					});
+					html += '</tbody></table>';
+				}
+
+				if (pending_reqs.length) {
+					html += '<p style="font-size:11px;color:#666;margin-top:8px"><strong>'
+						+ __('Pending requirements not yet active') + ' (' + pending_reqs.length + ')</strong></p>';
+					html += '<ul style="font-size:11px;color:#666;margin:0 0 12px 16px">';
+					pending_reqs.forEach(function(req) {
+						html += '<li>' + (req.requirement_name || req.name)
+							+ (req.due_date ? ' — ' + __('due') + ' ' + req.due_date : '')
+							+ '</li>';
+					});
+					html += '</ul>';
+				}
+			}
+
 			// Disclaimer
 			html += '<p style="margin-top:16px;font-size:11px;color:#999;font-style:italic">'
 				+ (audit.disclaimer || '') + '</p>';
@@ -286,6 +355,7 @@ function show_full_audit(frm) {
 			});
 			d.$body.html(html);
 			d.show();
+			});
 		}
 	});
 }
