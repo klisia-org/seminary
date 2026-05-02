@@ -415,7 +415,11 @@ def _linked_doctypes():
 
     doctypes = frappe.get_all(
         "Graduation Requirement Item",
-        filters={"requirement_type": "Linked Document", "link_doctype": ("is", "set")},
+        filters={
+            "requirement_type": "Linked Document",
+            "link_doctype": ("is", "set"),
+            "docstatus": 1,
+        },
         pluck="link_doctype",
     )
     doctypes = list({d for d in doctypes if d})

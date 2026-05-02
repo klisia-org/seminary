@@ -3,6 +3,12 @@
 
 frappe.ui.form.on("Program Graduation Requirement", {
 	refresh(frm) {
+		// Restrict the Library Link picker to submitted rows. Library is
+		// submittable; drafts and cancelled rows must not be selectable.
+		frm.set_query("grad_requirement_item", "pgr_items", () => ({
+			filters: { docstatus: 1 },
+		}));
+
 		// Safety net: bind a row-click handler that opens the row's full form
 		// view. Useful in case Frappe's built-in pencil binding misfires due
 		// to the heavy depends_on / fetch_from chain on this child doctype.

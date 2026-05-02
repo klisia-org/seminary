@@ -8,6 +8,7 @@
   "general_tab",
   "branding_section",
   "logo_portal",
+  "letterhead",
   "column_break_icme",
   "logo_dark",
   "section_break_qcbp",
@@ -463,11 +464,18 @@
   {
    "fieldname": "section_break_qcbp",
    "fieldtype": "Section Break"
+  },
+  {
+   "description": "Set a default letter head for student facing documents (audit reports, etc.)",
+   "fieldname": "letterhead",
+   "fieldtype": "Link",
+   "label": "Default Letter Head",
+   "options": "Letter Head"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-05-01 11:18:27.745938",
+ "modified": "2026-05-02 08:13:40.114125",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

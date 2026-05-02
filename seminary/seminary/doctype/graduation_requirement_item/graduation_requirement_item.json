@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "GRI-.####",
  "creation": "2026-04-25 14:06:41.951224",
+ "description": "To guarantee traceability, you must submit this document, and, if needed, cancel/amend, and link the new document on each program. Often, the best workflow is to create a new one first, and substitute the requirement to be canceled with the newly created one in every program it occurred, and then cancel the old one.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -23,7 +24,8 @@
   "default_staff_evidence_required",
   "default_staff_evidence_label",
   "section_break_wdqn",
-  "instructions"
+  "instructions",
+  "amended_from"
  ],
  "fields": [
   {
@@ -136,13 +138,24 @@
    "fieldname": "default_staff_evidence_label",
    "fieldtype": "Data",
    "label": "Staff Verification Label"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Graduation Requirement Item",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-04-25 16:23:47.952240",
- "modified_by": "Administrator",
+ "modified": "2026-05-02 06:23:15.879558",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Graduation Requirement Item",
  "naming_rule": "Expression",
@@ -221,5 +234,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "requirement_name"
+ "title_field": "requirement_name",
+ "track_changes": 1
 }

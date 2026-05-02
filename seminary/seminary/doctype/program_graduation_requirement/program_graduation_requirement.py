@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import today
 
 
 class ProgramGraduationRequirement(Document):
@@ -11,6 +12,19 @@ class ProgramGraduationRequirement(Document):
         self._validate_date_window()
         self._validate_no_active_overlap()
         self._validate_linked_doc_status_values()
+
+    def on_cancel(self):
+        """Cancellation = retirement. Clear 'Is Active' and stamp 'Active
+        Until' to today so resolve_policy() stops handing this policy out
+        to new enrollments. Existing snapshots on submitted Program
+        Enrollments keep resolving by name (snapshot semantics, ADR 012).
+        """
+        frappe.db.set_value(
+            self.doctype,
+            self.name,
+            {"active": 0, "active_until": today()},
+            update_modified=False,
+        )
 
     def _validate_date_window(self):
         if (
