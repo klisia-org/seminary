@@ -919,6 +919,23 @@ def course_enroll(pe_name, course):
 
     doc.credits = doc.get_credits()
     doc.insert()
+
+    # Without registrar gating (per-Program flag), advance the draft
+    # immediately. submit() raises docstatus and fires on_submit (which
+    # creates the Sales Invoice); workflow_state is then nudged via
+    # db_set, which skips validate_workflow's role check (the student
+    # fails it even with ignore_permissions). Program conditions decide
+    # the target state.
+    if not doc.registrar_block_cei:
+        target_state = (
+            "Submitted"
+            if (doc.is_free or not doc.require_pay_submit)
+            else "Awaiting Payment"
+        )
+        doc.flags.ignore_permissions = True
+        doc.submit()
+        doc.db_set("workflow_state", target_state, update_modified=False)
+
     return {
         "name": doc.name,
         "course_data": doc.course_data,
