@@ -24,6 +24,8 @@
   "column_break_voqj",
   "credits_complete",
   "max_time_enrolled",
+  "students_can_request_graduation",
+  "graduation_request_trigger",
   "section_break_gpa",
   "basis_for_gpa",
   "is_weighted",
@@ -118,6 +120,23 @@
    "fieldtype": "Float",
    "label": "Max Years to Graduate",
    "precision": "1"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!doc.is_ongoing",
+   "description": "When checked, students may file a Graduation Request from the audit page. Disable for programs where graduation is fully registrar-driven.",
+   "fieldname": "students_can_request_graduation",
+   "fieldtype": "Check",
+   "label": "Students Can Request Graduation"
+  },
+  {
+   "depends_on": "eval:doc.students_can_request_graduation && !doc.is_ongoing",
+   "description": "When the request becomes available to the student. \"Enrolled in final courses\" lets the student request as soon as the in-progress courses would close out the program. \"Passed final courses\" waits until grades are final.",
+   "fieldname": "graduation_request_trigger",
+   "fieldtype": "Select",
+   "label": "Graduation Request Trigger",
+   "mandatory_depends_on": "eval:doc.students_can_request_graduation",
+   "options": "\nEnrolled in final courses\nPassed final courses"
   },
   {
    "depends_on": "eval:!doc.is_ongoing",
@@ -388,7 +407,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-05-01 16:32:58.142542",
+ "modified": "2026-05-02 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

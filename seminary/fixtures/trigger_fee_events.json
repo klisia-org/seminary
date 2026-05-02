@@ -38,5 +38,13 @@
   "modified": "2025-02-17 15:25:19.475178",
   "name": "New Academic Term",
   "trigger": "New Academic Term"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2026-05-02 13:00:00.000000",
+  "name": "Graduation Request",
+  "trigger": "Graduation Request"
  }
 ]

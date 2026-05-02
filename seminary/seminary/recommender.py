@@ -37,6 +37,49 @@ def get_request(name, token):
 
 
 @frappe.whitelist(allow_guest=True)
+def upload_attachment(name, token):
+    """Token-gated file upload for the recommender portal.
+
+    The standard `upload_file` endpoint requires an authenticated user.
+    Recommenders are unauthenticated guests, so we accept the upload
+    here after validating the token, then create the File doc attached
+    to the Recommendation Letter on their behalf.
+
+    Returns the new file_url, which the form then submits via
+    `submit_letter` as `attachment_url`.
+    """
+    doc = _validate_token(name, token)
+    if doc.submitted_on:
+        frappe.throw(
+            _("This recommendation has already been submitted."),
+            frappe.PermissionError,
+        )
+
+    files = frappe.request.files
+    if not files or "file" not in files:
+        frappe.throw(_("No file uploaded."))
+
+    upload = files["file"]
+    content = upload.stream.read()
+    if not content:
+        frappe.throw(_("Uploaded file is empty."))
+
+    file_doc = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": upload.filename,
+            "is_private": 1,
+            "attached_to_doctype": "Recommendation Letter",
+            "attached_to_name": doc.name,
+            "content": content,
+        }
+    )
+    file_doc.save(ignore_permissions=True)
+
+    return {"file_url": file_doc.file_url, "file_name": file_doc.file_name}
+
+
+@frappe.whitelist(allow_guest=True)
 def submit_letter(name, token, body, attachment_url=None):
     """Persist the recommender's letter and advance the workflow to Submitted."""
     doc = _validate_token(name, token)
@@ -52,8 +95,13 @@ def submit_letter(name, token, body, attachment_url=None):
     if attachment_url:
         doc.letter_attachment = attachment_url
     doc.submitted_on = now_datetime()
-    doc.workflow_state = "Submitted"
     doc.save(ignore_permissions=True)
+
+    # Workflow advance via db.set_value — bypasses validate_workflow's
+    # role check, which would reject the Guest session running this
+    # endpoint. The token already authenticated the recommender's
+    # identity. (See feedback_workflow_conditions memory.)
+    doc.db_set("workflow_state", "Submitted", update_modified=False)
 
     # Reflect onto SGR via the doctype's own hook.
     doc.run_method("on_update_after_submit")

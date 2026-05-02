@@ -9,3 +9,4 @@ seminary.seminary.patches.clear_pay_gate_on_free_programs
 seminary.seminary.patches.backfill_pe_max_graduation_date
 seminary.seminary.patches.submit_graduation_requirement_items
 seminary.seminary.patches.submit_program_graduation_requirements
+seminary.seminary.patches.add_custom_graduation_request_field

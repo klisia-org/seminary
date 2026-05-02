@@ -31,8 +31,78 @@
 
         <!-- Graduation Eligibility Banner -->
         <div class="mb-4 px-4 py-3 rounded-lg text-sm font-semibold"
-          :class="audit.data.graduation_eligible ? 'bg-surface-green-1 text-ink-green-3' : 'bg-surface-amber-2 text-ink-amber-3'">
-          {{ audit.data.graduation_eligible ? __('Eligible for Graduation') : __('Not Yet Eligible for Graduation') }}
+          :class="eligibilityBannerClass">
+          {{ eligibilityBannerLabel }}
+        </div>
+
+        <!-- Graduation Request CTA -->
+        <div v-if="showGradRequestSection" class="mb-4 border rounded-lg p-4 bg-surface-white">
+          <!-- No request yet, candidate -->
+          <div v-if="!audit.data.graduation_request && audit.data.grad_candidate" class="flex items-center justify-between gap-4">
+            <div>
+              <div class="font-semibold text-ink-gray-8">{{ __('Ready to graduate?') }}</div>
+              <div class="text-sm text-ink-gray-5 mt-1">
+                <template v-if="audit.data.graduation_eligible">
+                  {{ __('You meet the program\'s graduation request criteria. File a request to begin the approval process.') }}
+                </template>
+                <template v-else>
+                  {{ __('You may file a request to begin the graduation process. You must pass the courses you are currently in for it to be accepted.') }}
+                </template>
+              </div>
+            </div>
+            <Button variant="solid" :loading="gradRequestSubmitting" @click="confirmGraduationRequest">
+              {{ __('Request Graduation') }}
+            </Button>
+          </div>
+
+          <!-- Awaiting Payment -->
+          <div v-else-if="audit.data.graduation_request && audit.data.graduation_request.workflow_state === 'Awaiting Payment'">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <div class="font-semibold text-ink-gray-8">{{ __('Graduation Request — Awaiting Payment') }}</div>
+                <div class="text-sm text-ink-gray-5 mt-1">
+                  {{ __('Your request was filed on') }} {{ audit.data.graduation_request.request_date }}.
+                  {{ __('Pay the invoice to advance to approval.') }}
+                </div>
+                <div v-if="audit.data.graduation_request.paid_percent != null" class="mt-2 text-xs text-ink-gray-5">
+                  {{ __('Paid') }}: {{ Math.round(audit.data.graduation_request.paid_percent) }}%
+                </div>
+              </div>
+              <a v-if="firstUnpaidInvoice"
+                :href="`/app/sales-invoice/${encodeURIComponent(firstUnpaidInvoice.name)}`"
+                class="text-ink-blue-3 hover:underline text-sm font-medium">
+                {{ __('View Invoice') }}
+              </a>
+            </div>
+          </div>
+
+          <!-- Academic Review / Financial Review -->
+          <div v-else-if="audit.data.graduation_request && (audit.data.graduation_request.workflow_state === 'Academic Review' || audit.data.graduation_request.workflow_state === 'Financial Review')"
+            class="text-ink-blue-3 font-semibold">
+            {{ __('Graduation Request — Under Review') }}
+            <span class="text-sm text-ink-gray-5 font-normal ml-1">
+              ({{ audit.data.graduation_request.workflow_state }})
+            </span>
+            <div class="text-sm text-ink-gray-5 font-normal mt-1">
+              {{ __('Filed on') }} {{ audit.data.graduation_request.request_date }}.
+              {{ __('Your request is being reviewed by school staff.') }}
+            </div>
+          </div>
+
+          <!-- Approved -->
+          <div v-else-if="audit.data.graduation_request && audit.data.graduation_request.workflow_state === 'Approved'"
+            class="text-ink-green-3 font-semibold">
+            {{ __('Graduation Request approved.') }}
+            <span class="text-sm text-ink-gray-5 font-normal ml-1">
+              {{ __('Filed on') }} {{ audit.data.graduation_request.request_date }}.
+            </span>
+          </div>
+
+          <!-- Draft (rare — between insert and submit) -->
+          <div v-else-if="audit.data.graduation_request && audit.data.graduation_request.workflow_state === 'Draft'"
+            class="text-ink-gray-6">
+            {{ __('Graduation Request is being prepared.') }}
+          </div>
         </div>
 
         <!-- Progress Summary Cards -->
@@ -170,17 +240,12 @@
                 </td>
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.due_date || '—' }}</td>
                 <td class="py-2 px-3">
-                  <a v-if="req.linked_doc"
-                    :href="linkedDocUrl(req)"
-                    class="text-ink-blue-3 hover:underline text-xs">
-                    {{ __('Open') }}
-                  </a>
-                  <button v-else-if="canStartRecommendation(req)"
+                  <button v-if="!req.linked_doc && canStartRecommendation(req)"
                     class="text-ink-blue-3 hover:underline text-xs"
                     @click="openRecommendationDialog(req)">
                     {{ __('Request Recommendation') }}
                   </button>
-                  <button v-else-if="canStartProject(req)"
+                  <button v-else-if="!req.linked_doc && canStartProject(req)"
                     class="text-ink-blue-3 hover:underline text-xs"
                     @click="openProjectDialog(req)">
                     {{ __('Start Project') }}
@@ -211,6 +276,47 @@
               </li>
             </ul>
           </details>
+        </div>
+
+        <!-- Pending Payments (across all payers on this enrollment) -->
+        <div v-if="unpaidInvoices.data && unpaidInvoices.data.length" class="mb-6">
+          <h3 class="text-md font-semibold text-ink-gray-7 mb-1">
+            {{ __('Pending Payments') }}
+          </h3>
+          <p class="text-xs text-ink-gray-4 mb-3 italic">
+            {{ __('Most schools require all fees to be paid before graduation. You can only pay invoices addressed to you on the Fees page; other payers must settle their own.') }}
+          </p>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b text-left text-ink-gray-6">
+                <th class="py-2 px-3 font-medium">{{ __('Payer') }}</th>
+                <th class="py-2 px-3 font-medium">{{ __('Unpaid Invoices') }}</th>
+                <th class="py-2 px-3 font-medium text-right">{{ __('Total Unpaid') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in unpaidInvoices.data" :key="row.customer" class="border-b">
+                <td class="py-2 px-3">{{ row.customer }}</td>
+                <td class="py-2 px-3 text-xs text-ink-gray-5">
+                  <span v-for="(inv, idx) in row.invoices" :key="inv.name">
+                    <span class="text-ink-gray-7">{{ inv.name }}</span>
+                    <span class="text-ink-gray-4"> ({{ inv.source }})</span><span v-if="idx < row.invoices.length - 1">, </span>
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-right font-medium text-ink-amber-3">
+                  {{ formatCurrency(row.total_unpaid) }}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot class="bg-surface-gray-1">
+              <tr>
+                <td class="px-3 py-2 font-medium text-ink-gray-7" colspan="2">{{ __('Total') }}</td>
+                <td class="px-3 py-2 text-right font-medium text-ink-amber-3">
+                  {{ formatCurrency(totalUnpaid) }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
 
@@ -309,12 +415,36 @@ const audit = createResource({
   auto: false,
 })
 
+const unpaidInvoices = createResource({
+  url: 'seminary.seminary.api.get_pe_unpaid_invoices',
+  makeParams() {
+    return { program_enrollment: selectedPE.value }
+  },
+  auto: false,
+})
+
 watch(selectedPE, (val) => {
-  if (val) audit.reload()
+  if (val) {
+    audit.reload()
+    unpaidInvoices.reload()
+  }
 })
 
 function loadAudit() {
-  if (selectedPE.value) audit.reload()
+  if (selectedPE.value) {
+    audit.reload()
+    unpaidInvoices.reload()
+  }
+}
+
+const totalUnpaid = computed(() => {
+  if (!unpaidInvoices.data) return 0
+  return unpaidInvoices.data.reduce((sum, row) => sum + (row.total_unpaid || 0), 0)
+})
+
+function formatCurrency(value) {
+  const n = Number(value || 0)
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const creditPercent = computed(() => {
@@ -369,6 +499,58 @@ const hasGradRequirements = computed(
   () => audit.data && audit.data.graduation_requirements && audit.data.graduation_requirements.length > 0
 )
 
+const showGradRequestSection = computed(() => {
+  if (!audit.data || !audit.data.students_can_request_graduation) return false
+  // Show when there's an active request, OR the student is currently a candidate.
+  return Boolean(audit.data.graduation_request) || Boolean(audit.data.grad_candidate)
+})
+
+// Three-state eligibility banner:
+//  - Eligible: passed everything (graduation_eligible)
+//  - Conditionally Eligible: candidate (enrolled in final courses) but not yet passed
+//  - Not Yet Eligible: neither
+const eligibilityBannerLabel = computed(() => {
+  if (!audit.data) return ''
+  if (audit.data.graduation_eligible) return __('Eligible for Graduation')
+  if (audit.data.grad_candidate) return __('Conditionally Eligible for Graduation')
+  return __('Not Yet Eligible for Graduation')
+})
+
+const eligibilityBannerClass = computed(() => {
+  if (!audit.data) return ''
+  if (audit.data.graduation_eligible) return 'bg-surface-green-1 text-ink-green-3'
+  if (audit.data.grad_candidate) return 'bg-surface-blue-1 text-ink-blue-3'
+  return 'bg-surface-amber-2 text-ink-amber-3'
+})
+
+const firstUnpaidInvoice = computed(() => {
+  const gr = audit.data?.graduation_request
+  if (!gr || !gr.sales_invoices) return null
+  return gr.sales_invoices.find(si => Number(si.outstanding_amount) > 0) || gr.sales_invoices[0]
+})
+
+const gradRequestSubmitting = ref(false)
+
+function confirmGraduationRequest() {
+  if (!selectedPE.value) return
+  const ok = window.confirm(
+    __('File a Graduation Request for this enrollment? This will generate the graduation fee invoice.')
+  )
+  if (!ok) return
+  gradRequestSubmitting.value = true
+  call('seminary.seminary.api.create_graduation_request', { program_enrollment: selectedPE.value })
+    .then(() => {
+      toast.success(__('Graduation Request created.'))
+      audit.reload()
+    })
+    .catch((err) => {
+      toast.error(err.message || __('Could not create the Graduation Request.'))
+    })
+    .finally(() => {
+      gradRequestSubmitting.value = false
+    })
+}
+
 const activeGradRequirements = computed(() => {
   if (!audit.data) return []
   return audit.data.graduation_requirements.filter(r => r.active)
@@ -384,12 +566,6 @@ function requirementDisplayName(req) {
     return `${req.requirement_name} (${req.slot_index})`
   }
   return req.requirement_name
-}
-
-function linkedDocUrl(req) {
-  if (!req.link_doctype || !req.linked_doc) return '#'
-  const dt = req.link_doctype.toLowerCase().replace(/ /g, '-')
-  return `/app/${dt}/${encodeURIComponent(req.linked_doc)}`
 }
 
 function canStudentUpload(req) {

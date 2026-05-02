@@ -18,11 +18,20 @@ import frappe
 def recompute_program_enrollment_gpa(pe_name):
     """Recompute current_gpa and current_honor for a Program Enrollment.
 
-    Idempotent. Safe to call from any hook point.
+    Idempotent. Safe to call from any hook point. Always re-evaluates
+    graduation candidacy at the end (even when GPA itself short-circuits)
+    because PEC state has changed by the time this is invoked.
     """
     if not pe_name:
         return
 
+    try:
+        _recompute_gpa_only(pe_name)
+    finally:
+        _evaluate_candidacy(pe_name)
+
+
+def _recompute_gpa_only(pe_name):
     pe = frappe.get_doc("Program Enrollment", pe_name)
     program = frappe.get_cached_doc("Program", pe.program)
     if program.is_ongoing:
@@ -74,6 +83,14 @@ def recompute_program_enrollment_gpa(pe_name):
         {"current_gpa": gpa, "current_honor": honor},
         update_modified=False,
     )
+
+
+def _evaluate_candidacy(pe_name):
+    """Recompute graduation candidacy. Failures are logged, not raised —
+    a candidacy bug must never break a grade-entry or withdrawal flow."""
+    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
+    evaluate_candidacy_safe(pe_name)
 
 
 def _resolve_grading_scale(pec):

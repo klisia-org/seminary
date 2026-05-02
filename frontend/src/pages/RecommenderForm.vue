@@ -39,16 +39,15 @@
           <label class="block text-sm font-medium text-ink-gray-7 mb-2">
             {{ __('Or attach a signed letter (optional)') }}
           </label>
-          <FileUploader @success="(file) => attachmentUrl = file.file_url">
-            <template #default="{ openFileSelector, uploading }">
-              <button class="text-ink-blue-3 hover:underline text-sm" @click="openFileSelector">
-                {{ uploading ? __('Uploading...') : (attachmentUrl ? __('Replace attachment') : __('Choose file')) }}
-              </button>
-              <span v-if="attachmentUrl" class="text-xs text-ink-gray-5 ml-3">
-                {{ attachmentUrl.split('/').pop() }}
-              </span>
-            </template>
-          </FileUploader>
+          <input ref="fileInput" type="file" class="hidden" @change="onFilePicked" />
+          <button class="text-ink-blue-3 hover:underline text-sm"
+            :disabled="uploading"
+            @click="fileInput?.click()">
+            {{ uploading ? __('Uploading...') : (attachmentUrl ? __('Replace attachment') : __('Choose file')) }}
+          </button>
+          <span v-if="attachmentUrl" class="text-xs text-ink-gray-5 ml-3">
+            {{ attachmentUrl.split('/').pop() }}
+          </span>
         </div>
 
         <button @click="submit"
@@ -62,7 +61,7 @@
 </template>
 
 <script setup>
-import { FileUploader, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
+import { LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -75,6 +74,37 @@ const token = route.query.token
 const body = ref('')
 const attachmentUrl = ref(null)
 const submitting = ref(false)
+const uploading = ref(false)
+const fileInput = ref(null)
+
+async function onFilePicked(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('name', name)
+    formData.append('token', token)
+    const res = await fetch('/api/method/seminary.seminary.recommender.upload_attachment', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Frappe-CSRF-Token': window.csrf_token || 'guest' },
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err._error_message || err.exc || `Upload failed (${res.status})`)
+    }
+    const data = await res.json()
+    attachmentUrl.value = data.message?.file_url
+    toast.success(__('Attachment uploaded.'))
+  } catch (e) {
+    toast.error(e.message || __('Upload failed.'))
+  } finally {
+    uploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
 
 const request = createResource({
   url: 'seminary.seminary.recommender.get_request',

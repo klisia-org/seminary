@@ -78,6 +78,18 @@ ticks Fulfilled.
 > the student *and* a staff verification of identity. One pair of fields
 > can model both.
 
+#### Blocks Graduation Request
+
+If your seminary uses the [Graduation Request](graduation-request.md) flow,
+each library item has one more flag — **Blocks Graduation Request**
+(visible only when `Mandatory` is checked). When set, the student cannot
+even *file* a Graduation Request until this requirement is `Fulfilled` or
+`Waived`. Use it for hard prerequisites the registrar's office wants
+verified up-front: recommendation letters, theses, doctrinal statements.
+Items without the flag are still tracked toward graduation eligibility,
+but the student can file the request and the academic review step will
+catch any leftovers.
+
 ### Layer 2 — The Policy
 
 A **Program Graduation Requirement** binds library items to a Program with

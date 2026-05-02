@@ -33,6 +33,7 @@
   "audit_summary",
   "grad_requirements_section",
   "graduation_policy",
+  "grad_candidate",
   "graduation_requirements",
   "enrolled_courses",
   "courses",
@@ -274,6 +275,16 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
+   "description": "System-managed. Set to 1 when the student meets the program's graduation_request_trigger condition (final mandatory + emphasis + credit math).",
+   "fieldname": "grad_candidate",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Graduation Candidate",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "graduation_requirements",
    "fieldtype": "Table",
    "label": "Graduation Requirements",
@@ -289,7 +300,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-04-23 17:19:36.376541",
+ "modified": "2026-05-02 12:35:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

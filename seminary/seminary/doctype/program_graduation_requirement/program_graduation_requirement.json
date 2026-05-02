@@ -27,7 +27,7 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "0",
+   "default": "1",
    "fieldname": "active",
    "fieldtype": "Check",
    "label": "Is Active"
@@ -37,6 +37,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Today",
    "fieldname": "active_from",
    "fieldtype": "Date",
    "label": "Active from",
@@ -73,7 +74,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-02 12:00:00.000000",
+ "modified": "2026-05-02 10:17:54.936838",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Graduation Requirement",

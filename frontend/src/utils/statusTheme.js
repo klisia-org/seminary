@@ -1,7 +1,7 @@
 const GREEN = new Set(['pass', 'passed', 'completed', 'paid', 'fulfilled', 'waived'])
 const BLUE = new Set(['enrolled', 'in progress', 'submitted'])
 const RED = new Set(['fail', 'failed', 'overdue'])
-const ORANGE = new Set(['withdrawn', 'draft', 'pending', 'unpaid', 'not started'])
+const ORANGE = new Set(['withdrawn', 'draft', 'pending', 'unpaid', 'not started', 'awaiting payment'])
 
 export function statusTheme(status) {
 	const s = (status || '').toString().trim().toLowerCase()

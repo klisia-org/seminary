@@ -10,6 +10,7 @@
   "requirement_name",
   "requirement_type",
   "mandatory",
+  "blocks_graduation_request",
   "slot_index",
   "column_break_status",
   "status",
@@ -59,6 +60,13 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "fieldname": "blocks_graduation_request",
+   "fieldtype": "Check",
+   "label": "Blocks Graduation Request",
+   "read_only": 1
+  },
+  {
    "default": "1",
    "description": "Position when the same requirement has multiple slots (e.g. 'Letter 2 of 3').",
    "fieldname": "slot_index",
@@ -71,6 +79,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "default": "Not Started",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -80,11 +89,13 @@
    "search_index": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "due_date",
    "fieldtype": "Date",
    "label": "Due Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "fulfilled_on",
    "fieldtype": "Date",
    "label": "Fulfilled On"
@@ -96,12 +107,14 @@
    "label": "Linked Document"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "link_doctype",
    "fieldtype": "Data",
    "label": "Link DocType",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "linked_doc",
    "fieldtype": "Dynamic Link",
    "label": "Linked Document",
@@ -114,6 +127,7 @@
    "label": "Evidence"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "student_evidence_attachment",
    "fieldtype": "Attach",
    "label": "Student Evidence"
@@ -123,11 +137,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "staff_evidence_attachment",
    "fieldtype": "Attach",
    "label": "Staff Evidence"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "verified_by",
    "fieldtype": "Link",
    "label": "Verified By",
@@ -135,6 +151,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "verified_on",
    "fieldtype": "Datetime",
    "label": "Verified On",
@@ -147,12 +164,14 @@
    "label": "Waiver"
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fieldname": "waived",
    "fieldtype": "Check",
    "label": "Waived"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "waived",
    "fieldname": "waiver_reason",
    "fieldtype": "Small Text",
@@ -163,6 +182,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "waived",
    "fieldname": "waived_by",
    "fieldtype": "Link",
@@ -171,6 +191,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "waived",
    "fieldname": "waived_on",
    "fieldtype": "Datetime",
@@ -184,6 +205,7 @@
    "label": "Notes"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "label": "Notes"
@@ -212,7 +234,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-25 18:00:00.000000",
+ "modified": "2026-05-02 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Graduation Requirement",

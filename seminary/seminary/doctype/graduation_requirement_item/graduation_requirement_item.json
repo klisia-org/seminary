@@ -10,6 +10,7 @@
   "requirement_name",
   "mandatory",
   "default_quantity",
+  "blocks_graduation_request",
   "column_break_gwiy",
   "requirement_type",
   "section_break_euxl",
@@ -40,6 +41,14 @@
    "fieldname": "mandatory",
    "fieldtype": "Check",
    "label": "Is Mandatory"
+  },
+  {
+   "default": "0",
+   "depends_on": "mandatory",
+   "description": "When checked, the student cannot file a Graduation Request until this requirement is Fulfilled or Waived. Use for items the school treats as a hard prerequisite (recommendation letters, theses).",
+   "fieldname": "blocks_graduation_request",
+   "fieldtype": "Check",
+   "label": "Blocks Graduation Request"
   },
   {
    "fieldname": "column_break_gwiy",
