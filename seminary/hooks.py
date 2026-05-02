@@ -291,10 +291,12 @@ doc_events = {
         "on_submit": [
             "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
             "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
+            "seminary.seminary.graduation_request_lifecycle.on_si_submit",
         ],
         "on_update_after_submit": [
             "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
             "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
+            "seminary.seminary.graduation_request_lifecycle.on_si_update_after_submit",
         ],
         "on_cancel": [
             "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
@@ -302,8 +304,14 @@ doc_events = {
         ],
     },
     "Payment Entry": {
-        "on_submit": "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
-        "on_cancel": "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
+        "on_submit": [
+            "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
+            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_submit",
+        ],
+        "on_cancel": [
+            "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
+            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_cancel",
+        ],
     },
     "Seminary Settings": {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",

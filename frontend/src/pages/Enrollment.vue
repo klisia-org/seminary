@@ -41,15 +41,24 @@
                 <td class="px-3 py-2">{{ cei.course_data }}</td>
                 <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
                 <td class="px-3 py-2">
-                  <Badge
-                    :theme="statusTheme(cei.status)"
-                    :label="cei.status === 'Draft' ? __('Pending') : __(cei.status)" />
+                  <div class="flex flex-col gap-0.5">
+                    <Badge :theme="statusTheme(cei.status)"
+                      :label="cei.status === 'Draft' ? __('Pending') : __(cei.status)" />
+                    <span v-if="cei.status === 'Awaiting Payment' && cei.paid_percent != null"
+                      class="text-xs text-ink-gray-5">
+                      {{ Math.round(cei.paid_percent) }}% {{ __('paid') }}
+                    </span>
+                  </div>
                 </td>
                 <td class="px-3 py-2 text-right">
                   <Button v-if="cei.status === 'Draft'" size="sm" variant="ghost" theme="red"
                     @click="cancelEnrollment(cei.name)" :loading="cancelling === cei.name">
                     {{ __('Cancel') }}
                   </Button>
+                  <a v-else-if="cei.status === 'Awaiting Payment' && cei.sales_invoice" :href="`/seminary/fees`"
+                    class="text-ink-blue-3 hover:underline text-sm font-medium">
+                    {{ __('Pay') }}
+                  </a>
                 </td>
               </tr>
             </tbody>
@@ -81,8 +90,7 @@
 
           <!-- Category Badges -->
           <div class="flex flex-wrap gap-1 mb-3">
-            <Badge v-for="(cat, idx) in course.categories" :key="idx"
-              :theme="badgeTheme(cat.type)"
+            <Badge v-for="(cat, idx) in course.categories" :key="idx" :theme="badgeTheme(cat.type)"
               :label="badgeLabel(cat)" />
           </div>
 
@@ -93,7 +101,9 @@
               <div class="flex-1 min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="cs.section" class="font-semibold text-ink-gray-7">{{ cs.section }}</span>
-                  <Badge v-if="cs.modality" :theme="cs.modality === 'Virtual' ? 'blue' : cs.modality === 'Hybrid' ? 'orange' : 'gray'" :label="cs.modality" />
+                  <Badge v-if="cs.modality"
+                    :theme="cs.modality === 'Virtual' ? 'blue' : cs.modality === 'Hybrid' ? 'orange' : 'gray'"
+                    :label="cs.modality" />
                   <span v-if="cs.days" class="text-xs text-ink-gray-5 font-mono">{{ cs.days }}</span>
                   <span v-if="cs.time_range" class="text-xs text-ink-gray-5">{{ cs.time_range }}</span>
                 </div>
@@ -103,8 +113,7 @@
                   <span v-if="cs.date_range">{{ cs.date_range }}</span>
                 </div>
               </div>
-              <Button size="sm" variant="subtle" @click="enrollInCourse(cs.name)"
-                :loading="enrolling === cs.name">
+              <Button size="sm" variant="subtle" @click="enrollInCourse(cs.name)" :loading="enrolling === cs.name">
                 {{ __('Enroll') }}
               </Button>
             </div>

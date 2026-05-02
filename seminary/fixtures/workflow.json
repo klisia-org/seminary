@@ -587,5 +587,110 @@
     "state": "Awaiting Payment"
    }
   ]
+ },
+ {
+  "creation": "2026-05-02 13:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Graduation Request",
+  "is_active": 1,
+  "name": "Graduation Request Lifecycle",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_name": "Graduation Request Lifecycle",
+  "workflow_state_field": "workflow_state",
+  "states": [
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Awaiting Payment",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Academic Review",
+    "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Financial Review",
+    "allow_edit": "Accounts User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Approved",
+    "allow_edit": "Seminary Manager"
+   },
+   {
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "state": "Cancelled",
+    "allow_edit": "Seminary Manager"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "condition": "not doc.is_free",
+    "next_state": "Awaiting Payment",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": "not doc.is_free",
+    "next_state": "Awaiting Payment",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "condition": "doc.is_free",
+    "next_state": "Academic Review",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": "doc.is_free",
+    "next_state": "Academic Review",
+    "state": "Draft"
+   },
+   {
+    "action": "Mark as Paid",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Academic Review",
+    "state": "Awaiting Payment"
+   },
+   {
+    "action": "Send for Financial Review",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Financial Review",
+    "state": "Academic Review"
+   },
+   {
+    "action": "Approve Financially",
+    "allow_self_approval": 1,
+    "allowed": "Accounts User",
+    "next_state": "Approved",
+    "state": "Financial Review"
+   }
+  ]
  }
 ]

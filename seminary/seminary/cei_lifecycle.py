@@ -42,12 +42,15 @@ def enroll_student(cei_doc):
         copy_data_to_scheduled_course_roster,
         copy_data_to_program_enrollment_course,
     )
+    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
     if not _roster_exists(cei_doc.coursesc_ce, cei_doc.student_ce):
         copy_data_to_scheduled_course_roster(cei_doc, None)
 
     if not _pec_exists(cei_doc.program_ce, cei_doc.coursesc_ce):
         copy_data_to_program_enrollment_course(cei_doc, None)
+
+    evaluate_candidacy_safe(cei_doc.program_ce)
 
 
 def _roster_exists(course_schedule, student):

@@ -33,6 +33,20 @@ class ProgramEnrollment(Document):
         self.update_student_joining_date()
         self.set_max_graduation_date()
 
+    def on_update_after_submit(self):
+        from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
+        before = getattr(self, "_doc_before_save", None)
+        was_active = bool(before.pgmenrol_active) if before else True
+        if was_active and not self.pgmenrol_active:
+            from seminary.seminary.graduation_request_lifecycle import (
+                cascade_cancel_graduation_requests,
+            )
+
+            cascade_cancel_graduation_requests(self.name)
+
+        evaluate_candidacy_safe(self.name)
+
     def set_max_graduation_date(self):
         """Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.
 

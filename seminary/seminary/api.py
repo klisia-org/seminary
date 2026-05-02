@@ -958,21 +958,47 @@ def get_student_enrollments_for_term(program_enrollment):
             "audit",
             "withdrawn",
             "credits",
+            "workflow_state",
+            "paid_percent",
         ],
         order_by="docstatus asc, course_data asc",
     )
 
-    # Add start date from Course Schedule for confirmed enrollments
+    # Map CEI workflow_state to a student-facing status. The workflow is
+    # the canonical source post-ADR 016 — `withdrawn` and docstatus alone
+    # can't distinguish Awaiting Payment (invoiced, not on roster) from
+    # Submitted (fully enrolled).
     for cei in ceis:
         cei["start_date"] = frappe.db.get_value(
             "Course Schedule", cei.coursesc_ce, "c_datestart"
         )
+
         if cei.docstatus == 0:
             cei["status"] = "Draft"
-        elif cei.withdrawn:
+        elif cei.workflow_state == "Awaiting Payment":
+            cei["status"] = "Awaiting Payment"
+        elif cei.workflow_state == "Withdrawn" or cei.withdrawn:
             cei["status"] = "Withdrawn"
         else:
             cei["status"] = "Enrolled"
+
+        # For Awaiting Payment, surface the unpaid invoice so the student
+        # can click through to pay.
+        cei["sales_invoice"] = None
+        if cei["status"] == "Awaiting Payment":
+            si_rows = frappe.get_all(
+                "Sales Invoice",
+                filters={
+                    "custom_cei": cei.name,
+                    "docstatus": 1,
+                    "is_return": 0,
+                },
+                fields=["name", "grand_total", "outstanding_amount"],
+                order_by="creation desc",
+                limit=1,
+            )
+            if si_rows:
+                cei["sales_invoice"] = si_rows[0]
 
     return ceis
 
@@ -1362,7 +1388,210 @@ def get_program_audit(program_enrollment):
 
     result["graduation_eligible"] = graduation_eligible
 
+    # Graduation Request CTA inputs (consumed by ProgramAudit.vue).
+    result["students_can_request_graduation"] = bool(
+        getattr(program, "students_can_request_graduation", 0)
+    )
+    result["graduation_request_trigger"] = (
+        getattr(program, "graduation_request_trigger", None) or None
+    )
+    result["grad_candidate"] = bool(pe.grad_candidate)
+    result["graduation_request"] = _active_graduation_request_summary(pe.name)
+
     return result
+
+
+def _active_graduation_request_summary(pe_name):
+    """Return the most recent non-cancelled Graduation Request for this PE,
+    or None. Frontend uses this to render the CTA state."""
+    rows = frappe.get_all(
+        "Graduation Request",
+        filters={"program_enrollment": pe_name, "docstatus": ("!=", 2)},
+        fields=[
+            "name",
+            "workflow_state",
+            "paid_percent",
+            "request_date",
+            "is_free",
+        ],
+        order_by="creation desc",
+        limit=1,
+    )
+    if not rows:
+        return None
+    gr = rows[0]
+    sales_invoices = frappe.get_all(
+        "Sales Invoice",
+        filters={
+            "custom_graduation_request": gr.name,
+            "docstatus": 1,
+            "is_return": 0,
+        },
+        fields=["name", "grand_total", "outstanding_amount"],
+    )
+    return {
+        **gr,
+        "sales_invoices": sales_invoices,
+    }
+
+
+@frappe.whitelist()
+def create_graduation_request(program_enrollment):
+    """Create + submit a Graduation Request for the given Program Enrollment.
+
+    Permission model:
+      - Caller is the student linked to the PE (portal flow), OR
+      - Caller has the Academics User role (registrar acting on behalf).
+
+    Validates trigger / candidacy at the controller level (`before_submit`).
+    Returns a summary suitable for refreshing the audit page CTA.
+    """
+    pe = frappe.db.get_value(
+        "Program Enrollment",
+        program_enrollment,
+        [
+            "name",
+            "student",
+            "program",
+            "expected_graduation_date",
+            "grad_candidate",
+            "docstatus",
+            "pgmenrol_active",
+        ],
+        as_dict=True,
+    )
+    if not pe:
+        frappe.throw(_("Program Enrollment {0} not found.").format(program_enrollment))
+
+    # Permission gate
+    user = frappe.session.user
+    user_roles = set(frappe.get_roles(user))
+    is_staff = bool(
+        user_roles & {"Academics User", "Seminary Manager", "System Manager"}
+    )
+    is_owner = False
+    if not is_staff:
+        student_for_user = frappe.db.get_value(
+            "Student", {"student_email_id": user}, "name"
+        )
+        is_owner = bool(student_for_user and student_for_user == pe.student)
+    if not (is_staff or is_owner):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+
+    # Quick guards (controller re-validates with full context)
+    if pe.docstatus != 1 or not pe.pgmenrol_active:
+        frappe.throw(_("Program Enrollment is not active."))
+    program_flags = frappe.db.get_value(
+        "Program",
+        pe.program,
+        ["students_can_request_graduation", "graduation_request_trigger"],
+        as_dict=True,
+    )
+    if not program_flags or not program_flags.students_can_request_graduation:
+        frappe.throw(_("This program does not allow Graduation Requests."))
+    if not program_flags.graduation_request_trigger:
+        frappe.throw(_("This program has no graduation request trigger configured."))
+    if not pe.grad_candidate:
+        frappe.throw(_("Not yet a graduation candidate."))
+
+    gr = frappe.get_doc(
+        {
+            "doctype": "Graduation Request",
+            "student": pe.student,
+            "program_enrollment": pe.name,
+            "program": pe.program,
+            "expected_graduation_date": pe.expected_graduation_date,
+        }
+    )
+    gr.insert(ignore_permissions=is_owner)
+    gr.submit()
+
+    return _active_graduation_request_summary(pe.name)
+
+
+@frappe.whitelist()
+def get_pe_unpaid_invoices(program_enrollment):
+    """Aggregate every unpaid Sales Invoice tied to this Program Enrollment,
+    grouped by payer (Customer). Covers three linkage paths:
+
+    - Course Enrollment Individual via Sales Invoice.custom_cei
+    - Graduation Request via Sales Invoice.custom_graduation_request
+    - Trigger invoices (NAT/NAY/Monthly/etc.) via the seminary_trigger
+      tag's last segment, which is the pgm_enroll_payers row name.
+
+    Returns a list grouped by customer:
+        [{
+            "customer": "Cust A",
+            "invoices": [{name, grand_total, outstanding_amount, source}],
+            "total_unpaid": 123.45,
+        }, ...]
+
+    Sorted by total_unpaid desc.
+    """
+    if not program_enrollment:
+        return []
+
+    rows = frappe.db.sql(
+        """
+        SELECT * FROM (
+            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
+                   'Course Enrollment' AS source
+            FROM `tabSales Invoice` si
+            INNER JOIN `tabCourse Enrollment Individual` cei ON cei.name = si.custom_cei
+            WHERE si.docstatus = 1
+              AND si.is_return = 0
+              AND si.outstanding_amount > 0
+              AND cei.program_ce = %(pe)s
+
+            UNION ALL
+
+            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
+                   'Graduation Request' AS source
+            FROM `tabSales Invoice` si
+            INNER JOIN `tabGraduation Request` gr ON gr.name = si.custom_graduation_request
+            WHERE si.docstatus = 1
+              AND si.is_return = 0
+              AND si.outstanding_amount > 0
+              AND gr.program_enrollment = %(pe)s
+
+            UNION ALL
+
+            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
+                   'Recurring Fee' AS source
+            FROM `tabSales Invoice` si
+            INNER JOIN `tabpgm_enroll_payers` pep
+                ON pep.name = SUBSTRING_INDEX(si.seminary_trigger, ':', -1)
+            INNER JOIN `tabPayers Fee Category PE` pfc ON pfc.name = pep.parent
+            WHERE si.docstatus = 1
+              AND si.is_return = 0
+              AND si.outstanding_amount > 0
+              AND si.seminary_trigger IS NOT NULL
+              AND si.seminary_trigger != ''
+              AND pfc.pf_pe = %(pe)s
+        ) AS u
+        ORDER BY u.customer, u.name
+        """,
+        {"pe": program_enrollment},
+        as_dict=True,
+    )
+
+    # Group by customer
+    by_customer = {}
+    for r in rows:
+        bucket = by_customer.setdefault(
+            r.customer, {"customer": r.customer, "invoices": [], "total_unpaid": 0.0}
+        )
+        bucket["invoices"].append(
+            {
+                "name": r.name,
+                "grand_total": float(r.grand_total or 0),
+                "outstanding_amount": float(r.outstanding_amount or 0),
+                "source": r.source,
+            }
+        )
+        bucket["total_unpaid"] += float(r.outstanding_amount or 0)
+
+    return sorted(by_customer.values(), key=lambda b: b["total_unpaid"], reverse=True)
 
 
 @frappe.whitelist()
@@ -2615,7 +2844,7 @@ def generate_monthly_invoices(as_of=None):
 def get_pgmenrollments(name):
     program_enrollments = frappe.get_all(
         "Program Enrollment",
-        filters={"student": name},
+        filters={"student": name, "docstatus": 1},
         fields=[
             "name",
             "program",

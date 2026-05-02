@@ -124,6 +124,7 @@
    "unique": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "request_sent_on",
    "fieldtype": "Datetime",
    "label": "Request Sent On",
@@ -134,11 +135,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "token_expires_on",
    "fieldtype": "Date",
    "label": "Token Expires On"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "submitted_on",
    "fieldtype": "Datetime",
    "label": "Letter Received On",
@@ -150,11 +153,13 @@
    "label": "Letter Content"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "letter_body",
    "fieldtype": "Text Editor",
    "label": "Letter Body"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "letter_attachment",
    "fieldtype": "Attach",
    "label": "Letter Attachment"
@@ -166,6 +171,7 @@
    "label": "Review"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewed_by",
    "fieldtype": "Link",
    "label": "Reviewed By",
@@ -173,6 +179,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "review_notes",
    "fieldtype": "Small Text",
    "label": "Review Notes"
@@ -194,6 +201,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "workflow_state",
    "fieldtype": "Link",
    "label": "Workflow State",

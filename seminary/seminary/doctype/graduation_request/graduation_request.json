@@ -1,0 +1,242 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-05-02 13:00:00.000000",
+ "description": "A student's request to graduate. Mirrors the Course Enrollment Individual lifecycle: on submit, generates a Sales Invoice for the program-configured Graduation Request fee category. Workflow: Draft -> Awaiting Payment -> Approved (or Draft -> Approved when free). Cancellation cascades from Program Enrollment withdrawal; the fee is non-refundable in that case.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "student",
+  "program_enrollment",
+  "program",
+  "column_break_top",
+  "request_date",
+  "expected_graduation_date",
+  "is_free",
+  "section_break_payment",
+  "paid_percent",
+  "gr_si",
+  "section_break_snapshot",
+  "graduation_requirements_html",
+  "pending_payments_html",
+  "section_break_notes",
+  "notes",
+  "section_break_workflow",
+  "workflow_state",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "GR-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "GR-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "program_enrollment.program",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Request Date",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "program_enrollment.expected_graduation_date",
+   "fieldname": "expected_graduation_date",
+   "fieldtype": "Date",
+   "label": "Expected Graduation Date",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "program.is_free",
+   "fieldname": "is_free",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Program is Free",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_payment",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Aggregate payment percentage across linked Sales Invoices. System-managed.",
+   "fieldname": "paid_percent",
+   "fieldtype": "Float",
+   "label": "Paid Percent",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "gr_si",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Sales Invoice Generated",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_snapshot",
+   "fieldtype": "Section Break",
+   "label": "Snapshot"
+  },
+  {
+   "fieldname": "graduation_requirements_html",
+   "fieldtype": "HTML",
+   "label": "Graduation Requirements"
+  },
+  {
+   "fieldname": "pending_payments_html",
+   "fieldtype": "HTML",
+   "label": "Pending Payments"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "notes",
+   "fieldtype": "Long Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "section_break_workflow",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Graduation Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-05-02 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Graduation Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "submit": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student",
+ "track_changes": 1
+}

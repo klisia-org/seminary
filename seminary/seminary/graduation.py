@@ -105,6 +105,8 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
         "requirement_name": library.requirement_name,
         "requirement_type": library.requirement_type,
         "mandatory": pgr_item.mandatory,
+        "blocks_graduation_request": getattr(library, "blocks_graduation_request", 0)
+        or 0,
         "slot_index": slot_index,
         "status": "Not Started",
         "link_doctype": (
