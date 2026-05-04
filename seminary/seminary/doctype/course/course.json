@@ -38,8 +38,7 @@
   {
    "fieldname": "department",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
+   "hidden": 1,
    "label": "Department",
    "options": "Department"
   },
@@ -50,7 +49,7 @@
    "label": "Course Credits (Default)"
   },
   {
-   "description": "Optional advisory minimum number of enrolled students for a Course Schedule of this course. Informational only — used by the Term Enrollment Status report. Course Schedules can override this.",
+   "description": "Optional advisory minimum number of enrolled students for a Course Schedule of this course. Informational only \u2014 used by the Term Enrollment Status report. Course Schedules can override this.",
    "fieldname": "default_minimum_enrollment",
    "fieldtype": "Int",
    "label": "Default Minimum Enrollment",
@@ -80,7 +79,7 @@
    "options": "Course Assessment Criteria"
   },
   {
-   "description": "Pre-selected source schedule when 'Import Course Template' is run on a Course Schedule of this course. Optional — the import dialog still allows picking any schedule.",
+   "description": "Pre-selected source schedule when 'Import Course Template' is run on a Course Schedule of this course. Optional \u2014 the import dialog still allows picking any schedule.",
    "fieldname": "default_cs_template",
    "fieldtype": "Link",
    "label": "Default Course Schedule Template",
@@ -126,11 +125,11 @@
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2025-03-05 18:51:34.182001",
+ "modified": "2026-05-02 14:24:10.608217",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -191,6 +190,7 @@
    "share": 1
   }
  ],
+ "row_format": "Dynamic",
  "search_fields": "course_name",
  "show_name_in_global_search": 1,
  "sort_field": "modified",

@@ -23,5 +23,30 @@
   "print_format_type": "Jinja",
   "show_section_headings": 0,
   "standard": "No"
+ },
+ {
+  "absolute_value": 0,
+  "align_labels_right": 0,
+  "custom_format": 1,
+  "default_print_language": null,
+  "disabled": 0,
+  "doc_type": "Diploma",
+  "doctype": "Print Format",
+  "font": "Default",
+  "font_size": 14,
+  "html": "{%- set program_name = frappe.db.get_value('Program', doc.program, 'program_name') or doc.program -%}\n{%- set student_name = frappe.db.get_value('Student', doc.student, 'student_name') -%}\n<div class=\"seminary-diploma\">\n  <style>\n    .seminary-diploma { font-family: 'Garamond', 'EB Garamond', Georgia, serif; color: #1f2937; padding: 48px 56px; border: 4px double #1f2937; }\n    .seminary-diploma .header { text-align: center; margin-bottom: 32px; }\n    .seminary-diploma .school { font-size: 28px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }\n    .seminary-diploma .preamble { text-align: center; font-size: 16px; margin: 24px 0 8px 0; font-style: italic; }\n    .seminary-diploma .name { text-align: center; font-size: 36px; font-weight: 700; margin: 8px 0 24px 0; letter-spacing: 1px; }\n    .seminary-diploma .body { text-align: center; font-size: 16px; line-height: 1.6; max-width: 640px; margin: 0 auto; }\n    .seminary-diploma .program { font-weight: 600; }\n    .seminary-diploma .meta { display: flex; justify-content: space-between; margin-top: 56px; font-size: 13px; }\n    .seminary-diploma .meta .col { flex: 1; text-align: center; }\n    .seminary-diploma .meta .label { color: #6b7280; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; margin-bottom: 4px; }\n    .seminary-diploma .signatures { display: flex; justify-content: space-between; margin-top: 48px; padding: 0 32px; }\n    .seminary-diploma .signatures .sig { flex: 1; text-align: center; padding: 0 16px; }\n    .seminary-diploma .signatures .line { border-top: 1px solid #1f2937; padding-top: 6px; font-size: 12px; color: #6b7280; }\n    .seminary-diploma .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #9ca3af; }\n    .seminary-diploma .footer .hash { font-family: 'Courier New', monospace; letter-spacing: 0.5px; }\n  </style>\n\n  {% if letter_head and not no_letterhead %}<div class=\"letter-head\" style=\"text-align:center; margin-bottom: 16px;\">{{ letter_head }}</div>{% endif %}\n\n  <div class=\"header\">\n    <div class=\"school\">{{ frappe.defaults.get_defaults().company or _('The Seminary') }}</div>\n  </div>\n\n  <div class=\"preamble\">{{ _('This is to certify that') }}</div>\n  <div class=\"name\">{{ doc.legal_name }}</div>\n\n  <div class=\"body\">\n    {{ _('has successfully completed all requirements of the') }}\n    <div class=\"program\" style=\"margin: 6px 0;\">{{ program_name }}</div>\n    {% if doc.expected_graduation_date %}\n      {{ _('and is hereby awarded this diploma on') }}\n      <strong>{{ frappe.utils.formatdate(doc.expected_graduation_date, 'long') }}</strong>.\n    {% else %}\n      {{ _('and is hereby awarded this diploma.') }}\n    {% endif %}\n  </div>\n\n  <div class=\"signatures\">\n    <div class=\"sig\"><div class=\"line\">{{ _('President') }}</div></div>\n    <div class=\"sig\"><div class=\"line\">{{ _('Registrar') }}</div></div>\n  </div>\n\n  <div class=\"meta\">\n    <div class=\"col\">\n      <div class=\"label\">{{ _('Diploma Serial') }}</div>\n      <div>{{ doc.diploma_serial }}</div>\n    </div>\n    <div class=\"col\">\n      <div class=\"label\">{{ _('Issued') }}</div>\n      <div>{{ frappe.utils.formatdate(doc.issued_on, 'long') }}</div>\n    </div>\n  </div>\n\n  <div class=\"footer\">\n    {{ _('Verification ID') }}: <span class=\"hash\">{{ doc.verification_hash or doc.name }}</span>\n    {% if doc.revoked %}<div style=\"color:#b91c1c; font-weight:600; margin-top:6px;\">{{ _('REVOKED') }}: {{ doc.revocation_reason or '' }}</div>{% endif %}\n  </div>\n</div>",
+  "line_breaks": 0,
+  "margin_bottom": 15.0,
+  "margin_left": 15.0,
+  "margin_right": 15.0,
+  "margin_top": 15.0,
+  "module": "Seminary",
+  "name": "Seminary Diploma",
+  "page_number": "Hide",
+  "print_format_builder": 0,
+  "print_format_builder_beta": 0,
+  "print_format_type": "Jinja",
+  "show_section_headings": 0,
+  "standard": "No"
  }
 ]

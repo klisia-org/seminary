@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Use git add . beforehand
 # Usage: ./scripts/bump.sh 1.2.0
 # Updates version in all files, commits, pushes, and creates a GitHub Release.
 set -euo pipefail

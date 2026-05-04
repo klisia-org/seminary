@@ -21,6 +21,9 @@
   "section_break_snapshot",
   "graduation_requirements_html",
   "pending_payments_html",
+  "section_break_names",
+  "legal_name_at_graduation",
+  "phonetic_name_snapshot",
   "section_break_notes",
   "notes",
   "section_break_workflow",
@@ -130,6 +133,28 @@
    "fieldname": "pending_payments_html",
    "fieldtype": "HTML",
    "label": "Pending Payments"
+  },
+  {
+   "fieldname": "section_break_names",
+   "fieldtype": "Section Break",
+   "label": "Diploma Identity"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Confirmed legal name at the moment of graduation (e.g. married name). Snapshotted to the Diploma on Approval.",
+   "fieldname": "legal_name_at_graduation",
+   "fieldtype": "Data",
+   "label": "Legal Name (as it should appear on diploma)",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "How the name should be pronounced at the ceremony. Pre-fills from the student's profile if set.",
+   "fetch_from": "student.phonetic_name",
+   "fetch_if_empty": 1,
+   "fieldname": "phonetic_name_snapshot",
+   "fieldtype": "Data",
+   "label": "Phonetic Name (for ceremony)"
   },
   {
    "fieldname": "section_break_notes",

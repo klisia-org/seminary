@@ -14,6 +14,7 @@
   "section_break_qcbp",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
+  "column_break_qndk",
   "auto_advance_course_schedule",
   "enrollment_window_rules_section",
   "enrollment_open_anchor",
@@ -43,9 +44,6 @@
   "scholarship_cc",
   "column_break_wnvm",
   "scholarship_cust",
-  "course_enrollment_parameters_section",
-  "block_cei_pay",
-  "min_perc_enroll",
   "section_break_7",
   "instructor_created_by",
   "hr_payroll_section",
@@ -210,26 +208,6 @@
   {
    "fieldname": "column_break_lhee",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "course_enrollment_parameters_section",
-   "fieldtype": "Section Break",
-   "label": "Course Enrollment Parameters"
-  },
-  {
-   "default": "0",
-   "fieldname": "block_cei_pay",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Block Course Enrollment Submission until paid?"
-  },
-  {
-   "depends_on": "doc.block_cei_pay==1",
-   "description": "This will only consider what the student should pay, not other payers.",
-   "fieldname": "min_perc_enroll",
-   "fieldtype": "Percent",
-   "hidden": 1,
-   "label": "Minimum percentage paid for enrollment"
   },
   {
    "fieldname": "section_break_qqak",
@@ -471,11 +449,15 @@
    "fieldtype": "Link",
    "label": "Default Letter Head",
    "options": "Letter Head"
+  },
+  {
+   "fieldname": "column_break_qndk",
+   "fieldtype": "Column Break"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-05-02 08:13:40.114125",
+ "modified": "2026-05-04 07:51:00.251908",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

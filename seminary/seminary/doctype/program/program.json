@@ -19,10 +19,11 @@
   "is_free",
   "require_pay_submit",
   "percent_to_pay",
+  "registrar_block_cei",
   "section_break_pgmtype",
   "terms_complete",
-  "column_break_voqj",
   "credits_complete",
+  "column_break_voqj",
   "max_time_enrolled",
   "students_can_request_graduation",
   "graduation_request_trigger",
@@ -328,6 +329,13 @@
    "label": "Minimum Payment %"
   },
   {
+   "default": "0",
+   "description": "When checked, students can only create a Draft enrollment for this program; a registrar must apply Submit before the student can pay. When unchecked, the student's enrollment auto-submits to Awaiting Payment.",
+   "fieldname": "registrar_block_cei",
+   "fieldtype": "Check",
+   "label": "Require Staff Verification of Course Enrollments"
+  },
+  {
    "fieldname": "column_break_voqj",
    "fieldtype": "Column Break"
   },
@@ -407,7 +415,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-05-02 12:30:00.000000",
+ "modified": "2026-05-02 12:12:38.999787",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

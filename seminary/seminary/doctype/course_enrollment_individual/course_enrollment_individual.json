@@ -16,6 +16,7 @@
   "is_free",
   "require_pay_submit",
   "percent_to_pay",
+  "registrar_block_cei",
   "course_data",
   "academic_term",
   "credits",
@@ -225,6 +226,15 @@
    "fieldtype": "Percent",
    "hidden": 1,
    "label": "Minimum Payment %",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "program_data.registrar_block_cei",
+   "fieldname": "registrar_block_cei",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Require Staff Verification of Course Enrollments",
    "read_only": 1
   },
   {

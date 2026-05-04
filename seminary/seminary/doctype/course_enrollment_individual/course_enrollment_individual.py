@@ -35,7 +35,7 @@ class CourseEnrollmentIndividual(Document):
         flags = frappe.db.get_value(
             "Program",
             program,
-            ["is_free", "require_pay_submit", "percent_to_pay"],
+            ["is_free", "require_pay_submit", "percent_to_pay", "registrar_block_cei"],
             as_dict=True,
         )
         if not flags:
@@ -43,6 +43,7 @@ class CourseEnrollmentIndividual(Document):
         self.is_free = flags.is_free or 0
         self.require_pay_submit = flags.require_pay_submit or 0
         self.percent_to_pay = flags.percent_to_pay or 0
+        self.registrar_block_cei = flags.registrar_block_cei or 0
 
     def on_submit(self):
         if self.cei_si:
@@ -285,6 +286,9 @@ class CourseEnrollmentIndividual(Document):
                     "seminary_summary": summary,
                 }
             )
+            # Student-initiated enrollments hit this on auto-submit; SI is
+            # system-authored on their behalf, so bypass docperms here.
+            sales_invoice.flags.ignore_permissions = True
             sales_invoice.insert()
             sales_invoice.save()
             if submitinvoice == 1:
