@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-05-03 00:00:00",
+ "default_print_format": "Seminary Diploma",
+ "description": "Issued diploma record. The `name` is an opaque hash intended to anchor a future public verification page; `diploma_serial` is the human-readable identifier (DIP-YYYY-####). Created automatically when a Graduation Request reaches the 'Approved' state. On Graduation Request cancellation the diploma is marked `revoked` rather than deleted so the verification hash remains addressable.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "diploma_serial",
+  "graduation_request",
+  "student",
+  "column_break_top",
+  "program",
+  "program_enrollment",
+  "issued_on",
+  "section_break_names",
+  "legal_name",
+  "phonetic_name",
+  "expected_graduation_date",
+  "section_break_verification",
+  "verification_hash",
+  "section_break_revocation",
+  "revoked",
+  "revoked_on",
+  "revocation_reason"
+ ],
+ "fields": [
+  {
+   "description": "Human-readable serial (DIP-YYYY-####). Auto-set on insert.",
+   "fieldname": "diploma_serial",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Diploma Serial",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "graduation_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Graduation Request",
+   "options": "Graduation Request",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "graduation_request.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "graduation_request.program",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "graduation_request.program_enrollment",
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "issued_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Issued On",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_names",
+   "fieldtype": "Section Break",
+   "label": "Names"
+  },
+  {
+   "description": "Snapshot of the legal name at the moment of issuance. Does not change if the student's name changes later.",
+   "fieldname": "legal_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Legal Name (printed on diploma)",
+   "reqd": 1
+  },
+  {
+   "description": "Snapshot of the phonetic spelling used at the ceremony.",
+   "fieldname": "phonetic_name",
+   "fieldtype": "Data",
+   "label": "Phonetic Name (ceremony)"
+  },
+  {
+   "fetch_from": "graduation_request.expected_graduation_date",
+   "fieldname": "expected_graduation_date",
+   "fieldtype": "Date",
+   "label": "Official Graduation Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_verification",
+   "fieldtype": "Section Break",
+   "label": "Verification"
+  },
+  {
+   "description": "Mirror of the diploma's `name` (the opaque hash). Exposed so the future public verification page can query by this field.",
+   "fieldname": "verification_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Verification Hash",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "section_break_revocation",
+   "fieldtype": "Section Break",
+   "label": "Revocation"
+  },
+  {
+   "default": "0",
+   "fieldname": "revoked",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Revoked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "revoked_on",
+   "fieldtype": "Date",
+   "label": "Revoked On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "revocation_reason",
+   "fieldtype": "Small Text",
+   "label": "Revocation Reason",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-04 05:23:02.209576",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Diploma",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "legal_name",
+ "track_changes": 1
+}

@@ -19,10 +19,14 @@ from frappe.model.document import Document
 from frappe.utils import flt, today
 
 
+NAME_LOCKED_STATES = ("Academic Review", "Financial Review", "Approved")
+
+
 class GraduationRequest(Document):
     def validate(self):
         self._fetch_program_and_dates()
         self._guard_unique_active_request()
+        self._guard_name_edits_after_review()
 
     def before_submit(self):
         program = frappe.get_cached_doc("Program", self.program)
@@ -58,6 +62,13 @@ class GraduationRequest(Document):
         self._generate_sales_invoices()
         self.db_set("gr_si", 1, update_modified=False)
 
+    def on_update_after_submit(self):
+        if self.workflow_state != "Approved":
+            return
+        if frappe.db.exists("Diploma", {"graduation_request": self.name}):
+            return
+        self._issue_diploma()
+
     def on_cancel(self):
         """Stamp workflow_state and cancel any unpaid linked Sales Invoices.
 
@@ -72,6 +83,8 @@ class GraduationRequest(Document):
             "Cancelled",
             update_modified=False,
         )
+
+        self._revoke_diploma_if_issued()
 
         if getattr(self.flags, "cascade_from_pe_withdrawal", False):
             return
@@ -120,6 +133,71 @@ class GraduationRequest(Document):
         )
         if self.program:
             self.is_free = frappe.db.get_value("Program", self.program, "is_free") or 0
+
+    def _revoke_diploma_if_issued(self):
+        """Mark the Diploma revoked rather than deleting it — preserves the
+        verification hash for the future v2 page (which should report the
+        Revoked state, not 404)."""
+        diploma = frappe.db.get_value(
+            "Diploma", {"graduation_request": self.name}, "name"
+        )
+        if not diploma:
+            return
+        reason = "Graduation Request cancelled"
+        if getattr(self.flags, "cascade_from_pe_withdrawal", False):
+            reason += " (cascade from PE withdrawal)"
+        frappe.db.set_value(
+            "Diploma",
+            diploma,
+            {
+                "revoked": 1,
+                "revoked_on": today(),
+                "revocation_reason": reason,
+            },
+            update_modified=False,
+        )
+
+    def _guard_name_edits_after_review(self):
+        """Lock the diploma name fields once Academic Review begins.
+
+        Registrar (Academics User) can still correct typos at any state.
+        """
+        if self.is_new():
+            return
+        changed = self.has_value_changed(
+            "legal_name_at_graduation"
+        ) or self.has_value_changed("phonetic_name_snapshot")
+        if not changed:
+            return
+        if self.workflow_state in NAME_LOCKED_STATES:
+            roles = set(frappe.get_roles())
+            if not (roles & {"Academics User", "Seminary Manager", "System Manager"}):
+                frappe.throw(
+                    _(
+                        "Diploma name can only be changed before Academic Review. "
+                        "Contact the registrar."
+                    )
+                )
+
+    def _issue_diploma(self):
+        """Create the Diploma record. Two layers of idempotency:
+        the `frappe.db.exists` short-circuit in on_update_after_submit,
+        and the unique constraint on Diploma.graduation_request."""
+        diploma = frappe.get_doc(
+            {
+                "doctype": "Diploma",
+                "graduation_request": self.name,
+                "student": self.student,
+                "program": self.program,
+                "program_enrollment": self.program_enrollment,
+                "legal_name": self.legal_name_at_graduation,
+                "phonetic_name": self.phonetic_name_snapshot,
+                "issued_on": today(),
+                "expected_graduation_date": self.expected_graduation_date,
+            }
+        )
+        diploma.flags.ignore_permissions = True
+        diploma.insert(ignore_permissions=True)
 
     def _guard_unique_active_request(self):
         """Block duplicate active requests on the same enrollment."""

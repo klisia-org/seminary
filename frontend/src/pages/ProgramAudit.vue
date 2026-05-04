@@ -50,7 +50,7 @@
                 </template>
               </div>
             </div>
-            <Button variant="solid" :loading="gradRequestSubmitting" @click="confirmGraduationRequest">
+            <Button variant="solid" :loading="gradRequestSubmitting" @click="openGradRequestDialog">
               {{ __('Request Graduation') }}
             </Button>
           </div>
@@ -354,6 +354,29 @@
     </template>
   </Dialog>
 
+  <!-- Graduation Request modal -->
+  <Dialog v-model="showGradRequestDialog" :options="{ title: __('File Graduation Request') }">
+    <template #body-content>
+      <p class="text-sm text-ink-gray-5 mb-4">
+        {{ __('Confirm the name to print on your diploma. If you have changed your name (e.g. through marriage), enter the legal name you want printed.') }}
+      </p>
+      <FormControl v-model="gradForm.legal_name" type="text"
+        :label="__('Legal Name (on diploma)')" required class="mb-3" />
+      <FormControl v-model="gradForm.phonetic_name" type="text"
+        :label="__('Phonetic Spelling (for ceremony)')"
+        :description="__('Optional. Example: JOH-ann mar-TEEN-ess')" class="mb-3" />
+      <p class="text-xs text-ink-gray-4 italic">
+        {{ __('You can edit these names until your request enters Academic Review. After that, contact the registrar.') }}
+      </p>
+    </template>
+    <template #actions>
+      <Button @click="showGradRequestDialog = false">{{ __('Cancel') }}</Button>
+      <Button variant="solid" :loading="gradRequestSubmitting" @click="submitGraduationRequest">
+        {{ __('File Request') }}
+      </Button>
+    </template>
+  </Dialog>
+
   <!-- Start Culminating Project modal -->
   <Dialog v-model="showProjectDialog" :options="{ title: __('Start Culminating Project') }">
     <template #body-content>
@@ -530,25 +553,37 @@ const firstUnpaidInvoice = computed(() => {
 })
 
 const gradRequestSubmitting = ref(false)
+const showGradRequestDialog = ref(false)
+const gradForm = reactive({ legal_name: '', phonetic_name: '' })
 
-function confirmGraduationRequest() {
+function openGradRequestDialog() {
   if (!selectedPE.value) return
-  const ok = window.confirm(
-    __('File a Graduation Request for this enrollment? This will generate the graduation fee invoice.')
-  )
-  if (!ok) return
+  gradForm.legal_name = audit.data?.student_name || ''
+  gradForm.phonetic_name = audit.data?.student_phonetic_name || ''
+  showGradRequestDialog.value = true
+}
+
+async function submitGraduationRequest() {
+  const legal = (gradForm.legal_name || '').trim()
+  if (!legal) {
+    toast.error(__('Legal name is required'))
+    return
+  }
   gradRequestSubmitting.value = true
-  call('seminary.seminary.api.create_graduation_request', { program_enrollment: selectedPE.value })
-    .then(() => {
-      toast.success(__('Graduation Request created.'))
-      audit.reload()
+  try {
+    await call('seminary.seminary.api.create_graduation_request', {
+      program_enrollment: selectedPE.value,
+      legal_name_at_graduation: legal,
+      phonetic_name: (gradForm.phonetic_name || '').trim() || null,
     })
-    .catch((err) => {
-      toast.error(err.message || __('Could not create the Graduation Request.'))
-    })
-    .finally(() => {
-      gradRequestSubmitting.value = false
-    })
+    toast.success(__('Graduation Request created.'))
+    showGradRequestDialog.value = false
+    audit.reload()
+  } catch (err) {
+    toast.error(err.message || __('Could not create the Graduation Request.'))
+  } finally {
+    gradRequestSubmitting.value = false
+  }
 }
 
 const activeGradRequirements = computed(() => {

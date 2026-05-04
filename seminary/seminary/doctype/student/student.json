@@ -28,6 +28,7 @@
   "student_mobile_number",
   "gender",
   "nationality",
+  "phonetic_name",
   "address_tab",
   "section_break_22",
   "address_line_1",
@@ -167,6 +168,12 @@
    "fieldtype": "Link",
    "label": "Nationality",
    "options": "Country"
+  },
+  {
+   "description": "How the student's name should be pronounced (e.g. 'JOH-ann mar-TEEN-ess'). Used for ceremony and roll calls.",
+   "fieldname": "phonetic_name",
+   "fieldtype": "Data",
+   "label": "Phonetic Name"
   },
   {
    "fieldname": "student_applicant",

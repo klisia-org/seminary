@@ -224,13 +224,16 @@ permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
     "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
+    "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
+# Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
     "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
+    "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
 }
 
 # DocType Class
@@ -422,7 +425,10 @@ fixtures = [
     "Messaging App",
     "Course Cancellation Reason",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
-    {"dt": "Print Format", "filters": [["name", "=", "Seminary Sales Invoice"]]},
+    {
+        "dt": "Print Format",
+        "filters": [["name", "in", ["Seminary Sales Invoice", "Seminary Diploma"]]],
+    },
     {
         "dt": "Workflow",
         "filters": [

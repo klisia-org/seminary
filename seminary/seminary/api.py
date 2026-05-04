@@ -1414,6 +1414,9 @@ def get_program_audit(program_enrollment):
     )
     result["grad_candidate"] = bool(pe.grad_candidate)
     result["graduation_request"] = _active_graduation_request_summary(pe.name)
+    result["student_phonetic_name"] = (
+        frappe.db.get_value("Student", pe.student, "phonetic_name") or ""
+    )
 
     return result
 
@@ -1453,16 +1456,26 @@ def _active_graduation_request_summary(pe_name):
 
 
 @frappe.whitelist()
-def create_graduation_request(program_enrollment):
+def create_graduation_request(
+    program_enrollment, legal_name_at_graduation, phonetic_name=None
+):
     """Create + submit a Graduation Request for the given Program Enrollment.
 
     Permission model:
       - Caller is the student linked to the PE (portal flow), OR
       - Caller has the Academics User role (registrar acting on behalf).
 
-    Validates trigger / candidacy at the controller level (`before_submit`).
-    Returns a summary suitable for refreshing the audit page CTA.
+    Captures the legal name (required) and phonetic spelling (optional) for
+    the diploma. The phonetic name is also persisted on the Student record so
+    it's reusable beyond graduation. Validates trigger / candidacy at the
+    controller level (`before_submit`). Returns a summary suitable for
+    refreshing the audit page CTA.
     """
+    legal_name_at_graduation = (legal_name_at_graduation or "").strip()
+    if not legal_name_at_graduation:
+        frappe.throw(_("Legal name is required."))
+    phonetic_name = (phonetic_name or "").strip() or None
+
     pe = frappe.db.get_value(
         "Program Enrollment",
         program_enrollment,
@@ -1511,6 +1524,15 @@ def create_graduation_request(program_enrollment):
     if not pe.grad_candidate:
         frappe.throw(_("Not yet a graduation candidate."))
 
+    if phonetic_name:
+        frappe.db.set_value(
+            "Student",
+            pe.student,
+            "phonetic_name",
+            phonetic_name,
+            update_modified=False,
+        )
+
     gr = frappe.get_doc(
         {
             "doctype": "Graduation Request",
@@ -1518,6 +1540,8 @@ def create_graduation_request(program_enrollment):
             "program_enrollment": pe.name,
             "program": pe.program,
             "expected_graduation_date": pe.expected_graduation_date,
+            "legal_name_at_graduation": legal_name_at_graduation,
+            "phonetic_name_snapshot": phonetic_name,
         }
     )
     gr.insert(ignore_permissions=is_owner)
