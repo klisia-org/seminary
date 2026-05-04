@@ -1,4 +1,0 @@
-[bandit]
-exclude_dirs = .git,.svn,.mypy_cache,.tox,.venv,venv
-[DEFAULT]
-ignore = B608
