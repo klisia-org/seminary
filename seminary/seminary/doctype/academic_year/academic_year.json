@@ -64,11 +64,6 @@
  "links": [
   {
    "group": "Student",
-   "link_doctype": "Student Admission",
-   "link_fieldname": "academic_year"
-  },
-  {
-   "group": "Student",
    "link_doctype": "Student Applicant",
    "link_fieldname": "academic_year"
   },

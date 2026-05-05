@@ -5,29 +5,36 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_years, date_diff, getdate, nowdate
+from frappe.utils import getdate
 
 
 class StudentApplicant(Document):
+    def before_insert(self):
+        if self.ds2 and self.ds_body:
+            return
+        ds = frappe.db.get_value(
+            "Doctrinal Statement",
+            {"active": 1, "use_in_student_admission": 1, "docstatus": 1},
+            ["name", "doctrinal_statement"],
+            as_dict=True,
+            order_by="creation desc",
+        )
+        if not ds:
+            return
+        if not self.ds2:
+            self.ds2 = ds.name
+        if not self.ds_body:
+            self.ds_body = ds.doctrinal_statement
+
     def autoname(self):
         from frappe.model.naming import set_name_by_naming_series
 
-        if self.student_admission:
-            naming_series = None
-            if self.program:
-                # set the naming series from the student admission if provided.
-                student_admission = self.get_student_admission_data(
-                    self.student_admission, self.program
-                )
-                if student_admission:
-                    naming_series = student_admission.get("applicant_naming_series")
-                else:
-                    naming_series = None
-            else:
-                frappe.throw(_("Select the program first"))
-
-            if naming_series:
-                self.naming_series = naming_series
+        if self.program:
+            program_naming_series = frappe.db.get_value(
+                "Program", self.program, "applicant_naming_series"
+            )
+            if program_naming_series:
+                self.naming_series = program_naming_series
 
         set_name_by_naming_series(self)
 
@@ -35,9 +42,6 @@ class StudentApplicant(Document):
         self.set_title()
         self.validate_dates()
         self.validate_term()
-
-        if self.student_admission and self.program and self.date_of_birth:
-            self.validation_from_student_admission()
 
     def set_title(self):
         self.title = " ".join(
@@ -60,53 +64,20 @@ class StudentApplicant(Document):
                     )
                 )
 
-    def validation_from_student_admission(self):
+    def after_insert(self):
+        # Generate Application-fee Sales Invoice(s) on creation, not on submit:
+        # web-form-created applicants stay at docstatus=0 indefinitely (no submit
+        # action), so on_submit never fires. Billing must run on insert so the
+        # post-application payment page has an SI to charge against.
+        from seminary.seminary.api import generate_application_invoices
 
-        student_admission = self.get_student_admission_data(
-            self.student_admission, self.program
-        )
-
-        if (
-            student_admission
-            and student_admission.min_age
-            and date_diff(
-                nowdate(),
-                add_years(getdate(self.date_of_birth), student_admission.min_age),
-            )
-            < 0
-        ):
-            frappe.throw(
-                _("Not eligible for the admission in this program as per Date Of Birth")
-            )
-
-        if (
-            student_admission
-            and student_admission.max_age
-            and date_diff(
-                nowdate(),
-                add_years(getdate(self.date_of_birth), student_admission.max_age),
-            )
-            > 0
-        ):
-            frappe.throw(
-                _("Not eligible for the admission in this program as per Date Of Birth")
+        try:
+            generate_application_invoices(self.name)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Application invoice generation failed for {self.name}",
             )
 
     def on_payment_authorized(self, *args, **kwargs):
         self.db_set("paid", 1)
-
-    def get_student_admission_data(self, student_admission, program):
-
-        admission_programs = frappe.get_all(
-            "Student Admission Program",
-            {
-                "parenttype": "Student Admission",
-                "parent": student_admission,
-                "program": program,
-            },
-            ["applicant_naming_series", "min_age", "max_age"],
-        )
-
-        if admission_programs:
-            return admission_programs[0]
-        return None

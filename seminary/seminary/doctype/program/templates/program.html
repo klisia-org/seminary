@@ -1,22 +1,112 @@
 {% extends "templates/web.html" %}
 
 {% block page_content %}
-<div style="text-align: center;">
-    <img src="{{ hero_image }}" alt="Hero Image" style="height: 320px">
+
+<style>
+.pgm-hero { position: relative; width: 100%; min-height: 320px; background-color: #1f2937; background-size: cover; background-position: center; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem; }
+.pgm-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; }
+.pgm-hero-overlay h1 { color: #fff; margin: 0 0 0.75rem; font-size: 2.25rem; line-height: 1.1; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.pgm-duration-pill { display: inline-block; padding: 0.5rem 1rem; background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; font-weight: 600; max-width: 33%; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.pgm-blurb { font-size: 1.1rem; color: #444; margin: 1.5rem 0; line-height: 1.5; }
+.pgm-section { margin: 1.5rem 0; }
+.pgm-section h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+.enrollment-windows, .enrollment-cta { margin: 1.5rem 0; padding: 1rem 1.25rem; border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa; }
+.enrollment-windows ul { list-style: none; padding: 0; margin: 0; }
+.enrollment-windows li { margin: 0.75rem 0; padding: 0.85rem 1rem; background: #fff; border-radius: 4px; border-left: 4px solid #2563eb; }
+.enrollment-windows li.indicator-green { border-left-color: #16a34a; }
+.enrollment-windows li.indicator-red { border-left-color: #dc2626; }
+.enrollment-windows li.indicator-blue { border-left-color: #2563eb; }
+.enrollment-windows .status-pill { font-weight: 600; }
+.enrollment-windows .term-meta { color: #555; margin-top: 0.25rem; font-size: 0.92rem; }
+.enrollment-windows .apply-btn-wrap { margin-top: 0.75rem; }
+.enrollment-windows .window-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.enrollment-windows .window-left { flex: 1 1 auto; min-width: 0; }
+.enrollment-windows .window-right { flex: 0 0 auto; text-align: right; }
+.enrollment-windows .window-right .term-label { font-weight: 700; }
+</style>
+
+<div class="pgm-hero" {% if hero_image %}style="background-image: url('{{ hero_image }}');"{% endif %}>
+    <div class="pgm-hero-overlay">
+        <h1>{{ title }}</h1>
+        {% if program_duration or duration_unit %}
+        <div class="pgm-duration-pill">
+            {{ program_duration or '' }} {{ _(duration_unit) if duration_unit else '' }}
+        </div>
+        {% endif %}
+    </div>
 </div>
 
+{% if blurb %}
+<div class="pgm-blurb">{{ blurb }}</div>
+{% endif %}
 
-<h1>{{ title }}</h1>
+{% if enrollment_mode == "Timed" and display_enrollment_window and open_windows %}
+<section class="enrollment-windows">
+    <h2 style="margin-top: 0;">{{ _("Now Accepting Applications") }}</h2>
+    <ul>
+        {% for w in open_windows %}
+        <li class="indicator-{{ w.indicator }}">
+            <div class="window-row">
+                <div class="window-left">
+                    <div><span class="status-pill">{{ w.status_label }}</span></div>
+                    <div class="term-meta">{{ _("Apply between") }} {{ w.apply_window_display }}</div>
+                    {% if w.introduction %}
+                    <div class="term-meta">{{ w.introduction }}</div>
+                    {% endif %}
+                    {% if display_cta %}
+                    <div class="apply-btn-wrap">
+                        <a class="btn btn-primary" href="/student-applicant/new?program={{ name | urlencode }}&academic_term={{ w.academic_term | urlencode }}&term_admission={{ w.name | urlencode }}">
+                            {{ _("Apply to be our student") }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="window-right">
+                    <div class="term-label">{{ w.term_label }}</div>
+                    {% if w.term_window_display %}
+                    <div class="term-meta">{{ _("Term runs") }} {{ w.term_window_display }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
 
-{{ program_description}}
+{% if enrollment_mode == "Continuous" and display_cta and continuous_term %}
+<section class="enrollment-cta">
+    <h2 style="margin-top: 0;">{{ _("Apply Anytime") }}</h2>
+    <div><strong>{{ continuous_term.term_label }}</strong></div>
+    {% if continuous_term.term_window_display %}
+    <div class="term-meta">{{ _("Term runs") }} {{ continuous_term.term_window_display }}</div>
+    {% endif %}
+    <div class="apply-btn-wrap">
+        <a class="btn btn-primary" href="/student-applicant/new?program={{ name | urlencode }}&academic_term={{ continuous_term.name | urlencode }}">
+            {{ _("Apply to be our student") }}
+        </a>
+    </div>
+</section>
+{% endif %}
 
-<h2>Program Requirements</h2>
-{{program_requirements}}
+{% if program_description %}
+<section class="pgm-section">
+    {{ program_description }}
+</section>
+{% endif %}
 
-<h2>Program Duration</h2>
-{{duration_txt}}
-{{program_duration}} {{duration_unit}}
+{% if program_requirements %}
+<section class="pgm-section">
+    <h2>{{ _("Program Requirements") }}</h2>
+    {{ program_requirements }}
+</section>
+{% endif %}
+
+{% if duration_txt %}
+<section class="pgm-section">
+    <h2>{{ _("Program Duration") }}</h2>
+    {{ duration_txt }}
+</section>
+{% endif %}
 
 {% endblock %}
-
-<!-- this is a custom web page template -->

@@ -1,0 +1,37 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="applicant-success" style="max-width: 640px; margin: 2rem auto; padding: 2rem;">
+    <div style="text-align: center;">
+        <h1>{{ _("Congratulations!") }}</h1>
+        <p style="font-size: 1.15rem; color: #333;">
+            {{ _("You have successfully applied to the seminary!") }}
+        </p>
+        <p style="color: #555;">
+            {{ _("We have everything to get back to you, after we review your application. This is a manual and prayerful process, so it may take about 2 weeks for us to get back to you.") }}
+        </p>
+    </div>
+
+    {% if payment_data and payment_data.payment_url %}
+    <div style="margin: 2rem 0; padding: 1.5rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+        <h2 style="margin-top: 0;">{{ _("Pay your Application Fee") }}</h2>
+        {% if payment_data.amount %}
+        <p>
+            {{ _("Amount due") }}:
+            <strong>{{ "{:,.2f}".format(payment_data.amount|float) }} {{ payment_data.currency or "" }}</strong>
+        </p>
+        {% endif %}
+        <a class="btn btn-primary btn-lg" href="{{ payment_data.payment_url }}">
+            {{ _("Proceed to Payment") }}
+        </a>
+    </div>
+    {% endif %}
+
+    {% if payment_data and payment_data.alternative_instructions %}
+    <div style="margin: 2rem 0; padding: 1.5rem; background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;">
+        <h3 style="margin-top: 0;">{{ _("Other ways to pay") }}</h3>
+        {{ payment_data.alternative_instructions }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

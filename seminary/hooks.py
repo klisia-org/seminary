@@ -49,10 +49,7 @@ app_include_js = [
 # website
 update_website_context = ["seminary.overrides.update_website_context"]
 
-website_generators = ["Student Admission"]
-
 website_route_rules = [
-    {"from_route": "/admissions", "to_route": "Student Admission"},
     {
         "from_route": "/program",
         "to_route": "Program",
@@ -69,12 +66,6 @@ calendars = [
 ]
 
 standard_portal_menu_items = [
-    {
-        "title": "Admission",
-        "route": "/admissions",
-        "reference_doctype": "Student Admission",
-        "role": "Student Applicant",
-    },
     {
         "title": "Financials",
         "route": "/financials",
@@ -106,7 +97,7 @@ default_roles = [
 
 global_search_doctypes = {
     "Seminary": [
-        {"doctype": "Student Admission", "index": 1},
+        {"doctype": "Term Admission", "index": 1},
         {"doctype": "Program", "index": 2},
         {"doctype": "Course", "index": 3},
         {"doctype": "Instructor", "index": 4},

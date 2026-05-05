@@ -16,6 +16,7 @@
  "field_order": [
   "academic_year",
   "term_name",
+  "term_for_web",
   "iscurrent_acterm",
   "open",
   "column_break_jhzu",
@@ -43,6 +44,12 @@
    "label": "Term Name",
    "reqd": 1,
    "search_index": 1
+  },
+  {
+   "description": "Display name for the public website (e.g., 'Spring Semester 2026'). Falls back to Term Name when blank.",
+   "fieldname": "term_for_web",
+   "fieldtype": "Data",
+   "label": "Term Name (for Web)"
   },
   {
    "fieldname": "term_start_date",

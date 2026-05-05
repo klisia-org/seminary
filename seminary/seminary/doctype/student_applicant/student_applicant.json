@@ -20,7 +20,8 @@
   "program",
   "section_break_xuzu",
   "student_email_id",
-  "student_admission",
+  "term_admission",
+  "customer",
   "customer_group",
   "image",
   "column_break_lvby",
@@ -85,6 +86,7 @@
   "emailchurch",
   "doctrine_tab",
   "doctrinal_agreement_section",
+  "ds_body",
   "ds2",
   "signdoctrine",
   "section_break_qktc",
@@ -175,10 +177,27 @@
    "search_index": 1
   },
   {
-   "fieldname": "student_admission",
+   "description": "The published Term Admission window the applicant is responding to. Optional for Continuous-enrollment programs.",
+   "fieldname": "term_admission",
    "fieldtype": "Link",
-   "label": "Student Admission",
-   "options": "Student Admission"
+   "label": "Term Admission",
+   "options": "Term Admission"
+  },
+  {
+   "description": "The Customer record used to bill the Application fee. Auto-created on submit if blank, using the applicant's name and Customer Group.",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "default": "Individual",
+   "description": "Customer Group used to bill the Application fee. Drives which Price List is applied.",
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "label": "Customer Group",
+   "options": "Customer Group"
   },
   {
    "fieldname": "image",
@@ -542,11 +561,21 @@
    "options": "Student Education"
   },
   {
-   "default": "<h3>\"Test\"</h3>",
+   "description": "Auto-set on insert to the most recent active Doctrinal Statement flagged 'Use in Student Admission'. Applicants confirm by submitting.",
    "fieldname": "ds2",
    "fieldtype": "Link",
-   "label": "Please read carefully and check if you agree with it.",
-   "options": "Doctrinal Statement"
+   "label": "Doctrinal Statement",
+   "options": "Doctrinal Statement",
+   "read_only": 1
+  },
+  {
+   "description": "Snapshot of the linked Doctrinal Statement's body, fetched on insert. Read-only; preserved at submit so the applicant's signed text is auditable even if the source DS is later amended.",
+   "fetch_from": "ds2.doctrinal_statement",
+   "fetch_if_empty": 1,
+   "fieldname": "ds_body",
+   "fieldtype": "Text Editor",
+   "label": "Please read carefully and check if you agree with our doctrinal statement",
+   "read_only": 1
   },
   {
    "fieldname": "contactsrefs",
