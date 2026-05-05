@@ -11,6 +11,7 @@
   "letterhead",
   "column_break_icme",
   "logo_dark",
+  "website_logo",
   "section_break_qcbp",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
@@ -460,11 +461,16 @@
   {
    "fieldname": "column_break_qndk",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "website_logo",
+   "fieldtype": "Attach Image",
+   "label": "Website logo"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-05-04 07:51:00.251908",
+ "modified": "2026-05-05 10:33:52.484217",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

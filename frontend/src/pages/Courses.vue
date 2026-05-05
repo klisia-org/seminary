@@ -9,10 +9,10 @@
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
     <!-- To Do Column -->
     <div class="w-full lg:w-1/4 p-4">
-      <h2 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('To Do') }}</h2>
+      <h2 class="text-lg font-semibold text-ink-gray-9">{{ __('To Do') }}</h2>
+      <hr class="border-outline-gray-2 mb-4" />
       <div v-if="isStudent || isInstructor">
         <div v-for="entry in courseToDoList" :key="entry.course.name">
-          <h3 class="text-md font-medium mb-2 text-ink-gray-9">{{ entry.course.name }}</h3>
           <CourseCardToDo :course="entry.course.name" :singleCourse="false" />
         </div>
 

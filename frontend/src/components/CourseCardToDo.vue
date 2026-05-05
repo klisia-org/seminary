@@ -1,13 +1,18 @@
 <template>
-  <div v-if="course" class="border-2 rounded-md min-w-80 p-5 mt-2 mb-3">
-    <div v-if="singleCourse" class="text-3xl font-semibold text-ink-gray-9 text-center">
+  <div v-if="course" class="border-2 rounded-md min-w-80 mt-2 mb-3 overflow-hidden">
+    <div v-if="singleCourse" class="text-3xl font-semibold text-ink-gray-9 text-center px-5 pt-5">
       {{ __("To Do") }}
     </div>
+    <div v-else-if="course.data?.course"
+      class="bg-surface-gray-1 border-b px-5 py-3 text-base font-semibold text-ink-gray-8 truncate">
+      {{ course.data.course }}
+    </div>
 
+    <div class="px-5 py-4">
     <!-- Student View -->
     <div v-if="course.data?.course && isStudent" class="text-ink-gray-8">
       <section v-if="missingAssessments.data?.length" class="missing-assessments mt-4">
-        <h3 class="text-xl font-semibold text-ink-gray-9">{{ __("Missing Assessments") }}</h3>
+        <h3 class="text-xl mb-3 font-semibold text-ink-gray-9">{{ __("Missing Assessments") }}</h3>
         <ul>
           <li v-for="assessment in missingAssessments.data" :key="assessment.id" class="text-ink-gray-8">
             {{ assessment.title }} ({{ __('Due') }}: {{ formatDate(assessment.due_date) }})
@@ -15,18 +20,16 @@
         </ul>
       </section>
 
-      <section v-if="assessments?.data?.length" class="due-soon mt-4">
+      <section v-if="dueSoonAssessments.length" class="due-soon mt-4">
         <h3 class="text-xl font-semibold text-ink-gray-9">{{ __('Due Soon') }}</h3>
         <ul>
-          <li
-            v-for="assessment in assessments.data.filter(a => !a.submitted && a.due_date && new Date(a.due_date) >= new Date()).slice(0, 5)"
-            :key="assessment.id">
+          <li v-for="assessment in dueSoonAssessments" :key="assessment.id">
             {{ assessment.title }} ({{ __('Due') }}: {{ formatDate(assessment.due_date) }})
           </li>
         </ul>
       </section>
 
-      <section v-if="!missingAssessments.data?.length && !assessments.data?.length" class="no-assessments mt-4">
+      <section v-if="!missingAssessments.data?.length && !dueSoonAssessments.length" class="no-assessments mt-4">
         <h3 class="text-xl font-semibold text-ink-gray-9">
           {{ __("Congrats! No assessments for now.") }}
         </h3>
@@ -60,6 +63,7 @@
         {{ __('Congrats! No assessments to grade for now.') }}
       </h3>
     </div>
+    </div>
   </div>
 </template>
 
@@ -67,7 +71,7 @@
 import { PartyPopper, BookOpenCheck, FileUp } from 'lucide-vue-next'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 import dayjs from '@/utils/dayjs'
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 
 const user = inject('$user')
 const props = defineProps({
@@ -91,6 +95,13 @@ const {
 } = useCourseToDo(props.course, user)
 
 const formatDate = (date) => dayjs(date).fromNow()
+
+const dueSoonAssessments = computed(() => {
+  const now = new Date()
+  return (assessments?.data ?? [])
+    .filter(a => !a.submitted && a.due_date && new Date(a.due_date) >= now)
+    .slice(0, 5)
+})
 </script>
 
 <style scoped>
