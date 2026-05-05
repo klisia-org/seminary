@@ -1,66 +1,129 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2024-05-11 18:14:35.516599",
+ "autoname": "hash",
+ "creation": "2026-05-04 13:17:54.149743",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "doctrinalst"
+  "ds_title",
+  "column_break_qeqf",
+  "active",
+  "section_break_hkwh",
+  "doctrinal_statement",
+  "section_break_bqhb",
+  "use_in_student_admission",
+  "column_break_xykp",
+  "ds_instructor",
+  "column_break_mkms",
+  "ds_web",
+  "amended_from"
  ],
  "fields": [
   {
-   "fieldname": "doctrinalst",
+   "fieldname": "ds_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "doctrinal_statement",
    "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Doctrinal Statement",
-   "reqd": 1,
-   "translatable": 1
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_bqhb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_in_student_admission",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Use in Student Admission"
+  },
+  {
+   "fieldname": "column_break_xykp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "ds_instructor",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Instructors"
+  },
+  {
+   "fieldname": "column_break_mkms",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "ds_web",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Use in the website"
+  },
+  {
+   "fieldname": "column_break_qeqf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Active",
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_hkwh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Doctrinal Statement",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
- "issingle": 1,
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2024-05-15 23:10:51.443306",
+ "modified": "2026-05-04 13:28:59.290988",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Doctrinal Statement",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
    "create": 1,
    "delete": 1,
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
+   "report": 1,
    "role": "System Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Student Applicant",
-   "share": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Academics User",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Student",
-   "share": 1
   }
  ],
- "route": "doctrine",
- "sort_field": "modified",
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "ds_title"
 }

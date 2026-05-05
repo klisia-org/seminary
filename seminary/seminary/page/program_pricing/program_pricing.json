@@ -1,0 +1,26 @@
+{
+ "content": null,
+ "creation": "2026-05-04 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-05-04 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "program-pricing",
+ "owner": "Administrator",
+ "page_name": "program-pricing",
+ "roles": [
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "Seminary Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Program Pricing"
+}

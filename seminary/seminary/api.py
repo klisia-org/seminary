@@ -2770,6 +2770,177 @@ def generate_nay_invoices(academic_year):
     return counts
 
 
+def _ensure_applicant_customer(applicant):
+    """Return the Customer for a Student Applicant, creating one if missing.
+
+    Strategy: prefer the link already on the applicant, then a Customer
+    matching the applicant's email, then create a fresh Customer using the
+    applicant's title and customer_group (defaulting to "Individual").
+    """
+    if applicant.customer and frappe.db.exists("Customer", applicant.customer):
+        return applicant.customer
+
+    if applicant.student_email_id:
+        existing = frappe.db.get_value(
+            "Customer",
+            {"email_id": applicant.student_email_id},
+            "name",
+        )
+        if existing:
+            applicant.db_set("customer", existing, update_modified=False)
+            return existing
+
+    customer_group = applicant.customer_group or "Individual"
+    if not frappe.db.exists("Customer Group", customer_group):
+        frappe.throw(
+            _(
+                "Customer Group {0} does not exist; set a valid Customer Group on the applicant before submitting."
+            ).format(customer_group)
+        )
+
+    customer = frappe.get_doc(
+        {
+            "doctype": "Customer",
+            "customer_name": applicant.title or applicant.name,
+            "customer_type": "Individual",
+            "customer_group": customer_group,
+            "email_id": applicant.student_email_id,
+        }
+    )
+    customer.flags.ignore_permissions = True
+    customer.insert(ignore_permissions=True)
+    applicant.db_set("customer", customer.name, update_modified=False)
+    return customer.name
+
+
+def generate_application_invoices(applicant_name):
+    """Generate Application-fee Sales Invoices for a Student Applicant.
+
+    Walks `Program.pgm_pgmfees` rows where `pgm_feeevent = 'Application'`
+    and creates one Sales Invoice per submitted Fee Category that has an
+    Item Price under the resolved Customer Group's default price list.
+
+    Idempotent: per-row safety net via `seminary_trigger = APP:<applicant>:<pf_row>`.
+    Free programs and applicants whose Program has no Application fee
+    configured are no-ops.
+    """
+    if not applicant_name:
+        return _empty_invoice_result("no applicant")
+    applicant = frappe.get_doc("Student Applicant", applicant_name)
+    if not applicant.program:
+        return _empty_invoice_result("no program")
+    program = frappe.get_doc("Program", applicant.program)
+    if program.is_free:
+        return _empty_invoice_result("free program")
+
+    application_rows = [
+        row
+        for row in (program.pgm_pgmfees or [])
+        if row.pgm_feeevent == "Application" and row.pgm_feecategory
+    ]
+    if not application_rows:
+        return _empty_invoice_result("no Application fee configured on program")
+
+    customer = _ensure_applicant_customer(applicant)
+    customer_group = frappe.db.get_value("Customer", customer, "customer_group")
+    default_price_list = frappe.db.get_value(
+        "Customer Group", customer_group, "default_price_list"
+    )
+    if not default_price_list:
+        frappe.throw(
+            _(
+                "Customer Group {0} has no default Price List; cannot price the Application fee."
+            ).format(customer_group)
+        )
+
+    ctx = _billing_context()
+    counts = {"created": 0, "skipped": 0, "failed": 0}
+
+    for pf_row in application_rows:
+        tag = f"APP:{applicant_name}:{pf_row.name}"
+        if frappe.db.exists(
+            "Sales Invoice", {"seminary_trigger": tag, "docstatus": ["<", 2]}
+        ):
+            counts["skipped"] += 1
+            continue
+
+        fc = frappe.db.get_value(
+            "Fee Category",
+            pf_row.pgm_feecategory,
+            ["item", "payment_term_template", "docstatus"],
+            as_dict=True,
+        )
+        if not fc or fc.docstatus != 1 or not fc.item:
+            counts["skipped"] += 1
+            continue
+
+        price_list_rate = frappe.db.get_value(
+            "Item Price",
+            {"price_list": default_price_list, "item_code": fc.item},
+            "price_list_rate",
+        )
+        if price_list_rate is None:
+            counts["skipped"] += 1
+            frappe.log_error(
+                f"No Item Price for {fc.item} on {default_price_list}; "
+                f"skipped Application fee for {applicant_name}.",
+                "generate_application_invoices",
+            )
+            continue
+
+        summary = _("Application — {0}").format(pf_row.pgm_feecategory)
+        try:
+            si = frappe.get_doc(
+                {
+                    "doctype": "Sales Invoice",
+                    "naming_series": "ACC-SINV-.YYYY.-",
+                    "posting_date": ctx["today"],
+                    "company": ctx["company"],
+                    "currency": ctx["currency"],
+                    "debit_to": ctx["receivable_account"],
+                    "income_account": ctx["income_account"],
+                    "conversion_rate": 1,
+                    "customer": customer,
+                    "selling_price_list": default_price_list,
+                    "base_grand_total": price_list_rate,
+                    "payment_terms_template": fc.payment_term_template,
+                    "remarks": summary,
+                    "seminary_trigger": tag,
+                    "seminary_summary": summary,
+                    "items": [
+                        {
+                            "doctype": "Sales Invoice Item",
+                            "item_code": fc.item,
+                            "qty": 1,
+                            "rate": 0,
+                            "description": _("Application fee for program {0}").format(
+                                applicant.program
+                            ),
+                            "income_account": ctx["income_account"],
+                            "cost_center": ctx["cost_center"],
+                            "base_rate": 0,
+                            "price_list_rate": price_list_rate,
+                        }
+                    ],
+                    "cost_center": ctx["cost_center"],
+                }
+            )
+            si.flags.ignore_permissions = True
+            si.run_method("set_missing_values")
+            si.insert(ignore_permissions=True)
+            if ctx["auto_submit"]:
+                si.submit()
+            counts["created"] += 1
+        except Exception:
+            counts["failed"] += 1
+            frappe.log_error(
+                frappe.get_traceback(), f"seminary application billing tag {tag}"
+            )
+
+    frappe.logger().info(f"generate_application_invoices({applicant_name}): {counts}")
+    return counts
+
+
 @frappe.whitelist()
 def insert_cs_assessment(criteria):
     # If criteria is already a dict, use it directly.
@@ -3341,10 +3512,165 @@ def course_event(name):
 
 @frappe.whitelist(allow_guest=True)
 def get_doctrinal_statement():
-    doctrinal_statement = frappe.get_doc("Doctrinal Statement")
-    doctrinal_statement = doctrinal_statement.doctrinalst
+    """Return the current admission Doctrinal Statement for the web form.
 
-    return doctrinal_statement
+    Picks the most recently created submitted DS that is both `active` and
+    flagged `use_in_student_admission`. Returns `{name, title, body}` or
+    None if none configured. The body is the HTML stored in the DS's
+    `doctrinal_statement` field, ready for direct injection.
+    """
+    row = frappe.db.get_value(
+        "Doctrinal Statement",
+        {
+            "active": 1,
+            "use_in_student_admission": 1,
+            "docstatus": 1,
+        },
+        ["name", "ds_title", "doctrinal_statement"],
+        as_dict=True,
+        order_by="creation desc",
+    )
+    if not row:
+        return None
+    return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_application_payment_url(applicant_name):
+    """Return a payment URL for a Student Applicant's outstanding Application
+    Sales Invoice, plus any alternative payment instructions configured on
+    Seminary Settings. Used by the public Student Applicant web form to let
+    applicants pay immediately after submitting.
+
+    Returns a dict:
+        payment_url: gateway URL (None if no gateway / no SI / already paid)
+        amount: outstanding amount on the invoice
+        currency: invoice currency
+        alternative_instructions: HTML from Seminary Settings (if configured)
+    Returns None if applicant doesn't exist.
+    """
+    if not applicant_name or not frappe.db.exists("Student Applicant", applicant_name):
+        return None
+
+    settings = frappe.get_single("Seminary Settings")
+    alternative_instructions = settings.get("alternative_payment_instructions") or None
+
+    invoice = frappe.db.sql(
+        """
+        SELECT name, currency, outstanding_amount
+        FROM `tabSales Invoice`
+        WHERE seminary_trigger LIKE %(prefix)s
+          AND docstatus < 2
+          AND outstanding_amount > 0
+        ORDER BY creation DESC
+        LIMIT 1
+        """,
+        {"prefix": f"APP:{applicant_name}:%"},
+        as_dict=True,
+    )
+
+    if not invoice:
+        return {
+            "payment_url": None,
+            "amount": None,
+            "currency": None,
+            "alternative_instructions": alternative_instructions,
+        }
+
+    inv = invoice[0]
+    payment_url = None
+    if settings.portal_payment_enable and settings.payment_gateway:
+        try:
+            payment_url = _create_application_payment_url(inv.name, settings)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"get_application_payment_url({applicant_name})",
+            )
+
+    return {
+        "payment_url": payment_url,
+        "amount": inv.outstanding_amount,
+        "currency": inv.currency,
+        "alternative_instructions": alternative_instructions,
+    }
+
+
+def _create_application_payment_url(invoice_name, settings):
+    """Create a Payment Request for an Application SI and return the URL.
+    Mirrors get_invoice_payment_url but skips the student-permission gate
+    (applicant payments come from the guest web form context — they need
+    to pay before they have a Student record)."""
+    gateway_account = frappe.db.get_value(
+        "Payment Gateway Account",
+        {"payment_gateway": settings.payment_gateway},
+        "name",
+    )
+    if not gateway_account:
+        return None
+
+    from erpnext.accounts.doctype.payment_request.payment_request import (
+        cancel_old_payment_requests,
+        get_amount,
+        get_gateway_details,
+    )
+
+    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
+    gateway = (
+        get_gateway_details(
+            frappe._dict(
+                {
+                    "payment_gateway_account": gateway_account,
+                    "company": ref_doc.company,
+                }
+            )
+        )
+        or frappe._dict()
+    )
+
+    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
+    if not grand_total:
+        return None
+
+    cancel_old_payment_requests("Sales Invoice", invoice_name)
+
+    pr = frappe.new_doc("Payment Request")
+    pr.update(
+        {
+            "payment_gateway_account": gateway.get("name"),
+            "payment_gateway": gateway.get("payment_gateway"),
+            "payment_account": gateway.get("payment_account"),
+            "payment_channel": gateway.get("payment_channel"),
+            "payment_request_type": "Inward",
+            "currency": ref_doc.currency,
+            "grand_total": grand_total,
+            "email_to": ref_doc.owner,
+            "subject": _("Application Payment for {0}").format(ref_doc.customer),
+            "message": gateway.get("message") or "",
+            "reference_doctype": "Sales Invoice",
+            "reference_name": invoice_name,
+            "company": ref_doc.company,
+            "party_type": "Customer",
+            "party": ref_doc.customer,
+            "mute_email": 1,
+        }
+    )
+    pr.flags.ignore_permissions = True
+    pr.insert(ignore_permissions=True)
+    pr.submit()
+    return pr.get_payment_url()
+
+
+@frappe.whitelist(allow_guest=True)
+def get_default_phone_country():
+    """Return the configured Seminary company's country as a full name
+    string (e.g. "United States"). Frappe's Phone control reads
+    `frappe.sys_defaults.country` and matches by name; web forms set this
+    on load to override the hard-coded "India" default."""
+    company = frappe.db.get_single_value("Seminary Settings", "company")
+    if not company:
+        return None
+    return frappe.db.get_value("Company", company, "country")
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4108,3 +4434,214 @@ def preview_announcement_recipients(name):
         "total": len(resolved),
         "sample": resolved[:50],
     }
+
+
+_PROGRAM_PRICING_TEMPLATE = """
+<style>
+.program-pricing { font-size: 13px; margin-left: 6px; }
+.program-pricing h2 { margin-top: 1.5rem; padding-bottom: 0.25rem; border-bottom: 2px solid #333; }
+.program-pricing h2 .currency { font-weight: normal; color: #555; font-size: 0.85em; }
+.program-pricing .customer-groups { margin: 0.5rem 0 1rem; color: #444; }
+.program-pricing .program-block { margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 4px; page-break-inside: avoid; }
+.program-pricing .program-block h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+.program-pricing .program-meta { list-style: none; padding: 0; margin: 0 0 0.75rem; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; color: #333; }
+.program-pricing .program-meta li { margin: 0; }
+.program-pricing .fees-table { width: 100%; border-collapse: collapse; }
+.program-pricing .fees-table th, .program-pricing .fees-table td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+.program-pricing .fees-table th { background: #f5f5f5; font-weight: 600; }
+.program-pricing .fees-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.program-pricing .not-priced { color: #c0392b; font-weight: 600; }
+.program-pricing .check { color: #2e7d32; font-weight: 700; }
+.program-pricing .no-fees { color: #777; font-style: italic; margin: 0; }
+@media print {
+  .program-pricing h2 { page-break-after: avoid; }
+}
+</style>
+<div class="program-pricing">
+{% for pl in price_lists %}
+  <section class="price-list-section">
+    <h2>{{ _("Price List") }}: {{ pl.name }}{% if pl.currency %} <span class="currency">— {{ _("Currency") }}: {{ pl.currency }}</span>{% endif %}</h2>
+    <p class="customer-groups">
+      <strong>{{ _("This price list affects the following customer groups:") }}</strong>
+      {% if pl.customer_groups %}{{ pl.customer_groups | join(", ") }}{% else %}<em>{{ _("None") }}</em>{% endif %}
+    </p>
+    {% for program in programs %}
+      <article class="program-block">
+        <h3>{{ program.program_name or program.name }}</h3>
+        <ul class="program-meta">
+          <li><strong>{{ _("Free Program") }}:</strong> {% if program.is_free %}<span class="check">✓</span>{% else %}—{% endif %}</li>
+          <li><strong>{{ _("Require Payment Before Enrollment") }}:</strong> {% if program.require_pay_submit %}<span class="check">✓</span>{% else %}—{% endif %}</li>
+          <li><strong>{{ _("Minimum Payment %") }}:</strong> {{ (program.percent_to_pay or 0) }}%</li>
+        </ul>
+        {% if program.fees %}
+        <table class="fees-table">
+          <thead>
+            <tr>
+              <th>{{ _("Fee Category") }}</th>
+              <th>{{ _("Event to charge") }}</th>
+              <th>{{ _("Item") }}</th>
+              <th>{{ _("Academic Credit") }}</th>
+              <th>{{ _("Audit") }}</th>
+              <th>{{ _("Payment Term") }}</th>
+              <th>{{ _("Item Price") }}</th>
+              <th>{{ _("Price last modified on") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fee in program.fees %}
+              {% set price = pl.prices.get(fee.item) if fee.item else None %}
+              <tr>
+                <td>{{ fee.fee_category or "—" }}</td>
+                <td>{{ fee.event or "—" }}</td>
+                <td>{{ fee.item or "—" }}</td>
+                <td>{% if fee.is_credit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
+                <td>{% if fee.is_audit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
+                <td>{{ fee.payment_term_template or "—" }}</td>
+                {% if price %}
+                  <td class="num">{{ "{:,.2f}".format(price.rate or 0) }}</td>
+                  <td>{{ price.modified_display or "—" }}</td>
+                {% else %}
+                  <td class="not-priced">{{ _("Not priced") }}</td>
+                  <td class="not-priced">—</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="no-fees">{{ _("No fees configured.") }}</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <p>{{ _("No selling price lists found.") }}</p>
+{% endfor %}
+</div>
+"""
+
+
+@frappe.whitelist()
+def get_program_pricing_html():
+    """Render the Program Pricing report (one block per selling Price List).
+
+    Resolves: customer groups whose default_price_list = the price list,
+    every Program with its Program Fees rows, the Fee Category lookups
+    (item, is_credit, is_audit, payment_term_template), and the matching
+    Item Price for the chosen Price List.
+    """
+    price_lists = frappe.get_all(
+        "Price List",
+        filters={"selling": 1, "enabled": 1},
+        fields=["name", "currency"],
+        order_by="name asc",
+    )
+
+    programs_raw = frappe.get_all(
+        "Program",
+        fields=[
+            "name",
+            "program_name",
+            "is_free",
+            "require_pay_submit",
+            "percent_to_pay",
+        ],
+        order_by="program_name asc",
+    )
+    program_names = [p["name"] for p in programs_raw]
+
+    fee_rows = []
+    if program_names:
+        fee_rows = frappe.get_all(
+            "Program Fees",
+            filters={"parenttype": "Program", "parent": ["in", program_names]},
+            fields=["parent", "pgm_feecategory", "pgm_feeevent", "idx"],
+            order_by="parent asc, idx asc",
+        )
+
+    fee_category_names = sorted(
+        {r["pgm_feecategory"] for r in fee_rows if r.get("pgm_feecategory")}
+    )
+    fee_categories = {}
+    if fee_category_names:
+        for fc in frappe.get_all(
+            "Fee Category",
+            filters={"name": ["in", fee_category_names]},
+            fields=[
+                "name",
+                "category_name",
+                "item",
+                "is_credit",
+                "is_audit",
+                "payment_term_template",
+            ],
+        ):
+            fee_categories[fc["name"]] = fc
+
+    fees_by_program = {}
+    referenced_items = set()
+    for r in fee_rows:
+        fc = fee_categories.get(r.get("pgm_feecategory")) or {}
+        item = fc.get("item")
+        if item:
+            referenced_items.add(item)
+        fees_by_program.setdefault(r["parent"], []).append(
+            {
+                "fee_category": fc.get("category_name") or r.get("pgm_feecategory"),
+                "event": r.get("pgm_feeevent"),
+                "item": item,
+                "is_credit": fc.get("is_credit"),
+                "is_audit": fc.get("is_audit"),
+                "payment_term_template": fc.get("payment_term_template"),
+            }
+        )
+
+    programs = []
+    for p in programs_raw:
+        programs.append({**p, "fees": fees_by_program.get(p["name"], [])})
+
+    enriched_price_lists = []
+    for pl in price_lists:
+        customer_groups = [
+            cg["name"]
+            for cg in frappe.get_all(
+                "Customer Group",
+                filters={"default_price_list": pl["name"]},
+                fields=["name"],
+                order_by="name asc",
+            )
+        ]
+
+        prices = {}
+        if referenced_items:
+            for ip in frappe.get_all(
+                "Item Price",
+                filters={
+                    "price_list": pl["name"],
+                    "item_code": ["in", list(referenced_items)],
+                },
+                fields=["item_code", "price_list_rate", "modified"],
+                order_by="modified desc",
+            ):
+                if ip["item_code"] in prices:
+                    continue
+                prices[ip["item_code"]] = {
+                    "rate": ip.get("price_list_rate"),
+                    "modified_display": frappe.utils.format_datetime(
+                        ip.get("modified"), "yyyy-MM-dd HH:mm"
+                    ),
+                }
+
+        enriched_price_lists.append(
+            {
+                "name": pl["name"],
+                "currency": pl.get("currency"),
+                "customer_groups": customer_groups,
+                "prices": prices,
+            }
+        )
+
+    return frappe.render_template(
+        _PROGRAM_PRICING_TEMPLATE,
+        {"price_lists": enriched_price_lists, "programs": programs},
+    )

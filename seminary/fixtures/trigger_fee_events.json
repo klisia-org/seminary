@@ -46,5 +46,13 @@
   "modified": "2026-05-02 13:00:00.000000",
   "name": "Graduation Request",
   "trigger": "Graduation Request"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2026-05-04 12:00:00.000000",
+  "name": "Application",
+  "trigger": "Application"
  }
 ]

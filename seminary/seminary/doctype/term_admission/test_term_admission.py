@@ -12,9 +12,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestDoctrinalStatement(IntegrationTestCase):
+class IntegrationTestTermAdmission(IntegrationTestCase):
     """
-    Integration tests for DoctrinalStatement.
+    Integration tests for TermAdmission.
     Use this class for testing interactions between multiple components.
     """
 
