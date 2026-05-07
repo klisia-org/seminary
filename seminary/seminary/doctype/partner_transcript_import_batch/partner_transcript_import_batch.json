@@ -3,7 +3,7 @@
  "allow_import": 1,
  "autoname": "format:TRIM-{YY}-{#####}",
  "creation": "2026-04-20 12:00:00",
- "description": "Orchestrates the stage \u2192 resolve \u2192 dry-run \u2192 commit workflow for both legacy bulk import and single-student external transfer. See ADR 005 'Legacy Bulk Import Workflow'.",
+ "description": "Orchestrates the stage \u2192 resolve \u2192 dry-run \u2192 commit workflow for both legacy bulk import and single-student external transfer.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

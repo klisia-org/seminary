@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "format:{course_name}",
  "creation": "2015-09-07 12:39:55.181893",
+ "description": "Course is the reusable subject taught, bridging Program and Course Schedule and defining pre-requisites and description.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

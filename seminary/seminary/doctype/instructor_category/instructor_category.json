@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:category_name",
  "creation": "2026-04-23 00:00:00.000000",
+ "description": "Categories to be selected on Course Schedule per Instructor. Serves also to establish payment rates.",
  "doctype": "DocType",
  "document_type": "Setup",
  "engine": "InnoDB",

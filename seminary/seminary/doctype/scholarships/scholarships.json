@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "format:{scholarship}-{program}",
  "creation": "2025-02-19 14:26:55.249123",
+ "description": "Scholarships are set per Program and can affect Fee Categories in different proportions. They are granted to students in their Program Enrollment.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
