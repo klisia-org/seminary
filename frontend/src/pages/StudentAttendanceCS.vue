@@ -300,10 +300,12 @@ const markAttendance = async () => {
   //console.log("Students Present:", studentsPresent);
 
 
+  try {
     const response = await fetch("/api/method/seminary.seminary.api.mark_attendance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Frappe-CSRF-Token": getCsrfToken(),
       },
       body: JSON.stringify({
         course_schedule: props.courseName,
@@ -311,20 +313,34 @@ const markAttendance = async () => {
         students_present: studentsPresent,
         students_absent: studentsAbsent,
       }),
-    })
-
-    .then(response => response.json())
-    .then(data => {
-      if (data.message) {
-        toast.success(__('Attendance updated successfully'));
-        meetingDates.reload();
-        attendanceResource.reload();
-      }
-    })
-    .catch((error) => {
-      console.error('Error:', error);
     });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?._server_messages
+        ? JSON.parse(payload._server_messages)
+            .map((m) => {
+              try { return JSON.parse(m).message; } catch { return m; }
+            })
+            .join('\n')
+        : payload?.exception || payload?.message || `HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    if (payload.message) {
+      toast.success(__('Attendance updated successfully'));
+      meetingDates.reload();
+      attendanceResource.reload();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error(error?.message || String(error));
+  }
 }
+
+const getCsrfToken = () =>
+  window.csrf_token ||
+  window.frappe?.csrf_token ||
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+  ''
 
 const course = createResource({
 	url: 'seminary.seminary.utils.get_course_details',
