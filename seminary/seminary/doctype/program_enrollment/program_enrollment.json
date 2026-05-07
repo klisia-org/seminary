@@ -3,6 +3,7 @@
  "allow_import": 1,
  "autoname": "format:{student_name}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
+ "description": "Students must enrolled to access courses. From here, access to Payers for the PE per fee category and scholarship granted.",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",

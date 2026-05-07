@@ -5,6 +5,7 @@
  "allow_rename": 1,
  "autoname": "field:program_name",
  "creation": "2015-09-07 12:54:03.609282",
+ "description": "Students need to enroll in a Program to access courses. Programs have their own academic and financial settings.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

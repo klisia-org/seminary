@@ -3,6 +3,7 @@
  "allow_guest_to_view": 1,
  "autoname": "format:{course_data}-{academic_term}-{####}",
  "creation": "2024-03-06 17:42:21.146997",
+ "description": "Students may only enroll in courses for their Program and that they are elligible for. Withdrawals can be requested through here.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

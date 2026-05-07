@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "postinstall": "vite build"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

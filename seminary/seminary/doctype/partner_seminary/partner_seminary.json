@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "field:partner_seminary_name",
  "creation": "2026-04-20 12:00:00",
- "description": "An external or self-referential (legacy) institution whose coursework is recognized by this seminary. See ADR 005.",
+ "description": "An external or self-referential (legacy) institution whose coursework is recognized by this seminary.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

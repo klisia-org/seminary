@@ -423,7 +423,7 @@
   "serial_no_series": null,
   "shelf_life_in_days": 0,
   "standard_rate": 0.0,
-  "stock_uom": "Academic Event",
+  "stock_uom": "Fee",
   "supplier_items": [],
   "taxes": [],
   "total_projected_qty": 0.0,
@@ -433,7 +433,7 @@
     "parent": "Audit Flat Fee",
     "parentfield": "uoms",
     "parenttype": "Item",
-    "uom": "Academic Event"
+    "uom": "Fee"
    }
   ],
   "valuation_method": "",
@@ -532,7 +532,7 @@
   "serial_no_series": null,
   "shelf_life_in_days": 0,
   "standard_rate": 0.0,
-  "stock_uom": "Academic Event",
+  "stock_uom": "Hour",
   "supplier_items": [],
   "taxes": [],
   "total_projected_qty": 0.0,
@@ -542,7 +542,7 @@
     "parent": "Audit Credit Hour",
     "parentfield": "uoms",
     "parenttype": "Item",
-    "uom": "Academic Event"
+    "uom": "Hour"
    }
   ],
   "valuation_method": "",

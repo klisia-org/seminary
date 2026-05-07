@@ -4,6 +4,7 @@
  "allow_import": 1,
  "autoname": "format:{course}-{academic_term}-{section}",
  "creation": "2015-09-09 16:34:04.960369",
+ "description": "A live instance of a course, with its own instructor, assessments, lessons, etc. After saving, you can import a template for the LMS.",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
