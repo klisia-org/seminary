@@ -12,7 +12,7 @@
  "idx": 2,
  "indicator_color": "green",
  "is_hidden": 0,
- "label": "Getting Started - SeminaryERP",
+ "label": "Getting Started SeminaryERP",
  "link_type": "DocType",
  "links": [
   {
@@ -344,10 +344,10 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-07 12:52:13.219147",
+ "modified": "2026-05-07 13:10:29.407724",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Getting Started - SeminaryERP",
+ "name": "Getting Started SeminaryERP",
  "number_cards": [],
  "owner": "Administrator",
  "parent_page": "Seminary",
@@ -438,6 +438,6 @@
    "type": "DocType"
   }
  ],
- "title": "Getting Started - SeminaryERP",
+ "title": "Getting Started SeminaryERP",
  "type": "Workspace"
 }

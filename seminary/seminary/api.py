@@ -2965,6 +2965,7 @@ def insert_cs_assessment(criteria):
             "quiz": criteria.get("quiz"),
             "exam": criteria.get("exam"),
             "assignment": criteria.get("assignment"),
+            "discussion": criteria.get("discussion"),
             "extracredit_scac": criteria.get("extracredit_scac"),
             "fudgepoints_scac": criteria.get("fudgepoints_scac"),
         }

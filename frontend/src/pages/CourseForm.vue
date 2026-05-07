@@ -161,7 +161,7 @@ const course = reactive({
 const maxShortIntroductionLength = 55;
 
 const remainingCharacters = computed(() => {
-	const typedLength = course.short_introduction.length || 0;
+	const typedLength = course.short_introduction?.length || 0;
 	return maxShortIntroductionLength - typedLength;
 });
 

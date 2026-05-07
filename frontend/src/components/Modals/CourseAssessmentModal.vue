@@ -251,26 +251,50 @@ const toggleExtraCredit = (checked) => {
   }
 }
 
-const insertCriteria = (close) => {
-  fetch('/api/method/seminary.seminary.api.insert_cs_assessment', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ criteria }),
-  })
-    .then((response) => response.json())
-    .then(() => {
-      toast.success(__('Course Assessment added successfully'))
-      emit('assessment-saved')
-      show.value = false
-      resetCriteria()
-      close()
-    })
-    .catch((error) => {
-      console.error('Error:', error)
-      toast.error(error.messages?.[0] || error)
-    })
+const getCsrfToken = () =>
+  window.csrf_token ||
+  window.frappe?.csrf_token ||
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+  ''
+
+const insertCriteria = async (close) => {
+  try {
+    const response = await fetch(
+      '/api/method/seminary.seminary.api.insert_cs_assessment',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Frappe-CSRF-Token': getCsrfToken(),
+        },
+        body: JSON.stringify({ criteria }),
+      }
+    )
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const message =
+        payload?._server_messages
+          ? JSON.parse(payload._server_messages)
+              .map((m) => {
+                try {
+                  return JSON.parse(m).message
+                } catch {
+                  return m
+                }
+              })
+              .join('\n')
+          : payload?.exception || payload?.message || `HTTP ${response.status}`
+      throw new Error(message)
+    }
+    toast.success(__('Course Assessment added successfully'))
+    emit('assessment-saved')
+    show.value = false
+    resetCriteria()
+    close()
+  } catch (error) {
+    console.error('Error:', error)
+    toast.error(error?.message || String(error))
+  }
 }
 
 const handleCancel = (close) => {

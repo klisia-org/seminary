@@ -7,7 +7,7 @@
  "charts": [
   {
    "chart": "Enrolled Students",
-   "width": "Half"
+   "width": "Full"
   },
   {
    "chart": "Students per current courses",
@@ -18,10 +18,10 @@
  "dashboard_name": "Seminary",
  "docstatus": 0,
  "doctype": "Dashboard",
- "idx": 1,
+ "idx": 3,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-04-18 13:57:47.451445",
+ "modified": "2026-05-07 13:22:12.927111",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",

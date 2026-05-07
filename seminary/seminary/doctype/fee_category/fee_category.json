@@ -124,7 +124,7 @@
  "icon": "fa fa-flag",
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-21 13:01:45.808506",
+ "modified": "2026-05-07 13:07:23.548419",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Fee Category",
@@ -141,6 +141,7 @@
    "report": 1,
    "role": "Academics User",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -153,6 +154,7 @@
    "report": 1,
    "role": "Accounts User",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -165,6 +167,7 @@
    "report": 1,
    "role": "Accounts Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
