@@ -3,7 +3,7 @@
  "creation": "2026-02-19 08:48:46.621520",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "circle-dollar-sign",
+ "header_icon": "plane-takeoff",
  "idx": 0,
  "items": [
   {
@@ -13,7 +13,7 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Getting Started SeminaryERP",
-   "link_to": "Getting Started - SeminaryERP",
+   "link_to": "Getting Started SeminaryERP",
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
@@ -41,13 +41,37 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book-open-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Academics",
+   "link_to": "Academics",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "chart-bar-big",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "Seminary",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-30 12:57:37.548607",
+ "modified": "2026-05-07 13:16:26.416923",
  "modified_by": "Administrator",
  "module": "Seminary",
- "name": "Getting Started - SeminaryERP",
+ "name": "Getting Started SeminaryERP",
  "owner": "Administrator",
  "standard": 1,
- "title": "Getting Started - SeminaryERP"
+ "title": "Getting Started SeminaryERP"
 }

@@ -87,14 +87,6 @@ const course = createResource({
 const subscribeCourseCalendar = () => {
 
     const calendarUrl = `${window.location.origin}/api/method/seminary.seminary.calendar.course_ics?course_schedule=${encodeURIComponent(props.courseName)}&token=${encodeURIComponent(course.data.calendar_token)}`;
-    const calendardata = fetch(calendarUrl).then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    });
-    console.log('Calendar URL:', calendarUrl);
-    console.log('Calendar Data:', calendardata);
     navigator.clipboard.writeText(calendarUrl).then(() => {
         alert(__('Calendar URL copied to clipboard! You can now add it to your calendar application.'));
     }, () => {
