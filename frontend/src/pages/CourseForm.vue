@@ -264,38 +264,45 @@ const imageResource = createResource({
 	}
 })
 
-const submitCourse = () => {
-	if (courseResource.data) {
-		fetch('/api/method/seminary.seminary.api.save_course', {
+const getCsrfToken = () =>
+	window.csrf_token ||
+	window.frappe?.csrf_token ||
+	document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+	''
+
+const submitCourse = async () => {
+	if (!courseResource.data) return;
+	try {
+		const response = await fetch('/api/method/seminary.seminary.api.save_course', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'X-Frappe-CSRF-Token': window.csrf_token,
+				'X-Frappe-CSRF-Token': getCsrfToken(),
 			},
 			body: JSON.stringify({
 				course: courseResource.data.name,
 				course_data: course,
 			}),
-		})
-			.then((response) => {
-				if (!response.ok) {
-					throw new Error(`HTTP error! Status: ${response.status}`);
-				}
-				return response.json();
-			})
-			.then((data) => {
-				// Check success in the nested message object
-				if (data.message && data.message.success) {
-					toast.success(__('Course updated successfully'));
-				} else {
-					toast.error(err.messages?.[0] || err);
-				}
-			})
-			.catch((error) => {
-				console.error('Fetch error:', error);
-				const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error.toString();
-				toast.error(errorMessage || __('An error occurred'));
-			});
+		});
+		const payload = await response.json().catch(() => ({}));
+		if (!response.ok) {
+			const message = payload?._server_messages
+				? JSON.parse(payload._server_messages)
+						.map((m) => {
+							try { return JSON.parse(m).message; } catch { return m; }
+						})
+						.join('\n')
+				: payload?.exception || payload?.message || `HTTP ${response.status}`;
+			throw new Error(message);
+		}
+		if (payload.message && payload.message.success) {
+			toast.success(__('Course updated successfully'));
+		} else {
+			toast.error(payload?.message?.error || __('An error occurred'));
+		}
+	} catch (error) {
+		console.error('Fetch error:', error);
+		toast.error(error?.message || __('An error occurred'));
 	}
 };
 

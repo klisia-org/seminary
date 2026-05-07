@@ -404,33 +404,46 @@ function validateCriteria() {
 }
 
 
-function submitCourseAssessment() {
+const getCsrfToken = () =>
+  window.csrf_token ||
+  window.frappe?.csrf_token ||
+  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+  ''
+
+async function submitCourseAssessment() {
   if (!validateCriteria()) {
     toast.error(__('Please fill in all required fields'));
     return;
   }
 
-  // Handle form submission logic here
-  fetch('/api/method/seminary.seminary.api.save_course_assessment', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      course: props.courseName,
-      assessment_data: assessmentCriteria,
-    }),
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
-      if (data.message) {
-        toast.success(__('Course updated successfully'));
-      }
-    })
-    .catch((error) => {
-      console.error('Error:', error);
+  try {
+    const response = await fetch('/api/method/seminary.seminary.api.save_course_assessment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': getCsrfToken(),
+      },
+      body: JSON.stringify({
+        course: props.courseName,
+        assessment_data: assessmentCriteria,
+      }),
     });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?._server_messages
+        ? JSON.parse(payload._server_messages)
+            .map((m) => {
+              try { return JSON.parse(m).message; } catch { return m; }
+            })
+            .join('\n')
+        : payload?.exception || payload?.message || `HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    toast.success(__('Course updated successfully'));
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error(error?.message || String(error));
+  }
 }
 
 async function fetchType(criteria) {
