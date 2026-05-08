@@ -106,18 +106,11 @@ def course_ics(course_schedule=None, token=None):
 
     calendar_data = fold_ics_lines(calendar_data)
 
-    # Directly set the response headers and body
     frappe.local.response.filename = f"{course_schedule}.ics"
     frappe.local.response.filecontent = calendar_data
-    frappe.local.response.type = "binary"
-
-    # Ensure frappe.local.response.headers is initialized
-    if not frappe.local.response.headers:
-        frappe.local.response.headers = {}
-
-    # Set the Content-Type header
-    frappe.local.response.headers["Content-Type"] = "text/calendar; charset=utf-8"
-
+    frappe.local.response.type = "raw"
+    frappe.local.response.content_type = "text/calendar; charset=utf-8"
+    frappe.local.response.display_content_as = "inline"
     return
 
 
