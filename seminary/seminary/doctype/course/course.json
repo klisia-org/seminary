@@ -121,13 +121,14 @@
    "fieldname": "coursecode",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Course Code"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2026-05-02 14:24:10.608217",
- "modified_by": "Administrator",
+ "modified": "2026-05-08 07:43:31.793068",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course",
  "naming_rule": "Expression (old style)",

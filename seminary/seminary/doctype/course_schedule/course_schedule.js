@@ -253,6 +253,47 @@ frappe.ui.form.on("Course Schedule", {
 				}
 			},
 
+	coursecode_cs: async function(frm) {
+		const code = (frm.doc.coursecode_cs || '').trim();
+		if (!code) return;
+
+		// fetch_from echoes the code back after a course is picked; skip the lookup in that case.
+		if (frm.doc.course) {
+			const r = await frappe.db.get_value('Course', frm.doc.course, 'coursecode');
+			if (r.message && r.message.coursecode === code) return;
+		}
+
+		const matches = await frappe.db.get_list('Course', {
+			filters: { coursecode: code },
+			fields: ['name', 'course_name'],
+			limit: 20
+		});
+
+		if (!matches.length) {
+			frappe.show_alert({
+				message: __('No course found with code {0}', [code]),
+				indicator: 'orange'
+			});
+			return;
+		}
+		if (matches.length === 1) {
+			frm.set_value('course', matches[0].name);
+			return;
+		}
+		frappe.prompt(
+			[{
+				fieldname: 'course',
+				fieldtype: 'Select',
+				label: __('Multiple courses match code {0}', [code]),
+				options: matches.map(c => c.name).join('\n'),
+				reqd: 1
+			}],
+			v => frm.set_value('course', v.course),
+			__('Choose Course'),
+			__('Select')
+		);
+	},
+
 
 
 	onload: (frm) => {

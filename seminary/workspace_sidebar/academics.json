@@ -9,15 +9,14 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "app-window-mac",
+   "icon": "book-open-text",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Portal",
-   "link_to": "",
-   "link_type": "URL",
+   "label": "Academics",
+   "link_to": "Academics",
+   "link_type": "Workspace",
    "show_arrow": 0,
-   "type": "Link",
-   "url": "/seminary/courses"
+   "type": "Link"
   },
   {
    "child": 0,
@@ -34,14 +33,15 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "book-open-text",
+   "icon": "app-window-mac",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Academic Setup Home",
-   "link_to": "Academic Setup",
-   "link_type": "Workspace",
+   "label": "Portal",
+   "link_to": "",
+   "link_type": "URL",
    "show_arrow": 0,
-   "type": "Link"
+   "type": "Link",
+   "url": "/seminary/courses"
   },
   {
    "child": 0,
@@ -94,21 +94,21 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "plane-takeoff",
+   "icon": "circle-dollar-sign",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Getting Started",
-   "link_to": "Getting Started - SeminaryERP",
+   "label": "Financial Setup",
+   "link_to": "Getting Started SeminaryERP",
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-04-30 10:58:14.792131",
+ "modified": "2026-05-08 08:27:09.037102",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
- "name": "Academic Setup",
+ "name": "Academics",
  "owner": "Administrator",
  "standard": 1,
- "title": "Academic Setup"
+ "title": "Academics"
 }

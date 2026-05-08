@@ -145,76 +145,6 @@
    "type": "Link"
   },
   {
-   "description": "Each Program may have additional requirements besides total credits and mandatory courses. These can be set here, with a common library of requirements that programs can share and per program requirements that are applied (snapshot) at program enrollment, so if graduation requirements change, it only affects previously enrolled students.",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Graduation Requirements",
-   "link_count": 2,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "16. Library of Graduation Requirements",
-   "link_count": 0,
-   "link_to": "Graduation Requirement Item",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "17. Program Graduation Requirements",
-   "link_count": 0,
-   "link_to": "Program Graduation Requirement",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "description": "Credit transfers are gated both here and at the program level.",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Credit Transfer Configuration",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "18. Partner Seminary",
-   "link_count": 0,
-   "link_to": "Partner Seminary",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "19. Partner Seminary Course Equivalence",
-   "link_count": 0,
-   "link_to": "Partner Seminary Course Equivalence",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "20. Partner Transcript Import",
-   "link_count": 0,
-   "link_to": "Partner Transcript Import Batch",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
    "description": "When a Student is created, SeminaryERP automatically creates a user and a customer. A student can be enrolled in one or more programs, retaining the same student id.",
    "hidden": 0,
    "is_query_report": 0,
@@ -336,16 +266,96 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Time to check your Pricing before enrollment",
+   "label": "** Time to check your Pricing before enrollment",
    "link_count": 0,
    "link_to": "program-pricing",
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "description": "Credit transfers are gated both here and at the program level. For your legacy system, please create a Partner Seminary using the full form.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Credit Transfer Configuration",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "18. Grade Conversion Policy",
+   "link_count": 0,
+   "link_to": "Grade Conversion Policy",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "19. Partner Seminary",
+   "link_count": 0,
+   "link_to": "Partner Seminary",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "20. Partner Seminary Course Eqv",
+   "link_count": 0,
+   "link_to": "Partner Seminary Course Equivalence",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "** Import Transcripts",
+   "link_count": 0,
+   "link_to": "Partner Transcript Import Batch",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "Each Program may have additional requirements besides total credits and mandatory courses. These can be set here, with a common library of requirements that programs can share and per program requirements that are applied (snapshot) at program enrollment, so if graduation requirements change, it does not affect previously enrolled students.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Graduation Requirements",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "16. Library of Graduation Requirements",
+   "link_count": 0,
+   "link_to": "Graduation Requirement Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "17. Program Graduation Requirements",
+   "link_count": 0,
+   "link_to": "Program Graduation Requirement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-05-07 13:10:29.407724",
- "modified_by": "Administrator",
+ "modified": "2026-05-08 07:42:18.065589",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Getting Started SeminaryERP",
  "number_cards": [],
