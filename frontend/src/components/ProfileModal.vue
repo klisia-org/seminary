@@ -118,8 +118,19 @@
 			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto" v-else-if="!isStudent">
 				<div class="flex flex-col gap-4">
 					<div class="flex items-center border-b border-solid border-outline-gray-1 pb-4 gap-2">
-						<Avatar size="3xl" class="h-12 w-12" :label="instructorInfo.instructor_name"
-							:image="instructorInfo.profileimage || null" />
+						<div class="relative group flex-shrink-0">
+							<Avatar size="3xl" class="h-12 w-12" :label="instructorInfo.instructor_name"
+								:image="editProfileImage || instructorInfo.profileimage || null" />
+							<FileUploader :fileTypes="['image/*']" @success="(f) => { editProfileImage = f.file_url }">
+								<template #default="{ uploading, openFileSelector }">
+									<button @click="openFileSelector"
+										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+										<FeatherIcon v-if="!uploading" name="camera" class="h-4 w-4 text-white" />
+										<FeatherIcon v-else name="loader" class="h-4 w-4 text-white animate-spin" />
+									</button>
+								</template>
+							</FileUploader>
+						</div>
 						<div class="flex flex-col ml-2 gap-1">
 							<p class="text-lg font-semibold">{{ instructorInfo.instructor_name }}</p>
 							<p class="text-ink-gray-6">{{ instructorInfo.user }}</p>
@@ -338,6 +349,7 @@ const editBio = ref('')
 const editProfEmail = ref('')
 const editPhoneMessage = ref('')
 const editSelectedApps = ref([])
+const editProfileImage = ref('')
 
 const saveInstructorResource = createResource({
 	url: 'seminary.seminary.api.save_instructor_profile',
@@ -366,6 +378,7 @@ const saveInstructor = () => {
 		prof_email: editProfEmail.value,
 		phone_message: editPhoneMessage.value,
 		messaging_apps: JSON.stringify(editSelectedApps.value),
+		profileimage: editProfileImage.value || null,
 	})
 }
 
@@ -410,6 +423,7 @@ watchEffect(() => {
 				editProfEmail.value = response.prof_email || ''
 				editPhoneMessage.value = response.phone_message || ''
 				editSelectedApps.value = (response.messaging_apps || []).map(a => a.app_name)
+				editProfileImage.value = response.profileimage || ''
 			},
 		})
 	}

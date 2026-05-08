@@ -660,6 +660,7 @@ def save_instructor_profile(
     prof_email=None,
     phone_message=None,
     messaging_apps=None,
+    profileimage=None,
 ):
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
     doc.instructor_name = instructor_name
@@ -669,6 +670,8 @@ def save_instructor_profile(
         doc.prof_email = prof_email
     if phone_message is not None:
         doc.phone_message = phone_message
+    if profileimage:
+        doc.profileimage = profileimage
     if messaging_apps is not None:
         import json
 
@@ -684,6 +687,7 @@ def save_instructor_profile(
         "bio": doc.bio,
         "prof_email": doc.prof_email,
         "phone_message": doc.phone_message,
+        "profileimage": doc.profileimage,
     }
 
 
