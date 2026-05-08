@@ -7,9 +7,9 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "vite --config vite.config.js",
-    "predev": "yarn build:portal-shell",
+    "predev": "yarn install --check-files && yarn build:portal-shell",
     "build": "vite build --config vite.config.js --base=/assets/seminary/frontend/ && yarn copy-html-entry",
-    "prebuild": "yarn build:portal-shell",
+    "prebuild": "yarn install --check-files && yarn build:portal-shell",
     "build:portal-shell": "yarn --cwd ../portal-shell install && yarn --cwd ../portal-shell build",
     "preview": "vite preview",
     "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"

@@ -11,3 +11,4 @@ seminary.seminary.patches.submit_graduation_requirement_items
 seminary.seminary.patches.submit_program_graduation_requirements
 seminary.seminary.patches.add_custom_graduation_request_field
 seminary.seminary.patches.retire_student_admission
+seminary.seminary.patches.ensure_custom_cei_column
