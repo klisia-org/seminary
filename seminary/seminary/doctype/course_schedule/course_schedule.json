@@ -283,8 +283,7 @@
    "fetch_from": "course.coursecode",
    "fieldname": "coursecode_cs",
    "fieldtype": "Data",
-   "label": "Course code",
-   "read_only": 1
+   "label": "Course code"
   },
   {
    "fieldname": "grading_tab",
@@ -531,8 +530,8 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-04-27 21:36:40.065427",
- "modified_by": "Administrator",
+ "modified": "2026-05-08 08:08:37.934099",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Schedule",
  "naming_rule": "Expression (old style)",
