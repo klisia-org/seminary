@@ -276,7 +276,7 @@ def has_student_role(member=None):
 @frappe.whitelist(allow_guest=True)
 def get_courses_for_student(student):
     courses = frappe.db.sql(
-        """select cei.coursesc_ce as name, cei.course_data as course, cs.course_image, cs.course_description_for_lms, cs.short_introduction, cs. academic_term
+        """select cei.coursesc_ce as name, cei.course_data as course, cs.course_image, cs.course_description_for_lms, cs.short_introduction, cs. academic_term, cs.section
 from `tabCourse Enrollment Individual` cei, `tabCourse Schedule` cs
 where cs.name = cei.coursesc_ce and cs.published = 1
 and cei.stu_user = %s""",
@@ -330,6 +330,7 @@ def get_instructors(course):
             "Instructor",
             instructor,
             [
+                "name",
                 "instructor_name",
                 "user",
                 "profileimage",
@@ -347,23 +348,24 @@ def get_instructors(course):
 
 @frappe.whitelist(allow_guest=True)
 def get_instructor(instructorName):
-    instructor = frappe.db.get_value(
-        "Instructor",
-        instructorName,
-        [
-            "instructor_name",
-            "user",
-            "profileimage",
-            "shortbio",
-            "bio",
-            "prof_email",
-            "phone_message",
-        ],
-        as_dict=True,
-    )
+    fields = [
+        "name",
+        "instructor_name",
+        "user",
+        "profileimage",
+        "shortbio",
+        "bio",
+        "prof_email",
+        "phone_message",
+    ]
+    instructor = frappe.db.get_value("Instructor", instructorName, fields, as_dict=True)
+    if not instructor:
+        instructor = frappe.db.get_value(
+            "Instructor", {"instructor_name": instructorName}, fields, as_dict=True
+        )
     if not instructor:
         frappe.throw(f"Instructor {instructorName} not found", frappe.DoesNotExistError)
-    instructor["messaging_apps"] = get_instructor_messaging_apps(instructorName)
+    instructor["messaging_apps"] = get_instructor_messaging_apps(instructor["name"])
     return instructor
 
 
@@ -479,6 +481,7 @@ def get_course_fields():
         "academic_term",
         "c_datestart",
         "c_dateend",
+        "section",
     ]
 
 
