@@ -1,71 +1,71 @@
-# Withdrawal
+# Trancamento
 
-The withdrawal module handles course drops and institutional withdrawals with configurable per-term rules.
+O módulo de Trancamento lida com cancelamentos de disciplina e trancamentos institucionais, com regras configuráveis por período letivo.
 
-## Overview
+## Visão geral
 
-Students can request withdrawal through the LMS portal.
-Rules governing deadlines, penalties, and refund eligibility are configured by academic users on the Desk view.
+Os estudantes podem solicitar trancamento pelo Portal do LMS.
+As regras que regem prazos, penalidades e elegibilidade a reembolso são configuradas por usuários acadêmicos na visualização do Desk.
 
-## Key concepts
+## Conceitos-chave
 
-- **Penalty-Free Window** — a configurable period after term start where withdrawal carries no academic penalty
-- **Withdrawal Reason** — a separate doctype allowing institutions to track and report on why students withdraw
-- **Refund/Scholarship Handling** — financial implications configured alongside withdrawal rules
+- **Janela sem penalidade** — período configurável após o início do período letivo em que o trancamento não acarreta penalidade acadêmica
+- **Motivo de Trancamento** — um Doctype separado que permite às instituições acompanhar e relatar por que os estudantes trancam
+- **Tratamento de Reembolso/Bolsa** — implicações financeiras configuradas junto com as regras de trancamento
 
-## Course Withdrawal Request
+## Solicitação de Trancamento de Disciplina
 
-Initiated by the student (if allowed in Seminary Settings) or by administrators/academic users
+Iniciada pelo estudante (se permitido nas "Configurações do Seminário") ou por administradores/usuários acadêmicos
 
-### Student Request
+### Solicitação do Estudante
 
-Students can request withdrawal from any course they are currently enrolled and have access on the Portal.
-Navigate to a Course --> My Status: At the bottom of the page, students can request widrawal from that course. The system will display on the top of this page the status of the course withdrawal request.
+Os estudantes podem solicitar trancamento de qualquer disciplina em que estejam atualmente matriculados e à qual tenham acesso no Portal.
+Navegue até uma Disciplina → Meu Status: ao final da página, os estudantes podem solicitar o trancamento daquela disciplina. O sistema exibirá, no topo dessa página, o status da solicitação de trancamento da disciplina.
 
-Students will need to provide a [pre-configured reason](#withdrawal-reasons) and any support documentation required by that specific reason. The system will auto-populate required fields.
+Os estudantes precisarão informar um [motivo preconfigurado](#withdrawal-reasons) e qualquer documentação comprobatória exigida por esse motivo específico. O sistema preencherá automaticamente os campos obrigatórios.
 
-Students may also create withdrawal requests for other courses, alongside this one by selecting the appropriate choice in Withdrawal Scope. Each course will track its own Course Withdrawal Request, but seminary administrators will see the related requests.
+Os estudantes também podem criar solicitações de trancamento para outras disciplinas, além desta, selecionando a opção apropriada em "Escopo do Trancamento". Cada disciplina acompanhará sua própria Solicitação de Trancamento de Disciplina, mas os administradores do seminário verão as solicitações relacionadas.
 
-![Withdrawal Requests Portal screen](/modules/withdrawal/img/withdrawal_request_portal.png)
+![Tela do Portal de Solicitações de Trancamento](/modules/withdrawal/img/withdrawal_request_portal.png)
 
-Once the student submitted the request, its status will be visible at the top of My Status page of that course. Status are dependent on the Workflow for this.
+Depois que o estudante enviar a solicitação, o status ficará visível no topo da página Meu Status daquela disciplina. Os status dependem do Fluxo de Trabalho configurado.
 
-![Withdrawal Requests Portal Status screen](/modules/withdrawal/img/withdrawal_request_portal_status.png)
+![Tela de Status no Portal das Solicitações de Trancamento](/modules/withdrawal/img/withdrawal_request_portal_status.png)
 
-### Registar Request
+### Solicitação da Secretaria Acadêmica
 
-Registars or other assigned users can create and track progression of the Course Withdrawal Request within Desk.
-In the image below, a request with status "Academically Approved" is shown, with the Action to be performed (top right) being "Send for Financial Review."
-Seminary ERP ships with a pre-defined Workflow, that can be customized by the Seminary administrator. This is particularly helpful to include email notifications, among other possibilities.
+Profissionais da Secretaria Acadêmica ou outros usuários designados podem criar e acompanhar a progressão da Solicitação de Trancamento de Disciplina no Desk.
+Na imagem abaixo, é exibida uma solicitação com o status "Aprovado Academicamente", tendo como Ação a ser executada (canto superior direito) "Enviar para Análise Financeira".
+O SeminaryERP vem com um Fluxo de Trabalho predefinido, que pode ser personalizado pelo(a) administrador(a) do seminário. Isso é particularmente útil para incluir notificações por e-mail, entre outras possibilidades.
 
-![Withdrawal Requests Desk screen](/modules/withdrawal/img/withdrawal_request_desk.png)
+![Tela no Desk de Solicitações de Trancamento](/modules/withdrawal/img/withdrawal_request_desk.png)
 
-## Withdrawal Reasons
+## Motivos de Trancamento
 
-It is a good practice to standardize and evaluate periodically the reasons that compel students to drop from courses. Many accrediting agencies require that and SeminaryERP makes it easier to fulfill this requirement.
-When a withdrawal reason is created, administrators will give a name, a description, if it will be mandatory to attach support documentation (it is always available, just not mandatory) and if so, what label will be displayed to students. This is to make it easier to students to know exactly what is needed to submit. Two informational rich text editors provide initial documentation for students and staff.
+É uma boa prática padronizar e avaliar periodicamente os motivos que levam os estudantes a desistirem de disciplinas. Muitas agências de credenciamento exigem isso, e o SeminaryERP facilita o atendimento a esse requisito.
+Ao criar um motivo de trancamento, os administradores definirão um nome, uma descrição, se será obrigatório anexar documentação comprobatória (ela está sempre disponível, apenas não obrigatória) e, em caso afirmativo, qual rótulo será exibido aos estudantes. Isso facilita para que os estudantes saibam exatamente o que precisam enviar. Dois editores de texto rico informativos fornecem documentação inicial para estudantes e equipe.
 
-![Withdrawal Reasons screen](/modules/withdrawal/img/withdrawal-reasons.png)
+![Tela de Motivos de Trancamento](/modules/withdrawal/img/withdrawal-reasons.png)
 
-## Withdrawal Rules
+## Regras de Trancamento
 
-1. Give the rule with a clear name, easy to understand by itself.
-2. The checbox "Exclude from Grade calculation" signals that this will not count towards the final GPA
-3. Grading Symbol: How do you want this to appear on the transcript (can be a word, not necessarily a symbol)
-4. Allow Partial Credit: The student submitted assessments may be used for partial credit (this feature is under development)
-5. If the main setting in "Seminary Settings" allows for it, a [**Term-Based Date**](#term-widrawal-rules) may be calculated automatically for each term. When it is checked, additional fields will be available to calculate the "Applies until" date for each term. Note that since the rule is applied per term (even if it impacts course schedules), the date thresholds are always relative to the term.
-6. Refund: If the checkbox is marked, a child table becomes available. This will define how much will be refunded and to whom, if the rule applies. That is, the system will automatically identify the Sales Invoice for that course and create a Credit Note against it, following the same tax procedure as the Sales Invoice. Three types of Payers are contemplated by the rules: Student (i.e., the ERPNext Customer associated with the Student), Scholarships (the ERPNext Customer associated with Scholarships in Seminary Settings), and Other Payers (as SeminaryERP also gives the option for churches, denominations to pay for part of tuition).
+1. Dê à regra um nome claro, fácil de entender por si só.
+2. A caixa de seleção "Excluir do cálculo da nota" indica que isso não contará para o GPA final},{
+3. Símbolo de Avaliação: como você quer que isso apareça no histórico escolar (pode ser uma palavra, não necessariamente um símbolo)
+4. Permitir crédito parcial: as atividades avaliativas enviadas pelo estudante podem ser usadas para crédito parcial (recurso em desenvolvimento)
+5. Se a configuração principal em "Configurações do Seminário" permitir, uma [**Data por Período Letivo**](#term-widrawal-rules) poderá ser calculada automaticamente para cada período letivo. Quando marcada, campos adicionais ficarão disponíveis para calcular a data "Válida até" para cada período letivo. Observe que, como a regra é aplicada por período letivo (mesmo que impacte cronogramas de disciplinas), os limites de data são sempre relativos ao período letivo.
+6. Reembolso: se a caixa de seleção estiver marcada, uma tabela filha ficará disponível. Isso definirá quanto será reembolsado e para quem, se a regra se aplicar. Ou seja, o sistema identificará automaticamente a Fatura de Venda daquela disciplina e criará uma Nota de Crédito vinculada a ela, seguindo o mesmo procedimento fiscal da Fatura de Venda. As regras contemplam três tipos de pagadores: Estudante (isto é, o Cliente do ERPNext associado ao Estudante), Bolsas (o Cliente do ERPNext associado a Bolsas nas Configurações do Seminário) e Outros Pagadores (pois o SeminaryERP também oferece a opção de igrejas/denominações pagarem parte da mensalidade).
 
-![Withdrawal Rules screen](/modules/withdrawal/img/withdrawal-rules.png)
+![Tela de Regras de Trancamento](/modules/withdrawal/img/withdrawal-rules.png)
 
-## Term Widrawal Rules
+## Regras de Trancamento por Período Letivo
 
-If there is a need for manual adjustment of the dates a rule apply, this can be done on Desk, Term Withdrawal Rules.
+Se houver necessidade de ajuste manual das datas em que uma regra se aplica, isso pode ser feito no Desk, em Regras de Trancamento por Período Letivo.
 
-![Term Withdrawal Rules screen](/modules/withdrawal/img/withdrawal-term-rules.png)
+![Tela de Regras de Trancamento por Período Letivo](/modules/withdrawal/img/withdrawal-term-rules.png)
 
-## Withdrawal Request Workflow
+## Fluxo de Trabalho da Solicitação de Trancamento
 
-Most seminaries will not need to edit the pre-configured workflow. However, it is possible to do so and larger institutions may particularly benefit from customizations. Since this is a ERPNext feature, their [documentation](https://docs.frappe.io/erpnext/workflows) may prove useful.
+A maioria dos seminários não precisará editar o fluxo de trabalho preconfigurado. No entanto, isso é possível e instituições maiores podem se beneficiar especialmente de personalizações. Como isso é um recurso do ERPNext, a [documentação](https://docs.frappe.io/erpnext/workflows) deles pode ser útil.
 
-![Withdrawal Workflow screen](/modules/withdrawal/img/withdrawal-workflow.png)
+![Tela do Fluxo de Trabalho de Trancamento](/modules/withdrawal/img/withdrawal-workflow.png)

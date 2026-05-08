@@ -1,13 +1,13 @@
-# Enrollment
+# Matrícula
 
-Enrollment manages how students register for courses within an academic term.
+O recurso de matrícula gerencia como os estudantes se matriculam em disciplinas dentro de um período letivo.
 
-## Overview
+## Visão geral
 
-Students can self-enroll through the LMS portal during configured enrollment windows, or administrators can enroll students directly through the Frappe Desk.
+Os estudantes podem se automatricular pelo portal do LMS durante os períodos de matrícula configurados, ou os administradores podem matricular estudantes diretamente pelo Frappe Desk.
 
-## Key concepts
+## Conceitos-chave
 
-- **Enrollment Window** — the date range during which self-enrollment is open
-- **Course Enrollment** — the record linking a student to a course for a specific term
-- **Enrollment Capacity** — optional limit on students per course section
+- **Período de matrícula** — o intervalo de datas durante o qual a automatrícula fica aberta
+- **Matrícula em disciplina** — o registro que vincula um estudante a uma disciplina em um período letivo específico
+- **Capacidade de matrícula** — limite opcional de estudantes por turma da disciplina

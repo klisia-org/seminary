@@ -1,29 +1,29 @@
-# SeminaryERP Documentation
+# Documentação do SeminaryERP
 
-Seminary ERP is a free open-source software that can grow with your seminary through the power of working together for the glory of God.
+O SeminaryERP é um software livre e de código aberto que pode crescer junto com o seu seminário graças ao poder de trabalhar em conjunto, para a glória de Deus.
 
-Although it is designed to be your one-stop-shop in terms of software, you can also adopt parts of it.
+Embora tenha sido projetado para ser uma solução tudo-em-um em termos de software, você também pode adotar apenas partes dele.
 
-In this introduction, let's understand the BIG picture.
+Nesta introdução, vamos entender o panorama GERAL.
 
-Seminary ERP is developed in an ecossystem of apps under the Frappe Framework. The core of this ecossystem is the excellent ERPNext, the best open-source Enterprise Resource Planning (ERP). With it, you can control payments, receivables, integrated with accounting, bank reconciliation, and much more. If you want to, you can also use their Human Resource Management System (HRMS), to do payroll, have recruitment portal, and much more - things you probably imagined were only accessible for big companies.
+O SeminaryERP é desenvolvido em um ecossistema de aplicativos sob o Frappe Framework. O núcleo desse ecossistema é o excelente ERPNext, o melhor sistema de planejamento de recursos empresariais (ERP) de código aberto. Com ele, você pode controlar pagamentos, contas a receber, além de integração com a contabilidade, conciliação bancária e muito mais. Se quiser, você também pode usar o Sistema de Gestão de Recursos Humanos (HRMS) deles, para fazer folha de pagamento, ter um portal de recrutamento e muito mais — coisas que você provavelmente imaginava serem acessíveis apenas para grandes empresas.
 
-Integrated with these is the Seminary ERP app, which consists of
+Integrado a eles está o aplicativo SeminaryERP, que consiste em
 
-SCHOOL MANAGEMENT SYSTEM + LEARNING MANAGEMENT SYSTEM
+SISTEMA DE GESTÃO ESCOLAR + SISTEMA DE GESTÃO DE APRENDIZAGEM
 
-The system can be better understood through its two interfaces under the same code.
+O sistema pode ser melhor compreendido por meio de suas duas interfaces sob a mesma base de código.
 
-![SeminaryERP at a glance](assets/SeminaryManagement.png)
+![Visão geral do SeminaryERP](assets/SeminaryManagement.png)
 
-## Who is this for?
+## Para quem se destina?
 
-- **Seminary administrators** setting up and running their institution
-- **Instructors** managing courses, grading, and discussions
-- **Students** navigating enrollment, coursework, and submissions
+- **Administradores do seminário** configurando e administrando sua instituição
+- **Instrutores** gerenciando cursos, avaliações e discussões
+- **Estudantes** gerenciando matrículas, atividades e envios
 
-## Sections
+## Seções
 
-- [Getting Started](getting-started/installation.md) — Install, configure, and run your first academic term
-- [Modules](modules/enrollment.md) — Detailed guides for each functional area
-- [Administration](administration/user-roles.md) — Roles, permissions, and customization
+- [Primeiros passos](getting-started/installation.md) — Instale, configure e execute seu primeiro período letivo
+- [Módulos](modules/enrollment.md) — Guias detalhados para cada área funcional
+- [Administração](administration/user-roles.md) — Funções, permissões e personalização

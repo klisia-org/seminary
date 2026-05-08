@@ -1,14 +1,14 @@
-# User Roles
+# Papéis de usuário},{
 
-SeminaryERP uses Frappe's role-based permission system to control access.
+O SeminaryERP usa o sistema de permissões baseado em papéis do Frappe para controlar o acesso.
 
-## Core roles
+## Papéis principais
 
-- **Seminary Admin** — full access to all seminary doctypes and settings
-- **Instructor** — manages courses, grades submissions, moderates discussions
-- **Student** — enrolls in courses, submits work, participates in discussions
-- **Evaluator** — grades submissions without full instructor privileges
+- **Seminary Admin** — acesso total a todos os tipos de documento do seminário e às configurações
+- **Instructor** — gerencia cursos, atribui notas às entregas, modera discussões
+- **Student** — matricula-se em cursos, envia trabalhos, participa de discussões
+- **Evaluator** — atribui notas às entregas sem todas as permissões de instrutor
 
-## Portal vs Desk access
+## Acesso: Portal vs Desk
 
-Students and instructors primarily use the LMS portal (frontend). Administrators work in the Frappe Desk for configuration and reporting.
+Estudantes e instrutores usam principalmente o portal do LMS (frontend). Os administradores trabalham no Frappe Desk para configuração e geração de relatórios.

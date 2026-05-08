@@ -1,23 +1,23 @@
-# Your First Term
+# Seu Primeiro Período Letivo
 
-A walkthrough of running a complete academic term from setup to grade submission.
+Um passo a passo para conduzir um período letivo completo, da configuração ao envio das notas.
 
-## 1. Create courses
+## 1º. Criar cursos
 
-Set up your courses with syllabus, lesson structure, and assessment criteria.
+Configure seus cursos com ementa, estrutura de aulas e critérios de avaliação.
 
-## 2. Open enrollment
+## 2º. Abrir inscrições
 
-Configure the enrollment window in your Academic Term and let students self-enroll through the portal.
+Configure o período de inscrições no seu Período Letivo e permita que os estudantes façam autoinscrição pelo portal.
 
-## 3. Run the term
+## 3º. Conduzir o período letivo
 
-Instructors manage lessons, discussion activities, and assignments through the LMS frontend.
+Os instrutores gerenciam aulas, atividades de discussão e tarefas pela interface do LMS.
 
-## 4. Grading
+## 4º. Atribuição de Notas
 
-Configure grading criteria per course, grade student submissions, and publish final grades.
+Configure critérios de avaliação por curso, avalie as submissões dos estudantes e publique as notas finais.
 
-## 5. Term close
+## 5º. Encerrar o período letivo
 
-Process any withdrawals, finalize grades, and archive the term.
+Processe quaisquer trancamentos, finalize as notas e arquive o período.

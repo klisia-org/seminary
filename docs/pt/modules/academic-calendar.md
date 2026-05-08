@@ -1,22 +1,22 @@
-# Academic Calendar
+# Calendário Acadêmico
 
-The academic calendar manages terms, important dates, and deadline rules. All aspects are controlled via Desk.
+O calendário acadêmico gerencia períodos letivos, datas importantes e regras de prazos. Todos os aspectos são controlados pelo Desk.
 
-## Overview
+## Visão geral
 
-The academic calendar has a tiered structure:
+O calendário acadêmico tem uma estrutura em camadas:
 
-### Academic Year:
+### Ano Letivo:
 
-Contains academic terms. May be used to trigger specific fees.
+Contém períodos letivos. Pode ser usado para disparar taxas específicas.
 
-### Academic Term:
+### Período Letivo:
 
-Terms cannot overlap. Each term must be wholly contained in an Academic Year, with start and end dates withing the Academic Year.  
-Each academic term defines the structure of a teaching period: start and end dates, enrollment windows, withdrawal deadlines, and grading periods.
+Os períodos letivos não podem se sobrepor. Cada período letivo deve estar totalmente contido em um Ano Letivo, com datas de início e término dentro do Ano Letivo.  
+Cada período letivo define a estrutura de um período de ensino: datas de início e término, janelas de matrícula, prazos de trancamento e períodos de avaliação.
 
-## Key concepts
+## Conceitos-chave
 
-- **Academic Term** — the fundamental time unit (semester, trimester, quarter)
-- **DateRuleResolver** — configurable logic for computing academic deadlines relative to term dates
-- **Term-Level Rules** — deadline and policy configuration lives at the term level, allowing different rules per term
+- **Período Letivo** — a unidade de tempo fundamental (semestre, trimestre, quarter)
+- **DateRuleResolver** — lógica configurável para calcular prazos acadêmicos em relação às datas do período letivo
+- **Regras no nível do período letivo** — a configuração de prazos e políticas fica no nível do período, permitindo regras diferentes por período
