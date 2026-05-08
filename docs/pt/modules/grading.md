@@ -1,13 +1,13 @@
 # Atribuição de Notas
 
-Grading manages assessment criteria, grade entry, and grade publication for courses.
+O módulo Avaliação gerencia, nas disciplinas, os critérios de avaliação, o lançamento de notas e a publicação de notas.
 
-## Overview
+## Visão geral
 
-Instructors define grading criteria per course, grade individual submissions (assignments, discussions, exams), and publish final grades at term end.
+Os instrutores definem os critérios de avaliação por disciplina, atribuem notas a entregas individuais (tarefas, atividades de discussão e provas) e publicam as notas finais ao término do período letivo.
 
-## Key concepts
+## Conceitos principais
 
-- **Grading Criteria** — weighted components that make up the final grade
-- **Submission Grading** — individual grades on discussion activities, exams, and assignments
-- **Grade Publication** — making grades visible to students
+- **Critérios de avaliação** — componentes ponderados que compõem a nota final
+- **Avaliação de entregas** — notas individuais em atividades de discussão, provas e tarefas
+- **Publicação de notas** — tornar as notas visíveis aos estudantes

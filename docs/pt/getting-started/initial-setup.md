@@ -1,22 +1,22 @@
-# Initial Setup
+# Configuração Inicial
 
-After installation, configure the core settings for your seminary.
+Após a instalação, configure as configurações principais do seu seminário.
 
-## Seminary Settings
+## Configurações do Seminário
 
-Navigate to **Seminary Settings** in the Frappe Desk to configure:
+Navegue até **Configurações do Seminário** no Frappe Desk para configurar:
 
-- Institution name and details
-- Academic year structure
-- Default grading scale
-- Student portal settings
+- Nome e detalhes da instituição
+- Estrutura do ano letivo
+- Escala de Notas Padrão
+- Configurações do portal do estudante
 
-## Create your first academic term
+## Crie seu primeiro período acadêmico
 
-1. Go to **Academic Term** and create a new term
-2. Set the start and end dates
-3. Configure enrollment windows and withdrawal deadlines
+1. Vá para **Período Acadêmico** e crie um novo período
+2. Defina as datas de início e término
+3. Configure os períodos de matrícula e os prazos de trancamento
 
-## Set up user roles
+## Defina os papéis de usuário
 
-See [User Roles](../administration/user-roles.md) for details on configuring instructor, student, and administrator access.
+Consulte [Papéis de Usuário](../administration/user-roles.md) para obter detalhes sobre a configuração de acesso de instrutores, estudantes e administradores.
