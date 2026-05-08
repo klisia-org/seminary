@@ -2,7 +2,7 @@
 	<Tooltip :text="`${instructor_name} - ${__('Profile Page')}`">
 		<router-link :to="{
 			name: 'InstructorProfile',
-			params: { instructorName: instructor_name },
+			params: { instructorName: instructor_id },
 
 		}">
 			<Avatar class="avatar border border-outline-gray-2 cursor-pointer" v-if="instructor_name"
@@ -25,6 +25,7 @@ const props = defineProps({
 })
 
 const instructor_name = computed(() => props.instructor?.instructor_name || '')
+const instructor_id = computed(() => props.instructor?.name || props.instructor?.instructor_name || '')
 const profileImage = computed(() => props.instructor?.profileimage || '')
 const encodedProfileImage = computed(() => profileImage.value ? encodeURI(profileImage.value) : '')
 </script>

@@ -64,7 +64,7 @@
               {{ course.short_introduction }}
             </div>
             <div class="academic-term text-right mt-auto">
-              {{ course.academic_term }}
+              {{ course.academic_term }} - {{ course.section }}
             </div>
           </div>
         </router-link>
