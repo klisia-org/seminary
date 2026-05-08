@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"YCA2mfiBh_\",\"type\":\"onboarding\",\"data\":{\"onboarding_name\":\"Seminary Onboarding\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
  "custom_blocks": [
   {
@@ -14,7 +14,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "non-profit",
- "idx": 2,
+ "idx": 4,
  "indicator_color": "",
  "is_hidden": 0,
  "label": "Seminary",
@@ -118,7 +118,7 @@
    "type": "Link"
   },
   {
-   "description": "Scholarships are defined on the Getting Started menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes.",
+   "description": "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes.",
    "hidden": 0,
    "is_query_report": 0,
    "label": "Scholarships",
@@ -197,17 +197,6 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
-   "label": "Active Students that passed each course",
-   "link_count": 0,
-   "link_to": "Active students that passed each course",
-   "link_type": "Report",
-   "onboard": 0,
-   "report_ref_doctype": "Program",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
    "is_query_report": 1,
    "label": "Courses to Offer",
    "link_count": 0,
@@ -225,10 +214,20 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Pricing",
+   "link_count": 0,
+   "link_to": "program-pricing",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-30 10:39:10.257717",
- "modified_by": "Administrator",
+ "modified": "2026-05-07 21:44:59.992668",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary",
  "number_cards": [],
