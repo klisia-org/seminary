@@ -1,231 +1,231 @@
-# Instructor Payment
+# Pagamento de Instrutores
 
-SeminaryERP supports three different ways of paying instructors: as **volunteers** receiving honoraria, as **salaried** employees, or on a **per-course / per-student** basis. This page walks you through setting it all up.
+SeminaryERP oferece três formas de pagar instrutores: como **voluntários** recebendo honorários, como funcionários **assalariados**, ou em base **por curso / por estudante**. Esta página orienta você na configuração de tudo isso.
 
-## Overview
+## Visão geral
 
-Each instructor record has an **Instructor Type** field. Pick the one that describes how the school compensates that person:
+Cada registro de instrutor tem um campo **Tipo de Instrutor**. Escolha a opção que descreve como a escola remunera essa pessoa:
 
-| Instructor Type | How they're paid                                        | What you'll set up                                                          |
-| --------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **Volunteer**   | Honorarium / "love offering" per visit                  | A Supplier record + Purchase Invoices                                       |
-| **Salaried**    | Fixed recurring salary                                  | Standard HRMS Employee + Salary Structure                                   |
-| **Per-Course**  | Paid per course taught, optionally per enrolled student | HRMS Employee + the Instructor Pay component (automated) |
+| Tipo de Instrutor | Como são pagos                                                     | O que você irá configurar                                                                     |
+| ----------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **Voluntário**    | Honorário / "oferta de amor" por visita                            | Um registro de Fornecedor + Faturas de Compra                                                 |
+| **Assalariado**   | Salário fixo recorrente                                            | Funcionário padrão do HRMS + Estrutura Salarial                                               |
+| **Por Curso**     | Pago por curso ministrado, opcionalmente por estudante matriculado | Funcionário do HRMS + o componente **\"Instructor Pay\"** (automatizado) |
 
-You can mix and match across your faculty — some salaried, some per-course, some volunteers — all in the same payroll system.
+Você pode combinar entre o corpo docente — alguns assalariados, alguns por curso, alguns voluntários — todos no mesmo sistema de folha de pagamento.
 
-The **Volunteer** flow works on its own with no extra apps. The **Salaried** and **Per-Course** flows require the Frappe HRMS app to be installed on your site.
+O fluxo de **Voluntário** funciona sozinho, sem aplicativos extras. Os fluxos **Assalariado** e **Por Curso** exigem que o aplicativo Frappe HRMS esteja instalado no seu site.
 
 ---
 
-## Prerequisites (for Salaried and Per-Course only)
+## Pré-requisitos (apenas para Assalariado e Por Curso)
 
-Skip this section if you only plan to pay volunteers via Purchase Invoice.
+Ignore esta seção se você planeja pagar apenas voluntários por meio de Fatura de Compra.
 
-### 1. Install HRMS
+### 1º. Instalar o HRMS
 
-Ask your bench administrator to install the Frappe HRMS app on your site. From the bench terminal this is:
+Peça ao administrador do bench para instalar o aplicativo Frappe HRMS no seu site. No terminal do bench, é assim:
 
 ```
 bench get-app hrms
 bench --site <your-site> install-app hrms
 ```
 
-> **Note:** HRMS `v16.5.1` has a known installation bug against ERPNext v16. If the install fails with a `repost_allowed_types` error, pin HRMS to tag `v16.4.8`:
+> **Observação:** o HRMS `v16.5.1` tem um erro conhecido de instalação com o ERPNext v16. Se a instalação falhar com o erro `repost_allowed_types`, fixe o HRMS na tag `v16.4.8`:
 >
 > ```
 > cd ~/frappe-bench/apps/hrms
 > git checkout v16.4.8
 > ```
 >
-> …then retry `bench install-app hrms`.
+> …em seguida, tente novamente `bench install-app hrms`.
 
-### 2. Enable HRMS Payroll in Seminary Settings
+### 2º. Habilitar HRMS Payroll nas Configurações de Seminário
 
-Open **Seminary Settings** in Desk, scroll to the **HR / Payroll** section, and check **Enable HRMS Payroll**. Save.
+Abra **Seminary Settings** no Desk, role até a seção **HR / Payroll** e marque **Enable HRMS Payroll**. Salvar.
 
-Saving will:
+Ao salvar, isto irá:
 
-- Add the per-category instructor pay fields to every Salary Slip.
-- Create a ready-to-use Salary Component called **"Instructor Pay"**.
+- Adicionar os campos de pagamento de instrutor por categoria a cada Salary Slip.
+- Criar um Salary Component pronto para uso chamado **\"Instructor Pay\"**.
 
-If you see an error saying HRMS isn't installed, return to step 1.
+Se você vir um erro dizendo que o HRMS não está instalado, volte ao passo 1.
 
-### 3. Set the HRMS Live Date
+### 3º. Definir a HRMS Live Date
 
-Still in **Seminary Settings → HR / Payroll**, fill in **HRMS Live Date (Pay Cutoff)** with the date your school is starting to use HRMS for payroll.
+Ainda em **Seminary Settings → HR / Payroll**, preencha **HRMS Live Date (Pay Cutoff)** com a data em que sua escola começará a usar o HRMS para a folha de pagamento.
 
-Courses whose start date is **before** this cutoff will _not_ appear in payroll. This protects you from accidentally sweeping years of historical courses into your first payroll run. Leave it blank only if you want to include every course on record.
+Cursos cuja data de início seja **anterior** a esse corte **não** aparecerão na folha de pagamento. Isso evita que você, por engano, puxe anos de cursos históricos para sua primeira execução de folha de pagamento. Deixe em branco somente se quiser incluir todos os cursos registrados.
 
-### 4. Choose a payment split policy
+### 4º. Escolher uma política de divisão de pagamento
 
-**Instructor Payment Split** tells the system when per-course pay is released across payroll runs:
+**Instructor Payment Split** informa ao sistema quando o pagamento por curso é liberado nas execuções da folha de pagamento:
 
-- **End of period** _(default)_ — the full amount is paid on the payroll slip whose period contains the course's end date.
-- **50% at start + 50% at end** — half paid on the slip containing the course's start date, the other half on the slip containing the course's end date.
+- **End of period** (padrão) — o valor total é pago no Salary Slip cujo período contém a data de término do curso.
+- **50% at start + 50% at end** — metade paga no Salary Slip que contém a data de início do curso e a outra metade no Salary Slip que contém a data de término do curso.
 
-Pick one. You can change it later, but changes only affect courses paid going forward.
-
----
-
-## Instructor Categories
-
-Every instructor assigned to a course carries a **Category** — "Instructor of Record", "Graduate Teaching Assistant", "Grader", etc. Categories drive two things: accreditation reports and how much the instructor earns.
-
-The system ships with four default categories: **Instructor of Record**, **Co-Instructor**, **Graduate Teaching Assistant**, **Grader**. You can add, rename, or hide them at **Desk → Instructor Category**.
-
-Note: Currently, there is no configuration for different payment per program or program level. If this is important for you, please create an issue in our github repository. One way to make this without coding is just to create a new category, e.g., Instructor of Record - PhD with different pay rate values.
-
-### Attaching pay rates to a category
-
-Open an Instructor Category and scroll to **Pay Rates**. Each row is one rate:
-
-| Column             | What it means                                                                                                       |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| **Pay Mode**       | `Per-Course` (flat amount per course) or `Per-Student` (amount × roster size) |
-| **Amount**         | How much to pay                                                                                                     |
-| **Currency**       | The currency for this rate (supports USD for donor-funded programs, local currency for local)    |
-| **Effective From** | The date this rate takes effect                                                                                     |
-| **Active**         | Check the current rate. Uncheck older ones to keep the history visible but unused                   |
-
-You can have one Per-Course row and one Per-Student row active at the same time — the system pays both. To change a rate, **uncheck Active on the old row** and **add a new row** with the new amount and a new Effective From date. This keeps the pay history for past payroll slips accurate.
-
-#### Example: "Instructor of Record" category
-
-| Pay Mode    | Amount | Currency | Effective From | Active                          |
-| ----------- | ------ | -------- | -------------- | ------------------------------- |
-| Per-Course  | 200    | USD      | 2024-01-01     | ☐ (old rate) |
-| Per-Course  | 300    | USD      | 2026-01-01     | ☑ (current)  |
-| Per-Student | 10     | USD      | 2024-01-01     | ☑                               |
-
-An Instructor of Record teaching a Fall 2025 course with 8 students would earn 200 + 80 = **$280**. The same course in Spring 2026 would earn 300 + 80 = **$380**.
+Escolha uma. Você pode alterá-la depois, mas as mudanças só afetam cursos pagos dali em diante.
 
 ---
 
-## Assigning a category on each course
+## Categorias de Instrutor
 
-When you create or edit a **Course Schedule**, the **Instructors** table now has a **Category** column. Pick the category for each instructor on that course. The category determines which rates apply for that person on that specific course.
+Todo instrutor atribuído a um curso possui uma **Categoria** — \"Instrutor Responsável\", \"Assistente de Ensino de Pós-Graduação\", \"Avaliador\", etc. As categorias determinam duas coisas: relatórios de acreditação e quanto o instrutor recebe.
 
-When HRMS Payroll is enabled, saving a Course Schedule without a category on every instructor row is blocked — this prevents forgetting someone's pay.
+O sistema vem com quatro categorias padrão: **Instrutor Responsável**, **Co-instrutor**, **Assistente de Ensino de Pós-Graduação**, **Avaliador**. Você pode adicioná-las, renomeá-las ou ocultá-las em **Desk → Instructor Category**.
 
-After assigning instructors, open each instructor's record once and click **Update Instructor Log** (or wait for it to refresh on next load). This syncs the course to their log, which is what payroll reads from.
+Observação: atualmente, não há configuração para pagamento diferente por programa ou nível de programa. Se isso for importante para você, crie uma issue em nosso repositório no GitHub. Uma forma de fazer isso sem programar é simplesmente criar uma nova categoria, por exemplo, \"Instrutor Responsável - PhD\" com valores de taxa de pagamento diferentes.
 
----
+### Vinculando taxas de pagamento a uma categoria
 
-## Setting up each payment flow
+Abra uma **Instructor Category** e role até **Pay Rates**. Cada linha é uma taxa:
 
-### Volunteer flow
+| Coluna                 | O que significa                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Modo de Pagamento**  | `Per-Course` (valor fixo por curso) ou `Per-Student` (valor × tamanho da turma)               |
+| **Valor**              | Quanto pagar                                                                                                                        |
+| **Moeda**              | A moeda para esta taxa (suporta USD para programas financiados por doadores e moeda local para operações locais) |
+| **Válido a partir de** | A data em que esta taxa entra em vigor                                                                                              |
+| **Ativo**              | Marque a taxa atual. Desmarque as antigas para manter o histórico visível, porém sem uso                            |
 
-For guest lecturers or visiting professors who receive an honorarium:
+Você pode ter uma linha Por Curso e uma linha Por Estudante ativas ao mesmo tempo — o sistema paga ambas. Para alterar uma taxa, **desmarque Ativo na linha antiga** e **adicione uma nova linha** com o novo valor e uma nova data em **Válido a partir de**. Isso mantém o histórico de pagamento preciso para Salary Slips passados.
 
-1. Create the **Instructor** record with **Instructor Type = Volunteer**.
-2. Open the Instructor form and click **Actions → Create Supplier**. A Supplier record is created automatically with the name, email, and phone copied from the Instructor. The Supplier link is saved back to the Instructor.
-3. Each time you want to pay the volunteer, create a **Purchase Invoice** against that Supplier. Add an Item (e.g., "Instructor Honorarium") and the amount.
-4. Submit the Purchase Invoice, then create a **Payment Entry** to disburse.
+#### Exemplo: categoria \"Instrutor Responsável\"
 
-Volunteers do **not** need an Employee record and do **not** appear in Payroll Entry. Their compensation is tracked in the usual supplier ledger.
+| Modo de Pagamento | Valor | Moeda | Válido a partir de | Ativo                              |
+| ----------------- | ----- | ----- | ------------------ | ---------------------------------- |
+| Por Curso         | 200   | USD   | 2024-01-01         | ☐ (taxa antiga) |
+| Por Curso         | 300   | USD   | 2026-01-01         | ☑ (atual)       |
+| Por Estudante     | 10    | USD   | 2024-01-01         | ☑                                  |
 
-### Salaried flow
-
-For full-time or part-time staff on a recurring salary:
-
-1. Create the **Employee** record (HR module).
-2. Create or edit the **Instructor** record and set **Instructor Type = Salaried**. Link to the Employee.
-3. Create a **Salary Structure** (e.g., "Instructor — Full-Time") with the Salary Components you need (Base, allowances, deductions).
-4. Create a **Salary Structure Assignment** connecting the Employee to the Structure.
-5. Run **Payroll Entry** on your normal monthly schedule. HRMS does the rest.
-
-No seminary-specific configuration is needed — this is stock HRMS.
-
-### Per-Course flow
-
-For instructors paid per course taught:
-
-1. Create the **Employee** record.
-2. Create or edit the **Instructor** record and set **Instructor Type = Per-Course**. Link to the Employee.
-3. Make sure the Instructor Category assigned on each of this instructor's Course Schedules has **Pay Rates** defined (see section above).
-4. Create a **Salary Structure** called something like "Instructor — Per-Course". In the **Earnings** table, add a single row:
-   - **Salary Component:** `Instructor Pay` _(this component was auto-created when you enabled HRMS Payroll — don't recreate it)_
-5. Assign the Structure to the Employee via **Salary Structure Assignment**.
-
-That's it. When Payroll Entry runs, the system calculates the pay based on the courses taught in that period × the category's rates, and puts the result on the slip.
-
-You do **not** need per-category components ("IoR Pay", "GTA Pay"). The single "Instructor Pay" component handles all categories, because rates live on the categories themselves.
+Um Instrutor Responsável lecionando um curso no outono de 2025 com 8 estudantes receberia 200 + 80 = **US$ 280**. O mesmo curso na primavera de 2026 receberia 300 + 80 = **US$ 380**.
 
 ---
 
-## Running payroll
+## Atribuindo uma categoria em cada curso
 
-Run Payroll Entry the same way you always have:
+Ao criar ou editar um **Course Schedule**, a tabela **Instructors** agora tem uma coluna **Category**. Escolha a categoria para cada instrutor nesse curso. A categoria determina quais taxas se aplicam para aquela pessoa naquele curso específico.
+
+Quando a Folha de Pagamento do HRMS está habilitada, salvar um **Course Schedule** sem categoria em cada linha de instrutor é bloqueado — isso evita esquecer o pagamento de alguém.
+
+Após atribuir os instrutores, abra o registro de cada instrutor uma vez e clique em **Update Instructor Log** (ou aguarde a atualização no próximo carregamento). Isso sincroniza o curso com o registro deles, a partir do qual a folha de pagamento lê.
+
+---
+
+## Configurando cada fluxo de pagamento
+
+### Fluxo de voluntário
+
+Para palestrantes convidados ou professores visitantes que recebem um honorário:
+
+1. Crie o registro de **Instructor** com **Instructor Type = Volunteer**.
+2. Abra o formulário de **Instructor** e clique em **Actions → Create Supplier**. Um registro de **Supplier** é criado automaticamente com o nome, e-mail e telefone copiados do **Instructor**. O vínculo de **Supplier** é salvo de volta no **Instructor**.
+3. Sempre que quiser pagar o voluntário, crie uma **Purchase Invoice** para esse **Supplier**. Adicione um Item (por exemplo, \"Instructor Honorarium\") e o valor.
+4. Envie a **Purchase Invoice** e, em seguida, crie um **Payment Entry** para efetuar o pagamento.
+
+Voluntários **não** precisam de um registro de **Employee** e **não** aparecem em **Payroll Entry**. A remuneração deles é acompanhada no razão de fornecedores usual.
+
+### Fluxo assalariado
+
+Para funcionários em tempo integral ou parcial com salário recorrente:
+
+1. Crie o registro de **Employee** (módulo de RH).
+2. Crie ou edite o registro de **Instructor** e defina **Instructor Type = Salaried**. Vincule ao **Employee**.
+3. Crie uma **Salary Structure** (por exemplo, \"Instructor — Full-Time\") com os **Salary Components** necessários (Base, auxílios, deduções).
+4. Crie uma **Salary Structure Assignment** conectando o **Employee** à **Salary Structure**.
+5. Execute o **Payroll Entry** na sua programação mensal normal. O HRMS faz o restante.
+
+Nenhuma configuração específica do seminário é necessária — este é o HRMS padrão.
+
+### Fluxo Por Curso
+
+Para instrutores pagos por curso ministrado:
+
+1. Crie o registro de **Employee**.
+2. Crie ou edite o registro de **Instructor** e defina **Instructor Type = Per-Course**. Vincule ao **Employee**.
+3. Garanta que a **Instructor Category** atribuída em cada **Course Schedule** deste instrutor tenha **Pay Rates** definidas (veja a seção acima).
+4. Crie uma **Salary Structure** chamada algo como \"Instructor — Per-Course\". Na tabela **Earnings**, adicione uma única linha:
+   - **Salary Component:** `Instructor Pay` _(este componente foi criado automaticamente quando você habilitou o HRMS Payroll — não o recrie)_
+5. Atribua a **Salary Structure** ao **Employee** via **Salary Structure Assignment**.
+
+É isso. Quando o **Payroll Entry** é executado, o sistema calcula o pagamento com base nos cursos ministrados nesse período × as taxas da categoria, e coloca o resultado no Salary Slip.
+
+Você **não** precisa de componentes por categoria (\"IoR Pay\", \"GTA Pay\"). O único componente \"Instructor Pay\" atende a todas as categorias, porque as taxas ficam nas próprias categorias.
+
+---
+
+## Executando a folha de pagamento
+
+Execute o **Payroll Entry** da mesma forma de sempre:
 
 1. **HR → Payroll → Payroll Entry → New**.
-2. Set the period dates, company, and the Salary Structure Assignment filter.
-3. Submit. HRMS generates one Salary Slip per employee.
+2. Defina as datas do período, a empresa e o filtro de **Salary Structure Assignment**.
+3. Enviar. O HRMS gera um Salary Slip por funcionário.
 
-Open a generated slip. Near the top, in the **Instructor Pay Inputs** section, you'll see:
+Abra um Salary Slip gerado. Perto do topo, na seção **Instructor Pay Inputs**, você verá:
 
-- **Computed Instructor Pay** — the calculated total.
-- **Instructor Log Summary** — a read-only breakdown showing, for each course paid on this slip: the course, category, rate applied, portion (100% or 50%), payment event (Start / End), and subtotal.
+- **Computed Instructor Pay** — o total calculado.
+- **Instructor Log Summary** — um detalhamento somente leitura que mostra, para cada curso pago neste Salary Slip: o curso, a categoria, a taxa aplicada, a fração (100% ou 50%), o evento de pagamento (Start / End) e o subtotal.
 
-This is your audit trail. If something looks off, this table tells you exactly which courses and rates were used.
+Esta é a sua trilha de auditoria. Se algo parecer incorreto, esta tabela informa exatamente quais cursos e taxas foram usados.
 
-### Re-running a payroll
+### Reexecutando a folha de pagamento
 
-If you cancel a Salary Slip and re-run Payroll Entry, the system automatically excludes courses that were paid on the cancelled slip. **You cannot accidentally double-pay.**
-
----
-
-## Reconciling: the Unpaid Instructor Log report
-
-After each payroll cycle, check **Reports → Unpaid Instructor Log**. It lists every teaching row (instructor × course) whose term has ended but which hasn't been 100% paid.
-
-This catches the usual mistakes:
-
-- An instructor who doesn't have an Employee linked, so they were skipped.
-- A Course Schedule with no category assigned (shouldn't happen with validation on, but caught if it does).
-- A category with no pay rate defined.
-- A payroll run that simply wasn't done for a given month.
-
-Filters at the top let you narrow by instructor, academic term, or category.
+Se você cancelar um Salary Slip e reexecutar o **Payroll Entry**, o sistema exclui automaticamente os cursos que foram pagos no Salary Slip cancelado. **Você não pode pagar em dobro por engano.**
 
 ---
 
-## Day-to-day tasks
+## Conciliação: o relatório **Unpaid Instructor Log**
 
-### Adding a new Instructor Category
+Após cada ciclo de folha de pagamento, verifique **Reports → Unpaid Instructor Log**. Ele lista cada linha de ensino (instrutor × curso) cujo período terminou, mas que ainda não foi pago em 100%.
 
-1. **Desk → Instructor Category → New**. Give it a name, description, and check **Is Instructor of Record?** if it should count toward accreditation.
-2. Open Seminary Settings and save it once (no changes needed — just Save). This refreshes the Salary Slip fields so the new category's counters appear on future slips.
-3. Add pay rates to the category as described above.
+Isso identifica os erros comuns:
 
-### Changing a rate (e.g., year-end raise)
+- Um instrutor que não tem um **Employee** vinculado, portanto foi ignorado.
+- Um **Course Schedule** sem categoria atribuída (não deveria acontecer com a validação ativada, mas será identificado se ocorrer).
+- Uma categoria sem taxa de pagamento definida.
+- Uma execução de folha que simplesmente não foi feita em determinado mês.
 
-1. Open the Instructor Category.
-2. On the current active row in **Pay Rates**, **uncheck Active**.
-3. Add a new row with the new amount and a new **Effective From** date.
-4. Save.
-
-Historical slips automatically keep using the old rate (based on the course's start date), so past payroll is not affected.
-
-### Starting a new academic year with a new Live Date
-
-If you want to reset what counts for HRMS payroll (e.g., your first year used a pilot policy), update **Seminary Settings → HRMS Live Date** to the new cutoff. Only courses starting on or after the new cutoff will be considered.
+Filtros no topo permitem restringir por instrutor, período acadêmico ou categoria.
 
 ---
 
-## Common questions
+## Tarefas do dia a dia
 
-**Can the same instructor have different categories in different courses?**
-Yes. Category is per Course Schedule Instructor row, not per instructor. A professor might be "Instructor of Record" in one course and "Co-Instructor" in another.
+### Adicionando uma nova categoria de instrutor
 
-**What happens if I forget to assign a category to a course?**
-When HRMS Payroll is enabled, saving the Course Schedule is blocked until every instructor row has a category. Categories also default to blank; you can use a script or bulk update to backfill.
+1. **Desk → Instructor Category → New**. Forneça um nome, descrição e marque **Is Instructor of Record?** se ela deve contar para a acreditação.
+2. Abra **Seminary Settings** e salve uma vez (não são necessárias alterações — apenas **Save**). Isso atualiza os campos do Salary Slip para que os contadores da nova categoria apareçam em Salary Slips futuros.
+3. Adicione taxas de pagamento à categoria conforme descrito acima.
 
-**What if an intensive course runs inside a broader term?**
-Fill in **Start Date** and **End Date** on the Course Schedule itself. When those dates are set, the system uses them instead of the academic term dates — so a two-week intensive is paid on the slip whose period contains the intensive's end, not the term's.
+### Alterando uma taxa (por exemplo, aumento de fim de ano)
 
-**What if a volunteer later becomes a paid instructor?**
-Change their **Instructor Type** from Volunteer to Salaried or Per-Course. Link to an Employee record. The old Supplier link stays (for historical Purchase Invoices) but is ignored going forward.
+1. Abra a **Instructor Category**.
+2. Na linha ativa atual em **Pay Rates**, **desmarque Ativo**.
+3. Adicione uma nova linha com o novo valor e uma nova data em **Válido a partir de**.
+4. Salvar.
 
-**Can I see what a slip _will_ pay before running it?**
-Yes. Create a Salary Slip manually for the employee and period — the **Instructor Log Summary** section populates as soon as you save as draft.
+Salary Slips históricos continuam usando automaticamente a taxa antiga (com base na data de início do curso), portanto a folha passada não é afetada.
+
+### Iniciando um novo ano acadêmico com uma nova Live Date
+
+Se quiser redefinir o que conta para a folha do HRMS (por exemplo, seu primeiro ano usou uma política piloto), atualize **Seminary Settings → HRMS Live Date** para o novo corte. Somente cursos que começarem na data do novo corte ou depois serão considerados.
+
+---
+
+## Perguntas comuns
+
+**O mesmo instrutor pode ter categorias diferentes em cursos distintos?**
+Sim. A categoria é por linha de instrutor no **Course Schedule**, não por instrutor. Um professor pode ser \"Instrutor Responsável\" em um curso e \"Co-instrutor\" em outro.
+
+**O que acontece se eu me esquecer de atribuir uma categoria a um curso?**
+Quando o HRMS Payroll está habilitado, salvar o **Course Schedule** é bloqueado até que cada linha de instrutor tenha uma categoria. As categorias também têm padrão em branco; você pode usar um script ou atualização em massa para preencher.
+
+**E se um curso intensivo ocorrer dentro de um período mais amplo?**
+Preencha **Start Date** e **End Date** no próprio **Course Schedule**. Quando essas datas são definidas, o sistema as usa em vez das datas do período acadêmico — assim, um intensivo de duas semanas é pago no Salary Slip cujo período contém o término do intensivo, não o do período.
+
+**E se um voluntário mais tarde se tornar um instrutor remunerado?**
+Altere o **Instructor Type** dele de Volunteer para Salaried ou Per-Course. Vincule a um registro de **Employee**. O vínculo antigo de **Supplier** permanece (para **Purchase Invoices** históricas), mas é ignorado daqui para frente.
+
+**Posso ver quanto um Salary Slip vai pagar antes de executá-lo?**
+Sim. Crie um **Salary Slip** manualmente para o funcionário e período — a seção **Instructor Log Summary** é preenchida assim que você salva como rascunho.

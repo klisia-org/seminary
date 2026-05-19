@@ -1,140 +1,140 @@
-# Announcements
+# Anuncios
 
-Seminary Announcements let you send a single message to everyone enrolled this term, everyone teaching this term, or any combination you need. Messages are delivered by email and also appear inside the student/instructor app under **Announcements**. Recipients are resolved from live data at send time, so students who enroll or drop between compose and send are picked up correctly.
+Los Anuncios del seminario le permiten enviar un único mensaje a todos los estudiantes inscritos en este período, a todos los instructores que enseñan en este período o a cualquier combinación que necesite. Los mensajes se entregan por correo electrónico y también aparecen dentro de la aplicación de estudiantes/instructores en **Anuncios**. Los destinatarios se resuelven a partir de datos en vivo en el momento del envío, por lo que los estudiantes que se inscriben o se dan de baja entre la redacción y el envío se incluyen correctamente.
 
-## When to use it
+## Cuándo usarlo
 
-- Deadline reminders (drop dates, exam windows, grade submission).
-- Campus or calendar changes (closures, holidays, schedule shifts).
-- Policy or administrative notices that need to reach a whole audience at once.
+- Recordatorios de plazos (fechas de baja, ventanas de examen, envío de calificaciones).
+- Cambios en el campus o en el calendario (cierres, feriados, cambios de horario).
+- Avisos de políticas o administrativos que deben llegar a toda una audiencia a la vez.
 
-For messages scoped to a single course (one class of students + their instructor), use the course's own **Announcements** panel inside the course page. Seminary Announcements are for audiences that span multiple classes.
-
----
-
-## Who can send
-
-The **Academics User** role can create, submit, and cancel Seminary Announcements. Students and instructors can read the announcements they received, but cannot compose.
+Para mensajes con alcance a un único curso (una clase de estudiantes y su instructor), use el panel de **Anuncios** del propio curso dentro de la página del curso. Los Anuncios del seminario son para audiencias que abarcan múltiples clases.
 
 ---
 
-## Creating an announcement
+## Quién puede enviar
 
-Open **Desk → Seminary Announcement → New**.
-
-### 1. Subject and message
-
-- **Subject** — the email subject line. Keep it short and specific: "Midterm week — building closure Friday" is better than "Important announcement".
-- **Academic Term** — defaults to the current term. Change it only if you're announcing something for a different term (e.g., a heads-up to next term's audience).
-- **Message** — the body. Full rich-text: headings, lists, links, bold, inline images.
-
-### 2. Audience
-
-Announcements resolve their recipient list from live queries. Pick one or more audience rules — they're combined (union) and then de-duplicated by email.
-
-| Rule                                              | Who it includes                                                                                                                                                                                                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **All students enrolled this term**               | Every student with a non-withdrawn Course Enrollment in a Course Schedule for the selected term.                                                                                                                                                          |
-| **All instructors teaching this term**            | Every instructor listed on any Course Schedule for the selected term.                                                                                                                                                                                     |
-| **Only these Programs**                           | Narrows the student audience to the listed programs. Leave empty for all programs. Does not affect instructors.                                                                                                           |
-| **Only these Course Schedules**                   | Narrows to those specific sections. Picks up those sections' students, and — if "All instructors teaching this term" is also checked — their instructors only. Use this to message "everyone in Theology 101, Section A". |
-| **Custom Filter** _(advanced)_ | Pick any doctype and a JSON filter. Useful for edge cases: "all students in the MDiv program with a pending withdrawal", "all instructors in a specific department".                                                      |
-
-You must pick at least one rule. Submit is blocked otherwise.
-
-### 3. Preview Recipients
-
-Before submitting, save the draft and click **Preview Recipients** in the form's top-right menu. A dialog shows the total count and a sample of up to 50 rows (type, name, email). Use this to sanity-check that you haven't accidentally targeted the wrong program or forgotten a course.
-
-If the preview count is zero, your audience rules are too narrow — nothing will submit in that state either. The form tells you the same thing at submit time.
-
-### 4. Send immediately or schedule
-
-- Leave **Send At** blank to send the moment you submit.
-- Fill **Send At** with a future date/time to schedule. The announcement is saved in **Queued** status and picked up by the hourly scheduler. Granularity is roughly one hour — don't use this for time-sensitive messages that must go out at an exact minute.
-
-### 5. Submit
-
-Click **Submit**. At this moment:
-
-1. The audience query runs and the resulting list is frozen into the **Recipients** tab as a permanent audit record.
-2. If the send is immediate, the emails are queued right away; if scheduled, they queue on the next scheduler tick after the Send At time.
-3. Status moves **Draft → Queued → Sending → Sent**. A failed SMTP transaction for one recipient marks that row **Failed** and is logged; the rest of the list still goes out.
-
-Once submitted, the announcement is sealed — you cannot edit subject, body, or audience. If you need to fix something, cancel and amend (or just create a new announcement).
+El rol **Usuario de Académicos** puede crear, enviar y cancelar Anuncios del seminario. Los estudiantes y los instructores pueden leer los anuncios que recibieron, pero no pueden redactarlos.
 
 ---
 
-## Where recipients see it
+## Crear un anuncio
 
-Two places:
+Abra **Desk → Anuncio del seminario → Nuevo**.
 
-- **Email** — delivered via the seminary's configured outgoing Email Account.
-- **Announcements** in the app sidebar — students and instructors see a list of every announcement they received, most recent first, inside the main app. No login to Desk required.
+### 1. Asunto y mensaje
 
-The in-app list matches recipients by either user account or email, so it works even for recipients who don't log in with the same email they receive mail on.
+- **Asunto** — la línea de asunto del correo electrónico. Manténgalo breve y específico: "Semana de parciales — cierre del edificio el viernes" es mejor que "Anuncio importante".
+- **Período académico** — predeterminado al período actual. Cámbielo solo si anuncia algo para un período diferente (p. ej., un aviso previo para la audiencia del próximo período).
+- **Mensaje** — el cuerpo. Texto enriquecido completo: encabezados, listas, enlaces, negritas, imágenes incrustadas.
 
----
+### 2. Audiencia
 
-## Tracking delivery
+Los anuncios resuelven su lista de destinatarios a partir de consultas en vivo. Elija una o más reglas de audiencia: se combinan (unión) y luego se deduplican por correo electrónico.
 
-Open a submitted announcement and go to the **Recipients** tab. Each row shows the party (Student / Instructor / custom), email, and a **Status**:
+| Regla                                                    | A quién incluye                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Todos los estudiantes inscritos en este período**      | Todo estudiante con una inscripción en un curso, no retirada, en un Horario del curso del período seleccionado.                                                                                                                                                                                                     |
+| **Todos los instructores que enseñan en este período**   | Todo instructor listado en cualquier Horario del curso para el período seleccionado.                                                                                                                                                                                                                                |
+| **Solo estos programas**                                 | Restringe la audiencia de estudiantes a los programas listados. Dejar vacío para todos los programas. No afecta a los instructores.                                                                                                                                                 |
+| **Solo estos Horarios del curso**                        | Restringe a esas secciones específicas. Incluye a los estudiantes de esas secciones y — si también se marca "Todos los instructores que enseñan en este período" — solo a los instructores de esas secciones. Use esto para enviar un mensaje a "todos en Teología 101, Sección A". |
+| **Filtro personalizado** _(avanzado)_ | Elija cualquier DocType y un filtro JSON. Útil para casos límite: "todos los estudiantes del programa MDiv con una baja pendiente", "todos los instructores de un departamento específico".                                                                                         |
 
-- **Sent** — email accepted by the outgoing server.
-- **Failed** — a delivery error. The **Error** column has the message.
-- **Pending** — not yet picked up (scheduled for later, or mid-flight).
+Debe elegir al menos una regla. De lo contrario, el envío se bloqueará.
 
-The recipient count and the announcement's overall status at the top give you the at-a-glance view. Drill into the tab for per-person detail.
+### 3. Vista previa de destinatarios
 
----
+Antes de enviar, guarde el borrador y haga clic en **Vista previa de destinatarios** en el menú superior derecho del formulario. Un cuadro de diálogo muestra el recuento total y una muestra de hasta 50 filas (tipo, nombre, correo electrónico). Use esto para comprobar que no haya apuntado accidentalmente al programa equivocado o que no haya olvidado un curso.
 
-## Common tasks
+Si el recuento de la vista previa es cero, sus reglas de audiencia son demasiado restrictivas; en ese estado tampoco se enviará nada. El formulario le indicará lo mismo en el momento del envío.
 
-### Sending a reminder to a specific program
+### 4. Enviar inmediatamente o programar
 
-1. New Seminary Announcement.
-2. Check **All students enrolled this term**.
-3. In **Only these Programs**, add the program. Leave instructors and courses empty.
-4. Preview — confirm only the right program's students show. Submit.
+- Deje **Enviar el** en blanco para enviar en el momento en que lo envíe.
+- Rellene **Enviar el** con una fecha/hora futura para programar. El anuncio se guarda con estado **En cola** y lo recoge el programador que se ejecuta cada hora. La granularidad es de aproximadamente una hora; no use esto para mensajes sensibles al tiempo que deban salir en un minuto exacto.
 
-### Messaging one section's students and instructor together
+### 5. Enviar
 
-1. New Seminary Announcement.
-2. Check **All students enrolled this term** and **All instructors teaching this term**.
-3. In **Only these Course Schedules**, add the section.
-4. Preview. Submit. The student list is narrowed to that section; the instructor list is narrowed to that section's instructors.
+Haga clic en **Enviar**. En este momento:
 
-### Emailing everyone teaching, across all programs
+1. Se ejecuta la consulta de audiencia y la lista resultante se congela en la pestaña **Destinatarios** como un registro de auditoría permanente.
+2. Si el envío es inmediato, los correos se ponen en cola de inmediato; si está programado, se ponen en cola en el siguiente ciclo del programador después del valor de **Enviar el**.
+3. El estado avanza **Borrador → En cola → Enviando → Enviado**. Una transacción SMTP fallida para un destinatario marca esa fila como **Fallido** y se registra; el resto de la lista sigue enviándose.
 
-1. New Seminary Announcement.
-2. Check **All instructors teaching this term**. Leave everything else blank.
-3. Preview. Submit.
-
-### Emailing a custom slice (advanced)
-
-Use **Custom Filter** when none of the built-in rules fit:
-
-- **Filter DocType:** the doctype to query (`Student`, `Instructor`, or anything with an email field).
-- **Email Field:** the name of the email column on that doctype (e.g. `student_email_id` for Student, `prof_email` for Instructor).
-- **Filters (JSON):** a Frappe filter expression, e.g. `[["Student","enabled",1]]`.
-
-Combine with the built-in rules or use it on its own.
+Una vez enviado, el anuncio queda bloqueado: no puede editar el asunto, el cuerpo ni la audiencia. Si necesita corregir algo, cancele y enmiende (o simplemente cree un nuevo anuncio).
 
 ---
 
-## Common questions
+## Dónde lo ven los destinatarios
 
-**Can I edit an announcement after submitting?**
-No. Submitting freezes subject, body, and the recipient snapshot — this is intentional, so what was sent always matches what's on record. If you need to correct something, cancel and send a new announcement noting the correction.
+En dos lugares:
 
-**What happens if the outgoing Email Account isn't configured?**
-Submit still succeeds — recipients are frozen and rows enter Pending state — but no mail leaves the system. Configure or fix the Email Account and the queue flushes on the next attempt.
+- **Correo electrónico** — entregado a través de la Cuenta de correo saliente configurada del seminario.
+- **Anuncios** en la barra lateral de la aplicación: los estudiantes y los instructores ven una lista de todos los anuncios que recibieron, el más reciente primero, dentro de la aplicación principal. No se requiere iniciar sesión en Desk.
 
-**What if a student withdraws between compose and send?**
-The recipient list is frozen at submit time, not at send time. If someone withdraws between submit and the scheduled send, they'll still receive the message. If you need to re-resolve, cancel the queued announcement and create a new one closer to the send time.
+La lista dentro de la aplicación empareja a los destinatarios por cuenta de usuario o por correo electrónico, por lo que funciona incluso para quienes no inician sesión con el mismo correo con el que reciben los mensajes.
 
-**Can I schedule an announcement to recur?**
-No — each announcement is a one-shot. For recurring reminders (monthly tuition reminders, weekly attendance warnings), use Frappe Notifications with a scheduled trigger instead.
+---
 
-**Does this respect unsubscribe preferences?**
-Yes. Standard Frappe email-queue rules apply: anyone who has unsubscribed from this seminary's emails is skipped.
+## Seguimiento de la entrega
+
+Abra un anuncio enviado y vaya a la pestaña **Destinatarios**. Cada fila muestra la parte (Estudiante / Instructor / personalizado), el correo electrónico y un **Estado**:
+
+- **Enviado** — correo aceptado por el servidor saliente.
+- **Fallido** — un error de entrega. La columna **Error** contiene el mensaje.
+- **Pendiente** — aún no recogido (programado para más tarde o en curso).
+
+El recuento de destinatarios y el estado general del anuncio en la parte superior le ofrecen una vista de un vistazo. Profundice en la pestaña para ver el detalle por persona.
+
+---
+
+## Tareas comunes
+
+### Enviar un recordatorio a un programa específico
+
+1. Nuevo Anuncio del seminario.
+2. Marque **Todos los estudiantes inscritos en este período**.
+3. En **Solo estos programas**, agregue el programa. Deje instructores y cursos en blanco.
+4. Vista previa: confirme que solo se muestren los estudiantes del programa correcto. Enviar.
+
+### Enviar un mensaje conjuntamente a los estudiantes y al instructor de una sección
+
+1. Nuevo Anuncio del seminario.
+2. Marque **Todos los estudiantes inscritos en este período** y **Todos los instructores que enseñan en este período**.
+3. En **Solo estos Horarios del curso**, agregue la sección.
+4. Vista previa. Enviar. La lista de estudiantes se restringe a esa sección; la lista de instructores se restringe a los instructores de esa sección.
+
+### Enviar correo a todas las personas que enseñan, en todos los programas
+
+1. Nuevo Anuncio del seminario.
+2. Marque **Todos los instructores que enseñan en este período**. Deje todo lo demás en blanco.
+3. Vista previa. Enviar.
+
+### Enviar correo a un segmento personalizado (avanzado)
+
+Use **Filtro personalizado** cuando ninguna de las reglas incorporadas se ajuste:
+
+- **DocType del filtro:** el DocType que consultar (`Student`, `Instructor` o cualquier elemento con un campo de correo).
+- **Campo de correo:** el nombre de la columna de correo en ese DocType (p. ej., `student_email_id` para Student, `prof_email` para Instructor).
+- **Filtros (JSON):** una expresión de filtro de Frappe, p. ej., `[[\"Student\",\"enabled\",1]]`.
+
+Combínelo con las reglas incorporadas o úselo por sí solo.
+
+---
+
+## Preguntas frecuentes
+
+**¿Puedo editar un anuncio después de enviarlo?**
+No. Al enviar, se congelan el asunto, el cuerpo y la instantánea de destinatarios; esto es intencional, para que lo enviado siempre coincida con lo que consta en el registro. Si necesita corregir algo, cancele y envíe un nuevo anuncio indicando la corrección.
+
+**¿Qué sucede si la Cuenta de correo saliente no está configurada?**
+El envío igualmente tiene éxito: los destinatarios se congelan y las filas entran en estado Pendiente, pero no sale ningún correo del sistema. Configure o corrija la Cuenta de correo y la cola se vaciará en el siguiente intento.
+
+**¿Qué ocurre si un estudiante se da de baja entre la redacción y el envío?**
+La lista de destinatarios se congela en el momento de presentar, no en el de enviar. Si alguien se da de baja entre la presentación y el envío programado, seguirá recibiendo el mensaje. Si necesita volver a resolver los destinatarios, cancele el anuncio en cola y cree uno nuevo más cerca de la hora de envío.
+
+**¿Puedo programar un anuncio para que se repita?**
+No: cada anuncio es de una sola vez. Para recordatorios recurrentes (recordatorios mensuales de matrícula, advertencias semanales de asistencia), use en su lugar Notificaciones de Frappe con un activador programado.
+
+**¿Esto respeta las preferencias de cancelación de suscripción?**
+Sí. Se aplican las reglas estándar de la cola de correo de Frappe: cualquiera que se haya dado de baja de los correos de este seminario se omite.

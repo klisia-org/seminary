@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-02-26 08:05-0609\n"
-"PO-Revision-Date: 2026-05-19 14:39\n"
+"PO-Revision-Date: 2026-05-19 17:32\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Spanish\n"
 "MIME-Version: 1.0\n"
@@ -35,7 +35,7 @@ msgstr "...Añadiendo curso a programas"
 #: frontend/src/components/Exam.vue:310
 #: seminary/public/frontend/assets/index-eyrhvldA.js:11
 msgid "1 minute remaining! Your exam will be auto-submitted."
-msgstr ""
+msgstr "¡Queda 1 minuto! Tu examen se enviará automáticamente."
 
 #: frontend/src/components/Quiz.vue:29
 msgid "1 time"
@@ -44,7 +44,7 @@ msgstr "1 vez"
 #: frontend/src/components/Exam.vue:305
 #: seminary/public/frontend/assets/index-eyrhvldA.js:11
 msgid "5 minutes remaining!"
-msgstr ""
+msgstr "¡Quedan 5 minutos!"
 
 #. Introduction text of the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
@@ -67,7 +67,7 @@ msgstr "<span class=\"h4\"><b>Gestión de la matrícula</b></span>"
 #. Header text in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "<span class=\"h4\">Academic Setup</span>"
-msgstr ""
+msgstr "<span class=\"h4\">Configuración Académica</span>"
 
 #. Header text in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -77,7 +77,7 @@ msgstr "<span class=\"h4\">Operaciones Académicas del Seminario</span>"
 #. Header text in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "<span class=\"h4\">Seminary Financial Setup</span>"
-msgstr ""
+msgstr "<span class=\"h4\">Configuración financiera del seminario</span>"
 
 #: frontend/src/pages/CourseForm.vue:22
 #: seminary/public/frontend/assets/CourseForm-0BGF3FB4.js:1
@@ -146,7 +146,7 @@ msgstr "Académico"
 
 #: seminary/install.py:158
 msgid "Academic Event"
-msgstr ""
+msgstr "Evento Académico"
 
 #. Name of a Workspace
 #. Label of a Card Break in the Academic Setup Workspace
@@ -632,7 +632,7 @@ msgstr "Permitir discusiones"
 #: frontend/src/pages/LessonForm.vue:23
 #: seminary/public/frontend/assets/LessonForm-DStxcf9v.js:2
 msgid "Allow Discussions? (Discussions will be automatically disabled for quizzes)"
-msgstr ""
+msgstr "¿Permitir discusiones? (Las discusiones se desactivarán automáticamente para los cuestionarios)"
 
 #. Label of the allow_audit (Check) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
@@ -642,7 +642,7 @@ msgstr "¿Permitir oyentes?"
 #. Label of the repeatable (Check) field in DocType 'Program Course'
 #: seminary/seminary/doctype/program_course/program_course.json
 msgid "Allow more than once"
-msgstr ""
+msgstr "Permitir más de una vez"
 
 #. Label of the amended_from (Link) field in DocType 'Course Enrollment
 #. Individual'
@@ -704,7 +704,7 @@ msgstr "Respuesta dada"
 #. Label of the answer_log (Long Text) field in DocType 'Exam Submission'
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 msgid "Answer Log"
-msgstr ""
+msgstr "Registro de respuestas"
 
 #. Label of the answers_section (Section Break) field in DocType 'Exam
 #. Submission'
@@ -882,7 +882,7 @@ msgstr "Asignar Becas en pagadores de inscriptos en el programa"
 #: frontend/src/pages/StudentGroup.vue:55
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Assign to group..."
-msgstr ""
+msgstr "Asignar al grupo..."
 
 #. Option for the 'Type' (Select) field in DocType 'Assessment Criteria'
 #. Label of the assignment_section (Section Break) field in DocType 'Assignment
@@ -1179,7 +1179,7 @@ msgstr "No se puede marcar la asistencia para fechas futuras."
 
 #: seminary/seminary/doctype/exam_submission/exam_submission.py:41
 msgid "Cannot modify a submitted exam."
-msgstr ""
+msgstr "No se puede modificar un examen enviado."
 
 #: frontend/src/pages/StudentAttendanceCS.vue:20
 #: seminary/public/frontend/assets/StudentAttendanceCS-BgRhOBc3.js:1
@@ -1255,7 +1255,7 @@ msgstr "Marcar todo"
 #. Course'
 #: seminary/seminary/doctype/program_course/program_course.json
 msgid "Check here if you allow this course to be taken more than once for credit (course audits will not be blocked by this setting)"
-msgstr ""
+msgstr "Marque aquí si permite que este curso se tome más de una vez para obtener créditos (las inscripciones como oyente no se bloquearán con esta configuración)"
 
 #. Description of the 'Question by Question' (Check) field in DocType 'Exam
 #. Activity'
@@ -1404,7 +1404,7 @@ msgstr "Comentarios de"
 #: frontend/src/pages/ExamSubmission.vue:116
 #: seminary/public/frontend/assets/ExamSubmission-CrrI2L6l.js:2
 msgid "Comments for this question"
-msgstr ""
+msgstr "Comentarios para esta pregunta"
 
 #. Label of the compact_item_print (Check) field in DocType 'Print Settings'
 #: seminary/fixtures/custom_field.json
@@ -1822,7 +1822,7 @@ msgstr "Nombre del curso"
 #. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Course Offerings"
-msgstr ""
+msgstr "Oferta de cursos"
 
 #. Label of the course_prerequisite (Table) field in DocType 'Course'
 #: seminary/seminary/doctype/course/course.json
@@ -2105,7 +2105,7 @@ msgstr "Creado"
 
 #: seminary/install.py:159
 msgid "Credit hour"
-msgstr ""
+msgstr "Hora de crédito"
 
 #. Option for the 'Duration (unit of measure)' (Select) field in DocType
 #. 'Program'
@@ -2186,12 +2186,12 @@ msgstr "Grupo de clientes"
 #. Label of a Link in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Customer Groups"
-msgstr ""
+msgstr "Grupos de clientes"
 
 #. Paragraph text in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Customer Groups can have a default price list, so you can have prices for nationals and foreigners, for instance. "
-msgstr ""
+msgstr "Los grupos de clientes pueden tener una lista de precios predeterminada, por lo que puede tener precios para nacionales y extranjeros, por ejemplo. "
 
 #: seminary/seminary/doctype/student/student.py:157
 msgid "Customer {0} created and linked to Student"
@@ -2217,7 +2217,7 @@ msgstr "Tablero"
 #. Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Data Installed"
-msgstr ""
+msgstr "Datos instalados"
 
 #. Label of the date (Date) field in DocType 'Student Attendance'
 #. Label of the date (Date) field in DocType 'Student Attendance Tool'
@@ -2317,7 +2317,7 @@ msgstr "Eliminar"
 #: frontend/src/pages/StudentGroup.vue:157
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Delete & Recreate"
-msgstr ""
+msgstr "Eliminar y volver a crear"
 
 #: frontend/src/components/CourseOutline.vue:32
 #: seminary/public/frontend/assets/CourseOutline-DRud0YXm.js:1
@@ -2359,7 +2359,7 @@ msgstr "Eliminar esta lección permanentemente la eliminará del curso. Esta acc
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:44
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Demo"
-msgstr ""
+msgstr "Demostración"
 
 #. Label of the department (Link) field in DocType 'Course'
 #. Label of the department (Link) field in DocType 'Instructor'
@@ -2435,7 +2435,7 @@ msgstr "Descartar"
 #: frontend/src/pages/StudentGroup.vue:28
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Discard Changes"
-msgstr ""
+msgstr "Descartar cambios"
 
 #. Label of the discount_ (Percent) field in DocType 'Scholarship Discounts'
 #: seminary/seminary/doctype/scholarship_discounts/scholarship_discounts.json
@@ -2603,7 +2603,7 @@ msgstr "No comprobar los requisitos previos"
 
 #: frontend/src/components/Exam.vue:81
 msgid "Draft saved"
-msgstr ""
+msgstr "Borrador guardado"
 
 #: frontend/src/components/CourseOutline.vue:104
 #: seminary/public/frontend/assets/CourseOutline-DRud0YXm.js:1
@@ -2682,16 +2682,16 @@ msgstr "Elemento ERP"
 
 #: seminary/install.py:51
 msgid "ERPNext must be installed before installing {0}"
-msgstr ""
+msgstr "ERPNext debe estar instalado antes de instalar {0}"
 
 #: seminary/install.py:39
 msgid "ERPNext setup is incomplete. Please complete the setup before installing {0}"
-msgstr ""
+msgstr "La configuración de ERPNext está incompleta. Por favor, complete la configuración antes de instalar {0}"
 
 #. Paragraph text in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Each student created automatically creates a customer, but you may want to create other customers for churches who want to pay part of the tuition of their pastors, etc. Then, you can assign more payers for an individual program enrollment (e.g., student and church will be invoiced separately if you so choose). Scholarships should be used for those sponsored by the Seminary (e.g., from donations to a fund/cost-center that the seminary has freedom to manage).&nbsp;"
-msgstr ""
+msgstr "Cada estudiante creado crea automáticamente un cliente, pero puede que quiera crear otros clientes para iglesias que deseen pagar parte de la matrícula de sus pastores, etc. Luego, podrá asignar más pagadores para una inscripción individual al programa (p. ej., estudiante e iglesia serán facturados por separado si así lo elige). Las becas deben usarse para quienes estén patrocinados por el Seminario (p. ej., a partir de donaciones a un fondo/centro de costos que el seminario tenga libertad para administrar).&nbsp;"
 
 #: frontend/src/components/CourseCardOverlay.vue:42
 #: frontend/src/components/DiscussionReplies.vue:30
@@ -3035,7 +3035,7 @@ msgstr "Título del examen"
 #: frontend/src/pages/ExamForm.vue:296
 #: seminary/public/frontend/assets/ExamForm-Cmv_VLId.js:1
 msgid "Exam created successfully"
-msgstr ""
+msgstr "Examen creado correctamente"
 
 #: frontend/src/pages/ExamForm.vue:315
 #: seminary/public/frontend/assets/ExamForm-Cmv_VLId.js:1
@@ -3145,7 +3145,7 @@ msgstr "Error al eliminar los criterios de evaluación"
 #: frontend/src/pages/ExamSubmission.vue:350
 #: seminary/public/frontend/assets/ExamSubmission-CrrI2L6l.js:2
 msgid "Failed to save"
-msgstr ""
+msgstr "Error al guardar"
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:266
 #: seminary/public/frontend/assets/DiscussionActivitySubmission-DsINMVQK.js:1
@@ -3167,7 +3167,7 @@ msgstr "Fe y Práctica"
 #. Label of a Link in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Fee Categories"
-msgstr ""
+msgstr "Categorías de cuotas"
 
 #. Name of a DocType
 #. Label of the fee_category (Link) field in DocType 'pgm_enroll_payers'
@@ -3227,7 +3227,7 @@ msgstr "Los archivos se agregarán a "
 #: seminary/public/frontend/assets/ExamPage-ypXitFvy.js:1
 #: seminary/public/frontend/assets/Exams-CfFctxU8.js:1
 msgid "Filter by Course"
-msgstr ""
+msgstr "Filtrar por curso"
 
 #: frontend/src/components/DiscussionActivity.vue:24
 msgid "Filter by Group"
@@ -3275,7 +3275,7 @@ msgstr "Enlaces financieros"
 #. Label of a Workspace Sidebar Item
 #: seminary/workspace_sidebar/seminary.json
 msgid "Financial Setup"
-msgstr ""
+msgstr "Configuración financiera"
 
 #. Label of the first_name (Data) field in DocType 'Student'
 #. Label of the first_name (Data) field in DocType 'Student Applicant'
@@ -3653,12 +3653,12 @@ msgstr "Hispano"
 #. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Holiday List"
-msgstr ""
+msgstr "Lista de días festivos"
 
 #. Label of a Workspace Sidebar Item
 #: seminary/workspace_sidebar/seminary.json
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #. Label of the testimony (Long Text) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
@@ -3788,7 +3788,7 @@ msgstr "Si la lección tiene un cuestionario o un examen, las discusiones se des
 #: frontend/src/pages/StudentGroup.vue:15
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "If the page does not refresh automatically after saving changes, please try reloading the page."
-msgstr ""
+msgstr "Si la página no se actualiza automáticamente después de guardar los cambios, intenta recargarla."
 
 #. Description of the 'Use Student Groups' (Check) field in DocType 'Discussion
 #. Activity'
@@ -3905,11 +3905,11 @@ msgstr "Configuración inicial del seminario"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:18
 msgid "Install Demo Data"
-msgstr ""
+msgstr "Instalar datos de demostración"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:25
 msgid "Installing demo data..."
-msgstr ""
+msgstr "Instalando datos de demostración..."
 
 #. Label of the question (Text Editor) field in DocType 'Assignment Activity'
 #. Label of the question (Text Editor) field in DocType 'Assignment Submission'
@@ -4202,7 +4202,7 @@ msgstr "Dejando Número de Certificado"
 
 #: frontend/src/components/Exam.vue:565
 msgid "Leaving this page will automatically submit your exam. Are you sure you want to leave?"
-msgstr ""
+msgstr "Al salir de esta página, tu examen se enviará automáticamente. ¿Seguro que deseas salir?"
 
 #. Option for the 'What is your highest academic degree?' (Select) field in
 #. DocType 'Student Applicant'
@@ -4415,11 +4415,11 @@ msgstr "Hacer un anuncio"
 #. Description of a Card Break in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Make sure you have valida Academic Year and Academic Terms to schedule new courses."
-msgstr ""
+msgstr "Asegúrese de tener un Año académico y Períodos académicos válidos para programar nuevos cursos."
 
 #: seminary/public/frontend/assets/index-eyrhvldA.js:11
 msgid "Make the title descriptive, so others may understand the topic."
-msgstr ""
+msgstr "Haz que el título sea descriptivo para que otros comprendan el tema."
 
 #. Option for the 'Gender' (Select) field in DocType 'Student Applicant'
 #: seminary/install.py:263
@@ -4651,7 +4651,7 @@ msgstr "Valoraciones faltantes"
 
 #: seminary/install.py:52
 msgid "Missing Dependency"
-msgstr ""
+msgstr "Dependencia faltante"
 
 #: frontend/src/components/ProfileModal.vue:112
 #: seminary/public/frontend/assets/index-DJ9Dx9ZW.js:2
@@ -4675,7 +4675,7 @@ msgstr "Mes"
 #: frontend/src/pages/StudentGroup.vue:88
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Move to..."
-msgstr ""
+msgstr "Mover a..."
 
 #. Label of the questions (Table) field in DocType 'Quiz'
 #: seminary/seminary/doctype/quiz/quiz.json
@@ -4831,7 +4831,7 @@ msgstr "Sin respuesta"
 
 #: seminary/install.py:78
 msgid "No Company found. Please complete the ERPNext Setup Wizard first."
-msgstr ""
+msgstr "No se encontró ninguna empresa. Por favor, complete primero el Asistente de configuración de ERPNext."
 
 #: frontend/src/components/Quiz.vue:230
 #: seminary/public/frontend/assets/index-eyrhvldA.js:3
@@ -4840,7 +4840,7 @@ msgstr "Sin respuesta correcta"
 
 #: seminary/install.py:85
 msgid "No Fiscal Year found."
-msgstr ""
+msgstr "No se encontró ningún año fiscal."
 
 #: seminary/seminary/doctype/course_gradebook/course_gradebook.js:170
 msgid "No Result to submit"
@@ -4852,11 +4852,11 @@ msgstr "No hay estudiantes en"
 
 #: seminary/install.py:99
 msgid "No active Buying Price List found."
-msgstr ""
+msgstr "No se encontró ninguna lista de precios de compra activa."
 
 #: seminary/install.py:92
 msgid "No active Selling Price List found."
-msgstr ""
+msgstr "No se encontró ninguna lista de precios de venta activa."
 
 #: frontend/src/components/Announcements.vue:25
 #: seminary/public/frontend/assets/CourseDetail-DBakGCd1.js:1
@@ -4925,7 +4925,7 @@ msgstr "No se encontraron pruebas"
 
 #: frontend/src/components/Exam.vue:445
 msgid "No saved draft found. Please answer at least one question."
-msgstr ""
+msgstr "No se encontró ningún borrador guardado. Por favor, responde al menos una pregunta."
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:184
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:190
@@ -5004,7 +5004,7 @@ msgstr "No guardado"
 #. Option for the 'Status' (Select) field in DocType 'Exam Submission'
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 msgid "Not Submitted"
-msgstr ""
+msgstr "No enviado"
 
 #: seminary/seminary/doctype/student_applicant/student_applicant.py:79
 #: seminary/seminary/doctype/student_applicant/student_applicant.py:92
@@ -5321,7 +5321,7 @@ msgstr "Categoría de cuota de pagador"
 #. Label of a Card Break in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Payers Setup"
-msgstr ""
+msgstr "Configuración de pagadores"
 
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:38
 msgid "Payers for this Program"
@@ -5427,7 +5427,7 @@ msgstr "Por favor, inscríbete para que este curso vea esta lección"
 
 #: seminary/public/frontend/assets/index-eyrhvldA.js:1
 msgid "Please ensure that you complete all the questions in ${a(b).data.duration} minutes."
-msgstr ""
+msgstr "Asegúrate de completar todas las preguntas en ${a(b).data.duration} minutos."
 
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.py:45
 #: seminary/seminary/doctype/assignment_submission/assignment_submission.py:144
@@ -5522,7 +5522,7 @@ msgstr "Por favor, sube el archivo de asignación."
 
 #: frontend/src/components/DiscussionActivity.vue:421
 msgid "Please write a reply before posting."
-msgstr ""
+msgstr "Por favor, escribe una respuesta antes de publicar."
 
 #: frontend/src/components/Exam.vue:93 frontend/src/components/Quiz.vue:82
 #: frontend/src/components/Quiz.vue:174
@@ -5650,12 +5650,12 @@ msgstr "Educación previa"
 #. Label of a Link in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Price Lists"
-msgstr ""
+msgstr "Listas de precios"
 
 #. Label of a Card Break in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Prices Setup"
-msgstr ""
+msgstr "Configuración de precios"
 
 #. Label of the print_uom_after_quantity (Check) field in DocType 'Print
 #. Settings'
@@ -5966,7 +5966,7 @@ msgstr "Preguntas eliminadas correctamente"
 
 #: seminary/public/frontend/assets/Lesson-yGsQ-00l.js:3
 msgid "Questions in Lesson"
-msgstr ""
+msgstr "Preguntas en la lección"
 
 #: seminary/seminary/utils.py:1028
 msgid "Questions parameter is required"
@@ -6080,12 +6080,12 @@ msgstr "Recomendado"
 #: frontend/src/pages/StudentGroup.vue:30
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Recreate Groups"
-msgstr ""
+msgstr "Volver a crear grupos"
 
 #: frontend/src/pages/StudentGroup.vue:146
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Recreate Student Groups"
-msgstr ""
+msgstr "Volver a crear grupos de estudiantes"
 
 #. Group in Sales Invoice's connections
 #: seminary/seminary/custom/sales_invoice.json
@@ -6161,15 +6161,15 @@ msgstr "Eliminar"
 #. Label of the no_more_demo (Check) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Remove Button Demo"
-msgstr ""
+msgstr "Quitar botón de demostración"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:32
 msgid "Remove Demo Data"
-msgstr ""
+msgstr "Eliminar datos de demostración"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:39
 msgid "Removing demo data..."
-msgstr ""
+msgstr "Eliminando datos de demostración..."
 
 #: frontend/src/pages/DiscussionActivitySubmission.vue:54
 #: seminary/public/frontend/assets/DiscussionActivitySubmission-DsINMVQK.js:1
@@ -6360,7 +6360,7 @@ msgstr "Guardar"
 #: frontend/src/pages/StudentGroup.vue:26
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Save Changes"
-msgstr ""
+msgstr "Guardar cambios"
 
 #: frontend/src/pages/CourseAssessment.vue:7
 #: seminary/public/frontend/assets/CourseAssessment-BnfpMDXL.js:1
@@ -6374,7 +6374,7 @@ msgstr "Guardar solo cuando el total de puntos = 100"
 
 #: frontend/src/components/Exam.vue:78
 msgid "Saving..."
-msgstr ""
+msgstr "Guardando..."
 
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -6404,7 +6404,7 @@ msgstr "Curso programado"
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Scheduled Courses"
-msgstr ""
+msgstr "Cursos programados"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:26
 msgid "Scheduling..."
@@ -6454,7 +6454,7 @@ msgstr "Becas"
 #. Description of a Card Break in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
 msgid "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes."
-msgstr ""
+msgstr "Las becas se definen en el menú de Configuración financiera. Para asignar o quitar becas, vaya a la Inscripción en el programa y, en la esquina superior derecha, haga clic en Pagadores para este programa; luego haga los cambios correspondientes en Beca y guarde el formulario. Es posible que deba recargar la página para ver los cambios."
 
 #. Label of the school (Data) field in DocType 'Student Education'
 #: seminary/seminary/doctype/student_education/student_education.json
@@ -6617,12 +6617,12 @@ msgstr "Seminario"
 #. Paragraph text in the Seminary Financial Setup Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Seminary ERP is installed with some default items, except for item price. You need to input these for each price list (default selling already exists and has some items)."
-msgstr ""
+msgstr "Seminary ERP se instala con algunos artículos predeterminados, excepto el precio de los artículos. Debe introducir los precios para cada lista de precios (la de venta predeterminada ya existe y tiene algunos artículos)."
 
 #. Name of a Workspace
 #: seminary/seminary/workspace/seminary_financial_setup/seminary_financial_setup.json
 msgid "Seminary Financial Setup"
-msgstr ""
+msgstr "Configuración financiera del seminario"
 
 #. Label of the logo_portal (Attach Image) field in DocType 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
@@ -6704,7 +6704,7 @@ msgstr "Ajustes"
 
 #: seminary/install.py:42
 msgid "Setup Incomplete"
-msgstr ""
+msgstr "Configuración incompleta"
 
 #: frontend/src/components/ProfileModal.vue:179
 #: seminary/public/frontend/assets/index-DJ9Dx9ZW.js:2
@@ -6745,7 +6745,7 @@ msgstr "Mostrar respuestas"
 #. 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Show Student Application button on login"
-msgstr ""
+msgstr "Mostrar el botón Solicitud de estudiante al iniciar sesión"
 
 #. Label of the show_submission_history (Check) field in DocType 'Quiz'
 #: frontend/src/pages/QuizForm.vue:97
@@ -7085,7 +7085,7 @@ msgstr "Grupos de estudiantes"
 
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "Student Groups are used to assign students to specific groups within the course, both for assigning grading to specific instructors and for organizing collaborative work."
-msgstr ""
+msgstr "Los grupos de estudiantes se usan para asignar a los estudiantes a grupos específicos dentro del curso, tanto para asignar la calificación a instructores específicos como para organizar el trabajo colaborativo."
 
 #. Label of the student (Link) field in DocType 'Quiz Submission'
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
@@ -7217,7 +7217,7 @@ msgstr "Usuario del estudiante"
 
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:52
 msgid "Student already enrolled in {0} for credit. If students should be able to enroll more than once, please adjust the program course settings to make this course repeatable."
-msgstr ""
+msgstr "El estudiante ya está inscrito en {0} para obtener créditos. Si los estudiantes deben poder inscribirse más de una vez, ajuste la configuración del curso del programa para que este curso sea repetible."
 
 #. Label of the stuemail_rc (Data) field in DocType 'Scheduled Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
@@ -7480,7 +7480,7 @@ msgstr "Texto para vista previa"
 #: frontend/src/pages/LessonForm.vue:18
 #: seminary/public/frontend/assets/LessonForm-DStxcf9v.js:2
 msgid "Text for Preview on the Course Page"
-msgstr ""
+msgstr "Texto para la vista previa en la página del curso"
 
 #. Description of the 'Finances and Services' (Tab Break) field in DocType
 #. 'Student'
@@ -7657,7 +7657,7 @@ msgstr "Esto se puede utilizar para filtrar u ordenar programas."
 
 #: seminary/public/frontend/assets/index-eyrhvldA.js:1
 msgid "This quiz consists of '${a(h).length}' questions"
-msgstr ""
+msgstr "Este cuestionario consta de '${a(h).length}' preguntas"
 
 #. Description of the 'Course' (Link) field in DocType 'Exam Activity'
 #. Description of the 'Course' (Link) field in DocType 'Quiz'
@@ -7702,7 +7702,7 @@ msgstr "Esto aparecerá en la primera página del curso"
 #: frontend/src/pages/StudentGroup.vue:147
 #: seminary/public/frontend/assets/StudentGroup-DPBI-zxq.js:1
 msgid "This will delete all existing groups and allow you to create new ones. This action cannot be undone. Are you sure?"
-msgstr ""
+msgstr "Esto eliminará todos los grupos existentes y te permitirá crear otros nuevos. Esta acción no se puede deshacer. ¿Estás seguro?"
 
 #. Description of the 'Show Answers' (Check) field in DocType 'Quiz'
 #: seminary/seminary/doctype/quiz/quiz.json
@@ -7745,7 +7745,7 @@ msgstr "Tiempo Tocado"
 
 #: frontend/src/components/Exam.vue:315
 msgid "Time is up! Submitting your exam..."
-msgstr ""
+msgstr "¡Se acabó el tiempo! Enviando tu examen..."
 
 #: frontend/src/pages/ExamSubmission.vue:73
 #: seminary/public/frontend/assets/ExamSubmission-CrrI2L6l.js:2
@@ -8054,7 +8054,7 @@ msgstr "Usar grupos de estudiantes"
 
 #: frontend/src/components/Modals/DiscussionModal.vue:9
 msgid "Use a clear title for your discussion thread."
-msgstr ""
+msgstr "Usa un título claro para tu hilo de discusión."
 
 #. Description of the 'Is Section Break' (Check) field in DocType 'Open
 #. Question'
@@ -8121,7 +8121,7 @@ msgstr "Entrada de usuario"
 #. Label of a Link in the Academic Setup Workspace
 #: seminary/seminary/workspace/academic_setup/academic_setup.json
 msgid "Users"
-msgstr ""
+msgstr "Usuarios"
 
 #. Option for the 'Content Type' (Select) field in DocType 'Course Activity'
 #: seminary/seminary/doctype/course_activity/course_activity.json
@@ -8145,7 +8145,7 @@ msgstr "Virtual"
 
 #: seminary/overrides.py:31
 msgid "Want to join us?"
-msgstr ""
+msgstr "¿Quieres unirte a nosotros?"
 
 #. Label of the web_tab (Tab Break) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
@@ -8212,7 +8212,7 @@ msgstr "Viudo(a)"
 
 #: frontend/src/components/DiscussionActivity.vue:219
 msgid "Write a reply line 222..."
-msgstr ""
+msgstr "Escribe una respuesta línea 222..."
 
 #: frontend/src/components/DiscussionActivity.vue:66
 #: frontend/src/components/DiscussionActivity.vue:222
@@ -8267,7 +8267,8 @@ msgstr "Puede especificar cursos por programa de seguimiento"
 #, python-format
 msgid "You got ${Math.ceil(a(Z).data.percentage)}% correct answers with a score of\n"
 "\t\t\t\t${a(Z).data.score} out of ${a(Z).data.score_out_of}"
-msgstr ""
+msgstr "Obtuviste ${Math.ceil(a(Z).data.percentage)}% de respuestas correctas con una puntuación de\n"
+"\t\t\t\t${a(Z).data.score} de ${a(Z).data.score_out_of}"
 
 #: frontend/src/components/Quiz.vue:62
 #: seminary/public/frontend/assets/index-eyrhvldA.js:2
@@ -8333,7 +8334,7 @@ msgstr "Ahora definirá el precio de cada artículo ERP en las listas de precios
 #: seminary/public/frontend/assets/index-eyrhvldA.js:1
 #, python-format
 msgid "You will have to get ${a(b).data.passing_percentage}% correct answers in order to pass the quiz."
-msgstr ""
+msgstr "Tendrás que obtener ${a(b).data.passing_percentage}% de respuestas correctas para aprobar el cuestionario."
 
 #: frontend/src/components/Assignment.vue:43
 #: seminary/public/frontend/assets/index-eyrhvldA.js:7

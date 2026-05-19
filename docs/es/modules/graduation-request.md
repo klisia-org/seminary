@@ -1,213 +1,213 @@
-# Graduation Request
+# Solicitud de Graduación
 
-The **Graduation Request** is the formal application a student files to graduate. It's the moment the registrar's office stops asking _"could this student graduate?"_ and starts processing _"this student wants to graduate this term."_ It carries an optional fee, runs through academic and financial review, and ends — after both reviews — at `Approved`.
+La **Solicitud de Graduación** es la solicitud formal que un estudiante presenta para graduarse. Es el momento en que la Secretaría Académica deja de preguntarse "¿podría este estudiante graduarse?" y empieza a procesar "este estudiante quiere graduarse este período." Lleva una cuota opcional, pasa por revisión académica y financiera, y termina —tras ambas revisiones— en `Approved`.
 
-This module is **opt-in per program**. Schools that handle graduation entirely registrar-side (no student-initiated request) leave it disabled and use the [Program Audit](graduation-requirements.md) page as a passive eligibility view.
+Este módulo es **optativo por programa**. Las escuelas que gestionan la graduación íntegramente desde la Secretaría Académica (sin solicitud iniciada por el estudiante) lo dejan deshabilitado y usan la página de [Auditoría del Programa](graduation-requirements.md) como una vista pasiva de elegibilidad.
 
-## Overview
+## Descripción general
 
-Two questions live side-by-side on the Program Audit page:
+En la página de Auditoría del Programa conviven dos preguntas lado a lado:
 
-| Question                                                   | Answered by                                                                                                  |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| _Has this student met every requirement to graduate?_      | The audit eligibility banner (`Eligible` / `Conditionally Eligible` / `Not Yet Eligible`) |
-| _Has this student formally applied to graduate this term?_ | The Graduation Request CTA below the banner                                                                  |
+| Pregunta                                                                | Respondida por                                                                                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| _¿Este estudiante ha cumplido todos los requisitos para graduarse?_     | El banner de elegibilidad de la auditoría (`Eligible` / `Conditionally Eligible` / `Not Yet Eligible`) |
+| _¿Este estudiante ha solicitado formalmente graduarse en este período?_ | El CTA de Solicitud de Graduación debajo del banner                                                                       |
 
-The first is automatic. The second is an explicit student action that books a fee, surfaces in the registrar's queue, and goes through review.
+La primera es automática. La segunda es una acción explícita del estudiante que registra una cuota, aparece en la cola de la Secretaría Académica y pasa por revisión.
 
-## Enable it on a program
+## Activarlo en un programa
 
-On the **Program** doctype, two new fields — both hidden for ongoing programs — switch the flow on:
+En el doctype **Program**, dos campos nuevos —ambos ocultos para programas en curso— activan el flujo:
 
-- **Students Can Request Graduation** (Check) — the master switch. When off, no CTA, no candidacy is computed, no Graduation Request can be filed for this program. Use this for programs handled entirely registrar-side.
-- **Graduation Request Trigger** (Select, mandatory when the Check is on) — _when_ the student becomes eligible to file:
-  - **Enrolled in final courses** — the student becomes a candidate the moment their currently-enrolled courses, _if all passed_, would close out the program. Use when you want early visibility (start preparing the diploma, line up the ceremony) and trust the student not to file until they're confident.
-  - **Passed final courses** — the student becomes a candidate only after final grades are in and the eligibility math is satisfied. Use when "no walk if you might fail your last class" is the policy.
+- **Los estudiantes pueden solicitar la graduación** (Casilla) — el interruptor principal. Si está desactivado, no hay CTA, no se calcula la candidatura y no se puede presentar ninguna Solicitud de Graduación para este programa. Úsalo para programas gestionados íntegramente por la Secretaría Académica.
+- **Disparador de la Solicitud de Graduación** (Selección, obligatorio cuando la casilla está activada) — cuándo el estudiante se vuelve elegible para presentar:
+  - **Inscrito en los cursos finales** — el estudiante se convierte en candidato en el momento en que los cursos en los que está inscrito actualmente, _si todos se aprueban_, cerrarían el programa. Úsalo cuando quieras visibilidad temprana (empezar a preparar el diploma, organizar la ceremonia) y confíes en que el estudiante no presentará hasta estar seguro.
+  - **Cursos finales aprobados** — el estudiante se convierte en candidato solo después de publicadas las calificaciones finales y cumplida la contabilización de elegibilidad. Úsalo cuando la política sea "no participas en la ceremonia si podrías reprobar tu última clase".
 
-> **Tip.** The two trigger modes use the same eligibility math. The difference is whether **in-progress** courses count toward the final tally. If you're not sure which to pick, **Passed final courses** is the conservative choice.
+> **Consejo.** Ambos modos de disparador usan el mismo cálculo de elegibilidad. La diferencia es si los cursos **en progreso** cuentan para el cómputo final. Si no estás seguro de cuál elegir, **Cursos finales aprobados** es la opción conservadora.
 
-## How the student gets to the CTA
+## Cómo llega el estudiante al CTA
 
-The system maintains a system-managed flag on each Program Enrollment called `grad_candidate`. It re-evaluates automatically whenever PE state changes — course enrollment, withdrawal, grade entry, or any registrar edit. The student does nothing to "activate" their CTA; it just appears once they meet the conditions.
+El sistema mantiene un indicador administrado por el sistema en cada Inscripción en el Programa llamado `grad_candidate`. Se reevalúa automáticamente cada vez que cambia el estado de la PE — inscripción a cursos, retiro, registro de calificaciones o cualquier edición de la Secretaría Académica. El estudiante no hace nada para "activar" su CTA; simplemente aparece cuando cumple las condiciones.
 
-`grad_candidate = 1` requires **all** of:
+`grad_candidate = 1` requiere **todo** lo siguiente:
 
-- The program's **Students Can Request Graduation** flag is on and **Graduation Request Trigger** is set.
-- All mandatory program courses are at least _In Progress_ (or _Completed_, depending on trigger mode).
-- All mandatory courses on the student's active emphasis tracks are at least _In Progress_ (or _Completed_).
-- The credit total — completed plus in-progress (or just completed, depending on trigger mode) — meets the program's required credits.
-- Every mandatory graduation requirement marked **Blocks Graduation Request** is `Fulfilled` or `Waived`.
+- El indicador **Los estudiantes pueden solicitar la graduación** del programa está activado y **Disparador de la Solicitud de Graduación** está definido.
+- Todos los cursos obligatorios del programa están al menos _En progreso_ (o _Completado_, según el modo de disparador).
+- Todos los cursos obligatorios en las trayectorias de énfasis activas del estudiante están al menos _En progreso_ (o _Completado_).
+- El total de créditos — completados más en progreso (o solo completados, según el modo de disparador) — cumple con los créditos requeridos del programa.
+- Cada requisito de graduación obligatorio marcado **Bloquea la Solicitud de Graduación** está `Fulfilled` o `Waived`.
 
-If any blocker is outstanding, the candidacy stays at 0 even when the credit/course math would otherwise be true. This is by design — the school explicitly tagged that requirement as a hard prerequisite.
+Si algún bloqueador sigue pendiente, la candidatura permanece en 0 aun cuando el cálculo de créditos/cursos sería suficiente. Esto es deliberado — la escuela marcó explícitamente ese requisito como un prerrequisito estricto.
 
-## What the student sees
+## Lo que ve el estudiante
 
-On the **Program Audit** page (`/program-audit/<enrollment>`):
+En la página de **Auditoría del Programa** (`/program-audit/<enrollment>`):
 
-1. The eligibility banner now has three states:
-   - **Eligible for Graduation** (green) — passed everything.
-   - **Conditionally Eligible for Graduation** (blue) — enrolled in their final courses; will be eligible when those grades come in.
-   - **Not Yet Eligible for Graduation** (amber) — the default starting state.
+1. El banner de elegibilidad ahora tiene tres estados:
+   - **Elegible para Graduación** (verde) — todo aprobado.
+   - **Elegible Condicionalmente para Graduación** (azul) — inscrito en sus cursos finales; será elegible cuando se publiquen esas calificaciones.
+   - **Aún no elegible para Graduación** (ámbar) — el estado inicial predeterminado.
 
-2. Below the banner, when the student is a candidate, the **Graduation Request CTA**:
-   - **Eligible** path: _"You meet the program's graduation request criteria. File a request to begin the approval process."_
-   - **Conditionally Eligible** path: _"You may file a request to begin the graduation process. You must pass the courses you are currently in for it to be accepted."_
+2. Debajo del banner, cuando el estudiante es candidato, el **CTA de Solicitud de Graduación**:
+   - **Ruta Elegible**: \*"Cumples con los criterios de solicitud de graduación del programa. _"Presenta una solicitud para iniciar el proceso de aprobación."_
+   - **Ruta Condicionalmente Elegible**: \*"Puedes presentar una solicitud para iniciar el proceso de graduación. _"Debes aprobar los cursos en los que estás actualmente para que sea aceptada."_
 
-3. Below the CTA, a **Pending Payments** table groups every unpaid Sales Invoice for this enrollment by payer. This includes the student's own invoices _and_ invoices owed by other payers (sponsoring church, scholarship donors, denominational fund). The student can only pay their own on the Fees page; this table tells everyone the full picture.
+3. Debajo del CTA, una tabla de **Pagos pendientes** agrupa cada **Factura de Venta** impaga de esta inscripción por pagador. Esto incluye las facturas del propio estudiante y las adeudadas por otros pagadores (iglesia patrocinadora, donantes de becas, fondo denominacional). El estudiante solo puede pagar las suyas en la página de Cuotas; esta tabla muestra a todos el panorama completo.
 
-   Most schools require all balances to be cleared before graduation. The financial-review step (below) is the gate, but seeing it surfaced here lets the student chase down their other payers early.
+   La mayoría de las escuelas exigen saldar todos los saldos antes de la graduación. El paso de revisión financiera (más abajo) es la puerta de control, pero verlo aquí permite al estudiante gestionar a tiempo a sus otros pagadores.
 
-## What happens when they file
+## Qué sucede cuando presentan
 
-Clicking **Request Graduation** does three things atomically:
+Hacer clic en **Solicitar Graduación** realiza tres acciones de forma atómica:
 
-1. Creates the **Graduation Request** record bound to this Program Enrollment.
-2. Submits it via the workflow.
-3. Generates a **Sales Invoice** for the program's Graduation Request fee, addressed to whichever payer is configured on the enrollment for the `Graduation Request` event. (Multiple payers split the fee proportionally, exactly like Course Enrollment fees.)
+1. Crea el registro de **Solicitud de Graduación** vinculado a esta Inscripción en el Programa.
+2. Lo envía a través del flujo de trabajo.
+3. Genera una **Factura de Venta** por la cuota de Solicitud de Graduación del programa, dirigida al pagador que esté configurado en la inscripción para el evento `Graduation Request`. (Si hay varios pagadores, la cuota se divide proporcionalmente, exactamente como las cuotas de Inscripción a Curso.)
 
-The student lands back on the audit page; the CTA card now shows **Awaiting Payment** with the paid percentage and a link to the invoice.
+El estudiante regresa a la página de auditoría; la tarjeta del CTA ahora muestra **A la espera de pago** con el porcentaje pagado y un enlace a la factura.
 
-If the program is marked **Free**, no invoice is generated and the request lands directly in `Academic Review`.
+Si el programa está marcado como **Gratuito**, no se genera factura y la solicitud pasa directamente a `Academic Review`.
 
-## The workflow
+## El flujo de trabajo
 
 ```
-Draft  →  Awaiting Payment  →  Academic Review  →  Financial Review  →  Approved
-            (free skips →                ↗)                                    ↓
-                                                                         Cancelled  (any state)
+Borrador  →  En espera de pago  →  Revisión académica  →  Revisión financiera  →  Aprobado
+            (los gratuitos omiten →                ↗)                                    ↓
+                                                                         Cancelado  (cualquier estado)
 ```
 
-| State                | Doc status | Who can edit     | What it means                                                                                                                                                             |
-| -------------------- | ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Draft**            | 0          | Academics User   | Being prepared; usually transient (the system creates and submits in one step from the audit page).                                    |
-| **Awaiting Payment** | 1          | Academics User   | Invoice generated; student needs to pay. Auto-advances on full payment.                                                                   |
-| **Academic Review**  | 1          | Academics User   | Payment in (or program is free). Academics confirm grades posted, blockers cleared, graduation requirements satisfied. |
-| **Financial Review** | 1          | Accounts User    | Bursar verifies no other outstanding balances on the enrollment.                                                                                          |
-| **Approved**         | 1          | Seminary Manager | Final stamp. Student is cleared for graduation.                                                                                           |
-| **Cancelled**        | 2          | Seminary Manager | Withdrawn from the process.                                                                                                                               |
+| Estado                  | Estado del documento | Quién puede editar | Qué significa                                                                                                                                                                                                                             |
+| ----------------------- | -------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Borrador**            | 0                    | Usuario Académico  | En preparación; normalmente transitorio (el sistema crea y envía en un solo paso desde la página de auditoría).                                                                                        |
+| **A la espera de pago** | 1                    | Usuario Académico  | Factura generada; el estudiante debe pagar. Avanza automáticamente cuando se paga en su totalidad.                                                                                                        |
+| **Revisión Académica**  | 1                    | Usuario Académico  | Pago recibido (o el programa es gratuito). El área académica confirma que las calificaciones están publicadas, los bloqueadores despejados y los requisitos de graduación satisfechos. |
+| **Revisión Financiera** | 1                    | Usuario de Cuentas | El Tesorero verifica que no haya otros saldos pendientes en la inscripción.                                                                                                                                               |
+| **Aprobado**            | 1                    | Gestor seminario   | Sello final. El estudiante queda autorizado para la graduación.                                                                                                                                           |
+| **Cancelado**           | 2                    | Gestor seminario   | Retirado del proceso.                                                                                                                                                                                                     |
 
-### Awaiting Payment → Academic Review (auto)
+### A la espera de pago → Revisión Académica (automático)
 
-When a Payment Entry posts against the GR's invoice and `paid_percent ≥ 100`, the system advances the workflow automatically. No manual step required for the common case.
+Cuando una Entrada de Pago se contabiliza contra la factura de la GR y `paid_percent ≥ 100`, el sistema avanza el flujo de trabajo automáticamente. No se requiere paso manual en el caso común.
 
-If a school operates with partial-payment policies, an Academics User can manually click **Mark as Paid** to advance the request before full payment posts.
+Si una escuela opera con políticas de pago parcial, un Academics User puede hacer clic manualmente en **Marcar como pagado** para avanzar la solicitud antes de que se registre el pago total.
 
-### Academic Review → Financial Review (manual)
+### Revisión Académica → Revisión Financiera (manual)
 
-Academics User clicks **Send for Financial Review** when satisfied that:
+Un Academics User hace clic en **Enviar a Revisión Financiera** cuando verifica que:
 
-- Final grades are posted on every course on the enrollment.
-- Every mandatory active graduation requirement is `Fulfilled` or `Waived`.
-- No outstanding academic decisions (incomplete grades, pending appeals).
+- Las calificaciones finales están publicadas en cada curso de la inscripción.
+- Cada requisito de graduación obligatorio y activo está `Fulfilled` o `Waived`.
+- No hay decisiones académicas pendientes (calificaciones incompletas, apelaciones en curso).
 
-The Graduation Request desk form shows two HTML snapshot tables to make this review fast:
+El formulario de escritorio de la Solicitud de Graduación muestra dos tablas instantáneas en HTML para agilizar esta revisión:
 
-- **Graduation Requirements** — every SGR row with status, mandatory flag, _Blocks Request_ flag, due date, and a link to the linked document (Recommendation Letter, Culminating Project, etc.). Open any one with a click.
-- **Pending Payments** — every unpaid invoice on the enrollment, grouped by payer, with desk links to each Sales Invoice.
+- **Requisitos de Graduación** — cada fila de SGR con estado, indicador de obligatorio, indicador _Bloquea la Solicitud_, fecha de vencimiento y un enlace al documento vinculado (Carta de Recomendación, Proyecto de Culminación, etc.). Abre cualquiera con un clic.
+- **Pagos pendientes** — cada factura impaga de la inscripción, agrupada por pagador, con enlaces de Desk a cada **Factura de Venta**.
 
-### Financial Review → Approved (manual)
+### Revisión Financiera → Aprobado (manual)
 
-Accounts User clicks **Approve Financially** when satisfied that:
+Un Accounts User hace clic en **Aprobar financieramente** cuando verifica que:
 
-- The graduation fee is paid in full.
-- No other outstanding balances on the enrollment (or the school has explicitly accepted them).
-- Refunds, scholarship reconciliations, and any holds are cleared.
+- La cuota de graduación está pagada en su totalidad.
+- No hay otros saldos pendientes en la inscripción (o la escuela los ha aceptado explícitamente).
+- Los reembolsos, conciliaciones de becas y cualquier retención están resueltos.
 
-This is the final approval. The Graduation Request lands at `Approved`.
+Esta es la aprobación final. La Solicitud de Graduación queda en `Approved`.
 
-> **Heads up — `Approved` does not stamp the PE as "graduated".** That's a separate registrar action (in a future release, a workflow on the PE itself). `Approved` means the request is complete; the registrar then runs the actual graduation processing (transcript stamping, alumni record creation) outside this module.
+> **Aviso — `Approved` no marca la PE como "graduado".** Es una acción separada de la Secretaría Académica (en una versión futura, un flujo de trabajo en la propia PE). `Approved` significa que la solicitud está completa; luego la Secretaría Académica ejecuta el procesamiento real de la graduación (anotación en el expediente, creación del registro de exalumno) fuera de este módulo.
 
-## Cancellation
+## Cancelación
 
-Two paths:
+Dos caminos:
 
-1. **Manual** — Academics or Seminary Manager clicks Cancel on the GR form. Any **fully unpaid** linked Sales Invoices are cancelled too. **Partially paid** invoices are left in place — the registrar handles refund decisions explicitly (use ERPNext's standard Credit Note flow if needed).
+1. **Manual** — Academics o Seminary Manager hace clic en Cancelar en el formulario de la GR. Cualquier **Factura de Venta** vinculada y totalmente impaga también se cancela. Las facturas **parcialmente pagadas** se dejan como están — la Secretaría Académica gestiona explícitamente las decisiones de reembolso (usa el flujo estándar de Nota de Crédito de ERPNext si es necesario).
 
-2. **Cascade from PE withdrawal** — when a registrar deactivates a Program Enrollment (`pgmenrol_active = 0`), every active GR on that PE is automatically cancelled. **The fee is non-refundable** in this path — invoices are left intact. This is the default policy because most schools treat the graduation fee as a non-refundable service fee, and a withdrawing student isn't graduating anyway.
+2. **Cascada por retiro de la PE** — cuando la Secretaría Académica desactiva una Inscripción en el Programa (`pgmenrol_active = 0`), toda GR activa en esa PE se cancela automáticamente. **La cuota no es reembolsable** en esta vía — las facturas se dejan intactas. Esta es la política predeterminada porque la mayoría de las escuelas tratan la cuota de graduación como una tarifa de servicio no reembolsable, y un estudiante que se retira no se va a graduar de todas formas.
 
-## Day-to-day for staff
+## Día a día para el personal
 
-### Where to look
+### Dónde buscar
 
-- **Per-student** — open the Program Enrollment in Desk; the GR (if any) is visible in the Connections sidebar.
-- **Queue** — the **Graduation Request** list view, filtered to `workflow_state` in `("Academic Review", "Financial Review")`, is the registrar's daily queue.
-- **Cohort** — same list filtered by `expected_graduation_date` within a term gives you the graduating cohort for ceremony planning.
+- **Por estudiante** — abre la Inscripción en el Programa en Desk; la GR (si existe) es visible en la barra lateral de Conexiones.
+- **Cola** — la vista de lista de **Solicitud de Graduación**, filtrada a `workflow_state` en `("Academic Review", "Financial Review")`, es la cola diaria del registro académico.
+- **Cohorte** — la misma lista filtrada por `expected_graduation_date` dentro de un período te da la cohorte que se gradúa para planificar la ceremonia.
 
-### Reviewing a request
+### Revisar una solicitud
 
-1. Open the Graduation Request from the list view.
-2. Scan the **Graduation Requirements** snapshot — anything not `Fulfilled` or `Waived`?
-3. Scan the **Pending Payments** snapshot — total unpaid is the bursar's concern.
-4. Click **Send for Financial Review** (if Academics) or **Approve Financially** (if Accounts), or **Cancel** if the request needs to come back to the student.
+1. Abre la Solicitud de Graduación desde la vista de lista.
+2. Revisa la instantánea de **Requisitos de Graduación** — ¿hay algo que no esté `Fulfilled` o `Waived`?
+3. Revisa la instantánea de **Pagos pendientes** — el total impago es responsabilidad de Tesorería.
+4. Haz clic en **Enviar a Revisión Financiera** (si eres Academics) o **Aprobar financieramente** (si eres Accounts), o **Cancelar** si la solicitud debe volver al estudiante.
 
-### When the student doesn't see the CTA
+### Cuando el estudiante no ve el CTA
 
-If a student tells you they "should be able to graduate" but don't see the button, walk through the candidacy checks:
+Si un estudiante te dice que "debería poder graduarse" pero no ve el botón, repasa las comprobaciones de candidatura:
 
-1. Is `Students Can Request Graduation` checked on the Program?
-2. Is `Graduation Request Trigger` set?
-3. Are all mandatory program + emphasis courses at least In Progress (Enrolled-mode) or Completed (Passed-mode)?
-4. Do the credit totals add up?
-5. Are there any **mandatory** graduation requirements with `Blocks Graduation Request` checked that are still `Not Started`, `In Progress`, or `Submitted`?
+1. ¿Está activado **Los estudiantes pueden solicitar la graduación** en el Programa?
+2. ¿Está configurado el **Disparador de la Solicitud de Graduación**?
+3. ¿Todos los cursos obligatorios del programa + énfasis están al menos _En progreso_ (modo Inscrito) o _Completado_ (modo Aprobado)?
+4. ¿Suman los totales de créditos?
+5. ¿Hay requisitos de graduación **obligatorios** con **Bloquea la Solicitud de Graduación** marcado que aún estén `Not Started`, `In Progress` o `Submitted`?
 
-The fifth is the most common silent blocker. Open the Program Enrollment and look at the Student Graduation Requirements table — anything with the **Blocks Request** flag set must be `Fulfilled` or `Waived` first.
+El quinto es el bloqueador silencioso más común. Abre la Inscripción en el Programa y mira la tabla de Requisitos de Graduación del Estudiante — cualquier elemento con el indicador **Bloquea la Solicitud** debe estar `Fulfilled` o `Waived` primero.
 
-> **Tip — bench helper.** If you change a program's trigger or fix a hard-to-debug case for one student, the system re-evaluates candidacy automatically on the next PE-related save. To force a recompute across an entire program, run:
+> **Consejo — utilidad de bench.** Si cambias el disparador de un programa o corriges un caso difícil de depurar para un estudiante, el sistema reevalúa la candidatura automáticamente en el siguiente guardado relacionado con la PE. Para forzar un recálculo en todo un programa, ejecuta:
 >
 > ```
 > bench --site <site> execute seminary.seminary.graduation_candidate.recompute_for_program --kwargs "{'program': 'MDiv'}"
 > ```
 
-## Worked examples
+## Ejemplos prácticos
 
-### Example 1 — Standard for-fee MDiv graduation
+### Ejemplo 1 — Graduación estándar de MDiv con cuota
 
-1. **Configure the program.** Open the _MDiv_ program. Tick **Students Can Request Graduation**. Set **Graduation Request Trigger** to _Passed final courses_ (the conservative default).
-2. **Configure the fee payer.** On each Program Enrollment, open the _Payers Fee Category PE_ table and add a row with `Event = Graduation Request`, the appropriate Fee Category, payer, and percentage.
-3. The student finishes their last term. Once final grades are posted, the system flips `grad_candidate` to 1.
-4. The student sees **Eligible for Graduation** + **Request Graduation** button on the audit page. They click it.
-5. The system creates the GR + Sales Invoice. The student pays. GR auto-advances to **Academic Review**.
-6. Academics opens the GR, reviews the snapshot tables, clicks **Send for Financial Review**.
-7. The Bursar verifies no other unpaid balances, clicks **Approve Financially**. GR lands at **Approved**.
+1. **Configura el programa.** Abre el programa _MDiv_. Marca **Los estudiantes pueden solicitar la graduación**. Configura **Disparador de la Solicitud de Graduación** en _Cursos finales aprobados_ (el valor predeterminado conservador).
+2. **Configura el pagador de la cuota.** En cada Inscripción en el Programa, abre la tabla _Payers Fee Category PE_ y añade una fila con `Event = Graduation Request`, la categoría de cuota adecuada, el pagador y el porcentaje.
+3. El estudiante termina su último período. Una vez publicadas las calificaciones finales, el sistema cambia `grad_candidate` a 1.
+4. El estudiante ve **Elegible para Graduación** + el botón **Solicitar Graduación** en la página de auditoría. Hace clic.
+5. El sistema crea la GR + la **Factura de Venta**. El estudiante paga. La GR avanza automáticamente a **Revisión Académica**.
+6. Academics abre la GR, revisa las tablas instantáneas y hace clic en **Enviar a Revisión Financiera**.
+7. El Tesorero verifica que no haya otros saldos impagos y hace clic en **Aprobar financieramente**. La GR queda en **Aprobado**.
 
-### Example 2 — Free program, request as soon as enrolled in final courses
+### Ejemplo 2 — Programa gratuito, solicitar en cuanto se inscribe en los cursos finales
 
-1. Configure the _Online Certificate_ program: tick **Free Program**, tick **Students Can Request Graduation**, set trigger to _Enrolled in final courses_.
-2. The student enrolls in their last courses for the term.
-3. The audit page shows **Conditionally Eligible** banner + the CTA with the "you must pass" caveat.
-4. The student files. The GR skips Awaiting Payment and lands directly in **Academic Review**.
-5. Academics waits until grades come in. If everything passed, **Send for Financial Review**. If a course was failed, **Cancel** — the student can re-file once they make up the requirement.
+1. Configura el programa _Online Certificate_: marca **Programa gratuito**, marca **Los estudiantes pueden solicitar la graduación**, establece el disparador en _Inscrito en los cursos finales_.
+2. El estudiante se inscribe en sus últimos cursos del período.
+3. La página de auditoría muestra el banner **Elegible Condicionalmente** + el CTA con la advertencia de "debes aprobar".
+4. El estudiante presenta la solicitud. La GR omite **A la espera de pago** y pasa directamente a **Revisión Académica**.
+5. Academics espera hasta que lleguen las calificaciones. Si todo está aprobado, **Enviar a Revisión Financiera**. Si algún curso se reprobó, **Cancelar** — el estudiante puede volver a presentar cuando cumpla el requisito.
 
-### Example 3 — Hard prerequisite: thesis must be approved first
+### Ejemplo 3 — Prerrequisito estricto: la tesis debe aprobarse primero
 
-1. Open the **Senior Project** Library item (Linked Document, target _Culminating Project_). Tick **Mandatory**, tick **Blocks Graduation Request**.
-2. The student finishes coursework but the thesis is still in revision. Even though the credit math is satisfied, `grad_candidate` stays at 0 — the audit page shows **Conditionally Eligible** but no CTA appears.
-3. The student's advisor approves the thesis. The Culminating Project workflow lands on `Completed`. The SGR row flips to `Fulfilled`. The candidacy evaluator runs, sees the blocker is now satisfied, and flips `grad_candidate` to 1.
-4. The student refreshes the audit page. The CTA is now visible. They file.
+1. Abre el elemento de Biblioteca **Senior Project** (Documento vinculado, destino _Proyecto de Culminación_). Marca **Obligatorio**, marca **Bloquea la Solicitud de Graduación**.
+2. El estudiante termina los cursos, pero la tesis sigue en revisión. Aunque el cálculo de créditos se cumple, `grad_candidate` permanece en 0 — la página de auditoría muestra **Elegible Condicionalmente** pero no aparece el CTA.
+3. El asesor del estudiante aprueba la tesis. El flujo de trabajo de Proyecto de Culminación queda en `Completed`. La fila de SGR cambia a `Fulfilled`. El evaluador de candidatura se ejecuta, ve que el bloqueador ya está satisfecho y cambia `grad_candidate` a 1.
+4. El estudiante actualiza la página de auditoría. Ahora el CTA es visible. Presenta la solicitud.
 
-### Example 4 — Sponsoring church behind on payments
+### Ejemplo 4 — Iglesia patrocinadora con pagos atrasados
 
-1. The student finishes coursework. They file the Graduation Request and pay the graduation fee. GR advances to Academic Review.
-2. Academics reviews requirements; everything is in order. Sends to Financial Review.
-3. The Bursar opens the GR, scans the **Pending Payments** snapshot. Sees that the sponsoring church owes $4,200 across three monthly invoices.
-4. The Bursar holds Approval, contacts the church. Once paid, **Approve Financially**. (Alternatively, if the school has a written agreement with the church, the Bursar may approve and chase the balance separately — that's an institutional policy decision the system doesn't enforce.)
+1. El estudiante termina los cursos. Presenta la Solicitud de Graduación y paga la cuota de graduación. La GR avanza a **Revisión Académica**.
+2. Academics revisa los requisitos; todo está en orden. Envía a **Revisión Financiera**.
+3. El Tesorero abre la GR y revisa la instantánea de **Pagos pendientes**. Ve que la iglesia patrocinadora adeuda 4.200 $ en tres facturas mensuales.
+4. El Tesorero retiene la Aprobación y contacta a la iglesia. Una vez pagado, **Aprobar financieramente**. (Alternativamente, si la escuela tiene un acuerdo por escrito con la iglesia, el Tesorero puede aprobar y cobrar el saldo por separado — es una decisión de política institucional que el sistema no impone.)
 
-## Quick reference
+## Referencia rápida
 
-| If you want to... | Do this                                                                                                                                       |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enable Graduation Requests on a program                           | Program → tick _Students Can Request Graduation_ + pick a trigger                                                                             |
-| Disable Graduation Requests for a specific program                | Untick _Students Can Request Graduation_ on that Program                                                                                      |
-| Make a graduation requirement a hard prerequisite to even filing  | Library → tick _Blocks Graduation Request_ (only visible if Mandatory)                                                     |
-| Force a candidacy recompute for one student                       | Save the Program Enrollment (any field) — recompute fires on `on_update_after_submit`                                      |
-| Force a recompute for an entire program                           | `bench execute seminary.seminary.graduation_candidate.recompute_for_program --kwargs "{'program': 'XYZ'}"`                                    |
-| See the registrar review queue                                    | Graduation Request list, filter `workflow_state in ("Academic Review", "Financial Review")`                                                   |
-| Cancel a request without refunding                                | Click Cancel on the GR (partially paid invoices are left in place)                                                         |
-| Confirm graduation finished                                       | Lands at `Approved` workflow state — actual graduation processing (transcript, alumni record) is a separate registrar step |
+| Si quieres...                         | Haz esto                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Habilitar Solicitudes de Graduación en un programa                                    | Programa → marca _Los estudiantes pueden solicitar la graduación_ + elige un disparador                                                                                                          |
+| Deshabilitar Solicitudes de Graduación para un programa específico                    | Desmarca _Los estudiantes pueden solicitar la graduación_ en ese Programa                                                                                                                        |
+| Convertir un requisito de graduación en prerrequisito estricto incluso para presentar | Biblioteca → marca _Bloquea la Solicitud de Graduación_ (solo visible si es Obligatorio)                                                                                      |
+| Forzar un recálculo de candidatura para un estudiante                                 | Guarda la Inscripción en el Programa (cualquier campo) — el recálculo se dispara en `on_update_after_submit`                                                                  |
+| Forzar un recálculo para todo un programa                                             | `bench execute seminary.seminary.graduation_candidate.recompute_for_program --kwargs "{'program': 'XYZ'}"`                                                                                       |
+| Ver la cola de revisión de la Secretaría Académica                                    | Lista de Solicitud de Graduación, filtro `workflow_state in ("Academic Review", "Financial Review")`                                                                                             |
+| Cancelar una solicitud sin reembolso                                                  | Haz clic en Cancelar en la GR (las facturas parcialmente pagadas se dejan como están)                                                                                         |
+| Confirmar que la graduación finalizó                                                  | Queda en el estado de flujo de trabajo `Approved` — el procesamiento real de la graduación (certificado, registro de exalumno) es un paso separado de la Secretaría Académica |
 
-## Related
+## Relacionado
 
-- [Graduation Requirements](graduation-requirements.md) — the policy + Library + SGR layers that the candidacy evaluator reads from.
-- [Enrollment](enrollment.md) — Program Enrollment is where `grad_candidate`, the policy snapshot, and the fee payer config live.
-- [Withdrawal](withdrawal.md) — withdrawing a PE auto-cancels any active Graduation Request.
-- [User Roles](../administration/user-roles.md) — Academics User vs Accounts User vs Seminary Manager (review steps).
+- [Requisitos de Graduación](graduation-requirements.md) — las capas de política + Biblioteca + SGR de las que lee el evaluador de candidatura.
+- [Inscripción](enrollment.md) — En la Inscripción en el Programa residen `grad_candidate`, la instantánea de la política y la configuración del pagador de cuotas.
+- [Retiro](withdrawal.md) — retirar una PE cancela automáticamente cualquier Solicitud de Graduación activa.
+- [Roles de Usuario](../administration/user-roles.md) — Academics User vs Accounts User vs Seminary Manager (pasos de revisión).

@@ -1,381 +1,259 @@
-# Graduation Requirements
+# Requisitos de Graduação
 
-The Program Audit has always answered the question _"has this student earned
-enough credits and passed the required courses?"_ But many seminaries graduate
-students against a longer list: chapel attendances, ordination interviews,
-recommendation letters, doctrinal statements, internship hours, a thesis or
-capstone. The **Graduation Requirements** module captures everything that is
-_not_ a course, lets registrars author it from Desk without code, and feeds
-the result into the same Program Audit page students and advisors already
-use.
+O Program Audit sempre respondeu à pergunta _"este estudante obteve
+créditos suficientes e foi aprovado nas disciplinas obrigatórias?"_ Mas muitos seminários formam
+estudantes com base em uma lista mais longa: presenças na capela, entrevistas de ordenação,
+cartas de recomendação, declarações doutrinárias, horas de estágio, uma tese ou
+trabalho de conclusão. O módulo **Requisitos de Graduação** captura tudo o que _não_ é disciplina, permite que a secretaria acadêmica o crie no Desk, sem código, e envia o resultado para a mesma página Program Audit que estudantes e orientadores já usam.
 
-## Overview
+## Visão geral
 
-Think of graduation as having **two parallel tracks**:
+Pense na graduação como tendo **duas trilhas paralelas**:
 
-| Track                                             | Where it is configured                                          | What it answers                                                                                                               |
-| ------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Academics** — credit hours and required courses | Program → Courses table                                         | Has the student passed the right courses and accumulated enough credits?                                                      |
-| **Graduation Requirements** — everything else     | Program Graduation Requirement (this module) | Has the student also fulfilled the non-course evidence (letters, attendance, projects, signed statements)? |
+| Trilha                                                    | Onde é configurado                                              | O que responde                                                                                                                                   |
+| --------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Acadêmicos** — horas-crédito e disciplinas obrigatórias | Program → tabela Courses                                        | O estudante foi aprovado nas disciplinas certas e acumulou créditos suficientes?                                                                 |
+| **Requisitos de Graduação** — todo o restante             | Program Graduation Requirement (este módulo) | O estudante também cumpriu as evidências não relacionadas a disciplinas (cartas, presenças, projetos, declarações assinadas)? |
 
-Both tracks roll up into the **Program Audit** page. A student is
-`graduation_eligible` only when **all currently-active mandatory** items on
-**both** tracks are green. The two tracks are evaluated independently — a
-student missing one chapel attendance is not blocked from registering for
-courses, and a student who has not yet finished their last course is not
-blocked from submitting their recommendation letters.
+Ambas as trilhas se consolidam na página Program Audit. Um estudante fica `graduation_eligible` apenas quando **todos os itens obrigatórios atualmente ativos** em **ambas** as trilhas estão verdes. As duas trilhas são avaliadas independentemente — um estudante com uma presença de capela faltando não é impedido de se registrar em disciplinas, e um estudante que ainda não concluiu sua última disciplina não é impedido de enviar suas cartas de recomendação.
 
-## The three layers
+## As três camadas
 
-The module is built in three layers. You will spend most of your time in the
-first two.
+O módulo é construído em três camadas. Você passará a maior parte do tempo nas duas primeiras.
 
 ```
-1. Library         — Graduation Requirement Item        (define once, reuse anywhere)
+1. Biblioteca         — Graduation Requirement Item        (defina uma vez, reutilize em qualquer lugar)
                     │
-2. Policy          — Program Graduation Requirement     (bind to a program, with dates)
+2. Política          — Program Graduation Requirement     (vincule a um programa, com datas)
                     │
-3. Instance        — Student Graduation Requirement     (one row per student, frozen at enrollment)
+3. Instância        — Student Graduation Requirement     (uma linha por estudante, congelada na matrícula)
 ```
 
-### Layer 1 — The Library
+### Camada 1 — A Biblioteca
 
-A **Graduation Requirement Item** declares _what kind of thing exists in the
-seminary_. You author it once, with instructions to students, and reuse it
-across as many programs as you like.
+Um **Graduation Requirement Item** declara _que tipo de coisa existe no seminário_. Você o define uma vez, com instruções aos estudantes, e o reutiliza em quantos programas desejar.
 
-Every library item picks **one** of three types:
+Cada item da biblioteca escolhe **um** de três tipos:
 
-- **Event Attendance** — fulfilled by a student attending a specific
-  [Event](../modules/academic-calendar.md). Example: _"Spiritual Formation
-  Retreat 2027"_. Choose **Event per Student** if every student must show up
-  individually; leave it unchecked if a single occurrence (a one-time chapel
-  service everyone attends together) satisfies the cohort.
-- **Manual Verification** — fulfilled by staff confirming the student did
-  the thing, optionally with file evidence from the student, the staff, or
-  both. Example: _"Doctrinal Statement Signed"_, _"Chapel Attendance"_ (8
-  total).
-- **Linked Document** — fulfilled when another document in the system
-  reaches a specific status. Example: a _Recommendation Letter_ moves to
-  `Approved`, or a _Culminating Project_ moves to `Completed`.
+- **Participação em Evento** — cumprido quando um estudante participa de um [Evento](../modules/academic-calendar.md) específico. Exemplo: _"Retiro de Formação Espiritual
+  2027"_. Marque **Event per Student** se cada estudante precisar comparecer individualmente; deixe desmarcado se uma única ocorrência (um culto de capela único que todos participam juntos) satisfizer a coorte.
+- **Verificação Manual** — cumprido quando a equipe confirma que o estudante realizou a tarefa, opcionalmente com arquivo de evidência do estudante, da equipe ou de ambos. Exemplo: _"Declaração Doutrinária Assinada"_, _"Presença na Capela"_ (8
+  no total).
+- **Documento Vinculado** — cumprido quando outro documento no sistema atinge um status específico. Exemplo: uma _Recommendation Letter_ passa para `Approved`, ou um _Culminating Project_ passa para `Completed`.
 
-Two flags govern evidence on Manual Verification items:
+Duas sinalizadores controlam as evidências em itens de Verificação Manual:
 
-- **Evidence Submitted by Student** — gives the student an upload button on
-  their audit page. Use this for things like a signed acknowledgement form
-  the student themselves attaches.
-- **Evidence Required by Staff** — staff must attach a file when marking the
-  item Fulfilled. Use this for things you must keep on file (a signed
-  doctrinal statement, scanned ordination council minutes).
+- **Evidence Submitted by Student** — dá ao estudante um botão de upload na sua página Program Audit. Use isto para itens como um formulário de ciência assinado que o próprio estudante anexa.
+- **Evidence Required by Staff** — a equipe deve anexar um arquivo ao marcar o item como Fulfilled. Use isto para itens que você precisa manter em arquivo (uma declaração doutrinária assinada, atas digitalizadas do conselho de ordenação).
 
-These two flags are independent. A doctrinal statement might require _both_
-(student uploads the signed PDF, staff uploads their identity-verification
-note). Chapel attendance typically requires _neither_ — the staff just
-ticks Fulfilled.
+Esses dois sinalizadores são independentes. Uma declaração doutrinária pode exigir _ambos_ (o estudante envia o PDF assinado, a equipe envia sua nota de verificação de identidade). A presença na capela normalmente não exige nenhum — a equipe apenas marca Fulfilled.
 
-> **Why two flags?** Some items, like chapel attendance, are simple — staff
-> ticks a box. Others, like a doctrinal statement, need a written document from
-> the student _and_ a staff verification of identity. One pair of fields
-> can model both.
+> **Por que dois sinalizadores?** Alguns itens, como presença na capela, são simples — a equipe marca uma caixa. Outros, como uma declaração doutrinária, exigem um documento escrito do estudante e uma verificação de identidade pela equipe. Um par de campos consegue modelar ambos.
 
 #### Blocks Graduation Request
 
-If your seminary uses the [Graduation Request](graduation-request.md) flow,
-each library item has one more flag — **Blocks Graduation Request**
-(visible only when `Mandatory` is checked). When set, the student cannot
-even _file_ a Graduation Request until this requirement is `Fulfilled` or
-`Waived`. Use it for hard prerequisites the registrar's office wants
-verified up-front: recommendation letters, theses, doctrinal statements.
-Items without the flag are still tracked toward graduation eligibility,
-but the student can file the request and the academic review step will
-catch any leftovers.
+Se o seu seminário usar o fluxo de [Graduation Request](graduation-request.md), cada item da biblioteca tem mais um sinalizador — **Blocks Graduation Request** (visível apenas quando `Mandatory` está marcado). Quando ativado, o estudante não pode nem mesmo abrir um Graduation Request até que esse requisito esteja `Fulfilled` ou `Waived`. Use isto para pré-requisitos rígidos que a secretaria acadêmica deseja verificar antecipadamente: cartas de recomendação, teses, declarações doutrinárias.
+Itens sem esse sinalizador ainda contam para a elegibilidade de graduação, mas o estudante pode enviar a solicitação e a etapa de revisão acadêmica detectará quaisquer pendências.
 
-### Layer 2 — The Policy
+### Camada 2 — A Política
 
-A **Program Graduation Requirement** binds library items to a Program with
-effective dates. This is the registrar's main authoring surface.
+Um **Program Graduation Requirement** vincula itens da biblioteca a um Program com datas de vigência. Esta é a principal área de configuração da secretaria acadêmica.
 
-Fields on the policy header:
+Campos no cabeçalho da política:
 
-- **Program** — which program this policy applies to.
-- **Active from / Active until** — the catalog-year window. A student
-  enrolling on 2026-09-01 picks up the policy whose window contains that
-  date.
-- **Is Active** — gate to mark a draft (or superseded) vs. a published policy.
+- **Program** — a qual programa esta política se aplica.
+- **Active from / Active until** — a janela do ano de catálogo. Um estudante que se matricular em 2026-09-01 adota a política cuja janela contenha essa data.
+- **Is Active** — chave para marcar rascunho (ou substituída) vs. política publicada.
 
-Inside the policy you list **Program Requirement Items** (the policy rows).
-Each row picks a library item and adds program-specific binding metadata:
+Dentro da política você lista **Program Requirement Items** (as linhas da política).
+Cada linha escolhe um item da biblioteca e adiciona metadados de vinculação específicos do programa:
 
-- **Activation Mode** — _when_ the requirement becomes "due" for an
-  enrolled student. See below.
-- **Is Mandatory** — does failing this row block graduation, or is it
-  optional/informational?
-- **Quantity Required** — only meaningful for Manual Verification (e.g.
-  "8 chapel attendances"). The other two types always count as 1.
+- **Activation Mode** — _quando_ o requisito passa a "vencer" para um
+  estudante matriculado. Veja abaixo.
+- **Is Mandatory** — falhar nesta linha bloqueia a graduação, ou é opcional/informativo?
+- **Quantity Required** — só faz sentido para Manual Verification (ex.:
+  "8 presenças na capela"). Os outros dois tipos sempre contam como 1.
 
-#### Activation modes
+#### Modos de ativação
 
-A requirement might be due _the day a student enrolls_ — or only after some
-trigger. The four modes:
+Um requisito pode vencer _no dia em que o estudante se matricula_ — ou apenas após algum gatilho. Os quatro modos:
 
-- **Always Active** — due from day one. Use this for anything the student
-  can start at any time (chapel attendance, doctrinal statement).
-- **After Requirement** — due only after one or more _other_ requirements in
-  this same policy have been fulfilled or waived. Use this for prerequisite
-  chains: _"Ordination Interview"_ becomes due only after _"Pastoral
-  Recommendation Letter"_ and _"Doctrinal Statement"_ are both fulfilled.
-- **On Document Status** — due only after a related document reaches a
-  given status. The library item's `link_doctype` and the chosen
-  `linked_doc_status` together define the gate.
-- **Time Offset** — due relative to a date anchor. Choose an anchor
-  (Expected Graduation Date, Last Term Starts, Program Starts), an offset
-  value, and a unit (Days or Academic Term). _"Senior Recital — due 60 days
-  before Expected Graduation Date"_ is offset = -60, unit = Days, anchor =
+- **Always Active** — exigível desde o primeiro dia. Use isto para qualquer coisa que o estudante possa iniciar a qualquer momento (presença na capela, declaração doutrinária).
+- **After Requirement** — só vence depois que um ou mais outros requisitos nesta mesma política tiverem sido `Fulfilled` ou `Waived`. Use isto para cadeias de pré-requisitos:
+  _"Ordination Interview"_ só vence após _"Pastoral
+  Recommendation Letter"_ e _"Doctrinal Statement"_ estarem ambas Fulfilled.
+- **On Document Status** — só vence depois que um documento relacionado atingir um status determinado. O `link_doctype` do item da biblioteca e o `linked_doc_status` escolhido juntos definem o gatilho.
+- **Time Offset** — vence em relação a um marco de data. Escolha um marco (Expected Graduation Date, Last Term Starts, Program Starts), um valor de deslocamento e uma unidade (Dias ou Período Acadêmico). _"Recital de Formatura — vence 60 dias
+  antes de Expected Graduation Date"_ é offset = -60, unit = Days, anchor =
   Expected Graduation Date.
 
-A row whose activation has not yet been triggered shows on the audit as
-_Not Yet Active_, and even if mandatory does **not** block graduation
-eligibility — it is "not yet your problem." Once active, an unfulfilled
-mandatory row blocks graduation.
+Uma linha cuja ativação ainda não foi disparada aparece no Program Audit como
+_Not Yet Active_ e, mesmo que seja obrigatória, **não** bloqueia a
+eligibilidade para graduação — é "ainda não é seu problema." Uma vez ativa, uma linha obrigatória não cumprida bloqueia a graduação.
 
-### Layer 3 — The Instance (snapshot)
+### Camada 3 — A Instância (snapshot)
 
-When a Program Enrollment is submitted, the system **snapshots** the active
-policy into per-student rows called **Student Graduation Requirements**
-(SGRs). One SGR row per policy row, multiplied by the quantity for Manual
-Verification items.
+Quando um Program Enrollment é enviado, o sistema **faz um snapshot** da política ativa em linhas por estudante chamadas **Student Graduation Requirements** (SGRs). Uma linha de SGR por linha da política, multiplicada pela quantidade para itens de Verificação Manual.
 
-This snapshot is **frozen for that student.** A registrar publishing a new
-policy in 2027 does **not** retroactively change the requirements of a
-student who enrolled in 2025. This is the catalog-year contract — it is the
-rule seminaries traditionally honor and it is enforced by construction.
+Esse snapshot fica **congelado para aquele estudante.** Um secretário acadêmico publicando uma nova política em 2027 **não** altera retroativamente os requisitos de um estudante que se matriculou em 2025. Este é o contrato do ano de catálogo — é a regra que os seminários tradicionalmente honram e é aplicada por design.
 
-The **Program Enrollment** also stores the policy it picked
-(`graduation_policy`) so anyone reviewing the file can trace exactly which
-catalog year the student is on.
+O **Program Enrollment** também armazena a política que selecionou (`graduation_policy`) para que qualquer pessoa revisando o arquivo possa rastrear exatamente em qual ano de catálogo o estudante está.
 
-If a registrar genuinely needs to migrate a student to the current policy
-(e.g. the student requested it, or a regulator required it), there is a
-whitelisted **Resnapshot** action on the Program Enrollment. By default it
-preserves any rows that were already waived; the action is logged.
+Se a secretaria acadêmica realmente precisar migrar um estudante para a política atual (por exemplo, o estudante solicitou, ou um órgão regulador exigiu), há uma ação autorizada **Resnapshot** no Program Enrollment. Por padrão, ela preserva quaisquer linhas que já estavam `Waived`; a ação é registrada em log.
 
-## Worked examples
+## Exemplos práticos
 
-### Example 1 — Chapel attendance (8 services per term)
+### Exemplo 1 — Presença na capela (8 cultos por período)
 
-**Goal:** every student must attend 8 chapel services across the program.
+**Objetivo:** todo estudante deve participar de 8 cultos de capela ao longo do programa.
 
-1. **Create the library item.** Desk → Graduation Requirement Item → New.
-   - Requirement: `Chapel Attendance`
-   - Type: `Manual Verification`
-   - Default Quantity: `8`
-   - Mandatory: ✓
+1. **Crie o item de biblioteca.** Desk → Graduation Requirement Item → New.
+   - Requisito: `Chapel Attendance`
+   - Tipo: `Manual Verification`
+   - Quantidade Padrão: `8`
+   - Obrigatório: ✓
    - Evidence Submitted by Student: ✗
-   - Evidence Required by Staff: ✗ (a tick-the-box record is enough)
-   - Instructions: _"Students are expected to attend at least 8 chapel
-     services. The chaplain's office signs students in at the door."_
+   - Evidence Required by Staff: ✗ (marcar a caixa é suficiente)
+   - Instruções: _"Espera-se que os estudantes participem de pelo menos 8 cultos na
+     capela. O setor de capelania registra os estudantes na entrada."_
 
-2. **Add it to the program policy.** Desk → Program Graduation Requirement
-   → open _MDiv 2026 Catalog_ → add a row pointing at `Chapel Attendance`.
+2. **Adicione à política do programa.** Desk → Program Graduation Requirement → abrir _MDiv 2026 Catalog_ → adicionar uma linha apontando para `Chapel Attendance`.
    - Activation Mode: `Always Active`
-   - Quantity Required: `8` (or override per program — e.g. 4 for a
-     part-time MA)
+   - Quantity Required: `8` (ou sobrescreva por programa — p.ex., 4 para um MA parcial)
 
-3. **At enrollment**, the system materializes 8 SGR rows for each student,
-   labeled _"Chapel Attendance — Slot 1 of 8"_ through _"8 of 8"_.
+3. **Na matrícula**, o sistema materializa 8 linhas de SGR para cada estudante,
+   rotuladas _"Presença na Capela — Item 1 de 8"_ até _"8 de 8"_.
 
-4. **Day to day**, the chaplain's office opens the student's Program
-   Enrollment, finds the next _Not Started_ slot, and ticks it to
-   `Fulfilled`. The Program Audit page updates immediately.
+4. **No dia a dia**, a capelania abre o Program Enrollment do estudante, encontra o próximo slot Not Started e o marca como `Fulfilled`. A página Program Audit é atualizada imediatamente.
 
-### Example 2 — Three recommendation letters (with named slots)
+### Exemplo 2 — Três cartas de recomendação (com slots nomeados)
 
-**Goal:** every applicant for graduation submits three recommendation
-letters — _Pastoral_, _Academic_, _Character_ — each from a different kind
-of recommender, each with its own instructions.
+**Objetivo:** todo candidato à graduação envia três cartas de recomendação — _Pastoral_, _Acadêmica_, _Caráter_ — cada uma de um tipo diferente de recomendador, cada uma com suas próprias instruções.
 
-The instinct is to use one library item with `quantity_required = 3`.
-**Don't.** Each letter has a different audience and different instructions.
-Create **three separate library items** instead:
+O instinto é usar um único item de biblioteca com `quantity_required = 3`.
+**Não faça isso.** Cada carta tem um público diferente e instruções diferentes.
+Crie **três itens de biblioteca separados** em vez disso:
 
-- _Pastoral Reference Letter_ — Linked Document, target `Recommendation
-    Letter`. Instructions: _"Solicit from your home-church pastor."_
-- _Academic Reference Letter_ — same. Instructions: _"Solicit from a
-  professor in your major."_
-- _Character Reference Letter_ — same. Instructions: _"Solicit from
-  someone who has known you for at least 5 years and is not a relative."_
+- _Pastoral Reference Letter_ — Documento Vinculado, alvo `Recommendation Letter`. Instruções: _"Solicite ao pastor da sua igreja de origem."_
+- _Academic Reference Letter_ — igual. Instruções: _"Solicite a um
+  professor da sua área de formação."_
+- _Character Reference Letter_ — igual. Instruções: _"Solicite a alguém que o conheça há pelo menos 5 anos e que não seja parente."_
 
-The student sees three distinct entries on the audit, each with its own
-guidance. The Recommendation Letter doctype handles the rest: a tokenized
-guest-portal link sent to the recommender, multi-channel delivery
-(portal / email / manual upload), and a workflow that ends in `Approved`.
-When the letter is approved, the SGR row flips to Fulfilled automatically.
+O estudante vê três entradas distintas no Program Audit, cada uma com sua própria orientação. O doctype Recommendation Letter cuida do restante: um link tokenizado do portal de convidados enviado ao recomendador, envio multicanal (portal / e-mail / upload manual) e um fluxo de trabalho que termina em `Approved`.
+Quando a carta é aprovada, a linha de SGR muda para `Fulfilled` automaticamente.
 
-### Example 3 — Ordination Interview (after letters)
+### Exemplo 3 — Entrevista de Ordenação (após as cartas)
 
-**Goal:** an ordination interview can only be scheduled _after_ both
-recommendation letters are in.
+**Objetivo:** uma entrevista de ordenação só pode ser agendada depois que ambas as cartas de recomendação estiverem recebidas.
 
-1. Create a Manual Verification library item _Ordination Interview_
-   (Mandatory, Staff Evidence Required = ✓ with label _"Interview minutes"_).
-2. On the policy, add a row for it with **Activation Mode = After
-   Requirement** and pick the policy rows for _Pastoral Reference_ and
-   _Academic Reference_ as prerequisites.
-3. Until both letters are Fulfilled, the audit shows _"Ordination Interview
-   — Not Yet Active"_ and does not block graduation. The moment the second
-   letter is approved, the row activates and starts counting against
-   eligibility.
+1. Crie um item de biblioteca de Manual Verification _Ordination Interview_
+   (Mandatory, Staff Evidence Required = ✓ com rótulo _"Ata da entrevista"_).
+2. Na política, adicione uma linha para isso com **Activation Mode = After Requirement** e selecione as linhas de política para _Pastoral Reference_ e _Academic Reference_ como pré-requisitos.
+3. Até que ambas as cartas estejam Fulfilled, o Program Audit mostra _"Ordination Interview
+   — Not Yet Active"_ e não bloqueia a graduação. No momento em que a segunda carta é aprovada, a linha é ativada e passa a contar para a elegibilidade.
 
-### Example 4 — Senior Project (a complex linked doctype)
+### Exemplo 4 — Projeto de Conclusão (um doctype vinculado complexo)
 
-**Goal:** every MDiv student writes a Senior Project, defended over up to
-three rounds with reviewers.
+**Objetivo:** todo estudante de MDiv escreve um Projeto de Conclusão, defendido em até três rodadas com avaliadores.
 
-This is the **Culminating Project** doctype. You don't need to model the
-project yourself — it ships with the system, including its own reviewer
-table and a 9-state workflow.
+Este é o doctype **Culminating Project**. Você não precisa modelar o projeto — ele já vem com o sistema, incluindo sua própria tabela de avaliadores e um fluxo de trabalho de 9 estados.
 
-To wire it into a program:
+Para integrá-lo a um programa:
 
-1. Create a library item _Senior Project_.
+1. Crie um item de biblioteca _Senior Project_.
    - Type: `Linked Document`
    - Linked Document: `Culminating Project`
-2. Add it to the policy with **Activation Mode = Time Offset**, anchor
-   `Last Term Starts`, value `0`, unit `Days` — i.e., due once the final
-   term begins.
-3. At enrollment, the SGR row appears in the snapshot. The student initiates
-   the project from the audit page (a _Start Senior Project_ button); when
-   the project's workflow reaches `Completed`, the SGR row flips to
-   Fulfilled automatically.
+2. Adicione-o à política com **Activation Mode = Time Offset**, anchor `Last Term Starts`, value `0`, unit `Days` — isto é, vence quando o período final começa.
+3. Na matrícula, a linha de SGR aparece no snapshot. O estudante inicia o projeto a partir da página Program Audit (um botão _Start Senior Project_); quando o fluxo de trabalho do projeto atinge `Completed`, a linha de SGR muda para `Fulfilled` automaticamente.
 
-### Example 5 — Doctrinal Statement (signed by both sides)
+### Exemplo 5 — Declaração Doutrinária (assinada por ambas as partes)
 
-**Goal:** the student signs a doctrinal statement; the registrar's office
-verifies the signature and files a copy.
+**Objetivo:** o estudante assina uma declaração doutrinária; a secretaria acadêmica verifica a assinatura e arquiva uma cópia.
 
-1. Create a library item _Doctrinal Statement_.
+1. Crie um item de biblioteca _Doctrinal Statement_.
    - Type: `Manual Verification`
-   - Mandatory: ✓
-   - Evidence Submitted by Student: ✓, label _"Signed statement (PDF)"_
-   - Evidence Required by Staff: ✓, label _"Identity-verification note"_
-2. The student uploads the signed PDF on the portal. Their slot moves to
-   `Submitted`.
-3. The registrar opens the SGR row, attaches the verification note, and
-   clicks Fulfilled.
+   - Obrigatório: ✓
+   - Evidence Submitted by Student: ✓, rótulo _"Declaração assinada (PDF)"_
+   - Evidence Required by Staff: ✓, rótulo _"Anotação de verificação de identidade"_
+2. O estudante faz o upload do PDF assinado no portal. Seu slot muda para `Submitted`.
+3. A secretaria acadêmica abre a linha de SGR, anexa a nota de verificação e clica em `Fulfilled`.
 
-## Day-to-day for staff
+## No dia a dia da equipe
 
-### Where to look
+### Onde procurar
 
-- **Per-student status** — open the student's _Program Enrollment_ and
-  scroll to the _Student Graduation Requirements_ table, or open the
-  _Program Audit_ page from the student portal (staff can also reach it
-  through the Backoffice).
-- **Per-program policy** — Desk → Program Graduation Requirement → pick the
-  active policy for the program.
-- **Cohort overview** — a list view of _Student Graduation Requirement_
-  filtered by `status = Not Started` and grouped by `requirement_name` shows
-  you who still owes what.
+- **Status por estudante** — abra o Program Enrollment do estudante e role até a tabela Student Graduation Requirements, ou abra a página Program Audit a partir do portal do estudante (a equipe também pode acessá-la pelo Backoffice).
+- **Política por programa** — Desk → Program Graduation Requirement → selecione a política ativa do programa.
+- **Visão geral da coorte** — uma listagem de Student Graduation Requirement filtrada por `status = Not Started` e agrupada por `requirement_name` mostra quem ainda deve o quê.
 
-### Marking something Fulfilled
+### Marcando algo como Fulfilled
 
-Open the SGR row (either from the parent Program Enrollment or directly).
-Set `status` to `Fulfilled`, attach Staff Evidence if the requirement asks
-for it, and save. The system stamps `verified_by` and `verified_on`
-automatically.
+Abra a linha de SGR (do Program Enrollment pai ou diretamente).
+Defina `status` como `Fulfilled`, anexe a evidência da equipe se o requisito solicitar e salve. O sistema preenche `verified_by` e `verified_on` automaticamente.
 
-For Linked Document requirements, you usually do **not** mark the SGR row
-manually — the linked document's own workflow flips it for you when it
-reaches the configured status.
+Para requisitos de Linked Document, normalmente você **não** marca a linha de SGR manualmente — o próprio fluxo de trabalho do documento vinculado altera para você quando atinge o status configurado.
 
-### Waiving a requirement
+### Dispensando um requisito
 
-Sometimes a requirement genuinely should not apply to a particular student
-(e.g. the requirement was added for new students and an in-flight student
-formally requested an exception). On the SGR row:
+Às vezes, um requisito realmente não deve se aplicar a um determinado estudante (por exemplo, o requisito foi adicionado para novos estudantes e um estudante em andamento solicitou formalmente uma exceção). Na linha de SGR:
 
-1. Tick **Waived**.
-2. Enter a **Waiver Reason** (a short paragraph — this is your audit trail).
-3. Save. The system records `waived_by` (you) and `waived_on` (now).
+1. Marque `Waived`.
+2. Insira uma **Waiver Reason** (um parágrafo curto — este é o seu rastro de auditoria).
+3. Salvar. O sistema registra `waived_by` ( você) e `waived_on` (agora).
 
-A waived row counts as satisfied for graduation eligibility but is clearly
-distinguished from `Fulfilled` in reports.
+Uma linha marcada como `Waived` conta como satisfeita para a elegibilidade de graduação, mas é claramente distinguida de `Fulfilled` nos relatórios.
 
-### Publishing a new catalog year
+### Publicando um novo ano de catálogo
 
-When the seminary changes its requirements, you publish a new policy
-**alongside** the old one — you do _not_ edit the old one in place.
+Quando o seminário altera seus requisitos, você publica uma nova política **ao lado** da antiga — você **não** edita a antiga no lugar.
 
-1. Duplicate the existing Program Graduation Requirement (or create a
-   new one).
-2. Set `Active from` to the date the new catalog kicks in (e.g.
-   `2027-09-01`).
-3. Set the previous policy's `Active until` to the day before
-   (e.g. `2027-08-31`).
-4. Tick `Is Active` on the new one.
-5. Adjust the rows.
+1. Duplique o Program Graduation Requirement existente (ou crie um novo).
+2. Defina `Active from` para a data em que o novo catálogo entra em vigor (por exemplo, `2027-09-01`).
+3. Defina `Active until` da política anterior para o dia anterior (por exemplo, `2027-08-31`).
+4. Marque `Is Active` na nova.
+5. Ajuste as linhas.
 
-Students enrolling **after** the new `Active from` will snapshot against the
-new policy. Students already enrolled keep the old one. If a student
-explicitly asks to be moved to the new catalog, use **Resnapshot** on their
-Program Enrollment.
+Estudantes que se matricularem **após** o novo `Active from` farão snapshot com base na nova política. Estudantes já matriculados mantêm a antiga. Se um estudante pedir explicitamente para ser movido para o novo catálogo, use **Resnapshot** no seu Program Enrollment.
 
-### Adding a new linked-document type without code
+### Adicionando um novo tipo de documento vinculado sem código
 
-If your seminary later wants a _new_ type of linked document (say,
-_Internship Report_ — a doctype your IT team builds with its own workflow),
-you do **not** need to edit any code. Once the doctype exists with a
-`workflow_state` field:
+Se o seu seminário quiser mais tarde um novo tipo de documento vinculado (por exemplo, _Internship Report_ — um doctype que sua equipe de TI cria com seu próprio fluxo de trabalho), você **não** precisa editar nenhum código. Assim que o doctype existir com um campo `workflow_state`:
 
-1. Create a library item with `Type = Linked Document` and pick _Internship
-   Report_ in `Linked Document`.
-2. Add it to the relevant program policies with the activation mode you
-   want.
-3. On each library item with `Activation Mode = On Document Status`,
-   specify the status that signals fulfillment (e.g. `Approved`,
-   `Completed`).
+1. Crie um item de biblioteca com `Type = Linked Document` e escolha _Internship Report_ em `Linked Document`.
+2. Adicione-o às políticas de programa relevantes com o modo de ativação desejado.
+3. Em cada item de biblioteca com **Activation Mode = On Document Status**, especifique o status que sinaliza a conclusão (por exemplo, `Approved`, `Completed`).
 
-The system reflects status changes onto SGR rows automatically.
+O sistema reflete automaticamente as mudanças de status nas linhas de SGR.
 
-> **Heads-up — bespoke doctypes.** Two requirement types ship with their
-> own complete doctypes because the generic "Linked Document" path is too
-> thin for them: **Recommendation Letter** (with the external recommender
-> portal) and **Culminating Project** (with reviewer rounds). For these,
-> use the dedicated doctypes; the system already wires them into the
-> graduation audit.
+> **Atenção — doctypes personalizados.** Dois tipos de requisito são fornecidos com seus
+> próprios doctypes completos porque o caminho genérico de "Linked Document" é muito
+> limitado para eles: **Recommendation Letter** (com o portal externo do recomendador)
+> e **Culminating Project** (com rodadas de avaliação). Para estes, use os doctypes dedicados; o sistema já os integra ao Program Audit.
 
-## How this connects back to the Program Audit
+## Como isso se conecta de volta ao Program Audit
 
-The **Program Audit page** (`/program-audit/<enrollment>`) renders a single
-consolidated view:
+A **página Program Audit** (`/program-audit/<enrollment>`) apresenta uma visão única e consolidada:
 
-- The **Academics** section, fed from the Program → Courses table, shows
-  credit progress and required-course status. _(unchanged)_
-- The **Graduation Requirements** section, fed from the SGR snapshot, shows
-  every active requirement, grouped by status, with per-row instructions
-  and any evidence already on file.
+- A seção **Acadêmicos**, alimentada pela tabela Program → Courses, mostra o progresso de créditos e o status das disciplinas obrigatórias. _(inalterado)_
+- A seção **Requisitos de Graduação**, alimentada pelo snapshot de SGR, mostra todos os requisitos ativos, agrupados por status, com instruções por linha e quaisquer evidências já arquivadas.
 
-A student is shown `Eligible to graduate` only when both sections are
-clear of unfulfilled mandatory items.
+Um estudante é mostrado como `Eligible to graduate` apenas quando ambas as seções estão livres de itens obrigatórios não cumpridos.
 
-## Quick reference
+## Referência rápida
 
-| If you want to... | Do this                                                                                        |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Add a new requirement category for the whole seminary             | Create a Graduation Requirement Item (library)                              |
-| Apply a requirement to a specific program                         | Add a row to that program's Program Graduation Requirement (policy)         |
-| Make a requirement due only after another                         | Activation Mode = After Requirement, pick prerequisites                                        |
-| Make a requirement due X days before graduation                   | Activation Mode = Time Offset, anchor = Expected Graduation Date                               |
-| Confirm a student satisfied something                             | Open the SGR row, set status = Fulfilled                                                       |
-| Excuse a student from a requirement                               | Open the SGR row, tick Waived, give a reason                                                   |
-| Update the seminary catalog                                       | Publish a new Program Graduation Requirement with a new Active from date — do not edit old one |
-| Move a student onto the new catalog                               | Resnapshot action on their Program Enrollment                                                  |
+| Se você quiser... | Faça isto                                                                                            |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Adicionar uma nova categoria de requisito para todo o seminário   | Criar um Graduation Requirement Item (biblioteca)                                 |
+| Aplicar um requisito a um programa específico                     | Adicionar uma linha ao Program Graduation Requirement (política) desse programa   |
+| Fazer um requisito vencer somente após outro                      | Activation Mode = After Requirement, selecione os pré-requisitos                                     |
+| Fazer um requisito vencer X dias antes da graduação               | Activation Mode = Time Offset, anchor = Expected Graduation Date                                     |
+| Confirmar que um estudante cumpriu algo                           | Abrir a linha de SGR, definir `status = Fulfilled`                                                   |
+| Dispensar um estudante de um requisito                            | Abrir a linha de SGR, marcar `Waived`, informar um motivo                                            |
+| Atualizar o catálogo do seminário                                 | Publicar um novo Program Graduation Requirement com uma nova data `Active from` — não edite o antigo |
+| Mover um estudante para o novo catálogo                           | Ação **Resnapshot** no seu Program Enrollment                                                        |
 
-## Related
+## Relacionados
 
-- [Enrollment](enrollment.md) — Program Enrollment is where the snapshot
-  lives.
-- [Academic Calendar](academic-calendar.md) — Events used by Event
-  Attendance requirements.
-- [User Roles](../administration/user-roles.md) — which roles can author
-  policies, mark requirements Fulfilled, and waive.
+- [Enrollment](enrollment.md) — o Program Enrollment é onde o snapshot fica.
+- [Academic Calendar](academic-calendar.md) — Eventos usados por requisitos de Participação em Evento.
+- [User Roles](../administration/user-roles.md) — quais papéis podem criar políticas, marcar requisitos como `Fulfilled` e dispensar.

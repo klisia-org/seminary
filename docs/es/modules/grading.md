@@ -1,13 +1,13 @@
-# Grading
+# Calificación
 
-Grading manages assessment criteria, grade entry, and grade publication for courses.
+El módulo Calificaciones gestiona los criterios de evaluación, el registro de calificaciones y la publicación de calificaciones para los cursos.
 
-## Overview
+## Descripción general
 
-Instructors define grading criteria per course, grade individual submissions (assignments, discussions, exams), and publish final grades at term end.
+Los instructores definen los criterios de calificación por curso, califican las entregas individuales (tareas, discusiones y exámenes) y publican las calificaciones finales al final del período académico.
 
-## Key concepts
+## Conceptos clave
 
-- **Grading Criteria** — weighted components that make up the final grade
-- **Submission Grading** — individual grades on discussion activities, exams, and assignments
-- **Grade Publication** — making grades visible to students
+- **Criterios de calificación** — componentes ponderados que conforman la calificación final
+- **Calificación de entregas** — calificaciones individuales en actividades de discusión, exámenes y tareas
+- **Publicación de calificaciones** — hacer visibles las calificaciones para los estudiantes

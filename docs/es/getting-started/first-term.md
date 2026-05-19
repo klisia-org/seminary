@@ -1,23 +1,23 @@
-# Your First Term
+# Su primer período académico
 
-A walkthrough of running a complete academic term from setup to grade submission.
+Una guía paso a paso para gestionar un período académico completo, desde la configuración hasta el envío de calificaciones.
 
-## 1. Create courses
+## 1. Crear cursos
 
-Set up your courses with syllabus, lesson structure, and assessment criteria.
+Configura cada curso con un plan de estudios, una estructura de lecciones y criterios de evaluación.
 
-## 2. Open enrollment
+## 2. Apertura de inscripciones
 
-Configure the enrollment window in your Academic Term and let students self-enroll through the portal.
+Configure la ventana de inscripción en su Período Académico y permita que los estudiantes se autoinscriban a través del portal.
 
-## 3. Run the term
+## 3. Ejecutar el período
 
-Instructors manage lessons, discussion activities, and assignments through the LMS frontend.
+Los instructores gestionan las lecciones, las actividades de discusión y las tareas desde la interfaz del LMS.
 
-## 4. Grading
+## 4. Calificación
 
-Configure grading criteria per course, grade student submissions, and publish final grades.
+Configure los criterios de calificación por curso, califique las entregas de los estudiantes y publique las calificaciones finales.
 
-## 5. Term close
+## 5. Cierre del período
 
-Process any withdrawals, finalize grades, and archive the term.
+Procese las bajas, finalice las calificaciones y archive el período.

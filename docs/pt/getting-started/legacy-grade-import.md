@@ -1,141 +1,141 @@
-# Legacy Grade Import
+# Importação de Notas Legadas},{
 
-SeminaryERP uses a single pipeline for both transfer credits from a partner institution and bulk backfill of grades from a legacy system. The model treats "our own pre-SeminaryERP history" as a self-referential Partner Seminary, so the same workflow that ingests a transfer student's transcript also onboards decades of historical data.
+O SeminaryERP usa uma única abordagem tanto para créditos de transferência de uma instituição parceira quanto para o preenchimento retroativo em massa de notas de um sistema legado. O modelo trata "nossa própria história pré-SeminaryERP" como um Seminário Parceiro autorreferenciado, de modo que o mesmo fluxo de trabalho que ingere o histórico escolar de um aluno transferido também incorpora décadas de dados históricos.
 
-The import is a staged, idempotent workflow:
+A importação é um fluxo de trabalho em etapas e idempotente:
 
-**Partner Seminary → Course Equivalences → Transcript Import Batch (Draft → Dry-Run → Submit)**
+**Seminário Parceiro → Equivalências de Disciplinas → Lote de Importação de Histórico (Rascunho → Dry-Run → Enviar)**
 
-Dry-run resolves every row against the equivalences and conversion policy without touching the student's record. Submit commits each row into the student's Program Enrollment and refreshes degree-audit totals. Re-submitting the same (student, source course code, source term) updates the existing transcript row in place — no duplicates.
+O Dry-Run resolve cada linha com base nas equivalências e na política de conversão sem mexer no registro do estudante. Enviar efetiva cada linha na Matrícula no Programa do estudante e atualiza os totais da auditoria de graduação. Reenviar o mesmo (estudante, código da disciplina de origem, período de origem) atualiza a linha existente do histórico no local — sem duplicatas.
 
-## 1. One-time setup (Internal Legacy)
+## 1º. Configuração única (Legado Interno)
 
-To import your own institution's historical data, create one self-referential **Partner Seminary** plus one **grade conversion policy**. Register only once, reuse forever.
+Para importar os dados históricos da sua própria instituição, crie um **Seminário Parceiro** autorreferenciado e uma **política de conversão de notas**. Cadastre uma vez, reutilize para sempre.
 
-1. **Create the Grade Conversion Policy "Identity (Internal)"**
-   - Source Grading Scale = your internal scale
-   - Target Grading Scale = your internal scale (same)
-   - Conversion Method = `identity`
-   - Submit it. Submitted policies can be referenced by Partner Seminary records; drafts cannot.
-2. **Create the Partner Seminary record**
-   - Name: e.g. `ESWA Legacy (pre-2026)`
-   - `Is Internal Legacy`: checked (this flag is read-only after creation, prevents deletion, and hides the record from default list views)
-   - `Counts in GPA`: checked (legacy grades ARE your institution's own grades — they should participate in GPA math)
-   - `Credit Unit Ratio`: `1.0`
-   - Default Grading Scale = your internal scale
-   - Default Conversion Policy = `Identity (Internal)`
-3. **Bulk-create Course Equivalences**
-   - Open the Partner Seminary Course Equivalence list view.
-   - Click **Create Legacy Integration** (System Manager only).
-   - Pick the legacy Partner Seminary you just created.
-   - One submitted `legacy_identity` equivalence is created per Course in your catalog, self-mapping the course to itself. Already-mapped courses are skipped — the action is idempotent.
+1. **Crie a Política de Conversão de Notas "Identidade (Interno)"**
+   - Escala de Notas de Origem = sua escala interna
+   - Escala de Notas de Destino = sua escala interna (mesma)
+   - Método de Conversão = `identity`
+   - Enviar. Políticas enviadas podem ser referenciadas por registros de Seminário Parceiro; rascunhos não.
+2. **Crie o registro de Seminário Parceiro**
+   - Nome: p.ex. `ESWA Legacy (pre-2026)`
+   - `Is Internal Legacy`: marcado (essa opção fica somente leitura após a criação, impede a exclusão e oculta o registro das visualizações de lista padrão)
+   - `Counts in GPA`: marcado (notas legadas SÃO as notas da sua própria instituição — devem participar do cálculo do GPA)
+   - `Credit Unit Ratio`: `1,0`
+   - Escala de Notas Padrão = sua escala interna
+   - Política de Conversão Padrão = `Identity (Internal)`
+3. **Criar em lote as Equivalências de Disciplinas**
+   - Abra a visualização de lista de Equivalência de Disciplinas do Seminário Parceiro.
+   - Clique em **Create Legacy Integration** (apenas para Gerente do Sistema).
+   - Selecione o Seminário Parceiro legado que você acabou de criar.
+   - Uma equivalência `legacy_identity` submetida é criada por disciplina no seu catálogo, mapeando a disciplina a si mesma. Disciplinas já mapeadas são ignoradas — a ação é idempotente.
 
-After this, the legacy Partner Seminary is ready to receive transcript imports. Skip to step 3 for the actual import flow.
+Após isso, o Seminário Parceiro legado está pronto para receber importações de históricos. Vá para a etapa 3 para o fluxo real de importação.
 
-## 2. One-time setup (External Partner)
+## 2º. Configuração única (Parceiro Externo)
 
-For a true external partner (a peer seminary transferring credits in):
+Para um parceiro realmente externo (um seminário parceiro transferindo créditos para cá):
 
-1. Create (or reuse) the partner's **Grading Scale** if different from yours. Submit it.
-2. Create the **Grade Conversion Policy** from the partner's scale to your internal scale:
-   - Pick a `conversion_method`: `identity`, `linear_multiplier`, `linear_with_offset`, `interval_map`, or `manual_per_course`.
-   - For `linear_*`, set the `multiplier` (and `offset` if applicable). E.g. Francophone 0–20 strong → Internal Percentage = ×5.
-   - For `interval_map`, fill the symbol-by-symbol mapping table. The Source Symbol and Target Symbol dropdowns auto-populate from the respective scales — every source symbol must be mapped (target symbols without a source are allowed).
-   - Submit.
-3. Create the **Partner Seminary** record for the institution:
-   - `Is Internal Legacy`: unchecked
-   - `Counts in GPA`: usually unchecked (industry default — transferred credits count toward degree but not GPA)
-   - `Credit Unit Ratio`: internal credit hours per 1 partner credit unit (e.g. `0.5` for ECTS → US semester hours at half weight)
-   - `Minimum Transferable Grade`: grade code on your internal scale below which transfers are blocked at commit time (e.g. `C`)
-   - Default Grading Scale / Default Conversion Policy = what you just created
-4. Create **Partner Seminary Course Equivalences** one at a time from the partner course to your internal course:
-   - Fill `source_course_code`, `source_course_name`, `source_credit_value`, and the target `internal_course`.
-   - Optional per-course overrides: `credit_override` (to force a specific credit count), `conversion_policy_override` (for a course on a different scale than the partner's default — e.g. a music department on pass/fail).
-   - Attach a `Supporting Document` (director approval, committee minutes, accreditor letter) for audit trail.
-   - Submit. Only submitted equivalences are usable during import.
+1. Crie (ou reutilize) a **Escala de Notas** do parceiro se for diferente da sua. Enviar.
+2. Crie a **Política de Conversão de Notas** da escala do parceiro para a sua escala interna:
+   - Escolha um `conversion_method`: `identity`, `linear_multiplier`, `linear_with_offset`, `interval_map` ou `manual_per_course`.
+   - Para `linear_*`, defina o `multiplier` (e o `offset`, se aplicável). Ex. Escala francófona 0–20 → Porcentagem interna = ×5.
+   - Para `interval_map`, preencha a tabela de mapeamento símbolo a símbolo. Os menus de seleção Símbolo de Origem e Símbolo de Destino são preenchidos automaticamente a partir das respectivas escalas — todo símbolo de origem deve ser mapeado (símbolos de destino sem origem são permitidos).
+   - Enviar.
+3. Crie o registro de **Seminário Parceiro** para a instituição:
+   - `Is Internal Legacy`: desmarcado
+   - `Counts in GPA`: geralmente desmarcado (padrão do setor — créditos transferidos contam para o diploma mas não para o GPA)
+   - `Credit Unit Ratio`: horas-crédito internas por 1 unidade de crédito do parceiro (por exemplo, `0,5` para ECTS → horas de semestre dos EUA com metade do peso)
+   - `Minimum Transferable Grade`: código de nota na sua escala interna abaixo do qual transferências são bloqueadas no momento do commit (p.ex., `C`)
+   - Escala de Notas Padrão / Política de Conversão Padrão = o que você acabou de criar
+4. Crie **Equivalências de Disciplinas do Seminário Parceiro** uma de cada vez, da disciplina do parceiro para a sua disciplina interna:
+   - Preencha `source_course_code`, `source_course_name`, `source_credit_value` e a `internal_course` de destino.
+   - Substituições opcionais por disciplina: `credit_override` (para forçar uma contagem específica de créditos), `conversion_policy_override` (para uma disciplina em uma escala diferente da padrão do parceiro — p.ex., um departamento de música em aprovação/reprovação).
+   - Anexe um `Supporting Document` (aprovação da direção, ata de comitê, carta do credenciador) para trilha de auditoria.
+   - Enviar. Apenas equivalências enviadas podem ser usadas durante a importação.
 
-Course equivalences are submittable: to change one, cancel and amend — the old version is retained via `amended_from`, and existing transcript rows continue to reference the original.
+Equivalências de disciplinas são enviáveis: para alterar uma, cancele e faça uma emenda — a versão antiga é mantida via `amended_from`, e as linhas de histórico existentes continuam referenciando a original.
 
-## 3. Importing transcripts
+## 3º. Importando históricos
 
-Partner Transcript Import Batch drives both the manual single-student case and the CSV bulk case. Every batch carries:
+O Lote de Importação de Histórico de Parceiro atende tanto ao caso manual de um único estudante quanto ao caso em massa via CSV. Cada lote contém:
 
-- `Partner Seminary`: which partner's data this batch represents
-- `Target Program`: the internal program the credits apply toward
-- `Target Academic Term`: the internal term these rows are anchored to (typically the student's current term for external transfer, or a designated legacy term for backfill)
+- `Partner Seminary`: de qual parceiro são os dados representados por este lote
+- `Target Program`: o programa interno ao qual os créditos se aplicam
+- `Target Academic Term`: o período letivo interno ao qual estas linhas estão ancoradas (normalmente o período atual do estudante para transferência externa, ou um período legado designado para preenchimento retroativo)
 
-### Manual entry (one student)
+### Entrada manual (um estudante)
 
-1. Create a new **Partner Transcript Import Batch**.
-2. Pick Partner Seminary, Target Program, Target Academic Term. Save. _(Autocompletes activate only after the first save.)_
-3. In the Rows table, add one row per course:
-   - `Student` (Link) OR `Student Email` — either identifies the student. If only email is provided, dry-run resolves it to the Student record via `Student.user`.
-   - `Source Course Code` — dropdown populated from submitted equivalences for this partner. Selecting a code auto-fills `Source Course Name` and `Source Credit Value` from the equivalence.
-   - `Source Term` — free-text (partner terms aren't tracked as Academic Term records here).
-   - `Source Grade` — dropdown populated from the partner's default grading scale grade codes.
-   - `External Reference` — optional source-system ID; takes precedence over the natural idempotency key.
-4. **Save**, then click **Run Dry-Run**.
-5. If dry-run is clean, the status advances to `Dry-Run Clean`. Click **Submit**.
+1. Crie um novo **Partner Transcript Import Batch**.
+2. Selecione Partner Seminary, Target Program, Target Academic Term. Salvar. _(Os preenchimentos automáticos ativam somente após o primeiro salvamento.)_
+3. Na tabela Rows, adicione uma linha por disciplina:
+   - `Student` (Link) OU `Student Email` — qualquer um identifica o estudante. Se apenas o e-mail for fornecido, o dry-run o resolve para o registro de Student via `Student.user`.
+   - `Source Course Code` — menu preenchido a partir das equivalências enviadas para esse parceiro. Selecionar um código preenche automaticamente `Source Course Name` e `Source Credit Value` a partir da equivalência.
+   - `Source Term` — texto livre (os períodos do parceiro não são rastreados aqui como registros de Academic Term).
+   - `Source Grade` — menu preenchido com os códigos de nota da escala de notas padrão do parceiro.
+   - `External Reference` — ID opcional do sistema de origem; tem precedência sobre a chave natural de idempotência.
+4. **Salvar**, depois clique em **Run Dry-Run**.
+5. Se o dry-run estiver limpo, o status avança para `Dry-Run Clean`. Clique em **Enviar**.
 
-### CSV bulk entry
+### Entrada em massa por CSV
 
-1. Use Frappe's built-in **Data Import** tool (use the seach bar) --> Add Data Import
+1. Use a ferramenta nativa de **Data Import** do Frappe (use a barra de pesquisa) --> Add Data Import
 
 2. Document type: Partner Transcript Import Batch Import
    Import Type: Insert New records
-   The only checkbox marked should be Don't send emails.
-   **Save**
+   A única caixa de seleção marcada deve ser Don't send emails.
+   **Salvar**
 
-3. You can download a CSV template from the tool to upload your data. Note that you do not need to repeat the initial fields (parent seminary, target program, and target academic term)
+3. Você pode baixar um modelo de CSV pela ferramenta para enviar seus dados. Observe que não é necessário repetir os campos iniciais (seminário de origem, programa de destino e período letivo de destino)
 
     ```csv
-    Partner Seminary,Target Program,Target Academic Term,Source Course Code (Rows),Source Grade (Rows),Source Term (Rows),Student email (Rows)
+    Seminário Parceiro,Programa de Destino,Período Acadêmico de Destino,Código da Disciplina de Origem (Linhas),Nota de Origem (Linhas),Período de Origem (Linhas),E-mail do estudante (Linhas)
     T-LINK,Master of Divinity,2025-2026 (SP26),SFD-101,A,1S 24,modest@gmail.com
     ,,,THM-201,A,1S24,modest@gmail.com
     ```
 
-4. Upon successful import, Open the Batch — all rows should be in the grid with `Student` blank and `Student Email` populated.
+4. Após a importação bem-sucedida, abra o Lote — todas as linhas devem estar na grade com `Student` em branco e `Student Email` preenchido.
 
-5. Click **Run Dry-Run**. Each row resolves:
-   - Email → Student Link
-   - Source course → Internal course via the equivalence
-   - Source credit → Internal credit (via `credit_override`, the equivalence's `source_credit_value`, or the row's own value × `credit_unit_ratio`)
-   - Source grade → Target grade via the conversion policy
+5. Clique em **Run Dry-Run**. Cada linha é resolvida:
+   - E-mail → Link do Estudante
+   - Disciplina de origem → disciplina interna via a equivalência
+   - Créditos de origem → créditos internos (via `credit_override`, `source_credit_value` da equivalência ou o próprio valor da linha × `credit_unit_ratio`)
+   - Nota de origem → nota de destino via a política de conversão
 
-6. Fix any warnings (see reference below), then Submit.
+6. Corrija quaisquer avisos (veja a referência abaixo) e depois clique em Enviar.
 
-## 4) Dry-run warning reference
+## 4º. Referência de avisos do Dry-Run
 
-| Warning                        | Meaning                                                                                                                        | Fix                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `unknown_student_email`        | No Student record has a `user` field matching the email.                                                       | Correct the email in the row, or update the Student's User link.                                          |
-| `no_submitted_equivalence`     | No submitted Course Equivalence for this partner + source code.                                                | Create and submit the equivalence, or correct the source code.                                            |
-| `zero_credits`                 | The row's source credit is blank and the equivalence has no `source_credit_value` / `credit_override`.         | Fill the row's `source_credit_value`, or edit the equivalence to carry a default.                         |
-| `below_minimum_transferable`   | The converted grade is below the partner's `Minimum Transferable Grade`.                                       | Registrar judgment — either skip the row or add an `Override Note` to accept it.                          |
-| `clamped_high` / `clamped_low` | The linear conversion produced a value outside the target scale; result was clamped.                           | Usually acceptable; informational. Review the policy multiplier if the clamp is frequent. |
-| `no_mapping`                   | An `interval_map` conversion had no row for this source symbol, or the grade wasn't found on the target scale. | Amend the policy's map to cover the missing symbol.                                                       |
-| `unparseable_source`           | Linear conversion couldn't parse the source grade as a number.                                                 | Correct the source grade, or switch the policy to `interval_map` / `manual_per_course`.                   |
+| Aviso                          | Significado                                                                                                                                  | Correção                                                                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unknown_student_email`        | Nenhum registro de Student tem um campo `user` correspondente ao e-mail.                                                     | Corrija o e-mail na linha ou atualize o link de Usuário do Student.                                                           |
+| `no_submitted_equivalence`     | Nenhuma Equivalência de Disciplina enviada para este parceiro + código de origem.                                            | Crie e envie a equivalência ou corrija o código de origem.                                                                    |
+| `zero_credits`                 | O crédito de origem da linha está em branco e a equivalência não possui `source_credit_value` / `credit_override`.           | Preencha o `source_credit_value` da linha ou edite a equivalência para ter um padrão.                                         |
+| `below_minimum_transferable`   | A nota convertida está abaixo do `Minimum Transferable Grade` do parceiro.                                                   | Julgamento da secretaria acadêmica — pule a linha ou adicione uma `Override Note` para aceitá-la.                             |
+| `clamped_high` / `clamped_low` | A conversão linear produziu um valor fora da escala de destino; o resultado foi limitado.                                    | Normalmente aceitável; informativo. Revise o multiplicador da política se a limitação ocorrer com frequência. |
+| `no_mapping`                   | Uma conversão `interval_map` não tinha linha para este símbolo de origem, ou a nota não foi encontrada na escala de destino. | Emende o mapeamento da política para cobrir o símbolo ausente.                                                                |
+| `unparseable_source`           | A conversão linear não conseguiu interpretar a nota de origem como um número.                                                | Corrija a nota de origem ou mude a política para `interval_map` / `manual_per_course`.                                        |
 
-A row with a warning blocks Dry-Run Clean unless the registrar fills `Override Note` on that row. Commit is additionally guarded: every row must have a resolved `Student` before Submit succeeds.
+Uma linha com aviso bloqueia o Dry-Run Clean, a menos que a secretaria acadêmica preencha `Override Note` nessa linha. O commit tem proteção adicional: toda linha deve ter um `Student` resolvido para que o envio seja bem-sucedido.
 
-## 5. Submit
+## 5º. Enviar
 
-On submit:
+Ao enviar:
 
-- Each row becomes a transferred `Program Enrollment Course` entry on the student's Program Enrollment for (Target Program, Target Academic Term). `Is Transfer` is checked; `Partner Seminary`, `Mapping Type`, `Course Equivalence`, `Conversion Policy Applied`, `Source Course Code`, `Source Term`, `Source Grade`, `External Reference` are all stamped for audit.
-- The Program Enrollment's `Total Credits` is recalculated from the SUM of passing rows.
-- Emphasis track credits are recalculated; auto-grant emphases are checked.
-- The student-facing transcript view shows the transferred courses alongside internal ones.
+- Cada linha se torna um lançamento transferido de `Program Enrollment Course` na Matrícula no Programa do estudante para (Target Program, Target Academic Term). `Is Transfer` fica marcado; `Partner Seminary`, `Mapping Type`, `Course Equivalence`, `Conversion Policy Applied`, `Source Course Code`, `Source Term`, `Source Grade`, `External Reference` são todos registrados para auditoria.
+- O `Total Credits` da Matrícula no Programa é recalculado a partir da SOMA das linhas aprovadas.
+- Os créditos da trilha de ênfase são recalculados; ênfases concedidas automaticamente são marcadas.
+- A visualização de histórico voltada ao estudante mostra as disciplinas transferidas ao lado das internas.
 
-## 6. Re-running and amending
+## 6º. Reexecutando e emendando
 
-The batch is idempotent. Re-submitting a batch with the same rows updates existing transcript entries in place (matched on `partner_seminary + source_course_code + source_term`, or `external_reference` when present). To correct data:
+O lote é idempotente. Reenviar um lote com as mesmas linhas atualiza as entradas existentes do histórico no local (correspondência em `partner_seminary + source_course_code + source_term`, ou `external_reference` quando presente). Para corrigir dados:
 
-- **Same-term correction** — Create a new batch with the corrected rows; the existing PEC rows update. Totals refresh.
-- **Wrong term selected** — Cancel the original batch (supervised; blocked if transcript rows still exist), create a new batch with the correct `Target Academic Term`.
-- **Policy correction** — Amend the Grade Conversion Policy (Frappe's built-in amendment creates `amended_from` lineage). Existing transcripts keep referencing the original policy ID; new imports use the amended version. This preserves historical reproducibility.
+- **Correção no mesmo período** — Crie um novo lote com as linhas corrigidas; as linhas de PEC existentes são atualizadas. Os totais são atualizados.
+- **Período errado selecionado** — Cancele o lote original (com supervisão; bloqueado se linhas de histórico ainda existirem) e crie um novo lote com o `Target Academic Term` correto.
+- **Correção de política** — Emende a Política de Conversão de Notas (a emenda nativa do Frappe cria a linhagem `amended_from`). Os históricos existentes continuam referenciando o ID da política original; novas importações usam a versão emendada. Isso preserva a reprodutibilidade histórica.
 
-## Related
+## Relacionado
 
-- [Initial Setup](initial-setup.md) — the full first-install sequence
+- [Configuração Inicial](initial-setup.md) — a sequência completa de primeira instalação
 - [Frappe Data Import](https://docs.frappe.io/framework/user/en/data-import)

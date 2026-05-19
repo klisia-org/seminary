@@ -1,9 +1,9 @@
-# Translations
+# Traducciones
 
-SeminaryERP is multi-lingual and so far has been translated to Portuguese and Spanish.
+SeminaryERP es multilingüe y hasta ahora se ha traducido al portugués y al español.
 
-Translations are hosted and managed on our [Crowdin project](https://crowdin.com/project/seminary-erp).
+Las traducciones se alojan y gestionan en nuestro [proyecto en Crowdin](https://crowdin.com/project/seminary-erp).
 
-As you use the system, feel free to contribute and improve our translations, as well as ask for a template for other languages. Our heart is to serve the global church.
+A medida que utilice el sistema, no dude en contribuir y mejorar nuestras traducciones, así como solicitar una plantilla para otros idiomas. Nuestro corazón es servir a la iglesia global.
 
-The Seminary may have a default language, usually defined during the installation, and each user may choose to see the platform in the language of their choice.
+El Seminario puede tener un idioma predeterminado, normalmente definido durante la instalación, y cada usuario puede elegir ver la plataforma en el idioma de su preferencia.

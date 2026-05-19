@@ -1,13 +1,13 @@
-# Enrollment
+# Inscripción
 
-Enrollment manages how students register for courses within an academic term.
+La Inscripción gestiona cómo los estudiantes se inscriben en cursos dentro de un período académico.
 
-## Overview
+## Descripción general
 
-Students can self-enroll through the LMS portal during configured enrollment windows, or administrators can enroll students directly through the Frappe Desk.
+Los estudiantes pueden autoinscribirse a través del portal del LMS durante las ventanas de inscripción configuradas, o los administradores pueden inscribir a los estudiantes directamente desde Frappe Desk.
 
-## Key concepts
+## Conceptos clave
 
-- **Enrollment Window** — the date range during which self-enrollment is open
-- **Course Enrollment** — the record linking a student to a course for a specific term
-- **Enrollment Capacity** — optional limit on students per course section
+- **Ventana de inscripción** — el rango de fechas durante el cual la autoinscripción está abierta
+- **Inscripción al curso** — el registro que vincula a un estudiante con un curso en un período académico específico
+- **Capacidad de inscripción** — límite opcional de estudiantes por sección del curso

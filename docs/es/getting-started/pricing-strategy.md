@@ -1,35 +1,35 @@
-# Pricing Strategy
+# Estrategia de precios
 
-SeminaryERP charges students by creating invoices from **Fee Categories**, each linked to an ERPNext **Item** with a price on a **Price List**. How granular you make those items is a strategic decision that affects reporting, forecasting, and how much work it is to change prices later.
+SeminaryERP cobra a los estudiantes creando facturas a partir de **Categorías de Cuotas**, cada una vinculada a un **Artículo** de ERPNext con un precio en una **Lista de Precios**. El grado de granularidad que dé a esos Artículos es una decisión estratégica que afecta la elaboración de informes, la previsión y el trabajo necesario para cambiar los precios más adelante.
 
-## Bundled vs. granular pricing
+## Precios agrupados vs. granulares
 
-Both of the following approaches produce the same invoice total. They are not equivalent for the seminary.
+Ambos enfoques siguientes producen el mismo total de la factura. No son equivalentes para el seminario.
 
-| Approach A — _bundled_         | Approach B — _granular_                 |
-| ------------------------------ | --------------------------------------- |
-| 1h course: 250 | Credit-hour: 200        |
-| 2h course: 450 | Course registration: 50 |
+| Enfoque A — _agrupado_            | Enfoque B — _granular_                   |
+| --------------------------------- | ---------------------------------------- |
+| Curso de 1 h: 250 | Hora de crédito: 200     |
+| Curso de 2 h: 450 | Inscripción al curso: 50 |
 
-**Approach A** is faster to set up. Prices are baked into each course-level item.
+**El Enfoque A** es más rápido de configurar. Los precios están incorporados en cada Artículo a nivel de curso.
 
-**Approach B** separates _what varies with credit load_ (per-credit teaching cost) from _what is fixed per enrollment_ (administrative cost). This lets you:
+**El Enfoque B** separa _lo que varía con la carga de créditos_ (costo de docencia por crédito) de _lo que es fijo por inscripción_ (costo administrativo). Esto permite:
 
-- Project revenue against enrollment scenarios (e.g. "what if average load drops from 12 to 9 credits?")
-- Raise per-credit rates without touching every course item
-- Apply scholarships or discounts to the credit portion only
-- Report on administrative vs. academic revenue cleanly
+- Proyectar ingresos según escenarios de matrícula (p. ej., "¿qué pasa si la carga promedio baja de 12 a 9 créditos?")
+- Aumentar las tarifas por crédito sin tocar cada Artículo de curso
+- Aplicar becas o descuentos solo a la parte por crédito
+- Informar con claridad sobre los ingresos administrativos vs. académicos
 
-For anything beyond a very small seminary, **prefer Approach B**. The upfront modeling effort pays off the first time you need to adjust pricing or justify a budget.
+Para cualquier seminario que no sea muy pequeño, **prefiera el Enfoque B**. El esfuerzo inicial de modelado se compensa la primera vez que necesite ajustar precios o justificar un presupuesto.
 
-## Practical guidelines
+## Pautas prácticas
 
-- **One Item per cost driver**, not per course. Credit hours, registration, technology fee, library access, housing — each is its own Item.
-- **Keep the number of Price Lists small.** Each additional list multiplies the maintenance surface. Only add a list when the _entire_ price structure genuinely differs (e.g. international students pay different rates across the board), not for one-off discounts — use scholarships or Pricing Rules for those.
-- **Map each chargeable event to a Fee Category.** This is what makes billing automatic: when the student enrolls, the term opens, or the per-credit trigger fires, SeminaryERP creates the right invoice lines from the Fee Category.
-- **Re-evaluate before your first term, not after.** Changing the pricing model once invoices exist is painful; getting it right before go-live is cheap.
+- **Un Artículo por factor de costo**, no por curso. Horas de crédito, inscripción, cuota de tecnología, acceso a biblioteca, alojamiento — cada uno es su propio Artículo.
+- **Mantenga pequeño el número de Listas de Precios.** Cada lista adicional multiplica la carga de mantenimiento. Agregue una lista solo cuando la estructura de precios _entera_ difiera genuinamente (p. ej., los estudiantes internacionales pagan tarifas diferentes en todos los conceptos), no para descuentos puntuales — use becas o Reglas de Precios para esos.
+- **Asigne cada evento facturable a una Categoría de Cuotas.** Esto es lo que hace que la facturación sea automática: cuando el estudiante se inscribe, se abre el período o se activa el disparador por crédito, SeminaryERP crea las líneas de factura correctas a partir de la Categoría de Cuotas.
+- **Reevalúe antes de su primer período, no después.** Cambiar el modelo de precios una vez que existan facturas es doloroso; acertarlo antes de la puesta en producción es barato.
 
-## Related
+## Relacionado
 
-- [Initial Setup](initial-setup.md) — the full setup sequence
-- [ERPNext Item](https://docs.frappe.io/erpnext/item) · [Price List](https://docs.frappe.io/erpnext/price-lists) · [Item Price](https://docs.frappe.io/erpnext/item-price)
+- [Configuración inicial](initial-setup.md) — la secuencia completa de configuración
+- [Artículo de ERPNext](https://docs.frappe.io/erpnext/item) · [Lista de Precios](https://docs.frappe.io/erpnext/price-lists) · [Precio de Artículo](https://docs.frappe.io/erpnext/item-price)

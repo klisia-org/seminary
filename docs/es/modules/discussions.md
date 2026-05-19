@@ -1,15 +1,15 @@
-# Discussion Activities
+# Actividades de discusión
 
-Discussion activities provide structured academic discussions within courses.
+Las actividades de discusión proporcionan discusiones académicas estructuradas dentro de los cursos.
 
-## Overview
+## Descripción general
 
-Instructors create discussion prompts. Students submit original posts and reply to peers. Discussions can be graded as part of course assessment.
+Los instructores crean temas de discusión. Los estudiantes envían publicaciones originales y responden a sus compañeros. Las discusiones pueden ser calificadas como parte de la evaluación del curso.
 
-## Key concepts
+## Conceptos clave
 
-- **Discussion Activity** — the prompt and configuration for a discussion
-- **Discussion Submission** — a student's original post in response to the prompt
-- **Replies** — threaded responses to submissions
-- **Post-Before-View** — optional setting requiring students to submit before seeing peer posts
-- **Student Groups** — optional grouping for smaller discussion sections
+- **Actividad de discusión** — el tema y la configuración de una discusión
+- **Envío de discusión** — la publicación original de un estudiante en respuesta al tema
+- **Respuestas** — respuestas en hilos a los envíos
+- **Publicar antes de ver** — configuración opcional que requiere que los estudiantes envíen su publicación antes de ver las publicaciones de sus compañeros
+- **Grupos de estudiantes** — agrupación opcional para secciones de discusión más pequeñas

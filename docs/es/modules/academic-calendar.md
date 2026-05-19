@@ -1,22 +1,22 @@
-# Academic Calendar
+# Calendario Académico
 
-The academic calendar manages terms, important dates, and deadline rules. All aspects are controlled via Desk.
+El calendario académico gestiona los términos, las fechas importantes y las reglas de plazos. Todos los aspectos se controlan a través de Desk.
 
-## Overview
+## Descripción general
 
-The academic calendar has a tiered structure:
+El calendario académico tiene una estructura por niveles:
 
-### Academic Year:
+### Año Académico:
 
-Contains academic terms. May be used to trigger specific fees.
+Contiene términos académicos. Puede utilizarse para activar cuotas específicas.
 
-### Academic Term:
+### Plazo Académico:
 
-Terms cannot overlap. Each term must be wholly contained in an Academic Year, with start and end dates withing the Academic Year.  
-Each academic term defines the structure of a teaching period: start and end dates, enrollment windows, withdrawal deadlines, and grading periods.
+Los términos no pueden superponerse. Cada término debe estar completamente contenido dentro de un Año Académico, con fechas de inicio y fin dentro del Año Académico.  
+Cada término académico define la estructura de un período de enseñanza: fechas de inicio y fin, ventanas de inscripción, plazos de baja y períodos de evaluación.
 
-## Key concepts
+## Conceptos clave
 
-- **Academic Term** — the fundamental time unit (semester, trimester, quarter)
-- **DateRuleResolver** — configurable logic for computing academic deadlines relative to term dates
-- **Term-Level Rules** — deadline and policy configuration lives at the term level, allowing different rules per term
+- **Término Académico** — la unidad de tiempo fundamental (semestre, trimestre, cuatrimestre)
+- **DateRuleResolver** — lógica configurable para calcular plazos académicos en función de las fechas del término
+- **Reglas a nivel de término** — la configuración de plazos y políticas reside en el nivel del término, lo que permite diferentes reglas por término

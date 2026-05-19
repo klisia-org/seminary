@@ -1,15 +1,15 @@
-# Customization
+# Personalización},{
 
-How to adapt SeminaryERP to your institution's needs.
+Cómo adaptar SeminaryERP a las necesidades de su institución.
 
-## Seminary Settings
+## Ajustes seminarios
 
-Central configuration for your institution. Access via **Frappe Desk > Seminary Settings**.
+Configuración centralizada para su institución. Acceda mediante **Frappe Desk > Seminary Settings**.
 
-## Term-level configuration
+## Configuración a nivel de período académico
 
-Many policies (enrollment windows, withdrawal rules, grading periods) are configured per academic term rather than globally, allowing your institution to evolve its policies over time.
+Muchas políticas (plazos de inscripción, reglas de retiro, períodos de calificación) se configuran por período académico en lugar de globalmente, lo que permite que su institución adapte sus políticas con el tiempo.
 
-## In-app help
+## Ayuda integrada en la aplicación
 
-SeminaryERP includes a contextual help system. Each form can display a help entry with a link to this documentation and a local notes field for institution-specific instructions. See **Seminary Help Entry** in the Desk.
+SeminaryERP incluye un sistema de ayuda contextual. Cada formulario puede mostrar una entrada de ayuda con un enlace a esta documentación y un campo de notas local para instrucciones específicas de la institución. Consulte **Seminary Help Entry** en el Desk.
