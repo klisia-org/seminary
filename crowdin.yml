@@ -9,7 +9,7 @@
 
   # Documentation translations (MkDocs)
   - source: /docs/en/**/*.md
-    translation: /docs/%two_letters_code%/**/%original_file_name%
+    translation: /docs/en/%two_letters_code%/**/%original_file_name%
 
 pull_request_title: "chore: sync translations from crowdin"
 pull_request_labels:

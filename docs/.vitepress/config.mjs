@@ -95,7 +95,7 @@ export default defineConfig({
       label: 'Português',
       lang: 'pt',
     },
-    fr: {
+    es: {
       label: 'Español',
       lang: 'es',
     },

@@ -14,7 +14,7 @@ SCHOOL MANAGEMENT SYSTEM + LEARNING MANAGEMENT SYSTEM
 
 The system can be better understood through its two interfaces under the same code.
 
-![SeminaryERP at a glance](assets/SeminaryManagement.png)
+![SeminaryERP at a glance](/SeminaryManagement.png)
 
 ## Who is this for?
 
