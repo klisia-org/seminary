@@ -1,4 +1,4 @@
-# Papéis de usuário},{
+# Papéis de usuário
 
 O SeminaryERP usa o sistema de permissões baseado em papéis do Frappe para controlar o acesso.
 

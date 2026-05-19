@@ -1,10 +1,10 @@
-# Trancamento
+# Cancelamento de Matrícula
 
-O módulo de Trancamento lida com cancelamentos de disciplina e trancamentos institucionais, com regras configuráveis por período letivo.
+O módulo de Cancelamento de Matrícula lida com cancelamentos de disciplina e trancamentos institucionais, com regras configuráveis por período letivo.
 
 ## Visão geral
 
-Os estudantes podem solicitar trancamento pelo Portal do LMS.
+Os estudantes podem solicitar Cancelamento de Matrícula pelo Portal do LMS.
 As regras que regem prazos, penalidades e elegibilidade a reembolso são configuradas por usuários acadêmicos na visualização do Desk.
 
 ## Conceitos-chave
@@ -53,7 +53,7 @@ Ao criar um motivo de trancamento, os administradores definirão um nome, uma de
 2. A caixa de seleção "Excluir do cálculo da nota" indica que isso não contará para o GPA final},{
 3. Símbolo de Avaliação: como você quer que isso apareça no histórico escolar (pode ser uma palavra, não necessariamente um símbolo)
 4. Permitir crédito parcial: as atividades avaliativas enviadas pelo estudante podem ser usadas para crédito parcial (recurso em desenvolvimento)
-5. Se a configuração principal em "Configurações do Seminário" permitir, uma [**Data por Período Letivo**](#term-widrawal-rules) poderá ser calculada automaticamente para cada período letivo. Quando marcada, campos adicionais ficarão disponíveis para calcular a data "Válida até" para cada período letivo. Observe que, como a regra é aplicada por período letivo (mesmo que impacte cronogramas de disciplinas), os limites de data são sempre relativos ao período letivo.
+5. Se a configuração principal em "Configurações do Seminário" permitir, uma [**Data por Período Letivo**](#term-widrawal-rules) poderá ser calculada automaticamente para cada período letivo. Quando marcada, campos adicionais ficarão disponíveis para calcular a data "Válida até" para cada período letivo. Observe que, como a regra é aplicada por período letivo (mesmo que impacte cursos agendados), os limites de data são sempre relativos ao período letivo.
 6. Reembolso: se a caixa de seleção estiver marcada, uma tabela filha ficará disponível. Isso definirá quanto será reembolsado e para quem, se a regra se aplicar. Ou seja, o sistema identificará automaticamente a Fatura de Venda daquela disciplina e criará uma Nota de Crédito vinculada a ela, seguindo o mesmo procedimento fiscal da Fatura de Venda. As regras contemplam três tipos de pagadores: Estudante (isto é, o Cliente do ERPNext associado ao Estudante), Bolsas (o Cliente do ERPNext associado a Bolsas nas Configurações do Seminário) e Outros Pagadores (pois o SeminaryERP também oferece a opção de igrejas/denominações pagarem parte da mensalidade).
 
 ![Tela de Regras de Trancamento](/modules/withdrawal/img/withdrawal-rules.png)
@@ -66,6 +66,6 @@ Se houver necessidade de ajuste manual das datas em que uma regra se aplica, iss
 
 ## Fluxo de Trabalho da Solicitação de Trancamento
 
-A maioria dos seminários não precisará editar o fluxo de trabalho preconfigurado. No entanto, isso é possível e instituições maiores podem se beneficiar especialmente de personalizações. Como isso é um recurso do ERPNext, a [documentação](https://docs.frappe.io/erpnext/workflows) deles pode ser útil.
+A maioria dos seminários não precisará editar o fluxo de trabalho pré-configurado. No entanto, isso é possível e instituições maiores podem se beneficiar especialmente de personalizações. Como isso é um recurso do ERPNext, a [documentação](https://docs.frappe.io/erpnext/workflows) deles pode ser útil.
 
 ![Tela do Fluxo de Trabalho de Trancamento](/modules/withdrawal/img/withdrawal-workflow.png)

@@ -4,7 +4,7 @@ O recurso de matrícula gerencia como os estudantes se matriculam em disciplinas
 
 ## Visão geral
 
-Os estudantes podem se automatricular pelo portal do LMS durante os períodos de matrícula configurados, ou os administradores podem matricular estudantes diretamente pelo Frappe Desk.
+Os estudantes podem se matricular pelo portal do LMS durante os períodos de matrícula configurados, ou os administradores podem matricular estudantes diretamente pelo Frappe Desk.
 
 ## Conceitos-chave
 
