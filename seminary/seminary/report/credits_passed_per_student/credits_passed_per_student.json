@@ -1,5 +1,6 @@
 {
  "add_total_row": 0,
+ "add_translate_data": 1,
  "columns": [
   {
    "fieldname": "student_name",
@@ -36,8 +37,8 @@
  "idx": 0,
  "is_standard": "Yes",
  "json": "{}",
- "letterhead": null,
- "modified": "2026-04-07 15:00:00.000000",
+ "letter_head": null,
+ "modified": "2026-05-10 08:38:31.781274",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Credits passed per student",
@@ -50,5 +51,6 @@
   {
    "role": "Academics User"
   }
- ]
+ ],
+ "timeout": 0
 }

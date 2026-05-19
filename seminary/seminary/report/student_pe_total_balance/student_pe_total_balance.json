@@ -1,5 +1,6 @@
 {
  "add_total_row": 1,
+ "add_translate_data": 1,
  "columns": [],
  "creation": "2024-05-03 16:28:19.055042",
  "disabled": 0,
@@ -8,8 +9,8 @@
  "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "letterhead": null,
- "modified": "2024-05-11 11:42:48.259786",
+ "letter_head": null,
+ "modified": "2026-05-10 08:38:51.178246",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student PE total balance",
@@ -29,5 +30,6 @@
   {
    "role": "Academics User"
   }
- ]
+ ],
+ "timeout": 0
 }

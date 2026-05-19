@@ -1,5 +1,6 @@
 {
  "add_total_row": 1,
+ "add_translate_data": 1,
  "columns": [],
  "creation": "2025-02-22 12:54:24.436986",
  "disabled": 0,
@@ -23,8 +24,8 @@
  ],
  "idx": 0,
  "is_standard": "Yes",
- "letterhead": null,
- "modified": "2025-02-28 10:10:36.812441",
+ "letter_head": null,
+ "modified": "2026-05-10 08:36:24.326867",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scholarship Sales Invoices",
