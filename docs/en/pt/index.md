@@ -14,7 +14,7 @@ SISTEMA DE GESTÃO ESCOLAR + SISTEMA DE GESTÃO DE APRENDIZAGEM
 
 O sistema pode ser melhor compreendido por meio de suas duas interfaces sob a mesma base de código.
 
-![Visão geral do SeminaryERP](assets/SeminaryManagement.png)
+![Visão geral do SeminaryERP](/SeminaryManagement.png)
 
 ## Para quem se destina?
 
