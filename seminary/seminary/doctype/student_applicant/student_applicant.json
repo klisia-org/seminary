@@ -37,6 +37,7 @@
   "gender",
   "blood_group",
   "social_security_number",
+  "document_id",
   "column_break_12",
   "student_mobile_number",
   "nationality",
@@ -48,6 +49,7 @@
   "reading",
   "compliteracy",
   "useemail",
+  "education_docs",
   "disabilities_section",
   "disablechk",
   "disable_accom",
@@ -582,15 +584,25 @@
    "fieldtype": "Table",
    "label": "Contacts and References",
    "options": "Student Contacts"
+  },
+  {
+   "fieldname": "document_id",
+   "fieldtype": "Attach",
+   "label": "Document ID"
+  },
+  {
+   "fieldname": "education_docs",
+   "fieldtype": "Attach",
+   "label": "Educational records"
   }
  ],
  "image_field": "image",
  "links": [],
- "modified": "2024-06-08 14:27:02.295555",
- "modified_by": "Administrator",
+ "modified": "2026-05-19 10:11:09.345321",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -620,6 +632,7 @@
   }
  ],
  "route": "apply-to-enroll",
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

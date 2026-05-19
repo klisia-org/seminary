@@ -92,12 +92,12 @@ export default defineConfig({
       lang: 'en',
     },
     pt: {
-      label: 'Portugues',
+      label: 'Português',
       lang: 'pt',
     },
     fr: {
-      label: 'Francais',
-      lang: 'fr',
+      label: 'Español',
+      lang: 'es',
     },
   },
 })
