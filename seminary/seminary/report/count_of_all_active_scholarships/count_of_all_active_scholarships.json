@@ -1,5 +1,6 @@
 {
  "add_total_row": 1,
+ "add_translate_data": 1,
  "columns": [],
  "creation": "2025-02-21 19:05:19.944540",
  "disabled": 0,
@@ -8,8 +9,8 @@
  "filters": [],
  "idx": 0,
  "is_standard": "Yes",
- "letterhead": null,
- "modified": "2025-02-21 19:07:41.423801",
+ "letter_head": null,
+ "modified": "2026-05-10 08:36:44.900533",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Count of All Active Scholarships",

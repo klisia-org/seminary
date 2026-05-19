@@ -1,5 +1,6 @@
 {
  "add_total_row": 0,
+ "add_translate_data": 1,
  "columns": [
   {
    "fieldname": "course",
@@ -19,10 +20,10 @@
  "docstatus": 0,
  "doctype": "Report",
  "filters": [],
- "idx": 0,
+ "idx": 2,
  "is_standard": "Yes",
- "letterhead": null,
- "modified": "2024-06-11 16:12:36.293671",
+ "letter_head": null,
+ "modified": "2026-05-10 08:38:41.259242",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Active students that passed each course",
@@ -39,5 +40,6 @@
   {
    "role": "Academics User"
   }
- ]
+ ],
+ "timeout": 0
 }

@@ -1,5 +1,6 @@
 {
  "add_total_row": 1,
+ "add_translate_data": 1,
  "columns": [],
  "creation": "2025-02-21 18:41:14.854272",
  "disabled": 0,
@@ -9,8 +10,8 @@
  "idx": 0,
  "is_standard": "Yes",
  "json": "{}",
- "letterhead": null,
- "modified": "2025-02-22 11:25:11.777609",
+ "letter_head": null,
+ "modified": "2026-05-10 08:37:57.909084",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Active Scholarships",

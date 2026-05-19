@@ -1,14 +1,17 @@
 {
  "add_total_row": 0,
+ "add_translate_data": 1,
  "columns": [],
- "creation": "2026-04-27 18:00:00.000000",
+ "creation": "2026-04-27 18:00:00",
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
+ "filters": [],
  "idx": 0,
  "is_standard": "Yes",
  "json": "{}",
- "modified": "2026-04-27 18:00:00.000000",
+ "letter_head": null,
+ "modified": "2026-05-10 08:35:41.509389",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Term Enrollment Status",
@@ -27,5 +30,6 @@
   {
    "role": "Registrar"
   }
- ]
+ ],
+ "timeout": 0
 }
