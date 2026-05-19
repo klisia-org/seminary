@@ -7,8 +7,15 @@
   - source: /seminary/locale/main.pot
     translation: /seminary/locale/%two_letters_code%.po
 
-  # Documentation translations (MkDocs)
+  # Documentation translations (VitePress)
+  # Locale subdirs (pt, es, ...) live INSIDE docs/en/ so VitePress can find
+  # them, but they must be excluded from the source glob — otherwise Crowdin
+  # registers translated .md files as new English sources. Add a new ignore
+  # entry whenever a new target language is added.
   - source: /docs/en/**/*.md
+    ignore:
+      - /docs/en/pt/**
+      - /docs/en/es/**
     translation: /docs/en/%two_letters_code%/**/%original_file_name%
 
 pull_request_title: "chore: sync translations from crowdin"
