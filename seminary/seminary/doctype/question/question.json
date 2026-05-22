@@ -33,7 +33,9 @@
   "possibility_1",
   "possibility_2",
   "possibility_3",
-  "possibility_4"
+  "possibility_4",
+  "reading_report_section",
+  "pages_total"
  ],
  "fields": [
   {
@@ -47,7 +49,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "Choices\nUser Input"
+   "options": "Choices\nUser Input\nReading Report"
   },
   {
    "default": "0",
@@ -170,14 +172,28 @@
    "fieldtype": "Link",
    "label": "Course",
    "options": "Course"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Reading Report';",
+   "fieldname": "reading_report_section",
+   "fieldtype": "Section Break",
+   "label": "Reading Report"
+  },
+  {
+   "description": "Total number of pages the student is expected to read for this report.",
+   "fieldname": "pages_total",
+   "fieldtype": "Int",
+   "label": "Pages Total",
+   "mandatory_depends_on": "eval: doc.type == 'Reading Report';",
+   "non_negative": 1
   }
  ],
  "links": [],
- "modified": "2025-03-20 20:01:22.543954",
- "modified_by": "Administrator",
+ "modified": "2026-05-21 19:11:17.667246",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Question",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -218,6 +234,7 @@
   }
  ],
  "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

@@ -1,5 +1,51 @@
 <template>
-	<div v-if="assignment.data" class="grid grid-cols-[65%,35%] h-full" :class="{ 'border rounded-lg': !showTitle }">
+	<div v-if="assignment.data">
+
+		<!-- Instructor View -->
+		<div v-if="isInstructorView && !showTitle" class="space-y-6 p-5">
+			<!-- Assignment Dashboard -->
+			<div v-if="courseName">
+					<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">
+						{{ __('Assignment') }}:
+					</h3>
+					<div v-html="assignment.data.question"
+						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
+					</div>
+				<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Assignment Dashboard') }}</h3>
+				<div v-if="assignmentDashboard.student_count > 0">
+					<div class="border rounded-lg p-4 text-center">
+						<div class="text-2xl font-bold text-ink-gray-9">{{ assignmentDashboard.student_count }}</div>
+						<div class="text-xs text-ink-gray-5 mt-1">{{ __('Students Who Submitted') }}</div>
+					</div>
+					<router-link
+						:to="{ name: 'AssignmentSubmissionCS', params: { courseName: courseName, assignmentID: props.assignmentID } }">
+						<Button variant="solid" class="w-full mt-3">{{ __('Grade this Assignment') }}</Button>
+					</router-link>
+	
+				</div>
+				<div v-else class="text-sm text-ink-gray-5">
+					{{ __('No students have submitted this assignment yet.') }}
+					<!-- Edit Assignment only when no student has submitted -->
+					<router-link :to="{ name: 'AssignmentForm', params: { assignmentID: props.assignmentID } }">
+						<Button variant="solid" class="w-full mt-3">{{ __('Edit Assignment') }}</Button>
+					</router-link>
+				</div>
+			</div>
+
+			<!-- Grading criteria info + link -->
+			<div v-if="courseName">
+				<div v-if="!isGradedAssignment"
+					class="bg-surface-blue-1 border border-outline-blue-1 rounded-md p-3 mb-3 text-sm text-ink-blue-2">
+					{{ __('This assignment is currently not associated with a grading criteria.') }}
+				</div>
+				<router-link :to="{ name: 'CourseAssessment', params: { courseName: courseName } }">
+					<Button variant="outline" class="w-full">{{ __('Edit Course Assessments') }}</Button>
+				</router-link>
+			</div>
+		</div>
+
+		<!-- Student / grading view -->
+		<div v-else class="grid grid-cols-[65%,35%] h-full" :class="{ 'border rounded-lg': !showTitle }">
 		<div class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
 			<div v-if="showTitle" class="text-lg font-semibold mb-5 text-ink-gray-9">
 				<div v-if="submissionName === 'new'">
@@ -10,7 +56,7 @@
 				</div>
 			</div>
 			<div class="text-sm text-ink-gray-7 font-medium mb-2">
-				{{ __('Question') }}:
+				{{ __('Assignment') }}:
 			</div>
 			<div v-html="assignment.data.question"
 				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
@@ -133,6 +179,7 @@
 				</div>
 			</div>
 		</div>
+		</div>
 	</div>
 </template>
 <script setup>
@@ -197,6 +244,10 @@ const assignment = createResource({
 	onSuccess(data) {
 		if (props.submissionName != 'new') {
 			submissionResource.reload()
+		}
+		if (isInstructorView.value && courseName.value && !showTitle) {
+			assignmentDashboardResource.reload()
+			gradingCriteriaResource.reload()
 		}
 	},
 })
@@ -442,4 +493,30 @@ const statusTheme = computed(() => {
 const showUploader = () => {
 	return ['PDF', 'Image', 'Document'].includes(assignment.data?.type)
 }
+
+// --- Instructor view: dashboard and grading shortcuts ---
+const isInstructorView = computed(
+	() => user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
+)
+const courseName = computed(() => router.currentRoute.value.params.courseName)
+
+const assignmentDashboard = ref({ student_count: 0 })
+
+const assignmentDashboardResource = createResource({
+	url: 'seminary.seminary.api.get_assignment_dashboard',
+	makeParams() {
+		return { course_name: courseName.value, assignment_id: props.assignmentID }
+	},
+	onSuccess(data) {
+		assignmentDashboard.value = data || { student_count: 0 }
+	},
+})
+
+const gradingCriteriaResource = createResource({
+	url: 'seminary.seminary.api.GradeableAssignment',
+	makeParams() {
+		return { courseName: courseName.value, assignmentID: props.assignmentID }
+	},
+})
+const isGradedAssignment = computed(() => !!gradingCriteriaResource.data)
 </script>

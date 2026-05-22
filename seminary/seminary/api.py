@@ -480,6 +480,118 @@ def get_discussion_dashboard(course_name: str, discussion_id: str):
     }
 
 
+@frappe.whitelist()
+def get_quiz_dashboard(course_name: str, quiz_id: str):
+    """Mini dashboard stats for the instructor view of a quiz: how many
+    students attempted it and the average number of attempts per student.
+
+    Only counts submissions by students on the course roster.
+    """
+    if not course_name or not quiz_id:
+        frappe.throw(_("Course and quiz are required."))
+
+    roster_emails = frappe.db.sql_list(
+        """
+        SELECT r.stuemail_rc
+        FROM `tabScheduled Course Roster` r
+        WHERE r.course_sc = %s
+        """,
+        course_name,
+    )
+    if not roster_emails:
+        return {"student_count": 0, "avg_attempts": 0}
+
+    placeholders = ", ".join(["%s"] * len(roster_emails))
+    rows = frappe.db.sql(
+        f"""
+        SELECT member, COUNT(*) AS attempts
+        FROM `tabQuiz Submission`
+        WHERE quiz = %s AND course = %s AND member IN ({placeholders})
+        GROUP BY member
+        """,
+        [quiz_id, course_name] + roster_emails,
+        as_dict=True,
+    )
+
+    student_count = len(rows)
+    total_attempts = sum(row.attempts for row in rows)
+    avg_attempts = round(total_attempts / student_count, 1) if student_count else 0
+
+    return {
+        "student_count": student_count,
+        "avg_attempts": avg_attempts,
+    }
+
+
+@frappe.whitelist()
+def get_exam_dashboard(course_name, exam_id):
+    """Instructor dashboard stat for an exam: how many roster students have
+    taken (submitted) it."""
+    if not course_name or not exam_id:
+        frappe.throw(_("Course and exam are required."))
+
+    roster_emails = frappe.db.sql_list(
+        """
+        SELECT r.stuemail_rc
+        FROM `tabScheduled Course Roster` r
+        WHERE r.course_sc = %s
+        """,
+        course_name,
+    )
+    if not roster_emails:
+        return {"student_count": 0}
+
+    placeholders = ", ".join(["%s"] * len(roster_emails))
+    student_count = (
+        frappe.db.sql(
+            f"""
+            SELECT COUNT(DISTINCT member)
+            FROM `tabExam Submission`
+            WHERE exam = %s AND course = %s
+            AND status != 'Not Submitted'
+            AND member IN ({placeholders})
+            """,
+            [exam_id, course_name] + roster_emails,
+        )[0][0]
+        or 0
+    )
+    return {"student_count": student_count}
+
+
+@frappe.whitelist()
+def get_assignment_dashboard(course_name, assignment_id):
+    """Instructor dashboard stat for an assignment: how many roster students
+    have submitted it."""
+    if not course_name or not assignment_id:
+        frappe.throw(_("Course and assignment are required."))
+
+    roster_emails = frappe.db.sql_list(
+        """
+        SELECT r.stuemail_rc
+        FROM `tabScheduled Course Roster` r
+        WHERE r.course_sc = %s
+        """,
+        course_name,
+    )
+    if not roster_emails:
+        return {"student_count": 0}
+
+    placeholders = ", ".join(["%s"] * len(roster_emails))
+    student_count = (
+        frappe.db.sql(
+            f"""
+            SELECT COUNT(DISTINCT member)
+            FROM `tabAssignment Submission`
+            WHERE assignment = %s AND course = %s
+            AND member IN ({placeholders})
+            """,
+            [assignment_id, course_name] + roster_emails,
+        )[0][0]
+        or 0
+    )
+    return {"student_count": student_count}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_translations():
     if frappe.session.user != "Guest":
@@ -3854,7 +3966,7 @@ def mark_lesson_progress(course, chapter_number, lesson_number):
         {"parent": chapter_name, "idx": lesson_number},
         "lesson",
     )
-    save_progress(lesson_name, course)
+    save_progress(lesson_name, chapter_name, course)
 
 
 @frappe.whitelist()
@@ -4114,6 +4226,51 @@ where cs.name = %s and
 cs.name = c.parent and
 c.discussion = %s""",
         (courseName, discussionID),
+    )
+    return count[0][0] > 0 if count else False
+
+
+@frappe.whitelist()
+def GradeableQuiz(courseName, quizID):
+    """True when the quiz is linked to a grading criteria on the course."""
+    count = frappe.db.sql(
+        """select count(c.name)
+from `tabScheduled Course Assess Criteria` c,
+`tabCourse Schedule` cs
+where cs.name = %s and
+cs.name = c.parent and
+c.quiz = %s""",
+        (courseName, quizID),
+    )
+    return count[0][0] > 0 if count else False
+
+
+@frappe.whitelist()
+def GradeableExam(courseName, examID):
+    """True when the exam is linked to a grading criteria on the course."""
+    count = frappe.db.sql(
+        """select count(c.name)
+from `tabScheduled Course Assess Criteria` c,
+`tabCourse Schedule` cs
+where cs.name = %s and
+cs.name = c.parent and
+c.exam = %s""",
+        (courseName, examID),
+    )
+    return count[0][0] > 0 if count else False
+
+
+@frappe.whitelist()
+def GradeableAssignment(courseName, assignmentID):
+    """True when the assignment is linked to a grading criteria on the course."""
+    count = frappe.db.sql(
+        """select count(c.name)
+from `tabScheduled Course Assess Criteria` c,
+`tabCourse Schedule` cs
+where cs.name = %s and
+cs.name = c.parent and
+c.assignment = %s""",
+        (courseName, assignmentID),
     )
     return count[0][0] > 0 if count else False
 

@@ -1,5 +1,44 @@
 <template>
-  <div v-if="isExamLoaded" class="grid" :class="hasSubmittedExam && examSubmissionName ? 'md:grid-cols-[70%,30%]' : ''">
+  <div v-if="isExamLoaded">
+
+    <!-- Instructor View -->
+    <div v-if="isInstructorView" class="space-y-6">
+      <!-- Exam Dashboard -->
+      <div v-if="courseName">
+        <h3 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Exam Dashboard') }}</h3>
+        <div v-if="examDashboard.student_count > 0">
+          <div class="border rounded-lg p-4 text-center">
+            <div class="text-2xl font-bold text-ink-gray-9">{{ examDashboard.student_count }}</div>
+            <div class="text-xs text-ink-gray-5 mt-1">{{ __('Students Who Took the Exam') }}</div>
+          </div>
+          <router-link
+            :to="{ name: 'ExamSubmissionCS', params: { courseName: courseName, examID: props.examName } }">
+            <Button variant="solid" class="w-full mt-3">{{ __('Grade this Exam') }}</Button>
+          </router-link>
+        </div>
+        <div v-else class="text-sm text-ink-gray-5">
+          {{ __('No students have taken this exam yet.') }}
+          <!-- Edit Exam only when no student has taken it -->
+          <router-link :to="{ name: 'ExamForm', params: { examID: props.examName } }">
+            <Button variant="solid" class="w-full mt-3">{{ __('Edit Exam') }}</Button>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Grading criteria info + link -->
+      <div v-if="courseName">
+        <div v-if="!isGradedExam"
+          class="bg-surface-blue-1 border border-outline-blue-1 rounded-md p-3 mb-3 text-sm text-ink-blue-2">
+          {{ __('This exam is currently not associated with a grading criteria.') }}
+        </div>
+        <router-link :to="{ name: 'CourseAssessment', params: { courseName: courseName } }">
+          <Button variant="outline" class="w-full">{{ __('Edit Course Assessments') }}</Button>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Student / exam-taking view -->
+    <div v-else class="grid" :class="hasSubmittedExam && examSubmissionName ? 'md:grid-cols-[70%,30%]' : ''">
     <!-- Left / Main column -->
     <div>
       <!-- Exam Header -->
@@ -124,6 +163,7 @@
         {{ __('Send') }}
       </Button>
     </div>
+    </div>
   </div>
 </template>
 
@@ -247,6 +287,46 @@ const is_instructor = () => {
   }
   return user_is_instructor;
 };
+
+// --- Instructor view: dashboard and grading shortcuts ---
+const courseName = computed(() => router.currentRoute.value.params.courseName)
+const isInstructorView = computed(
+  () =>
+    Array.isArray(instructors.data) &&
+    instructors.data.some((i) => i.user === user.data?.name)
+)
+
+const examDashboard = ref({ student_count: 0 })
+
+const examDashboardResource = createResource({
+  url: 'seminary.seminary.api.get_exam_dashboard',
+  makeParams() {
+    return { course_name: courseName.value, exam_id: props.examName }
+  },
+  onSuccess(data) {
+    examDashboard.value = data || { student_count: 0 }
+  },
+})
+
+const gradingCriteriaResource = createResource({
+  url: 'seminary.seminary.api.GradeableExam',
+  makeParams() {
+    return { courseName: courseName.value, examID: props.examName }
+  },
+})
+const isGradedExam = computed(() => !!gradingCriteriaResource.data)
+
+// Load instructor-view data once we know the user is an instructor.
+watch(
+  isInstructorView,
+  (isInstr) => {
+    if (isInstr && courseName.value) {
+      examDashboardResource.reload()
+      gradingCriteriaResource.reload()
+    }
+  },
+  { immediate: true }
+)
 
 const populateQuestions = () => {
   if (!exam.data || !exam.data.questions) return

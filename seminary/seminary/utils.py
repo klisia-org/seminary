@@ -1080,7 +1080,7 @@ def get_lesson_creation_details(course, chapter, lesson):
 
 @frappe.whitelist()
 def get_question_details(question):
-    fields = ["question", "type", "multiple"]
+    fields = ["question", "type", "multiple", "pages_total"]
     for i in range(1, 5):
         fields.append(f"option_{i}")
         fields.append(f"explanation_{i}")
@@ -1094,7 +1094,7 @@ def get_all_questions_details(questions):
 
     questions_str = "', '".join(questions)
     all_question_details = frappe.db.sql(
-        f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type, q.option_1, q.option_2, q.option_3, q.option_4, q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4
+        f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type, q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4, q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4
 from `tabQuestion` q, `tabQuiz Question` qq
 where q.name = qq.question and qq.name in ('{questions_str}')""",
         as_dict=1,

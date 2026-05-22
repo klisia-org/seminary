@@ -8,7 +8,6 @@ from frappe import _, safe_decode
 from frappe.model.document import Document
 from frappe.utils import cstr, comma_and, cint
 from fuzzywuzzy import fuzz
-from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 from seminary.seminary.utils import generate_slug
 from binascii import Error as BinasciiError
 from frappe.utils.file_manager import safe_b64decode
@@ -121,7 +120,25 @@ def quiz_summary(quiz, course, time_taken, results):
         result["question"] = question_details.question_detail
         result["points_out_of"] = question_details.points
 
-        if question_details.type != "Open Ended":
+        if question_details.type == "Reading Report":
+            # Partial credit: score = (pages_read / pages_total) * points.
+            # Reject out-of-range page counts by clamping to [0, pages_total].
+            pages_total = cint(
+                frappe.db.get_value("Question", result["question_name"], "pages_total")
+            )
+            pages_read = min(max(cint(result.get("answer")), 0), pages_total)
+
+            points = (
+                round((pages_read / pages_total) * question_details.points, 2)
+                if pages_total
+                else 0
+            )
+            result["answer"] = cstr(pages_read)
+            result["is_correct"] = 1 if pages_total and pages_read >= pages_total else 0
+            result["points"] = points
+            score += points
+
+        elif question_details.type != "Open Ended":
             correct = result["is_correct"][0]
             for point in result["is_correct"]:
                 correct = correct and point
@@ -183,17 +200,97 @@ def quiz_summary(quiz, course, time_taken, results):
     submission.save(ignore_permissions=True)
     print("Submission ", submission.name, " saved at ", submission.creation)
 
-    if percentage >= quiz_details.passing_percentage:
-        save_progress(quiz_details.lesson, quiz_details.course)
-    elif not quiz_details.passing_percentage:
-        save_progress(quiz_details.lesson, quiz_details.course)
+    # Lesson progress is recorded by the frontend via api.mark_lesson_progress,
+    # which has the course/chapter/lesson route context. The Quiz doctype has
+    # no lesson/chapter fields, so progress cannot be derived here.
 
     return {
-        "score": score,
+        "score": round(score, 2),
         "score_out_of": score_out_of,
         "submission": submission.name,
         "pass": percentage == quiz_details.passing_percentage,
         "percentage": percentage,
+    }
+
+
+def _question_answer_key(question_name):
+    """Returns (type, correct_answer, explanation) for a Question, used to show
+    the expected answer in a result summary. Reading Report has no fixed answer."""
+    fields = ["type"]
+    for n in range(1, 5):
+        fields += [
+            f"option_{n}",
+            f"is_correct_{n}",
+            f"explanation_{n}",
+            f"possibility_{n}",
+        ]
+    q = (
+        frappe.db.get_value("Question", question_name, fields, as_dict=1)
+        or frappe._dict()
+    )
+
+    if q.type == "Choices":
+        correct = [
+            q.get(f"option_{n}") for n in range(1, 5) if q.get(f"is_correct_{n}")
+        ]
+        explanation = " ".join(
+            q.get(f"explanation_{n}")
+            for n in range(1, 5)
+            if q.get(f"is_correct_{n}") and q.get(f"explanation_{n}")
+        )
+        return q.type, ", ".join(filter(None, correct)), explanation or None
+
+    if q.type == "User Input":
+        accepted = [
+            q.get(f"possibility_{n}") for n in range(1, 5) if q.get(f"possibility_{n}")
+        ]
+        return q.type, ", ".join(accepted), None
+
+    return q.type, None, None
+
+
+@frappe.whitelist()
+def get_last_submission(quiz):
+    """Read-only summary of the current user's most recent submission for this
+    quiz. Used to show the result when revisiting an already-taken quiz.
+    Does NOT create anything (unlike `quiz_summary`)."""
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return
+
+    name = frappe.db.get_value(
+        "Quiz Submission",
+        {"member": user, "quiz": quiz},
+        "name",
+        order_by="creation desc",
+    )
+    if not name:
+        return
+
+    submission = frappe.get_doc("Quiz Submission", name)
+    result = []
+    for row in submission.result:
+        qtype, correct_answer, explanation = _question_answer_key(row.question_name)
+        result.append(
+            {
+                "question_name": row.question_name,
+                "question_detail": row.question,
+                "type": qtype,
+                "answer": row.answer,
+                "is_correct": row.is_correct,
+                "points": row.points,
+                "points_out_of": row.points_out_of,
+                "correct_answer": correct_answer,
+                "explanation": explanation,
+            }
+        )
+    return {
+        "submission": submission.name,
+        "score": submission.score,
+        "score_out_of": submission.score_out_of,
+        "percentage": submission.percentage,
+        "passing_percentage": submission.passing_percentage,
+        "result": result,
     }
 
 
@@ -258,33 +355,17 @@ def get_question_details(question):
 def get_all_question_results(questions):
     if isinstance(questions, str):
         questions = json.loads(questions)
+
     results = []
     for question in questions:
-        result = frappe.db.sql(
-            f"""
-			SELECT
-				name, question,
-				CASE
-					WHEN is_correct_1 THEN option_1
-					WHEN is_correct_2 THEN option_2
-					WHEN is_correct_3 THEN option_3
-					WHEN is_correct_4 THEN option_4
-				END AS correct_option,
-				CASE
-					WHEN is_correct_1 THEN explanation_1
-					WHEN is_correct_2 THEN explanation_2
-					WHEN is_correct_3 THEN explanation_3
-					WHEN is_correct_4 THEN explanation_4
-				END AS correct_explanation
-			FROM
-				`tabQuestion`
-			WHERE
-				name = '{question}'
-			""",
-            as_dict=1,
+        _qtype, correct_answer, explanation = _question_answer_key(question)
+        results.append(
+            {
+                "name": question,
+                "correct_option": correct_answer,
+                "correct_explanation": explanation,
+            }
         )
-        results.append(result[0])
-        print("Correct answers backend:", result)
     return results
 
 
@@ -294,8 +375,18 @@ def check_answer(question, type, answers):
     print("Answers", answers)
     if type == "Choices":
         return check_choice_answers(question, answers)
+    elif type == "Reading Report":
+        return check_reading_report(question, answers[0])
     else:
         return check_input_answers(question, answers[0])
+
+
+def check_reading_report(question, answer):
+    """Returns 1 only when the student read every page (full credit);
+    partial scoring is computed authoritatively in `quiz_summary`."""
+    pages_total = cint(frappe.db.get_value("Question", question, "pages_total"))
+    pages_read = min(max(cint(answer), 0), pages_total)
+    return 1 if pages_total and pages_read >= pages_total else 0
 
 
 def check_choice_answers(question, answers):
