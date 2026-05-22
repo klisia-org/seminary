@@ -8,7 +8,6 @@ from frappe import _, safe_decode
 from frappe.model.document import Document
 from frappe.utils import cstr, comma_and, cint
 from fuzzywuzzy import fuzz
-from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 from seminary.seminary.utils import generate_slug
 from binascii import Error as BinasciiError
 from frappe.utils.file_manager import safe_b64decode
@@ -147,10 +146,9 @@ def exam_summary(exam, course, time_taken, results):
     )
     submission.save(ignore_permissions=True)
 
-    if percentage >= exam_details.passing_percentage:
-        save_progress(exam_details.lesson, exam_details.course)
-    elif not exam_details.passing_percentage:
-        save_progress(exam_details.lesson, exam_details.course)
+    # Lesson progress is recorded by the frontend via api.mark_lesson_progress,
+    # which has the course/chapter/lesson route context. The Exam Activity
+    # doctype has no lesson/chapter fields, so progress cannot be derived here.
 
     return {
         "score": score,

@@ -1,10 +1,51 @@
 <template>
 	<div v-if="isQuizLoaded">
+
+		<!-- Instructor View -->
+		<div v-if="isInstructorView" class="space-y-6">
+			<!-- Quiz Dashboard -->
+			<div v-if="courseName">
+				<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Quiz Dashboard') }}</h3>
+				<div v-if="quizDashboard.student_count > 0" class="grid grid-cols-2 gap-4">
+					<div class="border rounded-lg p-4 text-center">
+						<div class="text-2xl font-bold text-ink-gray-9">{{ quizDashboard.student_count }}</div>
+						<div class="text-xs text-ink-gray-5 mt-1">{{ __('Students Who Attempted') }}</div>
+					</div>
+					<div class="border rounded-lg p-4 text-center">
+						<div class="text-2xl font-bold text-ink-gray-9">{{ quizDashboard.avg_attempts }}</div>
+						<div class="text-xs text-ink-gray-5 mt-1">{{ __('Average Attempts per Student') }}</div>
+					</div>
+				</div>
+				<div v-else class="text-sm text-ink-gray-5">
+					{{ __('No students have attempted this quiz yet.') }}
+				<!-- Edit Quiz only if no submissions -->
+					<router-link :to="{ name: 'QuizForm', params: { quizID: props.quizName } }">
+						<Button variant="solid" class="w-full mt-3">{{ __('Edit Quiz') }}</Button>
+					</router-link>
+				</div>
+			</div>
+
+
+
+			<!-- Grading criteria info + link -->
+			<div v-if="courseName">
+				<div v-if="!isGradedQuiz"
+					class="bg-surface-blue-1 border border-outline-blue-1 rounded-md p-3 mb-3 text-sm text-ink-blue-2">
+					{{ __('This quiz is currently not associated with a grading criteria.') }}
+				</div>
+				<router-link :to="{ name: 'CourseAssessment', params: { courseName: courseName } }">
+					<Button variant="outline" class="w-full">{{ __('Edit Course Assessments') }}</Button>
+				</router-link>
+			</div>
+		</div>
+
+		<!-- Student / quiz-taking view -->
+		<template v-else>
 		<!-- Quiz Header -->
 		<div class="bg-surface-blue-2 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-2">
 			<div class="leading-5">
 				{{
-					__(`This quiz consists of '${questions.length}' questions`)
+					__(`This quiz consists of ${questions.length} questions`)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
@@ -24,7 +65,7 @@
 					`You will have to get ${quiz.data.passing_percentage}% correct answers in order to pass the quiz.`
 				) }}
 			</div>
-			<div v-if="quiz.data.max_attempts" class="leading-relaxed">
+			<div v-if="quiz.data.max_attempts && !attemptsExhausted" class="leading-relaxed">
 				{{
 					__(`You can attempt this quiz ${quiz.data.max_attempts === 1 ? __('1 time') : `${quiz.data.max_attempts}
 				times`
@@ -44,7 +85,7 @@
 		</div>
 
 		<!-- Start Screen -->
-		<div v-if="!fullQuizMode">
+		<div v-if="!fullQuizMode && !quizSubmission.data">
 			<div class="border text-center p-20 rounded-md">
 				<div class="font-semibold text-lg">
 					{{ quiz.data.title }}
@@ -128,6 +169,29 @@
 							</Badge>
 						</div>
 					</div>
+					<div v-else-if="questionDetails.data.type == 'Reading Report'">
+						<div class="flex items-center gap-2 my-2">
+							<FormControl type="number" min="0" :max="questionDetails.data.pages_total"
+								:modelValue="possibleAnswer"
+								@update:modelValue="(val) => (possibleAnswer = clampPages(val, questionDetails.data.pages_total))"
+								:disabled="showAnswers.length ? true : false" class="w-28" />
+							<span class="text-sm text-ink-gray-5">
+								{{ __('of') }} {{ questionDetails.data.pages_total }} {{ __('pages read') }}
+							</span>
+						</div>
+						<div v-if="showAnswers.length">
+							<Badge v-if="showAnswers[0]" :label="__('Fully read')" theme="green">
+								<template #prefix>
+									<CheckCircle class="w-4 h-4 text-ink-green-2 mr-1" />
+								</template>
+							</Badge>
+							<Badge v-else theme="orange" :label="__('Partially read')">
+								<template #prefix>
+									<MinusCircle class="w-4 h-4 mr-1" />
+								</template>
+							</Badge>
+						</div>
+					</div>
 					<div v-else>
 						<TextEditor class="mt-4" :content="possibleAnswer" @change="(val) => (possibleAnswer = val)"
 							:editable="true" :fixedMenu="true"
@@ -190,7 +254,20 @@
 				</div>
 				<!-- User Input Option -->
 				<div v-else-if="question.type == 'User Input'">
-					<FormControl v-model="answers[qtidx]" type="textarea" class="my-2" />
+					<FormControl type="textarea" :modelValue="answers[qtidx]?.[0]"
+						@update:modelValue="(val) => recordAnswer(qtidx, val)" class="my-2" />
+				</div>
+				<!-- Reading Report Option -->
+				<div v-else-if="question.type == 'Reading Report'">
+					<div class="flex items-center gap-2 my-2">
+						<FormControl type="number" min="0" :max="question.pages_total"
+							:modelValue="answers[qtidx]?.[0]"
+							@update:modelValue="(val) => recordAnswer(qtidx, clampPages(val, question.pages_total))"
+							class="w-28" />
+						<span class="text-sm text-ink-gray-5">
+							{{ __('of') }} {{ question.pages_total }} {{ __('pages read') }}
+						</span>
+					</div>
 				</div>
 			</div>
 			<!-- Submit Button -->
@@ -206,16 +283,20 @@
 			<div class="text-lg font-semibold">{{ __('Quiz Summary') }}</div>
 			<div class="text-ink-gray-9">
 				{{ __(`You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of
-				${quizSubmission.data.score} out of ${quizSubmission.data.score_out_of}`) }}
+				${Math.round(quizSubmission.data.score * 100) / 100} out of ${quizSubmission.data.score_out_of}`) }}
 			</div>
 			<div class="mt-6">
 				<div v-for="(question, qtidx) in detailedQuestions" :key="question.question_name"
 					class="border rounded-md p-5 mb-4">
 					<!-- Question Header -->
-					<div class="flex justify-between">
+					<div class="flex justify-between items-start gap-4">
 						<div class="text-lg text-ink-gray-5">
 							<span class="mr-2">{{ __('Question') }} {{ qtidx + 1 }}:</span>
 							<span v-html="question.question_detail"></span>
+						</div>
+						<div v-if="question.points_out_of != null"
+							class="text-sm font-semibold text-ink-gray-7 whitespace-nowrap shrink-0">
+							{{ __('Score') }}: {{ question.points ?? 0 }} / {{ question.points_out_of }}
 						</div>
 					</div>
 
@@ -224,8 +305,8 @@
 						<strong>{{ __('Your Answer:') }}</strong> {{ question.user_answer || __('No Answer') }}
 					</div>
 
-					<!-- Correct Answer -->
-					<div class="bg-surface-gray-3 rounded-md p-3 mt-4">
+					<!-- Correct Answer (not applicable to Reading Report) -->
+					<div v-if="question.type !== 'Reading Report'" class="bg-surface-gray-3 rounded-md p-3 mt-4">
 						<strong>{{ __('Correct Answer:') }}</strong> {{ question.correct_answer ||
 							__('No Correct Answer') }}
 					</div>
@@ -242,7 +323,7 @@
 								<CheckCircle class="w-4 h-4 text-ink-green-2 mr-1" />
 							</template>
 						</Badge>
-						<Badge v-else :label="__('Incorrect')" theme="red">
+						<Badge v-else-if="question.type !== 'Reading Report'" :label="__('Incorrect')" theme="red">
 							<template #prefix>
 								<XCircle class="w-4 h-4 text-ink-red-3 mr-1" />
 							</template>
@@ -250,10 +331,11 @@
 					</div>
 				</div>
 			</div>
-			<Button @click="resetQuiz()" class="mt-4">
+			<Button v-if="!attemptsExhausted" @click="resetQuiz()" class="mt-4">
 				<span>{{ __('Try Again') }}</span>
 			</Button>
 		</div>
+		</template>
 	</div>
 	<div v-else>
 		<p>Loading quiz data...</p>
@@ -313,6 +395,11 @@ const quiz = createResource({
 		if (data) {
 			populateQuestions();
 			setupTimer();
+			lastSubmission.reload();
+			if (isInstructorView.value && courseName.value) {
+				quizDashboardResource.reload();
+				gradingCriteriaResource.reload();
+			}
 		} else {
 			console.error("Failed to load quiz data."); // Debugging
 		}
@@ -324,6 +411,12 @@ const quiz = createResource({
 
 // Add a computed property to check if `quiz.data` is loaded
 const isQuizLoaded = computed(() => !!quiz.data);
+
+// Instructors/moderators/evaluators see the management view instead of the quiz.
+const isInstructorView = computed(
+	() => user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
+)
+const courseName = computed(() => router.currentRoute.value.params.courseName)
 
 const populateQuestions = () => {
 	let data = quiz.data;
@@ -411,12 +504,40 @@ const attempts = createResource({
 	},
 })
 
+// True once the student has used up every allowed attempt.
+const attemptsExhausted = computed(
+	() =>
+		!!quiz.data?.max_attempts &&
+		attempts.data?.length >= quiz.data.max_attempts
+)
+
+// --- Instructor view: dashboard stats and grading-criteria status ---
+const quizDashboard = ref({ student_count: 0, avg_attempts: 0 })
+
+const quizDashboardResource = createResource({
+	url: 'seminary.seminary.api.get_quiz_dashboard',
+	makeParams() {
+		return { course_name: courseName.value, quiz_id: quiz.data?.name }
+	},
+	onSuccess(data) {
+		quizDashboard.value = data || { student_count: 0, avg_attempts: 0 }
+	},
+})
+
+const gradingCriteriaResource = createResource({
+	url: 'seminary.seminary.api.GradeableQuiz',
+	makeParams() {
+		return { courseName: courseName.value, quizID: quiz.data?.name }
+	},
+})
+const isGradedQuiz = computed(() => !!gradingCriteriaResource.data)
+
 watch(
 	() => quiz.data,
 	(newData) => {
 		if (newData) {
 			populateQuestions()
-
+			lastSubmission.reload()
 		}
 		if (newData && quiz.data.max_attempts) {
 			attempts.reload()
@@ -458,7 +579,8 @@ const quizSubmission = createResource({
 	onError(err) {
 		console.error("Error loading quiz summary:", err); // Debugging
 	},
-	auto: true, // Re-enable auto-fetch
+	// No auto-fetch: quiz_summary CREATES a Quiz Submission, so it must run
+	// only on an explicit submit — never on page load.
 });
 
 const questionDetails = createResource({
@@ -668,6 +790,7 @@ const submitQuizComplete = async () => {
 		detailedQuestions.push({
 			question_name: question.question,
 			question_detail: question.question_detail,
+			type: question.type,
 			user_answer: answer,
 			correct_answer: null, // Placeholder for correct answer
 			explanation: question.explanation || null,
@@ -682,17 +805,20 @@ const submitQuizComplete = async () => {
 			onSuccess: async (data) => {
 
 
-				// Fetch correct answers from the backend
-				const correctAnswers = await call('seminary.seminary.doctype.quiz.quiz.get_all_question_results', {
-					questions: questions.map(q => q.question),
+				// Pull the authoritative graded result (per-question points + correct answers)
+				const saved = await call('seminary.seminary.doctype.quiz.quiz.get_last_submission', {
+					quiz: quiz.data.name,
 				});
+				const savedRows = saved?.result || [];
 
-				// Update detailedQuestions with correct answers and explanations
+				// Merge per-question score, correct answers and explanations
 				detailedQuestions.forEach((question) => {
-					const correctAnswer = correctAnswers.find((item) => item.name === question.question_name);
-					if (correctAnswer) {
-						question.correct_answer = correctAnswer.correct_option;
-						question.explanation = correctAnswer.correct_explanation || question.explanation;
+					const row = savedRows.find((r) => r.question_name === question.question_name);
+					if (row) {
+						question.correct_answer = row.correct_answer;
+						question.explanation = row.explanation || question.explanation;
+						question.points = row.points;
+						question.points_out_of = row.points_out_of;
 					}
 				});
 
@@ -708,6 +834,7 @@ const submitQuizComplete = async () => {
 
 
 				quizSubmission.reload(); // Reload the quiz summary and corrected answers
+				if (quiz.data && quiz.data.max_attempts) attempts.reload()
 				fullQuizMode.value = false; // Exit full quiz mode to show the summary
 			},
 			onError(err) {
@@ -731,6 +858,8 @@ const createSubmission = () => {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
 				if (quiz.data.duration) clearInterval(timerInterval)
+				// Build the detailed result cards from the saved submission.
+				lastSubmission.reload()
 			},
 			onError(err) {
 				const errorTitle = err?.message || ''
@@ -750,6 +879,7 @@ const resetQuiz = () => {
 	activeQuestion.value = 0
 	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
 	showAnswers.length = 0
+	isReviewingSubmission.value = false
 	quizSubmission.reset()
 	populateQuestions()
 	setupTimer()
@@ -760,7 +890,19 @@ const getInstructions = (question) => {
 	if (question.type == 'Choices')
 		if (question.multiple) return (__('Choose all answers that apply'))
 		else return (__('Choose one answer'))
+	else if (question.type == 'Reading Report')
+		return (__('Enter the number of pages you read'))
 	else return (__('Type your answer'))
+}
+
+// Keep page counts within [0, pages_total] so out-of-range values are rejected.
+const clampPages = (val, max) => {
+	let n = parseInt(val)
+	max = parseInt(max) || 0
+	if (isNaN(n)) return ''
+	if (n < 0) n = 0
+	if (max && n > max) n = max
+	return n
 }
 
 const markLessonProgress = () => {
@@ -840,10 +982,14 @@ watch(
 // Load detailed question data and results from localStorage
 const detailedQuestions = ref([]);
 const quizResults = ref([]);
+// True while showing a previously saved submission (loaded read-only) so the
+// localStorage sync below doesn't overwrite the reconstructed result.
+const isReviewingSubmission = ref(false);
 
 watch(
 	() => quizSubmission.data,
 	() => {
+		if (isReviewingSubmission.value) return
 		if (quizSubmission.data) {
 			const questions = localStorage.getItem(`${quiz.data.name}_questions`);
 			const results = localStorage.getItem(`${quiz.data.name}_results`);
@@ -852,4 +998,39 @@ watch(
 		}
 	}
 );
+
+// Read-only: when revisiting a quiz, show the student's most recent result
+// instead of silently re-running quiz_summary (which would create a duplicate
+// submission). Populated via the quiz.data watch above.
+const lastSubmission = createResource({
+	url: 'seminary.seminary.doctype.quiz.quiz.get_last_submission',
+	makeParams() {
+		return { quiz: quiz.data?.name }
+	},
+	onSuccess(data) {
+		// No prior submission — leave the start screen as-is.
+		if (!data) return
+		isReviewingSubmission.value = true
+		detailedQuestions.value = (data.result || []).map((row) => ({
+			question_name: row.question_name,
+			question_detail: row.question_detail,
+			type: row.type,
+			user_answer: row.answer,
+			correct_answer: row.correct_answer,
+			explanation: row.explanation,
+			points: row.points,
+			points_out_of: row.points_out_of,
+		}))
+		quizResults.value = (data.result || []).map((row) => ({
+			is_correct: [row.is_correct],
+		}))
+		quizSubmission.data = {
+			score: data.score,
+			score_out_of: data.score_out_of,
+			percentage: data.percentage,
+			submission: data.submission,
+			pass: data.percentage >= data.passing_percentage,
+		}
+	},
+});
 </script>

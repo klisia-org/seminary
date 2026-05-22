@@ -58,7 +58,7 @@
 						:label="__('Type')"
 						v-model="question.type"
 						type="select"
-						:options="['Choices', 'User Input']"
+						:options="['Choices', 'User Input', 'Reading Report']"
 						class="pb-2"
 						:required="true"
 					/>
@@ -90,6 +90,20 @@
 							v-model="question[`possibility_${n}`]"
 							:required="n == 1 ? true : false"
 						/>
+					</div>
+					<div
+						v-else-if="question.type == 'Reading Report'"
+						class="space-y-2 border-t pt-2"
+					>
+						<FormControl
+							:label="__('Pages Total')"
+							v-model="question.pages_total"
+							type="number"
+							:required="true"
+						/>
+						<p class="text-xs text-ink-gray-5">
+							{{ __('Students enter how many pages they read; the score is that fraction of the points.') }}
+						</p>
 					</div>
 				</div>
 				<div v-else-if="questionType == 'existing'" class="space-y-2">
@@ -141,6 +155,7 @@ const defaultQuestionState = () => ({
 	possibility_2: '',
 	possibility_3: '',
 	possibility_4: '',
+	pages_total: 0,
 })
 
 const questionType = ref('new')

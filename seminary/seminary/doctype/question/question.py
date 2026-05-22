@@ -5,6 +5,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import cint
 from seminary.seminary.utils import (
     has_course_instructor_role,
     has_course_moderator_role,
@@ -24,6 +25,8 @@ def validate_correct_answers(question):
         validate_correct_options(question)
     elif question.type == "User Input":
         validate_possible_answer(question)
+    elif question.type == "Reading Report":
+        validate_reading_report(question)
 
 
 def validate_duplicate_options(question):
@@ -70,6 +73,15 @@ def validate_possible_answer(question):
     if not len(possible_answers):
         frappe.throw(
             _("Add at least one possible answer for this question: {0}").format(
+                frappe.bold(question.question)
+            )
+        )
+
+
+def validate_reading_report(question):
+    if cint(question.pages_total) <= 0:
+        frappe.throw(
+            _("Set a Pages Total greater than zero for the Reading Report: {0}").format(
                 frappe.bold(question.question)
             )
         )

@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint
+from frappe.utils import flt
 from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 
@@ -40,14 +40,15 @@ class QuizSubmission(Document):
     def validate_points(self):
         self.score = 0
         for row in self.result:
-            if cint(row.points) > cint(row.points_out_of):
+            if flt(row.points) > flt(row.points_out_of):
                 frappe.throw(
                     _(
                         "Points for question number {0} cannot be greater than the points allotted for that question."
                     )
                 )
             else:
-                self.score += cint(row.points)
+                self.score += flt(row.points)
+        self.score = flt(self.score, 2)
 
     def set_percentage(self):
         if self.score and self.score_out_of:
