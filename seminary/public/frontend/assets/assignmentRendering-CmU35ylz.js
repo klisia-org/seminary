@@ -1,2 +1,0 @@
-function i(t){if(!t||typeof t!="string")return null;const e=t.trim(),n=e.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);if(n)return n[1];const r=e.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);if(r)return r[1];const o=e.match(/[?&]v=([A-Za-z0-9_-]{6,})/);return o?o[1]:null}function s(t){return!t||typeof t!="string"?!1:t.toLowerCase().split("?")[0].endsWith(".docx")}export{s as i,i as p};
-//# sourceMappingURL=assignmentRendering-CmU35ylz.js.map
