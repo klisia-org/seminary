@@ -1,7 +1,8 @@
 # Instalação
 
-!!! note "Pré-requisitos"
-    O SeminaryERP requer um ambiente [Frappe Bench](https://frappeframework.com/docs/user/en/installation) em funcionamento, com o ERPNext instalado.
+:::info Pré-requisitos
+O SeminaryERP requer um ambiente [Frappe Bench](https://frappeframework.com/docs/user/en/installation) em funcionamento, com o ERPNext instalado.
+:::
 
 ## Instalar o app
 
@@ -18,11 +19,12 @@ cd apps/seminary
 yarn install
 ```
 
-## Modo de desenvolvimento
+## Para pagamentos online, instale Pagamentos
 
-```bash
-bench --site your-site.localhost set-config developer_mode 1
-bench start
-```
+ ```bash
+ bench get-app payments
+ banco --site seu-site install-app payments
+ bench --site seu-site migrar
+ ```
 
 O frontend do LMS está disponível em `/seminary` no seu site.

@@ -1,6 +1,6 @@
 # Solicitud de Graduación
 
-La **Solicitud de Graduación** es la solicitud formal que un estudiante presenta para graduarse. Es el momento en que la Secretaría Académica deja de preguntarse "¿podría este estudiante graduarse?" y empieza a procesar "este estudiante quiere graduarse este período." Lleva una cuota opcional, pasa por revisión académica y financiera, y termina —tras ambas revisiones— en `Approved`.
+**Ruta Condicionalmente Elegible**: \*"Puedes presentar una solicitud para iniciar el proceso de graduación. _"Debes aprobar los cursos en los que estás actualmente para que sea aceptada."_
 
 Este módulo es **optativo por programa**. Las escuelas que gestionan la graduación íntegramente desde la Secretaría Académica (sin solicitud iniciada por el estudiante) lo dejan deshabilitado y usan la página de [Auditoría del Programa](graduation-requirements.md) como una vista pasiva de elegibilidad.
 
@@ -51,7 +51,7 @@ En la página de **Auditoría del Programa** (`/program-audit/<enrollment>`):
 
 2. Debajo del banner, cuando el estudiante es candidato, el **CTA de Solicitud de Graduación**:
    - **Ruta Elegible**: \*"Cumples con los criterios de solicitud de graduación del programa. _"Presenta una solicitud para iniciar el proceso de aprobación."_
-   - **Ruta Condicionalmente Elegible**: \*"Puedes presentar una solicitud para iniciar el proceso de graduación. _"Debes aprobar los cursos en los que estás actualmente para que sea aceptada."_
+   - La **Solicitud de Graduación** es la solicitud formal que un estudiante presenta para graduarse. Es el momento en que la Secretaría Académica deja de preguntarse "¿podría este estudiante graduarse?" y empieza a procesar "este estudiante quiere graduarse este período." _"Debes aprobar los cursos en los que estás actualmente para que sea aceptada."_
 
 3. Debajo del CTA, una tabla de **Pagos pendientes** agrupa cada **Factura de Venta** impaga de esta inscripción por pagador. Esto incluye las facturas del propio estudiante y las adeudadas por otros pagadores (iglesia patrocinadora, donantes de becas, fondo denominacional). El estudiante solo puede pagar las suyas en la página de Cuotas; esta tabla muestra a todos el panorama completo.
 

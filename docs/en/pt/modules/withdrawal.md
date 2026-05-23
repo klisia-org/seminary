@@ -69,3 +69,23 @@ Se houver necessidade de ajuste manual das datas em que uma regra se aplica, iss
 A maioria dos seminários não precisará editar o fluxo de trabalho pré-configurado. No entanto, isso é possível e instituições maiores podem se beneficiar especialmente de personalizações. Como isso é um recurso do ERPNext, a [documentação](https://docs.frappe.io/erpnext/workflows) deles pode ser útil.
 
 ![Tela do Fluxo de Trabalho de Trancamento](/modules/withdrawal/img/withdrawal-workflow.png)
+
+### Vias rápidas para programas em andamento e gratuitos
+
+Duas sinalizações no Programa subjacente alteram os botões mostrados em uma solicitação de cancelamento de matrícula para que os usuários não tenham que clicar através de estados de revisão que não têm nada para avaliar:
+
+- **É Contínuo** — Uma propriedade do **Nível do Programa**, espelhada em cada Programa nesse nível. Programas Contínuos não têm nenhum conceito de graduação, GPA ou transcrição, portanto não há nada para revisar academicamente em uma retirada.
+- **Programa gratuito** — uma caixa de verificação por programa. Quando definido, o registro não gera faturas de vendas, então não há nada para revisar financeiramente em uma retirada.
+
+Os botões disponíveis em uma solicitação de cancelamento de matrícula de curso se adaptam automaticamente:
+
+| Sinalizadores do programa | Botão mostrado no rascunho                                                  | Leva à                                                                                                                                       |
+| ------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nenhum                    | **Enviar** (padrão)                                      | Enviado → Revisão Acadêmica padrão → Revisão Financeira                                                                                      |
+| Apenas grátis             | **Enviar** (padrão)                                      | Enviado → Revisão Acadêmica → Aprovado Academicamente; de lá, o usuário acadêmico pode escolher _Completo_ para ignorar a Revisão Financeira |
+| Somente Contínuo          | **Enviar e Pular Revisão Acadêmica** (Usuário Acadêmico) | Aprovação acadêmica → Revisão financeira (cursos pagos únicos ainda resolvidos)                                           |
+| Contínuo **e** grátis     | **Enviar e Completar** (Usuário Acadêmico ou Acadêmico)  | Concluído (sem revisão alguma)                                                                                            |
+
+Quando um pedido chega ao _Aprovado acadêmico_ através do caminho **Enviar e Pular Revisão Acadêmica**, nenhum tratamento de nota foi aplicado — o sistema simplesmente marca a matrícula do Curso subjacente como cancelada.
+
+Se um aluno iniciar um cancelamento de matrícula de um programa contínuo mas pago, eles ainda verão o botão padrão de **Enviar**; o usuário acadêmico posteriormente avalia a solicitação por meio da Revisão Acadêmica, onde o processamento acadêmico de programas contínuos é simplificado por natureza.

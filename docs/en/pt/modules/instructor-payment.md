@@ -132,7 +132,7 @@ Para funcionários em tempo integral ou parcial com salário recorrente:
 1. Crie o registro de **Employee** (módulo de RH).
 2. Crie ou edite o registro de **Instructor** e defina **Instructor Type = Salaried**. Vincule ao **Employee**.
 3. Crie uma **Salary Structure** (por exemplo, \"Instructor — Full-Time\") com os **Salary Components** necessários (Base, auxílios, deduções).
-4. Crie uma **Salary Structure Assignment** conectando o **Employee** à **Salary Structure**.
+4. Crie uma **Atribuição de Estrutura de Salário** conectando o **Funcionário** à **Estrutura de Salário**.
 5. Execute o **Payroll Entry** na sua programação mensal normal. O HRMS faz o restante.
 
 Nenhuma configuração específica do seminário é necessária — este é o HRMS padrão.
@@ -146,7 +146,7 @@ Para instrutores pagos por curso ministrado:
 3. Garanta que a **Instructor Category** atribuída em cada **Course Schedule** deste instrutor tenha **Pay Rates** definidas (veja a seção acima).
 4. Crie uma **Salary Structure** chamada algo como \"Instructor — Per-Course\". Na tabela **Earnings**, adicione uma única linha:
    - **Salary Component:** `Instructor Pay` _(este componente foi criado automaticamente quando você habilitou o HRMS Payroll — não o recrie)_
-5. Atribua a **Salary Structure** ao **Employee** via **Salary Structure Assignment**.
+5. Atribua a **Estrutura de Salário** ao **Funcionário** via **Atribuição de Estrutura de Salário**.
 
 É isso. Quando o **Payroll Entry** é executado, o sistema calcula o pagamento com base nos cursos ministrados nesse período × as taxas da categoria, e coloca o resultado no Salary Slip.
 
@@ -159,7 +159,7 @@ Você **não** precisa de componentes por categoria (\"IoR Pay\", \"GTA Pay\"). 
 Execute o **Payroll Entry** da mesma forma de sempre:
 
 1. **HR → Payroll → Payroll Entry → New**.
-2. Defina as datas do período, a empresa e o filtro de **Salary Structure Assignment**.
+2. Defina as datas do período, a empresa e o filtro de **Atribuição de Estrutura de Salário**.
 3. Enviar. O HRMS gera um Salary Slip por funcionário.
 
 Abra um Salary Slip gerado. Perto do topo, na seção **Instructor Pay Inputs**, você verá:
