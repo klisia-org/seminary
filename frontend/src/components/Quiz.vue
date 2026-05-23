@@ -192,6 +192,25 @@
 							</Badge>
 						</div>
 					</div>
+					<div v-else-if="questionDetails.data.type == 'Scripture Matching'">
+						<ScriptureMatching
+							:key="`sm-${currentQuestion}`"
+							:items="questionDetails.data.matching_items || []"
+							:readOnly="showAnswers.length > 0"
+							@update:answer="(payload) => (possibleAnswer = JSON.stringify(payload))"
+						/>
+					</div>
+					<div v-else-if="questionDetails.data.type == 'Scripture Memorization'">
+						<ScriptureMemorization
+							:key="`sn-${currentQuestion}`"
+							:text="questionDetails.data.memorization_text || ''"
+							:hideCount="questionDetails.data.hide_word_count || 3"
+							:minWordLength="questionDetails.data.min_word_length || 4"
+							:referenceLabel="questionDetails.data.memorization_ref || questionDetails.data.memorization_resolved_ref || ''"
+							:readOnly="showAnswers.length > 0"
+							@update:answer="(payload) => (possibleAnswer = JSON.stringify(payload))"
+						/>
+					</div>
 					<div v-else>
 						<TextEditor class="mt-4" :content="possibleAnswer" @change="(val) => (possibleAnswer = val)"
 							:editable="true" :fixedMenu="true"
@@ -269,6 +288,23 @@
 						</span>
 					</div>
 				</div>
+				<!-- Scripture Matching -->
+				<div v-else-if="question.type == 'Scripture Matching'">
+					<ScriptureMatching
+						:items="question.matching_items || []"
+						@update:answer="(payload) => recordAnswer(qtidx, JSON.stringify(payload))"
+					/>
+				</div>
+				<!-- Scripture Memorization -->
+				<div v-else-if="question.type == 'Scripture Memorization'">
+					<ScriptureMemorization
+						:text="question.memorization_text || ''"
+						:hideCount="question.hide_word_count || 3"
+						:minWordLength="question.min_word_length || 4"
+						:referenceLabel="question.memorization_ref || ''"
+						@update:answer="(payload) => recordAnswer(qtidx, JSON.stringify(payload))"
+					/>
+				</div>
 			</div>
 			<!-- Submit Button -->
 			<div class="text-center mt-4">
@@ -300,16 +336,30 @@
 						</div>
 					</div>
 
-					<!-- User Answer -->
-					<div class="bg-surface-gray-3 rounded-md p-3 mt-4">
-						<strong>{{ __('Your Answer:') }}</strong> {{ question.user_answer || __('No Answer') }}
-					</div>
-
-					<!-- Correct Answer (not applicable to Reading Report) -->
-					<div v-if="question.type !== 'Reading Report'" class="bg-surface-gray-3 rounded-md p-3 mt-4">
-						<strong>{{ __('Correct Answer:') }}</strong> {{ question.correct_answer ||
-							__('No Correct Answer') }}
-					</div>
+					<!-- Scripture Matching: card-based result -->
+					<ScriptureMatchingResult
+						v-if="question.type === 'Scripture Matching'"
+						:items="question.matching_items || []"
+						:userAnswer="question.user_answer || ''"
+						class="mt-4"
+					/>
+					<!-- Scripture Memorization: dual-verse result -->
+					<ScriptureMemorizationResult
+						v-else-if="question.type === 'Scripture Memorization'"
+						:text="question.memorization_text || ''"
+						:userAnswer="question.user_answer || ''"
+						class="mt-4"
+					/>
+					<!-- Generic User Answer / Correct Answer (other types) -->
+					<template v-else>
+						<div class="bg-surface-gray-3 rounded-md p-3 mt-4">
+							<strong>{{ __('Your Answer:') }}</strong> {{ question.user_answer || __('No Answer') }}
+						</div>
+						<div v-if="question.type !== 'Reading Report'" class="bg-surface-gray-3 rounded-md p-3 mt-4">
+							<strong>{{ __('Correct Answer:') }}</strong> {{ question.correct_answer ||
+								__('No Correct Answer') }}
+						</div>
+					</template>
 
 					<!-- Explanation -->
 					<div v-if="question.explanation" class="bg-surface-gray-3 rounded-md p-3 mt-4">
@@ -349,6 +399,10 @@ import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
 import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
+import ScriptureMatching from '@/components/QuestionTypes/ScriptureMatching.vue'
+import ScriptureMemorization from '@/components/QuestionTypes/ScriptureMemorization.vue'
+import ScriptureMatchingResult from '@/components/QuestionTypes/ScriptureMatchingResult.vue'
+import ScriptureMemorizationResult from '@/components/QuestionTypes/ScriptureMemorizationResult.vue'
 
 const user = inject('$user')
 const fullQuizMode = ref(false);
@@ -794,6 +848,9 @@ const submitQuizComplete = async () => {
 			user_answer: answer,
 			correct_answer: null, // Placeholder for correct answer
 			explanation: question.explanation || null,
+			// Scripture-specific extras for rich result cards
+			matching_items: question.matching_items,
+			memorization_text: question.memorization_text,
 		});
 	}
 
@@ -819,7 +876,20 @@ const submitQuizComplete = async () => {
 						question.explanation = row.explanation || question.explanation;
 						question.points = row.points;
 						question.points_out_of = row.points_out_of;
+						// Server is authoritative for the Scripture data too,
+						// in case the question was re-saved between attempt and grading.
+						if (row.matching_items) question.matching_items = row.matching_items;
+						if (row.memorization_text) question.memorization_text = row.memorization_text;
 					}
+				});
+
+				// Server is authoritative for is_correct too — the frontend
+				// computed it as an object for Scripture types (response was
+				// {correct, total}), which broke the bottom Correct/Incorrect
+				// badge. Overwrite with the saved row's 1/0.
+				results.forEach((r) => {
+					const row = savedRows.find((sr) => sr.question_name === r.question_name);
+					if (row) r.is_correct = [row.is_correct];
 				});
 
 				// Store detailed question data in localStorage
@@ -1020,6 +1090,9 @@ const lastSubmission = createResource({
 			explanation: row.explanation,
 			points: row.points,
 			points_out_of: row.points_out_of,
+			// Scripture-specific extras passed through for the rich result cards
+			matching_items: row.matching_items,
+			memorization_text: row.memorization_text,
 		}))
 		quizResults.value = (data.result || []).map((row) => ({
 			is_correct: [row.is_correct],
