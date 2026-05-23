@@ -51,6 +51,32 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Heavy, on-demand viewers — only load when an instructor opens
+          // that submission type.
+          if (id.includes('pdfjs-dist')) {
+            return 'pdfjs';
+          }
+          if (id.includes('node_modules/mammoth')) {
+            return 'mammoth';
+          }
+          // Editor.js + all its plugins are pulled in (statically) by
+          // utils/index.js, which 25+ pages import. Put them in their own
+          // chunk so they parse in parallel and cache independently of the
+          // rest of vendor.
+          if (id.includes('node_modules/@editorjs')) {
+            return 'editorjs';
+          }
+          // highlight.js is used only by the CodeBox plugin; markdown-it only
+          // by LessonContent; both are big.
+          if (id.includes('node_modules/highlight.js')) {
+            return 'highlight';
+          }
+          if (id.match(/node_modules\/markdown-it(\/|$)/)) {
+            return 'markdown-it';
+          }
+          if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
+            return 'socketio';
+          }
           // Keep all frappe-ui modules together in one chunk
           if (id.includes('frappe-ui')) {
             return 'frappe-ui';

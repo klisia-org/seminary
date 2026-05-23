@@ -15,8 +15,8 @@
     "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
   },
   "engines": {
-        "npm": "please-use-yarn"
-    },
+    "npm": "please-use-yarn"
+  },
   "dependencies": {
     "@editorjs/embed": "^2.7.6",
     "@editorjs/header": "^2.8.8",
@@ -26,8 +26,8 @@
     "@editorjs/simple-image": "^1.6.0",
     "@editorjs/table": "^2.4.4",
     "@iconify/json": "^2.2.252",
-    "@seminary/portal-shell": "link:../portal-shell",
     "@internationalized/date": "^3.7.0",
+    "@seminary/portal-shell": "link:../portal-shell",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.13",
@@ -38,7 +38,9 @@
     "highlight.js": "^11.11.1",
     "hljs": "^6.2.3",
     "lucide-vue-next": "^0.479.0",
+    "mammoth": "^1.12.0",
     "markdown-it": "^14.1.1",
+    "pdfjs-dist": "^5.7.284",
     "pinia": "^3.0.1",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "3.4.15",

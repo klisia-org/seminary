@@ -181,3 +181,16 @@ watch(() => props.content, (newContent) => {
 
 defineExpose({ clear })
 </script>
+
+<style>
+/* The Teleport-mounted editor wrapper above uses z-index: 9999 to escape
+   deep-DOM stacking contexts. The frappe-ui menu's dropdowns (heading,
+   font color, link, etc.) use reka-ui's PopoverPortal, which also renders
+   to <body> but with no explicit z-index — so without this rule they
+   paint *below* the editor and only the bottom edge of the dropdown is
+   visible. Global because every PopoverContent should be above any
+   floating editor wrapper. */
+.PopoverContent {
+	z-index: 10000;
+}
+</style>

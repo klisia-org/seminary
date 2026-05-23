@@ -44,30 +44,38 @@
 			</div>
 		</div>
 
-		<!-- Student / grading view -->
-		<div v-else class="grid grid-cols-[65%,35%] h-full" :class="{ 'border rounded-lg': !showTitle }">
-		<div class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
-			<div v-if="showTitle" class="text-lg font-semibold mb-5 text-ink-gray-9">
-				<div v-if="submissionName === 'new'">
-					{{ __('Submission by') }} {{ user.data?.full_name }}
+		<!-- Grading view: submission on the left, prof comments/grading on the right.
+		     The AssignmentSubmission route is locked to instructors, so `showTitle`
+		     alone implies the prof grading screen — no need to also check role flags. -->
+		<div v-if="showTitle" class="grid grid-cols-[65%,35%] h-full">
+			<!-- LEFT: student submission -->
+			<div class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
+				<div class="text-lg font-semibold mb-3 text-ink-gray-9">
+					<div v-if="submissionName === 'new'">
+						{{ __('Submission by') }} {{ user.data?.full_name }}
+					</div>
+					<div v-else>
+						{{ __('Submission by') }} {{ submissionResource.doc?.member_name }}
+					</div>
 				</div>
-				<div v-else>
-					{{ __('Submission by') }} {{ submissionResource.doc?.member_name }}
-				</div>
+				<details class="mb-4">
+					<summary class="cursor-pointer text-sm text-ink-gray-7 font-medium select-none">
+						{{ __('Assignment Question') }}
+					</summary>
+					<div v-html="assignment.data.question"
+						class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal">
+					</div>
+				</details>
+				<SubmissionViewer
+					:submission="submissionResource.doc"
+					:type="assignment.data?.type"
+				/>
 			</div>
-			<div class="text-sm text-ink-gray-7 font-medium mb-2">
-				{{ __('Assignment') }}:
-			</div>
-			<div v-html="assignment.data.question"
-				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-			</div>
-		</div>
-
-		<div class="flex flex-col">
-			<div class="p-5">
+			<!-- RIGHT: prof comments / grading panel -->
+			<div class="p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
 				<div class="flex items-center justify-between mb-4">
 					<div class="font-semibold text-ink-gray-9">
-						{{ __('Submission') }}
+						{{ __('Grading') }}
 					</div>
 					<div class="flex items-center space-x-2">
 						<Badge v-if="isDirty" theme="orange">
@@ -81,85 +89,7 @@
 						</Button>
 					</div>
 				</div>
-				<div v-if="
-					submissionName != 'new' &&
-					!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
-					submissionResource.doc?.owner == user.data?.name
-				" class="bg-surface-blue-2 text-ink-blue-2 p-3 rounded-md leading-5 text-sm mb-4">
-					{{ __("You've successfully submitted the assignment.") }}
-					{{
-						__(
-							"Once the moderator grades your submission, you'll find the details here."
-						)
-					}}
-					{{ __('Feel free to make edits to your submission if needed, until it is graded.') }}
-				</div>
-				<div v-if="showUploader()">
-					<div class="text-xs text-ink-gray-5 mt-1 mb-2">
-						{{ __('Add your assignment as {0}').format(assignment.data.type) }}
-					</div>
-					<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
-						@success="(file) => saveSubmission(file)">
-						<template #default="{ uploading, progress, openFileSelector }">
-							<Button @click="openFileSelector" :loading="uploading">
-								{{
-									uploading
-										? __('Uploading {0}%').format(progress)
-										: __('Upload File')
-								}}
-							</Button>
-						</template>
-					</FileUploader>
-					<div v-else>
-						<div class="flex text-ink-gray-7">
-							<div class="border self-start rounded-md p-2 mr-2">
-								<FileText class="h-5 w-5 stroke-1.5" />
-							</div>
-							<a :href="submissionFile.file_url" target="_blank"
-								class="flex flex-col cursor-pointer !no-underline">
-								<span class="text-sm leading-5">
-									{{ submissionFile.file_name }}
-								</span>
-								<span class="text-sm text-ink-gray-5 mt-1">
-									{{ getFileSize(submissionFile.file_size) }}
-								</span>
-							</a>
-							<X v-if="canModifyAssignment" @click="removeSubmission()"
-								class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
-						</div>
-					</div>
-				</div>
-				<div v-else-if="assignment.data.type == 'URL'">
-					<div class="text-xs text-ink-gray-5 mb-1">
-						{{ __('Enter a URL') }}
-					</div>
-					<FormControl v-model="answer" type="text" :readonly="!canModifyAssignment" />
-				</div>
-				<div v-else>
-					<div class="text-sm mb-4">
-						{{ __('Write your answer here') }}
-					</div>
-					<TextEditor :content="answer" @change="(val) => (answer = val)" :editable="true" :fixedMenu="true"
-						editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
-				</div>
-
-				<div v-if="
-					user.data?.name == submissionResource.doc?.owner &&
-					submissionResource.doc?.comments
-				" class="mt-8 p-3 bg-surface-blue-2 text-ink-blue-2 rounded-md">
-					<div class="text-sm text-ink-gray-5 font-medium mb-2">
-						{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
-					</div>
-					<div class="leading-5">
-						<div v-html="submissionResource.doc.comments"></div>
-					</div>
-				</div>
-
-				<!-- Grading -->
-				<div v-if="canGradeSubmission" class="mt-8 space-y-4">
-					<div class="font-semibold mb-2 text-ink-gray-9">
-						{{ __('Grading') }}
-					</div>
+				<div v-if="canGradeSubmission" class="space-y-4">
 					<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.status"
 						:label="__('Grading Status')" type="select" :options="submissionStatusOptions" />
 					<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.grade"
@@ -168,17 +98,236 @@
 						<div class="text-sm text-ink-gray-5 mb-1">
 							{{ __('Comments') }}
 						</div>
-						<TextEditor :content="comments" @change="
-							(val) => {
-								comments = val
-								isDirty = true
-							}
-						" :editable="true" :fixedMenu="true"
-							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
+						<RichTextEditor
+							:id="'assignment-comments-' + (submissionName || 'new')"
+							:content="comments || ''"
+							:placeholder="__('Comments for the student…')"
+							@change="(val) => { comments = val; isDirty = true }"
+						/>
+					</div>
+					<div>
+						<div class="text-sm text-ink-gray-5 mb-1">
+							{{ __('Feedback file (optional)') }}
+						</div>
+						<FileUploader
+							v-if="!commentAttachFile"
+							@success="(file) => saveCommentAttach(file)"
+						>
+							<template #default="{ uploading, progress, openFileSelector }">
+								<Button @click="openFileSelector" :loading="uploading" variant="outline">
+									{{
+										uploading
+											? __('Uploading {0}%').format(progress)
+											: __('Attach feedback file')
+									}}
+								</Button>
+							</template>
+						</FileUploader>
+						<div v-else class="flex items-center text-ink-gray-7">
+							<div class="border self-start rounded-md p-2 mr-2">
+								<FileText class="h-5 w-5 stroke-1.5" />
+							</div>
+							<a :href="commentAttachFile.file_url" target="_blank"
+								class="flex-1 min-w-0 !no-underline text-sm leading-5 break-all">
+								{{ commentAttachFile.file_name || filenameFromUrl(commentAttachFile.file_url) }}
+							</a>
+							<X @click="removeCommentAttach()"
+								class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-3 shrink-0" />
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+
+		<!-- Student-side review: rendered submission + read-only comments thread,
+		     mirroring the prof view. Mutually-exclusive `v-if` (not `v-else-if`)
+		     so that an instructor in the lesson context can never accidentally
+		     land here when the chain is interpreted oddly. -->
+		<div
+			v-if="!showTitle && !isInstructorView && hasSubmission && !editMode"
+			class="p-5 h-full overflow-y-auto border rounded-lg"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<div class="text-lg font-semibold text-ink-gray-9">
+					{{ __('Your Submission') }}
+				</div>
+				<div class="flex items-center space-x-2">
+					<Badge
+						v-if="submissionResource.doc?.grade != null && submissionResource.doc?.grade !== ''"
+						theme="green"
+						size="lg"
+					>
+						{{ __('Score') }}: {{ submissionResource.doc.grade }}
+					</Badge>
+					<Badge v-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
+						{{ submissionResource.doc?.status }}
+					</Badge>
+					<Button v-if="canModifyAssignment" variant="outline" @click="editMode = true">
+						{{ __('Edit submission') }}
+					</Button>
+				</div>
+			</div>
+			<!-- Prof's overall feedback (the legacy single `comments` field — distinct
+			     from the anchored thread in the sidebar, which lives in
+			     `comments_thread`). Shown when the prof has written something. -->
+			<div
+				v-if="submissionResource.doc?.comments"
+				class="mb-4 p-3 bg-surface-blue-2 text-ink-blue-2 rounded-md"
+			>
+				<div class="text-sm text-ink-gray-5 font-medium mb-2">
+					{{ __('Feedback from') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
+				</div>
+				<div class="leading-5 prose prose-sm max-w-none" v-html="submissionResource.doc.comments"></div>
+			</div>
+			<!-- Prof's attached feedback file (e.g. marked-up .docx with track changes). -->
+			<a
+				v-if="submissionResource.doc?.comment_attach"
+				:href="submissionResource.doc.comment_attach"
+				target="_blank"
+				class="mb-4 border rounded-md p-3 bg-surface-white flex items-center text-ink-gray-7 !no-underline hover:bg-surface-gray-2 transition-colors"
+			>
+				<div class="border self-start rounded-md p-2 mr-3 shrink-0">
+					<FileText class="h-5 w-5 stroke-1.5" />
+				</div>
+				<div class="flex-1 min-w-0">
+					<div class="text-xs text-ink-gray-5 font-medium">
+						{{ __('Feedback file') }}
+					</div>
+					<div class="text-sm text-ink-blue-2 underline break-all">
+						{{ filenameFromUrl(submissionResource.doc.comment_attach) }}
+					</div>
+				</div>
+			</a>
+			<details class="mb-4">
+				<summary class="cursor-pointer text-sm text-ink-gray-7 font-medium select-none">
+					{{ __('Assignment Question') }}
+				</summary>
+				<div v-html="assignment.data.question"
+					class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal">
+				</div>
+			</details>
+			<SubmissionViewer
+				:submission="submissionResource.doc"
+				:type="assignment.data?.type"
+				:can-comment="false"
+			/>
+		</div>
+
+		<!-- Student input view: question on the left, input form on the right.
+		     Shown when the student has no submission yet OR clicked "Edit submission". -->
+		<div
+			v-if="!showTitle && !isInstructorView && (!hasSubmission || editMode)"
+			class="grid grid-cols-[65%,35%] h-full border rounded-lg"
+		>
+			<div class="border-r p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
+				<div class="text-sm text-ink-gray-7 font-medium mb-2">
+					{{ __('Assignment') }}:
+				</div>
+				<div v-html="assignment.data.question"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
+				</div>
+			</div>
+
+			<div class="flex flex-col">
+				<div class="p-5">
+					<div class="flex items-center justify-between mb-4">
+						<div class="font-semibold text-ink-gray-9">
+							{{ __('Submission') }}
+						</div>
+						<div class="flex items-center space-x-2">
+							<Badge v-if="isDirty" theme="orange">
+								{{ __('Not Saved') }}
+							</Badge>
+							<Badge v-else-if="submissionResource.doc?.status" :theme="statusTheme" size="lg">
+								{{ submissionResource.doc?.status }}
+							</Badge>
+							<Button v-if="editMode && hasSubmission" variant="subtle" @click="editMode = false">
+								{{ __('Cancel') }}
+							</Button>
+							<Button variant="solid" @click="submitAssignment()">
+								{{ __('Save') }}
+							</Button>
+						</div>
+					</div>
+					<div v-if="
+						submissionName != 'new' &&
+						!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
+						submissionResource.doc?.owner == user.data?.name
+					" class="bg-surface-blue-2 text-ink-blue-2 p-3 rounded-md leading-5 text-sm mb-4">
+						{{ __("You've successfully submitted the assignment.") }}
+						{{
+							__(
+								"Once the moderator grades your submission, you'll find the details here."
+							)
+						}}
+						{{ __('Feel free to make edits to your submission if needed, until it is graded.') }}
+					</div>
+					<div v-if="showUploader()">
+						<div class="text-xs text-ink-gray-5 mt-1 mb-2">
+							{{ __('Add your assignment as {0}').format(assignment.data.type) }}
+						</div>
+						<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
+							@success="(file) => saveSubmission(file)">
+							<template #default="{ uploading, progress, openFileSelector }">
+								<Button @click="openFileSelector" :loading="uploading">
+									{{
+										uploading
+											? __('Uploading {0}%').format(progress)
+											: __('Upload File')
+									}}
+								</Button>
+							</template>
+						</FileUploader>
+						<div v-else>
+							<div class="flex text-ink-gray-7">
+								<div class="border self-start rounded-md p-2 mr-2">
+									<FileText class="h-5 w-5 stroke-1.5" />
+								</div>
+								<a :href="submissionFile.file_url" target="_blank"
+									class="flex flex-col cursor-pointer !no-underline">
+									<span class="text-sm leading-5">
+										{{ submissionFile.file_name }}
+									</span>
+									<span class="text-sm text-ink-gray-5 mt-1">
+										{{ getFileSize(submissionFile.file_size) }}
+									</span>
+								</a>
+								<X v-if="canModifyAssignment" @click="removeSubmission()"
+									class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-4" />
+							</div>
+						</div>
+					</div>
+					<div v-else-if="['URL', 'YouTube'].includes(assignment.data.type)">
+						<div class="text-xs text-ink-gray-5 mb-1">
+							{{ assignment.data.type === 'YouTube' ? __('Enter a YouTube link') : __('Enter a URL') }}
+						</div>
+						<FormControl v-model="answer" type="text" :readonly="!canModifyAssignment" />
+					</div>
+					<div v-else>
+						<div class="text-sm mb-4">
+							{{ __('Write your answer here') }}
+						</div>
+						<RichTextEditor
+							:id="'assignment-answer-' + (submissionName || 'new')"
+							:content="answer || ''"
+							:placeholder="__('Write your answer here')"
+							@change="(val) => (answer = val)"
+						/>
+					</div>
+
+					<div v-if="
+						user.data?.name == submissionResource.doc?.owner &&
+						submissionResource.doc?.comments
+					" class="mt-8 p-3 bg-surface-blue-2 text-ink-blue-2 rounded-md">
+						<div class="text-sm text-ink-gray-5 font-medium mb-2">
+							{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
+						</div>
+						<div class="leading-5">
+							<div v-html="submissionResource.doc.comments"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -191,21 +340,24 @@ import {
 	createDocumentResource,
 	FileUploader,
 	FormControl,
-	TextEditor,
 	toast
 } from 'frappe-ui'
 import { computed, inject, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { FileText, X } from 'lucide-vue-next'
 import { getFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
+import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 const submissionFile = ref(null)
+const commentAttachFile = ref(null)
 const answer = ref(null)
 const comments = ref(null)
 const router = useRouter()
 const user = inject('$user')
 const showTitle = router.currentRoute.value.name == 'AssignmentSubmission'
 const isDirty = ref(false)
+const editMode = ref(false)
 
 const props = defineProps({
 	assignmentID: {
@@ -302,6 +454,21 @@ watch(submissionResource, () => {
 				image: submissionResource.doc.assignment_attachment,
 			})
 		}
+		if (submissionResource.doc.comment_attach) {
+			call('seminary.seminary.api.get_file_info', {
+				file_url: submissionResource.doc.comment_attach,
+			}).then((info) => {
+				commentAttachFile.value = info
+			}).catch(() => {
+				// fall back to a minimal stub so the UI can still render a download link
+				commentAttachFile.value = {
+					file_url: submissionResource.doc.comment_attach,
+					file_name: filenameFromUrl(submissionResource.doc.comment_attach),
+				}
+			})
+		} else {
+			commentAttachFile.value = null
+		}
 		if (submissionResource.doc.answer) {
 			answer.value = submissionResource.doc.answer
 		}
@@ -326,12 +493,21 @@ watch(submissionFile, () => {
 	}
 })
 
+// Auto-flip status to "Graded" when the instructor enters a grade — but
+// NOT on initial load (oldGrade === undefined → newGrade = stored value
+// would otherwise flip every student re-save to Graded), and only when the
+// grading UI is actually visible (students never legitimately change grade).
 watch(
 	() => submissionResource.doc?.grade,
 	(newGrade, oldGrade) => {
-		if (newGrade !== oldGrade && submissionResource.doc) {
-			submissionResource.doc.status = 'Graded'; // Automatically set status to "Graded"
-			isDirty.value = true; // Mark the form as dirty to indicate unsaved changes
+		if (
+			canGradeSubmission.value &&
+			oldGrade !== undefined &&
+			newGrade !== oldGrade &&
+			submissionResource.doc
+		) {
+			submissionResource.doc.status = 'Graded';
+			isDirty.value = true;
 		}
 	}
 );
@@ -356,6 +532,8 @@ const submitAssignment = () => {
 				onSuccess(data) {
 					toast.success(__('Changed successfully'))
 					isDirty.value = false;
+					// Drop back to the read-only review of the saved submission.
+					editMode.value = false;
 				},
 			}
 		)
@@ -397,6 +575,25 @@ const saveSubmission = (file) => {
 	isDirty.value = true
 	submissionFile.value = file
 }
+
+const saveCommentAttach = (file) => {
+	isDirty.value = true
+	commentAttachFile.value = file
+	if (submissionResource.doc) {
+		submissionResource.doc.comment_attach = file.file_url
+	}
+}
+
+const removeCommentAttach = () => {
+	isDirty.value = true
+	commentAttachFile.value = null
+	if (submissionResource.doc) {
+		submissionResource.doc.comment_attach = null
+	}
+}
+
+const filenameFromUrl = (url) =>
+	(url || '').split('/').pop() || __('feedback file')
 
 const markLessonProgress = () => {
 	if (router.currentRoute.value.name == 'Lesson') {
@@ -461,12 +658,27 @@ const canGradeSubmission = computed(() => {
 	)
 })
 
+// `hasSubmission` is true once the student has saved at least one submission.
+// On first open AssignmentBlock passes 'new' until the resource finds an
+// existing row; once it does, `props.submissionName` carries the real name.
+const hasSubmission = computed(
+	() =>
+		!!props.submissionName &&
+		props.submissionName !== 'new' &&
+		!!submissionResource.doc?.name
+)
+
 const canModifyAssignment = computed(() => {
-	return (
-		!submissionResource.doc ||
-		(submissionResource.doc?.owner == user.data?.name &&
-			submissionResource.doc?.status == 'Not Graded')
-	)
+	if (!submissionResource.doc) return true
+	if (submissionResource.doc.owner !== user.data?.name) return false
+	if (submissionResource.doc.status !== 'Not Graded') return false
+	// Any prof feedback that refers to the *current* submission state locks
+	// further edits — otherwise the feedback would dangle on a stale version.
+	// Lock applies on next page load (resource's fetched state is the truth).
+	if (submissionResource.doc.comments) return false
+	if (submissionResource.doc.comment_attach) return false
+	if ((submissionResource.doc.comments_thread || []).length > 0) return false
+	return true
 })
 
 const submissionStatusOptions = computed(() => {

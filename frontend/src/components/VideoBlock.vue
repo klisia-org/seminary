@@ -172,6 +172,7 @@ iframe {
 .duration-slider::-webkit-slider-thumb {
 	height: 10px;
 	width: 10px;
+	appearance: none;
 	-webkit-appearance: none;
 	background-color: theme('colors.gray.900');
 }
@@ -180,10 +181,12 @@ iframe {
 	input[type='range'] {
 		overflow: hidden;
 		width: 150px;
+		appearance: none;
 		-webkit-appearance: none;
 	}
 
 	input[type='range']::-webkit-slider-thumb {
+		appearance: none;
 		-webkit-appearance: none;
 		cursor: pointer;
 		box-shadow: -500px 0 0 500px theme('colors.gray.900');

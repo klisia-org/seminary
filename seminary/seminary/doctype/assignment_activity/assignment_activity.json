@@ -43,7 +43,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Accepted file type",
-   "options": "PDF\nDocument\nImage\nURL\nText",
+   "options": "PDF\nDocument\nImage\nURL\nText\nYouTube",
    "reqd": 1
   },
   {

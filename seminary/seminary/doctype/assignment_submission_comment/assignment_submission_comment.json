@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "creation": "2026-05-22 19:30:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "anchor_type",
+  "page",
+  "x_pct",
+  "y_pct",
+  "range_from",
+  "range_to",
+  "timestamp_s",
+  "comment",
+  "author",
+  "resolved"
+ ],
+ "fields": [
+  {
+   "default": "General",
+   "fieldname": "anchor_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Anchor Type",
+   "options": "General\nPage\nRegion\nTextRange\nTimestamp",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: ['Page','Region'].includes(doc.anchor_type)",
+   "fieldname": "page",
+   "fieldtype": "Int",
+   "label": "Page",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Region'",
+   "description": "Horizontal pin position as a percentage of page/image width (0\u2013100).",
+   "fieldname": "x_pct",
+   "fieldtype": "Float",
+   "label": "X %"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Region'",
+   "description": "Vertical pin position as a percentage of page/image height (0\u2013100).",
+   "fieldname": "y_pct",
+   "fieldtype": "Float",
+   "label": "Y %"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'TextRange'",
+   "fieldname": "range_from",
+   "fieldtype": "Int",
+   "label": "Range From"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'TextRange'",
+   "fieldname": "range_to",
+   "fieldtype": "Int",
+   "label": "Range To"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Timestamp'",
+   "description": "Video position in seconds.",
+   "fieldname": "timestamp_s",
+   "fieldtype": "Int",
+   "label": "Timestamp (s)"
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Comment",
+   "reqd": 1
+  },
+  {
+   "default": "__user",
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "label": "Author",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "resolved",
+   "fieldtype": "Check",
+   "label": "Resolved"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-23 07:00:56.843144",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Seminary",
+ "name": "Assignment Submission Comment",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
