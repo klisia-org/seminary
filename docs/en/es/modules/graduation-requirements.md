@@ -192,7 +192,7 @@ El instinto es usar un solo elemento de biblioteca con `quantity_required = 3`.
 En su lugar, cree **tres elementos de biblioteca por separado**:
 
 - _Pastoral Reference Letter_ — Linked Document, destino `Recommendation
-    Letter`. Instrucciones: _"Solicítela a su pastor de la iglesia local."_
+      Letter`. Instrucciones: _"Solicítela a su pastor de la iglesia local."_
 - _Academic Reference Letter_ — igual. Instrucciones: _"Solicítela a un
   profesor de tu especialidad."_
 - _Character Reference Letter_ — igual. Instrucciones: _"Solicítela a

@@ -1,0 +1,2 @@
+function e(e){if(!e||typeof e!=`string`)return null;let t=e.trim(),n=t.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);if(n)return n[1];let r=t.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);if(r)return r[1];let i=t.match(/[?&]v=([A-Za-z0-9_-]{6,})/);return i?i[1]:null}function t(e){return!e||typeof e!=`string`?!1:e.toLowerCase().split(`?`)[0].endsWith(`.docx`)}export{e as n,t};
+//# sourceMappingURL=assignmentRendering-CrVU3Qex.js.map

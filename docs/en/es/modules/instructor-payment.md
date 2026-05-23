@@ -130,7 +130,7 @@ Los voluntarios **no** necesitan un registro de Empleado y **no** aparecen en la
 Para personal de tiempo completo o de medio tiempo con salario recurrente:
 
 1. Cree el registro de **Empleado** (módulo de RR. HH.).
-2. Cree o edite el registro de **Instructor** y establezca **Tipo de instructor = Asalariado**. Vincúlelo al Empleado.
+2. Cree o edite el registro de **Instructor** y establezca **Tipo de instructor = Por curso**. Vincúlelo al Empleado.
 3. Cree una **Estructura salarial** (p. ej., "Instructor — Tiempo completo") con los Componentes salariales que necesite (Base, asignaciones, deducciones).
 4. Cree una **Asignación de estructura salarial** que conecte al Empleado con la Estructura.
 5. Ejecute la **Entrada de nómina** en su calendario mensual habitual. HRMS hace el resto.
@@ -142,7 +142,7 @@ No se requiere configuración específica del seminario: esto es HRMS estándar.
 Para instructores pagados por curso impartido:
 
 1. Cree el registro de **Empleado**.
-2. Cree o edite el registro de **Instructor** y establezca **Tipo de instructor = Por curso**. Vincúlelo al Empleado.
+2. Cree o edite el registro de **Instructor** y establezca **Tipo de instructor = Asalariado**. Vincúlelo al Empleado.
 3. Asegúrese de que la Categoría de instructor asignada en cada Horario del curso de este instructor tenga **Tarifas de pago** definidas (vea la sección anterior).
 4. Cree una **Estructura salarial** llamada algo como "Instructor — Por curso". En la tabla **Ingresos**, agregue una sola fila:
    - **Componente salarial:** `Pago del instructor` _(este componente se creó automáticamente cuando habilitó la Nómina de HRMS; no lo vuelva a crear)_
@@ -158,7 +158,7 @@ No necesita componentes por categoría ("Pago IoR", "Pago GTA"). El único compo
 
 Ejecute **Entrada de nómina** del mismo modo que siempre:
 
-1. **RR. HH. → Nómina → Entrada de nómina → Nuevo**.
+1. HH. → Nómina → Entrada de nómina → Nuevo\*\*.
 2. Defina las fechas del período, la empresa y el filtro de **Asignación de estructura salarial**.
 3. Enviar. HRMS genera un Recibo de salario por empleado.
 
