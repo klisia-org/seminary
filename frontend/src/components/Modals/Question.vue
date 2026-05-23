@@ -58,7 +58,7 @@
 						:label="__('Type')"
 						v-model="question.type"
 						type="select"
-						:options="['Choices', 'User Input', 'Reading Report']"
+						:options="['Choices', 'User Input', 'Reading Report', 'Scripture Matching', 'Scripture Memorization']"
 						class="pb-2"
 						:required="true"
 					/>
@@ -105,6 +105,64 @@
 							{{ __('Students enter how many pages they read; the score is that fraction of the points.') }}
 						</p>
 					</div>
+					<div
+						v-else-if="question.type == 'Scripture Matching'"
+						class="space-y-3 border-t pt-2"
+					>
+						<FormControl
+							:label="__('Bible ID Override (optional)')"
+							v-model="question.scripture_bible_id"
+							:description="__('Leave blank to use the language default from Bible API Settings.')"
+						/>
+						<div class="space-y-2">
+							<label class="block text-xs text-ink-gray-5">
+								{{ __('References to match') }} ({{ question.matching_items.length }})
+							</label>
+							<div
+								v-for="(item, idx) in question.matching_items"
+								:key="idx"
+								class="flex items-center gap-2"
+							>
+								<FormControl
+									v-model="item.reference"
+									:placeholder="__('e.g. Jn 3:16')"
+									class="flex-1"
+								/>
+								<Button variant="ghost" @click="removeMatchingItem(idx)" :label="__('Remove')" />
+							</div>
+							<Button variant="subtle" @click="addMatchingItem" :label="__('Add reference')" />
+							<p class="text-xs text-ink-gray-5">
+								{{ __('Verse texts will be fetched from api.bible on save. Need at least 2.') }}
+							</p>
+						</div>
+					</div>
+					<div
+						v-else-if="question.type == 'Scripture Memorization'"
+						class="space-y-2 border-t pt-2"
+					>
+						<FormControl
+							:label="__('Bible ID Override (optional)')"
+							v-model="question.scripture_bible_id"
+							:description="__('Leave blank to use the language default from Bible API Settings.')"
+						/>
+						<FormControl
+							:label="__('Reference')"
+							v-model="question.memorization_ref"
+							:placeholder="__('e.g. Jn 3:16')"
+							:required="true"
+						/>
+						<FormControl
+							:label="__('Words to Hide')"
+							v-model="question.hide_word_count"
+							type="number"
+						/>
+						<FormControl
+							:label="__('Minimum Word Length')"
+							v-model="question.min_word_length"
+							type="number"
+							:description="__('Only words at least this long are eligible to be blanked. 4 skips most articles in EN/PT.')"
+						/>
+					</div>
 				</div>
 				<div v-else-if="questionType == 'existing'" class="space-y-2">
 					<Link
@@ -123,7 +181,7 @@
 	</Dialog>
 </template>
 <script setup>
-import { Dialog, FormControl, TextEditor, createResource, toast } from 'frappe-ui'
+import { Button, Dialog, FormControl, TextEditor, call, createResource, toast } from 'frappe-ui'
 import { computed, reactive, ref, watch } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 
@@ -156,7 +214,19 @@ const defaultQuestionState = () => ({
 	possibility_3: '',
 	possibility_4: '',
 	pages_total: 0,
+	scripture_bible_id: '',
+	matching_items: [],
+	memorization_ref: '',
+	hide_word_count: 3,
+	min_word_length: 4,
 })
+
+const addMatchingItem = () => {
+	question.matching_items.push({ reference: '' })
+}
+const removeMatchingItem = (idx) => {
+	question.matching_items.splice(idx, 1)
+}
 
 const questionType = ref('new')
 const editMode = ref(false)
@@ -200,6 +270,11 @@ const questionData = createResource({
 			if (Object.hasOwn(data, key)) {
 				if (key.startsWith('is_correct_')) {
 					question[key] = Boolean(data[key])
+				} else if (key === 'matching_items' && Array.isArray(data[key])) {
+					// Strip child-row metadata; the editor only cares about the reference.
+					question.matching_items = data[key].map((it) => ({
+						reference: it.reference || '',
+					}))
 				} else if (data[key] !== undefined && data[key] !== null) {
 					question[key] = data[key]
 				}
@@ -324,12 +399,14 @@ const questionUpdate = createResource({
 	url: 'frappe.client.set_value',
 	auto: false,
 	makeParams() {
+		// set_value can't handle child tables; matching_items is updated
+		// separately via replace_matching_items below.
+		const fields = { ...question }
+		delete fields.matching_items
 		return {
 			doctype: 'Question',
 			name: questionData.data?.name,
-			fieldname: {
-				...question,
-			},
+			fieldname: fields,
 		}
 	},
 })
@@ -349,25 +426,44 @@ const pointsUpdate = createResource({
 })
 
 const updateQuestion = (close) => {
+	const finishUpdate = () => {
+		pointsUpdate.submit(
+			{},
+			{
+				onSuccess() {
+					show.value = false
+					toast.success(__('Question updated successfully'))
+					quiz.value.reload()
+					resetForms()
+					close()
+				},
+				onError(err) {
+					toast.error(err.messages?.[0] || err)
+				},
+			}
+		)
+	}
 	questionUpdate.submit(
 		{},
 		{
 			onSuccess() {
-				pointsUpdate.submit(
-					{},
-					{
-						onSuccess() {
-							show.value = false
-							toast.success(__('Question updated successfully'))
-							quiz.value.reload()
-							resetForms()
-							close()
-						},
-						onError(err) {
-							toast.error(err.messages?.[0] || err)
-						},
-					}
-				)
+				// Scripture Matching: separately swap the child rows, which
+				// triggers validate() server-side to re-fetch verse texts.
+				if (question.type === 'Scripture Matching') {
+					call(
+						'seminary.seminary.doctype.question.question.replace_matching_items',
+						{
+							question: questionData.data?.name,
+							items: JSON.stringify(question.matching_items),
+						}
+					)
+						.then(finishUpdate)
+						.catch((err) => {
+							toast.error(err.messages?.[0] || err.message || err)
+						})
+				} else {
+					finishUpdate()
+				}
 			},
 			onError(err) {
 				toast.error(err.messages?.[0] || err)
