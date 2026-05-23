@@ -104,7 +104,7 @@ Partner Transcript Import Batch sirve tanto para el caso manual de un solo estud
 
 6. Corrige cualquier advertencia (ver referencia más abajo) y luego envía.
 
-## 4) Referencia de advertencias del Dry-Run
+## 4) 4) Referencia de advertencias del Dry-Run
 
 | Advertencia                    | Significado                                                                                                                                        | Solución                                                                                                                                |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
