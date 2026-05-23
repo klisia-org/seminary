@@ -576,14 +576,19 @@ def get_assignment_dashboard(course_name, assignment_id):
     if not roster_emails:
         return {"student_count": 0}
 
+    # `course` is allowed to be NULL on legacy/Text Assignment Submissions —
+    # roughly a third of historical rows in production aren't course-tagged.
+    # Roster membership is the real scope here, so include NULL-course rows
+    # while excluding submissions explicitly tagged to a *different* course.
     placeholders = ", ".join(["%s"] * len(roster_emails))
     student_count = (
         frappe.db.sql(
             f"""
             SELECT COUNT(DISTINCT member)
             FROM `tabAssignment Submission`
-            WHERE assignment = %s AND course = %s
-            AND member IN ({placeholders})
+            WHERE assignment = %s
+              AND (course = %s OR course IS NULL)
+              AND member IN ({placeholders})
             """,
             [assignment_id, course_name] + roster_emails,
         )[0][0]
@@ -4273,6 +4278,159 @@ c.assignment = %s""",
         (courseName, assignmentID),
     )
     return count[0][0] > 0 if count else False
+
+
+# --- Assignment Submission anchored comments (Phase 2) ------------------------
+# One child doctype (Assignment Submission Comment) carries every flavour of
+# anchor — page / region / text range / video timestamp / general. The
+# `anchor_type` Select tells the frontend which overlay to use.
+
+
+_GRADER_ROLES = ("Moderator", "Instructor", "Evaluator", "Seminary Manager")
+
+
+def _can_grade_submission(submission):
+    """Anyone with a grading role can post / edit / resolve anchored comments
+    on a submission. (Authors of a comment can edit their own — checked at
+    the call site.)"""
+    user = frappe.session.user
+    if user == "Administrator":
+        return True
+    user_roles = set(frappe.get_roles(user))
+    return any(role in user_roles for role in _GRADER_ROLES)
+
+
+@frappe.whitelist()
+def get_submission_comments(submission_name):
+    """Read-only: return every anchored comment on a submission, with author
+    display names resolved. Ordered for stable per-type sidebar rendering."""
+    submission = frappe.get_doc("Assignment Submission", submission_name)
+    submission.check_permission("read")
+
+    rows = frappe.get_all(
+        "Assignment Submission Comment",
+        filters={
+            "parent": submission_name,
+            "parenttype": "Assignment Submission",
+        },
+        fields=[
+            "name",
+            "anchor_type",
+            "page",
+            "x_pct",
+            "y_pct",
+            "range_from",
+            "range_to",
+            "timestamp_s",
+            "comment",
+            "author",
+            "resolved",
+            "creation",
+        ],
+        order_by="page asc, timestamp_s asc, creation asc",
+        ignore_permissions=True,
+    )
+
+    author_ids = {row["author"] for row in rows if row.get("author")}
+    author_names = {}
+    if author_ids:
+        author_names = {
+            u["name"]: u["full_name"] or u["name"]
+            for u in frappe.get_all(
+                "User",
+                filters={"name": ["in", list(author_ids)]},
+                fields=["name", "full_name"],
+            )
+        }
+    for row in rows:
+        row["author_name"] = author_names.get(row.get("author"), row.get("author"))
+    return rows
+
+
+@frappe.whitelist()
+def add_submission_comment(
+    submission_name, anchor_type, anchor_data=None, comment=None
+):
+    """Create a new anchored comment on a submission.
+
+    `anchor_data` is a JSON object whose keys depend on `anchor_type`:
+      - General:   {}
+      - Page:      {page: int}
+      - Region:    {page: int, x_pct: float, y_pct: float}  (Image pins use page=1)
+      - TextRange: {range_from: int, range_to: int}
+      - Timestamp: {timestamp_s: int}
+    """
+    import json as _json
+
+    if not comment or not comment.strip():
+        frappe.throw(_("Comment text is required."))
+
+    submission = frappe.get_doc("Assignment Submission", submission_name)
+    if not _can_grade_submission(submission):
+        frappe.throw(_("You don't have permission to comment on this submission."))
+
+    if anchor_type not in ("General", "Page", "Region", "TextRange", "Timestamp"):
+        frappe.throw(_("Unknown anchor_type: {0}").format(anchor_type))
+
+    data = anchor_data or {}
+    if isinstance(data, str):
+        data = _json.loads(data or "{}")
+
+    row = frappe.get_doc(
+        {
+            "doctype": "Assignment Submission Comment",
+            "parent": submission_name,
+            "parenttype": "Assignment Submission",
+            "parentfield": "comments_thread",
+            "anchor_type": anchor_type,
+            "page": data.get("page") or 0,
+            "x_pct": data.get("x_pct") or 0,
+            "y_pct": data.get("y_pct") or 0,
+            "range_from": data.get("range_from") or 0,
+            "range_to": data.get("range_to") or 0,
+            "timestamp_s": data.get("timestamp_s") or 0,
+            "comment": comment,
+            "author": frappe.session.user,
+            "resolved": 0,
+        }
+    )
+    row.insert(ignore_permissions=True)
+    return row.name
+
+
+@frappe.whitelist()
+def update_submission_comment(name, comment=None, resolved=None):
+    """Edit a comment (author only) or resolve/unresolve it (graders)."""
+    row = frappe.get_doc("Assignment Submission Comment", name)
+    submission = frappe.get_doc("Assignment Submission", row.parent)
+
+    is_author = row.author == frappe.session.user
+    is_grader = _can_grade_submission(submission)
+
+    if not is_author and not is_grader:
+        frappe.throw(_("You don't have permission to edit this comment."))
+
+    if comment is not None:
+        if not is_author:
+            frappe.throw(_("Only the comment author may edit its text."))
+        row.comment = comment
+    if resolved is not None:
+        row.resolved = 1 if int(resolved) else 0
+
+    row.save(ignore_permissions=True)
+    return row.name
+
+
+@frappe.whitelist()
+def delete_submission_comment(name):
+    """Delete a comment row (author or grader)."""
+    row = frappe.get_doc("Assignment Submission Comment", name)
+    submission = frappe.get_doc("Assignment Submission", row.parent)
+
+    if row.author != frappe.session.user and not _can_grade_submission(submission):
+        frappe.throw(_("You don't have permission to delete this comment."))
+
+    frappe.delete_doc("Assignment Submission Comment", name, ignore_permissions=True)
 
 
 @frappe.whitelist()

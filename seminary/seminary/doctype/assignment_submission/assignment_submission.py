@@ -101,6 +101,7 @@ class AssignmentSubmission(Document):
             if (
                 doc_before_save.status != self.status
                 or doc_before_save.comments != self.comments
+                or doc_before_save.comment_attach != self.comment_attach
             ):
                 self.trigger_update_notification()
 

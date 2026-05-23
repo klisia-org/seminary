@@ -29,7 +29,9 @@
   "status",
   "late",
   "comments",
-  "evaluator"
+  "comment_attach",
+  "evaluator",
+  "comments_thread"
  ],
  "fields": [
   {
@@ -78,10 +80,22 @@
    "label": "Comments"
   },
   {
+   "description": "Optional file attached by the evaluator (e.g. a marked-up .docx) alongside the rich-text comments.",
+   "fieldname": "comment_attach",
+   "fieldtype": "Attach",
+   "label": "Feedback File"
+  },
+  {
    "fieldname": "evaluator",
    "fieldtype": "Link",
    "label": "Evaluated by",
    "options": "User"
+  },
+  {
+   "fieldname": "comments_thread",
+   "fieldtype": "Table",
+   "label": "Anchored Comments",
+   "options": "Assignment Submission Comment"
   },
   {
    "fieldname": "answer",

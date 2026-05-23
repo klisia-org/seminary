@@ -23,7 +23,9 @@
 				}">
 					<ListRow :row="row">
 						<template #default="{ column, item }">
-							<ListRowItem :item="row[column.key]" :align="column.align">
+							<!-- Coerce to string: ListRowItem's internal Tooltip expects a String,
+								 but `grade` is a Float so Vue logs a prop-type warning on 0 / NaN. -->
+							<ListRowItem :item="row[column.key] == null ? '' : String(row[column.key])" :align="column.align">
 								<div v-if="column.key == 'status'">
 									<Badge :theme="getStatusTheme(row[column.key])">
 										{{ row[column.key] }}

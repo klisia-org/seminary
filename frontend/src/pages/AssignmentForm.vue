@@ -208,6 +208,7 @@ const assignmentOptions = computed(() => {
 		{ label: __('Document'), value: 'Document' },
 		{ label: __('Text'), value: 'Text' },
 		{ label: __('URL'), value: 'URL' },
+		{ label: 'YouTube', value: 'YouTube' },
 	]
 })
 </script>
