@@ -83,7 +83,17 @@
         <div v-for="course in courses.data" :key="course.course" class="border rounded-lg p-4 bg-surface-white">
           <div class="flex items-start justify-between mb-2">
             <div>
-              <h3 class="font-semibold text-ink-gray-8">{{ course.course_name || course.course }}</h3>
+              <h3 class="font-semibold text-ink-gray-8 flex items-center gap-1">
+                {{ course.course_name || course.course }}
+                <Tooltip v-if="course.description" :hover-delay="0.2">
+                  <HelpCircle class="w-4 h-4 text-ink-gray-5 cursor-help" />
+                  <template #body>
+                    <div
+                      class="max-w-xs rounded bg-surface-gray-7 px-3 py-2 text-xs text-ink-white shadow-xl prose-sm"
+                      v-html="course.description" />
+                  </template>
+                </Tooltip>
+              </h3>
               <span class="text-sm text-ink-gray-5">{{ course.credits }} {{ __('credits') }}</span>
             </div>
           </div>
@@ -136,7 +146,8 @@
 </template>
 
 <script setup>
-import { Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
+import { Badge, Button, LoadingIndicator, Tooltip, createResource } from 'frappe-ui'
+import { HelpCircle } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 
 import MissingData from '@/components/MissingData.vue'
