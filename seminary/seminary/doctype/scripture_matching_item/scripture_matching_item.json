@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-05-23 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference",
+  "resolved_ref",
+  "fetched_text"
+ ],
+ "fields": [
+  {
+   "description": "Type the reference as you would say it (e.g. 'Jn 3:16', 'Sl 23', '1 João 4:8'). Parsed and fetched on save.",
+   "fieldname": "reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference",
+   "reqd": 1
+  },
+  {
+   "description": "Auto-populated on save with the api.bible OSIS ID for confirmation.",
+   "fieldname": "resolved_ref",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Resolved",
+   "read_only": 1
+  },
+  {
+   "description": "Auto-populated on save with the verse text fetched from api.bible. This is what students match against.",
+   "fieldname": "fetched_text",
+   "fieldtype": "Long Text",
+   "label": "Fetched Text",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Scripture Matching Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

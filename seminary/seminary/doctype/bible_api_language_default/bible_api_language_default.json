@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-05-23 12:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "language",
+  "bible_id",
+  "bible_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Language",
+   "options": "Language",
+   "reqd": 1
+  },
+  {
+   "description": "api.bible Bible ID for this language (e.g. bba9f40183526463-01 for BSB, 06125adad2d5898a-01 for Almeida Revista e Atualizada). Use the list_bibles helper to discover IDs.",
+   "fieldname": "bible_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bible ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bible_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bible",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-23 19:04:33.102073",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Seminary",
+ "name": "Bible API Language Default",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

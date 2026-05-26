@@ -1,0 +1,23 @@
+{
+ "color": "#f5cbcb",
+ "creation": "2026-05-23 00:00:00",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "filters_json": "{}",
+ "function": "Sum",
+ "idx": 1,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "CEIs Marked Paid Without Payment",
+ "modified": "2026-05-23 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "CEIs Marked Paid Without Payment",
+ "owner": "Administrator",
+ "report_field": "row_count",
+ "report_function": "Sum",
+ "report_name": "CEI Marked Paid Without Payment",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Report"
+}

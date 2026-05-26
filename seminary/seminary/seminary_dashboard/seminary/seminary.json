@@ -2,6 +2,9 @@
  "cards": [
   {
    "card": "Active Scholarships"
+  },
+  {
+   "card": "CEIs Marked Paid Without Payment"
   }
  ],
  "charts": [
@@ -21,8 +24,8 @@
  "idx": 3,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-05-07 13:22:12.927111",
- "modified_by": "Administrator",
+ "modified": "2026-05-23 19:41:37.868970",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary",
  "owner": "Administrator"

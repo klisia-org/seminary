@@ -273,12 +273,14 @@ class CourseSchedule(Document):
                 "cancelled_on": cancelled_at,
                 "cancelled_by": user,
                 "workflow_state": "Cancelled",
+                "published": 0,
             },
         )
         self.cancellation_reason = reason
         self.cancelled_on = cancelled_at
         self.cancelled_by = user
         self.workflow_state = "Cancelled"
+        self.published = 0
 
         _cascade_cancel_pec_and_cei(self.name, reason)
         _create_cancellation_announcement(self, reason)

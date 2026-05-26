@@ -35,7 +35,17 @@
   "possibility_3",
   "possibility_4",
   "reading_report_section",
-  "pages_total"
+  "pages_total",
+  "scripture_section",
+  "scripture_bible_id",
+  "matching_section",
+  "matching_items",
+  "memorization_section",
+  "memorization_ref",
+  "memorization_resolved_ref",
+  "memorization_text",
+  "hide_word_count",
+  "min_word_length"
  ],
  "fields": [
   {
@@ -49,7 +59,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Type",
-   "options": "Choices\nUser Input\nReading Report"
+   "options": "Choices\nUser Input\nReading Report\nScripture Matching\nScripture Memorization"
   },
   {
    "default": "0",
@@ -185,6 +195,74 @@
    "fieldtype": "Int",
    "label": "Pages Total",
    "mandatory_depends_on": "eval: doc.type == 'Reading Report';",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval: ['Scripture Matching', 'Scripture Memorization'].includes(doc.type)",
+   "fieldname": "scripture_section",
+   "fieldtype": "Section Break",
+   "label": "Scripture (api.bible)"
+  },
+  {
+   "description": "Optional. api.bible Bible ID (e.g. bba9f40183526463-01 for BSB). Leave blank to use the language default from Bible API Settings at fetch time.",
+   "fieldname": "scripture_bible_id",
+   "fieldtype": "Data",
+   "label": "Bible ID Override"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Scripture Matching'",
+   "fieldname": "matching_section",
+   "fieldtype": "Section Break",
+   "label": "Matching Pairs"
+  },
+  {
+   "description": "One row per reference. On save, the text for each reference is fetched from api.bible and cached. Students see the references in fixed order and drag them onto the shuffled verse texts.",
+   "fieldname": "matching_items",
+   "fieldtype": "Table",
+   "label": "Pairs",
+   "options": "Scripture Matching Item"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Scripture Memorization'",
+   "fieldname": "memorization_section",
+   "fieldtype": "Section Break",
+   "label": "Memorization Passage"
+  },
+  {
+   "description": "The reference students will memorize, e.g. 'Jn 3:16' or 'Sl 23:1'.",
+   "fieldname": "memorization_ref",
+   "fieldtype": "Data",
+   "label": "Reference",
+   "mandatory_depends_on": "eval: doc.type == 'Scripture Memorization'"
+  },
+  {
+   "description": "Auto-populated on save with the api.bible OSIS ID.",
+   "fieldname": "memorization_resolved_ref",
+   "fieldtype": "Data",
+   "label": "Resolved",
+   "read_only": 1
+  },
+  {
+   "description": "Auto-populated on save with the verse text fetched from api.bible. Students see this with some words blanked out.",
+   "fieldname": "memorization_text",
+   "fieldtype": "Long Text",
+   "label": "Verse Text",
+   "read_only": 1
+  },
+  {
+   "default": "3",
+   "description": "How many words to hide for the student to fill in.",
+   "fieldname": "hide_word_count",
+   "fieldtype": "Int",
+   "label": "Words to Hide",
+   "non_negative": 1
+  },
+  {
+   "default": "4",
+   "description": "Only words with at least this many characters are eligible to be hidden. 4 skips most articles/conjunctions in EN/PT without needing per-language stopword lists.",
+   "fieldname": "min_word_length",
+   "fieldtype": "Int",
+   "label": "Minimum Word Length",
    "non_negative": 1
   }
  ],

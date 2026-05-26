@@ -294,6 +294,9 @@ def get_courses(filters=None, start=0, page_length=20):
     if not filters:
         filters = {}
 
+    filters.setdefault("workflow_state", ["!=", "Cancelled"])
+    filters.setdefault("published", 1)
+
     fields = get_course_fields()
 
     courses = frappe.get_all(
@@ -482,6 +485,7 @@ def get_course_fields():
         "c_datestart",
         "c_dateend",
         "section",
+        "workflow_state",
     ]
 
 
@@ -1080,12 +1084,32 @@ def get_lesson_creation_details(course, chapter, lesson):
 
 @frappe.whitelist()
 def get_question_details(question):
-    fields = ["question", "type", "multiple", "pages_total"]
+    fields = [
+        "question",
+        "type",
+        "multiple",
+        "pages_total",
+        "scripture_bible_id",
+        "memorization_ref",
+        "memorization_resolved_ref",
+        "memorization_text",
+        "hide_word_count",
+        "min_word_length",
+    ]
     for i in range(1, 5):
         fields.append(f"option_{i}")
         fields.append(f"explanation_{i}")
 
-    question_details = frappe.db.get_value("Question", question, fields, as_dict=1)
+    question_details = (
+        frappe.db.get_value("Question", question, fields, as_dict=1) or {}
+    )
+    if question_details.get("type") == "Scripture Matching":
+        question_details["matching_items"] = frappe.get_all(
+            "Scripture Matching Item",
+            filters={"parent": question},
+            fields=["reference", "resolved_ref", "fetched_text"],
+            order_by="idx",
+        )
     return question_details
 
 
@@ -1094,11 +1118,42 @@ def get_all_questions_details(questions):
 
     questions_str = "', '".join(questions)
     all_question_details = frappe.db.sql(
-        f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type, q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4, q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4
+        f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type,
+q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4,
+q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
+q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
+q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
 where q.name = qq.question and qq.name in ('{questions_str}')""",
         as_dict=1,
     )
+
+    # Attach matching_items child rows for Scripture Matching questions.
+    matching_q_names = [
+        row["question"]
+        for row in all_question_details
+        if row.get("type") == "Scripture Matching"
+    ]
+    if matching_q_names:
+        items = frappe.get_all(
+            "Scripture Matching Item",
+            filters={"parent": ["in", matching_q_names]},
+            fields=["parent", "reference", "resolved_ref", "fetched_text", "idx"],
+            order_by="parent, idx",
+        )
+        items_by_parent: dict[str, list] = {}
+        for it in items:
+            items_by_parent.setdefault(it["parent"], []).append(
+                {
+                    "reference": it["reference"],
+                    "resolved_ref": it["resolved_ref"],
+                    "fetched_text": it["fetched_text"],
+                }
+            )
+        for row in all_question_details:
+            if row.get("type") == "Scripture Matching":
+                row["matching_items"] = items_by_parent.get(row["question"], [])
+
     return all_question_details
 
 
