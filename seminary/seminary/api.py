@@ -2149,7 +2149,8 @@ def get_course_schedule_events(start, end, filters=None):
     conditions = get_event_conditions("Course Schedule", filters)
 
     return frappe.db.sql(
-        """SELECT CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title,
+        """SELECT cs.name as name,
+			CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title,
 			cs.course as course,
 			timestamp(cm.cs_meetdate, cm.cs_fromtime) as dtstart,
 			timestamp(cm.cs_meetdate, cm.cs_totime) as dtend,
@@ -2161,7 +2162,8 @@ def get_course_schedule_events(start, end, filters=None):
 		(cm.cs_meetdate between %(start)s and %(end)s )
 		{conditions}
 		union
-		SELECT CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title,
+		SELECT cs.name as name,
+			CONCAT (cs.course, ' - ', COALESCE(cs.room, '')) as title,
 			cs.course as course,
 			(scac.due_date - INTERVAL 5 HOUR) as dtstart,
 			 scac.due_date as dtend,

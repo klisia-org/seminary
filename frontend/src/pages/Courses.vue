@@ -175,37 +175,45 @@ const filters = reactive({
 const showClosed = ref(false)
 console.log(filters.academic_term)
 
-// Ensure the URL is resolved as a string before passing to createResource
-const resolvedUrl = computed(() => {
-  return isInstructor.value
-    ? "seminary.seminary.utils.get_courses"
-    : "seminary.seminary.utils.get_courses_for_student"
-});
+// Two parallel resources — createResource (frappe-ui 0.1.261) can't swap
+// `url` after construction, and the role flag (`is_instructor`) often arrives
+// AFTER setup, so we build both and pick the active one via a computed.
+const handleCoursesSuccess = (response) => {
+  tableData.rows = response.sort((a, b) => {
+    if (a.academic_term < b.academic_term) return -1;
+    if (a.academic_term > b.academic_term) return 1;
+    if (a.course < b.course) return -1;
+    if (a.course > b.course) return 1;
+    return 0;
+  });
+}
 
-// Ensure params is resolved as a plain object to avoid circular references.
-// The instructor list filters client-side; ask for a comfortably large window
-// so course/term/status filters don't silently miss rows past page 20.
-const resolvedParams = computed(() => {
-  return isStudent.value ? { student: user.data?.name } : { page_length: 1000 };
-});
-
-
-// Make courses resource reactive
-const courses = createResource({
-  url: resolvedUrl.value, // Pass the resolved string value
-  params: resolvedParams.value, // Pass the resolved plain object
-  onSuccess: (response) => {
-    console.log("Courses data:", response);
-    tableData.rows = response.sort((a, b) => {
-      if (a.academic_term < b.academic_term) return -1;
-      if (a.academic_term > b.academic_term) return 1;
-      if (a.course < b.course) return -1;
-      if (a.course > b.course) return 1;
-      return 0;
-    });
-  },
-  auto: true,
+const instructorCourses = createResource({
+  url: 'seminary.seminary.utils.get_courses',
+  makeParams: () => ({ page_length: 1000 }),
+  onSuccess: handleCoursesSuccess,
 })
+
+const studentCourses = createResource({
+  url: 'seminary.seminary.utils.get_courses_for_student',
+  makeParams: () => ({ student: user.data?.name }),
+  onSuccess: handleCoursesSuccess,
+})
+
+const courses = computed(() => isInstructor.value ? instructorCourses : studentCourses)
+
+// Fetch only once the role flags are populated. `userResource.initialData`
+// is `[]`, so guard on `.name` (the real user object only has it after the
+// get_user_info call resolves) rather than truthiness.
+watch(
+  () => user.data?.name,
+  (name) => {
+    if (!name) return
+    const target = isInstructor.value ? instructorCourses : studentCourses
+    target.fetch()
+  },
+  { immediate: true }
+)
 
 
 
@@ -246,15 +254,15 @@ const tableData = reactive({
 })
 
 const uniqueCourses = computed(() => {
-  return [...new Set(courses.data?.map(course => course.course))]
+  return [...new Set(courses.value.data?.map(course => course.course))]
 })
 
 const uniqueAcademicTerms = computed(() => {
-  return [...new Set(courses.data?.map(course => course.academic_term))]
+  return [...new Set(courses.value.data?.map(course => course.academic_term))]
 })
 
 const filteredCourses = computed(() => {
-  return courses.data?.filter(course => {
+  return courses.value.data?.filter(course => {
     return (!filters.course || course.course === filters.course) &&
       (!filters.academic_term || course.academic_term === filters.academic_term) &&
       (showClosed.value || course.workflow_state !== 'Closed')
