@@ -264,7 +264,7 @@ frappe.ui.form.on("Course Schedule", {
 		}
 
 		const matches = await frappe.db.get_list('Course', {
-			filters: { coursecode: code },
+			filters: { coursecode: code, disabled: 0 },
 			fields: ['name', 'course_name'],
 			limit: 20
 		});

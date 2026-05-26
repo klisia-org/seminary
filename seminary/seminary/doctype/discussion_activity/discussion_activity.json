@@ -26,6 +26,7 @@
    "fieldname": "course",
    "fieldtype": "Link",
    "label": "Course",
+   "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
    "options": "Course",
    "reqd": 0
   },

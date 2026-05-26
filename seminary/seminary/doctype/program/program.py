@@ -20,6 +20,13 @@ class Program(WebsiteGenerator):
             self.require_pay_submit = 0
             self.percent_to_pay = 0
 
+        self._stamp_course_disabled_on()
+
+    def _stamp_course_disabled_on(self):
+        for pc in self.courses or []:
+            if pc.disabled and not pc.disabled_on:
+                pc.disabled_on = today()
+
     def get_context(self, context):
         context.open_windows = []
         context.continuous_term = None
@@ -121,10 +128,10 @@ class Program(WebsiteGenerator):
         return current
 
     def get_course_list(self):
-        program_course_list = self.courses
         course_list = [
             frappe.get_doc("Course", program_course.course)
-            for program_course in program_course_list
+            for program_course in self.courses
+            if not program_course.disabled
         ]
         return course_list
 

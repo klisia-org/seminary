@@ -53,6 +53,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Internal Course",
+   "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
    "options": "Course",
    "reqd": 1
   },
