@@ -836,7 +836,7 @@ def get_course(program):
     :param program: Program
     """
     courses = frappe.db.sql(
-        """select course, course_name from `tabProgram Course` where parent=%s
+        """select course, course_name from `tabProgram Course` where parent=%s and disabled = 0
 		UNION select program_track_course from `tabProgram Track Courses` where parent=%s""",
         (program),
         as_dict=1,
@@ -986,7 +986,7 @@ def petb_enroll(pe_name, pe_term):
     program = frappe.db.get_value("Program Enrollment", pe_name, "program")
     pecs = frappe.get_all(
         "Program Course",
-        filters={"parent": program, "course_term": pe_term},
+        filters={"parent": program, "course_term": pe_term, "disabled": 0},
         fields=["name", "course"],
     )
     cs = frappe.get_all(
@@ -1237,6 +1237,7 @@ def get_program_audit(program_enrollment):
             "required": pc.required,
         }
         for pc in program.courses
+        if not pc.disabled
     }
 
     # Get student's completed/in-progress courses
@@ -1775,6 +1776,8 @@ def get_available_courses_categorized(program_enrollment):
     # Build lookup maps
     program_course_map = {}
     for pc in program.courses:
+        if pc.disabled:
+            continue
         program_course_map[pc.course] = {
             "required": pc.required,
             "credits": pc.pgmcourse_credits or 0,
@@ -2526,7 +2529,7 @@ def courses_for_student(program_ce):
                 (SELECT pc.course
                 FROM `tabProgram Enrollment` pe
                 INNER JOIN `tabProgram Course` pc ON pe.program = pc.parent
-                WHERE pe.name = %s)
+                WHERE pe.name = %s AND pc.disabled = 0)
                 UNION
                 (SELECT ptc.program_track_course
                 FROM `tabProgram Enrollment` pe
@@ -2559,6 +2562,7 @@ def courses_for_student(program_ce):
                 WHERE pe.name = %s
                     AND p.program_type = 'Time-based'
                     AND pc.course_term > pe.current_std_term
+                    AND pc.disabled = 0
             )
             AND cs.course NOT IN (
                 SELECT ptc.program_track_course

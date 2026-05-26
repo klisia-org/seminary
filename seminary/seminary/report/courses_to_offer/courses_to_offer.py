@@ -83,7 +83,7 @@ def get_data(filters):
         mandatory_not_passed = frappe.db.sql(
             """SELECT pc.course, pc.course_name
 			FROM `tabProgram Course` pc
-			WHERE pc.parent = %s AND pc.required = 1
+			WHERE pc.parent = %s AND pc.required = 1 AND pc.disabled = 0
 				AND pc.course NOT IN (
 					SELECT pec.course_name
 					FROM `tabProgram Enrollment Course` pec

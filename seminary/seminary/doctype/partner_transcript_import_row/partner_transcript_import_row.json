@@ -88,6 +88,7 @@
    "fieldname": "resolved_internal_course",
    "fieldtype": "Link",
    "label": "Resolved Internal Course",
+   "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
    "options": "Course",
    "read_only": 1
   },

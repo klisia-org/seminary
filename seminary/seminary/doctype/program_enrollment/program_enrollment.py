@@ -246,7 +246,7 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
     doctype = "Program Course"
     return frappe.db.sql(
         """select course, course_name from `tabProgram Course`
-		where  parent = %(program)s and course like %(txt)s {match_cond}
+		where  parent = %(program)s and disabled = 0 and course like %(txt)s {match_cond}
 		order by
 			if(locate(%(_txt)s, course), locate(%(_txt)s, course), 99999),
 			idx desc,

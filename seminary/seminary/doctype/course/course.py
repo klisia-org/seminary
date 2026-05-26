@@ -7,12 +7,18 @@ import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import today
 
 
 class Course(Document):
     def validate(self):
         self.validate_assessment_criteria()
         self.clean_name()
+        self.set_disabled_on()
+
+    def set_disabled_on(self):
+        if self.disabled and not self.disabled_on:
+            self.disabled_on = today()
 
     def clean_name(self):
         if self.course_name and ("/" in self.course_name or "\\" in self.course_name):
@@ -73,7 +79,7 @@ def bulk_add_courses_to_program(courses, program, mandatory=False):
         frappe.throw(_("Not permitted to modify Program {0}").format(program))
 
     program_doc = frappe.get_doc("Program", program)
-    existing = {c.course for c in program_doc.courses}
+    existing = {c.course for c in program_doc.courses if not c.disabled}
 
     credits_by_course = {
         row.name: row.course_credits
@@ -112,7 +118,7 @@ def get_programs_without_course(course):
     data = []
     for entry in frappe.db.get_all("Program"):
         program = frappe.get_doc("Program", entry.name)
-        courses = [c.course for c in program.courses]
+        courses = [c.course for c in program.courses if not c.disabled]
         if not courses or course not in courses:
             data.append(program.name)
     return data

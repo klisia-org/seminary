@@ -16,6 +16,10 @@
   "hero_image",
   "column_break_tflc",
   "description",
+  "retire_the_course_section",
+  "disabled",
+  "disabled_on",
+  "disable_reason",
   "prerequisites_section",
   "course_prerequisite",
   "assessment_tab",
@@ -123,11 +127,37 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Code"
+  },
+  {
+   "default": "0",
+   "description": "Use this to retire a course globally.",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "retire_the_course_section",
+   "fieldtype": "Section Break",
+   "label": "Retire the Course"
+  },
+  {
+   "fieldname": "disabled_on",
+   "fieldtype": "Date",
+   "label": "Disabled on",
+   "read_only": 1
+  },
+  {
+   "fieldname": "disable_reason",
+   "fieldtype": "Small Text",
+   "label": "Disable reason",
+   "mandatory_depends_on": "eval:doc.disabled"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2026-05-08 07:43:31.793068",
+ "modified": "2026-05-26 16:57:14.064951",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course",
