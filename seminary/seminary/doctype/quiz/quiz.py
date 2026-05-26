@@ -138,6 +138,21 @@ def quiz_summary(quiz, course, time_taken, results):
             result["points"] = points
             score += points
 
+        elif question_details.type in ("Scripture Matching", "Scripture Memorization"):
+            # Re-validate server-side from result["answer"] (JSON-stringified
+            # by the frontend). Never trust client-submitted is_correct here.
+            payload = _parse_scripture_payload(result.get("answer"))
+            if question_details.type == "Scripture Matching":
+                outcome = check_scripture_matching(result["question_name"], payload)
+            else:
+                outcome = check_scripture_memorization(result["question_name"], payload)
+            correct_n = cint(outcome.get("correct", 0))
+            total_n = cint(outcome.get("total", 0)) or 1
+            points = round((correct_n / total_n) * question_details.points, 2)
+            result["is_correct"] = 1 if correct_n == total_n and total_n > 0 else 0
+            result["points"] = points
+            score += points
+
         elif question_details.type != "Open Ended":
             correct = result["is_correct"][0]
             for point in result["is_correct"]:
@@ -246,6 +261,20 @@ def _question_answer_key(question_name):
         ]
         return q.type, ", ".join(accepted), None
 
+    if q.type == "Scripture Matching":
+        rows = frappe.get_all(
+            "Scripture Matching Item",
+            filters={"parent": question_name},
+            fields=["reference", "fetched_text"],
+            order_by="idx",
+        )
+        pairs = [f"{r['reference']} → {r['fetched_text']}" for r in rows]
+        return q.type, "\n".join(pairs), None
+
+    if q.type == "Scripture Memorization":
+        text = frappe.db.get_value("Question", question_name, "memorization_text") or ""
+        return q.type, text, None
+
     return q.type, None, None
 
 
@@ -271,19 +300,44 @@ def get_last_submission(quiz):
     result = []
     for row in submission.result:
         qtype, correct_answer, explanation = _question_answer_key(row.question_name)
-        result.append(
-            {
-                "question_name": row.question_name,
-                "question_detail": row.question,
-                "type": qtype,
-                "answer": row.answer,
-                "is_correct": row.is_correct,
-                "points": row.points,
-                "points_out_of": row.points_out_of,
-                "correct_answer": correct_answer,
-                "explanation": explanation,
-            }
-        )
+        row_out = {
+            "question_name": row.question_name,
+            "question_detail": row.question,
+            "type": qtype,
+            "answer": row.answer,
+            "is_correct": row.is_correct,
+            "points": row.points,
+            "points_out_of": row.points_out_of,
+            "correct_answer": correct_answer,
+            "explanation": explanation,
+        }
+        if qtype == "Scripture Matching":
+            row_out["matching_items"] = frappe.get_all(
+                "Scripture Matching Item",
+                filters={"parent": row.question_name},
+                fields=["reference", "fetched_text", "idx"],
+                order_by="idx",
+            )
+        elif qtype == "Scripture Memorization":
+            mem = (
+                frappe.db.get_value(
+                    "Question",
+                    row.question_name,
+                    [
+                        "memorization_text",
+                        "memorization_ref",
+                        "memorization_resolved_ref",
+                    ],
+                    as_dict=True,
+                )
+                or {}
+            )
+            row_out["memorization_text"] = mem.get("memorization_text") or ""
+            row_out["memorization_ref"] = mem.get("memorization_ref") or ""
+            row_out["memorization_resolved_ref"] = (
+                mem.get("memorization_resolved_ref") or ""
+            )
+        result.append(row_out)
     return {
         "submission": submission.name,
         "score": submission.score,
@@ -377,8 +431,27 @@ def check_answer(question, type, answers):
         return check_choice_answers(question, answers)
     elif type == "Reading Report":
         return check_reading_report(question, answers[0])
+    elif type == "Scripture Matching":
+        return check_scripture_matching(question, _parse_scripture_payload(answers[0]))
+    elif type == "Scripture Memorization":
+        return check_scripture_memorization(
+            question, _parse_scripture_payload(answers[0])
+        )
     else:
         return check_input_answers(question, answers[0])
+
+
+def _parse_scripture_payload(answer):
+    """Frontend sends scripture answers as a JSON-stringified payload (so it can
+    pass through the existing string-based answer plumbing). Decode it here."""
+    if isinstance(answer, (dict, list)):
+        return answer
+    if not answer:
+        return None
+    try:
+        return json.loads(answer)
+    except (json.JSONDecodeError, TypeError):
+        return None
 
 
 def check_reading_report(question, answer):
@@ -424,3 +497,71 @@ def check_input_answers(question, answer):
             return 1
 
     return 0
+
+
+_WORD_NORMALIZE = re.compile(r"[^\w]+", re.UNICODE)
+
+
+def _normalize_word(w):
+    """Lowercase + strip surrounding punctuation, for case-insensitive,
+    punctuation-tolerant memorization comparison."""
+    if w is None:
+        return ""
+    return _WORD_NORMALIZE.sub("", str(w)).lower()
+
+
+def check_scripture_matching(question, answer):
+    """answer = [{"ref_idx": int, "text_orig_idx": int, ...}, ...] — one entry
+    per displayed slot, in shuffled display order. A slot is correct when the
+    student's chosen reference index equals the original index of the text
+    that slot displays (because matching_items[N] pairs reference N with text N).
+
+    Returns {"correct": N, "total": M}."""
+    rows = frappe.get_all(
+        "Scripture Matching Item",
+        filters={"parent": question},
+        fields=["fetched_text", "idx"],
+        order_by="idx",
+    )
+    total = len(rows)
+    if total == 0 or not isinstance(answer, list):
+        return {"correct": 0, "total": total or 1}
+    correct = 0
+    for entry in answer:
+        if not isinstance(entry, dict):
+            continue
+        chosen = entry.get("ref_idx")
+        text_orig = entry.get("text_orig_idx")
+        if chosen is None or text_orig is None:
+            continue
+        try:
+            if int(chosen) == int(text_orig):
+                correct += 1
+        except (TypeError, ValueError):
+            continue
+    return {"correct": correct, "total": total}
+
+
+def check_scripture_memorization(question, answer):
+    """answer = {"positions": [int, ...], "words": [str, ...]} — positions are
+    whitespace-token indices into memorization_text; words are what the student
+    typed. Returns {"correct": N, "total": len(positions)}."""
+    if not isinstance(answer, dict):
+        return {"correct": 0, "total": 1}
+    positions = answer.get("positions") or []
+    words = answer.get("words") or []
+    if not positions or len(positions) != len(words):
+        return {"correct": 0, "total": len(positions) or 1}
+    stored_text = frappe.db.get_value("Question", question, "memorization_text") or ""
+    tokens = stored_text.split()
+    correct = 0
+    for pos, typed in zip(positions, words):
+        try:
+            pos_i = int(pos)
+        except (TypeError, ValueError):
+            continue
+        if pos_i < 0 or pos_i >= len(tokens):
+            continue
+        if _normalize_word(typed) == _normalize_word(tokens[pos_i]):
+            correct += 1
+    return {"correct": correct, "total": len(positions)}

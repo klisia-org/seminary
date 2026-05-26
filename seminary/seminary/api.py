@@ -1891,6 +1891,16 @@ def get_available_courses_categorized(program_enrollment):
             }
         )
 
+    # Fetch descriptions in one query
+    course_descriptions = {
+        d.name: d.description
+        for d in frappe.get_all(
+            "Course",
+            filters={"name": ["in", available_courses]},
+            fields=["name", "description"],
+        )
+    }
+
     # Build categorized result
     result = []
     for course in available_courses:
@@ -1899,6 +1909,7 @@ def get_available_courses_categorized(program_enrollment):
             "Course", course, "course_name"
         )
         credits = pc.get("credits", 0)
+        description = course_descriptions.get(course) or ""
 
         categories = []
 
@@ -1928,6 +1939,7 @@ def get_available_courses_categorized(program_enrollment):
             {
                 "course": course,
                 "course_name": course_name,
+                "description": description,
                 "categories": categories,
                 "credits": credits,
                 "course_schedules": schedule_map.get(course, []),

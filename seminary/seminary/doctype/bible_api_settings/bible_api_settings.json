@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "creation": "2026-05-23 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "credentials_section",
+  "api_key",
+  "column_break_creds",
+  "base_url",
+  "defaults_section",
+  "default_bible_id",
+  "language_defaults_section",
+  "language_defaults"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "Master switch. When unchecked, all Bible lookups raise a friendly error instead of calling the upstream API.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "description": "Your api.bible API key (https://scripture.api.bible). Stored encrypted.",
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key"
+  },
+  {
+   "fieldname": "column_break_creds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "https://rest.api.bible/v1",
+   "description": "Base URL for api.bible (the /v1 prefix is required). Override only if api.bible changes their endpoint.",
+   "fieldname": "base_url",
+   "fieldtype": "Data",
+   "label": "Base URL"
+  },
+  {
+   "fieldname": "defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Defaults"
+  },
+  {
+   "description": "Fallback Bible ID used when the user's language has no row in the Language Defaults table below.",
+   "fieldname": "default_bible_id",
+   "fieldtype": "Data",
+   "label": "Default Bible ID"
+  },
+  {
+   "description": "Map each language the seminary serves to its preferred Bible. At lookup time, the user's interface language is matched against this table first; if no match, the Default Bible ID above is used.",
+   "fieldname": "language_defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Language Defaults"
+  },
+  {
+   "fieldname": "language_defaults",
+   "fieldtype": "Table",
+   "label": "Per-Language Bibles",
+   "options": "Bible API Language Default"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-23 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Bible API Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -26,7 +26,7 @@
    "fieldname": "type",
    "fieldtype": "Select",
    "label": "Question Type",
-   "options": "Choices\nUser Input\nReading Report",
+   "options": "Choices\nUser Input\nReading Report\nScripture Matching\nScripture Memorization",
    "read_only": 1
   },
   {

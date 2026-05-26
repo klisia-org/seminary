@@ -51,6 +51,12 @@
             </option>
           </select>
         </div>
+        <div v-if="isInstructor" class="self-end pb-2">
+          <label class="text-sm text-ink-gray-7 inline-flex items-center gap-2">
+            <input type="checkbox" v-model="showClosed" />
+            {{ __('Show closed') }}
+          </label>
+        </div>
       </div>
 
       <!-- Course Cards -->
@@ -59,6 +65,13 @@
           :to="{ name: 'CourseDetail', params: { courseName: course.name } }" :key="course.name" class="course_card">
           <div class="course-image" :style="{ backgroundImage: `url(${encodeURI(course.course_image)})` }"></div>
           <div class="p-4 text-container">
+            <Badge
+              v-if="course.workflow_state === 'Draft'"
+              theme="orange"
+              variant="subtle"
+              :label="__('Draft')"
+              class="self-start mb-2"
+            />
             <h3 class="text-2xl font-semibold">{{ course.course }}</h3>
             <div class="short-introduction text-ink-gray-7 text-sm">
               {{ course.short_introduction }}
@@ -82,7 +95,7 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch, watchEffect, reactive, toRaw } from 'vue'
 import { BookOpen, Plus, PartyPopper } from 'lucide-vue-next'
-import { createResource } from 'frappe-ui'
+import { createResource, Badge } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
 import { usersStore } from '../stores/user'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
@@ -159,6 +172,7 @@ const filters = reactive({
   course: '',
   academic_term: current_AcademicTerm.data?.title || ''
 });
+const showClosed = ref(false)
 console.log(filters.academic_term)
 
 // Ensure the URL is resolved as a string before passing to createResource
@@ -168,9 +182,11 @@ const resolvedUrl = computed(() => {
     : "seminary.seminary.utils.get_courses_for_student"
 });
 
-// Ensure params is resolved as a plain object to avoid circular references
+// Ensure params is resolved as a plain object to avoid circular references.
+// The instructor list filters client-side; ask for a comfortably large window
+// so course/term/status filters don't silently miss rows past page 20.
 const resolvedParams = computed(() => {
-  return isStudent.value ? { student: user.data?.name } : {};
+  return isStudent.value ? { student: user.data?.name } : { page_length: 1000 };
 });
 
 
@@ -240,7 +256,8 @@ const uniqueAcademicTerms = computed(() => {
 const filteredCourses = computed(() => {
   return courses.data?.filter(course => {
     return (!filters.course || course.course === filters.course) &&
-      (!filters.academic_term || course.academic_term === filters.academic_term)
+      (!filters.academic_term || course.academic_term === filters.academic_term) &&
+      (showClosed.value || course.workflow_state !== 'Closed')
   }) || []
 })
 
