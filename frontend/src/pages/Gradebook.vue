@@ -459,9 +459,9 @@ const saveAllChanges = async () => {
   }
 
   if (errors.length > 0) {
-    toast.error(__('Failed to save {0} grade(s)', [errors.length]))
+    toast.error(__('Failed to save {0} grade(s)').format(errors.length))
   } else {
-    toast.success(__('Saved {0} grade(s) successfully', [savedCount]))
+    toast.success(__('Saved {0} grade(s) successfully').format(savedCount))
   }
 }
 
