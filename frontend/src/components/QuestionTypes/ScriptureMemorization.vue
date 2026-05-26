@@ -17,8 +17,8 @@
             </template>
         </div>
         <div class="text-xs text-ink-gray-5 mt-3 italic">
-            {{ __('Reference: {0}', [referenceLabel]) }} —
-            {{ __('{0} blank(s) to fill', [hidden.length]) }}
+            {{ __('Reference: {0}').format(referenceLabel) }} —
+            {{ __('{0} blank(s) to fill').format(hidden.length) }}
         </div>
     </div>
 </template>

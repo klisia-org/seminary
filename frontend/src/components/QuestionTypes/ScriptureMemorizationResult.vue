@@ -1,5 +1,8 @@
 <template>
     <div class="space-y-3 my-2">
+        <div v-if="referenceLabel" class="text-xs text-ink-gray-5 italic">
+            {{ __('Reference: {0}').format(referenceLabel) }}
+        </div>
         <!-- Your answer: full verse, with student's words in the blanks coloured by correctness -->
         <div class="border rounded-md p-3 bg-surface-gray-2">
             <div class="text-xs text-ink-gray-6 mb-2 font-semibold">
@@ -49,6 +52,7 @@ const norm = (s) => String(s || '').replace(STRIP, '').toLowerCase()
 const props = defineProps({
     text: { type: String, required: true },
     userAnswer: { type: String, default: '' }, // JSON {"positions","words"}
+    referenceLabel: { type: String, default: '' },
 })
 
 const parsed = computed(() => {

@@ -348,6 +348,7 @@
 						v-else-if="question.type === 'Scripture Memorization'"
 						:text="question.memorization_text || ''"
 						:userAnswer="question.user_answer || ''"
+						:referenceLabel="question.memorization_ref || question.memorization_resolved_ref || ''"
 						class="mt-4"
 					/>
 					<!-- Generic User Answer / Correct Answer (other types) -->
@@ -851,6 +852,8 @@ const submitQuizComplete = async () => {
 			// Scripture-specific extras for rich result cards
 			matching_items: question.matching_items,
 			memorization_text: question.memorization_text,
+			memorization_ref: question.memorization_ref,
+			memorization_resolved_ref: question.memorization_resolved_ref,
 		});
 	}
 
@@ -880,6 +883,8 @@ const submitQuizComplete = async () => {
 						// in case the question was re-saved between attempt and grading.
 						if (row.matching_items) question.matching_items = row.matching_items;
 						if (row.memorization_text) question.memorization_text = row.memorization_text;
+						if (row.memorization_ref) question.memorization_ref = row.memorization_ref;
+						if (row.memorization_resolved_ref) question.memorization_resolved_ref = row.memorization_resolved_ref;
 					}
 				});
 
@@ -1093,6 +1098,8 @@ const lastSubmission = createResource({
 			// Scripture-specific extras passed through for the rich result cards
 			matching_items: row.matching_items,
 			memorization_text: row.memorization_text,
+			memorization_ref: row.memorization_ref,
+			memorization_resolved_ref: row.memorization_resolved_ref,
 		}))
 		quizResults.value = (data.result || []).map((row) => ({
 			is_correct: [row.is_correct],
