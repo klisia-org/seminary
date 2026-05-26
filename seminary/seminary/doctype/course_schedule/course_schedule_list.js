@@ -1,5 +1,9 @@
 frappe.listview_settings['Course Schedule'] = {
 	onload: function(listview) {
+		listview.page.add_inner_button(__("Classes & Assessments Calendar"), function() {
+			frappe.set_route("classes-and-assessments-calendar");
+		});
+
 		listview.page.add_actions_menu_item(__("Close Enrollment"), function() {
 			const docs = listview.get_checked_items();
 			if (!docs.length) {

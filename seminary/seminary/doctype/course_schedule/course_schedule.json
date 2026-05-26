@@ -131,7 +131,7 @@
   {
    "fieldname": "color",
    "fieldtype": "Color",
-   "label": "Color",
+   "label": "Color for Calendar",
    "print_hide": 1
   },
   {
@@ -530,7 +530,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-05-08 08:08:37.934099",
+ "modified": "2026-05-26 14:48:32.253681",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Schedule",
