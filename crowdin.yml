@@ -18,6 +18,15 @@
       - /docs/en/es/**
     translation: /docs/en/%two_letters_code%/**/%original_file_name%
 
+  # Lifecycle-diagram label dictionary (flat dotted-key JSON). Used by the
+  # <LifecycleDiagram> Vue component so Mermaid diagrams render with localized
+  # state names without exposing Mermaid syntax to translators.
+  - source: /docs/en/_i18n/*.json
+    ignore:
+      - /docs/en/pt/**
+      - /docs/en/es/**
+    translation: /docs/en/%two_letters_code%/_i18n/%original_file_name%
+
 pull_request_title: "chore: sync translations from crowdin"
 pull_request_labels:
   - translation

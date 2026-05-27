@@ -71,11 +71,7 @@ If the program is marked **Free**, no invoice is generated and the request lands
 
 ## The workflow
 
-```
-Draft  →  Awaiting Payment  →  Academic Review  →  Financial Review  →  Approved
-            (free skips →                ↗)                                    ↓
-                                                                         Cancelled  (any state)
-```
+<LifecycleDiagram type="graduationRequest" />
 
 | State | Doc status | Who can edit | What it means |
 | --- | --- | --- | --- |

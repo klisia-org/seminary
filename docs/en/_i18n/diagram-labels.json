@@ -1,0 +1,21 @@
+{
+  "enrollment.draft": "Draft",
+  "enrollment.awaitingPayment": "Awaiting Payment",
+  "enrollment.submitted": "Submitted",
+  "enrollment.withdrawn": "Withdrawn",
+
+  "courseSchedule.draft": "Draft",
+  "courseSchedule.openForEnrollment": "Open for Enrollment",
+  "courseSchedule.enrollmentClosed": "Enrollment Closed",
+  "courseSchedule.grading": "Grading",
+  "courseSchedule.closed": "Closed",
+  "courseSchedule.cancelled": "Cancelled",
+
+  "graduationRequest.draft": "Draft",
+  "graduationRequest.awaitingPayment": "Awaiting Payment",
+  "graduationRequest.academicReview": "Academic Review",
+  "graduationRequest.financialReview": "Financial Review",
+  "graduationRequest.approved": "Approved",
+  "graduationRequest.cancelled": "Cancelled",
+  "graduationRequest.freeSkips": "free programs skip"
+}
