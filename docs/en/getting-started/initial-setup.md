@@ -142,11 +142,7 @@ The companion **Time-to-Graduate Risk** report (Reports → Seminary) lists acti
 
 Each **Course Schedule** moves through a six-state workflow that the daily scheduler advances automatically (when [Section 2](#_2-seminary-settings) "Auto-advance" is on) or that registrars walk through manually:
 
-```
-Draft → Open for Enrollment → Enrollment Closed → Grading → Closed
-            ↓                       ↓
-        Cancelled               Cancelled (terminal)
-```
+<LifecycleDiagram type="courseSchedule" />
 
 - **Draft** — created, not yet visible to students. The scheduler promotes to Open for Enrollment when the resolved enrollment-open date arrives.
 - **Open for Enrollment** — students can request enrollment from the portal.

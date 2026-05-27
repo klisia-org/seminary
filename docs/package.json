@@ -8,7 +8,9 @@
   },
   "devDependencies": {
     "medium-zoom": "^1.1.0",
-    "vitepress": "^1.6.4"
+    "mermaid": "^11.15.0",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
   },
   "resolutions": {
     "esbuild": "^0.25.0",

@@ -2,10 +2,14 @@ import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom'
 import { onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vitepress'
+import LifecycleDiagram from './components/LifecycleDiagram.vue'
 import './custom.css'
 
 export default {
   extends: DefaultTheme,
+  enhanceApp({ app }) {
+    app.component('LifecycleDiagram', LifecycleDiagram)
+  },
   setup() {
     const route = useRoute()
     const initZoom = () => {

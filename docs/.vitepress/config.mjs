@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -7,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const initPy = readFileSync(resolve(__dirname, '../../seminary/__init__.py'), 'utf-8')
 const appVersion = 'v' + initPy.match(/__version__ = "(.+)"/)[1]
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'SeminaryERP Docs',
   description: 'Documentation for SeminaryERP — a theological seminary management system built on Frappe/ERPNext',
 
@@ -208,4 +209,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
