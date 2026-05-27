@@ -15,8 +15,9 @@ from seminary.seminary.api import (
 def daily():
     today = getdate()
 
+    _update_term_flags(today)
+
     if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
-        _update_term_flags(today)
         _run_nat_for_due_terms(today)
         _run_nay_for_due_years(today)
         if today.day == 1:
@@ -39,6 +40,10 @@ def hourly():
     )
 
     process_scheduled_announcements()
+
+
+def refresh_term_flags_on_save(doc, method=None):
+    _update_term_flags(getdate())
 
 
 def _update_term_flags(today):
