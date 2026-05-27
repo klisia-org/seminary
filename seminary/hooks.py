@@ -245,6 +245,9 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+    "Academic Term": {
+        "on_update": "seminary.tasks.refresh_term_flags_on_save",
+    },
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },

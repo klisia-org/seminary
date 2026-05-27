@@ -2524,7 +2524,7 @@ def courses_for_student(program_ce):
         FROM `tabCourse Schedule` cs
         INNER JOIN `tabAcademic Term` aterm ON aterm.name = cs.academic_term
         WHERE cs.workflow_state = 'Open for Enrollment'
-            AND aterm.iscurrent_acterm = '1'
+            AND aterm.open = '1'
             AND cs.course IN (
                 (SELECT pc.course
                 FROM `tabProgram Enrollment` pe
@@ -2574,12 +2574,17 @@ def courses_for_student(program_ce):
                     AND ptc.term > pe.current_std_term
             )
             AND cs.course NOT IN (
-                SELECT course_data
-                FROM `tabCourse Enrollment Individual`
-                WHERE audit = 0
-                    AND docstatus != '2'
-                    AND course_cancelled = 0
-                    AND program_ce = %s
+                SELECT cei.course_data
+                FROM `tabCourse Enrollment Individual` cei
+                LEFT JOIN `tabProgram Enrollment Course` pec
+                    ON pec.parent = cei.program_ce
+                    AND pec.course = cei.course_data
+                WHERE cei.audit = 0
+                    AND cei.docstatus != '2'
+                    AND cei.course_cancelled = 0
+                    AND cei.withdrawn = 0
+                    AND COALESCE(pec.status, '') != 'Fail'
+                    AND cei.program_ce = %s
             )""",
         (pgen_name, pgen_name, pgen_name, pgen_name, pgen_name, pgen_name),
         as_list=1,
