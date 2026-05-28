@@ -5,7 +5,8 @@
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 		</header>
 		<div class="m-5">
-			<div class="grid md:grid-cols-[1fr,auto] gap-5">
+			<div class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
+				style="--right-col: clamp(20rem, 24vw, 30rem)">
 				<div>
 					<div class="text-3xl font-semibold text-ink-gray-9">
 						{{ course.data.course }}
