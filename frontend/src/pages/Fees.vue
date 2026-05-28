@@ -149,6 +149,8 @@ import { createToast } from '@/utils'
 import { usersStore } from '../stores/user'
 import { statusTheme } from '@/utils/statusTheme'
 
+const INVOICE_PRINT_FORMAT = 'Seminary Sales Invoice'
+
 const paymentSuccess = ref(false)
 
 onMounted(() => {
@@ -256,7 +258,7 @@ const formatAbs = (value) => {
 }
 
 const openInvoicePDF = (row) => {
-	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}`
+	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&print_format=${encodeURIComponent(INVOICE_PRINT_FORMAT)}`
 	window.open(url, '_blank')
 }
 
