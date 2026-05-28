@@ -1,2 +1,0 @@
-import{Zn as e}from"./frappe-ui-DfdqFzhY.js";import{dt as t}from"./vendor-DCZBXAh0.js";import{c as n}from"./index-BRvUjYFV.js";var r=t(`settings`,()=>{let{isLoggedIn:t}=n();return{isSettingsOpen:e(!1),activeTab:e(null)}});export{r as t};
-//# sourceMappingURL=settings-CPImbOON.js.map
