@@ -34,3 +34,9 @@ class FeeCategory(Document):
                         "Seminary Settings are currently set to charge audit as a flat fee, not per credit. Either uncheck Is Credit here, or change Seminary Settings to allow audit per credit."
                     )
                 )
+            if self.is_credit == 0 and audit_per_credit == 1:
+                frappe.throw(
+                    _(
+                        "Seminary Settings are currently set to charge audit as per credit. Either check Is Credit here, or change Seminary Settings to allow audit as a flat fee."
+                    )
+                )
