@@ -25,9 +25,11 @@ def after_install():
     setup_fixtures()
     create_studentappl_role()
     create_student_role()
+    create_alumni_role()
     create_registrar_role()
     create_instructor_role()
     get_custom_fields()
+    setup_sales_invoice_permissions()
     update_company_in_item_details()
 
 
@@ -203,6 +205,35 @@ def create_student_role():
         ).save()
 
 
+def create_alumni_role():
+    if not frappe.db.exists("Role", _("Alumni")):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": _("Alumni"), "desk_access": 0}
+        ).save()
+
+
+def setup_sales_invoice_permissions():
+    """Grant the Student and Alumni roles read + print access to Sales Invoice.
+
+    Row-level access is scoped to the user's own linked Student record by
+    seminary.seminary.sales_invoice_permissions. Idempotent: re-running only
+    ensures the read/print flags are set, it never duplicates the rule.
+    """
+    from frappe.permissions import add_permission, update_permission_property
+
+    if not frappe.db.exists("DocType", "Sales Invoice"):
+        return
+
+    for role in (_("Student"), _("Alumni")):
+        if not frappe.db.exists("Role", role):
+            continue
+        add_permission("Sales Invoice", role, 0)
+        update_permission_property("Sales Invoice", role, 0, "read", 1)
+        update_permission_property("Sales Invoice", role, 0, "print", 1)
+
+    frappe.db.commit()
+
+
 def create_registrar_role():
     if not frappe.db.exists("Role", _("Registrar")):
         frappe.get_doc(
@@ -324,6 +355,8 @@ def setup_withdrawal_workflow():
 def after_migrate():
     setup_genders()
     setup_withdrawal_workflow()
+    create_alumni_role()
+    setup_sales_invoice_permissions()
 
 
 def setup_genders():

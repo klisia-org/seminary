@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+import zipfile
 from typing import Optional, Set
 
 import frappe
@@ -167,6 +169,59 @@ def get_files_in_folder(foldername: str | None = None, folder_id: str | None = N
         "folder_id": folder,
         "folder_name": frappe.db.get_value("File", folder, "file_name"),
     }
+
+
+def _add_folder_to_zip(
+    archive: zipfile.ZipFile,
+    folder_id: str,
+    base_path: str,
+    visited: Set[str],
+) -> None:
+    """Recursively write the contents of a folder into the zip archive."""
+    if folder_id in visited:
+        return
+    visited.add(folder_id)
+
+    entries = frappe.get_all(
+        "File",
+        filters={"folder": folder_id},
+        fields=["name", "file_name", "is_folder"],
+        order_by="is_folder desc, file_name asc",
+        ignore_permissions=True,
+    )
+
+    if not entries and base_path:
+        # Preserve empty folders in the archive.
+        archive.writestr(f"{base_path}/", b"")
+        return
+
+    for entry in entries:
+        entry_path = f"{base_path}/{entry.file_name}" if base_path else entry.file_name
+        if entry.is_folder:
+            _add_folder_to_zip(archive, entry.name, entry_path, visited)
+            continue
+        content = frappe.get_doc("File", entry.name).get_content(encodings=[])
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+        archive.writestr(entry_path, content)
+
+
+@frappe.whitelist()
+def download_folder(foldername: str | None = None, folder_id: str | None = None):
+    """Stream a zip archive of the folder, including its sub-folders and files."""
+    folder = _resolve_folder(foldername=foldername, folder_id=folder_id)
+    _ensure_folder_permission(folder, perm="read")
+
+    root_name = frappe.db.get_value("File", folder, "file_name") or "folder"
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        _add_folder_to_zip(archive, folder, root_name, visited=set())
+
+    frappe.local.response.filename = f"{root_name}.zip"
+    frappe.local.response.filecontent = buffer.getvalue()
+    frappe.local.response.type = "download"
+    frappe.local.response.display_content_as = "attachment"
 
 
 @frappe.whitelist()

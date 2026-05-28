@@ -1,6 +1,11 @@
 import frappe
 
 ACCOUNTING_BYPASS_ROLES = {"System Manager", "Accounts Manager", "Accounts User"}
+# Roles whose users may only access their own Sales Invoices, scoped by their
+# linked Student record. Read/print DocPerms for these roles are granted in
+# seminary.install.setup_sales_invoice_permissions. A restricted user with no
+# linked Student record sees nothing (the query condition resolves to 1=0).
+RESTRICTED_ROLES = {"Student", "Alumni"}
 
 
 def _current_student(user):
@@ -13,7 +18,7 @@ def _should_restrict(user):
     roles = set(frappe.get_roles(user))
     if roles & ACCOUNTING_BYPASS_ROLES:
         return False
-    return bool(_current_student(user))
+    return bool(roles & RESTRICTED_ROLES)
 
 
 def has_permission(doc, ptype, user):

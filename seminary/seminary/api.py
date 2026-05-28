@@ -1057,6 +1057,15 @@ def course_enroll(pe_name, course):
         doc.submit()
         doc.db_set("workflow_state", target_state, update_modified=False)
 
+        # db_set bypasses on_update_after_submit, so on_workflow_update never
+        # fires. Free / no-payment-required enrollments land in Submitted here
+        # with no further trigger, so run the post-submit side effects (roster
+        # + PEC creation) explicitly, mirroring _advance_cei_to_submitted.
+        if target_state == "Submitted":
+            from seminary.seminary.cei_lifecycle import enroll_student
+
+            enroll_student(frappe.get_doc("Course Enrollment Individual", doc.name))
+
     return {
         "name": doc.name,
         "course_data": doc.course_data,
@@ -1904,6 +1913,38 @@ def get_available_courses_categorized(program_enrollment):
         )
     }
 
+    # Map which available courses are prerequisites for other courses, so the UI
+    # can flag them and students can prioritize them.
+    prerequisite_for_map = {}
+    dependent_courses = set()
+    for row in frappe.get_all(
+        "Course_prerequisite",
+        filters={"course": ["in", available_courses], "parenttype": "Course"},
+        fields=["parent", "course", "prereq_mandatory"],
+    ):
+        dependent_courses.add(row.parent)
+        prerequisite_for_map.setdefault(row.course, []).append(
+            {"course": row.parent, "mandatory": row.prereq_mandatory or "Recommended"}
+        )
+
+    dependent_course_names = (
+        {
+            d.name: d.course_name
+            for d in frappe.get_all(
+                "Course",
+                filters={"name": ["in", list(dependent_courses)]},
+                fields=["name", "course_name"],
+            )
+        }
+        if dependent_courses
+        else {}
+    )
+    for deps in prerequisite_for_map.values():
+        for dep in deps:
+            dep["course_name"] = (
+                dependent_course_names.get(dep["course"]) or dep["course"]
+            )
+
     # Build categorized result
     result = []
     for course in available_courses:
@@ -1946,6 +1987,7 @@ def get_available_courses_categorized(program_enrollment):
                 "categories": categories,
                 "credits": credits,
                 "course_schedules": schedule_map.get(course, []),
+                "prerequisite_for": prerequisite_for_map.get(course, []),
             }
         )
 
@@ -2657,8 +2699,7 @@ def copy_data_to_scheduled_course_roster(doc, method):
                 "stdroster_grade": items,
             }
         )
-        roster.insert()
-        roster.save()
+        roster.insert(ignore_permissions=True)
     return
 
 
@@ -2680,7 +2721,7 @@ def copy_data_to_program_enrollment_course(doc, method):
         program_enrollment_course.academic_term = ac_term
         program_enrollment_course.credits = credits
         program_enrollment_course.status = "Enrolled"
-        program_enrollment_course.insert()
+        program_enrollment_course.insert(ignore_permissions=True)
 
 
 @frappe.whitelist()
