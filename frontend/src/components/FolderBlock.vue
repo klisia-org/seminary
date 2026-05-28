@@ -1,20 +1,38 @@
 <template>
   <div class="flex flex-col gap-4 rounded-lg border-2 border-outline-gray-1 p-4 mb-4">
-    <div class="flex flex-col gap-1">
-      <h4 class="text-lg font-semibold text-ink-gray-9">{{ currentFolderName || folderName }}</h4>
-      <div class="text-sm text-ink-gray-6 flex flex-wrap items-center gap-1" v-if="breadcrumbStack.length">
-        <template v-for="(crumb, index) in breadcrumbStack" :key="crumb.id || `${crumb.label}-${index}`">
-          <button
-            type="button"
-            class="rounded px-1.5 py-0.5 transition hover:bg-ink-gray-2 hover:text-ink-gray-9"
-            :class="index === breadcrumbStack.length - 1 ? 'font-medium text-ink-gray-8 cursor-default' : 'text-ink-gray-7'"
-            @click="index === breadcrumbStack.length - 1 ? null : navigateToBreadcrumb(index)"
-          >
-            {{ crumb.label }}
-          </button>
-          <span v-if="index < breadcrumbStack.length - 1">/</span>
-        </template>
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex flex-col gap-1">
+        <h4 class="text-lg font-semibold text-ink-gray-9">{{ currentFolderName || folderName }}</h4>
+        <div class="text-sm text-ink-gray-6 flex flex-wrap items-center gap-1" v-if="breadcrumbStack.length">
+          <template v-for="(crumb, index) in breadcrumbStack" :key="crumb.id || `${crumb.label}-${index}`">
+            <button
+              type="button"
+              class="rounded px-1.5 py-0.5 transition hover:bg-ink-gray-2 hover:text-ink-gray-9"
+              :class="index === breadcrumbStack.length - 1 ? 'font-medium text-ink-gray-8 cursor-default' : 'text-ink-gray-7'"
+              @click="index === breadcrumbStack.length - 1 ? null : navigateToBreadcrumb(index)"
+            >
+              {{ crumb.label }}
+            </button>
+            <span v-if="index < breadcrumbStack.length - 1">/</span>
+          </template>
+        </div>
       </div>
+      <button
+        type="button"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded border border-outline-gray-2 px-3 py-1.5 text-sm font-medium text-ink-gray-8 transition hover:border-outline-gray-3 hover:bg-ink-gray-2 disabled:cursor-not-allowed disabled:opacity-50"
+        :disabled="!canDownload || isDownloading"
+        @click="downloadAll"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        {{ isDownloading ? __('Preparing…') : __('Download all') }}
+      </button>
+    </div>
+    <div v-if="downloadError" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
+      {{ downloadError }}
     </div>
 
     <div v-if="errorMessage" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
@@ -92,12 +110,18 @@ const folderName = computed(() => {
 
 const isLoading = ref(false)
 const errorMessage = ref('')
+const downloadError = ref('')
+const isDownloading = ref(false)
 const files = ref([])
 const subfolders = ref([])
 const currentFolderId = ref(null)
 const currentFolderName = ref('')
 const breadcrumbStack = ref([])
 let hasMounted = false
+
+const canDownload = computed(
+  () => !isLoading.value && !errorMessage.value && (subfolders.value.length > 0 || files.value.length > 0),
+)
 
 const humanFileSize = (value) => {
   if (!value && value !== 0) {
@@ -135,6 +159,7 @@ const loadFolder = async ({ folderId = null, folderLabel = null } = {}) => {
   }
   isLoading.value = true
   errorMessage.value = ''
+  downloadError.value = ''
 
   try {
     const resource = createResource({
@@ -188,6 +213,47 @@ const navigateToBreadcrumb = async (index) => {
   const crumb = await loadFolder({ folderId: target.id, folderLabel: target.label })
   if (crumb) {
     breadcrumbStack.value = [...breadcrumbStack.value.slice(0, index), crumb]
+  }
+}
+
+const downloadAll = async () => {
+  if (isDownloading.value || !canDownload.value) {
+    return
+  }
+  const params = new URLSearchParams()
+  if (currentFolderId.value) {
+    params.set('folder_id', currentFolderId.value)
+  } else if (currentFolderName.value || folderName.value) {
+    params.set('foldername', currentFolderName.value || folderName.value)
+  } else {
+    return
+  }
+
+  isDownloading.value = true
+  downloadError.value = ''
+  try {
+    const response = await fetch(
+      `/api/method/seminary.api.folder_upload.download_folder?${params.toString()}`,
+      { credentials: 'include' },
+    )
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error?.message || __('Unable to download folder.'))
+    }
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${currentFolderName.value || folderName.value || 'folder'}.zip`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error downloading folder:', error)
+    downloadError.value = error?.message || __('Unable to download folder.')
+  } finally {
+    isDownloading.value = false
   }
 }
 

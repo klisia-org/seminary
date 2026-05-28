@@ -96,6 +96,23 @@
               </h3>
               <span class="text-sm text-ink-gray-5">{{ course.credits }} {{ __('credits') }}</span>
             </div>
+            <Tooltip v-if="course.prerequisite_for && course.prerequisite_for.length" :hover-delay="0.2">
+              <Badge theme="green" :label="__('Prerequisite')" />
+              <template #body>
+                <div class="max-w-xs rounded bg-surface-gray-7 px-3 py-2 text-xs text-ink-white shadow-xl">
+                  <p class="font-medium mb-1">{{ __('Prerequisite for:') }}</p>
+                  <ul class="space-y-0.5">
+                    <li v-for="dep in course.prerequisite_for" :key="dep.course"
+                      class="flex items-center justify-between gap-3">
+                      <span>{{ dep.course_name }}</span>
+                      <span class="opacity-70 whitespace-nowrap">
+                        {{ dep.mandatory === 'Mandatory' ? __('Mandatory') : __('Recommended') }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </template>
+            </Tooltip>
           </div>
 
           <!-- Category Badges -->
