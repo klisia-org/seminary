@@ -66,14 +66,23 @@ Culminating Project
 ### Unified `DateRuleResolver`, scoped to milestones
 
 `seminary/seminary/date_rules.py` is a new plain utility (not a Frappe Module):
-`resolve(anchor, offset_value, offset_unit, context, *, weekday, holiday_adjust,
-clamp_to)`. Anchors come from a caller-supplied `context` dict; `Academic Terms`
-offsets do a **real term walk** (fixing graduation.py's `*120 days`
-approximation), which matters for multi-year PhD timelines. It is a deliberate
-superset of the app's three ad-hoc resolvers (`graduation.compute_due_date`,
-`cs_lifecycle.resolve_window_dates`, `withdrawal.calculate_dynamic_date`) but is
-**wired only to milestone due dates for now**; those three are migrated onto it
-in a later pass once it's proven.
+`resolve(anchor, offset_value, offset_unit, context, *, weekday, weekday_strict,
+holiday_adjust, clamp_to)`. Anchors come from a caller-supplied `context` dict;
+term offsets do a **real term walk** (fixing graduation.py's `*120 days`
+approximation), which matters for multi-year PhD timelines. It is now the single
+resolver behind **all four** dated rules — milestones,
+`cs_lifecycle.resolve_window_dates`, `withdrawal.calculate_dynamic_date`, and
+graduation's Time-Offset due dates — replacing the three ad-hoc implementations.
+
+Migration was behaviour-preserving where it mattered: CS windows and withdrawal
+deadlines produce byte-identical dates (the withdrawal weekday rule's
+"advance even when already on the target weekday" is preserved via
+`weekday_strict=True`; holidays come from the company's default holiday list).
+Graduation's day offsets are unchanged; its term offsets switch from the
+`*120-day` approximation to a real walk from the term covering the anchor —
+and deliberately yield **no date** (rather than a misleading one) when no
+Academic Term covers the anchor (e.g. an offset anchored years out with no
+terms defined that far). `term_for_date` is covering-term-only for this reason.
 
 ## Consequences
 
@@ -90,6 +99,5 @@ in a later pass once it's proven.
   rather than a free MultiSelect — simpler, and validated against the slots.
 
 ## Follow-ups
-- Migrate graduation / Course Schedule / withdrawal onto `date_rules.py`.
 - Student/advisor Vue workbench (milestone timeline, submission upload, sign-off)
   and the Defense `Event` creation wiring.

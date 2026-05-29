@@ -17,7 +17,9 @@
 import frappe
 from frappe import _
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, getdate
+from frappe.utils import getdate
+
+from seminary.seminary import date_rules
 
 
 WINDOWS = ("enrollment_open", "enrollment_close", "grade_close")
@@ -26,14 +28,16 @@ WINDOWS = ("enrollment_open", "enrollment_close", "grade_close")
 def resolve_window_dates(cs) -> dict:
     """Resolve enrollment_open / enrollment_close / grade_close for a Course Schedule.
 
-    Reads the seminary-wide rule from Seminary Settings (anchor + offset) and
-    applies per-CS overrides. Per-CS override always wins.
+    Reads the seminary-wide rule from Seminary Settings (anchor + offset days)
+    and applies per-CS overrides. Per-CS override always wins. Date math runs
+    through the shared `date_rules` resolver (ADR 025).
 
     Returns ``{"enrollment_open": date_or_None, "enrollment_close": ..., "grade_close": ...}``.
     A window is ``None`` when there is no rule and no override — the scheduler
     then ignores it for state advance, and the late-grade nag stays silent.
     """
     settings = frappe.get_cached_doc("Seminary Settings")
+    context = {"anchors": _cs_anchor_dates(cs)}
     resolved = {}
     for window in WINDOWS:
         override = cs.get(f"{window}_date_override")
@@ -43,24 +47,28 @@ def resolve_window_dates(cs) -> dict:
 
         anchor = settings.get(f"{window}_anchor")
         offset = settings.get(f"{window}_offset_days") or 0
-        anchor_date = _resolve_anchor(cs, anchor)
-        resolved[window] = add_days(anchor_date, offset) if anchor_date else None
+        resolved[window] = date_rules.resolve(anchor, offset, "Days", context)
     return resolved
 
 
-def _resolve_anchor(cs, anchor):
-    """Return the date for an anchor key, or None if anchor is empty/unknown."""
-    if not anchor:
-        return None
-    if anchor == "term_start":
-        return frappe.db.get_value("Academic Term", cs.academic_term, "term_start_date")
-    if anchor == "term_end":
-        return frappe.db.get_value("Academic Term", cs.academic_term, "term_end_date")
-    if anchor == "classes_start":
-        return cs.c_datestart
-    if anchor == "classes_end":
-        return cs.c_dateend
-    return None
+def _cs_anchor_dates(cs) -> dict:
+    """The candidate anchor dates for a Course Schedule's window rules."""
+    term_dates = (
+        frappe.db.get_value(
+            "Academic Term",
+            cs.academic_term,
+            ["term_start_date", "term_end_date"],
+            as_dict=True,
+        )
+        if cs.academic_term
+        else None
+    ) or {}
+    return {
+        "term_start": term_dates.get("term_start_date"),
+        "term_end": term_dates.get("term_end_date"),
+        "classes_start": cs.c_datestart,
+        "classes_end": cs.c_dateend,
+    }
 
 
 def get_default_initial_state(cs) -> str:
