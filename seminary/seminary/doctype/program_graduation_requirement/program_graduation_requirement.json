@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "PGR-.#####",
  "creation": "2026-04-25 14:47:15.333793",
- "description": "A program's graduation policy. Submittable for traceability: to retire a policy, cancel it (this auto-clears 'Is Active' and stamps 'Active Until' to today). To change requirements, amend the cancelled policy and submit the amendment with a new 'Active From' date.",
+ "description": "A program's graduation policy. Submittable for traceability and versioned via workflow: a live policy is in the 'Active' state. To change requirements, use the 'Change Version' action — this retires the current policy (state 'Superseded', 'Is Active' cleared, 'Active Until' stamped to today) and spawns a Draft successor to edit and submit. Policies are never cancelled, so snapshot links from Program Enrollments stay valid (ADR 012, 024).",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -14,6 +14,11 @@
   "active_until",
   "section_break_cqwz",
   "pgr_items",
+  "section_break_versioning",
+  "workflow_state",
+  "superseded_by",
+  "column_break_version",
+  "supersedes",
   "amended_from"
  ],
  "fields": [
@@ -26,11 +31,12 @@
    "reqd": 1
   },
   {
-   "allow_on_submit": 1,
    "default": "1",
+   "description": "System-derived from the lifecycle state: a policy is live (Active) only while its workflow state is 'Active'. Use the 'Change Version' action to retire it.",
    "fieldname": "active",
    "fieldtype": "Check",
-   "label": "Is Active"
+   "label": "Is Active",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_mlpo",
@@ -58,6 +64,41 @@
    "fieldtype": "Table",
    "label": "Program Requirement Items",
    "options": "Program Grad Req Items"
+  },
+  {
+   "fieldname": "section_break_versioning",
+   "fieldtype": "Section Break",
+   "label": "Versioning"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "no_copy": 1,
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "description": "The Draft successor spawned when this policy was retired via 'Change Version'.",
+   "fieldname": "superseded_by",
+   "fieldtype": "Link",
+   "label": "Superseded By",
+   "no_copy": 1,
+   "options": "Program Graduation Requirement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_version",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The earlier policy this version replaces.",
+   "fieldname": "supersedes",
+   "fieldtype": "Link",
+   "label": "Supersedes",
+   "no_copy": 1,
+   "options": "Program Graduation Requirement",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",

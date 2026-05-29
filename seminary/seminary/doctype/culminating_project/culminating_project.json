@@ -5,7 +5,6 @@
  "creation": "2026-04-25 17:06:03.296800",
  "doctype": "DocType",
  "engine": "InnoDB",
- "is_submittable": 1,
  "field_order": [
   "program_enrollment",
   "student",
@@ -19,12 +18,18 @@
   "advisor",
   "column_break_advisors",
   "second_reader",
+  "third_reader",
   "section_break_dates",
   "proposal_approved_on",
   "defended_on",
   "column_break_dates",
   "current_round",
   "final_grade",
+  "section_break_enrollment",
+  "course_enrollment",
+  "section_break_milestones",
+  "milestones_complete",
+  "milestones",
   "section_break_submissions",
   "submissions",
   "section_break_status",
@@ -61,9 +66,9 @@
   {
    "default": "Thesis",
    "fieldname": "project_type",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Project Type",
-   "options": "Thesis\nCapstone\nDissertation"
+   "options": "Culminating Project Type"
   },
   {
    "fieldname": "section_break_about",
@@ -111,12 +116,14 @@
    "label": "Milestones"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "proposal_approved_on",
    "fieldtype": "Date",
    "label": "Proposal Approved On",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "defended_on",
    "fieldtype": "Date",
    "label": "Defended On"
@@ -138,6 +145,41 @@
    "label": "Final Grade"
   },
   {
+   "fieldname": "section_break_enrollment",
+   "fieldtype": "Section Break",
+   "label": "Course Enrollment"
+  },
+  {
+   "description": "The Course Enrollment Individual that backs this project. Created via 'Enroll in Project Course' from the project type's course; carries the fee, credits and the grade (on its Program Enrollment Course row) that flows to GPA and the transcript.",
+   "fieldname": "course_enrollment",
+   "fieldtype": "Link",
+   "label": "Course Enrollment",
+   "options": "Course Enrollment Individual",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_milestones",
+   "fieldtype": "Section Break",
+   "label": "Milestones"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "System-derived: set when every mandatory milestone is Approved or Waived. Gates the 'Complete' workflow action.",
+   "fieldname": "milestones_complete",
+   "fieldtype": "Check",
+   "label": "Milestones Complete",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Snapshotted from the project type when the project is activated; due dates computed per milestone anchor + offset. Sign-offs are recorded via Culminating Project Milestone Signoff.",
+   "fieldname": "milestones",
+   "fieldtype": "Table",
+   "label": "Milestones",
+   "options": "Culminating Project Milestone"
+  },
+  {
    "fieldname": "section_break_submissions",
    "fieldtype": "Section Break",
    "label": "Submissions"
@@ -153,6 +195,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "workflow_state",
    "fieldtype": "Link",
    "label": "Workflow State",
@@ -168,12 +211,19 @@
    "options": "Culminating Project",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "third_reader",
+   "fieldtype": "Link",
+   "label": "Third reader",
+   "options": "Instructor"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-04-25 21:30:00.000000",
+ "modified": "2026-05-29 12:16:13.694197",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Culminating Project",

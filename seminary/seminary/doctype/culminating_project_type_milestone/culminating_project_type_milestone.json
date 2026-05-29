@@ -1,0 +1,181 @@
+{
+ "actions": [],
+ "creation": "2026-05-29 13:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "milestone_name",
+  "sequence",
+  "milestone_kind",
+  "column_break_main",
+  "mandatory",
+  "repeatable",
+  "default_count",
+  "requires_submission",
+  "creates_event",
+  "section_break_signoff",
+  "signoff_advisor",
+  "signoff_second_reader",
+  "column_break_signoff",
+  "signoff_third_reader",
+  "signoff_committee",
+  "section_break_due",
+  "anchor",
+  "offset_value",
+  "column_break_due",
+  "offset_unit",
+  "section_break_desc",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "milestone_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Milestone",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Order in which milestones are presented and chained (used by the 'Previous Milestone' anchor).",
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sequence"
+  },
+  {
+   "default": "Standard",
+   "description": "Drives derived dates and handling: Proposal -> proposal_approved_on, Defense -> defended_on.",
+   "fieldname": "milestone_kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Kind",
+   "options": "Standard\nProposal\nDefense\nFinal Submission"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Mandatory milestones must be Approved/Waived before the project can be Completed.",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory"
+  },
+  {
+   "default": "0",
+   "description": "Seed several instances of this milestone (e.g. dissertation chapters).",
+   "fieldname": "repeatable",
+   "fieldtype": "Check",
+   "label": "Repeatable"
+  },
+  {
+   "default": "1",
+   "depends_on": "repeatable",
+   "fieldname": "default_count",
+   "fieldtype": "Int",
+   "label": "Default Count"
+  },
+  {
+   "default": "0",
+   "description": "The student must attach a deliverable (a Culminating Project Submission round) for this milestone.",
+   "fieldname": "requires_submission",
+   "fieldtype": "Check",
+   "label": "Requires Submission"
+  },
+  {
+   "default": "0",
+   "description": "Marks a milestone (e.g. the Defense) for which a calendar Event can be created from the frontend. Wiring is deferred.",
+   "fieldname": "creates_event",
+   "fieldtype": "Check",
+   "label": "Creates Event"
+  },
+  {
+   "fieldname": "section_break_signoff",
+   "fieldtype": "Section Break",
+   "label": "Required Sign-offs"
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_advisor",
+   "fieldtype": "Check",
+   "label": "Advisor"
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_second_reader",
+   "fieldtype": "Check",
+   "label": "Second Reader"
+  },
+  {
+   "fieldname": "column_break_signoff",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_third_reader",
+   "fieldtype": "Check",
+   "label": "Third Reader"
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_committee",
+   "fieldtype": "Check",
+   "label": "Committee"
+  },
+  {
+   "fieldname": "section_break_due",
+   "fieldtype": "Section Break",
+   "label": "Due Date Rule"
+  },
+  {
+   "description": "Base date for the due date. 'Term Start' combined with the 'Academic Terms' unit walks N terms from the enrollment's starting term.",
+   "fieldname": "anchor",
+   "fieldtype": "Select",
+   "label": "Anchor",
+   "options": "Project Start\nEnrollment Date\nExpected Graduation\nTerm Start\nPrevious Milestone"
+  },
+  {
+   "default": "0",
+   "description": "Signed whole number added to the anchor (e.g. -30, 2).",
+   "fieldname": "offset_value",
+   "fieldtype": "Int",
+   "label": "Offset Value"
+  },
+  {
+   "fieldname": "column_break_due",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Days",
+   "fieldname": "offset_unit",
+   "fieldtype": "Select",
+   "label": "Offset Unit",
+   "options": "Days\nAcademic Terms"
+  },
+  {
+   "fieldname": "section_break_desc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-29 13:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Culminating Project Type Milestone",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

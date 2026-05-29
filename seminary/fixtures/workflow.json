@@ -297,44 +297,14 @@
    {
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Proposal Submitted",
+    "state": "Active",
     "allow_edit": "Academics User"
-   },
-   {
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Proposal Approved",
-    "allow_edit": "Academics User"
-   },
-   {
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Drafting",
-    "allow_edit": "Student"
    },
    {
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Under Review",
     "allow_edit": "Instructor"
-   },
-   {
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Revisions Required",
-    "allow_edit": "Student"
-   },
-   {
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Approved",
-    "allow_edit": "Academics User"
-   },
-   {
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Defended",
-    "allow_edit": "Academics User"
    },
    {
     "doc_status": "1",
@@ -347,92 +317,100 @@
     "is_optional_state": 0,
     "state": "Rejected",
     "allow_edit": "Academics User"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Withdrawn",
+    "allow_edit": "Registrar"
    }
   ],
   "transitions": [
    {
-    "action": "Submit Proposal",
+    "action": "Activate",
+    "allow_self_approval": 1,
     "allowed": "Student",
-    "next_state": "Proposal Submitted",
+    "next_state": "Active",
     "state": "Draft"
    },
    {
-    "action": "Submit Proposal",
+    "action": "Activate",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
-    "next_state": "Proposal Submitted",
+    "next_state": "Active",
     "state": "Draft"
    },
    {
-    "action": "Approve Proposal",
-    "allowed": "Instructor",
-    "next_state": "Proposal Approved",
-    "state": "Proposal Submitted"
-   },
-   {
-    "action": "Approve Proposal",
-    "allowed": "Academics User",
-    "next_state": "Proposal Approved",
-    "state": "Proposal Submitted"
-   },
-   {
-    "action": "Reject",
-    "allowed": "Instructor",
-    "next_state": "Rejected",
-    "state": "Proposal Submitted"
-   },
-   {
-    "action": "Begin Drafting",
-    "allowed": "Student",
-    "next_state": "Drafting",
-    "state": "Proposal Approved"
-   },
-   {
-    "action": "Send for Review",
+    "action": "Send for Final Review",
+    "allow_self_approval": 1,
     "allowed": "Student",
     "next_state": "Under Review",
-    "state": "Drafting"
+    "state": "Active"
    },
    {
-    "action": "Send for Review",
-    "allowed": "Student",
-    "next_state": "Under Review",
-    "state": "Revisions Required"
-   },
-   {
-    "action": "Request Revisions",
-    "allowed": "Instructor",
-    "next_state": "Revisions Required",
-    "state": "Under Review"
-   },
-   {
-    "action": "Approve",
-    "allowed": "Instructor",
-    "next_state": "Approved",
-    "state": "Under Review"
-   },
-   {
-    "action": "Reject",
-    "allowed": "Instructor",
-    "next_state": "Rejected",
-    "state": "Under Review"
-   },
-   {
-    "action": "Mark Defended",
+    "action": "Send for Final Review",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
-    "next_state": "Defended",
-    "state": "Approved"
+    "next_state": "Under Review",
+    "state": "Active"
+   },
+   {
+    "action": "Return for Revisions",
+    "allow_self_approval": 1,
+    "allowed": "Instructor",
+    "next_state": "Active",
+    "state": "Under Review"
+   },
+   {
+    "action": "Return for Revisions",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Active",
+    "state": "Under Review"
    },
    {
     "action": "Complete",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
+    "condition": "doc.milestones_complete",
     "next_state": "Completed",
-    "state": "Defended"
+    "state": "Under Review"
    },
    {
     "action": "Complete",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
+    "condition": "doc.milestones_complete",
     "next_state": "Completed",
-    "state": "Approved"
+    "state": "Active"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Instructor",
+    "next_state": "Rejected",
+    "state": "Active"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Rejected",
+    "state": "Under Review"
+   },
+   {
+    "action": "Withdraw",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Withdrawn",
+    "state": "Active"
+   },
+   {
+    "action": "Withdraw",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Withdrawn",
+    "state": "Under Review"
    }
   ]
  },
@@ -690,6 +668,75 @@
     "allowed": "Accounts User",
     "next_state": "Approved",
     "state": "Financial Review"
+   }
+  ]
+ },
+ {
+  "creation": "2026-05-29 12:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Program Graduation Requirement",
+  "is_active": 1,
+  "name": "Program Graduation Requirement Versioning",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_name": "Program Graduation Requirement Versioning",
+  "workflow_state_field": "workflow_state",
+  "states": [
+   {
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft",
+    "allow_edit": "Registrar"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Active",
+    "allow_edit": "Registrar"
+   },
+   {
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Superseded",
+    "allow_edit": "Seminary Manager"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Active",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
+    "next_state": "Active",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Active",
+    "state": "Draft"
+   },
+   {
+    "action": "Change Version",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Superseded",
+    "state": "Active"
+   },
+   {
+    "action": "Change Version",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
+    "next_state": "Superseded",
+    "state": "Active"
    }
   ]
  }

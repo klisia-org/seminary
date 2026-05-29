@@ -9,6 +9,21 @@ frappe.ui.form.on("Program Graduation Requirement", {
 			filters: { docstatus: 1 },
 		}));
 
+		// Once retired via 'Change Version', point the registrar at the Draft
+		// successor that was spawned for editing.
+		if (frm.doc.superseded_by) {
+			frm.add_custom_button(__("Open New Version"), () => {
+				frappe.set_route("Form", "Program Graduation Requirement", frm.doc.superseded_by);
+			});
+			frm.dashboard.set_headline(
+				__("This policy was superseded by {0}.", [
+					`<a href="/app/program-graduation-requirement/${encodeURIComponent(
+						frm.doc.superseded_by
+					)}">${frappe.utils.escape_html(frm.doc.superseded_by)}</a>`,
+				])
+			);
+		}
+
 		// Safety net: bind a row-click handler that opens the row's full form
 		// view. Useful in case Frappe's built-in pencil binding misfires due
 		// to the heavy depends_on / fetch_from chain on this child doctype.

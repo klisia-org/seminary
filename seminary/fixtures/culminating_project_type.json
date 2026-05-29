@@ -1,0 +1,37 @@
+[
+ {
+  "doctype": "Culminating Project Type",
+  "name": "Thesis",
+  "type_name": "Thesis",
+  "is_active": 1,
+  "description": "A formal research thesis directed by an advisor and a second reader."
+ },
+ {
+  "doctype": "Culminating Project Type",
+  "name": "Capstone",
+  "type_name": "Capstone",
+  "is_active": 1,
+  "description": "An integrative capstone project demonstrating mastery of the program."
+ },
+ {
+  "doctype": "Culminating Project Type",
+  "name": "Dissertation",
+  "type_name": "Dissertation",
+  "is_active": 1,
+  "description": "An extended doctoral-level research dissertation."
+ },
+ {
+  "doctype": "Culminating Project Type",
+  "name": "Summative Paper",
+  "type_name": "Summative Paper",
+  "is_active": 1,
+  "description": "A summative research paper offered as an alternative to a full thesis."
+ },
+ {
+  "doctype": "Culminating Project Type",
+  "name": "Doctrinal Statement",
+  "type_name": "Doctrinal Statement",
+  "is_active": 1,
+  "description": "A written doctrinal statement offered as a culminating-project option."
+ }
+]

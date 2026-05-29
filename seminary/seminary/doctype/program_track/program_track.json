@@ -17,7 +17,8 @@
   "emphasis_declaration",
   "min_credits_to_declare",
   "advisory_only",
-  "tdescription"
+  "tdescription",
+  "web_show"
  ],
  "fields": [
   {
@@ -110,13 +111,19 @@
    "fieldname": "advisory_only",
    "fieldtype": "Check",
    "label": "Advisory Only"
+  },
+  {
+   "default": "0",
+   "fieldname": "web_show",
+   "fieldtype": "Check",
+   "label": "Show track in Program Web Page"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-07 15:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-05-29 14:39:24.368458",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program Track",
  "naming_rule": "Expression (old style)",

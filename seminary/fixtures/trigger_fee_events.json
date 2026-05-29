@@ -54,5 +54,13 @@
   "modified": "2026-05-04 12:00:00.000000",
   "name": "Application",
   "trigger": "Application"
+ },
+ {
+  "active": 1,
+  "docstatus": 0,
+  "doctype": "Trigger Fee Events",
+  "modified": "2026-05-29 12:00:00.000000",
+  "name": "Culminating Project Extension",
+  "trigger": "Culminating Project Extension"
  }
 ]
