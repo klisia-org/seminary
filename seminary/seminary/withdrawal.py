@@ -349,8 +349,11 @@ def get_withdrawal_rule_for_date(academic_term, effective_date):
 
 @frappe.whitelist()
 def calculate_dynamic_date(withdrawal_rule, academic_term):
-    """Calculate the applies_until date for a Term Withdrawal Rule based on the dynamic date fields."""
-    from datetime import timedelta
+    """Calculate the applies_until date for a Term Withdrawal Rule based on the
+    dynamic date fields. Date math runs through the shared `date_rules` resolver
+    (ADR 025): days after term start, snapped to the following weekday, nudged
+    off holidays, clamped to the term end."""
+    from seminary.seminary import date_rules
 
     rule = frappe.get_doc("Withdrawal Rules", withdrawal_rule)
     term = frappe.get_doc("Academic Term", academic_term)
@@ -358,45 +361,32 @@ def calculate_dynamic_date(withdrawal_rule, academic_term):
     if not rule.term_based_date or not rule.days_after_term_start:
         return None
 
-    base_date = frappe.utils.add_days(term.term_start_date, rule.days_after_term_start)
+    context = {
+        "anchors": {"term_start": term.term_start_date},
+        "holidays": _company_holidays(),
+    }
+    result = date_rules.resolve(
+        "term_start",
+        rule.days_after_term_start,
+        "Days",
+        context,
+        weekday=rule.day_of_week,
+        weekday_strict=True,
+        holiday_adjust=rule.adjust_for_holidays,
+        clamp_to=term.term_end_date,
+    )
+    return str(result) if result else None
 
-    if rule.day_of_week and rule.day_of_week != "Any":
-        day_map = {
-            "Monday": 0,
-            "Tuesday": 1,
-            "Wednesday": 2,
-            "Thursday": 3,
-            "Friday": 4,
-            "Saturday": 5,
-            "Sunday": 6,
-        }
-        target_day = day_map.get(rule.day_of_week, 0)
-        current_day = base_date.weekday()
-        days_ahead = target_day - current_day
-        if days_ahead <= 0:
-            days_ahead += 7
-        base_date = base_date + timedelta(days=days_ahead)
 
-    if rule.adjust_for_holidays and rule.adjust_for_holidays != "No adjustment":
-        from frappe.utils import getdate
-
-        holiday_list = frappe.db.get_single_value("Seminary Settings", "company")
-        if holiday_list:
-            company_holiday_list = frappe.db.get_value(
-                "Company", holiday_list, "default_holiday_list"
-            )
-            if company_holiday_list:
-                is_holiday = frappe.db.exists(
-                    "Holiday",
-                    {"parent": company_holiday_list, "holiday_date": base_date},
-                )
-                if is_holiday:
-                    if rule.adjust_for_holidays == "Subtract one day":
-                        base_date = base_date - timedelta(days=1)
-                    elif rule.adjust_for_holidays == "Add one day":
-                        base_date = base_date + timedelta(days=1)
-
-    if base_date > frappe.utils.getdate(term.term_end_date):
-        base_date = frappe.utils.getdate(term.term_end_date)
-
-    return str(base_date)
+def _company_holidays():
+    """Holiday dates from the default Seminary company's holiday list, as a set."""
+    company = frappe.db.get_single_value("Seminary Settings", "company")
+    if not company:
+        return set()
+    holiday_list = frappe.db.get_value("Company", company, "default_holiday_list")
+    if not holiday_list:
+        return set()
+    dates = frappe.get_all(
+        "Holiday", filters={"parent": holiday_list}, pluck="holiday_date"
+    )
+    return {frappe.utils.getdate(d) for d in dates if d}

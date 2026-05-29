@@ -14,6 +14,8 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, getdate, now_datetime, today
 
+from seminary.seminary import date_rules
+
 LINKED_DOC_HOOK_FLAG = "_seminary_grad_link_doctypes"
 
 
@@ -201,14 +203,7 @@ def evaluate_activation(sgr_row, program_enrollment):
         return needed.issubset(fulfilled_libs)
 
     if mode == "Time Offset":
-        anchor_date = _resolve_anchor_date(
-            pgr_item.get("offset_anchor"), program_enrollment
-        )
-        if not anchor_date:
-            return True
-        due = _apply_offset(
-            anchor_date, pgr_item.get("offset_value"), pgr_item.get("offset_unit")
-        )
+        due = _time_offset_due(pgr_item, program_enrollment)
         return getdate(today()) >= getdate(due) if due else True
 
     if mode == "On Document Status":
@@ -224,14 +219,29 @@ def compute_due_date(pgr_item, program_enrollment):
     activation modes."""
     if not pgr_item or pgr_item.get("activation_mode") != "Time Offset":
         return None
+    return _time_offset_due(pgr_item, program_enrollment)
 
-    anchor_date = _resolve_anchor_date(
-        pgr_item.get("offset_anchor"), program_enrollment
-    )
-    if not anchor_date:
-        return None
-    return _apply_offset(
-        anchor_date, pgr_item.get("offset_value"), pgr_item.get("offset_unit")
+
+def _time_offset_due(pgr_item, program_enrollment):
+    """Resolve a Time Offset requirement's date via the shared resolver. Day
+    offsets add days to the anchor; term offsets ("Academic Term") walk whole
+    terms from the term containing the anchor date (ADR 025) — replacing the
+    old ~120-day approximation."""
+    context = {
+        "anchors": {
+            anchor: _resolve_anchor_date(anchor, program_enrollment)
+            for anchor in (
+                "Expected Graduation Date",
+                "Program Starts",
+                "Last Term Starts",
+            )
+        }
+    }
+    return date_rules.resolve(
+        pgr_item.get("offset_anchor"),
+        pgr_item.get("offset_value"),
+        pgr_item.get("offset_unit"),
+        context,
     )
 
 
@@ -252,18 +262,6 @@ def _resolve_anchor_date(anchor, program_enrollment):
             else None
         )
     return None
-
-
-def _apply_offset(anchor_date, value, unit):
-    value = int(value or 0)
-    if unit == "Days":
-        return add_days(anchor_date, value)
-    if unit == "Academic Term":
-        # Approximate one academic term = 120 days for Time Offset due dates.
-        # Replace with a real walk over Academic Term records if registrars
-        # need finer accuracy.
-        return add_days(anchor_date, value * 120)
-    return anchor_date
 
 
 def _shift_term(term_name, n):

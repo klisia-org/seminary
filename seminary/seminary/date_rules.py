@@ -2,19 +2,24 @@
 # For license information, please see license.txt
 """Unified anchor + offset date resolver.
 
-One place to turn an anchor date and a signed offset into a concrete date.
-Built to eventually replace the three ad-hoc resolvers in the app
-(`graduation.compute_due_date`, `cs_lifecycle.resolve_window_dates`,
-`withdrawal.calculate_dynamic_date`). For now ONLY Culminating Project
-milestone due dates call it (ADR 025); the others are migrated in a later pass
-once this is proven.
+One place to turn an anchor date and a signed offset into a concrete date. This
+is the single resolver behind every dated rule in the app (ADR 025):
+- Culminating Project milestone due dates (`culminating_project.snapshot_milestones`)
+- Course Schedule enrollment/grade windows (`cs_lifecycle.resolve_window_dates`)
+- Term withdrawal deadlines (`withdrawal.calculate_dynamic_date`)
+- Graduation requirement Time-Offset due dates (`graduation`)
 
 `context` is a plain dict supplied by the caller:
     {
         "anchors": {"Project Start": date, "Enrollment Date": date, ...},
-        "term": "Academic Term name",   # base term for "Academic Terms" offsets
+        "term": "Academic Term name",   # base term for term offsets (optional)
         "holidays": {date, ...},          # optional, for holiday_adjust
     }
+
+Term offsets ("...Term" unit) walk whole Academic Terms: from `context["term"]`
+when supplied, otherwise from the term that contains the resolved anchor date
+(so a "-1 Term" offset from an arbitrary anchor lands on a real term start, not
+a day approximation).
 """
 
 from datetime import timedelta
@@ -40,22 +45,28 @@ def resolve(
     context,
     *,
     weekday=None,
+    weekday_strict=False,
     holiday_adjust=None,
     clamp_to=None,
 ):
     """Return the resolved date, or None when the anchor can't be resolved.
 
-    - offset_unit "Academic Terms": walk `offset_value` terms from `context["term"]`
-      and take that term's start date (real term walk, not a day approximation).
-    - offset_unit "Days" (default): add `offset_value` days to the anchor date.
+    - term offset (offset_unit contains "Term"): walk `offset_value` Academic
+      Terms from `context["term"]` (or the term containing the anchor date) and
+      take that term's start date.
+    - day offset (anything else): add `offset_value` days to the anchor date.
 
-    Optional post-processing (superset for the future merge; not wired for
-    milestones yet): snap to `weekday`, nudge off a holiday, clamp to a max date.
+    Optional post-processing, applied in order: snap to `weekday` (set
+    `weekday_strict=True` to always advance past the current weekday), nudge off
+    a holiday (`context["holidays"]`), clamp to a max date.
     """
     offset_value = int(offset_value or 0)
 
-    if offset_unit == "Academic Terms":
+    if offset_unit and "Term" in offset_unit:
         base_term = (context or {}).get("term")
+        if not base_term:
+            anchor_date = resolve_anchor(anchor, context)
+            base_term = term_for_date(anchor_date) if anchor_date else None
         if not base_term:
             return None
         target_term = shift_term(base_term, offset_value)
@@ -65,7 +76,7 @@ def resolve(
             else None
         )
         result = getdate(start) if start else None
-    else:  # "Days" or unset
+    else:  # day offset
         anchor_date = resolve_anchor(anchor, context)
         if not anchor_date:
             return None
@@ -75,7 +86,7 @@ def resolve(
         return None
 
     if weekday and weekday != "Any":
-        result = snap_to_weekday(result, weekday)
+        result = snap_to_weekday(result, weekday, strict=weekday_strict)
     if holiday_adjust and holiday_adjust != "No adjustment":
         result = adjust_for_holidays(result, holiday_adjust, context)
     if clamp_to:
@@ -92,13 +103,17 @@ def resolve_anchor(anchor, context):
     return getdate(value) if value else None
 
 
-def snap_to_weekday(date_val, weekday):
-    """Move forward to the next occurrence of `weekday` (same day stays put)."""
+def snap_to_weekday(date_val, weekday, strict=False):
+    """Move forward to the next occurrence of `weekday`.
+
+    With `strict=False` (default) a date already on `weekday` stays put; with
+    `strict=True` it advances a full week (matching the withdrawal-rule rule
+    that the deadline falls on the *following* weekday)."""
     target = WEEKDAY_INDEX.get(weekday)
     if target is None:
         return date_val
     days_ahead = target - date_val.weekday()
-    if days_ahead < 0:
+    if days_ahead < 0 or (strict and days_ahead == 0):
         days_ahead += 7
     return date_val + timedelta(days=days_ahead)
 
@@ -145,3 +160,27 @@ def next_term(term_name, ascending=True):
         pluck="name",
     )
     return row[0] if row else None
+
+
+def term_for_date(date_val):
+    """The Academic Term whose [start, end] window covers `date_val`, or None.
+
+    Used as the base term for a term offset when the caller doesn't pin an
+    explicit `context["term"]`. Deliberately returns None (rather than guessing
+    the nearest term) when no term covers the date — e.g. an anchor years out
+    with no terms defined that far — so the caller yields no date instead of a
+    misleading one."""
+    if not date_val:
+        return None
+    date_val = getdate(date_val)
+    covering = frappe.get_all(
+        "Academic Term",
+        filters={
+            "term_start_date": ("<=", date_val),
+            "term_end_date": (">=", date_val),
+        },
+        order_by="term_start_date desc",
+        limit=1,
+        pluck="name",
+    )
+    return covering[0] if covering else None

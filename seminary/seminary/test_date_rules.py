@@ -71,6 +71,33 @@ class TestDateRules(unittest.TestCase):
             datetime.date(2026, 6, 30),
         )
 
+    def test_snap_to_weekday_strict_advances_same_day(self):
+        # 2026-01-12 is a Monday; strict mode pushes to the following Monday.
+        self.assertEqual(
+            date_rules.snap_to_weekday(
+                datetime.date(2026, 1, 12), "Monday", strict=True
+            ),
+            datetime.date(2026, 1, 19),
+        )
+
+    def test_weekday_strict_in_resolve(self):
+        # Mirrors the withdrawal rule: a deadline landing on the target weekday
+        # advances a full week. Anchor 2026-01-12 (Mon) + Monday strict -> 01-19.
+        ctx = {"anchors": {"term_start": datetime.date(2026, 1, 12)}}
+        self.assertEqual(
+            date_rules.resolve(
+                "term_start", 0, "Days", ctx, weekday="Monday", weekday_strict=True
+            ),
+            datetime.date(2026, 1, 19),
+        )
+
+    def test_weekday_any_is_noop(self):
+        ctx = {"anchors": {"term_start": datetime.date(2026, 1, 12)}}
+        self.assertEqual(
+            date_rules.resolve("term_start", 0, "Days", ctx, weekday="Any"),
+            datetime.date(2026, 1, 12),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
