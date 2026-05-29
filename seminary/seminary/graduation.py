@@ -39,9 +39,11 @@ def resolve_policy(program, on_date):
         return None
 
     on_date = getdate(on_date)
+    # Only submitted, Active policies bind. Draft successors (spawned by the
+    # 'Change Version' action) sit at docstatus 0 and must never be resolved.
     candidates = frappe.get_all(
         "Program Graduation Requirement",
-        filters={"program_name": program, "active": 1, "docstatus": ("!=", 2)},
+        filters={"program_name": program, "active": 1, "docstatus": 1},
         fields=["name", "active_from", "active_until"],
     )
 

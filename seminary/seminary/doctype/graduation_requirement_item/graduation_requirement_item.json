@@ -18,6 +18,9 @@
   "event_per_student",
   "column_break_jscs",
   "link_doctype",
+  "section_break_uqmw",
+  "student_choice",
+  "grad_req_option",
   "section_break_evidence",
   "default_student_evidence_required",
   "default_student_evidence_label",
@@ -59,7 +62,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Requirement Type",
-   "options": "Event Attendance\nManual Verification\nLinked Document",
+   "options": "Event Attendance\nManual Verification\nLinked Document\nChoose Option",
    "reqd": 1
   },
   {
@@ -157,14 +160,35 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "section_break_uqmw",
+   "fieldtype": "Section Break",
+   "label": "Options"
+  },
+  {
+   "default": "0",
+   "description": "If unchecked, the registrar will need to assign the option. Otherwise, the student will be able to choose from the Portal.",
+   "fieldname": "student_choice",
+   "fieldtype": "Check",
+   "label": "Student chooses"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Choose Option'",
+   "description": "Don't use this for Culminating Project as it has its own Types determining the options.",
+   "fieldname": "grad_req_option",
+   "fieldtype": "Table",
+   "label": "Graduation Requirement Options",
+   "mandatory_depends_on": "eval:doc.requirement_type=='Choose Option'",
+   "options": "Graduation Requirement Options"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-08 06:29:22.790776",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-05-29 12:32:36.023878",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Graduation Requirement Item",
  "naming_rule": "Expression",
@@ -246,6 +270,7 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],

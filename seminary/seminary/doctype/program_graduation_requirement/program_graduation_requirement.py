@@ -4,26 +4,69 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import today
+from frappe.utils import add_days, get_link_to_form, today
 
 
 class ProgramGraduationRequirement(Document):
     def validate(self):
+        self._sync_lifecycle_fields()
         self._validate_date_window()
         self._validate_no_active_overlap()
         self._validate_linked_doc_status_values()
 
-    def on_cancel(self):
-        """Cancellation = retirement. Clear 'Is Active' and stamp 'Active
-        Until' to today so resolve_policy() stops handing this policy out
-        to new enrollments. Existing snapshots on submitted Program
-        Enrollments keep resolving by name (snapshot semantics, ADR 012).
+    def on_update_after_submit(self):
+        self._spawn_successor_on_supersede()
+
+    def _sync_lifecycle_fields(self):
+        """`active` is derived from the workflow state, never set by hand.
+        A policy is live only in the 'Active' state; retiring it (state
+        'Superseded') clears the flag and stamps 'Active Until'. Drafts are
+        inactive so they never collide with the live policy in
+        _validate_no_active_overlap or get handed out by resolve_policy.
         """
-        frappe.db.set_value(
-            self.doctype,
-            self.name,
-            {"active": 0, "active_until": today()},
-            update_modified=False,
+        if not self.workflow_state:
+            return
+        if self.workflow_state == "Active":
+            self.active = 1
+        elif self.workflow_state == "Superseded":
+            self.active = 0
+            if not self.active_until:
+                self.active_until = today()
+        else:  # Draft or any other intermediate state
+            self.active = 0
+
+    def _spawn_successor_on_supersede(self):
+        """When this policy enters 'Superseded' via the 'Change Version'
+        action, spawn a Draft clone for the registrar to edit and submit.
+        Idempotent: guarded by `superseded_by`. The doc is never cancelled,
+        so back-links from submitted Program Enrollments stay valid.
+        """
+        if self.workflow_state != "Superseded" or self.superseded_by:
+            return
+
+        # Retire in place. `active`/`active_until` aren't allow_on_submit, so a
+        # validate-time assignment is dropped on a submitted-doc save — persist
+        # the retirement directly. The doc is never cancelled, so back-links
+        # from submitted Program Enrollments stay valid.
+        self.db_set("active", 0, update_modified=False)
+        if not self.active_until:
+            self.db_set("active_until", today(), update_modified=False)
+
+        successor = frappe.copy_doc(self)
+        successor.workflow_state = "Draft"
+        successor.active = 0
+        successor.active_from = add_days(today(), 1)
+        successor.active_until = None
+        successor.supersedes = self.name
+        successor.insert(ignore_permissions=True)
+
+        self.db_set("superseded_by", successor.name, update_modified=False)
+        frappe.msgprint(
+            _(
+                "Draft version {0} created. Edit and submit it to activate the new policy."
+            ).format(get_link_to_form(self.doctype, successor.name)),
+            indicator="green",
+            alert=True,
         )
 
     def _validate_date_window(self):

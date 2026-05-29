@@ -1,0 +1,37 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "GRO-.####",
+ "creation": "2026-05-29 10:50:46.765656",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "grad_req_item"
+ ],
+ "fields": [
+  {
+   "fieldname": "grad_req_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Graduation Requirement Options",
+   "options": "Graduation Requirement Item"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-29 10:53:27.817412",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Graduation Requirement Options",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

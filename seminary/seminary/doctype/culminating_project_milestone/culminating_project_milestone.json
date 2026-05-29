@@ -1,0 +1,186 @@
+{
+ "actions": [],
+ "creation": "2026-05-29 13:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "milestone_name",
+  "sequence",
+  "instance",
+  "milestone_kind",
+  "column_break_main",
+  "status",
+  "due_date",
+  "completed_on",
+  "section_break_flags",
+  "mandatory",
+  "requires_submission",
+  "creates_event",
+  "column_break_flags",
+  "signoff_advisor",
+  "signoff_second_reader",
+  "signoff_third_reader",
+  "signoff_committee",
+  "section_break_refs",
+  "submission_round",
+  "event",
+  "column_break_refs",
+  "template_row"
+ ],
+ "fields": [
+  {
+   "fieldname": "milestone_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Milestone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "label": "Sequence",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "instance",
+   "fieldtype": "Int",
+   "label": "Instance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "milestone_kind",
+   "fieldtype": "Data",
+   "label": "Kind",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Not Started",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Not Started\nIn Progress\nSubmitted\nApproved\nOverdue\nWaived"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_flags",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_submission",
+   "fieldtype": "Check",
+   "label": "Requires Submission",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "creates_event",
+   "fieldtype": "Check",
+   "label": "Creates Event",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_flags",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_advisor",
+   "fieldtype": "Check",
+   "label": "Advisor Sign-off",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_second_reader",
+   "fieldtype": "Check",
+   "label": "Second Reader Sign-off",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_third_reader",
+   "fieldtype": "Check",
+   "label": "Third Reader Sign-off",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "signoff_committee",
+   "fieldtype": "Check",
+   "label": "Committee Sign-off",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_refs",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The Culminating Project Submission round that satisfies this milestone, if any.",
+   "fieldname": "submission_round",
+   "fieldtype": "Int",
+   "label": "Submission Round"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Calendar event created for this milestone (e.g. Thesis Defense). Set from the frontend; wiring deferred.",
+   "fieldname": "event",
+   "fieldtype": "Link",
+   "label": "Event",
+   "options": "Event",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_refs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "template_row",
+   "fieldtype": "Data",
+   "label": "Template Row",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-29 13:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Culminating Project Milestone",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

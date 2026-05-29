@@ -16,6 +16,7 @@ def daily():
     today = getdate()
 
     _update_term_flags(today)
+    _flag_overdue_milestones(today)
 
     if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
         _run_nat_for_due_terms(today)
@@ -71,6 +72,21 @@ def _update_term_flags(today):
 
     if not had_current:
         _maybe_warn_need_acadterm(today)
+
+
+def _flag_overdue_milestones(today):
+    """Mark culminating-project milestones past their due date as Overdue.
+
+    Only open milestones move (Approved / Waived / already-Overdue are left
+    alone). The milestones table is allow_on_submit, so a direct update is safe."""
+    frappe.db.sql(
+        """UPDATE `tabCulminating Project Milestone`
+           SET status = 'Overdue'
+           WHERE status IN ('Not Started', 'In Progress', 'Submitted')
+             AND due_date IS NOT NULL
+             AND due_date < %s""",
+        (today,),
+    )
 
 
 def _run_nat_for_due_terms(today):

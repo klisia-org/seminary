@@ -198,5 +198,21 @@
   "name": "Withdrawn",
   "style": "Danger",
   "workflow_state_name": "Withdrawn"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-check",
+  "name": "Active",
+  "style": "Success",
+  "workflow_state_name": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-archive",
+  "name": "Superseded",
+  "style": "Inverse",
+  "workflow_state_name": "Superseded"
  }
 ]

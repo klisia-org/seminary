@@ -432,6 +432,7 @@ fixtures = [
     "Seminary Help Entry",
     "Messaging App",
     "Course Cancellation Reason",
+    "Culminating Project Type",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
         "dt": "Print Format",
@@ -449,6 +450,8 @@ fixtures = [
                     "Culminating Project Workflow",
                     "Course Schedule Lifecycle",
                     "Course Enrollment Lifecycle",
+                    "Graduation Request Lifecycle",
+                    "Program Graduation Requirement Versioning",
                 ],
             ]
         ],
@@ -485,6 +488,8 @@ fixtures = [
                     "Cancelled",
                     "Awaiting Payment",
                     "Withdrawn",
+                    "Active",
+                    "Superseded",
                 ],
             ]
         ],
@@ -521,6 +526,11 @@ fixtures = [
                     "Submit & Skip Academic Review",
                     "Submit & Complete",
                     "Mark as Paid",
+                    "Change Version",
+                    "Activate",
+                    "Send for Final Review",
+                    "Return for Revisions",
+                    "Withdraw",
                 ],
             ]
         ],

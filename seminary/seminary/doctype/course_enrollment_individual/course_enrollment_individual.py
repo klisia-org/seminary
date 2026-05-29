@@ -5,9 +5,9 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
 from frappe.utils.csvutils import getlink
-import erpnext
+
+from seminary.seminary.billing import build_and_create_invoice as create_payer_invoice
 
 
 class CourseEnrollmentIndividual(Document):
@@ -171,29 +171,11 @@ class CourseEnrollmentIndividual(Document):
 
     @frappe.whitelist()
     def get_inv_data_ce(self):
-        today = frappe.utils.today()
-        company = frappe.defaults.get_defaults().company
-        currency = erpnext.get_company_currency(company)
-        receivable_account = frappe.db.get_single_value(
-            "Seminary Settings", "receivable_account"
-        )
         audithours = frappe.db.get_single_value("Seminary Settings", "auditcredit")
-        submitinvoice = frappe.db.get_single_value(
-            "Seminary Settings", "auto_submit_sales_invoice"
-        )
-        is_audit = self.audit
-        income_account = frappe.db.sql(
-            """select default_income_account from `tabCompany` where name=%s""", company
-        )[0][0]
-        cost_center = (
-            frappe.db.get_single_value("Seminary Settings", "cost_center") or None
-        )
-        sch_cost_center = frappe.db.get_single_value(
-            "Seminary Settings", "scholarship_cc"
-        )
         sch_customer = frappe.db.get_single_value(
             "Seminary Settings", "scholarship_cust"
         )
+        is_audit = self.audit
         stulink = self.student_ce
         inv_data = []
         inv_data = frappe.db.sql(
@@ -230,10 +212,11 @@ class CourseEnrollmentIndividual(Document):
             (self.name, is_audit),
         )[0][0]
 
+        audit_suffix = _(" (Audit)") if is_audit == 1 else ""
+        summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
+
         i = 0
         while i < rows:
-
-            items = []
             if inv_data[i][11] == 1:
                 qty = inv_data[i][2] * inv_data[i][7] / 100
             elif is_audit == 1 and audithours == 1:
@@ -241,57 +224,17 @@ class CourseEnrollmentIndividual(Document):
             else:
                 qty = inv_data[i][7] / 100
 
-            gt = qty * inv_data[i][14]
-            print(qty)
-            cost_center = (
-                cost_center if inv_data[i][5] != sch_customer else sch_cost_center
+            create_payer_invoice(
+                customer=inv_data[i][5],
+                item_code=inv_data[i][12],
+                qty=qty,
+                price_list_rate=inv_data[i][14],
+                selling_price_list=inv_data[i][13],
+                payment_terms_template=inv_data[i][8],
+                summary=summary,
+                student=stulink,
+                link_field="custom_cei",
+                link_value=self.name,
+                is_scholarship=inv_data[i][5] == sch_customer,
             )
-            discount = 0 if inv_data[i][5] != sch_customer else 100
-            audit_suffix = _(" (Audit)") if is_audit == 1 else ""
-            summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
-            items.append(
-                {
-                    "doctype": "Sales Invoice Item",
-                    "item_code": inv_data[i][12],
-                    "qty": qty,
-                    "rate": 0,
-                    "description": summary,
-                    "income_account": income_account,
-                    "cost_center": cost_center,
-                    "base_rate": 0,
-                    "price_list_rate": inv_data[i][14],
-                }
-            )
-
-            sales_invoice = frappe.get_doc(
-                {
-                    "doctype": "Sales Invoice",
-                    "naming_series": "ACC-SINV-.YYYY.-",
-                    "posting_date": today,
-                    "company": company,
-                    "currency": currency,
-                    "debit_to": receivable_account,
-                    "income_account": income_account,
-                    "conversion_rate": 1,
-                    "customer": inv_data[i][5],
-                    "selling_price_list": inv_data[i][13],
-                    "base_grand_total": gt,
-                    "payment_terms_template": inv_data[i][8],
-                    "remarks": summary,
-                    "items": items,
-                    "cost_center": cost_center,
-                    "custom_student": stulink,
-                    "custom_cei": self.name,
-                    "additional_discount_percentage": discount,
-                    "seminary_summary": summary,
-                }
-            )
-            # Student-initiated enrollments hit this on auto-submit; SI is
-            # system-authored on their behalf, so bypass docperms here.
-            sales_invoice.flags.ignore_permissions = True
-            sales_invoice.insert()
-            sales_invoice.save()
-            if submitinvoice == 1:
-                sales_invoice.submit()
             i += 1
-            print("Invoice Created")

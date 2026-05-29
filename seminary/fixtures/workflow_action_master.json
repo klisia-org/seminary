@@ -148,5 +148,35 @@
   "doctype": "Workflow Action Master",
   "name": "Mark as Paid",
   "workflow_action_name": "Mark as Paid"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Change Version",
+  "workflow_action_name": "Change Version"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Activate",
+  "workflow_action_name": "Activate"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Send for Final Review",
+  "workflow_action_name": "Send for Final Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Return for Revisions",
+  "workflow_action_name": "Return for Revisions"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Withdraw",
+  "workflow_action_name": "Withdraw"
  }
 ]

@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:type_name",
+ "creation": "2026-05-29 12:00:00",
+ "description": "A configurable culminating-project option (e.g. Thesis, Summative Paper, Doctrinal Statement). The backing Course carries the credits, grading scale (via its Course Schedule) and fees \u2014 a culminating project of this type enrolls the student in that course (ADR 024).",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "type_name",
+  "is_active",
+  "column_break_main",
+  "course",
+  "section_break_about",
+  "description",
+  "section_break_milestones",
+  "milestones"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Type Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The course code that carries this project type's credits, grading scale (via its Course Schedule) and fees. Configure per seminary and ensure the course belongs to programs; leave blank until the course exists.",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Backing Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "section_break_about",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_break_milestones",
+   "fieldtype": "Section Break",
+   "label": "Milestones"
+  },
+  {
+   "description": "Ordered milestone template for this project type. Snapshotted onto each project when it is activated; due dates are computed from each milestone's anchor + offset. A Defense is just a milestone with kind 'Defense' and its required sign-offs.",
+   "fieldname": "milestones",
+   "fieldtype": "Table",
+   "label": "Milestones",
+   "options": "Culminating Project Type Milestone"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-29 12:28:05.351515",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Seminary",
+ "name": "Culminating Project Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

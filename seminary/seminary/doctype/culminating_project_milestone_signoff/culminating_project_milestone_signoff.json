@@ -1,0 +1,161 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CPMS-.#######",
+ "creation": "2026-05-29 13:00:00",
+ "description": "One reviewer sign-off on a culminating-project milestone instance. A milestone is Approved once every required role has an Approved sign-off (ADR 025).",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "culminating_project",
+  "milestone_row",
+  "milestone_name",
+  "column_break_main",
+  "role",
+  "decision",
+  "section_break_who",
+  "signed_by",
+  "signed_on",
+  "section_break_detail",
+  "comment",
+  "attachment"
+ ],
+ "fields": [
+  {
+   "fieldname": "culminating_project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Culminating Project",
+   "options": "Culminating Project",
+   "reqd": 1
+  },
+  {
+   "description": "Name of the Culminating Project Milestone child row this sign-off applies to.",
+   "fieldname": "milestone_row",
+   "fieldtype": "Data",
+   "label": "Milestone Row",
+   "reqd": 1
+  },
+  {
+   "fieldname": "milestone_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Milestone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "Advisor\nSecond Reader\nThird Reader\nCommittee",
+   "reqd": 1
+  },
+  {
+   "default": "Approved",
+   "fieldname": "decision",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Decision",
+   "options": "Approved\nRevisions Required",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_who",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "signed_by",
+   "fieldtype": "Link",
+   "label": "Signed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signed_on",
+   "fieldtype": "Datetime",
+   "label": "Signed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_detail",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  },
+  {
+   "description": "The reviewer's marked-up document or evaluation form for this sign-off.",
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-29 13:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Culminating Project Milestone Signoff",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
