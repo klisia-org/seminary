@@ -6,6 +6,7 @@
  "field_order": [
   "round",
   "submission_type",
+  "milestone_row",
   "submitted_by",
   "submitted_on",
   "section_break_attach",
@@ -28,12 +29,21 @@
    "label": "Round"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "submission_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Type",
    "options": "Proposal\nDraft\nRevision\nFinal",
-   "reqd": 1
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The milestone (child row name) this submission was made against.",
+   "fieldname": "milestone_row",
+   "fieldtype": "Data",
+   "label": "Milestone Row",
+   "read_only": 1
   },
   {
    "fieldname": "submitted_by",
@@ -69,12 +79,14 @@
    "label": "Reviewer"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewer",
    "fieldtype": "Link",
    "label": "Reviewer",
    "options": "Instructor"
   },
   {
+   "allow_on_submit": 1,
    "default": "Pending",
    "fieldname": "reviewer_decision",
    "fieldtype": "Select",
@@ -87,17 +99,20 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewed_on",
    "fieldtype": "Datetime",
    "label": "Reviewed On",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewer_comment",
    "fieldtype": "Text Editor",
    "label": "Reviewer Comment"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "reviewer_attachment",
    "fieldtype": "Attach",
    "label": "Reviewer Attachment"

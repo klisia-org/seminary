@@ -709,7 +709,29 @@ def get_user_info():
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
+    user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
+    user.has_culminating_projects = _has_culminating_projects(
+        user.student, user.instructor
+    )
     return user
+
+
+def _has_culminating_projects(student, instructor):
+    """Whether the user owns (student) or reads (advisor/2nd/3rd) any Culminating
+    Project — gates the workbench sidebar link."""
+    if student and frappe.db.exists("Culminating Project", {"student": student}):
+        return True
+    if instructor and frappe.get_all(
+        "Culminating Project",
+        or_filters={
+            "advisor": instructor,
+            "second_reader": instructor,
+            "third_reader": instructor,
+        },
+        limit=1,
+    ):
+        return True
+    return False
 
 
 @frappe.whitelist()

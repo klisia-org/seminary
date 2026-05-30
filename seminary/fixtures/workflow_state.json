@@ -214,5 +214,13 @@
   "name": "Superseded",
   "style": "Inverse",
   "workflow_state_name": "Superseded"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-ban",
+  "name": "Retired",
+  "style": "Danger",
+  "workflow_state_name": "Retired"
  }
 ]

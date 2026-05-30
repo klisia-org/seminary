@@ -451,6 +451,7 @@ fixtures = [
                     "Course Enrollment Lifecycle",
                     "Graduation Request Lifecycle",
                     "Program Graduation Requirement Versioning",
+                    "Graduation Requirement Item",
                 ],
             ]
         ],
@@ -489,6 +490,7 @@ fixtures = [
                     "Withdrawn",
                     "Active",
                     "Superseded",
+                    "Retired",
                 ],
             ]
         ],
@@ -530,6 +532,8 @@ fixtures = [
                     "Send for Final Review",
                     "Return for Revisions",
                     "Withdraw",
+                    "Retire",
+                    "Reactivate",
                 ],
             ]
         ],

@@ -3,10 +3,11 @@
 
 frappe.ui.form.on("Program Graduation Requirement", {
 	refresh(frm) {
-		// Restrict the Library Link picker to submitted rows. Library is
-		// submittable; drafts and cancelled rows must not be selectable.
+		// Hide retired library items from the picker. The Library uses an
+		// Active/Retired workflow (no longer submittable); retired requirements
+		// must not be selectable for new policies.
 		frm.set_query("grad_requirement_item", "pgr_items", () => ({
-			filters: { docstatus: 1 },
+			filters: { workflow_state: ["!=", "Retired"] },
 		}));
 
 		// Once retired via 'Change Version', point the registrar at the Draft
