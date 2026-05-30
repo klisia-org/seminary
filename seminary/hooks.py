@@ -432,7 +432,6 @@ fixtures = [
     "Seminary Help Entry",
     "Messaging App",
     "Course Cancellation Reason",
-    "Culminating Project Type",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
         "dt": "Print Format",

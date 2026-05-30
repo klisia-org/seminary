@@ -55,7 +55,7 @@ class ProgramGraduationRequirement(Document):
         successor = frappe.copy_doc(self)
         successor.workflow_state = "Draft"
         successor.active = 0
-        successor.active_from = add_days(today(), 1)
+        successor.active_from = today()
         successor.active_until = None
         successor.supersedes = self.name
         successor.insert(ignore_permissions=True)

@@ -31,6 +31,7 @@ def after_install():
     get_custom_fields()
     setup_sales_invoice_permissions()
     update_company_in_item_details()
+    seed_culminating_project_types()
 
 
 def check_erpnext():
@@ -189,6 +190,47 @@ def setup_fixtures():
         },
     ]
     make_records(records)
+
+
+def seed_culminating_project_types():
+    """Seed the starter Culminating Project Types if they don't already exist.
+
+    These are NOT shipped as fixtures: seminaries configure each type's
+    milestones on the desk, and a fixture re-import on every migrate would wipe
+    those milestone rows. So we create the defaults once (create-only-if-missing)
+    and never overwrite an existing type or its milestones.
+    """
+    defaults = [
+        (
+            "Thesis",
+            _("A formal research thesis directed by an advisor and a second reader."),
+        ),
+        (
+            "Capstone",
+            _("An integrative capstone project demonstrating mastery of the program."),
+        ),
+        ("Dissertation", _("An extended doctoral-level research dissertation.")),
+        (
+            "Summative Paper",
+            _("A summative research paper offered as an alternative to a full thesis."),
+        ),
+        (
+            "Doctrinal Statement",
+            _("A written doctrinal statement offered as a culminating-project option."),
+        ),
+    ]
+    for type_name, description in defaults:
+        if frappe.db.exists("Culminating Project Type", type_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Culminating Project Type",
+                "type_name": type_name,
+                "is_active": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
 
 
 def create_studentappl_role():

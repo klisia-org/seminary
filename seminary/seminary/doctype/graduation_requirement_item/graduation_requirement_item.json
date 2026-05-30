@@ -21,6 +21,7 @@
   "section_break_uqmw",
   "student_choice",
   "grad_req_option",
+  "culm_proj_types",
   "section_break_evidence",
   "default_student_evidence_required",
   "default_student_evidence_label",
@@ -181,13 +182,22 @@
    "label": "Graduation Requirement Options",
    "mandatory_depends_on": "eval:doc.requirement_type=='Choose Option'",
    "options": "Graduation Requirement Options"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Linked Document' && doc.link_doctype=='Culminating Project'",
+   "description": "The Culminating Project Types a student may choose from to fulfil this requirement (e.g. Thesis or Summative Paper).",
+   "fieldname": "culm_proj_types",
+   "fieldtype": "Table",
+   "label": "Culminating Project Types Allowed",
+   "mandatory_depends_on": "eval:doc.requirement_type=='Linked Document' && doc.link_doctype=='Culminating Project'",
+   "options": "Grad Req Item Culm Proj Type"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-29 12:32:36.023878",
+ "modified": "2026-05-29 18:14:21.215936",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Graduation Requirement Item",

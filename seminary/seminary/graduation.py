@@ -118,13 +118,40 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
             if library.requirement_type == "Linked Document"
             else None
         ),
+        "student_choice": getattr(library, "student_choice", 0) or 0,
         "grad_requirement_item": library.name,
         "pgr_item": pgr_item.name,
     }
+    _apply_initial_choice_state(row, library)
     due = compute_due_date(pgr_item, program_enrollment_doc)
     if due:
         row["due_date"] = due
     return row
+
+
+def _apply_initial_choice_state(row, library):
+    """Set choice_pending / auto-select on a fresh SGR row.
+
+    - "Choose Option" umbrellas always start pending (a sub-GRI must be chosen).
+    - Culminating Project requirements with several allowed types start pending;
+      a single allowed type is auto-selected.
+    """
+    if library.requirement_type == "Choose Option":
+        row["choice_pending"] = 1
+        return
+    if (
+        library.requirement_type == "Linked Document"
+        and library.link_doctype == "Culminating Project"
+    ):
+        allowed = [
+            r.culminating_project_type
+            for r in (library.culm_proj_types or [])
+            if r.culminating_project_type
+        ]
+        if len(allowed) == 1:
+            row["chosen_project_type"] = allowed[0]
+        elif len(allowed) > 1:
+            row["choice_pending"] = 1
 
 
 @frappe.whitelist()
@@ -376,7 +403,15 @@ def reflect_linked_doc_status(doc, method=None):
     rows = frappe.get_all(
         "Student Graduation Requirement",
         filters={"link_doctype": doc.doctype, "linked_doc": doc.name},
-        fields=["name", "parent", "parenttype", "pgr_item", "status", "waived"],
+        fields=[
+            "name",
+            "parent",
+            "parenttype",
+            "pgr_item",
+            "status",
+            "waived",
+            "linked_doc_status",
+        ],
     )
     if not rows:
         return
@@ -388,7 +423,9 @@ def reflect_linked_doc_status(doc, method=None):
     for row in rows:
         if row.waived:
             continue
-        expected = frappe.db.get_value(
+        # Prefer the row's own fulfilling status (snapshotted when an umbrella
+        # option was chosen); fall back to the policy row's configured value.
+        expected = row.linked_doc_status or frappe.db.get_value(
             "Program Grad Req Items", row.pgr_item, "linked_doc_status"
         )
         if expected and current_value == expected and row.status != "Fulfilled":
@@ -526,6 +563,282 @@ def _user_owns_enrollment(program_enrollment_doc):
     return user_email == student_email
 
 
+# ---------------------------------------------------------------------------
+# Requirement choices: "Choose Option" umbrellas and Culminating Project types
+# ---------------------------------------------------------------------------
+
+# The linked-document status that fulfils each linked doctype (used when an
+# umbrella option is chosen, since the umbrella's policy row carries no status).
+LINKED_DOC_FULFILL_STATUS = {
+    "Culminating Project": "Completed",
+    "Recommendation Letter": "Approved",
+}
+
+
+def apply_sgr_choices(program_enrollment_doc):
+    """Resolve and validate pending choices on SGR rows. Idempotent. Called from
+    ProgramEnrollment.before_update_after_submit so desk grid edits and the
+    whitelisted portal actions both funnel through one place — a direct grid edit
+    to an invalid choice is rejected here too (belt and suspenders).
+
+    A 'Choose Option' umbrella **spawns** a dedicated requirement row for the
+    chosen sub-GRI (rather than morphing in place), so each option keeps its own
+    behavior (Manual Verification, Recommendation Letter, Culminating Project,
+    …). The umbrella mirrors the spawned row's status."""
+    for row in program_enrollment_doc.graduation_requirements or []:
+        if row.requirement_type == "Choose Option":
+            _resolve_umbrella(program_enrollment_doc, row)
+        if row.chosen_project_type:
+            _validate_chosen_project_type(row)
+            if row.choice_pending and row.link_doctype == "Culminating Project":
+                row.choice_pending = 0
+
+
+def _validate_chosen_option(row):
+    """The chosen umbrella option must be one of the GRI's grad_req_option rows."""
+    library = frappe.get_cached_doc(
+        "Graduation Requirement Item", row.grad_requirement_item
+    )
+    allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
+    if row.chosen_option not in allowed:
+        frappe.throw(
+            _("{0} is not a valid option for requirement '{1}'.").format(
+                row.chosen_option, row.requirement_name
+            )
+        )
+
+
+def _validate_chosen_project_type(row):
+    """The chosen project type must be in the requirement's culm_proj_types
+    allow-list (when one is configured)."""
+    if row.link_doctype != "Culminating Project":
+        frappe.throw(
+            _(
+                "Requirement '{0}' is not a Culminating Project; it cannot carry a project type."
+            ).format(row.requirement_name)
+        )
+    library = frappe.get_cached_doc(
+        "Graduation Requirement Item", row.grad_requirement_item
+    )
+    allowed = _culm_types(library)
+    if allowed and row.chosen_project_type not in allowed:
+        frappe.throw(
+            _(
+                "{0} is not an allowed Culminating Project Type for requirement '{1}'."
+            ).format(row.chosen_project_type, row.requirement_name)
+        )
+
+
+def _resolve_umbrella(pe, umbrella):
+    """Spawn (or replace) the dedicated requirement row for the chosen option and
+    keep the umbrella mirroring its status. An unchosen umbrella stays pending
+    (and thus keeps blocking graduation)."""
+    if not umbrella.chosen_option:
+        umbrella.choice_pending = 1
+        return
+    _validate_chosen_option(umbrella)
+
+    spawned = _find_spawned(pe, umbrella)
+    if spawned and spawned.grad_requirement_item != umbrella.chosen_option:
+        # Choice changed — drop the row created for the previous option.
+        pe.graduation_requirements.remove(spawned)
+        spawned = None
+    if not spawned:
+        spawned = pe.append(
+            "graduation_requirements",
+            _build_choice_row(pe, umbrella, umbrella.chosen_option),
+        )
+
+    umbrella.choice_pending = 0
+    # Mirror the spawned row's status so the umbrella reflects real progress and
+    # stops blocking graduation once the chosen requirement is fulfilled.
+    umbrella.status = spawned.status
+    umbrella.fulfilled_on = spawned.fulfilled_on
+    if spawned.name and umbrella.spawned_sgr != spawned.name:
+        umbrella.spawned_sgr = spawned.name
+
+
+def _find_spawned(pe, umbrella):
+    for row in pe.graduation_requirements or []:
+        if row is not umbrella and row.parent_choice == umbrella.name:
+            return row
+    return None
+
+
+def _build_choice_row(pe, umbrella, sub_name):
+    """Build the SGR row for a chosen umbrella option, carrying the sub-GRI's full
+    behavior (type, link, fulfilling status, and any nested project-type choice)."""
+    sub = frappe.get_cached_doc("Graduation Requirement Item", sub_name)
+    is_linked = sub.requirement_type == "Linked Document"
+    row = {
+        "requirement_name": sub.requirement_name,
+        "requirement_type": sub.requirement_type,
+        "mandatory": umbrella.mandatory,
+        "blocks_graduation_request": getattr(sub, "blocks_graduation_request", 0) or 0,
+        "slot_index": 1,
+        "status": "Not Started",
+        "link_doctype": sub.link_doctype if is_linked else None,
+        "linked_doc_status": (
+            LINKED_DOC_FULFILL_STATUS.get(sub.link_doctype) if is_linked else None
+        ),
+        "student_choice": umbrella.student_choice,
+        "grad_requirement_item": sub.name,
+        "pgr_item": umbrella.pgr_item,
+        "parent_choice": umbrella.name,
+    }
+    _apply_initial_choice_state(row, sub)
+    if umbrella.pgr_item:
+        pgr = frappe.db.get_value(
+            "Program Grad Req Items",
+            umbrella.pgr_item,
+            ["activation_mode", "offset_anchor", "offset_value", "offset_unit"],
+            as_dict=True,
+        )
+        if pgr:
+            due = compute_due_date(pgr, pe)
+            if due:
+                row["due_date"] = due
+    return row
+
+
+def _culm_types(library):
+    return [
+        r.culminating_project_type
+        for r in (library.culm_proj_types or [])
+        if r.culminating_project_type
+    ]
+
+
+def _check_choice_permission(pe, row):
+    """Student may choose only when the library item flags student_choice;
+    otherwise the choice is a staff (registrar) assignment."""
+    if row.student_choice and _user_owns_enrollment(pe):
+        return
+    if not frappe.has_permission("Program Enrollment", "write", doc=pe):
+        frappe.throw(
+            _("You are not permitted to set this requirement's choice."),
+            frappe.PermissionError,
+        )
+
+
+@frappe.whitelist()
+def choose_requirement_option(program_enrollment, sgr_name, chosen_grad_req_item):
+    """Pick which sub-GRI fulfils a 'Choose Option' umbrella. On save this spawns
+    (or replaces) a dedicated requirement row for the chosen option via
+    apply_sgr_choices."""
+    pe = frappe.get_doc("Program Enrollment", program_enrollment)
+    row = _find_sgr(pe, sgr_name)
+    _check_choice_permission(pe, row)
+    if row.requirement_type != "Choose Option":
+        frappe.throw(_("This requirement is not a Choose Option umbrella."))
+
+    library = frappe.get_cached_doc(
+        "Graduation Requirement Item", row.grad_requirement_item
+    )
+    allowed = {o.grad_req_item for o in (library.grad_req_option or [])}
+    if chosen_grad_req_item not in allowed:
+        frappe.throw(
+            _("{0} is not an option for this requirement.").format(chosen_grad_req_item)
+        )
+
+    row.chosen_option = chosen_grad_req_item
+    pe.save(ignore_permissions=True)
+    return {"chosen_option": row.chosen_option, "spawned_sgr": row.spawned_sgr}
+
+
+@frappe.whitelist()
+def choose_project_type(program_enrollment, sgr_name, culminating_project_type):
+    """Pick the Culminating Project Type for a CP requirement, before the project
+    document is created."""
+    pe = frappe.get_doc("Program Enrollment", program_enrollment)
+    row = _find_sgr(pe, sgr_name)
+    _check_choice_permission(pe, row)
+    if row.link_doctype != "Culminating Project":
+        frappe.throw(_("This requirement is not a Culminating Project."))
+
+    library = frappe.get_cached_doc(
+        "Graduation Requirement Item", row.grad_requirement_item
+    )
+    allowed = _culm_types(library)
+    if allowed and culminating_project_type not in allowed:
+        frappe.throw(
+            _("{0} is not an allowed project type for this requirement.").format(
+                culminating_project_type
+            )
+        )
+
+    row.chosen_project_type = culminating_project_type
+    pe.save(ignore_permissions=True)
+    return {"chosen_project_type": culminating_project_type}
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_choose_option_items(doctype, txt, searchfield, start, page_len, filters):
+    """Link-query for SGR.chosen_option: only the sub-GRIs listed in the
+    umbrella GRI's grad_req_option child table. Used by the Program Enrollment
+    desk form's set_query."""
+    gri = (filters or {}).get("grad_requirement_item")
+    if not gri:
+        return []
+    allowed = [
+        a
+        for a in frappe.get_all(
+            "Graduation Requirement Options",
+            filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
+            pluck="grad_req_item",
+        )
+        if a
+    ]
+    if not allowed:
+        return []
+    return frappe.get_all(
+        "Graduation Requirement Item",
+        filters=[["name", "in", allowed]],
+        # Match on name OR title: link validation (validate_link_and_fetch) sends
+        # txt = the row name (e.g. "GRI-0011"), while the search box sends the
+        # title text — both must resolve, or the picked value is cleared.
+        or_filters=[
+            ["name", "like", f"%{txt}%"],
+            ["requirement_name", "like", f"%{txt}%"],
+        ],
+        fields=["name", "requirement_name"],
+        limit_start=start,
+        limit_page_length=page_len,
+        as_list=True,
+    )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_allowed_culm_types(doctype, txt, searchfield, start, page_len, filters):
+    """Link-query for SGR.chosen_project_type: only the types listed in the
+    requirement's culm_proj_types allow-list. Used by the Program Enrollment
+    desk form's set_query."""
+    gri = (filters or {}).get("grad_requirement_item")
+    if not gri:
+        return []
+    allowed = [
+        a
+        for a in frappe.get_all(
+            "Grad Req Item Culm Proj Type",
+            filters={"parent": gri, "parenttype": "Graduation Requirement Item"},
+            pluck="culminating_project_type",
+        )
+        if a
+    ]
+    if not allowed:
+        return []
+    return frappe.get_all(
+        "Culminating Project Type",
+        filters=[["name", "in", allowed], ["name", "like", f"%{txt}%"]],
+        fields=["name"],
+        limit_start=start,
+        limit_page_length=page_len,
+        as_list=True,
+    )
+
+
 @frappe.whitelist()
 def start_recommendation_letter(
     program_enrollment,
@@ -588,6 +901,30 @@ def start_culminating_project(
         frappe.throw(_("This requirement is not a Culminating Project slot."))
     if row.linked_doc:
         frappe.throw(_("A culminating project already exists for this slot."))
+    if row.choice_pending:
+        frappe.throw(
+            _(
+                "Choose a Culminating Project Type for this requirement before starting the project."
+            )
+        )
+
+    # The type is decided on the requirement (decoupled from the project doc).
+    # Fall back to the legacy param only when the requirement enumerates no types.
+    chosen_type = row.chosen_project_type or project_type
+    allowed = _culm_types(
+        frappe.get_cached_doc("Graduation Requirement Item", row.grad_requirement_item)
+    )
+    if allowed:
+        if not chosen_type:
+            frappe.throw(
+                _("Choose a Culminating Project Type for this requirement first.")
+            )
+        if chosen_type not in allowed:
+            frappe.throw(
+                _("{0} is not an allowed project type for this requirement.").format(
+                    chosen_type
+                )
+            )
 
     project = frappe.get_doc(
         {
@@ -595,7 +932,7 @@ def start_culminating_project(
             "program_enrollment": program_enrollment,
             "student_grad_requirement": sgr_name,
             "project_title": project_title,
-            "project_type": project_type or "Thesis",
+            "project_type": chosen_type or "Thesis",
             "advisor": advisor,
             "abstract": abstract,
         }
