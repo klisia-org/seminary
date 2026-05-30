@@ -32,6 +32,8 @@
   "milestones",
   "section_break_submissions",
   "submissions",
+  "committee_section",
+  "committee",
   "section_break_status",
   "workflow_state",
   "amended_from"
@@ -133,6 +135,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fieldname": "current_round",
    "fieldtype": "Int",
@@ -185,6 +188,8 @@
    "label": "Submissions"
   },
   {
+   "allow_on_submit": 1,
+   "description": "Submission rounds added by the student while the project is Active; reviewed by advisors/readers.",
    "fieldname": "submissions",
    "fieldtype": "Table",
    "label": "Submissions",
@@ -217,13 +222,26 @@
    "fieldtype": "Link",
    "label": "Third reader",
    "options": "Instructor"
+  },
+  {
+   "fieldname": "committee_section",
+   "fieldtype": "Section Break",
+   "label": "Committee"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Committee members (internal instructors or external readers). The advisor maintains this and signs milestones on the committee's behalf.",
+   "fieldname": "committee",
+   "fieldtype": "Table",
+   "label": "Committee Members",
+   "options": "Culminating Project Committee"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-29 12:16:13.694197",
+ "modified": "2026-05-30 13:04:21.881419",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Culminating Project",

@@ -178,5 +178,17 @@
   "doctype": "Workflow Action Master",
   "name": "Withdraw",
   "workflow_action_name": "Withdraw"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Retire",
+  "workflow_action_name": "Retire"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Reactivate",
+  "workflow_action_name": "Reactivate"
  }
 ]

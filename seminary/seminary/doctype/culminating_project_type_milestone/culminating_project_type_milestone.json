@@ -3,7 +3,6 @@
  "creation": "2026-05-29 13:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
- "istable": 1,
  "field_order": [
   "milestone_name",
   "sequence",
@@ -161,15 +160,15 @@
   },
   {
    "fieldname": "description",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Description"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-29 13:00:00",
- "modified_by": "Administrator",
+ "modified": "2026-05-30 12:48:10.697569",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Culminating Project Type Milestone",
  "owner": "Administrator",

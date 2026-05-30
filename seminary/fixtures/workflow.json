@@ -8,56 +8,54 @@
   "name": "Course Withdrawal",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Course Withdrawal",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Submitted",
-    "allow_edit": "Academics User"
+    "state": "Submitted"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Academic Review",
-    "allow_edit": "Academics User"
+    "state": "Academic Review"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Academically Approved",
-    "allow_edit": "Academics User"
+    "state": "Academically Approved"
    },
    {
+    "allow_edit": "Accounts User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Financial Review",
-    "allow_edit": "Accounts User"
+    "state": "Financial Review"
    },
    {
+    "allow_edit": "Accounts User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Financially Approved",
-    "allow_edit": "Accounts User"
+    "state": "Financially Approved"
    },
    {
+    "allow_edit": "Seminary Manager",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Completed",
-    "allow_edit": "Seminary Manager"
+    "state": "Completed"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Rejected",
-    "allow_edit": "Academics User"
+    "state": "Rejected"
    }
   ],
   "transitions": [
@@ -150,7 +148,9 @@
     "next_state": "Completed",
     "state": "Financially Approved"
    }
-  ]
+  ],
+  "workflow_name": "Course Withdrawal",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-04-25 21:00:00.000000",
@@ -161,56 +161,54 @@
   "name": "Recommendation Letter Workflow",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Recommendation Letter Workflow",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Requested",
-    "allow_edit": "Academics User"
+    "state": "Requested"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Awaiting Response",
-    "allow_edit": "Academics User"
+    "state": "Awaiting Response"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Submitted",
-    "allow_edit": "Academics User"
+    "state": "Submitted"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Under Review",
-    "allow_edit": "Academics User"
+    "state": "Under Review"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Approved",
-    "allow_edit": "Academics User"
+    "state": "Approved"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Rejected",
-    "allow_edit": "Academics User"
+    "state": "Rejected"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Resend Required",
-    "allow_edit": "Academics User"
+    "state": "Resend Required"
    }
   ],
   "transitions": [
@@ -274,7 +272,9 @@
     "next_state": "Rejected",
     "state": "Submitted"
    }
-  ]
+  ],
+  "workflow_name": "Recommendation Letter Workflow",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-04-25 21:30:00.000000",
@@ -285,44 +285,42 @@
   "name": "Culminating Project Workflow",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Culminating Project Workflow",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Active",
-    "allow_edit": "Academics User"
+    "state": "Active"
    },
    {
+    "allow_edit": "Instructor",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Under Review",
-    "allow_edit": "Instructor"
+    "state": "Under Review"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Completed",
-    "allow_edit": "Academics User"
+    "state": "Completed"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Rejected",
-    "allow_edit": "Academics User"
+    "state": "Rejected"
    },
    {
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Withdrawn",
-    "allow_edit": "Registrar"
+    "state": "Withdrawn"
    }
   ],
   "transitions": [
@@ -412,7 +410,9 @@
     "next_state": "Withdrawn",
     "state": "Under Review"
    }
-  ]
+  ],
+  "workflow_name": "Culminating Project Workflow",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-04-27 12:00:00.000000",
@@ -423,44 +423,42 @@
   "name": "Course Schedule Lifecycle",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Course Schedule Lifecycle",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Open for Enrollment",
-    "allow_edit": "Academics User"
+    "state": "Open for Enrollment"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Enrollment Closed",
-    "allow_edit": "Academics User"
+    "state": "Enrollment Closed"
    },
    {
+    "allow_edit": "Instructor",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Grading",
-    "allow_edit": "Instructor"
+    "state": "Grading"
    },
    {
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Closed",
-    "allow_edit": "Registrar"
+    "state": "Closed"
    },
    {
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Cancelled",
-    "allow_edit": "Registrar"
+    "state": "Cancelled"
    }
   ],
   "transitions": [
@@ -485,7 +483,9 @@
     "next_state": "Grading",
     "state": "Enrollment Closed"
    }
-  ]
+  ],
+  "workflow_name": "Course Schedule Lifecycle",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-05-01 14:00:00.000000",
@@ -496,32 +496,30 @@
   "name": "Course Enrollment Lifecycle",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Course Enrollment Lifecycle",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Awaiting Payment",
-    "allow_edit": "Academics User"
+    "state": "Awaiting Payment"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Submitted",
-    "allow_edit": "Academics User"
+    "state": "Submitted"
    },
    {
+    "allow_edit": "Seminary Manager",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Withdrawn",
-    "allow_edit": "Seminary Manager"
+    "state": "Withdrawn"
    }
   ],
   "transitions": [
@@ -564,7 +562,9 @@
     "next_state": "Submitted",
     "state": "Awaiting Payment"
    }
-  ]
+  ],
+  "workflow_name": "Course Enrollment Lifecycle",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-05-02 13:00:00.000000",
@@ -575,44 +575,42 @@
   "name": "Graduation Request Lifecycle",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Graduation Request Lifecycle",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Academics User",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Academics User"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Awaiting Payment",
-    "allow_edit": "Academics User"
+    "state": "Awaiting Payment"
    },
    {
+    "allow_edit": "Academics User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Academic Review",
-    "allow_edit": "Academics User"
+    "state": "Academic Review"
    },
    {
+    "allow_edit": "Accounts User",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Financial Review",
-    "allow_edit": "Accounts User"
+    "state": "Financial Review"
    },
    {
+    "allow_edit": "Seminary Manager",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Approved",
-    "allow_edit": "Seminary Manager"
+    "state": "Approved"
    },
    {
+    "allow_edit": "Seminary Manager",
     "doc_status": "2",
     "is_optional_state": 0,
-    "state": "Cancelled",
-    "allow_edit": "Seminary Manager"
+    "state": "Cancelled"
    }
   ],
   "transitions": [
@@ -669,7 +667,9 @@
     "next_state": "Approved",
     "state": "Financial Review"
    }
-  ]
+  ],
+  "workflow_name": "Graduation Request Lifecycle",
+  "workflow_state_field": "workflow_state"
  },
  {
   "creation": "2026-05-29 12:00:00.000000",
@@ -680,26 +680,24 @@
   "name": "Program Graduation Requirement Versioning",
   "override_status": 0,
   "send_email_alert": 0,
-  "workflow_name": "Program Graduation Requirement Versioning",
-  "workflow_state_field": "workflow_state",
   "states": [
    {
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
-    "state": "Draft",
-    "allow_edit": "Registrar"
+    "state": "Draft"
    },
    {
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Active",
-    "allow_edit": "Registrar"
+    "state": "Active"
    },
    {
+    "allow_edit": "Seminary Manager",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Superseded",
-    "allow_edit": "Seminary Manager"
+    "state": "Superseded"
    }
   ],
   "transitions": [
@@ -738,6 +736,78 @@
     "next_state": "Superseded",
     "state": "Active"
    }
-  ]
+  ],
+  "workflow_name": "Program Graduation Requirement Versioning",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "creation": "2026-05-30 12:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Graduation Requirement Item",
+  "is_active": 1,
+  "name": "Graduation Requirement Item",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "All",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Active"
+   },
+   {
+    "allow_edit": "All",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Retired"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Retire",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Retired",
+    "state": "Active"
+   },
+   {
+    "action": "Retire",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
+    "next_state": "Retired",
+    "state": "Active"
+   },
+   {
+    "action": "Retire",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Retired",
+    "state": "Active"
+   },
+   {
+    "action": "Reactivate",
+    "allow_self_approval": 1,
+    "allowed": "Academics User",
+    "next_state": "Active",
+    "state": "Retired"
+   },
+   {
+    "action": "Reactivate",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
+    "next_state": "Active",
+    "state": "Retired"
+   },
+   {
+    "action": "Reactivate",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Active",
+    "state": "Retired"
+   }
+  ],
+  "workflow_name": "Graduation Requirement Item",
+  "workflow_state_field": "workflow_state"
  }
 ]

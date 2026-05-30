@@ -452,12 +452,14 @@ def _linked_doctypes():
     if not frappe.db.table_exists("Graduation Requirement Item"):
         return set()
 
+    # No docstatus filter: the Library is no longer submittable (it uses an
+    # Active/Retired workflow). Retired items still count here — students may
+    # hold snapshots of them whose linked-doc status must keep propagating.
     doctypes = frappe.get_all(
         "Graduation Requirement Item",
         filters={
             "requirement_type": "Linked Document",
             "link_doctype": ("is", "set"),
-            "docstatus": 1,
         },
         pluck="link_doctype",
     )
