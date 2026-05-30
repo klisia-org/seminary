@@ -97,6 +97,11 @@ terms defined that far). `term_for_date` is covering-term-only for this reason.
   Doctrinal Statement; a dozen dated, multi-term milestones for a PhD) without code.
 - Sign-off roles use fixed per-role checks tied to the project's reader slots
   rather than a free MultiSelect — simpler, and validated against the slots.
+- `Culminating Project Type` is **not** a fixture: it carries seminary-configured
+  milestone rows, and a fixture re-import on every migrate would wipe them. The
+  starter types are seeded create-only-if-missing via `install.seed_culminating_project_types`
+  (after_install for fresh sites, a one-time patch for existing ones), never
+  overwriting an existing type or its milestones.
 
 ## Follow-ups
 - Student/advisor Vue workbench (milestone timeline, submission upload, sign-off)

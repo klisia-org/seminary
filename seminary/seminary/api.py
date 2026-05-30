@@ -1211,6 +1211,63 @@ def credits_pe_track():
             )
 
 
+def _requirement_choice_options(sgr):
+    """Options for a pending choice on an SGR row (for the portal Choose modal).
+    Empty unless a choice is pending: umbrella -> sub-GRIs, CP -> allowed types."""
+    if not sgr.choice_pending or not sgr.grad_requirement_item:
+        return []
+    gri = frappe.get_cached_doc(
+        "Graduation Requirement Item", sgr.grad_requirement_item
+    )
+    if sgr.requirement_type == "Choose Option":
+        return [
+            {
+                "value": o.grad_req_item,
+                "label": frappe.db.get_value(
+                    "Graduation Requirement Item", o.grad_req_item, "requirement_name"
+                )
+                or o.grad_req_item,
+            }
+            for o in (gri.grad_req_option or [])
+            if o.grad_req_item
+        ]
+    if sgr.link_doctype == "Culminating Project":
+        return [
+            {"value": o.culminating_project_type, "label": o.culminating_project_type}
+            for o in (gri.culm_proj_types or [])
+            if o.culminating_project_type
+        ]
+    return []
+
+
+def _requirement_choice_summary(sgr):
+    """(has_choice, chosen_label) for the audit's Choices section. A requirement
+    offers a choice when it's a 'Choose Option' umbrella or a Culminating Project
+    with more than one allowed type."""
+    if sgr.requirement_type == "Choose Option":
+        label = None
+        if sgr.chosen_option:
+            label = (
+                frappe.db.get_value(
+                    "Graduation Requirement Item", sgr.chosen_option, "requirement_name"
+                )
+                or sgr.chosen_option
+            )
+        return True, label
+    if sgr.link_doctype == "Culminating Project" and sgr.grad_requirement_item:
+        gri = frappe.get_cached_doc(
+            "Graduation Requirement Item", sgr.grad_requirement_item
+        )
+        types = [
+            t.culminating_project_type
+            for t in (gri.culm_proj_types or [])
+            if t.culminating_project_type
+        ]
+        if len(types) > 1:
+            return True, (sgr.chosen_project_type or None)
+    return False, None
+
+
 @frappe.whitelist()
 def get_program_audit(program_enrollment):
     """Return comprehensive program progress data for a given Program Enrollment.
@@ -1503,6 +1560,7 @@ def get_program_audit(program_enrollment):
         satisfied = sgr.status in ("Fulfilled", "Waived")
         if sgr.mandatory and active and not satisfied:
             grad_requirements_blocking = True
+        has_choice, chosen_label = _requirement_choice_summary(sgr)
         grad_requirements.append(
             {
                 "name": sgr.name,
@@ -1524,6 +1582,13 @@ def get_program_audit(program_enrollment):
                 "waiver_reason": sgr.waiver_reason,
                 "notes": sgr.notes,
                 "grad_requirement_item": sgr.grad_requirement_item,
+                "student_choice": bool(sgr.student_choice),
+                "choice_pending": bool(sgr.choice_pending),
+                "chosen_project_type": sgr.chosen_project_type,
+                "chosen_option": sgr.chosen_option,
+                "has_choice": has_choice,
+                "chosen_label": chosen_label,
+                "options": _requirement_choice_options(sgr),
             }
         )
 

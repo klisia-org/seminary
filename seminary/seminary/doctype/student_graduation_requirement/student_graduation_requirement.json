@@ -16,8 +16,16 @@
   "status",
   "due_date",
   "fulfilled_on",
+  "section_break_choice",
+  "student_choice",
+  "choice_pending",
+  "column_break_choice",
+  "chosen_project_type",
+  "chosen_option",
+  "spawned_sgr",
   "section_break_link",
   "link_doctype",
+  "linked_doc_status",
   "linked_doc",
   "section_break_evidence",
   "student_evidence_attachment",
@@ -35,7 +43,8 @@
   "notes",
   "section_break_provenance",
   "grad_requirement_item",
-  "pgr_item"
+  "pgr_item",
+  "parent_choice"
  ],
  "fields": [
   {
@@ -46,6 +55,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "requirement_type",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -60,6 +70,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fieldname": "blocks_graduation_request",
    "fieldtype": "Check",
@@ -101,6 +112,63 @@
    "label": "Fulfilled On"
   },
   {
+   "depends_on": "eval:doc.requirement_type=='Choose Option' || doc.link_doctype=='Culminating Project' || doc.chosen_option || doc.chosen_project_type",
+   "fieldname": "section_break_choice",
+   "fieldtype": "Section Break",
+   "label": "Choice"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Snapshot of the library item's 'Student chooses' flag: when set, the student picks from the portal; otherwise the registrar assigns.",
+   "fieldname": "student_choice",
+   "fieldtype": "Check",
+   "label": "Student Chooses",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "A choice (umbrella option or Culminating Project Type) is required but not yet made. Gates the 'Choose'/'Start Project' actions.",
+   "fieldname": "choice_pending",
+   "fieldtype": "Check",
+   "label": "Choice Pending",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_choice",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.link_doctype=='Culminating Project'",
+   "description": "The Culminating Project Type chosen for this requirement (from the library item's allowed types).",
+   "fieldname": "chosen_project_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Chosen Project Type",
+   "options": "Culminating Project Type"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.requirement_type=='Choose Option' || doc.chosen_option",
+   "description": "For a 'Choose Option' umbrella: the sub-requirement chosen. Saving spawns a dedicated requirement row for it (linked via Created Requirement).",
+   "fieldname": "chosen_option",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Chosen Option",
+   "options": "Graduation Requirement Item"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "spawned_sgr",
+   "description": "The requirement row created for the chosen option. Changing the choice replaces it.",
+   "fieldname": "spawned_sgr",
+   "fieldtype": "Data",
+   "label": "Created Requirement",
+   "read_only": 1
+  },
+  {
    "depends_on": "eval:doc.requirement_type=='Linked Document'",
    "fieldname": "section_break_link",
    "fieldtype": "Section Break",
@@ -111,6 +179,14 @@
    "fieldname": "link_doctype",
    "fieldtype": "Data",
    "label": "Link DocType",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The linked document status that fulfils this row (snapshotted when an umbrella option is chosen). reflect_linked_doc_status prefers this over the policy row's value.",
+   "fieldname": "linked_doc_status",
+   "fieldtype": "Data",
+   "label": "Fulfilling Status",
    "read_only": 1
   },
   {
@@ -217,6 +293,7 @@
    "label": "Provenance"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "grad_requirement_item",
    "fieldtype": "Link",
    "label": "Library Item",
@@ -227,6 +304,14 @@
    "fieldname": "pgr_item",
    "fieldtype": "Data",
    "label": "Source Policy Row",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "For a row spawned by a 'Choose Option' umbrella: the umbrella SGR row it was created from.",
+   "fieldname": "parent_choice",
+   "fieldtype": "Data",
+   "label": "Chosen From",
    "read_only": 1
   }
  ],

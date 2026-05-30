@@ -33,7 +33,16 @@ class ProgramEnrollment(Document):
         self.update_student_joining_date()
         self.set_max_graduation_date()
 
+    def before_update_after_submit(self):
+        # validate() doesn't run on update-after-submit saves, so resolve
+        # graduation-requirement choices (umbrella morph / project-type pick)
+        # here — covers both desk grid edits and the portal choose actions.
+        from seminary.seminary.graduation import apply_sgr_choices
+
+        apply_sgr_choices(self)
+
     def on_update_after_submit(self):
+        self._backlink_spawned_choices()
         from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
         before = getattr(self, "_doc_before_save", None)
@@ -46,6 +55,28 @@ class ProgramEnrollment(Document):
             cascade_cancel_graduation_requests(self.name)
 
         evaluate_candidacy_safe(self.name)
+
+    def _backlink_spawned_choices(self):
+        """Populate each umbrella row's `spawned_sgr` with the child row it
+        created (names are only assigned once the parent has saved). Direct DB
+        write — no re-save, no recursion."""
+        spawned_by_parent = {
+            row.parent_choice: row.name
+            for row in (self.graduation_requirements or [])
+            if row.parent_choice
+        }
+        for row in self.graduation_requirements or []:
+            if row.requirement_type != "Choose Option" or not row.chosen_option:
+                continue
+            target = spawned_by_parent.get(row.name)
+            if target and row.spawned_sgr != target:
+                frappe.db.set_value(
+                    "Student Graduation Requirement",
+                    row.name,
+                    "spawned_sgr",
+                    target,
+                    update_modified=False,
+                )
 
     def set_max_graduation_date(self):
         """Auto-populate max_graduation_date from enrollment_date + Program.max_time_enrolled.

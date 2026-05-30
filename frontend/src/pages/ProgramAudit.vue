@@ -218,6 +218,28 @@
           <p v-if="audit.data.expected_graduation_date" class="text-xs text-ink-gray-4 mb-3 italic">
             {{ __('Expected graduation') }}: {{ audit.data.expected_graduation_date }}
           </p>
+
+          <!-- Choices of Graduation Requirements: 'Choose Option' umbrellas + multi-type culminating projects -->
+          <div v-if="gradChoices.length" class="mb-4 rounded-md border border-outline-gray-2 bg-surface-gray-1 px-3 py-2">
+            <p class="text-xs font-semibold text-ink-gray-6 mb-1.5">
+              {{ __('Choices of Graduation Requirements') }}
+            </p>
+            <div
+              v-for="c in gradChoices"
+              :key="'choice-' + c.name"
+              class="flex items-center justify-between gap-3 py-1 text-sm"
+            >
+              <span class="text-ink-gray-7">{{ c.requirement_name || c.name }}</span>
+              <span class="flex items-center gap-2 shrink-0">
+                <Badge
+                  :theme="c.choice_pending ? 'orange' : 'green'"
+                  :label="c.choice_pending ? __('Pending') : __('Made')"
+                />
+                <span class="text-ink-gray-6">{{ c.choice_pending ? '—' : (c.chosen_label || '—') }}</span>
+              </span>
+            </div>
+          </div>
+
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b text-left text-ink-gray-6">
@@ -588,7 +610,16 @@ async function submitGraduationRequest() {
 
 const activeGradRequirements = computed(() => {
   if (!audit.data) return []
-  return audit.data.graduation_requirements.filter(r => r.active)
+  // Suppress umbrella rows — they appear in the Choices section above; the
+  // chosen option's own (spawned) row carries the actual requirement.
+  return audit.data.graduation_requirements.filter(
+    r => r.active && r.requirement_type !== 'Choose Option'
+  )
+})
+
+const gradChoices = computed(() => {
+  if (!audit.data) return []
+  return (audit.data.graduation_requirements || []).filter(r => r.has_choice)
 })
 
 const pendingGradRequirements = computed(() => {
@@ -597,10 +628,15 @@ const pendingGradRequirements = computed(() => {
 })
 
 function requirementDisplayName(req) {
-  if ((req.slot_index || 1) > 1) {
-    return `${req.requirement_name} (${req.slot_index})`
+  let name = req.requirement_name
+  // Show the chosen Culminating Project Type inline (display only) e.g. "… (Thesis)".
+  if (req.link_doctype === 'Culminating Project' && req.chosen_project_type) {
+    name = `${name} (${req.chosen_project_type})`
   }
-  return req.requirement_name
+  if ((req.slot_index || 1) > 1) {
+    return `${name} (${req.slot_index})`
+  }
+  return name
 }
 
 function canStudentUpload(req) {

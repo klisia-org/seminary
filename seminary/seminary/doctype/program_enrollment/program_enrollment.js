@@ -34,6 +34,24 @@ frappe.ui.form.on('Program Enrollment', {
 			});
 },
 	refresh(frm) {
+		// Restrict the graduation-requirement choice dropdowns to the options the
+		// library item actually allows (the backend re-validates on save — see
+		// graduation.apply_sgr_choices). Scoped per row by its source GRI.
+		frm.set_query('chosen_option', 'graduation_requirements', function(doc, cdt, cdn) {
+			const row = locals[cdt][cdn];
+			return {
+				query: 'seminary.seminary.graduation.get_choose_option_items',
+				filters: { grad_requirement_item: row.grad_requirement_item },
+			};
+		});
+		frm.set_query('chosen_project_type', 'graduation_requirements', function(doc, cdt, cdn) {
+			const row = locals[cdt][cdn];
+			return {
+				query: 'seminary.seminary.graduation.get_allowed_culm_types',
+				filters: { grad_requirement_item: row.grad_requirement_item },
+			};
+		});
+
 		if (frm.doc.docstatus === 1) {
 			frm.add_custom_button(__('Payers for this Program'), function() {
 				frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
@@ -276,8 +294,10 @@ function show_full_audit(frm) {
 			// Graduation Requirements (non-course evidence: letters, theses, manual verifications)
 			let grad_reqs = audit.graduation_requirements || [];
 			if (grad_reqs.length) {
-				let active_reqs = grad_reqs.filter(r => r.active);
-				let pending_reqs = grad_reqs.filter(r => !r.active);
+				// Suppress umbrella rows here — they appear in the Choices table above;
+				// the chosen option's own (spawned) row carries the actual requirement.
+				let active_reqs = grad_reqs.filter(r => r.active && r.requirement_type !== 'Choose Option');
+				let pending_reqs = grad_reqs.filter(r => !r.active && r.requirement_type !== 'Choose Option');
 				let status_color = function(status) {
 					if (status === 'Fulfilled') return 'green';
 					if (status === 'Waived') return '#2563eb';
@@ -293,6 +313,26 @@ function show_full_audit(frm) {
 						+ __('Expected graduation') + ': ' + audit.expected_graduation_date + '</p>';
 				}
 
+				// Choices summary: 'Choose Option' umbrellas + multi-type culminating projects.
+				let choice_reqs = grad_reqs.filter(function(r) { return r.has_choice; });
+				if (choice_reqs.length) {
+					html += '<p style="font-weight:600;margin:8px 0 2px">' + __('Choices of Graduation Requirements') + '</p>';
+					html += '<table class="table table-bordered table-condensed">'
+						+ '<thead><tr><th>' + __('Requirement') + '</th><th>' + __('Choice') + '</th>'
+						+ '<th>' + __('Selected') + '</th></tr></thead><tbody>';
+					choice_reqs.forEach(function(r) {
+						let scolor = r.choice_pending ? '#ea580c' : '#16a34a';
+						let stext = r.choice_pending ? __('Pending') : __('Made');
+						let sel = r.choice_pending ? '—' : (r.chosen_label || '—');
+						html += '<tr><td>' + (r.requirement_name || r.name) + '</td>'
+							+ '<td style="color:' + scolor + ';font-weight:bold">' + stext + '</td>'
+							+ '<td>' + sel + '</td></tr>';
+					});
+					html += '</tbody></table>';
+					// Label the table below only when a Choices table precedes it.
+					html += '<p style="font-weight:600;margin:8px 0 2px">' + __('Actual Graduation Requirements') + '</p>';
+				}
+
 				if (active_reqs.length) {
 					html += '<table class="table table-bordered table-condensed">'
 						+ '<thead><tr>'
@@ -305,7 +345,7 @@ function show_full_audit(frm) {
 						+ '</tr></thead><tbody>';
 					active_reqs.forEach(function(req) {
 						html += '<tr>'
-							+ '<td>' + (req.requirement_name || req.name) + (req.waived ? ' <em>(' + __('waived') + ')</em>' : '') + '</td>'
+							+ '<td>' + (req.requirement_name || req.name) + ((req.link_doctype === 'Culminating Project' && req.chosen_project_type) ? ' (' + req.chosen_project_type + ')' : '') + (req.waived ? ' <em>(' + __('waived') + ')</em>' : '') + '</td>'
 							+ '<td>' + (req.requirement_type || '—') + '</td>'
 							+ '<td style="color:' + status_color(req.status) + ';font-weight:bold">' + (req.status || '—') + '</td>'
 							+ '<td>' + (req.mandatory ? __('Yes') : __('No')) + '</td>'
@@ -359,6 +399,26 @@ function show_full_audit(frm) {
 		}
 	});
 }
+
+frappe.ui.form.on('Student Graduation Requirement', {
+	chosen_option: function(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (!row.chosen_option) return;
+		// If a requirement row was already created for a previous choice, warn
+		// that changing the choice will replace (delete) it on save.
+		const spawned = (frm.doc.graduation_requirements || []).find(
+			(r) => r.parent_choice === row.name
+		);
+		if (spawned && spawned.grad_requirement_item && spawned.grad_requirement_item !== row.chosen_option) {
+			frappe.confirm(
+				__('This will remove the requirement already created for the previous choice ({0}) and create a new one when you save. Continue?',
+					[spawned.grad_requirement_item]),
+				() => {},
+				() => frappe.model.set_value(cdt, cdn, 'chosen_option', spawned.grad_requirement_item)
+			);
+		}
+	},
+});
 
 frappe.ui.form.on('Program Enrollment Course', {
 	courses_add: function(frm){
