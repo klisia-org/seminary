@@ -151,6 +151,15 @@
                   {{ __('Sign for Committee') }}
                 </Button>
               </template>
+              <template v-if="m.creates_event">
+                <span v-if="m.event" class="text-xs text-ink-gray-5 self-center inline-flex items-center gap-1">
+                  <CalendarCheck class="h-4 w-4 text-ink-green-3" />
+                  {{ __('Defense scheduled') }}<template v-if="m.event_starts_on">: {{ m.event_starts_on.slice(0, 16) }}</template>
+                </span>
+                <Button v-else-if="cp.data.viewer.my_role === 'Advisor'" size="sm" variant="subtle" @click="openDefense(m)">
+                  {{ __('Schedule Defense') }}
+                </Button>
+              </template>
             </div>
           </DisclosurePanel>
         </Disclosure>
@@ -216,6 +225,22 @@
       </template>
     </Dialog>
 
+    <!-- Schedule defense (advisor) -->
+    <Dialog v-model="defenseDialog" :options="{ title: __('Schedule Defense') }">
+      <template #body-content>
+        <p class="text-xs text-ink-gray-5 mb-3">
+          {{ __('Creates a calendar event with the student, readers and committee as participants.') }}
+        </p>
+        <FormControl type="datetime-local" :label="__('Date & time')" v-model="defenseForm.starts_on" class="mb-3" />
+        <FormControl type="text" :label="__('Location (optional)')" v-model="defenseForm.location" />
+      </template>
+      <template #actions>
+        <Button variant="solid" :loading="busy" :disabled="!defenseForm.starts_on" @click="doScheduleDefense">
+          {{ __('Schedule') }}
+        </Button>
+      </template>
+    </Dialog>
+
     <!-- Add committee member (advisor) -->
     <Dialog v-model="committeeDialog" :options="{ title: __('Add Committee Member') }">
       <template #body-content>
@@ -254,7 +279,7 @@
 import { computed, reactive, ref } from 'vue'
 import { Badge, Button, Dialog, FileUploader, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { ChevronRight, Mail, Info, X, Plus } from 'lucide-vue-next'
+import { ChevronRight, Mail, Info, X, Plus, CalendarCheck } from 'lucide-vue-next'
 import Link from '@/components/Controls/Link.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
@@ -360,6 +385,33 @@ function openInfo(m) {
   infoTitle.value = m.milestone_name
   infoContent.value = m.description || ''
   infoDialog.value = true
+}
+
+// Schedule defense (advisor)
+const defenseDialog = ref(false)
+const defenseForm = reactive({ milestone: null, starts_on: '', location: '' })
+function openDefense(m) {
+  Object.assign(defenseForm, { milestone: m.row, starts_on: '', location: '' })
+  defenseDialog.value = true
+}
+async function doScheduleDefense() {
+  busy.value = true
+  try {
+    await call('seminary.seminary.doctype.culminating_project.culminating_project.create_milestone_event', {
+      culminating_project: props.name,
+      milestone_row: defenseForm.milestone,
+      starts_on: defenseForm.starts_on.replace('T', ' '),
+      location: defenseForm.location || null,
+    })
+    toast.success(__('Defense scheduled'))
+    defenseDialog.value = false
+    cp.reload()
+    emit('changed')
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not schedule defense'))
+  } finally {
+    busy.value = false
+  }
 }
 
 // Committee management (advisor)
