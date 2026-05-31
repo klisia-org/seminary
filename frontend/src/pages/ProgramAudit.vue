@@ -259,6 +259,9 @@
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.requirement_type }}</td>
                 <td class="py-2 px-3">
                   <Badge :theme="statusTheme(req.status)" :label="req.status" />
+                  <div v-if="req.requirement_type === 'Chapel Attendance'" class="text-xs text-ink-gray-5 mt-1">
+                    {{ req.attended_count || 0 }} / {{ req.required_count || 0 }}
+                  </div>
                 </td>
                 <td class="py-2 px-3 text-xs text-ink-gray-5">{{ req.due_date || '—' }}</td>
                 <td class="py-2 px-3">
@@ -271,6 +274,11 @@
                     class="text-ink-blue-3 hover:underline text-xs"
                     @click="openProjectDialog(req)">
                     {{ __('Start Project') }}
+                  </button>
+                  <button v-else-if="canCheckInChapel(req)"
+                    class="text-ink-blue-3 hover:underline text-xs"
+                    @click="openChapelDialog(req)">
+                    {{ __('Check in') }}
                   </button>
                   <FileUploader v-else-if="canStudentUpload(req)"
                     :upload-args="{ doctype: 'Program Enrollment', docname: audit.data.program_enrollment, folder: 'Home/Attachments', private: 1 }"
@@ -423,6 +431,31 @@
       </Button>
     </template>
   </Dialog>
+
+  <!-- Chapel check-in modal -->
+  <Dialog v-model="showChapelDialog" :options="{ title: __('Chapel Check-in') }">
+    <template #body-content>
+      <p v-if="!openChapels.length" class="text-sm text-ink-gray-5">
+        {{ __('No chapel is open for check-in right now.') }}
+      </p>
+      <template v-else>
+        <FormControl v-model="chapelForm.chapel" type="select"
+          :label="__('Chapel')"
+          :options="openChapels.map(c => ({ label: c.chapel_topic, value: c.name }))"
+          class="mb-3" />
+        <FormControl v-if="chapelStatus.data?.requires_code" v-model="chapelForm.code" type="text"
+          :label="__('Check-in Code')"
+          :description="__('Enter the code shown during the service.')" class="mb-3" />
+      </template>
+    </template>
+    <template #actions>
+      <Button @click="showChapelDialog = false">{{ __('Cancel') }}</Button>
+      <Button v-if="openChapels.length" variant="solid" :loading="chapelSubmitting"
+        @click="submitCheckIn">
+        {{ __('Check in') }}
+      </Button>
+    </template>
+  </Dialog>
 </template>
 
 <script setup>
@@ -466,6 +499,18 @@ const unpaidInvoices = createResource({
     return { program_enrollment: selectedPE.value }
   },
   auto: false,
+})
+
+// Recent confirmed chapels + this student's Chapel Attendance progress, used to
+// surface a "Check in" action on count-based Chapel Attendance requirements.
+const chapelStatus = createResource({
+  url: 'seminary.seminary.chapel.get_chapel_status',
+  auto: !!student,
+})
+
+const openChapels = computed(() => {
+  const chapels = chapelStatus.data?.chapels || []
+  return chapels.filter(c => c.open_for_checkin && !c.already_checked_in)
 })
 
 watch(selectedPE, (val) => {
@@ -665,6 +710,47 @@ async function onStudentEvidenceUploaded(req, file) {
     audit.reload()
   } catch (e) {
     toast.error(e.message || __('Failed to submit evidence'))
+  }
+}
+
+function canCheckInChapel(req) {
+  return (
+    req.requirement_type === 'Chapel Attendance' &&
+    req.status !== 'Fulfilled' &&
+    req.status !== 'Waived' &&
+    openChapels.value.length > 0
+  )
+}
+
+const showChapelDialog = ref(false)
+const chapelSubmitting = ref(false)
+const chapelForm = reactive({ chapel: null, code: '' })
+
+function openChapelDialog() {
+  chapelForm.chapel = openChapels.value[0]?.name || null
+  chapelForm.code = ''
+  showChapelDialog.value = true
+}
+
+async function submitCheckIn() {
+  if (!chapelForm.chapel) {
+    toast.error(__('Select a chapel'))
+    return
+  }
+  chapelSubmitting.value = true
+  try {
+    await call('seminary.seminary.chapel.check_in', {
+      chapel: chapelForm.chapel,
+      code: chapelForm.code || null,
+    })
+    toast.success(__('Checked in'))
+    showChapelDialog.value = false
+    chapelStatus.reload()
+    audit.reload()
+  } catch (e) {
+    toast.error(e.message || __('Failed to check in'))
+  } finally {
+    chapelSubmitting.value = false
   }
 }
 

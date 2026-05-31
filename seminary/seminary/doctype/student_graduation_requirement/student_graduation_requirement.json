@@ -16,6 +16,8 @@
   "status",
   "due_date",
   "fulfilled_on",
+  "required_count",
+  "attended_count",
   "section_break_choice",
   "student_choice",
   "choice_pending",
@@ -43,6 +45,7 @@
   "notes",
   "section_break_provenance",
   "grad_requirement_item",
+  "event_custom_category",
   "pgr_item",
   "parent_choice"
  ],
@@ -110,6 +113,24 @@
    "fieldname": "fulfilled_on",
    "fieldtype": "Date",
    "label": "Fulfilled On"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.requirement_type=='Chapel Attendance'",
+   "description": "Snapshot of the required number of chapel services to attend.",
+   "fieldname": "required_count",
+   "fieldtype": "Int",
+   "label": "Required Count",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.requirement_type=='Chapel Attendance'",
+   "description": "Chapel services this student has checked in to (auto-counted from Chapel Attendance).",
+   "fieldname": "attended_count",
+   "fieldtype": "Int",
+   "label": "Attended Count",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.requirement_type=='Choose Option' || doc.link_doctype=='Culminating Project' || doc.chosen_option || doc.chosen_project_type",
@@ -298,6 +319,16 @@
    "fieldtype": "Link",
    "label": "Library Item",
    "options": "Graduation Requirement Item",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.requirement_type=='Event Attendance'",
+   "description": "Snapshot of the library item's Event Category. Used to create and track the attendance Event(s) for this requirement.",
+   "fieldname": "event_custom_category",
+   "fieldtype": "Link",
+   "label": "Event Category",
+   "options": "Event Custom Category",
    "read_only": 1
   },
   {

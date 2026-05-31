@@ -309,6 +309,7 @@ def snapshot_milestones(project):
                     "mandatory": tmpl.mandatory,
                     "requires_submission": tmpl.requires_submission,
                     "creates_event": tmpl.creates_event,
+                    "event_custom_category": tmpl.event_custom_category,
                     "signoff_advisor": tmpl.signoff_advisor,
                     "signoff_second_reader": tmpl.signoff_second_reader,
                     "signoff_third_reader": tmpl.signoff_third_reader,
@@ -847,16 +848,22 @@ def get_culminating_project(name):
         if s.milestone_row:
             subs_by_milestone.setdefault(s.milestone_row, []).append(d)
 
-    # Pull the (rich-text) instructions live from each milestone's type template
-    # so edits to the instructions show without re-snapshotting the project.
+    # Pull the instructions and defense-event config live from each milestone's
+    # type template, so edits show without re-snapshotting and existing projects
+    # (snapshotted before event_custom_category/creates_event existed) still work.
     template_rows = [m.template_row for m in project.milestones or [] if m.template_row]
-    descriptions = {
-        r.name: r.description
+    templates = {
+        r.name: r
         for r in (
             frappe.get_all(
                 "Culminating Project Type Milestone",
                 filters={"name": ["in", template_rows]},
-                fields=["name", "description"],
+                fields=[
+                    "name",
+                    "description",
+                    "creates_event",
+                    "event_custom_category",
+                ],
             )
             if template_rows
             else []
@@ -871,6 +878,7 @@ def get_culminating_project(name):
         if not msubs and m.submission_round and m.submission_round in subs_by_round:
             msubs = [subs_by_round[m.submission_round]]
         msubs.sort(key=lambda x: x["round"] or 0)
+        tmpl = templates.get(m.template_row) or {}
         milestones.append(
             {
                 "row": m.name,
@@ -883,11 +891,19 @@ def get_culminating_project(name):
                 "completed_on": m.completed_on,
                 "mandatory": m.mandatory,
                 "requires_submission": m.requires_submission,
-                "description": descriptions.get(m.template_row),
+                "description": tmpl.get("description"),
                 "required_roles": [label for c, label in _SIGNOFF_ROLES if m.get(c)],
                 "signoffs": signoffs_by_row.get(m.name, []),
                 "submissions": msubs,
                 "submission": msubs[-1] if msubs else None,
+                # Instance value with template fallback (snapshot may predate these).
+                "creates_event": m.creates_event or tmpl.get("creates_event") or 0,
+                "event": m.event,
+                "event_starts_on": (
+                    frappe.db.get_value("Event", m.event, "starts_on")
+                    if m.event
+                    else None
+                ),
             }
         )
 
@@ -1012,6 +1028,114 @@ def remove_committee_member(culminating_project, row):
     project.committee = [c for c in project.committee or [] if c.name != row]
     project.save(ignore_permissions=True)
     return {"committee": _committee(project)}
+
+
+@frappe.whitelist()
+def create_milestone_event(
+    culminating_project, milestone_row, starts_on, ends_on=None, location=None
+):
+    """Advisor schedules the calendar Event for a milestone (e.g. the Defense).
+    Participants are the student + readers + committee (internal by Instructor,
+    external by the committee child row). Calendar-only: it carries no SGR
+    participants, so it never auto-fulfils a graduation requirement."""
+    from seminary.seminary.events import create_event_from_category
+
+    project = frappe.get_doc("Culminating Project", culminating_project)
+    _require_advisor(project)
+    row = next((m for m in project.milestones if m.name == milestone_row), None)
+    if not row:
+        frappe.throw(
+            _("Milestone {0} not found on this project.").format(milestone_row)
+        )
+    # Read the category live from the type template when the snapshot predates
+    # the field (existing projects were snapshotted before event_custom_category
+    # existed, so the instance row is empty even though the template is set).
+    category = row.event_custom_category or (
+        frappe.db.get_value(
+            "Culminating Project Type Milestone",
+            row.template_row,
+            "event_custom_category",
+        )
+        if row.template_row
+        else None
+    )
+    if not category:
+        frappe.throw(_("This milestone has no Event Category set on its project type."))
+    if row.event:
+        frappe.throw(_("An event is already scheduled for this milestone."))
+
+    student_name = (
+        frappe.db.get_value("Student", project.student, "student_name")
+        if project.student
+        else None
+    )
+    event = create_event_from_category(
+        category,
+        starts_on,
+        ends_on=ends_on,
+        location=location,
+        participants=_defense_participants(project),
+        subject="{0} — {1}".format(row.milestone_name, student_name or project.student),
+        extra_description=_("{0} for {1}.").format(
+            row.milestone_name, project.project_title or project.name
+        ),
+    )
+    frappe.db.set_value("Culminating Project Milestone", milestone_row, "event", event)
+    return {"event": event}
+
+
+def _defense_participants(project):
+    """Student + readers + committee, as Event participants. External committee
+    members are referenced by their committee child row (no User/Instructor)."""
+    participants = []
+    if project.student:
+        participants.append(
+            {
+                "reference_doctype": "Student",
+                "reference_docname": project.student,
+                "email": frappe.db.get_value(
+                    "Student", project.student, "student_email_id"
+                ),
+            }
+        )
+    for field in ("advisor", "second_reader", "third_reader"):
+        inst = project.get(field)
+        if inst:
+            participants.append(
+                {
+                    "reference_doctype": "Instructor",
+                    "reference_docname": inst,
+                    "email": frappe.db.get_value("Instructor", inst, "prof_email"),
+                }
+            )
+    for c in project.committee or []:
+        if c.instructor:
+            participants.append(
+                {
+                    "reference_doctype": "Instructor",
+                    "reference_docname": c.instructor,
+                    "email": frappe.db.get_value(
+                        "Instructor", c.instructor, "prof_email"
+                    ),
+                }
+            )
+        else:
+            participants.append(
+                {
+                    "reference_doctype": "Culminating Project Committee",
+                    "reference_docname": c.name,
+                    "email": c.email_external,
+                }
+            )
+    # De-dupe (e.g. advisor also listed on the committee).
+    seen, unique = set(), []
+    for p in participants:
+        key = (p["reference_doctype"], p["reference_docname"])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(p)
+    return unique
 
 
 def _submission_dict(s):

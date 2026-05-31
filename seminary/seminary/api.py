@@ -1611,6 +1611,8 @@ def get_program_audit(program_enrollment):
                 "has_choice": has_choice,
                 "chosen_label": chosen_label,
                 "options": _requirement_choice_options(sgr),
+                "required_count": sgr.required_count or 0,
+                "attended_count": sgr.attended_count or 0,
             }
         )
 

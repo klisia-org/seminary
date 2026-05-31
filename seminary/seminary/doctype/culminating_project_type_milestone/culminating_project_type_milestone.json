@@ -13,6 +13,7 @@
   "default_count",
   "requires_submission",
   "creates_event",
+  "event_custom_category",
   "section_break_signoff",
   "signoff_advisor",
   "signoff_second_reader",
@@ -86,10 +87,18 @@
   },
   {
    "default": "0",
-   "description": "Marks a milestone (e.g. the Defense) for which a calendar Event can be created from the frontend. Wiring is deferred.",
+   "description": "Marks a milestone (e.g. the Defense) for which the advisor can schedule a calendar Event from the workbench.",
    "fieldname": "creates_event",
    "fieldtype": "Check",
    "label": "Creates Event"
+  },
+  {
+   "depends_on": "creates_event",
+   "description": "Event type used when the advisor schedules this milestone's event (supplies the title, visibility and instructions). Defenses are calendar-only — they do not auto-fulfil graduation requirements.",
+   "fieldname": "event_custom_category",
+   "fieldtype": "Link",
+   "label": "Event Category",
+   "options": "Event Custom Category"
   },
   {
    "fieldname": "section_break_signoff",

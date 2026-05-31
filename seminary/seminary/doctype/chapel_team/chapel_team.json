@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-31 07:12:13.430898",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "team_member_contact",
+  "chapel_role",
+  "invite_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "team_member_contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Team Member",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "chapel_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "\nPreacher\nWorship Leader\nHost\nOther"
+  },
+  {
+   "fieldname": "invite_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Invitation Status",
+   "options": "\nInvited\nAccepted\nDeclined\nNo-Show"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-31 07:33:30.582486",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Chapel Team",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

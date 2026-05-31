@@ -23,6 +23,7 @@
   "signoff_committee",
   "section_break_refs",
   "submission_round",
+  "event_custom_category",
   "event",
   "column_break_refs",
   "template_row"
@@ -151,7 +152,16 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Calendar event created for this milestone (e.g. Thesis Defense). Set from the frontend; wiring deferred.",
+   "description": "Snapshot of the type milestone's Event Category — supplies defaults when the advisor schedules this milestone's event.",
+   "fieldname": "event_custom_category",
+   "fieldtype": "Link",
+   "label": "Event Category",
+   "options": "Event Custom Category",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Calendar Event scheduled for this milestone (e.g. Thesis Defense), created by the advisor from the workbench.",
    "fieldname": "event",
    "fieldtype": "Link",
    "label": "Event",
