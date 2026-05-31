@@ -14,8 +14,7 @@
   "column_break_gwiy",
   "requirement_type",
   "section_break_euxl",
-  "event",
-  "event_per_student",
+  "event_custom_category",
   "column_break_jscs",
   "link_doctype",
   "section_break_uqmw",
@@ -63,7 +62,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Requirement Type",
-   "options": "Event Attendance\nManual Verification\nLinked Document\nChoose Option",
+   "options": "Event Attendance\nChapel Attendance\nManual Verification\nLinked Document\nChoose Option",
    "reqd": 1
   },
   {
@@ -73,10 +72,11 @@
   },
   {
    "depends_on": "eval:doc.requirement_type=='Event Attendance'",
-   "fieldname": "event",
+   "description": "The type of event students must attend. Whether each student attends individually (per_student) is configured on the category; Event instances are created later from it.",
+   "fieldname": "event_custom_category",
    "fieldtype": "Link",
-   "label": "Event",
-   "options": "Event"
+   "label": "Event Category",
+   "options": "Event Custom Category"
   },
   {
    "depends_on": "eval:doc.requirement_type=='Linked Document'",
@@ -105,17 +105,9 @@
    "label": "Instructions and Rationale"
   },
   {
-   "default": "0",
-   "depends_on": "eval:doc.requirement_type=='Event Attendance'",
-   "description": "If checked, every student must attend this event individually. If unchecked, a single occurrence of the event satisfies the requirement for everyone enrolled at the time.",
-   "fieldname": "event_per_student",
-   "fieldtype": "Check",
-   "label": "Event per Student"
-  },
-  {
    "default": "1",
-   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
-   "description": "Default number of instances the student must satisfy. Only meaningful for Manual Verification (e.g. '8 chapel attendances'). Event Attendance and Linked Document always count as 1.",
+   "depends_on": "eval:doc.requirement_type=='Manual Verification' || doc.requirement_type=='Chapel Attendance'",
+   "description": "Default number of instances the student must satisfy. For Chapel Attendance, the number of chapel services the student must check in to (e.g. 30). For Manual Verification, the number of instances. Event Attendance and Linked Document always count as 1.",
    "fieldname": "default_quantity",
    "fieldtype": "Int",
    "label": "Default Quantity"

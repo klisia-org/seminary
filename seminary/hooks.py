@@ -326,6 +326,20 @@ doc_events = {
         "on_update": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
         "on_trash": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
     },
+    # Reflect attendance on a category Event back onto the Student Graduation
+    # Requirement snapshot (cohort = fulfil all on Completed; per-student =
+    # fulfil those attending). Cheap short-circuit for non-category events.
+    "Event": {
+        "on_update": "seminary.seminary.events.reflect_event_attendance",
+    },
+    # Student self check-in: recompute the student's count-based Chapel
+    # Attendance graduation requirement(s) on each check-in / removal.
+    # (Chapel's own Event mirroring lives in the Chapel controller's lifecycle
+    # methods, so it needs no doc_events entry.)
+    "Chapel Attendance": {
+        "after_insert": "seminary.seminary.chapel.reflect_attendance",
+        "on_trash": "seminary.seminary.chapel.reflect_attendance",
+    },
     # Wildcard hook reflects linked-document status changes back onto the
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.

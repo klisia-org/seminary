@@ -69,6 +69,13 @@
   "alternative_payment_instructions",
   "section_break_fxlm",
   "calendar_instructions",
+  "chapel_events_section",
+  "sync_chapels_with_google_calendar",
+  "official_google_calendar",
+  "column_break_chapel",
+  "chapel_checkin_opens_before_mins",
+  "chapel_checkin_closes_after_mins",
+  "require_chapel_checkin_code",
   "show_student_application_on_login",
   "support_user"
  ],
@@ -437,6 +444,52 @@
    "fieldname": "hrms_live_date",
    "fieldtype": "Date",
    "label": "HRMS Live Date (Pay Cutoff)"
+  },
+  {
+   "fieldname": "chapel_events_section",
+   "fieldtype": "Section Break",
+   "label": "Chapel & Official Events"
+  },
+  {
+   "default": "0",
+   "description": "Master switch for syncing confirmed Chapel services to the official Google Calendar below. Off by default. When on, it also seeds the default of each new Chapel's own 'Sync with Google Calendar' checkbox (a chaplain can still override per service).",
+   "fieldname": "sync_chapels_with_google_calendar",
+   "fieldtype": "Check",
+   "label": "Sync chapels with Google Calendar"
+  },
+  {
+   "depends_on": "eval:doc.sync_chapels_with_google_calendar",
+   "description": "The shared institutional Google Calendar that official events (chapels, etc.) are pushed to. Configure a Google Calendar record first (Integrations > Google Calendar).",
+   "fieldname": "official_google_calendar",
+   "fieldtype": "Link",
+   "label": "Official Google Calendar",
+   "mandatory_depends_on": "eval:doc.sync_chapels_with_google_calendar",
+   "options": "Google Calendar"
+  },
+  {
+   "fieldname": "column_break_chapel",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "15",
+   "description": "How many minutes before a chapel's start time students may begin self check-in. Set both this and 'closes after' to 0 to disable the time window entirely (check-in allowed any time while the chapel is confirmed).",
+   "fieldname": "chapel_checkin_opens_before_mins",
+   "fieldtype": "Int",
+   "label": "Chapel Check-in Opens Before (mins)"
+  },
+  {
+   "default": "30",
+   "description": "How many minutes after a chapel's end time (or start, if no end) students may still self check-in. Set both this and 'opens before' to 0 to disable the time window entirely.",
+   "fieldname": "chapel_checkin_closes_after_mins",
+   "fieldtype": "Int",
+   "label": "Chapel Check-in Closes After (mins)"
+  },
+  {
+   "default": "0",
+   "description": "When checked, students must enter the chapel's human-readable check-in code (shown to the chaplain on the Chapel record, to display on screen during the service) to mark attendance.",
+   "fieldname": "require_chapel_checkin_code",
+   "fieldtype": "Check",
+   "label": "Require check-in code"
   },
   {
    "fieldname": "branding_section",

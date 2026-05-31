@@ -60,6 +60,10 @@ frappe.ui.form.on('Program Enrollment', {
 			frm.add_custom_button(__('View Full Audit'), function() {
 				show_full_audit(frm);
 			});
+
+			frm.add_custom_button(__('Schedule Required Event'), function() {
+				schedule_requirement_event(frm);
+			}, __('Graduation'));
 		}
 
 		// Populate inline audit summary
@@ -397,6 +401,51 @@ function show_full_audit(frm) {
 			d.show();
 			});
 		}
+	});
+}
+
+function schedule_requirement_event(frm) {
+	frappe.call({
+		method: 'seminary.seminary.events.get_per_student_event_requirements',
+		args: { program_enrollment: frm.doc.name },
+		callback: function(r) {
+			const rows = r.message || [];
+			if (!rows.length) {
+				frappe.msgprint(__('No per-student event requirements are pending on this enrollment.'));
+				return;
+			}
+			const d = new frappe.ui.Dialog({
+				title: __('Schedule Required Event'),
+				fields: [
+					{
+						fieldname: 'sgr_name',
+						fieldtype: 'Select',
+						label: __('Requirement'),
+						reqd: 1,
+						options: rows.map(row => ({
+							label: row.requirement_name + (row.due_date ? ' (' + __('due') + ' ' + row.due_date + ')' : ''),
+							value: row.sgr_name,
+						})),
+					},
+				],
+				primary_action_label: __('Create Event'),
+				primary_action: function(values) {
+					frappe.call({
+						method: 'seminary.seminary.events.create_requirement_event',
+						args: { program_enrollment: frm.doc.name, sgr_name: values.sgr_name },
+						freeze: true,
+						freeze_message: __('Creating event...'),
+						callback: function(res) {
+							if (res.message && res.message.event) {
+								d.hide();
+								frappe.set_route('Form', 'Event', res.message.event);
+							}
+						},
+					});
+				},
+			});
+			d.show();
+		},
 	});
 }
 

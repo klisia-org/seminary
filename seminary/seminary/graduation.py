@@ -119,9 +119,19 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
             else None
         ),
         "student_choice": getattr(library, "student_choice", 0) or 0,
+        "event_custom_category": (
+            library.event_custom_category
+            if library.requirement_type == "Event Attendance"
+            else None
+        ),
         "grad_requirement_item": library.name,
         "pgr_item": pgr_item.name,
     }
+    if library.requirement_type == "Chapel Attendance":
+        # Count-based: snapshot how many chapel services are required; the
+        # running count is reflected by seminary.seminary.chapel.
+        row["required_count"] = library.default_quantity or 1
+        row["attended_count"] = 0
     _apply_initial_choice_state(row, library)
     due = compute_due_date(pgr_item, program_enrollment_doc)
     if due:

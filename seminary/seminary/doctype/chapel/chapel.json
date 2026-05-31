@@ -1,0 +1,155 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CHPL-.#####",
+ "creation": "2026-05-31 07:07:04.864717",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "chapel_topic",
+  "confirmed",
+  "sync_with_google_calendar",
+  "checkin_code",
+  "event",
+  "column_break_vnnn",
+  "starts_on",
+  "ends_on",
+  "room",
+  "section_break_dxbw",
+  "description",
+  "section_break_nfgx",
+  "chapel_team"
+ ],
+ "fields": [
+  {
+   "description": "This is what participants will see.",
+   "fieldname": "chapel_topic",
+   "fieldtype": "Data",
+   "label": "Chapel Topic or Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_vnnn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "starts_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Starts on",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ends_on",
+   "fieldtype": "Datetime",
+   "label": "Ends on"
+  },
+  {
+   "fieldname": "section_break_nfgx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "chapel_team",
+   "fieldtype": "Table",
+   "label": "Chapel Team",
+   "options": "Chapel Team"
+  },
+  {
+   "default": "0",
+   "description": "Events will be created only when this is checked.",
+   "fieldname": "confirmed",
+   "fieldtype": "Check",
+   "label": "Confirmed"
+  },
+  {
+   "fieldname": "event",
+   "fieldtype": "Link",
+   "label": "Event",
+   "options": "Event"
+  },
+  {
+   "default": "0",
+   "fieldname": "sync_with_google_calendar",
+   "fieldtype": "Check",
+   "label": "Sync with Google Calendar"
+  },
+  {
+   "description": "Human-readable code students enter to check in (when 'Require check-in code' is on in Seminary Settings). Generated automatically; display it on screen during the service.",
+   "fieldname": "checkin_code",
+   "fieldtype": "Data",
+   "label": "Check-in Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "room",
+   "fieldtype": "Link",
+   "label": "Room",
+   "options": "Room"
+  },
+  {
+   "fieldname": "section_break_dxbw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-31 08:08:22.197529",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Chapel",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "chapel_topic"
+}
