@@ -77,6 +77,7 @@
   "chapel_checkin_closes_after_mins",
   "require_chapel_checkin_code",
   "show_student_application_on_login",
+  "default_application_web_form",
   "support_user"
  ],
  "fields": [
@@ -331,6 +332,14 @@
    "fieldname": "show_student_application_on_login",
    "fieldtype": "Check",
    "label": "Show Student Application button on login"
+  },
+  {
+   "description": "Application form used when a Program does not specify its own. Leave blank to use the built-in form.",
+   "fieldname": "default_application_web_form",
+   "fieldtype": "Link",
+   "label": "Default Application Web Form",
+   "link_filters": "[[\"Web Form\",\"doc_type\",\"=\",\"Student Applicant\"]]",
+   "options": "Web Form"
   },
   {
    "description": "This is the system user for portal support for students.",

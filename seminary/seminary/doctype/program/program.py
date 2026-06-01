@@ -28,8 +28,11 @@ class Program(WebsiteGenerator):
                 pc.disabled_on = today()
 
     def get_context(self, context):
+        from seminary.seminary.api import get_application_web_form_route
+
         context.open_windows = []
         context.continuous_term = None
+        context.apply_route = get_application_web_form_route(self.name)
 
         if self.enrollment_mode == "Timed":
             context.open_windows = self._resolve_open_windows()

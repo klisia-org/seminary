@@ -44,17 +44,25 @@ A **Graduation Requirement Item** declares *what kind of thing exists in the
 seminary*. You author it once, with instructions to students, and reuse it
 across as many programs as you like.
 
-Every library item picks **one** of three types:
+Every library item picks **one** of four types:
 
 - **Event Attendance** — fulfilled by a student attending a specific
   [Event](../modules/academic-calendar.md). Example: *"Spiritual Formation
   Retreat 2027"*. Choose **Event per Student** if every student must show up
-  individually; leave it unchecked if a single occurrence (a one-time chapel
-  service everyone attends together) satisfies the cohort.
+  individually; leave it unchecked if a single occurrence (a one-time event
+  everyone attends together) satisfies the cohort.
+- **Chapel Attendance** — *count-based* attendance at recurring chapel
+  services, fulfilled automatically as students **check themselves in** from
+  the portal. You set how many services are required (e.g. 30); the
+  requirement turns green the moment a student's check-in count reaches that
+  number. Unlike Event Attendance you do **not** create one record per
+  service — the chaplain schedules each chapel once, students self check-in,
+  and the system keeps the running tally. See
+  [Worked example 1](#example-1-chapel-attendance-self-check-in) for the full
+  setup.
 - **Manual Verification** — fulfilled by staff confirming the student did
   the thing, optionally with file evidence from the student, the staff, or
-  both. Example: *"Doctrinal Statement Signed"*, *"Chapel Attendance"* (8
-  total).
+  both. Example: *"Doctrinal Statement Signed"*, *"Ordination Interview"*.
 - **Linked Document** — fulfilled when another document in the system
   reaches a specific status. Example: a *Recommendation Letter* moves to
   `Approved`, or a *Culminating Project* moves to `Completed`.
@@ -70,13 +78,13 @@ Two flags govern evidence on Manual Verification items:
 
 These two flags are independent. A doctrinal statement might require *both*
 (student uploads the signed PDF, staff uploads their identity-verification
-note). Chapel attendance typically requires *neither* — the staff just
-ticks Fulfilled.
+note). A new-student orientation typically requires *neither* — the staff
+just ticks Fulfilled.
 
-> **Why two flags?** Some items, like chapel attendance, are simple — staff
-> ticks a box. Others, like a doctrinal statement, need a written document from
-> the student *and* a staff verification of identity. One pair of fields
-> can model both.
+> **Why two flags?** Some items, like a new-student orientation, are simple —
+> staff ticks a box. Others, like a doctrinal statement, need a written
+> document from the student *and* a staff verification of identity. One pair of
+> fields can model both.
 
 #### Blocks Graduation Request
 
@@ -110,8 +118,10 @@ Each row picks a library item and adds program-specific binding metadata:
   enrolled student. See below.
 - **Is Mandatory** — does failing this row block graduation, or is it
   optional/informational?
-- **Quantity Required** — only meaningful for Manual Verification (e.g.
-  "8 chapel attendances"). The other two types always count as 1.
+- **Quantity Required** — the count the student must reach. For **Chapel
+  Attendance** it is the number of services to check in to (e.g. 30); for
+  **Manual Verification** it is the number of instances (e.g. 8 service-hour
+  logs). Event Attendance and Linked Document always count as 1.
 
 #### Activation modes
 
@@ -143,7 +153,9 @@ mandatory row blocks graduation.
 When a Program Enrollment is submitted, the system **snapshots** the active
 policy into per-student rows called **Student Graduation Requirements**
 (SGRs). One SGR row per policy row, multiplied by the quantity for Manual
-Verification items.
+Verification items. **Chapel Attendance** is the exception — it stays a
+*single* row carrying the required count and a live "attended" tally (e.g.
+*22 / 30*) rather than splitting into one slot per service.
 
 This snapshot is **frozen for that student.** A registrar publishing a new
 policy in 2027 does **not** retroactively change the requirements of a
@@ -161,32 +173,63 @@ preserves any rows that were already waived; the action is logged.
 
 ## Worked examples
 
-### Example 1 — Chapel attendance (8 services per term)
+### Example 1 — Chapel attendance (self check-in)
 
-**Goal:** every student must attend 8 chapel services across the program.
+**Goal:** every student must attend 30 chapel services across the program,
+recorded by students checking themselves in.
 
 1. **Create the library item.** Desk → Graduation Requirement Item → New.
    - Requirement: `Chapel Attendance`
-   - Type: `Manual Verification`
-   - Default Quantity: `8`
+   - Type: `Chapel Attendance`
+   - Default Quantity: `30`
    - Mandatory: ✓
-   - Evidence Submitted by Student: ✗
-   - Evidence Required by Staff: ✗ (a tick-the-box record is enough)
-   - Instructions: *"Students are expected to attend at least 8 chapel
-     services. The chaplain's office signs students in at the door."*
+   - Instructions: *"Attend at least 30 chapel services. Open the Program
+     Audit page during the service and tap **Check in**."*
 
 2. **Add it to the program policy.** Desk → Program Graduation Requirement
    → open *MDiv 2026 Catalog* → add a row pointing at `Chapel Attendance`.
    - Activation Mode: `Always Active`
-   - Quantity Required: `8` (or override per program — e.g. 4 for a
+   - Quantity Required: `30` (or override per program — e.g. 15 for a
      part-time MA)
 
-3. **At enrollment**, the system materializes 8 SGR rows for each student,
-   labeled *"Chapel Attendance — Slot 1 of 8"* through *"8 of 8"*.
+3. **At enrollment**, the system materializes a **single** SGR row per
+   student that starts at *0 / 30*.
 
-4. **Day to day**, the chaplain's office opens the student's Program
-   Enrollment, finds the next *Not Started* slot, and ticks it to
-   `Fulfilled`. The Program Audit page updates immediately.
+4. **Day to day**, there is nothing for staff to tick. As each student checks
+   in to a chapel service, their tally climbs (*1 / 30*, *2 / 30*, …) and the
+   row turns green automatically the moment it reaches 30. The Program Audit
+   page reflects it immediately.
+
+#### Scheduling chapels and how check-in works
+
+Chapel services live in their own **Chapel** record (Desk → Chapel → New). A
+chapel is a public event — all students and instructors are invited, and it is
+open to the public.
+
+- **Topic, date/time, room** — what students see, and when check-in is
+  allowed.
+- **Chapel Team** — the table where the chaplain assigns the preacher,
+  worship leader, host, etc., and tracks each person's invitation status.
+- **Confirmed** — students can only check in to a chapel once it is
+  **Confirmed**. Leave it unchecked while you are still planning the service.
+
+**The check-in window** is governed by two settings under *Seminary Settings →
+Chapel & Official Events*: how many minutes **before** the start and **after**
+the end check-in stays open. Set **both to 0** to remove the time limit
+entirely (students may check in any time the chapel is Confirmed).
+
+**Optional check-in code.** If *Require check-in code* is enabled in Seminary
+Settings, each chapel gets a short human-readable code (shown on the Chapel
+record). Display it on screen during the service; students must type it to
+check in, which keeps people from checking in while away.
+
+**Optional Google Calendar sync.** If *Sync chapels with Google Calendar* is
+enabled and an *Official Google Calendar* is selected in Seminary Settings,
+each confirmed chapel is published to that shared calendar (with the chapel
+team added), so students and the public can see the schedule. The toggle is
+off by default — seminaries that don't use Google Calendar can ignore it, and
+individual chapels can still opt out via their own *Sync with Google Calendar*
+checkbox.
 
 ### Example 2 — Three recommendation letters (with named slots)
 
@@ -232,21 +275,26 @@ recommendation letters are in.
 three rounds with reviewers.
 
 This is the **Culminating Project** doctype. You don't need to model the
-project yourself — it ships with the system, including its own reviewer
-table and a 9-state workflow.
+project yourself — it ships with the system, including reviewer roles, a
+staged milestone plan, and its own workflow. The configurable pieces (project
+types, milestones, defenses) are described in
+[Culminating Projects: types, milestones, and defenses](#culminating-projects-types-milestones-and-defenses)
+below.
 
 To wire it into a program:
 
 1. Create a library item *Senior Project*.
    - Type: `Linked Document`
    - Linked Document: `Culminating Project`
+   - **Culminating Project Types Allowed**: list the project type(s) a student
+     may pick (e.g. *Thesis*, *Summative Paper*).
 2. Add it to the policy with **Activation Mode = Time Offset**, anchor
    `Last Term Starts`, value `0`, unit `Days` — i.e., due once the final
    term begins.
 3. At enrollment, the SGR row appears in the snapshot. The student initiates
-   the project from the audit page (a *Start Senior Project* button); when
-   the project's workflow reaches `Completed`, the SGR row flips to
-   Fulfilled automatically.
+   the project from the audit page (a *Start Project* button, choosing a type
+   if more than one is allowed); when the project reaches `Completed`, the SGR
+   row flips to Fulfilled automatically.
 
 ### Example 5 — Doctrinal Statement (signed by both sides)
 
@@ -262,6 +310,110 @@ verifies the signature and files a copy.
    `Submitted`.
 3. The registrar opens the SGR row, attaches the verification note, and
    clicks Fulfilled.
+
+## Culminating Projects: types, milestones, and defenses
+
+A *Senior Project* / *Thesis* / *Capstone* is wired in as a **Linked Document**
+requirement pointing at the **Culminating Project** doctype (Example 4). Behind
+that one requirement sits a small framework you configure once.
+
+### Project Types
+
+A **Culminating Project Type** (Desk → Culminating Project Type) is a reusable
+template for one *kind* of project — e.g. *Thesis*, *Capstone*, *Summative
+Paper*. Each type defines:
+
+- **Course** — a culminating project is also a real course enrollment, so it
+  earns credit and a grade like any other course. The type names which Course
+  backs it.
+- **Milestones** — the staged plan every project of this type follows (below).
+
+On the requirement's library item you list the **Culminating Project Types
+Allowed**. If you allow exactly one, the student is auto-assigned it; if you
+allow several (e.g. Thesis *or* Summative Paper), the student chooses one on the
+Program Audit page when they start.
+
+### Milestones
+
+Each Project Type carries a **milestone template** — an ordered list of steps.
+For each step you set:
+
+- **Kind** — *Standard*, *Proposal*, *Defense*, or *Final Submission*.
+- **Due date** — computed from an **anchor** (Project Start, Enrollment Date,
+  Expected Graduation, Term Start, or the Previous Milestone) plus an **offset**
+  in days or academic terms. So "Proposal — 30 days after project start" or
+  "Defense — one term before expected graduation" are just anchor + offset.
+- **Requires Submission** — whether the student must upload work for this step.
+- **Sign-offs** — which roles must approve: **Advisor**, **Second Reader**,
+  **Third Reader**, **Committee**. A milestone reaches *Approved* only once
+  every required role has signed, and the project can be marked *Completed* only
+  when all mandatory milestones are approved.
+
+When a student starts a project, the template milestones are **snapshotted**
+onto their project — the same frozen-at-start contract as graduation
+requirements. Each snapshot row tracks its own status, due date, sign-offs, and
+submission round, and overdue milestones are flagged automatically.
+
+### Defenses (and their calendar event)
+
+A milestone of kind **Defense** can carry a calendar event. On the milestone
+template, tick **Creates Event** and pick an **Event Category** (see the next
+section). Then, from the project workbench, the **advisor** clicks **Schedule
+Defense**, picks a date/time and optional location, and the system creates a
+calendar Event with the student, readers, and committee as participants.
+
+The defense event is *calendar-only* — it exists so everyone shows up at the
+right time. It does **not** auto-fulfil anything; the defense is recorded by the
+readers signing off the Defense milestone, exactly like any other milestone.
+
+Students, advisors, and readers do all of this from the **Culminating Project
+workbench** (a portal page) where they see milestones and due dates, upload
+submissions, and record sign-offs.
+
+## How attendance events are handled
+
+The **Event Attendance** requirement type is backed by two pieces: a reusable
+*category* and the dated *events* created from it.
+
+### Event Categories (the type)
+
+An **Event Custom Category** (Desk → Event Custom Category) describes a *kind* of
+event students attend — e.g. *Convocation*, *Spiritual Formation Retreat*, *Exit
+Interview*. It carries:
+
+- **Per Student** — if ticked, every student needs their *own* occurrence (a
+  one-on-one such as an exit interview); if unticked, a *single* occurrence
+  satisfies the whole cohort (a convocation everyone attends together).
+- **Visibility** — Public (appears on the shared calendar) or Private.
+- **Instructions** — copied into each event's description (dress code, what to
+  bring, location notes).
+
+Your Event Attendance library item points at the **category**, not at a specific
+date — because the same category is reused every year.
+
+### Creating the actual events
+
+There are two ways staff turn a category into a dated event students get credit
+for:
+
+- **Cohort event** (*Per Student* off) — from the **Event Custom Category** list,
+  click **Create Event** on the category's row, pick a date (and optional
+  location). The system creates one Event covering every enrolled student who
+  still owes this requirement; marking that Event **Completed** flips all of
+  their requirement rows to Fulfilled at once.
+- **Per-student event** (*Per Student* on) — from a student's **Program
+  Enrollment**, click **Schedule Required Event**, pick the requirement and a
+  date. This creates one Event for that student, fulfilled when they are marked
+  as attending.
+
+Either way the event is a normal calendar Event — it can be synced to Google
+Calendar like any other — and the matching graduation requirement updates
+automatically, with no separate "tick Fulfilled" step.
+
+> **Chapel is different.** Chapel attendance is recurring and count-based, so it
+> uses its own **Chapel Attendance** type with student self check-in
+> ([Example 1](#example-1-chapel-attendance-self-check-in)), not the Event
+> Attendance flow described here.
 
 ## Day-to-day for staff
 
@@ -284,9 +436,10 @@ Set `status` to `Fulfilled`, attach Staff Evidence if the requirement asks
 for it, and save. The system stamps `verified_by` and `verified_on`
 automatically.
 
-For Linked Document requirements, you usually do **not** mark the SGR row
-manually — the linked document's own workflow flips it for you when it
-reaches the configured status.
+For Linked Document and Chapel Attendance requirements, you usually do **not**
+mark the SGR row manually — the linked document's workflow (or the student's
+own check-ins) flips it for you. You can still waive them, or tick Fulfilled
+as an override.
 
 ### Waiving a requirement
 
@@ -353,7 +506,8 @@ consolidated view:
   credit progress and required-course status. *(unchanged)*
 - The **Graduation Requirements** section, fed from the SGR snapshot, shows
   every active requirement, grouped by status, with per-row instructions
-  and any evidence already on file.
+  and any evidence already on file. Chapel Attendance rows show a live count
+  (*22 / 30*) and a **Check in** button whenever a confirmed chapel is open.
 
 A student is shown `Eligible to graduate` only when both sections are
 clear of unfulfilled mandatory items.
@@ -364,6 +518,10 @@ clear of unfulfilled mandatory items.
 | --- | --- |
 | Add a new requirement category for the whole seminary | Create a Graduation Requirement Item (library) |
 | Apply a requirement to a specific program | Add a row to that program's Program Graduation Requirement (policy) |
+| Require students to attend N chapel services | Library item Type = Chapel Attendance, set Default Quantity; schedule Chapel records and mark them Confirmed |
+| Require a thesis / capstone | Library item Type = Linked Document → Culminating Project; list the allowed project type(s) |
+| Define a project's stages and defense | Add milestones to the Culminating Project Type (anchor + offset, sign-off roles, Creates Event for the defense) |
+| Require attendance at a one-off event | Create an Event Custom Category, then Create Event (cohort) or Schedule Required Event (per student) |
 | Make a requirement due only after another | Activation Mode = After Requirement, pick prerequisites |
 | Make a requirement due X days before graduation | Activation Mode = Time Offset, anchor = Expected Graduation Date |
 | Confirm a student satisfied something | Open the SGR row, set status = Fulfilled |

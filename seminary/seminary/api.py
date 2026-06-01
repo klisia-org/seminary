@@ -60,6 +60,33 @@ ALLOWED_ATTRIBUTES = {
     "span": ["class"],
 }
 
+DEFAULT_APPLICATION_WEB_FORM_ROUTE = "student-applicant"
+
+
+def get_application_web_form_route(program: str | None = None) -> str:
+    """Resolve the apply Web Form route for a program.
+
+    Resolution order: the program's own ``application_web_form`` →
+    ``Seminary Settings.default_application_web_form`` → the built-in
+    ``student-applicant`` form. Blank links or forms that no longer exist are
+    skipped so a deleted/renamed web form degrades gracefully to the fallback.
+    """
+
+    def _route(web_form: str | None) -> str | None:
+        if not web_form:
+            return None
+        return frappe.db.get_value("Web Form", web_form, "route")
+
+    if program:
+        route = _route(frappe.db.get_value("Program", program, "application_web_form"))
+        if route:
+            return route
+
+    route = _route(
+        frappe.db.get_single_value("Seminary Settings", "default_application_web_form")
+    )
+    return route or DEFAULT_APPLICATION_WEB_FORM_ROUTE
+
 
 @frappe.whitelist()
 def sanitize_html(html):

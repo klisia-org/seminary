@@ -14,15 +14,9 @@ frappe.ready(function () {
         }
     });
 
-    frappe.call("seminary.seminary.api.get_doctrinal_statement").then((r) => {
-        const ds = r.message;
-        if (!ds || !ds.body) return;
-        whenFieldsReady(["ds2"], (fields) => {
-            const f = fields[0];
-            if (f && f.set_value) f.set_value(ds.body);
-            else $('[data-fieldname="ds2"]').html(ds.body);
-        });
-    });
+    // The doctrinal statement is rendered by the shared web-form script
+    // (student_applicant_webform.js, wired via webform_include_js) so that
+    // custom Student Applicant forms get it too.
 
     // Shim handle_success so we can redirect using the saved doc's `data.name`.
     // The `after_save` event fires AFTER handle_success but doesn't carry data,

@@ -28,7 +28,7 @@
 <div class="pgm-hero" {% if hero_image %}style="background-image: url('{{ hero_image }}');"{% endif %}>
     <div class="pgm-hero-overlay">
         <h1>{{ title }}</h1>
-        {% if program_duration or duration_unit %}
+        {% if not is_ongoing and (program_duration or duration_unit) %}
         <div class="pgm-duration-pill">
             {{ program_duration or '' }} {{ _(duration_unit) if duration_unit else '' }}
         </div>
@@ -55,7 +55,7 @@
                     {% endif %}
                     {% if display_cta %}
                     <div class="apply-btn-wrap">
-                        <a class="btn btn-primary" href="/student-applicant/new?program={{ name | urlencode }}&academic_term={{ w.academic_term | urlencode }}&term_admission={{ w.name | urlencode }}">
+                        <a class="btn btn-primary" href="/{{ apply_route }}/new?program={{ name | urlencode }}&academic_term={{ w.academic_term | urlencode }}&term_admission={{ w.name | urlencode }}">
                             {{ _("Apply to be our student") }}
                         </a>
                     </div>
@@ -82,7 +82,7 @@
     <div class="term-meta">{{ _("Term runs") }} {{ continuous_term.term_window_display }}</div>
     {% endif %}
     <div class="apply-btn-wrap">
-        <a class="btn btn-primary" href="/student-applicant/new?program={{ name | urlencode }}&academic_term={{ continuous_term.name | urlencode }}">
+        <a class="btn btn-primary" href="/{{ apply_route }}/new?program={{ name | urlencode }}&academic_term={{ continuous_term.name | urlencode }}">
             {{ _("Apply to be our student") }}
         </a>
     </div>

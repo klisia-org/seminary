@@ -129,7 +129,7 @@ domains = {
     "Seminary": "seminary.seminary.setup",
 }
 # include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
+webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
@@ -236,7 +236,8 @@ has_permission = {
 
 
 override_doctype_class = {
-    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest"
+    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
 }
 
 
