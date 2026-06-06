@@ -142,11 +142,7 @@ O relatório do **Risco de Tempo-para-Graduação** (Relatórios → Seminário)
 
 Cada **Curso Agendado** se move através de um fluxo de trabalho de seis estados que os agendadores diários avançam automaticamente (quando [Seção 2](#_2-seminary-settings) "Avanço automático" está ligado) ou que a secretaria de alunos muda manualmente:
 
-```
-Rascunho → Abrir para matrícula → Matrícula fechada → Avaliação →
-            Fechada
-        Cancelado (terminal)
-```
+<LifecycleDiagram type="courseSchedule" />
 
 - **Rascunho** — criado, ainda não visível para os alunos. O agendador promove a Abertura para Matrícula quando chega a data de matrícula definida.
 - **Aberto para matrícula** — os alunos podem solicitar inscrição no portal.
