@@ -16,10 +16,7 @@ Os estudantes podem se matricular pelo portal do LMS durante os períodos de mat
 
 Uma Matrícula de Curso Individual se move através de um fluxo de trabalho de quatro estados:
 
-```
-Rascunho → Aguardando pagamento → Submetido → Retirado
-   ↘️├├├├├├├├├├─↗️
-```
+<LifecycleDiagram type="enrollment" />
 
 - **Rascunho** — criado mas ainda não apresentado; nada aconteceu além de salvar a linha
 - **Aguardando pagamento** — enviado, Faturas de Vendas geradas, mas o aluno ainda não foi adicionado à lista de participantes do curso (sem acesso ao LMS)
