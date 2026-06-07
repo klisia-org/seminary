@@ -143,7 +143,7 @@ def create_users():
                 "enabled": 1,
                 "send_welcome_email": 0,
                 "user_type": "System User",
-                "roles": [{"role": "Instructor"}, {"role": "Academics User"}],
+                "roles": [{"role": "Instructor"}, {"role": "Program Chair"}],
             },
         )
 

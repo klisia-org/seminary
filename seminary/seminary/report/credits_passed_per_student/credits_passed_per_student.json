@@ -49,7 +49,10 @@
  "report_type": "Report Builder",
  "roles": [
   {
-   "role": "Academics User"
+   "role": "Program Chair"
+  },
+  {
+   "role": "Registrar"
   }
  ],
  "timeout": 0

@@ -4,7 +4,7 @@ $(document).ready(function () {
 	var isStudent = roles.includes("Student");
 	var isStaff = roles.includes("Instructor") || roles.includes("System Manager")
 		|| roles.includes("Administrator") || roles.includes("Seminary Manager")
-		|| roles.includes("Course Moderator") || roles.includes("Evaluator");
+		|| roles.includes("Program Chair") || roles.includes("Registrar");
 	if (isStudent && !isStaff && (path === "/desk" || path === "/desk/" || path.startsWith("/desk/seminary"))) {
 		window.location.href = "/seminary/courses";
 	}

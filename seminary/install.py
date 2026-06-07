@@ -28,6 +28,8 @@ def after_install():
     create_alumni_role()
     create_registrar_role()
     create_instructor_role()
+    create_program_chair_role()
+    create_seminary_manager_role()
     get_custom_fields()
     setup_sales_invoice_permissions()
     update_company_in_item_details()
@@ -338,6 +340,26 @@ def create_instructor_role():
         ).save()
 
 
+def create_program_chair_role():
+    """Broad academic authority over programs & curriculum.
+
+    Replaces the ERPNext-inherited "Academics User" role, which Seminary used as
+    its de-facto content-owner role but never created itself. See ADR 030.
+    """
+    if not frappe.db.exists("Role", _("Program Chair")):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": _("Program Chair"), "desk_access": 1}
+        ).save()
+
+
+def create_seminary_manager_role():
+    """Module administrator. Previously relied on ERPNext to provide this role."""
+    if not frappe.db.exists("Role", _("Seminary Manager")):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": _("Seminary Manager"), "desk_access": 1}
+        ).save()
+
+
 def get_custom_fields():
     """Seminary specific custom fields that needs to be added to the Sales Invoice DocType."""
     return {
@@ -446,6 +468,8 @@ def after_migrate():
     setup_genders()
     setup_withdrawal_workflow()
     create_alumni_role()
+    create_program_chair_role()
+    create_seminary_manager_role()
     setup_sales_invoice_permissions()
 
 

@@ -27,7 +27,7 @@ CANCEL_ROLES = ("Registrar", "Seminary Manager")
 # workflow's Draft / Open for Enrollment state names ever change in
 # cs_lifecycle.py / workflow.json, update this list.
 TEMPLATE_IMPORT_STATES = ("Draft", "Open for Enrollment")
-TEMPLATE_IMPORT_ROLES = ("Academics User", "Seminary Manager", "Registrar")
+TEMPLATE_IMPORT_ROLES = ("Program Chair", "Seminary Manager", "Registrar")
 
 
 class CourseSchedule(Document):
@@ -345,7 +345,7 @@ class CourseSchedule(Document):
         if not roles.intersection(TEMPLATE_IMPORT_ROLES):
             frappe.throw(
                 _(
-                    "Only Academics User, Seminary Manager, or Registrar can "
+                    "Only Program Chair, Seminary Manager, or Registrar can "
                     "import a course template."
                 ),
                 frappe.PermissionError,

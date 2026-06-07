@@ -44,13 +44,17 @@
           </div>
 
           <!-- Reason -->
-          <Link
-            v-model="selectedReason"
-            doctype="Disciplinary Reason"
-            :label="__('Disciplinary reason')"
-            :filters="reasonFilters"
-            :required="true"
-          />
+          <div class="space-y-1.5">
+            <label class="block text-xs text-ink-gray-5">
+              {{ __('Disciplinary reason') }} <span class="text-ink-red-3">*</span>
+            </label>
+            <Autocomplete
+              :options="reasonOptions"
+              :modelValue="selectedReason"
+              :placeholder="__('Select a reason')"
+              @update:modelValue="(val) => (selectedReason = val?.value || '')"
+            />
+          </div>
 
           <!-- Recommendation preview -->
           <div
@@ -106,7 +110,6 @@
 <script setup>
 import { Dialog, FormControl, FileUploader, Button, call, toast } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
-import Link from '@/components/Controls/Link.vue'
 import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
 const show = defineModel({ default: false })
@@ -145,10 +148,7 @@ const recordOptions = computed(() =>
   (props.recommendedActions || []).map((a) => ({ label: a, value: a }))
 )
 
-const reasonFilters = computed(() => ({
-  instructor_portal: 1,
-  requires_course: props.mode === 'assessment' ? 1 : 0,
-}))
+const reasonOptions = ref([])
 
 const hasSubject = computed(() =>
   props.mode === 'course' ? !!cei.value : !!props.student
@@ -182,6 +182,17 @@ async function loadCeiOptions() {
     )
   } catch (e) {
     ceiOptions.value = []
+  }
+}
+
+async function loadReasonOptions() {
+  try {
+    reasonOptions.value = await call(
+      'seminary.seminary.disciplinary.list_portal_reasons',
+      { mode: props.mode }
+    )
+  } catch (e) {
+    reasonOptions.value = []
   }
 }
 
@@ -266,6 +277,7 @@ watch(show, (open) => {
     } else {
       resetReportState()
       loadCeiOptions()
+      loadReasonOptions()
     }
   }
 })

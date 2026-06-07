@@ -14,11 +14,11 @@ def redirect_student_on_login(login_manager):
     is_staff = bool(
         {
             "Instructor",
+            "Program Chair",
+            "Registrar",
+            "Seminary Manager",
             "System Manager",
             "Administrator",
-            "Seminary Manager",
-            "Course Moderator",
-            "Evaluator",
         }
         & set(roles)
     )

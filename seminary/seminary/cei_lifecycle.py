@@ -95,7 +95,7 @@ def maybe_advance_cei_on_payment(doc, method=None):
 def maybe_notify_registrar_on_invoice_cancel(doc, method=None):
     """Sales Invoice on_cancel hook. If a refund/cancellation drops the linked
     CEI's paid_percent below the program threshold while the CEI is already in
-    Submitted state, notify registrars (Academics User role) — but do NOT
+    Submitted state, notify registrars (Registrar role) — but do NOT
     revert the workflow state. See plan §7."""
     cei_name = getattr(doc, "custom_cei", None)
     if not cei_name:
@@ -215,10 +215,10 @@ def _advance_cei_to_submitted(cei_name):
 
 
 def _notify_registrar_payment_dropped(cei_name, paid_percent, threshold):
-    """Create a ToDo on the CEI for every Academics User and send a templated
+    """Create a ToDo on the CEI for every Registrar and send a templated
     email summarizing the situation. Triggered when a refund or invoice cancel
     drops a Submitted CEI's paid_percent below threshold."""
-    recipients = _academics_user_emails()
+    recipients = _registrar_emails()
     if not recipients:
         return
 
@@ -271,14 +271,14 @@ def _notify_registrar_payment_dropped(cei_name, paid_percent, threshold):
         )
 
 
-def _academics_user_emails():
-    """Return distinct enabled User emails who hold the Academics User role."""
+def _registrar_emails():
+    """Return distinct enabled User emails who hold the Registrar role."""
     rows = frappe.db.sql(
         """SELECT DISTINCT u.name
            FROM `tabUser` u
            INNER JOIN `tabHas Role` r ON r.parent = u.name
            WHERE u.enabled = 1
-             AND r.role = 'Academics User'""",
+             AND r.role = 'Registrar'""",
         as_dict=True,
     )
     return [r.name for r in rows if r.name]

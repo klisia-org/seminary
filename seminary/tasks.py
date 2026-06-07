@@ -142,13 +142,13 @@ def _maybe_warn_need_acadterm(today):
         return
 
     user_roles = frappe.db.sql(
-        """SELECT DISTINCT parent FROM `tabUserRole` WHERE role = 'Academics User'""",
+        """SELECT DISTINCT parent FROM `tabUserRole` WHERE role = 'Registrar'""",
         as_dict=True,
     )
     usernames = [r["parent"] for r in user_roles]
     if not usernames:
         frappe.log_error(
-            "No users found with the Academics User role.", "Need Academic Term"
+            "No users found with the Registrar role.", "Need Academic Term"
         )
         return
 

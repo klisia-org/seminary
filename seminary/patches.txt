@@ -19,3 +19,4 @@ seminary.seminary.patches.move_grad_req_item_to_workflow
 seminary.seminary.patches.backfill_pe_status
 seminary.seminary.patches.backfill_withdrawal_reason_category
 seminary.seminary.patches.seed_disciplinary_actions
+seminary.seminary.patches.rename_academics_user_to_program_chair

@@ -216,17 +216,21 @@ def get_user_info():
         as_dict=1,
     )
     user["roles"] = frappe.get_roles(user.name)
-    user.is_instructor = "Academics User" in user.roles
-    user.is_moderator = "Seminary Manager" in user.roles
-    user.is_evaluator = "Instructor" in user.roles
-    user.is_student = "Student" in user.roles
+    # LMS portal vocabulary mapped onto Seminary roles. Both the teaching
+    # Instructor and the curriculum-authority Program Chair get the instructor
+    # course view; the Instructor role drives the grading ("evaluator") view.
+    roles = set(user.roles)
+    user.is_instructor = bool({"Instructor", "Program Chair"} & roles)
+    user.is_moderator = "Seminary Manager" in roles
+    user.is_evaluator = "Instructor" in roles
+    user.is_student = "Student" in roles
     user.is_system_manager = "System Manager" in user.roles
     return user
 
 
 @frappe.whitelist()
 def get_all_users():
-    frappe.only_for(["Academics User", "Instructor", "Seminary Manager"])
+    frappe.only_for(["Program Chair", "Instructor", "Seminary Manager"])
     users = frappe.get_all(
         "User",
         {
@@ -250,7 +254,7 @@ def has_course_moderator_role(member=None):
 def has_course_instructor_role(member=None):
     return frappe.db.get_value(
         "Has Role",
-        {"parent": member or frappe.session.user, "role": "Academics User"},
+        {"parent": member or frappe.session.user, "role": "Program Chair"},
         "name",
     )
 
@@ -287,15 +291,50 @@ and cei.stu_user = %s""",
     return courses
 
 
+# Roles that see every course (academic deans / administrators), as opposed to a
+# regular Instructor who only sees the courses they teach.
+COURSE_FULL_ACCESS_ROLES = {
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+    "Administrator",
+}
+
+
+def get_own_course_schedules(user):
+    """Course Schedule names where `user` is listed as an instructor."""
+    instructor_names = frappe.get_all("Instructor", {"user": user}, pluck="name")
+    if not instructor_names:
+        return []
+    return frappe.get_all(
+        "Course Schedule Instructors",
+        {"instructor": ["in", instructor_names], "parenttype": "Course Schedule"},
+        pluck="parent",
+        distinct=True,
+    )
+
+
 @frappe.whitelist(allow_guest=True)
 def get_courses(filters=None, start=0, page_length=20):
-    """Returns the list of courses."""
+    """Returns the list of courses.
+
+    Program Chairs (treated as academic deans), Seminary Managers and System
+    Managers see every course. A regular Instructor sees only the courses they
+    are listed as an instructor on.
+    """
 
     if not filters:
         filters = {}
 
     filters.setdefault("workflow_state", ["!=", "Cancelled"])
     filters.setdefault("published", 1)
+
+    roles = set(frappe.get_roles())
+    if not (roles & COURSE_FULL_ACCESS_ROLES) and "Instructor" in roles:
+        own = get_own_course_schedules(frappe.session.user)
+        if not own:
+            return []
+        filters["name"] = ["in", own]
 
     fields = get_course_fields()
 
