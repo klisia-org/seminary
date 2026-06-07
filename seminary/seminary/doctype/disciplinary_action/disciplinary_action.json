@@ -2,13 +2,14 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:action_name",
- "creation": "2026-06-01 20:10:00.000000",
+ "creation": "2026-06-01 20:10:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "action_name",
   "severity",
   "triggers_dismissal",
+  "instructor_action",
   "is_active",
   "description"
  ],
@@ -46,11 +47,19 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "default": "0",
+   "description": "When checked, this action will be available for instructors to perform and report. Useful for verbal warnings that don't need escalation.",
+   "fieldname": "instructor_action",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Available to Instructors on Portal"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-01 20:10:00.000000",
+ "modified": "2026-06-07 20:19:51.148094",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Disciplinary Action",

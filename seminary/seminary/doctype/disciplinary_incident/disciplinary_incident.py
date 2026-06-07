@@ -11,6 +11,13 @@ class DisciplinaryIncident(Document):
         self.set_student_from_pe()
         self.set_occurrence_number()
         self.validate_assessment_required()
+        self.set_defaults()
+
+    def set_defaults(self):
+        if not self.status:
+            self.status = "Reported"
+        if not self.reported_by:
+            self.reported_by = frappe.session.user
 
     def set_student_from_pe(self):
         if not self.student and self.pe:

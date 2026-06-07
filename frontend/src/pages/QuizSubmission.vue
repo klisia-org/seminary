@@ -3,11 +3,29 @@
 		<Breadcrumbs v-if="submisisonDetails.doc" :items="breadcrumbs" />
 		<div class="space-x-2">
 			<Badge v-if="submisisonDetails.isDirty" :label="__('Not Saved')" variant="subtle" theme="orange" />
+			<Button
+				v-if="portalDisciplinary && submisisonDetails.doc"
+				variant="outline"
+				theme="red"
+				@click="showReportModal = true"
+			>
+				{{ __('Report Disciplinary Incident') }}
+			</Button>
 			<Button variant="solid" @click="saveSubmission()">
 				{{ __('Save') }}
 			</Button>
 		</div>
 	</header>
+	<ReportDisciplinaryIncidentModal
+		v-if="submisisonDetails.doc"
+		v-model="showReportModal"
+		mode="assessment"
+		:course="submisisonDetails.doc.course"
+		:student="submisisonDetails.doc.student"
+		:student-name="submisisonDetails.doc.member_name"
+		:assessment="submisisonDetails.doc.course_assess"
+		:assessment-name="submisisonDetails.doc.quiz_title"
+	/>
 	<div v-if="submisisonDetails.doc" class="w-1/2 mx-auto py-5 space-y-5">
 		<div class="text-xl font-semibold text-ink-gray-9">
 			{{ submisisonDetails.doc.member_name }}
@@ -51,8 +69,13 @@ import {
 	Badge,
 	toast
 } from 'frappe-ui'
-import { computed, onBeforeUnmount, onMounted, inject } from 'vue'
+import { computed, onBeforeUnmount, onMounted, inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
+import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
+
+const { portalDisciplinary } = usePortalDisciplinary()
+const showReportModal = ref(false)
 
 
 const router = useRouter()

@@ -47,6 +47,12 @@
   "scholarship_cust",
   "section_break_7",
   "instructor_created_by",
+  "column_break_zlxm",
+  "portal_disciplinary",
+  "withdrawal_section",
+  "term_based_withdrawal_dates",
+  "column_break_withdrawal",
+  "default_scholarship_withdrawal_procedure",
   "hr_payroll_section",
   "hrms_enable",
   "instructor_payment_split",
@@ -55,10 +61,6 @@
   "demo_data_installed",
   "column_break_xyvi",
   "no_more_demo",
-  "withdrawal_section",
-  "term_based_withdrawal_dates",
-  "column_break_withdrawal",
-  "default_scholarship_withdrawal_procedure",
   "portal_tab",
   "student_course_management_section",
   "allow_portal_enroll",
@@ -528,11 +530,22 @@
    "fieldname": "website_logo",
    "fieldtype": "Attach Image",
    "label": "Website logo"
+  },
+  {
+   "fieldname": "column_break_zlxm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "When checked, on each course there will be actions to report disciplinary incidents, at the course and assessment levels. A second gate on the disciplinary reason applies, so only when both conditions are met such type of reporting can occur.",
+   "fieldname": "portal_disciplinary",
+   "fieldtype": "Check",
+   "label": "Instructors create Disciplinary Incident"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-05-05 10:33:52.484217",
+ "modified": "2026-06-07 19:03:22.253387",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

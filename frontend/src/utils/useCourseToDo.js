@@ -37,6 +37,13 @@ export function useCourseToDo(courseName, user) {
     auto: true,
   })
 
+  const pendingDisciplinary = createResource({
+    url: 'seminary.seminary.disciplinary.list_pending_incidents',
+    cache: ['pending_disciplinary', courseName],
+    params: { course: courseName },
+    auto: !!isInstructor,
+  })
+
 
   const countToDoItems = computed(() => {
     const countMissing = missingAssessments.data?.length || 0
@@ -55,6 +62,7 @@ export function useCourseToDo(courseName, user) {
     assessments,
     missingAssessments,
     assessmentsToGrade,
+    pendingDisciplinary,
     isStudent,
     isInstructor,
     countToDoItems,
