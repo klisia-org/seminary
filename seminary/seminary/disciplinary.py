@@ -16,7 +16,13 @@ from frappe.utils import today
 TERMINAL_STATUSES = ("Withdrawn", "Dismissed", "Graduated", "Transferred")
 
 # Roles that may report/record disciplinary actions for any course (adjudicators).
-PRIVILEGED_ROLES = {"System Manager", "Academics User", "Seminary Manager", "Registrar"}
+PRIVILEGED_ROLES = {
+    "System Manager",
+    "Seminary Manager",
+    "Registrar",
+    "Program Chair",
+    "Instructor",
+}
 
 
 @frappe.whitelist()
@@ -142,6 +148,31 @@ def preview_recommendation(reason, cei=None, student=None):
         "occurrence_number": occurrence_number,
         "recommended": _recommendation(reason, occurrence_number),
     }
+
+
+@frappe.whitelist()
+def list_portal_reasons(mode="course"):
+    """Disciplinary Reasons offered in the instructor portal report modal.
+
+    Only reasons flagged ``instructor_portal`` are returned. ``requires_course``
+    (labelled "Requires assessment") splits the catalog: assessment mode returns
+    reasons that need an assessment context, course mode returns the rest. The
+    filter is applied as an explicit int so a course-mode value of 0 is never
+    dropped (unlike a falsy ``search_link`` filter).
+
+    Read is permission-bypassed — Disciplinary Reason is a controlled lookup and
+    instructors don't hold DocPerm read on it — and gated by role instead.
+    """
+    if not (_privileged() or "Instructor" in frappe.get_roles()):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    requires_course = 1 if mode == "assessment" else 0
+    return frappe.get_all(
+        "Disciplinary Reason",
+        filters={"instructor_portal": 1, "requires_course": requires_course},
+        fields=["name as value", "reason as label"],
+        order_by="reason asc",
+        ignore_permissions=True,
+    )
 
 
 @frappe.whitelist()

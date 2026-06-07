@@ -99,7 +99,7 @@ def check_and_advance_to_grading(cs_name):
     already past Enrollment Closed.
 
     System-driven transition — bypasses ``apply_workflow`` because the user
-    saving a grade is typically an Instructor without the Academics User role
+    saving a grade is typically an Instructor without the Program Chair role
     required by the workflow's Begin Grading action.
     """
     if not cs_name:

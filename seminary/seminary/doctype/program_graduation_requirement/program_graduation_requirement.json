@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "PGR-.#####",
  "creation": "2026-04-25 14:47:15.333793",
- "description": "A program's graduation policy. Submittable for traceability and versioned via workflow: a live policy is in the 'Active' state. To change requirements, use the 'Change Version' action — this retires the current policy (state 'Superseded', 'Is Active' cleared, 'Active Until' stamped to today) and spawns a Draft successor to edit and submit. Policies are never cancelled, so snapshot links from Program Enrollments stay valid (ADR 012, 024).",
+ "description": "A program's graduation policy. Submittable for traceability and versioned via workflow: a live policy is in the 'Active' state. To change requirements, use the 'Change Version' action \u2014 this retires the current policy (state 'Superseded', 'Is Active' cleared, 'Active Until' stamped to today) and spawns a Draft successor to edit and submit. Policies are never cancelled, so snapshot links from Program Enrollments stay valid (ADR 012, 024).",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -159,7 +159,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
    "share": 1,
    "submit": 1,
    "write": 1

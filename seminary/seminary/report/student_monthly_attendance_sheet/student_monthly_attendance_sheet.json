@@ -18,7 +18,10 @@
  "report_type": "Script Report",
  "roles": [
   {
-   "role": "Academics User"
+   "role": "Program Chair"
+  },
+  {
+   "role": "Registrar"
   }
  ]
 }

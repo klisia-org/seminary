@@ -56,7 +56,7 @@ def get_permission_query_conditions(user):
     if not user:
         user = frappe.session.user
     roles = set(frappe.get_roles(user))
-    if roles & {"System Manager", "Seminary Manager", "Academics User"}:
+    if roles & {"System Manager", "Seminary Manager", "Program Chair", "Registrar"}:
         return ""
     student = frappe.db.get_value("Student", {"student_email_id": user}, "name")
     if not student:
@@ -68,7 +68,7 @@ def has_permission(doc, user=None, permission_type=None):
     if not user:
         user = frappe.session.user
     roles = set(frappe.get_roles(user))
-    if roles & {"System Manager", "Seminary Manager", "Academics User"}:
+    if roles & {"System Manager", "Seminary Manager", "Program Chair", "Registrar"}:
         return True
     student = frappe.db.get_value("Student", {"student_email_id": user}, "name")
     return bool(student) and doc.student == student

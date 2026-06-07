@@ -85,7 +85,8 @@ def get_my_profile() -> dict | None:
 
 @frappe.whitelist()
 def mark_as_alumni(program_enrollment: str) -> dict:
-    if "Academics User" not in frappe.get_roles() and not frappe.has_permission(
+    staff_roles = {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}
+    if not (staff_roles & set(frappe.get_roles())) and not frappe.has_permission(
         "Alumni Profile", "create"
     ):
         frappe.throw(

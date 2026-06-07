@@ -187,7 +187,7 @@ def add_exam_grading_comment(submission_name, comment):
     user_doc = frappe.get_doc("User", user)
     is_owner = doc.member == user
     is_staff = any(
-        r.role in ("Instructor", "Course Moderator", "Evaluator", "System Manager")
+        r.role in ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
         for r in user_doc.roles
     )
     if not is_owner and not is_staff:

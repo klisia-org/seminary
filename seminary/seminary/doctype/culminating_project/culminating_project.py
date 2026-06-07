@@ -550,7 +550,7 @@ _READER_FIELDS = (
     ("second_reader", "Second Reader"),
     ("third_reader", "Third Reader"),
 )
-_STAFF_ROLES = ("Academics User", "Seminary Manager", "Registrar")
+_STAFF_ROLES = ("Program Chair", "Seminary Manager", "Registrar")
 # Sign-off role -> the milestone's required-sign-off check field.
 _ROLE_SIGNOFF_FIELD = {
     "Advisor": "signoff_advisor",

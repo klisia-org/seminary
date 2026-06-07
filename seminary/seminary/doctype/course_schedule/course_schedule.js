@@ -92,7 +92,7 @@ frappe.ui.form.on("Course Schedule", {
 		});
 	}
 
-	const can_send_grades = frappe.user.has_role('Instructor') || frappe.user.has_role('Academics User');
+	const can_send_grades = frappe.user.has_role('Instructor') || frappe.user.has_role('Program Chair');
 	if (!frm.is_new() && frm.doc.workflow_state === 'Grading' && can_send_grades) {
 		frm.add_custom_button(__('Send Grades'), function() {
 			frappe.confirm(
@@ -117,7 +117,7 @@ frappe.ui.form.on("Course Schedule", {
 	}
 
 	const importable = ['Draft', 'Open for Enrollment'].includes(frm.doc.workflow_state);
-	const can_import = frappe.user.has_role('Academics User')
+	const can_import = frappe.user.has_role('Program Chair')
 		|| frappe.user.has_role('Seminary Manager')
 		|| frappe.user.has_role('Registrar');
 	const no_chapters = !frm.doc.chapters || frm.doc.chapters.length === 0;

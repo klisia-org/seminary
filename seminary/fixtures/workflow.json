@@ -10,25 +10,25 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Submitted"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Academic Review"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Academically Approved"
@@ -52,7 +52,7 @@
     "state": "Completed"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Rejected"
@@ -62,7 +62,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "not doc.is_ongoing",
     "next_state": "Submitted",
     "state": "Draft"
@@ -78,7 +78,7 @@
    {
     "action": "Submit & Skip Academic Review",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "doc.is_ongoing and not doc.is_free",
     "next_state": "Academically Approved",
     "state": "Draft"
@@ -86,7 +86,7 @@
    {
     "action": "Submit & Complete",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "doc.is_ongoing and doc.is_free",
     "next_state": "Completed",
     "state": "Draft"
@@ -102,42 +102,42 @@
    {
     "action": "Send for Academic Review",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Academic Review",
     "state": "Submitted"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Rejected",
     "state": "Submitted"
    },
    {
     "action": "Approve Academically",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Academically Approved",
     "state": "Academic Review"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Rejected",
     "state": "Academic Review"
    },
    {
     "action": "Send for Financial Review",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Financial Review",
     "state": "Academically Approved"
    },
    {
     "action": "Complete",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Completed",
     "state": "Academically Approved"
    },
@@ -177,49 +177,49 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Requested"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Awaiting Response"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Submitted"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Under Review"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Approved"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Rejected"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Resend Required"
@@ -228,61 +228,61 @@
   "transitions": [
    {
     "action": "Mark Awaiting Response",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Awaiting Response",
     "state": "Requested"
    },
    {
     "action": "Resend Request",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Resend Required",
     "state": "Requested"
    },
    {
     "action": "Resend Request",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Resend Required",
     "state": "Awaiting Response"
    },
    {
     "action": "Mark Submitted",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Submitted",
     "state": "Awaiting Response"
    },
    {
     "action": "Mark Submitted",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Submitted",
     "state": "Resend Required"
    },
    {
     "action": "Send for Review",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Under Review",
     "state": "Submitted"
    },
    {
     "action": "Approve",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Approved",
     "state": "Under Review"
    },
    {
     "action": "Approve",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Approved",
     "state": "Submitted"
    },
    {
     "action": "Reject",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Rejected",
     "state": "Under Review"
    },
    {
     "action": "Reject",
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Rejected",
     "state": "Submitted"
    }
@@ -301,13 +301,13 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Active"
@@ -319,13 +319,13 @@
     "state": "Under Review"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Completed"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Rejected"
@@ -348,7 +348,7 @@
    {
     "action": "Activate",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Active",
     "state": "Draft"
    },
@@ -362,7 +362,7 @@
    {
     "action": "Send for Final Review",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Under Review",
     "state": "Active"
    },
@@ -376,14 +376,14 @@
    {
     "action": "Return for Revisions",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Active",
     "state": "Under Review"
    },
    {
     "action": "Complete",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "condition": "doc.milestones_complete",
     "next_state": "Completed",
     "state": "Under Review"
@@ -391,7 +391,7 @@
    {
     "action": "Complete",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "condition": "doc.milestones_complete",
     "next_state": "Completed",
     "state": "Active"
@@ -406,7 +406,7 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Rejected",
     "state": "Under Review"
    },
@@ -439,19 +439,19 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Open for Enrollment"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Enrollment Closed"
@@ -479,21 +479,21 @@
    {
     "action": "Open Enrollment",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Open for Enrollment",
     "state": "Draft"
    },
    {
     "action": "Close Enrollment",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Enrollment Closed",
     "state": "Open for Enrollment"
    },
    {
     "action": "Begin Grading",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Grading",
     "state": "Enrollment Closed"
    }
@@ -512,19 +512,19 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Awaiting Payment"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Submitted"
@@ -540,7 +540,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "doc.is_free or not doc.require_pay_submit",
     "next_state": "Submitted",
     "state": "Draft"
@@ -556,7 +556,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "doc.require_pay_submit and not doc.is_free",
     "next_state": "Awaiting Payment",
     "state": "Draft"
@@ -572,7 +572,7 @@
    {
     "action": "Mark as Paid",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Submitted",
     "state": "Awaiting Payment"
    }
@@ -591,19 +591,19 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Awaiting Payment"
    },
    {
-    "allow_edit": "Academics User",
+    "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Academic Review"
@@ -631,7 +631,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "not doc.is_free",
     "next_state": "Awaiting Payment",
     "state": "Draft"
@@ -647,7 +647,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "condition": "doc.is_free",
     "next_state": "Academic Review",
     "state": "Draft"
@@ -663,14 +663,14 @@
    {
     "action": "Mark as Paid",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Academic Review",
     "state": "Awaiting Payment"
    },
    {
     "action": "Send for Financial Review",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Registrar",
     "next_state": "Financial Review",
     "state": "Academic Review"
    },
@@ -732,7 +732,7 @@
    {
     "action": "Submit",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Active",
     "state": "Draft"
    },
@@ -781,7 +781,7 @@
    {
     "action": "Retire",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Retired",
     "state": "Active"
    },
@@ -802,7 +802,7 @@
    {
     "action": "Reactivate",
     "allow_self_approval": 1,
-    "allowed": "Academics User",
+    "allowed": "Program Chair",
     "next_state": "Active",
     "state": "Retired"
    },

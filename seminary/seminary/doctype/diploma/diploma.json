@@ -175,6 +175,14 @@
    "write": 1
   },
   {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -187,21 +195,24 @@
    "write": 1
   },
   {
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Registrar",
    "share": 1,
    "write": 1
   },
   {
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Student",
+   "role": "Program Chair",
    "share": 1
   }
  ],

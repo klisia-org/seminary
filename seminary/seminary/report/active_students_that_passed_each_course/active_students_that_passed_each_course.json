@@ -38,7 +38,10 @@
    "role": "System Manager"
   },
   {
-   "role": "Academics User"
+   "role": "Program Chair"
+  },
+  {
+   "role": "Registrar"
   }
  ],
  "timeout": 0

@@ -44,7 +44,7 @@
   {
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
    "select": 1
   },
   {
@@ -64,7 +64,6 @@
    "report": 1,
    "role": "System Manager",
    "select": 1
-
   }
  ],
  "row_format": "Dynamic",

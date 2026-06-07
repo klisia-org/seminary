@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "GRI-.####",
  "creation": "2026-04-25 14:06:41.951224",
- "description": "A reusable library of graduation requirements. To stop offering one, Retire it (via the workflow) — this hides it from the Program Graduation Requirement picker without breaking programs or student snapshots that already reference it. Reactivate to offer it again.",
+ "description": "A reusable library of graduation requirements. To stop offering one, Retire it (via the workflow) \u2014 this hides it from the Program Graduation Requirement picker without breaking programs or student snapshots that already reference it. Reactivate to offer it again.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -215,7 +215,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
    "share": 1,
    "submit": 1,
    "write": 1

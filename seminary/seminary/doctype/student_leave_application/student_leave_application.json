@@ -89,7 +89,6 @@
    "label": "Attendance Based On",
    "options": "Student Group\nCourse Schedule"
   },
-
   {
    "allow_in_quick_entry": 1,
    "depends_on": "eval:doc.attendance_based_on === \"Course Schedule\";",
@@ -141,7 +140,22 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
    "share": 1,
    "submit": 1,
    "write": 1

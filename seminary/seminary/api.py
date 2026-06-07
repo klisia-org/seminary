@@ -416,7 +416,7 @@ def add_grading_comment(submission_name: str, comment: str):
     user_doc = frappe.get_doc("User", user)
     is_owner = submission.member == user
     is_staff = any(
-        r.role in ("Instructor", "Course Moderator", "Evaluator", "System Manager")
+        r.role in ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
         for r in user_doc.roles
     )
     if not is_owner and not is_staff:
@@ -727,10 +727,14 @@ def get_user_info():
         as_dict=1,
     )
     user["roles"] = frappe.get_roles(user.name)
-    user.is_instructor = "Academics User" in user.roles
-    user.is_moderator = "Seminary Manager" in user.roles
-    user.is_evaluator = "Instructor" in user.roles
-    user.is_student = "Student" in user.roles
+    # LMS portal vocabulary mapped onto Seminary roles. Both the teaching
+    # Instructor and the curriculum-authority Program Chair get the instructor
+    # course view; the Instructor role drives the grading ("evaluator") view.
+    _roles = set(user.roles)
+    user.is_instructor = bool({"Instructor", "Program Chair"} & _roles)
+    user.is_moderator = "Seminary Manager" in _roles
+    user.is_evaluator = "Instructor" in _roles
+    user.is_student = "Student" in _roles
     user.is_alumni = "Alumni" in user.roles
     user.is_system_manager = "System Manager" in user.roles
     user.student = frappe.db.get_value(
@@ -1710,7 +1714,7 @@ def create_graduation_request(
 
     Permission model:
       - Caller is the student linked to the PE (portal flow), OR
-      - Caller has the Academics User role (registrar acting on behalf).
+      - Caller has the Program Chair or Registrar role (staff acting on behalf).
 
     Captures the legal name (required) and phonetic spelling (optional) for
     the diploma. The phonetic name is also persisted on the Student record so
@@ -1744,7 +1748,8 @@ def create_graduation_request(
     user = frappe.session.user
     user_roles = set(frappe.get_roles(user))
     is_staff = bool(
-        user_roles & {"Academics User", "Seminary Manager", "System Manager"}
+        user_roles
+        & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}
     )
     is_owner = False
     if not is_staff:
@@ -4352,7 +4357,7 @@ def delete_lesson(lesson, chapter):
 
 @frappe.whitelist()
 def delete_documents(doctype, documents):
-    frappe.only_for(["Seminary Manager", "Academics User", "Instructor"])
+    frappe.only_for(["Seminary Manager", "Program Chair", "Instructor"])
     for doc in documents:
         frappe.delete_doc(doctype, doc)
 
@@ -4522,7 +4527,7 @@ c.assignment = %s""",
 # `anchor_type` Select tells the frontend which overlay to use.
 
 
-_GRADER_ROLES = ("Moderator", "Instructor", "Evaluator", "Seminary Manager")
+_GRADER_ROLES = ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
 
 
 def _can_grade_submission(submission):

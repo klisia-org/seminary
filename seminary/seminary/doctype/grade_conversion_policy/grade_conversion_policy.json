@@ -66,7 +66,7 @@
   },
   {
    "depends_on": "eval:['linear_multiplier','linear_with_offset'].includes(doc.conversion_method)",
-   "description": "Target value = source value × multiplier (+ offset, if set).",
+   "description": "Target value = source value \u00d7 multiplier (+ offset, if set).",
    "fieldname": "multiplier",
    "fieldtype": "Float",
    "label": "Multiplier",
@@ -127,7 +127,21 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
    "share": 1,
    "submit": 1,
    "write": 1

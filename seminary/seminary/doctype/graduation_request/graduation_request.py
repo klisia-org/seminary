@@ -160,7 +160,7 @@ class GraduationRequest(Document):
     def _guard_name_edits_after_review(self):
         """Lock the diploma name fields once Academic Review begins.
 
-        Registrar (Academics User) can still correct typos at any state.
+        Registrar (and Program Chair) can still correct typos at any state.
         """
         if self.is_new():
             return
@@ -171,7 +171,10 @@ class GraduationRequest(Document):
             return
         if self.workflow_state in NAME_LOCKED_STATES:
             roles = set(frappe.get_roles())
-            if not (roles & {"Academics User", "Seminary Manager", "System Manager"}):
+            if not (
+                roles
+                & {"Program Chair", "Registrar", "Seminary Manager", "System Manager"}
+            ):
                 frappe.throw(
                     _(
                         "Diploma name can only be changed before Academic Review. "

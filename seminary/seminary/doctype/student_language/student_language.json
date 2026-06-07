@@ -77,10 +77,22 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Academics User",
+   "role": "Program Chair",
    "set_user_permissions": 0,
    "share": 1,
    "submit": 0,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
    "write": 1
   }
  ],
