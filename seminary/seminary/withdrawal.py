@@ -307,26 +307,137 @@ def _create_student_invoice_for_scholarship(
 
 
 def process_completion(doc):
-    """Handle final completion — check if Full Program Withdrawal needs to deactivate enrollment."""
-    if doc.withdrawal_scope == "Full Program Withdrawal" and doc.is_parent:
-        all_children = frappe.get_all(
-            "Course Withdrawal Request",
-            filters={
-                "parent_withdrawal": doc.name,
-                "docstatus": 1,
-            },
-            fields=["workflow_state"],
+    """Handle final completion.
+
+    A Full Program Withdrawal flips the Program Enrollment to a terminal status
+    once all of its child course withdrawals are Completed. The status change
+    goes through the shared spine (set_program_status), which records history,
+    keeps pgmenrol_active in sync, and runs the graduation-request cascade.
+    """
+    # A completing child course withdrawal may be the last piece of a program
+    # separation — re-check its parent (handles completing the parent before
+    # its children, and vice-versa).
+    if doc.has_parent and doc.parent_withdrawal:
+        parent = frappe.get_doc("Course Withdrawal Request", doc.parent_withdrawal)
+        if parent.withdrawal_scope == "Full Program Withdrawal" and parent.is_parent:
+            finalize_program_separation(parent)
+        return
+
+    if doc.withdrawal_scope != "Full Program Withdrawal" or not doc.is_parent:
+        return
+
+    # Deferred separations (End of Current Term / Specific Date) must not
+    # finalize until the daily scheduler has spawned the children on the
+    # effective date. cascade_done==0 means the children don't exist yet.
+    timing = getattr(doc, "separation_timing", "Immediate") or "Immediate"
+    if timing != "Immediate" and not doc.cascade_done:
+        return
+
+    finalize_program_separation(doc)
+
+
+def finalize_program_separation(doc):
+    """Flip the Program Enrollment to its terminal status once the program
+    separation parent AND every child course withdrawal are Completed. Safe to
+    call from either the parent or a child completing (idempotent)."""
+    if doc.workflow_state != "Completed":
+        return
+
+    children = frappe.get_all(
+        "Course Withdrawal Request",
+        filters={"parent_withdrawal": doc.name, "docstatus": 1},
+        fields=["workflow_state"],
+    )
+    if not all(c.workflow_state == "Completed" for c in children):
+        return
+
+    # Idempotency: do nothing if the PE is already in a terminal status.
+    pe_status = frappe.db.get_value(
+        "Program Enrollment", doc.program_enrollment, "status"
+    )
+    if pe_status in ("Withdrawn", "Dismissed", "Graduated", "Transferred"):
+        return
+
+    from seminary.seminary.program_status import set_program_status
+
+    to_status, category = _resolve_separation_target(doc)
+    notes = _transfer_notes(doc) if to_status == "Transferred" else None
+    effective_date = doc.separation_effective_date or doc.withdrawal_effective_date
+
+    set_program_status(
+        doc.program_enrollment,
+        to_status=to_status,
+        category=category,
+        reason=doc.withdrawal_reason,
+        effective_date=effective_date,
+        source_doctype="Course Withdrawal Request",
+        source_name=doc.name,
+        notes=notes,
+    )
+
+
+def process_due_separations():
+    """Daily: spawn course withdrawals for deferred program separations whose
+    effective date has arrived. Idempotent via the cascade_done flag."""
+    parents = frappe.get_all(
+        "Course Withdrawal Request",
+        filters={
+            "withdrawal_scope": "Full Program Withdrawal",
+            "is_parent": 1,
+            "docstatus": 1,
+            "cascade_done": 0,
+            "separation_effective_date": ("<=", frappe.utils.today()),
+        },
+        pluck="name",
+    )
+    for name in parents:
+        doc = frappe.get_doc("Course Withdrawal Request", name)
+        if (doc.separation_timing or "Immediate") == "Immediate":
+            continue
+        doc.create_child_withdrawal_requests()
+        doc.db_set("cascade_done", 1, update_modified=False)
+        # If approvals are already complete (and children fast-pathed), finalize.
+        if doc.workflow_state == "Completed":
+            finalize_program_separation(doc)
+    frappe.db.commit()
+
+
+def _resolve_separation_target(doc):
+    """Terminal PE status + history category for a completed program separation.
+
+    Disciplinary dismissals carry an explicit separation_status/category set by
+    the initiating path; voluntary/transfer separations derive from the
+    withdrawal reason's category (Transfer -> Transferred)."""
+    sep_status = getattr(doc, "separation_status", None)
+    if sep_status:
+        return sep_status, (
+            getattr(doc, "separation_category", None) or "Administrative"
         )
 
-        all_completed = all(c.workflow_state == "Completed" for c in all_children)
+    reason_category = (
+        frappe.db.get_value("Withdrawal Reasons", doc.withdrawal_reason, "category")
+        if doc.withdrawal_reason
+        else None
+    )
+    if reason_category == "Transfer":
+        return "Transferred", "Transfer"
+    return "Withdrawn", (reason_category or "Voluntary")
 
-        if all_completed:
-            frappe.db.set_value(
-                "Program Enrollment",
-                doc.program_enrollment,
-                "pgmenrol_active",
-                0,
-            )
+
+def _transfer_notes(doc):
+    """Compact snapshot of the transfer destination for the history row."""
+    parts = []
+    for field, label in (
+        ("transfer_to_institution", "Institution"),
+        ("transfer_to_program", "Program"),
+        ("transfer_to_country", "Country"),
+        ("destination_contact", "Contact"),
+        ("transcript_sent_on", "Transcript sent"),
+    ):
+        val = getattr(doc, field, None)
+        if val:
+            parts.append(f"{label}: {val}")
+    return "; ".join(parts) or None
 
 
 @frappe.whitelist()

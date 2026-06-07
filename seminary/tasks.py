@@ -17,6 +17,8 @@ def daily():
 
     _update_term_flags(today)
     _flag_overdue_milestones(today)
+    _process_program_separations()
+    _reconcile_loa(today)
 
     if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
         _run_nat_for_due_terms(today)
@@ -87,6 +89,21 @@ def _flag_overdue_milestones(today):
              AND due_date < %s""",
         (today,),
     )
+
+
+def _process_program_separations():
+    """Spawn course withdrawals for deferred program separations now due."""
+    from seminary.seminary.withdrawal import process_due_separations
+
+    process_due_separations()
+
+
+def _reconcile_loa(today):
+    """Flip billing_suspended on leaves that have crossed the Program Level
+    suspension threshold (see Phase 6 / ADR 033)."""
+    from seminary.seminary.program_status import reconcile_loa_billing
+
+    reconcile_loa_billing(today)
 
 
 def _run_nat_for_due_terms(today):

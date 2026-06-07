@@ -16,3 +16,6 @@ seminary.seminary.patches.backfill_pgr_workflow_state
 seminary.seminary.patches.backfill_culminating_project_workflow_state
 seminary.seminary.patches.seed_culminating_project_types
 seminary.seminary.patches.move_grad_req_item_to_workflow
+seminary.seminary.patches.backfill_pe_status
+seminary.seminary.patches.backfill_withdrawal_reason_category
+seminary.seminary.patches.seed_disciplinary_actions

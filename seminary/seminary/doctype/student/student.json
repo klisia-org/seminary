@@ -57,6 +57,9 @@
   "leaving_certificate_number",
   "column_break_31",
   "reason_for_leaving",
+  "standing_section",
+  "student_standing",
+  "student_holds",
   "student_name",
   "connections_tab"
  ],
@@ -254,6 +257,27 @@
    "fieldname": "reason_for_leaving",
    "fieldtype": "Text",
    "label": "Reason For Leaving"
+  },
+  {
+   "fieldname": "standing_section",
+   "fieldtype": "Section Break",
+   "label": "Standing & Holds"
+  },
+  {
+   "default": "Good Standing",
+   "description": "Derived from active holds and the latest program separation. Holds that block re-enrollment are enforced on new Program Enrollments (registrar-overridable).",
+   "fieldname": "student_standing",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Standing",
+   "options": "Good Standing\nProbation\nSuspended\nDismissed\nWithdrawn",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_holds",
+   "fieldtype": "Table",
+   "label": "Holds",
+   "options": "Student Hold"
   },
   {
    "fieldname": "student_name",

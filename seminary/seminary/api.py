@@ -3000,9 +3000,12 @@ def generate_nat_invoices(academic_term):
                 ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
         INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
         INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
+        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'New Academic Term'
+          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
+          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nat, 0) = 1)
           AND COALESCE(pgm.is_free, 0) = 0
         """,
         as_dict=True,
@@ -3050,9 +3053,12 @@ def generate_nay_invoices(academic_year):
                 ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
         INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
         INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
+        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'New Academic Year'
+          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
+          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nay, 0) = 1)
           AND COALESCE(pgm.is_free, 0) = 0
         """,
         as_dict=True,
@@ -3068,6 +3074,54 @@ def generate_nay_invoices(academic_year):
         )
     frappe.db.set_value("Academic Year", academic_year, "invoiced_nay_on", getdate())
     frappe.logger().info(f"generate_nay_invoices({academic_year}): {counts}")
+    return counts
+
+
+@frappe.whitelist()
+def generate_readmission_invoice(program_enrollment, fee_category, as_of=None):
+    """Bill a one-off readmission fee for a Program Enrollment returning from
+    leave, reusing the standard trigger-invoice pipeline. Idempotent per
+    (PE, date, payer) via the seminary_trigger tag."""
+    if not program_enrollment or not fee_category:
+        return _empty_invoice_result("missing args")
+
+    as_of = getdate(as_of) if as_of else getdate()
+    rows = frappe.db.sql(
+        """
+        SELECT pep.name AS pep_name, pfc.stu_link AS student,
+               pep.fee_category, pep.payer AS customer,
+               pep.pay_percent, pep.payterm_payer,
+               fc.item,
+               cg.default_price_list, ip.price_list_rate
+        FROM `tabpgm_enroll_payers` pep
+        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
+        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
+        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
+        INNER JOIN `tabItem Price` ip
+                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
+        WHERE pfc.pf_active = 1
+          AND fc.docstatus = 1
+          AND pfc.pf_pe = %s
+          AND pep.fee_category = %s
+        """,
+        (program_enrollment, fee_category),
+        as_dict=True,
+    )
+    ctx = _billing_context()
+    counts = {"created": 0, "skipped": 0, "failed": 0}
+    tag_date = as_of.strftime("%Y-%m-%d")
+    for r in rows:
+        summary = _("Readmission Fee — {0}").format(r.fee_category)
+        _create_trigger_invoice(
+            r,
+            f"READMIT:{program_enrollment}:{tag_date}:{r.pep_name}",
+            ctx,
+            counts,
+            summary=summary,
+        )
+    frappe.logger().info(
+        f"generate_readmission_invoice({program_enrollment}): {counts}"
+    )
     return counts
 
 
@@ -3298,10 +3352,12 @@ def generate_monthly_invoices(as_of=None):
         INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
         INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
         INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
+        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
         WHERE pfc.pf_active = 1
           AND fc.docstatus = 1
           AND pep.pep_event = 'Monthly'
-          AND pe.pgmenrol_active = 1
+          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
+          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_monthly, 0) = 1)
           AND COALESCE(pgm.is_free, 0) = 0
           AND (pe.last_monthly_invoiced_on IS NULL OR pe.last_monthly_invoiced_on < %s)
           AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)

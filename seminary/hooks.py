@@ -279,6 +279,9 @@ doc_events = {
     "Course Withdrawal Request": {
         "on_update_after_submit": "seminary.seminary.withdrawal.on_withdrawal_workflow_update",
     },
+    "Disciplinary Incident": {
+        "on_update": "seminary.seminary.disciplinary.on_incident_update",
+    },
     "Course Assess Results Detail": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
     },
@@ -382,6 +385,10 @@ scheduler_events = {
 override_whitelisted_methods = {
     "frappe.desk.desktop.get_desktop_page": "seminary.workspace_i18n.get_desktop_page",
     "frappe.desk.desktop.get_workspace_sidebar_items": "seminary.workspace_i18n.get_workspace_sidebar_items",
+    # Frappe v16 regression: `save_page`'s guard uses AND where it needs OR,
+    # so saving any public workspace is a silent no-op (the desk editor hangs
+    # and edits vanish on reload). See `seminary.workspace_save_fix`.
+    "frappe.desk.doctype.workspace.workspace.save_page": "seminary.workspace_save_fix.save_page",
 }
 
 # Example of original commented-out form retained for reference:

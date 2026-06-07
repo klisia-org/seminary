@@ -22,7 +22,22 @@
   "parent_withdrawal",
   "column_break_reason",
   "withdrawal_reason",
+  "reason_category",
   "student_documentation",
+  "separation_section",
+  "separation_timing",
+  "separation_effective_date",
+  "separation_status",
+  "separation_category",
+  "cascade_done",
+  "transfer_section",
+  "transfer_to_institution",
+  "transfer_to_program",
+  "transfer_to_country",
+  "column_break_transfer",
+  "destination_contact",
+  "transcript_sent_on",
+  "transfer_notes",
   "section_break_comments",
   "student_comment",
   "section_break_rule",
@@ -101,8 +116,7 @@
    "in_list_view": 1,
    "label": "Course Enrollment Individual",
    "options": "Course Enrollment Individual",
-   "reqd": 1,
-   "link_filters": "[[{\"fieldname\":\"course_enrollment_individual\",\"field_option\":\"Course Enrollment Individual\"},\"docstatus\",\"=\",1],[{\"fieldname\":\"course_enrollment_individual\",\"field_option\":\"Course Enrollment Individual\"},\"withdrawn\",\"=\",0]]"
+   "mandatory_depends_on": "eval:doc.withdrawal_scope!='Full Program Withdrawal'"
   },
   {
    "fetch_from": "course_enrollment_individual.coursesc_ce",
@@ -169,9 +183,102 @@
    "reqd": 1
   },
   {
+   "fetch_from": "withdrawal_reason.category",
+   "fieldname": "reason_category",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Reason Category",
+   "read_only": 1
+  },
+  {
    "fieldname": "student_documentation",
    "fieldtype": "Attach",
    "label": "Student Documentation"
+  },
+  {
+   "depends_on": "eval:doc.withdrawal_scope=='Full Program Withdrawal'",
+   "fieldname": "separation_section",
+   "fieldtype": "Section Break",
+   "label": "Program Separation"
+  },
+  {
+   "default": "Immediate",
+   "description": "Immediate withdraws from all current courses now. End of Current Term / Specific Date defers the course-withdrawal cascade until the effective date (run by the daily scheduler), letting in-progress grades be recorded first.",
+   "fieldname": "separation_timing",
+   "fieldtype": "Select",
+   "label": "Separation Timing",
+   "options": "Immediate\nEnd of Current Term\nSpecific Date"
+  },
+  {
+   "depends_on": "eval:doc.separation_timing!='Immediate'",
+   "description": "Date the program separation cascade should run. For End of Current Term this resolves to the current term's end date on submit.",
+   "fieldname": "separation_effective_date",
+   "fieldtype": "Date",
+   "label": "Separation Effective Date"
+  },
+  {
+   "fieldname": "separation_status",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Separation Target Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "separation_category",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Separation Category",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "cascade_done",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Cascade Done",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.reason_category=='Transfer'",
+   "fieldname": "transfer_section",
+   "fieldtype": "Section Break",
+   "label": "Transfer Destination"
+  },
+  {
+   "fieldname": "transfer_to_institution",
+   "fieldtype": "Data",
+   "label": "Destination Institution"
+  },
+  {
+   "fieldname": "transfer_to_program",
+   "fieldtype": "Data",
+   "label": "Destination Program"
+  },
+  {
+   "fieldname": "transfer_to_country",
+   "fieldtype": "Link",
+   "label": "Destination Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_transfer",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "destination_contact",
+   "fieldtype": "Data",
+   "label": "Destination Contact"
+  },
+  {
+   "fieldname": "transcript_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Transcript Sent On"
+  },
+  {
+   "fieldname": "transfer_notes",
+   "fieldtype": "Small Text",
+   "label": "Transfer Notes"
   },
   {
    "fieldname": "section_break_comments",

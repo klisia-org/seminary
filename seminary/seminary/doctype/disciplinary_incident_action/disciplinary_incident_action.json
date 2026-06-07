@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-01 20:13:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "action",
+  "applied_on",
+  "applied_by",
+  "was_suggested",
+  "outcome_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "action",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "Disciplinary Action",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applied_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Applied On"
+  },
+  {
+   "fieldname": "applied_by",
+   "fieldtype": "Link",
+   "label": "Applied By",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "description": "Set when this action was pre-filled from the reason's recommended-action matrix.",
+   "fieldname": "was_suggested",
+   "fieldtype": "Check",
+   "label": "Suggested"
+  },
+  {
+   "fieldname": "outcome_note",
+   "fieldtype": "Small Text",
+   "label": "Outcome Note"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-01 20:13:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Disciplinary Incident Action",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -22,7 +22,9 @@
   "academic_term",
   "image",
   "section_break_tfcw",
+  "status",
   "pgmenrol_active",
+  "billing_suspended",
   "current_std_term",
   "totalcredits",
   "current_gpa",
@@ -30,6 +32,11 @@
   "column_break_unkt",
   "inactiveuntil",
   "inactive_motive",
+  "loa_start_date",
+  "loa_expected_return",
+  "loa_max_return_date",
+  "status_history_section",
+  "status_history",
   "audit_section",
   "audit_summary",
   "grad_requirements_section",
@@ -144,12 +151,35 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "Active",
+   "description": "Lifecycle status of this enrollment. Set through the program-status spine (set_program_status); do not edit directly.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nLeave of Absence\nWithdrawn\nDismissed\nGraduated\nTransferred",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
    "default": "1",
+   "description": "Derived mirror of Status (1 only while Active). System-maintained; drives course-enrollment eligibility and existing active-enrollment queries.",
    "fieldname": "pgmenrol_active",
    "fieldtype": "Check",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Active"
+   "label": "Active (derived)",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "When set, recurring billing (per the Program Level leave policy) is suspended for this enrollment. Orthogonal to Active.",
+   "fieldname": "billing_suspended",
+   "fieldtype": "Check",
+   "label": "Billing Suspended",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_unkt",
@@ -159,6 +189,42 @@
    "fieldname": "inactiveuntil",
    "fieldtype": "Date",
    "label": "Inactive until"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.status=='Leave of Absence'",
+   "fieldname": "loa_start_date",
+   "fieldtype": "Date",
+   "label": "Leave Start Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.status=='Leave of Absence'",
+   "fieldname": "loa_expected_return",
+   "fieldtype": "Date",
+   "label": "Expected Return Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.status=='Leave of Absence'",
+   "description": "Hard cap by which the student must return; leaves past this may be administratively withdrawn.",
+   "fieldname": "loa_max_return_date",
+   "fieldtype": "Date",
+   "label": "Max Return Date"
+  },
+  {
+   "fieldname": "status_history_section",
+   "fieldtype": "Section Break",
+   "label": "Status History"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status_history",
+   "fieldtype": "Table",
+   "label": "Status History",
+   "options": "Program Enrollment Status History",
+   "read_only": 1
   },
   {
    "default": "1",

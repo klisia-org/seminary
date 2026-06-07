@@ -16,6 +16,7 @@ class ProgramEnrollment(Document):
             return
         self.set_student_name()
         self.validate_duplication()
+        self.validate_reenrollment_holds()
         self.validate_academic_term()
         self.validate_emphases()
         self.set_expected_graduation_date()
@@ -45,6 +46,11 @@ class ProgramEnrollment(Document):
         self._backlink_spawned_choices()
         from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
 
+        # Status transitions are canonically driven by set_program_status
+        # (seminary.seminary.program_status), which uses db_set and therefore
+        # bypasses this hook — it runs the grad-request cascade itself. This
+        # branch remains only as a fallback for a manual/amend save that flips
+        # pgmenrol_active 1->0 outside the spine.
         before = getattr(self, "_doc_before_save", None)
         was_active = bool(before.pgmenrol_active) if before else True
         if was_active and not self.pgmenrol_active:
@@ -124,24 +130,25 @@ class ProgramEnrollment(Document):
         _snapshot(self)
 
     def validate_academic_term(self):
-        today = getdate()
         start_date, end_date = frappe.db.get_value(
             "Academic Term", self.academic_term, ["term_start_date", "term_end_date"]
         )
-        if self.enrollment_date:
-            if getdate(self.enrollment_date) < today:
-                frappe.throw(
-                    _("Enrollment Date cannot be before today").format(
-                        get_link_to_form("Academic Term", self.academic_term)
-                    )
-                )
+        if not self.enrollment_date:
+            return
 
-            if end_date and getdate(self.enrollment_date) > getdate(end_date):
-                frappe.throw(
-                    _(
-                        "Enrollment Date cannot be after the End Date of the Academic Term {0}"
-                    ).format(get_link_to_form("Academic Term", self.academic_term))
-                )
+        enrollment_date = getdate(self.enrollment_date)
+        # Only guard against a past start date when the enrollment is first
+        # created. Editing or re-saving an existing record (e.g. a draft created
+        # on an earlier day) must not fail this check retroactively.
+        if self.is_new() and enrollment_date < getdate():
+            frappe.throw(_("Enrollment Date cannot be before today."))
+
+        if end_date and enrollment_date > getdate(end_date):
+            frappe.throw(
+                _(
+                    "Enrollment Date cannot be after the End Date of the Academic Term {0}"
+                ).format(get_link_to_form("Academic Term", self.academic_term))
+            )
 
     def validate_duplication(self):
         enrollment = frappe.db.exists(
@@ -156,6 +163,45 @@ class ProgramEnrollment(Document):
         )
         if enrollment:
             frappe.throw(_("Student is already enrolled."))
+
+    def validate_reenrollment_holds(self):
+        """Block a NEW enrollment for a student with an active re-enrollment
+        hold (e.g. a disciplinary dismissal). Registrar / Seminary Manager may
+        override; the override is surfaced as a warning. See ADR 033."""
+        if not self.is_new() or not self.student:
+            return
+
+        holds = frappe.get_all(
+            "Student Hold",
+            filters={
+                "parent": self.student,
+                "parentfield": "student_holds",
+                "is_active": 1,
+                "blocks_reenrollment": 1,
+            },
+            pluck="hold_type",
+        )
+        if not holds:
+            return
+
+        summary = ", ".join(sorted(set(holds)))
+        override_roles = {"Registrar", "Seminary Manager", "System Manager"}
+        if override_roles & set(frappe.get_roles()):
+            msgprint(
+                _(
+                    "Student has active re-enrollment hold(s): {0}. Proceeding under your override."
+                ).format(summary),
+                indicator="orange",
+                alert=True,
+            )
+            return
+
+        frappe.throw(
+            _(
+                "Student has active hold(s) blocking re-enrollment: {0}. "
+                "A Registrar or Seminary Manager must override."
+            ).format(summary)
+        )
 
     def validate_emphases(self):
         if not self.emphases:

@@ -32,6 +32,7 @@ def after_install():
     setup_sales_invoice_permissions()
     update_company_in_item_details()
     seed_culminating_project_types()
+    seed_disciplinary_actions()
 
 
 def check_erpnext():
@@ -226,6 +227,53 @@ def seed_culminating_project_types():
             {
                 "doctype": "Culminating Project Type",
                 "type_name": type_name,
+                "is_active": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_disciplinary_actions():
+    """Seed the starter Disciplinary Actions if they don't already exist.
+
+    Like Culminating Project Types, these are NOT fixtures: seminaries adjust
+    the catalog on the desk and a fixture re-import would clobber edits. Created
+    once, create-only-if-missing. The Dismissal action carries
+    `triggers_dismissal` so an applied dismissal sanction drives a program
+    separation through the shared spine (see ADR 032).
+    """
+    defaults = [
+        ("Verbal Warning", "Informal", 0, _("An informal verbal warning.")),
+        ("Written Warning", "Formal", 0, _("A formal written warning on record.")),
+        (
+            "Disciplinary Probation",
+            "Probation",
+            0,
+            _("A defined period of probation with conditions."),
+        ),
+        (
+            "Suspension",
+            "Suspension",
+            0,
+            _("Temporary suspension from program activities."),
+        ),
+        (
+            "Dismissal",
+            "Dismissal",
+            1,
+            _("Involuntary dismissal from the program."),
+        ),
+    ]
+    for action_name, severity, triggers, description in defaults:
+        if frappe.db.exists("Disciplinary Action", action_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Disciplinary Action",
+                "action_name": action_name,
+                "severity": severity,
+                "triggers_dismissal": triggers,
                 "is_active": 1,
                 "description": description,
             }

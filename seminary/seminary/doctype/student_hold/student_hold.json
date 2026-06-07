@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-01 20:35:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "hold_type",
+  "is_active",
+  "blocks_reenrollment",
+  "raised_on",
+  "raised_by",
+  "column_break_main",
+  "reason",
+  "source_doctype",
+  "source_name",
+  "lifted_on",
+  "lifted_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "hold_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Hold Type",
+   "options": "Disciplinary\nFinancial\nAcademic\nAdministrative",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "default": "1",
+   "fieldname": "blocks_reenrollment",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Blocks Re-enrollment"
+  },
+  {
+   "fieldname": "raised_on",
+   "fieldtype": "Date",
+   "label": "Raised On"
+  },
+  {
+   "fieldname": "raised_by",
+   "fieldtype": "Link",
+   "label": "Raised By",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Reason"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Link",
+   "label": "Source Document Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document",
+   "options": "source_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lifted_on",
+   "fieldtype": "Date",
+   "label": "Lifted On"
+  },
+  {
+   "fieldname": "lifted_by",
+   "fieldtype": "Link",
+   "label": "Lifted By",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-01 20:35:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Hold",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

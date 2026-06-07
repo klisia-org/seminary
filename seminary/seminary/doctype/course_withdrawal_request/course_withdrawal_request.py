@@ -1,5 +1,7 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
+from frappe.utils import today
 
 
 class CourseWithdrawalRequest(Document):
@@ -13,10 +15,55 @@ class CourseWithdrawalRequest(Document):
             and not self.has_parent
         ):
             self.is_parent = 1
+        self.validate_separation_timing()
+
+    def validate_separation_timing(self):
+        if self.withdrawal_scope != "Full Program Withdrawal":
+            return
+        if (
+            self.separation_timing == "Specific Date"
+            and not self.separation_effective_date
+        ):
+            frappe.throw(
+                _(
+                    "Please set a Separation Effective Date for a specific-date separation."
+                )
+            )
 
     def on_submit(self):
-        if self.is_parent:
-            self.create_child_withdrawal_requests()
+        if not self.is_parent:
+            return
+        if self._is_deferred_separation():
+            # Defer the course-withdrawal cascade to the effective date; the
+            # daily scheduler (process_due_separations) spawns the children then.
+            self._resolve_separation_effective_date()
+            return
+        self.create_child_withdrawal_requests()
+        self.db_set("cascade_done", 1, update_modified=False)
+
+    def _is_deferred_separation(self):
+        return (
+            self.withdrawal_scope == "Full Program Withdrawal"
+            and self.separation_timing
+            and self.separation_timing != "Immediate"
+        )
+
+    def _resolve_separation_effective_date(self):
+        if self.separation_effective_date:
+            return
+        if self.separation_timing == "End of Current Term":
+            term = frappe.db.get_value(
+                "Academic Term",
+                {"iscurrent_acterm": 1},
+                ["name", "term_end_date"],
+                as_dict=True,
+            )
+            if term and term.term_end_date:
+                self.db_set(
+                    "separation_effective_date",
+                    term.term_end_date,
+                    update_modified=False,
+                )
 
     def validate_documentation_required(self):
         if not self.withdrawal_reason:
@@ -49,6 +96,11 @@ class CourseWithdrawalRequest(Document):
         if self.withdrawal_rule:
             return
 
+        # Program-level separations (Full Program Withdrawal parents) carry no
+        # single CEI/term to anchor a rule; children inherit/auto-assign their own.
+        if not self.course_enrollment_individual:
+            return
+
         settings = frappe.get_cached_doc("Seminary Settings")
         if not settings.term_based_withdrawal_dates:
             return
@@ -76,15 +128,20 @@ class CourseWithdrawalRequest(Document):
             self.set_resulting_grade()
 
     def create_child_withdrawal_requests(self):
-        academic_term = frappe.db.get_value(
-            "Course Enrollment Individual",
-            self.course_enrollment_individual,
-            "academic_term",
+        academic_term = (
+            frappe.db.get_value(
+                "Course Enrollment Individual",
+                self.course_enrollment_individual,
+                "academic_term",
+            )
+            if self.course_enrollment_individual
+            else None
         )
 
         filters = {
             "program_ce": self.program_enrollment,
             "docstatus": 1,
+            "withdrawn": 0,
         }
 
         if self.withdrawal_scope == "All Courses This Term":
@@ -96,8 +153,16 @@ class CourseWithdrawalRequest(Document):
             fields=["name", "student_ce", "coursesc_ce", "course_data"],
         )
 
+        effective_date = (
+            self.separation_effective_date or self.withdrawal_effective_date
+        )
+
         for enroll in enrollments:
-            if enroll.name == self.course_enrollment_individual:
+            # A program-origin parent has no own CEI to skip.
+            if (
+                self.course_enrollment_individual
+                and enroll.name == self.course_enrollment_individual
+            ):
                 continue
 
             existing = frappe.db.exists(
@@ -123,7 +188,7 @@ class CourseWithdrawalRequest(Document):
                     "withdrawal_reason": self.withdrawal_reason,
                     "student_comment": self.student_comment,
                     "student_documentation": self.student_documentation,
-                    "withdrawal_effective_date": self.withdrawal_effective_date,
+                    "withdrawal_effective_date": effective_date,
                     "withdrawal_rule": self.withdrawal_rule,
                 }
             )
@@ -142,3 +207,71 @@ class CourseWithdrawalRequest(Document):
                 }
             )
             child_row.db_insert()
+
+
+TERMINAL_STATUSES = ("Withdrawn", "Dismissed", "Graduated", "Transferred")
+
+
+@frappe.whitelist()
+def initiate_program_separation(
+    program_enrollment,
+    withdrawal_reason,
+    effective_date=None,
+    timing="Immediate",
+    separation_status="Withdrawn",
+    separation_category="Voluntary",
+    comment=None,
+):
+    """Create a program-level Full Program Withdrawal request (no pre-selected
+    CEI). Shared entry point for the Program Enrollment form button and the
+    disciplinary dismissal path. Returns the new request's name.
+
+    The request is created in Draft and flows through the Course Withdrawal
+    workflow like any registrar-initiated separation; completion drives the
+    Program Enrollment terminal transition via process_completion -> the spine.
+    """
+    status = frappe.db.get_value("Program Enrollment", program_enrollment, "status")
+    if status in TERMINAL_STATUSES:
+        frappe.throw(
+            _("Program Enrollment {0} is already {1}.").format(
+                program_enrollment, status
+            )
+        )
+
+    existing = frappe.db.exists(
+        "Course Withdrawal Request",
+        {
+            "program_enrollment": program_enrollment,
+            "withdrawal_scope": "Full Program Withdrawal",
+            "is_parent": 1,
+            "docstatus": ("<", 2),
+        },
+    )
+    if existing:
+        frappe.throw(
+            _("A program separation request ({0}) is already in progress.").format(
+                existing
+            )
+        )
+
+    student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
+    doc = frappe.get_doc(
+        {
+            "doctype": "Course Withdrawal Request",
+            "program_enrollment": program_enrollment,
+            "student": student,
+            "withdrawal_scope": "Full Program Withdrawal",
+            "is_parent": 1,
+            "withdrawal_reason": withdrawal_reason,
+            "withdrawal_effective_date": effective_date or today(),
+            "separation_timing": timing or "Immediate",
+            "separation_effective_date": (
+                effective_date if (timing and timing == "Specific Date") else None
+            ),
+            "separation_status": separation_status,
+            "separation_category": separation_category,
+            "student_comment": comment,
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    return doc.name
