@@ -3,11 +3,29 @@
     <Breadcrumbs v-if="submisisonDetails.doc" :items="breadcrumbs" />
     <div class="space-x-2">
       <Badge v-if="submisisonDetails.isDirty" :label="__('Not Saved')" variant="subtle" theme="orange" />
+      <Button
+        v-if="portalDisciplinary && submisisonDetails.doc"
+        variant="outline"
+        theme="red"
+        @click="showReportModal = true"
+      >
+        {{ __('Report Disciplinary Incident') }}
+      </Button>
       <Button variant="solid" @click="validateSubmission()">
         {{ __('Save') }}
       </Button>
     </div>
   </header>
+  <ReportDisciplinaryIncidentModal
+    v-if="submisisonDetails.doc"
+    v-model="showReportModal"
+    mode="assessment"
+    :course="submisisonDetails.doc.course || courseName"
+    :student="submisisonDetails.doc.student"
+    :student-name="submisisonDetails.doc.member_name"
+    :assessment="submisisonDetails.doc.course_assess"
+    :assessment-name="ExamTitle.data?.title"
+  />
   <div class="flex justify-center text-xl font-bold text-ink-gray-9 mt-3">
     {{ ExamTitle.data?.title }}
   </div>
@@ -194,6 +212,11 @@ import { computed, onBeforeUnmount, onMounted, inject, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import LightEditor from '@/components/LightEditor.vue'
 import { Check, X } from 'lucide-vue-next'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
+import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
+
+const { portalDisciplinary } = usePortalDisciplinary()
+const showReportModal = ref(false)
 
 const router = useRouter()
 const user = inject('$user')

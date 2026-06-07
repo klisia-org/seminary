@@ -16,6 +16,8 @@
   "reason_requires_course",
   "assessment",
   "occurrence_number",
+  "status",
+  "reported_by",
   "evidence_section",
   "evidence",
   "evidence_attach",
@@ -104,6 +106,24 @@
    "fieldname": "occurrence_number",
    "fieldtype": "Int",
    "label": "Occurrence number"
+  },
+  {
+   "default": "Reported",
+   "description": "Reported: filed, awaiting an action. Action Taken: an instructor-authorized sanction was recorded. Escalated: needs an adjudicator (e.g. suspension/dismissal). Dismissed: the separation spine fired.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Reported\nAction Taken\nEscalated\nDismissed"
+  },
+  {
+   "description": "The user who filed this incident (set when reported from the portal).",
+   "fieldname": "reported_by",
+   "fieldtype": "Link",
+   "label": "Reported By",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_quoq",

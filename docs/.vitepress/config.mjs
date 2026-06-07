@@ -63,6 +63,7 @@ export default withMermaid(defineConfig({
               { text: 'Programs', link: '/modules/program' },
               { text: 'Enrollment', link: '/modules/enrollment' },
               { text: 'Withdrawal', link: '/modules/withdrawal' },
+              { text: 'Discipline', link: '/modules/discipline' },
               { text: 'Academic Calendar', link: '/modules/academic-calendar' },
               { text: 'Grading', link: '/modules/grading' },
               { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },

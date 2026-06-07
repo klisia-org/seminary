@@ -249,6 +249,20 @@
 							</Button>
 						</div>
 					</div>
+					<div v-if="canGradeSubmission && portalDisciplinary && submissionResource.doc" class="mb-2">
+						<Button variant="outline" theme="red" @click="showReportModal = true">
+							{{ __('Report Disciplinary Incident for this Submission') }}
+						</Button>
+						<ReportDisciplinaryIncidentModal
+							v-model="showReportModal"
+							mode="assessment"
+							:course="submissionResource.doc.course || courseName"
+							:student="submissionResource.doc.student"
+							:student-name="submissionResource.doc.member_name"
+							:assessment="submissionResource.doc.course_assess"
+							:assessment-name="assignment.data?.title"
+						/>
+					</div>
 					<div v-if="
 						submissionName != 'new' &&
 						!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
@@ -348,7 +362,11 @@ import { getFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
+import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
+const { portalDisciplinary } = usePortalDisciplinary()
+const showReportModal = ref(false)
 const submissionFile = ref(null)
 const commentAttachFile = ref(null)
 const answer = ref(null)

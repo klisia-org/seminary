@@ -1,7 +1,25 @@
 <template>
   <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
     <Breadcrumbs :items="breadcrumbs" />
+    <Button
+      v-if="portalDisciplinary && currentRow"
+      variant="outline"
+      theme="red"
+      @click="showReportModal = true"
+    >
+      {{ __('Report Disciplinary Incident') }}
+    </Button>
   </header>
+  <ReportDisciplinaryIncidentModal
+    v-if="currentRow"
+    v-model="showReportModal"
+    mode="assessment"
+    :course="courseName"
+    :student="currentRow.student"
+    :student-name="currentRow.student_name"
+    :assessment="currentRow.course_assess"
+    :assessment-name="title.data?.discussion_name"
+  />
   <div class="px-5 py-5 h-[calc(100vh-3.2rem)] overflow-y-auto">
     <!-- Navigation bar -->
     <div class="flex items-center justify-between mb-5">
@@ -132,6 +150,8 @@ import { useRouter } from 'vue-router'
 import dayjsModule from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import LightEditor from '@/components/LightEditor.vue'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
+import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
 const dayjs = typeof dayjsModule === 'function' ? dayjsModule : dayjsModule.default;
 dayjs.extend(relativeTime);
@@ -189,7 +209,7 @@ const submissionlist = createResource({
       ['disc_activity', '=', props.discussionID],
       ['coursesc', '=', props.courseName],
     ],
-    fields: ['name', 'student_name', 'member'],
+    fields: ['name', 'student_name', 'member', 'student', 'course_assess'],
     order_by: 'student_name asc',
   },
   auto: true,
@@ -206,6 +226,10 @@ const currentIndex = computed(() =>
 
 const studentName = computed(() => submissionlist.data?.find(sub => sub.name === currentSubmission.value)?.student_name);
 const memberName = computed(() => submissionlist.data?.find(sub => sub.name === currentSubmission.value)?.member);
+
+const { portalDisciplinary } = usePortalDisciplinary()
+const showReportModal = ref(false)
+const currentRow = computed(() => submissionlist.data?.find(sub => sub.name === currentSubmission.value));
 
 const fetchStudentData = createResource({
   url: 'seminary.seminary.api.get_user_discussion_submission',

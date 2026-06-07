@@ -116,6 +116,23 @@
 					</span>
 				</Button>
 			</router-link>
+			<Button
+				v-if="(user?.data?.is_moderator || is_instructor()) && portalDisciplinary"
+				variant="subtle"
+				class="w-full mt-2"
+				size="md"
+				@click="showReportModal = true"
+			>
+				<span>
+					{{ __('Report Disciplinary Incident') }}
+				</span>
+			</Button>
+			<ReportDisciplinaryIncidentModal
+				v-if="portalDisciplinary"
+				v-model="showReportModal"
+				mode="course"
+				:course="course.data.name"
+			/>
 			<div class="space-y-4">
 				<div class="mt-8 font-medium text-ink-gray-9">
 					{{ __('This course has:') }}
@@ -141,15 +158,20 @@
 </template>
 <script setup>
 import { BookOpen, Users, Star, GraduationCap } from 'lucide-vue-next'
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { Button, createResource, Tooltip } from 'frappe-ui'
 import { formatAmount } from '@/utils/'
+import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 
 import { useRouter } from 'vue-router'
 
 
 const router = useRouter()
 const user = inject('$user')
+
+const { portalDisciplinary } = usePortalDisciplinary()
+const showReportModal = ref(false)
 
 const props = defineProps({
 	course: {

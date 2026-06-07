@@ -63,15 +63,49 @@
         {{ __('Congrats! No assessments to grade for now.') }}
       </h3>
     </div>
+
+    <!-- Instructor: pending disciplinary actions -->
+    <div v-if="course.data?.course && isInstructor && pendingDisciplinary.data?.length"
+      class="text-ink-gray-8 mt-6 border-t pt-4">
+      <h3 class="text-xl mb-3 font-semibold text-ink-gray-9">{{ __('Disciplinary — Pending Actions') }}</h3>
+      <ul class="space-y-3">
+        <li v-for="item in pendingDisciplinary.data" :key="item.incident"
+          class="flex items-start justify-between gap-2">
+          <span class="text-sm">
+            <span class="font-medium">{{ item.student_name || item.student }}</span>
+            — {{ item.reason_label }} (#{{ item.occurrence_number }})
+            <span class="block text-ink-gray-6">{{ item.recommended_actions.join(', ') }}</span>
+          </span>
+          <Button size="sm" variant="subtle" @click="openRecord(item)">
+            {{ __('Record Action') }}
+          </Button>
+        </li>
+      </ul>
+      <ReportDisciplinaryIncidentModal
+        v-if="recordItem"
+        v-model="showRecordModal"
+        mode="record"
+        :incident="recordItem.incident"
+        :student="recordItem.student"
+        :student-name="recordItem.student_name"
+        :reason="recordItem.reason"
+        :reason-label="recordItem.reason_label"
+        :occurrence-number="recordItem.occurrence_number"
+        :recommended-actions="recordItem.recommended_actions"
+        @recorded="onRecorded"
+      />
+    </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { PartyPopper, BookOpenCheck, FileUp } from 'lucide-vue-next'
+import { Button } from 'frappe-ui'
 import { useCourseToDo } from '@/utils/useCourseToDo'
+import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import dayjs from '@/utils/dayjs'
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 
 const user = inject('$user')
 const props = defineProps({
@@ -90,9 +124,23 @@ const {
   assessments,
   missingAssessments,
   assessmentsToGrade,
+  pendingDisciplinary,
   isStudent,
   isInstructor,
 } = useCourseToDo(props.course, user)
+
+const showRecordModal = ref(false)
+const recordItem = ref(null)
+
+const openRecord = (item) => {
+  recordItem.value = item
+  showRecordModal.value = true
+}
+
+const onRecorded = () => {
+  showRecordModal.value = false
+  pendingDisciplinary.reload()
+}
 
 const formatDate = (date) => dayjs(date).fromNow()
 
