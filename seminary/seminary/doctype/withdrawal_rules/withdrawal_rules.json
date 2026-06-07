@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "field:rule_name",
  "creation": "2026-04-02 12:00:00",
+ "default": "Withdrawal Rules define how grading will respond to withdrawal based on anchored dates. These rules are used to feed Term WithDrawal Rules (which can be overriden case-by-case)",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

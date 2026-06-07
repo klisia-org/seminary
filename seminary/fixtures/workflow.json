@@ -61,6 +61,7 @@
   "transitions": [
    {
     "action": "Submit",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "condition": "not doc.is_ongoing",
     "next_state": "Submitted",
@@ -68,6 +69,7 @@
    },
    {
     "action": "Submit",
+    "allow_self_approval": 1,
     "allowed": "Student",
     "condition": "not (doc.is_ongoing and doc.is_free)",
     "next_state": "Submitted",
@@ -75,6 +77,7 @@
    },
    {
     "action": "Submit & Skip Academic Review",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "condition": "doc.is_ongoing and not doc.is_free",
     "next_state": "Academically Approved",
@@ -82,6 +85,7 @@
    },
    {
     "action": "Submit & Complete",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "condition": "doc.is_ongoing and doc.is_free",
     "next_state": "Completed",
@@ -89,6 +93,7 @@
    },
    {
     "action": "Submit & Complete",
+    "allow_self_approval": 1,
     "allowed": "Student",
     "condition": "doc.is_ongoing and doc.is_free",
     "next_state": "Completed",
@@ -96,54 +101,63 @@
    },
    {
     "action": "Send for Academic Review",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Academic Review",
     "state": "Submitted"
    },
    {
     "action": "Reject",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Rejected",
     "state": "Submitted"
    },
    {
     "action": "Approve Academically",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Academically Approved",
     "state": "Academic Review"
    },
    {
     "action": "Reject",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Rejected",
     "state": "Academic Review"
    },
    {
     "action": "Send for Financial Review",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Financial Review",
     "state": "Academically Approved"
    },
    {
     "action": "Complete",
+    "allow_self_approval": 1,
     "allowed": "Academics User",
     "next_state": "Completed",
     "state": "Academically Approved"
    },
    {
     "action": "Approve Financially",
+    "allow_self_approval": 1,
     "allowed": "Accounts User",
     "next_state": "Financially Approved",
     "state": "Financial Review"
    },
    {
     "action": "Reject",
+    "allow_self_approval": 1,
     "allowed": "Accounts User",
     "next_state": "Rejected",
     "state": "Financial Review"
    },
    {
     "action": "Complete",
+    "allow_self_approval": 1,
     "allowed": "Accounts User",
     "next_state": "Completed",
     "state": "Financially Approved"

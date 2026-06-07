@@ -88,18 +88,18 @@ Once Fee Categories are created, you will use them during the creation of Progra
 
 ## 9. Academic Year
 
-Create your first **Academic Year**. It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
+Create your first [**Academic Year**](../modules/academic-calendar.md#academic-year). It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
 
 ## 10. Academic Term
 
 Create your first **Academic Term** inside the Academic Year:
 
 1. Set start and end dates
-2. Configure enrollment windows and withdrawal deadlines — see [Academic Calendar](../modules/academic-calendar.md) and [Withdrawal](../modules/withdrawal.md) for how these dates drive downstream rules
+2. Configure enrollment windows and withdrawal deadlines — see [Academic Calendar](../modules/academic-calendar.md#academic-term) and [Withdrawal](../modules/withdrawal.md) for how these dates drive downstream rules
 
 ## 11. Program
 
-A **Program** is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment. 
+A [**Program**](../modules/program.md) is the curriculum structure students enroll into (e.g. *M.Div.*, *Certificate in Biblical Studies*). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment. 
 Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md). During program enrollment, it will also be established **who** pays each fee category and what percentage (Payers Fee Category).
 
 All Fee Categories for any course of that program **must** first be linked in the Program level. 

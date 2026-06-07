@@ -164,6 +164,8 @@
    "label": "Application Date"
   },
   {
+   "fetch_from": "academic_term.academic_year",
+   "fetch_if_empty": 1,
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year for Enrollment",
@@ -176,6 +178,7 @@
    "fieldtype": "Link",
    "label": "Academic Term for Enrollment",
    "options": "Academic Term",
+   "reqd": 1,
    "search_index": 1
   },
   {
@@ -214,8 +217,7 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
@@ -235,17 +237,18 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "This will also be your username for login. Preferably, use a personal email that you will keep.",
    "fieldname": "student_email_id",
    "fieldtype": "Data",
    "label": "Student Email Address",
    "options": "Email",
+   "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "student_mobile_number",
    "fieldtype": "Data",
-   "label": "Student Mobile Number",
-   "reqd": 1
+   "label": "Student Mobile Number"
   },
   {
    "fieldname": "nationality",
@@ -349,8 +352,7 @@
   {
    "fieldname": "social_security_number",
    "fieldtype": "Data",
-   "label": "Social Security Number",
-   "reqd": 1
+   "label": "Social Security Number"
   },
   {
    "fieldname": "ethnic",
@@ -468,8 +470,7 @@
    "description": "By signing here, I certify that I read and fully agree with the doctrinal statement above.",
    "fieldname": "signdoctrine",
    "fieldtype": "Signature",
-   "label": "Sign here",
-   "reqd": 1
+   "label": "Sign here"
   },
   {
    "fieldname": "doctrinal_agreement_section",
@@ -598,7 +599,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-05-19 10:11:09.345321",
+ "modified": "2026-06-01 02:57:24.459056",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
@@ -623,10 +624,37 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Student Applicant",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Alumni",
    "share": 1,
    "write": 1
   }

@@ -3,11 +3,13 @@
  "allow_rename": 1,
  "autoname": "field:label",
  "creation": "2026-04-02 12:00:00.000000",
+ "default": "Library of Disciplinary Reasons with its specific instructions for students and staff, if applicable, who needs to upload documentation.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "label",
   "description",
+  "category",
   "column_break_docs",
   "requires_documentation",
   "documentation_label",
@@ -30,6 +32,17 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Description"
+  },
+  {
+   "default": "Voluntary",
+   "description": "Drives the resulting Program Enrollment status on a full program separation (Transfer -> Transferred; everything else -> Withdrawn). Disciplinary/academic exits are handled by their own subsystems, not here.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Voluntary\nTransfer\nMedical/LOA\nAdministrative",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_docs",

@@ -2,13 +2,25 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "format:{pgm_level}",
- "creation": "2024-03-04 20:48:32.308155",
+ "creation": "2026-06-02 03:08:39.105531",
+ "description": "Program Levels do more than serve their academic role; they are also used to define program readmission fees after LOA of any kind; and possible parameters to suspend billing during LOA",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "pgm_level",
   "ongoing",
-  "description"
+  "description",
+  "leave_policy_section",
+  "loa_billing_suspension_days",
+  "suspend_monthly",
+  "suspend_nat",
+  "suspend_nay",
+  "column_break_readmission",
+  "charges_readmission_fee",
+  "readmission_fee_category",
+  "amended_from",
+  "section_break_kzml",
+  "amended"
  ],
  "fields": [
   {
@@ -32,13 +44,92 @@
    "fieldname": "ongoing",
    "fieldtype": "Check",
    "label": "Is Ongoing"
+  },
+  {
+   "fieldname": "leave_policy_section",
+   "fieldtype": "Section Break",
+   "label": "Leave & Readmission Policy"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "A Leave of Absence longer than this many days suspends the selected recurring charges. 0 = never suspend (billing continues throughout any leave).",
+   "fieldname": "loa_billing_suspension_days",
+   "fieldtype": "Int",
+   "label": "LOA Billing Suspension Threshold (days)",
+   "non_negative": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "depends_on": "eval:doc.loa_billing_suspension_days>0",
+   "fieldname": "suspend_monthly",
+   "fieldtype": "Check",
+   "label": "Suspend Monthly Charges"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "depends_on": "eval:doc.loa_billing_suspension_days>0",
+   "fieldname": "suspend_nat",
+   "fieldtype": "Check",
+   "label": "Suspend New Academic Term Charges"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "eval:doc.loa_billing_suspension_days>0",
+   "fieldname": "suspend_nay",
+   "fieldtype": "Check",
+   "label": "Suspend New Academic Year Charges"
+  },
+  {
+   "fieldname": "column_break_readmission",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Charge a readmission fee when a student returns from leave. The fee is the linked Fee Category, billed through the normal pipeline. It is NOT affected by the date threshold for billing suspension.",
+   "fieldname": "charges_readmission_fee",
+   "fieldtype": "Check",
+   "label": "Charges Readmission Fee"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.charges_readmission_fee",
+   "fieldname": "readmission_fee_category",
+   "fieldtype": "Link",
+   "label": "Readmission Fee Category",
+   "options": "Fee Category"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Level",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_kzml",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Amended From",
+   "options": "Program Level"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-01 12:16:57.044581",
- "modified_by": "Administrator",
+ "modified": "2026-06-02 03:15:51.948266",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program Level",
  "naming_rule": "Expression (old style)",
@@ -55,6 +146,19 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
    "share": 1,
    "submit": 1,
    "write": 1

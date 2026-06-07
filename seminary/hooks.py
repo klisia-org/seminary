@@ -129,7 +129,7 @@ domains = {
     "Seminary": "seminary.seminary.setup",
 }
 # include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
+webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
@@ -236,7 +236,8 @@ has_permission = {
 
 
 override_doctype_class = {
-    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest"
+    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
 }
 
 
@@ -277,6 +278,9 @@ doc_events = {
     },
     "Course Withdrawal Request": {
         "on_update_after_submit": "seminary.seminary.withdrawal.on_withdrawal_workflow_update",
+    },
+    "Disciplinary Incident": {
+        "on_update": "seminary.seminary.disciplinary.on_incident_update",
     },
     "Course Assess Results Detail": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
@@ -381,6 +385,10 @@ scheduler_events = {
 override_whitelisted_methods = {
     "frappe.desk.desktop.get_desktop_page": "seminary.workspace_i18n.get_desktop_page",
     "frappe.desk.desktop.get_workspace_sidebar_items": "seminary.workspace_i18n.get_workspace_sidebar_items",
+    # Frappe v16 regression: `save_page`'s guard uses AND where it needs OR,
+    # so saving any public workspace is a silent no-op (the desk editor hangs
+    # and edits vanish on reload). See `seminary.workspace_save_fix`.
+    "frappe.desk.doctype.workspace.workspace.save_page": "seminary.workspace_save_fix.save_page",
 }
 
 # Example of original commented-out form retained for reference:

@@ -10,6 +10,9 @@ def update_website_context(context):
         context.show_student_application = 0
 
     if context.show_student_application:
+        from seminary.seminary.api import get_application_web_form_route
+
+        apply_route = get_application_web_form_route()
         # Inject via head script that runs on login page only
         script = """
         <script>
@@ -21,7 +24,7 @@ def update_website_context(context):
                     div.className = "text-center";
                     div.style.marginTop = "20px";
                     div.innerHTML = '<p>%s</p>' +
-                        '<a href="/student-applicant/new" class="btn btn-primary btn-md">%s</a>';
+                        '<a href="/%s/new" class="btn btn-primary btn-md">%s</a>';
                     loginContainer.appendChild(div);
                 }
             }
@@ -29,6 +32,7 @@ def update_website_context(context):
         </script>
         """ % (
             frappe._("Want to join us?"),
+            apply_route,
             frappe._("Apply to be our Student"),
         )
 

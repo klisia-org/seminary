@@ -1,0 +1,190 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "DINC-.#####",
+ "creation": "2026-06-01 19:44:16.575164",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identification_section",
+  "pe",
+  "student",
+  "cei",
+  "incident_date",
+  "column_break_bkxt",
+  "reason",
+  "reason_requires_course",
+  "assessment",
+  "occurrence_number",
+  "evidence_section",
+  "evidence",
+  "evidence_attach",
+  "section_break_quoq",
+  "applied_actions",
+  "resolution_description"
+ ],
+ "fields": [
+  {
+   "fieldname": "pe",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cei",
+   "fieldtype": "Link",
+   "label": "Course Enrollment",
+   "options": "Course Enrollment Individual"
+  },
+  {
+   "fieldname": "column_break_bkxt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "incident_date",
+   "fieldtype": "Date",
+   "label": "Incident Date"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reason",
+   "options": "Disciplinary Reason",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "reason.requires_course",
+   "fieldname": "reason_requires_course",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reason Requires Assessment",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.reason_requires_course",
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "label": "Assessment Involved",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "fieldname": "identification_section",
+   "fieldtype": "Section Break",
+   "label": "Identification"
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "fieldname": "evidence",
+   "fieldtype": "Text Editor",
+   "label": "Describe what happened"
+  },
+  {
+   "fieldname": "evidence_attach",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "fetch_from": "pe.student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "description": "For this student and this reason",
+   "fieldname": "occurrence_number",
+   "fieldtype": "Int",
+   "label": "Occurrence number"
+  },
+  {
+   "fieldname": "section_break_quoq",
+   "fieldtype": "Section Break",
+   "label": "Resolution"
+  },
+  {
+   "description": "Sanctions applied for this incident. The reason's advisory matrix pre-fills suggestions by occurrence number; confirm or override before saving.",
+   "fieldname": "applied_actions",
+   "fieldtype": "Table",
+   "label": "Applied Actions",
+   "options": "Disciplinary Incident Action"
+  },
+  {
+   "fieldname": "resolution_description",
+   "fieldtype": "Text Editor",
+   "label": "Describe actions taken"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-01 19:59:35.532405",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Disciplinary Incident",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

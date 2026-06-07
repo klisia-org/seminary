@@ -1,0 +1,129 @@
+{
+ "actions": [],
+ "autoname": "DIRE-.#####",
+ "creation": "2026-06-01 19:32:43.206380",
+ "default": "Library of Disciplinary Reasons with its description for the catalog, definitions for Portal use, if it requires an assessment to be linked, and links to guidance on possible (not system-enforced) actions per reocurrence.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reason",
+  "category",
+  "description",
+  "instructor_portal",
+  "requires_course",
+  "matrix_section",
+  "recommended_actions"
+ ],
+ "fields": [
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Academic Integrity\nConduct\nAttendance\nFinancial\nOther"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Catalog description for this reason"
+  },
+  {
+   "default": "0",
+   "fieldname": "instructor_portal",
+   "fieldtype": "Check",
+   "label": "Available to instructors on the portal"
+  },
+  {
+   "default": "0",
+   "description": "Check this if this reason should be available on the assessment level (e.g., plagiarism). It will make course enrollment and assessment required on the incident page.",
+   "fieldname": "requires_course",
+   "fieldtype": "Check",
+   "label": "Requires assessment"
+  },
+  {
+   "description": "Advisory progressive-discipline matrix: recommended action(s) by occurrence number. These pre-fill the incident's applied actions; the adjudicator confirms or overrides. Nothing is auto-enforced except an action flagged 'Triggers Program Dismissal'.",
+   "fieldname": "matrix_section",
+   "fieldtype": "Section Break",
+   "label": "Recommended Actions (Advisory)"
+  },
+  {
+   "fieldname": "recommended_actions",
+   "fieldtype": "Table",
+   "label": "Recommended Actions",
+   "options": "Disciplinary Reason Recommended Action"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-01 19:49:02.557880",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Disciplinary Reason",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "reason"
+}

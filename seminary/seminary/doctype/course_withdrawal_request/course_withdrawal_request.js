@@ -1,25 +1,32 @@
 frappe.ui.form.on('Course Withdrawal Request', {
 
-	refresh: function(frm) {
-		// Filter CEI by selected Program Enrollment and current academic term
+	setup: function(frm) {
+		// Register the CEI query synchronously so it is always in place before
+		// the link field can be opened. The current term is cached on the form
+		// and applied without gating query registration on an async lookup.
+		frm._current_term = null;
 		frappe.db.get_value('Academic Term', { iscurrent_acterm: 1 }, 'name', function(r) {
-			let current_term = r ? r.name : null;
-
-			frm.set_query('course_enrollment_individual', function() {
-				let filters = {
-					docstatus: 1,
-					withdrawn: 0
-				};
-				if (frm.doc.program_enrollment) {
-					filters.program_ce = frm.doc.program_enrollment;
-				}
-				if (current_term) {
-					filters.academic_term = current_term;
-				}
-				return { filters: filters };
-			});
+			frm._current_term = r ? r.name : null;
 		});
 
+		frm.set_query('course_enrollment_individual', function() {
+			let filters = {
+				docstatus: 1,
+				withdrawn: 0
+			};
+			// Scoping by program_ce already restricts to the PE's student
+			// (one Program Enrollment belongs to exactly one student).
+			if (frm.doc.program_enrollment) {
+				filters.program_ce = frm.doc.program_enrollment;
+			}
+			if (frm._current_term) {
+				filters.academic_term = frm._current_term;
+			}
+			return { filters: filters };
+		});
+	},
+
+	refresh: function(frm) {
 		// Show parent and sibling requests for child requests
 		if (frm.doc.has_parent && frm.doc.parent_withdrawal) {
 			frm.add_custom_button(__('View Parent Request'), function() {

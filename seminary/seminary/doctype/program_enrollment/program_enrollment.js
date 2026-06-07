@@ -64,6 +64,31 @@ frappe.ui.form.on('Program Enrollment', {
 			frm.add_custom_button(__('Schedule Required Event'), function() {
 				schedule_requirement_event(frm);
 			}, __('Graduation'));
+
+			// Program-status lifecycle actions (see program_status.py / ADR 030)
+			const TERMINAL = ['Withdrawn', 'Dismissed', 'Graduated', 'Transferred'];
+			const status = frm.doc.status || 'Active';
+
+			if (!TERMINAL.includes(status)) {
+				frm.add_custom_button(__('Separate / Withdraw from Program'), function() {
+					separate_from_program(frm);
+				}, __('Status'));
+			}
+			if (status === 'Active') {
+				frm.add_custom_button(__('Place on Leave of Absence'), function() {
+					place_on_leave(frm);
+				}, __('Status'));
+			}
+			if (status === 'Leave of Absence') {
+				frm.add_custom_button(__('Return from Leave'), function() {
+					frappe.call({
+						method: 'seminary.seminary.program_status.return_from_leave_action',
+						args: { program_enrollment: frm.doc.name },
+						freeze: true,
+						callback: () => frm.reload_doc(),
+					});
+				}, __('Status'));
+			}
 		}
 
 		// Populate inline audit summary
@@ -402,6 +427,94 @@ function show_full_audit(frm) {
 			});
 		}
 	});
+}
+
+function separate_from_program(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __('Separate from Program'),
+		fields: [
+			{
+				fieldname: 'withdrawal_reason',
+				fieldtype: 'Link',
+				options: 'Withdrawal Reasons',
+				label: __('Withdrawal Reason'),
+				reqd: 1,
+			},
+			{
+				fieldname: 'timing',
+				fieldtype: 'Select',
+				label: __('Timing'),
+				options: 'Immediate\nEnd of Current Term\nSpecific Date',
+				default: 'Immediate',
+			},
+			{
+				fieldname: 'effective_date',
+				fieldtype: 'Date',
+				label: __('Effective Date'),
+				default: frappe.datetime.get_today(),
+				depends_on: "eval:doc.timing=='Specific Date'",
+			},
+			{ fieldname: 'comment', fieldtype: 'Small Text', label: __('Comment') },
+		],
+		primary_action_label: __('Create Separation Request'),
+		primary_action(values) {
+			frappe.call({
+				method: 'seminary.seminary.doctype.course_withdrawal_request.course_withdrawal_request.initiate_program_separation',
+				args: {
+					program_enrollment: frm.doc.name,
+					withdrawal_reason: values.withdrawal_reason,
+					effective_date: values.effective_date,
+					timing: values.timing,
+					comment: values.comment,
+				},
+				freeze: true,
+				callback: function(r) {
+					d.hide();
+					if (r.message) {
+						frappe.set_route('Form', 'Course Withdrawal Request', r.message);
+					}
+				},
+			});
+		},
+	});
+	d.show();
+}
+
+function place_on_leave(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __('Place on Leave of Absence'),
+		fields: [
+			{
+				fieldname: 'effective_date',
+				fieldtype: 'Date',
+				label: __('Leave Start Date'),
+				default: frappe.datetime.get_today(),
+				reqd: 1,
+			},
+			{ fieldname: 'expected_return', fieldtype: 'Date', label: __('Expected Return Date') },
+			{ fieldname: 'max_return', fieldtype: 'Date', label: __('Max Return Date') },
+			{ fieldname: 'reason', fieldtype: 'Small Text', label: __('Reason') },
+		],
+		primary_action_label: __('Place on Leave'),
+		primary_action(values) {
+			frappe.call({
+				method: 'seminary.seminary.program_status.place_on_leave',
+				args: {
+					program_enrollment: frm.doc.name,
+					effective_date: values.effective_date,
+					expected_return: values.expected_return,
+					max_return: values.max_return,
+					reason: values.reason,
+				},
+				freeze: true,
+				callback: function() {
+					d.hide();
+					frm.reload_doc();
+				},
+			});
+		},
+	});
+	d.show();
 }
 
 function schedule_requirement_event(frm) {

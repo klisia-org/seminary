@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:category_name",
  "creation": "2015-09-16 13:01:10.448734",
+ "default": "Fee Categories wire up a precified ERP Item to an Academic or Calendar event that triggers that charge, and the payment terms",
  "doctype": "DocType",
  "document_type": "Setup",
  "engine": "InnoDB",

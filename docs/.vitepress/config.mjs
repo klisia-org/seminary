@@ -60,6 +60,7 @@ export default withMermaid(defineConfig({
             text: 'Modules',
             collapsed: true,
             items: [
+              { text: 'Programs', link: '/modules/program' },
               { text: 'Enrollment', link: '/modules/enrollment' },
               { text: 'Withdrawal', link: '/modules/withdrawal' },
               { text: 'Academic Calendar', link: '/modules/academic-calendar' },

@@ -23,6 +23,7 @@
   "registrar_block_cei",
   "enrollment_mode",
   "applicant_naming_series",
+  "application_web_form",
   "section_break_pgmtype",
   "terms_complete",
   "credits_complete",
@@ -415,6 +416,14 @@
    "fieldname": "applicant_naming_series",
    "fieldtype": "Data",
    "label": "Applicant Naming Series"
+  },
+  {
+   "description": "Web Form prospective students use to apply to this program. Leave blank to use the seminary default.",
+   "fieldname": "application_web_form",
+   "fieldtype": "Link",
+   "label": "Application Web Form",
+   "link_filters": "[[\"Web Form\",\"doc_type\",\"=\",\"Student Applicant\"]]",
+   "options": "Web Form"
   },
   {
    "default": "0",
