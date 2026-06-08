@@ -90,22 +90,10 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "circle-dollar-sign",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Financial Setup",
-   "link_to": "Getting Started SeminaryERP",
-   "link_type": "Workspace",
-   "show_arrow": 0,
-   "type": "Link"
   }
  ],
- "modified": "2026-05-08 08:27:09.037102",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-08 06:09:07.450906",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academics",
  "owner": "Administrator",

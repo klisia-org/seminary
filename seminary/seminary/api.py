@@ -992,6 +992,8 @@ def first_term(doc):
 def roll_students(academic_term=None):
     # Student-advancement only. Invoice generation lives in tasks.daily() now
     # (see generate_nat_invoices / generate_nay_invoices / generate_monthly_invoices).
+    # Role gate moved here from the (retired) Registrar Hub page.
+    frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     roll_pe()
     return "Students advanced"
 
@@ -1001,6 +1003,7 @@ def regenerate_current_term_invoices():
     """Manual recovery: clear invoiced_nat_on on the current Academic Term and
     re-run the NAT generator. Safety-net seminary_trigger check still prevents
     duplicates for invoices that already exist."""
+    frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     current = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
     if not current:
         frappe.throw(_("No current Academic Term set."))

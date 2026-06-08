@@ -283,7 +283,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-08 14:52:22.974005",
+ "modified": "2026-06-08 06:34:16.542062",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Academics",
@@ -297,10 +297,10 @@
    "role": "Administrator"
   },
   {
-   "role": "Registrar"
+   "role": "Seminary Manager"
   },
   {
-   "role": "Seminary Manager"
+   "role": "Program Chair"
   }
  ],
  "sequence_id": 23.0,
