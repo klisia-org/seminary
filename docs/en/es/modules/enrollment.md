@@ -24,7 +24,7 @@ Draft  →  Awaiting Payment  →  Submitted  →  Withdrawn
 - **Draft** — created but not yet submitted; nothing has happened beyond saving the row
 - **Awaiting Payment** — submitted, Sales Invoices generated, but the student has not been added to the course roster yet (no LMS access)
 - **Submitted** — the student is fully enrolled: on the course roster, on the Program Enrollment's course list, eligible to receive grades
-- **Withdrawn** — automatically set when a Course Withdrawal Request reaches Academic Approval; visible in the CEI list view as a list-state pill
+- **Withdrawn** — automatically set when a Withdrawal Request reaches Academic Approval; visible in the CEI list view as a list-state pill
 
 Which path the CEI takes from Draft depends on the **Program** the course belongs to:
 
@@ -42,7 +42,7 @@ If a payment arrives off-platform (cash at the registrar's office, wire transfer
 
 ### Refunds and credit notes
 
-If a credit note posts after the CEI reached Submitted and the recomputed paid percentage falls below the threshold, the CEI **stays at Submitted** — the student isn't silently un-enrolled mid-term. Instead, a ToDo is created and an email is sent to all Academics Users so the registrar can decide whether to file a Course Withdrawal Request, follow up for collection, or accept the new reality.
+If a credit note posts after the CEI reached Submitted and the recomputed paid percentage falls below the threshold, the CEI **stays at Submitted** — the student isn't silently un-enrolled mid-term. Instead, a ToDo is created and an email is sent to all Academics Users so the registrar can decide whether to file a Withdrawal Request, follow up for collection, or accept the new reality.
 
 ### Payment Status section on the CEI
 

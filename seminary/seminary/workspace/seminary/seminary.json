@@ -14,7 +14,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "non-profit",
- "idx": 4,
+ "idx": 5,
  "indicator_color": "",
  "is_hidden": 0,
  "label": "Seminary",
@@ -64,55 +64,6 @@
    "label": "Sales Invoices",
    "link_count": 0,
    "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Schedule",
-   "link_count": 4,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Scheduled Courses",
-   "link_count": 0,
-   "link_to": "Course Schedule",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Year",
-   "link_count": 0,
-   "link_to": "Academic Year",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Term",
-   "link_count": 0,
-   "link_to": "Academic Term",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Instructors",
-   "link_count": 0,
-   "link_to": "Instructor",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -179,9 +130,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Course Withdrawal Requests",
+   "label": "Withdrawal Requests",
    "link_count": 0,
-   "link_to": "Course Withdrawal Request",
+   "link_to": "Withdrawal Request",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -224,10 +175,69 @@
    "link_type": "Page",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Schedule",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scheduled Courses",
+   "link_count": 0,
+   "link_to": "Course Schedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Year",
+   "link_count": 0,
+   "link_to": "Academic Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Term",
+   "link_count": 0,
+   "link_to": "Academic Term",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Instructors",
+   "link_count": 0,
+   "link_to": "Instructor",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Chapel",
+   "link_count": 0,
+   "link_to": "Chapel",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-05-07 21:44:59.992668",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-08 07:18:51.935215",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
  "number_cards": [],

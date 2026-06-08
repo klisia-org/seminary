@@ -112,7 +112,7 @@ CURATED = {
         "Program Chair": "R",
         "Instructor": "R",
     },
-    "course_withdrawal_request": {
+    "withdrawal_request": {
         "Registrar": "CRWDSXA",
         "Program Chair": "R",
     },

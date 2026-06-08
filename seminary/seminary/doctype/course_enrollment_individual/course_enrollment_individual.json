@@ -69,7 +69,7 @@
    "fieldname": "withdrawal_request",
    "fieldtype": "Link",
    "label": "Withdrawal Request",
-   "options": "Course Withdrawal Request",
+   "options": "Withdrawal Request",
    "read_only": 1
   },
   {
@@ -318,7 +318,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-30 15:19:13.651474",
+ "modified": "2026-06-08 07:56:16.305773",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Enrollment Individual",

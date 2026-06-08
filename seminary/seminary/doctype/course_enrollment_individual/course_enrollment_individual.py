@@ -68,7 +68,7 @@ class CourseEnrollmentIndividual(Document):
                 frappe.throw(
                     _(
                         "Cannot cancel enrollment after course has started ({0}). "
-                        "Please use a Course Withdrawal Request instead."
+                        "Please use a Withdrawal Request instead."
                     ).format(start_date)
                 )
 

@@ -1668,7 +1668,7 @@ def get_student_course_status(course):
 
     # Check for active withdrawal request
     withdrawal = frappe.db.get_value(
-        "Course Withdrawal Request",
+        "Withdrawal Request",
         {
             "course_enrollment_individual": cei.name if cei else "",
             "docstatus": ("!=", 2),

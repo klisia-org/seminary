@@ -119,7 +119,7 @@ global_search_doctypes = {
         {"doctype": "Quiz Activity", "index": 20},
         {"doctype": "Academic Term", "index": 21},
         {"doctype": "Academic Year", "index": 22},
-        {"doctype": "Course Withdrawal Request", "index": 23},
+        {"doctype": "Withdrawal Request", "index": 23},
         {"doctype": "Alumni Profile", "index": 24},
     ]
 }
@@ -276,7 +276,7 @@ doc_events = {
         "before_insert": "seminary.seminary.api.sanitize_reply",
         "before_save": "seminary.seminary.api.sanitize_reply",
     },
-    "Course Withdrawal Request": {
+    "Withdrawal Request": {
         "on_update_after_submit": "seminary.seminary.withdrawal.on_withdrawal_workflow_update",
     },
     "Disciplinary Incident": {

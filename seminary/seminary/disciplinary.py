@@ -394,7 +394,7 @@ def on_incident_update(doc, method=None):
         return
 
     existing = frappe.db.exists(
-        "Course Withdrawal Request",
+        "Withdrawal Request",
         {
             "program_enrollment": doc.pe,
             "withdrawal_scope": "Full Program Withdrawal",
@@ -405,7 +405,7 @@ def on_incident_update(doc, method=None):
     if existing:
         return
 
-    from seminary.seminary.doctype.course_withdrawal_request.course_withdrawal_request import (
+    from seminary.seminary.doctype.withdrawal_request.withdrawal_request import (
         initiate_program_separation,
     )
 
@@ -450,7 +450,7 @@ def _dismissal_withdrawal_reason():
     """A Withdrawal Reasons row to attach to disciplinary separations.
 
     Disciplinary exits don't use the student-facing reason taxonomy, but the
-    Course Withdrawal Request requires a withdrawal_reason; ensure a dedicated
+    Withdrawal Request requires a withdrawal_reason; ensure a dedicated
     'Disciplinary Dismissal' reason exists and return it."""
     name = "Disciplinary Dismissal"
     if not frappe.db.exists("Withdrawal Reasons", name):

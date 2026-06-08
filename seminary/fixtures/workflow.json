@@ -3,7 +3,7 @@
   "creation": "2026-04-02 12:00:00.000000",
   "docstatus": 0,
   "doctype": "Workflow",
-  "document_type": "Course Withdrawal Request",
+  "document_type": "Withdrawal Request",
   "is_active": 1,
   "name": "Course Withdrawal",
   "override_status": 0,
