@@ -1,0 +1,215 @@
+{
+ "app": "seminary",
+ "charts": [],
+ "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}}]",
+ "creation": "2026-06-08 06:32:52.504998",
+ "custom_blocks": [
+  {
+   "custom_block_name": "Registrar - Advance Students",
+   "label": "Registrar - Advance Students"
+  },
+  {
+   "custom_block_name": "Registrar - Regenerate Current-Term Invoices",
+   "label": "Registrar - Regenerate Current-Term Invoices"
+  }
+ ],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "users",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Registrar",
+ "link_type": "DocType",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Records",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student",
+   "link_count": 0,
+   "link_to": "Student",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Enrollment",
+   "link_count": 0,
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Enrollment Individual",
+   "link_count": 0,
+   "link_to": "Course Enrollment Individual",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Term",
+   "link_count": 0,
+   "link_to": "Academic Term",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Term Admission",
+   "link_count": 0,
+   "link_to": "Term Admission",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Graduation",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Graduation Request",
+   "link_count": 0,
+   "link_to": "Graduation Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Diploma",
+   "link_count": 0,
+   "link_to": "Diploma",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Recommendation Letter",
+   "link_count": 0,
+   "link_to": "Recommendation Letter",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Culminating Project",
+   "link_count": 0,
+   "link_to": "Culminating Project",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Discipline & Withdrawals",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Disciplinary Incident",
+   "link_count": 0,
+   "link_to": "Disciplinary Incident",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Withdrawal Request",
+   "link_count": 0,
+   "link_to": "Course Withdrawal Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-06-08 07:04:25.735868",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Registrar",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Seminary",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Registrar"
+  },
+  {
+   "role": "Seminary Manager"
+  }
+ ],
+ "sequence_id": 25.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Students",
+   "link_to": "Student",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Program Enrollment",
+   "link_to": "Program Enrollment",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Term Admission",
+   "link_to": "Term Admission",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Graduation Request",
+   "link_to": "Graduation Request",
+   "type": "DocType"
+  }
+ ],
+ "title": "Registrar",
+ "type": "Workspace"
+}

@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:category_name",
- "creation": "2026-04-23 00:00:00.000000",
+ "creation": "2026-04-23 00:00:00",
  "description": "Categories to be selected on Course Schedule per Instructor. Serves also to establish payment rates.",
  "doctype": "DocType",
  "document_type": "Setup",
@@ -38,6 +38,7 @@
    "label": "Description"
   },
   {
+   "description": "Optional configuration.",
    "fieldname": "rates_section",
    "fieldtype": "Section Break",
    "label": "Pay Rates"
@@ -51,7 +52,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-23 00:00:00.000000",
+ "modified": "2026-06-08 05:52:34.721586",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor Category",
