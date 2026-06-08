@@ -233,7 +233,7 @@ def _notify_registrar_payment_dropped(cei_name, paid_percent, threshold):
     description = _(
         "Payment threshold no longer met for {0} (course {1}). "
         "Now at {2:.1f}%, threshold is {3:.1f}%. "
-        "Review whether to file a Course Withdrawal Request or follow up with the student."
+        "Review whether to file a Withdrawal Request or follow up with the student."
     ).format(student_label, course_label, paid_percent, threshold)
 
     for user in recipients:

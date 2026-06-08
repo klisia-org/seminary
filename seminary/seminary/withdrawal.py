@@ -3,7 +3,7 @@ from frappe import _
 
 
 def on_withdrawal_workflow_update(doc, method):
-    """Handle workflow state transitions for Course Withdrawal Request.
+    """Handle workflow state transitions for Withdrawal Request.
 
     Fast-paths for ongoing/free programs are declared as conditional
     transitions in the Course Withdrawal workflow (see fixtures/workflow.json).
@@ -21,7 +21,7 @@ def process_academic_approval(doc):
 
     Treatments:
       - Clean Drop: delete roster and PEC rows so no transcript record remains.
-        The Course Withdrawal Request is the audit trail.
+        The Withdrawal Request is the audit trail.
       - Flat Symbol: write the rule's transcript_symbol (e.g. "W") to the roster
         and PEC. count_in_gpa = 0 (no numeric, not in GPA).
       - Calculated As-Is: run grade_thisstudent + fgrade_this_std (ungraded work
@@ -318,7 +318,7 @@ def process_completion(doc):
     # separation — re-check its parent (handles completing the parent before
     # its children, and vice-versa).
     if doc.has_parent and doc.parent_withdrawal:
-        parent = frappe.get_doc("Course Withdrawal Request", doc.parent_withdrawal)
+        parent = frappe.get_doc("Withdrawal Request", doc.parent_withdrawal)
         if parent.withdrawal_scope == "Full Program Withdrawal" and parent.is_parent:
             finalize_program_separation(parent)
         return
@@ -344,7 +344,7 @@ def finalize_program_separation(doc):
         return
 
     children = frappe.get_all(
-        "Course Withdrawal Request",
+        "Withdrawal Request",
         filters={"parent_withdrawal": doc.name, "docstatus": 1},
         fields=["workflow_state"],
     )
@@ -370,7 +370,7 @@ def finalize_program_separation(doc):
         category=category,
         reason=doc.withdrawal_reason,
         effective_date=effective_date,
-        source_doctype="Course Withdrawal Request",
+        source_doctype="Withdrawal Request",
         source_name=doc.name,
         notes=notes,
     )
@@ -380,7 +380,7 @@ def process_due_separations():
     """Daily: spawn course withdrawals for deferred program separations whose
     effective date has arrived. Idempotent via the cascade_done flag."""
     parents = frappe.get_all(
-        "Course Withdrawal Request",
+        "Withdrawal Request",
         filters={
             "withdrawal_scope": "Full Program Withdrawal",
             "is_parent": 1,
@@ -391,7 +391,7 @@ def process_due_separations():
         pluck="name",
     )
     for name in parents:
-        doc = frappe.get_doc("Course Withdrawal Request", name)
+        doc = frappe.get_doc("Withdrawal Request", name)
         if (doc.separation_timing or "Immediate") == "Immediate":
             continue
         doc.create_child_withdrawal_requests()

@@ -17,6 +17,9 @@ workspace via the sidebar editor or the Workspace form (editing existing
 records works; only the New button is hidden).
 """
 
+import json
+import re
+
 import frappe
 
 
@@ -260,6 +263,51 @@ def _ensure_sidebars():
     create_workspace_sidebar_for_workspaces()
 
 
+_STEP_NUM = re.compile(r"^\s*(\d+)([a-z]?)\s*\.\s*")
+
+
+def renumber_getting_started(workspace="Getting Started SeminaryERP"):
+    """Resequence the numbered setup-step labels to contiguous 1..N.
+
+    Order is taken from the existing numbers, treating letter-suffixed
+    insertions (11a, 17b, ...) as falling right after their base number. Labels
+    in both `shortcuts` and `links`, and the `shortcut_name` references in the
+    workspace content, are kept in sync. `**`-prefixed (non-numbered) items are
+    left untouched. Run:
+
+        bench --site <site> execute \
+            seminary.seminary.workspaces_bootstrap.renumber_getting_started
+    """
+
+    def key(label):
+        m = _STEP_NUM.match(label or "")
+        return (int(m.group(1)), m.group(2)) if m else None
+
+    doc = frappe.get_doc("Workspace", workspace)
+    rows = [r for r in doc.shortcuts if key(r.label)]
+    rows += [r for r in doc.links if r.type == "Link" and key(r.label)]
+    rows.sort(key=lambda r: key(r.label))
+
+    remap = {}
+    for i, row in enumerate(rows, start=1):
+        new_label = _STEP_NUM.sub(f"{i}. ", row.label, count=1)
+        if new_label != row.label:
+            remap[row.label] = new_label
+            row.label = new_label
+
+    content = frappe.parse_json(doc.content) or []
+    for block in content:
+        if block.get("type") == "shortcut":
+            sn = (block.get("data") or {}).get("shortcut_name")
+            if sn in remap:
+                block["data"]["shortcut_name"] = remap[sn]
+    doc.content = json.dumps(content, separators=(",", ":"))
+
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    print(f"Renumbered {len(rows)} items; {len(remap)} labels changed.")
+
+
 def run():
     create_workspace(
         title="Registrar",
@@ -301,8 +349,8 @@ def run():
                 "items": [
                     ("Disciplinary Incident", "Disciplinary Incident", "DocType"),
                     (
-                        "Course Withdrawal Request",
-                        "Course Withdrawal Request",
+                        "Withdrawal Request",
+                        "Withdrawal Request",
                         "DocType",
                     ),
                 ],

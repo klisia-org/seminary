@@ -191,7 +191,7 @@ async function submitRequest() {
 
     await call('frappe.client.insert', {
       doc: {
-        doctype: 'Course Withdrawal Request',
+        doctype: 'Withdrawal Request',
         student: user.data?.student,
         program_enrollment: pe,
         course_enrollment_individual: cei,

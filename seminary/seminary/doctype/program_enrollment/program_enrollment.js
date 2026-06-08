@@ -459,7 +459,7 @@ function separate_from_program(frm) {
 		primary_action_label: __('Create Separation Request'),
 		primary_action(values) {
 			frappe.call({
-				method: 'seminary.seminary.doctype.course_withdrawal_request.course_withdrawal_request.initiate_program_separation',
+				method: 'seminary.seminary.doctype.withdrawal_request.withdrawal_request.initiate_program_separation',
 				args: {
 					program_enrollment: frm.doc.name,
 					withdrawal_reason: values.withdrawal_reason,
@@ -471,7 +471,7 @@ function separate_from_program(frm) {
 				callback: function(r) {
 					d.hide();
 					if (r.message) {
-						frappe.set_route('Form', 'Course Withdrawal Request', r.message);
+						frappe.set_route('Form', 'Withdrawal Request', r.message);
 					}
 				},
 			});

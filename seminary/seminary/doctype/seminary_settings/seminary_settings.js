@@ -75,7 +75,7 @@ frappe.ui.form.on('Seminary Settings', {
 		// Withdrawal Workflow button
 		frm.add_custom_button(__("Configure Withdrawal Workflow"), function() {
 			frappe.set_route('List', 'Workflow', {
-				document_type: 'Course Withdrawal Request'
+				document_type: 'Withdrawal Request'
 			});
 		}, __('Withdrawal'));
 

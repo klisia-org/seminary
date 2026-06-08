@@ -12,7 +12,7 @@ Rules governing deadlines, penalties, and refund eligibility are configured by a
 - **Withdrawal Reason** — a separate doctype allowing institutions to track and report on why students withdraw
 - **Refund/Scholarship Handling** — financial implications configured alongside withdrawal rules
 
-## Course Withdrawal Request
+## Withdrawal Request
 Initiated by the student (if allowed in Seminary Settings) or by administrators/academic users
 
 ### Student Request
@@ -21,7 +21,7 @@ Navigate to a Course --> My Status: At the bottom of the page, students can requ
 
 Students will need to provide a [pre-configured reason](#withdrawal-reasons) and any support documentation required by that specific reason. The system will auto-populate required fields.
 
-Students may also create withdrawal requests for other courses, alongside this one by selecting the appropriate choice in Withdrawal Scope. Each course will track its own Course Withdrawal Request, but seminary administrators will see the related requests.
+Students may also create withdrawal requests for other courses, alongside this one by selecting the appropriate choice in Withdrawal Scope. Each course will track its own Withdrawal Request, but seminary administrators will see the related requests.
 
 ![Withdrawal Requests Portal screen](/modules/withdrawal/img/withdrawal_request_portal.png)
 
@@ -31,7 +31,7 @@ Once the student submitted the request, its status will be visible at the top of
 
 
 ### Registar Request
-Registars or other assigned users can create and track progression of the Course Withdrawal Request within Desk.
+Registars or other assigned users can create and track progression of the Withdrawal Request within Desk.
 In the image below, a request with status "Academically Approved" is shown, with the Action to be performed (top right) being "Send for Financial Review."
 Seminary ERP ships with a pre-defined Workflow, that can be customized by the Seminary administrator. This is particularly helpful to include email notifications, among other possibilities.
 
@@ -73,7 +73,7 @@ Two flags on the underlying Program change the buttons shown on a withdrawal req
 - **Is Ongoing** — a property of the **Program Level**, mirrored onto every Program at that level. Ongoing programs have no graduation, GPA, or transcript concept, so there is nothing to academically review on a withdrawal.
 - **Free Program** — a per-Program checkbox. When set, enrollment generates no Sales Invoices, so there is nothing to financially review on a withdrawal.
 
-The buttons available on a Draft Course Withdrawal Request adapt automatically:
+The buttons available on a Draft Withdrawal Request adapt automatically:
 
 | Program flags | Button shown on Draft | Lands at |
 | --- | --- | --- |

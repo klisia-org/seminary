@@ -77,7 +77,7 @@ Two flags on the underlying Program change the buttons shown on a withdrawal req
 - **Is Ongoing** — a property of the **Program Level**, mirrored onto every Program at that level. Ongoing programs have no graduation, GPA, or transcript concept, so there is nothing to academically review on a withdrawal.
 - **Free Program** — a per-Program checkbox. When set, enrollment generates no Sales Invoices, so there is nothing to financially review on a withdrawal.
 
-The buttons available on a Draft Course Withdrawal Request adapt automatically:
+The buttons available on a Draft Withdrawal Request adapt automatically:
 
 | Program flags        | Button shown on Draft                                                                     | Lands at                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
