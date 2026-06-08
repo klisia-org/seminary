@@ -28,7 +28,11 @@
             <label class="block text-xs text-ink-gray-5">
               {{ __('Student') }} <span class="text-ink-red-3">*</span>
             </label>
+            <div v-if="prefillCei" class="rounded-md bg-surface-gray-1 p-2 text-sm text-ink-gray-7">
+              {{ prefillStudentName || cei }}
+            </div>
             <Autocomplete
+              v-else
               :options="ceiOptions"
               :modelValue="cei"
               :placeholder="__('Select a student')"
@@ -117,6 +121,9 @@ const show = defineModel({ default: false })
 const props = defineProps({
   mode: { type: String, default: 'course' }, // 'course' | 'assessment' | 'record'
   course: { type: String, default: '' }, // Course Schedule
+  // course mode: pre-select a specific student (skip the picker)
+  prefillCei: { type: String, default: '' },
+  prefillStudentName: { type: String, default: '' },
   // assessment / record context
   student: { type: String, default: '' },
   studentName: { type: String, default: '' },
@@ -276,6 +283,9 @@ watch(show, (open) => {
       selectedAction.value = (props.recommendedActions || [])[0] || ''
     } else {
       resetReportState()
+      if (props.mode === 'course' && props.prefillCei) {
+        cei.value = props.prefillCei
+      }
       loadCeiOptions()
       loadReasonOptions()
     }

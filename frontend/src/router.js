@@ -186,6 +186,11 @@ const routes = [
 		component: () => import('@/pages/StudentAttendanceCS.vue'),
 		props: true,
 	},
+	{
+		path: '/attendance-checkin',
+		name: 'CourseCheckin',
+		component: () => import('@/pages/CourseCheckin.vue'),
+	},
 		{
 		path: '/discussion-activities',
 		name: 'DiscussionActivities',
