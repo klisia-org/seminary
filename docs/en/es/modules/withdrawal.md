@@ -13,7 +13,7 @@ Las reglas que rigen los plazos, las penalizaciones y la elegibilidad para reemb
 - **Motivo de retiro** — un doctype independiente que permite a las instituciones hacer seguimiento y reportar por qué los estudiantes se retiran
 - **Gestión de reembolsos/becas** — implicaciones financieras configuradas junto con las reglas de retiro
 
-## Solicitud de retiro de curso
+## Withdrawal Request
 
 Iniciada por el estudiante (si está permitido en Seminary Settings) o por administradores/usuarios académicos
 
@@ -24,7 +24,7 @@ Vaya a un Curso --> Mi estado: Al final de la página, los estudiantes pueden so
 
 Los estudiantes deberán proporcionar un [motivo preconfigurado](#withdrawal-reasons) y cualquier documentación de respaldo requerida por ese motivo específico. El sistema completará automáticamente los campos obligatorios.
 
-Los estudiantes también pueden crear solicitudes de retiro para otros cursos, además de este, seleccionando la opción adecuada en "Withdrawal Scope". Cada curso llevará su propio registro de la Solicitud de retiro del curso, pero los administradores del seminario verán las solicitudes relacionadas.
+Los estudiantes también pueden crear solicitudes de retiro para otros cursos, además de este, seleccionando la opción adecuada en "Withdrawal Scope". Each course will track its own Withdrawal Request, but seminary administrators will see the related requests.
 
 ![Pantalla del Portal de Solicitudes de retiro](/modules/withdrawal/img/withdrawal_request_portal.png)
 
@@ -34,7 +34,7 @@ Una vez que el estudiante haya enviado la solicitud, su estado será visible en 
 
 ### Solicitud del registrador
 
-Los registradores u otros usuarios asignados pueden crear y hacer seguimiento del progreso de la Solicitud de retiro del curso dentro de Desk.
+Registars or other assigned users can create and track progression of the Withdrawal Request within Desk.
 En la imagen siguiente se muestra una solicitud con estado "Academically Approved", con la Acción a realizar (arriba a la derecha) "Send for Financial Review."
 Seminary ERP incluye un Workflow predefinido, que puede personalizar el administrador del seminario. Esto es particularmente útil para incluir notificaciones por correo electrónico, entre otras posibilidades.
 
