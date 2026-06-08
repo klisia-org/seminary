@@ -53,12 +53,12 @@ class Student(Document):
         ):
             frappe.throw(_("Date of Birth cannot be greater than Joining Date."))
 
-        if (
-            self.joining_date
-            and self.date_of_leaving
-            and getdate(self.joining_date) > getdate(self.date_of_leaving)
-        ):
-            frappe.throw(_("Joining Date can not be greater than Leaving Date"))
+        if self.joining_date:
+            for record in self.leaving_records:
+                if record.date_of_leaving and getdate(self.joining_date) > getdate(
+                    record.date_of_leaving
+                ):
+                    frappe.throw(_("Joining Date can not be greater than Leaving Date"))
 
     def validate_user(self):
         """Create a website user for student creation if not already exists"""

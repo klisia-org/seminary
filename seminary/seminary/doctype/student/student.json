@@ -53,10 +53,7 @@
   "service_html",
   "exit_tab",
   "exit",
-  "date_of_leaving",
-  "leaving_certificate_number",
-  "column_break_31",
-  "reason_for_leaving",
+  "leaving_records",
   "standing_section",
   "student_standing",
   "student_holds",
@@ -240,23 +237,10 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "date_of_leaving",
-   "fieldtype": "Date",
-   "label": "Date of Leaving"
-  },
-  {
-   "fieldname": "leaving_certificate_number",
-   "fieldtype": "Data",
-   "label": "Leaving Certificate Number"
-  },
-  {
-   "fieldname": "column_break_31",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "reason_for_leaving",
-   "fieldtype": "Text",
-   "label": "Reason For Leaving"
+   "fieldname": "leaving_records",
+   "fieldtype": "Table",
+   "label": "Leaving Records",
+   "options": "Student Leaving Record"
   },
   {
    "fieldname": "standing_section",
