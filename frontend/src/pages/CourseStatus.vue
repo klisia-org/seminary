@@ -22,6 +22,43 @@
         </div>
       </div>
 
+      <!-- Attendance Standing -->
+      <div v-if="attendance?.enabled">
+        <!-- Warning / over-limit banner -->
+        <div v-if="attendance.level >= 1"
+          class="rounded-lg border p-4 flex items-center gap-3 mb-3"
+          :class="attendance.level >= 2
+            ? 'border-outline-red-1 bg-surface-red-1'
+            : 'border-outline-amber-1 bg-surface-amber-1'">
+          <AlertTriangle class="w-5 h-5" :class="attendance.level >= 2 ? 'text-ink-red-4' : 'text-ink-amber-3'" />
+          <div :class="attendance.level >= 2 ? 'text-ink-red-4' : 'text-ink-amber-3'">
+            <p class="font-semibold">
+              {{ attendance.level >= 2 ? __('Attendance limit exceeded') : __('Attendance warning') }}
+            </p>
+            <p class="text-sm">
+              {{ attendance.level >= 2
+                ? __('You have missed more classes than allowed for this course. Contact your instructor or the registrar.')
+                : __('You are close to the absence limit for this course.') }}
+            </p>
+          </div>
+        </div>
+
+        <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Attendance') }}</h3>
+        <div class="rounded-lg border bg-surface-gray-1 p-4 flex gap-8 items-center">
+          <div class="text-center">
+            <p class="text-3xl font-bold"
+              :class="attendance.level >= 2 ? 'text-ink-red-4' : (attendance.level === 1 ? 'text-ink-amber-3' : 'text-ink-gray-8')">
+              {{ attendance.effective }} / {{ attendance.limit }}
+            </p>
+            <p class="text-xs text-ink-gray-5">{{ __('Absences used / allowed') }}</p>
+          </div>
+          <div v-if="attendance.tardies" class="text-center">
+            <p class="text-3xl font-bold text-ink-gray-8">{{ attendance.tardies }}</p>
+            <p class="text-xs text-ink-gray-5">{{ __('Tardies') }}</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Progress Section -->
       <div>
         <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Progress') }}</h3>
@@ -229,6 +266,8 @@ const seminarySettings = createResource({
 const allowWithdrawal = computed(() => {
   return seminarySettings.data?.allow_portal_withdrawal === 1
 })
+
+const attendance = computed(() => status.data?.attendance)
 
 const withdrawalRules = computed(() => {
   if (!status.data?.withdrawal_rules) return []
