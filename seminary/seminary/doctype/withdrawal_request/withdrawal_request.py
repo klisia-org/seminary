@@ -6,6 +6,7 @@ from frappe.utils import today
 
 class WithdrawalRequest(Document):
     def validate(self):
+        self.validate_enrollment_active()
         self.validate_documentation_required()
         self.set_resulting_grade()
         self.auto_assign_withdrawal_rule()
@@ -16,6 +17,24 @@ class WithdrawalRequest(Document):
         ):
             self.is_parent = 1
         self.validate_separation_timing()
+
+    def validate_enrollment_active(self):
+        """Block new top-level requests against a Program Enrollment that has
+        already reached a terminal status. Child requests (created during the
+        cascade) and the initiate_program_separation path are built while the PE
+        is still active, so this only catches manual top-level creations."""
+        if not self.is_new() or self.has_parent or not self.program_enrollment:
+            return
+        status = frappe.db.get_value(
+            "Program Enrollment", self.program_enrollment, "status"
+        )
+        if status in TERMINAL_STATUSES:
+            frappe.throw(
+                _(
+                    "Program Enrollment {0} is already {1}; no further withdrawal "
+                    "requests can be created for it."
+                ).format(self.program_enrollment, status)
+            )
 
     def validate_separation_timing(self):
         if self.withdrawal_scope != "Full Program Withdrawal":

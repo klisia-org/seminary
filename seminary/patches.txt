@@ -20,3 +20,4 @@ seminary.seminary.patches.backfill_pe_status
 seminary.seminary.patches.backfill_withdrawal_reason_category
 seminary.seminary.patches.seed_disciplinary_actions
 seminary.seminary.patches.rename_academics_user_to_program_chair
+seminary.seminary.patches.backfill_student_leaving_records

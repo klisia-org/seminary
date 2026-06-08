@@ -21,6 +21,15 @@ TERMINAL_STATUSES = {"Withdrawn", "Dismissed", "Graduated", "Transferred"}
 ACTIVE_STATUS = "Active"
 LEAVE_STATUS = "Leave of Absence"
 
+# Maps a terminal Program Enrollment status to the Student Leaving Record's
+# reason_for_leaving Select.
+_TERMINAL_REASON = {
+    "Graduated": "Graduation",
+    "Withdrawn": "Voluntary Withdrawal",
+    "Dismissed": "Dismissal",
+    "Transferred": "Transfer",
+}
+
 
 def set_program_status(
     pe,
@@ -87,7 +96,9 @@ def set_program_status(
         _evaluate_billing_suspension(pe_doc)
 
     if to_status in TERMINAL_STATUSES:
-        _on_terminal(pe_doc, to_status, reason, effective_date)
+        _on_terminal(
+            pe_doc, to_status, reason, effective_date, source_doctype, source_name
+        )
 
     return pe_doc
 
@@ -210,7 +221,9 @@ def _append_history(
     row.db_insert()
 
 
-def _on_terminal(pe_doc, to_status, reason, effective_date):
+def _on_terminal(
+    pe_doc, to_status, reason, effective_date, source_doctype=None, source_name=None
+):
     """Side-effects shared by all terminal separations."""
     from seminary.seminary.graduation_request_lifecycle import (
         cascade_cancel_graduation_requests,
@@ -221,16 +234,10 @@ def _on_terminal(pe_doc, to_status, reason, effective_date):
     # A terminal separation stops recurring billing for this enrollment.
     _set_payers_active(pe_doc.name, 0)
 
-    # Stamp the student's leaving record (existing Student fields).
+    # Record the student's leaving record for this program enrollment.
     if pe_doc.student:
-        frappe.db.set_value(
-            "Student",
-            pe_doc.student,
-            {
-                "date_of_leaving": effective_date,
-                "reason_for_leaving": reason,
-            },
-            update_modified=False,
+        _upsert_leaving_record(
+            pe_doc, to_status, effective_date, source_doctype, source_name
         )
 
     # Student standing / holds are applied in Phase 7 (see student_standing.py).
@@ -240,6 +247,63 @@ def _on_terminal(pe_doc, to_status, reason, effective_date):
         apply_terminal_standing(pe_doc, to_status, reason, effective_date)
     except ImportError:
         pass
+
+
+def _upsert_leaving_record(
+    pe_doc, to_status, effective_date, source_doctype, source_name
+):
+    """Create or update the Student Leaving Record for this Program Enrollment.
+
+    One row per enrollment, keyed by program_enrollment. Written directly (no
+    full Student save) so a terminal transition does not re-run the Student
+    controller's customer sync. Mirrors the submitted-doc-safe child writes in
+    ``_append_history`` and ``student_standing.add_hold``."""
+    reason = _TERMINAL_REASON.get(to_status)
+    withdrawal_request = source_name if source_doctype == "Withdrawal Request" else None
+
+    existing = frappe.db.get_value(
+        "Student Leaving Record",
+        {
+            "parent": pe_doc.student,
+            "parentfield": "leaving_records",
+            "program_enrollment": pe_doc.name,
+        },
+        "name",
+    )
+    if existing:
+        frappe.db.set_value(
+            "Student Leaving Record",
+            existing,
+            {
+                "reason_for_leaving": reason,
+                "date_of_leaving": effective_date,
+                "withdrawal_request": withdrawal_request,
+            },
+            update_modified=False,
+        )
+        return
+
+    idx = (
+        frappe.db.count(
+            "Student Leaving Record",
+            {"parent": pe_doc.student, "parentfield": "leaving_records"},
+        )
+        + 1
+    )
+    frappe.get_doc(
+        {
+            "doctype": "Student Leaving Record",
+            "parent": pe_doc.student,
+            "parenttype": "Student",
+            "parentfield": "leaving_records",
+            "idx": idx,
+            "program_enrollment": pe_doc.name,
+            "program": pe_doc.program,
+            "reason_for_leaving": reason,
+            "date_of_leaving": effective_date,
+            "withdrawal_request": withdrawal_request,
+        }
+    ).db_insert()
 
 
 def _leave_policy(program):

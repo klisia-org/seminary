@@ -9,6 +9,17 @@ frappe.ui.form.on('Withdrawal Request', {
 			frm._current_term = r ? r.name : null;
 		});
 
+		// Only allow withdrawing from a still-running Program Enrollment;
+		// terminal enrollments cannot take further withdrawal requests.
+		frm.set_query('program_enrollment', function() {
+			return {
+				filters: {
+					docstatus: 1,
+					status: ['not in', ['Withdrawn', 'Dismissed', 'Graduated', 'Transferred']]
+				}
+			};
+		});
+
 		frm.set_query('course_enrollment_individual', function() {
 			let filters = {
 				docstatus: 1,
