@@ -28,6 +28,12 @@ def get_columns():
             "width": 130,
         },
         {
+            "fieldname": "awaiting_auto_enroll",
+            "label": _("Awaiting Auto-Enroll"),
+            "fieldtype": "Int",
+            "width": 150,
+        },
+        {
             "fieldname": "graduating_next_term",
             "label": _("Graduating Next Term"),
             "fieldtype": "Int",
@@ -119,17 +125,30 @@ def get_data(filters):
             )
             all_needed.add((row.course, course_name))
 
+        # Mandatory-on-enrollment courses this student is owed (from the
+        # enrollment's frozen snapshot) but not yet covered — i.e. waiting for
+        # an offering to open so the deferred auto-enrollment can fire. These
+        # are demand to schedule, surfaced distinctly in their own column.
+        awaiting_courses = _awaiting_auto_enroll_courses(pe.name)
+        for course in awaiting_courses:
+            course_name = frappe.db.get_value("Course", course, "course_name") or course
+            all_needed.add((course, course_name))
+
         for course, course_name in all_needed:
             if course not in course_demand:
                 course_demand[course] = {
                     "course": course,
                     "course_name": course_name,
                     "students_needing": 0,
+                    "awaiting_auto_enroll": 0,
                     "graduating_next_term": 0,
                     "graduating_two_terms": 0,
                 }
 
             course_demand[course]["students_needing"] += 1
+
+            if course in awaiting_courses:
+                course_demand[course]["awaiting_auto_enroll"] += 1
 
             if terms_to_grad <= 1:
                 course_demand[course]["graduating_next_term"] += 1
@@ -142,3 +161,17 @@ def get_data(filters):
     )
 
     return data
+
+
+def _awaiting_auto_enroll_courses(pe_name):
+    """Courses in the enrollment's mandatory-on-enrollment snapshot that the
+    student does not yet have covered (no live CEI, no passing record) — the
+    deferred auto-enrollment backlog waiting for an offering. See ADR 035."""
+    from seminary.seminary.required_enrollment import _already_covered
+
+    snapshot = frappe.get_all(
+        "Program Enrollment Required Course",
+        filters={"parent": pe_name},
+        pluck="course",
+    )
+    return {c for c in snapshot if not _already_covered(pe_name, c)}

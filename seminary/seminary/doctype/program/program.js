@@ -26,6 +26,34 @@ frappe.ui.form.on('Program', {
 				check_track_credits(frm);
 			});
 		}
+
+		// Show only when the program has at least one mandatory-on-enrollment course.
+		let has_reqonenroll = (frm.doc.courses || []).some(pc => pc.pgm_course_reqonenroll && !pc.disabled);
+		if (!frm.is_new() && has_reqonenroll) {
+			frm.add_custom_button(__('Apply Mandatory-on-Enrollment to Active Students'), function() {
+				frappe.confirm(
+					__('Push currently-flagged mandatory-on-enrollment courses to all active enrollments and auto-enroll where an offering is open. This is append-only and cannot remove existing snapshot entries. Continue?'),
+					function() {
+						frappe.call({
+							method: 'seminary.seminary.doctype.program.program.apply_required_on_enroll',
+							args: { program: frm.doc.name },
+							freeze: true,
+							freeze_message: __('Applying mandatory-on-enrollment requirements…'),
+							callback: function(r) {
+								if (r.message) {
+									let m = r.message;
+									frappe.msgprint({
+										title: __('Backfill Complete'),
+										indicator: 'green',
+										message: __('Active enrollments: {0}<br>Snapshots updated: {1}<br>Flagged courses: {2}', [m.active_enrollments, m.snapshots_updated, m.flagged_courses])
+									});
+								}
+							}
+						});
+					}
+				);
+			}, __('Actions'));
+		}
 	}
 });
 

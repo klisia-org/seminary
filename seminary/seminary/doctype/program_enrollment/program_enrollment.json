@@ -43,6 +43,8 @@
   "graduation_policy",
   "grad_candidate",
   "graduation_requirements",
+  "req_on_enroll_section",
+  "required_on_enroll_courses",
   "enrolled_courses",
   "courses",
   "section_break_uzvb",
@@ -356,6 +358,22 @@
    "fieldtype": "Table",
    "label": "Graduation Requirements",
    "options": "Student Graduation Requirement"
+  },
+  {
+   "collapsible": 1,
+   "description": "Courses flagged Mandatory on program enrollment were snapshotted at submit. Drives deferred auto-enrollment.",
+   "fieldname": "req_on_enroll_section",
+   "fieldtype": "Section Break",
+   "label": "Mandatory-on-Enrollment Courses"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Frozen at submit. Toggling the Program flag later does not change this list; use the Program form's backfill button to push new requirements.",
+   "fieldname": "required_on_enroll_courses",
+   "fieldtype": "Table",
+   "label": "Required on Enrollment",
+   "options": "Program Enrollment Required Course",
+   "read_only": 1
   }
  ],
  "image_field": "image",
@@ -367,7 +385,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-05-02 12:35:00.000000",
+ "modified": "2026-06-08 18:06:46.643347",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

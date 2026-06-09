@@ -37,6 +37,8 @@
   "accept_transfer_gpa",
   "column_break_gpa",
   "honors_levels",
+  "attendance_section_pgm",
+  "default_max_absence_percent",
   "section_break_courses",
   "courses",
   "tracks_tab",
@@ -190,6 +192,18 @@
    "fieldtype": "Table",
    "label": "Honors Levels",
    "options": "Honors Levels"
+  },
+  {
+   "fieldname": "attendance_section_pgm",
+   "fieldtype": "Section Break",
+   "label": "Attendance Policy"
+  },
+  {
+   "default": "0",
+   "description": "Maximum share of class meetings a student may miss before being flagged at risk of failing for absences. Each Course Schedule converts this to a whole-number limit (% × scheduled meetings), which the registrar can override. 0 = no attendance limit by default.",
+   "fieldname": "default_max_absence_percent",
+   "fieldtype": "Percent",
+   "label": "Default Max Absence %"
   },
   {
    "depends_on": "eval:!doc.is_ongoing",

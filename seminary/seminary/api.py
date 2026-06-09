@@ -2185,43 +2185,40 @@ def check_attendance_records_exist(course_schedule=None, date=None):
 
 
 @frappe.whitelist()
-def mark_attendance(students_present, students_absent, course_schedule=None, date=None):
+def mark_attendance(
+    students_present,
+    students_absent,
+    students_tardy=None,
+    course_schedule=None,
+    date=None,
+):
     """Creates Multiple Attendance Records.
 
     :param students_present: Students Present JSON.
     :param students_absent: Students Absent JSON.
+    :param students_tardy: Students Tardy JSON (optional).
     :param course_schedule: Course Schedule.
     :param date: Date.
     """
-    print(
-        "Mark Attendance called with course_schedule: ", course_schedule, "date: ", date
+    if not course_schedule:
+        return {"success": False}
+
+    def _as_list(value):
+        if value is None:
+            return []
+        return value if isinstance(value, list) else json.loads(value)
+
+    buckets = (
+        ("Present", _as_list(students_present)),
+        ("Absent", _as_list(students_absent)),
+        ("Tardy", _as_list(students_tardy)),
     )
 
-    if course_schedule:
-        present = (
-            students_present
-            if isinstance(students_present, list)
-            else json.loads(students_present)
-        )
-        absent = (
-            students_absent
-            if isinstance(students_absent, list)
-            else json.loads(students_absent)
-        )
-    print("Present: ", present)
-    print("Absent: ", absent)
-
-    for d in present:
-        status = "Present"
-        make_attendance_records(
-            d["student"], d["stuname_roster"], status, course_schedule, date
-        )
-
-    for d in absent:
-        status = "Absent"
-        make_attendance_records(
-            d["student"], d["stuname_roster"], status, course_schedule, date
-        )
+    for status, rows in buckets:
+        for d in rows:
+            make_attendance_records(
+                d["student"], d["stuname_roster"], status, course_schedule, date
+            )
 
     frappe.db.commit()
     return {"success": True}
@@ -3542,13 +3539,175 @@ def fgrade_this_std(name):
         else:
             fscore = fscore
         frappe.db.set_value("Scheduled Course Roster", name, "fscore", fscore)
-        print(fscore)
         fgrade = get_grade(grading_scale.name, fscore)
-        frappe.db.set_value("Scheduled Course Roster", name, "fgrade", fgrade)
         fgradepass = get_gradepass(grading_scale.name, fscore)
-        print(fgradepass)
-        frappe.db.set_value("Scheduled Course Roster", name, "fgradepass", fgradepass)
+        # Registrar override: fail for unexcused absences regardless of score.
+        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+            fgrade = grading_scale.fa_code
+            fgradepass = "Fail"
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            name,
+            {"fgrade": fgrade, "fgradepass": fgradepass},
+        )
         return "done"
+    elif csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+        # Non-points scale: still honor the FA override.
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            name,
+            {"fgrade": grading_scale.fa_code, "fgradepass": "Fail"},
+        )
+        return "done"
+
+
+FA_OVERRIDE_ROLES = {"Registrar", "Program Chair", "Seminary Manager", "System Manager"}
+
+
+def _assert_fa_roles():
+    if not (FA_OVERRIDE_ROLES & set(frappe.get_roles(frappe.session.user))):
+        frappe.throw(
+            _("Only the registrar or Program Chair can fail a student for absences."),
+            frappe.PermissionError,
+        )
+
+
+def _pe_and_pec(roster):
+    """Resolve (program_enrollment, program_enrollment_course) for a roster,
+    scoped to the roster's own program so it stays correct when a student is
+    enrolled in more than one program."""
+    pe = frappe.db.get_value(
+        "Program Enrollment",
+        {"student": roster.student, "program": roster.program_std_scr},
+        "name",
+    )
+    pec = (
+        frappe.db.get_value(
+            "Program Enrollment Course",
+            {"parent": pe, "course": roster.course_sc},
+            "name",
+        )
+        if pe
+        else None
+    )
+    return pe, pec
+
+
+@frappe.whitelist()
+def fail_for_absence(name):
+    """Registrar action: fail a student for unexcused absences despite otherwise
+    passing scores. Sets the sticky `failed_for_absence` flag (so re-grading keeps
+    the FA), forces the roster grade to the Grading Scale's FA code + Fail, and
+    propagates Fail to the Program Enrollment Course (transcript), removing the
+    course's credits from the enrollment total if it had been counted as passed."""
+    _assert_fa_roles()
+    roster = frappe.get_doc("Scheduled Course Roster", name)
+    if roster.failed_for_absence:
+        return {"failed_for_absence": 1}
+
+    scale = frappe.db.get_value("Course Schedule", roster.course_sc, "gradesc_cs")
+    fa_code = frappe.db.get_value("Grading Scale", scale, "fa_code") if scale else None
+    if not fa_code:
+        frappe.throw(
+            _(
+                "Set a 'Code for Failure for Absences' on the course's Grading Scale first."
+            )
+        )
+    fa_gpa = frappe.db.get_value("Grading Scale", scale, "fa_gpa") or 0
+
+    frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 1)
+    fgrade_this_std(name)  # now forces FA / Fail on the roster
+
+    # Always reflect FA/Fail on the transcript (Program Enrollment Course) — the
+    # student may already be graded, or graded-but-skipped (still Enrolled). Only
+    # touch the denormalized credit total for *finalized* rosters (active=0);
+    # for still-active ones Send Grades is the authority and would double-count.
+    pe, pec = _pe_and_pec(roster)
+    if pec:
+        prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
+        frappe.db.set_value(
+            "Program Enrollment Course",
+            pec,
+            {
+                "pec_finalgradecode": fa_code,
+                "status": "Fail",
+                "count_in_gpa": 1 if fa_gpa else 0,
+            },
+        )
+        if roster.active == 0 and prev_status == "Pass":
+            credits = (
+                frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
+            )
+            total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
+            frappe.db.set_value(
+                "Program Enrollment",
+                pe,
+                "totalcredits",
+                max(0, int(total) - int(credits)),
+            )
+
+    roster.add_comment(
+        "Info",
+        _("Failed for absences ({0}) by {1}.").format(fa_code, frappe.session.user),
+    )
+    frappe.db.commit()
+    return {"failed_for_absence": 1, "fa_code": fa_code}
+
+
+@frappe.whitelist()
+def undo_fail_for_absence(name):
+    """Reverse a Fail-for-Absence: clear the flag, recompute the real grade from
+    scores, and restore the Program Enrollment Course (and credits, if the course
+    now passes and grades were already finalized)."""
+    _assert_fa_roles()
+    roster = frappe.get_doc("Scheduled Course Roster", name)
+    if not roster.failed_for_absence:
+        return {"failed_for_absence": 0}
+
+    grades_sent = roster.active == 0
+    frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
+    grade_thisstudent(name)
+    fgrade_this_std(name)
+    new = frappe.db.get_value(
+        "Scheduled Course Roster", name, ["fgrade", "fgradepass"], as_dict=True
+    )
+
+    pe, pec = _pe_and_pec(roster)
+    if pec:
+        prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
+        if grades_sent:
+            # Finalized: restore the recomputed grade and re-add credits if it
+            # now passes (FA had it as Fail).
+            frappe.db.set_value(
+                "Program Enrollment Course",
+                pec,
+                {"pec_finalgradecode": new.fgrade, "status": new.fgradepass},
+            )
+            if new.fgradepass == "Pass" and prev_status != "Pass":
+                credits = (
+                    frappe.db.get_value("Program Enrollment Course", pec, "credits")
+                    or 0
+                )
+                total = (
+                    frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
+                )
+                frappe.db.set_value(
+                    "Program Enrollment", pe, "totalcredits", int(total) + int(credits)
+                )
+        else:
+            # Not yet graded: revert the PEC to its pre-grade default so Send
+            # Grades can grade it normally later.
+            frappe.db.set_value(
+                "Program Enrollment Course",
+                pec,
+                {"pec_finalgradecode": "", "status": "Enrolled"},
+            )
+
+    roster.add_comment(
+        "Info", _("Failure-for-absences cleared by {0}.").format(frappe.session.user)
+    )
+    frappe.db.commit()
+    return {"failed_for_absence": 0}
 
 
 @frappe.whitelist()
@@ -3640,7 +3799,9 @@ def send_grades(doc=None, **kwargs):
             credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
             if fgradepass == "Fail":
                 credits = 0
-            newcredits = totalcredits + (int(credits) if credits is not None else 0)
+            newcredits = (int(totalcredits) if totalcredits else 0) + (
+                int(credits) if credits is not None else 0
+            )
             print(newcredits)
             frappe.db.set_value(
                 "Program Enrollment Course",

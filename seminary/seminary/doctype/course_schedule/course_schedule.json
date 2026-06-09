@@ -55,6 +55,9 @@
   "meeting_dates_section",
   "cs_meetinfo",
   "hasmtgdate",
+  "attendance_policy_section_cs",
+  "attendance_policy",
+  "max_absences_custom",
   "calendar_token",
   "class_roster_tab",
   "lifecycle_section",
@@ -118,6 +121,28 @@
    "label": "Modality",
    "options": "Presential\nVirtual\nHybrid",
    "reqd": 1
+  },
+  {
+   "description": "How many class meetings a student may miss before being flagged at risk of failing for absences. Editable only by the registrar / Program Chair.",
+   "fieldname": "attendance_policy_section_cs",
+   "fieldtype": "Section Break",
+   "label": "Attendance Policy"
+  },
+  {
+   "default": "Auto (from program)",
+   "description": "Auto = each student's limit = their Program's max absence % × scheduled meetings (auto-disabled for Virtual). Custom = the fixed number below applies to everyone. Disabled = no attendance limit for this course. Editable only by the registrar / Program Chair.",
+   "fieldname": "attendance_policy",
+   "fieldtype": "Select",
+   "label": "Attendance Policy",
+   "options": "Auto (from program)\nCustom\nDisabled"
+  },
+  {
+   "depends_on": "eval:doc.attendance_policy=='Custom'",
+   "description": "Maximum absences allowed (applies to all students) before they are flagged over the limit.",
+   "fieldname": "max_absences_custom",
+   "fieldtype": "Int",
+   "label": "Max Absences (custom)",
+   "non_negative": 1
   },
   {
    "fieldname": "course",

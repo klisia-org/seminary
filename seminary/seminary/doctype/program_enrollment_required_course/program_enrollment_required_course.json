@@ -1,0 +1,45 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-08 00:00:00.000000",
+ "description": "Child table of Program Enrollment. Frozen snapshot, captured at submit, of the courses flagged `pgm_course_reqonenroll` (Mandatory on program enrollment) at the time of enrollment. Drives deferred auto-enrollment. Fulfillment status is computed from CEI/PEC, not stored here. See ADR 035.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course",
+  "course_name"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "columns": 6,
+   "fetch_from": "course.course_name",
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Enrollment Required Course",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

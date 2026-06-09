@@ -35,6 +35,10 @@ app_include_css = "assets/seminary/css/seminary.css"
 app_include_js = [
     "assets/seminary/js/login_redirect.js",
     "assets/seminary/js/seminary_help.js",
+    # Guards an upstream Frappe bug: Script Reports with a ref_doctype crash on
+    # render when the client meta lacks `masked_fields`.
+    # Registry: docs/frappe-workarounds.md (#1); see project_frappe_quirks.md.
+    "assets/seminary/js/masked_fields_report_guard.js",
 ]
 # app_include_js = "/assets/seminary/js/seminary.js"
 # app_include_js = "seminary/public/js/global_seminary.js"
@@ -237,6 +241,8 @@ has_permission = {
 
 override_doctype_class = {
     "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    # Frappe gap: webform_include_js is only wired for standard web forms.
+    # Frappe workaround — registry: docs/frappe-workarounds.md (#4).
     "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
 }
 
@@ -253,7 +259,14 @@ doc_events = {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
     "Program Enrollment": {
-        "on_submit": "seminary.seminary.api.get_payers",
+        "on_submit": [
+            "seminary.seminary.api.get_payers",
+            "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
+        ],
+    },
+    "Course Schedule": {
+        "on_update": "seminary.seminary.required_enrollment.on_course_schedule_update",
+        "after_insert": "seminary.seminary.required_enrollment.on_course_schedule_insert",
     },
     "Scheduled Course Assess Criteria": {
         "on_update": "seminary.seminary.api.update_card",
@@ -344,6 +357,18 @@ doc_events = {
         "after_insert": "seminary.seminary.chapel.reflect_attendance",
         "on_trash": "seminary.seminary.chapel.reflect_attendance",
     },
+    # Recompute the student's per-course attendance standing (absence tally,
+    # limit, alert level + once-per-crossing notifications) on every change.
+    "Student Attendance": {
+        "after_insert": "seminary.seminary.attendance.recompute_for_attendance",
+        "on_update": "seminary.seminary.attendance.recompute_for_attendance",
+        "on_trash": "seminary.seminary.attendance.recompute_for_attendance",
+    },
+    # Re-level affected attendance standings when a program's max absence %
+    # changes (the Auto per-student limit is derived from it).
+    "Program": {
+        "on_update": "seminary.seminary.attendance.recompute_on_program_update",
+    },
     # Wildcard hook reflects linked-document status changes back onto the
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
@@ -383,11 +408,13 @@ scheduler_events = {
 # post-process the responses through `_()`. Remove the two entries below and
 # delete `workspace_i18n.py` once upstream wires translation into these paths.
 override_whitelisted_methods = {
+    # Workspace i18n gap (Frappe v16). Registry: docs/frappe-workarounds.md (#3); ADR 020.
     "frappe.desk.desktop.get_desktop_page": "seminary.workspace_i18n.get_desktop_page",
     "frappe.desk.desktop.get_workspace_sidebar_items": "seminary.workspace_i18n.get_workspace_sidebar_items",
     # Frappe v16 regression: `save_page`'s guard uses AND where it needs OR,
     # so saving any public workspace is a silent no-op (the desk editor hangs
     # and edits vanish on reload). See `seminary.workspace_save_fix`.
+    # Frappe workaround — registry: docs/frappe-workarounds.md (#2).
     "frappe.desk.doctype.workspace.workspace.save_page": "seminary.workspace_save_fix.save_page",
 }
 

@@ -14,22 +14,11 @@ separately via the Chapel Attendance doctype and student self check-in — see
 seminary/seminary/chapel.py.
 """
 
-import secrets
-import string
-
 import frappe
 from frappe import _
 from frappe.model.document import Document
 
-# Human-readable alphabet for check-in codes: drop ambiguous I/O/0/1. Built from
-# string constants (not a literal) so secret scanners don't flag it as entropy.
-_CODE_ALPHABET = "".join(
-    c for c in string.ascii_uppercase + string.digits if c not in "IO01"
-)
-
-
-def _generate_checkin_code(length=5):
-    return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(length))
+from seminary.seminary.utils import generate_checkin_code
 
 
 def _contact_email(contact):
@@ -57,7 +46,7 @@ class Chapel(Document):
         if frappe.db.get_single_value(
             "Seminary Settings", "require_chapel_checkin_code"
         ):
-            self.checkin_code = _generate_checkin_code()
+            self.checkin_code = generate_checkin_code()
 
     def _sync_event(self):
         """Upsert the linked Frappe Event from this Chapel. Only confirmed
