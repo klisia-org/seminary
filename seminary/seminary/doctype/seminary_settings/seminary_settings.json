@@ -78,6 +78,17 @@
   "chapel_checkin_opens_before_mins",
   "chapel_checkin_closes_after_mins",
   "require_chapel_checkin_code",
+  "course_checkin_section",
+  "enforce_time_window",
+  "require_course_checkin_code",
+  "course_checkin_opens_before_mins",
+  "column_break_course_checkin",
+  "course_checkin_closes_after_mins",
+  "course_checkin_tardy_after_mins",
+  "attendance_policy_section",
+  "tardies_per_absence",
+  "column_break_attendance_policy",
+  "absence_warning_buffer",
   "show_student_application_on_login",
   "default_application_web_form",
   "support_user"
@@ -501,6 +512,79 @@
    "fieldname": "require_chapel_checkin_code",
    "fieldtype": "Check",
    "label": "Require check-in code"
+  },
+  {
+   "description": "Lets students self-record course attendance from their course card (\"Mark my attendance\"). The instructor still reviews and finalizes the roster on the attendance page.",
+   "fieldname": "course_checkin_section",
+   "fieldtype": "Section Break",
+   "label": "Course Attendance Self Check-in"
+  },
+  {
+   "default": "1",
+   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code — best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
+   "fieldname": "enforce_time_window",
+   "fieldtype": "Check",
+   "label": "Enforce meeting time window"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enforce_time_window",
+   "description": "When checked, students must enter the meeting's human-readable check-in code to self-record course attendance. The code is generated on demand from the attendance page (\"Show check-in code\").",
+   "fieldname": "require_course_checkin_code",
+   "fieldtype": "Check",
+   "label": "Require check-in code"
+  },
+  {
+   "default": "15",
+   "depends_on": "eval:doc.enforce_time_window",
+   "description": "How many minutes before a meeting's start time students may begin self check-in.",
+   "fieldname": "course_checkin_opens_before_mins",
+   "fieldtype": "Int",
+   "label": "Check-in Opens Before (mins)"
+  },
+  {
+   "fieldname": "column_break_course_checkin",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "30",
+   "depends_on": "eval:doc.enforce_time_window",
+   "description": "How many minutes after a meeting's end time (or start, if no end) students may still self check-in.",
+   "fieldname": "course_checkin_closes_after_mins",
+   "fieldtype": "Int",
+   "label": "Check-in Closes After (mins)"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enforce_time_window",
+   "description": "Grace period after a meeting's start time. A self check-in later than this is recorded as Tardy instead of Present. Set to 0 to never auto-mark Tardy on self check-in.",
+   "fieldname": "course_checkin_tardy_after_mins",
+   "fieldtype": "Int",
+   "label": "Tardy After (mins)"
+  },
+  {
+   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",
+   "fieldname": "attendance_policy_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Policy"
+  },
+  {
+   "default": "3",
+   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
+   "fieldname": "tardies_per_absence",
+   "fieldtype": "Int",
+   "label": "Tardies per Absence"
+  },
+  {
+   "fieldname": "column_break_attendance_policy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Warn (student banner + notification) when a student is within this many absences of the limit. Crossing the limit triggers a second, stronger notification.",
+   "fieldname": "absence_warning_buffer",
+   "fieldtype": "Int",
+   "label": "Warn Within (absences of limit)"
   },
   {
    "fieldname": "branding_section",

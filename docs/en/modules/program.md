@@ -132,6 +132,11 @@ row:
 
 - **Mandatory for this program** (`required`) — every student must pass it to
   graduate. Leave it unchecked for **electives**.
+- **Mandatory on program enrollment** (`pgm_course_reqonenroll`) — the student is
+  **automatically enrolled** in this course; no one has to register them by hand.
+  This is **separate** from *Mandatory for this program* above: that flag is about
+  *graduating*, this one is about *getting signed up*. A course can be one, the
+  other, both, or neither. See **Auto-enrolling students** below.
 - **Credits for this program** — the same course can be worth a different number
   of credits in different programs, so credits live on the program row.
 - **Term number** — a suggested term, used to sequence the audit.
@@ -144,6 +149,45 @@ row:
 > **List every course here.** Even courses that only matter to one track or
 > emphasis must appear in this main Courses table. The track tables below just
 > point at courses that already exist here.
+
+### Auto-enrolling students into courses
+
+Tick **Mandatory on program enrollment** on a course and students no longer have
+to register for it — the system signs them up for you. This is meant for the
+courses everyone in the program takes (a required orientation, a first-term core
+sequence), so the registrar doesn't enroll each student one by one.
+
+A few things worth understanding about *when* and *how* this happens:
+
+- **It waits for an offering.** A student can only be enrolled once the course is
+  actually being offered — that is, once a [Course Schedule](enrollment.md) for it
+  is **open for enrollment**. If the course isn't offered in the term the student
+  enrolls, nothing fails: the student is simply enrolled later, automatically, the
+  moment a future offering opens.
+- **It picks one offering sensibly.** When the course is open in more than one
+  place at once, the system prefers an offering in the student's own enrollment
+  term, then an online (**Virtual**) section, then the earliest-starting one.
+- **Paid programs still bill normally.** "Mandatory on enrollment" does **not**
+  mean free. On a paid program the auto-enrollment is invoiced and sits at
+  *Awaiting Payment* exactly like a hand-made enrollment until the student pays.
+- **Prerequisites are respected.** If the course has an unmet mandatory
+  prerequisite, the student is **not** auto-enrolled; instead a to-do is raised
+  for the registrar to sort out the sequencing.
+- **No double enrollment.** A student already enrolled in (or who already passed)
+  the course is left alone.
+
+> **The list is fixed at enrollment time.** Which courses a student is
+> auto-enrolled into is decided **when their enrollment is submitted**, from the
+> flags as they stand that day. Turning the flag on for a course **later** does
+> **not** reach back and enroll students who are already in the program — by
+> design, so a curriculum change never silently re-enrolls an existing cohort.
+>
+> To push a newly-flagged course to students who are *already* enrolled, open the
+> Program and use **Actions → Apply Mandatory-on-Enrollment to Active Students**.
+> It adds the new course to each active student's list and enrolls them where an
+> offering is open. The button only appears once the program has at least one
+> mandatory-on-enrollment course, and it only ever *adds* — it never removes a
+> course a student was already set up for.
 
 ## Tracks and emphases
 
@@ -292,6 +336,8 @@ credits and required courses, and the graduation requirements are clear.
 | Create a free, never-ending offering (e.g., a Free Courses page on the website to train believers and serve as a marketing tool for the seminary) | Use a Program Level with **Is Ongoing**; tick **Free Program** (often, Enrollment mode = continuous) |
 | Track progress by credits, any order | Enrollment Type = **Credits-based**; set Credits for completion |
 | Mark a course required for everyone | Tick **Mandatory for this program** on its Courses row |
+| Enroll every student in a course automatically | Tick **Mandatory on program enrollment** on its Courses row |
+| Apply a newly-flagged auto-enroll course to current students | Program → **Actions → Apply Mandatory-on-Enrollment to Active Students** |
 | Retire a course from the curriculum | Tick **Disabled** on its Courses row and give a reason |
 | Require N credits from a group of courses | Add an organizational track (Program Emphasis? **off**) with **Track Credits Required** |
 | Offer a declared specialization | Add a track with **Program Emphasis? on**; set credits, required courses, and declaration timing |

@@ -16,6 +16,9 @@
   "column_break_wvdd",
   "wf_code",
   "wf_gpa",
+  "section_break_fa",
+  "fa_code",
+  "fa_gpa",
   "grading_intervals_section",
   "intervals",
   "amended_from",
@@ -103,6 +106,25 @@
    "fieldname": "wf_gpa",
    "fieldtype": "Check",
    "label": "Consider WF in GPA"
+  },
+  {
+   "description": "Transcript notation when the registrar fails a student for unexcused absences despite otherwise-passing scores.",
+   "fieldname": "section_break_fa",
+   "fieldtype": "Section Break",
+   "label": "Transcript Notation for Failure for Absences"
+  },
+  {
+   "default": "FA",
+   "description": "e.g., FA. The grade code stamped when a student is failed for absences.",
+   "fieldname": "fa_code",
+   "fieldtype": "Data",
+   "label": "Code for Failure for Absences"
+  },
+  {
+   "default": "0",
+   "fieldname": "fa_gpa",
+   "fieldtype": "Check",
+   "label": "Consider FA in GPA"
   }
  ],
  "is_submittable": 1,

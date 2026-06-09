@@ -62,9 +62,9 @@
   },
   {
    "default": "0",
+   "description": "Automatically enroll students in this course. Enrollment is deferred until an offering (Course Schedule) is open; the set is fixed at enrollment time. Distinct from 'Mandatory for this program' (graduation). See ADR 035.",
    "fieldname": "pgm_course_reqonenroll",
    "fieldtype": "Check",
-   "hidden": 1,
    "in_list_view": 1,
    "label": "Mandatory on program enrollment"
   },

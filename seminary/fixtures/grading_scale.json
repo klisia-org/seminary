@@ -4,6 +4,8 @@
   "description": null,
   "docstatus": 1,
   "doctype": "Grading Scale",
+  "fa_code": "FA",
+  "fa_gpa": 0,
   "grading_scale_name": "Default Numeric Scale",
   "grscale_type": "Points",
   "intervals": [
@@ -126,7 +128,7 @@
    }
   ],
   "maxnumgrade": 100.0,
-  "modified": "2025-02-28 09:49:27.275161",
+  "modified": "2026-06-09 00:00:00.000000",
   "name": "Default Numeric Scale"
  }
 ]

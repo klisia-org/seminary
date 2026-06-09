@@ -20,6 +20,10 @@ def daily():
     _process_program_separations()
     _reconcile_loa(today)
 
+    from seminary.seminary.attendance import recompute_all
+
+    recompute_all()
+
     if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
         _run_nat_for_due_terms(today)
         _run_nay_for_due_years(today)

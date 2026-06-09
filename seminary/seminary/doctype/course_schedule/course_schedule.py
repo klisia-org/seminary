@@ -43,6 +43,40 @@ class CourseSchedule(Document):
         self.validate_instructor_categories()
         self.clean_name()
         self._resolve_dates_if_needed()
+        self._guard_attendance_policy()
+
+    def on_update(self):
+        # Re-level attendance standings: the per-student Auto limit moves when
+        # meeting dates are added (which happens after the initial save), and
+        # the policy itself may change. Roster counts are class-sized; the
+        # daily task is the backstop. Standings write via db.set_value, so this
+        # does not recurse through the roster on_update hook.
+        if (
+            frappe.flags.in_install
+            or frappe.flags.in_migrate
+            or frappe.flags.in_demo_install
+        ):
+            return
+        from seminary.seminary.attendance import recompute_for_course_schedule
+
+        try:
+            recompute_for_course_schedule(self.name)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), f"attendance re-level on CS save: {self.name}"
+            )
+
+    def _guard_attendance_policy(self):
+        """The attendance policy is registrar/Program-Chair governed (instructors
+        see it read-only via course_schedule.js; this is the server-side gate)."""
+        if self.is_new():
+            return
+        if self.has_value_changed("attendance_policy") or self.has_value_changed(
+            "max_absences_custom"
+        ):
+            from seminary.seminary.attendance import assert_can_edit_policy
+
+            assert_can_edit_policy()
 
     def before_insert(self):
         if not self.workflow_state:

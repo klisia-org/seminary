@@ -29,6 +29,7 @@ class ProgramEnrollment(Document):
 
     def before_submit(self):
         self.snapshot_graduation_requirements()
+        self.snapshot_required_on_enroll_courses()
 
     def on_submit(self):
         self.update_student_joining_date()
@@ -128,6 +129,26 @@ class ProgramEnrollment(Document):
         if self.graduation_requirements:
             return
         _snapshot(self)
+
+    def snapshot_required_on_enroll_courses(self):
+        """Freeze the set of courses flagged `pgm_course_reqonenroll` on the
+        Program at submit time. Deferred auto-enrollment matches this frozen
+        list (not the live Program flag), so toggling the flag later does not
+        retroactively enroll already-enrolled students. Mirrors
+        snapshot_graduation_requirements. See ADR 035."""
+        if self.required_on_enroll_courses:
+            return
+        rows = frappe.get_all(
+            "Program Course",
+            filters={
+                "parent": self.program,
+                "pgm_course_reqonenroll": 1,
+                "disabled": 0,
+            },
+            pluck="course",
+        )
+        for course in rows:
+            self.append("required_on_enroll_courses", {"course": course})
 
     def validate_academic_term(self):
         start_date, end_date = frappe.db.get_value(

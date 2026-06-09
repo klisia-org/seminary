@@ -25,6 +25,14 @@
   "column_break_debd",
   "fgrade",
   "fgradepass",
+  "attendance_standing_section",
+  "absence_count",
+  "tardy_count",
+  "column_break_attendance_scr",
+  "effective_absences",
+  "absence_limit",
+  "attendance_alert_level",
+  "failed_for_absence",
   "grades_section",
   "stdroster_grade"
  ],
@@ -152,6 +160,64 @@
    "fieldname": "progress",
    "fieldtype": "Float",
    "label": "Progress",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attendance_standing_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Standing"
+  },
+  {
+   "default": "0",
+   "description": "Recorded absences (approved-leave absences excluded).",
+   "fieldname": "absence_count",
+   "fieldtype": "Int",
+   "label": "Absences",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "tardy_count",
+   "fieldtype": "Int",
+   "label": "Tardies",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_attendance_scr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Absences + (tardies converted per Seminary Settings). Compared against the absence limit.",
+   "fieldname": "effective_absences",
+   "fieldtype": "Int",
+   "label": "Effective Absences",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "This student's allowed absences for the course (0 = no limit). Derived from their program's max absence % and the course's scheduled meetings, or the course's custom limit.",
+   "fieldname": "absence_limit",
+   "fieldtype": "Int",
+   "label": "Absence Limit",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "0 = OK, 1 = within the warning band, 2 = over the limit. Drives once-per-crossing notifications.",
+   "fieldname": "attendance_alert_level",
+   "fieldtype": "Int",
+   "in_standard_filter": 1,
+   "label": "Attendance Alert Level",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set by the registrar's 'Fail for Absence' action. Forces the final grade to the Grading Scale's FA code (Fail), surviving re-grading.",
+   "fieldname": "failed_for_absence",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Failed for Absence",
    "read_only": 1
   }
  ],

@@ -3,6 +3,13 @@ frappe.ui.form.on("Course Schedule", {
 	refresh: function(frm) {
 		frm.add_web_link(`/seminary/courses/${frm.doc.name}`, "See on Website");
 		frm.trigger("render_days");
+
+		// Attendance policy is registrar / Program Chair governed (the server
+		// enforces it too in course_schedule.py). Instructors see it read-only.
+		const canEditPolicy = ["Registrar", "Program Chair", "Seminary Manager", "System Manager"]
+			.some(r => frappe.user_roles.includes(r));
+		["attendance_policy", "max_absences_custom"].forEach(f =>
+			frm.set_df_property(f, "read_only", canEditPolicy ? 0 : 1));
 		if (frm.doc.hasmtgdate === 0) {
 			frm.add_custom_button(__('Add Meeting Dates'), function() {
 				// Button functionality here

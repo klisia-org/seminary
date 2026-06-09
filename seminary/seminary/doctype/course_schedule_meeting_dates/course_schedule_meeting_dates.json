@@ -9,7 +9,8 @@
   "cs_meetdate",
   "cs_fromtime",
   "cs_totime",
-  "attendance"
+  "attendance",
+  "checkin_code"
  ],
  "fields": [
   {
@@ -35,6 +36,13 @@
    "fieldname": "attendance",
    "fieldtype": "Check",
    "label": "Attendance taken",
+   "read_only": 1
+  },
+  {
+   "description": "Human-readable code students enter to self check-in for this meeting (when 'Require check-in code' is on in Seminary Settings). Generated on demand from the attendance page; display it on screen during class.",
+   "fieldname": "checkin_code",
+   "fieldtype": "Data",
+   "label": "Check-in Code",
    "read_only": 1
   }
  ],

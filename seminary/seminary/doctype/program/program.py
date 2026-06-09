@@ -140,6 +140,18 @@ class Program(WebsiteGenerator):
 
 
 @frappe.whitelist()
+def apply_required_on_enroll(program):
+    """Explicit, append-only backfill: push the program's currently-flagged
+    mandatory-on-enrollment courses onto active enrollments' snapshots and
+    auto-enroll where an offering is open. Triggered from the Program form
+    button (see program.js) or bench. See ADR 035."""
+    frappe.only_for(("Registrar", "System Manager"))
+    from seminary.seminary.required_enrollment import reconcile_required_enrollments
+
+    return reconcile_required_enrollments(program)
+
+
+@frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def get_program_tracks(doctype, txt, searchfield, start, page_len, filters):
     if not filters.get("program"):
