@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "creation": "2026-06-10 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "fieldname",
+  "operator",
+  "value"
+ ],
+ "fields": [
+  {
+   "description": "A field on the watched doctype (status, workflow_state, any field).",
+   "fieldname": "fieldname",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Field",
+   "reqd": 1
+  },
+  {
+   "default": "Equals",
+   "fieldname": "operator",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Operator",
+   "options": "Equals\nNot Equals\nGreater Than\nGreater or Equal\nLess Than\nLess or Equal\nIn\nContains\nIs Set\nIs Not Set",
+   "reqd": 1
+  },
+  {
+   "description": "Comma-separated list for 'In'. Ignored for Is Set / Is Not Set.",
+   "fieldname": "value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Value"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Communication Trigger Condition",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

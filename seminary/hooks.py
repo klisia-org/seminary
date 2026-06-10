@@ -378,8 +378,23 @@ doc_events = {
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
     "*": {
-        "on_update_after_submit": "seminary.seminary.graduation.reflect_linked_doc_status",
+        "on_update": "seminary.seminary.communication_triggers.process",
+        "on_update_after_submit": [
+            "seminary.seminary.graduation.reflect_linked_doc_status",
+            "seminary.seminary.communication_triggers.process",
+        ],
+        "on_submit": "seminary.seminary.communication_triggers.process",
+        "on_cancel": "seminary.seminary.communication_triggers.process",
     },
+}
+
+# Communication channel adapters (ADR 043). Other apps extend this hook with
+# {provider_key: "dotted.path.AdapterClass"}; Channel Provider Account rows
+# reference the keys.
+communication_channel_providers = {
+    "frappe-email": "seminary.seminary.comms.EmailAdapter",
+    "in-app": "seminary.seminary.comms.InAppAdapter",
+    "telegram": "seminary.seminary.telegram_adapter.TelegramAdapter",
 }
 
 # Scheduled Tasks
@@ -389,6 +404,10 @@ scheduler_events = {
     # 	"all": [
     # 		"seminary.tasks.all"
     # 	],
+    "cron": {
+        # Communication Log drainer (ADR 043): rate-limited per provider account.
+        "*/5 * * * *": ["seminary.seminary.comms.dispatch"],
+    },
     "daily": ["seminary.tasks.daily"],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [

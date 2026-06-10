@@ -281,19 +281,21 @@ def _notify_registrar_payment_dropped(cei_name, paid_percent, threshold):
                 f"cei_lifecycle: failed to assign ToDo for {cei_name} to {user}",
             )
 
-    try:
-        frappe.sendmail(
-            recipients=recipients,
-            subject=_("Payment threshold dropped: {0}").format(cei_name),
-            message=description,
-            reference_doctype="Course Enrollment Individual",
-            reference_name=cei_name,
-        )
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"cei_lifecycle: failed to email registrars for {cei_name}",
-        )
+    from seminary.seminary import comms
+
+    comms.send_to_role(
+        "Registrar",
+        "cei-payment-threshold",
+        context={
+            "student": student_label,
+            "course": course_label,
+            "paid_percent": round(paid_percent, 1),
+            "threshold": round(threshold, 1),
+        },
+        reference_doctype="Course Enrollment Individual",
+        reference_name=cei_name,
+        triggered_by="cei-payment-threshold",
+    )
 
 
 def _registrar_emails():

@@ -1,0 +1,338 @@
+{
+ "actions": [],
+ "autoname": "COMM-.YYYY.-.######",
+ "creation": "2026-06-10 12:00:00.000000",
+ "description": "The communication ledger (ADR 043): one row per person × channel × message, both directions. Created Queued and drained by the rate-limited dispatcher — never sent inline. The unique idempotency key is the no-double-send guarantee. A Person's filtered list of these rows IS the unified interaction timeline.",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "routing_section",
+  "direction",
+  "status",
+  "category",
+  "column_break_routing",
+  "person",
+  "channel",
+  "provider_account",
+  "to_address",
+  "from_address",
+  "content_section",
+  "subject",
+  "message",
+  "column_break_content",
+  "template",
+  "language",
+  "triggered_by",
+  "reference_doctype",
+  "reference_name",
+  "delivery_section",
+  "scheduled_at",
+  "sent_at",
+  "delivered_at",
+  "read_at",
+  "column_break_delivery",
+  "retry_count",
+  "next_attempt_at",
+  "error",
+  "provider_message_id",
+  "idempotency_key",
+  "follow_up_section",
+  "awaiting_response",
+  "follow_up_after_days",
+  "column_break_follow",
+  "follow_up_template",
+  "follow_up_of",
+  "follow_up_done"
+ ],
+ "fields": [
+  {
+   "fieldname": "routing_section",
+   "fieldtype": "Section Break",
+   "label": "Routing"
+  },
+  {
+   "default": "Outbound",
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Direction",
+   "options": "Outbound\nInbound",
+   "reqd": 1
+  },
+  {
+   "default": "Queued",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Queued\nSending\nSent\nDelivered\nRead\nFailed\nBounced\nCancelled",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "\nTransactional\nAcademic\nCommunity\nPromotional\nEmergency"
+  },
+  {
+   "fieldname": "column_break_routing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Blank only for messages to addresses the spine doesn't know (e.g. custom-filter announcement recipients, unmatched inbound).",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Person",
+   "options": "Person",
+   "search_index": 1
+  },
+  {
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Channel",
+   "options": "Communication Channel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "provider_account",
+   "fieldtype": "Link",
+   "label": "Provider Account",
+   "options": "Channel Provider Account"
+  },
+  {
+   "fieldname": "to_address",
+   "fieldtype": "Data",
+   "label": "To",
+   "search_index": 1
+  },
+  {
+   "fieldname": "from_address",
+   "fieldtype": "Data",
+   "label": "From"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Subject"
+  },
+  {
+   "description": "Rendered snapshot — what was actually sent, regardless of later template edits.",
+   "fieldname": "message",
+   "fieldtype": "Text Editor",
+   "label": "Message"
+  },
+  {
+   "fieldname": "column_break_content",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "label": "Template",
+   "options": "Communication Template"
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "options": "Language"
+  },
+  {
+   "description": "Who or what queued this: a user, or a system path like seminary-announcement / waitlist-promotion.",
+   "fieldname": "triggered_by",
+   "fieldtype": "Data",
+   "label": "Triggered By"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype",
+   "search_index": 1
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery"
+  },
+  {
+   "description": "Blank = send at the next dispatcher run.",
+   "fieldname": "scheduled_at",
+   "fieldtype": "Datetime",
+   "label": "Scheduled At"
+  },
+  {
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "label": "Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivered_at",
+   "fieldtype": "Datetime",
+   "label": "Delivered At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "read_at",
+   "fieldtype": "Datetime",
+   "label": "Read At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_delivery",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "label": "Retry Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "next_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Next Attempt At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "read_only": 1
+  },
+  {
+   "description": "Provider-side id, used to correlate delivery/read webhooks.",
+   "fieldname": "provider_message_id",
+   "fieldtype": "Data",
+   "label": "Provider Message ID",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Unique. Insert-or-skip on this key is the no-double-send guarantee.",
+   "fieldname": "idempotency_key",
+   "fieldtype": "Data",
+   "label": "Idempotency Key",
+   "no_copy": 1,
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "follow_up_section",
+   "fieldtype": "Section Break",
+   "label": "Follow-up"
+  },
+  {
+   "default": "0",
+   "fieldname": "awaiting_response",
+   "fieldtype": "Check",
+   "label": "Awaiting Response"
+  },
+  {
+   "default": "0",
+   "description": "Days after sending with no reply and no read before the follow-up fires.",
+   "fieldname": "follow_up_after_days",
+   "fieldtype": "Int",
+   "label": "Follow Up After (Days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_follow",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Queued automatically when the follow-up fires. Blank = a ToDo is created for the triggering user instead.",
+   "fieldname": "follow_up_template",
+   "fieldtype": "Link",
+   "label": "Follow Up Template",
+   "options": "Communication Template"
+  },
+  {
+   "description": "The outbound log this row is a follow-up to.",
+   "fieldname": "follow_up_of",
+   "fieldtype": "Link",
+   "label": "Follow Up Of",
+   "options": "Communication Log",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "follow_up_done",
+   "fieldtype": "Check",
+   "label": "Follow Up Done",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Communication Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "subject,to_address,status",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "subject",
+ "track_changes": 0
+}

@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-06-10 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "channel",
+  "language",
+  "subject",
+  "body"
+ ],
+ "fields": [
+  {
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Channel",
+   "options": "Communication Channel",
+   "reqd": 1
+  },
+  {
+   "description": "Blank = fallback version for any language.",
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Language",
+   "options": "Language"
+  },
+  {
+   "description": "Jinja. Ignored by channels without subjects (SMS, Voice).",
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Subject"
+  },
+  {
+   "description": "Jinja. Context: person, doc (the reference document, if any), plus whatever the caller passes.",
+   "fieldname": "body",
+   "fieldtype": "Code",
+   "label": "Body",
+   "options": "Jinja",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Communication Template Version",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

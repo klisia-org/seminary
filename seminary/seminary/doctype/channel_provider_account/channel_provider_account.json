@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "autoname": "field:account_name",
+ "creation": "2026-06-10 12:00:00.000000",
+ "description": "A configured provider instance for a Communication Channel (ADR 043): Twilio-US, a Telegram bot, the site's Frappe email stack... Channel is the semantic ('SMS'); the account is who actually carries it, with its own region scope and hourly rate limit.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "account_name",
+  "channel",
+  "provider",
+  "column_break_main",
+  "enabled",
+  "country",
+  "hourly_limit",
+  "settings_section",
+  "settings"
+ ],
+ "fields": [
+  {
+   "fieldname": "account_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Account Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Channel",
+   "options": "Communication Channel",
+   "reqd": 1
+  },
+  {
+   "description": "Adapter key resolved through the communication_channel_providers hook. Built-ins: frappe-email (Frappe Email Account stack), in-app (portal inbox).",
+   "fieldname": "provider",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Provider",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Enabled"
+  },
+  {
+   "description": "Routing scope: persons from this country prefer this account. Blank = default account for the channel.",
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country / Region",
+   "options": "Country"
+  },
+  {
+   "default": "0",
+   "description": "Maximum sends per trailing hour through this account (free-tier throttle). 0 = unlimited. Emergency-category messages bypass the throttle.",
+   "fieldname": "hourly_limit",
+   "fieldtype": "Int",
+   "label": "Hourly Limit",
+   "non_negative": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "settings_section",
+   "fieldtype": "Section Break",
+   "label": "Provider Settings"
+  },
+  {
+   "description": "Provider-specific configuration as JSON (API keys, sender ids, webhook secrets). Passed verbatim to the adapter.",
+   "fieldname": "settings",
+   "fieldtype": "Code",
+   "label": "Settings (JSON)",
+   "options": "JSON"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Channel Provider Account",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

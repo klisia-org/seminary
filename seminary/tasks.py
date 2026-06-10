@@ -39,6 +39,10 @@ def daily():
         advance_due_course_schedules(today)
         nag_late_graders(today)
 
+    from seminary.seminary.comms import process_follow_ups
+
+    process_follow_ups()
+
 
 @frappe.whitelist()
 def hourly():
@@ -137,40 +141,19 @@ def _run_nay_for_due_years(today):
 
 
 def _maybe_warn_need_acadterm(today):
-    outgoing_email = frappe.db.get_all("Email Account", {"enable_outgoing": 1}, "name")
-    if not outgoing_email:
-        return
+    from seminary.seminary import comms
 
     future_terms = frappe.db.count("Academic Term", {"term_start_date": [">=", today]})
     if future_terms >= 2:
         return
 
-    user_roles = frappe.db.sql(
-        """SELECT DISTINCT parent FROM `tabUserRole` WHERE role = 'Registrar'""",
-        as_dict=True,
+    # One nag per (term-count, registrar): the dedupe key keeps the daily task
+    # from re-mailing every day while the count stays the same, but a further
+    # drop (or a registrar fixing it and it dropping again later) re-fires.
+    comms.send_to_role(
+        "Registrar",
+        "few-academic-terms",
+        context={"count": future_terms},
+        triggered_by="need-academic-term",
+        dedupe_prefix=f"few-academic-terms::{future_terms}",
     )
-    usernames = [r["parent"] for r in user_roles]
-    if not usernames:
-        frappe.log_error(
-            "No users found with the Registrar role.", "Need Academic Term"
-        )
-        return
-
-    users = frappe.db.sql(
-        "SELECT email FROM `tabUser` WHERE name IN ({})".format(
-            ", ".join(["%s"] * len(usernames))
-        ),
-        tuple(usernames),
-    )
-    subject = "Few Academic Terms"
-    body = (
-        f"There are only {future_terms} academic terms in the pipeline. "
-        "Please create more to avoid disruptions."
-    )
-    for (email,) in users:
-        try:
-            frappe.sendmail(recipients=email, subject=subject, message=body)
-        except Exception as e:
-            frappe.log_error(
-                f"Failed to send email to {email}: {str(e)}", "Need Academic Term"
-            )

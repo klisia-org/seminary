@@ -48,27 +48,29 @@ class RecommendationLetter(Document):
         if not self.recommender_email:
             return
 
+        from seminary.seminary import comms
+        from seminary.seminary.person import find_person
+
         portal_url = get_url(
             f"/recommender-form/{self.name}?token={self.request_token}"
         )
         student_name = (
             frappe.db.get_value("Student", self.student, "student_name") or ""
         )
-        subject = _("Recommendation request for {0}").format(student_name)
-        message = _(
-            "Dear {0},<br><br>"
-            "{1} has requested a recommendation letter from you for their seminary program. "
-            "Please use the secure link below to submit your letter:<br><br>"
-            '<a href="{2}">{2}</a><br><br>'
-            "This link expires on {3}. Thank you."
-        ).format(self.recommender_name, student_name, portal_url, self.token_expires_on)
-
-        frappe.sendmail(
-            recipients=[self.recommender_email],
-            subject=subject,
-            message=message,
+        comms.send(
+            find_person(email=self.recommender_email),
+            "recommendation-request",
+            to_address=self.recommender_email,
+            context={
+                "recommender": self.recommender_name,
+                "student": student_name,
+                "url": portal_url,
+                "expires": self.token_expires_on,
+            },
             reference_doctype=self.doctype,
             reference_name=self.name,
+            triggered_by="recommendation-request",
+            dedupe_key=f"recommendation-request::{self.name}",
         )
         self.db_set("request_sent_on", now_datetime(), update_modified=False)
         _advance_state(self, "Requested")

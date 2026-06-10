@@ -36,6 +36,10 @@ def after_install():
     seed_culminating_project_types()
     seed_disciplinary_actions()
     seed_room_features()
+    seed_communication_channels()
+    seed_channel_provider_accounts()
+    seed_communication_templates()
+    setup_customer_person_field()
 
 
 def check_erpnext():
@@ -315,6 +319,196 @@ def seed_room_features():
     frappe.db.commit()
 
 
+def seed_communication_channels():
+    """Seed the semantic Communication Channels (ADR 042/043).
+
+    Not fixtures (a re-import would clobber seminary edits — channels grow
+    configuration like provider accounts and rate limits in ADR 043). Created
+    once, create-only-if-missing. Names are stable identifiers referenced from
+    code (Person primary-address sync); descriptions are free to edit.
+    """
+    defaults = [
+        ("Email", _("Email delivery.")),
+        ("SMS", _("Text messages to the primary mobile number.")),
+        ("WhatsApp", _("WhatsApp messages.")),
+        ("Telegram", _("Telegram messages.")),
+        ("In-App", _("Portal inbox messages.")),
+        ("Print", _("Generated PDF documents / printed letters.")),
+        ("Voice", _("Voice / IVR calls.")),
+    ]
+    for channel_name, description in defaults:
+        if frappe.db.exists("Communication Channel", channel_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Communication Channel",
+                "channel_name": channel_name,
+                "enabled": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_channel_provider_accounts():
+    """Default provider accounts so Email and In-App work out of the box
+    (ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
+    any account for a channel (even renamed), we never add another."""
+    defaults = [
+        ("Default Email", "Email", "frappe-email"),
+        ("Portal Inbox", "In-App", "in-app"),
+    ]
+    for account_name, channel, provider in defaults:
+        if not frappe.db.exists("Communication Channel", channel):
+            continue
+        if frappe.db.exists("Channel Provider Account", {"channel": channel}):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Channel Provider Account",
+                "account_name": account_name,
+                "channel": channel,
+                "provider": provider,
+                "enabled": 1,
+                "hourly_limit": 0,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_communication_templates():
+    """Seed the Communication Templates the system call sites reference
+    (ADR 043/044). Create-only-if-missing by template_key — seminaries edit
+    bodies and add language versions on the desk, so a fixture re-import would
+    clobber them. Bodies are deliberately NOT gettext-wrapped: per-language
+    copy lives in additional Communication Template Version rows, not .po
+    files."""
+    defaults = [
+        {
+            "template_key": "waitlist-promoted",
+            "category": "Transactional",
+            "description": "Student notice: promoted off a course waitlist.",
+            "subject": "You're off the waitlist: {{ course }}",
+            "body": (
+                "<p>Good news — a seat opened in {{ course }} and you've been "
+                "moved off the waitlist.{% if awaiting_payment %} A seat invoice "
+                "has been issued — please complete payment to keep your seat."
+                "{% endif %}</p>"
+            ),
+        },
+        {
+            "template_key": "waitlist-promoted-registrar",
+            "category": "Transactional",
+            "description": "Registrar notice: a student was auto-promoted from a waitlist.",
+            "subject": "Waitlist promotion: {{ course }}",
+            "body": (
+                "<p>{{ student }} was auto-promoted from the waitlist into "
+                "{{ course }} (now {{ state }}).</p>"
+            ),
+        },
+        {
+            "template_key": "waitlist-closed",
+            "category": "Transactional",
+            "description": "Student notice: enrollment closed without a seat opening.",
+            "subject": "Waitlist closed: {{ course }}",
+            "body": (
+                "<p>Enrollment for {{ course }} has closed and a seat did not open "
+                "before the deadline. Please contact the registrar about "
+                "alternatives.</p>"
+            ),
+        },
+        {
+            "template_key": "cei-payment-threshold",
+            "category": "Transactional",
+            "description": "Registrar notice: a Submitted enrollment dropped below the payment threshold.",
+            "subject": "Payment threshold dropped: {{ student }}",
+            "body": (
+                "<p>Payment threshold no longer met for {{ student }} (course "
+                "{{ course }}). Now at {{ paid_percent }}%, threshold is "
+                "{{ threshold }}%. Review whether to file a Withdrawal Request or "
+                "follow up with the student.</p>"
+            ),
+        },
+        {
+            "template_key": "late-grades-nag",
+            "category": "Transactional",
+            "description": "Instructor/registrar nag: final grades are past the grade close date.",
+            "subject": "Grades overdue for {{ course }}",
+            "body": (
+                "<p>Final grades for <b>{{ course }}</b> ({{ term }}) were due on "
+                "<b>{{ due }}</b> ({{ days }} day(s) ago) and have not yet been "
+                "sent.</p><p>Please enter and finalize all grades, then use "
+                "<b>Send Grades</b> to close the course for the term.</p>"
+            ),
+        },
+        {
+            "template_key": "few-academic-terms",
+            "category": "Transactional",
+            "description": "Registrar warning: fewer than two future Academic Terms exist.",
+            "subject": "Few Academic Terms",
+            "body": (
+                "<p>There are only {{ count }} future academic term(s) in the "
+                "pipeline. Please create more to avoid disruptions.</p>"
+            ),
+        },
+        {
+            "template_key": "recommendation-request",
+            "category": "Transactional",
+            "description": "External recommender: secure-link request for a recommendation letter.",
+            "subject": "Recommendation request for {{ student }}",
+            "body": (
+                "Dear {{ recommender }},<br><br>{{ student }} has requested a "
+                "recommendation letter from you for their seminary program. "
+                "Please use the secure link below to submit your letter:<br><br>"
+                '<a href="{{ url }}">{{ url }}</a><br><br>'
+                "This link expires on {{ expires }}. Thank you."
+            ),
+        },
+    ]
+    for tpl in defaults:
+        if frappe.db.exists("Communication Template", tpl["template_key"]):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Communication Template",
+                "template_key": tpl["template_key"],
+                "category": tpl["category"],
+                "description": tpl["description"],
+                "enabled": 1,
+                "versions": [
+                    {
+                        "channel": "Email",
+                        "subject": tpl["subject"],
+                        "body": tpl["body"],
+                    }
+                ],
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def setup_customer_person_field():
+    """Reverse link Customer → Person (ADR 042 addendum): Person.customer
+    records the financial party; this mirrors it on the Customer so finance
+    views show which human a Customer is. Maintained by person.link_customer."""
+    if frappe.db.exists("Custom Field", "Customer-person"):
+        return
+    frappe.get_doc(
+        {
+            "doctype": "Custom Field",
+            "dt": "Customer",
+            "fieldname": "person",
+            "fieldtype": "Link",
+            "options": "Person",
+            "label": "Person",
+            "insert_after": "customer_group",
+            "read_only": 1,
+            "search_index": 1,
+        }
+    ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def create_studentappl_role():
     if not frappe.db.exists("Role", _("Student Applicant")):
         frappe.get_doc(
@@ -504,6 +698,10 @@ def after_migrate():
     create_seminary_manager_role()
     setup_sales_invoice_permissions()
     seed_room_features()
+    seed_communication_channels()
+    seed_channel_provider_accounts()
+    seed_communication_templates()
+    setup_customer_person_field()
 
 
 def setup_genders():
