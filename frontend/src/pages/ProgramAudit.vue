@@ -282,6 +282,7 @@
                   </button>
                   <FileUploader v-else-if="canStudentUpload(req)"
                     :upload-args="{ doctype: 'Program Enrollment', docname: audit.data.program_enrollment, folder: 'Home/Attachments', private: 1 }"
+                    :validate-file="validateFileSize"
                     @success="(file) => onStudentEvidenceUploaded(req, file)">
                     <template #default="{ openFileSelector }">
                       <button class="text-ink-blue-3 hover:underline text-xs" @click="openFileSelector">
@@ -465,6 +466,7 @@ import { computed, inject, reactive, ref, watch } from 'vue'
 import ProgressBar from '@/components/ProgressBar.vue'
 import MissingData from '@/components/MissingData.vue'
 import { statusTheme } from '@/utils/statusTheme'
+import { validateFileSize } from '@/utils'
 
 const user = inject('$user')
 const isStudent = user.data?.is_student

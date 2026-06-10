@@ -61,6 +61,10 @@
 												{{
 													__('Appears on the course card in the course list')
 												}}
+												<span v-if="uploadLimits.data?.max_upload_mb">
+													·
+													{{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+												</span>
 											</div>
 										</div>
 									</div>
@@ -84,6 +88,12 @@
 						<div class="mb-4">
 							<MultiSelect v-model="instructorNames" doctype="Instructor" :label="__('Instructors')"
 								:filters="{ Status: 'Active' }" :required="true" />
+						</div>
+
+						<FormControl v-model="course.web_meeting" type="url" :label="__('Web Meeting Link')"
+							:placeholder="__('https://zoom.us/j/...')" class="mb-4" />
+						<div class="text-sm text-ink-gray-5 -mt-2 mb-4">
+							{{ __('Link students use to join the online class session (Zoom, Meet, Teams, etc.).') }}
 						</div>
 					</div>
 					<div class="container border-t">
@@ -125,7 +135,7 @@ import {
 	watch,
 	getCurrentInstance,
 } from 'vue'
-import { updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle, uploadLimits, validateFileSize } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
 import { Image, Trash2, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
@@ -156,6 +166,7 @@ const course = reactive({
 	course_description_for_lms: '',
 	course_image: null,
 	published: false,
+	web_meeting: '',
 })
 
 const maxShortIntroductionLength = 55;
@@ -311,6 +322,7 @@ const validateFile = (file) => {
 	if (!['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
 		return __('Only image file is allowed.')
 	}
+	return validateFileSize(file)
 }
 
 const saveImage = (file) => {

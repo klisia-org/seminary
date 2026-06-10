@@ -1,17 +1,27 @@
 <template>
-	<FileUploader
-		:fileTypes="['image/*', 'video/*', 'audio/*', '.pdf']"
-		:validateFile="validateFile"
-		@success="(data) => addFile(data)"
-		ref="fileUploader"
-		class="hide"
-	/>
+	<div class="rounded-md border border-outline-gray-2 p-3">
+		<FileUploader
+			:fileTypes="['image/*', 'video/*', 'audio/*', '.pdf']"
+			:validateFile="validateFile"
+			@success="(data) => addFile(data)"
+		>
+			<template #default="{ uploading, progress, openFileSelector }">
+				<div class="flex items-center gap-2">
+					<Button @click="openFileSelector" :loading="uploading">
+						{{ uploading ? __('Uploading {0}%').format(progress) : __('Upload File') }}
+					</Button>
+					<span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
+						{{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+					</span>
+				</div>
+			</template>
+		</FileUploader>
+	</div>
 </template>
 <script setup>
-import { FileUploader } from 'frappe-ui'
-import { onMounted, ref, nextTick } from 'vue'
+import { FileUploader, Button } from 'frappe-ui'
+import { uploadLimits, validateFileSize } from '@/utils'
 
-const fileUploader = ref(null)
 const emit = defineEmits(['fileUploaded'])
 
 const props = defineProps({
@@ -19,14 +29,6 @@ const props = defineProps({
 		type: Function,
 		required: true,
 	},
-})
-
-onMounted(async () => {
-	await nextTick()
-	const fileInput = fileUploader.value.$el.querySelector('input[type="file"]')
-	if (fileInput) {
-		fileInput.click()
-	}
 })
 
 const addFile = (file) => {
@@ -41,13 +43,6 @@ const validateFile = (file) => {
 	if (!['jpg', 'jpeg', 'png', 'mp4', 'mov', 'mp3', 'pdf'].includes(extension)) {
 		return 'Only image and video files are allowed.'
 	}
-}
-
-const isVideo = (type) => {
-	return ['mov', 'mp4', 'avi', 'mkv', 'webm'].includes(type.toLowerCase())
-}
-
-const isAudio = (type) => {
-	return ['mp3', 'wav', 'ogg'].includes(type.toLowerCase())
+	return validateFileSize(file)
 }
 </script>

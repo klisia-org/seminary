@@ -173,11 +173,17 @@
           {{ __('This will be recorded as a {0} for “{1}”.').format(submitTypeHint, submitForm.milestone_name) }}
         </p>
         <FormControl type="textarea" :label="__('Note (optional)')" v-model="submitForm.note" class="mb-3" />
-        <FileUploader :upload-args="uploadArgs" @success="(f) => (submitForm.file = f.file_url)">
+        <FileUploader :upload-args="uploadArgs" :validate-file="validateFileSize"
+          @success="(f) => (submitForm.file = f.file_url)">
           <template #default="{ uploading, openFileSelector }">
-            <Button @click="openFileSelector" :loading="uploading" variant="outline" iconLeft="paperclip">
-              {{ submitForm.file ? __('Replace file') : __('Attach file') }}
-            </Button>
+            <div class="flex items-center gap-2">
+              <Button @click="openFileSelector" :loading="uploading" variant="outline" iconLeft="paperclip">
+                {{ submitForm.file ? __('Replace file') : __('Attach file') }}
+              </Button>
+              <span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
+                {{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+              </span>
+            </div>
           </template>
         </FileUploader>
         <p v-if="submitForm.file" class="text-xs text-ink-gray-5 mt-1 break-all">{{ submitForm.file }}</p>
@@ -200,11 +206,17 @@
         </div>
         <FormControl type="select" :label="__('Decision')" v-model="reviewForm.decision" :options="decisionOptions" class="mb-3" />
         <FormControl type="textarea" :label="__('Comment (optional)')" v-model="reviewForm.comment" class="mb-3" />
-        <FileUploader :upload-args="uploadArgs" @success="(f) => (reviewForm.file = f.file_url)">
+        <FileUploader :upload-args="uploadArgs" :validate-file="validateFileSize"
+          @success="(f) => (reviewForm.file = f.file_url)">
           <template #default="{ uploading, openFileSelector }">
-            <Button @click="openFileSelector" :loading="uploading" variant="outline" iconLeft="paperclip">
-              {{ reviewForm.file ? __('Replace file') : __('Attach file (optional)') }}
-            </Button>
+            <div class="flex items-center gap-2">
+              <Button @click="openFileSelector" :loading="uploading" variant="outline" iconLeft="paperclip">
+                {{ reviewForm.file ? __('Replace file') : __('Attach file (optional)') }}
+              </Button>
+              <span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
+                {{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+              </span>
+            </div>
           </template>
         </FileUploader>
         <p v-if="reviewForm.file" class="text-xs text-ink-gray-5 mt-1 break-all">{{ reviewForm.file }}</p>
@@ -286,6 +298,7 @@ import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CulminatingProjectSubmission from '@/components/CulminatingProjectSubmission.vue'
 import { statusTheme } from '@/utils/statusTheme'
 import { fileName } from '@/utils/file'
+import { uploadLimits, validateFileSize } from '@/utils'
 
 const props = defineProps({ name: { type: String, required: true } })
 // Announce that this project changed, so a parent list/badge can refresh.

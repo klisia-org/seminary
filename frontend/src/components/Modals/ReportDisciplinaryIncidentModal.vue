@@ -94,13 +94,16 @@
           />
           <div class="space-y-1.5">
             <label class="block text-xs text-ink-gray-5">{{ __('Attachment') }}</label>
-            <FileUploader @success="(f) => (evidenceAttach = f.file_url)">
+            <FileUploader :validate-file="validateFileSize" @success="(f) => (evidenceAttach = f.file_url)">
               <template #default="{ uploading, openFileSelector }">
                 <Button :loading="uploading" @click="openFileSelector">
                   {{ evidenceAttach ? __('Replace attachment') : __('Add attachment') }}
                 </Button>
                 <span v-if="evidenceAttach" class="ml-2 text-sm text-ink-gray-6">
                   {{ __('Attached') }}
+                </span>
+                <span v-else-if="uploadLimits.data?.max_upload_mb" class="ml-2 text-sm text-ink-gray-5">
+                  {{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
                 </span>
               </template>
             </FileUploader>
@@ -114,6 +117,7 @@
 <script setup>
 import { Dialog, FormControl, FileUploader, Button, call, toast } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
+import { uploadLimits, validateFileSize } from '@/utils'
 import Autocomplete from '@/components/Controls/Autocomplete.vue'
 
 const show = defineModel({ default: false })

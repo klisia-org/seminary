@@ -47,13 +47,48 @@
             </div>
         </div>
 
+        <div v-if="course.data" class="mt-8 border-t pt-6">
+            <h3 class="text-2xl font-bold mb-4">{{ __('When & Where') }}</h3>
+
+            <dl class="space-y-3">
+                <div v-if="locationLabel" class="flex flex-col sm:flex-row sm:gap-2">
+                    <dt class="font-semibold text-ink-gray-8 sm:w-40 shrink-0">{{ __('Location') }}</dt>
+                    <dd class="text-ink-gray-7">{{ locationLabel }}</dd>
+                </div>
+
+                <div v-if="course.data.days_of_week?.length" class="flex flex-col sm:flex-row sm:gap-2">
+                    <dt class="font-semibold text-ink-gray-8 sm:w-40 shrink-0">{{ __('Days of the Week') }}</dt>
+                    <dd class="text-ink-gray-7">
+                        {{ course.data.days_of_week.join(', ') }}
+                        <template v-if="course.data.from_time && course.data.to_time">
+                            · {{ formatTime(course.data.from_time) }}–{{ formatTime(course.data.to_time) }}
+                        </template>
+                    </dd>
+                </div>
+
+                <div v-if="course.data.meeting_dates?.length" class="flex flex-col sm:flex-row sm:gap-2">
+                    <dt class="font-semibold text-ink-gray-8 sm:w-40 shrink-0">{{ __('Meeting Dates') }}</dt>
+                    <dd class="text-ink-gray-7">
+                        <ul class="space-y-1">
+                            <li v-for="meeting in course.data.meeting_dates" :key="meeting.cs_meetdate">
+                                {{ formatDate(meeting.cs_meetdate) }}
+                                <template v-if="meeting.cs_fromtime && meeting.cs_totime">
+                                    · {{ formatTime(meeting.cs_fromtime) }}–{{ formatTime(meeting.cs_totime) }}
+                                </template>
+                            </li>
+                        </ul>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
     </div>
 </template>
 <script setup>
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle, formatTime, formatDate } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,10 +142,20 @@ const subscribeCourseCalendar = () => {
 //     console.log('Downloading Calendar from URL:', calendarUrl);
 // };
 
+const locationLabel = computed(() => {
+    const loc = course.data?.location
+    if (!loc) return ''
+    return [loc.campus, loc.building, loc.room].filter(Boolean).join(' › ')
+})
+
 const breadcrumbs = computed(() => {
     let items = [{ label: __('Courses'), route: { name: 'Courses' } }]
     items.push({
         label: course?.data?.course,
+        route: { name: 'CourseDetail', params: { courseName: props.courseName } },
+    })
+    items.push({
+        label: __('Calendar'),
         route: { name: 'CourseCalendar', params: { courseName: props.courseName } },
     })
 

@@ -1,2 +1,0 @@
-import{Gt as e,ln as t}from"./frappe-ui-DfdqFzhY.js";var n=e({url:`frappe.client.get_value`,params:{doctype:`Seminary Settings`,fieldname:`portal_disciplinary`},cache:`portal_disciplinary`,auto:!0});function r(){return{portalDisciplinary:t(()=>{var e;return((e=n.data)==null?void 0:e.portal_disciplinary)===1})}}export{r as t};
-//# sourceMappingURL=usePortalDisciplinary-BMnXri3Z.js.map

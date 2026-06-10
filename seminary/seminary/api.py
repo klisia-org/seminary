@@ -698,6 +698,12 @@ def save_course(course, course_data):
         frappe.db.set_value(
             "Course Schedule", course, "published", course_data["published"]
         )
+        frappe.db.set_value(
+            "Course Schedule",
+            course,
+            "web_meeting",
+            course_data.get("web_meeting"),
+        )
 
         frappe.db.commit()
         return {"success": True}

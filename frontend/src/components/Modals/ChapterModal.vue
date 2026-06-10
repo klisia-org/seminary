@@ -25,12 +25,15 @@
 						@success="(file) => (chapter.scorm_package = file)"
 					>
 						<template v-slot="{ file, progress, uploading, openFileSelector }">
-							<div class="mb-4">
+							<div class="mb-4 flex items-center gap-2">
 								<Button @click="openFileSelector" :loading="uploading">
 									{{
 										uploading ? `Uploading ${progress}%` : 'Upload an zip file'
 									}}
 								</Button>
+								<span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
+									{{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+								</span>
 							</div>
 						</template>
 					</FileUploader>
@@ -69,7 +72,7 @@ import {
 	toast
 } from 'frappe-ui'
 import { computed, reactive, watch } from 'vue'
-import { getFileSize } from '@/utils/'
+import { getFileSize, uploadLimits, validateFileSize } from '@/utils/'
 import { capture } from '@/telemetry'
 import { FileText, X } from 'lucide-vue-next'
 import { useSettings } from '@/stores/settings'
@@ -244,6 +247,7 @@ const validateFile = (file) => {
 	if (extension !== 'zip') {
 		return __('Only zip files are allowed')
 	}
+	return validateFileSize(file)
 }
 
 const dialogOptions = computed(() => ({

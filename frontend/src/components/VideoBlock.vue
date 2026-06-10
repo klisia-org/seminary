@@ -74,11 +74,27 @@ const props = defineProps({
 
 onMounted(() => {
 	setTimeout(() => {
-		videoRef.value.onloadedmetadata = () => {
-			duration.value = videoRef.value.duration
+		const trackTime = () => {
+			videoRef.value.ontimeupdate = () => {
+				currentTime.value = videoRef.value.currentTime
+			}
 		}
-		videoRef.value.ontimeupdate = () => {
-			currentTime.value = videoRef.value.currentTime
+		videoRef.value.onloadedmetadata = () => {
+			const reported = videoRef.value.duration
+			// WebM clips recorded with MediaRecorder report `Infinity` because the
+			// blob ships without duration metadata. Seek past the end once to force
+			// the browser to resolve the real duration, then reset to the start.
+			if (!isFinite(reported)) {
+				videoRef.value.ontimeupdate = () => {
+					duration.value = videoRef.value.duration
+					videoRef.value.currentTime = 0
+					trackTime()
+				}
+				videoRef.value.currentTime = 1e101
+				return
+			}
+			duration.value = reported
+			trackTime()
 		}
 	}, 0)
 })
@@ -130,6 +146,7 @@ const changeCurrentTime = () => {
 }
 
 const formatTime = (time) => {
+	if (!isFinite(time)) return '0:00'
 	const minutes = Math.floor(time / 60)
 	const seconds = Math.floor(time % 60)
 	return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
