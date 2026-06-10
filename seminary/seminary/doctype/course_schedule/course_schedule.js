@@ -223,6 +223,16 @@ frappe.ui.form.on("Course Schedule", {
 		}, __('Actions'));
 	}
 
+	// Export this schedule's full authored content as a portable Course Pack.
+	const has_content = frm.doc.chapters && frm.doc.chapters.length > 0;
+	if (!frm.is_new() && can_import && has_content) {
+		frm.add_custom_button(__('Export Course Pack'), function () {
+			const url = '/api/method/seminary.seminary.course_pack.export.export_course_pack'
+				+ '?course_schedule=' + encodeURIComponent(frm.doc.name);
+			window.open(url, '_blank');
+		}, __('Actions'));
+	}
+
 	const cancellable = ['Open for Enrollment', 'Enrollment Closed'].includes(frm.doc.workflow_state);
 	const can_cancel = frappe.user.has_role('Registrar') || frappe.user.has_role('Seminary Manager');
 	if (!frm.is_new() && cancellable && can_cancel) {
