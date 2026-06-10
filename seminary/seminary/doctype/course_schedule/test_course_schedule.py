@@ -1,88 +1,43 @@
 # Copyright (c) 2015, Frappe Technologies and Contributors
 # See license.txt
 
-import datetime
 import unittest
 
-import frappe
-from frappe.utils import to_timedelta, today
-from frappe.utils.data import add_to_date
+from seminary.seminary.utils import times_overlap
 
-from seminary.seminary.utils import OverlapError
-
-# test_records = frappe.get_test_records('Course Schedule')
-
-
-class TestCourseSchedule(unittest.TestCase):
-    def test_instructor_conflict(self):
-        cs1 = make_course_schedule_test_record(simulate=True)
-
-        cs2 = make_course_schedule_test_record(
-            from_time=cs1.from_time,
-            to_time=cs1.to_time,
-            room=frappe.get_all("Room")[1].name,
-            do_not_save=1,
-        )
-        self.assertRaises(OverlapError, cs2.save)
-
-    def test_room_conflict(self):
-        cs1 = make_course_schedule_test_record(simulate=True)
-
-        cs2 = make_course_schedule_test_record(
-            from_time=cs1.from_time,
-            to_time=cs1.to_time,
-            instructor="_Test Instructor 2",
-            do_not_save=1,
-        )
-        self.assertRaises(OverlapError, cs2.save)
-
-    def test_no_conflict(self):
-        cs1 = make_course_schedule_test_record(simulate=True)
-
-        make_course_schedule_test_record(
-            from_time=cs1.from_time,
-            to_time=cs1.to_time,
-            instructor="_Test Instructor 2",
-            room=frappe.get_all("Room")[1].name,
-        )
-
-    def test_update_schedule_date(self):
-        doc = make_course_schedule_test_record(
-            schedule_date=add_to_date(today(), days=1)
-        )
-        doc.schedule_date = add_to_date(doc.schedule_date, days=1)
-        doc.save()
+# The legacy conflict tests here referenced fields removed long ago
+# (schedule_date, a single `instructor`/`room` field). Room double-booking is
+# now detected over the cs_meetinfo meeting-date child table using the shared
+# times_overlap predicate (ADR 038); that predicate is unit-tested below.
 
 
-def make_course_schedule_test_record(**args):
-    args = frappe._dict(args)
+class TestTimesOverlap(unittest.TestCase):
+    def test_clear_overlap(self):
+        self.assertTrue(times_overlap("09:00:00", "10:30:00", "10:00:00", "11:00:00"))
 
-    course_schedule = frappe.new_doc("Course Schedule")
+    def test_contained(self):
+        self.assertTrue(times_overlap("09:00:00", "12:00:00", "10:00:00", "11:00:00"))
 
-    course_schedule.course = args.course or "TC101"
-    course_schedule.instructor = args.instructor or "_Test Instructor"
-    course_schedule.room = args.room or frappe.get_all("Room")[0].name
+    def test_back_to_back_does_not_overlap(self):
+        # Touching endpoints (one class ends as the next begins) is not a clash.
+        self.assertFalse(times_overlap("09:00:00", "10:00:00", "10:00:00", "11:00:00"))
 
-    course_schedule.schedule_date = args.schedule_date or today()
-    course_schedule.from_time = args.from_time or to_timedelta("01:00:00")
-    course_schedule.to_time = (
-        args.to_time or course_schedule.from_time + datetime.timedelta(hours=1)
-    )
+    def test_disjoint(self):
+        self.assertFalse(times_overlap("09:00:00", "10:00:00", "11:00:00", "12:00:00"))
 
-    if not args.do_not_save:
-        if args.simulate:
-            while True:
-                try:
-                    course_schedule.save()
-                    break
-                except OverlapError:
-                    course_schedule.from_time = (
-                        course_schedule.from_time + datetime.timedelta(minutes=10)
-                    )
-                    course_schedule.to_time = (
-                        course_schedule.from_time + datetime.timedelta(hours=1)
-                    )
-        else:
-            course_schedule.save()
+    def test_missing_bound_is_not_overlap(self):
+        self.assertFalse(times_overlap(None, "10:00:00", "09:00:00", "11:00:00"))
 
-    return course_schedule
+
+class TestSeatSemantics(unittest.TestCase):
+    """Documents the seat-holder model (ADR 038). seats_used counts Submitted +
+    Awaiting Payment; Waitlisted/Unseated never hold a seat."""
+
+    def test_seat_holder_states(self):
+        from seminary.seminary.waitlist import SEAT_HOLDER_STATES, DEMAND_STATES
+
+        self.assertEqual(set(SEAT_HOLDER_STATES), {"Submitted", "Awaiting Payment"})
+        self.assertNotIn("Waitlisted", SEAT_HOLDER_STATES)
+        self.assertNotIn("Unseated", SEAT_HOLDER_STATES)
+        self.assertIn("Waitlisted", DEMAND_STATES)
+        self.assertNotIn("Unseated", DEMAND_STATES)

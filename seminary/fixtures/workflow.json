@@ -534,6 +534,18 @@
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Withdrawn"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Waitlisted"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Unseated"
    }
   ],
   "transitions": [
@@ -541,7 +553,7 @@
     "action": "Submit",
     "allow_self_approval": 1,
     "allowed": "Registrar",
-    "condition": "doc.is_free or not doc.require_pay_submit",
+    "condition": "(doc.is_free or not doc.require_pay_submit) and doc.seat_available",
     "next_state": "Submitted",
     "state": "Draft"
    },
@@ -549,7 +561,7 @@
     "action": "Submit",
     "allow_self_approval": 1,
     "allowed": "Student",
-    "condition": "(doc.is_free or not doc.require_pay_submit) and not doc.registrar_block_cei",
+    "condition": "(doc.is_free or not doc.require_pay_submit) and not doc.registrar_block_cei and doc.seat_available",
     "next_state": "Submitted",
     "state": "Draft"
    },
@@ -557,7 +569,7 @@
     "action": "Submit",
     "allow_self_approval": 1,
     "allowed": "Registrar",
-    "condition": "doc.require_pay_submit and not doc.is_free",
+    "condition": "doc.require_pay_submit and not doc.is_free and doc.seat_available",
     "next_state": "Awaiting Payment",
     "state": "Draft"
    },
@@ -565,8 +577,24 @@
     "action": "Submit",
     "allow_self_approval": 1,
     "allowed": "Student",
-    "condition": "doc.require_pay_submit and not doc.is_free and not doc.registrar_block_cei",
+    "condition": "doc.require_pay_submit and not doc.is_free and not doc.registrar_block_cei and doc.seat_available",
     "next_state": "Awaiting Payment",
+    "state": "Draft"
+   },
+   {
+    "action": "Join Waitlist",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": "not doc.seat_available",
+    "next_state": "Waitlisted",
+    "state": "Draft"
+   },
+   {
+    "action": "Join Waitlist",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": "not doc.seat_available and not doc.registrar_block_cei",
+    "next_state": "Waitlisted",
     "state": "Draft"
    },
    {
@@ -575,6 +603,36 @@
     "allowed": "Registrar",
     "next_state": "Submitted",
     "state": "Awaiting Payment"
+   },
+   {
+    "action": "Promote",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": "doc.seat_available and (doc.is_free or not doc.require_pay_submit)",
+    "next_state": "Submitted",
+    "state": "Waitlisted"
+   },
+   {
+    "action": "Promote",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": "doc.seat_available and doc.require_pay_submit and not doc.is_free",
+    "next_state": "Awaiting Payment",
+    "state": "Waitlisted"
+   },
+   {
+    "action": "Release Seat Request",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "next_state": "Unseated",
+    "state": "Waitlisted"
+   },
+   {
+    "action": "Release Seat Request",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "next_state": "Unseated",
+    "state": "Waitlisted"
    }
   ],
   "workflow_name": "Course Enrollment Lifecycle",

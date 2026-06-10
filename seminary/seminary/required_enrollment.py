@@ -255,16 +255,17 @@ def _already_covered(pe_name, course):
     )
 
 
-def _prereqs_met(pe_name, course):
-    """True unless the course has a mandatory prerequisite the student lacks a
-    graded, non-Fail PEC for (scoped to this enrollment, matching the existing
-    courses_for_student convention). PEC.course_name holds the underlying Course
-    (fetched from Course Schedule.course)."""
+def unmet_prerequisites(pe_name, course):
+    """Mandatory prerequisite courses the student lacks a graded, non-Fail PEC
+    for, scoped to this enrollment. PEC.course_name holds the underlying Course
+    (fetched from Course Schedule.course). Returns a list of Course names (empty
+    when all mandatory prerequisites are satisfied)."""
     mandatory = frappe.get_all(
         "Course_prerequisite",
         filters={"parent": course, "prereq_mandatory": "Mandatory"},
         pluck="course",
     )
+    missing = []
     for prereq in mandatory:
         ok = frappe.db.exists(
             "Program Enrollment Course",
@@ -276,8 +277,13 @@ def _prereqs_met(pe_name, course):
             },
         )
         if not ok:
-            return False
-    return True
+            missing.append(prereq)
+    return missing
+
+
+def _prereqs_met(pe_name, course):
+    """True when the course has no unmet mandatory prerequisite for this PE."""
+    return not unmet_prerequisites(pe_name, course)
 
 
 def _open_offerings(course):

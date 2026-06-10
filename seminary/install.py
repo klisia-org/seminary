@@ -35,6 +35,7 @@ def after_install():
     update_company_in_item_details()
     seed_culminating_project_types()
     seed_disciplinary_actions()
+    seed_room_features()
 
 
 def check_erpnext():
@@ -283,6 +284,37 @@ def seed_disciplinary_actions():
     frappe.db.commit()
 
 
+def seed_room_features():
+    """Seed starter Room Features if they don't already exist.
+
+    Not fixtures (seminaries curate their own catalog on the desk, and a
+    fixture re-import would clobber edits — see ADR 035). The accessibility
+    feature in particular lets a Course Type *require* an accessible room,
+    which the standalone Room.accessible check could never express. Created
+    once, create-only-if-missing.
+    """
+    defaults = [
+        ("Wheelchair Accessible", "Specialized"),
+        ("Projector", "AV Equipment"),
+        ("Screen", "AV Equipment"),
+        ("Sound System", "AV Equipment"),
+        ("Whiteboard", "Room Configuration"),
+        ("Piano", "Musical"),
+        ("Movable Seating", "Room Configuration"),
+    ]
+    for feature, category in defaults:
+        if frappe.db.exists("Room Feature", {"feature": feature}):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Room Feature",
+                "feature": feature,
+                "category": category,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def create_studentappl_role():
     if not frappe.db.exists("Role", _("Student Applicant")):
         frappe.get_doc(
@@ -471,6 +503,7 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_sales_invoice_permissions()
+    seed_room_features()
 
 
 def setup_genders():

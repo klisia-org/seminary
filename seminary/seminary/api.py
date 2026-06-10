@@ -1104,12 +1104,27 @@ def course_enroll(pe_name, course):
     # fails it even with ignore_permissions). Program conditions decide
     # the target state.
     if not doc.registrar_block_cei:
-        target_state = (
-            "Submitted"
-            if (doc.is_free or not doc.require_pay_submit)
-            else "Awaiting Payment"
+        from seminary.seminary.waitlist import (
+            assign_waitlist_positions,
+            is_seat_available,
+            recount,
         )
+
+        # This path sets workflow_state directly (bypassing apply_workflow), so
+        # the seat_available workflow condition never runs here — enforce the
+        # capacity routing explicitly: a full section sends the student to the
+        # waitlist instead of a seat (ADR 038).
+        if not is_seat_available(cs.name):
+            target_state = "Waitlisted"
+        elif doc.is_free or not doc.require_pay_submit:
+            target_state = "Submitted"
+        else:
+            target_state = "Awaiting Payment"
+
         doc.flags.ignore_permissions = True
+        # Set the state before submit so on_submit sees "Waitlisted" and skips
+        # invoicing (waitlisted students hold a queue spot, not a seat).
+        doc.workflow_state = target_state
         doc.submit()
         doc.db_set("workflow_state", target_state, update_modified=False)
 
@@ -1121,6 +1136,12 @@ def course_enroll(pe_name, course):
             from seminary.seminary.cei_lifecycle import enroll_student
 
             enroll_student(frappe.get_doc("Course Enrollment Individual", doc.name))
+        elif target_state == "Waitlisted":
+            assign_waitlist_positions(cs.name)
+
+        # Keep the section's seat/demand caches honest (this path doesn't ride
+        # the CEI workflow hook that normally recounts).
+        recount(cs.name)
 
     return {
         "name": doc.name,
@@ -1163,6 +1184,7 @@ def get_student_enrollments_for_term(program_enrollment):
             "credits",
             "workflow_state",
             "paid_percent",
+            "waitlist_position",
         ],
         order_by="docstatus asc, course_data asc",
     )
@@ -1172,14 +1194,28 @@ def get_student_enrollments_for_term(program_enrollment):
     # can't distinguish Awaiting Payment (invoiced, not on roster) from
     # Submitted (fully enrolled).
     for cei in ceis:
-        cei["start_date"] = frappe.db.get_value(
-            "Course Schedule", cei.coursesc_ce, "c_datestart"
+        cs_info = (
+            frappe.db.get_value(
+                "Course Schedule",
+                cei.coursesc_ce,
+                ["c_datestart", "workflow_state"],
+                as_dict=True,
+            )
+            or {}
         )
+        cei["start_date"] = cs_info.get("c_datestart")
+        # Drives the portal: an unpaid seat can only be self-released while the
+        # section is still open for enrollment (see cancel_unpaid_enrollment).
+        cei["enrollment_open"] = cs_info.get("workflow_state") == "Open for Enrollment"
 
         if cei.docstatus == 0:
             cei["status"] = "Draft"
         elif cei.workflow_state == "Awaiting Payment":
             cei["status"] = "Awaiting Payment"
+        elif cei.workflow_state == "Waitlisted":
+            cei["status"] = "Waitlisted"
+        elif cei.workflow_state == "Unseated":
+            cei["status"] = "Unseated"
         elif cei.workflow_state == "Withdrawn" or cei.withdrawn:
             cei["status"] = "Withdrawn"
         else:
@@ -1217,6 +1253,66 @@ def cancel_draft_enrollment(cei_name):
     ):
         frappe.throw(_("You can only cancel your own enrollments"))
     doc.delete()
+    return {"success": True}
+
+
+@frappe.whitelist()
+def cancel_unpaid_enrollment(cei_name):
+    """Release an unpaid 'Awaiting Payment' enrollment before paying.
+
+    Cancels the CEI (which cancels its linked unpaid Sales Invoice via the CEI's
+    on_cancel) and frees the seat so the waitlist can promote. This is a clean
+    release, not a Withdrawal Request — the student never started the course, so
+    it leaves no transcript trace. Blocked once any payment has been made (use a
+    withdrawal/refund instead) or once the course has started (before_cancel).
+    """
+    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+
+    owns = doc.student_ce == frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, "name"
+    )
+    staff = bool(
+        {"Registrar", "Program Chair", "Seminary Manager", "System Manager"}
+        & set(frappe.get_roles(frappe.session.user))
+    )
+    if not (owns or staff):
+        frappe.throw(_("You can only cancel your own enrollments"))
+
+    if doc.docstatus != 1 or doc.workflow_state != "Awaiting Payment":
+        frappe.throw(
+            _("Only an unpaid 'Awaiting Payment' enrollment can be released here.")
+        )
+
+    if flt(doc.paid_percent) > 0:
+        frappe.throw(
+            _(
+                "A payment has already been made on this enrollment. "
+                "Please request a withdrawal/refund instead."
+            )
+        )
+
+    course_schedule = doc.coursesc_ce
+    # Gate on the enrollment window, not the course start date: an unpaid,
+    # unseated student can release their seat while the section is still open
+    # for enrollment (which can extend past the start date). Once enrollment
+    # closes, the seat allocation is final — route to the registrar.
+    cs_state = frappe.db.get_value("Course Schedule", course_schedule, "workflow_state")
+    if cs_state != "Open for Enrollment":
+        frappe.throw(
+            _(
+                "This section is no longer open for enrollment, so the seat "
+                "can't be self-released. Please contact the registrar or file "
+                "a Withdrawal Request."
+            )
+        )
+
+    doc.flags.ignore_permissions = True
+    doc.flags.allow_unpaid_release = True
+    doc.cancel()  # on_cancel cancels the unpaid Sales Invoice
+
+    from seminary.seminary.waitlist import recount_and_promote
+
+    recount_and_promote(course_schedule)
     return {"success": True}
 
 
@@ -2705,16 +2801,21 @@ def courses_for_student(program_ce):
                     AND pe.name = %s)
             )
             AND cs.course NOT IN (
-                SELECT c.name
-                FROM `tabCourse` c
-                INNER JOIN `tabCourse_prerequisite` cp ON cp.parent = c.name
+                -- Exclude a course only when it has a mandatory prerequisite
+                -- the student has NOT passed. PEC.course_name holds the
+                -- underlying Course (PEC.course is a Course Schedule), so the
+                -- prereq match is course_name = cp.course — matching the
+                -- _prereqs_met convention in required_enrollment.py.
+                SELECT cp.parent
+                FROM `tabCourse_prerequisite` cp
                 WHERE cp.prereq_mandatory = 'Mandatory'
-                    AND c.name NOT IN (
-                        SELECT pec.course
-                        FROM `tabCourse_prerequisite` cp2
-                        INNER JOIN `tabProgram Enrollment Course` pec ON cp2.parent = pec.course
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM `tabProgram Enrollment Course` pec
                         WHERE pec.parent = %s
+                            AND pec.course_name = cp.course
                             AND pec.pec_finalgradecode IS NOT NULL
+                            AND COALESCE(pec.status, '') != 'Fail'
                     )
             )
             AND cs.course NOT IN (
@@ -2770,12 +2871,11 @@ def copy_data_to_scheduled_course_roster(doc, method):
     if coursesc_ce and student_ce:
         items = []
         criteria = []
-        enrollments = frappe.db.get_value("Course Schedule", coursesc_ce, "enrollments")
-        if enrollments:
-            enrollments += 1
-        else:
-            enrollments = 1
-        frappe.db.set_value("Course Schedule", coursesc_ce, "enrollments", enrollments)
+        # Seat/demand caches (enrollments, seats_used, registrations,
+        # waitlist_count) are recomputed from enrollment state by
+        # seminary.seminary.waitlist.recount — invoked from enroll_student and
+        # the CEI workflow hook. The old increment-only counter here drifted
+        # upward because withdrawals never decremented it (see ADR 035).
         criteria = frappe.db.sql(
             """select distinct scac.name, scac.weight_scac, extracredit_scac, fudgepoints_scac from `tabScheduled Course Assess Criteria` scac
 			where scac.docstatus = 0 and
@@ -5370,3 +5470,131 @@ def get_program_pricing_html():
         _PROGRAM_PRICING_TEMPLATE,
         {"price_lists": enriched_price_lists, "programs": programs},
     )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def room_search(doctype, txt, searchfield, start, page_len, filters):
+    """Link-field search for the Course Schedule `room` picker.
+
+    Frappe Link `get_query` can only filter, not reorder — so this custom
+    search orders rooms best-fit first and attaches a muted description line
+    (capacity · feature fit · free/busy) the dropdown renders. It only ranks;
+    it never hides rooms, since room fit is a warning, not a hard block.
+
+    `filters` (passed from course_schedule.js): course, modality,
+    course_schedule (optional, for the busy/free flag). All optional — with
+    none of them this degrades to a plain capacity-sorted list.
+    """
+    filters = (
+        frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+    )
+    course = filters.get("course")
+    modality = filters.get("modality")
+    course_schedule = filters.get("course_schedule")
+
+    # Required features for this course type + modality (All ∪ specific).
+    required = set()
+    if course:
+        course_type = frappe.db.get_value("Course", course, "course_type")
+        if course_type:
+            required = set(
+                f
+                for f in frappe.get_all(
+                    "Course Type Requirements",
+                    filters={
+                        "parent": course_type,
+                        "parenttype": "Course Type",
+                        "modality": ["in", ["All", modality or ""]],
+                    },
+                    pluck="room_feature",
+                )
+                if f
+            )
+
+    # Room → set(features), in one query.
+    have_by_room = {}
+    for fr in frappe.get_all(
+        "Room Existing Feature",
+        filters={"parenttype": "Room"},
+        fields=["parent", "feature"],
+    ):
+        have_by_room.setdefault(fr.parent, set()).add(fr.feature)
+
+    busy_rooms = _rooms_busy_for_cs(course_schedule) if course_schedule else set()
+
+    # Match the docname, room name, AND room number. The docname match is
+    # essential: when the Link control re-resolves a selected value it searches
+    # by the docname (e.g. ROOM-00001) — if that returns nothing the control
+    # treats the value as invalid and silently clears it.
+    or_filters = None
+    if txt:
+        like = f"%{txt}%"
+        or_filters = [
+            ["name", "like", like],
+            ["room_name", "like", like],
+            ["room_number", "like", like],
+        ]
+    rooms = frappe.get_all(
+        "Room",
+        or_filters=or_filters,
+        fields=["name", "room_name", "seating_capacity"],
+        limit_page_length=0,
+    )
+
+    scored = []
+    for r in rooms:
+        have = have_by_room.get(r.name, set())
+        missing = required - have
+        fits_features = 1 if not missing else 0
+        is_free = 0 if r.name in busy_rooms else 1
+        parts = [_("cap {0}").format(r.seating_capacity or "?")]
+        if required:
+            parts.append(
+                _("✓ fits")
+                if fits_features
+                else _("✗ missing {0}").format(len(missing))
+            )
+        if course_schedule:
+            parts.append(_("free") if is_free else _("busy"))
+        # Sort key: free first, feature-fit next, larger rooms next.
+        scored.append(
+            (
+                is_free,
+                fits_features,
+                r.seating_capacity or 0,
+                r.name,
+                r.room_name,
+                " · ".join(parts),
+            )
+        )
+
+    scored.sort(key=lambda x: (-x[0], -x[1], -x[2], x[3]))
+    page = scored[start : start + page_len]
+    # Return (name, title, description): Frappe's build_for_autosuggest uses
+    # column 1 as the link label when Room has "Show Title Field in Link"
+    # enabled, so the picker shows the room name instead of the ROOM-##### id.
+    return [(name, room_name, desc) for (_f, _fit, _cap, name, room_name, desc) in page]
+
+
+def _rooms_busy_for_cs(course_schedule):
+    """Set of room names already booked during any of this CS's meeting windows."""
+    rows = frappe.db.sql(
+        """
+        SELECT DISTINCT other_cs.room
+        FROM `tabCourse Schedule Meeting Dates` mine
+        JOIN `tabCourse Schedule` my_cs ON mine.parent = my_cs.name
+        JOIN `tabCourse Schedule` other_cs
+            ON other_cs.name != my_cs.name
+           AND COALESCE(other_cs.workflow_state, '') != 'Cancelled'
+           AND other_cs.room IS NOT NULL
+        JOIN `tabCourse Schedule Meeting Dates` theirs
+            ON theirs.parent = other_cs.name
+           AND theirs.cs_meetdate = mine.cs_meetdate
+           AND mine.cs_fromtime < theirs.cs_totime
+           AND theirs.cs_fromtime < mine.cs_totime
+        WHERE mine.parent = %s
+        """,
+        (course_schedule,),
+    )
+    return {r[0] for r in rows if r[0]}

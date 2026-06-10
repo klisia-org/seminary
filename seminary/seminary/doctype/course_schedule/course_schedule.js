@@ -1,8 +1,53 @@
 frappe.ui.form.on("Course Schedule", {
 
+	setup: function(frm) {
+		// Best-fit-first room picker: ordered by free/busy, feature fit, then
+		// capacity, with a muted description line. See api.room_search.
+		frm.set_query("room", function() {
+			return {
+				query: "seminary.seminary.api.room_search",
+				filters: {
+					course: frm.doc.course,
+					modality: frm.doc.modality,
+					course_schedule: frm.doc.__islocal ? null : frm.doc.name,
+				},
+			};
+		});
+	},
+
 	refresh: function(frm) {
 		frm.add_web_link(`/seminary/courses/${frm.doc.name}`, "See on Website");
 		frm.trigger("render_days");
+
+		// Change Room (with a reason captured into the room change log).
+		const canSchedule = ["Registrar", "Program Chair", "Seminary Manager", "System Manager"]
+			.some(r => frappe.user_roles.includes(r));
+		if (!frm.doc.__islocal && canSchedule) {
+			frm.add_custom_button(__('Change Room'), function() {
+				const d = new frappe.ui.Dialog({
+					title: __('Change Room'),
+					fields: [
+						{ fieldname: 'room', fieldtype: 'Link', options: 'Room',
+						  label: __('New Room'), reqd: 1,
+						  get_query: () => ({
+							query: "seminary.seminary.api.room_search",
+							filters: { course: frm.doc.course, modality: frm.doc.modality,
+							           course_schedule: frm.doc.name },
+						  }) },
+						{ fieldname: 'reason', fieldtype: 'Small Text',
+						  label: __('Reason'), reqd: 1 },
+					],
+					primary_action_label: __('Change'),
+					primary_action(values) {
+						frappe.dom.freeze(__("Changing room..."));
+						frm.call('change_room', { room: values.room, reason: values.reason })
+							.always(() => frappe.dom.unfreeze())
+							.then(() => { d.hide(); frm.reload_doc(); });
+					},
+				});
+				d.show();
+			});
+		}
 
 		// Attendance policy is registrar / Program Chair governed (the server
 		// enforces it too in course_schedule.py). Instructors see it read-only.
@@ -250,13 +295,18 @@ frappe.ui.form.on("Course Schedule", {
 
 	},
 			validate: function(frm) {
+				// Non-virtual, multi-day sections need at least one meeting day so
+				// meeting dates can be generated. Use frappe.throw: it shows a
+				// persistent message AND aborts the save. The old `validated = false`
+				// assigned an undeclared global Frappe ignores, so the save went
+				// through anyway and the post-save refresh cleared the message,
+				// leaving an empty "Message" box. (The old else-branch frm.call
+				// was a redundant second validate — the server validate already
+				// runs on every save.)
 				if (frm.doc.modality !== "Virtual" && frm.doc.c_datestart !== frm.doc.c_dateend) {
 					if (!frm.doc.monday && !frm.doc.tuesday && !frm.doc.wednesday && !frm.doc.thursday && !frm.doc.friday && !frm.doc.saturday && !frm.doc.sunday) {
-						frappe.msgprint('Please select at least one day of the week');
-						validated = false;
+						frappe.throw(__('Please select at least one day of the week.'));
 					}
-				} else {
-					frm.call('validate')
 				}
 			},
 

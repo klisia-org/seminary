@@ -540,6 +540,8 @@ fixtures = [
                     "Active",
                     "Superseded",
                     "Retired",
+                    "Waitlisted",
+                    "Unseated",
                 ],
             ]
         ],
@@ -583,6 +585,9 @@ fixtures = [
                     "Withdraw",
                     "Retire",
                     "Reactivate",
+                    "Join Waitlist",
+                    "Promote",
+                    "Release Seat Request",
                 ],
             ]
         ],

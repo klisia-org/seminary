@@ -23,6 +23,7 @@
   "c_datestart",
   "c_dateend",
   "room",
+  "max_enrollment",
   "column_break_9",
   "from_time",
   "to_time",
@@ -68,6 +69,8 @@
   "cancelled_by",
   "late_grade_nag_sent",
   "minimum_enrollment",
+  "room_history_section",
+  "room_change_log",
   "enrollment_dates_section",
   "enrollment_open_date_override",
   "enrollment_close_date_override",
@@ -82,6 +85,9 @@
   "stu_groups_course",
   "section_break_adom",
   "enrollments",
+  "seats_used",
+  "registrations",
+  "waitlist_count",
   "lessons"
  ],
  "fields": [
@@ -171,6 +177,14 @@
    "in_list_view": 1,
    "label": "Room",
    "options": "Room",
+   "permlevel": 1
+  },
+  {
+   "description": "Seat cap for this section. Auto-filled from the room's seating capacity when a room is set; override as needed. Leave blank for no cap (waitlist stays inactive).",
+   "fieldname": "max_enrollment",
+   "fieldtype": "Int",
+   "label": "Max Enrollment",
+   "non_negative": 1,
    "permlevel": 1
   },
   {
@@ -411,6 +425,20 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "fieldname": "room_history_section",
+   "fieldtype": "Section Break",
+   "label": "Room Changes"
+  },
+  {
+   "description": "Append-only audit of room reassignments, with the reason for each move.",
+   "fieldname": "room_change_log",
+   "fieldtype": "Table",
+   "label": "Room Change Log",
+   "options": "Course Schedule Room Change",
+   "read_only": 1
+  },
+  {
    "description": "Override the Course default minimum enrollment for this schedule. Informational \u2014 used by the Term Enrollment Status report.",
    "fieldname": "minimum_enrollment",
    "fieldtype": "Int",
@@ -507,9 +535,30 @@
    "fieldtype": "Section Break"
   },
   {
+   "description": "Rostered (Submitted) students. Recomputed from enrollment state.",
    "fieldname": "enrollments",
    "fieldtype": "Int",
    "label": "Enrollments",
+   "read_only": 1
+  },
+  {
+   "description": "Seats held = Submitted + Awaiting Payment. Capacity is measured against this.",
+   "fieldname": "seats_used",
+   "fieldtype": "Int",
+   "label": "Seats Used",
+   "read_only": 1
+  },
+  {
+   "description": "Total demand = Draft + Awaiting Payment + Submitted + Waitlisted.",
+   "fieldname": "registrations",
+   "fieldtype": "Int",
+   "label": "Registrations",
+   "read_only": 1
+  },
+  {
+   "fieldname": "waitlist_count",
+   "fieldtype": "Int",
+   "label": "Waitlist",
    "read_only": 1
   },
   {
@@ -572,6 +621,27 @@
    "read": 1,
    "report": 1,
    "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
    "share": 1,
    "write": 1
   },

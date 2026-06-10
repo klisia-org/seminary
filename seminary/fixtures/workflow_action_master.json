@@ -190,5 +190,23 @@
   "doctype": "Workflow Action Master",
   "name": "Reactivate",
   "workflow_action_name": "Reactivate"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Join Waitlist",
+  "workflow_action_name": "Join Waitlist"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Promote",
+  "workflow_action_name": "Promote"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Release Seat Request",
+  "workflow_action_name": "Release Seat Request"
  }
 ]

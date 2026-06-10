@@ -1,4 +1,5 @@
 [pre_model_sync]
+seminary.seminary.patches.convert_room_capacity_to_int
 
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
@@ -21,3 +22,6 @@ seminary.seminary.patches.backfill_withdrawal_reason_category
 seminary.seminary.patches.seed_disciplinary_actions
 seminary.seminary.patches.rename_academics_user_to_program_chair
 seminary.seminary.patches.backfill_student_leaving_records
+seminary.seminary.patches.seed_room_features
+seminary.seminary.patches.backfill_course_schedule_seat_caches
+seminary.seminary.patches.backfill_facility_locations

@@ -16,6 +16,7 @@
   "hero_image",
   "column_break_tflc",
   "description",
+  "course_type",
   "retire_the_course_section",
   "disabled",
   "disabled_on",
@@ -153,12 +154,19 @@
    "fieldtype": "Small Text",
    "label": "Disable reason",
    "mandatory_depends_on": "eval:doc.disabled"
+  },
+  {
+   "fieldname": "course_type",
+   "fieldtype": "Link",
+   "label": "Course Type",
+   "mask": 1,
+   "options": "Course Type"
   }
  ],
  "image_field": "hero_image",
  "links": [],
- "modified": "2026-05-26 16:57:14.064951",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-09 21:50:50.132321",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course",
  "naming_rule": "Expression (old style)",

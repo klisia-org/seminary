@@ -91,9 +91,33 @@
   "absence_warning_buffer",
   "show_student_application_on_login",
   "default_application_web_form",
-  "support_user"
+  "support_user",
+  "facilities_section",
+  "sync_rooms_to_asset_locations",
+  "root_asset_location"
  ],
  "fields": [
+  {
+   "collapsible": 1,
+   "fieldname": "facilities_section",
+   "fieldtype": "Section Break",
+   "label": "Facilities & Assets"
+  },
+  {
+   "default": "1",
+   "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
+   "fieldname": "sync_rooms_to_asset_locations",
+   "fieldtype": "Check",
+   "label": "Sync rooms to Asset Locations"
+  },
+  {
+   "depends_on": "sync_rooms_to_asset_locations",
+   "description": "Optional. Root of the Location subtree the seminary's campuses/rooms hang under. Leave blank to auto-create and use a \"Seminary Locations\" root.",
+   "fieldname": "root_asset_location",
+   "fieldtype": "Link",
+   "label": "Root Asset Location",
+   "options": "Location"
+  },
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"

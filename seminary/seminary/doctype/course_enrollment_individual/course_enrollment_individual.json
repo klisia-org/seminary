@@ -18,6 +18,7 @@
   "require_pay_submit",
   "percent_to_pay",
   "registrar_block_cei",
+  "seat_available",
   "course_data",
   "academic_term",
   "credits",
@@ -42,6 +43,8 @@
   "column_break_cancellation",
   "course_cancellation_reason",
   "course_cancelled_on",
+  "waitlist_section",
+  "waitlist_position",
   "section_break_ogto",
   "amended_from",
   "workflow_state"
@@ -102,6 +105,20 @@
    "fieldname": "course_cancelled_on",
    "fieldtype": "Datetime",
    "label": "Cancelled On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.workflow_state=='Waitlisted' || doc.workflow_state=='Unseated' || doc.waitlist_position",
+   "fieldname": "waitlist_section",
+   "fieldtype": "Section Break",
+   "label": "Waitlist"
+  },
+  {
+   "description": "Position in the section's waitlist queue (1 = next in line). Maintained automatically.",
+   "fieldname": "waitlist_position",
+   "fieldtype": "Int",
+   "label": "Waitlist Position",
    "read_only": 1
   },
   {
@@ -236,6 +253,15 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Require Staff Verification of Course Enrollments",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Computed in validate(): 1 when the section has an open seat (or no cap). Workflow conditions read this to route a submission to a seat vs. the waitlist.",
+   "fieldname": "seat_available",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Seat Available",
    "read_only": 1
   },
   {

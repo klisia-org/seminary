@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-09 21:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "changed_on",
+  "changed_by",
+  "column_break_rcl1",
+  "from_room",
+  "to_room",
+  "reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "changed_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Changed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "changed_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Changed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rcl1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_room",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "From Room",
+   "options": "Room",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_room",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "To Room",
+   "options": "Room",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Reason"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-09 21:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Schedule Room Change",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

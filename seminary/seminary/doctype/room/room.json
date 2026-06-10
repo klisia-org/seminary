@@ -1,14 +1,21 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "ROOM-.YYYY.-.#####",
+ "autoname": "ROOM-.#####",
  "creation": "2015-09-09 16:20:14.613061",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "room_name",
   "room_number",
-  "seating_capacity"
+  "seating_capacity",
+  "accessible",
+  "location_section",
+  "building",
+  "campus",
+  "column_break_loc1",
+  "location",
+  "room_features"
  ],
  "fields": [
   {
@@ -25,13 +32,60 @@
   },
   {
    "fieldname": "seating_capacity",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Seating Capacity"
+   "label": "Seating Capacity",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "accessible",
+   "fieldtype": "Check",
+   "label": "Accessible"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "location_section",
+   "fieldtype": "Section Break",
+   "label": "Location"
+  },
+  {
+   "description": "Optional. Building this room belongs to (Campus → Building → Room).",
+   "fieldname": "building",
+   "fieldtype": "Link",
+   "label": "Building",
+   "options": "Building"
+  },
+  {
+   "fetch_from": "building.campus",
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_loc1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "ERPNext Location mirrored from this room (for Asset tracking). Maintained automatically.",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "no_copy": 1,
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "fieldname": "room_features",
+   "fieldtype": "Table",
+   "label": "Room Features",
+   "options": "Room Existing Feature"
   }
  ],
  "links": [],
- "modified": "2026-05-02 13:21:12.874331",
+ "modified": "2026-06-10 04:44:37.133169",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Room",
@@ -61,11 +115,23 @@
    "role": "Seminary Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
   }
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
