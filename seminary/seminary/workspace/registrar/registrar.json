@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":3}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
+ "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":3}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"zCJmpIVH5E\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus and Building\",\"col\":4}},{\"id\":\"TD23W6NHLU\",\"type\":\"card\",\"data\":{\"card_name\":\"Rooms and Requirements\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
  "creation": "2026-06-08 06:32:52.504998",
  "custom_blocks": [
   {
@@ -18,7 +18,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "users",
- "idx": 0,
+ "idx": 2,
  "indicator_color": "green",
  "is_hidden": 0,
  "label": "Registrar",
@@ -160,9 +160,111 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Rooms and Requirements",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Rooms",
+   "link_count": 0,
+   "link_to": "Room",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Room Features",
+   "link_count": 0,
+   "link_to": "Room Feature",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Type and Requirements",
+   "link_count": 0,
+   "link_to": "Course Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Waitlisted Sections",
+   "link_count": 0,
+   "link_to": "Waitlisted Sections",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Course Schedule",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Unmet Demand",
+   "link_count": 0,
+   "link_to": "Unmet Demand",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Course Schedule",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Room Utilization",
+   "link_count": 0,
+   "link_to": "Room Utilization",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Course Schedule",
+   "type": "Link"
+  },
+  {
+   "description": "Help organize rooms for Course Schedules, particularly in larger seminaries.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus and Building",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campus",
+   "link_count": 0,
+   "link_to": "Campus",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Buildings",
+   "link_count": 0,
+   "link_to": "Building",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-06-09 04:51:32.950625",
+ "modified": "2026-06-10 07:20:06.216184",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Registrar",

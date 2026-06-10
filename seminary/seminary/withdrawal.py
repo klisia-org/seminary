@@ -42,17 +42,32 @@ def process_academic_approval(doc):
         _mark_cei_withdrawn(doc.course_enrollment_individual, doc.name)
         return
 
-    if not doc.withdrawal_rule:
-        return
-
-    rule = frappe.get_doc("Withdrawal Rules", doc.withdrawal_rule)
-    treatment = rule.grade_treatment
-
     cei = doc.course_enrollment_individual
     course_schedule = frappe.db.get_value(
         "Course Enrollment Individual", cei, "coursesc_ce"
     )
     student = frappe.db.get_value("Course Enrollment Individual", cei, "student_ce")
+
+    # No withdrawal rule resolved for this term (none configured, or none
+    # applies to the effective date). The institution defined no grade
+    # treatment, so fall back to a Clean Drop instead of doing nothing —
+    # otherwise a Completed withdrawal would leave the student Submitted and on
+    # the roster, never freeing the seat (and never promoting the waitlist).
+    if not doc.withdrawal_rule:
+        frappe.db.delete(
+            "Scheduled Course Roster",
+            {"course_sc": course_schedule, "student": student},
+        )
+        frappe.db.delete(
+            "Program Enrollment Course",
+            {"course": course_schedule, "parent": doc.program_enrollment},
+        )
+        _mark_cei_withdrawn(cei, doc.name)
+        recompute_program_enrollment_gpa(doc.program_enrollment)
+        return
+
+    rule = frappe.get_doc("Withdrawal Rules", doc.withdrawal_rule)
+    treatment = rule.grade_treatment
 
     if treatment == "Clean Drop":
         frappe.db.delete(
@@ -167,6 +182,15 @@ def _mark_cei_withdrawn(cei, withdrawal_request):
             "workflow_state": "Withdrawn",
         },
     )
+    # A withdrawal frees a seat — refresh the section's caches and auto-promote
+    # the next waitlisted student if a seat is now open. (db.set_value above
+    # bypasses on_update_after_submit, so the promotion can't ride that hook.)
+    from seminary.seminary.waitlist import recount_and_promote
+
+    course_schedule = frappe.db.get_value(
+        "Course Enrollment Individual", cei, "coursesc_ce"
+    )
+    recount_and_promote(course_schedule)
 
 
 def process_financial_approval(doc):

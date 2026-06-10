@@ -36,8 +36,8 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="cei in myEnrollments.data" :key="cei.name"
-                :class="cei.status === 'Withdrawn' ? 'text-ink-gray-4 line-through' : ''">
+              <tr v-for="cei in sortedEnrollments" :key="cei.name"
+                :class="['Withdrawn', 'Unseated'].includes(cei.status) ? 'text-ink-gray-4 line-through' : ''">
                 <td class="px-3 py-2">{{ cei.course_data }}</td>
                 <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
                 <td class="px-3 py-2">
@@ -48,6 +48,10 @@
                       class="text-xs text-ink-gray-5">
                       {{ Math.round(cei.paid_percent) }}% {{ __('paid') }}
                     </span>
+                    <span v-else-if="cei.status === 'Waitlisted' && cei.waitlist_position"
+                      class="text-xs text-ink-gray-5">
+                      {{ __('Position') }} #{{ cei.waitlist_position }}
+                    </span>
                   </div>
                 </td>
                 <td class="px-3 py-2 text-right">
@@ -55,10 +59,17 @@
                     @click="cancelEnrollment(cei.name)" :loading="cancelling === cei.name">
                     {{ __('Cancel') }}
                   </Button>
-                  <a v-else-if="cei.status === 'Awaiting Payment' && cei.sales_invoice" :href="`/seminary/fees`"
-                    class="text-ink-blue-3 hover:underline text-sm font-medium">
-                    {{ __('Pay') }}
-                  </a>
+                  <div v-else-if="cei.status === 'Awaiting Payment'"
+                    class="flex items-center justify-end gap-3">
+                    <a v-if="cei.sales_invoice" :href="`/seminary/fees`"
+                      class="text-ink-blue-3 hover:underline text-sm font-medium">
+                      {{ __('Pay') }}
+                    </a>
+                    <Button size="sm" variant="ghost" theme="red"
+                      @click="releaseUnpaid(cei)" :loading="cancelling === cei.name">
+                      {{ __('Cancel') }}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -163,7 +174,7 @@
 </template>
 
 <script setup>
-import { Badge, Button, LoadingIndicator, Tooltip, createResource } from 'frappe-ui'
+import { Badge, Button, LoadingIndicator, Tooltip, createResource, toast } from 'frappe-ui'
 import { HelpCircle } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 
@@ -218,6 +229,23 @@ const myEnrollments = createResource({
   },
   auto: false,
 })
+
+// Group the table by status (active first, terminal/greyed last), then course,
+// so it reads cleanly and the struck-through Withdrawn/Unseated rows sit together.
+const STATUS_ORDER = {
+  'Enrolled': 0,
+  'Awaiting Payment': 1,
+  'Waitlisted': 2,
+  'Draft': 3,
+  'Unseated': 4,
+  'Withdrawn': 5,
+}
+const sortedEnrollments = computed(() =>
+  [...(myEnrollments.data || [])].sort((a, b) => {
+    const rank = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)
+    return rank !== 0 ? rank : (a.course_data || '').localeCompare(b.course_data || '')
+  })
+)
 
 const totalCredits = computed(() => {
   if (!myEnrollments.data) return 0
@@ -281,6 +309,30 @@ function cancelEnrollment(ceiName) {
     courses.reload()
   }).catch(() => {
     cancelling.value = null
+  })
+}
+
+const releaseAction = createResource({
+  url: 'seminary.seminary.api.cancel_unpaid_enrollment',
+})
+
+// Release an unpaid "Awaiting Payment" seat (cancels the invoice, frees the
+// seat for the waitlist). Not a withdrawal — leaves no transcript record.
+// Only possible while the section is still open for enrollment; once closed,
+// the student must withdraw instead, so guide them there clearly.
+function releaseUnpaid(cei) {
+  if (!cei.enrollment_open) {
+    toast.error(__('This course enrollment window is closed. You can withdraw from its My Status page or ask the registrar.'))
+    return
+  }
+  cancelling.value = cei.name
+  releaseAction.submit({ cei_name: cei.name }).then(() => {
+    cancelling.value = null
+    myEnrollments.reload()
+    courses.reload()
+  }).catch((err) => {
+    cancelling.value = null
+    toast.error(err?.messages?.[0] || __('Could not cancel this enrollment.'))
   })
 }
 </script>

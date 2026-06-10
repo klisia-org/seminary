@@ -26,6 +26,7 @@ from frappe.utils import (
     validate_phone_number,
     get_fullname,
     pretty_date,
+    get_time,
     get_time_str,
     nowtime,
     format_datetime,
@@ -36,6 +37,27 @@ from seminary.seminary.md import find_macros, markdown_to_html
 
 class OverlapError(frappe.ValidationError):
     pass
+
+
+@frappe.whitelist()
+def get_timezones():
+    """All IANA timezones, from Frappe's own source (the same list System
+    Settings uses for its Time Zone Select). Used to populate the Campus
+    timezone Select client-side."""
+    from frappe.utils.momentjs import get_all_timezones
+
+    return get_all_timezones()
+
+
+def times_overlap(a_from, a_to, b_from, b_to):
+    """True when two time windows on the same day overlap. Touching endpoints
+    (back-to-back classes) do NOT count as overlapping. Returns False if any
+    bound is missing. Used by room double-booking detection (ADR 038)."""
+    if not (a_from and a_to and b_from and b_to):
+        return False
+    a_from, a_to = get_time(a_from), get_time(a_to)
+    b_from, b_to = get_time(b_from), get_time(b_to)
+    return a_from < b_to and b_from < a_to
 
 
 RE_SLUG_NOTALLOWED = re.compile("[^a-z0-9]+")
@@ -279,11 +301,25 @@ def has_student_role(member=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_courses_for_student(student):
+    """Courses the student is actually enrolled in — i.e. with a Submitted CEI.
+
+    Gating on the Submitted enrollment state excludes the enrollments a student
+    can't enter — cancelled (docstatus 2), Waitlisted, Unseated, Awaiting
+    Payment, and Withdrawn — while still showing completed courses (whose
+    Submitted CEI stays Submitted; only the roster is finalized to active=0).
+    ``student`` is the User (email)."""
     courses = frappe.db.sql(
-        """select cei.coursesc_ce as name, cei.course_data as course, cs.course_image, cs.course_description_for_lms, cs.short_introduction, cs. academic_term, cs.section
-from `tabCourse Enrollment Individual` cei, `tabCourse Schedule` cs
-where cs.name = cei.coursesc_ce and cs.published = 1
-and cei.stu_user = %s""",
+        """select cei.coursesc_ce as name, cei.course_data as course,
+                  cs.course_image, cs.course_description_for_lms,
+                  cs.short_introduction, cs.academic_term, cs.section
+from `tabCourse Enrollment Individual` cei
+join `tabCourse Schedule` cs on cs.name = cei.coursesc_ce
+where cs.published = 1
+  and cei.stu_user = %s
+  and cei.docstatus = 1
+  and cei.workflow_state = 'Submitted'
+  and IFNULL(cei.course_cancelled, 0) = 0
+  and IFNULL(cei.withdrawn, 0) = 0""",
         student,
         as_dict=True,
     )

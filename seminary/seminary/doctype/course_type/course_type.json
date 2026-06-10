@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "autoname": "CRST-.######",
+ "creation": "2026-06-09 21:43:08.723417",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_type",
+  "course_type_req"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_type_req",
+   "fieldtype": "Table",
+   "label": "Course Type Requirements",
+   "options": "Course Type Requirements"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-09 21:48:47.276982",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Type",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "course_type"
+}

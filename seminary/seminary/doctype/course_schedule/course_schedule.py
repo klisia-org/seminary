@@ -44,6 +44,9 @@ class CourseSchedule(Document):
         self.clean_name()
         self._resolve_dates_if_needed()
         self._guard_attendance_policy()
+        self._default_max_enrollment_from_room()
+        self._validate_room_fit()
+        self._log_room_change()
 
     def on_update(self):
         # Re-level attendance standings: the per-student Auto limit moves when
@@ -66,6 +69,33 @@ class CourseSchedule(Document):
                 frappe.get_traceback(), f"attendance re-level on CS save: {self.name}"
             )
 
+        self._handle_capacity_and_waitlist()
+
+    def _handle_capacity_and_waitlist(self):
+        """React to capacity and lifecycle changes for the waitlist engine.
+
+        - A larger cap or a bigger room frees seats → promote from the waitlist.
+        - Leaving Open for Enrollment closes the queue → any still-waitlisted
+          students become Unseated (the room-scarcity record).
+        """
+        from seminary.seminary.waitlist import (
+            mark_waitlist_unseated,
+            recount_and_promote,
+        )
+
+        if self.has_value_changed("workflow_state") and self.workflow_state not in (
+            "Draft",
+            "Open for Enrollment",
+        ):
+            mark_waitlist_unseated(self.name)
+
+        if (
+            self.has_value_changed("max_enrollment")
+            or self.has_value_changed("room")
+            or self.has_value_changed("workflow_state")
+        ):
+            recount_and_promote(self.name)
+
     def _guard_attendance_policy(self):
         """The attendance policy is registrar/Program-Chair governed (instructors
         see it read-only via course_schedule.js; this is the server-side gate)."""
@@ -77,6 +107,170 @@ class CourseSchedule(Document):
             from seminary.seminary.attendance import assert_can_edit_policy
 
             assert_can_edit_policy()
+
+    # ── Room capacity & fit ──────────────────────────────────────────────
+    # Every check below no-ops when its inputs are absent (progressive,
+    # opt-in by data presence — see ADR 035): no room, no course type, no
+    # requirement rows, or no cap all degrade to today's behaviour.
+
+    def _default_max_enrollment_from_room(self):
+        """Seed max_enrollment from the room's seating capacity when a room is
+        first set or changed and no explicit cap is present. The cap stays
+        overridable; clearing it on an unchanged room keeps it uncapped."""
+        if not self.room or self.max_enrollment:
+            return
+        if not (self.is_new() or self.has_value_changed("room")):
+            return
+        cap = frappe.db.get_value("Room", self.room, "seating_capacity")
+        if cap:
+            self.max_enrollment = cap
+
+    def _validate_room_fit(self):
+        if not self.room:
+            return
+        self._validate_room_not_undersized()
+        self._validate_room_double_booking()
+        self._warn_missing_room_features()
+
+    def _validate_room_not_undersized(self):
+        """Block assigning a room that can't seat the students already enrolled."""
+        from seminary.seminary.waitlist import seats_used
+
+        cap = frappe.db.get_value("Room", self.room, "seating_capacity")
+        if not cap:
+            return
+        used = seats_used(self.name)
+        if used > cap:
+            frappe.throw(
+                _(
+                    "Room {0} seats {1}, but this section already has {2} "
+                    "enrolled. Choose a larger room."
+                ).format(self.room, cap, used)
+            )
+
+    def _validate_room_double_booking(self):
+        """Block a room that's already booked for an overlapping meeting time.
+
+        Operates over the meeting-date child table (cs_meetinfo): two sections
+        clash only if they share the room AND a meeting date AND overlapping
+        time windows. Back-to-back classes (touching endpoints) do not clash.
+        """
+        from seminary.seminary.utils import times_overlap
+
+        rows = [r for r in (self.cs_meetinfo or []) if r.cs_meetdate]
+        if not rows:
+            return
+        dates = list({str(r.cs_meetdate) for r in rows})
+        others = frappe.db.sql(
+            """
+            SELECT cs.name, cs.title, m.cs_meetdate, m.cs_fromtime, m.cs_totime
+            FROM `tabCourse Schedule Meeting Dates` m
+            JOIN `tabCourse Schedule` cs ON m.parent = cs.name
+            WHERE cs.room = %(room)s
+              AND cs.name != %(self_name)s
+              AND COALESCE(cs.workflow_state, '') != 'Cancelled'
+              AND m.cs_meetdate IN %(dates)s
+            """,
+            {"room": self.room, "self_name": self.name or "", "dates": tuple(dates)},
+            as_dict=True,
+        )
+        if not others:
+            return
+
+        by_date = {}
+        for o in others:
+            by_date.setdefault(str(o.cs_meetdate), []).append(o)
+
+        for r in rows:
+            for o in by_date.get(str(r.cs_meetdate), []):
+                if times_overlap(
+                    r.cs_fromtime, r.cs_totime, o.cs_fromtime, o.cs_totime
+                ):
+                    frappe.throw(
+                        _(
+                            "Room {0} is already booked by {1} on {2} "
+                            "({3}–{4}). Pick another room or time."
+                        ).format(
+                            self.room,
+                            o.title or o.name,
+                            r.cs_meetdate,
+                            o.cs_fromtime,
+                            o.cs_totime,
+                        )
+                    )
+
+    def _warn_missing_room_features(self):
+        """Dismissible warning when the room lacks features the course's Course
+        Type requires for this modality. Unions the 'All' modality rows with the
+        section's specific modality. Never blocks the save."""
+        if not self.course:
+            return
+        course_type = frappe.db.get_value("Course", self.course, "course_type")
+        if not course_type:
+            return
+        required = set(
+            filter(
+                None,
+                frappe.get_all(
+                    "Course Type Requirements",
+                    filters={
+                        "parent": course_type,
+                        "parenttype": "Course Type",
+                        "modality": ["in", ["All", self.modality or ""]],
+                    },
+                    pluck="room_feature",
+                ),
+            )
+        )
+        if not required:
+            return
+        have = set(
+            frappe.get_all(
+                "Room Existing Feature",
+                filters={"parent": self.room, "parenttype": "Room"},
+                pluck="feature",
+            )
+        )
+        missing = required - have
+        if not missing:
+            return
+        labels = [
+            frappe.db.get_value("Room Feature", m, "feature") or m for m in missing
+        ]
+        frappe.msgprint(
+            _("Room {0} is missing required feature(s) for this course: {1}.").format(
+                self.room, ", ".join(labels)
+            ),
+            title=_("Room feature mismatch"),
+            indicator="orange",
+        )
+
+    def _log_room_change(self):
+        """Append an audit row whenever the room changes on an existing section.
+        The reason comes from the Change Room dialog (self.flags.room_change_reason);
+        a direct field edit logs the move with a blank reason."""
+        if self.is_new() or not self.has_value_changed("room"):
+            return
+        before = self.get_doc_before_save()
+        old_room = before.room if before else None
+        self.append(
+            "room_change_log",
+            {
+                "from_room": old_room,
+                "to_room": self.room,
+                "reason": self.flags.get("room_change_reason") or "",
+                "changed_by": frappe.session.user,
+                "changed_on": now(),
+            },
+        )
+
+    @frappe.whitelist()
+    def change_room(self, room, reason):
+        """Registrar-facing room reassignment that records a reason in the log."""
+        self.flags.room_change_reason = reason
+        self.room = room
+        self.save()
+        return self.room
 
     def before_insert(self):
         if not self.workflow_state:
@@ -318,6 +512,13 @@ class CourseSchedule(Document):
 
         _cascade_cancel_pec_and_cei(self.name, reason)
         _create_cancellation_announcement(self, reason)
+
+        # Close out any waitlist (the section is gone) and refresh the seat
+        # caches, which now read zero seat-holders.
+        from seminary.seminary.waitlist import mark_waitlist_unseated, recount
+
+        mark_waitlist_unseated(self.name)
+        recount(self.name)
 
     @frappe.whitelist()
     def import_template(self, source_cs):

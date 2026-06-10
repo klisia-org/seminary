@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:campus_name",
+ "creation": "2026-06-10 00:00:00",
+ "description": "A physical campus/site of the seminary. Top of the Campus → Building → Room hierarchy; optionally mirrored into the ERPNext Location tree for Asset tracking.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "campus_name",
+  "abbreviation",
+  "is_active",
+  "column_break_cmp1",
+  "timezone",
+  "location"
+ ],
+ "fields": [
+  {
+   "fieldname": "campus_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campus Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "abbreviation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Abbreviation"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_cmp1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Informational only — the timezone of this campus. NOT yet applied to attendance/chapel check-in windows, which still use the site time zone (see ADR 036). Reserved for future multi-timezone support.",
+   "fieldname": "timezone",
+   "fieldtype": "Select",
+   "label": "Timezone"
+  },
+  {
+   "description": "ERPNext Location mirrored from this campus (for Asset tracking). Maintained automatically.",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "no_copy": 1,
+   "options": "Location",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-10 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Campus",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "campus_name",
+ "track_changes": 1
+}

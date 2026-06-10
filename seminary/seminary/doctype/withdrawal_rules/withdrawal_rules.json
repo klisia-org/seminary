@@ -1,10 +1,9 @@
 {
  "actions": [],
- "allow_rename": 1,
  "autoname": "field:rule_name",
  "creation": "2026-04-02 12:00:00",
- "default": "Withdrawal Rules define how grading will respond to withdrawal based on anchored dates. These rules are used to feed Term WithDrawal Rules (which can be overriden case-by-case)",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/withdrawal.html#withdrawal-rules",
  "engine": "InnoDB",
  "field_order": [
   "rule_name",
@@ -112,7 +111,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-30 15:12:33.482960",
+ "modified": "2026-06-09 19:47:43.743975",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Withdrawal Rules",
@@ -157,8 +156,10 @@
   }
  ],
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "rule_name",
  "track_changes": 1
 }

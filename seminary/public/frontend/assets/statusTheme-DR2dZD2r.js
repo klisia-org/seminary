@@ -1,0 +1,2 @@
+var e=new Set([`pass`,`passed`,`completed`,`paid`,`fulfilled`,`waived`,`approved`,`accepted`]),t=new Set([`enrolled`,`in progress`,`submitted`,`active`,`under review`]),n=new Set([`fail`,`failed`,`overdue`,`rejected`,`unseated`]),r=new Set([`withdrawn`,`draft`,`pending`,`unpaid`,`not started`,`awaiting payment`,`revisions required`,`waitlisted`]);function i(i){let a=(i||``).toString().trim().toLowerCase();return e.has(a)?`green`:t.has(a)?`blue`:n.has(a)?`red`:r.has(a)?`orange`:`gray`}export{i as t};
+//# sourceMappingURL=statusTheme-DR2dZD2r.js.map

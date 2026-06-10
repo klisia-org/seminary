@@ -28,11 +28,29 @@ from frappe.utils import flt, now_datetime
 def on_workflow_update(doc, method=None):
     """Fired on Course Enrollment Individual `on_update_after_submit`.
     Routes side-effects by workflow state. Idempotent."""
+    from seminary.seminary.waitlist import assign_waitlist_positions, recount
+
+    # A student promoted off the waitlist via the manual Promote action arrives
+    # here in Submitted / Awaiting Payment without ever passing through
+    # on_submit (which skipped invoicing while they were Waitlisted). Raise the
+    # invoice now. Auto-promotion goes through waitlist._promote_cei instead and
+    # does this itself, so cei_si is already set and this is a no-op there.
+    if doc.workflow_state in ("Submitted", "Awaiting Payment") and not doc.cei_si:
+        doc.generate_enrollment_invoice()
+
     if doc.workflow_state == "Submitted":
         enroll_student(doc)
-    # "Awaiting Payment" and "Withdrawn" require no on-arrival side effects:
-    # the SI was created at on_submit; withdrawal side-effects already ran in
-    # withdrawal.py:process_academic_approval before workflow_state was set.
+
+    # A fresh Waitlisted arrival needs a queue position assigned.
+    if doc.workflow_state == "Waitlisted" and doc.coursesc_ce:
+        assign_waitlist_positions(doc.coursesc_ce)
+
+    # Keep the section's seat/demand caches honest on every state change.
+    # "Withdrawn"/"Unseated" free a seat, but those paths (withdrawal.py /
+    # waitlist.mark_waitlist_unseated) call recount_and_promote themselves;
+    # here a recount is enough.
+    if doc.coursesc_ce:
+        recount(doc.coursesc_ce)
 
 
 def enroll_student(cei_doc):
@@ -212,6 +230,13 @@ def _advance_cei_to_submitted(cei_name):
     cei = frappe.get_doc("Course Enrollment Individual", cei_name)
     cei.workflow_state = "Submitted"
     enroll_student(cei)
+
+    # Payment-driven advance bypasses on_update_after_submit (db.set_value
+    # above), so refresh the seat caches here.
+    if cei.coursesc_ce:
+        from seminary.seminary.waitlist import recount
+
+        recount(cei.coursesc_ce)
 
 
 def _notify_registrar_payment_dropped(cei_name, paid_percent, threshold):

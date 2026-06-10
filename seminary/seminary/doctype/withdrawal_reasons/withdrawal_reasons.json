@@ -2,9 +2,9 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:label",
- "creation": "2026-04-02 12:00:00.000000",
- "default": "Library of Disciplinary Reasons with its specific instructions for students and staff, if applicable, who needs to upload documentation.",
+ "creation": "2026-04-02 12:00:00",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/withdrawal.html#withdrawal-reasons",
  "engine": "InnoDB",
  "field_order": [
   "label",
@@ -85,7 +85,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-02 12:00:00.000000",
+ "modified": "2026-06-09 19:44:56.334495",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Withdrawal Reasons",
@@ -121,6 +121,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

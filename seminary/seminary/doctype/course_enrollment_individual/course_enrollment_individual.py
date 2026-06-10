@@ -9,12 +9,70 @@ from frappe.utils.csvutils import getlink
 
 from seminary.seminary.billing import build_and_create_invoice as create_payer_invoice
 
+# Roles allowed to bypass the prerequisite gate via the no_prereq flag.
+_PREREQ_OVERRIDE_ROLES = {
+    "Registrar",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _user_can_override_prereqs():
+    return bool(_PREREQ_OVERRIDE_ROLES & set(frappe.get_roles(frappe.session.user)))
+
 
 class CourseEnrollmentIndividual(Document):
     def validate(self):
         self.validate_duplicate()
         self.validate_duplicate_course()
         self._hydrate_program_flags()
+        self._compute_seat_availability()
+        self._validate_prerequisites()
+
+    def _validate_prerequisites(self):
+        """Block enrollment when the course has an unmet mandatory prerequisite.
+
+        Authoritative server-side gate (the courses_for_student picker is the
+        student-facing UX, but this is the real boundary). A registrar can
+        override by ticking ``no_prereq`` ("Don't check pre-requisites"); the
+        override is honored only for staff, so a student-driven enrollment can't
+        set the flag to skip the check.
+        """
+        if (
+            frappe.flags.in_install
+            or frappe.flags.in_migrate
+            or frappe.flags.in_demo_install
+        ):
+            return
+        if self.no_prereq and _user_can_override_prereqs():
+            return
+        if not (self.program_ce and self.course_data):
+            return
+
+        from seminary.seminary.required_enrollment import unmet_prerequisites
+
+        missing = unmet_prerequisites(self.program_ce, self.course_data)
+        if missing:
+            frappe.throw(
+                _(
+                    "Cannot enroll in {0}: missing mandatory prerequisite(s): {1}. "
+                    "A registrar can override by ticking "
+                    "“Don't check pre-requisites” on this enrollment."
+                ).format(self.course_data, ", ".join(missing))
+            )
+
+    def _compute_seat_availability(self):
+        """Set ``seat_available`` so the workflow can route a submission to a
+        seat vs. the waitlist. Read live from the section's seat count (the
+        same pattern as the payment-gating flags above). Excludes self so a
+        re-save of an existing seat-holder doesn't count against itself.
+        """
+        from seminary.seminary.waitlist import is_seat_available
+
+        self.seat_available = (
+            1 if is_seat_available(self.coursesc_ce, exclude_cei=self.name) else 0
+        )
 
     def _hydrate_program_flags(self):
         """Mirror payment-gating flags from the linked Program.
@@ -46,19 +104,42 @@ class CourseEnrollmentIndividual(Document):
         self.registrar_block_cei = flags.registrar_block_cei or 0
 
     def on_submit(self):
+        # Waitlisted students hold a queue position, not a seat — no invoice is
+        # raised until they are promoted (see waitlist._promote_cei, which calls
+        # generate_enrollment_invoice at that point).
+        if self.workflow_state == "Waitlisted":
+            return
+        self.generate_enrollment_invoice()
+
+    def generate_enrollment_invoice(self):
+        """Raise the enrollment Sales Invoice once. Free programs just flag
+        ``cei_si``; everyone else gets an invoice via ``get_inv_data_ce``.
+
+        Idempotent on ``cei_si``. Shared by on_submit (Draft → Awaiting Payment
+        / Submitted) and by waitlist promotion (Waitlisted → Awaiting Payment /
+        Submitted), so a promoted student is billed exactly like a directly
+        enrolled one.
+        """
         if self.cei_si:
             return
         if frappe.db.get_value("Program", self.program_data, "is_free"):
-            self.cei_si = 1
             self.db_set("cei_si", 1)
             return
         self.get_inv_data_ce()
-        self.cei_si = 1
         self.db_set("cei_si", 1)
 
     def before_cancel(self):
-        """Block cancellation if the course has already started."""
+        """Block cancellation if the course has already started.
+
+        Exception: a pre-seat unpaid release (api.cancel_unpaid_enrollment) sets
+        ``allow_unpaid_release`` and is gated instead on the section still being
+        Open for Enrollment — an unpaid, unrostered student dropping out before
+        being seated isn't a post-start withdrawal.
+        """
         from frappe.utils import getdate
+
+        if self.flags.get("allow_unpaid_release"):
+            return
 
         if self.coursesc_ce:
             start_date = frappe.db.get_value(

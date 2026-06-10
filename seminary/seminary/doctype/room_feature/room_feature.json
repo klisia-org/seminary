@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "autoname": "RFEA-.#####",
+ "creation": "2026-06-09 21:03:34.064223",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "feature",
+  "column_break_fptn",
+  "category"
+ ],
+ "fields": [
+  {
+   "fieldname": "feature",
+   "fieldtype": "Data",
+   "label": "Feature"
+  },
+  {
+   "fieldname": "column_break_fptn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "\nAV Equipment\nMusical\nRoom Configuration\nSpecialized"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-09 21:11:38.947216",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Room Feature",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "feature"
+}

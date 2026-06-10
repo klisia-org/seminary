@@ -18,7 +18,16 @@ def validate(doc, method=None):
 
 
 def on_update(doc, method=None):
-    """Provision Salary Slip custom fields + Instructor Pay component when HRMS is on."""
+    """Provision Salary Slip custom fields + Instructor Pay component when HRMS is on;
+    backfill Asset Locations when room sync is switched on."""
+    if (
+        doc.has_value_changed("sync_rooms_to_asset_locations")
+        and doc.sync_rooms_to_asset_locations
+    ):
+        from seminary.seminary import locations
+
+        frappe.enqueue(locations.backfill, queue="long")
+
     if not doc.hrms_enable:
         return
 
