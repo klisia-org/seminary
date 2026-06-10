@@ -16,10 +16,7 @@ Los estudiantes pueden autoinscribirse a través del portal del LMS durante las 
 
 A Course Enrollment Individual moves through a four-state workflow:
 
-```
-Draft  →  Awaiting Payment  →  Submitted  →  Withdrawn
-   ↘─────────────────────────────↗
-```
+<LifecycleDiagram type="enrollment" />
 
 - **Draft** — created but not yet submitted; nothing has happened beyond saving the row
 - **Awaiting Payment** — submitted, Sales Invoices generated, but the student has not been added to the course roster yet (no LMS access)
