@@ -19,6 +19,7 @@
   "naming_series",
   "joining_date",
   "user",
+  "person",
   "student_applicant",
   "image",
   "section_break_7",
@@ -80,24 +81,37 @@
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "First Name",
+   "read_only_depends_on": "eval:doc.person",
    "reqd": 1
   },
   {
    "fieldname": "middle_name",
    "fieldtype": "Data",
-   "label": "Middle Name"
+   "label": "Middle Name",
+   "read_only_depends_on": "eval:doc.person"
   },
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
    "in_global_search": 1,
-   "label": "Last Name"
+   "label": "Last Name",
+   "read_only_depends_on": "eval:doc.person"
   },
   {
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User ID",
    "options": "User"
+  },
+  {
+   "description": "Identity spine record (ADR 042). Created automatically; name and contact edits happen on the Person.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "column_break_4",
@@ -112,17 +126,21 @@
    "set_only_once": 1
   },
   {
+   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
    "fieldname": "student_email_id",
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "Student Email Address",
+   "read_only_depends_on": "eval:doc.person",
    "unique": 1
   },
   {
+   "description": "Mirror of the linked Person's Primary Mobile (ADR 042).",
    "fieldname": "student_mobile_number",
    "fieldtype": "Data",
    "in_global_search": 1,
-   "label": "Student Mobile Number"
+   "label": "Student Mobile Number",
+   "read_only_depends_on": "eval:doc.person"
   },
   {
    "default": "Today",
@@ -354,7 +372,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2025-03-11 18:22:00.009549",
+ "modified": "2026-06-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student",

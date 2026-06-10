@@ -24,6 +24,7 @@
   "customer",
   "customer_group",
   "image",
+  "person",
   "column_break_lvby",
   "academic_year",
   "academic_term",
@@ -103,18 +104,21 @@
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "First Name",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
    "reqd": 1
   },
   {
    "fieldname": "middle_name",
    "fieldtype": "Data",
-   "label": "Middle Name"
+   "label": "Middle Name",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
    "in_global_search": 1,
-   "label": "Last Name"
+   "label": "Last Name",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "program",
@@ -242,13 +246,25 @@
    "fieldtype": "Data",
    "label": "Student Email Address",
    "options": "Email",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
    "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "student_mobile_number",
    "fieldtype": "Data",
-   "label": "Student Mobile Number"
+   "label": "Student Mobile Number",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
+  },
+  {
+   "description": "Identity spine record (ADR 042). Promoted from this form on insert; intake fields stay editable (and re-promote) until admission, then flip to read-only mirrors.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "nationality",
@@ -599,7 +615,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-06-01 02:57:24.459056",
+ "modified": "2026-06-10 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",

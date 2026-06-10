@@ -1,0 +1,257 @@
+{
+ "actions": [],
+ "autoname": "PERS-.#####",
+ "creation": "2026-06-10 12:00:00.000000",
+ "description": "Identity and reachability spine (ADR 042). One record per human; role doctypes (Student, Instructor, Alumni Profile, Student Applicant) link here and mirror its contact data read-only. Identity is the opaque PERS id — email is just a channel address, never a key.",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "first_name",
+  "middle_name",
+  "last_name",
+  "full_name",
+  "column_break_identity",
+  "image",
+  "language",
+  "country",
+  "reachability_section",
+  "primary_email",
+  "column_break_reach",
+  "primary_mobile",
+  "addresses_section",
+  "channel_addresses",
+  "consent_section",
+  "consents",
+  "links_section",
+  "user",
+  "column_break_links",
+  "customer",
+  "conversation_tab",
+  "conversation_html",
+  "connections_tab"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image"
+  },
+  {
+   "description": "Language used for outbound communication (templates render in this language). Distinct from the desk/portal UI language on User.",
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Communication Language",
+   "options": "Language"
+  },
+  {
+   "description": "Drives regional provider routing (ADR 043).",
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country / Region",
+   "options": "Country"
+  },
+  {
+   "fieldname": "reachability_section",
+   "fieldtype": "Section Break",
+   "label": "Reachability"
+  },
+  {
+   "description": "Canonical email. Mirrored into linked role records and into the primary Email channel address. Changing it does NOT rename the linked User's login.",
+   "fieldname": "primary_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Primary Email",
+   "options": "Email",
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_reach",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Include country code, e.g. +15551234567. Mirrored into the primary SMS channel address.",
+   "fieldname": "primary_mobile",
+   "fieldtype": "Data",
+   "label": "Primary Mobile",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "addresses_section",
+   "fieldtype": "Section Break",
+   "label": "Channel Addresses"
+  },
+  {
+   "fieldname": "channel_addresses",
+   "fieldtype": "Table",
+   "label": "Channel Addresses",
+   "options": "Person Channel Address"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "consent_section",
+   "fieldtype": "Section Break",
+   "label": "Consent"
+  },
+  {
+   "fieldname": "consents",
+   "fieldtype": "Table",
+   "label": "Consent",
+   "options": "Person Consent"
+  },
+  {
+   "fieldname": "links_section",
+   "fieldtype": "Section Break",
+   "label": "System Links"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "search_index": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_links",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "conversation_tab",
+   "fieldtype": "Tab Break",
+   "label": "Conversation"
+  },
+  {
+   "fieldname": "conversation_html",
+   "fieldtype": "HTML",
+   "label": "Conversation"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Roles",
+   "show_dashboard": 1
+  }
+ ],
+ "image_field": "image",
+ "links": [
+  {
+   "group": "Communication",
+   "link_doctype": "Communication Log",
+   "link_fieldname": "person"
+  },
+  {
+   "group": "Roles",
+   "link_doctype": "Student Applicant",
+   "link_fieldname": "person"
+  },
+  {
+   "group": "Roles",
+   "link_doctype": "Student",
+   "link_fieldname": "person"
+  },
+  {
+   "group": "Roles",
+   "link_doctype": "Instructor",
+   "link_fieldname": "person"
+  },
+  {
+   "group": "Roles",
+   "link_doctype": "Alumni Profile",
+   "link_fieldname": "person"
+  }
+ ],
+ "modified": "2026-06-10 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "full_name,primary_email",
+ "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 1
+}

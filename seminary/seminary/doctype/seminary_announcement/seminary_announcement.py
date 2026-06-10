@@ -78,34 +78,51 @@ class SeminaryAnnouncement(Document):
 
 
 def send_announcement(announcement: str):
+    """Materialize one Communication Log per recipient (ADR 043). Delivery is
+    the dispatcher's job — rate-limited per provider account — which reflects
+    outcomes back onto the recipient rows and flips this doc to Sent/Failed
+    once nothing is left Queued/Sending. The per-recipient idempotency key
+    makes re-running this job (or re-enqueuing the announcement) safe."""
+    from seminary.seminary import comms
+    from seminary.seminary.person import find_person
+
     doc = frappe.get_doc("Seminary Announcement", announcement)
     if doc.status not in ("Queued", "Sending"):
         return
 
     doc.db_set("status", "Sending", update_modified=False)
-    sent = 0
-    failed = 0
 
     for child in doc.recipients:
         if child.delivery_status == "Sent":
             continue
         try:
-            frappe.sendmail(
-                recipients=[child.email],
+            person = find_person(email=child.email, user=child.user)
+            comms.send_message(
+                channel="Email",
+                category="Academic",
+                person=person,
+                to_address=child.email,
                 subject=doc.subject,
                 message=doc.message,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
-                expose_recipients="hide",
-                now=False,
+                triggered_by=doc.owner,
+                dedupe_key=f"seminary-announcement::{doc.name}::{(child.email or '').lower()}::Email",
             )
-            frappe.db.set_value(
-                "Seminary Announcement Recipient",
-                child.name,
-                {"delivery_status": "Sent", "error": None},
-                update_modified=False,
-            )
-            sent += 1
+            if person:
+                # Portal-inbox copy (ADR 043 stage two); read_at on this log
+                # is the announcement's read receipt.
+                comms.send_message(
+                    channel="In-App",
+                    category="Academic",
+                    person=person,
+                    subject=doc.subject,
+                    message=doc.message,
+                    reference_doctype=doc.doctype,
+                    reference_name=doc.name,
+                    triggered_by=doc.owner,
+                    dedupe_key=f"seminary-announcement::{doc.name}::{(child.email or '').lower()}::In-App",
+                )
         except Exception as e:
             frappe.db.set_value(
                 "Seminary Announcement Recipient",
@@ -113,17 +130,11 @@ def send_announcement(announcement: str):
                 {"delivery_status": "Failed", "error": str(e)[:500]},
                 update_modified=False,
             )
-            failed += 1
             frappe.log_error(
-                f"Seminary Announcement {doc.name} failed for {child.email}: {e}",
+                f"Seminary Announcement {doc.name} failed to queue for {child.email}: {e}",
                 "Seminary Announcement Send",
             )
 
-    final_status = "Sent" if sent > 0 else "Failed"
-    doc.db_set(
-        {"status": final_status, "sent_datetime": now_datetime()},
-        update_modified=False,
-    )
     frappe.db.commit()
 
 

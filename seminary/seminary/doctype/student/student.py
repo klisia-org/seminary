@@ -13,6 +13,7 @@ from frappe.utils.nestedset import get_root_of
 
 class Student(Document):
     def validate(self):
+        self.resolve_person()
         self.set_title()
         self.validate_dates()
         self.validate_user()
@@ -29,6 +30,72 @@ class Student(Document):
             self.update_linked_customer()
         else:
             self.create_customer()
+        self.update_person_links()
+
+    def resolve_person(self):
+        """Person spine seam (ADR 042). Admission path: reuse the applicant's
+        Person; standalone creation: ensure one from the typed fields. After
+        the link exists, the Person is authoritative and the local contact
+        fields are read-only mirrors hydrated here (fetch_from can't source
+        Person child rows, and validate_user below needs the email in-row)."""
+        from seminary.seminary import person as person_spine
+
+        if not self.person and self.student_applicant:
+            self.person = frappe.db.get_value(
+                "Student Applicant", self.student_applicant, "person"
+            )
+        if not self.person:
+            if not self.student_email_id:
+                return  # nothing to key on; validate_user will complain anyway
+            self.person = person_spine.ensure_person(
+                email=self.student_email_id,
+                first_name=self.first_name,
+                middle_name=self.middle_name,
+                last_name=self.last_name,
+                mobile=self.student_mobile_number,
+                country=self.country,
+                image=self.image,
+            )
+        self._hydrate_from_person()
+
+    def _hydrate_from_person(self):
+        spine = frappe.db.get_value(
+            "Person",
+            self.person,
+            [
+                "first_name",
+                "middle_name",
+                "last_name",
+                "primary_email",
+                "primary_mobile",
+            ],
+            as_dict=True,
+        )
+        if not spine:
+            return
+        if spine.first_name:
+            self.first_name = spine.first_name
+        self.middle_name = spine.middle_name
+        self.last_name = spine.last_name
+        if spine.primary_email:
+            self.student_email_id = spine.primary_email
+        if spine.primary_mobile:
+            self.student_mobile_number = spine.primary_mobile
+
+    def update_person_links(self):
+        """Attach the system records this role created to the spine."""
+        from seminary.seminary import person as person_spine
+
+        if not self.person:
+            return
+        if self.user and not frappe.db.get_value("Person", self.person, "user"):
+            frappe.db.set_value(
+                "Person", self.person, "user", self.user, update_modified=False
+            )
+        customer = self.customer or frappe.db.get_value(
+            "Student", self.name, "customer"
+        )
+        person_spine.link_customer(self.person, customer)
 
     def set_customer_group(self):
         if frappe.flags.in_demo_install:

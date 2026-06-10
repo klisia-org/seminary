@@ -1,0 +1,149 @@
+{
+ "actions": [],
+ "autoname": "field:trigger_name",
+ "creation": "2026-06-10 12:00:00.000000",
+ "description": "Declarative notification rule (ADR 044): when a watched document reaches a condition (status, workflow_state, any field), render a Communication Template for the configured recipients through the consent-aware, rate-limited ledger. Write the plumbing once, configure the rest.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "trigger_name",
+  "reference_doctype",
+  "trigger_on",
+  "column_break_main",
+  "enabled",
+  "template",
+  "once_per_document",
+  "conditions_section",
+  "conditions",
+  "recipients_section",
+  "recipients"
+ ],
+ "fields": [
+  {
+   "fieldname": "trigger_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Trigger Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Watched DocType",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "default": "Save",
+   "description": "Save fires on the false→true edge of the conditions (a plain save never re-fires while they stay true). Insert evaluates once on creation. Submit/Cancel evaluate at that event.",
+   "fieldname": "trigger_on",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Trigger On",
+   "options": "Save\nInsert\nSubmit\nCancel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Communication Template",
+   "options": "Communication Template",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Fire at most once per document per recipient (idempotency-keyed). Uncheck to re-fire on every false→true transition, e.g. a status that legitimately cycles.",
+   "fieldname": "once_per_document",
+   "fieldtype": "Check",
+   "label": "Once Per Document"
+  },
+  {
+   "description": "All rows must match (AND). No rows = always true, so a Save trigger without conditions only fires on creation.",
+   "fieldname": "conditions_section",
+   "fieldtype": "Section Break",
+   "label": "What must happen"
+  },
+  {
+   "fieldname": "conditions",
+   "fieldtype": "Table",
+   "label": "Conditions",
+   "options": "Communication Trigger Condition"
+  },
+  {
+   "fieldname": "recipients_section",
+   "fieldtype": "Section Break",
+   "label": "Who receives it"
+  },
+  {
+   "fieldname": "recipients",
+   "fieldtype": "Table",
+   "label": "Recipients",
+   "options": "Communication Trigger Recipient",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Communication Trigger",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "reference_doctype,template",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

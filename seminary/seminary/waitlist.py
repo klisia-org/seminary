@@ -296,78 +296,69 @@ def _cei_notice_context(cei_name):
 
 
 def _notify_promotion(cei_name):
-    """Email the student and registrars that a seat opened, and drop a ToDo for
-    the registrars. Failures are logged, never fatal to the transaction."""
-    from seminary.seminary.cs_lifecycle import _registrar_emails
+    """Tell the student and the registrars a seat opened, through the
+    Communication Log (ADR 043) — templated, consent-aware, rate-limited.
+    Failures are logged, never fatal to the transaction."""
+    from seminary.seminary import comms
+    from seminary.seminary.person import find_person
 
     ctx = _cei_notice_context(cei_name)
     if not ctx:
         return
-    awaiting = ctx.workflow_state == "Awaiting Payment"
-    pay_note = (
-        _(
-            " A seat invoice has been issued — please complete payment to keep your seat."
-        )
-        if awaiting
-        else ""
-    )
-    student_msg = _(
-        "Good news — a seat opened in {0} and you've been moved off the waitlist.{1}"
-    ).format(ctx.course_data, pay_note)
 
     if ctx.stu_user:
         try:
-            frappe.sendmail(
-                recipients=[ctx.stu_user],
-                subject=_("You're off the waitlist: {0}").format(ctx.course_data),
-                message=student_msg,
+            comms.send(
+                find_person(user=ctx.stu_user),
+                "waitlist-promoted",
+                to_address=ctx.stu_user,
+                context={
+                    "course": ctx.course_data,
+                    "awaiting_payment": ctx.workflow_state == "Awaiting Payment",
+                },
                 reference_doctype="Course Enrollment Individual",
                 reference_name=cei_name,
+                triggered_by="waitlist-promotion",
             )
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                f"waitlist: student promotion email failed for {cei_name}",
+                f"waitlist: student promotion notice failed for {cei_name}",
             )
 
-    registrars = _registrar_emails()
-    if not registrars:
-        return
-    reg_msg = _("{0} was auto-promoted from the waitlist into {1} (now {2}).").format(
-        ctx.student_ce, ctx.course_data, ctx.workflow_state
+    comms.send_to_role(
+        "Registrar",
+        "waitlist-promoted-registrar",
+        context={
+            "student": ctx.student_ce,
+            "course": ctx.course_data,
+            "state": ctx.workflow_state,
+        },
+        reference_doctype="Course Enrollment Individual",
+        reference_name=cei_name,
+        triggered_by="waitlist-promotion",
     )
-    try:
-        frappe.sendmail(
-            recipients=registrars,
-            subject=_("Waitlist promotion: {0}").format(ctx.course_data),
-            message=reg_msg,
-            reference_doctype="Course Enrollment Individual",
-            reference_name=cei_name,
-        )
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"waitlist: registrar promotion email failed for {cei_name}",
-        )
 
 
 def _notify_unseated(cei_name):
+    from seminary.seminary import comms
+    from seminary.seminary.person import find_person
+
     ctx = _cei_notice_context(cei_name)
     if not ctx or not ctx.stu_user:
         return
     try:
-        frappe.sendmail(
-            recipients=[ctx.stu_user],
-            subject=_("Waitlist closed: {0}").format(ctx.course_data),
-            message=_(
-                "Enrollment for {0} has closed and a seat did not open before the "
-                "deadline. Please contact the registrar about alternatives."
-            ).format(ctx.course_data),
+        comms.send(
+            find_person(user=ctx.stu_user),
+            "waitlist-closed",
+            to_address=ctx.stu_user,
+            context={"course": ctx.course_data},
             reference_doctype="Course Enrollment Individual",
             reference_name=cei_name,
+            triggered_by="waitlist-closed",
         )
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
-            f"waitlist: unseated email failed for {cei_name}",
+            f"waitlist: unseated notice failed for {cei_name}",
         )

@@ -256,8 +256,17 @@ const routes = [
   },
   {
     path: "/announcements",
-    name: "Announcements",
-    component: () => import('@/pages/Announcements.vue'),
+    redirect: "/inbox",
+  },
+  {
+    path: "/inbox",
+    name: "Inbox",
+    component: () => import('@/pages/Inbox.vue'),
+  },
+  {
+    path: "/preferences",
+    name: "CommunicationPreferences",
+    component: () => import('@/pages/CommunicationPreferences.vue'),
   },
   {
     path: "/alumni",

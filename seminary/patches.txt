@@ -25,3 +25,5 @@ seminary.seminary.patches.backfill_student_leaving_records
 seminary.seminary.patches.seed_room_features
 seminary.seminary.patches.backfill_course_schedule_seat_caches
 seminary.seminary.patches.backfill_facility_locations
+seminary.seminary.patches.create_person_spine
+seminary.seminary.patches.link_customers_to_persons

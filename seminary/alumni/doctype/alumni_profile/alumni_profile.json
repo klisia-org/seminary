@@ -9,6 +9,7 @@
  "field_order": [
   "identity_section",
   "user",
+  "person",
   "email",
   "full_name",
   "column_break_identity",
@@ -46,6 +47,16 @@
    "reqd": 1,
    "search_index": 1,
    "unique": 1
+  },
+  {
+   "description": "Identity spine record (ADR 042). Resolved automatically via the Student's Person or the User.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "description": "Used as the unique name. Set automatically from User on save.",
@@ -182,7 +193,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-04-25 00:00:00.000000",
+ "modified": "2026-06-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Alumni",
  "name": "Alumni Profile",

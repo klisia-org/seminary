@@ -65,6 +65,11 @@ class StudentApplicant(Document):
                 )
 
     def after_insert(self):
+        # Person spine seam (ADR 042): public intake captures contact fields
+        # here (a guest can't write Person directly) and promotes them on
+        # insert — no User exists yet.
+        self._promote_to_person()
+
         # Generate Application-fee Sales Invoice(s) on creation, not on submit:
         # web-form-created applicants stay at docstatus=0 indefinitely (no submit
         # action), so on_submit never fires. Billing must run on insert so the
@@ -78,6 +83,46 @@ class StudentApplicant(Document):
                 frappe.get_traceback(),
                 f"Application invoice generation failed for {self.name}",
             )
+
+    def on_update(self):
+        self._repromote_to_person()
+
+    def _promote_to_person(self):
+        from seminary.seminary import person as person_spine
+
+        person = person_spine.ensure_person(
+            email=self.student_email_id,
+            first_name=self.first_name,
+            middle_name=self.middle_name,
+            last_name=self.last_name,
+            mobile=self.student_mobile_number,
+            country=self.country,
+            image=self.image,
+        )
+        self.db_set("person", person, update_modified=False)
+
+    def _repromote_to_person(self):
+        """While the applicant is the sole role attached (no User yet, not
+        Admitted), the intake form stays the authoritative editor: staff fix
+        typos where they see them and the edit re-promotes last-write-wins
+        (ADR 042). From admission on, edits happen on the Person."""
+        from seminary.seminary import person as person_spine
+
+        if not self.person or self.application_status == "Admitted":
+            return
+        if frappe.db.get_value("Person", self.person, "user"):
+            return
+        person_spine.update_person(
+            self.person,
+            email=self.student_email_id,
+            first_name=self.first_name,
+            middle_name=self.middle_name,
+            last_name=self.last_name,
+            mobile=self.student_mobile_number,
+            country=self.country,
+            image=self.image,
+            overwrite=True,
+        )
 
     def on_payment_authorized(self, *args, **kwargs):
         self.db_set("paid", 1)

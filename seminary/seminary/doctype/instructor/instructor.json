@@ -10,6 +10,7 @@
  "field_order": [
   "instructor_name",
   "user",
+  "person",
   "gender",
   "column_break_5",
   "status",
@@ -130,6 +131,16 @@
    "reqd": 1
   },
   {
+   "description": "Identity spine record (ADR 042). Created automatically from the User; contact edits happen on the Person.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
    "fieldname": "mini_bio_section",
    "fieldtype": "Section Break",
    "label": "Mini bio"
@@ -157,9 +168,11 @@
    "label": "Communication Preferences"
   },
   {
+   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
    "fieldname": "prof_email",
    "fieldtype": "Data",
    "label": "E-mail for student communication",
+   "read_only_depends_on": "eval:doc.person",
    "reqd": 1
   },
   {
@@ -167,10 +180,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Include country code, e.g. +15551234567",
+   "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile (ADR 042).",
    "fieldname": "phone_message",
    "fieldtype": "Data",
-   "label": "Phone for messaging students"
+   "label": "Phone for messaging students",
+   "read_only_depends_on": "eval:doc.person"
   },
   {
    "fieldname": "messaging_apps",
@@ -206,7 +220,7 @@
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-04-24 00:00:00.000000",
+ "modified": "2026-06-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "creation": "2026-06-10 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "recipient_type",
+  "role",
+  "user",
+  "document_field",
+  "channel"
+ ],
+ "fields": [
+  {
+   "fieldname": "recipient_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Recipient Type",
+   "options": "Role\nUser\nDocument Field",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.recipient_type==\"Role\"",
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Role",
+   "mandatory_depends_on": "eval:doc.recipient_type==\"Role\"",
+   "options": "Role"
+  },
+  {
+   "depends_on": "eval:doc.recipient_type==\"User\"",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "mandatory_depends_on": "eval:doc.recipient_type==\"User\"",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.recipient_type==\"Document Field\"",
+   "description": "A field on the watched doctype pointing at the person: a Link to Person, to a doctype carrying a person field (Student, Instructor...), to a User, or a plain email Data field.",
+   "fieldname": "document_field",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Field",
+   "mandatory_depends_on": "eval:doc.recipient_type==\"Document Field\""
+  },
+  {
+   "default": "Email",
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Channel",
+   "options": "Communication Channel",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Communication Trigger Recipient",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

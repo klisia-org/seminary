@@ -198,11 +198,13 @@ def advance_due_course_schedules(today=None):
 
 
 def nag_late_graders(today=None):
-    """Daily job: email instructors when a course in Grading is past its grade_close_date.
-
-    Sends one email per course (idempotent via late_grade_nag_sent). Registrar
-    role users are CC'd.
+    """Daily job: nag instructors when a course in Grading is past its
+    grade_close_date, through the Communication Log (ADR 043). One nag per
+    course (idempotent via late_grade_nag_sent); registrars get their own copy
+    instead of a CC so it lands on their timelines too.
     """
+    from seminary.seminary import comms
+
     today = getdate(today) if today else getdate()
 
     overdue = frappe.get_all(
@@ -217,43 +219,55 @@ def nag_late_graders(today=None):
     if not overdue:
         return
 
-    registrar_emails = _registrar_emails()
-
     for cs in overdue:
         try:
-            instructor_emails = _instructor_emails_for_cs(cs.name)
-            if not instructor_emails:
+            instructors = _instructor_persons_for_cs(cs.name)
+            if not instructors:
                 frappe.log_error(
-                    f"No instructor email on file for {cs.name}; nag skipped.",
-                    "Late-grade nag: missing instructor email",
+                    f"No instructor on file for {cs.name}; nag skipped.",
+                    "Late-grade nag: missing instructor",
                 )
                 continue
-            days_overdue = (today - getdate(cs.grade_close_date)).days
-            subject = _("Grades overdue for {0}").format(cs.title)
-            message = _(
-                "<p>Final grades for <b>{course}</b> ({term}) were due on "
-                "<b>{due}</b> ({days} day(s) ago) and have not yet been sent.</p>"
-                "<p>Please enter and finalize all grades, then use "
-                "<b>Send Grades</b> to close the course for the term.</p>"
-            ).format(
-                course=cs.title,
-                term=cs.academic_term,
-                due=cs.grade_close_date,
-                days=days_overdue,
-            )
-            frappe.sendmail(
-                recipients=instructor_emails,
-                cc=registrar_emails or None,
-                subject=subject,
-                message=message,
+            context = {
+                "course": cs.title,
+                "term": cs.academic_term,
+                "due": cs.grade_close_date,
+                "days": (today - getdate(cs.grade_close_date)).days,
+            }
+            for person in instructors:
+                comms.send(
+                    person,
+                    "late-grades-nag",
+                    context=context,
+                    reference_doctype="Course Schedule",
+                    reference_name=cs.name,
+                    triggered_by="late-grades-nag",
+                )
+            comms.send_to_role(
+                "Registrar",
+                "late-grades-nag",
+                context=context,
                 reference_doctype="Course Schedule",
                 reference_name=cs.name,
+                triggered_by="late-grades-nag",
             )
             frappe.db.set_value("Course Schedule", cs.name, "late_grade_nag_sent", 1)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(), f"Late-grade nag failed: {cs.name}"
             )
+
+
+def _instructor_persons_for_cs(cs_name) -> list:
+    return frappe.db.sql_list(
+        """
+		SELECT DISTINCT i.person
+		FROM `tabCourse Schedule Instructors` csi
+		JOIN `tabInstructor` i ON csi.instructor = i.name
+		WHERE csi.parent = %s AND IFNULL(i.person, '') != ''
+		""",
+        (cs_name,),
+    )
 
 
 def _instructor_emails_for_cs(cs_name) -> list:
