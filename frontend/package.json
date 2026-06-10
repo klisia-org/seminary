@@ -12,7 +12,8 @@
     "prebuild": "yarn install --check-files && yarn build:portal-shell",
     "build:portal-shell": "yarn --cwd ../portal-shell install && yarn --cwd ../portal-shell build",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html"
+    "copy-html-entry": "cp ../seminary/public/frontend/index.html ../seminary/www/seminary.html",
+    "audit:check": "node scripts/audit-lock.mjs"
   },
   "engines": {
     "npm": "please-use-yarn"

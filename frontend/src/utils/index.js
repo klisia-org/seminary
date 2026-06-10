@@ -1,4 +1,4 @@
-import { toast } from 'frappe-ui'
+import { toast, createResource } from 'frappe-ui'
 import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
@@ -17,6 +17,8 @@ import Embed from '@editorjs/embed'
 import SimpleImage from '@editorjs/simple-image'
 import Table from '@editorjs/table'
 import { FolderTool } from '@/utils/foldertool'
+import { IframeEmbed } from '@/utils/iframetool'
+import { VideoRecord } from '@/utils/videorecord'
 
 export function createToast(options) {
 	toast({
@@ -50,6 +52,31 @@ export function formatNumber(number) {
 	return number.toLocaleString('en-IN', {
 		maximumFractionDigits: 0,
 	})
+}
+
+// Shared upload size limit, fetched once. Components read `uploadLimits.data`
+// (`{ max_upload_bytes, max_upload_mb, max_recording_mb }`) and validate against
+// it with `validateFileSize` before handing a file to the uploader.
+export const uploadLimits = createResource({
+	url: 'seminary.seminary.lesson_media.get_upload_limits',
+	cache: ['uploadLimits'],
+	auto: true,
+})
+
+/**
+ * Returns an error string when `file` exceeds the allowed upload size, or
+ * undefined when it is fine — matching frappe-ui FileUploader's `validateFile`
+ * contract (a returned string blocks the upload and is shown to the user).
+ */
+export function validateFileSize(file) {
+	const maxBytes = uploadLimits.data?.max_upload_bytes
+	if (maxBytes && file.size > maxBytes) {
+		return __('"{0}" is too large ({1} MB). The maximum upload size is {2} MB.').format(
+			file.name,
+			Math.round(file.size / (1024 * 1024)),
+			uploadLimits.data.max_upload_mb
+		)
+	}
 }
 
 export function formatNumberIntoCurrency(number, currency) {
@@ -306,6 +333,12 @@ export const getEditorTools = (course = null, courseName = null) => {
 					},
 				},
 			},
+		},
+		iframe: {
+			class: IframeEmbed,
+		},
+		recordVideo: {
+			class: VideoRecord,
 		},
 		folder: {
 			class: FolderTool,

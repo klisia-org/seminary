@@ -255,6 +255,11 @@ doc_events = {
     "Academic Term": {
         "on_update": "seminary.tasks.refresh_term_flags_on_save",
     },
+    # Hard size ceiling for in-platform lesson recordings (the client-side
+    # length cap can be bypassed). Scoped to recorder output by filename prefix.
+    "File": {
+        "validate": "seminary.seminary.lesson_media.enforce_recording_limits",
+    },
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },

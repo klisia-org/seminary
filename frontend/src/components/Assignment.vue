@@ -283,13 +283,18 @@
 						<FileUploader v-if="!submissionFile" :fileTypes="getType()" :validateFile="validateFile"
 							@success="(file) => saveSubmission(file)">
 							<template #default="{ uploading, progress, openFileSelector }">
-								<Button @click="openFileSelector" :loading="uploading">
-									{{
-										uploading
-											? __('Uploading {0}%').format(progress)
-											: __('Upload File')
-									}}
-								</Button>
+								<div class="flex items-center gap-2">
+									<Button @click="openFileSelector" :loading="uploading">
+										{{
+											uploading
+												? __('Uploading {0}%').format(progress)
+												: __('Upload File')
+										}}
+									</Button>
+									<span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
+										{{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+									</span>
+								</div>
 							</template>
 						</FileUploader>
 						<div v-else>
@@ -358,7 +363,7 @@ import {
 } from 'frappe-ui'
 import { computed, inject, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { FileText, X } from 'lucide-vue-next'
-import { getFileSize } from '@/utils'
+import { getFileSize, uploadLimits, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
@@ -659,6 +664,7 @@ const validateFile = (file) => {
 	} else if (type == 'PDF' && !['pdf'].includes(extension)) {
 		return __('Only PDF file is allowed.')
 	}
+	return validateFileSize(file)
 }
 
 const removeSubmission = () => {

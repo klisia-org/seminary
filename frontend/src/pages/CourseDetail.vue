@@ -18,6 +18,45 @@
 					<div v-html="course.data.course_description_for_lms"
 						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
 					</div>
+					<div class="mt-6 flex flex-wrap items-center gap-2">
+						<Badge v-if="course.data.modality" theme="blue" size="lg">
+							<template #prefix>
+								<MonitorPlay class="h-3.5 w-3.5" />
+							</template>
+							{{ __(course.data.modality) }}
+						</Badge>
+						<Badge v-if="locationLabel" theme="gray" size="lg">
+							<template #prefix>
+								<MapPin class="h-3.5 w-3.5" />
+							</template>
+							{{ locationLabel }}
+						</Badge>
+						<router-link v-if="scheduleLabel"
+							:to="{ name: 'CourseCalendar', params: { courseName: course.data.name } }"
+							class="no-underline">
+							<Badge theme="gray" size="lg" class="cursor-pointer hover:opacity-80 transition-opacity">
+								<template #prefix>
+									<CalendarDays class="h-3.5 w-3.5" />
+								</template>
+								{{ scheduleLabel }}
+							</Badge>
+						</router-link>
+						<Badge v-if="timeLabel" theme="gray" size="lg">
+							<template #prefix>
+								<Clock class="h-3.5 w-3.5" />
+							</template>
+							{{ timeLabel }}
+						</Badge>
+						<a v-if="course.data.web_meeting" :href="course.data.web_meeting" target="_blank"
+							rel="noopener noreferrer" class="no-underline">
+							<Badge theme="green" size="lg" class="cursor-pointer hover:opacity-80 transition-opacity">
+								<template #prefix>
+									<Video class="h-3.5 w-3.5" />
+								</template>
+								{{ __('Join Online') }}
+							</Badge>
+						</a>
+					</div>
 					<div class="mt-10">
 						<div v-if="course.data.instructors.length === 1" class="text-lg font-semibold">{{
 							__('Instructor') }}</div>
@@ -92,13 +131,13 @@
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
-import { updateDocumentTitle } from '@/utils'
+import { updateDocumentTitle, formatTime } from '@/utils'
 import { useRouter } from 'vue-router'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
-import { Send, Mail } from 'lucide-vue-next'
+import { Send, Mail, MapPin, CalendarDays, Clock, MonitorPlay, Video } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
 
 const user = inject('$user')
@@ -158,6 +197,24 @@ const canEditOutline = computed(() => {
 		roles.is_instructor ||
 		roles.is_evaluator
 	)
+})
+
+const locationLabel = computed(() => {
+	const loc = course.data?.location
+	if (!loc) return ''
+	return [loc.campus, loc.building, loc.room].filter(Boolean).join(' › ')
+})
+
+const scheduleLabel = computed(() => {
+	const days = course.data?.days_of_week || []
+	if (!days.length) return ''
+	return days.join(', ')
+})
+
+const timeLabel = computed(() => {
+	const { from_time, to_time } = course.data || {}
+	if (!from_time || !to_time) return ''
+	return `${formatTime(from_time)}–${formatTime(to_time)}`
 })
 
 const breadcrumbs = computed(() => {

@@ -361,7 +361,7 @@ import { computed, inject, onMounted, onBeforeUnmount, ref, watch, toRaw } from 
 import dayjsModule from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { FileText, X } from 'lucide-vue-next'
-import { getFileSize } from '@/utils'
+import { getFileSize, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import LightEditor from '@/components/LightEditor.vue'
@@ -999,6 +999,8 @@ const getType = () => {
 }
 
 const validateFile = (file) => {
+	const sizeError = validateFileSize(file)
+	if (sizeError) return sizeError
 	const extension = file.name.split('.').pop()?.toLowerCase()
 	const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xml']
 	const isImage = file.type?.startsWith('image/')

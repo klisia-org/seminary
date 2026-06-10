@@ -28,6 +28,7 @@
   "from_time",
   "to_time",
   "title",
+  "web_meeting",
   "section_break_7",
   "monday_column",
   "monday",
@@ -136,7 +137,7 @@
   },
   {
    "default": "Auto (from program)",
-   "description": "Auto = each student's limit = their Program's max absence % × scheduled meetings (auto-disabled for Virtual). Custom = the fixed number below applies to everyone. Disabled = no attendance limit for this course. Editable only by the registrar / Program Chair.",
+   "description": "Auto = each student's limit = their Program's max absence % \u00d7 scheduled meetings (auto-disabled for Virtual). Custom = the fixed number below applies to everyone. Disabled = no attendance limit for this course. Editable only by the registrar / Program Chair.",
    "fieldname": "attendance_policy",
    "fieldtype": "Select",
    "label": "Attendance Policy",
@@ -600,13 +601,18 @@
    "fieldtype": "Data",
    "label": "Section",
    "reqd": 1
+  },
+  {
+   "fieldname": "web_meeting",
+   "fieldtype": "Data",
+   "label": "Web Meeting Link"
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-05-26 14:48:32.253681",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-10 16:50:57.048600",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
  "naming_rule": "Expression (old style)",

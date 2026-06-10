@@ -584,11 +584,42 @@ def get_course_details(course):
             "enrollments",
             "lessons",
             "calendar_token",
+            "room",
+            "web_meeting",
+            "from_time",
+            "to_time",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
         ],
         as_dict=1,
     )
 
     course_details.instructors = get_instructors(course_details.name)
+    course_details.location = get_course_location(course_details.room)
+    course_details.days_of_week = [
+        day.capitalize()
+        for day in (
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        )
+        if course_details.get(day)
+    ]
+    course_details.meeting_dates = frappe.get_all(
+        "Course Schedule Meeting Dates",
+        filters={"parent": course_details.name, "parenttype": "Course Schedule"},
+        fields=["cs_meetdate", "cs_fromtime", "cs_totime"],
+        order_by="cs_meetdate asc",
+    )
 
     if frappe.session.user == "Guest":
         course_details.membership = None
@@ -607,6 +638,38 @@ def get_course_details(course):
         )
 
     return course_details
+
+
+def get_course_location(room):
+    """Resolve a Room link into its Campus / Building / Room labels.
+
+    Returns a dict with campus, building and room labels (any of which may be
+    None) so the frontend can render whatever location detail is available.
+    """
+    if not room:
+        return {"room": None, "building": None, "campus": None}
+
+    room_doc = frappe.db.get_value(
+        "Room",
+        room,
+        ["room_name", "room_number", "building", "campus"],
+        as_dict=1,
+    )
+    if not room_doc:
+        return {"room": None, "building": None, "campus": None}
+
+    room_label = room_doc.room_name or room_doc.room_number or room
+    building_label = (
+        frappe.db.get_value("Building", room_doc.building, "building_name")
+        if room_doc.building
+        else None
+    )
+
+    return {
+        "room": room_label,
+        "building": building_label,
+        "campus": room_doc.campus,
+    }
 
 
 @frappe.whitelist()

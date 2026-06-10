@@ -12,7 +12,7 @@
 						<div class="relative group flex-shrink-0">
 							<Avatar size="3xl" class="h-12 w-12" :label="studentInfo.student_name"
 								:image="editImage || studentInfo.image || null" />
-							<FileUploader :fileTypes="['image/*']" @success="(f) => { editImage = f.file_url }">
+							<FileUploader :fileTypes="['image/*']" :validate-file="validateFileSize" @success="(f) => { editImage = f.file_url }">
 								<template #default="{ uploading, openFileSelector }">
 									<button @click="openFileSelector"
 										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -121,7 +121,7 @@
 						<div class="relative group flex-shrink-0">
 							<Avatar size="3xl" class="h-12 w-12" :label="instructorInfo.instructor_name"
 								:image="editProfileImage || instructorInfo.profileimage || null" />
-							<FileUploader :fileTypes="['image/*']" @success="(f) => { editProfileImage = f.file_url }">
+							<FileUploader :fileTypes="['image/*']" :validate-file="validateFileSize" @success="(f) => { editProfileImage = f.file_url }">
 								<template #default="{ uploading, openFileSelector }">
 									<button @click="openFileSelector"
 										class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -231,6 +231,7 @@
 <script setup>
 import { Dialog, Avatar, FeatherIcon, FileUploader, createResource } from 'frappe-ui'
 import { ref, computed, watchEffect } from 'vue'
+import { validateFileSize } from '@/utils'
 import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
 import { useTheme } from '@/composables/useTheme'
