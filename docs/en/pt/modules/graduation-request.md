@@ -71,11 +71,7 @@ Se o programa estiver marcado como **Gratuito**, nenhuma fatura é gerada e a so
 
 ## O fluxo de trabalho
 
-```
-Rascunho  →  Aguardando Pagamento  →  Revisão Acadêmica  →  Revisão Financeira  →  Aprovado
-            (gratuito pula →                ↗)                                    ↓
-                                                                         Cancelado  (qualquer estado)
-```
+<LifecycleDiagram type="graduationRequest" />
 
 | Estado                   | Status do documento | Quem pode editar    | O que significa                                                                                                                                                                                             |
 | ------------------------ | ------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

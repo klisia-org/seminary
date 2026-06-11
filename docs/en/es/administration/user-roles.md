@@ -1,14 +1,38 @@
 # Roles de usuario
 
-SeminaryERP utiliza el sistema de permisos basado en roles de Frappe para controlar el acceso.
+SeminaryERP utiliza el sistema de permisos basado en roles de Frappe para controlar el acceso. The
+module defines and owns the following roles (see ADR 034). A user may hold more
+than one role.
 
-## Roles principales
+## Staff roles (Desk)
 
-- **Seminary Admin** — acceso completo a todos los doctypes del seminario y a la configuración
-- **Instructor** — gestiona cursos, califica entregas, modera discusiones
-- **Student** — se inscribe en cursos, entrega trabajos, participa en discusiones
-- **Evaluator** — califica entregas sin los privilegios completos de instructor
+- **Seminary Manager** — module administrator. Full access to academic and
+  configuration doctypes, including workflow actions.
+- **Registrar** — student-records lifecycle: admissions, enrollment, academic
+  terms, withdrawals, graduation and transcripts, and disciplinary records.
+- **Program Chair** — programs and curriculum authority: programs, courses,
+  assessments, grading, and academic policy. (This role was previously named
+  _Academics User_.)
+- **Instructor** — teaches and grades their own courses, and may report
+  disciplinary incidents.
+
+## Portal roles (frontend)
+
+- **Student** — enrols in courses, submits work, and views their own records and
+  published curriculum.
+- **Alumni** — graduated students; access to the alumni portal and their own
+  records.
+- **Student Applicant** — prospective students completing the application
+  web form.
 
 ## Acceso: Portal vs Desk
 
-Los estudiantes y los instructores utilizan principalmente el portal del LMS (frontend). Los administradores trabajan en Frappe Desk para la configuración y la generación de informes.
+Students, alumni and applicants use the LMS portal (frontend) and have no Desk
+access; they are redirected to the portal on login. Staff work in the Frappe
+Desk for configuration, records and reporting.
+
+## Notas
+
+- `Program Chair` and `Seminary Manager` are created by the app on install — no
+  external (ERPNext Education) dependency.
+- `System Manager` (Frappe core) retains super-admin access everywhere.

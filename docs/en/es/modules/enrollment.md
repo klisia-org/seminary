@@ -16,10 +16,7 @@ Los estudiantes pueden autoinscribirse a través del portal del LMS durante las 
 
 A Course Enrollment Individual moves through a four-state workflow:
 
-```
-Draft  →  Awaiting Payment  →  Submitted  →  Withdrawn
-   ↘─────────────────────────────↗
-```
+<LifecycleDiagram type="enrollment" />
 
 - **Draft** — created but not yet submitted; nothing has happened beyond saving the row
 - **Awaiting Payment** — submitted, Sales Invoices generated, but the student has not been added to the course roster yet (no LMS access)
@@ -28,11 +25,11 @@ Draft  →  Awaiting Payment  →  Submitted  →  Withdrawn
 
 Which path the CEI takes from Draft depends on the **Program** the course belongs to:
 
-| Program flags                               | Draft submits to | Why                                        |
-| ------------------------------------------- | ---------------- | ------------------------------------------ |
-| Free Program (`is_free`) | Enviado          | No invoicing, no payment to gate on        |
-| Paid + Require Payment Before Enrollment    | Awaiting Payment | Hold the seat until the student pays       |
-| Paid + payment not required                 | Enviado          | Invoice the student but enroll them anyway |
+| Program flags                               | Draft submits to    | Why                                        |
+| ------------------------------------------- | ------------------- | ------------------------------------------ |
+| Free Program (`is_free`) | Enviado             | No invoicing, no payment to gate on        |
+| Paid + Require Payment Before Enrollment    | A la espera de pago | Hold the seat until the student pays       |
+| Paid + payment not required                 | Enviado             | Invoice the student but enroll them anyway |
 
 For programs configured as _Require Payment Before Enrollment_, the CEI auto-advances from **Awaiting Payment** to **Submitted** when the student's cumulative payments cross the program's _Minimum Payment %_ threshold (default 100%). For mixed-payer scenarios (student + scholarship + third party), the threshold is computed against the _total_ invoiced amount across all linked Sales Invoices.
 

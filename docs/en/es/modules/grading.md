@@ -210,7 +210,7 @@ get there.
   separate Offline assessment if you want to track participation
   apart from the discussion's content.
 
-## Related
+## Relacionados
 
 - [Discussion Activities](discussions.md) — setup and reply requirements
 - [Enrollment](enrollment.md) — who appears in the Gradebook rows

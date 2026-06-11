@@ -88,18 +88,18 @@ Depois que as Categorias de Taxas são criadas, você as usará durante a criaç
 
 ## 9. Ano Letivo
 
-Crie seu primeiro **ano letivo**. É um recipiente para Períodos Letivos — os períodos não podem ultrapassar os limites do seu ano. Algumas taxas e tarefas administrativas são agendadas uma vez por ano.
+Create your first [**Academic Year**](../modules/academic-calendar.md#academic-year). É um recipiente para Períodos Letivos — os períodos não podem ultrapassar os limites do seu ano. Algumas taxas e tarefas administrativas são agendadas uma vez por ano.
 
 ## 10. Período Letivo
 
 Crie seu primeiro período acadêmico
 
 1. Defina as datas de início e término
-2. Configurar janelas de matrícula e prazos de cancelamento de matrícula - ver [Calendário Acadêmico](../modules/academic-calendar.md) e [Cancelamento de Matrícula](../modules/withdrawal.md) sobre como estas datas determinam regras posteriores.
+2. Configurar janelas de matrícula e prazos de cancelamento de matrícula - ver [Calendário Acadêmico](../modules/academic-calendar.md#academic-term) e [Cancelamento de Matrícula](../modules/withdrawal.md) sobre como estas datas determinam regras posteriores.
 
 ## 11) Programa
 
-Um **programa** é a estrutura de currículos em que os alunos se inscrevem (por exemplo, _M.Div._, _Certificado em Estudos Bíblicos_). Ele define créditos/termos necessários, cursos, áreas de concentração, grupos e taxas ao nível do programa. Crie pelo menos um programa antes de abrir as inscrições.
+A [**Program**](../modules/program.md) is the curriculum structure students enroll into (e.g. _M.Div._, _Certificate in Biblical Studies_). Ele define créditos/termos necessários, cursos, áreas de concentração, grupos e taxas ao nível do programa. Crie pelo menos um programa antes de abrir as inscrições.
 Modelagem detalhada do programa (grupos, áreas de concentração, requisitos de crédito) é abrangida por [Matrículas](../modules/enrollment.md). Durante a matrícula do programa, também será estabelecido **quem** paga cada categoria de taxas e qual porcentagem (Pagador por Categoria da Taxa).
 
 Todas as categorias de taxas para qualquer curso desse programa **devem** primeiro ser vinculado no nível do Programa.
@@ -142,11 +142,7 @@ O relatório do **Risco de Tempo-para-Graduação** (Relatórios → Seminário)
 
 Cada **Curso Agendado** se move através de um fluxo de trabalho de seis estados que os agendadores diários avançam automaticamente (quando [Seção 2](#_2-seminary-settings) "Avanço automático" está ligado) ou que a secretaria de alunos muda manualmente:
 
-```
-Rascunho → Abrir para matrícula → Matrícula fechada → Avaliação →
-            Fechada
-        Cancelado (terminal)
-```
+<LifecycleDiagram type="courseSchedule" />
 
 - **Rascunho** — criado, ainda não visível para os alunos. O agendador promove a Abertura para Matrícula quando chega a data de matrícula definida.
 - **Aberto para matrícula** — os alunos podem solicitar inscrição no portal.

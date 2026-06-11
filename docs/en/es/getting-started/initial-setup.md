@@ -88,18 +88,18 @@ Once Fee Categories are created, you will use them during the creation of Progra
 
 ## 9. Estructura del Año Académico
 
-Create your first **Academic Year**. It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
+Create your first [**Academic Year**](../modules/academic-calendar.md#academic-year). It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
 
 ## 10. Plazo Académico
 
 Cree su primer período académico
 
 1. Establezca las fechas de inicio y fin
-2. Configure enrollment windows and withdrawal deadlines — see [Academic Calendar](../modules/academic-calendar.md) and [Withdrawal](../modules/withdrawal.md) for how these dates drive downstream rules
+2. Configure enrollment windows and withdrawal deadlines — see [Academic Calendar](../modules/academic-calendar.md#academic-term) and [Withdrawal](../modules/withdrawal.md) for how these dates drive downstream rules
 
 ## 11) Programa
 
-A **Program** is the curriculum structure students enroll into (e.g. _M.Div._, _Certificate in Biblical Studies_). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment.
+A [**Program**](../modules/program.md) is the curriculum structure students enroll into (e.g. _M.Div._, _Certificate in Biblical Studies_). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment.
 Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md). During program enrollment, it will also be established **who** pays each fee category and what percentage (Payers Fee Category).
 
 All Fee Categories for any course of that program **must** first be linked in the Program level.
@@ -142,11 +142,7 @@ The companion **Time-to-Graduate Risk** report (Reports → Seminary) lists acti
 
 Each **Course Schedule** moves through a six-state workflow that the daily scheduler advances automatically (when [Section 2](#_2-seminary-settings) "Auto-advance" is on) or that registrars walk through manually:
 
-```
-Draft → Open for Enrollment → Enrollment Closed → Grading → Closed
-            ↓                       ↓
-        Cancelled               Cancelled (terminal)
-```
+<LifecycleDiagram type="courseSchedule" />
 
 - **Draft** — created, not yet visible to students. The scheduler promotes to Open for Enrollment when the resolved enrollment-open date arrives.
 - **Open for Enrollment** — students can request enrollment from the portal.
@@ -265,11 +261,11 @@ If you have a small numer of students and prefer to do it manually, upon creatio
 
 | _**Import**_ in this order                        | _**Input manually**_ in this order                |
 | ------------------------------------------------- | ------------------------------------------------- |
-| 1. Users                   | 1. Estudiantes             |
+| 1. Usuarios                | 1. Estudiantes             |
 | 2. Clientes                | 2. Cursos                  |
-| 3. Estudiantes             | 3. Holiday List            |
+| 3. Estudiantes             | 3. Lista de días festivos  |
 | 4. Cursos                  | 4. Inscripción al programa |
-| 5. Holiday List            |                                                   |
+| 5. Lista de días festivos  |                                                   |
 | 6. Inscripción al programa |                                                   |
 
 Then, you need to link courses to your programs.

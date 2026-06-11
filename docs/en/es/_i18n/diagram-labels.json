@@ -1,0 +1,19 @@
+{
+  "enrollment.draft": "Borrador",
+  "enrollment.awaitingPayment": "A la espera de pago",
+  "enrollment.submitted": "Enviado",
+  "enrollment.withdrawn": "Withdrawn",
+  "courseSchedule.draft": "Borrador",
+  "courseSchedule.openForEnrollment": "Abierto para la inscripción",
+  "courseSchedule.enrollmentClosed": "Enrollment Closed",
+  "courseSchedule.grading": "Calificación",
+  "courseSchedule.closed": "Cerrado",
+  "courseSchedule.cancelled": "Cancelado",
+  "graduationRequest.draft": "Borrador",
+  "graduationRequest.awaitingPayment": "A la espera de pago",
+  "graduationRequest.academicReview": "Revisión Académica",
+  "graduationRequest.financialReview": "Revisión Financiera",
+  "graduationRequest.approved": "Aprobado",
+  "graduationRequest.cancelled": "Cancelado",
+  "graduationRequest.freeSkips": "free programs skip"
+}

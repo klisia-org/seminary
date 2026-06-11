@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-05-19 05:57-0609\n"
-"PO-Revision-Date: 2026-05-20 07:40\n"
+"PO-Revision-Date: 2026-06-11 08:43\n"
 "Last-Translator: support@seminaryerp.org\n"
 "Language-Team: Spanish\n"
 "MIME-Version: 1.0\n"
@@ -36,7 +36,7 @@ msgstr " para calificar"
 
 #: seminary/seminary/report/student_program_progress/student_program_progress.py:51
 msgid "% Complete"
-msgstr ""
+msgstr "% Completado"
 
 #: seminary/seminary/report/unpaid_instructor_log/unpaid_instructor_log.py:68
 msgid "% Paid"
@@ -1159,7 +1159,7 @@ msgstr ""
 #. 'Seminary Announcement'
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json
 msgid "All instructors teaching this term"
-msgstr ""
+msgstr "Todos los instructores que enseñan en este período"
 
 #: seminary/seminary/doctype/exam_activity/exam_activity.py:50
 #: seminary/seminary/doctype/quiz/quiz.py:50
@@ -1170,7 +1170,7 @@ msgstr "Todas las preguntas deben tener los mismos puntos si se establece un lí
 #. Announcement'
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json
 msgid "All students enrolled this term"
-msgstr ""
+msgstr "Todos los estudiantes inscritos en este período"
 
 #. Description of the 'All students enrolled this term' (Check) field in
 #. DocType 'Seminary Announcement'
@@ -1419,7 +1419,7 @@ msgstr "El anuncio se ha enviado correctamente"
 #: seminary/public/frontend/assets/Announcements-D_TpyOqc.js:1
 #: seminary/public/frontend/assets/index-BC7kSMNz.js:2
 msgid "Announcements"
-msgstr ""
+msgstr "Anuncios"
 
 #. Label of the answer (Text Editor) field in DocType 'Assignment Submission'
 #. Label of the answer (Text Editor) field in DocType 'Exam Question Result'
@@ -1881,7 +1881,7 @@ msgstr "Asistencia actualizada correctamente"
 #. Announcement'
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json
 msgid "Audience"
-msgstr ""
+msgstr "Audiencia"
 
 #. Label of the audit_section (Section Break) field in DocType 'Partner
 #. Transcript Import Batch'
@@ -3458,7 +3458,7 @@ msgstr ""
 #: seminary/seminary/doctype/course_withdrawal_request/course_withdrawal_request.json
 #: seminary/seminary/doctype/withdrawal_courses/withdrawal_courses.json
 msgid "Course Withdrawal Request"
-msgstr ""
+msgstr "Solicitud de retiro de curso"
 
 #. Label of a Link in the Seminary Workspace
 #: seminary/seminary/workspace/seminary/seminary.json
@@ -4991,7 +4991,7 @@ msgstr ""
 #: seminary/seminary/doctype/fee_category/fee_category.json
 #: seminary/seminary/doctype/instructor_category_rate/instructor_category_rate.json
 msgid "Effective From"
-msgstr ""
+msgstr "Vigente desde"
 
 #: frontend/src/pages/Enrollment.vue:223
 #: seminary/public/frontend/assets/Enrollment-B1u1S58l.js:1
@@ -6551,7 +6551,7 @@ msgstr ""
 #: seminary/seminary/doctype/diploma/diploma.json
 #: seminary/seminary/doctype/graduation_request/graduation_request.json
 msgid "Graduation Request"
-msgstr ""
+msgstr "Solicitud de Graduación"
 
 #. Label of the graduation_request_trigger (Select) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
@@ -6629,7 +6629,7 @@ msgstr ""
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.json
 #: seminary/seminary/workspace/getting_started_seminaryerp/getting_started_seminaryerp.json
 msgid "Graduation Requirements"
-msgstr ""
+msgstr "Requisitos de Graduación"
 
 #. Label of the grand_total (Currency) field in DocType 'Student Balance
 #. Invoice'
@@ -7379,7 +7379,7 @@ msgstr "Registros del instructor que serán creados por"
 #. Label of the instructor_type (Select) field in DocType 'Instructor'
 #: seminary/seminary/doctype/instructor/instructor.json
 msgid "Instructor Type"
-msgstr ""
+msgstr "Tipo de instructor"
 
 #: seminary/seminary/doctype/instructor/instructor.py:44
 msgid "Instructor Type {0} requires an Employee link for payroll."
@@ -9515,12 +9515,12 @@ msgstr ""
 #. Label of the courses (Table) field in DocType 'Seminary Announcement'
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json
 msgid "Only these Course Schedules"
-msgstr ""
+msgstr "Solo estos Horarios del curso"
 
 #. Label of the programs (Table) field in DocType 'Seminary Announcement'
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.json
 msgid "Only these Programs"
-msgstr ""
+msgstr "Solo estos programas"
 
 #: frontend/src/pages/CourseWithdrawalRequest.vue:68
 #: seminary/public/frontend/assets/CourseWithdrawalRequest-BLVJTnBm.js:1
@@ -10000,7 +10000,7 @@ msgstr ""
 #: seminary/seminary/doctype/instructor_category_rate/instructor_category_rate.json
 #: seminary/seminary/doctype/salary_slip_instructor_summary/salary_slip_instructor_summary.json
 msgid "Pay Mode"
-msgstr ""
+msgstr "Modo de pago"
 
 #: frontend/src/pages/Fees.vue:49
 msgid "Pay Partial"
@@ -10184,7 +10184,7 @@ msgstr ""
 #: seminary/seminary/doctype/instructor_category_rate/instructor_category_rate.json
 #: seminary/seminary/doctype/salary_slip_instructor_summary/salary_slip_instructor_summary.json
 msgid "Per-Student"
-msgstr ""
+msgstr "Por estudiante"
 
 #. Label of the percentage (Float) field in DocType 'Assignment Submission'
 #. Label of the percentage (Float) field in DocType 'Discussion Submission'
@@ -10363,7 +10363,7 @@ msgstr "Por favor, inicie sesión para acceder al cuestionario."
 #. Label of the ds_body (Text Editor) field in DocType 'Student Applicant'
 #: seminary/seminary/doctype/student_applicant/student_applicant.json
 msgid "Please read carefully and check if you agree with our doctrinal statement"
-msgstr ""
+msgstr "Lee atentamente y marca si estás de acuerdo con nuestra declaración doctrinal"
 
 #. Label of a field in the student-applicant Web Form
 #: seminary/seminary/web_form/student_applicant/student_applicant.json
@@ -10619,11 +10619,11 @@ msgstr "Presencial"
 
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.js:63
 msgid "Preview"
-msgstr ""
+msgstr "Vista previa"
 
 #: seminary/seminary/doctype/seminary_announcement/seminary_announcement.js:4
 msgid "Preview Recipients"
-msgstr ""
+msgstr "Vista previa de destinatarios"
 
 #: seminary/seminary/api.py:4435
 msgid "Preview is only available on draft announcements."
@@ -15648,7 +15648,7 @@ msgstr "¿Quieres unirte a nosotros?"
 #. Label of the warning (Data) field in DocType 'Partner Transcript Import Row'
 #: seminary/seminary/doctype/partner_transcript_import_row/partner_transcript_import_row.json
 msgid "Warning"
-msgstr ""
+msgstr "Advertencia"
 
 #. Description of the 'Conversion Warning' (Select) field in DocType 'Program
 #. Enrollment Course'
@@ -15824,7 +15824,7 @@ msgstr ""
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.json
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.js:80
 msgid "Withdrawal"
-msgstr ""
+msgstr "Retiro"
 
 #. Label of the section_break_courses (Section Break) field in DocType 'Course
 #. Withdrawal Request'
@@ -15853,7 +15853,7 @@ msgstr ""
 #: seminary/seminary/doctype/withdrawal_reasons/withdrawal_reasons.json
 #: seminary/seminary/workspace/academics/academics.json
 msgid "Withdrawal Reasons"
-msgstr ""
+msgstr "Motivos de retiro"
 
 #. Name of a DocType
 #. Label of the withdrawal_refunds (Table) field in DocType 'Withdrawal Rules'
@@ -15892,7 +15892,7 @@ msgstr ""
 #. Name of a DocType
 #: seminary/seminary/doctype/withdrawal_rules/withdrawal_rules.json
 msgid "Withdrawal Rules"
-msgstr ""
+msgstr "Reglas de retiro"
 
 #. Label of the section_break_scope (Section Break) field in DocType 'Course
 #. Withdrawal Request'
@@ -16338,7 +16338,7 @@ msgstr "crédito"
 #: seminary/public/frontend/assets/ProgramAudit-CZWJsEst.js:1
 #: seminary/seminary/doctype/program_enrollment/program_enrollment.js:325
 msgid "due"
-msgstr ""
+msgstr "vence"
 
 #. Description of the Onboarding Step 'Decide when invoices are due'
 #: seminary/seminary/onboarding_step/payment_terms/payment_terms.json
