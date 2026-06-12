@@ -39,26 +39,7 @@ frappe.ui.form.on("Payers Fee Category PE", {
                 console.log("Error calling check_percentages:", e);
             });
 
-        console.log("Calling add_scholarship automatically after save");
-        frm.call('add_scholarship')
-            .then(r => {
-                console.log("add_scholarship called successfully");
-                frm.save()
-                    .then(() => {
-                        frm.reload_doc(); // Reload the form after saving
-                    });
-            })
-            .catch(e => {
-                console.log("Error calling add_scholarship:", e);
-            });
-    },
-
-    onload(frm) {
-        frm.set_query("scholarship", function (doc, cdt, cdn) {
-            let row = frappe.get_doc(cdt, cdn);
-            return {
-                query: "seminary.seminary.api.get_scholarships"
-            };
-        });
     }
+    // Scholarships are no longer baked into payer rows: they are granted as
+    // Scholarship Awards and applied at invoice time (see billing.resolve_scholarship).
 });

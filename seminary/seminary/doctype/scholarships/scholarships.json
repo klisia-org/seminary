@@ -7,8 +7,25 @@
  "engine": "InnoDB",
  "field_order": [
   "scholarship",
+  "scholarship_type",
   "program",
-  "sch_discounts"
+  "column_break_head",
+  "is_active",
+  "show_on_portal",
+  "discounts_section",
+  "sch_discounts",
+  "funding_section",
+  "cost_center",
+  "column_break_fund",
+  "budget_slots",
+  "granting_section",
+  "min_gpa",
+  "min_credits_total",
+  "column_break_grant",
+  "notes",
+  "retention_section",
+  "retain_min_credits_per_term",
+  "retain_min_gpa"
  ],
  "fields": [
   {
@@ -16,7 +33,17 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Scholarship"
+   "label": "Scholarship",
+   "reqd": 1
+  },
+  {
+   "default": "Merit",
+   "fieldname": "scholarship_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "Merit\nNeed\nWork-Study\nStaff\nOther"
   },
   {
    "fieldname": "program",
@@ -24,13 +51,104 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Program",
-   "options": "Program"
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "When unchecked, no new awards can be granted from this scholarship.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active"
+  },
+  {
+   "default": "0",
+   "description": "Per-template portal gate. Combined with Seminary Settings → Allow Portal Scholarship, both must be on for students to see/apply.",
+   "fieldname": "show_on_portal",
+   "fieldtype": "Check",
+   "label": "Show on Portal"
+  },
+  {
+   "fieldname": "discounts_section",
+   "fieldtype": "Section Break",
+   "label": "Discounts"
   },
   {
    "fieldname": "sch_discounts",
    "fieldtype": "Table",
    "label": "Discounts per fee",
    "options": "Scholarship Discounts"
+  },
+  {
+   "fieldname": "funding_section",
+   "fieldtype": "Section Break",
+   "label": "Funding"
+  },
+  {
+   "description": "Cost center the forgiveness is booked to. Defaults from Seminary Settings → Scholarship Cost Center; override to budget this scholarship separately (the $ ceiling lives in an ERPNext Budget against this cost center).",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_fund",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Maximum number of concurrent active awards. 0 = unlimited.",
+   "fieldname": "budget_slots",
+   "fieldtype": "Int",
+   "label": "Budget Slots"
+  },
+  {
+   "fieldname": "granting_section",
+   "fieldtype": "Section Break",
+   "label": "Granting Criteria"
+  },
+  {
+   "default": "0",
+   "fieldname": "min_gpa",
+   "fieldtype": "Float",
+   "label": "Minimum GPA"
+  },
+  {
+   "default": "0",
+   "fieldname": "min_credits_total",
+   "fieldtype": "Int",
+   "label": "Minimum Total Credits"
+  },
+  {
+   "fieldname": "column_break_grant",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Requirements / Notes"
+  },
+  {
+   "fieldname": "retention_section",
+   "fieldtype": "Section Break",
+   "label": "Retention Criteria"
+  },
+  {
+   "default": "0",
+   "description": "Minimum credit hours the student must enroll in each term to keep the award. 0 = no requirement.",
+   "fieldname": "retain_min_credits_per_term",
+   "fieldtype": "Int",
+   "label": "Min Credits per Term"
+  },
+  {
+   "default": "0",
+   "fieldname": "retain_min_gpa",
+   "fieldtype": "Float",
+   "label": "Min GPA to Retain"
   }
  ],
  "index_web_pages_for_search": 1,

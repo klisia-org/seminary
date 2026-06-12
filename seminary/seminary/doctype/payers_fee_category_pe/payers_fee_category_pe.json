@@ -10,7 +10,6 @@
   "column_break_gkkm",
   "pf_active",
   "pf_custgroup",
-  "scholarship",
   "section_break_obto",
   "pf_payers",
   "section_break_jxev",
@@ -84,14 +83,6 @@
    "fieldtype": "Link",
    "label": "Student Link",
    "options": "Student"
-  },
-  {
-   "description": "The scholarship will give discounts in the fee categories defined there. You may need to save and reload to see the changes.",
-   "fieldname": "scholarship",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Scholarship",
-   "options": "Scholarships"
   },
   {
    "fieldname": "section_break_pbgg",

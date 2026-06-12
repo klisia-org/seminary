@@ -529,6 +529,7 @@ fixtures = [
                     "Graduation Request Lifecycle",
                     "Program Graduation Requirement Versioning",
                     "Graduation Requirement Item",
+                    "Scholarship Award Lifecycle",
                 ],
             ]
         ],
@@ -570,6 +571,8 @@ fixtures = [
                     "Retired",
                     "Waitlisted",
                     "Unseated",
+                    "Suspended",
+                    "Ended",
                 ],
             ]
         ],
@@ -616,6 +619,9 @@ fixtures = [
                     "Join Waitlist",
                     "Promote",
                     "Release Seat Request",
+                    "Grant Directly",
+                    "Suspend",
+                    "End",
                 ],
             ]
         ],

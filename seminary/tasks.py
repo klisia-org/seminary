@@ -43,6 +43,10 @@ def daily():
 
     process_follow_ups()
 
+    from seminary.seminary.scholarship import review_scholarship_retention
+
+    review_scholarship_retention(today)
+
 
 @frappe.whitelist()
 def hourly():
