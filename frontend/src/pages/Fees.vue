@@ -20,6 +20,9 @@
 			<h3 class="text-lg font-bold text-ink-gray-8">
 				{{ __('Scholarship') }}: {{ studentInfo.scholarships[0].scholarship }}
 			</h3>
+			<p v-if="studentInfo.scholarships[0].effective_to" class="text-xs text-ink-gray-5">
+				{{ __('Awarded until') }}: {{ studentInfo.scholarships[0].effective_to }}
+			</p>
 			<Badge :theme="retentionTheme(studentInfo.scholarships[0].retention_status)"
 				:label="studentInfo.scholarships[0].retention_status || 'OK'" />
 			<!-- Requirements to keep the award -->

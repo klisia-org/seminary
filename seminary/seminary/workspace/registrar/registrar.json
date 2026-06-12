@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":3}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"zCJmpIVH5E\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus and Building\",\"col\":4}},{\"id\":\"TD23W6NHLU\",\"type\":\"card\",\"data\":{\"card_name\":\"Rooms and Requirements\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
+ "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":3}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"zCJmpIVH5E\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus and Building\",\"col\":4}},{\"id\":\"TD23W6NHLU\",\"type\":\"card\",\"data\":{\"card_name\":\"Rooms and Requirements\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"rif-EZ0Jgm\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
  "creation": "2026-06-08 06:32:52.504998",
  "custom_blocks": [
   {
@@ -24,65 +24,6 @@
  "label": "Registrar",
  "link_type": "DocType",
  "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Records",
-   "link_count": 5,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Student",
-   "link_count": 0,
-   "link_to": "Student",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Program Enrollment",
-   "link_count": 0,
-   "link_to": "Program Enrollment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Course Enrollment Individual",
-   "link_count": 0,
-   "link_to": "Course Enrollment Individual",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Academic Term",
-   "link_count": 0,
-   "link_to": "Academic Term",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Term Admission",
-   "link_count": 0,
-   "link_to": "Term Admission",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
   {
    "hidden": 0,
    "is_query_report": 0,
@@ -262,10 +203,129 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 0,
+   "link_to": "Scholarships",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarship Award",
+   "link_count": 0,
+   "link_to": "Scholarship Award",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Students at Scholarship Risk",
+   "link_count": 0,
+   "link_to": "Students at Scholarship Risk",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarship Budget x Given",
+   "link_count": 0,
+   "link_to": "Scholarship Budget vs Given",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Scholarships",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Records",
+   "link_count": 6,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student",
+   "link_count": 0,
+   "link_to": "Student",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Program Enrollment",
+   "link_count": 0,
+   "link_to": "Program Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Course Enrollment Individual",
+   "link_count": 0,
+   "link_to": "Course Enrollment Individual",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Academic Term",
+   "link_count": 0,
+   "link_to": "Academic Term",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Term Admission",
+   "link_count": 0,
+   "link_to": "Term Admission",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Person",
+   "link_count": 0,
+   "link_to": "Person",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-06-10 07:20:06.216184",
- "modified_by": "Administrator",
+ "modified": "2026-06-13 02:44:18.720057",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Registrar",
  "number_cards": [],
