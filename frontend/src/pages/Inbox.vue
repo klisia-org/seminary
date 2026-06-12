@@ -178,48 +178,83 @@
 							{{ __('All students') }} ({{ studentCount }})
 						</label>
 					</div>
+					<Input
+						:value="recipientSearch"
+						:debounce="200"
+						type="text"
+						class="mb-1.5"
+						:placeholder="__('Search recipients...')"
+						@input="(v) => (recipientSearch = v)"
+					/>
 					<div
-						class="max-h-48 space-y-0.5 overflow-y-auto rounded-md border border-outline-gray-2 p-2"
+						class="max-h-56 space-y-1 overflow-y-auto rounded-md border border-outline-gray-2 p-2"
 					>
 						<div v-if="scope.loading" class="text-sm text-ink-gray-5">
 							{{ __('Loading...') }}
 						</div>
-						<template v-for="kind in recipientKinds" :key="kind">
-							<div
-								class="px-1 pt-1 text-xs font-medium uppercase tracking-wide text-ink-gray-5"
+						<Disclosure
+							v-for="group in recipientGroups"
+							:key="group.name + '|' + expandGroups"
+							v-slot="{ open }"
+							:defaultOpen="expandGroups"
+							as="div"
+						>
+							<DisclosureButton
+								class="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left hover:bg-surface-gray-1"
 							>
-								{{ __(kind === 'Instructor' ? 'Instructors' : 'Students') }}
-							</div>
-							<label
-								v-for="r in recipientsByKind(kind)"
-								:key="r.person"
-								class="flex items-center gap-2 rounded px-1 py-0.5 text-sm text-ink-gray-8"
-								:class="
-									compose.allStudents && r.kind === 'Student'
-										? 'opacity-50'
-										: 'cursor-pointer hover:bg-surface-gray-1'
-								"
-							>
-								<input
-									v-model="compose.recipients"
-									type="checkbox"
-									:value="r.person"
-									class="rounded"
-									:disabled="compose.allStudents && r.kind === 'Student'"
+								<ChevronRight
+									class="size-3.5 text-ink-gray-5"
+									:class="{ 'rotate-90 transform': open }"
 								/>
-								<span class="truncate">
-									{{ r.label }}
-									<span v-if="r.courses?.length" class="text-xs text-ink-gray-5">
-										— {{ r.courses.join(', ') }}
-									</span>
+								<span
+									class="text-xs font-medium uppercase tracking-wide text-ink-gray-5"
+								>
+									{{ __(group.name) }}
 								</span>
-							</label>
-						</template>
+								<span class="text-xs text-ink-gray-4">({{ group.items.length }})</span>
+								<span
+									v-if="groupSelectedCount(group)"
+									class="ml-auto rounded-full bg-surface-blue-2 px-1.5 text-xs text-ink-blue-3"
+								>
+									{{ groupSelectedCount(group) }}
+								</span>
+							</DisclosureButton>
+							<DisclosurePanel class="pl-5">
+								<label
+									v-for="r in group.items"
+									:key="r.person"
+									class="flex items-center gap-2 rounded px-1 py-0.5 text-sm text-ink-gray-8"
+									:class="
+										compose.allStudents && r.kind === 'Student'
+											? 'opacity-50'
+											: 'cursor-pointer hover:bg-surface-gray-1'
+									"
+								>
+									<input
+										v-model="compose.recipients"
+										type="checkbox"
+										:value="r.person"
+										class="rounded"
+										:disabled="compose.allStudents && r.kind === 'Student'"
+									/>
+									<span class="truncate">
+										{{ r.label }}
+										<span v-if="r.courses?.length" class="text-xs text-ink-gray-5">
+											— {{ r.courses.join(', ') }}
+										</span>
+									</span>
+								</label>
+							</DisclosurePanel>
+						</Disclosure>
 						<div
-							v-if="!scope.loading && !scope.data?.recipients?.length"
+							v-if="!scope.loading && !recipientGroups.length"
 							class="text-sm text-ink-gray-5"
 						>
-							{{ __('No recipients available.') }}
+							{{
+								scope.data?.recipients?.length
+									? __('No recipients match your search.')
+									: __('No recipients available.')
+							}}
 						</div>
 					</div>
 				</div>
@@ -231,12 +266,54 @@
 					<div class="mb-1.5 text-sm text-ink-gray-5">
 						{{ __('Message') }} <span class="text-ink-red-3">*</span>
 					</div>
-					<textarea
-						v-model="compose.message"
-						rows="6"
-						class="w-full rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-8 focus:ring-0"
+					<RichTextEditor
+						:id="'compose-' + composeKey"
+						:content="composeInitialMessage"
+						:teleport="false"
+						:uploadFunction="privateImageUpload"
 						:placeholder="__('Write your message...')"
-					></textarea>
+						@change="onComposeMessage"
+					/>
+				</div>
+				<div>
+					<div class="mb-1.5 text-sm text-ink-gray-5">{{ __('Attachments') }}</div>
+					<FileUploader
+						:upload-args="{ folder: 'Home/Attachments', private: 1 }"
+						:validate-file="validateFileSize"
+						@success="onAttach"
+					>
+						<template #default="{ uploading, progress, openFileSelector }">
+							<Button
+								variant="outline"
+								:loading="uploading"
+								:label="
+									uploading
+										? __('Uploading {0}%').format(progress)
+										: __('Attach file')
+								"
+								@click="openFileSelector"
+							>
+								<template #prefix><Paperclip class="size-4" /></template>
+							</Button>
+						</template>
+					</FileUploader>
+					<ul v-if="compose.attachments.length" class="mt-2 space-y-1">
+						<li
+							v-for="(a, i) in compose.attachments"
+							:key="a.file_url"
+							class="flex items-center gap-2 text-sm text-ink-gray-7"
+						>
+							<Paperclip class="size-3.5 shrink-0 text-ink-gray-4" />
+							<span class="truncate">{{ a.file_name }}</span>
+							<button
+								class="ml-auto text-ink-gray-4 hover:text-ink-red-3"
+								:title="__('Remove')"
+								@click="compose.attachments.splice(i, 1)"
+							>
+								<X class="size-4" />
+							</button>
+						</li>
+					</ul>
 				</div>
 			</div>
 		</template>
@@ -259,9 +336,25 @@
 
 <script setup>
 import { computed, inject, reactive, ref, watch } from 'vue'
-import { Button, Dialog, Input, createResource } from 'frappe-ui'
-import { Inbox as InboxIcon, SquarePen, Reply } from 'lucide-vue-next'
-import { createToast, timeAgo } from '@/utils'
+import { Button, Dialog, Input, FileUploader, createResource } from 'frappe-ui'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import {
+	Inbox as InboxIcon,
+	SquarePen,
+	Reply,
+	ChevronRight,
+	Paperclip,
+	X,
+} from 'lucide-vue-next'
+import { createToast, timeAgo, validateFileSize } from '@/utils'
+import RichTextEditor from '@/components/RichTextEditor.vue'
+import { useFileUpload } from '../../node_modules/frappe-ui/src/utils/useFileUpload'
+
+// Inline images in a portal message must upload PRIVATE (they're attached to the
+// recipient's log and served by doc-permission, never made public).
+function privateImageUpload(file) {
+	return useFileUpload().upload(file, { private: true })
+}
 
 const user = inject('$user')
 
@@ -325,12 +418,18 @@ function markAllRead() {
 // ----- compose -----
 
 const showCompose = ref(false)
+const composeKey = ref(0)
+// Drives the recipient filter. The field updates this via @input (frappe-ui's
+// <Input> only emits update:modelValue on change/blur, not while typing), with
+// frappe-ui's own :debounce coalescing the re-renders.
+const recipientSearch = ref('')
 const compose = reactive({
 	course: '',
 	recipients: [],
 	allStudents: false,
 	subject: '',
 	message: '',
+	attachments: [],
 })
 
 const scope = createResource({
@@ -347,13 +446,56 @@ watch(
 	}
 )
 
-const recipientKinds = computed(() => {
-	const kinds = new Set((scope.data?.recipients || []).map((r) => r.kind))
-	return ['Instructor', 'Student'].filter((k) => kinds.has(k))
+// Recipients grouped by `group` (role / Instructors / Students / Support …).
+// Group headings are alphabetical (Students last, as the catch-all roster);
+// every group's members are sorted alphabetically by name.
+const recipientGroups = computed(() => {
+	const all = scope.data?.recipients || []
+	const q = recipientSearch.value.trim().toLowerCase()
+	const matched = q
+		? all.filter((r) => (r.label || '').toLowerCase().includes(q))
+		: all
+	const buckets = {}
+	for (const r of matched) {
+		const g = r.group || 'Other'
+		;(buckets[g] = buckets[g] || []).push(r)
+	}
+	const names = Object.keys(buckets)
+		.filter((n) => n !== 'Students')
+		.sort((a, b) => a.localeCompare(b))
+	if (buckets['Students']) names.push('Students')
+	return names.map((name) => ({
+		name,
+		items: [...buckets[name]].sort((a, b) =>
+			(a.label || '').localeCompare(b.label || '')
+		),
+	}))
 })
 
-function recipientsByKind(kind) {
-	return (scope.data?.recipients || []).filter((r) => r.kind === kind)
+// Collapse groups by default so a large roster stays light in the DOM; expand
+// when the user is searching (filtered set is small) or the list is short.
+const expandGroups = computed(
+	() => !!recipientSearch.value || (scope.data?.recipients?.length || 0) <= 40
+)
+
+function groupSelectedCount(group) {
+	if (compose.allStudents && group.name === 'Students') return group.items.length
+	return group.items.filter((r) => compose.recipients.includes(r.person)).length
+}
+
+// The editor owns its content; we only seed it once per compose (via the keyed
+// `composeInitialMessage`) and read edits back, so typing elsewhere never feeds
+// reactive content back into the editor.
+const composeInitialMessage = ref('')
+function onComposeMessage(val) {
+	compose.message = val
+}
+
+function onAttach(file) {
+	compose.attachments.push({
+		file_url: file.file_url,
+		file_name: file.file_name || file.file_url,
+	})
 }
 
 const studentCount = computed(
@@ -369,6 +511,10 @@ function openCompose() {
 	compose.allStudents = false
 	compose.subject = ''
 	compose.message = ''
+	composeInitialMessage.value = ''
+	compose.attachments = []
+	recipientSearch.value = ''
+	composeKey.value += 1
 	scope.fetch()
 	showCompose.value = true
 }
@@ -446,7 +592,8 @@ function submitReply() {
 }
 
 function submitCompose(close) {
-	if ((!compose.recipients.length && !compose.allStudents) || !compose.message.trim()) {
+	const hasText = compose.message.replace(/<[^>]*>/g, '').trim()
+	if ((!compose.recipients.length && !compose.allStudents) || !hasText) {
 		createToast({ title: __('Pick a recipient and write a message.'), icon: 'alert-circle' })
 		return
 	}
@@ -457,6 +604,7 @@ function submitCompose(close) {
 			subject: compose.subject,
 			message: compose.message,
 			course: compose.course || null,
+			attachments: compose.attachments,
 		})
 		.then((r) => {
 			close()

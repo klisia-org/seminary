@@ -92,6 +92,8 @@
   "show_student_application_on_login",
   "default_application_web_form",
   "support_user",
+  "messaging_section",
+  "portal_messaging_rules",
   "facilities_section",
   "sync_rooms_to_asset_locations",
   "root_asset_location"
@@ -379,11 +381,23 @@
    "options": "Web Form"
   },
   {
-   "description": "This is the system user for portal support for students.",
+   "description": "This is the system user for portal support for students. Referenced by the \"Support User\" audience in Portal Messaging Rules below.",
    "fieldname": "support_user",
    "fieldtype": "Link",
    "label": "Support User",
    "options": "User"
+  },
+  {
+   "fieldname": "messaging_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Messaging"
+  },
+  {
+   "description": "Who portal users may message from their Inbox, per sender role. Leave empty to fall back to the built-in defaults (students message their course instructors; staff message the whole roster).",
+   "fieldname": "portal_messaging_rules",
+   "fieldtype": "Table",
+   "label": "Portal Messaging Rules",
+   "options": "Portal Messaging Rule"
   },
   {
    "fieldname": "withdrawal_section",

@@ -28,3 +28,4 @@ seminary.seminary.patches.backfill_facility_locations
 seminary.seminary.patches.create_person_spine
 seminary.seminary.patches.link_customers_to_persons
 seminary.seminary.patches.migrate_channel_provider_settings
+seminary.seminary.patches.seed_portal_messaging_rules

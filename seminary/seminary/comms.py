@@ -339,10 +339,17 @@ def send_message(
     follow_up_template=None,
     follow_up_of=None,
     in_reply_to=None,
+    attach_files=None,
 ):
     """Queue a pre-rendered message (the raw path — used by the Seminary
-    Announcement port, where content is authored, not templated)."""
-    message = _publish_embedded_files(message)
+    Announcement port, where content is authored, not templated).
+
+    For external channels embedded files are flipped public so the recipient's
+    client can fetch them without a session. For In-App (portal inbox) they stay
+    private and are attached to the per-recipient log instead, so Frappe's
+    /private/files ACL serves them only to the recipient/sender (ADR 043)."""
+    if channel != IN_APP_CHANNEL:
+        message = _publish_embedded_files(message)
     person_doc = None
     if person:
         person_doc = (
@@ -400,9 +407,44 @@ def send_message(
         )
     values["provider_account"] = account
     log_name = _insert_log(values, dedupe_key)
+    if log_name and channel == IN_APP_CHANNEL:
+        _attach_inapp_files(log_name, message, attach_files)
     if log_name and not scheduled_at:
         _maybe_deliver_instant(log_name, account)
     return log_name
+
+
+def _attach_inapp_files(log_name, message, attach_files=None):
+    """Attach every private file an In-App message references — explicit
+    attachments plus inline images in the body — to the per-recipient
+    Communication Log, reusing the uploaded bytes (create_attachment_copy).
+    The recipient/sender can then download via Frappe's /private/files ACL
+    because they can read their own log; nothing is made public."""
+    urls = set(attach_files or [])
+    urls |= set(re.findall(r"/private/files/[^\"'\s>)]+", message or ""))
+    for url in urls:
+        base = unquote(url.split("?")[0])
+        name = frappe.db.get_value("File", {"file_url": base}, "name")
+        if not name:
+            continue
+        if frappe.db.exists(
+            "File",
+            {
+                "file_url": base,
+                "attached_to_doctype": "Communication Log",
+                "attached_to_name": log_name,
+            },
+        ):
+            continue
+        try:
+            source = frappe.get_doc("File", name)
+            source.create_attachment_copy(
+                "Communication Log", log_name, ignore_permissions=True
+            )
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), f"Could not attach {url} to {log_name}"
+            )
 
 
 def _maybe_deliver_instant(log_name, account_name):
@@ -418,10 +460,11 @@ def _maybe_deliver_instant(log_name, account_name):
 
 
 def _publish_embedded_files(message):
-    """Message content is being SENT to other people: an embedded private
-    upload (desk Text Editor uploads default to private) would 403 for every
-    recipient — portal inbox and email alike. Flip the referenced Files public
-    and rewrite their URLs in the snapshot."""
+    """Message content SENT over an EXTERNAL channel (Email): the recipient's
+    client fetches embedded images with no Frappe session, so an embedded
+    private upload would 403. Flip the referenced Files public and rewrite their
+    URLs in the snapshot. NOT used for In-App — those stay private and are
+    served by doc-permission (see _attach_inapp_files / _privatize_embedded_files)."""
     if not message or "/private/files/" not in message:
         return message
     for file_url in set(re.findall(r"/private/files/[^\"'\s>)]+", message)):
@@ -441,6 +484,33 @@ def _publish_embedded_files(message):
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(), f"Could not publish embedded file {file_url}"
+            )
+    return message
+
+
+def _privatize_embedded_files(message):
+    """Defense-in-depth for In-App compose: if an inline image was uploaded
+    public (the editor's default before the private-upload fix), flip the
+    sender's OWN file private and rewrite its URL, so portal-message content is
+    never publicly reachable regardless of the client. Scoped to files owned by
+    the current user so we never re-privatize a shared/system public asset."""
+    if not message or "/files/" not in message:
+        return message
+    for file_url in set(re.findall(r"(?<!/private)/files/[^\"'\s>)]+", message)):
+        base = unquote(file_url.split("?")[0])
+        row = frappe.db.get_value(
+            "File", {"file_url": base, "is_private": 0}, ["name", "owner"], as_dict=True
+        )
+        if not row or row.owner != frappe.session.user:
+            continue
+        try:
+            file_doc = frappe.get_doc("File", row.name)
+            file_doc.is_private = 1
+            file_doc.save(ignore_permissions=True)
+            message = message.replace(file_url, file_doc.file_url)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), f"Could not privatize embedded file {file_url}"
             )
     return message
 
@@ -1037,26 +1107,260 @@ def _is_messaging_staff():
 def get_my_messaging_scope(course=None):
     """Who the session user may message (ADR 043 portal messaging), the
     authorization source of truth — send_portal_message validates against it
-    server-side. Students: instructors of course schedules they're enrolled
-    in. Staff (Instructor / Seminary Manager / Program Chair): every
-    instructor and student, narrowable per course schedule."""
+    server-side.
+
+    Driven by the Portal Messaging Rules configured on Seminary Settings
+    (sender role -> audience). When no rules are configured it falls back to
+    the built-in defaults: students reach the instructors of course schedules
+    they're enrolled in; staff (Instructor / Seminary Manager / Program Chair)
+    reach every instructor and student, narrowable per course schedule.
+
+    Each recipient carries a `group` (display heading for the compose picker)
+    and a `kind` (Instructor / Student / Role / User / Support — the
+    all_students expansion and existing checks key off `kind`)."""
     me = _my_person()
-    if _is_messaging_staff():
-        courses = _staff_course_options()
-        recipients = _staff_recipients(course)
+    staff = _is_messaging_staff()
+    settings = frappe.get_cached_doc("Seminary Settings")
+    rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
+
+    if not rules:
+        recipients = _legacy_recipients(course, staff)
     else:
-        enrolled = _student_enrolled_cs()
+        my_roles = set(frappe.get_roles())
+        by_person = {}
+        for rule in rules:
+            if rule.sender_role not in my_roles:
+                continue
+            group = (rule.group_label or "").strip() or _default_group(rule)
+            for rec in _resolve_audience(rule, course, staff, settings):
+                _merge_recipient(by_person, rec, group)
+        recipients = list(by_person.values())
+
+    if staff:
+        courses = _staff_course_options()
+    else:
         courses = [
             {"value": r.name, "label": f"{r.title} ({r.academic_term})"}
-            for r in enrolled
+            for r in _student_enrolled_cs()
         ]
-        recipients = _student_recipients(course, [r.name for r in enrolled])
     recipients = [r for r in recipients if r["person"] != me]
-    return {
-        "staff": _is_messaging_staff(),
-        "courses": courses,
-        "recipients": recipients,
-    }
+    return {"staff": staff, "courses": courses, "recipients": recipients}
+
+
+def _legacy_recipients(course, staff):
+    """Built-in messaging policy used when a seminary has configured no Portal
+    Messaging Rules (and for pre-seed installs). Mirrors the original ADR 043
+    behavior verbatim, backfilling the display `group`."""
+    if staff:
+        recipients = _staff_recipients(course)
+    else:
+        recipients = _student_recipients(
+            course, [r.name for r in _student_enrolled_cs()]
+        )
+    for r in recipients:
+        r["group"] = "Instructors" if r["kind"] == "Instructor" else "Students"
+    return recipients
+
+
+# ----- rule-driven audience resolution
+
+_AUDIENCE_GROUP = {
+    "Course Instructors": "Instructors",
+    "All Instructors": "Instructors",
+    "Course Students": "Students",
+    "All Students": "Students",
+    "Support User": "Support",
+    "Specific User": "Direct",
+}
+
+
+def _default_group(rule):
+    if rule.audience == "Role":
+        return rule.audience_role or "Other"
+    return _AUDIENCE_GROUP.get(rule.audience, "Other")
+
+
+def _merge_recipient(by_person, rec, group):
+    """Dedupe by person across rules: first rule that reaches a person wins the
+    display group; later rules only union the per-course annotations."""
+    existing = by_person.get(rec["person"])
+    if existing:
+        for c in rec.get("courses", []):
+            if c not in existing["courses"]:
+                existing["courses"].append(c)
+        return
+    rec = dict(rec)
+    rec["group"] = group
+    rec.setdefault("courses", [])
+    by_person[rec["person"]] = rec
+
+
+def _resolve_audience(rule, course, staff, settings):
+    audience = rule.audience
+    if audience == "Course Instructors":
+        return _student_recipients(course, [r.name for r in _student_enrolled_cs()])
+    if audience == "Course Students":
+        return _course_student_recipients(course, staff)
+    if audience == "All Instructors":
+        return _all_instructor_recipients(course) if staff else []
+    if audience == "All Students":
+        return _all_student_recipients(course) if staff else []
+    if audience == "Role":
+        return _role_recipients(rule.audience_role)
+    if audience == "Specific User":
+        return _user_recipient(rule.audience_user, "User")
+    if audience == "Support User":
+        return _user_recipient(settings.support_user, "Support")
+    return []
+
+
+def _all_instructor_recipients(course=None):
+    """Every active instructor, or — when a course filter is set — just the
+    instructors of that Course Schedule (preserves the staff course filter)."""
+    if course:
+        rows = frappe.db.sql(
+            """
+            SELECT DISTINCT i.person, i.instructor_name
+            FROM `tabCourse Schedule Instructors` csi
+            JOIN `tabInstructor` i ON csi.instructor = i.name
+            WHERE csi.parent = %(cs)s AND IFNULL(i.person, '') != ''
+            """,
+            {"cs": course},
+            as_dict=True,
+        )
+    else:
+        rows = frappe.get_all(
+            "Instructor",
+            filters={"status": "Active", "person": ("is", "set")},
+            fields=["person", "instructor_name"],
+        )
+    return [
+        {
+            "person": r.person,
+            "label": r.instructor_name,
+            "kind": "Instructor",
+            "courses": [],
+        }
+        for r in rows
+    ]
+
+
+def _all_student_recipients(course=None):
+    """Every enabled student, or — when a course filter is set — just the
+    students enrolled in that Course Schedule."""
+    if course:
+        rows = frappe.db.sql(
+            """
+            SELECT DISTINCT s.person, s.student_name
+            FROM `tabCourse Enrollment Individual` cei
+            JOIN `tabStudent` s ON cei.student_ce = s.name
+            WHERE cei.coursesc_ce = %(cs)s AND cei.docstatus = 1
+              AND cei.withdrawn = 0 AND IFNULL(s.person, '') != ''
+            """,
+            {"cs": course},
+            as_dict=True,
+        )
+    else:
+        rows = frappe.get_all(
+            "Student",
+            filters={"enabled": 1, "person": ("is", "set")},
+            fields=["person", "student_name"],
+        )
+    return [
+        {"person": r.person, "label": r.student_name, "kind": "Student", "courses": []}
+        for r in rows
+    ]
+
+
+def _course_student_recipients(course, staff):
+    """Students enrolled in the sender's course schedules — the schedules a
+    staff member teaches, or a student's own enrolled schedules — honoring the
+    course filter."""
+    if staff:
+        rows = frappe.db.sql(
+            """
+            SELECT DISTINCT cs.name
+            FROM `tabCourse Schedule` cs
+            JOIN `tabCourse Schedule Instructors` csi ON csi.parent = cs.name
+            JOIN `tabInstructor` i ON csi.instructor = i.name
+            WHERE i.user = %(user)s
+            """,
+            {"user": frappe.session.user},
+            as_dict=True,
+        )
+        cs_names = [r.name for r in rows]
+    else:
+        cs_names = [r.name for r in _student_enrolled_cs()]
+    if course:
+        cs_names = [c for c in cs_names if c == course]
+    if not cs_names:
+        return []
+    rows = frappe.db.sql(
+        """
+        SELECT DISTINCT s.person, s.student_name, cs.title
+        FROM `tabCourse Enrollment Individual` cei
+        JOIN `tabStudent` s ON cei.student_ce = s.name
+        JOIN `tabCourse Schedule` cs ON cei.coursesc_ce = cs.name
+        WHERE cei.coursesc_ce IN %(cs)s AND cei.docstatus = 1
+          AND cei.withdrawn = 0 AND IFNULL(s.person, '') != ''
+        """,
+        {"cs": tuple(cs_names)},
+        as_dict=True,
+    )
+    by_person = {}
+    for r in rows:
+        entry = by_person.setdefault(
+            r.person,
+            {
+                "person": r.person,
+                "label": r.student_name,
+                "kind": "Student",
+                "courses": [],
+            },
+        )
+        if r.title:
+            entry["courses"].append(r.title)
+    return list(by_person.values())
+
+
+def _role_recipients(role):
+    """Persons whose enabled User holds `role`. Single join (no find_person
+    N+1); Person-less role holders are silently skipped since messages target a
+    Person."""
+    if not role:
+        return []
+    rows = frappe.db.sql(
+        """
+        SELECT DISTINCT p.name AS person, p.full_name AS label
+        FROM `tabHas Role` hr
+        JOIN `tabUser` u ON hr.parent = u.name
+        JOIN `tabPerson` p ON p.user = u.name
+        WHERE hr.parenttype = 'User' AND hr.role = %(role)s
+          AND u.enabled = 1 AND u.name NOT IN ('Administrator', 'Guest')
+        """,
+        {"role": role},
+        as_dict=True,
+    )
+    return [
+        {"person": r.person, "label": r.label, "kind": "Role", "courses": []}
+        for r in rows
+    ]
+
+
+def _user_recipient(user, kind):
+    if not user:
+        return []
+    from seminary.seminary.person import find_person
+
+    person = find_person(user=user)
+    if not person:
+        return []
+    label = (
+        frappe.db.get_value("Person", person, "full_name")
+        or frappe.db.get_value("User", user, "full_name")
+        or user
+    )
+    return [{"person": person, "label": label, "kind": kind, "courses": []}]
 
 
 def _student_enrolled_cs():
@@ -1184,13 +1488,17 @@ def send_portal_message(
     course=None,
     all_students=0,
     recipient=None,
+    attachments=None,
 ):
     """Portal compose: person-to-person In-App messages, instant delivery.
     Accepts a list of recipients; all_students expands to every student in the
     sender's scope (staff only — and the scope already honors the course
-    filter). Every target is validated against the scope server-side."""
+    filter). Every target is validated against the scope server-side. The body
+    is rich text (sanitized server-side); attachments and inline images stay
+    PRIVATE and are attached to each recipient's log, so only the recipient and
+    sender can download them via Frappe's /private/files ACL (ADR 043)."""
     _my_person()
-    if not (message or "").strip():
+    if not frappe.utils.strip_html(message or "").strip():
         frappe.throw(_("Write a message first."))
 
     if isinstance(recipients, str):
@@ -1215,9 +1523,14 @@ def send_portal_message(
     if blocked:
         frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
 
-    body = "<p>{0}</p>".format(
-        frappe.utils.escape_html(message.strip()).replace("\n", "<br>")
-    )
+    if isinstance(attachments, str):
+        attachments = json.loads(attachments)
+    attachments = attachments or []
+    attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
+
+    body = frappe.utils.sanitize_html(message)
+    body = _privatize_embedded_files(body)  # belt-and-suspenders on inline images
+    body += _attachment_html(attachments)
     sent = 0
     for target in targets:
         if send_message(
@@ -1229,9 +1542,33 @@ def send_portal_message(
             reference_doctype="Course Schedule" if course else None,
             reference_name=course,
             triggered_by=frappe.session.user,
+            attach_files=attach_files,
         ):
             sent += 1
     return {"sent": sent}
+
+
+def _attachment_html(attachments):
+    """A trusted download-link block appended to a message body. The files stay
+    PRIVATE; _attach_inapp_files attaches them to each recipient's log so the
+    /private/files links resolve only for the recipient and sender."""
+    if not attachments:
+        return ""
+    if isinstance(attachments, str):
+        attachments = json.loads(attachments)
+    items = "".join(
+        '<li><a href="{0}">{1}</a></li>'.format(
+            frappe.utils.escape_html(a.get("file_url", "")),
+            frappe.utils.escape_html(
+                a.get("file_name") or a.get("file_url") or _("Attachment")
+            ),
+        )
+        for a in (attachments or [])
+        if a.get("file_url")
+    )
+    if not items:
+        return ""
+    return "<hr><p><b>{0}</b></p><ul>{1}</ul>".format(_("Attachments"), items)
 
 
 @frappe.whitelist()

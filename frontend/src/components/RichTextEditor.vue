@@ -59,6 +59,9 @@ const props = defineProps({
     id: { type: String, default: '' },
     editable: { type: Boolean, default: true },
     teleport: { type: Boolean, default: true },
+    // Override how inline images upload (e.g. to force private uploads). When
+    // null the editor's default (public) upload is used.
+    uploadFunction: { type: Function, default: null },
 })
 
 const emit = defineEmits(['change'])
@@ -116,6 +119,7 @@ async function activate() {
         editable: props.editable,
         extensions: getTextEditorExtensions({
             placeholder: props.placeholder,
+            uploadFunction: props.uploadFunction || undefined,
         }),
         onUpdate: ({ editor: e }) => {
             if (settingContent) return
