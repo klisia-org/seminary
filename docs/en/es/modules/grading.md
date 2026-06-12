@@ -1,71 +1,71 @@
 # Calificación
 
 Grading is how you decide what a student earned in a course and how you keep
-track of getting there. Seminary ERP gives you two places to work, and they
-fit together cleanly: a **To-Do card** that surfaces what's waiting on your
-attention, and a **Gradebook** that gives you the whole picture in a grid.
+track of getting there. El ERP seminario te da dos lugares para trabajar, y
+encaja limpiamente: una **Tarjeta To-Hecho** que superficializa lo que está esperando en tu
+atención, y un **Gradebook** que te da la imagen completa en una cuadrícula.
 
 ## Descripción general
 
-Grading in Seminary ERP is built around two ideas:
+La calificación en ERP seminario se construye alrededor de dos ideas:
 
-- **Assessment Criteria** define _what counts_ toward the final grade for a
-  course (the syllabus says "30% papers, 20% quizzes, 50% final exam," and
-  the Assessment Criteria express that as rows on the Course Schedule).
-- **Submissions** are _what students hand in_ (a paper, a quiz attempt, an
-  exam, a discussion post). Each submission gets graded against the
-  Assessment Criterion it belongs to, then rolls up into the student's
-  course total.
+- **Criterio de la evaluación** define _lo que cuenta_ hacia la calificación final para un curso
+  (el plan de estudios dice "30% papeles, 20% cuestionarios, 50% examen final", y
+  los Criterios de Evaluación lo expresan como filas en el Horario del Curso).
+- **Envíos** son _lo que los estudiantes aportan_ (un papel, un intento de cuestionario, un examen
+  , una publicación de discusión). Cada envío recibe una calificación con el criterio
+  del Criterio de la evaluación al que pertenece, luego se inscribe en el total del curso
+  del estudiante.
 
 Some assessments don't have a submission at all — chapel attendance,
 class participation, an in-class presentation. Those use a special type
 called **Offline**, where you enter the grade directly in the Gradebook
 without any handed-in artifact.
 
-## Assessment types
+## Tipos de exámenes
 
-When you create an Assessment Criterion (on the Course Assessment page),
-you pick a **type**. That type decides how the assessment is collected
-and how students submit (or don't).
+Cuando creas un criterio de evaluación (en la página de evaluación del curso),
+eliges un **tipo**. Ese tipo decide cómo se recolecta la evaluación
+y cómo los estudiantes envían (o no).
 
 ### Examen
 
-Auto-graded multiple-choice / true-false / short-answer style questions.
+Preguntas de múltiples opciones automáticas / verdadero-falsas / cortas respuestas.
 Students take it in the browser; the system scores it the moment they
-hit submit. You can configure passing percentage and maximum attempts on
-the Quiz itself. Most quizzes need no instructor grading at all — but if
-you've added open-ended questions, those land in the Quiz Submission
-view for you to score.
+hit submit. Puedes configurar el porcentaje de paso y el máximo de intentos en
+el propio Cuestionario. La mayoría de los cuestionarios no necesitan ninguna calificación por parte del instructor, pero si
+ha añadido preguntas abiertas, esos terrenos en la vista de Envío de Exámenes
+para que anotes.
 
-> **Use this for:** weekly comprehension checks, vocabulary drills,
-> reading-confirmation quizzes, anything where the answer is mechanically
-> right or wrong.
+> **Usa esto para:** comprobaciones semanales, perforaciones vocabularias,
+> cuestionarios de lectura-confirmación, cualquier cosa en la que la respuesta sea mecánicamente
+> correcta o incorrecta.
 
 ### Tarea
 
-A paper or file the student writes and uploads (PDF, document, image, URL,
-or text). Students see a prompt in the lesson, write or attach their
-answer, and submit. You then open each Assignment Submission, read it,
-and enter a score plus written feedback.
+Un documento o archivo que el estudiante escribe y carga (PDF, documento, imagen, URL,
+o texto). Students see a prompt in the lesson, write or attach their
+answer, and submit. A continuación, abre cada Envío de Asignaciones, leerlo,
+e introduce una puntuación más comentarios escritos.
 
-> **Use this for:** essays, exegetical papers, reflection journals,
-> project deliverables — anything where the student produces something
-> you read carefully.
+> **Usa esto para:** ensayos, documentos exegéticos, diarios de reflexión,
+> entregables del proyecto, cualquier cosa donde el estudiante produzca algo
+> que leas cuidadosamente.
 
 ### Examen
 
-A more elaborate, often timed, in-browser test. Exams support multiple
+Una prueba en el navegador más elaborada, a menudo temporizada. Exams support multiple
 question types (multiple choice, open-ended, file upload), time limits,
-and per-question feedback. Auto-gradable parts score themselves; the
-open-ended portions are flagged "Not Graded" until you score them.
+and per-question feedback. Las partes autogradables se marcan a sí mismas; las porciones
+de terminación abierta están marcadas "Sin calificar" hasta que las anotes.
 
-> **Use this for:** midterms, finals, formal proctored assessments where
-> you want a single linear test experience for the student.
+> **Usa esto para:** evaluaciones intermedias, finales, formales proctorizadas donde
+> quieres una única experiencia de prueba lineal para el estudiante.
 
 ### Discusión
 
-Threaded online dialogue. Students post their initial position on a prompt
-and reply to classmates. Discussions can be **graded** (linked to an
+Diálogo en línea. Los estudiantes publican su posición inicial en un mensaje
+y responden a sus compañeros de clase. Discussions can be **graded** (linked to an
 Assessment Criterion) or **free-form** (just for engagement). Graded
 discussions can require students to reply to a minimum number of
 classmates' original posts; you set this on the Discussion Activity as
@@ -73,135 +73,135 @@ _"Minimum replies to other students"_. The system tracks each student's
 reply count and won't mark the discussion complete until the threshold
 is met.
 
-> **Use this for:** weekly conversation around the readings, case-study
-> debates, peer feedback rounds — anywhere the _interaction_ is the
-> learning.
+> **Usa esto para:** conversación semanal alrededor de las lecturas, debates de estudio de casos
+> , redondeadas por pares, en cualquier lugar donde la _interacción_ sea la
+> aprender.
 
 ### Desconectado
 
-The catch-all for things you grade outside the LMS. There's no submission
-doctype, no upload, no scoring page. You just open the Gradebook and type
-the score for each student.
+El "catch-all for things you grade outside the LMS. No hay ningún documento de tipo
+, no hay carga, no hay página de puntuación. Acabas de abrir el Calificador y escribe
+la puntuación para cada estudiante.
 
 > **Use this for:** chapel attendance, class participation, in-person
 > presentations, oral exams, lab work, peer-evaluation scores, anything
-> that lives in your notebook and you transcribe in. Create one Offline
-> assessment per category so the weights still add up cleanly.
+> that lives in your notebook and you transcribe in. Crea una evaluación
+> sin conexión por categoría para que los pesos aún se sumen limpiamente.
 
-## Where grading happens day to day
+## Donde la calificación ocurre día a día
 
-### The To-Do card (top-right of every Course page)
+### La tarjeta To-Do (arriba a la derecha de cada página del curso)
 
-Every Course Detail page shows a **To-Do** card on the right. For
+Cada página de detalles del curso muestra una tarjeta **Hacer** a la derecha. For
 instructors and academic users it lists, in plain text:
 
 - **"Assignments to Grade — N"**, **"Exams to Grade — N"**, etc. — one
   line per activity with un-graded submissions, with the count.
-- Each line is a clickable shortcut straight into the grading queue
-  for that activity.
+- Cada línea es un acceso directo en la cola de calificación
+  para esa actividad.
 
-This is your daily triage view. Open the course, glance at the card,
-click the activity with the biggest backlog. The card only shows things
-that actually need attention — empty queues collapse to _"Congrats!
-No assessments to grade for now."_
+Esta es tu vista diaria de prueba. Abre el curso, mira la tarjeta,
+haz clic en la actividad con el mayor atrasado. La tarjeta solo muestra cosas
+que realmente necesitan atención, las colas vacías colapsan _"¡Felicidades!
+No hay evaluaciones para calificar por ahora."_
 
-> **What's NOT in the To-Do card:** Offline assessments. Since there's
-> no submission to grade, they don't appear here. Use the Gradebook for
-> those.
+> **Lo que NO está en la tarjeta To-Do :** Evaluaciones sin conexión. Since there's
+> no submission to grade, they don't appear here. Usa las Calificaciones para
+> .
 
-### The grading queue (one activity at a time)
+### La cola de calificación (una actividad a la vez)
 
-Clicking an item from the To-Do card takes you to the per-activity
-**Submissions** page. There you see one row per student, with their
-submission status (Not Submitted / Not Graded / Graded), original-post
-date or upload date, and any reply count for discussions. Click a
+Al hacer clic en un objeto de la tarjeta To-Do te llevará a la página de **envíos** por actividad
+. Allí ve una fila por estudiante, con su estado
+de envío (No Enviado / No Calificado / Calificado), publicación original
+fecha o fecha de carga, y cualquier respuesta cuenta para discusiones. Click a
 student's row to open their submission, read it, type a score, leave
 feedback, and save.
 
-This is the right place when you want to focus on a single assessment
-and grade it cohort-wide in one sitting.
+Este es el lugar adecuado cuando quieres centrarte en una sola evaluación
+y calificarla en una sola sentada.
 
-### The Gradebook (the whole grid)
+### El Calificador (toda la cuadrícula)
 
-The **Gradebook** (linked from every Course page) is a single table:
+El **Calificación** (enlazado desde cada página del curso) es una sola tabla:
 
-- **Rows:** every student in the course.
-- **Columns:** every Assessment Criterion, in order, with weight
-  percentage shown beneath the title.
+- **Filas:** cada estudiante en el curso.
+- **Columnas:** cada criterio de evaluación, en orden, con un porcentaje
+  de peso que se muestra bajo el título.
 - **Publicación de calificaciones** — hacer visibles las calificaciones para los estudiantes
 
-Three things to know:
+Tres cosas a saber:
 
 1. **Header links.** Click any column title and you jump to that
-   assessment's grading queue (the per-activity view above). The
-   Gradebook is the natural launch pad when you're moving across
-   assessments rather than across students.
-2. **Edit cells directly.** You can type a grade in any cell. This is
-   the **only place to enter grades for Offline assessments** — there's
-   nothing to click into for those, since there's no submission. It also
-   works as an override for the other types if you ever need to nudge a
-   grade after the submission has been saved.
-3. **Save All Changes.** Edits are tracked locally until you click the
-   _Save All Changes_ button at the top (or press `Ctrl+S`). The button
-   shows how many cells have unsaved edits. This batches the writes so
-   you can flow through the grid without saving every cell.
+   assessment's grading queue (the per-activity view above). El
+   Calificaciones es la plataforma de lanzamiento natural cuando estás moviendo a través de
+   evaluaciones en lugar de entre los estudiantes.
+2. **Editar celdas directamente.** Puedes escribir una nota en cualquier celda. Este es
+   el **único lugar para introducir las notas para las evaluaciones sin conexión** — no hay
+   nada en el que hacer clic para ellas, ya que no hay envío. También
+   funciona como anulación para los otros tipos si alguna vez necesitas nudear un grado
+   después de que el envío haya sido guardado.
+3. **Guarda todos los cambios.** Las ediciones se rastrean localmente hasta que hagas clic en el botón
+   _Guardar todos los cambios_ en la parte superior (o pulsa `Ctrl+S`). El botón
+   muestra cuántas celdas tienen ediciones sin guardar. Esto bloquea las escrituras para que
+   pueda fluir a través de la cuadrícula sin guardar cada celda.
 
 Extra-credit columns are tinted blue and show a "Max Extra: N" hint
 under the title instead of a weight, so they're easy to spot.
 
-## A typical week
+## Una semana típica
 
-A common rhythm for a seminary instructor:
+Un ritmo común para un instructor seminario:
 
-1. **Monday morning** — open the course. The To-Do card shows
-   _"Assignments to Grade — 8"_. Click it, work through the eight
-   submissions one by one, save each.
-2. **Mid-week** — the discussion deadline passes. To-Do card now shows
-   _"Discussions to Grade — 12"_. Open the queue, see the _"Replies"_
-   column (X / Y format when a minimum is set) so you know at a glance
-   who hit the participation requirement and who didn't. Grade the
-   ones who met it; reach out to the ones who didn't.
-3. **End of class session** — open the **Gradebook**, find the
-   _"Class Participation"_ (Offline) column, and type in scores for
-   the students who spoke up well. Hit _Save All Changes_ once.
+1. **Lunes por la mañana** - abre el curso. La tarjeta To-Do muestra
+   _"Asignaciones a la calificación: 8"_. Haga clic en él, trabaje a través de las ocho
+   envíos uno por uno, ahorre cada una.
+2. **Semana** — el plazo de discusión pasa. La tarjeta To-Do ahora muestra
+   _"Discusiones a la Igualdad: 12"_. Abrir la cola, mira la columna _"Respuestas"_
+   (formato X / Y cuando se establece un mínimo) para que sepa a un vistazo
+   quién alcanzó el requisito de participación y quién no. Califica a los
+   que lo conocieron; contacta a los que no lo hicieron.
+3. **Fin de la sesión de clase** — abre la **Gradebook**, encuentra la columna
+   _"Participación de Clase"_ (sin conexión), y escribe puntuaciones para
+   los estudiantes que hablaron bien. Pulsa _Guardar todos los cambios_ una vez.
 4. **End of term** — open the Gradebook to see the full grid, spot any
    missing cells, fill in the last few Offline assessments, and verify
    the totals look right before publishing final grades.
 
-## Setting up an assessment plan for a course
+## Configurando un plan de evaluación para un curso
 
-Before any of the above works, the course needs Assessment Criteria
-defined. From a Course Schedule, click **Course Assessment** to open
-the configuration page. Add one row per graded thing in the syllabus:
+Antes de cualquiera de los trabajos anteriores, el curso necesita que se definan los criterios de evaluación
+. From a Course Schedule, click **Course Assessment** to open
+the configuration page. Añadir una fila por cosa calificada en la sílice:
 
-- Pick the **type** (Quiz / Assignment / Exam / Discussion / Offline).
-- For non-Offline types, link the actual activity (the specific Quiz,
-  Assignment Activity, etc.).
-- Set the **weight** (percentage of the final grade) — or tick
-  **Extra Credit** and enter max points, in which case the row counts
-  on top of the 100% rather than against it.
+- Escoja el **tipo** (Quiz / Asignación / Examen / Discusión / Desconectado).
+- Para tipos no sin conexión, vincule la actividad real (el ensayo específico,
+  Actividad de asignación, etc.).
+- Establece el **peso** (porcentaje del grado final) — o marca
+  **Crédito adicional** e introduce puntos máximos, en cuyo caso el registro cuenta
+  encima del 100% en lugar de contra él.
 - Optionally set a **due date** — used for the To-Do card's "Due Soon"
   list and for marking late submissions.
 
-The total weight of non-extra-credit rows must equal **100** before you
-can save. The page shows a running total at the top in red until you
+El peso total de las filas no extra-crédito debe ser igual a **100** antes de que
+pueda guardar. The page shows a running total at the top in red until you
 get there.
 
-## Tips
+## Consejos
 
-- **Don't grade in the Gradebook by default.** Clicking through the
-  per-activity queue gives you the full submission view (the file, the
-  rubric, the feedback box, prior comments). The Gradebook is for
-  Offline grades, overrides, and end-of-term sweeps.
-- **Use Offline liberally.** Anything that lives on a clipboard or in
-  your head — attendance, oral exam scores, peer evaluation totals,
-  presentation rubric scores — becomes a clean column in the Gradebook
-  the moment you add an Offline Assessment Criterion.
-- **One Offline row per category.** A single _"Participation"_ row
-  combining attendance, oral engagement, and group work is fine when
-  the syllabus describes it that way. Splitting them into separate
-  rows is fine too — students see the breakdown and you can weight
-  each piece.
+- \*\*No clasifiques en el Calificador por defecto. \* Hacer clic a través de la cola
+  por actividad te da la vista completa del envío (el archivo, la
+  rubric, la caja de comentarios, comentarios previos). El Calibrador es para
+  grados, anulaciones y barridos de final de fin.
+- \*\*Usar sin conexión libremente. \* Cualquier cosa que viva en un portapapeles o en
+  tu cabeza: asistencia, puntuación del examen oral, totales de evaluación de pares,
+  puntuaciones rubricas de presentación — se convierte en una columna limpia en el Calificador
+  en el momento en que añades un Criterio de Evaluación sin conexión.
+- \*\*Una fila sin conexión por categoría. \* Una sola _"Participación"_ fila
+  que combina atención, compromiso oral, y el trabajo en grupo está bien cuando
+  el plan lo describe de esa manera. Dividirlos en renglones separados
+  también está bien: los estudiantes ven el desglose y puedes pesar
+  cada parte.
 - **Discussion replies count toward "complete," not toward the grade.**
   The minimum-replies setting controls when the discussion is marked
   _complete_ on the student's outline and To-Do. The grade itself is
@@ -210,10 +210,10 @@ get there.
   separate Offline assessment if you want to track participation
   apart from the discussion's content.
 
-## Related
+## Relacionados
 
-- [Discussion Activities](discussions.md) — setup and reply requirements
-- [Enrollment](enrollment.md) — who appears in the Gradebook rows
-- [Withdrawal](withdrawal.md) — how withdrawn students are represented
+- [Actividades de discusión](discussions.md) — requisitos de configuración y respuesta
+- [Enrollment](enrollment.md) — quién aparece en las filas de Calificaciones
+- [Withdrawal](withdrawal.md) — cómo los estudiantes retirados están representados
 - [Graduation Requirements](graduation-requirements.md) — non-course
   evidence that complements graded coursework

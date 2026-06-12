@@ -12,58 +12,55 @@ Los estudiantes pueden autoinscribirse a través del portal del LMS durante las 
 - **Inscripción al curso** — el registro que vincula a un estudiante con un curso en un período académico específico
 - **Capacidad de inscripción** — límite opcional de estudiantes por sección del curso
 
-## Course Enrollment lifecycle
+## Ciclo de vida de matriculación del curso
 
-A Course Enrollment Individual moves through a four-state workflow:
+Un registro individual de un curso se mueve a través de un flujo de trabajo de cuatro estados:
 
-```
-Draft  →  Awaiting Payment  →  Submitted  →  Withdrawn
-   ↘─────────────────────────────↗
-```
+<LifecycleDiagram type="enrollment" />
 
-- **Draft** — created but not yet submitted; nothing has happened beyond saving the row
-- **Awaiting Payment** — submitted, Sales Invoices generated, but the student has not been added to the course roster yet (no LMS access)
-- **Submitted** — the student is fully enrolled: on the course roster, on the Program Enrollment's course list, eligible to receive grades
-- **Withdrawn** — automatically set when a Withdrawal Request reaches Academic Approval; visible in the CEI list view as a list-state pill
+- **Borrador** — creado pero no enviado; nada ha pasado más allá de guardar la fila
+- **Esperando pago** — enviado, facturas de ventas generadas, pero el estudiante aún no ha sido añadido a la lista del curso (sin acceso a LMS)
+- **Enviado** — el estudiante está totalmente inscrito: en la lista de cursos, en la lista de cursos de la Inscripción al programa, elegible para recibir calificaciones
+- **Retirada** — se establece automáticamente cuando una Petición de Retiro alcanza Aprobación Académica; visible en la vista de lista CEI como una píldora de estado de lista
 
-Which path the CEI takes from Draft depends on the **Program** the course belongs to:
+¿Qué camino toma el CEI de Drraft depende del **Programa** al que pertenece el curso:
 
-| Program flags                               | Draft submits to | Why                                        |
-| ------------------------------------------- | ---------------- | ------------------------------------------ |
-| Free Program (`is_free`) | Enviado          | No invoicing, no payment to gate on        |
-| Paid + Require Payment Before Enrollment    | Awaiting Payment | Hold the seat until the student pays       |
-| Paid + payment not required                 | Enviado          | Invoice the student but enroll them anyway |
+| Marcas del programa                            | Envíos de borrador a | Por qué                                              |
+| ---------------------------------------------- | -------------------- | ---------------------------------------------------- |
+| Programa gratis (`is_free`) | Enviado              | Sin facturación, sin pago a puerta en                |
+| Pagado + Requerir Pago Antes de Inscripción    | A la espera de pago  | Mantenga el asiento hasta que el estudiante pague    |
+| Pago + pago no requerido                       | Enviado              | Factura al estudiante pero inscríbete de todos modos |
 
-For programs configured as _Require Payment Before Enrollment_, the CEI auto-advances from **Awaiting Payment** to **Submitted** when the student's cumulative payments cross the program's _Minimum Payment %_ threshold (default 100%). For mixed-payer scenarios (student + scholarship + third party), the threshold is computed against the _total_ invoiced amount across all linked Sales Invoices.
+Para programas configurados como _Requerir Pago Antes de Inscripción_, los anticipos automáticos CEI de **Esperando el Pago** a **Enviado** cuando los pagos acumulados del estudiante cruzan el umbral _Pago mínimo %_ del programa (100 % por defecto). Para escenarios de pagadores mixtos (estudiante + beca + terceros), el umbral se calcula en función de la cantidad _total_ facturada a través de todas las facturas de ventas vinculadas.
 
-### Manual override
+### Anulación manual
 
-If a payment arrives off-platform (cash at the registrar's office, wire transfer reconciled later, special exception), an Academics User can use the **Mark as Paid** workflow button on an Awaiting Payment CEI to advance it to Submitted without recording a Payment Entry first.
+Si un pago llega fuera de la plataforma (efectivo en la oficina del registrador, transferencia bancaria reconciliada más tarde, excepción especial), un usuario de Académicos puede usar el botón de flujo de trabajo **Marcar como pago** en un CEI en espera de pago para avanzar a Enviado sin grabar primero una entrada de pago.
 
-### Refunds and credit notes
+### Reembolsos y notas de crédito
 
-If a credit note posts after the CEI reached Submitted and the recomputed paid percentage falls below the threshold, the CEI **stays at Submitted** — the student isn't silently un-enrolled mid-term. Instead, a ToDo is created and an email is sent to all Academics Users so the registrar can decide whether to file a Withdrawal Request, follow up for collection, or accept the new reality.
+Si un post de nota de crédito después del CEI llegó a Enviado y el porcentaje de pago recalculado cae por debajo del umbral, el CEI **se queda en Submitted** — el alumno no está inscrito a medio plazo. En su lugar, se crea un ToDo y se envía un correo electrónico a todos los Usuarios Académicos para que el registrador pueda decidir si presentar una Petición de Retiro, seguimiento de la colección, o aceptar la nueva realidad.
 
-### Payment Status section on the CEI
+### Sección de estado del pago en el CEI
 
-The CEI form exposes a _Payment Status_ section showing the live state:
+El formulario CEI expone una sección de _Estado de pago_ que muestra el estado en vivo:
 
-- **Total Invoiced** — sum of all linked Sales Invoices
-- **Total Paid** — sum of `(grand_total − outstanding_amount)` across those invoices
-- **Paid %** — derived; shown in the list view
-- **Threshold Met On** — datetime stamped by the system when the auto-advance fired (empty for manual overrides and free programs)
+- **Total facturado** — suma de todas las facturas de ventas vinculadas
+- **Total pagado** — suma de `(grand_total − importe_pendiente)` a través de esas facturas
+- **Pagado %** — derivado; mostrado en la vista de lista
+- **Umbral activado** - hora de fecha sellada por el sistema cuando el avance automático se disparó (vacío para anulaciones manuales y programas libres)
 
-## Free and Ongoing programs
+## Programas gratuitos y en curso
 
-Two Program-level flags shape the enrollment experience for non-traditional offerings:
+Dos banderas a nivel de programa conforman la experiencia de inscripción para ofertas no tradicionales:
 
-- **Is Ongoing** (mirrored from Program Level) — programs with no graduation: continuous education, free auditing, devotional courses. CEIs in ongoing programs skip GPA calculation, never trigger graduation audit checks, and have free withdrawal (no Academic Review).
-- **Free Program** (per-Program toggle) — bypasses Sales Invoice generation entirely and skips Financial Review on withdrawal. Often combined with _Is Ongoing_, but the two are independent: a paid one-off seminar in an ongoing track leaves _Free Program_ off; a free degree program leaves _Is Ongoing_ off so graduation logic still runs.
+- **Está en curso** (reflejado en el nivel del programa) — programas sin graduación: educación continua, auditoría gratuita y cursos devocionales. Los CEI en los programas en curso omiten el cálculo de la GPA, nunca activan cheques de auditoría de graduación y tienen retiro gratuito (sin revisión académica).
+- **Programa gratis** (por programa) — evita completamente la generación de Facturas de Ventas y omite la revisión financiera en el retiro. A menudo combinado con _Está en curso_, pero los dos son independientes: un seminario remunerado en una pista continua deja _Programa Gratis_ apagado; un programa de grado libre deja _Está en curso_ así que la lógica de graduación todavía se ejecuta.
 
-See [Withdrawal → Fast-paths for Ongoing and Free programs](withdrawal.md#fast-paths-for-ongoing-and-free-programs) for how the same flags shape the withdrawal flow.
+Vea [Withdrawal → Rápidas rutas para programas en curso y gratis](withdrawal.md#fast-paths-for-ongoing-and-free-programs) para ver cómo las mismas banderas dan forma al flujo de retiro.
 
-## Maximum enrollment duration
+## Duración máxima de la inscripción
 
-Programs that bound how long a student may stay enrolled (e.g., "MDiv must finish in 7 years") set **Max Years to Graduate** on the Program (fractional years supported). On enrollment submission, the student's _Max Graduation Date_ is auto-set to _enrollment date + Max Years to Graduate_. Registrars can edit _Max Graduation Date_ afterward to grant extensions.
+Programas que limitan el tiempo que un estudiante puede permanecer inscrito (p. ej. "MDiv debe terminar en 7 años") estableció **Max Years en Graduate** en el Programa (años fraccionales apoyados). Al enviar la inscripción, la _Fecha Máxima de Graduación_ del estudiante es autoajustada a _fecha de matriculación + año máximo a Graduate_. Los registradores pueden editar _Fecha Máxima de Graduación_ después para conceder extensiones.
 
-The **Time-to-Graduate Risk** report (under Reports → Seminary) lists every active enrollment whose Program has a max enrollment duration, computes remaining credits and remaining time, and ranks students by the credits-per-year pace they need to make their cap. Most-at-risk students appear at the top.
+El informe **Riesgo de tiempo para graduar** (en Informes → Seminario) lista cada inscripción activa cuyo Programa tiene una duración máxima de inscripción, calcula los créditos restantes y el tiempo restante, y clasifica a los estudiantes por el ritmo de los créditos por año que necesitan para hacer su tope. Los estudiantes de mayor riesgo aparecen en la parte superior.
