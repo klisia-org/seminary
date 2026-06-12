@@ -16,15 +16,12 @@ Os estudantes podem se matricular pelo portal do LMS durante os períodos de mat
 
 Uma Matrícula de Curso Individual se move através de um fluxo de trabalho de quatro estados:
 
-```
-Rascunho → Aguardando pagamento → Submetido → Retirado
-   ↘️├├├├├├├├├├─↗️
-```
+<0/>
 
 - **Rascunho** — criado mas ainda não apresentado; nada aconteceu além de salvar a linha
 - **Aguardando pagamento** — enviado, Faturas de Vendas geradas, mas o aluno ainda não foi adicionado à lista de participantes do curso (sem acesso ao LMS)
 - **Enviado** — O aluno está totalmente matriculado: na lista de cursos do curso, na lista de cursos do Programa, elegível para receber as notas
-- **Cancelamento de Matrícula** - defina automaticamente quando uma Solicitação de Cancelamento de Matrícula do Curso chega à Aprovação Acadêmica; visível na vista da lista CI como uma pílula de estado listada
+- **Retirada** — defina automaticamente quando uma Solicitação de Retirada chega à Aprovação Acadêmica; visível na vista da lista CI como uma pílula de estado listada
 
 Qual caminho o CEI pega a partir do rascunho depende do **Programa** ao qual o curso pertence:
 
@@ -42,7 +39,7 @@ Se um pagamento chegar fora da plataforma (dinheiro na secretaria, transferênci
 
 ### Reembolsos e notas de crédito
 
-Se uma nota de crédito é criada após o CEI ser enviado e a porcentagem paga recalculada cair abaixo do limite, o CEI **permanece em Enviado** — o aluno não será silenciosamente des-inscrito no meio do período letivo. Em vez disso, um ToDo é criado e um e-mail é enviado a todos os usuários acadêmicos, então o agente de registo pode decidir se deve criar uma solicitação de cancelamento de matrícula do curso, seguimento e cobrança, ou apenas ter ciência.
+Se uma nota de crédito é criada após o CEI ser enviado e a porcentagem paga recalculada cair abaixo do limite, o CEI **permanece em Enviado** — o aluno não será silenciosamente des-inscrito no meio do período letivo. Em vez disso, um ToDo é criado e um e-mail é enviado a todos os usuários acadêmicos, então o agente de registo pode decidir se deve fazer uma solicitação de retirada, Prosseguem a recolha ou aceitam a nova realidade.
 
 ### Seção Status de pagamento no CEI
 

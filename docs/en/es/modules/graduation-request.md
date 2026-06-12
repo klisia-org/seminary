@@ -71,11 +71,7 @@ Si el programa está marcado como **Gratuito**, no se genera factura y la solici
 
 ## El flujo de trabajo
 
-```
-Borrador  →  En espera de pago  →  Revisión académica  →  Revisión financiera  →  Aprobado
-            (los gratuitos omiten →                ↗)                                    ↓
-                                                                         Cancelado  (cualquier estado)
-```
+<LifecycleDiagram type="graduationRequest" />
 
 | Estado                  | Estado del documento | Quién puede editar | Qué significa                                                                                                                                                                                                                             |
 | ----------------------- | -------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
