@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "PERS-.#####",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "Identity and reachability spine (ADR 042). One record per human; role doctypes (Student, Instructor, Alumni Profile, Student Applicant) link here and mirror its contact data read-only. Identity is the opaque PERS id — email is just a channel address, never a key.",
+ "description": "Identity and reachability spine. One record per human; role doctypes (Student, Instructor, Alumni Profile, Student Applicant) link here and mirror its contact data read-only. Identity is the opaque PERS id — email is just a channel address, never a key.",
  "doctype": "DocType",
  "document_type": "Document",
  "engine": "InnoDB",
@@ -20,6 +20,13 @@
   "primary_email",
   "column_break_reach",
   "primary_mobile",
+  "mailing_address_section",
+  "address_line_1",
+  "address_line_2",
+  "pincode",
+  "column_break_mail",
+  "city",
+  "state",
   "addresses_section",
   "channel_addresses",
   "consent_section",
@@ -112,6 +119,42 @@
    "fieldtype": "Data",
    "label": "Primary Mobile",
    "options": "Phone"
+  },
+  {
+   "collapsible": 1,
+   "description": "Postal address for printed letters and mailing labels. The country comes from the Person's Country above.",
+   "fieldname": "mailing_address_section",
+   "fieldtype": "Section Break",
+   "label": "Mailing Address"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Postal Code"
+  },
+  {
+   "fieldname": "column_break_mail",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State / Province"
   },
   {
    "fieldname": "addresses_section",

@@ -212,7 +212,7 @@ after_migrate = "seminary.install.after_migrate"
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "seminary.notifications.get_notification_config"
+notification_config = "seminary.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -395,6 +395,8 @@ communication_channel_providers = {
     "frappe-email": "seminary.seminary.comms.EmailAdapter",
     "in-app": "seminary.seminary.comms.InAppAdapter",
     "telegram": "seminary.seminary.telegram_adapter.TelegramAdapter",
+    "twilio": "seminary.seminary.twilio_adapter.TwilioAdapter",
+    "print": "seminary.seminary.comms.PrintAdapter",
 }
 
 # Scheduled Tasks

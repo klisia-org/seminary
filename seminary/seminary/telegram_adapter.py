@@ -245,6 +245,15 @@ def _bot_username(account):
     return me.get("username")
 
 
+@frappe.whitelist()
+def register_webhook(account, base_url=None):
+    """Desk button entry point (Channel Provider Account). Registers this
+    account's webhook with Telegram; base_url overrides the site URL for dev
+    tunnels. Returns the registered URL."""
+    frappe.has_permission("Channel Provider Account", "write", throw=True)
+    return setup_webhook(account, base_url=base_url or None)
+
+
 def setup_webhook(account, base_url=None):
     """Register the comms webhook with Telegram for this account.
     bench --site <site> execute seminary.seminary.telegram_adapter.setup_webhook \

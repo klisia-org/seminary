@@ -38,6 +38,7 @@ def after_install():
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
+    seed_mailing_label_formats()
     seed_communication_templates()
     setup_customer_person_field()
 
@@ -350,6 +351,76 @@ def seed_communication_channels():
     frappe.db.commit()
 
 
+def seed_mailing_label_formats():
+    """Seed common Avery label layouts (ADR 045). Create-only-if-missing; a
+    seminary edits these or adds its own measured stock."""
+    # name, page, cols, rows, label_w, label_h, margin_top, margin_left, description
+    defaults = [
+        (
+            "Avery 5160",
+            "Letter",
+            3,
+            10,
+            66.7,
+            25.4,
+            12.7,
+            4.8,
+            _("30 per US Letter sheet, 2.625×1 in"),
+        ),
+        (
+            "Avery 5161",
+            "Letter",
+            2,
+            10,
+            101.6,
+            25.4,
+            12.7,
+            4.0,
+            _("20 per US Letter sheet, 4×1 in"),
+        ),
+        (
+            "Avery 5163",
+            "Letter",
+            2,
+            5,
+            101.6,
+            50.8,
+            12.7,
+            4.8,
+            _("10 per US Letter sheet, 4×2 in"),
+        ),
+        (
+            "Avery L7160",
+            "A4",
+            3,
+            7,
+            63.5,
+            38.1,
+            15.1,
+            7.0,
+            _("21 per A4 sheet, 63.5×38.1 mm"),
+        ),
+    ]
+    for name, page, cols, rows, lw, lh, mt, ml, desc in defaults:
+        if frappe.db.exists("Mailing Label Format", name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Mailing Label Format",
+                "format_name": name,
+                "page_size": page,
+                "columns": cols,
+                "rows": rows,
+                "label_width": lw,
+                "label_height": lh,
+                "margin_top": mt,
+                "margin_left": ml,
+                "description": desc,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def seed_channel_provider_accounts():
     """Default provider accounts so Email and In-App work out of the box
     (ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
@@ -357,6 +428,7 @@ def seed_channel_provider_accounts():
     defaults = [
         ("Default Email", "Email", "frappe-email"),
         ("Portal Inbox", "In-App", "in-app"),
+        ("Print Spool", "Print", "print"),
     ]
     for account_name, channel, provider in defaults:
         if not frappe.db.exists("Communication Channel", channel):
@@ -700,6 +772,7 @@ def after_migrate():
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
+    seed_mailing_label_formats()
     seed_communication_templates()
     setup_customer_person_field()
 

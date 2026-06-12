@@ -65,10 +65,22 @@
    "link_type": "Dashboard",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "inbox",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Inbox",
+   "link_to": "communication-inbox",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-05-07 13:16:26.416923",
- "modified_by": "Administrator",
+ "modified": "2026-06-12 06:17:30.600562",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Getting Started SeminaryERP",
  "owner": "Administrator",

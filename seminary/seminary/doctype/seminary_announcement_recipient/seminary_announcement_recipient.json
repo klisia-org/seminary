@@ -19,7 +19,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Party Type",
-   "options": "Student\nInstructor\nUser\nOther",
+   "options": "Student\nInstructor\nAlumni\nUser\nOther",
    "reqd": 1
   },
   {

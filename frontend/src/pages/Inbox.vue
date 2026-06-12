@@ -135,6 +135,15 @@
 				v-html="msg.message"
 				@click.stop
 			></div>
+			<div
+				v-if="expanded.has(msg.name) && canReply(msg)"
+				class="mt-3"
+				@click.stop
+			>
+				<Button variant="subtle" size="sm" :label="__('Reply')" @click="openReply(msg)">
+					<template #prefix><Reply class="size-4" /></template>
+				</Button>
+			</div>
 		</article>
 	</div>
 
@@ -232,12 +241,26 @@
 			</div>
 		</template>
 	</Dialog>
+
+	<Dialog v-model="showReply" :options="replyDialogOptions">
+		<template #body-content>
+			<div class="mb-1.5 text-sm text-ink-gray-5">
+				{{ __('Reply to') }} {{ replyTo?.sender_name }}
+			</div>
+			<textarea
+				v-model="replyText"
+				rows="5"
+				class="w-full rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-8 focus:ring-0"
+				:placeholder="__('Write your reply...')"
+			></textarea>
+		</template>
+	</Dialog>
 </template>
 
 <script setup>
 import { computed, inject, reactive, ref, watch } from 'vue'
 import { Button, Dialog, Input, createResource } from 'frappe-ui'
-import { Inbox as InboxIcon, SquarePen } from 'lucide-vue-next'
+import { Inbox as InboxIcon, SquarePen, Reply } from 'lucide-vue-next'
 import { createToast, timeAgo } from '@/utils'
 
 const user = inject('$user')
@@ -368,6 +391,59 @@ const composeDialogOptions = computed(() => ({
 		},
 	],
 }))
+
+// ----- reply -----
+
+const showReply = ref(false)
+const replyTo = ref(null)
+const replyText = ref('')
+const replyRes = createResource({
+	url: 'seminary.seminary.comms.reply_portal_message',
+	onSuccess: () => {
+		showReply.value = false
+		createToast({
+			title: __('Reply sent'),
+			icon: 'check',
+			iconClasses: 'text-ink-green-3',
+		})
+		if (box.value === 'sent') inbox.fetch()
+	},
+	onError: (err) => {
+		const msg = err?.messages?.join(', ') || err?.message
+		createToast({
+			title: msg || __('Could not send reply.'),
+			icon: 'alert-circle',
+			iconClasses: 'text-ink-red-3',
+		})
+	},
+})
+
+// Only person-to-person messages (Community) can be replied to; broadcasts /
+// system notices have no individual sender within your messaging scope.
+function canReply(msg) {
+	return box.value === 'inbox' && msg.category === 'Community' && msg.sender_name
+}
+
+function openReply(msg) {
+	replyTo.value = msg
+	replyText.value = ''
+	showReply.value = true
+}
+
+const replyDialogOptions = computed(() => ({
+	title: __('Reply'),
+	actions: [
+		{ label: __('Send'), variant: 'solid', onClick: () => submitReply() },
+	],
+}))
+
+function submitReply() {
+	if (!replyText.value.trim()) {
+		createToast({ title: __('Write a reply.'), icon: 'alert-circle' })
+		return
+	}
+	replyRes.submit({ in_reply_to: replyTo.value.name, message: replyText.value })
+}
 
 function submitCompose(close) {
 	if ((!compose.recipients.length && !compose.allStudents) || !compose.message.trim()) {

@@ -1,24 +1,37 @@
 {
  "actions": [],
- "allow_rename": 0,
- "autoname": "format:ANN-{academic_term}-{####}",
- "creation": "2026-04-23 00:00:00.000000",
+ "autoname": "ANN-.{YYYY}-.####",
+ "creation": "2026-04-23 00:00:00",
  "doctype": "DocType",
  "document_type": "Document",
+ "Description": "Tool for mass communication in the Seminary, allowing diverse filters and channels.",
  "engine": "InnoDB",
  "field_order": [
   "subject",
   "academic_term",
+  "category",
   "column_break_hdr",
   "status",
   "scheduled_datetime",
   "sent_datetime",
   "recipient_count",
   "message_section",
+  "channels",
+  "fallback_email_portal",
   "message",
+  "short_message",
+  "voice_audio",
+  "print_options_section",
+  "print_letterhead_mode",
+  "print_letter_head",
+  "print_subject_heading",
+  "column_break_print",
+  "print_mailing_labels",
+  "label_format",
   "audience_section",
   "audience_students_enrolled",
   "audience_instructors_teaching",
+  "audience_alumni",
   "column_break_audience",
   "programs",
   "courses",
@@ -41,13 +54,24 @@
    "reqd": 1
   },
   {
+   "description": "Required when the audience is term-scoped (enrolled students, teaching instructors, or specific course schedules). Optional for All Alumni or custom-filter broadcasts.",
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Academic Term",
-   "options": "Academic Term",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.audience_students_enrolled || doc.audience_instructors_teaching || (doc.courses && doc.courses.length)",
+   "options": "Academic Term"
+  },
+  {
+   "default": "Academic",
+   "description": "Routing and consent class. Emergency bypasses recipient consent and the per-account hourly throttle.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Transactional\nAcademic\nCommunity\nPromotional\nEmergency"
   },
   {
    "fieldname": "column_break_hdr",
@@ -88,10 +112,86 @@
    "label": "Message"
   },
   {
+   "description": "Channels to send over. Leave empty to send Email + In-App (the default).",
+   "fieldname": "channels",
+   "fieldtype": "Table MultiSelect",
+   "label": "Send via channels",
+   "options": "Seminary Announcement Channel"
+  },
+  {
+   "default": "1",
+   "description": "If a recipient can't be reached on any selected channel (no address, or opted out), send them Email + In-App instead so the announcement still arrives. Email is always available.",
+   "fieldname": "fallback_email_portal",
+   "fieldtype": "Check",
+   "label": "Email + In-App fallback"
+  },
+  {
+   "description": "Rich body for Email and In-App. Required when an Email/In-App channel is selected.",
    "fieldname": "message",
    "fieldtype": "Text Editor",
-   "label": "Message",
-   "reqd": 1
+   "label": "Message"
+  },
+  {
+   "description": "Plain-text body for length-limited channels (SMS, WhatsApp, Telegram). Leave blank to auto-strip the message above.",
+   "fieldname": "short_message",
+   "fieldtype": "Small Text",
+   "label": "Short Message"
+  },
+  {
+   "description": "Optional recording for the Voice channel — the call plays this instead of reading the text aloud. MP3 or WAV, up to 40 MB (≈40 min); keep it short. Made public so the carrier can fetch it.",
+   "fieldname": "voice_audio",
+   "fieldtype": "Attach",
+   "label": "Voice Recording"
+  },
+  {
+   "collapsible": 1,
+   "description": "Applies when the Print channel is selected.",
+   "fieldname": "print_options_section",
+   "fieldtype": "Section Break",
+   "label": "Print Options"
+  },
+  {
+   "default": "Seminary Default",
+   "description": "Letter head for the printed PDF. Seminary Default uses the one set in Seminary Settings.",
+   "fieldname": "print_letterhead_mode",
+   "fieldtype": "Select",
+   "label": "Letter Head",
+   "options": "Seminary Default\nNone\nSpecific"
+  },
+  {
+   "depends_on": "eval:doc.print_letterhead_mode==\"Specific\"",
+   "fieldname": "print_letter_head",
+   "fieldtype": "Link",
+   "label": "Specific Letter Head",
+   "mandatory_depends_on": "eval:doc.print_letterhead_mode==\"Specific\"",
+   "options": "Letter Head"
+  },
+  {
+   "default": "1",
+   "description": "Print the subject as a heading on the letter. On for newsletters; turn off for a formal letter that opens straight with the body.",
+   "fieldname": "print_subject_heading",
+   "fieldtype": "Check",
+   "label": "Print subject as heading"
+  },
+  {
+   "fieldname": "column_break_print",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Also generate a sheet of mailing labels (PDF) for recipients who have a postal address.",
+   "fieldname": "print_mailing_labels",
+   "fieldtype": "Check",
+   "label": "Print mailing labels"
+  },
+  {
+   "default": "Avery 5160",
+   "depends_on": "eval:doc.print_mailing_labels",
+   "description": "Label-sheet layout. Pick a shipped Avery preset or define your own under Mailing Label Format.",
+   "fieldname": "label_format",
+   "fieldtype": "Link",
+   "label": "Label Format",
+   "options": "Mailing Label Format"
   },
   {
    "fieldname": "audience_section",
@@ -111,6 +211,13 @@
    "fieldname": "audience_instructors_teaching",
    "fieldtype": "Check",
    "label": "All instructors teaching this term"
+  },
+  {
+   "default": "0",
+   "description": "All enabled Alumni Profiles. Term-independent.",
+   "fieldname": "audience_alumni",
+   "fieldtype": "Check",
+   "label": "All alumni"
   },
   {
    "fieldname": "column_break_audience",
@@ -188,7 +295,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-23 00:00:00.000000",
+ "modified": "2026-06-11 19:24:42.574333",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Announcement",
@@ -236,6 +343,7 @@
  ],
  "row_format": "Dynamic",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

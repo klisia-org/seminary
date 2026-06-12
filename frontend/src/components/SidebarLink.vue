@@ -24,6 +24,13 @@
     >
       {{ label }}
     </span>
+    <span
+      v-if="badge"
+      class="ml-auto flex-shrink-0 rounded-full bg-surface-red-2 px-1.5 py-0.5 text-xs font-semibold text-ink-red-3"
+      :class="isCollapsed ? 'hidden' : ''"
+    >
+      {{ badge > 99 ? '99+' : badge }}
+    </span>
   </button>
 </template>
 
@@ -49,7 +56,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-
+  badge: {
+    type: Number,
+    default: 0,
+  },
 })
 
 function handleClick() {

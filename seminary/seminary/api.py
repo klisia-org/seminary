@@ -5248,23 +5248,226 @@ def get_my_announcements(limit=100):
 
 @frappe.whitelist()
 def preview_announcement_recipients(name):
-    """Resolve the recipient list for a draft Seminary Announcement without sending.
+    """Resolve the recipient list for a draft Seminary Announcement without
+    sending, and compute per-channel reachability against the selected channels.
 
-    Returns {total, sample} where sample is the first 50 resolved rows.
+    Returns a tally (total / reachable / unreachable, per-channel reachable
+    counts, how many rely on the Email+In-App fallback) plus the first 50 rows
+    annotated with their reachability.
     """
+    from seminary.seminary import comms
     from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
         resolve_recipients,
     )
+    from seminary.seminary.person import find_person
 
     doc = frappe.get_doc("Seminary Announcement", name)
     if doc.docstatus != 0:
         frappe.throw(_("Preview is only available on draft announcements."))
 
     resolved = resolve_recipients(doc)
+    channels = doc._selected_channels()
+    category = doc.category or "Academic"
+    fallback_channels = (
+        [c for c in ("Email", "In-App") if c not in channels]
+        if doc.fallback_email_portal
+        else []
+    )
+
+    channel_counts = {c: 0 for c in channels}
+    reachable_count = 0
+    fallback_count = 0
+    sample = []
+
+    for i, r in enumerate(resolved):
+        person_name = find_person(email=r.get("email"), user=r.get("user"))
+        person = frappe.get_doc("Person", person_name) if person_name else None
+
+        ok_selected = False
+        for c in channels:
+            if comms.reachability(person, c, category, email=r.get("email")) == "ok":
+                channel_counts[c] += 1
+                ok_selected = True
+
+        via_fallback = False
+        if not ok_selected and fallback_channels:
+            via_fallback = any(
+                comms.reachability(person, c, category, email=r.get("email")) == "ok"
+                for c in fallback_channels
+            )
+
+        reachable = ok_selected or via_fallback
+        if reachable:
+            reachable_count += 1
+        if via_fallback:
+            fallback_count += 1
+
+        if i < 50:
+            reason = ""
+            if not reachable:
+                # email is the universal fallback address, so its block reason
+                # is the most useful explanation of an unreachable recipient
+                reason = comms.reachability(
+                    person, "Email", category, email=r.get("email")
+                )
+            sample.append(
+                {
+                    "party_type": r["party_type"],
+                    "party_name": r.get("party_name"),
+                    "email": r["email"],
+                    "reachable": reachable,
+                    "via_fallback": via_fallback,
+                    "reason": reason,
+                }
+            )
+
     return {
         "total": len(resolved),
-        "sample": resolved[:50],
+        "reachable": reachable_count,
+        "unreachable": len(resolved) - reachable_count,
+        "channels": channels,
+        "channel_counts": channel_counts,
+        "fallback": bool(doc.fallback_email_portal),
+        "fallback_channels": fallback_channels,
+        "fallback_count": fallback_count,
+        "sample": sample,
     }
+
+
+@frappe.whitelist()
+def generate_announcement_labels(name):
+    """Render the mailing-label PDF for a Seminary Announcement and attach it.
+    Works on a draft (recipients resolved live) or a submitted one (its frozen
+    recipient list). Returns {file_url, placed, omitted}."""
+    from seminary.seminary import mailing_labels
+    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+        resolve_recipients,
+    )
+
+    doc = frappe.get_doc("Seminary Announcement", name)
+    doc.check_permission("write")
+
+    if doc.docstatus == 0:
+        recipients = resolve_recipients(doc)
+    else:
+        recipients = [
+            {
+                "party_type": r.party_type,
+                "party": r.party,
+                "party_name": r.party_name,
+                "email": r.email,
+                "user": r.user,
+            }
+            for r in doc.recipients
+        ]
+    if not recipients:
+        frappe.throw(_("No recipients to build labels for."))
+
+    result = mailing_labels._render_and_attach(doc.name, recipients, doc.label_format)
+    if not result["placed"]:
+        frappe.throw(
+            _("None of the {0} recipient(s) have a postal address on file.").format(
+                len(recipients)
+            )
+        )
+    return result
+
+
+@frappe.whitelist()
+def announcement_letters_pdf(name):
+    """Build/attach the consolidated, official Print letters PDF (one
+    personalized letter per recipient, per page) and return its URL. After
+    submit it uses the sent Print logs; on a draft it renders all recipients."""
+    from seminary.seminary.doctype.seminary_announcement import (
+        seminary_announcement as sa,
+    )
+
+    doc = frappe.get_doc("Seminary Announcement", name)
+    doc.check_permission("read")
+    url = sa._attach_letters_pdf(doc)
+    if not url:
+        frappe.throw(_("No recipients to print letters for."))
+    return {"file_url": url}
+
+
+@frappe.whitelist()
+def preview_announcement_letter(name):
+    """Render the printed letter (subject + message wrapped in the letter head)
+    to a PDF so staff can preview/print the 'newsletter'. Personalization tokens
+    are resolved against the first real recipient (or a sample). Returns
+    {file_url}."""
+    from frappe.utils.pdf import get_pdf
+    from seminary.seminary import comms
+    from seminary.seminary.doctype.seminary_announcement import (
+        seminary_announcement as sa,
+    )
+    from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+        resolve_recipients,
+    )
+    from seminary.seminary.person import find_person
+
+    doc = frappe.get_doc("Seminary Announcement", name)
+    doc.check_permission("read")
+
+    resolved = (
+        resolve_recipients(doc)
+        if doc.docstatus == 0
+        else [
+            frappe._dict(
+                party_type=r.party_type,
+                party=r.party,
+                party_name=r.party_name,
+                email=r.email,
+                user=r.user,
+            )
+            for r in doc.recipients
+        ]
+    )
+    if resolved:
+        first = frappe._dict(resolved[0])
+        person_name = find_person(email=first.email, user=first.get("user"))
+        person = frappe.get_doc("Person", person_name) if person_name else None
+        ctx = sa._render_context(first, person)
+        shown_for = first.party_name or first.email
+    else:
+        ctx = sa._sample_context()
+        shown_for = _("sample recipient")
+
+    subject = frappe.utils.escape_html(sa._render(doc.subject or "", ctx))
+    message = sa._render(doc.message or "", ctx)
+    caption = (
+        '<p style="color:#888;font-size:11px;margin-bottom:12px;">'
+        + frappe.utils.escape_html(
+            _("Preview — personalized for {0}").format(shown_for)
+        )
+        + "</p>"
+    )
+    heading = f"<h1>{subject}</h1>" if subject and doc.print_subject_heading else ""
+    body = caption + heading + message
+    html = comms.pdf_html(sa._wrap_letterhead(sa._resolve_letter_head(doc), body))
+    pdf = get_pdf(html)
+
+    for old in frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Seminary Announcement",
+            "attached_to_name": name,
+            "file_name": ("like", "letter-%"),
+        },
+        pluck="name",
+    ):
+        frappe.delete_doc("File", old, ignore_permissions=True, force=True)
+    f = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": f"letter-{name}.pdf",
+            "attached_to_doctype": "Seminary Announcement",
+            "attached_to_name": name,
+            "is_private": 1,
+            "content": pdf,
+        }
+    ).insert(ignore_permissions=True)
+    return {"file_url": f.file_url}
 
 
 _PROGRAM_PRICING_TEMPLATE = """

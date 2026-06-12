@@ -28,6 +28,9 @@ def resolve_recipients(doc) -> list[dict]:
     if doc.audience_instructors_teaching:
         out.extend(_instructors_for_term(term, course_schedules, seen))
 
+    if doc.audience_alumni:
+        out.extend(_alumni_recipients(seen))
+
     if doc.custom_filter_doctype:
         filters_raw = doc.custom_filters or "[]"
         try:
@@ -149,6 +152,37 @@ def _instructors_for_term(term, course_schedules, seen):
                 "party_type": "Instructor",
                 "party": r.instructor,
                 "party_name": r.instructor_name,
+                "email": r.email,
+                "user": r.user,
+            }
+        )
+    return out
+
+
+def _alumni_recipients(seen):
+    """All enabled Alumni Profiles. Term-independent — alumni reachability is
+    not scoped to a term, program, or course. Filtered on `enabled` (not
+    `show_in_directory`, which only governs the public directory listing).
+    """
+    rows = frappe.get_all(
+        "Alumni Profile",
+        filters={"enabled": 1},
+        fields=["name", "email", "full_name", "user"],
+    )
+
+    out = []
+    for r in rows:
+        if not r.email:
+            continue
+        key = r.email.strip().lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "party_type": "Alumni",
+                "party": r.name,
+                "party_name": r.full_name,
                 "email": r.email,
                 "user": r.user,
             }

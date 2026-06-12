@@ -71,6 +71,7 @@ export default withMermaid(defineConfig({
               { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },
               { text: 'Graduation Request', link: '/modules/graduation-request' },
               { text: 'Discussions', link: '/modules/discussions' },
+              { text: 'Communication', link: '/modules/communication' },
               { text: 'Announcements', link: '/modules/announcements' },
               { text: 'Instructor Payment', link: '/modules/instructor-payment' },
             ],
