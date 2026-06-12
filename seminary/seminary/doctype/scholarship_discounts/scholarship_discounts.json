@@ -7,14 +7,18 @@
  "engine": "InnoDB",
  "field_order": [
   "pgm_fee",
+  "mode",
+  "value",
   "discount_"
  ],
  "fields": [
   {
    "default": "0",
+   "depends_on": "eval:false",
+   "description": "Deprecated: superseded by Mode + Value. Retained only so the migration patch can backfill Value.",
    "fieldname": "discount_",
    "fieldtype": "Percent",
-   "in_list_view": 1,
+   "hidden": 1,
    "label": "Discount (%)"
   },
   {
@@ -23,6 +27,23 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Program Fee"
+  },
+  {
+   "default": "Percent",
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mode",
+   "options": "Percent\nFlat",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Percent of the fee (Mode = Percent) or a flat currency amount per term (Mode = Flat).",
+   "fieldname": "value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Value"
   }
  ],
  "index_web_pages_for_search": 1,

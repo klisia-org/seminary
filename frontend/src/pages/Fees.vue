@@ -16,10 +16,65 @@
 		</div>
 
 		<div v-if="studentInfo.scholarships && studentInfo.scholarships?.[0]?.scholarship"
-			class="flex flex-col items-center justify-center p-3">
+			class="flex flex-col items-center justify-center gap-1 p-3">
 			<h3 class="text-lg font-bold text-ink-gray-8">
 				{{ __('Scholarship') }}: {{ studentInfo.scholarships[0].scholarship }}
 			</h3>
+			<p v-if="studentInfo.scholarships[0].effective_to" class="text-xs text-ink-gray-5">
+				{{ __('Awarded until') }}: {{ studentInfo.scholarships[0].effective_to }}
+			</p>
+			<Badge :theme="retentionTheme(studentInfo.scholarships[0].retention_status)"
+				:label="studentInfo.scholarships[0].retention_status || 'OK'" />
+			<!-- Requirements to keep the award -->
+			<div v-if="studentInfo.scholarships[0].retain_min_gpa || studentInfo.scholarships[0].retain_min_credits_per_term"
+				class="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-ink-gray-6">
+				<span class="text-ink-gray-5">{{ __('To keep this scholarship') }}:</span>
+				<span v-if="studentInfo.scholarships[0].retain_min_gpa"
+					:class="studentInfo.scholarships[0].current_gpa < studentInfo.scholarships[0].retain_min_gpa ? 'text-ink-red-3 font-medium' : ''">
+					{{ __('GPA') }} {{ studentInfo.scholarships[0].current_gpa }} / {{ studentInfo.scholarships[0].retain_min_gpa }}
+				</span>
+				<span v-if="studentInfo.scholarships[0].retain_min_credits_per_term"
+					:class="studentInfo.scholarships[0].current_term_credits < studentInfo.scholarships[0].retain_min_credits_per_term ? 'text-ink-red-3 font-medium' : ''">
+					{{ __('Credits this term') }} {{ studentInfo.scholarships[0].current_term_credits }} / {{ studentInfo.scholarships[0].retain_min_credits_per_term }}
+				</span>
+			</div>
+			<p v-if="studentInfo.scholarships[0].retention_status === 'At Risk' && studentInfo.scholarships[0].retention_note"
+				class="text-xs text-ink-red-3 text-center max-w-md">
+				{{ studentInfo.scholarships[0].retention_note }}
+			</p>
+		</div>
+
+		<!-- Scholarships the student can apply for (only when they hold none) -->
+		<div v-if="(!studentInfo.scholarships || !studentInfo.scholarships.length) && availableScholarships.rows.length"
+			class="mx-5 mt-4 space-y-3">
+			<h3 class="text-sm font-semibold text-ink-gray-7">{{ __('Scholarships you can apply for') }}</h3>
+			<div v-for="item in availableScholarships.rows" :key="item.name"
+				class="rounded-lg border bg-surface-white p-4">
+				<div class="flex items-start justify-between gap-3">
+					<div>
+						<div class="font-semibold text-ink-gray-8">{{ item.scholarship }}</div>
+						<div class="text-xs text-ink-gray-5">{{ item.scholarship_type }} · {{ item.program }}</div>
+						<p v-if="item.notes" class="mt-1 text-sm text-ink-gray-6">{{ item.notes }}</p>
+						<ul class="mt-1 text-xs text-ink-gray-5 list-disc list-inside">
+							<li v-if="item.min_gpa">{{ __('Min GPA') }}: {{ item.min_gpa }}</li>
+							<li v-if="item.min_credits_total">{{ __('Min total credits') }}: {{ item.min_credits_total }}</li>
+							<li v-if="item.retain_min_credits_per_term">{{ __('Keep: min credits/term') }}: {{ item.retain_min_credits_per_term }}</li>
+							<li v-if="item.retain_min_gpa">{{ __('Keep: min GPA') }}: {{ item.retain_min_gpa }}</li>
+						</ul>
+						<p v-if="!item.eligible && item.ineligible_reasons?.length"
+							class="mt-2 text-xs text-ink-red-3">
+							{{ item.ineligible_reasons.join(' ') }}
+						</p>
+					</div>
+					<div class="shrink-0 flex flex-col items-end gap-1">
+						<Badge v-if="!item.eligible" theme="gray" :label="__('Not Eligible')" />
+						<Button v-else size="sm" variant="solid" theme="blue"
+							@click="applyForScholarship(item)"
+							:label="applyingTo === item.name ? __('Applying...') : __('Apply')"
+							:disabled="applyingTo === item.name" />
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<div v-if="tableData.rows.length > 0" class="px-5 py-4">
@@ -176,7 +231,7 @@ let isStudent = user.data.is_student
 let student = user.data.student
 
 const scholarshipsResource = createResource({
-	url: 'seminary.seminary.api.get_scholarship',
+	url: 'seminary.seminary.scholarship.get_student_scholarship',
 	params: {
 		student: student,
 	},
@@ -185,6 +240,58 @@ const scholarshipsResource = createResource({
 	},
 	auto: true,
 })
+
+// Scholarships the student could apply for (double-gated + budget-open).
+const availableScholarships = reactive({ rows: [] })
+const availableScholarshipsResource = createResource({
+	url: 'seminary.seminary.scholarship.get_available_scholarships',
+	params: {
+		student: student,
+	},
+	onSuccess: (response) => {
+		availableScholarships.rows = response || []
+	},
+	auto: true,
+})
+
+const applyingTo = ref(null)
+const applyForScholarship = (item) => {
+	applyingTo.value = item.name
+	createResource({
+		url: 'seminary.seminary.scholarship.apply_for_scholarship',
+		params: {
+			program_enrollment: item.program_enrollment,
+			scholarship: item.name,
+		},
+		onSuccess: () => {
+			applyingTo.value = null
+			createToast({
+				title: __('Application submitted'),
+				text: __('Your scholarship request has been submitted for review.'),
+				icon: 'check',
+				iconClasses: 'text-ink-green-3',
+			})
+			availableScholarshipsResource.reload()
+			scholarshipsResource.reload()
+		},
+		onError: (err) => {
+			applyingTo.value = null
+			createToast({
+				title: __('Could not apply'),
+				text: err?.messages?.[0] || __('Please try again.'),
+				icon: 'x',
+				iconClasses: 'text-ink-red-3',
+			})
+		},
+		auto: true,
+	})
+}
+
+const retentionTheme = (status) => {
+	if (status === 'At Risk') return 'red'
+	if (status === 'Under Review') return 'orange'
+	return 'green'
+}
 
 const seminarySettings = createResource({
 	url: 'frappe.client.get_value',

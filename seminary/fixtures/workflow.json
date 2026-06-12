@@ -881,5 +881,159 @@
   ],
   "workflow_name": "Graduation Requirement Item",
   "workflow_state_field": "workflow_state"
+ },
+ {
+  "creation": "2026-06-12 00:00:00.000000",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Scholarship Award",
+  "is_active": 1,
+  "name": "Scholarship Award Lifecycle",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Submitted"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Under Review"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Active"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Rejected"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Suspended"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Ended"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Student",
+    "condition": null,
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Submit",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Submitted",
+    "state": "Draft"
+   },
+   {
+    "action": "Grant Directly",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Active",
+    "state": "Draft"
+   },
+   {
+    "action": "Send for Review",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Under Review",
+    "state": "Submitted"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Active",
+    "state": "Submitted"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Rejected",
+    "state": "Submitted"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Active",
+    "state": "Under Review"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Rejected",
+    "state": "Under Review"
+   },
+   {
+    "action": "Suspend",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Suspended",
+    "state": "Active"
+   },
+   {
+    "action": "Reactivate",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Active",
+    "state": "Suspended"
+   },
+   {
+    "action": "End",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Ended",
+    "state": "Active"
+   },
+   {
+    "action": "End",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": null,
+    "next_state": "Ended",
+    "state": "Suspended"
+   }
+  ],
+  "workflow_name": "Scholarship Award Lifecycle",
+  "workflow_state_field": "workflow_state"
  }
 ]

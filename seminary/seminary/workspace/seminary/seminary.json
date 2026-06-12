@@ -69,36 +69,6 @@
    "type": "Link"
   },
   {
-   "description": "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to the Program Enrollment and on the top right click on Payers for this Program, then make the appropriate changes on Scholarship and save the form. You may need to reload the page to see the changes.",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Scholarships",
-   "link_count": 2,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Assign Scholarships in the Payers for Program Enrollment",
-   "link_count": 0,
-   "link_to": "Program Enrollment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Active Scholarship List",
-   "link_count": 0,
-   "link_to": "All Active Scholarships",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
    "hidden": 0,
    "is_query_report": 0,
    "label": "Enrollment",
@@ -293,9 +263,39 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "description": "Scholarships are defined on the Financial Setup menu. To assign or remove scholarships, go to Scholarship Award.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Scholarships",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Active Scholarship List",
+   "link_count": 0,
+   "link_to": "All Active Scholarships",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Award Scholarships",
+   "link_count": 0,
+   "link_to": "Scholarship Award",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-06-12 06:20:31.043830",
+ "modified": "2026-06-13 02:41:08.643682",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary",

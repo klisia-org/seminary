@@ -1157,16 +1157,65 @@ def course_enroll(pe_name, course):
     }
 
 
+def _resolve_display_terms():
+    """Academic term(s) to treat as 'this term' for the portal.
+
+    Prefers the flagged current term, but degrades gracefully so the student's
+    "My Enrollments This Term" panel never blanks out just because the daily
+    scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
+    gap between consecutive terms:
+      1. the flagged current term(s);
+      2. else the term whose date range contains today (flag not yet set);
+      3. else, during an inter-term gap, the nearest OPEN term by date distance
+         (the upcoming term the student is enrolling into).
+    """
+    today = frappe.utils.getdate(frappe.utils.today())
+
+    flagged = frappe.get_all(
+        "Academic Term", filters={"iscurrent_acterm": 1}, pluck="name"
+    )
+    if flagged:
+        return flagged
+
+    covering = frappe.get_all(
+        "Academic Term",
+        filters={
+            "term_start_date": ["<=", today],
+            "term_end_date": [">=", today],
+        },
+        pluck="name",
+    )
+    if covering:
+        return covering
+
+    open_terms = frappe.get_all(
+        "Academic Term",
+        filters={"open": 1},
+        fields=["name", "term_start_date", "term_end_date"],
+    )
+    if not open_terms:
+        return []
+
+    def distance(t):
+        if t.term_start_date and today < t.term_start_date:
+            return (t.term_start_date - today).days
+        if t.term_end_date and today > t.term_end_date:
+            return (today - t.term_end_date).days
+        return 0
+
+    open_terms.sort(key=distance)
+    return [open_terms[0].name]
+
+
 @frappe.whitelist()
 def get_student_enrollments_for_term(program_enrollment):
-    """Return the student's CEIs for the current academic term."""
+    """Return the student's CEIs for the current academic term (with a graceful
+    fallback during inter-term gaps — see _resolve_display_terms)."""
     student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
     if not student:
         return []
 
-    current_terms = frappe.get_all(
-        "Academic Term", filters={"iscurrent_acterm": 1}, pluck="name"
-    )
+    current_terms = _resolve_display_terms()
     if not current_terms:
         return []
 
@@ -2684,12 +2733,10 @@ def save_course_assessment(course, assessment_data):
 
 @frappe.whitelist()
 def get_scholarship(student):
-    scholarship = frappe.get_all(
-        "Payers Fee Category PE",
-        filters={"stu_link": student, "pf_active": 1},
-        fields=["scholarship"],
-    )
-    return scholarship
+    # Back-compat shim: scholarships are now first-class Scholarship Awards.
+    from seminary.seminary.scholarship import get_student_scholarship
+
+    return get_student_scholarship(student)
 
 
 @frappe.whitelist()
@@ -4534,53 +4581,6 @@ def get_program_fees(program):
 
 
 @frappe.whitelist()
-def add_scholarship(doc):
-    print("Add Scholarship called")
-    program_enrollment = doc.program_enrollment
-    student = doc.student
-    scholarship = doc.scholarship
-    sch_payer = frappe.db.get_value(
-        "Singles",
-        {"doctype": "Seminary Settings", "field": "scholarship_cust"},
-        "value",
-    )
-    if scholarship:
-        scholarship_discs = frappe.db.sql(
-            """select pgm_fee, discount_ from `tabScholarship Discounts` where parent = %s""",
-            (scholarship),
-        )
-        student_fees = frappe.db.sql(
-            """select  fee_category, pay_percent, payterm_payer, pep_event from `tabpgm_enroll_payers` where parent = %s and payer = %s""",
-            (program_enrollment, student),
-        )
-        for fee in student_fees:
-            for disc in scholarship_discs:
-
-                if fee[0] == disc[0]:
-                    stu_pay = fee[2]
-                    discount = disc[1]
-                    new_stu_pay = stu_pay - discount
-                    print("category: " + fee[0] + ", new fee: " + str(new_stu_pay))
-                    frappe.db.set_value(
-                        "pgm_enroll_payers",
-                        {"parent": program_enrollment, "fee_category": fee[0]},
-                        "pay_percent",
-                        new_stu_pay,
-                    )
-                    doc = frappe.new_doc("pgm_enroll_payers")
-                    doc.parent = program_enrollment
-                    doc.parentfield = "pf_payers"
-                    doc.parenttype = "Payers Fee Category PE"
-                    doc.fee_category = fee[0]
-                    doc.payer = sch_payer
-                    doc.payterm_payer = fee[2]
-                    doc.pep_event = fee[3]
-                    doc.pay_percent = discount
-                    doc.insert()
-                    doc.save()
-
-
-@frappe.whitelist()
 def get_fields(doctype, fields=None):
     if fields is None:
         fields = []
@@ -4591,24 +4591,6 @@ def get_fields(doctype, fields=None):
         fields.insert(1, meta.title_field.strip())
 
     return unique(fields)
-
-
-@frappe.whitelist()
-def get_scholarships(doctype, txt, searchfield, start, page_len, filters):
-    pe_query = frappe.db.sql(
-        """select pf_pe from `tabPayers Fee Category PE` where name LIKE %s""",
-        (f"%{txt}%",),
-    )
-    # Adding check to ensure pe_query has results before accessing [0][0]
-    if not pe_query or not pe_query[0][0]:
-        return []
-    program_enrollment = pe_query[0][0]
-    pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    program = pe.program
-    scholarships = frappe.db.sql(
-        """select name from `tabScholarships` where program = %s""", (program,)
-    )
-    return scholarships
 
 
 @frappe.whitelist()

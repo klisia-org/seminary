@@ -16,8 +16,8 @@ def get_context(context):
         students[1]["student_name"] if len(students) > 1 else "Nikolay Rimsky-Korsakov"
     )
     context.scholarships = frappe.get_all(
-        "Payers Fee Category PE",
-        filters={"stu_link": context.student, "pf_active": 1},
+        "Scholarship Award",
+        filters={"student": context.student, "workflow_state": "Active"},
         fields=["scholarship"],
     )
     context.scholarship = (

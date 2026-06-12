@@ -238,5 +238,21 @@
   "name": "Unseated",
   "style": "Danger",
   "workflow_state_name": "Unseated"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-file",
+  "name": "Suspended",
+  "style": "",
+  "workflow_state_name": "Suspended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-file",
+  "name": "Ended",
+  "style": "",
+  "workflow_state_name": "Ended"
  }
 ]

@@ -268,6 +268,12 @@ def process_financial_approval(doc):
         for item in return_doc.items:
             item.qty = item.qty * refund_pct
 
+        # Student invoices now carry the scholarship forgiveness as an absolute
+        # discount_amount (computed at invoice time). Scale it with the quantities
+        # so the credit note refunds the same proportion of the net.
+        if return_doc.get("discount_amount"):
+            return_doc.discount_amount = return_doc.discount_amount * refund_pct
+
         return_doc.remarks = (
             f"Withdrawal refund for {cei_name} ({refund_info['refund_percent']}%)"
         )

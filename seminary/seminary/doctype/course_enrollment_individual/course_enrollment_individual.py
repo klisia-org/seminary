@@ -253,11 +253,16 @@ class CourseEnrollmentIndividual(Document):
     @frappe.whitelist()
     def get_inv_data_ce(self):
         audithours = frappe.db.get_single_value("Seminary Settings", "auditcredit")
-        sch_customer = frappe.db.get_single_value(
-            "Seminary Settings", "scholarship_cust"
-        )
         is_audit = self.audit
         stulink = self.student_ce
+        # Only the student's own payer line carries a scholarship; resolve it at
+        # invoice time and book the forgiveness to a separate invoice.
+        student_customer = (
+            frappe.db.get_value("Student", stulink, "customer") or stulink
+        )
+        academic_term = self.academic_term or frappe.db.get_value(
+            "Course Schedule", self.coursesc_ce, "academic_term"
+        )
         inv_data = []
         inv_data = frappe.db.sql(
             """select cei.student_ce, cei.audit, cei.credits, cei.program_data,  pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate
@@ -296,26 +301,60 @@ class CourseEnrollmentIndividual(Document):
         audit_suffix = _(" (Audit)") if is_audit == 1 else ""
         summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
 
+        from seminary.seminary.billing import (
+            create_scholarship_invoice,
+            resolve_scholarship,
+        )
+
         i = 0
         while i < rows:
-            if inv_data[i][11] == 1:
-                qty = inv_data[i][2] * inv_data[i][7] / 100
+            row = inv_data[i]
+            if row[11] == 1:
+                qty = row[2] * row[7] / 100
             elif is_audit == 1 and audithours == 1:
-                qty = inv_data[i][2] * inv_data[i][7] / 100
+                qty = row[2] * row[7] / 100
             else:
-                qty = inv_data[i][7] / 100
+                qty = row[7] / 100
+
+            fee_category = row[4]
+            price_list_rate = row[14]
+            forgiven, award = 0, None
+            if row[5] == student_customer:
+                student_gross = round(qty * (price_list_rate or 0), 2)
+                forgiven, award = resolve_scholarship(
+                    program_enrollment=self.program_ce,
+                    fee_category=fee_category,
+                    student_gross=student_gross,
+                    academic_term=academic_term,
+                )
 
             create_payer_invoice(
-                customer=inv_data[i][5],
-                item_code=inv_data[i][12],
+                customer=row[5],
+                item_code=row[12],
                 qty=qty,
-                price_list_rate=inv_data[i][14],
-                selling_price_list=inv_data[i][13],
-                payment_terms_template=inv_data[i][8],
+                price_list_rate=price_list_rate,
+                selling_price_list=row[13],
+                payment_terms_template=row[8],
                 summary=summary,
                 student=stulink,
                 link_field="custom_cei",
                 link_value=self.name,
-                is_scholarship=inv_data[i][5] == sch_customer,
+                discount_amount=(forgiven if (forgiven and award) else 0),
             )
+
+            if forgiven and award:
+                create_scholarship_invoice(
+                    award=award,
+                    fee_category=fee_category,
+                    academic_term=academic_term,
+                    scope=self.name,
+                    forgiven=forgiven,
+                    item_code=row[12],
+                    selling_price_list=row[13],
+                    payment_terms_template=row[8],
+                    summary=summary,
+                    student=stulink,
+                    link_field="custom_cei",
+                    link_value=self.name,
+                )
             i += 1

@@ -67,6 +67,7 @@
   "portal_payment_enable",
   "column_break_smoh",
   "allow_portal_withdrawal",
+  "allow_portal_scholarship",
   "payment_gateway",
   "alternative_payment_instructions",
   "section_break_fxlm",
@@ -410,6 +411,13 @@
    "fieldname": "allow_portal_withdrawal",
    "fieldtype": "Check",
    "label": "Allow students to request course withdrawal on Portal"
+  },
+  {
+   "default": "0",
+   "description": "Global gate for portal scholarship applications. A scholarship is shown/applicable on the portal only when this is on AND the scholarship's own \"Show on Portal\" is checked (double gate).",
+   "fieldname": "allow_portal_scholarship",
+   "fieldtype": "Check",
+   "label": "Allow students to apply for scholarships on Portal"
   },
   {
    "default": "1",

@@ -208,5 +208,23 @@
   "doctype": "Workflow Action Master",
   "name": "Release Seat Request",
   "workflow_action_name": "Release Seat Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Grant Directly",
+  "workflow_action_name": "Grant Directly"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Suspend",
+  "workflow_action_name": "Suspend"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "End",
+  "workflow_action_name": "End"
  }
 ]

@@ -1,0 +1,2 @@
+import{Qn as e}from"./frappe-ui-BZD020RY.js";import{kt as t}from"./vendor-giNDUMjU.js";import{A as n}from"./index-Dkb0JSCp.js";var r=t(`settings`,()=>{let{isLoggedIn:t}=n();return{isSettingsOpen:e(!1),activeTab:e(null)}});export{r as t};
+//# sourceMappingURL=settings-Df3aogDJ.js.map
