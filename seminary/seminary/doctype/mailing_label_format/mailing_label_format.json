@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "autoname": "field:format_name",
+ "creation": "2026-06-11 00:00:00.000000",
+ "description": "A label-sheet layout for printed mailing labels. Ships with common Avery presets; a seminary can add its own by measuring its label stock (millimetres).",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "format_name",
+  "page_size",
+  "description",
+  "geometry_section",
+  "columns",
+  "rows",
+  "label_width",
+  "label_height",
+  "column_break_geo",
+  "margin_top",
+  "margin_left"
+ ],
+ "fields": [
+  {
+   "fieldname": "format_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Format Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Letter",
+   "fieldname": "page_size",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Page Size",
+   "options": "Letter\nA4\nLegal",
+   "reqd": 1
+  },
+  {
+   "description": "e.g. \"Avery 5160 — 30 per US Letter sheet, 2.625×1 in\".",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "description": "Grid and dimensions in millimetres. Measure your sheet: how many labels across (columns) and down (rows), each label's width and height, and the sheet's top and left margin to the first label.",
+   "fieldname": "geometry_section",
+   "fieldtype": "Section Break",
+   "label": "Geometry (mm)"
+  },
+  {
+   "fieldname": "columns",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Columns",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "rows",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Rows",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "label_width",
+   "fieldtype": "Float",
+   "label": "Label Width (mm)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "label_height",
+   "fieldtype": "Float",
+   "label": "Label Height (mm)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_geo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "margin_top",
+   "fieldtype": "Float",
+   "label": "Top Margin (mm)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "margin_left",
+   "fieldtype": "Float",
+   "label": "Left Margin (mm)",
+   "non_negative": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-11 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Mailing Label Format",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Registrar"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

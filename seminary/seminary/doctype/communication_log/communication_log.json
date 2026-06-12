@@ -16,6 +16,7 @@
   "channel",
   "provider_account",
   "to_address",
+  "media_url",
   "from_address",
   "content_section",
   "subject",
@@ -43,7 +44,8 @@
   "column_break_follow",
   "follow_up_template",
   "follow_up_of",
-  "follow_up_done"
+  "follow_up_done",
+  "in_reply_to"
  ],
  "fields": [
   {
@@ -134,6 +136,12 @@
    "fieldname": "message",
    "fieldtype": "Text Editor",
    "label": "Message"
+  },
+  {
+   "description": "Public URL of an attached media file (e.g. a Voice recording played by the carrier). When set, channels that support media use it instead of the text body.",
+   "fieldname": "media_url",
+   "fieldtype": "Data",
+   "label": "Media URL"
   },
   {
    "fieldname": "column_break_content",
@@ -283,6 +291,14 @@
    "fieldname": "follow_up_done",
    "fieldtype": "Check",
    "label": "Follow Up Done",
+   "read_only": 1
+  },
+  {
+   "description": "The message this one replies to — links a conversation thread.",
+   "fieldname": "in_reply_to",
+   "fieldtype": "Link",
+   "label": "In Reply To",
+   "options": "Communication Log",
    "read_only": 1
   }
  ],

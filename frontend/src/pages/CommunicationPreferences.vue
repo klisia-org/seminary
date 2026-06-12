@@ -78,6 +78,51 @@
 
 		<section class="rounded-lg border border-outline-gray-1 bg-surface-white p-5 shadow-sm">
 			<h3 class="mb-1 text-base font-semibold text-ink-gray-8">
+				{{ __('Mailing address') }}
+			</h3>
+			<p class="mb-3 text-sm text-ink-gray-5">
+				{{ __('Where the seminary sends printed letters.') }}
+			</p>
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<input
+					v-model="mailing.address_line_1"
+					:placeholder="__('Address line 1')"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0 sm:col-span-2"
+				/>
+				<input
+					v-model="mailing.address_line_2"
+					:placeholder="__('Address line 2')"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0 sm:col-span-2"
+				/>
+				<input
+					v-model="mailing.city"
+					:placeholder="__('City')"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
+				/>
+				<input
+					v-model="mailing.state"
+					:placeholder="__('State / Province')"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
+				/>
+				<input
+					v-model="mailing.pincode"
+					:placeholder="__('Postal code')"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
+				/>
+				<select
+					v-model="mailing.country"
+					class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
+				>
+					<option value="">{{ __('Country') }}</option>
+					<option v-for="c in prefs.data.countries" :key="c" :value="c">
+						{{ c }}
+					</option>
+				</select>
+			</div>
+		</section>
+
+		<section class="rounded-lg border border-outline-gray-1 bg-surface-white p-5 shadow-sm">
+			<h3 class="mb-1 text-base font-semibold text-ink-gray-8">
 				{{ __('Your contact addresses') }}
 			</h3>
 			<p class="mb-3 text-sm text-ink-gray-5">
@@ -149,6 +194,14 @@ const telegram = createResource({
 
 const language = ref('')
 const consents = reactive({})
+const mailing = reactive({
+	address_line_1: '',
+	address_line_2: '',
+	city: '',
+	state: '',
+	pincode: '',
+	country: '',
+})
 
 const prefs = createResource({
 	url: 'seminary.seminary.comms.get_my_communication_preferences',
@@ -160,6 +213,15 @@ const prefs = createResource({
 				consents[`${ch}::${cat}`] = data.consents[`${ch}::${cat}`] || 'Unset'
 			}
 		}
+		Object.assign(mailing, {
+			address_line_1: '',
+			address_line_2: '',
+			city: '',
+			state: '',
+			pincode: '',
+			country: '',
+			...(data.mailing_address || {}),
+		})
 	},
 })
 
@@ -175,6 +237,10 @@ function save() {
 		const [channel, category] = key.split('::')
 		return { channel, category, status }
 	})
-	saving.submit({ language: language.value || null, consents: rows })
+	saving.submit({
+		language: language.value || null,
+		consents: rows,
+		mailing_address: { ...mailing },
+	})
 }
 </script>

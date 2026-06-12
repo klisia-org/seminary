@@ -29,6 +29,14 @@
   "column_break_professional",
   "city",
   "country",
+  "mailing_address_section",
+  "mailing_address_line_1",
+  "mailing_address_line_2",
+  "mailing_pincode",
+  "column_break_mailing",
+  "mailing_city",
+  "mailing_state",
+  "mailing_country",
   "bio_section",
   "bio"
  ],
@@ -179,6 +187,59 @@
    "fieldtype": "Link",
    "label": "Country",
    "options": "Country"
+  },
+  {
+   "collapsible": 1,
+   "description": "From the linked Person (the source of truth). Alumni edit it on the portal Preferences page.",
+   "fieldname": "mailing_address_section",
+   "fieldtype": "Section Break",
+   "label": "Mailing Address"
+  },
+  {
+   "fetch_from": "person.address_line_1",
+   "fieldname": "mailing_address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "person.address_line_2",
+   "fieldname": "mailing_address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "person.pincode",
+   "fieldname": "mailing_pincode",
+   "fieldtype": "Data",
+   "label": "Postal Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_mailing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "person.city",
+   "fieldname": "mailing_city",
+   "fieldtype": "Data",
+   "label": "City",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "person.state",
+   "fieldname": "mailing_state",
+   "fieldtype": "Data",
+   "label": "State / Province",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "person.country",
+   "fieldname": "mailing_country",
+   "fieldtype": "Data",
+   "label": "Country",
+   "read_only": 1
   },
   {
    "fieldname": "bio_section",

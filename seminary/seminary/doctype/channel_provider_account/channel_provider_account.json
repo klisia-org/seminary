@@ -14,6 +14,15 @@
   "enabled",
   "country",
   "hourly_limit",
+  "credentials_section",
+  "twilio_account_sid",
+  "twilio_auth_token",
+  "twilio_from_number",
+  "twilio_messaging_service_sid",
+  "telegram_bot_token",
+  "telegram_webhook_secret",
+  "telegram_bot_username",
+  "public_url",
   "settings_section",
   "settings"
  ],
@@ -36,11 +45,12 @@
    "reqd": 1
   },
   {
-   "description": "Adapter key resolved through the communication_channel_providers hook. Built-ins: frappe-email (Frappe Email Account stack), in-app (portal inbox).",
+   "description": "Adapter that carries this channel. frappe-email = Frappe Email Account stack; in-app = portal inbox; telegram = Telegram bot; twilio = Twilio SMS/WhatsApp/Voice; print = generated PDF letters.",
    "fieldname": "provider",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Provider",
+   "options": "\nfrappe-email\nin-app\ntelegram\ntwilio\nprint",
    "reqd": 1
   },
   {
@@ -70,16 +80,83 @@
    "non_negative": 1
   },
   {
+   "depends_on": "eval:[\"telegram\",\"twilio\"].includes(doc.provider)",
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "depends_on": "eval:doc.provider==\"twilio\"",
+   "description": "Twilio Account SID (starts with AC).",
+   "fieldname": "twilio_account_sid",
+   "fieldtype": "Data",
+   "label": "Twilio Account SID",
+   "mandatory_depends_on": "eval:doc.provider==\"twilio\""
+  },
+  {
+   "depends_on": "eval:doc.provider==\"twilio\"",
+   "description": "Twilio Auth Token. Stored encrypted.",
+   "fieldname": "twilio_auth_token",
+   "fieldtype": "Password",
+   "label": "Twilio Auth Token",
+   "mandatory_depends_on": "eval:doc.provider==\"twilio\""
+  },
+  {
+   "depends_on": "eval:doc.provider==\"twilio\"",
+   "description": "Sending number in E.164 (e.g. +15551234567). For WhatsApp use the WhatsApp-enabled sender; the whatsapp: prefix is added automatically from the Channel. Leave blank if using a Messaging Service SID.",
+   "fieldname": "twilio_from_number",
+   "fieldtype": "Data",
+   "label": "From Number",
+   "mandatory_depends_on": "eval:doc.provider==\"twilio\" && !doc.twilio_messaging_service_sid"
+  },
+  {
+   "depends_on": "eval:doc.provider==\"twilio\"",
+   "description": "Optional. Use a Twilio Messaging Service (MG...) instead of a fixed From number.",
+   "fieldname": "twilio_messaging_service_sid",
+   "fieldtype": "Data",
+   "label": "Messaging Service SID"
+  },
+  {
+   "depends_on": "eval:doc.provider==\"telegram\"",
+   "description": "Bot token from @BotFather. Stored encrypted.",
+   "fieldname": "telegram_bot_token",
+   "fieldtype": "Password",
+   "label": "Bot Token",
+   "mandatory_depends_on": "eval:doc.provider==\"telegram\""
+  },
+  {
+   "depends_on": "eval:doc.provider==\"telegram\"",
+   "description": "Auto-generated on save if left blank; Telegram echoes it back on each webhook call for verification. Stored encrypted.",
+   "fieldname": "telegram_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.provider==\"telegram\"",
+   "description": "Optional. The bot's @username (auto-detected from the token if blank).",
+   "fieldname": "telegram_bot_username",
+   "fieldtype": "Data",
+   "label": "Bot Username"
+  },
+  {
+   "depends_on": "eval:[\"telegram\",\"twilio\"].includes(doc.provider)",
+   "description": "Optional. The public HTTPS base/URL the provider was configured to call, if the site sits behind a proxy that rewrites the request URL (used for webhook signature verification).",
+   "fieldname": "public_url",
+   "fieldtype": "Data",
+   "label": "Public URL (override)"
+  },
+  {
    "collapsible": 1,
    "fieldname": "settings_section",
    "fieldtype": "Section Break",
-   "label": "Provider Settings"
+   "label": "Advanced"
   },
   {
-   "description": "Provider-specific configuration as JSON (API keys, sender ids, webhook secrets). Passed verbatim to the adapter.",
+   "description": "Optional extra provider configuration as raw JSON, merged underneath the fields above (the typed fields win). Secrets belong in the encrypted fields above, not here.",
    "fieldname": "settings",
    "fieldtype": "Code",
-   "label": "Settings (JSON)",
+   "label": "Extra Settings (JSON)",
    "options": "JSON"
   }
  ],

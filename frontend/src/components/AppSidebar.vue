@@ -8,7 +8,7 @@
 			</div>
 			<nav class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
 				<SidebarLink v-for="link in links" :key="link.to" :label="link.label" :to="link.to"
-					:isCollapsed="isSidebarCollapsed" :icon="link.icon" />
+					:isCollapsed="isSidebarCollapsed" :icon="link.icon" :badge="link.badge || 0" />
 				<template v-if="userResource?.data?.is_moderator || userResource?.data?.is_system_manager">
 					<SidebarLink :label="__('Desk')" :to="'/desk/seminary'" :icon="MonitorCog"
 						:isCollapsed="isSidebarCollapsed" />
@@ -56,7 +56,8 @@ import SidebarLink from '@/components/SidebarLink.vue'
 import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { usersStore } from '@/stores/user';
 import { useTheme } from '@/composables/useTheme';
 import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell';
@@ -74,6 +75,15 @@ const visiblePortals = computed(() => {
 const { theme, toggleTheme } = useTheme();
 
 const { userResource } = usersStore();
+
+const unreadCount = createResource({
+	url: 'seminary.seminary.comms.get_my_unread_count',
+	auto: true,
+});
+
+// Refresh the unread badge as the user moves around (e.g. after reading in the Inbox).
+const route = useRoute();
+watch(() => route.path, () => unreadCount.reload());
 
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
@@ -117,6 +127,7 @@ const links = computed(() => {
 			label: __('Inbox'),
 			to: '/inbox',
 			icon: Inbox,
+			badge: unreadCount.data || 0,
 		},
 		{
 			label: __('Preferences'),
