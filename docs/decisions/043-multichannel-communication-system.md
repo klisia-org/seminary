@@ -75,4 +75,42 @@ sequences (drip), donor module on top of Person, Notification Log bridge
 retirement.
 
 ## Roadmap
-Remaining on the communication roadmap: Twilio SMS / WhatsApp Cloud adapters (same shape as Telegram), Days-Before/After scheduled triggers, reply-from-inbox threading, and surfacing inbound replies in the portal.
+Remaining on the communication roadmap: Twilio SMS / WhatsApp Cloud adapters (same shape as Telegram), Days-Before/After scheduled triggers, and surfacing inbound replies in the portal. (Portal compose + reply-from-inbox threading shipped — see addendum.)
+
+## Addendum (2026-06-12): Portal compose — configurable audiences & private attachments
+
+The portal inbox grew a **compose** surface (person-to-person In-App messages,
+`send_portal_message`/`reply_portal_message`), and two decisions firmed up.
+
+**Messaging audiences are configurable, not hardcoded.** Who a portal user may
+message is the authorization spine (`get_my_messaging_scope` — `send_portal_message`
+validates every target against it server-side). It is driven by **Portal
+Messaging Rule** child rows on Seminary Settings: `sender_role → audience`
+(Course Instructors/Students, All Instructors/Students, a Role, a Specific User,
+or the Support User — this wires the previously-dead `support_user`). Defaults
+are seeded create-only-if-empty via the install hook + a one-time patch (never
+fixtures, per 015's lesson) and reproduce the prior behavior (students → their
+course instructors; staff → the roster) plus Student → Support. No rules
+configured ⇒ a legacy fallback. **Safety:** All-Instructors/All-Students
+audiences are server-gated to actual staff regardless of rule config, so a
+mis-configured `Student → All Students` rule can't leak the roster.
+
+**Attachments and inline images stay PRIVATE — never flipped public.** A public
+`/files/...` URL is unauthenticated; unacceptable for student-associated content.
+Instead every file a message references (explicit attachments + editor inline
+images, uploaded `is_private=1`) is attached to **each recipient's** Communication
+Log via `create_attachment_copy` (deduped bytes, one File row per recipient), and
+served by Frappe's native `/private/files` ACL — which grants a private file to
+anyone who can READ a document it's attached to (OR-semantics across File rows).
+To make that ACL authorize the right people, portal roles (Student/Alumni/
+Instructor) get a **scoped** read on Communication Log: a permlevel-0 read
+DocPerm narrowed by `permission_query_conditions` + a deny-only `has_permission`
+hook to rows where they are the `person` or the `triggered_by`. Internal/PII
+fields (`to_address`, `error`, routing, `idempotency_key`, …) move to
+**permlevel 1**, readable only by staff. `_publish_embedded_files` (the public
+flip) is retained **only for external channels** (Email, whose clients fetch
+without a session), gated on `channel != In-App`. The inbox listing itself still
+uses `frappe.get_all` (permission-ignoring, manually scoped), so the role grant
+exists purely to satisfy the file-download ACL. See
+`seminary/communication_log_permissions.py`, `_attach_inapp_files` /
+`_privatize_embedded_files` in `comms.py`, and the Communication Log permlevels.

@@ -107,18 +107,21 @@
    "fieldname": "provider_account",
    "fieldtype": "Link",
    "label": "Provider Account",
-   "options": "Channel Provider Account"
+   "options": "Channel Provider Account",
+   "permlevel": 1
   },
   {
    "fieldname": "to_address",
    "fieldtype": "Data",
    "label": "To",
+   "permlevel": 1,
    "search_index": 1
   },
   {
    "fieldname": "from_address",
    "fieldtype": "Data",
-   "label": "From"
+   "label": "From",
+   "permlevel": 1
   },
   {
    "fieldname": "content_section",
@@ -141,7 +144,8 @@
    "description": "Public URL of an attached media file (e.g. a Voice recording played by the carrier). When set, channels that support media use it instead of the text body.",
    "fieldname": "media_url",
    "fieldtype": "Data",
-   "label": "Media URL"
+   "label": "Media URL",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_content",
@@ -151,13 +155,15 @@
    "fieldname": "template",
    "fieldtype": "Link",
    "label": "Template",
-   "options": "Communication Template"
+   "options": "Communication Template",
+   "permlevel": 1
   },
   {
    "fieldname": "language",
    "fieldtype": "Link",
    "label": "Language",
-   "options": "Language"
+   "options": "Language",
+   "permlevel": 1
   },
   {
    "description": "Who or what queued this: a user, or a system path like seminary-announcement / waitlist-promotion.",
@@ -187,7 +193,8 @@
    "description": "Blank = send at the next dispatcher run.",
    "fieldname": "scheduled_at",
    "fieldtype": "Datetime",
-   "label": "Scheduled At"
+   "label": "Scheduled At",
+   "permlevel": 1
   },
   {
    "fieldname": "sent_at",
@@ -199,6 +206,7 @@
    "fieldname": "delivered_at",
    "fieldtype": "Datetime",
    "label": "Delivered At",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -216,18 +224,21 @@
    "fieldname": "retry_count",
    "fieldtype": "Int",
    "label": "Retry Count",
+   "permlevel": 1,
    "read_only": 1
   },
   {
    "fieldname": "next_attempt_at",
    "fieldtype": "Datetime",
    "label": "Next Attempt At",
+   "permlevel": 1,
    "read_only": 1
   },
   {
    "fieldname": "error",
    "fieldtype": "Small Text",
    "label": "Error",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -235,6 +246,7 @@
    "fieldname": "provider_message_id",
    "fieldtype": "Data",
    "label": "Provider Message ID",
+   "permlevel": 1,
    "read_only": 1,
    "search_index": 1
   },
@@ -244,6 +256,7 @@
    "fieldtype": "Data",
    "label": "Idempotency Key",
    "no_copy": 1,
+   "permlevel": 1,
    "read_only": 1,
    "unique": 1
   },
@@ -257,7 +270,8 @@
    "default": "0",
    "fieldname": "awaiting_response",
    "fieldtype": "Check",
-   "label": "Awaiting Response"
+   "label": "Awaiting Response",
+   "permlevel": 1
   },
   {
    "default": "0",
@@ -265,7 +279,8 @@
    "fieldname": "follow_up_after_days",
    "fieldtype": "Int",
    "label": "Follow Up After (Days)",
-   "non_negative": 1
+   "non_negative": 1,
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_follow",
@@ -276,7 +291,8 @@
    "fieldname": "follow_up_template",
    "fieldtype": "Link",
    "label": "Follow Up Template",
-   "options": "Communication Template"
+   "options": "Communication Template",
+   "permlevel": 1
   },
   {
    "description": "The outbound log this row is a follow-up to.",
@@ -284,6 +300,7 @@
    "fieldtype": "Link",
    "label": "Follow Up Of",
    "options": "Communication Log",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -291,6 +308,7 @@
    "fieldname": "follow_up_done",
    "fieldtype": "Check",
    "label": "Follow Up Done",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -324,6 +342,12 @@
    "write": 1
   },
   {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
    "create": 1,
    "email": 1,
    "export": 1,
@@ -335,6 +359,12 @@
    "write": 1
   },
   {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
    "email": 1,
    "export": 1,
    "print": 1,
@@ -342,6 +372,23 @@
    "report": 1,
    "role": "Program Chair",
    "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
   }
  ],
  "row_format": "Dynamic",

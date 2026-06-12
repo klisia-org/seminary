@@ -40,6 +40,7 @@ def after_install():
     seed_channel_provider_accounts()
     seed_mailing_label_formats()
     seed_communication_templates()
+    seed_portal_messaging_rules()
     setup_customer_person_field()
 
 
@@ -559,6 +560,42 @@ def seed_communication_templates():
     frappe.db.commit()
 
 
+def seed_portal_messaging_rules():
+    """Seed the default Portal Messaging Rules on Seminary Settings (ADR 043) so
+    the portal Inbox works out of the box: students reach their course
+    instructors plus the support user; staff reach the whole roster.
+
+    Seeded once, create-only-if-empty — if a seminary has configured any rule
+    we never touch the table. NOT fixtures: a re-import would clobber the
+    seminary's desk edits (and child rows) on every migrate.
+    """
+    if not frappe.db.exists("DocType", "Portal Messaging Rule"):
+        return
+    settings = frappe.get_single("Seminary Settings")
+    if settings.get("portal_messaging_rules"):
+        return
+    defaults = [
+        ("Student", "Course Instructors"),
+        ("Student", "Support User"),
+        ("Instructor", "All Instructors"),
+        ("Instructor", "All Students"),
+        ("Seminary Manager", "All Instructors"),
+        ("Seminary Manager", "All Students"),
+        ("Program Chair", "All Instructors"),
+        ("Program Chair", "All Students"),
+    ]
+    for sender_role, audience in defaults:
+        if not frappe.db.exists("Role", sender_role):
+            continue
+        settings.append(
+            "portal_messaging_rules",
+            {"enabled": 1, "sender_role": sender_role, "audience": audience},
+        )
+    settings.flags.ignore_permissions = True
+    settings.save()
+    frappe.db.commit()
+
+
 def setup_customer_person_field():
     """Reverse link Customer → Person (ADR 042 addendum): Person.customer
     records the financial party; this mirrors it on the Customer so finance
@@ -774,6 +811,7 @@ def after_migrate():
     seed_channel_provider_accounts()
     seed_mailing_label_formats()
     seed_communication_templates()
+    seed_portal_messaging_rules()
     setup_customer_person_field()
 
 
