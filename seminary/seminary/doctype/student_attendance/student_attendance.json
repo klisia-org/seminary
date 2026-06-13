@@ -15,6 +15,7 @@
   "course_schedule",
   "column_break_3",
   "date",
+  "meeting",
   "status",
   "leave_application",
   "amended_from"
@@ -41,6 +42,15 @@
    "fieldtype": "Date",
    "label": "Date",
    "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "The specific class meeting (a section can meet more than once on the same date).",
+   "fieldname": "meeting",
+   "fieldtype": "Link",
+   "label": "Meeting",
+   "options": "Course Schedule Meeting Dates",
+   "read_only": 1,
    "search_index": 1
   },
   {

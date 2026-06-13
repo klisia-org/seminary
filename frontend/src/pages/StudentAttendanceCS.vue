@@ -25,7 +25,12 @@
     @click="selectDate(meeting)"
     :title="new Date(meeting.cs_meetdate) > today ? __('Cannot set attendance of future dates') : ''"
   >
-    <span>{{ formatDate(meeting.cs_meetdate) }}</span>
+    <span>
+      {{ formatDate(meeting.cs_meetdate) }}
+      <span v-if="meeting.cs_fromtime" class="text-xs text-ink-gray-5">· {{ hhmm(meeting.cs_fromtime) }}</span>
+      <span v-if="meeting.online" class="text-xs text-ink-gray-5">· {{ __('Online') }}</span>
+      <span v-else-if="meeting.room_label" class="text-xs text-ink-gray-5">· {{ meeting.room_label }}</span>
+    </span>
     <span v-if="meeting.attendance === 1" class="text-green-500">
       <Check class="h-5 w-5 text-green-500" />
     </span>
@@ -43,6 +48,8 @@
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold">
           {{ __('Attendance for: ') }} {{ selectedDate?.cs_meetdate || __('Select a date') }}
+          <span v-if="selectedDate?.online" class="text-sm font-normal text-ink-gray-5">· {{ __('Online') }}</span>
+          <span v-else-if="selectedDate?.room_label" class="text-sm font-normal text-ink-gray-5">· {{ selectedDate.room_label }}</span>
         </h2>
         <div v-if="selectedDate" class="flex items-center gap-2">
           <Button variant="subtle" @click="printBlankSheet">
@@ -298,6 +305,10 @@ const formatDate = (dateStr) => {
   return dayjs(dateStr).format('MMM D') // e.g., "Apr 5"
 }
 
+// "6:49:00" / "06:49:00" → "6:49" (slice(0,5) leaves a dangling colon on
+// single-digit hours).
+const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
+
 // Per-student attendance standing (absences vs allowed), keyed by student id.
 const standings = createResource({
   url: 'seminary.seminary.attendance.get_course_attendance_standings',
@@ -380,9 +391,9 @@ const attendanceResource = createResource({
       doctype: 'Student Attendance',
       filters: {
         course_schedule: props.courseName,
-        date: selectedDate.value?.cs_meetdate, // Filter by selected date
+        meeting: selectedDate.value?.name, // Filter by the specific meeting
       },
-      fields: ['student', 'status', 'date'],
+      fields: ['student', 'status', 'date', 'meeting'],
     };
   },
   auto: false, // Do not fetch automatically; fetch when a date is selected
@@ -399,7 +410,7 @@ watch(
       attendance.value[s.student] = 'Absent';
     });
     data.forEach((record) => {
-      if (record.date === selectedDate.value?.cs_meetdate) {
+      if (record.meeting === selectedDate.value?.name) {
         attendance.value[record.student] = record.status || 'Absent';
       }
     });
@@ -461,6 +472,7 @@ const markAttendance = async () => {
       body: JSON.stringify({
         course_schedule: props.courseName,
         date: selectedDate.value.cs_meetdate,
+        meeting: selectedDate.value.name,
         students_present: bucket('Present'),
         students_tardy: bucket('Tardy'),
         students_absent: bucket('Absent'),
@@ -511,6 +523,7 @@ const showCheckinCode = async () => {
     const res = await call('seminary.seminary.course_checkin.ensure_meeting_checkin_code', {
       course_schedule: props.courseName,
       meeting_date: selectedDate.value.cs_meetdate,
+      meeting: selectedDate.value.name,
     });
     checkinCode.value = res.checkin_code;
     checkinUrl.value =

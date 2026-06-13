@@ -122,16 +122,33 @@ def _enrolled(course_schedule, student):
     )
 
 
-def _recorded_dates(student, course_schedule):
-    """Dates (as strings) the student already has a Student Attendance for."""
-    return {
-        str(r.date)
-        for r in frappe.get_all(
-            "Student Attendance",
-            filters={"student": student, "course_schedule": course_schedule},
-            fields=["date"],
-        )
-    }
+def _tracks_online(settings):
+    """Whether online meetings are attendance-bearing (ADR 051). Defaults to True
+    when the setting is absent."""
+    v = settings.get("track_online_attendance")
+    return v is None or bool(v)
+
+
+def _recorded(student, course_schedule):
+    """(meeting names, dates as strings) the student already has attendance for.
+
+    Meetings is authoritative once attendance is keyed per-meeting (ADR 051);
+    dates still covers legacy rows whose ``meeting`` isn't set yet."""
+    rows = frappe.get_all(
+        "Student Attendance",
+        filters={"student": student, "course_schedule": course_schedule},
+        fields=["meeting", "date"],
+    )
+    meetings = {r.meeting for r in rows if r.meeting}
+    dates = {str(r.date) for r in rows if r.date}
+    return meetings, dates
+
+
+def _is_recorded(row, recorded):
+    """Whether this meeting row is already attended — by meeting name, or by date
+    for un-backfilled legacy rows."""
+    meetings, dates = recorded
+    return row.name in meetings or str(getdate(row.cs_meetdate)) in dates
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +175,8 @@ def get_course_checkin_context(course_schedule):
 
     settings = frappe.get_cached_doc("Seminary Settings")
     enforce = bool(settings.enforce_time_window)
-    recorded = _recorded_dates(student.name, course_schedule)
+    track_online = _tracks_online(settings)
+    recorded = _recorded(student.name, course_schedule)
 
     ctx = {
         "eligible": True,
@@ -171,23 +189,31 @@ def get_course_checkin_context(course_schedule):
         now = now_datetime()
         ctx["open_meeting"] = None
         for row in meetings:
+            if row.cs_online and not track_online:
+                continue
             start, end = _meeting_times(row)
             if _is_open_now(start, end, settings, now):
-                mdate = str(getdate(row.cs_meetdate))
                 ctx["open_meeting"] = {
-                    "meeting_date": mdate,
+                    "meeting_date": str(getdate(row.cs_meetdate)),
+                    "meeting": row.name,
                     "from_time": str(row.cs_fromtime) if row.cs_fromtime else None,
                     "to_time": str(row.cs_totime) if row.cs_totime else None,
-                    "already_checked_in": mdate in recorded,
+                    "already_checked_in": _is_recorded(row, recorded),
                 }
                 break
     else:
         today_d = getdate(today())
         ctx["pending"] = [
-            {"meeting_date": str(getdate(r.cs_meetdate))}
+            {
+                "meeting_date": str(getdate(r.cs_meetdate)),
+                "meeting": r.name,
+                "from_time": str(r.cs_fromtime) if r.cs_fromtime else None,
+                "to_time": str(r.cs_totime) if r.cs_totime else None,
+            }
             for r in meetings
             if getdate(r.cs_meetdate) <= today_d
-            and str(getdate(r.cs_meetdate)) not in recorded
+            and not _is_recorded(r, recorded)
+            and (track_online or not r.cs_online)
         ]
 
     return ctx
@@ -199,11 +225,14 @@ def get_course_checkin_context(course_schedule):
 
 
 @frappe.whitelist()
-def course_check_in(course_schedule, meeting_date, code=None):
+def course_check_in(course_schedule, meeting_date, code=None, meeting=None):
     """Student self check-in for a class meeting. Validates enrollment, then —
     when the time window is enforced — the window and code, recording Present or
     Tardy. In catch-up mode (window not enforced) records Present for any past
-    meeting. Idempotent: a later check-in updates the existing record."""
+    meeting. Idempotent: a later check-in updates the existing record.
+
+    ``meeting`` (the specific Course Schedule Meeting Dates row) keys attendance
+    per-meeting; a section may meet more than once on one date (ADR 051)."""
     student = get_current_student()
     if not student:
         frappe.throw(_("Only enrolled students can check in."), frappe.PermissionError)
@@ -219,18 +248,30 @@ def course_check_in(course_schedule, meeting_date, code=None):
     settings = frappe.get_cached_doc("Seminary Settings")
     enforce = bool(settings.enforce_time_window)
 
+    # Online meetings aren't attendance-bearing when the policy is off — drop them
+    # so neither the open-now resolution nor catch-up can record against one.
+    if not _tracks_online(settings):
+        rows = [r for r in rows if not r.cs_online]
+        if not rows:
+            frappe.throw(_("Online meetings don't track attendance."))
+
     if enforce:
         # Validate against the row that is actually open now (handles >1 row
         # sharing the date), not just the first one matching the date.
-        meeting = _open_meeting(rows, settings)
-        if not meeting:
+        meeting_row = _open_meeting(rows, settings)
+        if not meeting_row:
             frappe.throw(_("Check-in for this meeting is not open right now."))
-        _validate_code(meeting, settings, code)
-        status = _status_for(_meeting_times(meeting)[0], settings)
+        _validate_code(meeting_row, settings, code)
+        status = _status_for(_meeting_times(meeting_row)[0], settings)
     else:
         # Catch-up mode: any past meeting, no code, never auto-Tardy.
         if getdate(meeting_date) > getdate(today()):
             frappe.throw(_("You cannot check in for a future meeting."))
+        # Honour the meeting the student picked; fall back to the lone row on
+        # the date when the caller didn't specify one.
+        meeting_row = next((r for r in rows if r.name == meeting), None)
+        if not meeting_row and len(rows) == 1:
+            meeting_row = rows[0]
         status = "Present"
 
     stuname = (
@@ -242,7 +283,12 @@ def course_check_in(course_schedule, meeting_date, code=None):
         or student.student_name
     )
     make_attendance_records(
-        student.name, stuname, status, course_schedule, getdate(meeting_date)
+        student.name,
+        stuname,
+        status,
+        course_schedule,
+        getdate(meeting_date),
+        meeting=meeting_row.name if meeting_row else None,
     )
     frappe.db.commit()
 
@@ -250,6 +296,7 @@ def course_check_in(course_schedule, meeting_date, code=None):
         "status": status,
         "course_schedule": course_schedule,
         "meeting_date": str(getdate(meeting_date)),
+        "meeting": meeting_row.name if meeting_row else None,
     }
 
 
@@ -264,6 +311,7 @@ def get_open_course_checkins():
 
     settings = frappe.get_cached_doc("Seminary Settings")
     enforce = bool(settings.enforce_time_window)
+    track_online = _tracks_online(settings)
     now = now_datetime()
     today_d = getdate(today())
 
@@ -279,24 +327,28 @@ def get_open_course_checkins():
     for cs_name in schedules:
         cs = frappe.get_doc("Course Schedule", cs_name)
         title = cs.title or cs.course
-        recorded = _recorded_dates(student.name, cs_name)
+        recorded = _recorded(student.name, cs_name)
         for row in cs.cs_meetinfo or []:
+            if row.cs_online and not track_online:
+                continue
             mdate = getdate(row.cs_meetdate)
             mdate_s = str(mdate)
+            already = _is_recorded(row, recorded)
             if enforce:
                 start, end = _meeting_times(row)
                 if not _is_open_now(start, end, settings, now):
                     continue
             else:
-                if mdate > today_d or mdate_s in recorded:
+                if mdate > today_d or already:
                     continue
             meetings.append(
                 {
                     "course_schedule": cs_name,
                     "course_title": title,
                     "meeting_date": mdate_s,
+                    "meeting": row.name,
                     "from_time": str(row.cs_fromtime) if row.cs_fromtime else None,
-                    "already_checked_in": mdate_s in recorded,
+                    "already_checked_in": already,
                 }
             )
 
@@ -313,10 +365,14 @@ def get_open_course_checkins():
 
 
 @frappe.whitelist()
-def ensure_meeting_checkin_code(course_schedule, meeting_date):
+def ensure_meeting_checkin_code(course_schedule, meeting_date, meeting=None):
     """Return the meeting's check-in code, generating + persisting one the first
     time the instructor displays it. Kept once set so it stays stable for the
-    class. Requires write access to the Course Schedule."""
+    class. Requires write access to the Course Schedule.
+
+    A code is per-MEETING (a section can meet more than once on a date — ADR
+    051), so the instructor passes the specific ``meeting`` row; without one we
+    fall back to the row open now, else the first on the date."""
     if not frappe.has_permission("Course Schedule", "write", doc=course_schedule):
         frappe.throw(_("Not permitted"), frappe.PermissionError)
 
@@ -325,14 +381,19 @@ def ensure_meeting_checkin_code(course_schedule, meeting_date):
     if not rows:
         frappe.throw(_("There is no class meeting on that date."))
 
-    # Prefer the row open now so the displayed code matches what students
-    # validate against this moment; otherwise the first row on the date.
     settings = frappe.get_cached_doc("Seminary Settings")
-    meeting = _open_meeting(rows, settings) or rows[0]
+    row = next((r for r in rows if r.name == meeting), None) if meeting else None
+    if not row:
+        # Prefer the row open now so the displayed code matches what students
+        # validate against this moment; otherwise the first row on the date.
+        row = _open_meeting(rows, settings) or rows[0]
 
-    if not meeting.checkin_code:
-        meeting.checkin_code = generate_checkin_code()
+    if row.cs_online and not _tracks_online(settings):
+        frappe.throw(_("Online meetings don't track attendance."))
+
+    if not row.checkin_code:
+        row.checkin_code = generate_checkin_code()
         schedule_doc.save(ignore_permissions=True)
         frappe.db.commit()
 
-    return {"checkin_code": meeting.checkin_code}
+    return {"checkin_code": row.checkin_code, "meeting": row.name}

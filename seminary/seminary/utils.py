@@ -60,6 +60,66 @@ def times_overlap(a_from, a_to, b_from, b_to):
     return a_from < b_to and b_from < a_to
 
 
+def student_schedule_conflicts(student, course_schedule, exclude_cei=None):
+    """A student's active enrollments whose meetings clash with ``course_schedule``.
+
+    Pivots the ADR-038 room double-booking mechanism from room→student: joins the
+    Course Schedule Meeting Dates child table on a shared ``cs_meetdate`` with a
+    strict time overlap (back-to-back meetings don't clash; missing times — e.g.
+    Virtual — never clash). Because the join is date-based, sections in different
+    terms can't collide, so no separate term filter is needed.
+
+    "Active" = the student's other Course Enrollment Individual rows that aren't
+    audit / withdrawn / cancelled and aren't in a Withdrawn / Unseated state —
+    i.e. Draft, Awaiting Payment, Submitted and Waitlisted all count as occupying
+    the student's calendar (ADR 050). Conflicts WARN, they never block.
+
+    Returns a list of dicts (one per overlapping meeting date): ``cei``, ``state``,
+    ``course_schedule``, ``title``, ``room``, ``meetdate``, ``from_time``,
+    ``to_time`` (the clashing section's window).
+    """
+    if not (student and course_schedule):
+        return []
+    return frappe.db.sql(
+        """
+        SELECT DISTINCT
+            other_cei.name           AS cei,
+            other_cei.workflow_state AS state,
+            other_cs.name            AS course_schedule,
+            other_cs.title           AS title,
+            other_cs.room            AS room,
+            mine.cs_meetdate         AS meetdate,
+            theirs.cs_fromtime       AS from_time,
+            theirs.cs_totime         AS to_time
+        FROM `tabCourse Schedule Meeting Dates` mine
+        JOIN `tabCourse Enrollment Individual` other_cei
+            ON other_cei.student_ce = %(student)s
+           AND other_cei.name != %(exclude)s
+           AND other_cei.audit = 0
+           AND other_cei.withdrawn = 0
+           AND other_cei.course_cancelled = 0
+           AND COALESCE(other_cei.workflow_state, '') NOT IN ('Withdrawn', 'Unseated')
+        JOIN `tabCourse Schedule` other_cs
+            ON other_cs.name = other_cei.coursesc_ce
+           AND other_cs.name != %(course_schedule)s
+           AND COALESCE(other_cs.workflow_state, '') != 'Cancelled'
+        JOIN `tabCourse Schedule Meeting Dates` theirs
+            ON theirs.parent = other_cs.name
+           AND theirs.cs_meetdate = mine.cs_meetdate
+           AND mine.cs_fromtime < theirs.cs_totime
+           AND theirs.cs_fromtime < mine.cs_totime
+        WHERE mine.parent = %(course_schedule)s
+        ORDER BY mine.cs_meetdate
+        """,
+        {
+            "student": student,
+            "course_schedule": course_schedule,
+            "exclude": exclude_cei or "",
+        },
+        as_dict=True,
+    )
+
+
 RE_SLUG_NOTALLOWED = re.compile("[^a-z0-9]+")
 
 
@@ -694,9 +754,30 @@ def get_course_details(course):
     course_details.meeting_dates = frappe.get_all(
         "Course Schedule Meeting Dates",
         filters={"parent": course_details.name, "parenttype": "Course Schedule"},
-        fields=["cs_meetdate", "cs_fromtime", "cs_totime"],
+        fields=[
+            "cs_meetdate",
+            "cs_fromtime",
+            "cs_totime",
+            "cs_room",
+            "cs_online",
+            "cs_web_meeting",
+        ],
         order_by="cs_meetdate asc",
     )
+    # Resolve each meeting's EFFECTIVE room/link (per-meeting override else the
+    # section value; online meetings have no room) so the calendar can show
+    # per-meeting detail (ADR 051).
+    _room_labels = {}
+    for m in course_details.meeting_dates:
+        eff_room = None if m.cs_online else (m.cs_room or course_details.room)
+        if eff_room and eff_room not in _room_labels:
+            _room_labels[eff_room] = (
+                frappe.db.get_value("Room", eff_room, "room_name") or eff_room
+            )
+        m["room"] = eff_room
+        m["room_label"] = _room_labels.get(eff_room)
+        m["online"] = m.cs_online
+        m["web_meeting"] = m.cs_web_meeting or course_details.web_meeting
 
     if frappe.session.user == "Guest":
         course_details.membership = None
@@ -2125,6 +2206,11 @@ def generate_checkin_code(length=5):
 
 @frappe.whitelist()
 def get_course_meetingdates(course):
+    # When online meetings aren't attendance-bearing, keep them off the
+    # instructor's markable list (ADR 051).
+    md_filters = {"parent": course}
+    if frappe.db.get_single_value("Seminary Settings", "track_online_attendance") == 0:
+        md_filters["cs_online"] = 0
     meetingdates = frappe.get_all(
         "Course Schedule Meeting Dates",
         fields=[
@@ -2132,12 +2218,28 @@ def get_course_meetingdates(course):
             "cs_meetdate",
             "cs_fromtime",
             "cs_totime",
+            "cs_room",
+            "cs_online",
             "attendance",
             "checkin_code",
         ],
-        filters={"parent": course},
+        filters=md_filters,
         order_by="cs_meetdate asc",
     )
+    # Resolve each meeting's effective room (override else section room; none when
+    # online) and its label, so the attendance page can remind the instructor
+    # which room a meeting is in (ADR 051).
+    section_room = frappe.db.get_value("Course Schedule", course, "room")
+    room_labels = {}
+    for m in meetingdates:
+        eff_room = None if m.cs_online else (m.cs_room or section_room)
+        if eff_room and eff_room not in room_labels:
+            room_labels[eff_room] = (
+                frappe.db.get_value("Room", eff_room, "room_name") or eff_room
+            )
+        m["room"] = eff_room
+        m["room_label"] = room_labels.get(eff_room)
+        m["online"] = m.cs_online
     return meetingdates
 
 

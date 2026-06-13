@@ -75,7 +75,8 @@ import { CheckCircle2 } from 'lucide-vue-next'
 
 const route = useRoute()
 
-const key = (m) => `${m.course_schedule}__${m.meeting_date}`
+// Key by the specific meeting row (a section can meet twice on one date).
+const key = (m) => `${m.course_schedule}__${m.meeting}`
 
 const form = reactive({
   meeting: '',
@@ -89,14 +90,17 @@ const status = createResource({
   onSuccess(data) {
     const open = (data?.meetings || []).filter((m) => !m.already_checked_in)
     if (form.meeting) return
-    // Preselect the meeting the QR pointed at, else the first open one.
+    // Preselect the meeting the QR pointed at (matched by course + date), else
+    // the first open one.
     const wanted =
       route.query.course && route.query.date
-        ? `${route.query.course}__${route.query.date}`
+        ? open.find(
+            (m) =>
+              m.course_schedule === route.query.course &&
+              m.meeting_date === route.query.date,
+          )
         : null
-    form.meeting =
-      (wanted && open.find((m) => key(m) === wanted) && wanted) ||
-      (open[0] ? key(open[0]) : '')
+    form.meeting = key(wanted || open[0] || {})
   },
 })
 
@@ -108,9 +112,12 @@ const checkedInMeetings = computed(() =>
   (status.data?.meetings || []).filter((m) => m.already_checked_in),
 )
 
+const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
 const meetingOptions = computed(() =>
   openMeetings.value.map((m) => ({
-    label: `${m.course_title} — ${m.meeting_date}`,
+    label: m.from_time
+      ? `${m.course_title} — ${m.meeting_date} · ${hhmm(m.from_time)}`
+      : `${m.course_title} — ${m.meeting_date}`,
     value: key(m),
   })),
 )
@@ -122,12 +129,17 @@ async function submit() {
     toast.error(__('Select a class'))
     return
   }
-  const [course_schedule, meeting_date] = form.meeting.split('__')
+  const picked = (status.data?.meetings || []).find((m) => key(m) === form.meeting)
+  if (!picked) {
+    toast.error(__('Select a class'))
+    return
+  }
   submitting.value = true
   try {
     const res = await call('seminary.seminary.course_checkin.course_check_in', {
-      course_schedule,
-      meeting_date,
+      course_schedule: picked.course_schedule,
+      meeting_date: picked.meeting_date,
+      meeting: picked.meeting,
       code: form.code || null,
     })
     toast.success(res?.status === 'Tardy' ? __('Checked in — marked Tardy') : __('Checked in'))

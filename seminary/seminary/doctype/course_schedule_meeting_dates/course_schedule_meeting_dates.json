@@ -9,6 +9,9 @@
   "cs_meetdate",
   "cs_fromtime",
   "cs_totime",
+  "cs_room",
+  "cs_online",
+  "cs_web_meeting",
   "attendance",
   "checkin_code"
  ],
@@ -30,6 +33,28 @@
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "To"
+  },
+  {
+   "description": "Overrides the section's default room for this meeting only. Leave blank to use the section room.",
+   "fieldname": "cs_room",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Room",
+   "options": "Room"
+  },
+  {
+   "default": "0",
+   "description": "This meeting is held online (no physical room; excluded from room double-booking).",
+   "fieldname": "cs_online",
+   "fieldtype": "Check",
+   "label": "Online"
+  },
+  {
+   "depends_on": "eval:doc.cs_online || doc.cs_web_meeting",
+   "description": "Join link for this meeting. Falls back to the section's Web Meeting Link when blank.",
+   "fieldname": "cs_web_meeting",
+   "fieldtype": "Data",
+   "label": "Web Meeting Link"
   },
   {
    "default": "0",

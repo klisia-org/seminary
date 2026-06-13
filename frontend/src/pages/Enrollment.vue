@@ -38,7 +38,13 @@
             <tbody>
               <tr v-for="cei in sortedEnrollments" :key="cei.name"
                 :class="['Withdrawn', 'Unseated'].includes(cei.status) ? 'text-ink-gray-4 line-through' : ''">
-                <td class="px-3 py-2">{{ cei.course_data }}</td>
+                <td class="px-3 py-2">
+                  <div>{{ cei.course_data }}</div>
+                  <div v-if="cei.categories && cei.categories.length" class="flex flex-wrap gap-1 mt-1">
+                    <Badge v-for="(cat, idx) in cei.categories" :key="idx" size="sm"
+                      :theme="badgeTheme(cat.type)" :label="badgeLabel(cat)" />
+                  </div>
+                </td>
                 <td class="px-3 py-2">{{ cei.credits || '-' }}</td>
                 <td class="px-3 py-2">
                   <div class="flex flex-col gap-0.5">
@@ -144,6 +150,10 @@
                     :label="cs.modality" />
                   <span v-if="cs.days" class="text-xs text-ink-gray-5 font-mono">{{ cs.days }}</span>
                   <span v-if="cs.time_range" class="text-xs text-ink-gray-5">{{ cs.time_range }}</span>
+                  <Tooltip v-if="cs.schedule_conflict && cs.schedule_conflict.length"
+                    :text="conflictSummary(cs.schedule_conflict)">
+                    <Badge theme="orange" :label="__('Schedule overlap')" />
+                  </Tooltip>
                 </div>
                 <div class="text-xs text-ink-gray-5 mt-0.5">
                   <span v-if="cs.instructors">{{ cs.instructors }}</span>
@@ -151,7 +161,7 @@
                   <span v-if="cs.date_range">{{ cs.date_range }}</span>
                 </div>
               </div>
-              <Button size="sm" variant="subtle" @click="enrollInCourse(cs.name)" :loading="enrolling === cs.name">
+              <Button size="sm" variant="subtle" @click="enrollInCourse(cs)" :loading="enrolling === cs.name">
                 {{ __('Enroll') }}
               </Button>
             </div>
@@ -171,10 +181,31 @@
   <div v-else class="flex flex-col items-center justify-center py-20">
     <p class="text-lg font-bold text-ink-gray-5">{{ __('Course enrollment is only available for Students') }}</p>
   </div>
+
+  <!-- ADR 050: double-booking is allowed on purpose — warn, don't block. -->
+  <Dialog v-model="showConflictDialog" :options="{ title: __('Schedule overlap') }">
+    <template #body-content>
+      <p class="text-sm text-ink-gray-6 mb-3">
+        {{ __('This section overlaps another of your enrollments:') }}
+      </p>
+      <ul class="text-sm text-ink-gray-7 list-disc pl-5 mb-3 space-y-1">
+        <li v-for="(c, idx) in pendingConflicts" :key="idx">
+          {{ conflictLine(c) }}
+        </li>
+      </ul>
+      <p class="text-xs text-ink-gray-5 italic">
+        {{ __('You can enroll anyway — for example to hold a seat while you wait for another section. The registrar may later cancel one of the two overlapping enrollments.') }}
+      </p>
+    </template>
+    <template #actions>
+      <Button @click="showConflictDialog = false">{{ __('Cancel') }}</Button>
+      <Button variant="solid" @click="confirmConflictEnroll">{{ __('Enroll Anyway') }}</Button>
+    </template>
+  </Dialog>
 </template>
 
 <script setup>
-import { Badge, Button, LoadingIndicator, Tooltip, createResource, toast } from 'frappe-ui'
+import { Badge, Button, Dialog, LoadingIndicator, Tooltip, createResource, toast } from 'frappe-ui'
 import { HelpCircle } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
 
@@ -283,7 +314,40 @@ const enrollAction = createResource({
   url: 'seminary.seminary.api.course_enroll',
 })
 
-function enrollInCourse(courseSchedule) {
+// ADR 050: a section that overlaps another active enrollment shows an
+// "Enroll Anyway / Cancel" confirm first; enrollment is never blocked.
+const showConflictDialog = ref(false)
+const pendingConflicts = ref([])
+const pendingConflictCS = ref(null)
+
+function conflictLine(c) {
+  const when = [c.date, (c.from_time || c.to_time) ? `(${c.from_time}–${c.to_time})` : '']
+    .filter(Boolean).join(' ')
+  return when ? `${c.course} — ${when}` : c.course
+}
+
+function conflictSummary(conflicts) {
+  return (conflicts || []).map(conflictLine).join('\n')
+}
+
+function enrollInCourse(cs) {
+  const courseSchedule = typeof cs === 'string' ? cs : cs.name
+  const conflicts = (typeof cs === 'object' && cs.schedule_conflict) || []
+  if (conflicts.length) {
+    pendingConflictCS.value = courseSchedule
+    pendingConflicts.value = conflicts
+    showConflictDialog.value = true
+    return
+  }
+  doEnroll(courseSchedule)
+}
+
+function confirmConflictEnroll() {
+  showConflictDialog.value = false
+  if (pendingConflictCS.value) doEnroll(pendingConflictCS.value)
+}
+
+function doEnroll(courseSchedule) {
   enrolling.value = courseSchedule
   enrollAction.submit({
     pe_name: selectedPE.value,
