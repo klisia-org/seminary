@@ -44,20 +44,20 @@
   },
   {
    "allow_in_quick_entry": 1,
-   "depends_on": "eval: doc.parenttype == 'Program' && cur_frm && cur_frm.doc.program_type == 'Credits-based'",
    "fieldname": "course_term",
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Term number",
+   "mandatory_depends_on": "eval: doc.parenttype == 'Program' && cur_frm && cur_frm.doc.program_type == 'Time-based'",
    "non_negative": 1
   },
   {
    "allow_in_quick_entry": 1,
-   "depends_on": "eval: doc.parenttype == 'Program' && cur_frm && cur_frm.doc.program_type == 'Credits-based'",
    "fieldname": "pgmcourse_credits",
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Credits for this program",
+   "mandatory_depends_on": "eval: doc.parenttype == 'Program' && cur_frm && cur_frm.doc.program_type == 'Credits-based'",
    "non_negative": 1
   },
   {
