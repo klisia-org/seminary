@@ -74,21 +74,8 @@
 									{{ __('View profile') }}
 								</div>
 								<div class="flex gap-2 mt-1" @click.stop>
-									<a v-if="instructor.prof_email"
-										:href="`mailto:${instructor.prof_email}?subject=[${course.data.name}] ${user.data?.full_name || ''}`"
-										:title="__('Send email')"
-										class="text-ink-gray-4 hover:text-ink-blue-link transition-colors">
-										<Mail class="h-4 w-4" />
-									</a>
-									<template v-if="instructor.phone_message && instructor.messaging_apps?.length">
-										<a v-for="app in instructor.messaging_apps" :key="app.app_name"
-											:href="`${app.url_prefix}${instructor.phone_message.replace(/\D/g, '')}`"
-											target="_blank"
-											:title="app.app_name"
-											class="inline-flex items-center justify-center h-4 w-4">
-											<span v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-full [&>svg]:w-full"></span>
-										</a>
-									</template>
+									<ContactChannelIcons :channels="instructor.contact_channels" :instructor="instructor.name"
+										:course="course.data.name" />
 								</div>
 							</router-link>
 						</div>
@@ -134,10 +121,11 @@ import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle, formatTime } from '@/utils'
 import { useRouter } from 'vue-router'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
+import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
-import { Send, Mail, MapPin, CalendarDays, Clock, MonitorPlay, Video } from 'lucide-vue-next'
+import { Send, MapPin, CalendarDays, Clock, MonitorPlay, Video } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
 
 const user = inject('$user')

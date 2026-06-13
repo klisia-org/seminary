@@ -36,13 +36,7 @@
           <div class="text-sm font-medium text-ink-gray-8">{{ a.instructor_name }}</div>
           <div class="text-xs text-ink-gray-4">{{ a.role }}</div>
           <div class="flex gap-2 mt-1">
-            <a v-if="a.prof_email" :href="`mailto:${a.prof_email}`" :title="__('Send email')"
-              class="text-ink-gray-4 hover:text-ink-blue-link"><Mail class="h-4 w-4" /></a>
-            <a v-for="app in (a.messaging_apps || [])" :key="app.app_name"
-              :href="`${app.url_prefix}${(a.phone_message || '').replace(/\D/g, '')}`" target="_blank" :title="app.app_name"
-              class="inline-flex items-center justify-center h-4 w-4">
-              <span v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-full [&>svg]:w-full"></span>
-            </a>
+            <ContactChannelIcons :channels="a.contact_channels" :instructor="a.name" />
           </div>
         </div>
       </div>
@@ -295,6 +289,7 @@ import { ChevronRight, Mail, Info, X, Plus, CalendarCheck } from 'lucide-vue-nex
 import Link from '@/components/Controls/Link.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
+import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 import CulminatingProjectSubmission from '@/components/CulminatingProjectSubmission.vue'
 import { statusTheme } from '@/utils/statusTheme'
 import { fileName } from '@/utils/file'

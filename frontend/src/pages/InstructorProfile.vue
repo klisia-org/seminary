@@ -13,22 +13,13 @@
             <img :src="instructor.data.profileimage" alt="Instructor Image" class="rounded-full h-40 w-40" />
         </div>
         <div class="m-5">
-            <div class="text-lg font-semibold text-ink-blue-link flex items-center gap-3">
-                <Mail class="h-5 w-5 text-ink-gray-5" />
-                <a :href="`mailto:${instructor.data.prof_email || instructor.data.user}`">
-                    {{ instructor.data.prof_email || instructor.data.user }}
-                </a>
+            <div class="text-base text-ink-gray-7">
+                {{ instructor.data.prof_email || instructor.data.user }}
             </div>
-            <div v-if="instructor.data.phone_message && instructor.data.messaging_apps?.length"
-                class="flex items-center gap-3 mt-2">
-                <template v-for="app in instructor.data.messaging_apps" :key="app.app_name">
-                    <a :href="`${app.url_prefix}${instructor.data.phone_message.replace(/\D/g, '')}`"
-                        target="_blank"
-                        class="flex items-center gap-1 text-ink-blue-link hover:text-ink-green-3 transition-colors">
-                        <span v-html="app.svg_icon" class="inline-block h-5 w-5 [&>svg]:h-full [&>svg]:w-full"></span>
-                        {{ app.app_name }}
-                    </a>
-                </template>
+            <div v-if="instructor.data.contact_channels?.length" class="flex items-center gap-3 mt-2">
+                <ContactChannelIcons :channels="instructor.data.contact_channels"
+                    :instructor="instructor.data.name"
+                    icon-class="inline-flex items-center justify-center h-5 w-5 text-ink-blue-link hover:text-ink-green-3 transition-colors" />
             </div>
         </div>
         <div v-if="instructor.data.bio" class="m-5">
@@ -49,7 +40,7 @@
 import { Breadcrumbs, createResource, Button, TabButtons } from 'frappe-ui'
 import { computed, inject, watch, ref, onMounted, watchEffect } from 'vue'
 
-import { Mail } from 'lucide-vue-next'
+import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 
 import { useRoute, useRouter } from 'vue-router'
 

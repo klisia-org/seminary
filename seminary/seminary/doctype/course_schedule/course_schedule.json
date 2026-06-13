@@ -7,6 +7,7 @@
  "description": "A live instance of a course, with its own instructor, assessments, lessons, etc. After saving, you can import a template for the LMS.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_12-course-schedule-lifecycle",
  "engine": "InnoDB",
  "field_order": [
   "course_information_section",
@@ -611,7 +612,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-06-10 16:50:57.048600",
+ "modified": "2026-06-13 09:38:31.594661",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

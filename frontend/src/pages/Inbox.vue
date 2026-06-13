@@ -335,7 +335,8 @@
 </template>
 
 <script setup>
-import { computed, inject, reactive, ref, watch } from 'vue'
+import { computed, inject, reactive, ref, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, FileUploader, createResource } from 'frappe-ui'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import {
@@ -505,9 +506,12 @@ const selectedCount = computed(
 	() => compose.recipients.length + (compose.allStudents ? studentCount.value : 0)
 )
 
-function openCompose() {
-	compose.course = ''
-	compose.recipients = []
+function openCompose(prefill = {}) {
+	compose.course = prefill.course || ''
+	// Pre-target a recipient (e.g. arriving from an instructor contact icon).
+	// The id is validated server-side on send; the picker checkbox reflects it
+	// once the scope resolves.
+	compose.recipients = prefill.recipient ? [prefill.recipient] : []
 	compose.allStudents = false
 	compose.subject = ''
 	compose.message = ''
@@ -518,6 +522,14 @@ function openCompose() {
 	scope.fetch()
 	showCompose.value = true
 }
+
+// Deep-link from a contact icon: /inbox?compose=1&recipient=<Person>&course=<CS>
+const route = useRoute()
+onMounted(() => {
+	if (route.query.compose) {
+		openCompose({ recipient: route.query.recipient, course: route.query.course })
+	}
+})
 
 const sendMessage = createResource({ url: 'seminary.seminary.comms.send_portal_message' })
 

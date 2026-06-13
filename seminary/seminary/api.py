@@ -786,18 +786,33 @@ def get_instructor_info():
             "profileimage",
             "prof_email",
             "phone_message",
+            "person",
+            "students_may_contact",
         ],
         as_dict=1,
     )
     if instructor:
-        from seminary.seminary.utils import get_instructor_messaging_apps
+        from seminary.seminary.utils import get_instructor_contact_channels
+        from seminary.seminary.comms import WHATSAPP_CHANNEL
 
-        instructor["messaging_apps"] = get_instructor_messaging_apps(instructor.name)
-        # Also return all available messaging apps for the edit form
-        instructor["available_messaging_apps"] = frappe.get_all(
-            "Messaging App",
-            fields=["app_name", "svg_icon", "url_prefix"],
-            order_by="app_name",
+        instructor["contact_channels"] = get_instructor_contact_channels(
+            instructor.name
+        )
+        # The editable WhatsApp number (other channels are managed on the
+        # Communication Preferences page / via bot onboarding).
+        instructor["whatsapp"] = (
+            frappe.db.get_value(
+                "Person Channel Address",
+                {
+                    "parent": instructor.person,
+                    "parenttype": "Person",
+                    "channel": WHATSAPP_CHANNEL,
+                    "status": "Active",
+                },
+                "value",
+            )
+            if instructor.person
+            else None
         )
     return instructor
 
@@ -835,7 +850,8 @@ def save_instructor_profile(
     bio,
     prof_email=None,
     phone_message=None,
-    messaging_apps=None,
+    students_may_contact=None,
+    whatsapp=None,
     profileimage=None,
 ):
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
@@ -846,23 +862,25 @@ def save_instructor_profile(
         doc.prof_email = prof_email
     if phone_message is not None:
         doc.phone_message = phone_message
+    if students_may_contact is not None:
+        doc.students_may_contact = cint(students_may_contact)
     if profileimage:
         doc.profileimage = profileimage
-    if messaging_apps is not None:
-        import json
-
-        if isinstance(messaging_apps, str):
-            messaging_apps = json.loads(messaging_apps)
-        doc.messaging_apps = []
-        for app_name in messaging_apps:
-            doc.append("messaging_apps", {"messaging_app": app_name})
     doc.save(ignore_permissions=False)
+
+    if whatsapp is not None and doc.person:
+        from seminary.seminary.person import set_channel_address
+        from seminary.seminary.comms import WHATSAPP_CHANNEL
+
+        set_channel_address(doc.person, WHATSAPP_CHANNEL, whatsapp)
+
     return {
         "instructor_name": doc.instructor_name,
         "shortbio": doc.shortbio,
         "bio": doc.bio,
         "prof_email": doc.prof_email,
         "phone_message": doc.phone_message,
+        "students_may_contact": doc.students_may_contact,
         "profileimage": doc.profileimage,
     }
 

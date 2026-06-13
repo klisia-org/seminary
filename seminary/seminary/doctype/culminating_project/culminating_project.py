@@ -797,7 +797,7 @@ def get_culminating_project(name):
     elif my_role is None:
         my_role = "Staff"
 
-    from seminary.seminary.utils import get_instructor_messaging_apps
+    from seminary.seminary.utils import get_instructor_contact_channels
 
     advisors = []
     for field, label in _READER_FIELDS:
@@ -808,16 +808,14 @@ def get_culminating_project(name):
             frappe.db.get_value(
                 "Instructor",
                 inst,
-                ["instructor_name", "prof_email", "profileimage", "phone_message"],
+                ["instructor_name", "prof_email", "profileimage"],
                 as_dict=True,
             )
             or {}
         )
         info["name"] = inst
         info["role"] = label
-        info["messaging_apps"] = (
-            get_instructor_messaging_apps(inst) if info.get("phone_message") else []
-        )
+        info["contact_channels"] = get_instructor_contact_channels(inst)
         advisors.append(info)
 
     signoffs_by_row = {}

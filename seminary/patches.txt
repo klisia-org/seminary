@@ -30,5 +30,6 @@ seminary.seminary.patches.create_person_spine
 seminary.seminary.patches.link_customers_to_persons
 seminary.seminary.patches.migrate_channel_provider_settings
 seminary.seminary.patches.seed_portal_messaging_rules
+seminary.seminary.patches.migrate_instructor_messaging_to_channels
 seminary.seminary.patches.migrate_scholarships_to_awards
 seminary.seminary.patches.backfill_donor_person_link

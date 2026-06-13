@@ -204,21 +204,21 @@
 								<input v-model="editPhoneMessage" type="tel"
 									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 							</div>
-							<div v-if="instructorInfo.available_messaging_apps?.length" class="mt-2">
-								<label class="text-sm text-ink-gray-6 mb-1 block">{{ __('Messaging Apps') }}</label>
-								<div class="flex flex-wrap gap-2">
-									<label v-for="app in instructorInfo.available_messaging_apps" :key="app.app_name"
-										class="flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-sm cursor-pointer transition-colors"
-										:class="editSelectedApps.includes(app.app_name) ? 'border-outline-blue-1 bg-surface-blue-1 text-ink-blue-2' : 'border-outline-gray-2 text-ink-gray-6 hover:border-outline-gray-3'">
-										<input type="checkbox" :value="app.app_name" v-model="editSelectedApps" class="sr-only" />
-										<span v-if="app.svg_icon" v-html="app.svg_icon" class="inline-block h-4 w-4 [&>svg]:h-4 [&>svg]:w-4"></span>
-										{{ app.app_name }}
-									</label>
-								</div>
+							<div class="mt-2">
+								<label class="text-sm text-ink-gray-6">{{ __('WhatsApp number') }}</label>
+								<input v-model="editWhatsapp" type="tel" placeholder="+15551234567"
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 								<p class="mt-1 text-xs text-ink-gray-4">
-									{{ __('Select which messaging apps students can use to contact you.') }}
+									{{ __('Shown as a WhatsApp contact icon. Other channels (e.g. Telegram) are managed on your Communication Preferences page.') }}
 								</p>
 							</div>
+							<label class="mt-3 flex items-center gap-2 text-sm text-ink-gray-7 cursor-pointer">
+								<input type="checkbox" v-model="editStudentsMayContact" />
+								{{ __('Students may contact me') }}
+							</label>
+							<p class="text-xs text-ink-gray-4">
+								{{ __('When off, only staff can reach you through the portal; students see no contact icons on your courses.') }}
+							</p>
 						</div>
 					</div>
 				</div>
@@ -341,7 +341,7 @@ const saveStudent = () => {
 // ── Instructor ────────────────────────────────────────────────────────────────
 const instructorInfo = ref({
 	instructor_name: '', user: '', bio: '', shortbio: '', profileimage: '',
-	prof_email: '', phone_message: '', messaging_apps: [], available_messaging_apps: [],
+	prof_email: '', phone_message: '', whatsapp: '', students_may_contact: 1,
 })
 
 const editName = ref('')
@@ -349,7 +349,8 @@ const editShortbio = ref('')
 const editBio = ref('')
 const editProfEmail = ref('')
 const editPhoneMessage = ref('')
-const editSelectedApps = ref([])
+const editWhatsapp = ref('')
+const editStudentsMayContact = ref(true)
 const editProfileImage = ref('')
 
 const saveInstructorResource = createResource({
@@ -378,7 +379,8 @@ const saveInstructor = () => {
 		bio: editBio.value || '',
 		prof_email: editProfEmail.value,
 		phone_message: editPhoneMessage.value,
-		messaging_apps: JSON.stringify(editSelectedApps.value),
+		whatsapp: editWhatsapp.value,
+		students_may_contact: editStudentsMayContact.value ? 1 : 0,
 		profileimage: editProfileImage.value || null,
 	})
 }
@@ -423,7 +425,8 @@ watchEffect(() => {
 				editBio.value = response.bio || ''
 				editProfEmail.value = response.prof_email || ''
 				editPhoneMessage.value = response.phone_message || ''
-				editSelectedApps.value = (response.messaging_apps || []).map(a => a.app_name)
+				editWhatsapp.value = response.whatsapp || ''
+				editStudentsMayContact.value = response.students_may_contact !== 0
 				editProfileImage.value = response.profileimage || ''
 			},
 		})
