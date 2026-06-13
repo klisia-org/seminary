@@ -15,7 +15,7 @@ Three-tier documentation strategy:
 
 2. **Tier 2 — Structural (system shape):** Folded into ADRs or inline Python docstrings. Auto-generated schema docs were considered and rejected — Frappe's doctype JSON is already readable. The value is in explaining *why* fields exist, cross-doctype relationships, and what is intentionally absent.
 
-3. **Tier 3 — Operational (user workflows):** VitePress deployed via GitHub Actions to GitHub Pages. Crowdin manages translations from `docs/en/` source files. Core docs describe what SeminaryERP does out of the box; each seminary adds local context via a Seminary Help Entry doctype with rich-text notes surfaced inline on Frappe forms.
+3. **Tier 3 — Operational (user workflows):** VitePress deployed via GitHub Actions to GitHub Pages. Crowdin manages translations from `docs/en/` source files. Core docs describe what SeminaryERP does out of the box; each seminary adds local context via a Seminary Help Entry doctype with rich-text notes surfaced inline on Frappe forms. (The link *to* those operational docs now lives on each doctype's own "Documentation Link" property, surfaced as a form Help icon — see ADR 049.)
 
 Single repo with `docs/` subfolder so code and doc changes land in the same PR.
 
@@ -24,5 +24,5 @@ Single repo with `docs/` subfolder so code and doc changes land in the same PR.
 - ADRs capture reasoning while fresh; no retroactive documentation debt.
 - Crowdin + folder-based i18n means translators never touch git.
 - Deferred user docs until features stabilize avoids maintaining stale content.
-- Seminary Help Entry creates a clean separation: ESWA maintains the *what*, each seminary maintains the *how we do it here*.
+- Seminary Help Entry creates a clean separation: ESWA maintains the *what* (now linked via each doctype's Documentation Link, ADR 049), each seminary maintains the *how we do it here* via `local_notes` shown inline.
 - Screenshots require per-language maintenance — mitigated by English fallback and deferred localization of images.

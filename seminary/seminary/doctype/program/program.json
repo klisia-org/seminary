@@ -7,6 +7,7 @@
  "creation": "2015-09-07 12:54:03.609282",
  "description": "Students need to enroll in a Program to access courses. Programs have their own academic and financial settings.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/program.html",
  "engine": "InnoDB",
  "field_order": [
   "program_name",
@@ -200,7 +201,7 @@
   },
   {
    "default": "0",
-   "description": "Maximum share of class meetings a student may miss before being flagged at risk of failing for absences. Each Course Schedule converts this to a whole-number limit (% × scheduled meetings), which the registrar can override. 0 = no attendance limit by default.",
+   "description": "Maximum share of class meetings a student may miss before being flagged at risk of failing for absences. Each Course Schedule converts this to a whole-number limit (% \u00d7 scheduled meetings), which the registrar can override. 0 = no attendance limit by default.",
    "fieldname": "default_max_absence_percent",
    "fieldtype": "Percent",
    "label": "Default Max Absence %"
@@ -493,8 +494,8 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-05-05 17:13:09.525062",
- "modified_by": "Administrator",
+ "modified": "2026-06-13 07:33:12.183259",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program",
  "naming_rule": "By fieldname",

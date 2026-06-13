@@ -5,6 +5,7 @@
  "creation": "2024-03-06 17:42:21.146997",
  "description": "Students may only enroll in courses for their Program and that they are elligible for. Withdrawals can be requested through here.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/enrollment.html#course-enrollment-lifecycle",
  "engine": "InnoDB",
  "field_order": [
   "program_ce",
@@ -344,8 +345,8 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-08 07:56:16.305773",
- "modified_by": "Administrator",
+ "modified": "2026-06-13 07:34:15.852462",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Enrollment Individual",
  "naming_rule": "Expression (old style)",

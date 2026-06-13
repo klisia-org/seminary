@@ -1,294 +1,290 @@
 # Configuración inicial
 
-After [installation](installation.md), walk through the sections below **in order**. Each one depends on the previous. Everything is done in the Frappe Desk unless noted.
+Después de [installation](installation.md), camina por las secciones de abajo **por orden**. Cada uno depende de lo anterior. Todo se hace en la Frappe Desk a menos que se tenga en cuenta.
 
-:::tip ERPNext fundamentals
-SeminaryERP is built on top of ERPNext. Several items below (Items, Price Lists, Customer Groups, Item Prices, Payment Terms) are _standard ERPNext records_ — this page covers what a seminary specifically needs, and links out to the ERPNext manual for the full reference.
+:::tip Fundamentos ERPNext
+SeminaryERP se construye sobre ERPNext. Varios artículos a continuación (artículos, listas de precios, grupos de clientes, precios de artículos, artículos Los términos de pago) son _registros ERPNext estándar_ — esta página cubre lo que un seminario necesita específicamente. y enlaza con el manual ERPNext para la referencia completa.
 :::
 
 ## 1. Escala de Calificación
 
-Create the default grading scale used seminary-wide. You can create additional scales later and assign them per-course. See [Grading](../modules/grading.md) for how scales interact with assessments and transcripts.
+Crear la escala de calificación predeterminada utilizada seminario--do? Puedes crear escalas adicionales más tarde y asignarlas por curso. Vea [Grading](../modules/grading.md) para ver cómo interactúan las escalas con las evaluaciones y transcripciones.
 
 ## 2. Ajustes seminarios
 
-Vaya a **Ajustes del Seminario** en Frappe Desk para configurar: This is the seminary-wide control panel:
+Vaya a **Ajustes del Seminario** en Frappe Desk para configurar: Este es el panel de control para todo el seminario:
 
-- **Institution details and logo**
+- **Detalles de la institución y logo**
 - Escala de valoración por defecto
-- **Scholarships** — Cost Center and Default Customer
-- **Audits** — whether to allow non-credit students, and how they are charged (flat fee or per-credit hour)
-- **Course withdrawal** — baseline policy (detailed rules are configured in the [Withdrawal module](../modules/withdrawal.md))
-- **Course Schedule lifecycle**:
-  - **Auto-advance Course Schedule states** (default on) — when checked, the daily scheduler advances Course Schedules automatically based on the dates below (Draft → Open for Enrollment → Enrollment Closed) and emails instructors who haven't sent grades by the deadline. Uncheck if your seminary prefers fully manual control.
-  - **Enrollment Window Rules** — three pairs of (anchor, offset in days) that define when each Course Schedule opens for enrollment, closes enrollment, and expects grades. Anchors: `term_start`, `term_end`, `classes_start` (= each Course Schedule's start date), `classes_end` (= each Course Schedule's end date). Negative offset = before the anchor; positive = after. A blank anchor opts a window out — affected Course Schedules need explicit overrides on their own form (Lifecycle section) or land directly in Open for Enrollment with no enrollment deadline. See [Section 12](#_12-course-schedule-lifecycle).
-- **HR/Payroll** - You may extend SeminaryERP functionality with our integration with Frappe HRMS to process payroll. In order to do this, click on [Enable HRMS Payroll](../modules/instructor-payment.md)
-- **Student Portal** — toggle each capability students will have:
-  - Request course enrollments
-  - Request course withdrawals
-  - Pay online through a payment gateway (and which gateway is the default — e.g. Stripe)
-  - Edit course calendar instructions
-  - Online student application workflow
+- **Becas** — Centro de Costos y Cliente Predeterminado
+- **Cuidados** - si se permite a estudiantes no acreditados y cómo se les cobra (tarifa fija o por hora de crédito)
+- **retiro de curso** — política de línea de referencia (las reglas detalladas están configuradas en el [módulo de retirada](../modules/withdrawal.md))
+- **Curso de Programación de ciclo de vida**:
+  - **Estado del Horario del Curso Auto-Avanzado** (por defecto en) — cuando está marcado, el planificador diario avanza los Programas del Curso automáticamente en base a las fechas siguientes (Borrador → Abrir para la inscripción → Cerrar la inscripción) y enviar un correo electrónico a los instructores que no han enviado las calificaciones por el plazo. Desmarque si su seminario prefiere un control manual completo.
+  - **Reglas de Ventana de Inscripción** — tres pares de (anclaje, desplazamiento en días) que definen cuándo se abre cada Programación de Curso para la inscripción, cierra la inscripción y espera las calificaciones. Anclajes: `term_start`, `term_end`, `classes_start` (= la fecha de inicio de cada horario del curso), `classes_end` (= la fecha de fin de cada finalización del curso del horario). Desfase negativa = antes del fondo; positivo = después. Un ancla en blanco opta por una ventana — los Programas del Curso afectados necesitan anulaciones explícitas en su propia forma (sección de ciclo de vida) o aterrizar directamente en Open for Enrollment sin plazo de inscripción. Ver [Sección 12](#_12-course-schedule-lifecycle).
+- **HR/nómina** - Puedes extender la funcionalidad de SeminaryERP con nuestra integración con Frappe HRMS para procesar nóminas. Para hacer esto, haga clic en [Habilitar nómina HRMS](../modules/instructor-payment.md)
+- **Portal de estudiantes** — cambia cada capacidad que tendrán los estudiantes:
+  - Solicitar matriculaciones de cursos
+  - Solicitar retiros de cursos
+  - Pagar en línea a través de una pasarela de pago (y cuál pasarela es el predeterminado — por ejemplo, Stripe)
+  - Editar instrucciones del calendario del curso
+  - Flujo de trabajo en línea de la aplicación del estudiante
 
-## 3. ERP Items
+## 3. Elementos ERP
 
-In ERPNext, everything that can be billed is an **Item** (credit hour, registration fee, library fee, housing, etc.). SeminaryERP ships with a starter set — review them and decide which fit your seminary before creating more.
+En ERPNext, todo lo que se puede facturar es un **artículo** (hora de crédito, cuota de inscripción, cuota de biblioteca, alojamiento, etc.). SeminaryERP viene con un set de inicio — revisa y decide qué se ajusta a tu seminario antes de crear más.
 
-:::warning UOM must not be "whole number"
-When creating a new Item, make sure its [UOM](https://docs.frappe.io/erpnext/uom) has **"Must be Whole Number"** unchecked. Credit hours and many fees are fractional.
+:::warning UOM no debe ser "número entero"
+Al crear un nuevo objeto, asegúrate de que su [UOM](https://docs.frappe.io/erpnext/uom) tiene **"Debe ser número completo"** sin marcar. Las horas de crédito y muchas comisiones son fraccionales.
 :::
 
-For anything else about Items — stock vs. non-stock, item groups, taxes — see the ERPNext [Item documentation](https://docs.frappe.io/erpnext/item).
+Para cualquier otra cosa acerca de los artículos — stock vs. no stock, grupos de artículos, impuestos — vea el ERPNext [Documentación del artículo](https://docs.frappe.io/erpnext/item).
 
-## 4. Price Lists
+## 4. Listas de precios
 
-A [Price List](https://docs.frappe.io/erpnext/price-lists) is simply a named set of prices. You can have as many as you want (e.g. _National Students_, _Foreign Students_, _Scholarship Tier A_), but **every additional list is ongoing maintenance** — add one only when pricing genuinely differs.
+Una [Lista de precios](https://docs.frappe.io/erpnext/price-lists) es simplemente un conjunto de precios. Puedes tener tantos como quieras (p.e. _Estudiantes nacionales_, _Estudiantes extranjeros_, _Becas de nivel A_), pero **cada lista adicional es mantenida en curso** — agregue una sólo cuando los precios difieran genuinamente.
 
-## 5. Customer Groups
+## 5. Grupos de clientes
 
-SeminaryERP automatically creates a **Student** customer group. If you need different price lists applied automatically (e.g. national vs. international), create additional [Customer Groups](https://docs.frappe.io/erpnext/customer-group) and set each one's default Price List. Students assigned to the group will be billed from that list.
+SeminaryERP crea automáticamente un grupo de clientes **Estudiantes**. Si necesitas diferentes listas de precios aplicadas automáticamente (por ejemplo, nacional vs. internacional), crea [Grupos de clientes] adicionales (https://docs.frappe.io/erpnext/customer-group) y establece la lista de precios por defecto de cada uno. Los estudiantes asignados al grupo serán facturados de esa lista.
 
-## 6. Item Prices
+## 6. Precios del artículo
 
-This is where you enter the price of each Item on each Price List. See [Item Price](https://docs.frappe.io/erpnext/item-price) for the mechanics.
+Aquí es donde usted introduce el precio de cada artículo en cada lista de precios. Ver [Precio del artículo](https://docs.frappe.io/erpnext/item-price) para los mecánicos.
 
-Before entering numbers, read [Pricing Strategy](pricing-strategy.md) — how granular your pricing is determines how much automation and reporting SeminaryERP can do for you later.
+Antes de introducir números, leer [Estrategia de Precios](pricing-strategy.md) — cómo el gránulo de tu precio determina cuánta automatización y el informe SeminariERP puede hacer por ti más tarde.
 
 ## 7. Términos de pago
 
-A [Payment Terms Template](https://docs.frappe.io/erpnext/payment-terms-template) bundles one or more [Payment Terms](https://docs.frappe.io/erpnext/payment-terms) (e.g. _50% at enrollment, 50% mid-term_).
-Therefore, templates are a simple and practical way to set up **when** and **the invoice portion (%)** of an invoice should be paid.
+Una [Plantilla de términos de pago] (https://docs.frappe.io/erpnext/payment-terms-template) contiene uno o más [Términos de pago](https://docs.frappe.io/erpnext/payment-terms) (por ejemplo, _50% en la matriculación, 50% a medio plazo_).
+Por lo tanto, las plantillas son una forma sencilla y práctica de configurar **cuando** y **la porción de la factura (%)** debe pagarse.
 
-Payment terms will define the due date of a invoice based on the date of its creation, as well as the percentage of the invoice to be paid.
-Templates are attached to Fee Categories and to invoices, so create the templates you actually need before setting up Fee Categories.
+Las condiciones de pago definirán la fecha de vencimiento de una factura basada en la fecha de creación, así como el porcentaje de la factura a pagar.
+Las plantillas están adjuntas a Categorías de Tarifa y a facturas, así que crea las plantillas que necesitas antes de configurar Categorías de Tarifa.
 
 ## 8. Categoría de cuota
 
-A **Fee Category** is SeminaryERP's billing automation unit. Each category links:
+Una **Categoría de tasas** es la unidad de automatización de facturación de SeminaryERP. Cada categoría enlace:
 
-- An **ERP Item** (what is billed)
-- A **Payment Terms Template** (how it is billed)
-- A **Category Type** (Item Group) for reporting
-- A **Event to Charge** (when the charge is created)
-- Flags for **Is Academic Credit** and **Is Audit** --Only fee categories with these indicators will be calculated per credit hour (in the case of audits, see also Seminary Settings)
+- Un **elemento ERP** (lo que se factura)
+- Una **Plantilla de términos de pago** (cómo se factura)
+- Un **tipo de categoría** (grupo de artículos) para reportar
+- Un **evento a cargar** (cuando se crea el cargo)
+- Marcas para **Es Crédito Académico** y **Está asumido** --Solo las categorías de tarifas con estos indicadores se calcularán por hora de crédito (en el caso de las auditorías, ver también Configuración Seminaria)
 
-SeminaryERP defines the **Event to charge** and they are called programmatically. The following triggers are available for the creation of Fee Categories:
+SeminaryERP define el **evento a cargar** y se llaman programáticamente. Los siguientes activadores están disponibles para la creación de categorías de tarifa:
 
-- **Program Enrollment** — fires once on Program Enrollment submission.
-- **Course Enrollment** — fires once per course, on Course Enrollment submission.
-- **New Academic Term** — daily scheduler fires on the Academic Term's start date (or the next day the job runs, if cron missed).
-- **New Academic Year** — daily scheduler fires on the Academic Year's start date (or the next day the job runs, if cron missed).
-- **Monthly** — daily scheduler fires on the calendar 1st of every month for every active Program Enrollment. A `Effective From` date on the Fee Category restricts billing to program enrollments whose Enrollment Date is strictly after that date (leave blank to bill everyone currently enrolled).
+- **Inscripción al programa**: se desencadena una vez al enviar la inscripción al programa.
+- **Inscripción al Curso**: se produce un incendio una vez por curso, en la presentación de la inscripción al Curso.
+- **Nuevo plazo académico** — el planificador diario dispara en la fecha de inicio del plazo académico (o al día siguiente se ejecuta el trabajo, si no se encuentra el programa).
+- **Año nuevo académico** — el planificador diario dispara en la fecha de inicio del Año Académico (o al día siguiente el trabajo se corre, si no se cumple).
+- **Mensualmente** — el programador diario dispara en el primer calendario de cada mes para cada inscripción activa del programa. Una fecha `efectiva desde` en la Categoría de Tarifa restringe la facturación a las inscripciones del programa cuya Fecha de Inscripción es estrictamente posterior a esa fecha (déjalo en blanco para facturar a todos los que están inscritos).
 
-The three time-driven triggers (NAT / NAY / Monthly) are idempotent: the scheduler records that a period has been invoiced (via `invoiced_nat_on`, `invoiced_nay_on`, `last_monthly_invoiced_on` flags) and won't bill it twice. If a cron run is missed, the next daily run picks up any pending period. Billing can be paused globally via **Seminary Settings → Enable Automated Billing**. For one-off recovery, use **Registrar Hub → Regenerate Current-Term Invoices**.
+Los tres activadores impulsados por el tiempo (NAT / NAY / Mensual) son idempotentes: el planificador registra que un período ha sido facturado (a través de `invoiced_nat_on`, `invoiced_nay_on`, `last_monthly_invoiced_on`) y no lo facturará dos veces. Si no se ejecuta un cron, la próxima ejecución diaria recoge cualquier período pendiente. La facturación puede ser pausada globalmente a través de **Configuración Seminaria → Habilitar facturación automática**. Para una recuperación única, use **Registrar Hub → Regenerar Facturas a Plazo Actual**.
 
-Set up one Fee Category per chargeable event so SeminaryERP can post invoices automatically when the event happens. This is why Items, Price Lists, and Payment Terms must exist first.
+Configurar una Categoría de Tarifa por evento cargable para que SeminaryERP pueda publicar facturas automáticamente cuando el evento suceda. Por eso primero deben existir artículos, listas de precios y términos de pago.
 
-Once Fee Categories are created, you will use them during the creation of Programs and courses.
+Una vez creadas las Categorías de Tarifa, las utilizará durante la creación de Programas y cursos.
 
 ## 9. Estructura del Año Académico
 
-Create your first **Academic Year**. It is a container for Academic Terms — terms cannot extend beyond their year's boundaries. Some fees and administrative tasks are scheduled once per year.
+Crea tu primer [**Año Académico**](../modules/academic-calendar.md#academic-year). Es un contenedor de Términos Académicos — los términos no pueden extenderse más allá de los límites de su año. Algunas tasas y tareas administrativas están programadas una vez al año.
 
 ## 10. Plazo Académico
 
 Cree su primer período académico
 
 1. Establezca las fechas de inicio y fin
-2. Configure enrollment windows and withdrawal deadlines — see [Academic Calendar](../modules/academic-calendar.md) and [Withdrawal](../modules/withdrawal.md) for how these dates drive downstream rules
+2. Configure las ventanas de matriculación y los plazos de retiro — vea el [Calendario Académico](../modules/academic-calendar.md#academic-term) y [Withdrawal](../modules/withdrawal.md) para ver cómo estas fechas establecen las reglas de bajada.
 
 ## 11) Programa
 
-A **Program** is the curriculum structure students enroll into (e.g. _M.Div._, _Certificate in Biblical Studies_). It defines required credits/terms, courses, tracks, emphases, and program-level fees. Create at least one program before opening enrollment.
-Detailed program modeling (tracks, emphases, credit requirements) is covered under [Enrollment](../modules/enrollment.md). During program enrollment, it will also be established **who** pays each fee category and what percentage (Payers Fee Category).
+Un [**Programa**](../modules/program.md) es la estructura curricular en la que los estudiantes se inscriben (por ejemplo, _M.Div._, _Certificado en Estudios Bíblicos_). Define los créditos/términos requeridos, cursos, trazas, acentos y tarifas de nivel de programas. Crear al menos un programa antes de abrir la inscripción.
+El modelado detallado del programa (seguimientos, enfoques, requisitos de crédito) está cubierto bajo [Enrollment](../modules/enrollment.md). Durante la inscripción en el programa, también se establecerá **quién** paga cada categoría de cuota y qué porcentaje (Categoría de cuota de pago).
 
-All Fee Categories for any course of that program **must** first be linked in the Program level.
+Todas las Categorías de Tarifa para cualquier curso de ese programa **debe** estar vinculadas primero al nivel del programa.
 
 ### Nivel de programa
 
-Every Program links to a **Program Level** (e.g. _Bachelors_, _Masters_, _Doctorate_, _Certificate_, _Non Formal Program_). Levels are **submittable**: once submitted, a level is locked and visible in the Program form's level picker. To change the gating fields on a level after the fact, amend it (creating a new revision) and re-point Programs as needed — this gives you a clean audit trail and prevents silent behavior changes on programs already in flight.
+Cada Programa enlaza a un **Nivel de Programa** (por ejemplo, _Bachelors_, _Masters_, _Doctorado_, _Certificado_, _Programa no formal_). Los niveles son **enviados**: una vez enviado, un nivel está bloqueado y visible en el selector de nivel del formulario. Para cambiar los campos de compuerta en un nivel después del hecho, modifíquelo (creando una nueva revisión) y programas de repunte según sea necesario — esto le da una pista de auditoría limpia y evita cambios de comportamiento silenciosos en los programas que ya están en vuelo.
 
-The level carries one behavior-shaping flag:
+El nivel lleva una bandera que da forma al comportamiento:
 
-- **Is Ongoing** — check this only when the program has no definitive end (continuous education, free auditing, devotional courses). Ongoing programs skip GPA, graduation, alumni transition, and the Academic Review step on withdrawal. The flag is mirrored from Program Level onto every Program at that level (read-only on the Program form).
+- **Está en curso** — comprueba esto sólo cuando el programa no tiene un fin definitivo (educación continua, auditoría gratuita, cursos devocionales). Los programas en curso omiten la GPA, la graduación, la transición de antiguos alumnos y el paso de Examen Académico al retiro. El parámetro se refleja desde el Nivel de Programa a cada Programa a ese nivel (sólo lectura en el formulario del Programa).
 
-When _Is Ongoing_ is set, the GPA & Honors section, _Enrollment Type_, _Terms for completion_, and _Credits for completion_ fields disappear from the Program form — they have no meaning for ongoing programs.
+Cuando _está en curso_ está establecido, la sección de GPA & Honores, _Tipo de inscripción_, _Términos de finalización_, y los _créditos para completar_ campos desaparecen del formulario del Programa — no tienen sentido para los programas en curso.
 
-### Free Program
+### Programa gratis
 
-A separate, per-Program checkbox **Free Program** decouples the financial side from the academic side:
+Una casilla de verificación separada por programa **Programa gratis** desacoplará la parte financiera del lado académico:
 
-- When checked, the Program **does not** generate enrollment Sales Invoices (CEI submission, New Academic Term / New Academic Year / Monthly billing triggers all skip free programs), and withdrawal requests skip the Financial Review step.
-- The _Financial_ tab and _Program Fees_ table hide on the Program form when _Free Program_ is set.
+- Cuando está marcado, el programa **no** genera facturas de ventas de matrícula (envío de CEI, Nuevo Plazo Académico/Año Académico Nuevo / Académico de facturación mensual activa todos los programas libres de salteo), y las solicitudes de retiro omiten el paso de Revisión Financiera.
+- La tabla _Financial_ y _Tarifas de programa_ se ocultan en el formulario del programa cuando se establece _Programa Gratis_.
 
-The two flags are orthogonal: a paid-but-ongoing program (e.g. paid one-off seminars in a continuing-ed track) leaves _Free Program_ unchecked, so per-course fees and refund flows still work; a free degree program leaves _Is Ongoing_ unchecked so graduation logic still runs. See [Withdrawal → Fast-paths for Ongoing and Free programs](../modules/withdrawal.md#fast-paths-for-ongoing-and-free-programs) for how the two flags combine to shape the withdrawal buttons.
+Las dos banderas son ortogonales: un programa pagado-pero en curso (p.ej. los seminarios pagados de una sola vez en una pista continuada dejan sin control el _Programa Gratis_, por lo que los honorarios por curso y los flujos de reembolso todavía funcionan; un programa de grado libre deja _Está en curso_ sin comprobar, así que la lógica de graduación todavía se ejecuta. Vea [Withdrawal → Rápidas rutas para programas en curso y Gratis](../modules/withdrawal.md#fast-paths-for-ongoing-and-free-programs) para ver cómo se combinan las dos banderas para dar forma a los botones de retiro.
 
-### Payment Gating (paid programs)
+### Pasarela de pago (programas de pago)
 
-For paid programs, two more fields control whether a Course Enrollment requires payment before the student is fully enrolled:
+Para los programas de pago, dos campos más controlan si la inscripción en un curso requiere el pago antes de que el estudiante esté completamente inscrito:
 
-- **Require Payment Before Enrollment** (default on, hidden when _Free Program_ is checked) — when set, a new Course Enrollment lands at _Awaiting Payment_ on submit. The student is invoiced but not added to the course roster until they pay.
-- **Minimum Payment %** (default 100) — the minimum cumulative payment, as a percentage of the Course Enrollment's invoiced total, that must clear before the system advances the enrollment to _Submitted_. Set 50 if half-down enrolls; leave at 100 to require full payment.
+- **Requiere el pago antes de inscribirse** (predeterminado, oculto cuando se marca el _Programa Gratis_) — cuando se establece, una nueva inscripción en el curso aterriza al _Pago en espera_ al enviar. El estudiante es facturado pero no se añade a la lista del curso hasta que paga.
+- **Pago mínimo %** (por defecto 100) — el pago acumulado mínimo, como porcentaje del total facturado de la inscripción en el curso que debe limpiar antes de que el sistema avance la inscripción a _Enviado_. Establecer 50 si se inscribe a la mitad; déjalo a 100 para requerir el pago completo.
 
-Both fields are hidden for ongoing programs (no enrollment gating concept). See [Enrollment → Course Enrollment lifecycle](../modules/enrollment.md#course-enrollment-lifecycle) for the full state machine.
+Ambos campos están ocultos para programas en curso (sin concepto de matriculación). Ver [Inscripción → ciclo de vida de matriculación del curso](../modules/enrollment.md#course-enrollment-lifecycle) para la máquina de estado completo.
 
-### Maximum Enrollment Duration (Time Cap)
+### Duración máxima de la inscripción (límite de tiempo)
 
-**Max Years to Graduate** (Float, fractional values supported) is the maximum time a student may stay enrolled before they must graduate. 0 means no limit (the default). When set, every new Program Enrollment for this Program gets a **Max Graduation Date** auto-computed as `enrollment_date + Max Years to Graduate`; registrars can edit that date later to grant extensions.
+**Max Years to Graduate** (Float, valores fraccionales soportados) es el tiempo máximo que un estudiante puede permanecer inscrito antes de que se gradue. 0 significa que no hay límite (el predeterminado). Cuando se establece, cada nueva inscripción a este programa obtiene una **Fecha de Graduación Máxima** calculada automáticamente como `Enrollment_date + Max Años para Graduar`; los registradores pueden editar esa fecha más tarde para conceder extensiones.
 
-The companion **Time-to-Graduate Risk** report (Reports → Seminary) lists active enrollments whose Program has a non-zero Max Years, ranks them by the credits-per-year pace they need to finish on time, and flags overdue students at the top.
+El informe de **Riesgo de tiempo para graduar** de compañero (informes → Seminario) lista las inscripciones activas cuyo programa tiene años máximos distintos de cero, los clasifica por el ritmo de crédito por año que necesitan para terminar a tiempo, y las banderas atrasadas a los estudiantes en la parte superior.
 
-## 12. Course Schedule Lifecycle
+## 12. Curso de programación de ciclo de vida
 
-Each **Course Schedule** moves through a six-state workflow that the daily scheduler advances automatically (when [Section 2](#_2-seminary-settings) "Auto-advance" is on) or that registrars walk through manually:
+Cada **Horario del curso** se mueve a través de un flujo de trabajo de seis estados que el planificador diario avanza automáticamente (cuando [Sección 2](#_2-seminary-settings) "Avance automático" está encendido) o los registradores caminan a través manualmente:
 
-```
-Draft → Open for Enrollment → Enrollment Closed → Grading → Closed
-            ↓                       ↓
-        Cancelled               Cancelled (terminal)
-```
+<LifecycleDiagram type="courseSchedule" />
 
-- **Draft** — created, not yet visible to students. The scheduler promotes to Open for Enrollment when the resolved enrollment-open date arrives.
-- **Open for Enrollment** — students can request enrollment from the portal.
-- **Enrollment Closed** — registration window has passed, term is running, prof is teaching.
-- **Grading** — the system enters this state automatically the first time a non-null grade is saved against any active student (whether via Quiz/Assignment/Exam/Discussion submission or directly in the gradebook). No registrar action needed.
-- **Closed** — final state, set when the prof clicks **Send Grades** on the gradebook (or, in the Desk, on the Course Schedule form). Final grades are written to the transcript at this moment.
-- **Cancelled** — terminal. Reachable only before grading begins (see _Cancelling a Course_ below).
+- **Borrador** — creado, aún no visible para los estudiantes. El planificador promueve la apertura para la inscripción cuando llegue la fecha resuelta de inscripción.
+- **Abrir para inscripción** — los estudiantes pueden solicitar la inscripción en el portal.
+- **Inscripción cerrada** — ha pasado la ventana de registro, el término está en funcionamiento, prof está enseñando.
+- **Calificación** — el sistema entra en este estado automáticamente la primera vez que se guarda una nota no nula contra cualquier estudiante activo (ya sea a través de la presentación/asignación/Exam/Discusión o directamente en el gradebook). No se necesita ninguna acción de registro.
+- **Cerrado** — estado final, establecido cuando el prof hace clic en **Enviar calificaciones** en el cuaderno de notas (o, en la Información, en el formulario de Programación del curso). Las notas finales están escritas en la transcripción en este momento.
+- **Cancelado** — terminal. Sólo se puede obtener antes de comenzar la calificación (ver _Cancelar un Curso_ más abajo).
 
-### Per-Course-Schedule date overrides
+### Anulación de fecha por horario del curso
 
-Each Course Schedule's **Lifecycle** section (in the Class Roster tab) shows the resolved enrollment open / close / grade-close dates from the Seminary Settings rule, plus three optional **override** date fields. Filling an override replaces the rule for that one schedule — useful for late-added courses, intensives, or one-off exceptions.
+La sección **Lifecycle** de cada Programa de Curso (en la pestaña Clase Roster) muestra la inscripción resuelta abrir/cerrar / cerrar calificaciones de las fechas de la regla de Configuración Seminaria, más tres campos opcionales de fecha de anulación. El rellenado de una anulación reemplaza la regla para ese programa — útil para cursos con retraso agregado, intensivos o excepciones únicas.
 
-### Course Cancellation Reasons
+### Razones de cancelación del curso
 
-Cancellations require a **reason** chosen from a configurable list. SeminaryERP ships with five seeded reasons:
+Las cancelaciones requieren una **razón** elegida de una lista configurable. Barcos seminaryERP con cinco razones de semilla:
 
-- Insufficient Enrollment
-- Instructor Unavailable
-- Curriculum Change
-- Administrative Decision
+- Inscripción insuficiente
+- Instructor no disponible
+- Cambio de currículo
+- Decisión administrativa
 - Force Majeure
 
-To add or rename reasons, open **Course Cancellation Reason** in the Desk (search bar). Mark old reasons as inactive rather than deleting them so historical cancellations keep a valid label.
+Para añadir o renombrar razones, abre **Razón de cancelación del curso** en el escritorio (barra de búsqueda). Marcar razones antiguas como inactivas en lugar de eliminarlas, por lo que las cancelaciones históricas mantienen una etiqueta válida.
 
-### Cancelling a Course (registrar workflow)
+### Cancelar un Curso (registrar flujo de trabajo)
 
-A course can be cancelled only while it is in **Open for Enrollment** or **Enrollment Closed**. Once any grade is entered, the system moves the course to **Grading** and cancellation is no longer offered — at that point cancelling would risk losing transcript data.
+Un curso sólo se puede cancelar mientras esté en **Open for Enrollment** o **Enrollment Closed**. Una vez que se ha ingresado cualquier calificación, el sistema mueve el curso a **Calificación** y la cancelación ya no se ofrece, en ese momento la cancelación correría el riesgo de perder los datos de transcripción.
 
-Steps:
+Pasos:
 
-1. Open the Course Schedule form (Desk).
-2. **Status** action group → **Cancel Course**.
-3. Pick a Cancellation Reason in the dialog and confirm.
+1. Abre el formulario de Horarios del Curso (Escritorio).
+2. Grupo de acción **Estado** → **Cancelar Curso**.
+3. Elija un motivo de cancelación en el diálogo y confirme.
 
-The system will:
+El sistema será:
 
-- Mark every enrolled student's Course Enrollment Individual with `Course Cancelled`, the chosen reason, and a timestamp (distinct from a student-initiated withdrawal).
-- Remove the affected Program Enrollment Course rows so cancelled courses don't appear in transcripts or progress audits. Rows that came from a partner seminary's transferred grades are preserved.
-- Send a Seminary Announcement to all enrolled students explaining the cancellation.
-- Free the students to enroll in another section or course immediately — duplicate-enrollment checks and "courses available" lists ignore cancelled-course CEIs.
+- Marca la inscripción de cada estudiante matriculado con `Curso Cancelado`, la razón elegida y una marca de tiempo (diferente de una retirada iniciada por el estudiante).
+- Elimine las filas del curso de inscripción del programa afectado para que los cursos cancelados no aparezcan en las transcripciones o evaluaciones de progreso. Se conservan las filas que provienen de las notas transferidas de un seminario asociado.
+- Enviar un Anuncio Seminario a todos los estudiantes matriculados explicando la cancelación.
+- Libera a los estudiantes matricularse en otra sección o curso inmediatamente — cheques de matriculación duplicados y listas de "cursos disponibles" ignoran los CEI de cursos cancelados.
 
-Cancellation cannot be undone in this version. The dialog warns about this, so verify before confirming.
+La cancelación no se puede deshacer en esta versión. El diálogo advierte sobre esto, así que verifique antes de confirmar.
 
-:::tip Emergency: cancel after grading started
-If a course must be retired after grading has begun (e.g., the instructor dies mid-term), the procedure is: withdraw each enrolled student through the standard withdrawal flow, then have the prof (or registrar) click **Send Grades** on the empty roster. The course closes cleanly with no grades to dispute.
+:::tip Emergencia: cancelar después de iniciar la calificación
+Si un curso debe ser retirado después de que la calificación haya comenzado (p.e. el instructor muere a medio plazo), el procedimiento es: retirar a cada estudiante matriculado a través del flujo de retiro estándar, entonces haz clic en **Enviar calificaciones** en la lista vacía. El curso se cierra de forma limpia sin que haya grados de disputación.
 :::
 
-:::warning Sales Invoices are NOT touched on cancellation
-This version does not touch Sales Invoices when a course is cancelled. Reconcile manually — typically by cancelling the per-course invoice and creating a credit note. A future iteration may automate this; until then, treat invoice cleanup as a separate registrar task.
+:::warning Las facturas de ventas NO son tocadas en la cancelación
+Esta versión no toca las facturas de ventas cuando se cancela un curso. Reconcile manualmente — típicamente cancelando la factura por curso y creando una nota de crédito. Una iteración futura puede automatizar esto; hasta entonces, tratar la limpieza de las facturas como una tarea de registro separada.
 :::
 
-### Minimum enrollment
+### Inscripción mínima
 
-Each **Course** has an optional **Default Minimum Enrollment** field. Each Course Schedule has its own **Minimum Enrollment** override (in the Lifecycle section). Both are _informational only_ — the system does not auto-cancel courses that miss the threshold. Use the **Term Enrollment Status** report (Desk → Reports) to see, per Academic Term, every Course Schedule with its minimum, current enrollment, and the gap. Below-minimum courses are highlighted; cancel them via the workflow above before classes start.
+Cada **Curso** tiene un campo opcional **Inscripción mínima predeterminada**. Cada Horario del Curso tiene su propia anulación **mínimo de inscripción** (en la sección de ciclo de vida). Ambos son _sólo informativos_ — el sistema no cancela automáticamente cursos que pierdan el umbral. Utilice el informe de **Estado de inscripción** (Escritorio → Informes) para ver, por término académico, cada Horario del Curso con su mínimo, su inscripción actual y la brecha. Los cursos inferiores son destacados; cancelarlos mediante el flujo de trabajo anterior antes de que comiencen las clases.
 
-### Late-grade reminders
+### Recordatorios de grado tardío
 
-When **Auto-advance** is on, every day the scheduler emails any instructor whose Course Schedule is past its grade-close deadline and still hasn't reached **Closed** state. The Registrar role is CC'd. The reminder is sent once per Course Schedule (idempotent flag prevents repeat sends).
+Cuando **Avance automático** está activado, el planificador envía todos los días un correo electrónico a cualquier instructor cuya Programación del Curso ha pasado su fecha límite de cierre de notas y aún no ha alcanzado el estado **Cerrado**. El rol de Registrador es C'd. El recordatorio se envía una vez por Horario del Curso (bandera idempotente previene envíos repetidos).
 
-### Auto-seeding assessment criteria from the Course
+### Criterios de evaluación automáticos del curso
 
-A new Course Schedule does not start empty. As soon as you save a fresh Course Schedule, its **Assessment Criteria** table auto-populates from the parent Course's `Assessment Criteria` (set up under **Course → Assessment** tab). The mapping copies title, criterion link, and weight verbatim — so if your Course has 100% of weight assigned, the new Schedule starts ready to teach without manual data entry.
+Un nuevo horario de cursos no comienza vacío. Tan pronto como guarde un nuevo horario de cursos, su tabla de **Criterios de Evaluación** rellena automáticamente desde el `Criterio de Evaluación` del curso padre (configurado en la pestaña **Curso → Evaluación**). El título de las copias de mapeo, el enlace de criterios y el peso literalmente — así que si tu curso tiene el 100% de peso asignado, el nuevo Horario comienza listo para enseñar sin entrada de datos manuales.
 
-If you change the Course on an existing schedule, the seeding does **not** re-run — it only fires once on creation. To pull a fresh copy, use **Import Course Template** below.
+Si cambias el Curso en un programa existente, la siembra **no** vuelve a correr — solo dispara una vez en la creación. Para extraer una copia fresca, usa **Importar plantilla del curso** a continuación.
 
-:::tip Set up Course assessments first
-Configure the parent Course's Assessment Criteria (Course → Assessment tab) with weights summing to 100% before creating any Course Schedule. The same setup carries over automatically every term.
+:::tip Configurar primero las evaluaciones del curso
+Configure los criterios de evaluación del curso padre (curso → pestaña de evaluación) con pesos que suman al 100% antes de crear cualquier planificación del curso. La misma configuración se almacena automáticamente cada término.
 :::
 
-### Reusing a Schedule as a Template
+### Reutilizando un Horario como Plantilla
 
-The auto-seed above covers the assessment criteria, but a fully-built Course Schedule typically has more: chapters, lessons (with videos, PDFs, instructor notes), and assessment links wired into specific lessons. To reuse all of that across terms:
+La semilla automática de arriba cubre los criterios de evaluación, pero un horario de curso totalmente construido normalmente tiene más: capítulos, clases (con vídeos, PDFs, notas del instructor) y enlaces de evaluación conectados a lecciones específicas. Para reutilizar todo esto a través de términos:
 
-1. Open the parent Course (Desk → Course → _your course_).
-2. In the **Assessment** tab, set **Default Course Schedule Template** to the Course Schedule you want to use as the canonical structure.
+1. Abre el curso padre (Escritorio → Curso → _Tu curso_).
+2. En la pestaña **Evaluación**, establece **Plantilla por defecto de programación del curso** en el horario del curso que quieres utilizar como estructura canónica.
 
-Then, when creating a new Course Schedule for that course:
+Luego, al crear un nuevo programa de cursos para ese curso:
 
-1. Save the new Course Schedule as usual (assessment criteria seed automatically — no manual entry needed).
-2. On the new schedule's form, click **Actions → Import Course Template**.
-3. The dialog pre-fills with the Course's default template; you can pick any other same-course Schedule. Click **Import**.
+1. Guardar el nuevo Horario del Curso como de costumbre (semilla de criterios de evaluación automáticamente — no se necesita entrada manual).
+2. En el formulario del nuevo horario, haga clic en **Acciones → Importar plantilla del curso**.
+3. El diálogo pre-rellena con la plantilla predeterminada del curso; puede elegir cualquier otro programa del mismo curso. Haga clic en **importar**.
 
-The import copies:
+Las copias de importación:
 
-- **Chapters** (including SCORM packages, file references shared between schedules)
-- **Lessons** — every one, regardless of whether it has an assessment link. Videos, PDFs, instructor notes, content, allow-discuss flag — all carry over.
-- **Assessment criteria** — replaces what's on the new schedule (so the auto-seeded rows are overwritten by the template's). Lesson-level assessment links are remapped to the new schedule's criteria automatically.
+- **Capítulos** (incluyendo paquetes SCORM, referencias de archivos compartidas entre programas)
+- **Lecciones** — cada una, sin importar si tiene un enlace de evaluación. Videos, PDFs, notas de instructor, contenido, permitir la bandera — todo lleva encima.
+- **Criterios de evaluación** — reemplaza lo que hay en el nuevo programa (por lo que las filas autoseised son sobrescritas por las de la plantilla). Los enlaces de evaluación a nivel de la lección se reorganizan automáticamente con los criterios del nuevo programa.
 
-The import does **not** copy:
+La importación **no** copia:
 
-- Roster, enrollments, or graded data
-- Assessment due dates (stay null until you set them per-term)
-- Cancellation history or workflow timestamps
+- Roster, inscripciones o datos calificados
+- Fecha de vencimiento de la evaluación (permanezca nulo hasta que los establezca por término)
+- Historial de cancelación o timestamps de flujo de trabajo
 
-A timeline Comment on the new schedule records what was imported, from where, when, and by whom.
+Un comentario cronológico sobre el nuevo programa registra lo que fue importado, desde donde, cuándo y por quién.
 
-**Constraints:**
+**Restricciones:**
 
-- Available in **Draft** or **Open for Enrollment** state only — once enrollment closes, the structure is committed.
-- Permitted to **Academics User**, **Seminary Manager**, or **Registrar**.
-- Refuses if the target schedule already has chapters (one-shot operation, not a merge). To re-import, delete chapters first.
-- Refuses if the source schedule has no assessment criteria, or if its weights don't sum to 100% — fix the source first.
+- Disponible en el estado de **Borrador** o **Abrir para inscripción** sólo — una vez que se cierra la inscripción, la estructura es confirmada.
+- Permitido para **Usuario Académicos**, **Administrador Seminario**, o **Registrar**.
+- Se niega si el calendario de destino ya tiene capítulos (operación de un solo disparo, no fusión). Para reimportar, elimina los capítulos primero.
+- Se niega si el horario de origen no tiene criterios de evaluación, o si sus pesos no suman al 100% — arreglar la fuente primero.
 
-:::warning Import is not reversible
-There is no "undo" for the import. The dialog warns about this. If you imported the wrong template, delete the chapters and try again.
+:::warning La importación no es reversible
+No hay "deshacer" para la importación. El diálogo advierte sobre esto. Si importó la plantilla incorrecta, elimine los capítulos e inténtelo de nuevo.
 :::
 
 ## 13. Configure los roles de usuario
 
 Consulte [Roles de usuario](../administration/user-roles.md) para obtener detalles sobre la configuración del acceso de instructores, estudiantes y administradores.
 
-## 14. Manual Input OR Import the following data
+## 14. Entrada manual O importar los siguientes datos
 
-The following must be present for you to start your first term.
-If you have a small numer of students and prefer to do it manually, upon creation of a Student, SeminaryERP may create both a linked user and customer. However, it is also easy to import this data. You can follow [these instructions](https://docs.frappe.io/erpnext/data-import).
+Debe estar presente para que comience su primer mandato.
+Si tienes un pequeño número de estudiantes y prefieres hacerlo manualmente, al crear un estudiante, SeminaryERP puede crear tanto un usuario vinculado como un cliente. Sin embargo, también es fácil importar estos datos. Puedes seguir [estas instrucciones](https://docs.frappe.io/erpnext/data-import).
 
-| _**Import**_ in this order                        | _**Input manually**_ in this order                |
+| _**Importar**_ en este pedido                     | _**Entrada manualmente**_ en este pedido          |
 | ------------------------------------------------- | ------------------------------------------------- |
-| 1. Users                   | 1. Estudiantes             |
+| 1. Usuarios                | 1. Estudiantes             |
 | 2. Clientes                | 2. Cursos                  |
-| 3. Estudiantes             | 3. Holiday List            |
+| 3. Estudiantes             | 3. Lista de días festivos  |
 | 4. Cursos                  | 4. Inscripción al programa |
-| 5. Holiday List            |                                                   |
+| 5. Lista de días festivos  |                                                   |
 | 6. Inscripción al programa |                                                   |
 
-Then, you need to link courses to your programs.
-It is **strongly recommended** to double-check the import and **complement** the information on Courses before adding them to Programs. Courses will propagate several pieces of information to **Course Schedule**, so its completeness of information will expedite the work every term.
-To add them in bulk, navigate to Courses, select all courses you want to add to a Program, and click on **Actions** ⇒ **Add to Program**. A pop-up window will open where you need to select the Program that these courses should be added to. The window also has a checkbox to indicate if all the selected courses should be mandatory for this program or not.
+Luego, tienes que vincular los cursos a tus programas.
+Se **recomienda encarecidamente** comprobar la importación y **complementar** la información de los Cursos antes de añadirlos a los Programas. Los cursos propagarán varias piezas de información a **Horario del Curso**, por lo que su integridad de la información acelerará el trabajo cada término.
+Para añadirlos en masa, navega a cursos, selecciona todos los cursos que quieras añadir a un programa, y haga clic en **Acciones** ⇒ **Agregar al Programa**. Se abrirá una ventana emergente donde tendrás que seleccionar el Programa al que se añadirán estos cursos. La ventana también tiene una casilla de verificación para indicar si todos los cursos seleccionados deben ser obligatorios para este programa o no.
 
-## 15. Import existing grades
+## 15. Importar notas existentes
 
-SeminaryERP uses a single process to accept grades from other seminaries that also serves to import grades from any legacy system, manually or via CSV. See [Legacy Grade Import](legacy-grade-import.md) for the full workflow — one-time Partner Seminary setup, bulk equivalence creation, dry-run validation, and idempotent commit.
+SeminaryERP utiliza un único proceso para aceptar calificaciones de otros seminarios que también sirven para importar calificaciones de cualquier sistema heredado, manualmente o a través de CSV. Vea [Legacy Grade Import](legacy-grade-import.md) para el flujo de trabajo completo — configuración seminaria de Partner única, creación de equivalencia en masa, validación de gestión seca y commit idempotente.
 
 ## 16. Añadir instructores
 
-Create an **Instructor** record for every person who will teach. Each instructor needs a linked **System User** (so they can log in to the Desk and LMS) and an **Instructor Type** that reflects how they are paid:
+Crea un registro de **Instructor** para cada persona que enseñará. Cada instructor necesita un **Usuario del Sistema** enlazado (para que puedan iniciar sesión en el escritorio y LMS) y un **Tipo de instructor** que refleje cómo son pagados:
 
-- **Volunteer** — unpaid or honorarium only. Click _Create Supplier_ on the form to enable honorarium billing through Purchase Invoice.
-- **Salaried** or **Per-Course** — requires [HRMS Payroll enabled](../modules/instructor-payment.md) and a linked Employee record.
+- **Voluntario**: no pagado o solo honorario. Haga clic en _Crear proveedor_ en el formulario para habilitar la facturación de honorario a través de la factura de compra.
+- **Salariado** o **por curso** — requiere [HRMS Payroll activado](../modules/instructor-payment.md) y un registro vinculado a los empleados.
 
-For accreditation, fill in the **Education** section with each instructor's degrees, institutions, and supporting documents. When an Employee is linked, use _Education → Pull from Employee_ to copy education already recorded in HRMS instead of re-entering it.
+Para acreditación, rellene la sección **Educación** con los títulos, instituciones y documentos de apoyo de cada instructor. Cuando un Empleado está enlazado, utilice _Educación → Tirar del Empleado_ para copiar la educación ya registrada en HRMS en lugar de volver a introducirla.
 
 ---
 
-Once the above is in place, proceed to [Your First Term](first-term.md).
+Una vez que lo anterior esté en su lugar, procede a [Tu primer término](first-term.md).

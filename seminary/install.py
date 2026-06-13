@@ -618,6 +618,46 @@ def setup_customer_person_field():
     frappe.db.commit()
 
 
+def setup_donor_person_field():
+    """Soft link Donor (frappe_giving) <-> Person. frappe_giving is an optional
+    app, so these fields are created programmatically only when its Donor
+    doctype is present -- re-checked on every migrate, so installing
+    frappe_giving later and migrating adds them. Donor.person is the canonical
+    FK (set by giving admins); Person.donor is a read-only reverse mirror kept
+    in sync by seminary.seminary.integrations.giving. Mirrors the
+    Customer<->Person pattern in setup_customer_person_field()."""
+    if not frappe.db.exists("DocType", "Donor"):
+        return
+    if not frappe.db.exists("Custom Field", "Donor-person"):
+        frappe.get_doc(
+            {
+                "doctype": "Custom Field",
+                "dt": "Donor",
+                "fieldname": "person",
+                "fieldtype": "Link",
+                "options": "Person",
+                "label": "Person",
+                "insert_after": "customer",
+                "search_index": 1,
+            }
+        ).insert(ignore_permissions=True)
+    if not frappe.db.exists("Custom Field", "Person-donor"):
+        frappe.get_doc(
+            {
+                "doctype": "Custom Field",
+                "dt": "Person",
+                "fieldname": "donor",
+                "fieldtype": "Link",
+                "options": "Donor",
+                "label": "Donor",
+                "insert_after": "customer",
+                "read_only": 1,
+                "search_index": 1,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def create_studentappl_role():
     if not frappe.db.exists("Role", _("Student Applicant")):
         frappe.get_doc(
@@ -813,6 +853,7 @@ def after_migrate():
     seed_communication_templates()
     seed_portal_messaging_rules()
     setup_customer_person_field()
+    setup_donor_person_field()
 
 
 def setup_genders():

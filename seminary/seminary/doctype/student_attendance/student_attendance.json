@@ -5,6 +5,7 @@
  "creation": "2015-11-05 15:20:23.045996",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/attendance.html",
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
@@ -92,7 +93,7 @@
   }
  ],
  "links": [],
- "modified": "2025-04-04 17:34:18.775916",
+ "modified": "2026-06-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student Attendance",

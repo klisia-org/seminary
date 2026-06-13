@@ -19,10 +19,10 @@ cd apps/seminary
 yarn install
 ```
 
-## For online payments, install Payments
+## Para pagos en línea, instale pagos
 
  ```bash
- bench get-app payments
+ pagos bench get-app
  bench --site your-site install-app payments
  bench --site your-site migrate
  ```

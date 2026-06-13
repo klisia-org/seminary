@@ -4,44 +4,28 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from urllib.parse import urlparse
 
 
 class SeminaryHelpEntry(Document):
     def autoname(self):
-        """Derive name from mkdocs_url + target for uniqueness.
+        """Name from the help target (doctype or frontend page).
 
-        Examples:
-          .../en/modules/enrollment/                     (doctype: Course Enrollment)  -> modules-enrollment
-          .../en/modules/academic-calendar/               (doctype: Academic Year)      -> modules-academic-calendar--academic-year
-          .../en/modules/academic-calendar/#academic-term (doctype: Academic Term)      -> modules-academic-calendar-academic-term
+        The entry now centres on `local_notes`; `mkdocs_url` is optional, so the
+        name is derived from the target rather than the URL. Frappe appends a
+        numeric suffix on collision. Existing rows keep their names (autoname
+        runs only on insert).
         """
-        parsed = urlparse(self.mkdocs_url)
-        path = parsed.path.strip("/")
-        parts = path.split("/")
-        # Strip language prefix (2-letter code like "en", "pt", "fr")
-        if len(parts) > 1 and len(parts[0]) == 2:
-            parts = parts[1:]
-        base = "-".join(parts) if parts else "help"
-
-        # Include anchor fragment if present (e.g. #academic-year)
-        if parsed.fragment:
-            base = f"{base}-{parsed.fragment}"
-
-        # If no anchor, disambiguate by target to avoid collisions
-        # when the same page is linked to multiple doctypes/pages
-        elif self.document_type:
-            suffix = self.document_type.lower().replace(" ", "-")
-            if suffix not in base:
-                base = f"{base}--{suffix}"
-        elif self.frontend_page:
-            suffix = self.frontend_page.lower().replace(" ", "-")
-            if suffix not in base:
-                base = f"{base}--{suffix}"
-
-        self.name = base
+        target = self.document_type or self.frontend_page or "help"
+        self.name = frappe.scrub(target).replace("_", "-")
 
     def validate(self):
+        if self.frontend_page:
+            # The frontend matches on the Vue route name (e.g. "Courses"), which
+            # never carries a file extension — tolerate a pasted "Courses.vue".
+            self.frontend_page = self.frontend_page.strip()
+            if self.frontend_page.endswith(".vue"):
+                self.frontend_page = self.frontend_page[: -len(".vue")]
+
         if not self.document_type and not self.frontend_page:
             frappe.throw(
                 _("At least one of Document Type or Frontend Page must be set.")

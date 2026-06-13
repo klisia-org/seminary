@@ -4,7 +4,7 @@
  "creation": "2026-04-23 00:00:00",
  "doctype": "DocType",
  "document_type": "Document",
- "Description": "Tool for mass communication in the Seminary, allowing diverse filters and channels.",
+ "documentation": "https://docs.seminaryerp.org/modules/announcements.html#creating-an-announcement",
  "engine": "InnoDB",
  "field_order": [
   "subject",
@@ -138,7 +138,7 @@
    "label": "Short Message"
   },
   {
-   "description": "Optional recording for the Voice channel — the call plays this instead of reading the text aloud. MP3 or WAV, up to 40 MB (≈40 min); keep it short. Made public so the carrier can fetch it.",
+   "description": "Optional recording for the Voice channel \u2014 the call plays this instead of reading the text aloud. MP3 or WAV, up to 40 MB (\u224840 min); keep it short. Made public so the carrier can fetch it.",
    "fieldname": "voice_audio",
    "fieldtype": "Attach",
    "label": "Voice Recording"
@@ -295,8 +295,8 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-11 19:24:42.574333",
- "modified_by": "Administrator",
+ "modified": "2026-06-13 05:29:16.930905",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Seminary Announcement",
  "naming_rule": "Expression",

@@ -9,11 +9,12 @@
   "document_type",
   "frontend_page",
   "column_break_1",
-  "mkdocs_url",
   "is_active",
   "show_students",
   "notes_section",
-  "local_notes"
+  "local_notes",
+  "documentation_section",
+  "mkdocs_url"
  ],
  "fields": [
   {
@@ -29,7 +30,7 @@
    "options": "DocType"
   },
   {
-   "description": "Vue page component name, e.g. CourseDetail, Lesson, Grades",
+   "description": "Vue route name (e.g. Courses, CourseDetail, Transcripts) — NOT the file name. See the route names in frontend/src/router.js.",
    "fieldname": "frontend_page",
    "fieldtype": "Data",
    "label": "Frontend Page"
@@ -39,11 +40,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Optional. On Desk forms the documentation link comes from the doctype's own \"Documentation Link\" property; this field is mainly for frontend (Vue) pages that have no doctype.",
    "fieldname": "mkdocs_url",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Documentation URL",
-   "reqd": 1
+   "label": "Documentation Link (optional)"
   },
   {
    "default": "1",
@@ -61,20 +62,25 @@
    "label": "Show to Students"
   },
   {
-   "collapsible": 1,
    "fieldname": "notes_section",
    "fieldtype": "Section Break",
    "label": "Local Notes"
   },
   {
-   "description": "How we do it at this seminary \u2014 institution-specific instructions",
+   "description": "How we do it at this seminary \u2014 institution-specific instructions, shown inline on the form.",
    "fieldname": "local_notes",
    "fieldtype": "Text Editor",
    "label": "Local Notes"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "documentation_section",
+   "fieldtype": "Section Break",
+   "label": "Documentation"
   }
  ],
  "links": [],
- "modified": "2026-04-06 14:00:00.000000",
+ "modified": "2026-06-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Help Entry",

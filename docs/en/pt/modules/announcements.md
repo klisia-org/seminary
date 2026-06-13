@@ -1,6 +1,6 @@
 # Anúncios},{
 
-Os Anúncios do Seminário permitem enviar uma única mensagem para todos os estudantes matriculados neste período letivo, todos os instrutores que lecionam neste período, ou qualquer combinação de que você precise. As mensagens são entregues por e-mail e também aparecem no aplicativo do estudante/instrutor em **Anúncios**. Os destinatários são resolvidos a partir de dados ao vivo no momento do envio, portanto estudantes que se matriculem ou cancelem a matrícula entre a redação e o envio serão incluídos corretamente.
+Seminary Announcements let you send a single message to everyone enrolled this term, everyone teaching this term, all alumni, or any combination you need. Messages are delivered over the channels you choose — email and the in-app inbox by default, with SMS, WhatsApp, and Telegram available for urgent reach. Os destinatários são resolvidos a partir de dados ao vivo no momento do envio, portanto estudantes que se matriculem ou cancelem a matrícula entre a redação e o envio serão incluídos corretamente.
 
 ## Quando usar
 
@@ -22,11 +22,25 @@ A função **Academics User** pode criar, enviar e cancelar Anúncios do Seminá
 
 Abra **Desk → Seminary Announcement → New**.
 
-### 1º. Assunto e mensagem
+### 1º. Subject, category, and message
 
-- **Assunto** — a linha de assunto do e-mail. Mantenha curto e específico: "Semana de provas — prédio fechado na sexta" é melhor que "Anúncio importante".
-- **Período Letivo** — por padrão é o período atual. Altere apenas se você estiver anunciando algo para um período diferente (por exemplo, um aviso prévio ao público do próximo período).
-- **Mensagem** — o corpo. Rich text completo: títulos, listas, links, negrito, imagens embutidas.
+- **Subject** — the email/message subject line. Mantenha curto e específico: "Semana de provas — prédio fechado na sexta" é melhor que "Anúncio importante".
+- **Academic Term** — required when the audience is term-scoped (enrolled students, teaching instructors, or specific course schedules); optional for an all-alumni or custom-filter broadcast. Defaults to the current term.
+- **Category** — the routing/consent class (default **Academic**). Most announcements are Academic. Choose **Emergency** for a genuine calamity (campus closure, safety alert): Emergency messages **bypass recipient opt-outs and the hourly send throttle** so they reach everyone at once. Promotional messages only reach recipients who have opted in.
+- **Send via channels** — leave empty to send **Email + In-App** (the default). Add **SMS**, **WhatsApp**, **Telegram** (urgent reach), **Voice** (an automated call that reads the message), or **Print** (a PDF letter to mail). Each needs a configured provider account — see [Communication](communication.md); Print works out of the box. Submit is blocked if you pick a channel with no provider account configured.
+- **Mensagem** — o corpo. Rich text completo: títulos, listas, links, negrito, imagens embutidas. Used for Email, In-App, **and Print** (the printed letter). You can personalize it with Jinja tokens that resolve per recipient: `{{ recipient.first_name }}`, `{{ recipient.name }}`, `{{ recipient.email }}` (and `{{ person.* }}` for spine fields). Example: _"Dear {{ recipient.first_name }},"_. Syntax errors are caught when you save.
+- **Voice Recording** — _(shown when Voice is selected)_ an optional MP3/WAV the call plays instead of reading the text aloud (e.g. the director records the message). Up to ~40 MB; the file is made public so the carrier can fetch it.
+- **Short Message** — a plain-text version for the length-limited / spoken channels (SMS, WhatsApp, Telegram, Voice). Leave it blank and the system strips the rich message down to plain text automatically; fill it in when you want a tighter wording for a 160-character world or a call.
+- **Email + In-App fallback** _(on by default)_ — if a recipient can't be reached on any selected channel (no phone/Telegram connected, or opted out), they're sent Email + In-App instead, so the announcement still arrives. Email is always available. Turn it off only if you want a channel-exclusive send.
+
+#### Print options
+
+When **Print** is among the channels, a **Print Options** section appears:
+
+- **Letter Head** — _Seminary Default_ (the one set in Seminary Settings), _None_, or _Specific_ (pick any Frappe Letter Head). The chosen letterhead wraps the printed PDF letter.
+- **Print mailing labels** — also produce a sheet of mailing labels (PDF). Pick a **Label Format** — a **Mailing Label Format** record. Common Avery layouts (5160, 5161, 5163, L7160) are shipped; a seminary can add its own by measuring its label stock (columns, rows, label size, margins in mm) under **Mailing Label Format**. Use the **Mailing Labels (PDF)** button to generate/download; labels are also attached to the announcement when it's sent. Labels are produced for recipients with a postal address (on their Person record, or a Student record); those without one are listed as omitted so you know who to follow up.
+
+**Printing the letters.** While drafting, **Letter Preview (PDF)** shows a single letter (subject + message in the letter head, personalized for one recipient) so you can check the layout. After you **submit**, the button becomes **Print Letters (PDF)**: the official, consolidated document — every recipient's personalized letter, one per page, ready to print and mail. It's also generated automatically on send and attached to the announcement (alongside the mailing labels), so the finished letters live on the announcement itself.
 
 ### 2º. Público
 
@@ -36,6 +50,7 @@ Os anúncios constroem sua lista de destinatários a partir de consultas ao vivo
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Todos os estudantes matriculados neste período letivo**  | Todo estudante com uma Matrícula em Curso não cancelada em um Cronograma de Curso para o período selecionado.                                                                                                                                                                                                   |
 | **Todos os instrutores que lecionam neste período letivo** | Todo instrutor listado em qualquer Cronograma de Curso para o período selecionado.                                                                                                                                                                                                                              |
+| **All alumni**                                             | Every enabled Alumni Profile. Term-independent — ignores the term/program/course narrowing. Use for alumni newsletters or invitations.                                                                                                                                          |
 | **Apenas estes Programas**                                 | Restringe o público de estudantes aos programas listados. Deixe em branco para todos os programas. Não afeta os instrutores.                                                                                                                                                    |
 | **Apenas estes Cronogramas de Curso**                      | Restringe para aquelas turmas específicas. Inclui os estudantes daquelas turmas e — se "Todos os instrutores que lecionam neste período letivo" também estiver marcado — apenas os instrutores dessas turmas. Use isto para enviar mensagem a "todos em Teologia 101, Turma A". |
 | **Filtro Personalizado** _(avançado)_   | Escolha qualquer DocType e um filtro JSON. Útil para casos de borda: "todos os estudantes no programa MDiv com cancelamento pendente", "todos os instrutores de um departamento específico".                                                                                    |
@@ -44,7 +59,7 @@ Você deve escolher pelo menos uma regra. Caso contrário, o envio é bloqueado.
 
 ### 3º. Pré-visualizar Destinatários
 
-Antes de enviar, salve o rascunho e clique em **Pré-visualizar Destinatários** no menu superior direito do formulário. Uma caixa de diálogo mostra a contagem total e uma amostra de até 50 linhas (tipo, nome, e-mail). Use isso para uma verificação rápida de que você não direcionou por engano o programa errado ou esqueceu um curso.
+Antes de enviar, salve o rascunho e clique em **Pré-visualizar Destinatários** no menu superior direito do formulário. A dialog shows a reachability tally — **how many are reachable on the channels you picked**, broken down per channel, and how many will rely on the Email/In-App fallback — plus a sample of up to 50 rows with a ✓/✗ **Reachable** column (with the reason: "no address" or "opted out"). Use this to sanity-check the audience _and_ to spot, before sending, when an urgent SMS/WhatsApp blast would actually reach only a fraction of people (e.g. "SMS 12 of 32") so you can act on it.
 
 Se a contagem na pré-visualização for zero, suas regras de público estão muito restritas — nada será enviado nesse estado também. O formulário informa o mesmo no momento do envio.
 
@@ -67,12 +82,13 @@ Após o envio, o anúncio é selado — você não pode editar o assunto, o corp
 
 ## Onde os destinatários veem
 
-Em dois lugares:
+Wherever you sent it:
 
 - **E-mail** — entregue via a Email Account de saída configurada do seminário.
-- **Anúncios** na barra lateral do app — estudantes e instrutores veem uma lista de todos os anúncios que receberam, mais recentes primeiro, dentro do app principal. Não é necessário fazer login no Desk.
+- **In-App** — the **Inbox / Announcements** in the app sidebar lists every message a person received, most recent first. Não é necessário fazer login no Desk.
+- **SMS / WhatsApp / Telegram** — if selected and the recipient has a number/chat connected for that channel, the Short Message is delivered there too.
 
-A lista no app relaciona destinatários pelo usuário ou pelo e-mail, então funciona mesmo para quem não faz login com o mesmo e-mail em que recebe as mensagens.
+A lista no app relaciona destinatários pelo usuário ou pelo e-mail, então funciona mesmo para quem não faz login com o mesmo e-mail em que recebe as mensagens. A recipient who has no address for a chosen channel (e.g. no Telegram connected) simply doesn't get that copy; the other channels still go out.
 
 ---
 
@@ -80,11 +96,11 @@ A lista no app relaciona destinatários pelo usuário ou pelo e-mail, então fun
 
 Abra um anúncio enviado e vá até a aba **Destinatários**. Cada linha mostra a parte (Estudante / Instrutor / personalizado), e-mail e um **Status**:
 
-- **Enviado** — e-mail aceito pelo servidor de saída.
-- **Falhou** — um erro de entrega. A coluna **Erro** contém a mensagem.
+- **Sent** — at least one of the chosen channels reached the recipient (any successful channel marks the recipient Sent).
+- **Failed** — every channel attempted for that recipient failed. A coluna **Erro** contém a mensagem.
 - **Pendente** — ainda não processado (agendado para mais tarde ou em andamento).
 
-A contagem de destinatários e o status geral do anúncio no topo dão uma visão rápida. Aprofunde-se na aba para ver os detalhes por pessoa.
+A contagem de destinatários e o status geral do anúncio no topo dão uma visão rápida. Aprofunde-se na aba para ver os detalhes por pessoa. For full per-channel detail (which channels were tried, delivery receipts), open the recipient's Person record and its **Conversation** tab, or the **Communication Log** list filtered by this announcement.
 
 ---
 
@@ -136,5 +152,5 @@ A lista de destinatários é congelada no momento do envio, e não no momento do
 **Posso agendar um anúncio para se repetir?**
 Não — cada anúncio é de uma única vez. Para lembretes recorrentes (lembretes mensais de mensalidade, avisos semanais de frequência), use Frappe Notifications com um gatilho agendado.
 
-**Isso respeita as preferências de cancelamento de inscrição?**
-Sim. As regras padrão da fila de e-mails do Frappe se aplicam: quem cancelou a inscrição nos e-mails deste seminário é ignorado.
+**Does this respect unsubscribe preferences?**
+Yes, by category. A recipient who has opted out of the announcement's category on a channel is skipped for that channel — except for **Emergency** announcements, which are delivered regardless of consent. Promotional announcements only reach recipients who have explicitly opted in. Recipients manage these preferences on their portal **Preferences** page.

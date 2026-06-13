@@ -43,17 +43,25 @@ Un **Graduation Requirement Item** declara _qué tipo de elemento existe en el
 seminario_. Lo define una vez, con instrucciones para los estudiantes, y lo reutiliza
 a través de tantos programas como desee.
 
-Cada elemento de biblioteca elige **uno** de tres tipos:
+Cada elemento de la biblioteca elige **uno** de cuatro tipos:
 
 - **Event Attendance** — se cumple cuando un estudiante asiste a un
   [Event](../modules/academic-calendar.md) específico. Ejemplo: _"Retiro de Formación Espiritual
-  2027"_. Elija **Event per Student** si cada estudiante debe presentarse
-  individualmente; déjelo sin marcar si una sola ocurrencia (un servicio de capilla
-  único al que todos asisten juntos) satisface a la cohorte.
+  2027"_. Elige **Evento por Estudiante** si cada estudiante debe mostrar
+  individualmente; dejar que no se marque si una única ocurrencia (un evento único
+  todos asisten juntos) satisface a la compañía.
+- **Asistencia al Chapel** — asistencia _basada en el contador_ a los servicios del capellán recurrente
+  , realizada automáticamente a medida que los estudiantes **verifican** desde
+  el portal. Estableces cuántos servicios son requeridos (por ejemplo, 30); el requisito
+  se vuelve verde al momento en que el número de facturación de un estudiante alcanza ese número
+  . A diferencia de la asistencia al evento, **no** creas un registro por un servicio
+  : el capellán se organiza cada capellán una vez, los estudiantes auto facturan,
+  y el sistema mantiene el funcionamiento en cuenta. See
+  [Worked example 1](#example-1-chapel-attendance-self-check-in) for the full
+  setup.
 - **Manual Verification** — se cumple cuando el personal confirma que el estudiante hizo
   lo requerido, opcionalmente con evidencia en archivo del estudiante, del personal o
-  de ambos. Ejemplo: _"Declaración doctrinal firmada"_, _"Asistencia a capilla"_ (8
-  en total).
+  de ambos. Ejemplo: _"Declaración Doctrinal firmada"_, _"Entrevista de ordenación"_.
 - **Linked Document** — se cumple cuando otro documento del sistema
   alcanza un estado específico. Ejemplo: una _Recommendation Letter_ pasa a
   `Approved`, o un _Culminating Project_ pasa a `Completed`.
@@ -68,13 +76,13 @@ Dos indicadores controlan la evidencia en los elementos de Manual Verification:
   doctrinal firmada, actas escaneadas del concilio de ordenación).
 
 Estos dos indicadores son independientes. Una declaración doctrinal podría requerir _ambos_
-(el estudiante carga el PDF firmado y el personal carga su nota de verificación de identidad). La asistencia a capilla normalmente no requiere _ninguno_ — el personal solo
-marca Fulfilled.
+(el estudiante carga el PDF firmado y el personal carga su nota de verificación de identidad). Una orientación de nuevo estudiante normalmente requiere _ninguna de las dos_ — el personal
+solo marca Completo.
 
-> **¿Por qué dos indicadores?** Algunos elementos, como la asistencia a capilla, son simples — el personal
-> marca una casilla. Otros, como una declaración doctrinal, necesitan un documento escrito del
-> estudiante _y_ una verificación de identidad por parte del personal. Un solo par de campos
-> puede modelar ambos casos.
+> **Why two flags?** Some items, like a new-student orientation, are simple —
+> staff ticks a box. Otros, como una proposición doctrinal, necesitan un documento
+> escrito del estudiante _y_ una verificación de identidad del personal. Un par de campos
+> pueden modelar ambos.
 
 #### Blocks Graduation Request
 
@@ -107,8 +115,10 @@ Cada fila elige un elemento de biblioteca y agrega metadatos de vinculación esp
   estudiante matriculado. Véase más abajo.
 - **Is Mandatory** — ¿no cumplir esta fila bloquea la graduación, o es
   opcional/informativa?
-- **Quantity Required** — solo significativo para Manual Verification (por ej.,
-  "8 asistencias a capilla"). Los otros dos tipos siempre cuentan como 1.
+- **Cantidad requerida** - el recuento que el estudiante debe alcanzar. Para **Chapel
+  Atendencia** es el número de servicios a los que debe registrarse (p. ej. 30); para
+  **Verificación manual** es el número de instancias (por ejemplo, registros
+  de 8 horas de servicio). La Asistencia al Evento y el Documento Enlazado siempre cuentan como 1.
 
 #### Modos de activación
 
@@ -137,7 +147,9 @@ de graduación — es "aún no es su problema". Una vez activa, una fila obligat
 Cuando se envía un Program Enrollment, el sistema **toma una instantánea** de la política activa
 en filas por estudiante llamadas **Student Graduation Requirements**
 (SGR). Una fila SGR por fila de política, multiplicada por la cantidad para los elementos de
-Manual Verification.
+Manual Verification. **Chapel Attendance** is the exception — it stays a
+_single_ row carrying the required count and a live "attended" tally (e.g.
+_22 / 30_) rather than splitting into one slot per service.
 
 Esta instantánea queda **congelada para ese estudiante.** Que una secretaría publique una nueva
 política en 2027 **no** cambia retroactivamente los requisitos de un
@@ -154,32 +166,63 @@ conserva cualquier fila que ya estuviera eximida; la acción queda registrada.
 
 ## Ejemplos prácticos
 
-### Ejemplo 1 — Asistencia a capilla (8 servicios por período)
+### Ejemplo 1 — Atención al Chapel (auto check-in)
 
-**Objetivo:** todo estudiante debe asistir a 8 servicios de capilla a lo largo del programa.
+**Objetivo:** cada estudiante debe asistir a 30 servicios del capellán en todo el programa,
+grabado por estudiantes que se registran a sí mismos.
 
 1. **Cree el elemento de biblioteca.** Desk → Graduation Requirement Item → New.
    - Requirement: `Asistencia a capilla`
-   - Type: `Manual Verification`
-   - Default Quantity: `8`
+   - Tipo: `Asistencia al Chapel`
+   - Cantidad predeterminada: `30`
    - Obligatorio: ✓
-   - Evidence Submitted by Student: ✗
-   - Evidence Required by Staff: ✗ (basta con un registro de marcar la casilla)
-   - Instructions: _"Se espera que los estudiantes asistan al menos a 8 servicios de
-     capilla. La oficina del capellán registra la asistencia de los estudiantes en la puerta."_
+   - Instrucciones: _"Asista a al menos 30 servicios de capillo. Abra la página de auditoría del programa
+     durante el servicio y pulse **Verificar**."_
 
 2. **Agréguelo a la política del programa.** Desk → Program Graduation Requirement
    → abra _MDiv 2026 Catalog_ → añada una fila apuntando a `Chapel Attendance`.
    - Activation Mode: `Always Active`
-   - Quantity Required: `8` (o sobrescriba por programa — p. ej., 4 para una
+   - Quantity Required: `30` (o sobrescriba por programa — p. ej., 15 para una
      maestría a tiempo parcial)
 
-3. **Al matricularse**, el sistema materializa 8 filas SGR por estudiante,
-   etiquetadas _"Asistencia a capilla — Casilla 1 de 8"_ hasta _"8 de 8"_.
+3. **At enrollment**, the system materializes a **single** SGR row per
+   student that starts at _0 / 30_.
 
-4. **En el día a día**, la oficina del capellán abre el Program
-   Enrollment del estudiante, busca la siguiente casilla _Not Started_ y la marca como
-   `Fulfilled`. La página Program Audit se actualiza de inmediato.
+4. **Día a día**, no hay nada que ver con el personal. Mientras cada estudiante verifica
+   en un servicio de capilla, su cuenta sube (_1 / 30_, _2 / 30_, …) y el renglón
+   se vuelve verde automáticamente en el momento en que alcanza 30. La página
+   de la auditoría del programa lo refleja inmediatamente.
+
+#### Programación de capítulos y cómo funciona el check-in
+
+Los servicios de Chapel viven en su propio registro **Chapel** (Desk → Chapel → New). A
+chapel is a public event — all students and instructors are invited, and it is
+open to the public.
+
+- **Tema, fecha/hora, habitación** — lo que los estudiantes ven, y cuando el check-in es
+  permitido.
+- **Chapel Team** — the table where the chaplain assigns the preacher,
+  worship leader, host, etc., and tracks each person's invitation status.
+- **Confirmed** — students can only check in to a chapel once it is
+  **Confirmed**. Dejarlo sin marcar mientras usted todavía está planeando el servicio.
+
+**La ventana de facturación** se rige por dos ajustes en _Configuración seminaria →
+Chapel & Eventos Oficiales_: cuántos minutos **antes** del inicio y **después**
+el check-in final permanece abierto. Establece **ambos a 0** para eliminar completamente el límite de tiempo
+(los estudiantes pueden comprobar en cualquier momento en que se confirme el capellón).
+
+\*\* Código de facturación opcional. \* Si _Requiere código de facturación_ está habilitado en Ajustes seminarios
+, cada capellán obtiene un código corto legible por humanos (se muestra en el registro Chapel
+). Muéstralo en pantalla durante el servicio; los estudiantes deben escribirlo en
+facturar, lo que evita que la gente se registre mientras esté ausente.
+
+**Optional Google Calendar sync.** If _Sync chapels with Google Calendar_ is
+enabled and an _Official Google Calendar_ is selected in Seminary Settings,
+each confirmed chapel is published to that shared calendar (with the chapel
+team added), so students and the public can see the schedule. El conmutador está
+por defecto — los seminarios que no usan el calendario de Google pueden ignorarlo, y
+capeles individuales pueden optar por su propia casilla de verificación _Sincronizar con Google Calendar_
+.
 
 ### Ejemplo 2 — Tres cartas de recomendación (con casillas con nombre)
 
@@ -224,21 +267,26 @@ cartas de recomendación estén ingresadas.
 tres rondas con revisores.
 
 Este es el doctype **Culminating Project**. No necesita modelar el
-proyecto usted mismo: viene incluido con el sistema, con su propia tabla de revisores
-y un flujo de trabajo de 9 estados.
+proyecto usted mismo - viene con el sistema, incluyendo roles de revisor, un plan
+de hito escalonado, y su propio flujo de trabajo. Las piezas configurables (proyecto
+tipos, hitos, defensas) se describen en
+[Proyectos Culminantes: tipos, hitos y defensas](#culminating-projects-types-milestones-and-defenses)
+a continuación.
 
 Para conectarlo a un programa:
 
 1. Cree un elemento de biblioteca _Proyecto de fin de estudios_.
    - Type: `Linked Document`
    - Linked Document: `Culminating Project`
+   - **Culminating Project Types Allowed**: list the project type(s) a student
+     may pick (e.g. _Thesis_, _Summative Paper_).
 2. Agréguelo a la política con **Activation Mode = Time Offset**, ancla
    `Last Term Starts`, valor `0`, unidad `Days` — es decir, pendiente una vez que inicia el
    último período.
 3. Al matricularse, la fila SGR aparece en la instantánea. El estudiante inicia
-   el proyecto desde la página de auditoría (un botón _Start Senior Project_); cuando
-   el flujo de trabajo del proyecto llega a `Completed`, la fila SGR pasa a
-   Fulfilled automáticamente.
+   el proyecto desde la página de auditoría (un botón de _Iniciar proyecto_, elegir un tipo
+   si se permite más de uno); cuando el proyecto llega a `Completado`, la fila SGR
+   se vuelve a completar automáticamente.
 
 ### Ejemplo 5 — Declaración doctrinal (firmada por ambas partes)
 
@@ -254,6 +302,110 @@ verifica la firma y archiva una copia.
    `Submitted`.
 3. La secretaría abre la fila SGR, adjunta la nota de verificación y
    hace clic en Fulfilled.
+
+## Culminando proyectos: tipos, hitos y defensas
+
+Un \*Proyecto Senior \* / _Este_ / _Capstone_ está conectado por cable como un requisito de **Documento**
+que apunta al **Proyecto Culminante** doctype (Ejemplo 4). Behind
+that one requirement sits a small framework you configure once.
+
+### Tipos de proyecto
+
+Un **Tipo de proyecto** (Escritorio → Culminando tipo de proyecto) es una plantilla
+reutilizable para un _tipo_ de proyecto — e. . _Este_, _Capstone_, _Summative
+Paper_. Cada tipo define:
+
+- **Curso**: un proyecto culminante también es una inscripción real al curso, por lo que
+  gana crédito y una calificación como cualquier otro curso. Los nombres de tipo que el Curso
+  lo respalda.
+- **Hitos** — el plan escalonado que cada proyecto de este tipo sigue (abajo).
+
+En el elemento de la biblioteca de requerimientos se listan los **tipos de proyecto Culminantes
+Permitidos**. If you allow exactly one, the student is auto-assigned it; if you
+allow several (e.g. Thesis _or_ Summative Paper), the student chooses one on the
+Program Audit page when they start.
+
+### Milestones
+
+Cada Tipo de Proyecto lleva una **plantilla de hitos** — una lista ordenada de pasos.
+Para cada paso que establezcas:
+
+- **Por favor** — _Estándar_, _Propuesta_, _Defensa_, o _Envío final_.
+- **Vencimiento** — calculado a partir de un **ancla** (proyecto de inicio, fecha de inscripción,
+  Graduación esperada, Plazo de comienzo, o el Hito Anterior) más un **offset**
+  en días o términos académicos. Así que "Propuesta - 30 días después del inicio del proyecto" o
+  "Defensa, un término antes de la graduación esperada" son solo un anclaje + offset.
+- **Requiere Envío** - si el estudiante debe subir o no trabajo para este paso.
+- **Inicia sesión** — que los roles deben aprobar: **Asesor**, **Segundo Lector**,
+  **Tercera Lectura**, **Expansión**. A milestone reaches _Approved_ only once
+  every required role has signed, and the project can be marked _Completed_ only
+  when all mandatory milestones are approved.
+
+Cuando un estudiante inicia un proyecto, los hitos de plantilla son **instantáneos**
+en su proyecto — el mismo contrato de inicio congelado que los requisitos de graduación
+. Each snapshot row tracks its own status, due date, sign-offs, and
+submission round, and overdue milestones are flagged automatically.
+
+### Defensa (y su evento de calendario)
+
+Un hito de tipo **Defense** puede llevar un evento calendario. En la plantilla
+, marca **Crea el Evento** y elige una **Categoría de Eventos** (consulta la siguiente sección
+). Luego, desde el banco de trabajo del proyecto, el **asesor** hace clic en **Schedule
+Defense**, elige una fecha/hora y ubicación opcional, y el sistema crea un evento
+calendario con el estudiante, los lectores y el comité como participantes.
+
+El evento de defensa es _solo calendario_: existe para que todos aparezcan en el
+momento adecuado. It does **not** auto-fulfil anything; the defense is recorded by the
+readers signing off the Defense milestone, exactly like any other milestone.
+
+Students, advisors, and readers do all of this from the **Culminating Project
+workbench** (a portal page) where they see milestones and due dates, upload
+submissions, and record sign-offs.
+
+## Cómo se manejan los eventos de asistencia
+
+El tipo de requerimiento de **asistencia a eventos** está respaldado por dos partes: una
+_categoría_ reutilizable y los _eventos_ fechados creados a partir de él.
+
+### Categorías de eventos (el tipo)
+
+An **Event Custom Category** (Desk → Event Custom Category) describes a _kind_ of
+event students attend — e.g. _Convocation_, _Spiritual Formation Retreat_, _Exit
+Interview_. Características:
+
+- **Por estudiante**: si está marcado, cada estudiante necesita su _propia_ ocurrencia (una
+  one-on-one como una entrevista de salida); si no está marcado, una ocurrencia _única_
+  satisface a toda la cohorte (una convocación que todo el mundo asiste juntos).
+- **Visibilidad** — Público (aparece en el calendario compartido) o privado.
+- **Instructions** — copied into each event's description (dress code, what to
+  bring, location notes).
+
+Tu elemento de la biblioteca de asistencia al evento apunta a la **categoría**, no a una fecha
+específica, porque la misma categoría se reutiliza cada año.
+
+### Creando los eventos actuales
+
+Hay dos maneras en que el personal convierte una categoría en un evento fechado que los estudiantes obtienen crédito
+por:
+
+- **Cohort event** (_Per Student_ off) — from the **Event Custom Category** list,
+  click **Create Event** on the category's row, pick a date (and optional
+  location). The system creates one Event covering every enrolled student who
+  still owes this requirement; marking that Event **Completed** flips all of
+  their requirement rows to Fulfilled at once.
+- **Evento por estudiante** (_Por estudiante_ en) — desde el **Programa
+  Inscripción**, haz clic en **Programar evento requerido**, elige el requisito y una fecha
+  . Esto crea un evento para ese estudiante, realizado cuando se marcan
+  como asistente.
+
+Either way the event is a normal calendar Event — it can be synced to Google
+Calendar like any other — and the matching graduation requirement updates
+automatically, with no separate "tick Fulfilled" step.
+
+> **Chapel is different.** Chapel attendance is recurring and count-based, so it
+> uses its own **Chapel Attendance** type with student self check-in
+> ([Example 1](#example-1-chapel-attendance-self-check-in)), not the Event
+> Attendance flow described here.
 
 ## Día a día para el personal
 
@@ -276,9 +428,10 @@ Establezca `status` en `Fulfilled`, adjunte evidencia del personal si el requisi
 pide y guarde. El sistema sella `verified_by` y `verified_on`
 automáticamente.
 
-Para requisitos de Linked Document, normalmente **no** marca la fila SGR
-manualmente: el propio flujo de trabajo del documento vinculado la cambiará por usted cuando
-llegue al estado configurado.
+For Linked Document and Chapel Attendance requirements, you usually do **not**
+mark the SGR row manually — the linked document's workflow (or the student's
+own check-ins) flips it for you. Aún puedes renunciar a ellos, o marcar
+como una sobreescribición.
 
 ### Eximir un requisito
 
@@ -344,23 +497,28 @@ y consolidada:
   el progreso de créditos y el estado de los cursos obligatorios. _(sin cambios)_
 - La sección **Requisitos de Graduación**, alimentada desde la instantánea SGR, muestra
   cada requisito activo, agrupado por estado, con instrucciones por fila
-  y cualquier evidencia ya archivada.
+  y cualquier evidencia ya archivada. Las filas de asistencia a Chapel muestran un recuento
+  en vivo (_22 / 30_) y un botón **facturar** cada vez que se abre un capellán confirmado.
 
 A un estudiante se le muestra `Eligible to graduate` solo cuando ambas secciones están
 libres de elementos obligatorios sin cumplir.
 
 ## Referencia rápida
 
-| Si desea...      | Haga esto                                                                                               |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Agregar una nueva categoría de requisitos para todo el seminario | Crear un Graduation Requirement Item (biblioteca)                                    |
-| Aplicar un requisito a un programa específico                    | Añadir una fila al Program Graduation Requirement (política) de ese programa         |
-| Hacer que un requisito venza solo después de otro                | Activation Mode = After Requirement, elija los prerrequisitos                                           |
-| Hacer que un requisito venza X días antes de la graduación       | Activation Mode = Time Offset, anchor = Expected Graduation Date                                        |
-| Confirmar que un estudiante cumplió algo                         | Abrir la fila SGR, establecer status = Fulfilled                                                        |
-| Eximir a un estudiante de un requisito                           | Abrir la fila SGR, marcar Waived, dar un motivo                                                         |
-| Actualizar el catálogo del seminario                             | Publicar un nuevo Program Graduation Requirement con una nueva fecha Active from — no edite el anterior |
-| Mover a un estudiante al nuevo catálogo                          | Acción Resnapshot en su Program Enrollment                                                              |
+| Si desea...      | Haga esto                                                                                                                                                            |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agregar una nueva categoría de requisitos para todo el seminario | Crear un Graduation Requirement Item (biblioteca)                                                                                                 |
+| Aplicar un requisito a un programa específico                    | Añadir una fila al Program Graduation Requirement (política) de ese programa                                                                      |
+| Requiere que los estudiantes asistan a los servicios de N capel  | Tipo de elemento de la biblioteca = Asistencia al Chapel, establecer cantidad predeterminada; programar los registros del Chapel y marcarlos Confirmados             |
+| Requiere una tesis / cápsula                                     | Tipo de elemento de biblioteca = Documento vinculado → Culminando proyecto; listar el tipo de proyecto permitido                                                     |
+| Definir las etapas y la defensa de un proyecto                   | Agrega hitos al tipo de proyecto de cultivo (anclaje + desplazamiento, roles de desconexión, Crea Evento para la defensa)                         |
+| Requerir asistencia en un evento único                           | Crear una categoría personalizada de eventos, luego crear un evento (cohorte) o programar un evento requerido (por estudiante) |
+| Hacer que un requisito venza solo después de otro                | Activation Mode = After Requirement, elija los prerrequisitos                                                                                                        |
+| Hacer que un requisito venza X días antes de la graduación       | Activation Mode = Time Offset, anchor = Expected Graduation Date                                                                                                     |
+| Confirmar que un estudiante cumplió algo                         | Abrir la fila SGR, establecer status = Fulfilled                                                                                                                     |
+| Eximir a un estudiante de un requisito                           | Abrir la fila SGR, marcar Waived, dar un motivo                                                                                                                      |
+| Actualizar el catálogo del seminario                             | Publicar un nuevo Program Graduation Requirement con una nueva fecha Active from — no edite el anterior                                                              |
+| Mover a un estudiante al nuevo catálogo                          | Acción Resnapshot en su Program Enrollment                                                                                                                           |
 
 ## Relacionados
 
