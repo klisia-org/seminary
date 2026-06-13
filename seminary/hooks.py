@@ -524,7 +524,6 @@ fixtures = [
     "Custom HTML Block",
     # NOT fixtured: local_notes is per-institution user content; fixturing would
     # clobber it on every migrate (see ADR 049 / feedback on fixtures).
-    "Messaging App",
     "Course Cancellation Reason",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {

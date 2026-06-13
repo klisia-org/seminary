@@ -9,7 +9,11 @@
  "field_order": [
   "channel_name",
   "enabled",
-  "description"
+  "description",
+  "portal_contact_section",
+  "portal_contactable",
+  "weblink_prefix",
+  "svg_icon"
  ],
  "fields": [
   {
@@ -32,6 +36,33 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "fieldname": "portal_contact_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Contact"
+  },
+  {
+   "default": "0",
+   "description": "Show this channel as a contact icon on instructor / course pages, letting portal users reach the instructor on it.",
+   "fieldname": "portal_contactable",
+   "fieldtype": "Check",
+   "label": "Portal-contactable"
+  },
+  {
+   "depends_on": "portal_contactable",
+   "description": "Optional public deep-link prefix, e.g. https://wa.me/ or https://t.me/ — appended with the contact's address to open the external app directly. Leave blank for channels with no public deep link (the icon then routes through the logged comms inbox).",
+   "fieldname": "weblink_prefix",
+   "fieldtype": "Data",
+   "label": "Deep-link Prefix"
+  },
+  {
+   "depends_on": "portal_contactable",
+   "description": "Paste raw SVG markup for the channel icon (rendered inline on contact icons).",
+   "fieldname": "svg_icon",
+   "fieldtype": "Code",
+   "label": "SVG Icon",
+   "options": "SVG"
   }
  ],
  "links": [],

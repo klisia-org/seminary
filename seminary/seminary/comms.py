@@ -37,6 +37,8 @@ EMAIL_CHANNEL = "Email"
 PRINT_CHANNEL = "Print"
 VOICE_CHANNEL = "Voice"
 SMS_CHANNEL = "SMS"
+WHATSAPP_CHANNEL = "WhatsApp"
+TELEGRAM_CHANNEL = "Telegram"
 # Channels that don't deliver to an address — landing in the ledger (or, for
 # Print, the generated document) is the delivery, so no address is resolved.
 ADDRESSLESS_CHANNELS = {IN_APP_CHANNEL, PRINT_CHANNEL}
@@ -1607,6 +1609,78 @@ def reply_portal_message(in_reply_to, message):
         category="Community",
         triggered_by=frappe.session.user,
         in_reply_to=in_reply_to,
+    )
+    return {"log": log}
+
+
+@frappe.whitelist()
+def contact_instructor(instructor, channel, message, subject=None):
+    """Portal contact: a logged message to an instructor on a chosen channel
+    (ADR 042/043) — the icons on Course Detail route here instead of opening the
+    instructor's personal app, so the conversation lives in the Communication
+    Log. Authorized two ways: the instructor must be within the sender's
+    `get_my_messaging_scope` (a student reaches only the instructors of courses
+    they're enrolled in) and the instructor's own `students_may_contact` toggle
+    must allow it (staff are always allowed). In-App lands in the inbox; an
+    external channel routes through its provider account when one is configured."""
+    _my_person()
+    if not frappe.utils.strip_html(message or "").strip():
+        frappe.throw(_("Write a message first."))
+
+    info = frappe.db.get_value(
+        "Instructor",
+        instructor,
+        ["person", "students_may_contact"],
+        as_dict=True,
+    )
+    if not info or not info.person:
+        frappe.throw(_("Instructor not found."), frappe.DoesNotExistError)
+
+    if not _is_messaging_staff() and not info.students_may_contact:
+        frappe.throw(
+            _("This instructor isn't accepting student messages."),
+            frappe.PermissionError,
+        )
+    if info.person not in {r["person"] for r in get_my_messaging_scope()["recipients"]}:
+        frappe.throw(_("You can't message this instructor."), frappe.PermissionError)
+
+    if not frappe.db.get_value(
+        "Communication Channel",
+        {"name": channel, "enabled": 1, "portal_contactable": 1},
+    ):
+        frappe.throw(_("This channel isn't available."))
+
+    # Pre-check the provider so a missing external account fails friendly here,
+    # not with send_message's generic "No enabled Channel Provider Account".
+    if channel != IN_APP_CHANNEL:
+        if not pick_account(channel):
+            frappe.throw(_("This channel isn't available right now."))
+        person_doc = frappe.get_doc("Person", info.person)
+        if not resolve_address(person_doc, channel):
+            frappe.throw(_("This instructor has no {0} address.").format(channel))
+
+    # Email needs a subject; default one naming the sender so the recipient
+    # knows who reached out (the send goes out from the seminary's address).
+    if channel == EMAIL_CHANNEL and not (subject or "").strip():
+        sender = frappe.utils.get_fullname(frappe.session.user)
+        subject = (
+            _("New message from {0}").format(sender)
+            if sender
+            else _("New message from the portal")
+        )
+
+    body = "<p>{0}</p>".format(
+        frappe.utils.escape_html(message.strip()).replace("\n", "<br>")
+    )
+    log = send_message(
+        channel=channel,
+        person=info.person,
+        subject=subject,
+        message=body,
+        category="Community",
+        reference_doctype="Instructor",
+        reference_name=instructor,
+        triggered_by=frappe.session.user,
     )
     return {"log": log}
 

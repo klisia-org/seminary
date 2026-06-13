@@ -205,3 +205,39 @@ def link_customer(person_name, customer):
         frappe.db.set_value(
             "Customer", customer, "person", person_name, update_modified=False
         )
+
+
+def set_channel_address(person_name, channel, value):
+    """Upsert (or clear, when value is blank) a non-primary channel address on a
+    Person — e.g. an instructor's WhatsApp number for portal contact. Primary
+    addresses are owned by the identity sync (primary_mobile/email mirrors) and
+    are left untouched. Returns the stored value (None when cleared)."""
+    if not person_name or not channel:
+        return None
+    if not frappe.db.exists("Communication Channel", channel):
+        frappe.throw(_("Unknown channel {0}.").format(channel))
+    person = frappe.get_doc("Person", person_name)
+    value = (value or "").strip() or None
+    row = next(
+        (
+            r
+            for r in person.channel_addresses
+            if r.channel == channel and not r.is_primary
+        ),
+        None,
+    )
+    if value:
+        if row:
+            row.value = value
+            row.status = "Active"
+        else:
+            person.append(
+                "channel_addresses",
+                {"channel": channel, "value": value, "status": "Active"},
+            )
+    elif row:
+        person.channel_addresses.remove(row)
+    else:
+        return None
+    person.save(ignore_permissions=True)
+    return value

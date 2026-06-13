@@ -6,6 +6,7 @@
  "description": "Instructors may either be related to employee (requires HRMS) or supplier (contractor), include education, bio for LMS, communication preferences, and a log of courses taught.",
  "doctype": "DocType",
  "document_type": "Other",
+ "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_16-add-instructors",
  "engine": "InnoDB",
  "field_order": [
   "instructor_name",
@@ -25,7 +26,7 @@
   "prof_email",
   "column_break_srsj",
   "phone_message",
-  "messaging_apps",
+  "students_may_contact",
   "mini_bio_section",
   "bio",
   "shortbio",
@@ -180,17 +181,18 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile (ADR 042).",
+   "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile.",
    "fieldname": "phone_message",
    "fieldtype": "Data",
    "label": "Phone for messaging students",
    "read_only_depends_on": "eval:doc.person"
   },
   {
-   "fieldname": "messaging_apps",
-   "fieldtype": "Table",
-   "label": "Messaging Apps",
-   "options": "Instructor Messaging App"
+   "default": "1",
+   "description": "When off, only staff can reach you through the portal; students see no contact icons on your courses.",
+   "fieldname": "students_may_contact",
+   "fieldtype": "Check",
+   "label": "Students may contact me"
   },
   {
    "collapsible": 1,
@@ -220,7 +222,7 @@
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-06-10 12:00:00.000000",
+ "modified": "2026-06-13 09:40:29.201303",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

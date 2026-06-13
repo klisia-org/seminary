@@ -415,11 +415,10 @@ def get_instructors(course):
                 "shortbio",
                 "bio",
                 "prof_email",
-                "phone_message",
             ],
             as_dict=True,
         )
-        details["messaging_apps"] = get_instructor_messaging_apps(instructor)
+        details["contact_channels"] = get_instructor_contact_channels(instructor)
         instructor_details.append(details)
     return instructor_details
 
@@ -434,7 +433,6 @@ def get_instructor(instructorName):
         "shortbio",
         "bio",
         "prof_email",
-        "phone_message",
     ]
     instructor = frappe.db.get_value("Instructor", instructorName, fields, as_dict=True)
     if not instructor:
@@ -443,26 +441,105 @@ def get_instructor(instructorName):
         )
     if not instructor:
         frappe.throw(f"Instructor {instructorName} not found", frappe.DoesNotExistError)
-    instructor["messaging_apps"] = get_instructor_messaging_apps(instructor["name"])
+    instructor["contact_channels"] = get_instructor_contact_channels(instructor["name"])
     return instructor
 
 
-def get_instructor_messaging_apps(instructor_name):
-    apps = frappe.get_all(
-        "Instructor Messaging App",
-        filters={"parent": instructor_name, "parenttype": "Instructor"},
-        fields=["messaging_app"],
+def get_instructor_contact_channels(instructor_name):
+    """Contact icons for an instructor, sourced from their Person channel
+    addresses (ADR 042/043) — replaces the retired Instructor Messaging App.
+
+    Each item is an action descriptor the frontend dispatches on `mode`:
+      - "comms":   a provider is configured for the channel and the instructor
+                   has an active address — clicking sends through the logged
+                   comms inbox (the raw phone/handle is never returned).
+      - "weblink": no provider, but a public phone deep-link applies (WhatsApp)
+                   — the server-built `url` opens the external app.
+      - "inapp":   the In-App channel — routes to the portal inbox compose.
+
+    Gated by the instructor's `students_may_contact` toggle: staff
+    (Instructor / Seminary Manager / Program Chair) always see the icons;
+    guests and plain students see nothing when the toggle is off."""
+    from seminary.seminary import comms
+
+    info = frappe.db.get_value(
+        "Instructor",
+        instructor_name,
+        ["name", "person", "students_may_contact", "prof_email"],
+        as_dict=True,
     )
+    if not info or not info.person:
+        return []
+
+    viewer_is_staff = bool(set(frappe.get_roles()) & comms.STAFF_MESSAGING_ROLES)
+    if not viewer_is_staff and not info.students_may_contact:
+        return []
+
+    address_by_channel = {}
+    for row in frappe.get_all(
+        "Person Channel Address",
+        filters={"parent": info.person, "parenttype": "Person", "status": "Active"},
+        fields=["channel", "value"],
+    ):
+        address_by_channel.setdefault(row.channel, row.value)
+
+    channels = frappe.get_all(
+        "Communication Channel",
+        filters={"enabled": 1, "portal_contactable": 1},
+        fields=["name", "channel_name", "weblink_prefix", "svg_icon"],
+        order_by="creation asc",
+    )
+
+    provider_cache = {}
+
+    def has_provider(channel):
+        if channel not in provider_cache:
+            provider_cache[channel] = bool(comms.pick_account(channel))
+        return provider_cache[channel]
+
+    def weblink(ch, value):
+        """The public fallback URL when no provider is configured, or None when
+        the stored address can't form a valid public link."""
+        if not ch.weblink_prefix:
+            return None
+        if ch.name == comms.EMAIL_CHANNEL:
+            return ch.weblink_prefix + value  # mailto:<email>
+        if ch.name == comms.WHATSAPP_CHANNEL:
+            digits = re.sub(r"\D", "", value)
+            return ch.weblink_prefix + digits if digits else None
+        # Telegram stores a bot chat-id (not a @username), so t.me/<id> wouldn't
+        # resolve — it's only ever offered as logged comms.
+        return None
+
     result = []
-    for app in apps:
-        app_details = frappe.db.get_value(
-            "Messaging App",
-            app.messaging_app,
-            ["app_name", "svg_icon", "url_prefix"],
-            as_dict=True,
-        )
-        if app_details:
-            result.append(app_details)
+    for ch in channels:
+        item = {
+            "channel": ch.name,
+            "channel_name": ch.channel_name,
+            "svg_icon": ch.svg_icon,
+        }
+        if ch.name == comms.IN_APP_CHANNEL:
+            # Always available — routes to the portal inbox compose, no address.
+            item["mode"] = "inapp"
+            item["person"] = info.person
+            result.append(item)
+            continue
+        value = address_by_channel.get(ch.name)
+        if ch.name == comms.EMAIL_CHANNEL and not value:
+            # Email always reachable via the mirrored professional address.
+            value = info.prof_email
+        if not value:
+            continue
+        if has_provider(ch.name):
+            # Logged comms send — never expose the raw address to the client.
+            item["mode"] = "comms"
+            result.append(item)
+            continue
+        url = weblink(ch, value)
+        if url:
+            item["mode"] = "weblink"
+            item["url"] = url
+            result.append(item)
     return result
 
 
