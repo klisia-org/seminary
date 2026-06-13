@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "autoincrement",
  "creation": "2025-03-06 15:31:00.333003",
+ "description": "A record of one student's completion status for a lesson in a scheduled course. Use it to track how far each student has progressed through a course's lessons.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

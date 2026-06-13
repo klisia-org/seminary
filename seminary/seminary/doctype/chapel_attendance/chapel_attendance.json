@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "CHATT-.#####",
  "creation": "2026-05-31 09:00:00.000000",
+ "description": "Record showing that a student checked in to a chapel service. One record is created per student per chapel and counts toward the student's chapel attendance graduation requirement.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#example-1-chapel-attendance-self-check-in",
  "engine": "InnoDB",
  "field_order": [
   "chapel",

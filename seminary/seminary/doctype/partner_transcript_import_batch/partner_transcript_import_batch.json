@@ -3,8 +3,9 @@
  "allow_import": 1,
  "autoname": "format:TRIM-{YY}-{#####}",
  "creation": "2026-04-20 12:00:00",
- "description": "Orchestrates the stage \u2192 resolve \u2192 dry-run \u2192 commit workflow for both legacy bulk import and single-student external transfer.",
+ "description": "Working sheet for importing course grades from a partner institution onto students' records, taking you from staged rows through a preview check to a committed transcript. Use it for bulk legacy imports or a single student's transfer credit.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/getting-started/legacy-grade-import.html#_3-importing-transcripts",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "format:{course_code}-{lesson_title}_{####}",
  "creation": "2025-03-08 14:40:26.854417",
+ "description": "A single lesson within a scheduled course's chapter, holding its content, preview text, and any linked quiz, assignment, exam, or discussion. Use it to build the teaching material students work through.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

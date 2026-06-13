@@ -61,19 +61,6 @@ frappe.ui.form.on('Course', {
 	}
 });
 
-frappe.ui.form.on('Course Topic', {
-	topics_add: function(frm){
-		frm.fields_dict['topics'].grid.get_field('topic').get_query = function(doc){
-			var topics_list = [];
-			if(!doc.__islocal) topics_list.push(doc.name);
-			$.each(doc.topics, function(idx, val){
-				if (val.topic) topics_list.push(val.topic);
-			});
-			return { filters: [['Topic', 'name', 'not in', topics_list]] };
-		};
-	}
-});
-
 let get_programs_without_course = function(course) {
 	return frappe.call({
 		type: 'GET',

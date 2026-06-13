@@ -4,9 +4,10 @@
  "allow_rename": 1,
  "autoname": "field:category_name",
  "creation": "2026-04-23 00:00:00",
- "description": "Categories to be selected on Course Schedule per Instructor. Serves also to establish payment rates.",
+ "description": "Role an instructor plays on a course, such as lead or teaching assistant, used when assigning instructors to a course schedule and to set their pay rates. Add the categories your school uses before running payroll.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/instructor-payment.html#instructor-categories",
  "engine": "InnoDB",
  "field_order": [
   "category_name",

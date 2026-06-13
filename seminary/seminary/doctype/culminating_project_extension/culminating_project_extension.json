@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "CPE-.#####",
  "creation": "2026-05-29 12:00:00",
- "description": "A registrar-granted extension term for a culminating project. Billing and tracking only: it charges an extension fee but creates NO Program Enrollment Course row, so it never affects credits, grade, GPA, or the transcript (ADR 024).",
+ "description": "An extra term granted to a student to finish a culminating project. Create one to charge the extension fee for that term; it does not add credits, a grade, or a transcript entry.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#culminating-projects-types-milestones-and-defenses",
  "engine": "InnoDB",
  "field_order": [
   "culminating_project",

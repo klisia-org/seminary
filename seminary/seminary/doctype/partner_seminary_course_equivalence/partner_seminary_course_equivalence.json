@@ -3,8 +3,9 @@
  "allow_rename": 0,
  "autoname": "format:{partner_seminary}-{source_course_code}-{##}",
  "creation": "2026-04-20 12:00:00.000000",
- "description": "Submittable registrar decision that a specific course at a Partner Seminary is equivalent to a course in this institution's catalog.",
+ "description": "Approved decision that a specific course at a partner institution maps to a course in your catalog, with optional credit and conversion overrides. Create and submit one for each partner course before importing transcripts that include it.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/getting-started/legacy-grade-import.html#_2-one-time-setup-external-partner",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

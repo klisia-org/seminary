@@ -3,7 +3,7 @@
  "allow_guest_to_view": 1,
  "autoname": "format:{course_data}-{academic_term}-{####}",
  "creation": "2024-03-06 17:42:21.146997",
- "description": "Students may only enroll in courses for their Program and that they are elligible for. Withdrawals can be requested through here.",
+ "description": "A student's enrollment in one course section for a term. Students can only enroll in courses for their program that they are eligible for, and can request a withdrawal from here. Payment, seating, and waitlist status are tracked on the record.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/enrollment.html#course-enrollment-lifecycle",
  "engine": "InnoDB",

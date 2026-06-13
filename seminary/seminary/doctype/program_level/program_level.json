@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "format:{pgm_level}",
  "creation": "2026-06-02 03:08:39.105531",
- "description": "Program Levels do more than serve their academic role; they are also used to define program readmission fees after LOA of any kind; and possible parameters to suspend billing during LOA",
+ "description": "A category that groups programs by type (for example degree, certificate, or continuing education) and sets shared rules such as whether the level is ongoing, leave-of-absence billing suspension, and readmission fees. Pick a level on each program to apply these rules.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/program.html#program-level-and-ongoing",
  "engine": "InnoDB",
  "field_order": [
   "pgm_level",

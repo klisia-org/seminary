@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "format:{trigger}",
  "creation": "2024-03-21 20:59:42.960644",
+ "description": "List of billing events that fee categories can be tied to, such as program enrollment or course enrollment. Use it to define and activate the moments at which a fee should be charged.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

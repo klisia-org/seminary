@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "field:trigger_name",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "Declarative notification rule (ADR 044): when a watched document reaches a condition (status, workflow_state, any field), render a Communication Template for the configured recipients through the consent-aware, rate-limited ledger. Write the plumbing once, configure the rest.",
+ "description": "A rule that automatically sends a message when a record reaches a chosen condition, for example notifying a student when their application is accepted. Pick the record type to watch, the conditions to match, the template to send, and who receives it.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#communication-triggers",
  "engine": "InnoDB",
  "field_order": [
   "trigger_name",
@@ -39,7 +40,7 @@
   },
   {
    "default": "Save",
-   "description": "Save fires on the false→true edge of the conditions (a plain save never re-fires while they stay true). Insert evaluates once on creation. Submit/Cancel evaluate at that event.",
+   "description": "Save fires on the false\u2192true edge of the conditions (a plain save never re-fires while they stay true). Insert evaluates once on creation. Submit/Cancel evaluate at that event.",
    "fieldname": "trigger_on",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -68,7 +69,7 @@
   },
   {
    "default": "1",
-   "description": "Fire at most once per document per recipient (idempotency-keyed). Uncheck to re-fire on every false→true transition, e.g. a status that legitimately cycles.",
+   "description": "Fire at most once per document per recipient (idempotency-keyed). Uncheck to re-fire on every false\u2192true transition, e.g. a status that legitimately cycles.",
    "fieldname": "once_per_document",
    "fieldtype": "Check",
    "label": "Once Per Document"

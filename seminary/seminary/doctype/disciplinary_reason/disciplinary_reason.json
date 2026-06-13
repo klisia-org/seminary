@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "DIRE-.#####",
  "creation": "2026-06-01 19:32:43.206380",
+ "description": "A disciplinary reason is a reusable category for incidents, such as Plagiarism or Unexcused Absence. Each reason can suggest recommended actions by how many times it has occurred; staff confirm or override these when recording an incident.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/discipline.html#disciplinary-reasons",
  "engine": "InnoDB",
  "field_order": [
   "reason",

@@ -3,8 +3,10 @@
  "allow_rename": 0,
  "autoname": "field:email",
  "creation": "2026-04-25 00:00:00.000000",
+ "description": "A graduate's directory record with their class year, program completed, current role, location, and bio. Use it to maintain alumni contacts and optionally list them in the public alumni directory.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/alumni.html",
  "engine": "InnoDB",
  "field_order": [
   "identity_section",

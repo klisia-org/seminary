@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "PERS-.#####",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "Identity and reachability spine. One record per human; role doctypes (Student, Instructor, Alumni Profile, Student Applicant) link here and mirror its contact data read-only. Identity is the opaque PERS id — email is just a channel address, never a key.",
+ "description": "A single human on record, holding their name, contact details, and communication preferences. One Person record is shared by all the roles that human plays (student, instructor, alumni, applicant), so you update their contact info in one place.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#person",
  "engine": "InnoDB",
  "field_order": [
   "identity_section",

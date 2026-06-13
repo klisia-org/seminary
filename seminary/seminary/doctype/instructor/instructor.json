@@ -3,7 +3,7 @@
  "allow_import": 1,
  "autoname": "format:{instructor_name}",
  "creation": "2015-11-04 15:56:30.004034",
- "description": "Instructors may either be related to employee (requires HRMS) or supplier (contractor), include education, bio for LMS, communication preferences, and a log of courses taught.",
+ "description": "Person who teaches courses, holding their bio for the LMS, contact preferences for students, education history for accreditation, and a log of courses taught. Set up an instructor before assigning them to a course schedule.",
  "doctype": "DocType",
  "document_type": "Other",
  "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_16-add-instructors",

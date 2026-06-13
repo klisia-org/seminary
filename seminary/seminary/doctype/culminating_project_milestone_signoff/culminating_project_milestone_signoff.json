@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "CPMS-.#######",
  "creation": "2026-05-29 13:00:00",
- "description": "One reviewer sign-off on a culminating-project milestone instance. A milestone is Approved once every required role has an Approved sign-off (ADR 025).",
+ "description": "One reviewer's sign-off on a culminating-project milestone, recording who approved it (or asked for revisions), when, and any comments or attachment. A milestone is approved once every required reviewer has signed off.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#milestones",
  "engine": "InnoDB",
  "field_order": [
   "culminating_project",

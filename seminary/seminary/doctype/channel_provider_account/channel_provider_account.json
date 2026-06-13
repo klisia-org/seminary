@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "field:account_name",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "A configured provider instance for a Communication Channel (ADR 043): Twilio-US, a Telegram bot, the site's Frappe email stack... Channel is the semantic ('SMS'); the account is who actually carries it, with its own region scope and hourly rate limit.",
+ "description": "The actual service that carries a communication channel, such as a Twilio number for SMS, a Telegram bot, or the site's email setup. Set one up to plug in provider credentials, limit which region or country it serves, and cap how many messages it sends per hour.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#channel-provider-accounts",
  "engine": "InnoDB",
  "field_order": [
   "account_name",

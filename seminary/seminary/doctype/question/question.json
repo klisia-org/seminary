@@ -5,7 +5,9 @@
  "autoname": "format:QTS-{course}-{#####}",
  "creation": "2018-10-01 15:58:00.696815",
  "default_view": "List",
+ "description": "Reusable question for a quiz, covering types such as multiple choice, free-text input, reading reports, and scripture matching or memorization. Create questions to add to your quizzes.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#quiz",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

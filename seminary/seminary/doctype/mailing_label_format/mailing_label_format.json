@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "field:format_name",
  "creation": "2026-06-11 00:00:00.000000",
- "description": "A label-sheet layout for printed mailing labels. Ships with common Avery presets; a seminary can add its own by measuring its label stock (millimetres).",
+ "description": "A label-sheet layout for printed mailing labels, with the grid and measurements of the label stock. Use it to pick a shipped Avery preset or define your own sheet for printed mailings.",
  "doctype": "DocType",
  "document_type": "Setup",
  "engine": "InnoDB",
@@ -38,7 +38,7 @@
    "reqd": 1
   },
   {
-   "description": "e.g. \"Avery 5160 — 30 per US Letter sheet, 2.625×1 in\".",
+   "description": "e.g. \"Avery 5160 \u2014 30 per US Letter sheet, 2.625\u00d71 in\".",
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"

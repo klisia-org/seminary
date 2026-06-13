@@ -2,7 +2,9 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2024-06-16 05:12:30.747119",
+ "description": "Gradebook view that shows every student in a course section alongside their scores for each assessment. Open it to review and enter grades across the whole class in one grid.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid",
  "engine": "InnoDB",
  "field_order": [
   "course_schedule",

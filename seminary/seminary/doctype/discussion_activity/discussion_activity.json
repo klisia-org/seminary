@@ -3,7 +3,9 @@
  "allow_rename": 0,
  "autoname": "format:{course}-{discussion_name}-{##}",
  "creation": "2025-10-07 07:45:54.407934",
+ "description": "Discussion an instructor sets up for a course, including the prompt, whether students must post before they can reply, and how many replies to classmates are required. Create one for each graded discussion.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/discussions.html",
  "engine": "InnoDB",
  "field_order": [
   "discussion_name",

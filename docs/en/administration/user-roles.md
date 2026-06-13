@@ -1,8 +1,9 @@
 # User Roles
 
 SeminaryERP uses Frappe's role-based permission system to control access. The
-module defines and owns the following roles (see ADR 034). A user may hold more
-than one role.
+module defines and owns the following roles. A user may hold more
+than one role. ERPNext roles (for accounting, etc.) should be selected per your policy.
+See [ERPNext Module Access documentation.](https://docs.frappe.io/erpnext/adding-users#27-allow-module-access)
 
 ## Staff roles (Desk)
 
@@ -33,6 +34,4 @@ Desk for configuration, records and reporting.
 
 ## Notes
 
-- `Program Chair` and `Seminary Manager` are created by the app on install — no
-  external (ERPNext Education) dependency.
 - `System Manager` (Frappe core) retains super-admin access everywhere.

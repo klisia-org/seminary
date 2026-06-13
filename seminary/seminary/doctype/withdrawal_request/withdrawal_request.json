@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "WDR-.{YYYY}-.####",
  "creation": "2026-04-02 12:00:00",
+ "description": "A withdrawal request records a student leaving a single course, all courses in a term, or an entire program, along with the reason and effective date. Create one to start and process a withdrawal through approval.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/withdrawal.html#withdrawal-request",
  "engine": "InnoDB",
  "field_order": [
   "program_enrollment",

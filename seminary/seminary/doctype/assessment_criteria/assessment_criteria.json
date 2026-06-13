@@ -4,7 +4,9 @@
  "allow_rename": 1,
  "autoname": "field:assessment_criteria",
  "creation": "2016-12-14 16:40:15.144115",
+ "description": "Reusable label for a type of graded work, such as a quiz, assignment, exam, or discussion. Create the criteria you want available so instructors can attach them to a course's assessment plan.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#setting-up-an-assessment-plan-for-a-course",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

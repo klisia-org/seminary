@@ -3,8 +3,9 @@
  "autoname": "hash",
  "creation": "2026-05-03 00:00:00",
  "default_print_format": "Seminary Diploma",
- "description": "Issued diploma record. The `name` is an opaque hash intended to anchor a future public verification page; `diploma_serial` is the human-readable identifier (DIP-YYYY-####). Created automatically when a Graduation Request reaches the 'Approved' state. On Graduation Request cancellation the diploma is marked `revoked` rather than deleted so the verification hash remains addressable.",
+ "description": "The diploma issued to a student when their graduation request is approved. It records the legal name as printed, the program, and the official graduation date. Created automatically on approval, and marked revoked rather than deleted if the graduation is later cancelled.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-request.html",
  "engine": "InnoDB",
  "field_order": [
   "diploma_serial",

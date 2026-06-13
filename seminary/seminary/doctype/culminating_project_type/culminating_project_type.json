@@ -4,8 +4,9 @@
  "allow_rename": 1,
  "autoname": "field:type_name",
  "creation": "2026-05-29 12:00:00",
- "description": "A configurable culminating-project option (e.g. Thesis, Summative Paper, Doctrinal Statement). The backing Course carries the credits, grading scale (via its Course Schedule) and fees \u2014 a culminating project of this type enrolls the student in that course (ADR 024).",
+ "description": "A kind of culminating project a student can pursue, such as Thesis, Summative Paper, or Doctrinal Statement. Set up one per option to define its milestone schedule and the course that carries its credits, grade, and fees; a student's project of this type enrolls them in that course.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#project-types",
  "engine": "InnoDB",
  "field_order": [
   "type_name",

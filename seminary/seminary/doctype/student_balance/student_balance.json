@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "naming_series:",
  "creation": "2026-04-17 12:00:00.000000",
+ "description": "Running account of a student's invoices, payments, and credits with the amount still owed. Use it to see what a student currently owes and to record payments against their charges.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/enrollment.html#payment-status-section-on-the-cei",
  "engine": "InnoDB",
  "field_order": [
   "naming_series",

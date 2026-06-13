@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "field:policy_name",
  "creation": "2026-04-20 12:00:00.000000",
- "description": "Relationship-specific policy that converts grades from a source Grading Scale to a target Grading Scale. See ADR 006.",
+ "description": "Policy that converts grades from one grading scale to another, by identity, a multiplier, a multiplier with offset, a symbol-to-symbol map, or manual entry. Create one when importing legacy grades or moving grades between scales.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/getting-started/legacy-grade-import.html",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

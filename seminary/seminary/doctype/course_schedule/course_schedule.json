@@ -4,7 +4,7 @@
  "allow_import": 1,
  "autoname": "format:{course}-{academic_term}-{section}",
  "creation": "2015-09-09 16:34:04.960369",
- "description": "A live instance of a course, with its own instructor, assessments, lessons, etc. After saving, you can import a template for the LMS.",
+ "description": "A specific offering of a course for one term, with its own instructor, section, room, meeting times, seats, and grades. Create one each time a course is taught; students enroll in the schedule, not the course. After saving you can import a template for the LMS.",
  "doctype": "DocType",
  "document_type": "Document",
  "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_12-course-schedule-lifecycle",

@@ -4,8 +4,9 @@
  "allow_rename": 1,
  "autoname": "format:{course_name}",
  "creation": "2015-09-07 12:39:55.181893",
- "description": "Course is the reusable subject taught, bridging Program and Course Schedule and defining pre-requisites and description.",
+ "description": "A reusable subject that can be taught across programs and terms. It holds the course code, credits, description, prerequisites, and grading defaults. Create one per subject, then schedule it as a Course Schedule each time it is offered.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/program.html#courses",
  "engine": "InnoDB",
  "field_order": [
   "course_name",

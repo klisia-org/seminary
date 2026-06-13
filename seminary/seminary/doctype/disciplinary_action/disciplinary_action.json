@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "field:action_name",
  "creation": "2026-06-01 20:10:00",
+ "description": "A disciplinary action is a sanction you can apply, such as a Verbal Warning, Probation, or Dismissal. Define each action once here so staff and instructors can reuse it when recording incidents.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/discipline.html#disciplinary-actions",
  "engine": "InnoDB",
  "field_order": [
   "action_name",

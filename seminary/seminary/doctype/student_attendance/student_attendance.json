@@ -3,6 +3,7 @@
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2015-11-05 15:20:23.045996",
+ "description": "Attendance record marking whether a student was present, absent, or excused for a given class meeting on a given date. Use it to track and report each student's participation in a course.",
  "doctype": "DocType",
  "document_type": "Document",
  "documentation": "https://docs.seminaryerp.org/modules/attendance.html",

@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "field:grading_scale_name",
  "creation": "2016-08-26 03:06:53.922972",
+ "description": "Grading scale that defines the grade codes, thresholds, and grade points used to turn scores into letter or descriptive grades, plus the transcript notations for withdrawals and failure for absences. Create one per scale your school uses (for example a points scale or a descriptive scale).",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_1-grading-scale",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

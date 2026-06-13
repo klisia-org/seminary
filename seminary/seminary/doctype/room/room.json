@@ -3,6 +3,7 @@
  "allow_import": 1,
  "autoname": "ROOM-.#####",
  "creation": "2015-09-09 16:20:14.613061",
+ "description": "A teaching space where classes can meet, with a name, number, seating capacity, and the features it offers. Create one per room and link it to its Building so the Campus fills in automatically; capacity drives seat caps and room-size checks, so keep it accurate.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/rooms.html",
  "engine": "InnoDB",
@@ -51,7 +52,7 @@
    "label": "Location"
   },
   {
-   "description": "Optional. Building this room belongs to (Campus → Building → Room).",
+   "description": "Optional. Building this room belongs to (Campus \u2192 Building \u2192 Room).",
    "fieldname": "building",
    "fieldtype": "Link",
    "label": "Building",

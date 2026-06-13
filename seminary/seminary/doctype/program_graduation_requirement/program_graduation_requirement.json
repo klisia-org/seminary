@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "PGR-.#####",
  "creation": "2026-04-25 14:47:15.333793",
- "description": "A program's graduation policy. Submittable for traceability and versioned via workflow: a live policy is in the 'Active' state. To change requirements, use the 'Change Version' action \u2014 this retires the current policy (state 'Superseded', 'Is Active' cleared, 'Active Until' stamped to today) and spawns a Draft successor to edit and submit. Policies are never cancelled, so snapshot links from Program Enrollments stay valid (ADR 012, 024).",
+ "description": "A program's official set of graduation requirements that applies to the students under it. Create one to define what a program's students must complete to graduate. To change the requirements later, use Change Version, which retires the current policy and opens a draft successor to edit, keeping each student's enrollment tied to the policy in force when they enrolled.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#layer-2-the-policy",
  "engine": "InnoDB",
  "field_order": [
   "program_name",

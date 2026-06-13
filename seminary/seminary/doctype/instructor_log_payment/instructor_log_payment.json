@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "hash",
  "creation": "2026-04-23 00:00:00.000000",
+ "description": "Record that a course an instructor taught was paid on a given salary slip, including the portion and amount. Created automatically when you run instructor payroll, and used to prevent paying the same teaching twice.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/instructor-payment.html#running-payroll",
  "editable_grid": 0,
  "engine": "InnoDB",
  "field_order": [

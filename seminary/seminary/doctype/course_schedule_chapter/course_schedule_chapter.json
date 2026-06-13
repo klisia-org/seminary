@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "format:{course_code}-{chapter_title}{###}",
  "creation": "2025-03-10 11:17:17.690579",
+ "description": "A chapter that groups lessons within a scheduled course, optionally backed by a SCORM package. Use it to organize a course's lessons into ordered sections.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

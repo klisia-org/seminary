@@ -4,9 +4,10 @@
  "allow_rename": 1,
  "autoname": "BLDG-.#####",
  "creation": "2026-06-10 00:00:00",
- "description": "A building within a Campus. Middle of the Campus → Building → Room hierarchy; optionally mirrored into the ERPNext Location tree for Asset tracking.",
+ "description": "A building that belongs to a Campus, sitting between Campus and Room in the location hierarchy. Create one for each building on a campus so rooms can be grouped under it.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/rooms.html#building",
  "engine": "InnoDB",
  "field_order": [
   "building_name",

@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "SCHA-.{YYYY}-.####",
  "creation": "2026-06-12 00:00:00.000000",
+ "description": "Scholarship granted to a specific student for a specific program enrollment, with its own effective dates and discount terms. Use it to award financial aid, track its review and retention status, and apply the discount to the student's fees.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/scholarships.html#the-scholarship-award",
  "engine": "InnoDB",
  "field_order": [
   "scholarship",

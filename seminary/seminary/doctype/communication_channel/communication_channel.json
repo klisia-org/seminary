@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "field:channel_name",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "A semantic communication channel (Email, SMS, WhatsApp...). Channels are seeded create-only-if-missing; provider accounts and rate limits attach to channels in ADR 043's delivery engine.",
+ "description": "A way of reaching people, such as Email, SMS, WhatsApp, or Telegram. Enable or disable a channel here, and choose whether it appears as a contact option for instructors on the portal.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#communication-channels",
  "engine": "InnoDB",
  "field_order": [
   "channel_name",
@@ -51,7 +52,7 @@
   },
   {
    "depends_on": "portal_contactable",
-   "description": "Optional public deep-link prefix, e.g. https://wa.me/ or https://t.me/ — appended with the contact's address to open the external app directly. Leave blank for channels with no public deep link (the icon then routes through the logged comms inbox).",
+   "description": "Optional public deep-link prefix, e.g. https://wa.me/ or https://t.me/ \u2014 appended with the contact's address to open the external app directly. Leave blank for channels with no public deep link (the icon then routes through the logged comms inbox).",
    "fieldname": "weblink_prefix",
    "fieldtype": "Data",
    "label": "Deep-link Prefix"

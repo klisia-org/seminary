@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "CHPL-.#####",
  "creation": "2026-05-31 07:07:04.864717",
+ "description": "Scheduled chapel service that is open to all students, instructors, and the public. Use it to plan each service, assign the preacher and worship team, and let students check in for attendance.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#example-1-chapel-attendance-self-check-in",
  "engine": "InnoDB",
  "field_order": [
   "chapel_topic",
