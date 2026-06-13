@@ -3,9 +3,10 @@
  "allow_import": 1,
  "autoname": "format:{student_name}-{program}-{##}",
  "creation": "2015-12-02 12:58:32.916080",
- "description": "Students must enrolled to access courses. From here, access to Payers for the PE per fee category and scholarship granted.",
+ "description": "A student's enrollment in a program, created when they are admitted. It tracks status, term progress, GPA, credits, emphases, and graduation, and is required before the student can enroll in any course.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/enrollment.html",
  "engine": "InnoDB",
  "field_order": [
   "student",

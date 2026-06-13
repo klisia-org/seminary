@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "hash",
  "creation": "2026-04-06 16:00:00",
+ "description": "A private note a portal user keeps for a single lesson. Use it to let students and staff jot personal notes while working through course lessons.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

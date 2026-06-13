@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "RFEA-.#####",
  "creation": "2026-06-09 21:03:34.064223",
+ "description": "One capability a room can offer, such as Projector, Sound System, Piano, or Wheelchair Accessible, grouped by a category like AV Equipment or Musical. A starter set is included; add your own to describe what your rooms have.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/rooms.html#room-features-what-a-room-has",
  "engine": "InnoDB",
  "field_order": [
   "feature",

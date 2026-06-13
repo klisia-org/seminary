@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "CP-.#######",
  "creation": "2026-04-25 17:06:03.296800",
+ "description": "A student's capstone work toward graduation, such as a thesis, dissertation, or summative paper. Create one for a student to track its title, advisor and readers, milestones, submissions, and defense through to a final grade.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#culminating-projects-types-milestones-and-defenses",
  "engine": "InnoDB",
  "field_order": [
   "program_enrollment",

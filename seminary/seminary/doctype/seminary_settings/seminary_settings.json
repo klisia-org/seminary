@@ -1,7 +1,9 @@
 {
  "actions": [],
  "creation": "2017-04-05 13:33:04.519313",
+ "description": "Seminary-wide configuration: branding, billing and enrollment windows, attendance and check-in rules, portal options, scholarships, and integrations. Set these once during setup and revisit when institutional policies change.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/administration/customization.html#seminary-settings",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -568,7 +570,7 @@
   },
   {
    "default": "1",
-   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code — best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
+   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code \u2014 best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
    "fieldname": "enforce_time_window",
    "fieldtype": "Check",
    "label": "Enforce meeting time window"
@@ -611,20 +613,20 @@
   },
   {
    "default": "1",
-   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only — excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
+   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only \u2014 excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
    "fieldname": "track_online_attendance",
    "fieldtype": "Check",
    "label": "Track Attendance for Online Meetings"
   },
   {
-   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",
+   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % \u00d7 the course's scheduled meetings, overridable per Course Schedule by the registrar.",
    "fieldname": "attendance_policy_section",
    "fieldtype": "Section Break",
    "label": "Attendance Policy"
   },
   {
    "default": "3",
-   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
+   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 \u2192 every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
    "fieldname": "tardies_per_absence",
    "fieldtype": "Int",
    "label": "Tardies per Absence"

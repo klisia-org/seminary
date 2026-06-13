@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "RL-.######",
  "creation": "2026-04-25 17:03:46.967406",
+ "description": "A recommendation letter requested from a pastor, mentor, or employer to satisfy a student's graduation requirement. Create one per recommender to email them a secure link, collect their letter, and track it through review and approval.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#example-2-three-recommendation-letters-with-named-slots",
  "engine": "InnoDB",
  "field_order": [
   "program_enrollment",

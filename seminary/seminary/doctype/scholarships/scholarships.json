@@ -2,8 +2,9 @@
  "actions": [],
  "autoname": "format:{scholarship}-{program}",
  "creation": "2025-02-19 14:26:55.249123",
- "description": "Scholarships are set per Program and can affect Fee Categories in different proportions. They are granted to students via Scholarship Award.",
+ "description": "Reusable scholarship template for a program that defines its discounts per fee, eligibility, and retention rules. Set one up so it can be granted to students through individual scholarship awards.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/scholarships.html#the-scholarship-template",
  "engine": "InnoDB",
  "field_order": [
   "scholarship",
@@ -67,7 +68,7 @@
   },
   {
    "default": "0",
-   "description": "Per-template portal gate. Combined with Seminary Settings → Allow Portal Scholarship, both must be on for students to see/apply.",
+   "description": "Per-template portal gate. Combined with Seminary Settings \u2192 Allow Portal Scholarship, both must be on for students to see/apply.",
    "fieldname": "show_on_portal",
    "fieldtype": "Check",
    "label": "Show on Portal"
@@ -89,7 +90,7 @@
    "label": "Funding"
   },
   {
-   "description": "Cost center the forgiveness is booked to. Defaults from Seminary Settings → Scholarship Cost Center; override to budget this scholarship separately (the $ ceiling lives in an ERPNext Budget against this cost center).",
+   "description": "Cost center the forgiveness is booked to. Defaults from Seminary Settings \u2192 Scholarship Cost Center; override to budget this scholarship separately (the $ ceiling lives in an ERPNext Budget against this cost center).",
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Cost Center",

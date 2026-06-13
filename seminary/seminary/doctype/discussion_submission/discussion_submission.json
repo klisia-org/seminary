@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "format:{disc_activity}-{YYYY}-{####}",
  "creation": "2025-10-07 08:01:59.159235",
+ "description": "A student's participation in a course discussion, holding their original post, replies, and the instructor's grade and feedback. Created when a student takes part and opened by the grader to score the participation.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#discussion",
  "engine": "InnoDB",
  "field_order": [
   "id_section",

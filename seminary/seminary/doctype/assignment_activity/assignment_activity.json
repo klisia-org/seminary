@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "format:{coursecode}-{title}-{###}",
  "creation": "2025-03-07 09:06:43.140515",
+ "description": "Assignment an instructor sets for a course, including the instructions, the accepted submission format, and whether it is graded. Create one for each assignment students will turn in.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#assignment",
  "engine": "InnoDB",
  "field_order": [
   "assignment_section",

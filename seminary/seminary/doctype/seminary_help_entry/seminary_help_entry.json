@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "",
  "creation": "2026-04-06 12:15:51.732987",
+ "description": "In-app help shown beside a Desk form or portal page, holding institution-specific notes and an optional documentation link. Use it to give your staff and students guidance tailored to how this seminary works.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/administration/customization.html#in-app-help",
  "engine": "InnoDB",
  "field_order": [
   "help_target_section",
@@ -30,7 +32,7 @@
    "options": "DocType"
   },
   {
-   "description": "Vue route name (e.g. Courses, CourseDetail, Transcripts) — NOT the file name. See the route names in frontend/src/router.js.",
+   "description": "Vue route name (e.g. Courses, CourseDetail, Transcripts) \u2014 NOT the file name. See the route names in frontend/src/router.js.",
    "fieldname": "frontend_page",
    "fieldtype": "Data",
    "label": "Frontend Page"

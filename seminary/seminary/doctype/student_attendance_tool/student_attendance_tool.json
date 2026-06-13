@@ -2,7 +2,9 @@
  "actions": [],
  "allow_copy": 1,
  "creation": "2016-11-16 17:12:46.437539",
+ "description": "Quick screen for taking attendance for a whole class at once. Pick a course schedule and date, then mark every enrolled student present or absent in one place instead of creating records one by one.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/attendance.html#capturing-attendance",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

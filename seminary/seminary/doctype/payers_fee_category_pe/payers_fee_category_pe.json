@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "format:{pf_pe}",
  "creation": "2024-03-22 14:20:55.544942",
+ "description": "Setup that splits a student's program-enrollment charges among the people or organizations paying for them, such as the student, a church, or a sponsor. Use it to record who pays which share of each fee and to generate the resulting invoices.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

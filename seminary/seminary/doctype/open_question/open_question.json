@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "format:{question_short}{####}",
  "creation": "2025-03-10 13:40:28.162324",
+ "description": "Open-ended question used in an exam, where the student writes a free-form answer that an instructor grades by hand. Create one for essay or short-answer questions, with an optional explanation shown as feedback.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#quiz",
  "engine": "InnoDB",
  "field_order": [
   "question",

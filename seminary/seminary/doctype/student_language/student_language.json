@@ -8,6 +8,7 @@
  "beta": 0,
  "creation": "2017-02-21 01:55:00.366273",
  "custom": 0,
+ "description": "A language a student can speak or study, used as a lookup elsewhere in the system. Use it to maintain the list of languages the seminary recognizes.",
  "docstatus": 0,
  "doctype": "DocType",
  "document_type": "",

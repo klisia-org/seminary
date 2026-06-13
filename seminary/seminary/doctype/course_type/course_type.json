@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "CRST-.######",
  "creation": "2026-06-09 21:43:08.723417",
+ "description": "A grouping of courses by what they need from a room. For each modality, list the room features that modality requires, so courses of this type can be matched to suitable rooms.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/rooms.html#course-type-what-a-course-needs",
  "engine": "InnoDB",
  "field_order": [
   "course_type",

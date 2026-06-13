@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "DINC-.#####",
  "creation": "2026-06-01 19:44:16.575164",
+ "description": "A disciplinary incident records something that happened with a student on a given date: the reason, the evidence, and the action or actions taken. Create one when you need to report or resolve a student conduct or academic-integrity issue.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/discipline.html#reporting-from-the-instructor-portal",
  "engine": "InnoDB",
  "field_order": [
   "identification_section",

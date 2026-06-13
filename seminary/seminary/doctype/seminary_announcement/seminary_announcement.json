@@ -2,6 +2,7 @@
  "actions": [],
  "autoname": "ANN-.{YYYY}-.####",
  "creation": "2026-04-23 00:00:00",
+ "description": "A message broadcast to a chosen audience (enrolled students, teaching instructors, alumni, specific course schedules, or a custom group) across email, in-app, SMS, WhatsApp, voice, and printed letters. Use it to send academic notices, community news, or emergency alerts.",
  "doctype": "DocType",
  "document_type": "Document",
  "documentation": "https://docs.seminaryerp.org/modules/announcements.html#creating-an-announcement",

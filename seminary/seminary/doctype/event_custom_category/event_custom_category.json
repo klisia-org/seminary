@@ -4,8 +4,9 @@
  "allow_rename": 1,
  "autoname": "field:category_name",
  "creation": "2026-05-30 12:00:00",
- "description": "A reusable type of seminary Event (e.g. Convocation, Chapel, Thesis Defense, Exit Interview). Graduation Requirement Items of type 'Event Attendance' and Culminating Project defense milestones point at a category; actual Event instances are created from it on the right date with the right participants.",
+ "description": "A reusable type of seminary event, such as Convocation, Chapel, Thesis Defense, or Exit Interview. Set one up so graduation requirements and project defenses can point at it; actual events are then scheduled from it on the right date with the right attendees.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#event-categories-the-type",
  "engine": "InnoDB",
  "field_order": [
   "category_name",

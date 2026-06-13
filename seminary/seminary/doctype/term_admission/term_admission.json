@@ -2,8 +2,9 @@
  "actions": [],
  "autoname": "format:{academic_term}",
  "creation": "2026-05-04 12:00:00",
- "description": "An admission window scoped to a single Academic Term. Submitted + published windows are what the public Program page renders open enrollment for. The program_details child table is pre-populated on insert with every Timed Program; remove rows for programs not accepting that term.",
+ "description": "An admission window for a single academic term that lists which programs accept applications during it. Publish a window to open enrollment on the public program pages; use it for programs that admit only at set times rather than continuously.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/program.html#admissions-timed-vs-continuous",
  "engine": "InnoDB",
  "field_order": [
   "academic_term",

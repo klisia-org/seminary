@@ -70,6 +70,8 @@ export default withMermaid(defineConfig({
               { text: 'Attendance', link: '/modules/attendance' },
               { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },
               { text: 'Graduation Request', link: '/modules/graduation-request' },
+              { text: 'Scholarships', link: '/modules/scholarships' },
+              { text: 'Alumni', link: '/modules/alumni' },
               { text: 'Discussions', link: '/modules/discussions' },
               { text: 'Communication', link: '/modules/communication' },
               { text: 'Announcements', link: '/modules/announcements' },
@@ -82,6 +84,7 @@ export default withMermaid(defineConfig({
             items: [
               { text: 'User Roles', link: '/administration/user-roles' },
               { text: 'Customization', link: '/administration/customization' },
+              { text: 'Bible Lookup', link: '/administration/bible-api' },
             ],
           },
         ],

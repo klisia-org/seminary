@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "format:{course}-{foldername}-{####}",
  "creation": "2025-04-09 08:57:13.280493",
+ "description": "A named file folder attached to a course, where instructors store materials students can download. Use it to organize and share course files with enrolled students.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

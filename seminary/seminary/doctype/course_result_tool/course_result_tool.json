@@ -2,7 +2,9 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2024-03-11 16:20:12.131693",
+ "description": "Tool for reviewing the combined results of a scheduled course, pulling a roster and showing each student's outcome. Use it to check final standings for a course section.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid",
  "engine": "InnoDB",
  "field_order": [
   "schedcourse_restool",

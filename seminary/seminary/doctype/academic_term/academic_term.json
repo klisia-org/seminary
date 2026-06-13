@@ -10,6 +10,7 @@
  "allow_rename": 1,
  "autoname": "field:title",
  "creation": "2015-09-08 17:19:19.158228",
+ "description": "A teaching period within an academic year, such as a semester or quarter, with its own start and end dates. Courses are scheduled and students enroll against a term; create one for each period in your calendar.",
  "doctype": "DocType",
  "document_type": "Setup",
  "documentation": "https://docs.seminaryerp.org/modules/academic-calendar.html#academic-term",

@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "format:QS-{YYYY}-{#####}",
  "creation": "2018-10-15 15:48:40.482821",
+ "description": "A student's attempt at a quiz, holding their answers, the auto-graded score, and time taken. Created when a student submits a quiz, with the score carried into the gradebook.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#quiz",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

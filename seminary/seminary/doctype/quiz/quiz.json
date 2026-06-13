@@ -3,7 +3,9 @@
  "allow_import": 1,
  "autoname": "format:{title}-{###}",
  "creation": "2025-03-19 12:16:53.160358",
+ "description": "Quiz an instructor builds for a course, with its questions, passing score, attempt limit, and options like shuffling or a time limit. Create one to define a quiz students will take.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#quiz",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

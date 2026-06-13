@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "format:{title}{###}",
  "creation": "2025-03-10 13:46:52.598184",
+ "description": "Exam an instructor builds for a course, with its pool of questions, time limit, and options like shuffling or offering a subset of questions. Create one to define an exam students will take.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#exam",
  "engine": "InnoDB",
  "field_order": [
   "id_section",

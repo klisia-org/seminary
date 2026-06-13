@@ -3,8 +3,9 @@
  "allow_rename": 0,
  "autoname": "naming_series:",
  "creation": "2026-05-02 13:00:00.000000",
- "description": "A student's request to graduate. Mirrors the Course Enrollment Individual lifecycle: on submit, generates a Sales Invoice for the program-configured Graduation Request fee category. Workflow: Draft -> Awaiting Payment -> Approved (or Draft -> Approved when free). Cancellation cascades from Program Enrollment withdrawal; the fee is non-refundable in that case.",
+ "description": "A student's application to graduate from their program. Create one when a student is eligible; it confirms their diploma name, charges any graduation fee, and moves through review to approval, which issues the diploma.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-request.html",
  "engine": "InnoDB",
  "field_order": [
   "naming_series",

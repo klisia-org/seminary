@@ -3,6 +3,7 @@
  "allow_rename": 1,
  "autoname": "format:{YYYY}-{####}",
  "creation": "2025-10-07 09:10:08.405950",
+ "description": "A named set of students grouped under a mentor, optionally reused across courses. Use it to organize students into cohorts or small groups for a course or for ongoing mentoring.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

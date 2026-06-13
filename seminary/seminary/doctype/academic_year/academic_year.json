@@ -3,6 +3,7 @@
  "allow_import": 1,
  "autoname": "field:academic_year_name",
  "creation": "2015-09-07 12:49:51.303026",
+ "description": "A school year with a start and end date that academic terms belong to. Create one per year as the top level of your academic calendar.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/academic-calendar.html",
  "engine": "InnoDB",

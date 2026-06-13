@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "format:AS-{assignment}-{####}",
  "creation": "2025-03-07 10:04:07.197858",
+ "description": "A student's submission for an assignment, holding their uploaded file or answer plus the grade and instructor feedback. Created when a student submits and opened by the grader to mark and comment on the work.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#assignment",
  "engine": "InnoDB",
  "field_order": [
   "id_section",

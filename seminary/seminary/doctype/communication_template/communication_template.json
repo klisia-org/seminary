@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "field:template_key",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "A message template with per-(channel, language) Jinja versions (ADR 043). Rendering falls back: requested language → blank-language version → any version for the channel.",
+ "description": "A reusable message with separate versions for each channel and language, so the same notification can go out as an email, an SMS, or in another language. Create one for any message you send repeatedly, such as an acceptance notice or a payment reminder.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#communication-templates",
  "engine": "InnoDB",
  "field_order": [
   "template_key",

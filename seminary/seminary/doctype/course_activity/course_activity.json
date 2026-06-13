@@ -3,7 +3,9 @@
  "autoname": "format:EDU-CA-{YYYY}-{#####}",
  "beta": 1,
  "creation": "2018-10-01 17:35:54.391413",
+ "description": "Record of a student opening a piece of course content, such as an article or video, on a given date. Created automatically to track what a student has worked through.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#assessment-types",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

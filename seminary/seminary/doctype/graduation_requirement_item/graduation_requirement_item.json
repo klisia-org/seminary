@@ -3,8 +3,9 @@
  "allow_rename": 1,
  "autoname": "GRI-.####",
  "creation": "2026-04-25 14:06:41.951224",
- "description": "A reusable library of graduation requirements. To stop offering one, Retire it (via the workflow) \u2014 this hides it from the Program Graduation Requirement picker without breaking programs or student snapshots that already reference it. Reactivate to offer it again.",
+ "description": "A reusable library of graduation requirements (such as a thesis, recommendation letters, or chapel attendance) that programs can draw from. Define each requirement once here, then add it to a program's graduation policy. Retire one to stop offering it without affecting programs or students that already use it.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#layer-1-the-library",
  "engine": "InnoDB",
  "field_order": [
   "requirement_name",

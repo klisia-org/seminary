@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "format:{academic_term}-{withdrawal_rule}-{####}",
  "creation": "2026-04-02 12:00:00",
+ "description": "A term withdrawal rule sets which withdrawal rule applies for a given academic term up to a cutoff date. Use these to apply different grading and refund treatment as the term progresses.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/withdrawal.html#term-widrawal-rules",
  "engine": "InnoDB",
  "field_order": [
   "academic_term",

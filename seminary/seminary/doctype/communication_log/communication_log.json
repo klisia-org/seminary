@@ -2,9 +2,10 @@
  "actions": [],
  "autoname": "COMM-.YYYY.-.######",
  "creation": "2026-06-10 12:00:00.000000",
- "description": "The communication ledger (ADR 043): one row per person × channel × message, both directions. Created Queued and drained by the rate-limited dispatcher — never sent inline. The unique idempotency key is the no-double-send guarantee. A Person's filtered list of these rows IS the unified interaction timeline.",
+ "description": "A record of one message sent to or received from a person, including its content, channel, and delivery status. Browse these to see the full history of communication with someone or to check whether a message was delivered.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/communication.html#communication-log",
  "engine": "InnoDB",
  "field_order": [
   "routing_section",
@@ -135,7 +136,7 @@
    "label": "Subject"
   },
   {
-   "description": "Rendered snapshot — what was actually sent, regardless of later template edits.",
+   "description": "Rendered snapshot \u2014 what was actually sent, regardless of later template edits.",
    "fieldname": "message",
    "fieldtype": "Text Editor",
    "label": "Message"
@@ -312,7 +313,7 @@
    "read_only": 1
   },
   {
-   "description": "The message this one replies to — links a conversation thread.",
+   "description": "The message this one replies to \u2014 links a conversation thread.",
    "fieldname": "in_reply_to",
    "fieldtype": "Link",
    "label": "In Reply To",

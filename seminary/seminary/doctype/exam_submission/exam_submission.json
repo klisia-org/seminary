@@ -2,7 +2,9 @@
  "actions": [],
  "autoname": "hash",
  "creation": "2025-03-10 13:57:25.901720",
+ "description": "A student's attempt at an exam, holding their answers, score, and the instructor's grading and comments. Created when a student takes the exam and opened by the grader to score and give feedback.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#exam",
  "engine": "InnoDB",
  "field_order": [
   "id_section",

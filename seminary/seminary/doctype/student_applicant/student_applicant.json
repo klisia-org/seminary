@@ -5,8 +5,10 @@
  "autoname": "format:{academic_term}-{first_name}-{###}",
  "creation": "2015-09-11 11:50:09.740807",
  "default_view": "List",
+ "description": "A prospective student's application to a program, created when someone applies through the public application form or by staff. Review and process it here before admitting the applicant and creating their enrollment.",
  "doctype": "DocType",
  "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/program.html#the-application-form",
  "engine": "InnoDB",
  "field_order": [
   "first_name",

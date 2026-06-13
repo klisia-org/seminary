@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:category_name",
  "creation": "2015-09-16 13:01:10.448734",
+ "description": "Type of charge a student can be billed for, such as tuition, registration, or a per-credit fee. Set one up for each kind of fee so it can be applied to enrollments and turned into invoices.",
  "doctype": "DocType",
  "document_type": "Setup",
  "documentation": "https://docs.seminaryerp.org/getting-started/initial-setup.html#_8-fee-category",

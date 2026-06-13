@@ -1,7 +1,9 @@
 {
  "actions": [],
  "creation": "2026-05-23 12:00:00.000000",
+ "description": "Connection settings for the scripture lookup service, including the API key and which Bible translation to use per language. Use it to enable and configure in-app Bible passage lookups.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/administration/bible-api.html",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [

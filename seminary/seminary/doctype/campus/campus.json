@@ -4,9 +4,10 @@
  "allow_rename": 1,
  "autoname": "field:campus_name",
  "creation": "2026-06-10 00:00:00",
- "description": "A physical campus/site of the seminary. Top of the Campus → Building → Room hierarchy; optionally mirrored into the ERPNext Location tree for Asset tracking.",
+ "description": "A physical campus or site of the seminary, at the top of the Campus -> Building -> Room hierarchy. Create one for each location where classes are held, then add its buildings and rooms underneath.",
  "doctype": "DocType",
  "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/rooms.html#campus",
  "engine": "InnoDB",
  "field_order": [
   "campus_name",
@@ -42,7 +43,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Informational only — the timezone of this campus. NOT yet applied to attendance/chapel check-in windows, which still use the site time zone (see ADR 036). Reserved for future multi-timezone support.",
+   "description": "Informational only \u2014 the timezone of this campus. NOT yet applied to attendance/chapel check-in windows, which still use the site time zone (see ADR 036). Reserved for future multi-timezone support.",
    "fieldname": "timezone",
    "fieldtype": "Select",
    "label": "Timezone"

@@ -3,7 +3,9 @@
  "allow_rename": 1,
  "autoname": "hash",
  "creation": "2026-05-04 13:17:54.149743",
+ "description": "A statement of faith maintained by the seminary. Create one to publish the school's beliefs and, optionally, require students or instructors to affirm it during admission or display it on the website.",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#example-5-doctrinal-statement-signed-by-both-sides",
  "engine": "InnoDB",
  "field_order": [
   "ds_title",
