@@ -4,6 +4,7 @@
  "autoname": "field:academic_year_name",
  "creation": "2015-09-07 12:49:51.303026",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/academic-calendar.html",
  "engine": "InnoDB",
  "field_order": [
   "section_break_zolm",
@@ -88,7 +89,7 @@
    "link_fieldname": "academic_year"
   }
  ],
- "modified": "2024-02-24 17:24:33.063128",
+ "modified": "2026-06-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Year",

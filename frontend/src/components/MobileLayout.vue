@@ -28,6 +28,8 @@
 			</button>
 		</div>
 
+		<HelpWidget mobile />
+
 		<ProfileModal v-model="showProfile" />
 	</div>
 </template>
@@ -39,6 +41,7 @@ import { usersStore } from '@/stores/user'
 import { createResource } from 'frappe-ui'
 import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound } from 'lucide-vue-next'
 import ProfileModal from '@/components/ProfileModal.vue'
+import HelpWidget from '@/components/HelpWidget.vue'
 
 const router = useRouter()
 const { userResource } = usersStore()

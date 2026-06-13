@@ -12,4 +12,12 @@ Many policies (enrollment windows, withdrawal rules, grading periods) are config
 
 ## In-app help
 
-SeminaryERP includes a contextual help system. Each form can display a help entry with a link to this documentation and a local notes field for institution-specific instructions. See **Seminary Help Entry** in the Desk.
+SeminaryERP includes a contextual help system with two parts:
+
+- **Documentation link.** A form shows a Help icon in its header when its doctype
+  has a "Documentation Link" set (DocType → *More Information* → Documentation
+  Link). Clicking it opens that page of this documentation in a new tab. No setup
+  beyond the link is needed.
+- **Local notes.** Create a **Seminary Help Entry** for a doctype and fill in
+  *Local Notes* — your institution-specific "how we do it here" instructions.
+  They appear in a collapsible panel at the top of that doctype's form.

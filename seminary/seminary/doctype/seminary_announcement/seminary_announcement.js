@@ -25,10 +25,11 @@ frappe.ui.form.on("Seminary Announcement", {
     },
 
     onload(frm) {
-        // Only offer channels with an enabled provider account, and keep the
-        // Table MultiSelect dropdown query well-defined (works around a Frappe
-        // quirk where the option list can render partially until interacted with).
-        frm.set_query("channel", "channels", () => ({ filters: { enabled: 1 } }));
+        // Only offer channels with an enabled provider account. `channels` is a
+        // Table MultiSelect whose control extends ControlLink and sits on the
+        // parent form, so it has no `.grid` — use the parent-field set_query
+        // signature (the child-table signature crashes on `.grid.get_field`).
+        frm.set_query("channels", () => ({ filters: { enabled: 1 } }));
 
         if (frm.is_new() && !frm.doc.academic_term) {
             frappe.db.get_list("Academic Term", {

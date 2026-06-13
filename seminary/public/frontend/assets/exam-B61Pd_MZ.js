@@ -1,0 +1,2 @@
+import{Qn as e}from"./frappe-ui-2sRMI7Q4.js";import{u as t}from"./editorjs-BbaSkpwg.js";var n=e({prefillData:{title:``,course:``},setPrefillData(e){this.prefillData=t({},e)},clearPrefillData(){this.prefillData={title:``,course:``}}});console.log(n.prefillData);export{n as t};
+//# sourceMappingURL=exam-B61Pd_MZ.js.map

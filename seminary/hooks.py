@@ -31,10 +31,18 @@ add_to_apps_screen = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = "assets/seminary/css/seminary.css"
+app_include_css = [
+    "assets/seminary/css/seminary.css",
+    # Styles for the Local Notes panel rendered by seminary_help.js.
+    "assets/seminary/css/seminary_help.css",
+]
 app_include_js = [
     "assets/seminary/js/login_redirect.js",
     "assets/seminary/js/seminary_help.js",
+    # Fills a Frappe gap: a DocType's `documentation` link is rendered only in
+    # list-view empty-state, never in form view. Adds a form-header Help icon.
+    # Registry: docs/frappe-workarounds.md (#5).
+    "assets/seminary/js/seminary_doc_link.js",
     # Guards an upstream Frappe bug: Script Reports with a ref_doctype crash on
     # render when the client meta lacks `masked_fields`.
     # Registry: docs/frappe-workarounds.md (#1); see project_frappe_quirks.md.
@@ -376,6 +384,14 @@ doc_events = {
     "Program": {
         "on_update": "seminary.seminary.attendance.recompute_on_program_update",
     },
+    # Soft integration with frappe_giving (optional app): mirror the canonical
+    # Donor.person link onto the read-only Person.donor field. Fires only when a
+    # Donor doc is saved, i.e. only when frappe_giving is installed, so the
+    # dependency stays one-directional -- giving never imports seminary.
+    "Donor": {
+        "on_update": "seminary.seminary.integrations.giving.on_donor_update",
+        "on_trash": "seminary.seminary.integrations.giving.on_donor_trash",
+    },
     # Wildcard hook reflects linked-document status changes back onto the
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
@@ -506,7 +522,8 @@ fixtures = [
     "Instructor Category",
     "Assessment Criteria",
     "Custom HTML Block",
-    "Seminary Help Entry",
+    # NOT fixtured: local_notes is per-institution user content; fixturing would
+    # clobber it on every migrate (see ADR 049 / feedback on fixtures).
     "Messaging App",
     "Course Cancellation Reason",
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},

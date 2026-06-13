@@ -1,10 +1,13 @@
-import { ref, watch, inject } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { createResource } from 'frappe-ui'
+import { usersStore } from '@/stores/user'
 
 export function useHelp() {
 	const route = useRoute()
-	const user = inject('$user')
+	// usersStore is the reliable user source across layouts; inject('$user') is
+	// not provided in every layout context and was throwing here.
+	const { userResource } = usersStore()
 	const helpData = ref(null)
 
 	const helpResource = createResource({
@@ -15,7 +18,7 @@ export function useHelp() {
 				return
 			}
 			// Hide from students if show_students is unchecked
-			if (user.data?.is_student && !data.show_students) {
+			if (userResource?.data?.is_student && !data.show_students) {
 				helpData.value = null
 				return
 			}

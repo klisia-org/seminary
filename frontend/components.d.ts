@@ -37,6 +37,7 @@ declare module 'vue' {
     ExamGraded: typeof import('./src/components/ExamGraded.vue')['default']
     FolderBlock: typeof import('./src/components/FolderBlock.vue')['default']
     FolderPlugin: typeof import('./src/components/FolderPlugin.vue')['default']
+    HelpWidget: typeof import('./src/components/HelpWidget.vue')['default']
     ImageViewer: typeof import('./src/components/AssignmentViewers/ImageViewer.vue')['default']
     InstructorAvatar: typeof import('./src/components/InstructorAvatar.vue')['default']
     LessonContent: typeof import('./src/components/LessonContent.vue')['default']

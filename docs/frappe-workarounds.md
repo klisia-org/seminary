@@ -22,6 +22,7 @@ Last verified against **frappe `version-16` @ 16.18.2** (commit `e61c3950fa`).
 | 2 | `seminary/workspace_save_fix.py` | `workspace.py` `save_page` | `override_whitelisted_methods` | _(link)_ |
 | 3 | `seminary/workspace_i18n.py` | `frappe.desk.desktop` translation pass | `override_whitelisted_methods` | ADR 020 _(link)_ |
 | 4 | `seminary/seminary/overrides/web_form.py` `SeminaryWebForm` | `web_form.py` `add_custom_context_and_script` | `override_doctype_class` | _(link)_ |
+| 5 | `seminary/public/js/seminary_doc_link.js` | form view ignores `meta.documentation` (only `list_view.js` uses it) | `app_include_js` | _(link)_ |
 
 ---
 
@@ -108,6 +109,30 @@ hook should load that script **without** our override.
 
 **Remove:** drop the `"Web Form"` entry from `override_doctype_class` in
 `hooks.py`; delete `overrides/web_form.py` (it holds only this one method).
+
+## 5 — Form-view Documentation Link icon
+
+**Gap.** A DocType's built-in `documentation` property (label "Documentation
+Link") is surfaced by Frappe **only** in the list-view empty-state — see
+`get_documentation_link()` in `list_view.js`, which renders a "Need Help?" link.
+Nothing under `frappe/public/js/frappe/form/` reads it, so opening a form never
+exposes the doctype's documentation. Our `seminary_doc_link.js` wraps
+`Form.prototype.refresh` and, when `frm.meta.documentation` is set, adds a
+header Help icon (`page.add_action_icon`) that opens the URL in a new tab. The
+value is already sent to the client in the form meta, so this is purely a
+client-side rendering gap.
+
+**Verify still needed:**
+```bash
+grep -n "documentation" apps/frappe/frappe/public/js/frappe/form/form.js
+```
+Needed while form view makes no use of `meta.documentation` (the grep finds
+nothing relevant). Functional check: open any doctype whose JSON sets
+`"documentation"` (e.g. **Seminary Announcement**) — a Help icon should appear
+in the form header **without** our script.
+
+**Remove:** delete `seminary/public/js/seminary_doc_link.js`, drop its
+`app_include_js` entry in `hooks.py`, `bench build --app seminary`.
 
 ---
 

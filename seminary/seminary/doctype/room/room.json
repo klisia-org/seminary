@@ -4,6 +4,7 @@
  "autoname": "ROOM-.#####",
  "creation": "2015-09-09 16:20:14.613061",
  "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/rooms.html",
  "engine": "InnoDB",
  "field_order": [
   "room_name",
@@ -85,7 +86,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-10 04:44:37.133169",
+ "modified": "2026-06-12 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Room",

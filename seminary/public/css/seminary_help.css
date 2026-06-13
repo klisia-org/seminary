@@ -1,0 +1,51 @@
+/* Local Notes panel (seminary_help.js) — an always-visible collapsible panel
+ * mounted in .form-layout, above the form tabs. Desk theme tokens only. */
+
+.seminary-local-notes-panel {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md, 8px);
+	background-color: var(--card-bg);
+	margin: 0 0 var(--margin-md, 15px);
+	overflow: hidden;
+}
+
+.seminary-local-notes-panel .seminary-ln-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: var(--padding-sm, 8px) var(--padding-md, 15px);
+	cursor: pointer;
+	font-weight: 600;
+	color: var(--heading-color, var(--text-color));
+	user-select: none;
+}
+
+.seminary-local-notes-panel .seminary-ln-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.seminary-local-notes-panel .seminary-ln-caret {
+	color: var(--text-muted);
+	transition: transform 0.15s ease;
+}
+
+.seminary-local-notes-panel .seminary-ln-body {
+	padding: 0 var(--padding-md, 15px) var(--padding-md, 15px);
+	color: var(--text-color);
+}
+
+.seminary-local-notes-panel.collapsed .seminary-ln-body {
+	display: none;
+}
+
+.seminary-local-notes-panel.collapsed .seminary-ln-caret {
+	transform: rotate(-90deg);
+}
+
+/* Quill read-mode content carries its own padding; avoid doubling it. */
+.seminary-local-notes-panel .ql-editor.read-mode {
+	padding: 0;
+}
