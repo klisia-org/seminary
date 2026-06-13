@@ -174,7 +174,7 @@
 			<div class="space-y-3">
 				<template v-if="checkinContext.data?.enforce">
 					<p class="text-sm text-ink-gray-6">
-						{{ checkinContext.data?.course_title }} — {{ selectedMeeting }}
+						{{ checkinContext.data?.course_title }} — {{ selectedMeetingLabel }}
 					</p>
 					<FormControl
 						v-if="checkinContext.data?.requires_code"
@@ -261,11 +261,31 @@ const canCheckin = computed(
 	() => checkinContext.data?.eligible && !user?.data?.is_moderator && !is_instructor()
 )
 
+// A section can meet more than once on a date, so options are keyed by the
+// specific meeting (row name), with a date+time label to tell them apart.
+const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
+const meetingLabel = (m) =>
+	m?.from_time ? `${m.meeting_date} · ${hhmm(m.from_time)}` : m?.meeting_date
+
 const pendingOptions = computed(() =>
 	(checkinContext.data?.pending || []).map((p) => ({
-		label: p.meeting_date,
-		value: p.meeting_date,
+		label: meetingLabel(p),
+		value: p.meeting,
 	}))
+)
+
+// meeting row name → meeting (open + pending), so we can resolve the date for
+// the chosen meeting when checking in.
+const meetingsByName = computed(() => {
+	const map = {}
+	const ctx = checkinContext.data
+	if (ctx?.open_meeting?.meeting) map[ctx.open_meeting.meeting] = ctx.open_meeting
+	;(ctx?.pending || []).forEach((p) => { map[p.meeting] = p })
+	return map
+})
+
+const selectedMeetingLabel = computed(() =>
+	meetingLabel(meetingsByName.value[selectedMeeting.value]) || selectedMeeting.value
 )
 
 function markAttendance() {
@@ -282,7 +302,7 @@ function markAttendance() {
 			toast.success(__('You are already checked in for this class.'))
 			return
 		}
-		selectedMeeting.value = m.meeting_date
+		selectedMeeting.value = m.meeting
 		codeInput.value = ''
 		if (ctx.requires_code) {
 			showCheckinDialog.value = true
@@ -294,7 +314,7 @@ function markAttendance() {
 			toast.success(__('No meetings are awaiting your attendance.'))
 			return
 		}
-		selectedMeeting.value = ctx.pending[0].meeting_date
+		selectedMeeting.value = ctx.pending[0].meeting
 		showCheckinDialog.value = true
 	}
 }
@@ -307,9 +327,11 @@ async function submitCheckin() {
 	submitting.value = true
 	checkinError.value = ''
 	try {
+		const m = meetingsByName.value[selectedMeeting.value]
 		const res = await call('seminary.seminary.course_checkin.course_check_in', {
 			course_schedule: props.course.data.name,
-			meeting_date: selectedMeeting.value,
+			meeting_date: m?.meeting_date || selectedMeeting.value,
+			meeting: selectedMeeting.value,
 			code: codeInput.value || null,
 		})
 		toast.success(

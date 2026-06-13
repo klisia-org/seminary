@@ -29,6 +29,49 @@ class CourseEnrollmentIndividual(Document):
         self._hydrate_program_flags()
         self._compute_seat_availability()
         self._validate_prerequisites()
+        self._warn_schedule_conflict()
+
+    def _warn_schedule_conflict(self):
+        """Warn (never block) when this enrollment overlaps another of the
+        student's active sections (ADR 050).
+
+        Double-booking is allowed on purpose — a waitlisted student often holds
+        a less-desired section at the same time until the waitlist clears — so
+        this only surfaces a notice. The CEI form script (before_save) shows an
+        interactive "Proceed Anyway / Cancel" confirm; this server-side check is
+        the non-interactive safety net for API/registrar-script paths that
+        bypass the form.
+        """
+        if (
+            frappe.flags.in_install
+            or frappe.flags.in_migrate
+            or frappe.flags.in_demo_install
+        ):
+            return
+        if self.audit or not (self.student_ce and self.coursesc_ce):
+            return
+
+        from seminary.seminary.utils import student_schedule_conflicts
+
+        clashes = student_schedule_conflicts(
+            self.student_ce, self.coursesc_ce, exclude_cei=self.name
+        )
+        if not clashes:
+            return
+
+        lines = "<br>".join(
+            _("{0} on {1} ({2}–{3})").format(
+                c.title or c.course_schedule, c.meetdate, c.from_time, c.to_time
+            )
+            for c in clashes
+        )
+        frappe.msgprint(
+            _("Schedule conflict: this section overlaps the student's:<br>{0}").format(
+                lines
+            ),
+            title=_("Schedule conflict"),
+            indicator="orange",
+        )
 
     def _validate_prerequisites(self):
         """Block enrollment when the course has an unmet mandatory prerequisite.

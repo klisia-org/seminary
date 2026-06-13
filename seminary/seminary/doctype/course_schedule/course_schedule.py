@@ -9,7 +9,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, formatdate, getdate, now
+from frappe.utils import add_days, formatdate, get_time, getdate, now
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
@@ -125,64 +125,137 @@ class CourseSchedule(Document):
         if cap:
             self.max_enrollment = cap
 
+    def _effective_room(self, row):
+        """The room a meeting actually uses: its own override, else the section
+        room — and nothing when the meeting is online (ADR 051)."""
+        if row.cs_online:
+            return None
+        return row.cs_room or self.room
+
+    def _effective_rooms(self):
+        """Distinct physical rooms this section touches (section room ∪ per-meeting
+        overrides), excluding online meetings."""
+        rooms = set()
+        if self.room:
+            rooms.add(self.room)
+        for row in self.cs_meetinfo or []:
+            if row.cs_room and not row.cs_online:
+                rooms.add(row.cs_room)
+        return rooms
+
     def _validate_room_fit(self):
-        if not self.room:
+        # A room is "in play" when the section has one OR any meeting overrides one.
+        if not self._effective_rooms():
             return
+        self._validate_room_times()
         self._validate_room_not_undersized()
         self._validate_room_double_booking()
         self._warn_missing_room_features()
 
-    def _validate_room_not_undersized(self):
-        """Block assigning a room that can't seat the students already enrolled."""
-        from seminary.seminary.waitlist import seats_used
-
-        cap = frappe.db.get_value("Room", self.room, "seating_capacity")
-        if not cap:
-            return
-        used = seats_used(self.name)
-        if used > cap:
+    def _validate_room_times(self):
+        """A meeting that uses a physical room must declare its window — otherwise
+        it silently opts out of room AND student conflict detection (ADR 051, #3)."""
+        if self.room and not (self.from_time and self.to_time):
             frappe.throw(
                 _(
-                    "Room {0} seats {1}, but this section already has {2} "
-                    "enrolled. Choose a larger room."
-                ).format(self.room, cap, used)
+                    "Set a From/To time: a room is assigned but the section has no meeting time."
+                )
+            )
+        for row in self.cs_meetinfo or []:
+            if self._effective_room(row) and not (row.cs_fromtime and row.cs_totime):
+                frappe.throw(
+                    _(
+                        "Meeting on {0} uses a room but has no time. Set From/To or mark it Online."
+                    ).format(row.cs_meetdate)
+                )
+
+    def _validate_room_not_undersized(self):
+        """Block assigning a SECTION room that can't seat the enrolled students.
+        Per-meeting override rooms only warn (informational — never blocks or
+        unseats anyone), per ADR 051."""
+        from seminary.seminary.waitlist import seats_used
+
+        used = seats_used(self.name)
+        if not used:
+            return
+
+        if self.room:
+            cap = frappe.db.get_value("Room", self.room, "seating_capacity")
+            if cap and used > cap:
+                frappe.throw(
+                    _(
+                        "Room {0} seats {1}, but this section already has {2} "
+                        "enrolled. Choose a larger room."
+                    ).format(self.room, cap, used)
+                )
+
+        small = []
+        for room in self._effective_rooms() - {self.room}:
+            cap = frappe.db.get_value("Room", room, "seating_capacity")
+            if cap and used > cap:
+                small.append("{0} ({1})".format(room, cap))
+        if small:
+            frappe.msgprint(
+                _(
+                    "Some meeting rooms seat fewer than the {0} students enrolled: {1}. "
+                    "No one is unseated — adjust the room if needed."
+                ).format(used, ", ".join(small)),
+                title=_("Meeting room capacity"),
+                indicator="orange",
             )
 
     def _validate_room_double_booking(self):
         """Block a room that's already booked for an overlapping meeting time.
 
-        Operates over the meeting-date child table (cs_meetinfo): two sections
-        clash only if they share the room AND a meeting date AND overlapping
-        time windows. Back-to-back classes (touching endpoints) do not clash.
+        Operates over the meeting-date child table (cs_meetinfo) on the
+        EFFECTIVE room of each meeting (per-meeting override else section room;
+        online meetings excluded — ADR 051). Two sections clash only if a
+        meeting shares the effective room AND a date AND an overlapping window.
+        Back-to-back classes (touching endpoints) do not clash.
         """
         from seminary.seminary.utils import times_overlap
 
-        rows = [r for r in (self.cs_meetinfo or []) if r.cs_meetdate]
-        if not rows:
+        # This section's bookable meetings as (row, effective_room).
+        mine = []
+        for r in self.cs_meetinfo or []:
+            if not r.cs_meetdate:
+                continue
+            eff = self._effective_room(r)
+            if eff:
+                mine.append((r, eff))
+        if not mine:
             return
-        dates = list({str(r.cs_meetdate) for r in rows})
+
+        rooms = list({eff for _r, eff in mine})
+        dates = list({str(r.cs_meetdate) for r, _eff in mine})
         others = frappe.db.sql(
             """
-            SELECT cs.name, cs.title, m.cs_meetdate, m.cs_fromtime, m.cs_totime
+            SELECT cs.name, cs.title, m.cs_meetdate, m.cs_fromtime, m.cs_totime,
+                   COALESCE(m.cs_room, cs.room) AS eff_room
             FROM `tabCourse Schedule Meeting Dates` m
             JOIN `tabCourse Schedule` cs ON m.parent = cs.name
-            WHERE cs.room = %(room)s
-              AND cs.name != %(self_name)s
+            WHERE cs.name != %(self_name)s
               AND COALESCE(cs.workflow_state, '') != 'Cancelled'
+              AND COALESCE(m.cs_online, 0) = 0
+              AND COALESCE(m.cs_room, cs.room) IN %(rooms)s
               AND m.cs_meetdate IN %(dates)s
             """,
-            {"room": self.room, "self_name": self.name or "", "dates": tuple(dates)},
+            {
+                "self_name": self.name or "",
+                "rooms": tuple(rooms),
+                "dates": tuple(dates),
+            },
             as_dict=True,
         )
         if not others:
             return
 
-        by_date = {}
+        by_key = {}
         for o in others:
-            by_date.setdefault(str(o.cs_meetdate), []).append(o)
+            by_key.setdefault((str(o.cs_meetdate), o.eff_room), []).append(o)
 
-        for r in rows:
-            for o in by_date.get(str(r.cs_meetdate), []):
+        for r, eff in mine:
+            for o in by_key.get((str(r.cs_meetdate), eff), []):
                 if times_overlap(
                     r.cs_fromtime, r.cs_totime, o.cs_fromtime, o.cs_totime
                 ):
@@ -191,7 +264,7 @@ class CourseSchedule(Document):
                             "Room {0} is already booked by {1} on {2} "
                             "({3}–{4}). Pick another room or time."
                         ).format(
-                            self.room,
+                            eff,
                             o.title or o.name,
                             r.cs_meetdate,
                             o.cs_fromtime,
@@ -200,9 +273,10 @@ class CourseSchedule(Document):
                     )
 
     def _warn_missing_room_features(self):
-        """Dismissible warning when the room lacks features the course's Course
+        """Dismissible warning when a room lacks features the course's Course
         Type requires for this modality. Unions the 'All' modality rows with the
-        section's specific modality. Never blocks the save."""
+        section's specific modality, and checks every effective room (section ∪
+        per-meeting overrides). Never blocks the save."""
         if not self.course:
             return
         course_type = frappe.db.get_value("Course", self.course, "course_type")
@@ -224,26 +298,27 @@ class CourseSchedule(Document):
         )
         if not required:
             return
-        have = set(
-            frappe.get_all(
-                "Room Existing Feature",
-                filters={"parent": self.room, "parenttype": "Room"},
-                pluck="feature",
+        for room in self._effective_rooms():
+            have = set(
+                frappe.get_all(
+                    "Room Existing Feature",
+                    filters={"parent": room, "parenttype": "Room"},
+                    pluck="feature",
+                )
             )
-        )
-        missing = required - have
-        if not missing:
-            return
-        labels = [
-            frappe.db.get_value("Room Feature", m, "feature") or m for m in missing
-        ]
-        frappe.msgprint(
-            _("Room {0} is missing required feature(s) for this course: {1}.").format(
-                self.room, ", ".join(labels)
-            ),
-            title=_("Room feature mismatch"),
-            indicator="orange",
-        )
+            missing = required - have
+            if not missing:
+                continue
+            labels = [
+                frappe.db.get_value("Room Feature", m, "feature") or m for m in missing
+            ]
+            frappe.msgprint(
+                _(
+                    "Room {0} is missing required feature(s) for this course: {1}."
+                ).format(room, ", ".join(labels)),
+                title=_("Room feature mismatch"),
+                indicator="orange",
+            )
 
     def _log_room_change(self):
         """Append an audit row whenever the room changes on an existing section.
@@ -399,15 +474,31 @@ class CourseSchedule(Document):
             )
 
     def validate_time(self):
-        """Validates if from_time is greater than to_time"""
+        """Validates if from_time is greater than to_time (section and per-meeting).
+
+        Compares with get_time() — Time values can arrive as strings, and a raw
+        string compare is wrong for single-digit hours ("9:00:00" > "13:00:00").
+        """
         if (
             self.is_new()
             or self.has_value_changed("from_time")
             or self.has_value_changed("to_time")
         ):
             if self.from_time and self.to_time:
-                if self.from_time > self.to_time:
+                if get_time(self.from_time) > get_time(self.to_time):
                     frappe.throw(_("From Time cannot be greater than To Time."))
+
+        for row in self.cs_meetinfo or []:
+            if (
+                row.cs_fromtime
+                and row.cs_totime
+                and get_time(row.cs_fromtime) > get_time(row.cs_totime)
+            ):
+                frappe.throw(
+                    _("Meeting on {0}: From Time cannot be after To Time.").format(
+                        row.cs_meetdate
+                    )
+                )
 
     def generate_token(self):
         if not self.calendar_token:

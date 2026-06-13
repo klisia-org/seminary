@@ -18,6 +18,42 @@ function load_courses_for_program(frm) {
     });
 }
 
+// ADR 050: double-booking is allowed on purpose (warn, not block). Resolves
+// true to proceed with the save, false to abort. ESC / dialog close = abort.
+function confirm_schedule_conflict(clashes) {
+    const lines = clashes
+        .map(
+            (c) =>
+                `${frappe.utils.escape_html(c.title || c.course_schedule)} — ${c.meetdate} (${c.from_time}–${c.to_time})`
+        )
+        .join("<br>");
+    return new Promise((resolve) => {
+        const d = new frappe.ui.Dialog({
+            title: __("Schedule conflict"),
+            primary_action_label: __("Proceed Anyway"),
+            primary_action() {
+                resolve(true);
+                d.hide();
+            },
+            secondary_action_label: __("Cancel"),
+            secondary_action() {
+                resolve(false);
+                d.hide();
+            },
+        });
+        d.$body.html(
+            `<div class="text-muted" style="padding:8px 0;">${__(
+                "This section overlaps the student's enrollment(s):"
+            )}<br><br>${lines}<br><br>${__(
+                "Enroll anyway? The registrar can later cancel one of the two enrollments."
+            )}</div>`
+        );
+        // ESC / X without choosing a button counts as Cancel (no-op if already resolved).
+        d.onhide = () => resolve(false);
+        d.show();
+    });
+}
+
 frappe.ui.form.on("Course Enrollment Individual", {
     onload(frm) {
 
@@ -100,6 +136,31 @@ frappe.ui.form.on("Course Enrollment Individual", {
             }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
         }
 
+    },
+    validate(frm) {
+        // ADR 050: warn (don't block) on a student schedule double-booking.
+        // Async gate — the returned promise is awaited; cancelling sets
+        // frappe.validated = false to abort the save.
+        if (frm.doc.audit || !frm.doc.student_ce || !frm.doc.coursesc_ce) return;
+        return frappe
+            .call({
+                method: "seminary.seminary.api.check_schedule_conflicts",
+                args: {
+                    student: frm.doc.student_ce,
+                    course_schedule: frm.doc.coursesc_ce,
+                    exclude_cei: frm.doc.name,
+                },
+            })
+            .then((r) => {
+                const clashes = (r && r.message) || [];
+                if (!clashes.length) return;
+                return confirm_schedule_conflict(clashes).then((proceed) => {
+                    if (!proceed) frappe.validated = false;
+                });
+            })
+            .catch(() => {
+                // Never block the save on a failed conflict check.
+            });
     },
     program_ce(frm) {
         // Clear stale course selection when program changes

@@ -70,11 +70,17 @@
                     <dt class="font-semibold text-ink-gray-8 sm:w-40 shrink-0">{{ __('Meeting Dates') }}</dt>
                     <dd class="text-ink-gray-7">
                         <ul class="space-y-1">
-                            <li v-for="meeting in course.data.meeting_dates" :key="meeting.cs_meetdate">
+                            <li v-for="(meeting, idx) in course.data.meeting_dates" :key="idx">
                                 {{ formatDate(meeting.cs_meetdate) }}
                                 <template v-if="meeting.cs_fromtime && meeting.cs_totime">
                                     · {{ formatTime(meeting.cs_fromtime) }}–{{ formatTime(meeting.cs_totime) }}
                                 </template>
+                                <span v-if="meeting.online" class="text-ink-gray-5">· {{ __('Online') }}</span>
+                                <span v-else-if="meeting.room_label" class="text-ink-gray-5">· {{ meeting.room_label }}</span>
+                                <a v-if="meeting.web_meeting" :href="meeting.web_meeting" target="_blank"
+                                    rel="noopener noreferrer" class="text-ink-blue-3 hover:underline">
+                                    · {{ __('Join Online') }}
+                                </a>
                             </li>
                         </ul>
                     </dd>

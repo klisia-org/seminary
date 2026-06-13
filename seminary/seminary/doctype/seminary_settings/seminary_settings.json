@@ -86,6 +86,7 @@
   "column_break_course_checkin",
   "course_checkin_closes_after_mins",
   "course_checkin_tardy_after_mins",
+  "track_online_attendance",
   "attendance_policy_section",
   "tardies_per_absence",
   "column_break_attendance_policy",
@@ -607,6 +608,13 @@
    "fieldname": "course_checkin_tardy_after_mins",
    "fieldtype": "Int",
    "label": "Tardy After (mins)"
+  },
+  {
+   "default": "1",
+   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only — excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
+   "fieldname": "track_online_attendance",
+   "fieldtype": "Check",
+   "label": "Track Attendance for Online Meetings"
   },
   {
    "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",

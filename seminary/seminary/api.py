@@ -13,6 +13,7 @@ from frappe.utils import (
     cstr,
     flt,
     getdate,
+    get_time,
     unique,
     get_datetime,
     cint,
@@ -714,6 +715,114 @@ def save_course(course, course_data):
         return {"success": False, "message": str(e)}
 
 
+_CS_MEETING_STAFF_ROLES = {
+    "Registrar",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _can_manage_virtual_meetings(course_schedule):
+    """An instructor of the section (or staff) may self-manage online meetings —
+    no registrar needed (ADR 051)."""
+    if _CS_MEETING_STAFF_ROLES & set(frappe.get_roles()):
+        return True
+    return bool(
+        frappe.db.exists(
+            "Course Schedule Instructors",
+            {
+                "parent": course_schedule,
+                "parenttype": "Course Schedule",
+                "user": frappe.session.user,
+            },
+        )
+    )
+
+
+@frappe.whitelist()
+def get_virtual_meetings(course_schedule):
+    """Online meetings on a section's calendar (cs_online rows) for the course form."""
+    return frappe.get_all(
+        "Course Schedule Meeting Dates",
+        filters={
+            "parent": course_schedule,
+            "parenttype": "Course Schedule",
+            "cs_online": 1,
+        },
+        fields=[
+            "name",
+            "cs_meetdate",
+            "cs_fromtime",
+            "cs_totime",
+            "cs_web_meeting",
+            "attendance",
+        ],
+        order_by="cs_meetdate asc, cs_fromtime asc",
+    )
+
+
+@frappe.whitelist()
+def add_virtual_meeting(course_schedule, meeting_date, from_time, to_time, link=None):
+    """Instructor self-service: add an online class session to the section
+    calendar — no room, no registrar. It flows to subscribers' calendars via the
+    per-meeting iCal feed (ADR 051). Online-only: no room or modality options."""
+    if not _can_manage_virtual_meetings(course_schedule):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+    if not (meeting_date and from_time and to_time):
+        frappe.throw(_("Date, From and To times are required."))
+    if get_time(from_time) > get_time(to_time):
+        frappe.throw(_("From Time cannot be after To Time."))
+
+    doc = frappe.get_doc("Course Schedule", course_schedule)
+    doc.append(
+        "cs_meetinfo",
+        {
+            "cs_meetdate": meeting_date,
+            "cs_fromtime": from_time,
+            "cs_totime": to_time,
+            "cs_online": 1,
+            "cs_web_meeting": link or doc.web_meeting,
+        },
+    )
+    doc.hasmtgdate = 1
+    doc.flags.ignore_permissions = True
+    doc.save()
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
+def remove_virtual_meeting(course_schedule, meeting):
+    """Remove an online meeting the instructor added. Online rows only — room-based
+    meetings stay registrar-managed."""
+    if not _can_manage_virtual_meetings(course_schedule):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    doc = frappe.get_doc("Course Schedule", course_schedule)
+    row = next((r for r in doc.cs_meetinfo if r.name == meeting), None)
+    if not row:
+        frappe.throw(_("Meeting not found."))
+    if not row.cs_online:
+        frappe.throw(_("Only online meetings added here can be removed."))
+
+    # Don't orphan attendance: a meeting students have already been marked for
+    # can't be deleted (reschedule a future one instead).
+    if frappe.db.exists("Student Attendance", {"meeting": meeting}):
+        frappe.throw(
+            _(
+                "Attendance has already been recorded for this meeting, so it "
+                "can't be removed."
+            )
+        )
+
+    doc.cs_meetinfo.remove(row)
+    doc.flags.ignore_permissions = True
+    doc.save()
+    frappe.db.commit()
+    return {"success": True}
+
+
 @frappe.whitelist(allow_guest=True)
 def get_user_info():
     if frappe.session.user == "Guest":
@@ -1229,13 +1338,20 @@ def _resolve_display_terms():
 def get_student_enrollments_for_term(program_enrollment):
     """Return the student's CEIs for the current academic term (with a graceful
     fallback during inter-term gaps — see _resolve_display_terms)."""
-    student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
+    pe = frappe.get_doc("Program Enrollment", program_enrollment)
+    student = pe.student
     if not student:
         return []
 
     current_terms = _resolve_display_terms()
     if not current_terms:
         return []
+
+    # Same Required / Track / Elective badges the enrollment picker shows, so a
+    # student can see whether an already-enrolled course is required or elective.
+    category_map = _course_category_map(
+        pe, frappe.get_cached_doc("Program", pe.program)
+    )
 
     ceis = frappe.get_all(
         "Course Enrollment Individual",
@@ -1267,6 +1383,7 @@ def get_student_enrollments_for_term(program_enrollment):
     # can't distinguish Awaiting Payment (invoiced, not on roster) from
     # Submitted (fully enrolled).
     for cei in ceis:
+        cei["categories"] = category_map.get(cei.course_data) or [{"type": "Elective"}]
         cs_info = (
             frappe.db.get_value(
                 "Course Schedule",
@@ -1387,6 +1504,70 @@ def cancel_unpaid_enrollment(cei_name):
 
     recount_and_promote(course_schedule)
     return {"success": True}
+
+
+_CONFLICT_STAFF_ROLES = {
+    "Registrar",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _is_conflict_staff():
+    return bool(_CONFLICT_STAFF_ROLES & set(frappe.get_roles(frappe.session.user)))
+
+
+@frappe.whitelist()
+def check_schedule_conflicts(student, course_schedule, exclude_cei=None):
+    """Active enrollments of ``student`` that clash with ``course_schedule`` (ADR 050).
+
+    Backs the CEI form's "Proceed Anyway / Cancel" confirm. Non-staff callers may
+    only check their own student record, so a portal user can't probe another
+    student's calendar.
+    """
+    if not _is_conflict_staff():
+        own = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
+        if not own or student != own:
+            frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    from seminary.seminary.utils import student_schedule_conflicts
+
+    return student_schedule_conflicts(student, course_schedule, exclude_cei=exclude_cei)
+
+
+@frappe.whitelist()
+def resolve_schedule_conflict(cei_name):
+    """Registrar one-click resolution of a conflicting enrollment (ADR 050).
+
+    Picks the safe path by state so the conflict worksheet calls a single
+    endpoint: a Draft is deleted, an unpaid Awaiting Payment seat is released
+    (freeing the seat + promoting the waitlist). Submitted / Waitlisted (or any
+    paid) enrollment is NOT dropped here — it carries financial/grade weight, so
+    we return ``action: "withdrawal"`` and let the UI route to a Withdrawal
+    Request, preserving the audit trail.
+    """
+    if not _is_conflict_staff():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+    doc = frappe.get_doc("Course Enrollment Individual", cei_name)
+
+    if doc.docstatus == 0:
+        doc.delete(ignore_permissions=True)
+        return {"success": True, "action": "deleted"}
+
+    if doc.workflow_state == "Awaiting Payment" and flt(doc.paid_percent) == 0:
+        # Reuse the audited unpaid-release path (cancels the invoice + promotes).
+        return cancel_unpaid_enrollment(cei_name)
+
+    return {
+        "success": False,
+        "action": "withdrawal",
+        "message": _(
+            "This enrollment is {0}. Resolve it through a Withdrawal Request to "
+            "keep the financial and grade record intact."
+        ).format(doc.workflow_state or _("active")),
+    }
 
 
 @frappe.whitelist()
@@ -2059,6 +2240,58 @@ def get_pe_unpaid_invoices(program_enrollment):
     return sorted(by_customer.values(), key=lambda b: b["total_unpaid"], reverse=True)
 
 
+def _course_category_map(pe, program):
+    """course -> [category badge dicts] for one program enrollment.
+
+    Shared by the enrollment picker and the My Enrollments list so a course's
+    Required / Track / Elective badges read identically in both. Mirrors the
+    Program Mandatory + active-emphasis Track logic; defaults to Elective.
+    """
+    active_tracks = {
+        e.emphasis_track for e in (pe.emphases or []) if e.status == "Active"
+    }
+    track_course_map = {}
+    if active_tracks:
+        for tc in frappe.get_all(
+            "Program Track Courses",
+            filters={"parent": pe.program},
+            fields=[
+                "program_track",
+                "program_track_course",
+                "pgm_track_course_mandatory",
+            ],
+        ):
+            if tc.program_track not in active_tracks:
+                continue
+            track_course_map.setdefault(tc.program_track_course, []).append(
+                {
+                    "track": tc.program_track,
+                    "track_name": frappe.db.get_value(
+                        "Program Track", tc.program_track, "track_name"
+                    ),
+                    "mandatory": tc.pgm_track_course_mandatory,
+                }
+            )
+
+    category_map = {}
+    for pc in program.courses:
+        if pc.disabled:
+            continue
+        cats = []
+        if pc.required:
+            cats.append({"type": "Program Mandatory"})
+        for ti in track_course_map.get(pc.course, []):
+            cats.append(
+                {
+                    "type": "Track Mandatory" if ti["mandatory"] else "Track Elective",
+                    "track": ti["track"],
+                    "track_name": ti["track_name"],
+                }
+            )
+        category_map[pc.course] = cats or [{"type": "Elective"}]
+    return category_map
+
+
 @frappe.whitelist()
 def get_available_courses_categorized(program_enrollment):
     """Return available courses for enrollment with category metadata.
@@ -2066,6 +2299,8 @@ def get_available_courses_categorized(program_enrollment):
     Each course includes its categories (Program Mandatory, Track Mandatory, Elective)
     and available course schedules.
     """
+    from seminary.seminary.utils import student_schedule_conflicts
+
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = frappe.get_cached_doc("Program", pe.program)
 
@@ -2086,33 +2321,9 @@ def get_available_courses_categorized(program_enrollment):
             "course_name": pc.course_name,
         }
 
-    # Track course lookup: course -> list of tracks
-    track_course_map = {}
-    active_emphasis_tracks = set()
-    for emphasis in pe.emphases or []:
-        if emphasis.status == "Active":
-            active_emphasis_tracks.add(emphasis.emphasis_track)
-
-    track_courses = frappe.get_all(
-        "Program Track Courses",
-        filters={"parent": pe.program},
-        fields=["program_track", "program_track_course", "pgm_track_course_mandatory"],
-    )
-    for tc in track_courses:
-        if tc.program_track not in active_emphasis_tracks:
-            continue
-        if tc.program_track_course not in track_course_map:
-            track_course_map[tc.program_track_course] = []
-        track_name = frappe.db.get_value(
-            "Program Track", tc.program_track, "track_name"
-        )
-        track_course_map[tc.program_track_course].append(
-            {
-                "track": tc.program_track,
-                "track_name": track_name,
-                "mandatory": tc.pgm_track_course_mandatory,
-            }
-        )
+    # course -> [category badges]; shared with the My Enrollments list so a
+    # course's Required / Track / Elective badges read identically in both.
+    category_map = _course_category_map(pe, program)
 
     # Get course schedules for available courses in current term
     course_schedules = frappe.get_all(
@@ -2181,6 +2392,25 @@ def get_available_courses_categorized(program_enrollment):
         elif cs.c_datestart:
             date_range = frappe.utils.formatdate(cs.c_datestart, "MMM d, yyyy")
 
+        # ADR 050: flag (don't hide) sections that overlap the student's existing
+        # active enrollments, so the picker can show a hint and an "Enroll Anyway"
+        # confirm. Enrollment is never blocked.
+        conflicts = [
+            {
+                "course": c.title or c.course_schedule,
+                "date": frappe.utils.formatdate(c.meetdate, "MMM d"),
+                "from_time": (
+                    frappe.utils.format_time(c.from_time, "h:mm a")
+                    if c.from_time
+                    else ""
+                ),
+                "to_time": (
+                    frappe.utils.format_time(c.to_time, "h:mm a") if c.to_time else ""
+                ),
+            }
+            for c in student_schedule_conflicts(pe.student, cs.name)
+        ]
+
         if cs.course not in schedule_map:
             schedule_map[cs.course] = []
         schedule_map[cs.course].append(
@@ -2193,6 +2423,7 @@ def get_available_courses_categorized(program_enrollment):
                 "date_range": date_range,
                 "days": days,
                 "time_range": time_range,
+                "schedule_conflict": conflicts,
             }
         )
 
@@ -2248,29 +2479,7 @@ def get_available_courses_categorized(program_enrollment):
         credits = pc.get("credits", 0)
         description = course_descriptions.get(course) or ""
 
-        categories = []
-
-        # Check if program mandatory
-        if pc.get("required"):
-            categories.append({"type": "Program Mandatory"})
-
-        # Check track categories
-        if course in track_course_map:
-            for track_info in track_course_map[course]:
-                cat_type = (
-                    "Track Mandatory" if track_info["mandatory"] else "Track Elective"
-                )
-                categories.append(
-                    {
-                        "type": cat_type,
-                        "track": track_info["track"],
-                        "track_name": track_info["track_name"],
-                    }
-                )
-
-        # If no specific category, it's a general elective
-        if not categories:
-            categories.append({"type": "Elective"})
+        categories = category_map.get(course) or [{"type": "Elective"}]
 
         result.append(
             {
@@ -2360,6 +2569,7 @@ def mark_attendance(
     students_tardy=None,
     course_schedule=None,
     date=None,
+    meeting=None,
 ):
     """Creates Multiple Attendance Records.
 
@@ -2368,6 +2578,8 @@ def mark_attendance(
     :param students_tardy: Students Tardy JSON (optional).
     :param course_schedule: Course Schedule.
     :param date: Date.
+    :param meeting: Course Schedule Meeting Dates row (the specific class meeting
+        — a section can meet more than once on the same date; ADR 051).
     """
     if not course_schedule:
         return {"success": False}
@@ -2386,7 +2598,12 @@ def mark_attendance(
     for status, rows in buckets:
         for d in rows:
             make_attendance_records(
-                d["student"], d["stuname_roster"], status, course_schedule, date
+                d["student"],
+                d["stuname_roster"],
+                status,
+                course_schedule,
+                date,
+                meeting=meeting,
             )
 
     frappe.db.commit()
@@ -2394,45 +2611,68 @@ def mark_attendance(
 
 
 def make_attendance_records(
-    student, stuname_roster, status, course_schedule=None, date=None
+    student, stuname_roster, status, course_schedule=None, date=None, meeting=None
 ):
     """Creates/Update Attendance Record.
 
+    Keyed by the specific class MEETING when given (a section can meet more than
+    once on a date — ADR 051), falling back to (student, course, date) for legacy
+    callers/rows. ``date`` is always stored for display/reporting.
+
     :param student: Student.
     :param stuname_roster: Student Name.
-    :param status: Status (Present/Absent).
+    :param status: Status (Present/Absent/Tardy).
     :param course_schedule: Course Schedule.
     :param date: Date.
+    :param meeting: Course Schedule Meeting Dates row name (the class meeting).
     """
-    print(
-        "Student: ",
-        student,
-        "Status: ",
-        status,
-        "Course Schedule: ",
-        course_schedule,
-        "Date: ",
-        date,
-    )
+    # Resolve the meeting row from the date when the caller didn't pass one, so
+    # attendance is keyed per-meeting wherever the date has a single meeting.
+    if not meeting and date and course_schedule:
+        meeting = frappe.db.get_value(
+            "Course Schedule Meeting Dates",
+            {"cs_meetdate": date, "parent": course_schedule},
+            "name",
+        )
 
-    # Check if the attendance record already exists
-    HasAttendance = frappe.db.exists(
-        "Student Attendance",
-        {
+    # Match an existing record by meeting (preferred) or by date (legacy rows
+    # without a meeting set). Backfill the meeting on a legacy match.
+    if meeting:
+        match = {
+            "student": student,
+            "course_schedule": course_schedule,
+            "meeting": meeting,
+            "docstatus": ("!=", 2),
+        }
+        legacy_match = {
             "student": student,
             "course_schedule": course_schedule,
             "date": date,
+            "meeting": ("in", (None, "")),
             "docstatus": ("!=", 2),
-        },
-    )
+        }
+        HasAttendance = frappe.db.exists(
+            "Student Attendance", match
+        ) or frappe.db.exists("Student Attendance", legacy_match)
+    else:
+        HasAttendance = frappe.db.exists(
+            "Student Attendance",
+            {
+                "student": student,
+                "course_schedule": course_schedule,
+                "date": date,
+                "docstatus": ("!=", 2),
+            },
+        )
 
     if HasAttendance:
         # Fetch the existing record and update it
         student_attendance = frappe.get_doc("Student Attendance", HasAttendance)
         student_attendance.status = status
         student_attendance.stuname_roster = stuname_roster
+        if meeting:
+            student_attendance.meeting = meeting
         student_attendance.save(ignore_permissions=True)
-        print(f"Updated existing attendance record for student: {student}")
     else:
         # Create a new attendance record
         student_attendance = frappe.new_doc("Student Attendance")
@@ -2440,22 +2680,13 @@ def make_attendance_records(
         student_attendance.stuname_roster = stuname_roster
         student_attendance.course_schedule = course_schedule
         student_attendance.date = date
+        student_attendance.meeting = meeting
         student_attendance.status = status
         student_attendance.insert(ignore_permissions=True)
-        print(f"Created new attendance record for student: {student}")
 
-    # Update the attendance field in Course Schedule Meeting Dates
-    csmtd = frappe.db.get_value(
-        "Course Schedule Meeting Dates",
-        {"cs_meetdate": date, "parent": course_schedule},
-        "name",
-    )
-    frappe.db.set_value(
-        "Course Schedule Meeting Dates",
-        csmtd,
-        "attendance",
-        1,
-    )
+    # Flag the specific meeting row as having attendance taken.
+    if meeting:
+        frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
 
 
 @frappe.whitelist()
@@ -5790,19 +6021,21 @@ def _rooms_busy_for_cs(course_schedule):
     """Set of room names already booked during any of this CS's meeting windows."""
     rows = frappe.db.sql(
         """
-        SELECT DISTINCT other_cs.room
+        SELECT DISTINCT COALESCE(theirs.cs_room, other_cs.room) AS room
         FROM `tabCourse Schedule Meeting Dates` mine
         JOIN `tabCourse Schedule` my_cs ON mine.parent = my_cs.name
         JOIN `tabCourse Schedule` other_cs
             ON other_cs.name != my_cs.name
            AND COALESCE(other_cs.workflow_state, '') != 'Cancelled'
-           AND other_cs.room IS NOT NULL
         JOIN `tabCourse Schedule Meeting Dates` theirs
             ON theirs.parent = other_cs.name
            AND theirs.cs_meetdate = mine.cs_meetdate
+           AND COALESCE(theirs.cs_online, 0) = 0
+           AND COALESCE(theirs.cs_room, other_cs.room) IS NOT NULL
            AND mine.cs_fromtime < theirs.cs_totime
            AND theirs.cs_fromtime < mine.cs_totime
         WHERE mine.parent = %s
+          AND COALESCE(mine.cs_online, 0) = 0
         """,
         (course_schedule,),
     )

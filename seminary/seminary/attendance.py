@@ -43,14 +43,24 @@ ALERT_NONE, ALERT_DANGER, ALERT_OVER = 0, 1, 2
 # ---------------------------------------------------------------------------
 
 
+def _tracks_online_attendance():
+    """Whether online meetings are attendance-bearing (ADR 051). Defaults to
+    True when the setting is absent (pre-migration / unset)."""
+    val = frappe.db.get_single_value("Seminary Settings", "track_online_attendance")
+    return val is None or bool(val)
+
+
 def _cs_meta(course_schedule, cs=None):
     """Policy inputs for a Course Schedule (from a loaded doc when available)."""
+    track_online = _tracks_online_attendance()
     if cs is not None:
+        rows = cs.get("cs_meetinfo") or []
+        total = len([r for r in rows if track_online or not r.get("cs_online")])
         return {
             "policy": cs.get("attendance_policy") or POLICY_AUTO,
             "custom": cs.get("max_absences_custom"),
             "modality": cs.get("modality"),
-            "total": len(cs.get("cs_meetinfo") or []),
+            "total": total,
         }
     row = (
         frappe.db.get_value(
@@ -61,13 +71,14 @@ def _cs_meta(course_schedule, cs=None):
         )
         or frappe._dict()
     )
+    meeting_filters = {"parent": course_schedule}
+    if not track_online:
+        meeting_filters["cs_online"] = 0
     return {
         "policy": row.attendance_policy or POLICY_AUTO,
         "custom": row.max_absences_custom,
         "modality": row.modality,
-        "total": frappe.db.count(
-            "Course Schedule Meeting Dates", {"parent": course_schedule}
-        ),
+        "total": frappe.db.count("Course Schedule Meeting Dates", meeting_filters),
     }
 
 
@@ -111,14 +122,25 @@ def compute_max_absences(cs):
 def _counts(student, course_schedule):
     """(absences, tardies) for a student in a course. Absences linked to an
     approved (submitted) Student Leave Application are excluded."""
+    # When online meetings aren't attendance-bearing, ignore any attendance rows
+    # tied to an online meeting (e.g. recorded before the policy was turned off).
+    online_clause = (
+        ""
+        if _tracks_online_attendance()
+        else (
+            "AND NOT EXISTS (SELECT 1 FROM `tabCourse Schedule Meeting Dates` m "
+            "WHERE m.name = sa.meeting AND m.cs_online = 1)"
+        )
+    )
     rows = frappe.db.sql(
-        """
+        f"""
         SELECT sa.status, sa.leave_application,
                COALESCE(sla.docstatus, -1) AS leave_docstatus
         FROM `tabStudent Attendance` sa
         LEFT JOIN `tabStudent Leave Application` sla
             ON sla.name = sa.leave_application
         WHERE sa.student = %s AND sa.course_schedule = %s AND sa.docstatus < 2
+        {online_clause}
         """,
         (student, course_schedule),
         as_dict=True,

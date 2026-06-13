@@ -41,7 +41,10 @@ def course_ics(course_schedule=None, token=None):
     validate_token(course_schedule, token)
     meeting_dates = frappe.db.sql(
         """
-        select mt.cs_fromtime, mt.cs_totime, mt.cs_meetdate, cs.room, mt.creation
+        select mt.cs_fromtime, mt.cs_totime, mt.cs_meetdate, mt.cs_online,
+               COALESCE(mt.cs_room, cs.room) as room,
+               COALESCE(mt.cs_web_meeting, cs.web_meeting) as web_meeting,
+               mt.creation
         from `tabCourse Schedule Meeting Dates` mt, `tabCourse Schedule` cs
         where mt.parent = %s and
         mt.parent = cs.name
@@ -74,7 +77,12 @@ def course_ics(course_schedule=None, token=None):
         )
         event.name = f"{course_schedule} (_( Class Session))"
         event.description = f"Course Schedule: {course_schedule}\nMeeting Date: {meeting.cs_meetdate}\nFrom: {meeting.cs_fromtime}\nTo: {meeting.cs_totime}"
-        if meeting.room:
+        if meeting.web_meeting:
+            event.description += f"\nJoin online: {meeting.web_meeting}"
+        # Online meetings have no physical room; show the room otherwise.
+        if meeting.cs_online:
+            event.location = meeting.web_meeting or _("Online")
+        elif meeting.room:
             event.location = meeting.room
         # Parse Frappe creation field and convert to UTC for DTSTAMP
         creation_datetime = frappe.utils.get_datetime(meeting.creation)

@@ -3,16 +3,17 @@ frappe.ui.form.on("Course Schedule", {
 	setup: function(frm) {
 		// Best-fit-first room picker: ordered by free/busy, feature fit, then
 		// capacity, with a muted description line. See api.room_search.
-		frm.set_query("room", function() {
-			return {
-				query: "seminary.seminary.api.room_search",
-				filters: {
-					course: frm.doc.course,
-					modality: frm.doc.modality,
-					course_schedule: frm.doc.__islocal ? null : frm.doc.name,
-				},
-			};
+		const room_filters = () => ({
+			query: "seminary.seminary.api.room_search",
+			filters: {
+				course: frm.doc.course,
+				modality: frm.doc.modality,
+				course_schedule: frm.doc.__islocal ? null : frm.doc.name,
+			},
 		});
+		frm.set_query("room", room_filters);
+		// Same picker for the per-meeting room override on the Meeting Dates grid.
+		frm.set_query("cs_room", "cs_meetinfo", room_filters);
 	},
 
 	refresh: function(frm) {
@@ -36,6 +37,10 @@ frappe.ui.form.on("Course Schedule", {
 						  }) },
 						{ fieldname: 'reason', fieldtype: 'Small Text',
 						  label: __('Reason'), reqd: 1 },
+						{ fieldname: 'note_html', fieldtype: 'HTML',
+						  options: `<div class="text-muted small" style="margin-top: 8px;">
+							${__("This changes the section's default room (logged in the room-change history). To put a single meeting in a different room, set its Room on the Meeting Dates grid instead — per-meeting overrides aren't recorded in that log.")}
+						  </div>` },
 					],
 					primary_action_label: __('Change'),
 					primary_action(values) {

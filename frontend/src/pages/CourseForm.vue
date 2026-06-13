@@ -95,6 +95,51 @@
 						<div class="text-sm text-ink-gray-5 -mt-2 mb-4">
 							{{ __('Link students use to join the online class session (Zoom, Meet, Teams, etc.).') }}
 						</div>
+
+						<!-- Online meetings: instructor self-service, no registrar (ADR 051) -->
+						<div class="mb-4">
+							<div class="flex items-center justify-between mb-1">
+								<div class="text-sm font-medium text-ink-gray-7">{{ __('Online Meetings') }}</div>
+								<Button size="sm" @click="openVirtualDialog()">
+									<template #prefix><Video class="h-4 w-4" /></template>
+									{{ __('Schedule a virtual meeting') }}
+								</Button>
+							</div>
+							<div class="text-sm text-ink-gray-5 mb-2">
+								{{ __('Add an online class session to the course calendar — no room or registrar needed. It syncs to subscribers’ calendars.') }}
+							</div>
+							<div v-if="virtualMeetings.data?.length" class="border rounded-md divide-y">
+								<div v-for="m in virtualMeetings.data" :key="m.name"
+									class="flex items-center justify-between px-3 py-2 text-sm gap-3">
+									<div class="min-w-0">
+										<span class="font-medium text-ink-gray-8">{{ m.cs_meetdate }}</span>
+										<span v-if="m.cs_fromtime" class="text-ink-gray-5">
+											· {{ hhmm(m.cs_fromtime) }}–{{ hhmm(m.cs_totime) }}
+										</span>
+									</div>
+									<div class="flex items-center gap-2 shrink-0">
+										<a v-if="m.cs_web_meeting || course.web_meeting"
+											:href="m.cs_web_meeting || course.web_meeting" target="_blank"
+											rel="noopener noreferrer" class="no-underline">
+											<Button size="sm" variant="subtle">
+												<template #prefix><Video class="h-4 w-4" /></template>
+												{{ __('Join') }}
+											</Button>
+										</a>
+										<span v-if="m.attendance" class="text-xs text-ink-gray-4">
+											{{ __('Attendance recorded') }}
+										</span>
+										<Button v-else size="sm" variant="ghost" theme="red"
+											@click="removeVirtualMeeting(m.name)">
+											<template #icon><Trash2 class="h-4 w-4" /></template>
+										</Button>
+									</div>
+								</div>
+							</div>
+							<div v-else class="text-xs text-ink-gray-4">
+								{{ __('No online meetings scheduled yet.') }}
+							</div>
+						</div>
 					</div>
 					<div class="container border-t">
 						<div v-if="user.data?.is_moderator" class="text-lg font-semibold mt-5 mb-4">
@@ -113,6 +158,31 @@
 					:allowEdit="true" />
 			</div>
 		</div>
+
+		<!-- Schedule a virtual meeting (online only: date, from, to, link) -->
+		<Dialog v-model="showVirtualDialog" :options="{ title: __('Schedule a virtual meeting') }">
+			<template #body-content>
+				<div class="space-y-3">
+					<p class="text-sm text-ink-gray-6">
+						{{ __('Adds an online session to the course calendar. No room or registrar needed.') }}
+					</p>
+					<FormControl type="date" v-model="vForm.meeting_date" :label="__('Date')" :required="true" />
+					<div class="grid grid-cols-2 gap-3">
+						<FormControl type="time" v-model="vForm.from_time" :label="__('From')" :required="true" />
+						<FormControl type="time" v-model="vForm.to_time" :label="__('To')" :required="true" />
+					</div>
+					<FormControl type="url" v-model="vForm.link" :label="__('Meeting Link')"
+						:placeholder="__('https://zoom.us/j/...')"
+						:description="__('Leave blank to use the course Web Meeting Link above.')" />
+				</div>
+			</template>
+			<template #actions>
+				<Button @click="showVirtualDialog = false">{{ __('Cancel') }}</Button>
+				<Button variant="solid" :loading="savingVirtual" @click="addVirtualMeeting()">
+					{{ __('Add to calendar') }}
+				</Button>
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script setup>
@@ -120,6 +190,8 @@ import {
 	Breadcrumbs,
 	TextEditor,
 	Button,
+	Dialog,
+	call,
 	createResource,
 	FormControl,
 	FileUploader,
@@ -137,7 +209,7 @@ import {
 } from 'vue'
 import { updateDocumentTitle, uploadLimits, validateFileSize } from '@/utils'
 import Link from '@/components/Controls/Link.vue'
-import { Image, Trash2, X } from 'lucide-vue-next'
+import { Image, Trash2, Video, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
@@ -168,6 +240,66 @@ const course = reactive({
 	published: false,
 	web_meeting: '',
 })
+
+// --- Online (virtual) meetings: instructor self-service (ADR 051) ----------
+const showVirtualDialog = ref(false)
+const savingVirtual = ref(false)
+const vForm = reactive({ meeting_date: '', from_time: '', to_time: '', link: '' })
+
+const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
+
+const virtualMeetings = createResource({
+	url: 'seminary.seminary.api.get_virtual_meetings',
+	makeParams() {
+		return { course_schedule: props.courseName }
+	},
+	auto: false,
+})
+
+const openVirtualDialog = () => {
+	vForm.meeting_date = ''
+	vForm.from_time = ''
+	vForm.to_time = ''
+	vForm.link = ''
+	showVirtualDialog.value = true
+}
+
+const addVirtualMeeting = async () => {
+	if (!vForm.meeting_date || !vForm.from_time || !vForm.to_time) {
+		toast.error(__('Date, From and To times are required.'))
+		return
+	}
+	savingVirtual.value = true
+	try {
+		await call('seminary.seminary.api.add_virtual_meeting', {
+			course_schedule: props.courseName,
+			meeting_date: vForm.meeting_date,
+			from_time: vForm.from_time,
+			to_time: vForm.to_time,
+			link: vForm.link || null,
+		})
+		toast.success(__('Virtual meeting added to the calendar'))
+		showVirtualDialog.value = false
+		virtualMeetings.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || e?.message || __('Could not add the meeting'))
+	} finally {
+		savingVirtual.value = false
+	}
+}
+
+const removeVirtualMeeting = async (name) => {
+	try {
+		await call('seminary.seminary.api.remove_virtual_meeting', {
+			course_schedule: props.courseName,
+			meeting: name,
+		})
+		toast.success(__('Online meeting removed'))
+		virtualMeetings.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || e?.message || __('Could not remove the meeting'))
+	}
+}
 
 const maxShortIntroductionLength = 55;
 
@@ -251,6 +383,7 @@ const courseResource = createResource({
 		}
 
 		if (data.course_image) imageResource.reload({ image: data.course_image })
+		virtualMeetings.reload()
 		check_permission()
 	},
 	onError(err) {
