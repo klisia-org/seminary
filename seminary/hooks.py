@@ -242,6 +242,7 @@ has_permission = {
     "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
+    "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
 }
 
 # DocType Class
@@ -290,7 +291,10 @@ doc_events = {
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
-        "on_update": "seminary.seminary.api.quizresult_to_card",
+        "on_update": [
+            "seminary.seminary.api.quizresult_to_card",
+            "seminary.seminary.plagiarism.service.on_submission_update",
+        ],
     },
     "Exam Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
@@ -415,6 +419,14 @@ communication_channel_providers = {
     "telegram": "seminary.seminary.telegram_adapter.TelegramAdapter",
     "twilio": "seminary.seminary.twilio_adapter.TwilioAdapter",
     "print": "seminary.seminary.comms.PrintAdapter",
+}
+
+# Plagiarism provider adapters. Other apps extend this hook with
+# {provider_key: "dotted.path.AdapterClass"}; Plagiarism Provider Account rows
+# (external only) reference the keys. internal needs no account.
+plagiarism_providers = {
+    "internal": "seminary.seminary.plagiarism.internal.InternalPlagiarismAdapter",
+    "external-http": "seminary.seminary.plagiarism.external.ExternalHTTPPlagiarismAdapter",
 }
 
 # Scheduled Tasks

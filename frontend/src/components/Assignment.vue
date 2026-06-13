@@ -135,6 +135,124 @@
 								class="bg-surface-gray-3 rounded-md cursor-pointer stroke-1.5 w-5 h-5 p-1 ml-3 shrink-0" />
 						</div>
 					</div>
+
+					<!-- Plagiarism check. Compares this submission against every
+					     other submission for the same assignment, across all terms.
+					     Gated by the Seminary Settings flag; students never reach
+					     this panel (it is inside the canGradeSubmission block). -->
+					<div v-if="plagiarismEnabled" class="pt-4 border-t border-outline-gray-2">
+						<div class="flex items-center justify-between mb-2">
+							<div class="text-sm font-medium text-ink-gray-7">
+								{{ __('Plagiarism Check') }}
+							</div>
+							<Button
+								variant="outline"
+								size="sm"
+								:loading="plagiarismBusy"
+								@click="runPlagiarismCheck()"
+							>
+								{{ plagiarismResult ? __('Re-run') : __('Run check') }}
+							</Button>
+						</div>
+
+						<div v-if="plagiarismBusy" class="flex items-center text-sm text-ink-gray-5">
+							<LoadingIndicator class="w-4 h-4 mr-2" />
+							{{ __('Checking…') }}
+						</div>
+
+						<template v-else-if="plagiarismResult">
+							<div v-if="plagiarismResult.status === 'Completed'">
+								<div class="flex items-center gap-2 mb-1">
+									<div class="text-2xl font-bold" :class="scoreTextClass(plagiarismResult.overall_score)">
+										{{ Math.round(plagiarismResult.overall_score) }}%
+									</div>
+									<Badge :theme="scoreTheme(plagiarismResult.overall_score)">
+										{{ scoreLabel(plagiarismResult.overall_score) }}
+									</Badge>
+								</div>
+								<div class="text-xs text-ink-gray-5 mb-2">
+									{{ __('Compared against {0} submission(s)').format(plagiarismResult.source_count) }}
+								</div>
+								<div v-if="plagiarismResult.is_stale"
+									class="text-xs text-ink-orange-2 bg-surface-amber-1 rounded p-2 mb-2">
+									{{ __('The submission changed after this check — re-run for current results.') }}
+								</div>
+								<div v-if="plagiarismResult.sources.length" class="space-y-0.5">
+									<div
+										v-for="s in visibleSources"
+										:key="s.name"
+										class="flex items-center justify-between text-sm py-1 border-b border-outline-gray-1 last:border-0"
+										:class="s.same_student ? 'text-ink-gray-5' : 'text-ink-gray-8'"
+									>
+										<div class="min-w-0 flex-1 pr-2">
+											<div class="truncate">
+												{{ s.source_student_name || s.source_submission }}
+												<span v-if="s.same_student" class="text-xs text-ink-gray-4">
+													({{ __('same student') }})
+												</span>
+											</div>
+											<div class="text-xs text-ink-gray-4 truncate">{{ s.source_term }}</div>
+										</div>
+										<div class="flex items-center gap-2 shrink-0">
+											<span class="font-medium" :class="scoreTextClass(s.similarity)">
+												{{ Math.round(s.similarity) }}%
+											</span>
+											<button
+												v-if="s.has_passages"
+												class="text-xs text-ink-blue-3 hover:underline"
+												@click="openMatchDetail(s)"
+											>
+												{{ __('View') }}
+											</button>
+										</div>
+									</div>
+									<button
+										v-if="plagiarismResult.sources.length > SOURCE_PREVIEW"
+										class="text-xs text-ink-blue-3 hover:underline mt-1"
+										@click="showAllSources = !showAllSources"
+									>
+										{{ showAllSources
+											? __('Show fewer')
+											: __('Show all {0}').format(plagiarismResult.sources.length) }}
+									</button>
+								</div>
+								<div v-else class="text-sm text-ink-green-3">
+									{{ __('No similar submissions found.') }}
+								</div>
+							</div>
+							<div v-else-if="plagiarismResult.status === 'Skipped'" class="text-sm text-ink-gray-5">
+								{{ plagiarismResult.error || __('Not checked.') }}
+							</div>
+							<div v-else-if="plagiarismResult.status === 'Failed'" class="text-sm text-ink-red-3">
+								{{ __('Check failed.') }} {{ plagiarismResult.error }}
+							</div>
+						</template>
+
+						<div v-else class="text-xs text-ink-gray-4">
+							{{ __('Not checked yet.') }}
+						</div>
+					</div>
+
+					<!-- Report a disciplinary incident for this submission. Lives in
+					     the grading panel where canGradeSubmission is true; gated by
+					     the portal_disciplinary flag. -->
+					<div
+						v-if="portalDisciplinary && submissionResource.doc"
+						class="pt-4 border-t border-outline-gray-2"
+					>
+						<Button variant="outline" theme="red" @click="showReportModal = true">
+							{{ __('Report Disciplinary Incident') }}
+						</Button>
+						<ReportDisciplinaryIncidentModal
+							v-model="showReportModal"
+							mode="assessment"
+							:course="submissionResource.doc.course || courseName"
+							:student="submissionResource.doc.student"
+							:student-name="submissionResource.doc.member_name"
+							:assessment="submissionResource.doc.course_assess"
+							:assessment-name="assignment.data?.title"
+						/>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -249,20 +367,6 @@
 							</Button>
 						</div>
 					</div>
-					<div v-if="canGradeSubmission && portalDisciplinary && submissionResource.doc" class="mb-2">
-						<Button variant="outline" theme="red" @click="showReportModal = true">
-							{{ __('Report Disciplinary Incident for this Submission') }}
-						</Button>
-						<ReportDisciplinaryIncidentModal
-							v-model="showReportModal"
-							mode="assessment"
-							:course="submissionResource.doc.course || courseName"
-							:student="submissionResource.doc.student"
-							:student-name="submissionResource.doc.member_name"
-							:assessment="submissionResource.doc.course_assess"
-							:assessment-name="assignment.data?.title"
-						/>
-					</div>
 					<div v-if="
 						submissionName != 'new' &&
 						!['Pass', 'Fail', 'Graded'].includes(submissionResource.doc?.status) &&
@@ -348,6 +452,35 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Plagiarism match detail: verbatim passages this submission shares
+		     with one other submission. -->
+		<Dialog v-model="showMatchDetail" :options="{ title: __('Matched Passages'), size: '2xl' }">
+			<template #body-content>
+				<div v-if="matchDetail.loading" class="flex justify-center py-8">
+					<LoadingIndicator class="w-6 h-6" />
+				</div>
+				<div v-else-if="matchDetail.data">
+					<div class="text-sm text-ink-gray-6 mb-3">
+						{{ matchDetail.data.source_student_name }}
+						<span v-if="matchDetail.data.source_term">· {{ matchDetail.data.source_term }}</span>
+						· {{ Math.round(matchDetail.data.similarity) }}%
+					</div>
+					<div v-if="matchDetail.data.passages.length" class="space-y-2">
+						<div
+							v-for="(p, i) in matchDetail.data.passages"
+							:key="i"
+							class="text-sm bg-surface-amber-1 text-ink-gray-8 rounded p-2 leading-5"
+						>
+							{{ p.text }}
+						</div>
+					</div>
+					<div v-else class="text-sm text-ink-gray-5">
+						{{ __('No verbatim passages.') }}
+					</div>
+				</div>
+			</template>
+		</Dialog>
 	</div>
 </template>
 <script setup>
@@ -357,8 +490,10 @@ import {
 	call,
 	createResource,
 	createDocumentResource,
+	Dialog,
 	FileUploader,
 	FormControl,
+	LoadingIndicator,
 	toast
 } from 'frappe-ui'
 import { computed, inject, onMounted, onBeforeUnmount, ref, watch } from 'vue'
@@ -407,7 +542,132 @@ const keyboardShortcut = (e) => {
 
 onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
+	stopPlagiarismPoll()
 })
+
+// --- Plagiarism check (graders only) ----------------------------------------
+const plagiarismResult = ref(null)
+const plagiarismBusy = ref(false)
+let plagiarismTimer = null
+
+// Keep the matched-source list compact in the narrow grading panel (so the
+// disciplinary action below it stays above the fold); the rest is one click away.
+const SOURCE_PREVIEW = 5
+const showAllSources = ref(false)
+const visibleSources = computed(() =>
+	showAllSources.value
+		? plagiarismResult.value?.sources || []
+		: (plagiarismResult.value?.sources || []).slice(0, SOURCE_PREVIEW)
+)
+
+const plagiarismSettings = createResource({
+	url: 'frappe.client.get_value',
+	params: { doctype: 'Seminary Settings', fieldname: 'plagiarism_enabled' },
+	cache: 'plagiarism_enabled',
+	auto: true,
+})
+// Inlines the canGradeSubmission grading-role check (rather than referencing
+// that computed, which is declared later in setup) so the immediate watch below
+// can read this during setup without a temporal-dead-zone error.
+const plagiarismEnabled = computed(
+	() =>
+		(user.data?.is_moderator ||
+			user.data?.is_evaluator ||
+			user.data?.is_instructor) &&
+		props.submissionName !== 'new' &&
+		router.currentRoute.value.name === 'AssignmentSubmission' &&
+		plagiarismSettings.data?.plagiarism_enabled === 1
+)
+
+function stopPlagiarismPoll() {
+	if (plagiarismTimer) {
+		clearInterval(plagiarismTimer)
+		plagiarismTimer = null
+	}
+}
+
+function applyPlagiarismResult(data) {
+	plagiarismResult.value = data
+	showAllSources.value = false
+	const pending = data && (data.status === 'Queued' || data.status === 'Running')
+	plagiarismBusy.value = !!pending
+	if (!pending) stopPlagiarismPoll()
+}
+
+function fetchPlagiarismResult() {
+	if (!plagiarismEnabled.value || props.submissionName === 'new') return
+	call('seminary.seminary.api.get_plagiarism_result', {
+		submission_name: props.submissionName,
+	})
+		.then(applyPlagiarismResult)
+		.catch(() => {})
+}
+
+function runPlagiarismCheck() {
+	plagiarismBusy.value = true
+	call('seminary.seminary.api.run_plagiarism_check', {
+		submission_name: props.submissionName,
+	})
+		.then(() => {
+			stopPlagiarismPoll()
+			plagiarismTimer = setInterval(fetchPlagiarismResult, 3000)
+			fetchPlagiarismResult()
+		})
+		.catch((err) => {
+			plagiarismBusy.value = false
+			toast.error(err.messages?.[0] || err)
+		})
+}
+
+watch(
+	plagiarismEnabled,
+	(on) => {
+		if (on) fetchPlagiarismResult()
+	},
+	{ immediate: true }
+)
+
+// Detail modal: verbatim overlapping passages for one matched source.
+const showMatchDetail = ref(false)
+const matchDetail = ref({ loading: false, data: null })
+
+function openMatchDetail(s) {
+	showMatchDetail.value = true
+	matchDetail.value = { loading: true, data: null }
+	call('seminary.seminary.api.get_plagiarism_match_detail', {
+		result_name: plagiarismResult.value.name,
+		source_row: s.name,
+	})
+		.then((data) => {
+			matchDetail.value = { loading: false, data }
+		})
+		.catch((err) => {
+			matchDetail.value = { loading: false, data: null }
+			toast.error(err.messages?.[0] || err)
+		})
+}
+
+// Colour thresholds: below the configured threshold = low (green), up to 2×
+// = review (amber), at/above 2× = high (red).
+function scoreLevel(score) {
+	const t = plagiarismResult.value?.threshold || 30
+	if (score >= 2 * t) return 'high'
+	if (score >= t) return 'review'
+	return 'low'
+}
+function scoreLabel(score) {
+	return { low: __('Low'), review: __('Review'), high: __('High') }[scoreLevel(score)]
+}
+function scoreTheme(score) {
+	return { low: 'green', review: 'orange', high: 'red' }[scoreLevel(score)]
+}
+function scoreTextClass(score) {
+	return {
+		low: 'text-ink-green-3',
+		review: 'text-ink-amber-3',
+		high: 'text-ink-red-3',
+	}[scoreLevel(score)]
+}
 
 const assignment = createResource({
 	url: 'frappe.client.get',

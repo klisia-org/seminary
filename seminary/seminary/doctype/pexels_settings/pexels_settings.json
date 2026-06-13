@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2026-06-13 12:00:00.000000",
+ "description": "Connection settings for the Pexels stock-photo service. Configure the API key here to let instructors pick a free course image from Pexels in the course form.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "credentials_section",
+  "api_key",
+  "column_break_creds",
+  "base_url",
+  "defaults_section",
+  "results_per_page"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "Master switch. When unchecked, the Pexels picker raises a friendly error instead of calling the upstream API.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "description": "Your Pexels API key (https://www.pexels.com/api/). Stored encrypted.",
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key"
+  },
+  {
+   "fieldname": "column_break_creds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "https://api.pexels.com",
+   "description": "Base URL for the Pexels API. Override only if Pexels changes their endpoint.",
+   "fieldname": "base_url",
+   "fieldtype": "Data",
+   "label": "Base URL"
+  },
+  {
+   "fieldname": "defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Defaults"
+  },
+  {
+   "default": "15",
+   "description": "How many photos to fetch per search page (1-80).",
+   "fieldname": "results_per_page",
+   "fieldtype": "Int",
+   "label": "Results Per Page"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-13 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Pexels Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
