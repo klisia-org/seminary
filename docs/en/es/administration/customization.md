@@ -12,4 +12,12 @@ Muchas políticas (plazos de inscripción, reglas de retiro, períodos de califi
 
 ## Ayuda integrada en la aplicación
 
-SeminaryERP incluye un sistema de ayuda contextual. Cada formulario puede mostrar una entrada de ayuda con un enlace a esta documentación y un campo de notas local para instrucciones específicas de la institución. Consulte **Seminary Help Entry** en el Desk.
+SeminaryERP includes a contextual help system with two parts:
+
+- **Documentation link.** A form shows a Help icon in its header when its doctype
+  has a "Documentation Link" set (DocType → _More Information_ → Documentation
+  Link). Clicking it opens that page of this documentation in a new tab. No setup
+  beyond the link is needed.
+- **Local notes.** Create a **Seminary Help Entry** for a doctype and fill in
+  _Local Notes_ — your institution-specific "how we do it here" instructions.
+  They appear in a collapsible panel at the top of that doctype's form.
