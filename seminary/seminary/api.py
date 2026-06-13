@@ -1127,8 +1127,15 @@ def roll_students(academic_term=None):
     # (see generate_nat_invoices / generate_nay_invoices / generate_monthly_invoices).
     # Role gate moved here from the (retired) Registrar Hub page.
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
-    roll_pe()
-    return "Students advanced"
+    summary = roll_pe()
+    return _(
+        "Advanced {0} students. Auto-enroll: {1} enrolled, {2} skipped, {3} failed (see ToDos)."
+    ).format(
+        summary["advanced"],
+        summary["tb_enrolled"],
+        summary["tb_skipped"],
+        summary["tb_failed"],
+    )
 
 
 @frappe.whitelist()
@@ -1146,8 +1153,17 @@ def regenerate_current_term_invoices():
 
 @frappe.whitelist()
 def roll_pe():
-    # Students' academic terms will advance. In case enrolled in a time-based program, petb_enroll will try to enroll them in courses
+    # Students' academic terms advance. Time-based enrollments additionally
+    # attempt auto-enroll into the new term's courses via petb_enroll. Returns a
+    # summary so the caller (Advance Students action) can report the outcome.
     tb = frappe.db.get_single_value("Seminary Settings", "advancetb")
+    summary = {
+        "advanced": 0,
+        "tb_enrolled": 0,
+        "tb_skipped": 0,
+        "tb_failed": 0,
+        "failures": [],
+    }
     pes = frappe.get_all(
         "Program Enrollment",
         filters={"pgmenrol_active": 1, "docstatus": 1},
@@ -1155,50 +1171,120 @@ def roll_pe():
     )
     for pe in pes:
         pe_name = pe.name
-        pe_term = pe.current_std_term
         pe_program = frappe.db.get_value("Program Enrollment", pe_name, "program")
         pe_program_type = frappe.db.get_value("Program", pe_program, "program_type")
-        pe_term = pe_term + 1
+        pe_term = (pe.current_std_term or 0) + 1
         frappe.db.set_value("Program Enrollment", pe_name, "current_std_term", pe_term)
+        summary["advanced"] += 1
         if pe_program_type == "Time-based" and tb == 1:
-            petb_enroll(pe_name, pe_term)
-        else:
-            continue
+            r = petb_enroll(pe_name, pe_term)
+            summary["tb_enrolled"] += r["enrolled"]
+            summary["tb_skipped"] += r["skipped"]
+            summary["tb_failed"] += r["failed"]
+            summary["failures"].extend(r["failures"])
+    return summary
 
 
 @frappe.whitelist()
 def petb_enroll(pe_name, pe_term):
-    # This will try to enroll all active students from time-based programs in courses scheduled for the new academic term and open for enrollment
-    currentterm = frappe.db.sql(
-        """select name from `tabAcademic Term` where iscurrent_acterm = 1"""
+    """Attempt to auto-enroll an active Time-based student into the courses
+    scheduled for their new term (Program Course.course_term == pe_term) that
+    have an open offering this term. Returns a structured summary; failures are
+    logged and surfaced to Registrars as ToDos rather than silently swallowed.
+
+    Note: a student whose current_std_term has advanced past the program's last
+    populated course_term simply matches no Program Course rows here, so they
+    yield an all-zero summary (correct — nothing left to auto-enroll)."""
+    from seminary.seminary.required_enrollment import (
+        _already_covered,
+        _notify_registrar_enroll_failure,
+        _notify_registrar_prereq_block,
+        unmet_prerequisites,
     )
-    program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+
+    summary = {"enrolled": 0, "skipped": 0, "failed": 0, "failures": []}
+
+    current_term = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
+    if not current_term:
+        # No current term flagged — nothing to enroll into. The caller already
+        # advanced the term counter; enrollment is simply deferred.
+        return summary
+
+    program, student = frappe.db.get_value(
+        "Program Enrollment", pe_name, ["program", "student"]
+    )
+
     pecs = frappe.get_all(
         "Program Course",
         filters={"parent": program, "course_term": pe_term, "disabled": 0},
-        fields=["name", "course"],
+        fields=["course"],
     )
-    cs = frappe.get_all(
-        "Course Schedule",
-        filters={
-            "academic_term": currentterm,
-            "workflow_state": "Open for Enrollment",
-        },
-        fields=["name", "course"],
+    # Underlying Courses that have an open offering this term.
+    open_courses = set(
+        frappe.get_all(
+            "Course Schedule",
+            filters={
+                "academic_term": current_term,
+                "workflow_state": "Open for Enrollment",
+            },
+            pluck="course",
+        )
     )
-    for pec in pecs:
-        for cs_course in cs:
-            if pec.course == cs_course.course:
-                course = pec.course
-                try:
-                    course_enroll(pe_name, course)
-                except Exception as e:
-                    # Handle the error here
-                    print(f"An error occurred: {str(e)}")
 
-            else:
-                continue
-    return "No course to enroll"
+    pe_ref = frappe._dict(name=pe_name, student=student, program=program)
+
+    def _record_failure(course, reason):
+        summary["failed"] += 1
+        summary["failures"].append(
+            {"pe": pe_name, "student": student, "course": course, "reason": reason}
+        )
+
+    for pec in pecs:
+        course = pec.course
+
+        # 1) Already covered (passing PEC or live CEI) — benign skip. A prior
+        #    Fail is NOT covered, so a failed course with met prereqs and an open
+        #    offering falls through and is re-attempted below.
+        if _already_covered(pe_name, course):
+            summary["skipped"] += 1
+            continue
+
+        # 2) Unmet mandatory prerequisites — auto-enroll would fail; notify.
+        missing = unmet_prerequisites(pe_name, course)
+        if missing:
+            _notify_registrar_prereq_block(pe_ref, course)
+            _record_failure(
+                course, _("Unmet prerequisite: {0}").format(", ".join(missing))
+            )
+            continue
+
+        # 3) No open offering this term — defer (not a failure).
+        if course not in open_courses:
+            summary["skipped"] += 1
+            continue
+
+        # 4) Attempt enroll into the open Course Schedule; surface any error.
+        try:
+            cs_name = frappe.db.get_value(
+                "Course Schedule",
+                {
+                    "course": course,
+                    "academic_term": current_term,
+                    "workflow_state": "Open for Enrollment",
+                },
+                "name",
+            )
+            course_enroll(pe_name, cs_name)
+            summary["enrolled"] += 1
+        except Exception as e:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"petb_enroll: course_enroll failed (pe={pe_name}, course={course})",
+            )
+            _notify_registrar_enroll_failure(pe_ref, course, str(e))
+            _record_failure(course, str(e))
+
+    return summary
 
 
 @frappe.whitelist()

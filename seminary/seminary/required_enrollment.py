@@ -372,3 +372,51 @@ def _notify_registrar_prereq_block(pe, course):
                 frappe.get_traceback(),
                 f"required_enrollment: failed to assign prereq ToDo for {pe.name} to {user}",
             )
+
+
+def _notify_registrar_enroll_failure(pe, course, reason):
+    """Create one open ToDo per Registrar when a term-roll auto-enroll attempt
+    fails for a reason other than unmet prerequisites (e.g. a CEI validation
+    error). Idempotent: skips if an open ToDo for this PE already mentions the
+    course. Mirrors _notify_registrar_prereq_block."""
+    from seminary.seminary.cei_lifecycle import _registrar_emails
+
+    recipients = _registrar_emails()
+    if not recipients:
+        return
+
+    description = _(
+        "Course {0} could not be auto-enrolled for enrollment {1} during term "
+        "roll: {2}. Review and enroll the student manually if appropriate."
+    ).format(course, pe.name, reason)
+
+    for user in recipients:
+        if frappe.db.exists(
+            "ToDo",
+            {
+                "allocated_to": user,
+                "reference_type": "Program Enrollment",
+                "reference_name": pe.name,
+                "status": "Open",
+                "description": ["like", f"%{course}%"],
+            },
+        ):
+            continue
+        try:
+            frappe.get_doc(
+                {
+                    "doctype": "ToDo",
+                    "owner": user,
+                    "allocated_to": user,
+                    "description": description,
+                    "reference_type": "Program Enrollment",
+                    "reference_name": pe.name,
+                    "priority": "Medium",
+                    "status": "Open",
+                }
+            ).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"required_enrollment: failed to assign enroll-failure ToDo for {pe.name} to {user}",
+            )

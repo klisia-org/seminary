@@ -21,11 +21,36 @@ class Program(WebsiteGenerator):
             self.percent_to_pay = 0
 
         self._stamp_course_disabled_on()
+        self._validate_course_term_and_credits()
 
     def _stamp_course_disabled_on(self):
         for pc in self.courses or []:
             if pc.disabled and not pc.disabled_on:
                 pc.disabled_on = today()
+
+    def _validate_course_term_and_credits(self):
+        # Per-type curriculum requirements. mandatory_depends_on on the child
+        # fields gives client-side hinting, but it can't read the parent's
+        # program_type server-side — enforce authoritatively here. Time-based
+        # progression keys off course_term (see petb_enroll); Credits-based
+        # completion keys off pgmcourse_credits.
+        if self.is_ongoing:
+            return
+        for pc in self.courses or []:
+            if pc.disabled:
+                continue
+            if self.program_type == "Time-based" and not pc.course_term:
+                frappe.throw(
+                    _(
+                        "Course {0}: Term number is required for Time-based programs."
+                    ).format(pc.course)
+                )
+            if self.program_type == "Credits-based" and not pc.pgmcourse_credits:
+                frappe.throw(
+                    _(
+                        "Course {0}: Credits are required for Credits-based programs."
+                    ).format(pc.course)
+                )
 
     def get_context(self, context):
         from seminary.seminary.api import get_application_web_form_route

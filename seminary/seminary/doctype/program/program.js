@@ -27,6 +27,12 @@ frappe.ui.form.on('Program', {
 			});
 		}
 
+		if (frm.doc.program_type === 'Time-based' && (frm.doc.courses || []).length) {
+			frm.add_custom_button(__('Check Term Courses & Credits'), function() {
+				check_term_courses(frm);
+			});
+		}
+
 		// Show only when the program has at least one mandatory-on-enrollment course.
 		let has_reqonenroll = (frm.doc.courses || []).some(pc => pc.pgm_course_reqonenroll && !pc.disabled);
 		if (!frm.is_new() && has_reqonenroll) {
@@ -185,6 +191,86 @@ function check_track_credits(frm) {
 		title: __('Track Credit Sufficiency'),
 		message: html,
 		indicator: all_ok ? 'green' : 'orange',
+		wide: true
+	});
+}
+
+function check_term_courses(frm) {
+	// Group non-disabled Program Courses by course_term and total credits.
+	// Mirrors check_track_credits, but for the Time-based curriculum shape.
+	// Reflects the (possibly unsaved) grid rows. Courses with no term land in
+	// an "Unassigned" bucket — those never auto-enroll, so they are the signal
+	// the registrar most needs to see.
+	const UNASSIGNED = '__unassigned__';
+	let terms = {};
+	(frm.doc.courses || []).forEach(function(pc) {
+		if (pc.disabled || !pc.course) return;
+		let term = cint(pc.course_term);
+		let key = term ? term : UNASSIGNED;
+		if (!terms[key]) {
+			terms[key] = { courses: [], count: 0, credits: 0 };
+		}
+		let credits = cint(pc.pgmcourse_credits);
+		terms[key].courses.push({
+			course: pc.course,
+			course_name: pc.course_name || pc.course,
+			credits: credits
+		});
+		terms[key].count += 1;
+		terms[key].credits += credits;
+	});
+
+	// Numeric terms ascending, Unassigned last.
+	let keys = Object.keys(terms).filter(k => k !== UNASSIGNED)
+		.map(Number).sort((a, b) => a - b).map(String);
+	if (terms[UNASSIGNED]) keys.push(UNASSIGNED);
+
+	let total_courses = 0;
+	let total_credits = 0;
+	let body = '';
+	keys.forEach(function(key) {
+		let t = terms[key];
+		let label = key === UNASSIGNED ? __('Unassigned') : __('Term {0}', [key]);
+		body += '<tr style="background:#f5f5f5;font-weight:bold">'
+			+ '<td colspan="3">' + label + '</td></tr>';
+		t.courses.forEach(function(c) {
+			body += '<tr>'
+				+ '<td>' + c.course + '</td>'
+				+ '<td>' + frappe.utils.escape_html(c.course_name) + '</td>'
+				+ '<td style="text-align:right">' + c.credits + '</td>'
+				+ '</tr>';
+		});
+		body += '<tr style="font-style:italic">'
+			+ '<td colspan="2" style="text-align:right">'
+			+ __('{0} course(s)', [t.count]) + '</td>'
+			+ '<td style="text-align:right">' + t.credits + '</td></tr>';
+		total_courses += t.count;
+		total_credits += t.credits;
+	});
+
+	let html = '<table class="table table-bordered table-condensed">'
+		+ '<thead><tr>'
+		+ '<th>' + __('Course') + '</th>'
+		+ '<th>' + __('Course Name') + '</th>'
+		+ '<th style="text-align:right">' + __('Credits') + '</th>'
+		+ '</tr></thead>'
+		+ '<tbody>' + body + '</tbody>'
+		+ '<tfoot><tr style="font-weight:bold">'
+		+ '<td colspan="2" style="text-align:right">'
+		+ __('Total: {0} course(s)', [total_courses]) + '</td>'
+		+ '<td style="text-align:right">' + total_credits + '</td>'
+		+ '</tr></tfoot>'
+		+ '</table>';
+
+	if (terms[UNASSIGNED]) {
+		html += '<p style="color:#b45309">'
+			+ __('Courses under "Unassigned" have no Term number and will not be auto-enrolled.')
+			+ '</p>';
+	}
+
+	frappe.msgprint({
+		title: __('Term Courses & Credits'),
+		message: html,
 		wide: true
 	});
 }
