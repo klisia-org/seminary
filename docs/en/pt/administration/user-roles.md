@@ -1,7 +1,8 @@
 # Papéis de usuário
 
-O SeminaryERP usa o sistema de permissões baseado em papéis do Frappe para controlar o acesso. O módulo
-define e possui os seguintes papéis. Um usuário pode ter mais do que um papel.
+O SeminaryERP usa o sistema de permissões baseado em papéis do Frappe para controlar o acesso. The
+module defines and owns the following roles. Um usuário pode ter mais do que um papel. ERPNext roles (for accounting, etc.) should be selected per your policy.
+See [ERPNext Module Access documentation.](https://docs.frappe.io/erpnext/adding-users#27-allow-module-access)
 
 ## Papéis da equipe (Desk)
 
@@ -30,6 +31,4 @@ para configuração, registros e relatórios.
 
 ## Notas
 
-- `Diretor de Programas` e `Gerente de Seminário` são criados pelo aplicativo ao instalar — sem dependência
-  externa.
 - `Gerenciador do Sistema` (Núcleo da Frappe) retém o acesso de superadministrador em todos os lugares.
