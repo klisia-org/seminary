@@ -33,6 +33,10 @@ def after_install():
     get_custom_fields()
     setup_sales_invoice_permissions()
     update_company_in_item_details()
+    seed_fee_categories()
+    seed_assessment_criteria()
+    seed_course_cancellation_reasons()
+    seed_grading_scale()
     seed_culminating_project_types()
     seed_disciplinary_actions()
     seed_room_features()
@@ -41,6 +45,7 @@ def after_install():
     seed_mailing_label_formats()
     seed_communication_templates()
     seed_portal_messaging_rules()
+    seed_partner_types()
     setup_customer_person_field()
 
 
@@ -200,6 +205,190 @@ def setup_fixtures():
         },
     ]
     make_records(records)
+
+
+def seed_fee_categories():
+    """Seed the starter Fee Categories if they don't already exist.
+
+    NOT fixtures: Fee Category.validate_audit() cross-checks a category's
+    is_credit against Seminary Settings (auditcredit / allow_audit). The moment a
+    seminary flips that setting — or edits a category — a fixture re-import on
+    migrate re-validates the shipped rows and throws (e.g. "set to charge audit
+    as a flat fee, not per credit"). So we create the defaults once
+    (create-only-if-missing) and never re-touch them.
+
+    The Audit Fee is seeded as a flat fee (is_credit=0) to match the default
+    auditcredit=0 setting, so a fresh seed validates cleanly; a seminary that
+    charges audit per credit flips both the setting and this category itself.
+
+    Each row references a fixtured Item and Payment Terms Template — we skip any
+    row whose dependencies aren't present yet (so install ordering can't make us
+    throw); the next migrate, with fixtures loaded, fills it in.
+    """
+    # category_name, fc_event, item, is_audit, is_credit
+    defaults = [
+        ("Program Admission Fee", "Program Enrollment", "Admission Fee", 0, 0),
+        ("Registration fee (new term)", "New Academic Term", "Admission Fee", 0, 0),
+        ("Credit hour", "Course Enrollment", "Credit hour", 0, 1),
+        ("Audit Fee", "Course Enrollment", "Audit Flat Fee", 1, 0),
+    ]
+    payment_term_template = "For immediate payment"
+    has_payment_term = frappe.db.exists("Payment Terms Template", payment_term_template)
+    for category_name, fc_event, item, is_audit, is_credit in defaults:
+        if frappe.db.exists("Fee Category", category_name):
+            continue
+        if not frappe.db.exists("Item", item):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Fee Category",
+                "category_name": category_name,
+                "feecategory_type": "Tuition",
+                "fc_event": fc_event,
+                "item": item,
+                "is_audit": is_audit,
+                "is_credit": is_credit,
+                "payment_term_template": (
+                    payment_term_template if has_payment_term else None
+                ),
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_assessment_criteria():
+    """Seed the starter Assessment Criteria if they don't already exist.
+
+    NOT fixtures: seminaries curate their own grading criteria on the desk, and a
+    fixture re-import would clobber those edits every migrate. Created once,
+    create-only-if-missing. (The "Discussion" row shipped in the old fixture was
+    mis-typed as a Discussion Activity — a per-course transactional doctype, not
+    a catalog — so it never became a real criterion; it's seeded correctly here.)
+    """
+    # assessment_criteria (name), type
+    defaults = [
+        ("Project", "Assignment"),
+        ("Participation", "Offline"),
+        ("Quiz", "Quiz"),
+        ("Exam", "Exam"),
+        ("Discussion", "Discussion"),
+        ("Academic Paper with Online Submission", "Assignment"),
+    ]
+    for criteria, criteria_type in defaults:
+        if frappe.db.exists("Assessment Criteria", criteria):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Assessment Criteria",
+                "assessment_criteria": criteria,
+                "type": criteria_type,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_course_cancellation_reasons():
+    """Seed the starter Course Cancellation Reasons if they don't already exist.
+
+    NOT fixtures: seminaries add/retire reasons on the desk, and a fixture
+    re-import would clobber those edits (and the is_active toggle) every migrate.
+    Created once, create-only-if-missing.
+    """
+    # reason_name, description
+    defaults = [
+        (
+            "Insufficient Enrollment",
+            _(
+                "The course did not reach the minimum number of enrolled students by the enrollment deadline."
+            ),
+        ),
+        (
+            "Instructor Unavailable",
+            _(
+                "The instructor cannot teach the course (illness, leave, departure, scheduling conflict)."
+            ),
+        ),
+        (
+            "Curriculum Change",
+            _(
+                "The course was removed from or changed in the curriculum after the schedule was published."
+            ),
+        ),
+        (
+            "Administrative Decision",
+            _(
+                "The course is cancelled by administrative or departmental decision (resource constraints, restructuring)."
+            ),
+        ),
+        (
+            "Force Majeure",
+            _(
+                "The course is cancelled due to circumstances beyond the seminary's control (natural disaster, public health, civil unrest)."
+            ),
+        ),
+    ]
+    for reason_name, description in defaults:
+        if frappe.db.exists("Course Cancellation Reason", reason_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Course Cancellation Reason",
+                "reason_name": reason_name,
+                "is_active": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_grading_scale():
+    """Seed the starter Default Numeric Scale if it doesn't already exist.
+
+    NOT a fixture: Grading Scale is submittable and seminaries define their own
+    scales; a fixture re-import would clobber edits every migrate. Created once,
+    create-only-if-missing, and submitted (docstatus=1) so it can be used.
+    """
+    name = "Default Numeric Scale"
+    if frappe.db.exists("Grading Scale", name):
+        return
+    # grade_code, grade_pass, threshold
+    intervals = [
+        ("A+", "Pass", 98.0),
+        ("A", "Pass", 96.0),
+        ("A-", "Pass", 94.0),
+        ("B+", "Pass", 92.0),
+        ("B", "Pass", 89.0),
+        ("B-", "Pass", 86.0),
+        ("C+", "Pass", 83.0),
+        ("C", "Pass", 80.0),
+        ("C-", "Pass", 77.0),
+        ("D+", "Pass", 74.0),
+        ("D", "Pass", 72.0),
+        ("D-", "Pass", 69.0),
+        ("F", "Fail", 0.0),
+    ]
+    doc = frappe.get_doc(
+        {
+            "doctype": "Grading Scale",
+            "grading_scale_name": name,
+            "grscale_type": "Points",
+            "maxnumgrade": 100.0,
+            "fa_code": "FA",
+            "fa_gpa": 0,
+            "intervals": [
+                {
+                    "grade_code": code,
+                    "grade_description": code,
+                    "grade_pass": grade_pass,
+                    "threshold": threshold,
+                }
+                for code, grade_pass, threshold in intervals
+            ],
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    doc.submit()
+    frappe.db.commit()
 
 
 def seed_culminating_project_types():
@@ -633,6 +822,44 @@ def seed_portal_messaging_rules():
     frappe.db.commit()
 
 
+def seed_partner_types():
+    """Seed the starter Partner Types if they don't already exist (ADR 053).
+
+    NOT fixtures: partner_type is an open taxonomy seminaries curate on the
+    desk, and a fixture re-import would clobber those edits (and the is_active
+    toggle) every migrate. Created once, create-only-if-missing. The starter set
+    mirrors the partner-flavored Customer Groups already seeded in
+    setup_fixtures(). Skipped silently until the doctype exists (install
+    ordering)."""
+    if not frappe.db.exists("DocType", "Partner Type"):
+        return
+    defaults = [
+        ("Church", _("A local church or congregation.")),
+        ("Denomination", _("A denominational or network body of churches.")),
+        (
+            "Mission Agency",
+            _("A sending or field mission organization."),
+        ),
+        (
+            "Para-church Organization",
+            _("A ministry working alongside churches (camps, media, relief)."),
+        ),
+        ("NGO", _("A non-governmental / non-profit organization.")),
+    ]
+    for type_name, description in defaults:
+        if frappe.db.exists("Partner Type", type_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Partner Type",
+                "partner_type_name": type_name,
+                "is_active": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def setup_customer_person_field():
     """Reverse link Customer → Person (ADR 042 addendum): Person.customer
     records the financial party; this mirrors it on the Customer so finance
@@ -883,12 +1110,17 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_sales_invoice_permissions()
+    seed_fee_categories()
+    seed_assessment_criteria()
+    seed_course_cancellation_reasons()
+    seed_grading_scale()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
     seed_mailing_label_formats()
     seed_communication_templates()
     seed_portal_messaging_rules()
+    seed_partner_types()
     setup_customer_person_field()
     setup_donor_person_field()
 

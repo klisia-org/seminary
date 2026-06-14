@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "creation": "2026-06-13 12:00:00",
+ "description": "A person affiliated with a Partner Organization. Links the human by Person (the identity spine, ADR 042), not Frappe Contact, so one human is one Person across all roles.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "person",
+  "role_at_org",
+  "is_primary",
+  "column_break_contact",
+  "relationship_status",
+  "portal_user",
+  "portal_access"
+ ],
+ "fields": [
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "description": "Role this person holds at the organization, e.g. \"Senior Pastor\", \"HR Contact\".",
+   "fieldname": "role_at_org",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Role at Organization"
+  },
+  {
+   "default": "0",
+   "description": "The main point of contact for this organization.",
+   "fieldname": "is_primary",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Primary Contact"
+  },
+  {
+   "fieldname": "column_break_contact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Active",
+   "fieldname": "relationship_status",
+   "fieldtype": "Select",
+   "label": "Relationship Status",
+   "options": "Active\nInactive\nFormer"
+  },
+  {
+   "description": "Reserved for the Partner portal (phase 1): the User this contact signs in as. Multiple contacts per organization can each have their own portal user.",
+   "fieldname": "portal_user",
+   "fieldtype": "Link",
+   "label": "Portal User",
+   "options": "User"
+  },
+  {
+   "default": "0",
+   "description": "Reserved for the Partner portal (phase 1): grants this contact portal access for the organization.",
+   "fieldname": "portal_access",
+   "fieldtype": "Check",
+   "label": "Portal Access"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-13 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner Contact",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

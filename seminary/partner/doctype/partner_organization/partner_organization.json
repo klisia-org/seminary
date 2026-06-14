@@ -1,0 +1,294 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PORG-.#####",
+ "creation": "2026-06-13 12:00:00",
+ "description": "An external organization the seminary relates to (church, mission agency, denomination, para-church organization, NGO). The relationship spine \u2014 it carries the partner's type, engagement, capabilities, and people, and links out to a Customer only when billing is involved. Distinct from Partner Seminary (academic credit). See ADR 053.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/partners.html",
+ "engine": "InnoDB",
+ "field_order": [
+  "details_section",
+  "organization_name",
+  "partner_type",
+  "status",
+  "column_break_details",
+  "engagement_tier",
+  "website",
+  "image",
+  "capabilities_section",
+  "accepts_job_postings",
+  "offers_internships",
+  "column_break_caps",
+  "provides_qa_feedback",
+  "is_alumni_employer",
+  "reachability_section",
+  "primary_email",
+  "column_break_reach",
+  "primary_phone",
+  "location_section",
+  "address_line_1",
+  "address_line_2",
+  "pincode",
+  "column_break_loc",
+  "city",
+  "state",
+  "country",
+  "contacts_section",
+  "contacts",
+  "links_section",
+  "customer",
+  "notes_section",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "organization_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Organization Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "partner_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Type",
+   "options": "Partner Type"
+  },
+  {
+   "default": "Prospect",
+   "description": "Dormant/Archived partners are hidden from default list views and should not be referenced by new postings.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Prospect\nActive\nDormant\nArchived",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Initial",
+   "description": "Descriptive relationship depth for reporting and prioritization only. It does NOT gate feature access \u2014 use the capability flags below for that (ADR 053).",
+   "fieldname": "engagement_tier",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Engagement Tier",
+   "options": "Initial\nLight\nEngaged\nCommitted"
+  },
+  {
+   "fieldname": "website",
+   "fieldtype": "Data",
+   "label": "Website",
+   "options": "URL"
+  },
+  {
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Logo"
+  },
+  {
+   "description": "Each capability is an independent grant. A partner can accept job postings without being on a higher engagement tier.",
+   "fieldname": "capabilities_section",
+   "fieldtype": "Section Break",
+   "label": "Capabilities"
+  },
+  {
+   "default": "0",
+   "fieldname": "accepts_job_postings",
+   "fieldtype": "Check",
+   "label": "Accepts Job Postings"
+  },
+  {
+   "default": "0",
+   "fieldname": "offers_internships",
+   "fieldtype": "Check",
+   "label": "Offers Internships"
+  },
+  {
+   "fieldname": "column_break_caps",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "provides_qa_feedback",
+   "fieldtype": "Check",
+   "label": "Provides QA / Program Feedback"
+  },
+  {
+   "default": "0",
+   "description": "Surfaced in the alumni-placement report (\"find churches where our graduates serve\").",
+   "fieldname": "is_alumni_employer",
+   "fieldtype": "Check",
+   "label": "Is Alumni Employer"
+  },
+  {
+   "fieldname": "reachability_section",
+   "fieldtype": "Section Break",
+   "label": "Reachability"
+  },
+  {
+   "fieldname": "primary_email",
+   "fieldtype": "Data",
+   "label": "Primary Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_reach",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "primary_phone",
+   "fieldtype": "Data",
+   "label": "Primary Phone",
+   "options": "Phone"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "location_section",
+   "fieldtype": "Section Break",
+   "label": "Location"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Postal Code"
+  },
+  {
+   "fieldname": "column_break_loc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State / Province"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "contacts_section",
+   "fieldtype": "Section Break",
+   "label": "Contacts"
+  },
+  {
+   "fieldname": "contacts",
+   "fieldtype": "Table",
+   "label": "Contacts",
+   "options": "Partner Contact"
+  },
+  {
+   "fieldname": "links_section",
+   "fieldtype": "Section Break",
+   "label": "System Links"
+  },
+  {
+   "description": "Optional. Link a Customer only when this partner is also billed (sponsorship, placement fee). Leave blank for a pure relationship \u2014 we never auto-create a Customer.",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "image_field": "image",
+ "links": [
+  {
+   "group": "Academic",
+   "link_doctype": "Partner Seminary",
+   "link_fieldname": "partner_organization"
+  }
+ ],
+ "modified": "2026-06-14 07:18:16.704319",
+ "modified_by": "murilomelodts@gmail.com",
+ "module": "Partner",
+ "name": "Partner Organization",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "partner_type,city",
+ "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "organization_name",
+ "track_changes": 1
+}
