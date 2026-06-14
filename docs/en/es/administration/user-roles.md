@@ -1,8 +1,9 @@
 # Roles de usuario
 
-SeminaryERP utiliza el sistema de permisos basado en roles de Frappe para controlar el acceso. El módulo
-define y posee los siguientes roles (ver ADR 034). Un usuario puede tener más
-de un rol.
+SeminaryERP utiliza el sistema de permisos basado en roles de Frappe para controlar el acceso. The
+module defines and owns the following roles. Un usuario puede tener más
+de un rol. ERPNext roles (for accounting, etc.) should be selected per your policy.
+See [ERPNext Module Access documentation.](https://docs.frappe.io/erpnext/adding-users#27-allow-module-access)
 
 ## Funciones del personal (Pabilia)
 
@@ -33,6 +34,4 @@ para configuración, registros y reportes.
 
 ## Notas
 
-- `Programa` y `Administrador seminario` son creados por la aplicación al instalar — sin dependencia
-  externa (ERPNext Educación).
 - `System Manager` (Frappe core) conserva acceso super-admin en todas partes.
