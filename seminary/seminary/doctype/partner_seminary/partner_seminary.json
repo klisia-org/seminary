@@ -15,6 +15,7 @@
   "column_break_header",
   "country",
   "customer",
+  "partner_organization",
   "accreditation_status",
   "defaults_section",
   "default_grading_scale",
@@ -70,6 +71,14 @@
    "fieldtype": "Link",
    "label": "Customer",
    "options": "Customer"
+  },
+  {
+   "depends_on": "eval:!doc.is_internal_legacy",
+   "description": "Optional. Link the relationship-side record when this same external institution is also a ministry/employment partner (job board, internships, alumni placement). Not applicable to internal legacy records. See ADR 053.",
+   "fieldname": "partner_organization",
+   "fieldtype": "Link",
+   "label": "Partner Organization",
+   "options": "Partner Organization"
   },
   {
    "fieldname": "accreditation_status",

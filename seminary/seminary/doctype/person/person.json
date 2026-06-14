@@ -246,6 +246,12 @@
    "group": "Roles",
    "link_doctype": "Alumni Profile",
    "link_fieldname": "person"
+  },
+  {
+   "group": "Roles",
+   "link_doctype": "Partner Contact",
+   "link_fieldname": "person",
+   "parent_doctype": "Partner Organization"
   }
  ],
  "modified": "2026-06-10 16:00:00.000000",

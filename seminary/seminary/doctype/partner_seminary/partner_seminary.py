@@ -6,7 +6,20 @@ from frappe.model.document import Document
 class PartnerSeminary(Document):
     def validate(self):
         self._lock_is_internal_legacy()
+        self._validate_partner_organization()
         self._validate_defaults_submitted()
+
+    def _validate_partner_organization(self):
+        """The relationship-spine link (ADR 053) only makes sense for a genuine
+        external institution. Internal legacy records are this seminary's own
+        pre-system history, never an external ministry/employment partner."""
+        if self.is_internal_legacy and self.partner_organization:
+            frappe.throw(
+                _(
+                    "An Internal Legacy Partner Seminary cannot be linked to a "
+                    "Partner Organization."
+                )
+            )
 
     def on_trash(self):
         if self.is_internal_legacy:

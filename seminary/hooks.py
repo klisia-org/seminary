@@ -525,18 +525,26 @@ override_whitelisted_methods = {
 # --------------------------
 fixtures = [
     "Trigger Fee Events",
-    "Grading Scale",
+    # Grading Scale is NOT fixtured: it's submittable and seminaries define their
+    # own scales; a re-import would clobber edits. Seeded create-only-if-missing
+    # by install.seed_grading_scale() instead.
     "Item",
     "Payment Term",
     "Payment Terms Template",
-    "Fee Category",
+    # Fee Category is NOT fixtured: its validate_audit() cross-checks each row
+    # against Seminary Settings, so a re-import throws once a seminary changes
+    # the audit setting or edits a category. Seeded create-only-if-missing by
+    # install.seed_fee_categories() instead.
     "Program Level",
-    "Instructor Category",
-    "Assessment Criteria",
-    "Custom HTML Block",
+    # Instructor Category is NOT fixtured: seeded create-only-if-missing by
+    # install.setup_fixtures() so seminary edits to the catalog survive migrate.
+    # Assessment Criteria is NOT fixtured: seeded create-only-if-missing by
+    # install.seed_assessment_criteria() so seminary edits survive migrate.
     # NOT fixtured: local_notes is per-institution user content; fixturing would
     # clobber it on every migrate (see ADR 049 / feedback on fixtures).
-    "Course Cancellation Reason",
+    "Custom HTML Block",
+    # Course Cancellation Reason is NOT fixtured: seeded create-only-if-missing
+    # by install.seed_course_cancellation_reasons() so seminary edits survive.
     {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
         "dt": "Print Format",
