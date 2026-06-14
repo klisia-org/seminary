@@ -33,7 +33,9 @@
   "comments",
   "comment_attach",
   "evaluator",
-  "comments_thread"
+  "comments_thread",
+  "plagiarism_text",
+  "plagiarism_text_hash"
  ],
  "fields": [
   {
@@ -197,6 +199,23 @@
    "fieldname": "late",
    "fieldtype": "Duration",
    "label": "Lateness",
+   "read_only": 1
+  },
+  {
+   "description": "Cached plain-text extraction (answer + attachment) used by the plagiarism checker. Maintained automatically.",
+   "fieldname": "plagiarism_text",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Plagiarism Text Cache",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "plagiarism_text_hash",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Plagiarism Text Hash",
+   "no_copy": 1,
    "read_only": 1
   }
  ],

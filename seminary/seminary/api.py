@@ -6126,3 +6126,117 @@ def _rooms_busy_for_cs(course_schedule):
         (course_schedule,),
     )
     return {r[0] for r in rows if r[0]}
+
+
+# --- Plagiarism checking ------------------------------------------------------
+# Graders run a check from the submission grading panel; it runs on the long
+# worker and writes a Plagiarism Check Result. Students must never reach any of
+# these — every method gates on a grading role server-side (the frontend gate is
+# not trusted), separately from the doctype's own permission rules.
+
+
+def _require_grader():
+    if not _can_grade_submission(None):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+
+def _latest_plagiarism_result(submission_name):
+    rows = frappe.get_all(
+        "Plagiarism Check Result",
+        filters={
+            "reference_doctype": "Assignment Submission",
+            "reference_name": submission_name,
+        },
+        fields=["name"],
+        order_by="creation desc",
+        limit_page_length=1,
+    )
+    return rows[0].name if rows else None
+
+
+@frappe.whitelist()
+def run_plagiarism_check(submission_name, provider=None):
+    """Queue a plagiarism check for a submission. Returns the result doc name and
+    its (Queued) status so the panel can start polling."""
+    _require_grader()
+    if not frappe.db.get_single_value("Seminary Settings", "plagiarism_enabled"):
+        frappe.throw(_("Plagiarism checking is disabled."))
+    if not frappe.db.exists("Assignment Submission", submission_name):
+        frappe.throw(_("Submission not found."))
+
+    from seminary.seminary.plagiarism.service import enqueue_check
+
+    result_name = enqueue_check(submission_name, provider=provider)
+    return {"status": "Queued", "result": result_name}
+
+
+@frappe.whitelist()
+def get_plagiarism_result(submission_name):
+    """Latest plagiarism result for a submission (header + matched-source rows,
+    without the heavy passage JSON). Returns None when none has been run."""
+    _require_grader()
+    result_name = _latest_plagiarism_result(submission_name)
+    if not result_name:
+        return None
+    result = frappe.get_doc("Plagiarism Check Result", result_name)
+    sources = [
+        {
+            "name": row.name,
+            "source_submission": row.source_submission,
+            "source_student_name": row.source_student_name,
+            "source_course": row.source_course,
+            "source_term": row.source_term,
+            "similarity": row.similarity,
+            "same_student": row.same_student,
+            "has_passages": bool(row.matched_passages and row.matched_passages != "[]"),
+        }
+        for row in result.matched_sources
+    ]
+    submission_modified = frappe.db.get_value(
+        "Assignment Submission", submission_name, "modified"
+    )
+    return {
+        "name": result.name,
+        "status": result.status,
+        "provider": result.provider,
+        "overall_score": result.overall_score,
+        "checked_chars": result.checked_chars,
+        "source_count": result.source_count,
+        "error": result.error,
+        "checked_on": result.checked_on,
+        "threshold": frappe.db.get_single_value(
+            "Seminary Settings", "plagiarism_similarity_threshold"
+        )
+        or 30,
+        "is_stale": bool(
+            result.checked_on
+            and submission_modified
+            and get_datetime(submission_modified) > get_datetime(result.checked_on)
+        ),
+        "sources": sources,
+    }
+
+
+@frappe.whitelist()
+def get_plagiarism_match_detail(result_name, source_row):
+    """The verbatim overlapping passages for one matched-source row (the detail
+    modal). Kept off the list call so it stays light."""
+    _require_grader()
+    row = frappe.db.get_value(
+        "Plagiarism Matched Source",
+        {"name": source_row, "parent": result_name},
+        ["source_student_name", "source_term", "similarity", "matched_passages"],
+        as_dict=True,
+    )
+    if not row:
+        frappe.throw(_("Match not found."))
+    try:
+        passages = json.loads(row.matched_passages or "[]")
+    except ValueError:
+        passages = []
+    return {
+        "source_student_name": row.source_student_name,
+        "source_term": row.source_term,
+        "similarity": row.similarity,
+        "passages": passages,
+    }

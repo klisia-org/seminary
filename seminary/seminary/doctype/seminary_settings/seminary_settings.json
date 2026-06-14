@@ -100,7 +100,16 @@
   "portal_messaging_rules",
   "facilities_section",
   "sync_rooms_to_asset_locations",
-  "root_asset_location"
+  "root_asset_location",
+  "plagiarism_section",
+  "plagiarism_enabled",
+  "plagiarism_default_provider",
+  "plagiarism_similarity_threshold",
+  "column_break_plagiarism",
+  "plagiarism_min_document_length",
+  "plagiarism_ngram_size",
+  "plagiarism_exclude_same_student",
+  "plagiarism_strip_question"
  ],
  "fields": [
   {
@@ -123,6 +132,76 @@
    "fieldtype": "Link",
    "label": "Root Asset Location",
    "options": "Location"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "plagiarism_section",
+   "fieldtype": "Section Break",
+   "label": "Plagiarism Checking"
+  },
+  {
+   "default": "0",
+   "description": "Show graders a 'Run plagiarism check' action on submissions, comparing each against every other submission for the same assignment across all terms.",
+   "fieldname": "plagiarism_enabled",
+   "fieldtype": "Check",
+   "label": "Enable Plagiarism Checking"
+  },
+  {
+   "default": "internal",
+   "depends_on": "plagiarism_enabled",
+   "description": "internal = free, built-in comparison against our own submissions; external-http = a configured Plagiarism Provider Account.",
+   "fieldname": "plagiarism_default_provider",
+   "fieldtype": "Select",
+   "label": "Default Provider",
+   "options": "internal\nexternal-http"
+  },
+  {
+   "default": "30",
+   "depends_on": "plagiarism_enabled",
+   "description": "Similarity at or above this percentage is treated as concerning (drives the result colour).",
+   "fieldname": "plagiarism_similarity_threshold",
+   "fieldtype": "Float",
+   "label": "Similarity Threshold %",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "column_break_plagiarism",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "200",
+   "depends_on": "plagiarism_enabled",
+   "description": "Submissions with less comparable text than this (characters) are skipped, to avoid noise scores on stubs.",
+   "fieldname": "plagiarism_min_document_length",
+   "fieldtype": "Int",
+   "label": "Minimum Document Length",
+   "non_negative": 1
+  },
+  {
+   "default": "5",
+   "depends_on": "plagiarism_enabled",
+   "description": "Word n-gram size for verbatim-phrase matching (advanced; 5 is a good default).",
+   "fieldname": "plagiarism_ngram_size",
+   "fieldtype": "Int",
+   "label": "Shingle Size (words)",
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "depends_on": "plagiarism_enabled",
+   "description": "Exclude a student's own other submissions (e.g. a retake across terms) from the headline score. They are still listed, flagged.",
+   "fieldname": "plagiarism_exclude_same_student",
+   "fieldtype": "Check",
+   "label": "Exclude Same Student from Score"
+  },
+  {
+   "default": "1",
+   "depends_on": "plagiarism_enabled",
+   "description": "Strip the echoed assignment question from answers before comparing, so the shared prompt isn't read as plagiarism.",
+   "fieldname": "plagiarism_strip_question",
+   "fieldtype": "Check",
+   "label": "Strip Assignment Question"
   },
   {
    "fieldname": "column_break_4",

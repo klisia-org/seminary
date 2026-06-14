@@ -5,3 +5,5 @@ fuzzywuzzy
 ics
 defusedxml
 bleach>=6.0
+pypdf
+python-docx

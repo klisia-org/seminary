@@ -158,22 +158,14 @@ watch(
   { immediate: true }
 );
 
-watch(
-  () => cachedAcademicTerm.value,
-  (newTerm) => {
-    if (newTerm) {
-      filters.academic_term = newTerm;
-      console.log("Updated filters.academic_term:", filters.academic_term);
-    }
-  }
-);
-
 const filters = reactive({
   course: '',
   academic_term: current_AcademicTerm.data?.title || ''
 });
+// Set once we've resolved the default term against the available options, so a
+// user's later manual selection is never overwritten.
+const defaultTermApplied = ref(false);
 const showClosed = ref(false)
-console.log(filters.academic_term)
 
 // Two parallel resources — createResource (frappe-ui 0.1.261) can't swap
 // `url` after construction, and the role flag (`is_instructor`) often arrives
@@ -260,6 +252,23 @@ const uniqueCourses = computed(() => {
 const uniqueAcademicTerms = computed(() => {
   return [...new Set(courses.value.data?.map(course => course.academic_term))]
 })
+
+// Default the filter to the current Academic Term, but ONLY when it's actually
+// one of the selectable options (i.e. the user has a course in that term).
+// Otherwise fall back to '' ("All Terms"). This prevents the <select> from
+// rendering blank when its v-model holds a term that isn't in the option list
+// — the case a student with no current-term courses hits in production.
+watch(
+  [() => cachedAcademicTerm.value, uniqueAcademicTerms],
+  ([term, options]) => {
+    if (defaultTermApplied.value) return;
+    // Wait until both the current term and the user's course list have loaded.
+    if (!term || !options || !options.length) return;
+    filters.academic_term = options.includes(term) ? term : '';
+    defaultTermApplied.value = true;
+  },
+  { immediate: true }
+);
 
 const filteredCourses = computed(() => {
   return courses.value.data?.filter(course => {

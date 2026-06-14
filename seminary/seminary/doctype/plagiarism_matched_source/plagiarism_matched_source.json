@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "creation": "2026-06-13 10:00:00.000000",
+ "doctype": "DocType",
+ "description": "One other submission the checked work resembled, with the similarity score and (for the strongest few) the verbatim overlapping passages.",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "source_submission",
+  "source_student",
+  "source_student_name",
+  "source_course",
+  "source_term",
+  "similarity",
+  "same_student",
+  "matched_passages"
+ ],
+ "fields": [
+  {
+   "fieldname": "source_submission",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Submission",
+   "options": "Assignment Submission"
+  },
+  {
+   "fieldname": "source_student",
+   "fieldtype": "Link",
+   "label": "Source Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "source_student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student"
+  },
+  {
+   "fieldname": "source_course",
+   "fieldtype": "Link",
+   "label": "Source Course Schedule",
+   "options": "Course Schedule"
+  },
+  {
+   "fetch_from": "source_course.academic_term",
+   "fieldname": "source_term",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "similarity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Similarity %",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "fieldname": "same_student",
+   "fieldtype": "Check",
+   "label": "Same Student"
+  },
+  {
+   "description": "JSON list of the verbatim overlapping passages (top sources only).",
+   "fieldname": "matched_passages",
+   "fieldtype": "Long Text",
+   "label": "Matched Passages (JSON)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-13 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Plagiarism Matched Source",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

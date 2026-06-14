@@ -54,9 +54,14 @@
 											<Image class="size-5 stroke-1 text-ink-gray-7" />
 										</div>
 										<div class="ml-4">
-											<Button @click="openFileSelector">
-												{{ __('Upload') }}
-											</Button>
+											<div class="flex items-center gap-2">
+												<Button @click="openFileSelector">
+													{{ __('Upload') }}
+												</Button>
+												<Button @click="openPexelsDialog()">
+													{{ __('Choose from Pexels') }}
+												</Button>
+											</div>
 											<div class="mt-2 text-ink-gray-5 text-sm">
 												{{
 													__('Appears on the course card in the course list')
@@ -181,6 +186,52 @@
 				<Button variant="solid" :loading="savingVirtual" @click="addVirtualMeeting()">
 					{{ __('Add to calendar') }}
 				</Button>
+			</template>
+		</Dialog>
+
+		<!-- Pick a free course image from Pexels (no attribution required) -->
+		<Dialog v-model="showPexelsDialog" :options="{ title: __('Choose an image from Pexels'), size: '3xl' }">
+			<template #body-content>
+				<div class="space-y-4">
+					<form class="flex items-center gap-2" @submit.prevent="searchPexels()">
+						<FormControl class="flex-1" type="text" v-model="pexelsQuery"
+							:placeholder="__('Search free photos (e.g. theology, church, books)')" />
+						<Button variant="solid" :loading="pexelsLoading" @click="searchPexels()">
+							{{ __('Search') }}
+						</Button>
+					</form>
+					<p class="text-xs text-ink-gray-5">
+						{{ __('Photos provided by Pexels. No attribution required.') }}
+					</p>
+
+					<div v-if="pexelsError" class="text-sm text-ink-red-3">
+						{{ pexelsError }}
+					</div>
+
+					<div v-if="pexelsResults.length"
+						class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[55vh] overflow-y-auto">
+						<button v-for="photo in pexelsResults" :key="photo.id" type="button"
+							class="relative rounded-md overflow-hidden border hover:ring-2 hover:ring-outline-gray-3 focus:outline-none focus:ring-2 focus:ring-outline-gray-4 aspect-[4/3]"
+							:disabled="downloadingId !== null" @click="selectPexelsPhoto(photo)">
+							<img :src="photo.thumb" :alt="photo.alt" loading="lazy"
+								class="w-full h-full object-cover" />
+							<div v-if="downloadingId === photo.id"
+								class="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-sm">
+								{{ __('Adding…') }}
+							</div>
+						</button>
+					</div>
+
+					<div v-else-if="pexelsSearched && !pexelsLoading" class="text-sm text-ink-gray-5 py-6 text-center">
+						{{ __('No photos found. Try a different search.') }}
+					</div>
+
+					<div v-if="pexelsNextPage" class="flex justify-center">
+						<Button :loading="pexelsLoadingMore" @click="loadMorePexels()">
+							{{ __('Load more') }}
+						</Button>
+					</div>
+				</div>
 			</template>
 		</Dialog>
 	</div>
@@ -464,6 +515,78 @@ const saveImage = (file) => {
 
 const removeImage = () => {
 	course.course_image = null
+}
+
+// --- Pexels stock-photo picker ---------------------------------------------
+const showPexelsDialog = ref(false)
+const pexelsQuery = ref('')
+const pexelsResults = ref([])
+const pexelsPage = ref(1)
+const pexelsNextPage = ref(null)
+const pexelsLoading = ref(false)
+const pexelsLoadingMore = ref(false)
+const pexelsSearched = ref(false)
+const pexelsError = ref('')
+const downloadingId = ref(null)
+
+const openPexelsDialog = () => {
+	pexelsError.value = ''
+	showPexelsDialog.value = true
+}
+
+const runPexelsSearch = async (page) => {
+	pexelsError.value = ''
+	try {
+		const res = await call('seminary.seminary.integrations.pexels.search_photos', {
+			query: pexelsQuery.value,
+			page,
+		})
+		if (page === 1) {
+			pexelsResults.value = res.photos
+		} else {
+			pexelsResults.value = pexelsResults.value.concat(res.photos)
+		}
+		pexelsPage.value = page
+		pexelsNextPage.value = res.next_page
+	} catch (error) {
+		pexelsError.value =
+			error?.messages?.join('\n') || error?.message || __('Could not search Pexels.')
+	}
+}
+
+const searchPexels = async () => {
+	if (!pexelsQuery.value.trim()) return
+	pexelsLoading.value = true
+	pexelsSearched.value = true
+	pexelsResults.value = []
+	pexelsNextPage.value = null
+	await runPexelsSearch(1)
+	pexelsLoading.value = false
+}
+
+const loadMorePexels = async () => {
+	if (!pexelsNextPage.value) return
+	pexelsLoadingMore.value = true
+	await runPexelsSearch(pexelsNextPage.value)
+	pexelsLoadingMore.value = false
+}
+
+const selectPexelsPhoto = async (photo) => {
+	if (downloadingId.value !== null) return
+	downloadingId.value = photo.id
+	try {
+		const file = await call('seminary.seminary.integrations.pexels.download_photo', {
+			src_url: photo.full,
+		})
+		saveImage(file)
+		showPexelsDialog.value = false
+	} catch (error) {
+		toast.error(
+			error?.messages?.join('\n') || error?.message || __('Could not add this image.')
+		)
+	} finally {
+		downloadingId.value = null
+	}
 }
 
 const check_permission = () => {
