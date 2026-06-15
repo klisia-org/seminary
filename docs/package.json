@@ -13,7 +13,7 @@
     "vitepress-plugin-mermaid": "^2.0.17"
   },
   "resolutions": {
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.25.0",
     "postcss": "^8.5.10"
   }
 }
