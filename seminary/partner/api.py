@@ -564,3 +564,279 @@ def apply_to_job(
     # submit so partner reviewers inherit read access (ADR 043).
 
     return {"name": doc.name, "status": doc.status, "submitted": do_submit}
+
+
+# ---------------------------------------------------------------------------
+# Alumni-facing Partner Organization directory + self-service listing (ADR 053)
+#
+# Alumni browse a directory of "Listed" organizations and may submit their own,
+# which staff approve by moving the listing to "Listed". Both gates below must be
+# on for an alumnus to submit: the seminary-wide create toggle AND the toggle on
+# their completed program's Program Level (default on). Submitting records the
+# alumnus as a portal-enabled Partner Contact, so Partner Organization.on_update
+# grants them the Partner role for the existing partner portal.
+# ---------------------------------------------------------------------------
+
+DIRECTORY_LIST_FIELDS = (
+    "name",
+    "organization_name",
+    "partner_type",
+    "city",
+    "state",
+    "country",
+    "website",
+    "image",
+)
+
+MY_ORG_FIELDS = (
+    "name",
+    "organization_name",
+    "partner_type",
+    "city",
+    "listing_status",
+    "image",
+)
+
+
+def _require_alumni() -> str | None:
+    """Gate alumni-only endpoints and return the caller's Person spine."""
+    _require_login()
+    if "Alumni" not in frappe.get_roles():
+        frappe.throw(
+            _("You do not have access to the Partner Organization directory."),
+            frappe.PermissionError,
+        )
+    return _current_person()
+
+
+def _directory_enabled() -> bool:
+    return bool(
+        frappe.db.get_single_value(
+            "Seminary Settings", "allow_alumni_view_partner_directory"
+        )
+    )
+
+
+def _require_directory() -> None:
+    if not _directory_enabled():
+        frappe.throw(
+            _("The Partner Organization directory is not available."),
+            frappe.PermissionError,
+        )
+
+
+def _alumni_program_level(person: str | None) -> str | None:
+    """The Program Level of the alumnus's completed program (or None)."""
+    if not person:
+        return None
+    program = frappe.db.get_value(
+        "Alumni Profile", {"person": person}, "program_completed"
+    )
+    if not program:
+        return None
+    return frappe.db.get_value("Program", program, "program_level")
+
+
+def _alumni_can_create(person: str | None) -> bool:
+    """Both gates must be on: the seminary-wide create toggle AND the alumnus's
+    Program Level toggle. A missing program level defaults to allowed (the
+    Program Level field itself defaults on)."""
+    if not _directory_enabled():
+        return False
+    if not frappe.db.get_single_value(
+        "Seminary Settings", "allow_alumni_create_partner_org"
+    ):
+        return False
+    program_level = _alumni_program_level(person)
+    if not program_level:
+        return True
+    return bool(
+        frappe.db.get_value(
+            "Program Level", program_level, "allow_alumni_create_partner_org"
+        )
+    )
+
+
+@frappe.whitelist()
+def get_partner_directory(query: str = "", partner_type: str = "") -> list[dict]:
+    """Listed Partner Organizations for the alumni directory, name/city searchable."""
+    _require_alumni()
+    _require_directory()
+
+    filters: list = [["listing_status", "=", "Listed"]]
+    if partner_type:
+        filters.append(["partner_type", "=", partner_type])
+
+    orgs = frappe.get_all(
+        "Partner Organization",
+        fields=list(DIRECTORY_LIST_FIELDS),
+        filters=filters,
+        order_by="organization_name asc",
+        limit_page_length=0,
+    )
+    needle = (query or "").strip().lower()
+    if needle:
+        orgs = [
+            o
+            for o in orgs
+            if needle
+            in " ".join(
+                str(o.get(f) or "")
+                for f in (
+                    "organization_name",
+                    "partner_type",
+                    "city",
+                    "state",
+                    "country",
+                )
+            ).lower()
+        ]
+    return orgs
+
+
+@frappe.whitelist()
+def get_my_organizations() -> dict:
+    """Organizations the current alumnus is a portal contact for, plus whether
+    they may create new ones (drives the Add button and its enablement)."""
+    person = _require_alumni()
+    _require_directory()
+
+    rows = frappe.get_all(
+        "Partner Contact",
+        filters={
+            "portal_user": frappe.session.user,
+            "parenttype": "Partner Organization",
+        },
+        fields=["parent", "role_at_org", "is_primary"],
+    )
+    org_names = [r.parent for r in rows]
+    orgs_by_name = (
+        {
+            o.name: o
+            for o in frappe.get_all(
+                "Partner Organization",
+                fields=list(MY_ORG_FIELDS),
+                filters={"name": ["in", org_names]},
+            )
+        }
+        if org_names
+        else {}
+    )
+
+    organizations = []
+    for r in rows:
+        org = orgs_by_name.get(r.parent)
+        if not org:
+            continue
+        organizations.append(
+            {
+                **org,
+                "role_at_org": r.role_at_org,
+                "is_primary": bool(r.is_primary),
+            }
+        )
+
+    return {
+        "can_create": _alumni_can_create(person),
+        "organizations": organizations,
+    }
+
+
+@frappe.whitelist()
+def get_partner_organization(name: str) -> dict:
+    """Public profile of one Listed organization for the directory detail view."""
+    _require_alumni()
+    _require_directory()
+
+    org = frappe.db.get_value(
+        "Partner Organization",
+        name,
+        [
+            "name",
+            "organization_name",
+            "partner_type",
+            "website",
+            "image",
+            "about_us",
+            "city",
+            "state",
+            "country",
+            "primary_email",
+            "listing_status",
+        ],
+        as_dict=True,
+    )
+    if not org or org.listing_status != "Listed":
+        frappe.throw(_("Organization not found."))
+    org.pop("listing_status", None)
+    org["open_openings"] = frappe.db.count(
+        "Partner Job Opening",
+        {"partner_org": name, "publish": 1, "status": "Open"},
+    )
+    return org
+
+
+@frappe.whitelist(methods=["POST"])
+def create_partner_organization(
+    organization_name: str,
+    role_at_org: str = "",
+    is_primary: str | int = 0,
+    website: str = "",
+    city: str = "",
+    about_us: str = "",
+) -> dict:
+    """An alumnus submits a new Partner Organization for staff approval.
+
+    The listing stays hidden from the directory (status "Pending Approval") until
+    staff move it to "Listed". The alumnus is recorded as a portal-enabled Partner
+    Contact, so Partner Organization.on_update grants them the Partner role and the
+    partner portal — letting them manage the org while approval is pending."""
+    person = _require_alumni()
+    if not _alumni_can_create(person):
+        frappe.throw(
+            _("You are not allowed to create Partner Organizations."),
+            frappe.PermissionError,
+        )
+    if not person:
+        frappe.throw(
+            _(
+                "Your alumni profile isn't fully set up yet. Please contact the registrar."
+            )
+        )
+
+    organization_name = (organization_name or "").strip()
+    if not organization_name:
+        frappe.throw(_("Organization name is required."))
+    if frappe.db.exists(
+        "Partner Organization", {"organization_name": organization_name}
+    ):
+        frappe.throw(
+            _(
+                "An organization named {0} already exists. Search the directory for it, or contact the registrar."
+            ).format(organization_name)
+        )
+
+    is_primary_flag = (
+        1 if str(is_primary).strip().lower() in ("1", "true", "yes", "on") else 0
+    )
+
+    doc = frappe.new_doc("Partner Organization")
+    doc.organization_name = organization_name
+    doc.status = "Prospect"
+    doc.listing_status = "Pending Approval"
+    doc.website = (website or "").strip() or None
+    doc.city = (city or "").strip() or None
+    doc.about_us = about_us or None
+    doc.append(
+        "contacts",
+        {
+            "person": person,
+            "role_at_org": (role_at_org or "").strip() or None,
+            "is_primary": is_primary_flag,
+            "relationship_status": "Active",
+            "portal_access": 1,
+            "portal_user": frappe.session.user,
+        },
+    )
+    doc.insert(ignore_permissions=True)
+    return {"name": doc.name, "organization_name": doc.organization_name}

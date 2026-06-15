@@ -6,8 +6,23 @@
 				<UserDropdown :isCollapsed="isSidebarCollapsed"
 					:seminarySettings="!seminarySettings.loading && seminarySettings.data ? seminarySettings.data : {}" />
 			</div>
-			<div v-if="!isSidebarCollapsed && orgName" class="px-4 pb-2 text-xs font-medium uppercase tracking-wide text-ink-gray-5 truncate">
-				{{ orgName }}
+			<div v-if="!isSidebarCollapsed && orgs.length" class="px-4 pb-3">
+				<label class="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-gray-5">
+					{{ __('Organization') }}
+				</label>
+				<select
+					v-if="hasMultiple"
+					:value="activeOrg"
+					@change="onSwitchOrg($event.target.value)"
+					class="w-full rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm font-medium text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
+				>
+					<option v-for="o in orgs" :key="o.name" :value="o.name">
+						{{ o.organization_name }}
+					</option>
+				</select>
+				<div v-else class="truncate text-sm font-semibold text-ink-gray-8">
+					{{ activeOrgName }}
+				</div>
 			</div>
 			<nav class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
 				<SidebarLink v-for="link in links" :key="link.to" :label="link.label" :to="link.to"
@@ -55,16 +70,28 @@ import SidebarLink from '@/components/SidebarLink.vue'
 import { Building2, Users, Briefcase, ArrowLeftToLine, ArrowRightToLine, Sun, Moon } from 'lucide-vue-next'
 import UserDropdown from './UserDropdown.vue'
 import { createResource } from 'frappe-ui'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { usersStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell'
 
 const portalConfig = getPortalConfig()
 const { userResource } = usersStore()
 const { theme, toggleTheme } = useTheme()
+const router = useRouter()
 
-const orgName = computed(() => userResource?.data?.partner_org || '')
+const { activeOrg, activeOrgName, orgs, hasMultiple, setActiveOrg, ensureLoaded } = usePartnerOrg()
+onMounted(ensureLoaded)
+
+function onSwitchOrg(name) {
+	if (!name || name === activeOrg.value) return
+	setActiveOrg(name)
+	// Reset to a context that's valid for any org so a stale detail view can't
+	// linger; list/profile pages re-fetch for the new org.
+	router.push({ name: 'PartnerProfile' })
+}
 
 const visiblePortals = computed(() => {
 	const roles = userResource?.data?.roles || []

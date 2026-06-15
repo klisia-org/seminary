@@ -83,8 +83,10 @@ import { ref, watch } from 'vue'
 import { createResource, debounce, Badge } from 'frappe-ui'
 import { ArrowLeft, Search, Star, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { statusTheme } from '@/utils/statusTheme'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
 const props = defineProps({ name: { type: String, required: true } })
+const { activeOrg } = usePartnerOrg()
 const STATUSES = ['Open', 'Replied', 'Shortlisted', 'Hold', 'Rejected', 'Accepted', 'Withdrawn']
 
 const query = ref('')
@@ -95,7 +97,7 @@ const sortDir = ref('desc')
 
 const apps = createResource({
 	url: 'seminary.partner.portal.list_applications',
-	makeParams: () => ({ opening: props.name, status: status.value, evaluated: evaluated.value, sort_by: sortBy.value, sort_dir: sortDir.value, query: query.value }),
+	makeParams: () => ({ opening: props.name, status: status.value, evaluated: evaluated.value, sort_by: sortBy.value, sort_dir: sortDir.value, query: query.value, org: activeOrg.value }),
 	auto: true,
 })
 const refetch = debounce(() => apps.reload(), 250)

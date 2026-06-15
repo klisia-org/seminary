@@ -47,10 +47,18 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { createResource, Button, Badge, FormControl, Dialog, toast } from 'frappe-ui'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
-const people = createResource({ url: 'seminary.partner.portal.get_people', auto: true })
+const { activeOrg } = usePartnerOrg()
+
+const people = createResource({
+	url: 'seminary.partner.portal.get_people',
+	makeParams: () => ({ org: activeOrg.value }),
+	auto: true,
+})
+watch(activeOrg, () => people.reload())
 
 const showCreate = ref(false)
 const cForm = reactive({ first_name: '', last_name: '', email: '', mobile: '', role_at_org: '', grant: false })
@@ -68,6 +76,7 @@ const create = createResource({
 		mobile: cForm.mobile,
 		role_at_org: cForm.role_at_org,
 		grant_portal_access: cForm.grant ? '1' : '0',
+		org: activeOrg.value,
 	}),
 	onSuccess() {
 		showCreate.value = false

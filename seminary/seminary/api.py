@@ -1014,6 +1014,12 @@ def get_school_abbr_logo():
     allow_portal_enroll = (
         frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll") or 0
     )
+    allow_alumni_partner_directory = (
+        frappe.db.get_single_value(
+            "Seminary Settings", "allow_alumni_view_partner_directory"
+        )
+        or 0
+    )
     return {
         "name": abbr,
         "logo": logo,
@@ -1021,6 +1027,7 @@ def get_school_abbr_logo():
         "support_user": support_user,
         "date_format": date_format,
         "allow_portal_enroll": allow_portal_enroll,
+        "allow_alumni_partner_directory": allow_alumni_partner_directory,
     }
 
 

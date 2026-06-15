@@ -92,8 +92,11 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { createResource, Button, FormControl, TextEditor, FileUploader, Dialog, toast } from 'frappe-ui'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
+
+const { activeOrg } = usePartnerOrg()
 
 const EDITABLE = ['about_us', 'doctrinal_statement', 'website', 'image', 'primary_email', 'primary_phone', 'address_line_1', 'address_line_2', 'pincode', 'city', 'state']
 const form = reactive(Object.fromEntries(EDITABLE.map((k) => [k, ''])))
@@ -103,15 +106,17 @@ const sizeOptions = [{ label: '—', value: '' }, ...['Under 50', '50-150', '150
 
 const org = createResource({
 	url: 'seminary.partner.portal.get_my_org',
+	makeParams: () => ({ org: activeOrg.value }),
 	auto: true,
 	onSuccess(data) {
 		for (const k of EDITABLE) form[k] = data?.[k] || ''
 	},
 })
+watch(activeOrg, () => org.reload())
 
 const save = createResource({
 	url: 'seminary.partner.portal.update_org',
-	makeParams: () => ({ values: { ...form } }),
+	makeParams: () => ({ values: { ...form }, org: activeOrg.value }),
 	onSuccess() {
 		toast.success(__('Profile saved.'))
 		org.reload()
@@ -143,6 +148,7 @@ const saveLocation = createResource({
 	url: 'seminary.partner.portal.save_location',
 	makeParams: () => ({
 		name: locForm.name || undefined,
+		org: activeOrg.value,
 		values: {
 			location_name: locForm.location_name,
 			address_line_1: locForm.address_line_1,
