@@ -77,9 +77,39 @@ APP_SORT_FIELDS = {
 # --------------------------------------------------------------------------- #
 # Resolution helpers
 # --------------------------------------------------------------------------- #
-def _require_org() -> str:
+def _my_orgs() -> list[dict]:
+    """Every Partner Organization the current user may act on — one per portal
+    `Partner Contact` row (a user can be a contact on several orgs)."""
+    rows = frappe.get_all(
+        "Partner Contact",
+        filters={
+            "portal_user": frappe.session.user,
+            "portal_access": 1,
+            "parenttype": "Partner Organization",
+        },
+        fields=["parent"],
+    )
+    names = [r.parent for r in rows]
+    if not names:
+        return []
+    return frappe.get_all(
+        "Partner Organization",
+        filters={"name": ["in", names]},
+        fields=["name", "organization_name"],
+        order_by="organization_name asc",
+    )
+
+
+def _require_org(org: str | None = None) -> str:
+    """Resolve the org for this request. When `org` is given it must be one the
+    user belongs to; otherwise fall back to their default (first) org."""
     if frappe.session.user == "Guest":
         frappe.throw(_("Please log in."), frappe.PermissionError)
+    if org:
+        valid = {o["name"] for o in _my_orgs()}
+        if org not in valid:
+            frappe.throw(_("That organization isn't yours."), frappe.PermissionError)
+        return org
     org = my_partner_org()
     if not org:
         frappe.throw(
@@ -87,6 +117,14 @@ def _require_org() -> str:
             frappe.PermissionError,
         )
     return org
+
+
+@frappe.whitelist()
+def list_my_orgs() -> list[dict]:
+    """Organizations the partner user can act on, for the portal org picker."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please log in."), frappe.PermissionError)
+    return _my_orgs()
 
 
 def _current_person() -> str | None:
@@ -126,8 +164,8 @@ def _parse(values):
 # Profile
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
-def get_my_org() -> dict:
-    org = _require_org()
+def get_my_org(org=None) -> dict:
+    org = _require_org(org)
     doc = frappe.get_doc("Partner Organization", org)
     data = {f: doc.get(f) for f in ORG_EDITABLE_FIELDS}
     data.update(
@@ -136,30 +174,30 @@ def get_my_org() -> dict:
             "organization_name": doc.organization_name,
             "partner_type": doc.partner_type,
             "status": doc.status,
-            "locations": list_locations(),
+            "locations": list_locations(org),
         }
     )
     return data
 
 
 @frappe.whitelist()
-def update_org(values) -> dict:
-    org = _require_org()
+def update_org(values, org=None) -> dict:
+    org = _require_org(org)
     values = _parse(values)
     doc = frappe.get_doc("Partner Organization", org)
     for field in ORG_EDITABLE_FIELDS:
         if field in values:
             doc.set(field, values[field])
     doc.save(ignore_permissions=True)
-    return get_my_org()
+    return get_my_org(org)
 
 
 # --------------------------------------------------------------------------- #
 # People
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
-def get_people() -> list[dict]:
-    org = _require_org()
+def get_people(org=None) -> list[dict]:
+    org = _require_org(org)
     doc = frappe.get_doc("Partner Organization", org)
     people = []
     for c in doc.contacts:
@@ -195,8 +233,9 @@ def create_contact(
     mobile=None,
     role_at_org=None,
     grant_portal_access=0,
+    org=None,
 ) -> dict:
-    org = _require_org()
+    org = _require_org(org)
     if not email:
         frappe.throw(_("An email is required to create a contact."))
     grant = str(grant_portal_access).strip().lower() in ("1", "true", "yes")
@@ -245,8 +284,8 @@ def _ensure_user(email, first_name, last_name) -> str:
 # Locations
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
-def list_locations() -> list[dict]:
-    org = _require_org()
+def list_locations(org=None) -> list[dict]:
+    org = _require_org(org)
     return frappe.get_all(
         "Partner Organization Location",
         filters={"partner_org": org},
@@ -267,8 +306,8 @@ def list_locations() -> list[dict]:
 
 
 @frappe.whitelist(methods=["POST"])
-def save_location(values, name=None) -> dict:
-    org = _require_org()
+def save_location(values, name=None, org=None) -> dict:
+    org = _require_org(org)
     values = _parse(values)
     if name:
         doc = _own_doc("Partner Organization Location", name, org)
@@ -292,17 +331,17 @@ def _posting_state(status, publish) -> str:
 
 
 @frappe.whitelist()
-def get_skill_tags() -> list[str]:
+def get_skill_tags(org=None) -> list[str]:
     """Active Skill Tag names for the posting form's skills picker."""
-    _require_org()
+    _require_org(org)
     return frappe.get_all(
         "Skill Tag", filters={"is_active": 1}, pluck="name", order_by="name asc"
     )
 
 
 @frappe.whitelist()
-def list_job_postings() -> list[dict]:
-    org = _require_org()
+def list_job_postings(org=None) -> list[dict]:
+    org = _require_org(org)
     rows = frappe.get_all(
         "Partner Job Opening",
         filters={"partner_org": org},
@@ -329,8 +368,8 @@ def list_job_postings() -> list[dict]:
 
 
 @frappe.whitelist()
-def get_job_posting(name=None) -> dict:
-    org = _require_org()
+def get_job_posting(name=None, org=None) -> dict:
+    org = _require_org(org)
     if not name:
         return {
             "is_new": True,
@@ -340,7 +379,7 @@ def get_job_posting(name=None) -> dict:
             "open_alumni": 0,
             "require_doctrinal_alignment": 0,
             "skills": [],
-            "locations": list_locations(),
+            "locations": list_locations(org),
         }
     doc = _own_doc("Partner Job Opening", name, org)
     data = {f: doc.get(f) for f in OPENING_EDITABLE_FIELDS}
@@ -351,15 +390,15 @@ def get_job_posting(name=None) -> dict:
             "publish": doc.publish,
             "state": _posting_state(doc.status, doc.publish),
             "skills": [s.skill_tag for s in doc.skills],
-            "locations": list_locations(),
+            "locations": list_locations(org),
         }
     )
     return data
 
 
 @frappe.whitelist(methods=["POST"])
-def save_job_posting(values, name=None) -> dict:
-    org = _require_org()
+def save_job_posting(values, name=None, org=None) -> dict:
+    org = _require_org(org)
     values = _parse(values)
     if name:
         doc = _own_doc("Partner Job Opening", name, org)
@@ -393,8 +432,9 @@ def list_applications(
     sort_by="submission_date",
     sort_dir="desc",
     query="",
+    org=None,
 ) -> dict:
-    org = _require_org()
+    org = _require_org(org)
     opening_doc = frappe.db.get_value(
         "Partner Job Opening", opening, ["partner_org", "job_title"], as_dict=True
     )
@@ -477,8 +517,8 @@ def list_applications(
 
 
 @frappe.whitelist()
-def get_application(name) -> dict:
-    org = _require_org()
+def get_application(name, org=None) -> dict:
+    org = _require_org(org)
     doc = _own_doc("Partner Job Application", name, org)
     if doc.status == "Draft":
         frappe.throw(
@@ -537,8 +577,8 @@ def get_application(name) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def set_application_status(name, status) -> dict:
-    org = _require_org()
+def set_application_status(name, status, org=None) -> dict:
+    org = _require_org(org)
     if status not in PIPELINE_STATUSES:
         frappe.throw(_("Invalid status."))
     doc = _own_doc("Partner Job Application", name, org)
@@ -548,8 +588,8 @@ def set_application_status(name, status) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def save_review(application, rating=None, notes=None) -> dict:
-    org = _require_org()
+def save_review(application, rating=None, notes=None, org=None) -> dict:
+    org = _require_org(org)
     person = _require_person()
     doc = _own_doc("Partner Job Application", application, org)
     row = next((r for r in doc.reviews if r.reviewer == person), None)
@@ -579,8 +619,9 @@ def save_contact_log(
     participants=None,
     notes=None,
     row=None,
+    org=None,
 ) -> dict:
-    org = _require_org()
+    org = _require_org(org)
     doc = _own_doc("Partner Job Application", application, org)
     if row:
         target = next((c for c in doc.contacts if c.name == row), None)

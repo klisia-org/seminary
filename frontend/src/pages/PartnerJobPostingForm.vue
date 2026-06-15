@@ -74,9 +74,11 @@ import { useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { createResource, Button, FormControl, TextEditor, toast } from 'frappe-ui'
 import { ArrowLeft } from 'lucide-vue-next'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
 const props = defineProps({ name: { type: String, default: null } })
 const router = useRouter()
+const { activeOrg } = usePartnerOrg()
 
 const employmentOptions = ['', 'Full-time', 'Part-time', 'Contract', 'Salary with fundraising', 'Volunteer'].map((v) => ({ label: v ? __(v) : '—', value: v }))
 const positionOptions = ['', 'Pastoral / Preaching', 'Teaching / Education', 'Worship / Music', 'Youth & Children', 'Counseling / Care', 'Missions / Outreach', 'Administration / Operations', 'Facilities / Support', 'Other'].map((v) => ({ label: v ? __(v) : '—', value: v }))
@@ -89,11 +91,15 @@ const form = reactive({
 })
 const locationOptions = computed(() => [{ label: '—', value: '' }, ...((posting.data?.locations || []).map((l) => ({ label: l.location_name, value: l.name })))])
 
-const skillTags = createResource({ url: 'seminary.partner.portal.get_skill_tags', auto: true })
+const skillTags = createResource({
+	url: 'seminary.partner.portal.get_skill_tags',
+	makeParams: () => ({ org: activeOrg.value }),
+	auto: true,
+})
 
 const posting = createResource({
 	url: 'seminary.partner.portal.get_job_posting',
-	makeParams: () => ({ name: props.name || undefined }),
+	makeParams: () => ({ name: props.name || undefined, org: activeOrg.value }),
 	auto: true,
 	onSuccess(data) {
 		for (const k of Object.keys(form)) {
@@ -111,7 +117,7 @@ function toggleSkill(tag) {
 
 const save = createResource({
 	url: 'seminary.partner.portal.save_job_posting',
-	makeParams: () => ({ name: props.name || undefined, values: { ...form } }),
+	makeParams: () => ({ name: props.name || undefined, values: { ...form }, org: activeOrg.value }),
 	onSuccess() {
 		toast.success(__('Posting saved — pending staff review.'))
 		router.push({ name: 'PartnerJobPostings' })

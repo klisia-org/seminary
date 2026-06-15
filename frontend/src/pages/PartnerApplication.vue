@@ -114,8 +114,10 @@
 import { reactive, ref, watch } from 'vue'
 import { createResource, Button, FormControl, Dialog, toast } from 'frappe-ui'
 import { ArrowLeft, Star, FileText } from 'lucide-vue-next'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
 const props = defineProps({ name: { type: String, required: true }, appName: { type: String, required: true } })
+const { activeOrg } = usePartnerOrg()
 
 const contactTypeOptions = ['Email', 'Phone', 'Video Call', 'In-person', 'Other'].map((v) => ({ label: __(v), value: v }))
 
@@ -124,7 +126,7 @@ const myNotes = ref('')
 
 const app = createResource({
 	url: 'seminary.partner.portal.get_application',
-	makeParams: () => ({ name: props.appName }),
+	makeParams: () => ({ name: props.appName, org: activeOrg.value }),
 	auto: true,
 	onSuccess(data) {
 		myRating.value = data?.my_review?.rating || 0
@@ -143,12 +145,12 @@ const statusRes = createResource({
 	},
 })
 function onStatus(value) {
-	statusRes.submit({ name: props.appName, status: value })
+	statusRes.submit({ name: props.appName, status: value, org: activeOrg.value })
 }
 
 const review = createResource({
 	url: 'seminary.partner.portal.save_review',
-	makeParams: () => ({ application: props.appName, rating: myRating.value, notes: myNotes.value }),
+	makeParams: () => ({ application: props.appName, rating: myRating.value, notes: myNotes.value, org: activeOrg.value }),
 	onSuccess() {
 		toast.success(__('Review saved.'))
 		app.reload()
@@ -174,7 +176,7 @@ function openContact(c = null) {
 }
 const contact = createResource({
 	url: 'seminary.partner.portal.save_contact_log',
-	makeParams: () => ({ application: props.appName, row: cForm.row || undefined, contact_type: cForm.contact_type, participants: cForm.participants, notes: cForm.notes }),
+	makeParams: () => ({ application: props.appName, row: cForm.row || undefined, contact_type: cForm.contact_type, participants: cForm.participants, notes: cForm.notes, org: activeOrg.value }),
 	onSuccess() {
 		showContact.value = false
 		toast.success(__('Saved.'))

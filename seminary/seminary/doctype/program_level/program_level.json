@@ -19,6 +19,8 @@
   "column_break_readmission",
   "charges_readmission_fee",
   "readmission_fee_category",
+  "alumni_portal_section",
+  "allow_alumni_create_partner_org",
   "amended_from",
   "section_break_kzml",
   "amended"
@@ -103,6 +105,19 @@
    "fieldtype": "Link",
    "label": "Readmission Fee Category",
    "options": "Fee Category"
+  },
+  {
+   "fieldname": "alumni_portal_section",
+   "fieldtype": "Section Break",
+   "label": "Alumni Portal"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "description": "Second gate for alumni-created Partner Organizations. Both this and the Seminary Settings toggle must be on for an alumnus of this program level to submit an organization.",
+   "fieldname": "allow_alumni_create_partner_org",
+   "fieldtype": "Check",
+   "label": "Allow Alumni to create Partner Organizations?"
   },
   {
    "fieldname": "amended_from",

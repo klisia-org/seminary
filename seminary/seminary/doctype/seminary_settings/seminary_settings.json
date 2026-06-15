@@ -109,7 +109,10 @@
   "plagiarism_min_document_length",
   "plagiarism_ngram_size",
   "plagiarism_exclude_same_student",
-  "plagiarism_strip_question"
+  "plagiarism_strip_question",
+  "alumni_partners_section",
+  "allow_alumni_view_partner_directory",
+  "allow_alumni_create_partner_org"
  ],
  "fields": [
   {
@@ -760,6 +763,26 @@
    "fieldname": "portal_disciplinary",
    "fieldtype": "Check",
    "label": "Instructors create Disciplinary Incident"
+  },
+  {
+   "fieldname": "alumni_partners_section",
+   "fieldtype": "Section Break",
+   "label": "Alumni & Partner Organizations"
+  },
+  {
+   "default": "1",
+   "description": "When checked, alumni see a Partner Organization Directory on their portal.",
+   "fieldname": "allow_alumni_view_partner_directory",
+   "fieldtype": "Check",
+   "label": "Allow Alumni to see Partner Organization Directory?"
+  },
+  {
+   "default": "0",
+   "depends_on": "allow_alumni_view_partner_directory",
+   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control — both this and the Program Level toggle must be on.",
+   "fieldname": "allow_alumni_create_partner_org",
+   "fieldtype": "Check",
+   "label": "Allow Alumni to create Partner Organizations?"
   }
  ],
  "issingle": 1,

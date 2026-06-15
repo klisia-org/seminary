@@ -34,10 +34,19 @@
 </template>
 
 <script setup>
+import { watch } from 'vue'
 import { createResource, Button, Badge } from 'frappe-ui'
 import { Briefcase } from 'lucide-vue-next'
+import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
-const postings = createResource({ url: 'seminary.partner.portal.list_job_postings', auto: true })
+const { activeOrg } = usePartnerOrg()
+
+const postings = createResource({
+	url: 'seminary.partner.portal.list_job_postings',
+	makeParams: () => ({ org: activeOrg.value }),
+	auto: true,
+})
+watch(activeOrg, () => postings.reload())
 
 function stateTheme(state) {
 	if (state === 'Live') return 'green'

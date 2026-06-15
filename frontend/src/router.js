@@ -338,6 +338,17 @@ const routes = [
     component: () => import('@/pages/AlumniDirectory.vue'),
   },
   {
+    path: "/alumni/organizations",
+    name: "PartnerOrganizationList",
+    component: () => import('@/pages/PartnerOrganizationList.vue'),
+  },
+  {
+    path: "/alumni/organizations/:name",
+    name: "PartnerOrganizationDetail",
+    component: () => import('@/pages/PartnerOrganization.vue'),
+    props: true,
+  },
+  {
     path: "/alumni/profile",
     name: "AlumniProfile",
     component: () => import('@/pages/AlumniProfile.vue'),
