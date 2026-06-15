@@ -36,7 +36,8 @@
    "in_standard_filter": 1,
    "label": "Job Opening",
    "options": "Partner Job Opening",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fetch_from": "job_opening.partner_org",
@@ -45,7 +46,8 @@
    "in_standard_filter": 1,
    "label": "Partner Organization",
    "options": "Partner Organization",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "column_break_head",
@@ -169,7 +171,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-14 12:00:00",
+ "modified": "2026-06-15 17:47:46.012053",
  "modified_by": "Administrator",
  "module": "Partner",
  "name": "Partner Job Application",

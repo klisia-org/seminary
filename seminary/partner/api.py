@@ -13,6 +13,21 @@ from frappe import _
 
 FULL_AGREEMENT = "I agree completely, without reservations"
 
+# Applicant-facing status buckets for the "My Applications" panel. The partner's
+# internal pipeline states (Replied/Shortlisted/Hold) are collapsed into "Open" —
+# the applicant only needs to know their application is live and under consideration,
+# not where it sits in the reviewer's workflow. Each bucket key is also a filter value.
+APPLICANT_BUCKETS = {
+    "Draft": ("Draft",),
+    "Open": ("Open", "Replied", "Shortlisted", "Hold"),
+    "Rejected": ("Rejected",),
+    "Accepted": ("Accepted",),
+    "Withdrawn": ("Withdrawn",),
+}
+
+# Live states an applicant may withdraw from (everything in the "Open" bucket).
+WITHDRAWABLE_STATUSES = APPLICANT_BUCKETS["Open"]
+
 # Lightweight fields for the list/card view.
 LIST_FIELDS = (
     "name",
@@ -103,9 +118,16 @@ def get_job_openings(
     _decorate(openings)
 
     is_student, is_alumni = _audience()
+    # Openings the user has already applied to live in the "My Applications" panel,
+    # not the master list — so a browsing applicant never asks "did I apply here yet?"
+    # Drafts are NOT excluded: an in-progress draft stays browsable so it can be
+    # resumed from the opening's detail page.
+    applied = _applied_opening_names()
     needle = (query or "").strip().lower()
     results = []
     for o in openings:
+        if o["name"] in applied:
+            continue
         if not _is_visible(o, is_student, is_alumni):
             continue
         if partner_type and o.get("partner_type") != partner_type:
@@ -171,6 +193,119 @@ def _decorate(openings: list[dict]) -> None:
         o["partner_type"] = org.partner_type if org else None
         o["location_name"] = loc.location_name if loc else None
         o["city"] = loc.city if loc and loc.city else (org.city if org else None)
+
+
+def _applied_opening_names() -> set[str]:
+    """Openings the current user has a *submitted* application to (Draft excluded)."""
+    person = _current_person()
+    if not person:
+        return set()
+    return set(
+        frappe.get_all(
+            "Partner Job Application",
+            filters={"applicant": person, "status": ["!=", "Draft"]},
+            pluck="job_opening",
+        )
+    )
+
+
+@frappe.whitelist()
+def get_my_applications(status: str = "Open") -> list[dict]:
+    """The logged-in applicant's own applications for the side panel, newest first,
+    decorated with the opening + organization for display.
+
+    `status` is a bucket key from APPLICANT_BUCKETS (default "Open" = active);
+    pass an empty string for every application across all buckets, including Drafts."""
+    _require_login()
+    person = _current_person()
+    if not person:
+        return []
+
+    filters = {"applicant": person}
+    bucket = APPLICANT_BUCKETS.get(status)
+    if bucket:
+        filters["status"] = ["in", list(bucket)]
+
+    apps = frappe.get_all(
+        "Partner Job Application",
+        fields=["name", "job_opening", "status", "submission_date"],
+        filters=filters,
+        order_by="submission_date desc, modified desc",
+        limit_page_length=0,
+    )
+    if not apps:
+        return []
+
+    opening_names = {a["job_opening"] for a in apps if a.get("job_opening")}
+    openings = {
+        r.name: r
+        for r in frappe.get_all(
+            "Partner Job Opening",
+            fields=["name", "job_title", "partner_org", "status"],
+            filters={"name": ["in", list(opening_names)]},
+        )
+    }
+    org_names = {o.partner_org for o in openings.values() if o.partner_org}
+    orgs = (
+        {
+            r.name: r
+            for r in frappe.get_all(
+                "Partner Organization",
+                fields=["name", "organization_name", "city"],
+                filters={"name": ["in", list(org_names)]},
+            )
+        }
+        if org_names
+        else {}
+    )
+
+    for a in apps:
+        opening = openings.get(a["job_opening"])
+        org = orgs.get(opening.partner_org) if opening else None
+        a["job_title"] = opening.job_title if opening else a["job_opening"]
+        a["opening_status"] = opening.status if opening else None
+        a["organization_name"] = org.organization_name if org else None
+        a["city"] = org.city if org else None
+    return apps
+
+
+def _own_application(name: str) -> "frappe._dict":
+    """Load (applicant, status) for an application and confirm it belongs to the
+    caller — the permission boundary for applicant-side mutations."""
+    person = _current_person()
+    app = frappe.db.get_value(
+        "Partner Job Application", name, ["applicant", "status"], as_dict=True
+    )
+    if not app or not person or app.applicant != person:
+        frappe.throw(_("That application isn't yours."), frappe.PermissionError)
+    return app
+
+
+@frappe.whitelist(methods=["POST"])
+def withdraw_application(name: str) -> dict:
+    """Applicant withdraws their own live application. Allowed only from the "Open"
+    bucket; a Draft (not yet submitted) or an already-terminal application
+    (Rejected/Accepted/Withdrawn) cannot be withdrawn."""
+    _require_login()
+    app = _own_application(name)
+    if app.status not in WITHDRAWABLE_STATUSES:
+        frappe.throw(_("This application can no longer be withdrawn."))
+    doc = frappe.get_doc("Partner Job Application", name)
+    doc.status = "Withdrawn"
+    doc.save(ignore_permissions=True)  # runs vacancy sync via on_update
+    return {"name": name, "status": doc.status}
+
+
+@frappe.whitelist(methods=["POST"])
+def discard_draft(name: str) -> dict:
+    """Applicant deletes their own in-progress Draft. Submitted applications are
+    permanent and must be withdrawn instead."""
+    _require_login()
+    app = _own_application(name)
+    if app.status != "Draft":
+        frappe.throw(_("Only a draft application can be discarded."))
+    frappe.delete_doc("Partner Job Application", name, ignore_permissions=True)
+    return {"name": name}
 
 
 @frappe.whitelist()

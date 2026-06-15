@@ -44,54 +44,123 @@
 		</div>
 	</header>
 
-	<div v-if="openings.loading" class="p-5 text-ink-gray-5">{{ __('Loading jobs...') }}</div>
+	<div class="mx-auto flex w-full max-w-6xl flex-col gap-5 p-3 sm:p-5 lg:flex-row lg:items-start">
+		<main class="min-w-0 flex-1">
+			<div v-if="openings.loading" class="text-ink-gray-5">{{ __('Loading jobs...') }}</div>
 
-	<div
-		v-else-if="!openings.data?.length"
-		class="mt-24 md:mt-40 mx-auto w-3/4 md:w-1/2 space-y-2 p-5 text-center text-ink-gray-5"
-	>
-		<Briefcase class="mx-auto size-10 stroke-1 text-ink-gray-4" />
-		<div class="text-xl font-medium">{{ __('No openings found') }}</div>
-		<div class="leading-5">{{ __('Try a different search or clear the filters.') }}</div>
+			<div
+				v-else-if="!openings.data?.length"
+				class="mt-16 md:mt-28 mx-auto w-3/4 md:w-1/2 space-y-2 text-center text-ink-gray-5"
+			>
+				<Briefcase class="mx-auto size-10 stroke-1 text-ink-gray-4" />
+				<div class="text-xl font-medium">{{ __('No openings found') }}</div>
+				<div class="leading-5">{{ __('Try a different search or clear the filters.') }}</div>
+			</div>
+
+			<ul v-else class="grid grid-cols-1 gap-3 xl:grid-cols-2">
+				<li v-for="job in openings.data" :key="job.name">
+					<router-link
+						:to="{ name: 'JobOpening', params: { jobName: job.name } }"
+						class="flex h-full flex-col gap-2 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3 hover:shadow-sm"
+					>
+						<div class="flex items-start justify-between gap-2">
+							<span class="font-semibold text-ink-gray-8">{{ job.job_title }}</span>
+							<Badge v-if="job.employment_type" theme="blue" variant="subtle">
+								{{ __(job.employment_type) }}
+							</Badge>
+						</div>
+						<div class="text-sm text-ink-gray-6">{{ job.organization_name }}</div>
+						<div class="flex flex-wrap items-center gap-1.5">
+							<Badge v-if="job.position_type" theme="gray" variant="subtle">
+								{{ __(job.position_type) }}
+							</Badge>
+							<Badge v-if="job.require_doctrinal_alignment" theme="orange" variant="subtle">
+								{{ __('Doctrinal agreement') }}
+							</Badge>
+						</div>
+						<div class="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-gray-5">
+							<span v-if="job.city" class="flex items-center gap-1">
+								<MapPin class="size-3.5" />{{ job.city }}
+							</span>
+							<span v-if="job.ministry_setting">&middot; {{ __(job.ministry_setting) }}</span>
+							<span v-if="job.posted_on">&middot; {{ formatDate(job.posted_on) }}</span>
+						</div>
+					</router-link>
+				</li>
+			</ul>
+		</main>
+
+		<aside class="w-full shrink-0 lg:w-80">
+			<div class="rounded-lg border border-outline-gray-2 bg-surface-white p-4">
+				<div class="mb-3 flex items-center justify-between gap-2">
+					<h3 class="text-base font-semibold text-ink-gray-8">{{ __('My Applications') }}</h3>
+					<span v-if="myApps.data?.length" class="rounded-full bg-surface-gray-2 px-2 py-0.5 text-xs font-medium text-ink-gray-6">
+						{{ myApps.data.length }}
+					</span>
+				</div>
+				<select v-model="myStatus" class="filter-select mb-3 w-full">
+					<option value="">{{ __('All statuses') }}</option>
+					<option v-for="s in APPLICATION_FILTERS" :key="s" :value="s">{{ __(s) }}</option>
+				</select>
+
+				<div v-if="myApps.loading" class="py-6 text-center text-sm text-ink-gray-5">{{ __('Loading...') }}</div>
+				<div v-else-if="!myApps.data?.length" class="py-6 text-center text-sm text-ink-gray-5">
+					{{ myStatus ? __('No {0} applications.').format(__(myStatus).toLowerCase()) : __('You haven\'t applied to any openings yet.') }}
+				</div>
+				<ul v-else class="space-y-2">
+					<li v-for="a in myApps.data" :key="a.name" class="rounded-md border border-outline-gray-2 transition hover:border-outline-gray-3">
+						<router-link
+							:to="{ name: 'JobOpening', params: { jobName: a.job_opening } }"
+							class="block rounded-t-md p-3 hover:bg-surface-gray-1"
+						>
+							<div class="flex items-start justify-between gap-2">
+								<span class="text-sm font-medium text-ink-gray-8">{{ a.job_title }}</span>
+								<Badge :theme="bucketOf(a.status).theme" variant="subtle">{{ __(bucketOf(a.status).label) }}</Badge>
+							</div>
+							<div v-if="a.organization_name" class="text-xs text-ink-gray-6">{{ a.organization_name }}</div>
+							<div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-gray-5">
+								<span v-if="a.city">{{ a.city }}</span>
+								<span v-if="a.city && a.submission_date">&middot;</span>
+								<span v-if="a.submission_date">{{ formatDate(a.submission_date) }}</span>
+							</div>
+						</router-link>
+						<div v-if="a.status === 'Draft'" class="flex gap-2 border-t border-outline-gray-1 px-3 py-2">
+							<Button size="sm" variant="subtle" @click="editDraft(a)">{{ __('Edit') }}</Button>
+							<Button size="sm" variant="subtle" theme="red" @click="confirmDiscard(a)">{{ __('Cancel') }}</Button>
+						</div>
+						<div v-else-if="OPEN_STATES.includes(a.status)" class="flex border-t border-outline-gray-1 px-3 py-2">
+							<Button size="sm" variant="subtle" theme="red" @click="confirmWithdraw(a)">{{ __('Withdraw') }}</Button>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</aside>
 	</div>
 
-	<ul v-else class="mx-auto grid w-full max-w-5xl grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:p-5">
-		<li v-for="job in openings.data" :key="job.name">
-			<router-link
-				:to="{ name: 'JobOpening', params: { jobName: job.name } }"
-				class="flex h-full flex-col gap-2 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3 hover:shadow-sm"
-			>
-				<div class="flex items-start justify-between gap-2">
-					<span class="font-semibold text-ink-gray-8">{{ job.job_title }}</span>
-					<Badge v-if="job.employment_type" theme="blue" variant="subtle">
-						{{ __(job.employment_type) }}
-					</Badge>
-				</div>
-				<div class="text-sm text-ink-gray-6">{{ job.organization_name }}</div>
-				<div class="flex flex-wrap items-center gap-1.5">
-					<Badge v-if="job.position_type" theme="gray" variant="subtle">
-						{{ __(job.position_type) }}
-					</Badge>
-					<Badge v-if="job.require_doctrinal_alignment" theme="orange" variant="subtle">
-						{{ __('Doctrinal agreement') }}
-					</Badge>
-				</div>
-				<div class="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-gray-5">
-					<span v-if="job.city" class="flex items-center gap-1">
-						<MapPin class="size-3.5" />{{ job.city }}
-					</span>
-					<span v-if="job.ministry_setting">&middot; {{ __(job.ministry_setting) }}</span>
-					<span v-if="job.posted_on">&middot; {{ formatDate(job.posted_on) }}</span>
-				</div>
-			</router-link>
-		</li>
-	</ul>
+	<Dialog
+		v-model="dialog.show"
+		:options="{ title: dialog.title, message: dialog.message, actions: dialog.actions }"
+	/>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { createResource, debounce, Badge } from 'frappe-ui'
+import { ref, reactive, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { createResource, debounce, Badge, Button, Dialog, toast } from 'frappe-ui'
 import { Search, Briefcase, MapPin } from 'lucide-vue-next'
+
+// Applicant-facing status buckets — partner-internal pipeline states collapse into
+// "Open" (mirrors APPLICANT_BUCKETS in seminary/partner/api.py). Order = filter order.
+const APPLICATION_FILTERS = ['Draft', 'Open', 'Rejected', 'Accepted', 'Withdrawn']
+const OPEN_STATES = ['Open', 'Replied', 'Shortlisted', 'Hold']
+function bucketOf(status) {
+	if (status === 'Draft') return { label: 'Draft', theme: 'gray' }
+	if (OPEN_STATES.includes(status)) return { label: 'Open', theme: 'green' }
+	if (status === 'Rejected') return { label: 'Rejected', theme: 'red' }
+	if (status === 'Accepted') return { label: 'Accepted', theme: 'blue' }
+	if (status === 'Withdrawn') return { label: 'Withdrawn', theme: 'orange' }
+	return { label: status, theme: 'gray' }
+}
 
 const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Contract', 'Salary with fundraising', 'Volunteer']
 const MINISTRY_SETTINGS = ['Urban', 'Suburban', 'Rural', 'Campus']
@@ -134,6 +203,57 @@ const openings = createResource({
 
 const refetch = debounce(() => openings.reload(), 250)
 watch([query, employmentType, ministrySetting, positionType, partnerType, requiresDoctrinal], refetch)
+
+const myStatus = ref('Open')
+const myApps = createResource({
+	url: 'seminary.partner.api.get_my_applications',
+	makeParams: () => ({ status: myStatus.value }),
+	auto: true,
+})
+watch(myStatus, () => myApps.reload())
+
+// --- My Applications actions (edit / discard draft, withdraw) -------------------
+const router = useRouter()
+const dialog = reactive({ show: false, title: '', message: '', actions: [] })
+
+const withdrawResource = createResource({ url: 'seminary.partner.api.withdraw_application' })
+const discardResource = createResource({ url: 'seminary.partner.api.discard_draft' })
+
+function editDraft(a) {
+	router.push({ name: 'JobApplication', params: { jobName: a.job_opening } })
+}
+
+function confirmDiscard(a) {
+	dialog.title = __('Discard draft')
+	dialog.message = __('Discard this draft application? This can\'t be undone.')
+	dialog.actions = [
+		{ label: __('Keep draft'), variant: 'outline', onClick: () => (dialog.show = false) },
+		{
+			label: __('Discard'), variant: 'solid', theme: 'red',
+			onClick: () => discardResource.submit({ name: a.name }, {
+				onSuccess: () => { dialog.show = false; myApps.reload(); toast.success(__('Draft discarded.')) },
+				onError: (err) => toast.error(err.messages?.[0] || __('Could not discard the draft.')),
+			}),
+		},
+	]
+	dialog.show = true
+}
+
+function confirmWithdraw(a) {
+	dialog.title = __('Withdraw application')
+	dialog.message = __('Are you confident this is God\'s direction?')
+	dialog.actions = [
+		{ label: __('No, let me pray more'), variant: 'outline', onClick: () => (dialog.show = false) },
+		{
+			label: __('Yes, withdraw'), variant: 'solid', theme: 'red',
+			onClick: () => withdrawResource.submit({ name: a.name }, {
+				onSuccess: () => { dialog.show = false; myApps.reload(); toast.success(__('Application withdrawn.')) },
+				onError: (err) => toast.error(err.messages?.[0] || __('Could not withdraw the application.')),
+			}),
+		},
+	]
+	dialog.show = true
+}
 
 function formatDate(value) {
 	if (!value) return ''

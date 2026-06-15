@@ -7,6 +7,8 @@ any other org is never returned or writable. Mutations use `ignore_permissions`
 (this API is the permission boundary) after an explicit ownership check.
 """
 
+from collections import Counter
+
 import frappe
 from frappe import _
 from frappe.utils import flt, now_datetime
@@ -385,13 +387,27 @@ def save_job_posting(values, name=None) -> dict:
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
 def list_applications(
-    opening, status=None, sort_by="submission_date", sort_dir="desc", query=""
-) -> list[dict]:
+    opening,
+    status=None,
+    evaluated="",
+    sort_by="submission_date",
+    sort_dir="desc",
+    query="",
+) -> dict:
     org = _require_org()
-    if frappe.db.get_value("Partner Job Opening", opening, "partner_org") != org:
+    opening_doc = frappe.db.get_value(
+        "Partner Job Opening", opening, ["partner_org", "job_title"], as_dict=True
+    )
+    if not opening_doc or opening_doc.partner_org != org:
         frappe.throw(
             _("That posting isn't part of your organization."), frappe.PermissionError
         )
+
+    # Total received — every submitted application for this opening, unaffected by
+    # the active filters/search (so the header count is a stable "X applications").
+    total = frappe.db.count(
+        "Partner Job Application", {"job_opening": opening, "status": ["!=", "Draft"]}
+    )
 
     filters = {"job_opening": opening, "status": ["!=", "Draft"]}
     if status and status in PIPELINE_STATUSES:
@@ -400,7 +416,7 @@ def list_applications(
     sort_col = APP_SORT_FIELDS.get(sort_by, "submission_date")
     direction = "asc" if str(sort_dir).lower() == "asc" else "desc"
 
-    return frappe.get_all(
+    rows = frappe.get_all(
         "Partner Job Application",
         fields=[
             "name",
@@ -414,6 +430,50 @@ def list_applications(
         or_filters=or_filters,
         order_by=f"{sort_col} {direction}",
     )
+
+    if rows:
+        names = [r["name"] for r in rows]
+        # "Evaluated by me" — applications where the caller's Person has a review row.
+        person = _current_person()
+        reviewed_by_me = set()
+        if person:
+            reviewed_by_me = set(
+                frappe.get_all(
+                    "Partner Job Application Review",
+                    filters={
+                        "parenttype": "Partner Job Application",
+                        "parent": ["in", names],
+                        "reviewer": person,
+                    },
+                    pluck="parent",
+                )
+            )
+        # Logged-contact counts, grouped by application (counted in Python — raw SQL
+        # aggregates aren't allowed in get_all's field list).
+        contact_counts = Counter(
+            frappe.get_all(
+                "Partner Job Application Contact",
+                filters={
+                    "parenttype": "Partner Job Application",
+                    "parent": ["in", names],
+                },
+                pluck="parent",
+            )
+        )
+        for r in rows:
+            r["evaluated_by_me"] = r["name"] in reviewed_by_me
+            r["contact_count"] = contact_counts.get(r["name"], 0)
+
+        if evaluated == "yes":
+            rows = [r for r in rows if r["evaluated_by_me"]]
+        elif evaluated == "no":
+            rows = [r for r in rows if not r["evaluated_by_me"]]
+
+    return {
+        "job_title": opening_doc.job_title,
+        "total": total,
+        "applications": rows,
+    }
 
 
 @frappe.whitelist()

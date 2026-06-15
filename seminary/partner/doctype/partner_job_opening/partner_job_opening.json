@@ -3,12 +3,11 @@
  "allow_bulk_edit": 1,
  "autoname": "PJO-.######",
  "creation": "2026-06-15 01:29:31.197517",
- "doctype": "DocType",
  "description": "A job opening for a Partner Organization with linked ATS",
+ "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "partner_org",
-  "opened_by",
   "job_description_section",
   "job_title",
   "planned_vacancies",
@@ -46,7 +45,8 @@
    "in_standard_filter": 1,
    "label": "Partner Organization",
    "options": "Partner Organization",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "job_description_section",
@@ -220,12 +220,6 @@
    "fieldtype": "Table MultiSelect",
    "label": "Skills",
    "options": "Skill Tag Link"
-  },
-  {
-   "fieldname": "opened_by",
-   "fieldtype": "Link",
-   "label": "Position opened by",
-   "options": "Partner Contact"
   }
  ],
  "grid_page_length": 50,
@@ -237,7 +231,7 @@
    "link_fieldname": "job_opening"
   }
  ],
- "modified": "2026-06-15 03:27:34.204825",
+ "modified": "2026-06-15 18:02:09.651201",
  "modified_by": "Administrator",
  "module": "Partner",
  "name": "Partner Job Opening",
@@ -291,15 +285,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [
-  {
-   "color": "Green",
-   "title": "Open"
-  },
-  {
-   "color": "Gray",
-   "title": "Closed"
-  }
- ],
+ "states": [],
  "title_field": "job_title"
 }

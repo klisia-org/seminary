@@ -190,7 +190,7 @@
 			</p>
 			<div class="mt-4 flex flex-col gap-2">
 				<Button variant="solid" :loading="submit.loading" @click="confirmSubmit">
-					{{ __('Yes, submit') }}
+					{{ __('Yes, submit. I understand I will not be able to reapply.') }}
 				</Button>
 				<Button :loading="submit.loading" @click="saveDraftFromDialog">
 					{{ __('No, save it as I seek guidance') }}
