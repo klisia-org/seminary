@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PORG-LOC-.#####",
+ "creation": "2026-06-14 12:00:00",
+ "description": "A physical site / campus of a Partner Organization. A standalone doctype (not a child table) so a Partner Job Opening can link a specific location and openings stay filterable by ministry setting and size. See ADR 053.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_org",
+  "location_name",
+  "column_break_loc_head",
+  "ministry_setting",
+  "congregation_size",
+  "address_section",
+  "address_line_1",
+  "address_line_2",
+  "pincode",
+  "column_break_addr",
+  "city",
+  "state",
+  "country"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "reqd": 1
+  },
+  {
+   "description": "A short label for this site, e.g. \"Main Campus\", \"Downtown Plant\".",
+   "fieldname": "location_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Location Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_loc_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The setting this site serves. Used to match and filter job openings.",
+   "fieldname": "ministry_setting",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Ministry Setting",
+   "options": "\nUrban\nSuburban\nRural\nCampus"
+  },
+  {
+   "description": "Optional — applies to churches; leave blank for non-congregational organizations.",
+   "fieldname": "congregation_size",
+   "fieldtype": "Select",
+   "label": "Congregation Size",
+   "options": "\nUnder 50\n50-150\n150-500\nOver 500"
+  },
+  {
+   "fieldname": "address_section",
+   "fieldtype": "Section Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Postal Code"
+  },
+  {
+   "fieldname": "column_break_addr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State / Province"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-14 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner Organization Location",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "partner_org,city",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "location_name",
+ "track_changes": 1
+}

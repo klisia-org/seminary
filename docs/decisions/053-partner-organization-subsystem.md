@@ -86,6 +86,72 @@ identity), and `Partner Seminary` (academic credit, [ADR 005](005-unified-partne
   an optional `current_partner_organization` link + a non-destructive matching patch + an
   alumni-employer report. Decoupled; can be pulled forward.
 
+### Phase 1 ATS data model (decided)
+
+The job board / applicant-tracking layer is implemented as `Partner Job Opening` and
+`Partner Job Application` (the concrete names of the ADR's generic "Job Posting"/"Job Application").
+Six shape decisions:
+
+1. **Locations are a standalone `Partner Organization Location` doctype, not a child table.** A
+   Frappe `Link` cannot target a child-table row, so a child table couldn't be *picked* by a
+   `Partner Job Opening` nor filtered on. The standalone doctype links back to the org
+   (`partner_org`), carries the per-site address plus `ministry_setting` (Urban/Suburban/Rural/
+   Campus) and an optional `congregation_size`, and a Job Opening links one site — making openings
+   filterable by setting (the opening fetches `ministry_setting` read-only for a join-free filter).
+
+2. **Skill matching uses one controlled vocabulary reused on both sides.** A `Skill Tag` master
+   (seeded via install hook, not fixtures — same reasoning as `Partner Type`) plus a single tiny
+   `Skill Tag Link` child surfaced as a **Table MultiSelect** on both `Person.skills` and
+   `Partner Job Opening.skills`. Frappe manages the junction rows, so there are no hand-built
+   "Job Posting Skills"/"Person Skills" doctypes. `Skill Tag`/`Skill Tag Link` live in the
+   **Seminary** module (not Partner) so core `Person` does not depend on the Partner module.
+
+3. **Applicant identity and resume are reused, not re-entered.** `Partner Job Application.applicant`
+   links `Person`. `full_name` is `fetch_from`; the controller snapshots `primary_email`/
+   `primary_mobile` as **preferred-or-primary** — `Person` carries `preferred_application_email`/
+   `preferred_application_phone` (blank = use the primary), editable from the apply page, so the
+   partner reaches the applicant on the channel they chose. The per-application `resume` defaults
+   from `Person.resume` (overridable), served privately
+   ([ADR 043](043-multichannel-communication-system.md)). One application per
+   `(applicant, job_opening)`; audience flags (`open_students`/`open_alumni`) gate eligibility, and
+   accepting an application decrements the opening's `vacancies` and auto-closes it when full.
+
+4. **Draft → submitted lifecycle on the Select status; the who/when audit is free.** Pipeline values
+   `Draft/Open/Replied/Shortlisted/Hold/Rejected/Accepted/Withdrawn`. A `Draft` is saved by the
+   applicant but hidden from the partner and excluded from the published count; submitting moves it
+   to `Open`. We model this on the existing status Select rather than Frappe `docstatus`, so reviews,
+   status changes and the contact log (all *post-submission*) keep working without marking fields
+   `allow_on_submit`. Completeness rules (cover letter required; doctrinal response required when the
+   opening asks; explanation required when the response isn't full agreement) are enforced **only at
+   submit**, never on a Draft. The `Partner Job Application Review` child holds `reviewer`/`rating`/
+   `notes` only (no `changed_status` — who/when comes from `track_changes`), keeping review and
+   status-audit orthogonal ([ADR 015](015-orthogonal-program-flags-and-workflow-conditions.md)). A
+   `Partner Job Application Contact` child logs recruiter touchpoints. (Note: `reviewer` links
+   `Person`, not `Partner Contact`, for the same child-table-not-linkable reason as #1.)
+
+5. **Ministry-focused, not a generic board.** `Partner Job Opening` carries a `position_type`
+   (ministry role taxonomy: Pastoral, Teaching, Worship, Youth, Counseling, Missions, Admin,
+   Facilities, Other) and a `require_doctrinal_alignment` check — which the opening's `validate`
+   rejects unless the organization actually publishes a `doctrinal_statement`. When required, the
+   applicant must read that statement and answer (`I agree completely, without reservations` /
+   `… with reservations` / `I agree partially` / `I disagree`), with an explanation required for
+   anything short of full agreement. `description` is mandatory on the opening. The portal filters by
+   position type, employment type, ministry setting, the org's Partner Type, and "requires doctrinal
+   agreement"; submission is a prayerful confirmation, not a one-click apply.
+
+6. **Phase 1 portals are implemented — both sides.** Applicant side: Vue pages (`Jobs`,
+   `JobOpening`, `JobApplication`) on the student/alumni portals, backed by `seminary.partner.api`
+   (eligibility-scoped listing/detail + draft-aware `apply_to_job`). **Employer side**: a self-
+   contained **Partner portal** (its own switcher entry + sidebar) where partner staff manage their
+   profile, people, locations, postings, and applicants, backed by `seminary.partner.portal`. A new
+   `Partner` role (portal-only, auto-granted when a `Partner Contact` is given `portal_access`) plus
+   record-level scoping (`seminary.partner.permissions`, registered as
+   `permission_query_conditions`/`has_permission`) confines each partner user to their own org.
+   Partner-created/edited postings save **unpublished** (staff approval before public); partners run
+   the applicant pipeline (status changes) and review/contact-log each applicant; an application
+   carries `submission_date` (set when it leaves Draft) for ordering, and its résumé `File` is
+   attached to the application on submit so partners read it through their application permission.
+
 ## Consequences
 
 Easier: relationship modeling is orthogonal to billing — partners never pollute AR/QBO; the spine

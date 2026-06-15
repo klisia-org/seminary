@@ -36,6 +36,11 @@
   "user",
   "column_break_links",
   "customer",
+  "career_section",
+  "skills",
+  "resume",
+  "preferred_application_email",
+  "preferred_application_phone",
   "conversation_tab",
   "conversation_html",
   "connections_tab"
@@ -202,6 +207,40 @@
    "fieldtype": "Link",
    "label": "Customer",
    "options": "Customer"
+  },
+  {
+   "collapsible": 1,
+   "description": "Reusable career details that pre-fill this person's job applications, so they apply without re-entering data.",
+   "fieldname": "career_section",
+   "fieldtype": "Section Break",
+   "label": "Career / Job Board"
+  },
+  {
+   "description": "Skills this person offers. Matched against the skills tagged on job openings.",
+   "fieldname": "skills",
+   "fieldtype": "Table MultiSelect",
+   "label": "Skills",
+   "options": "Skill Tag Link"
+  },
+  {
+   "description": "Stored resume / CV, reused to pre-fill job applications. Served privately (ADR 043).",
+   "fieldname": "resume",
+   "fieldtype": "Attach",
+   "label": "Resume"
+  },
+  {
+   "description": "Where partners should reach you about job applications. Leave blank to use your primary email.",
+   "fieldname": "preferred_application_email",
+   "fieldtype": "Data",
+   "label": "Preferred Email for Applications",
+   "options": "Email"
+  },
+  {
+   "description": "Leave blank to use your primary mobile.",
+   "fieldname": "preferred_application_phone",
+   "fieldtype": "Data",
+   "label": "Preferred Phone for Applications",
+   "options": "Phone"
   },
   {
    "fieldname": "conversation_tab",

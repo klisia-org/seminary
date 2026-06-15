@@ -53,7 +53,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
@@ -87,6 +87,7 @@ watch(() => route.path, () => unreadCount.reload());
 
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
+	const isAlumni = userResource?.data?.is_alumni
 	const isEvaluator = userResource?.data?.is_evaluator
 	const hasCulminatingProjects = userResource?.data?.has_culminating_projects
 	const allowEnroll = seminarySettings.data?.allow_portal_enroll
@@ -122,6 +123,11 @@ const links = computed(() => {
 			label: __('Culminating Project'),
 			to: '/culminating-project',
 			icon: ScrollText,
+		}] : []),
+		...((isStudent || isAlumni) ? [{
+			label: __('Jobs'),
+			to: '/jobs',
+			icon: Briefcase,
 		}] : []),
 		{
 			label: __('Inbox'),
