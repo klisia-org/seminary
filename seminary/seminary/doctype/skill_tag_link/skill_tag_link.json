@@ -1,0 +1,34 @@
+{
+ "actions": [],
+ "creation": "2026-06-14 12:00:00",
+ "description": "Junction row linking a Skill Tag to its parent (Person or Partner Job Opening). Used as a Table MultiSelect target so the same controlled vocabulary tags both sides for matching. See ADR 053.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "skill_tag"
+ ],
+ "fields": [
+  {
+   "fieldname": "skill_tag",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Skill",
+   "options": "Skill Tag",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-14 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Skill Tag Link",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

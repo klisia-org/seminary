@@ -26,6 +26,7 @@ def after_install():
     create_studentappl_role()
     create_student_role()
     create_alumni_role()
+    create_partner_role()
     create_registrar_role()
     create_instructor_role()
     create_program_chair_role()
@@ -46,6 +47,7 @@ def after_install():
     seed_communication_templates()
     seed_portal_messaging_rules()
     seed_partner_types()
+    seed_skill_tags()
     setup_customer_person_field()
 
 
@@ -860,6 +862,41 @@ def seed_partner_types():
     frappe.db.commit()
 
 
+def seed_skill_tags():
+    """Seed a starter set of Skill Tags if they don't already exist (ADR 053).
+
+    NOT fixtures: skill_tag is an open taxonomy seminaries curate on the desk
+    (and tag onto people / job openings), and a fixture re-import would clobber
+    those edits every migrate. Created once, create-only-if-missing. Skipped
+    silently until the doctype exists (install ordering)."""
+    if not frappe.db.exists("DocType", "Skill Tag"):
+        return
+    defaults = [
+        ("Preaching", "Ministry"),
+        ("Teaching", "Ministry"),
+        ("Youth Ministry", "Ministry"),
+        ("Worship Leading", "Ministry"),
+        ("Pastoral Care / Counseling", "Ministry"),
+        ("Church Administration", "Administration"),
+        ("Bookkeeping / Finance", "Administration"),
+        ("Biblical Languages", "Language"),
+        ("Cross-cultural Missions", "Missions"),
+        ("Discipleship", "Ministry"),
+    ]
+    for skill_name, category in defaults:
+        if frappe.db.exists("Skill Tag", skill_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Skill Tag",
+                "skill_name": skill_name,
+                "category": category,
+                "is_active": 1,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def setup_customer_person_field():
     """Reverse link Customer → Person (ADR 042 addendum): Person.customer
     records the financial party; this mirrors it on the Customer so finance
@@ -940,6 +977,16 @@ def create_alumni_role():
     if not frappe.db.exists("Role", _("Alumni")):
         frappe.get_doc(
             {"doctype": "Role", "role_name": _("Alumni"), "desk_access": 0}
+        ).save()
+
+
+def create_partner_role():
+    """Portal role for partner-organization staff (the job-board employer side,
+    ADR 053). No desk access; record-level scoping in seminary.partner.permissions
+    limits each partner user to their own organization."""
+    if not frappe.db.exists("Role", _("Partner")):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": _("Partner"), "desk_access": 0}
         ).save()
 
 
@@ -1107,6 +1154,7 @@ def after_migrate():
     setup_genders()
     setup_withdrawal_workflow()
     create_alumni_role()
+    create_partner_role()
     create_program_chair_role()
     create_seminary_manager_role()
     setup_sales_invoice_permissions()
@@ -1121,6 +1169,7 @@ def after_migrate():
     seed_communication_templates()
     seed_portal_messaging_rules()
     seed_partner_types()
+    seed_skill_tags()
     setup_customer_person_field()
     setup_donor_person_field()
 

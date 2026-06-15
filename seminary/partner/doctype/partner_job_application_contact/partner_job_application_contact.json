@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-06-14 12:00:00",
+ "description": "A logged touchpoint with an applicant (email, call, interview). The creator is captured automatically as the row owner. See ADR 053.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "contact_type",
+  "contacted_on",
+  "column_break_contact_log",
+  "participants",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "contact_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Contact Type",
+   "options": "\nEmail\nPhone\nVideo Call\nIn-person\nOther"
+  },
+  {
+   "default": "Now",
+   "fieldname": "contacted_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Contacted On"
+  },
+  {
+   "fieldname": "column_break_contact_log",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Who took part, e.g. \"Pr. Silva, applicant\".",
+   "fieldname": "participants",
+   "fieldtype": "Small Text",
+   "label": "Participants"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-14 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner Job Application Contact",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

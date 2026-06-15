@@ -166,6 +166,7 @@ doctype_js = {
 role_home_page = {
     "Student": "/seminary/courses",
     "Alumni": "/seminary/alumni",
+    "Partner": "/seminary/partner",
 }
 
 # Authentication hooks
@@ -232,6 +233,10 @@ permission_query_conditions = {
     "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
+    "Partner Organization": "seminary.partner.permissions.org_query",
+    "Partner Organization Location": "seminary.partner.permissions.location_query",
+    "Partner Job Opening": "seminary.partner.permissions.opening_query",
+    "Partner Job Application": "seminary.partner.permissions.application_query",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -243,6 +248,10 @@ has_permission = {
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
+    "Partner Organization": "seminary.partner.permissions.org_has",
+    "Partner Organization Location": "seminary.partner.permissions.location_has",
+    "Partner Job Opening": "seminary.partner.permissions.opening_has",
+    "Partner Job Application": "seminary.partner.permissions.application_has",
 }
 
 # DocType Class

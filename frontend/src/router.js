@@ -19,6 +19,65 @@ const routes = [
     component: () => import('@/pages/Fees.vue'),
   },
   {
+    path: "/jobs",
+    name: "Jobs",
+    component: () => import('@/pages/Jobs.vue'),
+  },
+  {
+    path: "/jobs/:jobName",
+    name: "JobOpening",
+    component: () => import('@/pages/JobOpening.vue'),
+    props: true,
+  },
+  {
+    path: "/jobs/:jobName/apply",
+    name: "JobApplication",
+    component: () => import('@/pages/JobApplication.vue'),
+    props: true,
+  },
+  {
+    path: "/partner",
+    redirect: "/partner/jobs",
+  },
+  {
+    path: "/partner/profile",
+    name: "PartnerProfile",
+    component: () => import('@/pages/PartnerProfile.vue'),
+  },
+  {
+    path: "/partner/people",
+    name: "PartnerPeople",
+    component: () => import('@/pages/PartnerPeople.vue'),
+  },
+  {
+    path: "/partner/jobs",
+    name: "PartnerJobPostings",
+    component: () => import('@/pages/PartnerJobPostings.vue'),
+  },
+  {
+    path: "/partner/jobs/new",
+    name: "PartnerJobPostingNew",
+    component: () => import('@/pages/PartnerJobPostingForm.vue'),
+  },
+  {
+    path: "/partner/jobs/:name/edit",
+    name: "PartnerJobPostingEdit",
+    component: () => import('@/pages/PartnerJobPostingForm.vue'),
+    props: true,
+  },
+  {
+    path: "/partner/jobs/:name",
+    name: "PartnerJobPosting",
+    component: () => import('@/pages/PartnerJobPosting.vue'),
+    props: true,
+  },
+  {
+    path: "/partner/jobs/:name/applications/:appName",
+    name: "PartnerApplication",
+    component: () => import('@/pages/PartnerApplication.vue'),
+    props: true,
+  },
+  {
     path: "/grades",
     name: "Transcripts",
     component: () => import('@/pages/Grades.vue'),

@@ -1,0 +1,89 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:skill_name",
+ "creation": "2026-06-14 12:00:00",
+ "description": "A skill / competency tag used to match people to job openings. An open taxonomy seeded once on install and curated on the desk. Reused on both Person and Partner Job Opening via Table MultiSelect, so the same controlled vocabulary tags both sides. See ADR 053.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "skill_name",
+  "category",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "skill_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Skill",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Optional grouping, e.g. \"Ministry\", \"Language\", \"Administration\".",
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category"
+  },
+  {
+   "default": "1",
+   "description": "Inactive skills stay on existing records but are hidden from new tagging.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Active"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-14 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Skill Tag",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

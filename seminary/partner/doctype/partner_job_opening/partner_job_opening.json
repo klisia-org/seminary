@@ -1,0 +1,305 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "autoname": "PJO-.######",
+ "creation": "2026-06-15 01:29:31.197517",
+ "doctype": "DocType",
+ "description": "A job opening for a Partner Organization with linked ATS",
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_org",
+  "opened_by",
+  "job_description_section",
+  "job_title",
+  "planned_vacancies",
+  "vacancies",
+  "employment_type",
+  "position_type",
+  "location",
+  "ministry_setting",
+  "column_break_cqsn",
+  "status",
+  "posted_on",
+  "closes_on",
+  "closed_on",
+  "section_break_pdqg",
+  "description",
+  "qualifications",
+  "skills_section",
+  "skills",
+  "section_break_wofe",
+  "open_alumni",
+  "column_break_gcqp",
+  "open_students",
+  "require_doctrinal_alignment",
+  "section_break_wufw",
+  "publish",
+  "publish_applications_received",
+  "column_break_liry",
+  "route"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_description_section",
+   "fieldtype": "Section Break",
+   "label": "Job Description"
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cqsn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nClosed"
+  },
+  {
+   "fieldname": "posted_on",
+   "fieldtype": "Datetime",
+   "label": "Posted On"
+  },
+  {
+   "depends_on": "eval:doc.status == 'Open'",
+   "description": "If set, the job opening will be closed automatically after this date",
+   "fieldname": "closes_on",
+   "fieldtype": "Date",
+   "label": "Closes On"
+  },
+  {
+   "default": "1",
+   "fieldname": "planned_vacancies",
+   "fieldtype": "Int",
+   "label": "Planned Number of Positions",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "vacancies",
+   "fieldtype": "Int",
+   "label": "Vacancies",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.status == 'Closed'",
+   "fieldname": "closed_on",
+   "fieldtype": "Date",
+   "label": "Closed On"
+  },
+  {
+   "fieldname": "section_break_pdqg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Job profile and responsibilities.",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_wufw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "publish",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Publish on Portal"
+  },
+  {
+   "fieldname": "column_break_liry",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "publish",
+   "fieldname": "publish_applications_received",
+   "fieldtype": "Check",
+   "label": "Publish Applications Received"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Route",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "employment_type",
+   "fieldtype": "Select",
+   "label": "Employment Type",
+   "options": "\nFull-time\nPart-time\nContract\nSalary with fundraising\nVolunteer"
+  },
+  {
+   "description": "The kind of ministry role, used to match and filter openings.",
+   "fieldname": "position_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Position Type",
+   "options": "\nPastoral / Preaching\nTeaching / Education\nWorship / Music\nYouth & Children\nCounseling / Care\nMissions / Outreach\nAdministration / Operations\nFacilities / Support\nOther"
+  },
+  {
+   "description": "A site of the partner organization. Pick a location to inherit its ministry setting and make this opening filterable by it.",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Partner Organization Location"
+  },
+  {
+   "fetch_from": "location.ministry_setting",
+   "fieldname": "ministry_setting",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Ministry Setting",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_wofe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "open_alumni",
+   "fieldtype": "Check",
+   "label": "Open to Alumni"
+  },
+  {
+   "fieldname": "column_break_gcqp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "open_students",
+   "fieldtype": "Check",
+   "label": "Open to Students"
+  },
+  {
+   "default": "0",
+   "description": "Applicants must respond to the organization's doctrinal statement before applying. Requires the organization to have a doctrinal statement.",
+   "fieldname": "require_doctrinal_alignment",
+   "fieldtype": "Check",
+   "label": "Require Doctrinal Alignment"
+  },
+  {
+   "description": "Describe the qualifications you value for this position.",
+   "fieldname": "qualifications",
+   "fieldtype": "Text Editor",
+   "label": "Qualifications"
+  },
+  {
+   "fieldname": "skills_section",
+   "fieldtype": "Section Break",
+   "label": "Skills"
+  },
+  {
+   "description": "Tag the skills this role calls for. Matched against the skills on a Person.",
+   "fieldname": "skills",
+   "fieldtype": "Table MultiSelect",
+   "label": "Skills",
+   "options": "Skill Tag Link"
+  },
+  {
+   "fieldname": "opened_by",
+   "fieldtype": "Link",
+   "label": "Position opened by",
+   "options": "Partner Contact"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Applications",
+   "link_doctype": "Partner Job Application",
+   "link_fieldname": "job_opening"
+  }
+ ],
+ "modified": "2026-06-15 03:27:34.204825",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner Job Opening",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Green",
+   "title": "Open"
+  },
+  {
+   "color": "Gray",
+   "title": "Closed"
+  }
+ ],
+ "title_field": "job_title"
+}

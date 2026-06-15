@@ -1,0 +1,262 @@
+{
+ "actions": [],
+ "autoname": "PJA-.######",
+ "creation": "2026-06-14 12:00:00",
+ "description": "A person's application to a Partner Job Opening. Identity is auto-filled from Person and the resume defaults from the applicant's stored resume, so people apply without re-entering data. See ADR 053.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "job_opening",
+  "partner_org",
+  "column_break_head",
+  "applicant",
+  "status",
+  "submission_date",
+  "applicant_section",
+  "full_name",
+  "primary_email",
+  "column_break_applicant",
+  "primary_mobile",
+  "submission_section",
+  "cover_letter",
+  "doctrinal_alignment",
+  "alignment_explanation",
+  "resume",
+  "evaluation_section",
+  "average_rating",
+  "reviews",
+  "contact_log_section",
+  "contacts"
+ ],
+ "fields": [
+  {
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Opening",
+   "options": "Partner Job Opening",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_opening.partner_org",
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicant",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "default": "Open",
+   "description": "Draft = saved by the applicant but not yet submitted; it is hidden from the partner until submitted.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nOpen\nReplied\nShortlisted\nHold\nRejected\nAccepted\nWithdrawn"
+  },
+  {
+   "description": "When the applicant submitted (left Draft). Used to order the partner's applicant list.",
+   "fieldname": "submission_date",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applicant_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
+  },
+  {
+   "fetch_from": "applicant.full_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "description": "The applicant's preferred application email, or their primary email.",
+   "fieldname": "primary_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_applicant",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The applicant's preferred application phone, or their primary mobile.",
+   "fieldname": "primary_mobile",
+   "fieldtype": "Data",
+   "label": "Mobile",
+   "options": "Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submission_section",
+   "fieldtype": "Section Break",
+   "label": "Submission"
+  },
+  {
+   "fieldname": "cover_letter",
+   "fieldtype": "Text Editor",
+   "label": "Cover Letter"
+  },
+  {
+   "description": "The applicant's response to the organization's doctrinal statement (required only when the opening asks for it).",
+   "fieldname": "doctrinal_alignment",
+   "fieldtype": "Select",
+   "label": "Doctrinal Alignment",
+   "options": "\nI agree completely, without reservations\nI agree completely, with reservations\nI agree partially\nI disagree"
+  },
+  {
+   "depends_on": "eval:doc.doctrinal_alignment && doc.doctrinal_alignment != 'I agree completely, without reservations'",
+   "fieldname": "alignment_explanation",
+   "fieldtype": "Small Text",
+   "label": "Points of disagreement or reservation"
+  },
+  {
+   "description": "Defaults from the applicant's stored resume; you can override it for this application. Served privately (ADR 043).",
+   "fieldname": "resume",
+   "fieldtype": "Attach",
+   "label": "Resume"
+  },
+  {
+   "fieldname": "evaluation_section",
+   "fieldtype": "Section Break",
+   "label": "Evaluation"
+  },
+  {
+   "description": "Average of the reviewers' ratings below.",
+   "fieldname": "average_rating",
+   "fieldtype": "Rating",
+   "label": "Average Rating",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviews",
+   "fieldtype": "Table",
+   "label": "Reviews",
+   "options": "Partner Job Application Review"
+  },
+  {
+   "fieldname": "contact_log_section",
+   "fieldtype": "Section Break",
+   "label": "Contact Log"
+  },
+  {
+   "fieldname": "contacts",
+   "fieldtype": "Table",
+   "label": "Contact Log",
+   "options": "Partner Job Application Contact"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-14 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner Job Application",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "job_opening,status",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Blue",
+   "title": "Open"
+  },
+  {
+   "color": "Cyan",
+   "title": "Replied"
+  },
+  {
+   "color": "Green",
+   "title": "Shortlisted"
+  },
+  {
+   "color": "Yellow",
+   "title": "Hold"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  },
+  {
+   "color": "Green",
+   "title": "Accepted"
+  },
+  {
+   "color": "Gray",
+   "title": "Withdrawn"
+  }
+ ],
+ "title_field": "full_name",
+ "track_changes": 1
+}

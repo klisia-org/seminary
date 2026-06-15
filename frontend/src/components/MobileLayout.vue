@@ -36,14 +36,15 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usersStore } from '@/stores/user'
 import { createResource } from 'frappe-ui'
-import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound } from 'lucide-vue-next'
+import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound, Building2, Users, Briefcase } from 'lucide-vue-next'
 import ProfileModal from '@/components/ProfileModal.vue'
 import HelpWidget from '@/components/HelpWidget.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { userResource } = usersStore()
 const showProfile = ref(false)
 
@@ -53,6 +54,13 @@ const seminarySettings = createResource({
 })
 
 const links = computed(() => {
+	if (route.path.startsWith('/partner')) {
+		return [
+			{ label: __('Profile'), to: '/partner/profile', icon: Building2, activeFor: ['PartnerProfile'] },
+			{ label: __('People'), to: '/partner/people', icon: Users, activeFor: ['PartnerPeople'] },
+			{ label: __('Jobs'), to: '/partner/jobs', icon: Briefcase, activeFor: ['PartnerJobPostings', 'PartnerJobPosting', 'PartnerApplication'] },
+		]
+	}
 	const isStudent = userResource?.data?.is_student
 	const isModerator = userResource?.data?.is_moderator
 	const isSystemManager = userResource?.data?.is_system_manager

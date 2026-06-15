@@ -36,6 +36,9 @@
   "country",
   "contacts_section",
   "contacts",
+  "profile_section",
+  "about_us",
+  "doctrinal_statement",
   "links_section",
   "customer",
   "notes_section",
@@ -81,7 +84,7 @@
   },
   {
    "default": "Initial",
-   "description": "Descriptive relationship depth for reporting and prioritization only. It does NOT gate feature access \u2014 use the capability flags below for that (ADR 053).",
+   "description": "Descriptive relationship depth for reporting and prioritization only. It does NOT gate feature access \u2014 use the capability flags below for that.",
    "fieldname": "engagement_tier",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -209,6 +212,25 @@
    "options": "Partner Contact"
   },
   {
+   "collapsible": 1,
+   "description": "Public-facing profile shown to applicants on the job board.",
+   "fieldname": "profile_section",
+   "fieldtype": "Section Break",
+   "label": "Profile"
+  },
+  {
+   "description": "An introduction to the organization for prospective applicants.",
+   "fieldname": "about_us",
+   "fieldtype": "Text Editor",
+   "label": "About Us"
+  },
+  {
+   "description": "Optional. A statement of faith / doctrinal position, so applicants can assess theological fit.",
+   "fieldname": "doctrinal_statement",
+   "fieldtype": "Text Editor",
+   "label": "Doctrinal Statement"
+  },
+  {
    "fieldname": "links_section",
    "fieldtype": "Section Break",
    "label": "System Links"
@@ -235,12 +257,22 @@
  "image_field": "image",
  "links": [
   {
+   "group": "Job Board",
+   "link_doctype": "Partner Organization Location",
+   "link_fieldname": "partner_org"
+  },
+  {
+   "group": "Job Board",
+   "link_doctype": "Partner Job Opening",
+   "link_fieldname": "partner_org"
+  },
+  {
    "group": "Academic",
    "link_doctype": "Partner Seminary",
    "link_fieldname": "partner_organization"
   }
  ],
- "modified": "2026-06-14 07:18:16.704319",
+ "modified": "2026-06-15 04:33:09.218225",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Partner",
  "name": "Partner Organization",
@@ -280,6 +312,22 @@
    "role": "Program Chair",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Partner"
   }
  ],
  "row_format": "Dynamic",
