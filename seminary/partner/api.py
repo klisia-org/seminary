@@ -567,6 +567,109 @@ def apply_to_job(
 
 
 # ---------------------------------------------------------------------------
+# Career / Job Board self-service profile (ADR 053)
+#
+# Skills, résumé, and preferred application contact live on the Person spine
+# (ADR 042), the single record the job board reads when prefilling an
+# application. Both students (via the portal Profile dialog) and alumni (via
+# the Alumni Profile page) edit the SAME Person fields through these shared,
+# whitelisted endpoints — the permission boundary, since portal users hold no
+# direct write rights on Person.
+# ---------------------------------------------------------------------------
+
+CAREER_FIELDS = (
+    "resume",
+    "preferred_application_email",
+    "preferred_application_phone",
+)
+
+
+@frappe.whitelist()
+def list_skill_tags() -> list[dict]:
+    """The curated, active Skill Tag taxonomy users pick from (staff own the
+    list on the desk; the portal only selects, never creates — see ADR 053)."""
+    _require_login()
+    return frappe.get_all(
+        "Skill Tag",
+        filters={"is_active": 1},
+        fields=["name", "category"],
+        order_by="category asc, name asc",
+    )
+
+
+@frappe.whitelist()
+def get_my_career_profile() -> dict | None:
+    """The current user's career fields off the Person spine, or None if they
+    have no Person record yet (e.g. not set up for the job board)."""
+    _require_login()
+    person = _current_person()
+    if not person:
+        return None
+    doc = frappe.get_doc("Person", person)
+    data = {field: doc.get(field) for field in CAREER_FIELDS}
+    data["skills"] = [s.skill_tag for s in doc.skills]
+    if data.get("resume"):
+        data["resume_name"] = (
+            frappe.db.get_value("File", {"file_url": data["resume"]}, "file_name")
+            or data["resume"].rsplit("/", 1)[-1]
+        )
+    return data
+
+
+@frappe.whitelist(methods=["POST"])
+def update_my_career_profile(
+    skills: list | str | None = None,
+    resume: str | None = None,
+    preferred_application_email: str | None = None,
+    preferred_application_phone: str | None = None,
+) -> dict:
+    """Save the current user's career fields onto their Person spine.
+
+    Blank contact fields clear the override (the job board then falls back to
+    the primary email/phone). Skills are filtered to the active taxonomy so the
+    portal can't introduce ad-hoc tags."""
+    _require_login()
+    person = _current_person()
+    if not person:
+        frappe.throw(
+            _(
+                "Your profile isn't set up for the job board yet. Please contact the registrar."
+            )
+        )
+
+    if isinstance(skills, str):
+        skills = frappe.parse_json(skills) or []
+
+    doc = frappe.get_doc("Person", person)
+    doc.resume = (resume or "").strip() or None
+    doc.preferred_application_email = (
+        preferred_application_email or ""
+    ).strip() or None
+    doc.preferred_application_phone = (
+        preferred_application_phone or ""
+    ).strip() or None
+
+    if skills is not None:
+        valid = set(
+            frappe.get_all(
+                "Skill Tag",
+                filters={"name": ["in", list(skills)], "is_active": 1},
+                pluck="name",
+            )
+        )
+        # Preserve the user's chosen order, dropping unknown/inactive tags.
+        chosen, seen = [], set()
+        for tag in skills:
+            if tag in valid and tag not in seen:
+                chosen.append(tag)
+                seen.add(tag)
+        doc.set("skills", [{"skill_tag": tag} for tag in chosen])
+
+    doc.save(ignore_permissions=True)
+    return get_my_career_profile()
+
+
+# ---------------------------------------------------------------------------
 # Alumni-facing Partner Organization directory + self-service listing (ADR 053)
 #
 # Alumni browse a directory of "Listed" organizations and may submit their own,

@@ -1,11 +1,8 @@
 <template>
 	<header
-		class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<router-link
-			:to="{ name: 'JobOpening', params: { jobName } }"
-			class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8"
-		>
+		class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
+		<router-link :to="{ name: 'JobOpening', params: { jobName } }"
+			class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
 			<ArrowLeft class="size-4" />
 			{{ __('Back to opening') }}
 		</router-link>
@@ -25,16 +22,16 @@
 
 		<!-- Can't apply: explain and offer to go back -->
 		<div v-if="!opening.can_apply" class="mt-5">
-			<div
-				v-if="opening.already_applied"
-				class="rounded-md bg-surface-green-2 px-3 py-2 text-sm text-ink-green-3"
-			>
+			<div v-if="opening.already_applied"
+				class="rounded-md bg-surface-green-2 px-3 py-2 text-sm text-ink-green-3">
 				{{ __('You have already applied to this opening.') }}
 			</div>
-			<div v-else-if="!context.data.has_person" class="rounded-md bg-surface-amber-2 px-3 py-2 text-sm text-ink-amber-3">
+			<div v-else-if="!context.data.has_person"
+				class="rounded-md bg-surface-amber-2 px-3 py-2 text-sm text-ink-amber-3">
 				{{ __("Your profile isn't set up to apply yet. Please contact the registrar.") }}
 			</div>
-			<div v-else-if="opening.status !== 'Open'" class="rounded-md bg-surface-gray-2 px-3 py-2 text-sm text-ink-gray-6">
+			<div v-else-if="opening.status !== 'Open'"
+				class="rounded-md bg-surface-gray-2 px-3 py-2 text-sm text-ink-gray-6">
 				{{ __('This opening is closed and no longer accepting applications.') }}
 			</div>
 			<div v-else class="rounded-md bg-surface-gray-2 px-3 py-2 text-sm text-ink-gray-6">
@@ -45,10 +42,8 @@
 		<!-- Apply form -->
 		<form v-else class="mt-5 flex flex-col gap-4" @submit.prevent="onSubmitClick">
 			<!-- Saved-but-not-submitted banner -->
-			<div
-				v-if="savedAsDraft"
-				class="flex flex-col gap-2 rounded-lg border border-outline-amber-1 bg-surface-amber-1 p-3 sm:flex-row sm:items-center sm:justify-between"
-			>
+			<div v-if="savedAsDraft"
+				class="flex flex-col gap-2 rounded-lg border border-outline-amber-1 bg-surface-amber-1 p-3 sm:flex-row sm:items-center sm:justify-between">
 				<div class="text-sm text-ink-amber-3">
 					{{ __('Your application is saved but not submitted.') }}
 				</div>
@@ -82,18 +77,10 @@
 					{{ __('Use a different email or phone for job applications') }}
 				</summary>
 				<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<FormControl
-						type="email"
-						:label="__('Preferred email')"
-						v-model="preferredEmail"
-						:placeholder="applicant.primary_email || __('Leave blank to use your primary email')"
-					/>
-					<FormControl
-						type="text"
-						:label="__('Preferred phone')"
-						v-model="preferredPhone"
-						:placeholder="applicant.primary_mobile || __('Leave blank to use your primary phone')"
-					/>
+					<FormControl type="email" :label="__('Preferred email')" v-model="preferredEmail"
+						:placeholder="applicant.primary_email || __('Leave blank to use your primary email')" />
+					<FormControl type="text" :label="__('Preferred phone')" v-model="preferredPhone"
+						:placeholder="applicant.primary_mobile || __('Leave blank to use your primary phone')" />
 				</div>
 				<div class="mt-1 text-xs text-ink-gray-5">{{ __('Saved to your profile and reused next time.') }}</div>
 			</details>
@@ -103,15 +90,10 @@
 				<div class="mb-1 text-sm text-ink-gray-7">
 					{{ __('Cover Letter') }} <span class="text-ink-red-3">*</span>
 				</div>
-				<TextEditor
-					:content="coverLetter"
-					@change="(val) => (coverLetter = val)"
-					:editable="true"
-					:fixedMenu="true"
-					:bubbleMenu="false"
+				<TextEditor :content="coverLetter" @change="(val) => (coverLetter = val)" :editable="true"
+					:fixedMenu="true" :bubbleMenu="false"
 					editorClass="prose-sm max-w-none rounded-b-md border-x border-b border-outline-gray-2 bg-surface-white px-2 py-2 min-h-[10rem] max-h-[24rem] overflow-y-auto text-ink-gray-8"
-					:placeholder="__('Share how the Lord has prepared you and why you sense a fit for this role.')"
-				/>
+					:placeholder="__('Share how the Lord has prepared you and why you sense a fit for this role.')" />
 			</div>
 
 			<!-- Doctrinal alignment (only when the opening requires it) -->
@@ -119,50 +101,38 @@
 				<div class="mb-1 text-sm text-ink-gray-7">
 					{{ __('Doctrinal alignment') }} <span class="text-ink-red-3">*</span>
 				</div>
-				<div
-					v-if="opening.doctrinal_statement"
-					class="rounded-md border border-outline-gray-2 bg-surface-gray-1 p-3"
-				>
+				<div v-if="opening.doctrinal_statement"
+					class="rounded-md border border-outline-gray-2 bg-surface-gray-1 p-3">
 					<div class="mb-1 text-xs font-medium uppercase tracking-wide text-ink-gray-5">
 						{{ __("The organization's doctrinal statement") }}
 					</div>
-					<div class="prose-sm max-h-64 max-w-none overflow-y-auto text-ink-gray-7" v-html="opening.doctrinal_statement" />
+					<div class="prose-sm max-h-64 max-w-none overflow-y-auto text-ink-gray-7"
+						v-html="opening.doctrinal_statement" />
 				</div>
-				<FormControl
-					class="mt-2"
-					type="select"
-					:label="__('Your response')"
-					v-model="doctrinalAlignment"
-					:options="alignmentOptions"
-				/>
-				<FormControl
-					v-if="doctrinalAlignment && doctrinalAlignment !== FULL_AGREEMENT"
-					class="mt-2"
-					type="textarea"
-					:label="__('Explain your points of disagreement or reservation')"
-					v-model="alignmentExplanation"
-					:rows="4"
-				/>
+				<FormControl class="mt-2" type="select" :label="__('Your response')" v-model="doctrinalAlignment"
+					:options="alignmentOptions" />
+				<FormControl v-if="doctrinalAlignment && doctrinalAlignment !== FULL_AGREEMENT" class="mt-2"
+					type="textarea" :label="__('Explain your points of disagreement or reservation')"
+					v-model="alignmentExplanation" :rows="4" />
 			</div>
 
 			<!-- Résumé -->
 			<div>
 				<div class="mb-1 text-sm text-ink-gray-7">{{ __('Résumé') }}</div>
 				<div class="flex flex-wrap items-center gap-2">
-					<FileUploader
-						:upload-args="{ folder: 'Home/Attachments', private: 1 }"
-						:validate-file="validateResume"
-						@success="onResumeUploaded"
-					>
+					<FileUploader :upload-args="{ folder: 'Home/Attachments', private: 1 }"
+						:validate-file="validateResume" @success="onResumeUploaded">
 						<template #default="{ uploading, progress, openFileSelector }">
 							<Button :loading="uploading" @click="openFileSelector">
-								{{ uploading ? __('Uploading {0}%').format(progress) : (resumeUrl ? __('Replace résumé') : __('Upload résumé')) }}
+								{{ uploading ? __('Uploading {0}%').format(progress) : (resumeUrl ? __('Replace résumé')
+									: __('Upload résumé')) }}
 							</Button>
 						</template>
 					</FileUploader>
 					<span v-if="resumeLabel" class="text-sm text-ink-gray-6">{{ resumeLabel }}</span>
 				</div>
-				<div class="mt-1 text-xs text-ink-gray-5">{{ __('PDF or Word document. Optional if a résumé is on your profile.') }}</div>
+				<div class="mt-1 text-xs text-ink-gray-5">{{ __('PDF or Word document. Optional if a résumé is on your profile.') }}
+				</div>
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2 pt-1">
@@ -172,10 +142,8 @@
 				<Button :loading="submit.loading" @click="saveDraft">
 					{{ __('Save without submitting') }}
 				</Button>
-				<router-link
-					:to="{ name: 'JobOpening', params: { jobName } }"
-					class="text-sm text-ink-gray-6 hover:text-ink-gray-8"
-				>
+				<router-link :to="{ name: 'JobOpening', params: { jobName } }"
+					class="text-sm text-ink-gray-6 hover:text-ink-gray-8">
 					{{ __('Cancel') }}
 				</router-link>
 			</div>
@@ -190,7 +158,7 @@
 			</p>
 			<div class="mt-4 flex flex-col gap-2">
 				<Button variant="solid" :loading="submit.loading" @click="confirmSubmit">
-					{{ __('Yes, submit. I understand I will not be able to reapply.') }}
+					{{ __('Yes, submit.') }}
 				</Button>
 				<Button :loading="submit.loading" @click="saveDraftFromDialog">
 					{{ __('No, save it as I seek guidance') }}

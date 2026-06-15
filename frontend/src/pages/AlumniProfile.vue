@@ -8,10 +8,10 @@
 		<button
 			type="button"
 			class="rounded-md bg-surface-gray-7 px-3 py-1.5 text-sm font-medium text-ink-white disabled:opacity-50"
-			:disabled="!dirty || save.loading"
+			:disabled="!dirty || saving"
 			@click="onSave"
 		>
-			{{ save.loading ? __('Saving...') : __('Save') }}
+			{{ saving ? __('Saving...') : __('Save') }}
 		</button>
 	</header>
 
@@ -54,16 +54,21 @@
 		</Field>
 
 		<label class="flex items-center gap-2 text-sm text-ink-gray-7">
-			<input v-model="form.show_in_directory" type="checkbox" />
+			<input v-model="form.show_in_directory" type="checkbox" :true-value="1" :false-value="0" />
 			{{ __('Show me in the alumni directory') }}
 		</label>
+
+		<div class="border-t border-outline-gray-1 pt-5">
+			<CareerProfileFields ref="career" />
+		</div>
 	</form>
 </template>
 
 <script setup>
-import { reactive, computed, watch, h } from 'vue'
+import { reactive, ref, computed, h } from 'vue'
 import { createResource } from 'frappe-ui'
 import { UserX } from 'lucide-vue-next'
+import CareerProfileFields from '@/components/CareerProfileFields.vue'
 
 const EDITABLE = [
 	'full_name',
@@ -91,9 +96,13 @@ const profile = createResource({
 	},
 })
 
-const dirty = computed(() =>
+const career = ref(null)
+const saving = ref(false)
+
+const profileDirty = computed(() =>
 	EDITABLE.some((key) => (form[key] ?? '') !== (snapshot[key] ?? ''))
 )
+const dirty = computed(() => profileDirty.value || !!career.value?.dirty)
 
 const save = createResource({
 	url: 'seminary.alumni.api.update_profile',
@@ -105,11 +114,23 @@ const save = createResource({
 	},
 })
 
-function onSave() {
-	if (!dirty.value) return
-	const values = {}
-	for (const key of EDITABLE) values[key] = form[key]
-	save.submit({ values })
+// One Save button drives both records: the Alumni Profile fields and the
+// shared career fields (which live on the Person spine).
+async function onSave() {
+	if (!dirty.value || saving.value) return
+	saving.value = true
+	try {
+		const tasks = []
+		if (profileDirty.value) {
+			const values = {}
+			for (const key of EDITABLE) values[key] = form[key]
+			tasks.push(save.submit({ values }))
+		}
+		if (career.value?.dirty) tasks.push(career.value.save())
+		await Promise.all(tasks)
+	} finally {
+		saving.value = false
+	}
 }
 
 const Field = (props, { slots }) =>
