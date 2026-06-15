@@ -93,6 +93,11 @@
 						</p>
 					</div>
 
+					<!-- Career / Job Board (saved to the Person spine, shared with the job board) -->
+					<div class="border-t border-outline-gray-1 pt-3">
+						<CareerProfileFields ref="career" />
+					</div>
+
 					<!-- Read-only fields -->
 					<div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
 						<div v-for="field in readOnlyFields" :key="field.label" class="flex">
@@ -115,7 +120,7 @@
 			</div>
 
 			<!-- Instructor view (editable) -->
-			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto" v-else-if="!isStudent">
+			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto" v-else-if="isInstructor">
 				<div class="flex flex-col gap-4">
 					<div class="flex items-center border-b border-solid border-outline-gray-1 pb-4 gap-2">
 						<div class="relative group flex-shrink-0">
@@ -224,6 +229,51 @@
 				</div>
 			</div>
 
+			<!-- Fallback view: users who are neither student nor instructor (e.g. Partners) -->
+			<div class="profile-dialog text-base text-ink-gray-9 max-h-[70vh] overflow-y-auto"
+				v-else-if="!isStudent && !isInstructor">
+				<div class="flex flex-col gap-4">
+					<div class="flex items-center border-b border-solid border-outline-gray-1 pb-4 gap-2">
+						<Avatar size="3xl" class="h-12 w-12" :label="userResource.data?.full_name"
+							:image="userResource.data?.user_image || null" />
+						<div class="flex flex-col ml-2 gap-1">
+							<p class="text-lg font-semibold">{{ userResource.data?.full_name }}</p>
+							<p class="text-ink-gray-6">{{ userResource.data?.email }}</p>
+						</div>
+					</div>
+					<!-- Appearance preference -->
+					<div>
+						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
+						<div class="mt-1 flex gap-2 px-1">
+							<button type="button" @click="setTheme('light')"
+								:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+								{{ __('Light') }}
+							</button>
+							<button type="button" @click="setTheme('dark')"
+								:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
+								{{ __('Dark') }}
+							</button>
+						</div>
+					</div>
+					<!-- Language preference -->
+					<div>
+						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
+						<select v-model="selectedLanguage"
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+							<option value="">{{ __('Default') }}</option>
+							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
+								{{ lang.language_name }}
+							</option>
+						</select>
+						<p class="mt-1 text-xs text-ink-gray-4">
+							{{ __('Available languages are configured by your seminary administrator.') }}
+						</p>
+					</div>
+				</div>
+			</div>
+
 		</template>
 	</Dialog>
 </template>
@@ -234,6 +284,7 @@ import { ref, computed, watchEffect } from 'vue'
 import { validateFileSize } from '@/utils'
 import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
+import CareerProfileFields from '@/components/CareerProfileFields.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme, setTheme } = useTheme()
@@ -244,6 +295,7 @@ const showProfileDialog = defineModel({ default: false })
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 const isStudent = ref(false)
+const isInstructor = ref(false)
 const user = ref('')
 const saveSuccess = ref(false)
 
@@ -293,6 +345,7 @@ const studentInfo = ref({
 	image: '',
 })
 
+const career = ref(null)
 const editImage = ref('')
 const editMobile = ref('')
 const editAddr = ref({
@@ -326,6 +379,8 @@ const saveStudent = () => {
 	if (languageChanged.value) {
 		saveLanguageResource.submit({ language: selectedLanguage.value })
 	}
+	// Career fields live on the Person spine; the dialog's single Save covers them too.
+	career.value?.save()
 	saveStudentResource.submit({
 		mobile: editMobile.value,
 		address_line_1: editAddr.value.address_line_1,
@@ -385,6 +440,18 @@ const saveInstructor = () => {
 	})
 }
 
+// ── Other users (e.g. Partners): universal preferences only ──────────────────
+const savePreferences = () => {
+	if (languageChanged.value) {
+		saveLanguageResource.submit(
+			{ language: selectedLanguage.value },
+			{ onSuccess: () => window.location.reload() }
+		)
+	} else {
+		handleClose()
+	}
+}
+
 // ── Bootstrap resources when user data is available ──────────────────────────
 const studentResource = ref(null)
 const instructorResource = ref(null)
@@ -392,6 +459,7 @@ const instructorResource = ref(null)
 watchEffect(() => {
 	if (!userResource.data) return
 	isStudent.value = userResource.data.is_student
+	isInstructor.value = userResource.data.is_instructor
 	user.value = userResource.data.name
 
 	if (isStudent.value && !studentResource.value) {
@@ -414,7 +482,7 @@ watchEffect(() => {
 		})
 	}
 
-	if (!isStudent.value && !instructorResource.value) {
+	if (isInstructor.value && !instructorResource.value) {
 		instructorResource.value = createResource({
 			url: 'seminary.seminary.api.get_instructor_info',
 			auto: true,
@@ -441,7 +509,7 @@ const dialogOptions = computed(() => ({
 		{
 			label: __('Save'),
 			variant: 'solid',
-			onClick: isStudent.value ? saveStudent : saveInstructor,
+			onClick: isStudent.value ? saveStudent : (isInstructor.value ? saveInstructor : savePreferences),
 		},
 		{
 			label: __('Close'),
