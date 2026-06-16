@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "autoname": "PINHL-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A day's logged internship hours against a placement. Whether it counts toward the total depends on the type's tracking mode.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#logging-hours",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "internship_placement",
+  "internship_application",
+  "partner_org",
+  "column_break_head",
+  "log_date",
+  "hours",
+  "description",
+  "verification_section",
+  "supervisor_verified",
+  "column_break_verify",
+  "verified_by",
+  "verified_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_placement",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Placement",
+   "options": "Internship Placement",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_placement.internship_application",
+   "fieldname": "internship_application",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Internship Application",
+   "options": "Internship Application",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_placement.partner_org",
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "log_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Hours",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "verification_section",
+   "fieldtype": "Section Break",
+   "label": "Verification"
+  },
+  {
+   "default": "0",
+   "description": "Set by the site supervisor. Required for hours to count when the type tracks with supervisor confirmation.",
+   "fieldname": "supervisor_verified",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Supervisor Verified"
+  },
+  {
+   "fieldname": "column_break_verify",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Verified By",
+   "options": "Person",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Hours Log",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "log_date",
+ "sort_order": "DESC",
+ "states": []
+}

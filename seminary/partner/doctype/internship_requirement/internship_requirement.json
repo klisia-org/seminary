@@ -1,0 +1,487 @@
+{
+ "actions": [],
+ "autoname": "PINR-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A tracked internship deliverable, snapshotted from an Internship Requirement Template onto an application (or placement). Carries the three party submissions and sign-offs.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#requirements",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "internship_application",
+  "internship_placement",
+  "requirement_template",
+  "internship_type",
+  "partner_org",
+  "column_break_head",
+  "title",
+  "scope",
+  "status",
+  "due_date",
+  "completed_on",
+  "mandatory",
+  "is_hour_log",
+  "submit_template",
+  "student_section",
+  "student_submits",
+  "student_label",
+  "student_submission_type",
+  "student_instructions",
+  "student_attachment",
+  "student_submission_value",
+  "student_acknowledged",
+  "student_submitted_on",
+  "student_submitted_by",
+  "seminary_section",
+  "seminary_submits",
+  "seminary_label",
+  "seminary_submission_type",
+  "seminary_instructions",
+  "seminary_attachment",
+  "seminary_submission_value",
+  "seminary_acknowledged",
+  "seminary_submitted_on",
+  "seminary_submitted_by",
+  "seminary_signoff_column",
+  "seminary_signs_complete",
+  "seminary_signoff",
+  "seminary_signed_by",
+  "seminary_signed_on",
+  "partner_section",
+  "partner_submits",
+  "partner_label",
+  "partner_submission_type",
+  "partner_instructions",
+  "partner_attachment",
+  "partner_submission_value",
+  "partner_acknowledged",
+  "partner_submitted_on",
+  "partner_submitted_by",
+  "partner_signoff_column",
+  "partner_signs_complete",
+  "partner_signoff",
+  "partner_signed_by",
+  "partner_signed_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_application",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Internship Application",
+   "options": "Internship Application",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "internship_placement",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Internship Placement",
+   "options": "Internship Placement",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "requirement_template",
+   "fieldtype": "Link",
+   "label": "Requirement Template",
+   "options": "Internship Requirement Template",
+   "read_only": 1
+  },
+  {
+   "fieldname": "internship_type",
+   "fieldtype": "Link",
+   "label": "Internship Type",
+   "options": "Internship Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "internship_placement.partner_org",
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scope",
+   "fieldtype": "Select",
+   "label": "Scope",
+   "options": "Application\nPlacement",
+   "read_only": 1
+  },
+  {
+   "default": "Not Started",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Not Started\nIn Progress\nSubmitted\nCompleted\nWaived"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_hour_log",
+   "fieldtype": "Check",
+   "label": "Is Hour Log",
+   "read_only": 1
+  },
+  {
+   "depends_on": "submit_template",
+   "description": "Blank form to download and fill for this requirement's submission.",
+   "fieldname": "submit_template",
+   "fieldtype": "Attach",
+   "label": "Submission Form Template",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "student_submits",
+   "fieldname": "student_section",
+   "fieldtype": "Section Break",
+   "label": "Student"
+  },
+  {
+   "default": "0",
+   "fieldname": "student_submits",
+   "fieldtype": "Check",
+   "label": "Student Submits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_label",
+   "fieldtype": "Data",
+   "label": "What to Submit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_submission_type",
+   "fieldtype": "Select",
+   "label": "Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Instructions",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.student_submission_type=='Attachment'",
+   "fieldname": "student_attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "depends_on": "eval:['Text','Link'].includes(doc.student_submission_type)",
+   "fieldname": "student_submission_value",
+   "fieldtype": "Small Text",
+   "label": "Submission"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.student_submission_type=='Acknowledgement'",
+   "fieldname": "student_acknowledged",
+   "fieldtype": "Check",
+   "label": "Acknowledged"
+  },
+  {
+   "fieldname": "student_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "seminary_submits",
+   "fieldname": "seminary_section",
+   "fieldtype": "Section Break",
+   "label": "Seminary"
+  },
+  {
+   "default": "0",
+   "fieldname": "seminary_submits",
+   "fieldtype": "Check",
+   "label": "Seminary Submits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seminary_label",
+   "fieldtype": "Data",
+   "label": "What to Submit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seminary_submission_type",
+   "fieldtype": "Select",
+   "label": "Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seminary_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Instructions",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.seminary_submission_type=='Attachment'",
+   "fieldname": "seminary_attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "depends_on": "eval:['Text','Link'].includes(doc.seminary_submission_type)",
+   "fieldname": "seminary_submission_value",
+   "fieldtype": "Small Text",
+   "label": "Submission"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.seminary_submission_type=='Acknowledgement'",
+   "fieldname": "seminary_acknowledged",
+   "fieldtype": "Check",
+   "label": "Acknowledged"
+  },
+  {
+   "fieldname": "seminary_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seminary_submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seminary_signoff_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "seminary_signs_complete",
+   "fieldtype": "Check",
+   "label": "Seminary Signs Complete",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "seminary_signs_complete",
+   "fieldname": "seminary_signoff",
+   "fieldtype": "Check",
+   "label": "Signed Complete by Seminary"
+  },
+  {
+   "depends_on": "seminary_signs_complete",
+   "fieldname": "seminary_signed_by",
+   "fieldtype": "Link",
+   "label": "Signed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "seminary_signs_complete",
+   "fieldname": "seminary_signed_on",
+   "fieldtype": "Datetime",
+   "label": "Signed On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "partner_submits",
+   "fieldname": "partner_section",
+   "fieldtype": "Section Break",
+   "label": "Partner Organization"
+  },
+  {
+   "default": "0",
+   "fieldname": "partner_submits",
+   "fieldtype": "Check",
+   "label": "Partner Submits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "partner_label",
+   "fieldtype": "Data",
+   "label": "What to Submit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "partner_submission_type",
+   "fieldtype": "Select",
+   "label": "Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement",
+   "read_only": 1
+  },
+  {
+   "fieldname": "partner_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Instructions",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.partner_submission_type=='Attachment'",
+   "fieldname": "partner_attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "depends_on": "eval:['Text','Link'].includes(doc.partner_submission_type)",
+   "fieldname": "partner_submission_value",
+   "fieldtype": "Small Text",
+   "label": "Submission"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.partner_submission_type=='Acknowledgement'",
+   "fieldname": "partner_acknowledged",
+   "fieldtype": "Check",
+   "label": "Acknowledged"
+  },
+  {
+   "fieldname": "partner_submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "partner_submitted_by",
+   "fieldtype": "Link",
+   "label": "Submitted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "partner_signoff_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "partner_signs_complete",
+   "fieldtype": "Check",
+   "label": "Partner Signs Complete",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "partner_signs_complete",
+   "fieldname": "partner_signoff",
+   "fieldtype": "Check",
+   "label": "Signed Complete by Partner"
+  },
+  {
+   "depends_on": "partner_signs_complete",
+   "fieldname": "partner_signed_by",
+   "fieldtype": "Link",
+   "label": "Signed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "partner_signs_complete",
+   "fieldname": "partner_signed_on",
+   "fieldtype": "Datetime",
+   "label": "Signed On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Requirement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "title"
+}

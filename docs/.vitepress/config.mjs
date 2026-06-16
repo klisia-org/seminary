@@ -70,6 +70,7 @@ export default withMermaid(defineConfig({
               { text: 'Attendance', link: '/modules/attendance' },
               { text: 'Graduation Requirements', link: '/modules/graduation-requirements' },
               { text: 'Graduation Request', link: '/modules/graduation-request' },
+              { text: 'Internships', link: '/modules/internship' },
               { text: 'Scholarships', link: '/modules/scholarships' },
               { text: 'Alumni', link: '/modules/alumni' },
               { text: 'Discussions', link: '/modules/discussions' },

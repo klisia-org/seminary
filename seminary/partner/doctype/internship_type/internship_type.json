@@ -1,0 +1,222 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:type_name",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A kind of internship a student can pursue (e.g. Worship, Chaplaincy, Pastoral). Defines the required hours and how they are tracked, the requirement template, the optional backing course (credits/grade), the graduation requirement it fulfils, and an optional faculty advisor pool.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#internship-types",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "type_name",
+  "is_active",
+  "column_break_main",
+  "total_hours_required",
+  "allow_multi_site",
+  "max_sites",
+  "section_break_tracking",
+  "hours_tracking",
+  "column_break_tracking",
+  "graduation_requirement_item",
+  "section_break_eval",
+  "course",
+  "evaluation_model",
+  "section_break_faculty",
+  "auto_assign_faculty",
+  "advisor_slots",
+  "section_break_about",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "label": "Type Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Default total hours a student must log to complete this type. A program can override this on its graduation requirement (Program Grad Req Items → Internship Hours Required), so one type can require different hours per program.",
+   "fieldname": "total_hours_required",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Default Hours Required",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "description": "Allow a student to fulfil this internship across more than one placement site.",
+   "fieldname": "allow_multi_site",
+   "fieldtype": "Check",
+   "label": "Allow Multi-Site"
+  },
+  {
+   "default": "1",
+   "depends_on": "allow_multi_site",
+   "description": "Maximum number of placement sites a student may use (when multi-site is allowed).",
+   "fieldname": "max_sites",
+   "fieldtype": "Int",
+   "label": "Max Sites",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_break_tracking",
+   "fieldtype": "Section Break",
+   "label": "Hours Tracking"
+  },
+  {
+   "default": "Portal Daily Log",
+   "description": "How logged hours count toward the total. 'Portal Daily Log' counts immediately; '... with Supervisor Confirmation' counts only verified rows; 'Submittable Log' counts once the designated hour-log requirement is signed complete.",
+   "fieldname": "hours_tracking",
+   "fieldtype": "Select",
+   "label": "Hours Tracking",
+   "options": "Portal Daily Log\nPortal Daily Log with Supervisor Confirmation\nSubmittable Log"
+  },
+  {
+   "fieldname": "column_break_tracking",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The graduation requirement library item this internship fulfils. A student may apply only when their active enrollment has an open requirement of this item; completion reflects back to it.",
+   "fieldname": "graduation_requirement_item",
+   "fieldtype": "Link",
+   "label": "Graduation Requirement Item",
+   "options": "Graduation Requirement Item"
+  },
+  {
+   "fieldname": "section_break_eval",
+   "fieldtype": "Section Break",
+   "label": "Evaluation & Credit"
+  },
+  {
+   "description": "Optional. When set, this internship carries the course's credits, grade and fees: an application enrolls the student in the course and evaluation follows the course. Leave blank for a non-credit internship.",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Backing Course",
+   "options": "Course"
+  },
+  {
+   "default": "Inherited from Course",
+   "description": "How the internship is graded. 'Inherited from Course' requires a backing course (the course's grading scale applies). Without a course, pick Pass/Fail or Graded; the faculty advisor records the outcome on the application.",
+   "fieldname": "evaluation_model",
+   "fieldtype": "Select",
+   "label": "Evaluation Model",
+   "options": "Inherited from Course\nPass/Fail\nGraded"
+  },
+  {
+   "fieldname": "section_break_faculty",
+   "fieldtype": "Section Break",
+   "label": "Faculty Assignment"
+  },
+  {
+   "default": "0",
+   "description": "When on, an accepted application is assigned a faculty advisor by round-robin over the pool below (manual entry always wins).",
+   "fieldname": "auto_assign_faculty",
+   "fieldtype": "Check",
+   "label": "Auto-Assign Faculty"
+  },
+  {
+   "depends_on": "auto_assign_faculty",
+   "description": "Advisor pool for round-robin assignment. The slot with the most remaining capacity is picked.",
+   "fieldname": "advisor_slots",
+   "fieldtype": "Table",
+   "label": "Advisor Pool",
+   "options": "Internship Type Advisor Slot"
+  },
+  {
+   "fieldname": "section_break_about",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [
+  {
+   "group": "Configuration",
+   "link_doctype": "Internship Requirement Template",
+   "link_fieldname": "internship_type"
+  },
+  {
+   "group": "Internships",
+   "link_doctype": "Internship Position",
+   "link_fieldname": "internship_type"
+  }
+ ],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

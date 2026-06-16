@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "PORG-.#####",
  "creation": "2026-06-13 12:00:00",
- "description": "An external organization the seminary relates to (church, mission agency, denomination, para-church organization, NGO). The relationship spine \u2014 it carries the partner's type, engagement, capabilities, and people, and links out to a Customer only when billing is involved. Distinct from Partner Seminary (academic credit). See ADR 053.",
+ "description": "An external organization the seminary relates to (church, mission agency, denomination, para-church organization, NGO). The relationship spine \u2014 it carries the partner's type, engagement, capabilities, and people, and links out to a Customer only when billing is involved. Distinct from Partner Seminary (academic credit).",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/partners.html",
  "engine": "InnoDB",
@@ -23,6 +23,8 @@
   "column_break_caps",
   "provides_qa_feedback",
   "is_alumni_employer",
+  "internships_section",
+  "allowed_internship_types",
   "reachability_section",
   "primary_email",
   "column_break_reach",
@@ -149,6 +151,20 @@
    "fieldname": "is_alumni_employer",
    "fieldtype": "Check",
    "label": "Is Alumni Employer"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "offers_internships",
+   "fieldname": "internships_section",
+   "fieldtype": "Section Break",
+   "label": "Internships"
+  },
+  {
+   "description": "Internship types this organization is approved to offer. Leave empty to allow any type; list one or more to restrict it to those.",
+   "fieldname": "allowed_internship_types",
+   "fieldtype": "Table",
+   "label": "Allowed Internship Types",
+   "options": "Partner Allowed Internship Type"
   },
   {
    "fieldname": "reachability_section",

@@ -17,6 +17,7 @@
   "section_break_euxl",
   "event_custom_category",
   "column_break_jscs",
+  "allowed_document",
   "link_doctype",
   "section_break_uqmw",
   "student_choice",
@@ -81,10 +82,21 @@
   },
   {
    "depends_on": "eval:doc.requirement_type=='Linked Document'",
+   "description": "Pick the kind of document that fulfils this requirement from the curated list. Advanced users can extend the list via Allowed Graduation Document.",
+   "fieldname": "allowed_document",
+   "fieldtype": "Link",
+   "label": "Fulfilling Document",
+   "options": "Allowed Graduation Document"
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Linked Document'",
+   "description": "The underlying DocType, derived from the Fulfilling Document above.",
+   "fetch_from": "allowed_document.document_type",
    "fieldname": "link_doctype",
    "fieldtype": "Link",
-   "label": "Linked Document",
-   "options": "DocType"
+   "label": "Linked DocType",
+   "options": "DocType",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_jscs",

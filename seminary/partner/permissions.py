@@ -87,3 +87,52 @@ def application_query(user=None):
 
 def application_has(doc, ptype=None, user=None):
     return _has(doc, user, "partner_org")
+
+
+# --- Internship subsystem (every doctype carries partner_org, ADR 054) ---
+def internship_position_query(user=None):
+    return _conditions(user, "Internship Position", "partner_org")
+
+
+def internship_position_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")
+
+
+def internship_application_query(user=None):
+    return _conditions(user, "Internship Application", "partner_org")
+
+
+def internship_application_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")
+
+
+def internship_placement_query(user=None):
+    return _conditions(user, "Internship Placement", "partner_org")
+
+
+def internship_placement_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")
+
+
+def internship_hours_log_query(user=None):
+    return _conditions(user, "Internship Hours Log", "partner_org")
+
+
+def internship_hours_log_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")
+
+
+def internship_requirement_query(user=None):
+    return _conditions(user, "Internship Requirement", "partner_org")
+
+
+def internship_requirement_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")
+
+
+def internship_supervisor_evaluation_query(user=None):
+    return _conditions(user, "Internship Supervisor Evaluation", "partner_org")
+
+
+def internship_supervisor_evaluation_has(doc, ptype=None, user=None):
+    return _has(doc, user, "partner_org")

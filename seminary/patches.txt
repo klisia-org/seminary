@@ -36,3 +36,5 @@ seminary.seminary.patches.backfill_donor_person_link
 seminary.seminary.patches.backfill_student_attendance_meeting
 seminary.seminary.patches.retire_article_and_course_topic
 seminary.seminary.patches.backfill_partner_listing_status
+seminary.seminary.patches.backfill_allowed_graduation_documents
+seminary.seminary.patches.backfill_person_gender

@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "creation": "2026-06-16 12:00:00",
+ "description": "A recurring weekly time block expected for an Internship Position.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#positions",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "day_of_week",
+  "start_time",
+  "end_time"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "day_of_week",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Day of Week",
+   "options": "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Start"
+  },
+  {
+   "columns": 3,
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "End"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Position Schedule",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

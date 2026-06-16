@@ -17,5 +17,15 @@
   "graduationRequest.financialReview": "Financial Review",
   "graduationRequest.approved": "Approved",
   "graduationRequest.cancelled": "Cancelled",
-  "graduationRequest.freeSkips": "free programs skip"
+  "graduationRequest.freeSkips": "free programs skip",
+
+   "internship.type": "Internship Type",
+    "internship.position": "Internship Position",
+    "internship.application": "Internship Application",
+    "internship.placement": "Internship Placement(s)",
+    "internship.hourReq": "Hours + Requirements",
+    "internship.gradReq": "Graduation Requirements",
+    "internship.documents": "Documented as",
+    "internship.governs": "Governs",
+    "internship.fulfills": "Fulfills"
 }

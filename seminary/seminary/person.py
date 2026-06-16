@@ -57,6 +57,7 @@ def ensure_person(
     language=None,
     country=None,
     image=None,
+    gender=None,
 ):
     """Get-or-create the Person for an email/User; returns the Person name.
 
@@ -91,6 +92,7 @@ def ensure_person(
         "language": language,
         "country": country,
         "image": image,
+        "gender": gender,
     }
 
     existing = find_person(email=email, user=user)
@@ -125,6 +127,7 @@ def update_person(
     language=None,
     country=None,
     image=None,
+    gender=None,
     overwrite=False,
 ):
     """Re-sync a known Person from a role record.
@@ -143,6 +146,7 @@ def update_person(
         "language": language,
         "country": country,
         "image": image,
+        "gender": gender,
     }
     changed = _apply(person, values, email=normalize_email(email), overwrite=overwrite)
     changed = _link_user(person, user) or changed

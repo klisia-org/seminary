@@ -36,6 +36,28 @@ const routes = [
     props: true,
   },
   {
+    path: "/internships",
+    name: "Internships",
+    component: () => import('@/pages/Internships.vue'),
+  },
+  {
+    path: "/my-internships",
+    name: "MyInternships",
+    component: () => import('@/pages/MyInternships.vue'),
+  },
+  {
+    path: "/my-internships/:name",
+    name: "MyInternship",
+    component: () => import('@/pages/MyInternship.vue'),
+    props: true,
+  },
+  {
+    path: "/internships/:name",
+    name: "Internship",
+    component: () => import('@/pages/Internship.vue'),
+    props: true,
+  },
+  {
     path: "/partner",
     redirect: "/partner/jobs",
   },
@@ -76,6 +98,39 @@ const routes = [
     name: "PartnerApplication",
     component: () => import('@/pages/PartnerApplication.vue'),
     props: true,
+  },
+  {
+    path: "/partner/internships",
+    name: "PartnerInternshipPostings",
+    component: () => import('@/pages/PartnerInternshipPostings.vue'),
+  },
+  {
+    path: "/partner/internships/new",
+    name: "PartnerInternshipPostingNew",
+    component: () => import('@/pages/PartnerInternshipPostingForm.vue'),
+  },
+  {
+    path: "/partner/internships/:name/edit",
+    name: "PartnerInternshipPostingEdit",
+    component: () => import('@/pages/PartnerInternshipPostingForm.vue'),
+    props: true,
+  },
+  {
+    path: "/partner/internships/:name",
+    name: "PartnerInternshipPosting",
+    component: () => import('@/pages/PartnerInternshipPosting.vue'),
+    props: true,
+  },
+  {
+    path: "/partner/internships/:name/applicants/:appName",
+    name: "PartnerInternshipApplicant",
+    component: () => import('@/pages/PartnerInternshipApplicant.vue'),
+    props: true,
+  },
+  {
+    path: "/partner/interns",
+    name: "PartnerInterns",
+    component: () => import('@/pages/PartnerInterns.vue'),
   },
   {
     path: "/grades",

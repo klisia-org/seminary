@@ -1,0 +1,167 @@
+{
+ "actions": [],
+ "autoname": "PINSF-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A student's confidential feedback on an internship placement.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#evaluations-and-feedback",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "internship_placement",
+  "internship_application",
+  "column_break_head",
+  "overall_rating",
+  "would_recommend",
+  "ratings_section",
+  "site_supervisor",
+  "supervision_quality",
+  "spiritual_formation_value",
+  "column_break_ratings",
+  "workload_appropriateness",
+  "narrative_section",
+  "highlights",
+  "concerns",
+  "suggestions_for_seminary"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_placement",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Placement",
+   "options": "Internship Placement",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_placement.internship_application",
+   "fieldname": "internship_application",
+   "fieldtype": "Link",
+   "label": "Internship Application",
+   "options": "Internship Application",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "overall_rating",
+   "fieldtype": "Rating",
+   "label": "Overall Rating"
+  },
+  {
+   "default": "0",
+   "fieldname": "would_recommend",
+   "fieldtype": "Check",
+   "label": "Would Recommend to Other Students"
+  },
+  {
+   "fieldname": "ratings_section",
+   "fieldtype": "Section Break",
+   "label": "Ratings"
+  },
+  {
+   "description": "The supervisor in charge at this placement, so feedback can be read against the specific person.",
+   "fetch_from": "internship_placement.site_supervisor",
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Person",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supervision_quality",
+   "fieldtype": "Select",
+   "label": "Supervision Quality",
+   "options": "\nExcellent\nGood\nAdequate\nPoor"
+  },
+  {
+   "fieldname": "spiritual_formation_value",
+   "fieldtype": "Select",
+   "label": "Spiritual Formation Value",
+   "options": "\nHigh\nModerate\nLow"
+  },
+  {
+   "fieldname": "column_break_ratings",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "workload_appropriateness",
+   "fieldtype": "Select",
+   "label": "Workload Appropriateness",
+   "options": "\nToo Light\nAppropriate\nToo Heavy"
+  },
+  {
+   "fieldname": "narrative_section",
+   "fieldtype": "Section Break",
+   "label": "Narrative"
+  },
+  {
+   "fieldname": "highlights",
+   "fieldtype": "Text Editor",
+   "label": "Highlights"
+  },
+  {
+   "fieldname": "concerns",
+   "fieldtype": "Text Editor",
+   "label": "Concerns"
+  },
+  {
+   "fieldname": "suggestions_for_seminary",
+   "fieldtype": "Text Editor",
+   "label": "Suggestions for the Seminary"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Student Internship Feedback",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

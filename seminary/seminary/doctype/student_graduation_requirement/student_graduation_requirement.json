@@ -29,6 +29,7 @@
   "link_doctype",
   "linked_doc_status",
   "linked_doc",
+  "internship_hours_required",
   "section_break_evidence",
   "student_evidence_attachment",
   "column_break_evidence",
@@ -216,6 +217,16 @@
    "fieldtype": "Dynamic Link",
    "label": "Linked Document",
    "options": "link_doctype"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.link_doctype=='Internship Application'",
+   "description": "Snapshot of the program's required internship hours for this requirement; an internship application reads its hour target from here.",
+   "fieldname": "internship_hours_required",
+   "fieldtype": "Int",
+   "label": "Internship Hours Required",
+   "non_negative": 1,
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.requirement_type=='Manual Verification'",

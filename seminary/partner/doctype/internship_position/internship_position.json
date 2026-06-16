@@ -1,0 +1,306 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "autoname": "PINP-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "An internship opening a Partner Organization offers, tied to an Internship Type, with its weekly commitment, schedule, and how applications are accepted.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#positions",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "partner_org",
+  "internship_type",
+  "column_break_head",
+  "status",
+  "acceptance_mode",
+  "details_section",
+  "title",
+  "location",
+  "ministry_setting",
+  "column_break_details",
+  "planned_placements",
+  "placements_filled",
+  "default_site_supervisor",
+  "description_section",
+  "description",
+  "qualifications",
+  "commitment_section",
+  "min_hours_per_week",
+  "flexible_dates",
+  "preferred_start",
+  "preferred_end",
+  "column_break_commitment",
+  "flexible_schedule",
+  "weekly_schedule",
+  "schedule_notes",
+  "audience_section",
+  "open_students",
+  "column_break_audience",
+  "publish",
+  "route"
+ ],
+ "fields": [
+  {
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "internship_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Type",
+   "options": "Internship Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nClosed"
+  },
+  {
+   "default": "Evaluate Applications",
+   "description": "Auto-Accept = a submitted application is accepted immediately and a placement is created. Evaluate = the organization reviews applications before accepting.",
+   "fieldname": "acceptance_mode",
+   "fieldtype": "Select",
+   "label": "Acceptance Mode",
+   "options": "Auto-Accept on Submission\nEvaluate Applications"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "description": "A site of the partner organization. Pick a location to inherit its ministry setting and make this position filterable by it.",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Partner Organization Location"
+  },
+  {
+   "fetch_from": "location.ministry_setting",
+   "fieldname": "ministry_setting",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Ministry Setting",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "planned_placements",
+   "fieldtype": "Int",
+   "label": "Planned Placements",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Accepted placements so far. Auto-closes the position when full.",
+   "fieldname": "placements_filled",
+   "fieldtype": "Int",
+   "label": "Placements Filled",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Default supervisor for placements made from this position (the person behind a Partner Contact). Can be changed per placement.",
+   "fieldname": "default_site_supervisor",
+   "fieldtype": "Link",
+   "label": "Default Site Supervisor",
+   "options": "Person"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "The internship's focus and responsibilities.",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "description": "Qualifications or readiness expected of the student.",
+   "fieldname": "qualifications",
+   "fieldtype": "Text Editor",
+   "label": "Qualifications"
+  },
+  {
+   "fieldname": "commitment_section",
+   "fieldtype": "Section Break",
+   "label": "Commitment & Schedule"
+  },
+  {
+   "default": "0",
+   "description": "Minimum weekly hours expected of the intern.",
+   "fieldname": "min_hours_per_week",
+   "fieldtype": "Float",
+   "label": "Minimum Hours / Week",
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "description": "When off, give preferred start/end dates.",
+   "fieldname": "flexible_dates",
+   "fieldtype": "Check",
+   "label": "Flexible Dates"
+  },
+  {
+   "depends_on": "eval:!doc.flexible_dates",
+   "fieldname": "preferred_start",
+   "fieldtype": "Date",
+   "label": "Preferred Start"
+  },
+  {
+   "depends_on": "eval:!doc.flexible_dates",
+   "fieldname": "preferred_end",
+   "fieldtype": "Date",
+   "label": "Preferred End"
+  },
+  {
+   "fieldname": "column_break_commitment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "When off, specify the weekly time blocks below.",
+   "fieldname": "flexible_schedule",
+   "fieldtype": "Check",
+   "label": "Flexible Schedule"
+  },
+  {
+   "depends_on": "eval:!doc.flexible_schedule",
+   "fieldname": "weekly_schedule",
+   "fieldtype": "Table",
+   "label": "Weekly Schedule",
+   "options": "Internship Position Schedule"
+  },
+  {
+   "fieldname": "schedule_notes",
+   "fieldtype": "Small Text",
+   "label": "Schedule Notes"
+  },
+  {
+   "fieldname": "audience_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "open_students",
+   "fieldtype": "Check",
+   "label": "Open to Students"
+  },
+  {
+   "fieldname": "column_break_audience",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Publish on the student portal. Partner-created positions are reviewed by seminary staff before they go live.",
+   "fieldname": "publish",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Publish on Portal"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Route",
+   "read_only": 1,
+   "unique": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Applications",
+   "link_doctype": "Internship Application",
+   "link_fieldname": "internship_position"
+  }
+ ],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Position",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}
