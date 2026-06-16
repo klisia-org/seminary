@@ -49,13 +49,13 @@
 
 			<div class="flex flex-col gap-2">
 				<label class="flex items-center gap-2 text-sm text-ink-gray-7">
-					<input type="checkbox" v-model="form.open_students" class="rounded border-outline-gray-3" />{{ __('Open to students') }}
+					<input type="checkbox" v-model="form.open_students" :true-value="1" :false-value="0" class="rounded border-outline-gray-3" />{{ __('Open to students') }}
 				</label>
 				<label class="flex items-center gap-2 text-sm text-ink-gray-7">
-					<input type="checkbox" v-model="form.open_alumni" class="rounded border-outline-gray-3" />{{ __('Open to alumni') }}
+					<input type="checkbox" v-model="form.open_alumni" :true-value="1" :false-value="0" class="rounded border-outline-gray-3" />{{ __('Open to alumni') }}
 				</label>
 				<label class="flex items-center gap-2 text-sm text-ink-gray-7">
-					<input type="checkbox" v-model="form.require_doctrinal_alignment" class="rounded border-outline-gray-3" />
+					<input type="checkbox" v-model="form.require_doctrinal_alignment" :true-value="1" :false-value="0" class="rounded border-outline-gray-3" />
 					{{ __('Require doctrinal agreement (needs a doctrinal statement on your profile)') }}
 				</label>
 			</div>

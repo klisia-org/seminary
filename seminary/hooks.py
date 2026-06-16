@@ -237,6 +237,12 @@ permission_query_conditions = {
     "Partner Organization Location": "seminary.partner.permissions.location_query",
     "Partner Job Opening": "seminary.partner.permissions.opening_query",
     "Partner Job Application": "seminary.partner.permissions.application_query",
+    "Internship Position": "seminary.partner.permissions.internship_position_query",
+    "Internship Application": "seminary.partner.permissions.internship_application_query",
+    "Internship Placement": "seminary.partner.permissions.internship_placement_query",
+    "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_query",
+    "Internship Requirement": "seminary.partner.permissions.internship_requirement_query",
+    "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_query",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -252,6 +258,12 @@ has_permission = {
     "Partner Organization Location": "seminary.partner.permissions.location_has",
     "Partner Job Opening": "seminary.partner.permissions.opening_has",
     "Partner Job Application": "seminary.partner.permissions.application_has",
+    "Internship Position": "seminary.partner.permissions.internship_position_has",
+    "Internship Application": "seminary.partner.permissions.internship_application_has",
+    "Internship Placement": "seminary.partner.permissions.internship_placement_has",
+    "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_has",
+    "Internship Requirement": "seminary.partner.permissions.internship_requirement_has",
+    "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_has",
 }
 
 # DocType Class
@@ -449,7 +461,10 @@ scheduler_events = {
         # Communication Log drainer (ADR 043): rate-limited per provider account.
         "*/5 * * * *": ["seminary.seminary.comms.dispatch"],
     },
-    "daily": ["seminary.tasks.daily"],
+    "daily": [
+        "seminary.tasks.daily",
+        "seminary.partner.internship.activate_due_placements",
+    ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [
     # 		"seminary.tasks.weekly"

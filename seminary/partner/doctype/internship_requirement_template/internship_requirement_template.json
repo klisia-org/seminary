@@ -1,0 +1,298 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "PINRT-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A deliverable in an Internship Type's requirement template. Declares its scope, due-date rule, and the three party sets (student / seminary / partner) that submit and sign it. Snapshotted onto each Internship Requirement instance.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#requirement-templates",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "internship_type",
+  "title",
+  "column_break_head",
+  "scope",
+  "sequence",
+  "mandatory",
+  "is_hour_log",
+  "submit_template",
+  "section_break_due",
+  "due_anchor",
+  "due_offset_value",
+  "column_break_due",
+  "due_offset_unit",
+  "section_break_student",
+  "student_submits",
+  "student_label",
+  "student_submission_type",
+  "student_instructions",
+  "section_break_seminary",
+  "seminary_submits",
+  "seminary_label",
+  "seminary_submission_type",
+  "seminary_signs_complete",
+  "seminary_instructions",
+  "section_break_partner",
+  "partner_submits",
+  "partner_label",
+  "partner_submission_type",
+  "partner_signs_complete",
+  "partner_instructions"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Type",
+   "options": "Internship Type",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Placement",
+   "description": "Application = one instance per application (e.g. a learning covenant). Placement = one instance per placement site (e.g. a site evaluation).",
+   "fieldname": "scope",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scope",
+   "options": "Application\nPlacement"
+  },
+  {
+   "default": "0",
+   "description": "Order in which requirements are presented and chained (used by the 'Previous Requirement' anchor).",
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "label": "Sequence"
+  },
+  {
+   "default": "1",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "label": "Mandatory"
+  },
+  {
+   "default": "0",
+   "description": "Marks the deliverable that carries the submittable hours log. Required (exactly one per type) when the type's Hours Tracking is 'Submittable Log'.",
+   "fieldname": "is_hour_log",
+   "fieldtype": "Check",
+   "label": "Is Hour Log"
+  },
+  {
+   "description": "Optional blank form for a party to download, fill, and re-upload as their submission (e.g. a site evaluation form).",
+   "fieldname": "submit_template",
+   "fieldtype": "Attach",
+   "label": "Submission Form Template"
+  },
+  {
+   "fieldname": "section_break_due",
+   "fieldtype": "Section Break",
+   "label": "Due Date Rule"
+  },
+  {
+   "description": "Base date for the due date. 'Term Start' with the 'Academic Terms' unit walks N terms from the enrollment's term.",
+   "fieldname": "due_anchor",
+   "fieldtype": "Select",
+   "label": "Anchor",
+   "options": "Application Date\nPlacement Start\nPlacement End\nPrevious Requirement\nExpected Graduation\nTerm Start"
+  },
+  {
+   "default": "0",
+   "description": "Signed whole number added to the anchor (e.g. -7, 30).",
+   "fieldname": "due_offset_value",
+   "fieldtype": "Int",
+   "label": "Offset Value"
+  },
+  {
+   "fieldname": "column_break_due",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Days",
+   "fieldname": "due_offset_unit",
+   "fieldtype": "Select",
+   "label": "Offset Unit",
+   "options": "Days\nAcademic Terms"
+  },
+  {
+   "fieldname": "section_break_student",
+   "fieldtype": "Section Break",
+   "label": "Student"
+  },
+  {
+   "default": "0",
+   "fieldname": "student_submits",
+   "fieldtype": "Check",
+   "label": "Student Submits"
+  },
+  {
+   "depends_on": "student_submits",
+   "fieldname": "student_label",
+   "fieldtype": "Data",
+   "label": "Student Submission Label"
+  },
+  {
+   "default": "Attachment",
+   "depends_on": "student_submits",
+   "fieldname": "student_submission_type",
+   "fieldtype": "Select",
+   "label": "Student Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement"
+  },
+  {
+   "depends_on": "student_submits",
+   "fieldname": "student_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Student Instructions"
+  },
+  {
+   "fieldname": "section_break_seminary",
+   "fieldtype": "Section Break",
+   "label": "Seminary"
+  },
+  {
+   "default": "0",
+   "fieldname": "seminary_submits",
+   "fieldtype": "Check",
+   "label": "Seminary Submits"
+  },
+  {
+   "depends_on": "seminary_submits",
+   "fieldname": "seminary_label",
+   "fieldtype": "Data",
+   "label": "Seminary Submission Label"
+  },
+  {
+   "default": "Attachment",
+   "depends_on": "seminary_submits",
+   "fieldname": "seminary_submission_type",
+   "fieldtype": "Select",
+   "label": "Seminary Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement"
+  },
+  {
+   "default": "0",
+   "description": "The seminary (faculty/registrar) signs this requirement complete.",
+   "fieldname": "seminary_signs_complete",
+   "fieldtype": "Check",
+   "label": "Seminary Signs Complete"
+  },
+  {
+   "depends_on": "seminary_submits",
+   "fieldname": "seminary_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Seminary Instructions"
+  },
+  {
+   "fieldname": "section_break_partner",
+   "fieldtype": "Section Break",
+   "label": "Partner Organization"
+  },
+  {
+   "default": "0",
+   "fieldname": "partner_submits",
+   "fieldtype": "Check",
+   "label": "Partner Submits"
+  },
+  {
+   "depends_on": "partner_submits",
+   "fieldname": "partner_label",
+   "fieldtype": "Data",
+   "label": "Partner Submission Label"
+  },
+  {
+   "default": "Attachment",
+   "depends_on": "partner_submits",
+   "fieldname": "partner_submission_type",
+   "fieldtype": "Select",
+   "label": "Partner Submission Type",
+   "options": "Attachment\nText\nLink\nAcknowledgement"
+  },
+  {
+   "default": "0",
+   "description": "The partner organization (site supervisor) signs this requirement complete.",
+   "fieldname": "partner_signs_complete",
+   "fieldtype": "Check",
+   "label": "Partner Signs Complete"
+  },
+  {
+   "depends_on": "partner_submits",
+   "fieldname": "partner_instructions",
+   "fieldtype": "Text Editor",
+   "label": "Partner Instructions"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Requirement Template",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

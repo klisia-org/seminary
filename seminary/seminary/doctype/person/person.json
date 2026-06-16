@@ -17,6 +17,7 @@
   "image",
   "language",
   "country",
+  "gender",
   "reachability_section",
   "primary_email",
   "column_break_reach",
@@ -99,6 +100,13 @@
    "fieldtype": "Link",
    "label": "Country / Region",
    "options": "Country"
+  },
+  {
+   "description": "The person's gender. The shared human attribute for every role this person holds (student, instructor, partner contact).",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
   },
   {
    "fieldname": "reachability_section",

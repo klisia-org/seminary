@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":3}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":3}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":3}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":3}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"zCJmpIVH5E\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus and Building\",\"col\":4}},{\"id\":\"TD23W6NHLU\",\"type\":\"card\",\"data\":{\"card_name\":\"Rooms and Requirements\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"rif-EZ0Jgm\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
+ "content": "[{\"id\":\"4fff0a8c1a\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Registrar</span>\",\"col\":12}},{\"id\":\"b94e48e3e8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"eddL69-M9c\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Attendance Risk\",\"col\":5}},{\"id\":\"PRScVX4W-x\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students at Scholarship Risk\",\"col\":5}},{\"id\":\"PlAl9DX0jb\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"rJgeJ6AqFR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Partner Approvals</b></span>\",\"col\":12}},{\"id\":\"giaHJsk-Nn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Partner Organizations for Approval\",\"col\":5}},{\"id\":\"mDK7qirhEh\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Internship Positions to Approve\",\"col\":5}},{\"id\":\"g4pa5I9wIS\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Partner Job Opening to Publish\",\"col\":5}},{\"id\":\"uuZNKKHhY0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"3Xyk8-Bo0U\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Items that may need attention</b></span>\",\"col\":12}},{\"id\":\"1nFwDDlvlJ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Academic Terms\",\"col\":4}},{\"id\":\"bwcLDAU63M\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Withdrawal Request\",\"col\":4}},{\"id\":\"l_plabdV4H\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Internship Applications\",\"col\":4}},{\"id\":\"AufZjg2z9t\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Candidates\",\"col\":4}},{\"id\":\"b09f73faeb\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Graduation Request\",\"col\":5}},{\"id\":\"ofWmqukU8G\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Applicant\",\"col\":4}},{\"id\":\"98w3kPYPMZ\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"qkGH5Hli5Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quick Links</b></span>\",\"col\":12}},{\"id\":\"c9ec5dd9ef\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students\",\"col\":3}},{\"id\":\"2602936099\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":4}},{\"id\":\"9de1289954\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Admission\",\"col\":4}},{\"id\":\"2d6d9250a2\",\"type\":\"card\",\"data\":{\"card_name\":\"Records\",\"col\":4}},{\"id\":\"zCJmpIVH5E\",\"type\":\"card\",\"data\":{\"card_name\":\"Campus and Building\",\"col\":4}},{\"id\":\"TD23W6NHLU\",\"type\":\"card\",\"data\":{\"card_name\":\"Rooms and Requirements\",\"col\":4}},{\"id\":\"a8bfe8481f\",\"type\":\"card\",\"data\":{\"card_name\":\"Graduation\",\"col\":4}},{\"id\":\"0e79b4c12d\",\"type\":\"card\",\"data\":{\"card_name\":\"Discipline & Withdrawals\",\"col\":4}},{\"id\":\"rif-EZ0Jgm\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":4}},{\"id\":\"Ay7uJ4z4nl\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"u842iDcOP6\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Regenerate Current-Term Invoices\",\"col\":12}},{\"id\":\"2nVf3GD5g3\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrar - Advance Students\",\"col\":12}}]",
  "creation": "2026-06-08 06:32:52.504998",
  "custom_blocks": [
   {
@@ -324,8 +324,8 @@
    "type": "Link"
   }
  ],
- "modified": "2026-06-13 02:44:18.720057",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-17 04:51:01.631123",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Registrar",
  "number_cards": [],
@@ -346,10 +346,62 @@
   {
    "color": "Grey",
    "doc_view": "List",
+   "format": "{} Applied",
+   "label": "Student Applicant",
+   "link_to": "Student Applicant",
+   "stats_filter": "[[\"Student Applicant\",\"application_status\",\"=\",\"Applied\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "Students at Attendance Risk",
    "link_to": "Students At Attendance Risk",
    "report_ref_doctype": "Scheduled Course Roster",
    "type": "Report"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} Pending Approval",
+   "label": "Partner Organizations for Approval",
+   "link_to": "Partner Organization",
+   "stats_filter": "[[\"Partner Organization\",\"listing_status\",\"=\",\"Pending Approval\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} To Publish",
+   "label": "Internship Positions to Approve",
+   "link_to": "Internship Position",
+   "stats_filter": "[[\"Internship Position\",\"status\",\"=\",\"Open\"],[\"Internship Position\",\"open_students\",\"=\",1],[\"Internship Position\",\"publish\",\"=\",0]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Program Enrollment",
+   "link_to": "Program Enrollment",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Term Admission",
+   "link_to": "Term Admission",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} To Publish",
+   "label": "Partner Job Opening to Publish",
+   "link_to": "Partner Job Opening",
+   "stats_filter": "[[\"Partner Job Opening\",\"publish\",\"=\",0],[\"Partner Job Opening\",\"status\",\"=\",\"Open\"]]",
+   "type": "DocType"
   },
   {
    "color": "Grey",
@@ -361,15 +413,27 @@
   {
    "color": "Grey",
    "doc_view": "List",
-   "label": "Program Enrollment",
-   "link_to": "Program Enrollment",
+   "label": "Students at Scholarship Risk",
+   "link_to": "Students at Scholarship Risk",
+   "report_ref_doctype": "Scholarship Award",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": "{} Open for Enrollment",
+   "label": "Academic Terms",
+   "link_to": "Academic Term",
+   "stats_filter": "[[\"Academic Term\",\"open\",\"=\",1]]",
    "type": "DocType"
   },
   {
    "color": "Grey",
    "doc_view": "List",
-   "label": "Term Admission",
-   "link_to": "Term Admission",
+   "format": "{} Submitted",
+   "label": "Withdrawal Request",
+   "link_to": "Withdrawal Request",
+   "stats_filter": "[[\"Withdrawal Request\",\"workflow_state\",\"=\",\"Submitted\"]]",
    "type": "DocType"
   },
   {
@@ -377,6 +441,23 @@
    "doc_view": "List",
    "label": "Graduation Request",
    "link_to": "Graduation Request",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} To Approve",
+   "label": "Internship Applications",
+   "link_to": "Internship Application",
+   "stats_filter": "[[\"Internship Application\",\"status\",\"=\",\"Draft\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Graduation Candidates",
+   "link_to": "Program Enrollment",
+   "stats_filter": "[[\"Program Enrollment\",\"pgmenrol_active\",\"=\",1],[\"Program Enrollment\",\"grad_candidate\",\"=\",1]]",
    "type": "DocType"
   }
  ],

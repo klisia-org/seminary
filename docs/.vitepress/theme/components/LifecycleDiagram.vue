@@ -84,6 +84,26 @@ stateDiagram-v2
     academic --> cancelled
     financial --> cancelled
 `,
+internship: (t) => `
+flowchart TD
+    classDef state fill:#ececff,stroke:#6c757d,rx:4,ry:4,color:#212529
+    classDef start fill:#212529,stroke:#212529,color:#fff
+
+    S([ ]):::start --> type
+    type["${t('internship.type')}"]:::state
+    position["${t('internship.position')}"]:::state
+    application["${t('internship.application')}"]:::state
+    placement["${t('internship.placement')}"]:::state
+    hourReq["${t('internship.hourReq')}"]:::state
+    gradReq["${t('internship.gradReq')}"]:::state
+
+    type --> application
+    type -->|${t('internship.governs')}| position
+    application --> placement
+    position --> placement
+    placement -->|${t('internship.documents')}| hourReq
+    hourReq -->|${t('internship.fulfills')}| gradReq
+`
 }
 
 const graph = computed(() => {

@@ -48,6 +48,9 @@ def after_install():
     seed_portal_messaging_rules()
     seed_partner_types()
     seed_skill_tags()
+    seed_allowed_graduation_documents()
+    seed_internship_types()
+    seed_internship_communication()
     setup_customer_person_field()
 
 
@@ -862,6 +865,207 @@ def seed_partner_types():
     frappe.db.commit()
 
 
+def seed_internship_communication():
+    """Seed starter internship notification templates + triggers (ADR 044/054).
+
+    Create-only-if-missing; seminaries edit the wording and enable/disable each
+    trigger on the desk. Edge-triggered, consent-aware and rate-limited through
+    the communication ledger (ADR 043), so they never spam."""
+    if not frappe.db.exists("DocType", "Communication Trigger"):
+        return
+
+    templates = [
+        (
+            "internship-accepted",
+            "Your internship application was accepted",
+            "<p>Good news — your internship application has been accepted. Open "
+            "<b>My Internships</b> on your student portal for your placement and next steps.</p>",
+        ),
+        (
+            "internship-rejected",
+            "Update on your internship application",
+            "<p>Your internship application was not accepted this time. Please speak with "
+            "your faculty advisor or the registrar about other opportunities.</p>",
+        ),
+        (
+            "internship-completed",
+            "Your internship is complete",
+            "<p>Your internship has been marked complete. Thank you for your faithful service.</p>",
+        ),
+    ]
+    for key, subject, body in templates:
+        if frappe.db.exists("Communication Template", key):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Communication Template",
+                "template_key": key,
+                "category": "Academic",
+                "description": _("Internship notice: {0}.").format(key),
+                "enabled": 1,
+                "versions": [{"channel": "Email", "subject": subject, "body": body}],
+            }
+        ).insert(ignore_permissions=True)
+
+    triggers = [
+        ("Internship Accepted", "Accepted", "internship-accepted"),
+        ("Internship Rejected", "Rejected", "internship-rejected"),
+        ("Internship Completed", "Completed", "internship-completed"),
+    ]
+    for name, status_value, template_key in triggers:
+        if frappe.db.exists("Communication Trigger", {"trigger_name": name}):
+            continue
+        if not frappe.db.exists("Communication Template", template_key):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Communication Trigger",
+                "trigger_name": name,
+                "reference_doctype": "Internship Application",
+                "trigger_on": "Save",
+                "enabled": 1,
+                "once_per_document": 1,
+                "template": template_key,
+                "conditions": [
+                    {"fieldname": "status", "operator": "Equals", "value": status_value}
+                ],
+                "recipients": [
+                    {"recipient_type": "Document Field", "document_field": "student"}
+                ],
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    from seminary.seminary.communication_triggers import clear_trigger_cache
+
+    clear_trigger_cache()
+
+
+def seed_allowed_graduation_documents():
+    """Seed the built-in Allowed Graduation Document options (ADR 054).
+
+    The curated picker behind a 'Linked Document' graduation requirement, so staff
+    choose from a friendly list instead of every DocType in the system. NOT
+    fixtures: seminaries may extend the list on the desk and a re-import would
+    clobber those edits. Created once, create-only-if-missing. Skipped silently
+    until the doctype exists (install ordering)."""
+    if not frappe.db.exists("DocType", "Allowed Graduation Document"):
+        return
+    defaults = [
+        ("Culminating Project", _("Thesis / Culminating Project"), "Completed"),
+        ("Recommendation Letter", _("Recommendation Letter"), "Approved"),
+        ("Internship Application", _("Internship"), "Completed"),
+    ]
+    for doctype, label, status in defaults:
+        if frappe.db.exists("Allowed Graduation Document", doctype):
+            # Ensure the built-in flag is set even if the backfill patch created
+            # the row first (it can't know which doctypes are canonical built-ins).
+            if not frappe.db.get_value(
+                "Allowed Graduation Document", doctype, "built_in"
+            ):
+                frappe.db.set_value(
+                    "Allowed Graduation Document", doctype, "built_in", 1
+                )
+            continue
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Allowed Graduation Document",
+                "document_type": doctype,
+                "label": label,
+                "fulfilling_status": status,
+                "is_active": 1,
+                "built_in": 1,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_internship_types():
+    """Seed starter Internship Types and their requirement templates if missing (ADR 054).
+
+    NOT fixtures: seminaries configure each type's hours, templates, and faculty
+    pool on the desk, and a fixture re-import would clobber those edits every
+    migrate. Created once, create-only-if-missing. Skipped silently until the
+    doctype exists (install ordering)."""
+    if not frappe.db.exists("DocType", "Internship Type"):
+        return
+
+    defaults = [
+        (
+            "Worship Internship",
+            200,
+            _("A supervised worship-ministry placement in a partner congregation."),
+        ),
+        (
+            "Chaplaincy Internship",
+            400,
+            _(
+                "A supervised chaplaincy placement (hospital, military, or institutional)."
+            ),
+        ),
+    ]
+    for type_name, hours, description in defaults:
+        if frappe.db.exists("Internship Type", type_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Internship Type",
+                "type_name": type_name,
+                "is_active": 1,
+                "total_hours_required": hours,
+                "hours_tracking": "Portal Daily Log with Supervisor Confirmation",
+                "evaluation_model": "Pass/Fail",
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+
+        # A minimal starter template set, only when this type has none yet.
+        if not frappe.db.exists(
+            "Internship Requirement Template", {"internship_type": type_name}
+        ):
+            frappe.get_doc(
+                {
+                    "doctype": "Internship Requirement Template",
+                    "internship_type": type_name,
+                    "title": _("Learning Covenant"),
+                    "scope": "Application",
+                    "sequence": 1,
+                    "mandatory": 1,
+                    "due_anchor": "Application Date",
+                    "due_offset_value": 14,
+                    "due_offset_unit": "Days",
+                    "student_submits": 1,
+                    "student_label": _("Signed learning covenant"),
+                    "student_submission_type": "Attachment",
+                    "seminary_submits": 0,
+                    "seminary_signs_complete": 1,
+                    "partner_submits": 0,
+                }
+            ).insert(ignore_permissions=True)
+            frappe.get_doc(
+                {
+                    "doctype": "Internship Requirement Template",
+                    "internship_type": type_name,
+                    "title": _("Final Site Evaluation"),
+                    "scope": "Placement",
+                    "sequence": 2,
+                    "mandatory": 1,
+                    "due_anchor": "Placement End",
+                    "due_offset_value": 7,
+                    "due_offset_unit": "Days",
+                    "student_submits": 0,
+                    "seminary_submits": 0,
+                    "partner_submits": 1,
+                    "partner_label": _("Completed site evaluation form"),
+                    "partner_submission_type": "Attachment",
+                    "partner_signs_complete": 1,
+                }
+            ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def seed_skill_tags():
     """Seed a starter set of Skill Tags if they don't already exist (ADR 053).
 
@@ -1170,6 +1374,9 @@ def after_migrate():
     seed_portal_messaging_rules()
     seed_partner_types()
     seed_skill_tags()
+    seed_allowed_graduation_documents()
+    seed_internship_types()
+    seed_internship_communication()
     setup_customer_person_field()
     setup_donor_person_field()
 

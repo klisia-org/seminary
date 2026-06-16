@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "autoname": "PINSE-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A site supervisor's structured evaluation of an intern's readiness and formation for a placement.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#evaluations-and-feedback",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "field_order": [
+  "internship_placement",
+  "internship_application",
+  "partner_org",
+  "column_break_head",
+  "site_supervisor",
+  "ratings_section",
+  "overall_readiness",
+  "theological_integration",
+  "column_break_ratings",
+  "relational_skills",
+  "initiative",
+  "narrative_section",
+  "comments",
+  "endorses_ministry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_placement",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Placement",
+   "options": "Internship Placement",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_placement.internship_application",
+   "fieldname": "internship_application",
+   "fieldtype": "Link",
+   "label": "Internship Application",
+   "options": "Internship Application",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_placement.partner_org",
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "internship_placement.site_supervisor",
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Person"
+  },
+  {
+   "fieldname": "ratings_section",
+   "fieldtype": "Section Break",
+   "label": "Ratings"
+  },
+  {
+   "fieldname": "overall_readiness",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Overall Ministry Readiness",
+   "options": "\nExceeds Expectations\nMeets Expectations\nDeveloping\nBelow Expectations\nNot Observed"
+  },
+  {
+   "fieldname": "theological_integration",
+   "fieldtype": "Select",
+   "label": "Theological Integration",
+   "options": "\nExceeds Expectations\nMeets Expectations\nDeveloping\nBelow Expectations\nNot Observed"
+  },
+  {
+   "fieldname": "column_break_ratings",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "relational_skills",
+   "fieldtype": "Select",
+   "label": "Relational Skills",
+   "options": "\nExceeds Expectations\nMeets Expectations\nDeveloping\nBelow Expectations\nNot Observed"
+  },
+  {
+   "fieldname": "initiative",
+   "fieldtype": "Select",
+   "label": "Initiative",
+   "options": "\nExceeds Expectations\nMeets Expectations\nDeveloping\nBelow Expectations\nNot Observed"
+  },
+  {
+   "fieldname": "narrative_section",
+   "fieldtype": "Section Break",
+   "label": "Narrative"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Text Editor",
+   "label": "Comments"
+  },
+  {
+   "default": "0",
+   "description": "The supervisor endorses this student for ministry.",
+   "fieldname": "endorses_ministry",
+   "fieldtype": "Check",
+   "label": "Endorses for Ministry"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Internship Supervisor Evaluation",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Supervisor Evaluation",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Partner",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -112,7 +112,15 @@
   "plagiarism_strip_question",
   "alumni_partners_section",
   "allow_alumni_view_partner_directory",
-  "allow_alumni_create_partner_org"
+  "allow_alumni_create_partner_org",
+  "internship_section",
+  "internship_staff_proxy",
+  "show_ungated_internships_to_all",
+  "internship_share_column",
+  "internship_share_program",
+  "internship_share_credits",
+  "internship_share_gpa",
+  "internship_share_expected_graduation"
  ],
  "fields": [
   {
@@ -783,6 +791,54 @@
    "fieldname": "allow_alumni_create_partner_org",
    "fieldtype": "Check",
    "label": "Allow Alumni to create Partner Organizations?"
+  },
+  {
+   "fieldname": "internship_section",
+   "fieldtype": "Section Break",
+   "label": "Internships"
+  },
+  {
+   "default": "0",
+   "description": "When on, staff (registrar/faculty) may fill and sign any party's internship requirement submission (student / seminary / partner) directly in Desk, without the portal round-trip. The sign-off still records the acting staff user.",
+   "fieldname": "internship_staff_proxy",
+   "fieldtype": "Check",
+   "label": "Allow Staff to Submit/Sign on Behalf of Any Party"
+  },
+  {
+   "default": "0",
+   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal — an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
+   "fieldname": "show_ungated_internships_to_all",
+   "fieldtype": "Check",
+   "label": "Show Ungated Internships to All Students"
+  },
+  {
+   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default — the partner sees only the applicant's name unless you opt in here.",
+   "fieldname": "internship_share_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "internship_share_program",
+   "fieldtype": "Check",
+   "label": "Share Applicant's Program with Partner"
+  },
+  {
+   "default": "0",
+   "fieldname": "internship_share_credits",
+   "fieldtype": "Check",
+   "label": "Share Applicant's Credit Hours Passed"
+  },
+  {
+   "default": "0",
+   "fieldname": "internship_share_gpa",
+   "fieldtype": "Check",
+   "label": "Share Applicant's GPA"
+  },
+  {
+   "default": "0",
+   "fieldname": "internship_share_expected_graduation",
+   "fieldtype": "Check",
+   "label": "Share Applicant's Expected Graduation"
   }
  ],
  "issingle": 1,

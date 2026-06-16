@@ -118,6 +118,19 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
             if library.requirement_type == "Linked Document"
             else None
         ),
+        "linked_doc_status": (
+            fulfilling_status(library.link_doctype)
+            if library.requirement_type == "Linked Document"
+            else None
+        ),
+        # Snapshot the program's required internship hours (ADR 054) so an
+        # internship application reads its target from the frozen student row,
+        # not the live (re-versionable) policy.
+        "internship_hours_required": (
+            (pgr_item.get("internship_hours_required") or 0)
+            if library.link_doctype == "Internship Application"
+            else 0
+        ),
         "student_choice": getattr(library, "student_choice", 0) or 0,
         "event_custom_category": (
             library.event_custom_category
@@ -587,6 +600,18 @@ LINKED_DOC_FULFILL_STATUS = {
 }
 
 
+def fulfilling_status(link_doctype):
+    """The document status that fulfils a Linked Document requirement. Reads the
+    curated Allowed Graduation Document lookup (name == document_type), falling
+    back to the built-in defaults so legacy data keeps resolving (ADR 054)."""
+    if not link_doctype:
+        return None
+    val = frappe.db.get_value(
+        "Allowed Graduation Document", link_doctype, "fulfilling_status"
+    )
+    return val or LINKED_DOC_FULFILL_STATUS.get(link_doctype)
+
+
 def apply_sgr_choices(program_enrollment_doc):
     """Resolve and validate pending choices on SGR rows. Idempotent. Called from
     ProgramEnrollment.before_update_after_submit so desk grid edits and the
@@ -691,7 +716,7 @@ def _build_choice_row(pe, umbrella, sub_name):
         "status": "Not Started",
         "link_doctype": sub.link_doctype if is_linked else None,
         "linked_doc_status": (
-            LINKED_DOC_FULFILL_STATUS.get(sub.link_doctype) if is_linked else None
+            fulfilling_status(sub.link_doctype) if is_linked else None
         ),
         "student_choice": umbrella.student_choice,
         "grad_requirement_item": sub.name,

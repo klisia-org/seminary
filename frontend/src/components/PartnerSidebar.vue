@@ -67,7 +67,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { Building2, Users, Briefcase, ArrowLeftToLine, ArrowRightToLine, Sun, Moon } from 'lucide-vue-next'
+import { Building2, Users, Briefcase, Handshake, UserCheck, ArrowLeftToLine, ArrowRightToLine, Sun, Moon } from 'lucide-vue-next'
 import UserDropdown from './UserDropdown.vue'
 import { createResource } from 'frappe-ui'
 import { computed, onMounted } from 'vue'
@@ -105,6 +105,8 @@ const links = computed(() => [
 	{ label: __('Our Profile'), to: '/partner/profile', icon: Building2 },
 	{ label: __('Our People'), to: '/partner/people', icon: Users },
 	{ label: __('Job Postings'), to: '/partner/jobs', icon: Briefcase },
+	{ label: __('Internships'), to: '/partner/internships', icon: Handshake },
+	{ label: __('Our Interns'), to: '/partner/interns', icon: UserCheck },
 ])
 
 const isSidebarCollapsed = useStorage('sidebar_is_collapsed', false)

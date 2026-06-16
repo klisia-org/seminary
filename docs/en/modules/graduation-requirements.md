@@ -64,8 +64,10 @@ Every library item picks **one** of four types:
   the thing, optionally with file evidence from the student, the staff, or
   both. Example: *"Doctrinal Statement Signed"*, *"Ordination Interview"*.
 - **Linked Document** — fulfilled when another document in the system
-  reaches a specific status. Example: a *Recommendation Letter* moves to
-  `Approved`, or a *Culminating Project* moves to `Completed`.
+  reaches a specific status. You pick the document from a curated list (see
+  [Allowed documents](#allowed-documents)). Example: a *Recommendation Letter*
+  moves to `Approved`, a *Culminating Project* moves to `Completed`, or an
+  *Internship* moves to `Completed`.
 
 Two flags govern evidence on Manual Verification items:
 
@@ -473,29 +475,39 @@ new policy. Students already enrolled keep the old one. If a student
 explicitly asks to be moved to the new catalog, use **Resnapshot** on their
 Program Enrollment.
 
-### Adding a new linked-document type without code
+### Allowed documents
 
-If your seminary later wants a *new* type of linked document (say,
-*Internship Report* — a doctype your IT team builds with its own workflow),
-you do **not** need to edit any code. Once the doctype exists with a
-`workflow_state` field:
+A *"Linked Document"* requirement points at a real document in the system. To
+keep that choice friendly, the document types that may fulfil a requirement are
+curated in a small list — **Allowed Graduation Document** (Desk → Allowed
+Graduation Document). Each entry pairs a document type with a plain-language
+**label** and the **fulfilling status** that marks it done. The seminary ships
+with the built-in options:
 
-1. Create a library item with `Type = Linked Document` and pick *Internship
-   Report* in `Linked Document`.
-2. Add it to the relevant program policies with the activation mode you
-   want.
-3. On each library item with `Activation Mode = On Document Status`,
-   specify the status that signals fulfillment (e.g. `Approved`,
-   `Completed`).
+| Label | Document | Fulfilling status |
+| --- | --- | --- |
+| Thesis / Culminating Project | Culminating Project | `Completed` |
+| Recommendation Letter | Recommendation Letter | `Approved` |
+| Internship | Internship Application | `Completed` |
 
-The system reflects status changes onto SGR rows automatically.
+When you author a library item with `Type = Linked Document`, you simply pick
+from this list under **Fulfilling Document** — the underlying doctype and the
+status that fulfils it are filled in for you, so you never type a raw doctype
+name or guess a status.
 
-> **Heads-up — bespoke doctypes.** Two requirement types ship with their
-> own complete doctypes because the generic "Linked Document" path is too
-> thin for them: **Recommendation Letter** (with the external recommender
-> portal) and **Culminating Project** (with reviewer rounds). For these,
-> use the dedicated doctypes; the system already wires them into the
-> graduation audit.
+Most seminaries never touch the list itself. If your IT team builds a *new* kind
+of linked document (say an *Internship Report* doctype with its own workflow),
+an **advanced user** adds one Allowed Graduation Document row for it — no code —
+and it becomes available to every program policy. The system reflects status
+changes onto SGR rows automatically.
+
+> **Heads-up — bespoke doctypes.** Three requirement types ship with their own
+> complete doctypes because the generic "Linked Document" path is too thin for
+> them: **Recommendation Letter** (with the external recommender portal),
+> **Culminating Project** (with reviewer rounds and milestones), and
+> **Internships** (with org-posted positions, placements, hours, and supervisor
+> evaluations — see [Internships](internship.md)). For these, use the dedicated
+> doctypes; the system already wires them into the graduation audit.
 
 ## How this connects back to the Program Audit
 
@@ -535,5 +547,7 @@ clear of unfulfilled mandatory items.
   lives.
 - [Academic Calendar](academic-calendar.md) — Events used by Event
   Attendance requirements.
+- [Internships](internship.md) — the bespoke linked-document path for
+  supervised placements, hours, and supervisor evaluations.
 - [User Roles](../administration/user-roles.md) — which roles can author
   policies, mark requirements Fulfilled, and waive.

@@ -12,6 +12,8 @@
   "activation_mode",
   "mandatory",
   "quantity_required",
+  "internship_link_doctype",
+  "internship_hours_required",
   "section_break_pwhj",
   "on_document",
   "column_break_kagr",
@@ -84,6 +86,22 @@
    "fieldname": "quantity_required",
    "fieldtype": "Int",
    "label": "Quantity Required"
+  },
+  {
+   "fetch_from": "grad_requirement_item.link_doctype",
+   "fieldname": "internship_link_doctype",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Internship Link DocType",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.internship_link_doctype=='Internship Application'",
+   "description": "Total internship hours this program requires for this internship. Overrides the Internship Type's default, so one type (e.g. Worship) can require different hours per program.",
+   "fieldname": "internship_hours_required",
+   "fieldtype": "Int",
+   "label": "Internship Hours Required",
+   "non_negative": 1
   },
   {
    "depends_on": "eval:doc.activation_mode=='After Requirement'",

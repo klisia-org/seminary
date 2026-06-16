@@ -55,6 +55,7 @@ class Student(Document):
                 mobile=self.student_mobile_number,
                 country=self.country,
                 image=self.image,
+                gender=self.gender,
             )
         self._hydrate_from_person()
 
@@ -91,6 +92,15 @@ class Student(Document):
         if self.user and not frappe.db.get_value("Person", self.person, "user"):
             frappe.db.set_value(
                 "Person", self.person, "user", self.user, update_modified=False
+            )
+        # Gender is a shared human attribute: keep the spine current from the
+        # student record (the usual entry point for a student's gender).
+        if (
+            self.gender
+            and frappe.db.get_value("Person", self.person, "gender") != self.gender
+        ):
+            frappe.db.set_value(
+                "Person", self.person, "gender", self.gender, update_modified=False
             )
         customer = self.customer or frappe.db.get_value(
             "Student", self.name, "customer"

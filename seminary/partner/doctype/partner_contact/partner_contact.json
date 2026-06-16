@@ -9,6 +9,7 @@
   "person",
   "role_at_org",
   "is_primary",
+  "can_supervise",
   "column_break_contact",
   "relationship_status",
   "portal_user",
@@ -37,6 +38,13 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Primary Contact"
+  },
+  {
+   "default": "1",
+   "description": "Whether this person may be assigned as a site supervisor for internship placements. Uncheck to block a specific contact.",
+   "fieldname": "can_supervise",
+   "fieldtype": "Check",
+   "label": "Can Supervise Interns"
   },
   {
    "fieldname": "column_break_contact",

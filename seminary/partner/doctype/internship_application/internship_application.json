@@ -1,0 +1,267 @@
+{
+ "actions": [],
+ "autoname": "PINA-.######",
+ "creation": "2026-06-16 12:00:00",
+ "description": "A student's application for an Internship Position. Fulfilled by one or more Internship Placements; gated by an open graduation requirement and reflected back to it on completion.",
+ "documentation": "https://docs.seminaryerp.org/modules/internship.html#applications",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "internship_position",
+  "partner_org",
+  "internship_type",
+  "backing_course",
+  "column_break_head",
+  "student",
+  "status",
+  "submission_date",
+  "academic_section",
+  "program_enrollment",
+  "student_grad_requirement",
+  "column_break_academic",
+  "faculty_advisor",
+  "hours_section",
+  "total_hours_needed",
+  "total_hours_logged",
+  "column_break_hours",
+  "multi_site_approved",
+  "outcome_section",
+  "final_outcome",
+  "course_enrollment",
+  "registrar_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "internship_position",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Internship Position",
+   "options": "Internship Position",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_position.partner_org",
+   "fieldname": "partner_org",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Partner Organization",
+   "options": "Partner Organization",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "internship_position.internship_type",
+   "fieldname": "internship_type",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Internship Type",
+   "options": "Internship Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "internship_type.course",
+   "fieldname": "backing_course",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Backing Course",
+   "options": "Course",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Draft",
+   "description": "Draft = saved by the student but not yet submitted; hidden from the partner until submitted.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nSubmitted\nUnder Review\nAccepted\nActive\nCompleted\nRejected\nWithdrawn"
+  },
+  {
+   "description": "When the application left Draft (was submitted).",
+   "fieldname": "submission_date",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "academic_section",
+   "fieldtype": "Section Break",
+   "label": "Academic"
+  },
+  {
+   "description": "The student's active program enrollment whose requirement this internship fulfils. Resolved automatically on submission.",
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "description": "The Student Graduation Requirement row this internship fulfils (resolved from the type's graduation requirement item).",
+   "fieldname": "student_grad_requirement",
+   "fieldtype": "Data",
+   "label": "Graduation Requirement Row",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_academic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Seminary faculty overseeing this internship. Auto-assigned on acceptance when the type opts in; manual entry always wins.",
+   "fieldname": "faculty_advisor",
+   "fieldtype": "Link",
+   "label": "Faculty Advisor",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "hours_section",
+   "fieldtype": "Section Break",
+   "label": "Hours"
+  },
+  {
+   "description": "Total hours to complete (defaults from the internship type).",
+   "fieldname": "total_hours_needed",
+   "fieldtype": "Int",
+   "label": "Total Hours Needed",
+   "non_negative": 1
+  },
+  {
+   "description": "Hours that count so far, rolled up from all placements per the type's tracking mode.",
+   "fieldname": "total_hours_logged",
+   "fieldtype": "Float",
+   "label": "Total Hours Logged",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_hours",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Registrar approval to fulfil this internship across multiple placement sites (when the type allows it).",
+   "fieldname": "multi_site_approved",
+   "fieldtype": "Check",
+   "label": "Multi-Site Approved"
+  },
+  {
+   "fieldname": "outcome_section",
+   "fieldtype": "Section Break",
+   "label": "Outcome"
+  },
+  {
+   "depends_on": "eval:!doc.backing_course",
+   "description": "Recorded by the faculty advisor on completion (Pass/Fail or a grade) for internships without a backing course. Course-backed internships carry their grade on the program enrollment course row.",
+   "fieldname": "final_outcome",
+   "fieldtype": "Data",
+   "label": "Final Outcome"
+  },
+  {
+   "depends_on": "backing_course",
+   "description": "The course enrollment created for a course-backed internship (carries credits, grade and fees).",
+   "fieldname": "course_enrollment",
+   "fieldtype": "Link",
+   "label": "Course Enrollment",
+   "options": "Course Enrollment Individual",
+   "read_only": 1
+  },
+  {
+   "fieldname": "registrar_notes",
+   "fieldtype": "Small Text",
+   "label": "Registrar Notes"
+  }
+ ],
+ "links": [
+  {
+   "group": "Fulfilment",
+   "link_doctype": "Internship Placement",
+   "link_fieldname": "internship_application"
+  },
+  {
+   "group": "Fulfilment",
+   "link_doctype": "Internship Requirement",
+   "link_fieldname": "internship_application"
+  }
+ ],
+ "modified": "2026-06-16 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Internship Application",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Partner",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "internship_position,student,status",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {"color": "Gray", "title": "Draft"},
+  {"color": "Blue", "title": "Submitted"},
+  {"color": "Cyan", "title": "Under Review"},
+  {"color": "Green", "title": "Accepted"},
+  {"color": "Green", "title": "Active"},
+  {"color": "Green", "title": "Completed"},
+  {"color": "Red", "title": "Rejected"},
+  {"color": "Gray", "title": "Withdrawn"}
+ ],
+ "track_changes": 1
+}
