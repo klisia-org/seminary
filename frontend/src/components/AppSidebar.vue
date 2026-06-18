@@ -76,14 +76,28 @@ const { theme, toggleTheme } = useTheme();
 
 const { userResource } = usersStore();
 
-const unreadCount = createResource({
-	url: 'seminary.seminary.comms.get_my_unread_count',
-	auto: true,
+// Members (students/instructors and super-roles) get the Courses + Inbox portal.
+// Other roles that reach this shell — e.g. an external examiner who is also a
+// partner — only see the links relevant to them, and we skip the member-only
+// data fetches below that would otherwise 403 in the console.
+const isMember = computed(() => {
+	const u = userResource?.data || {}
+	return !!(u.is_student || u.is_instructor || u.is_moderator || u.is_system_manager)
 });
 
-// Refresh the unread badge as the user moves around (e.g. after reading in the Inbox).
+const unreadCount = createResource({
+	url: 'seminary.seminary.comms.get_my_unread_count',
+	auto: false,
+});
+
+// Fetch (and refresh as the user moves around) the unread badge only for members
+// who can access the Inbox.
 const route = useRoute();
-watch(() => route.path, () => unreadCount.reload());
+watch(
+	() => [isMember.value, route.path],
+	() => { if (isMember.value) unreadCount.reload() },
+	{ immediate: true }
+);
 
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
@@ -96,11 +110,11 @@ const links = computed(() => {
 		facultyCaps.includes('Placement Examiner')
 	const allowEnroll = seminarySettings.data?.allow_portal_enroll
 	return [
-		{
+		...(isMember.value ? [{
 			label: __('Courses'),
 			to: '/courses',
 			icon: BookOpen,
-		},
+		}] : []),
 		...(isStudent ? [
 			{
 				label: __('Transcripts'),
@@ -143,12 +157,12 @@ const links = computed(() => {
 			to: '/internships',
 			icon: Handshake,
 		}] : []),
-		{
+		...(isMember.value ? [{
 			label: __('Inbox'),
 			to: '/inbox',
 			icon: Inbox,
 			badge: unreadCount.data || 0,
-		},
+		}] : []),
 		{
 			label: __('Preferences'),
 			to: '/preferences',

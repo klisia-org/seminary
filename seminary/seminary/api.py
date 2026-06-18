@@ -864,9 +864,6 @@ def get_user_info():
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
     user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
-    user.has_culminating_projects = _has_culminating_projects(
-        user.student, user.instructor
-    )
     # Faculty-capability routing (ADR 059): the units/capabilities this instructor
     # is wired to drive which worklist tabs (advising, verifications, placement
     # exams) the portal shows.
@@ -885,12 +882,18 @@ def get_user_info():
             user.external_examiner = frappe.db.get_value(
                 "External Examiner", {"person": _person}, "name"
             )
+    # Compute after external_examiner so an external reader (who is neither student
+    # nor instructor) still gets the Culminating Project sidebar link.
+    user.has_culminating_projects = _has_culminating_projects(
+        user.student, user.instructor, user.external_examiner
+    )
     return user
 
 
-def _has_culminating_projects(student, instructor):
-    """Whether the user owns (student) or reads (advisor/2nd/3rd) any Culminating
-    Project — gates the workbench sidebar link."""
+def _has_culminating_projects(student, instructor, external_examiner=None):
+    """Whether the user owns (student), reads (advisor/2nd/3rd), or serves as an
+    External Examiner on any Culminating Project — gates the workbench sidebar
+    link."""
     if student and frappe.db.exists("Culminating Project", {"student": student}):
         return True
     if instructor and frappe.get_all(
@@ -903,6 +906,13 @@ def _has_culminating_projects(student, instructor):
         limit=1,
     ):
         return True
+    if external_examiner:
+        from seminary.seminary.doctype.culminating_project.culminating_project import (
+            cp_names_for_external_examiner,
+        )
+
+        if cp_names_for_external_examiner(external_examiner):
+            return True
     return False
 
 

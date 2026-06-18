@@ -452,6 +452,19 @@ router.beforeEach(async (to, from, next) => {
     window.location.href = '/login'
     return
   }
+
+  // The portal's default path is /courses, which is empty for users who aren't
+  // students/instructors (e.g. an external examiner). Send such non-members to
+  // their own first stop instead of an odd blank Courses page.
+  if (to.path === '/courses') {
+    const u = userResource?.data || {}
+    const isMember = u.is_student || u.is_instructor || u.is_moderator || u.is_system_manager
+    if (!isMember) {
+      if (u.has_culminating_projects) return next('/culminating-project')
+      if (u.is_alumni) return next('/alumni')
+      return next('/preferences')
+    }
+  }
   return next()
 })
 
