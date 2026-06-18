@@ -2,18 +2,56 @@ import frappe
 from frappe import _
 
 
-def on_withdrawal_workflow_update(doc, method):
-    """Handle workflow state transitions for Withdrawal Request.
+def on_withdrawal_workflow_update(doc, method=None):
+    """Fire withdrawal side effects for 1->1 workflow transitions.
 
-    Fast-paths for ongoing/free programs are declared as conditional
-    transitions in the Course Withdrawal workflow (see fixtures/workflow.json).
+    Registered on ``on_update_after_submit``. The 0->1 fast-path submits (an
+    ongoing program going Draft -> Financial Review / Completed) don't reach
+    this hook — Frappe fires ``on_submit`` there instead — so the controller's
+    on_submit calls :func:`dispatch_withdrawal_effects` for those.
     """
-    if doc.workflow_state == "Academically Approved":
-        process_academic_approval(doc)
-    elif doc.workflow_state == "Financially Approved":
-        process_financial_approval(doc)
-    elif doc.workflow_state == "Completed":
+    dispatch_withdrawal_effects(doc)
+
+
+def dispatch_withdrawal_effects(doc):
+    """Apply academic/financial/completion side effects based on the transition
+    just taken, derived from (previous state -> current state).
+
+    The Course Withdrawal workflow (5 states) binds effects to the *transition*,
+    not the resulting state, because:
+      - The academic decision can land in either Financial Review (a refund is
+        due) or Completed (the no-refund "Approve Academically & Conclude"
+        fast-track), so it can't key on a single state.
+      - Completed is reachable three ways: via Financial Review (finance just
+        decided -> apply financial), via the academic Conclude (academic not yet
+        applied), or via an ongoing-program Draft fast-path (likewise).
+
+    Parents of a program separation carry no single CEI; their children apply
+    the per-CEI academic/financial effects, so we only run process_completion
+    for them (it is internally gated on every child being Completed).
+    """
+    before = doc.get_doc_before_save()
+    prev_state = before.workflow_state if before else None
+    cur = doc.workflow_state
+    is_parent = bool(doc.is_parent)
+
+    if cur == "Financial Review":
+        # Academic decision applied; finance pending.
+        if not is_parent:
+            process_academic_approval(doc)
+    elif cur == "Completed":
+        if prev_state == "Financial Review":
+            # Academic already applied on entry to Financial Review; only the
+            # financial decision remains.
+            if not is_parent:
+                process_financial_approval(doc)
+        else:
+            # Concluded without a Financial Review stop (no refund due): the
+            # academic effect has not run yet.
+            if not is_parent:
+                process_academic_approval(doc)
         process_completion(doc)
+    # Draft, Academic Review, Rejected: no side effects.
 
 
 def process_academic_approval(doc):
@@ -35,9 +73,10 @@ def process_academic_approval(doc):
 
     doc.academic_processed_by = frappe.session.user
 
-    # Ongoing programs reach this state via the workflow's "Submit & Skip
-    # Academic Review" fast-path. They have no transcript/GPA concept, so
-    # short-circuit any grade-treatment work and just mark the CEI withdrawn.
+    # Ongoing programs reach this via the workflow's "Submit & Approve
+    # Academically" / "Submit & Conclude" fast-paths. They have no transcript/GPA
+    # concept, so short-circuit any grade-treatment work and just mark the CEI
+    # withdrawn.
     if doc.is_ongoing:
         _mark_cei_withdrawn(doc.course_enrollment_individual, doc.name)
         return

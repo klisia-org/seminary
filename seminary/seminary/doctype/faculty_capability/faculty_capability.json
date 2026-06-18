@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:capability_name",
+ "creation": "2026-06-18 00:00:00",
+ "description": "A kind of academic work a faculty member can be wired to perform in an Academic Unit (advising, verification, examining, etc.). The routes_to machine key lets routing code filter by meaning, not by the editable display name. Add the capabilities your school uses.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/academic-units.html#faculty-capabilities",
+ "engine": "InnoDB",
+ "field_order": [
+  "capability_name",
+  "routes_to",
+  "tracks_capacity",
+  "is_active",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "capability_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Stable machine key the routing code filters on (so the display name above can be edited freely). Picks which subsystem this capability feeds.",
+   "fieldname": "routes_to",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Routes To",
+   "options": "Course Instructor\nThesis/CP Advisor\nInternship Advisor\nPlacement Examiner\nManual-Verification Verifier\nMentor\nCommittee/Board Member",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "When checked, holders declare a capacity (Max Students) for this capability — used for capacity-aware assignment (advising, examining, verifying). Leave off for capabilities without a cap, like Course Instructor or Board/Committee Member.",
+   "fieldname": "tracks_capacity",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Tracks Capacity"
+  },
+  {
+   "default": "1",
+   "description": "Uncheck to retire this capability without deleting it (keeps history on existing memberships).",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Faculty Capability",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

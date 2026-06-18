@@ -19,31 +19,13 @@
     "allow_edit": "Registrar",
     "doc_status": "1",
     "is_optional_state": 0,
-    "state": "Submitted"
-   },
-   {
-    "allow_edit": "Registrar",
-    "doc_status": "1",
-    "is_optional_state": 0,
     "state": "Academic Review"
-   },
-   {
-    "allow_edit": "Registrar",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Academically Approved"
    },
    {
     "allow_edit": "Accounts User",
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Financial Review"
-   },
-   {
-    "allow_edit": "Accounts User",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "state": "Financially Approved"
    },
    {
     "allow_edit": "Seminary Manager",
@@ -64,7 +46,7 @@
     "allow_self_approval": 1,
     "allowed": "Registrar",
     "condition": "not doc.is_ongoing",
-    "next_state": "Submitted",
+    "next_state": "Academic Review",
     "state": "Draft"
    },
    {
@@ -72,27 +54,27 @@
     "allow_self_approval": 1,
     "allowed": "Student",
     "condition": "not (doc.is_ongoing and doc.is_free)",
-    "next_state": "Submitted",
+    "next_state": "Academic Review",
     "state": "Draft"
    },
    {
-    "action": "Submit & Skip Academic Review",
+    "action": "Submit & Approve Academically",
     "allow_self_approval": 1,
     "allowed": "Registrar",
-    "condition": "doc.is_ongoing and not doc.is_free",
-    "next_state": "Academically Approved",
+    "condition": "doc.is_ongoing and not doc.is_free and doc.refund_due",
+    "next_state": "Financial Review",
     "state": "Draft"
    },
    {
-    "action": "Submit & Complete",
+    "action": "Submit & Conclude",
     "allow_self_approval": 1,
     "allowed": "Registrar",
-    "condition": "doc.is_ongoing and doc.is_free",
+    "condition": "doc.is_ongoing and (doc.is_free or not doc.refund_due)",
     "next_state": "Completed",
     "state": "Draft"
    },
    {
-    "action": "Submit & Complete",
+    "action": "Submit & Conclude",
     "allow_self_approval": 1,
     "allowed": "Student",
     "condition": "doc.is_ongoing and doc.is_free",
@@ -100,24 +82,19 @@
     "state": "Draft"
    },
    {
-    "action": "Send for Academic Review",
-    "allow_self_approval": 1,
-    "allowed": "Registrar",
-    "next_state": "Academic Review",
-    "state": "Submitted"
-   },
-   {
-    "action": "Reject",
-    "allow_self_approval": 1,
-    "allowed": "Registrar",
-    "next_state": "Rejected",
-    "state": "Submitted"
-   },
-   {
     "action": "Approve Academically",
     "allow_self_approval": 1,
     "allowed": "Registrar",
-    "next_state": "Academically Approved",
+    "condition": "doc.refund_due and not doc.is_free",
+    "next_state": "Financial Review",
+    "state": "Academic Review"
+   },
+   {
+    "action": "Approve Academically & Conclude",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": "doc.is_free or not doc.refund_due",
+    "next_state": "Completed",
     "state": "Academic Review"
    },
    {
@@ -126,26 +103,12 @@
     "allowed": "Registrar",
     "next_state": "Rejected",
     "state": "Academic Review"
-   },
-   {
-    "action": "Send for Financial Review",
-    "allow_self_approval": 1,
-    "allowed": "Registrar",
-    "next_state": "Financial Review",
-    "state": "Academically Approved"
-   },
-   {
-    "action": "Complete",
-    "allow_self_approval": 1,
-    "allowed": "Registrar",
-    "next_state": "Completed",
-    "state": "Academically Approved"
    },
    {
     "action": "Approve Financially",
     "allow_self_approval": 1,
     "allowed": "Accounts User",
-    "next_state": "Financially Approved",
+    "next_state": "Completed",
     "state": "Financial Review"
    },
    {
@@ -154,13 +117,6 @@
     "allowed": "Accounts User",
     "next_state": "Rejected",
     "state": "Financial Review"
-   },
-   {
-    "action": "Complete",
-    "allow_self_approval": 1,
-    "allowed": "Accounts User",
-    "next_state": "Completed",
-    "state": "Financially Approved"
    }
   ],
   "workflow_name": "Course Withdrawal",
@@ -342,6 +298,7 @@
     "action": "Activate",
     "allow_self_approval": 1,
     "allowed": "Student",
+    "condition": "doc.advisor",
     "next_state": "Active",
     "state": "Draft"
    },
@@ -349,6 +306,7 @@
     "action": "Activate",
     "allow_self_approval": 1,
     "allowed": "Program Chair",
+    "condition": "doc.advisor",
     "next_state": "Active",
     "state": "Draft"
    },
@@ -546,6 +504,12 @@
     "doc_status": "1",
     "is_optional_state": 0,
     "state": "Unseated"
+   },
+   {
+    "allow_edit": "Seminary Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "state": "Concluded"
    }
   ],
   "transitions": [

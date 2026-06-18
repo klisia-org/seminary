@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "kind",
+  "course",
+  "graduation_requirement_item",
+  "gating_assessment",
+  "exempt_if_score_at_least",
+  "column_break_state",
+  "resolution",
+  "score",
+  "overridden",
+  "source_profile",
+  "note"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Kind",
+   "options": "Leveling Course\nCourse Exemption\nPlacement Assessment\nRequirement Waiver",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "depends_on": "eval:['Leveling Course','Course Exemption'].includes(doc.kind)",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "depends_on": "eval:doc.kind=='Requirement Waiver'",
+   "fieldname": "graduation_requirement_item",
+   "fieldtype": "Link",
+   "label": "Graduation Requirement",
+   "options": "Graduation Requirement Item"
+  },
+  {
+   "depends_on": "eval:['Leveling Course','Placement Assessment'].includes(doc.kind)",
+   "fieldname": "gating_assessment",
+   "fieldtype": "Link",
+   "label": "Placement Assessment",
+   "options": "Placement Assessment"
+  },
+  {
+   "columns": 1,
+   "depends_on": "eval:doc.kind=='Leveling Course'",
+   "fieldname": "exempt_if_score_at_least",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Exempt if Score ≥",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "column_break_state",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "default": "Pending",
+   "description": "Computed from the gating exam's score; override manually if needed (tick Overridden to keep the resolver from changing it).",
+   "fieldname": "resolution",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Resolution",
+   "options": "Pending\nRequired\nExempt\nWaived"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "label": "Score (from exam)",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "When ticked, the resolver will not recompute this row's resolution (manual override).",
+   "fieldname": "overridden",
+   "fieldtype": "Check",
+   "label": "Overridden"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "source_profile",
+   "fieldtype": "Link",
+   "label": "Source Profile",
+   "options": "Leveling Profile",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Enrollment Leveling",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

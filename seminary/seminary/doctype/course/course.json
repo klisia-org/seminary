@@ -11,7 +11,7 @@
  "field_order": [
   "course_name",
   "coursecode",
-  "department",
+  "academic_unit",
   "course_credits",
   "default_minimum_enrollment",
   "hero_image",
@@ -43,11 +43,11 @@
    "unique": 1
   },
   {
-   "fieldname": "department",
+   "description": "The Academic Department (or Interdepartment) that owns this course. Its code is the source of the course prefix.",
+   "fieldname": "academic_unit",
    "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Department",
-   "options": "Department"
+   "label": "Academic Unit",
+   "options": "Academic Unit"
   },
   {
    "fieldname": "course_credits",

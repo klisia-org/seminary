@@ -17,6 +17,16 @@ frappe.ui.form.on('Course', {
 		frm.set_query('default_cs_template', function() {
 			return { filters: { course: frm.doc.name } };
 		});
+
+		// A course is owned by an Academic Department (or a joint Interdepartment).
+		frm.set_query('academic_unit', function() {
+			return {
+				filters: {
+					is_active: 1,
+					unit_type: ['in', ['Academic Department', 'Academic Interdepartment']]
+				}
+			};
+		});
 	},
 
 	add_course_to_programs: function(frm) {

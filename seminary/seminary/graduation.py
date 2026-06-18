@@ -12,7 +12,7 @@ from datetime import timedelta
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, getdate, now_datetime, today
+from frappe.utils import add_days, flt, getdate, now_datetime, today
 
 from seminary.seminary import date_rules
 
@@ -86,19 +86,125 @@ def snapshot_graduation_requirements(program_enrollment_doc):
     policy = frappe.get_doc("Program Graduation Requirement", policy_name)
     program_enrollment_doc.graduation_policy = policy_name
 
+    applicable = _applicable_emphasis_tracks(program_enrollment_doc)
+    scoped_libs_added = set()
     for pgr_item in policy.pgr_items or []:
-        library_type = frappe.db.get_value(
-            "Graduation Requirement Item",
-            pgr_item.grad_requirement_item,
-            "requirement_type",
+        if not _pgr_item_applies(pgr_item, applicable):
+            continue
+        if _pgr_item_scope(pgr_item):
+            # Dedup emphasis-scoped rows by library item, so a student in two
+            # emphasis that both require the same thing gets a single row.
+            if pgr_item.grad_requirement_item in scoped_libs_added:
+                continue
+            scoped_libs_added.add(pgr_item.grad_requirement_item)
+        _append_pgr_item_rows(program_enrollment_doc, pgr_item)
+
+
+def _append_pgr_item_rows(program_enrollment_doc, pgr_item):
+    """Append the SGR slot row(s) for one policy item — one row, or N rows for
+    a Manual Verification requiring N instances."""
+    library_type = frappe.db.get_value(
+        "Graduation Requirement Item",
+        pgr_item.grad_requirement_item,
+        "requirement_type",
+    )
+    if library_type == "Manual Verification":
+        quantity = max(int(pgr_item.quantity_required or 1), 1)
+    else:
+        quantity = 1
+    for slot in range(1, quantity + 1):
+        row = _build_sgr_row(program_enrollment_doc, pgr_item, slot)
+        program_enrollment_doc.append("graduation_requirements", row)
+
+
+# ---------------------------------------------------------------------------
+# Emphasis scoping (ADR 056)
+# ---------------------------------------------------------------------------
+
+
+def _pgr_item_scope(pgr_item):
+    """The emphasis (Program Track) a policy item is scoped to, as a 0/1-element
+    list (empty = applies to all). Returned as a list so callers stay uniform.
+    Stored as a single Link on the PGRI row — Frappe forbids table fields on a
+    child doctype, so this is not a multi-select (ADR 056)."""
+    track = pgr_item.get("applies_to_emphasis")
+    return [track] if track else []
+
+
+def _pgr_item_applies(pgr_item, applicable_tracks):
+    """True when a policy item applies to this student: either it is unscoped
+    (program-flat) or the student holds one of its scoping emphases."""
+    scope = _pgr_item_scope(pgr_item)
+    if not scope:
+        return True
+    return bool(set(scope) & set(applicable_tracks))
+
+
+def _applicable_emphasis_tracks(program_enrollment_doc):
+    """Program Track names the student has declared that count for requirement
+    scoping: status Active or Completed, excluding advisory-only emphases."""
+    tracks = {
+        e.emphasis_track
+        for e in (program_enrollment_doc.get("emphases") or [])
+        if e.get("status") in ("Active", "Completed") and e.get("emphasis_track")
+    }
+    if not tracks:
+        return set()
+    advisory = set(
+        frappe.get_all(
+            "Program Track",
+            filters={"name": ("in", list(tracks)), "advisory_only": 1},
+            pluck="name",
         )
-        if library_type == "Manual Verification":
-            quantity = max(int(pgr_item.quantity_required or 1), 1)
-        else:
-            quantity = 1
-        for slot in range(1, quantity + 1):
-            row = _build_sgr_row(program_enrollment_doc, pgr_item, slot)
-            program_enrollment_doc.append("graduation_requirements", row)
+    )
+    return tracks - advisory
+
+
+def emphasis_scope_for_pgr_item(pgr_item_name):
+    """Report helper: the emphasis (Program Track) a policy item is scoped to."""
+    if not pgr_item_name:
+        return []
+    track = frappe.db.get_value(
+        "Program Grad Req Items", pgr_item_name, "applies_to_emphasis"
+    )
+    return [track] if track else []
+
+
+def ensure_emphasis_scoped_requirements(program_enrollment_doc):
+    """Idempotently append SGR rows for emphasis-scoped policy items that have
+    become applicable (e.g. an emphasis declared after enrollment).
+
+    Adds only; never removes. Program-flat rows are untouched (the catalog-year
+    contract holds for the base requirement set); orphans left by a dropped
+    emphasis are surfaced by the Orphan Graduation Requirements report."""
+    policy_name = program_enrollment_doc.get("graduation_policy")
+    if not policy_name:
+        return
+    applicable = _applicable_emphasis_tracks(program_enrollment_doc)
+    if not applicable:
+        return
+    rows = program_enrollment_doc.get("graduation_requirements") or []
+    existing = {r.pgr_item for r in rows if r.pgr_item}
+    # Library items already covered by an emphasis-scoped row — used to dedup a
+    # student who holds two emphases that require the same thing.
+    existing_scoped_libs = {
+        r.grad_requirement_item
+        for r in rows
+        if r.emphasis_scoped and r.grad_requirement_item
+    }
+    policy = frappe.get_doc("Program Graduation Requirement", policy_name)
+    for pgr_item in policy.pgr_items or []:
+        scope = _pgr_item_scope(pgr_item)
+        if not scope:
+            continue  # program-flat: frozen at enrollment, not our concern
+        if pgr_item.name in existing:
+            continue  # already materialized for this student
+        if not (set(scope) & applicable):
+            continue  # student does not hold this emphasis
+        if pgr_item.grad_requirement_item in existing_scoped_libs:
+            continue  # same requirement already added via another emphasis
+        _append_pgr_item_rows(program_enrollment_doc, pgr_item)
+        existing_scoped_libs.add(pgr_item.grad_requirement_item)
 
 
 def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
@@ -109,9 +215,16 @@ def _build_sgr_row(program_enrollment_doc, pgr_item, slot_index):
         "requirement_name": library.requirement_name,
         "requirement_type": library.requirement_type,
         "mandatory": pgr_item.mandatory,
-        "blocks_graduation_request": getattr(library, "blocks_graduation_request", 0)
-        or 0,
+        # Per-program override (ADR 012): the PGR row — not the library default —
+        # decides whether this requirement blocks the graduation request. Only
+        # meaningful when mandatory, mirroring the GRI's depends_on.
+        "blocks_graduation_request": (
+            (pgr_item.get("blocks_graduation_request") or 0)
+            if pgr_item.mandatory
+            else 0
+        ),
         "slot_index": slot_index,
+        "emphasis_scoped": 1 if _pgr_item_scope(pgr_item) else 0,
         "status": "Not Started",
         "link_doctype": (
             library.link_doctype
@@ -240,17 +353,43 @@ def evaluate_activation(sgr_row, program_enrollment):
     if mode == "Always Active":
         return True
 
+    if mode == "Credits Passed":
+        required = pgr_item.get("activation_credits") or 0
+        if not required:
+            return True
+        return (program_enrollment.get("totalcredits") or 0) >= required
+
+    if mode == "Course Passed":
+        course = pgr_item.get("prerequisite_course")
+        if not course:
+            return True
+        # A single passing attempt satisfies the gate permanently — even for a
+        # repeatable course (ADR 056). A leveling exemption / placed-out course
+        # also satisfies it (ADR 058).
+        if frappe.db.exists(
+            "Program Enrollment Course",
+            {
+                "parent": program_enrollment.get("name"),
+                "course_name": course,
+                "status": ("in", ("Pass", "Exempt")),
+            },
+        ):
+            return True
+        from seminary.seminary.leveling import leveling_sets
+
+        exempted, _required, _lvl = leveling_sets(program_enrollment.get("name"))
+        return course in exempted
+
     if mode == "After Requirement":
-        prereqs = pgr_item.get("prerequisite_requirement") or []
-        if not prereqs:
+        needed = pgr_item.get("prerequisite_requirement")
+        if not needed:
             return True
         fulfilled_libs = {
             r.grad_requirement_item
             for r in program_enrollment.graduation_requirements
             if r.status in ("Fulfilled", "Waived")
         }
-        needed = {p.graduation_requirement_item for p in prereqs}
-        return needed.issubset(fulfilled_libs)
+        return needed in fulfilled_libs
 
     if mode == "Time Offset":
         due = _time_offset_due(pgr_item, program_enrollment)
@@ -358,15 +497,17 @@ def _load_pgr_item(name):
     row = frappe.db.get_value(
         "Program Grad Req Items",
         name,
-        ["activation_mode", "offset_anchor", "offset_value", "offset_unit"],
+        [
+            "activation_mode",
+            "activation_credits",
+            "offset_anchor",
+            "offset_value",
+            "offset_unit",
+            "prerequisite_requirement",
+            "prerequisite_course",
+            "applies_to_emphasis",
+        ],
         as_dict=True,
-    )
-    if not row:
-        return None
-    row["prerequisite_requirement"] = frappe.get_all(
-        "Grad Req Item Prerequisite",
-        filters={"parent": name},
-        fields=["graduation_requirement_item"],
     )
     return row
 
@@ -524,16 +665,34 @@ def all_mandatory_satisfied(program_enrollment):
 @frappe.whitelist()
 def mark_sgr_verified(program_enrollment, sgr_name, attachment_url=None):
     """Staff action: mark a Manual Verification row Fulfilled, optionally
-    attaching staff evidence."""
+    attaching staff evidence. (Placement-exam scoring moved to leveling's own
+    mark_placement_scored in ADR 060 — this is now purely graduation-requirement
+    verification.)"""
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     row = _find_sgr(pe, sgr_name)
+    # When the requirement is routed to an Academic Unit (ADR 059), a wired
+    # Manual-Verification Verifier (or full-access role) may act from their
+    # worklist; otherwise fall back to the caller's own PE permission.
+    unit = (
+        frappe.db.get_value(
+            "Graduation Requirement Item", row.grad_requirement_item, "academic_unit"
+        )
+        if row.grad_requirement_item
+        else None
+    )
+    ignore = False
+    if unit:
+        from seminary.seminary import faculty
+
+        faculty.require_capability(unit, faculty.MANUAL_VERIFICATION_ROUTE)
+        ignore = True
     if attachment_url:
         row.staff_evidence_attachment = attachment_url
     row.status = "Fulfilled"
     row.fulfilled_on = today()
     row.verified_by = frappe.session.user
     row.verified_on = now_datetime()
-    pe.save(ignore_permissions=False)
+    pe.save(ignore_permissions=ignore)
     return {"status": row.status}
 
 
@@ -551,6 +710,70 @@ def waive_sgr(program_enrollment, sgr_name, reason):
     row.status = "Waived"
     pe.save(ignore_permissions=False)
     return {"status": row.status}
+
+
+@frappe.whitelist()
+def cancel_orphan_requirement(program_enrollment, sgr_name):
+    """Registrar action (Orphan Graduation Requirements report): drop an
+    emphasis-scoped requirement row whose scoping emphasis the student no
+    longer holds. Removes the SGR row outright."""
+    pe = frappe.get_doc("Program Enrollment", program_enrollment)
+    _find_sgr(pe, sgr_name)  # validates existence
+    pe.graduation_requirements = [
+        r for r in pe.graduation_requirements if r.name != sgr_name
+    ]
+    pe.save(ignore_permissions=False)
+    return {"removed": sgr_name}
+
+
+@frappe.whitelist()
+def withdraw_orphan_requirement(program_enrollment, sgr_name):
+    """Registrar action: when the orphan's fulfillment is a linked document
+    (e.g. Internship Application, Culminating Project), withdraw that document
+    and then drop the orphan row. Errors clearly when there is nothing to
+    withdraw — use Cancel or Waive instead."""
+    pe = frappe.get_doc("Program Enrollment", program_enrollment)
+    row = _find_sgr(pe, sgr_name)
+    if not (row.link_doctype and row.linked_doc):
+        frappe.throw(
+            _(
+                "This requirement has no linked document to withdraw. "
+                "Use Cancel or Waive instead."
+            )
+        )
+    _withdraw_linked_doc(row.link_doctype, row.linked_doc)
+    pe.graduation_requirements = [
+        r for r in pe.graduation_requirements if r.name != sgr_name
+    ]
+    pe.save(ignore_permissions=False)
+    return {"withdrawn": row.linked_doc}
+
+
+def _withdraw_linked_doc(doctype, name):
+    """Move a fulfilling document to its 'Withdrawn' workflow state, following
+    the codebase pattern for system-driven transitions (db_set on
+    workflow_state). Guards when the doctype has no such state."""
+    from frappe.model.workflow import get_workflow_name
+
+    workflow = get_workflow_name(doctype)
+    if not workflow:
+        frappe.throw(
+            _("{0} has no workflow; withdraw it manually, then Cancel here.").format(
+                doctype
+            )
+        )
+    states = frappe.get_all(
+        "Workflow Document State", filters={"parent": workflow}, pluck="state"
+    )
+    if "Withdrawn" not in states:
+        frappe.throw(
+            _(
+                "{0} has no 'Withdrawn' state; withdraw it manually, then Cancel here."
+            ).format(doctype)
+        )
+    if not frappe.db.exists(doctype, name):
+        return
+    frappe.get_doc(doctype, name).db_set("workflow_state", "Withdrawn")
 
 
 @frappe.whitelist()

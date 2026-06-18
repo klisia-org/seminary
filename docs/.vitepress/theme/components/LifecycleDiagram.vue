@@ -41,11 +41,13 @@ stateDiagram-v2
     state "${t('enrollment.draft')}" as draft
     state "${t('enrollment.awaitingPayment')}" as awaiting
     state "${t('enrollment.submitted')}" as submitted
+    state "${t('enrollment.concluded')}" as concluded
     state "${t('enrollment.withdrawn')}" as withdrawn
     [*] --> draft
     draft --> awaiting
     awaiting --> submitted
     submitted --> withdrawn
+    submitted --> concluded
     draft --> submitted
 `,
   courseSchedule: (t) => `
@@ -83,6 +85,23 @@ stateDiagram-v2
     awaiting --> cancelled
     academic --> cancelled
     financial --> cancelled
+`,
+  withdrawal: (t) => `
+stateDiagram-v2
+    direction LR
+    state "${t('withdrawal.draft')}" as draft
+    state "${t('withdrawal.academicReview')}" as academic
+    state "${t('withdrawal.financialReview')}" as financial
+    state "${t('withdrawal.completed')}" as completed
+    state "${t('withdrawal.rejected')}" as rejected
+    [*] --> draft
+    draft --> academic
+    academic --> financial : ${t('withdrawal.refundDue')}
+    academic --> completed : ${t('withdrawal.noRefund')}
+    financial --> completed
+    academic --> rejected
+    financial --> rejected
+    draft --> completed : ${t('withdrawal.ongoingFree')}
 `,
 internship: (t) => `
 flowchart TD

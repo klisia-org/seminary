@@ -364,6 +364,11 @@ const routes = [
     component: () => import('@/pages/CulminatingProject.vue'),
   },
   {
+    path: "/faculty-worklist",
+    name: "FacultyWorklist",
+    component: () => import('@/pages/FacultyWorklist.vue'),
+  },
+  {
     path: "/enrollment",
     name: "Enrollment",
     component: () => import('@/pages/Enrollment.vue'),

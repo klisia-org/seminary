@@ -32,8 +32,73 @@ class CulminatingProject(Document):
         self._maybe_snapshot_milestones()
         self._stamp_submission_metadata()
         self._validate_readers_for_milestones()
+        self._apply_reader_policy()
         self._derive_milestone_dates()
         self._compute_milestones_complete()
+
+    def _apply_reader_policy(self):
+        """Wire reader composition from the project type's policy (ADR 060): the
+        type fixes each named slot's reader type, forbids slots beyond
+        readers_required (extra reviewers go on the committee), and validates an
+        instructor reader against the unit rule. No-op when the type does not apply
+        a reader policy — staff then pick types/members freely."""
+        if not self.project_type:
+            return
+        cpt = frappe.get_cached_doc("Culminating Project Type", self.project_type)
+        if not cpt.apply_reader_policy:
+            return
+        from seminary.seminary import faculty
+
+        required = min(cpt.readers_required or 0, 2)
+        slots = (
+            (
+                1,
+                "second_reader",
+                _("Second Reader"),
+                cpt.second_reader_type,
+                cpt.second_reader_allow_other_units,
+            ),
+            (
+                2,
+                "third_reader",
+                _("Third Reader"),
+                cpt.third_reader_type,
+                cpt.third_reader_allow_other_units,
+            ),
+        )
+        for num, field, label, policy_type, allow_other in slots:
+            value = self.get(field)
+            if num > required:
+                if value:
+                    frappe.throw(
+                        _(
+                            "This project type allows {0} named reader(s); the {1} is "
+                            "not permitted — put extra reviewers on the committee."
+                        ).format(required, label)
+                    )
+                self.set(f"{field}_type", "Instructor")
+                continue
+            policy_type = policy_type or "Instructor"
+            self.set(f"{field}_type", policy_type)  # type is dictated by the policy
+            if not value:
+                continue
+            if not frappe.db.exists(policy_type, value):
+                frappe.throw(
+                    _("The {0} must be an {1} for this project type.").format(
+                        label, policy_type
+                    )
+                )
+            if (
+                policy_type == "Instructor"
+                and not allow_other
+                and self.academic_unit
+                and not faculty.is_member(self.academic_unit, value)
+            ):
+                frappe.throw(
+                    _("{0} must be a member of this project's Academic Unit.").format(
+                        label
+                    )
+                )
 
     def on_submit(self):
         self._link_to_sgr()
@@ -43,6 +108,8 @@ class CulminatingProject(Document):
         # round counter and milestone-derived fields here too (e.g. after a
         # submission is added or a sign-off flips a milestone). allow_on_submit.
         self._update_round_counter()
+        self._validate_readers_for_milestones()
+        self._apply_reader_policy()
         self._derive_milestone_dates()
         self._compute_milestones_complete()
 
@@ -395,8 +462,13 @@ def record_signoff(
         )
 
     reader_field = _ROLE_READER_FIELD.get(role)
-    if reader_field and not project.get(reader_field):
-        frappe.throw(_("This project has no {0} to sign off.").format(role))
+    if reader_field:
+        if not project.get(reader_field):
+            frappe.throw(_("This project has no {0} to sign off.").format(role))
+        # An external named reader doesn't sign individually (no login) — the
+        # advisor records the sign-off on their behalf, like a committee member.
+        if (project.get(f"{reader_field}_type") or "Instructor") == "External Examiner":
+            _require_advisor(project)
 
     # The committee doesn't sign individually — the advisor records its sign-off
     # on the committee's behalf, and the committee must exist first.
@@ -463,6 +535,59 @@ def _recompute_milestone_status(project, row):
             row.completed_on = today()
     elif signoffs:
         row.status = "In Progress"
+
+
+@frappe.whitelist()
+def assign_advisor(culminating_project, advisor):
+    """Department action (ADR 059/060): assign the Thesis/CP Advisor from the
+    project's Academic Unit pool, claim their capacity, and (best-effort) activate
+    the project. Authorized for a full-access role or someone wired to the unit's
+    Thesis/CP Advisor capability. Reassigning releases the prior advisor's slot."""
+    from frappe.model.workflow import apply_workflow
+
+    from seminary.seminary import faculty
+
+    project = frappe.get_doc("Culminating Project", culminating_project)
+    unit = project.academic_unit
+    if not unit:
+        frappe.throw(_("Set the project's Academic Unit before assigning an advisor."))
+    faculty.require_capability(unit, faculty.THESIS_CP_ADVISOR_ROUTE)
+
+    # Gate 1 (always): the advisor must be qualified — hold the Thesis/CP Advisor
+    # capability. Gate 2 (when the type opts in): from the project's unit.
+    scope_unit = None
+    if project.project_type:
+        cpt = frappe.get_cached_doc("Culminating Project Type", project.project_type)
+        if cpt.apply_reader_policy and cpt.advisor_from_academic_unit:
+            scope_unit = unit
+    if not faculty.holds_capability(
+        advisor, faculty.THESIS_CP_ADVISOR_ROUTE, scope_unit
+    ):
+        frappe.throw(
+            _("{0} is not a Thesis/CP Advisor{1}.").format(
+                frappe.db.get_value("Instructor", advisor, "instructor_name")
+                or advisor,
+                _(" in this Academic Unit") if scope_unit else "",
+            )
+        )
+
+    if project.advisor and project.advisor != advisor:
+        faculty.release_capability(
+            unit, project.advisor, faculty.THESIS_CP_ADVISOR_ROUTE
+        )
+
+    project.advisor = advisor
+    project.save(ignore_permissions=True)
+    faculty.claim_for(unit, faculty.THESIS_CP_ADVISOR_ROUTE, advisor)
+
+    activated = False
+    if project.docstatus == 0 and (project.workflow_state in (None, "Draft")):
+        try:
+            apply_workflow(project, "Activate")
+            activated = True
+        except frappe.PermissionError:
+            pass  # advisor is set; an authorized user can Activate next.
+    return {"advisor": advisor, "activated": activated}
 
 
 @frappe.whitelist()
@@ -801,21 +926,50 @@ def get_culminating_project(name):
 
     advisors = []
     for field, label in _READER_FIELDS:
-        inst = project.get(field)
-        if not inst:
+        value = project.get(field)
+        if not value:
+            continue
+        rtype = (
+            "Instructor"
+            if field == "advisor"
+            else (project.get(f"{field}_type") or "Instructor")
+        )
+        if rtype == "External Examiner":
+            x = (
+                frappe.db.get_value(
+                    "External Examiner",
+                    value,
+                    ["examiner_name", "email", "institution"],
+                    as_dict=True,
+                )
+                or {}
+            )
+            advisors.append(
+                {
+                    "name": value,
+                    "role": label,
+                    "is_external": 1,
+                    "instructor_name": x.get("examiner_name"),
+                    "prof_email": x.get("email"),
+                    "institution": x.get("institution"),
+                    "profileimage": None,
+                    "contact_channels": [],
+                }
+            )
             continue
         info = (
             frappe.db.get_value(
                 "Instructor",
-                inst,
+                value,
                 ["instructor_name", "prof_email", "profileimage"],
                 as_dict=True,
             )
             or {}
         )
-        info["name"] = inst
+        info["name"] = value
         info["role"] = label
-        info["contact_channels"] = get_instructor_contact_channels(inst)
+        info["is_external"] = 0
+        info["contact_channels"] = get_instructor_contact_channels(value)
         advisors.append(info)
 
     signoffs_by_row = {}
@@ -913,6 +1067,15 @@ def get_culminating_project(name):
         "project_title": project.project_title,
         "abstract": project.abstract,
         "project_type": project.project_type,
+        "academic_unit": project.academic_unit,
+        "advisor": project.advisor,
+        "readers_required": (
+            frappe.db.get_value(
+                "Culminating Project Type", project.project_type, "readers_required"
+            )
+            if project.project_type
+            else 0
+        ),
         "workflow_state": project.workflow_state,
         "milestones_complete": project.milestones_complete,
         "final_grade": project.final_grade,
@@ -947,7 +1110,8 @@ def get_culminating_project(name):
 
 
 def _committee(project):
-    """Committee members for display (internal instructors or external readers)."""
+    """Committee members for display (internal instructors, External Examiners, or
+    legacy free-text externals)."""
     members = []
     for c in project.get("committee") or []:
         if c.instructor:
@@ -960,15 +1124,35 @@ def _committee(project):
                 )
                 or {}
             )
-            member_name, email = info.get("instructor_name"), info.get("prof_email")
+            member_name, email, is_external = (
+                info.get("instructor_name"),
+                info.get("prof_email"),
+                0,
+            )
+        elif c.external_examiner:
+            info = (
+                frappe.db.get_value(
+                    "External Examiner",
+                    c.external_examiner,
+                    ["examiner_name", "email"],
+                    as_dict=True,
+                )
+                or {}
+            )
+            member_name, email, is_external = (
+                info.get("examiner_name"),
+                info.get("email"),
+                1,
+            )
         else:
-            member_name, email = c.external_name, c.email_external
+            member_name, email, is_external = c.external_name, c.email_external, 1
         members.append(
             {
                 "name": c.name,
                 "instructor": c.instructor,
+                "external_examiner": c.external_examiner,
                 "member_name": member_name,
-                "is_external": c.is_external,
+                "is_external": is_external,
                 "email": email,
             }
         )
@@ -988,10 +1172,14 @@ def _require_advisor(project):
 
 @frappe.whitelist()
 def add_committee_member(
-    culminating_project, instructor=None, external_name=None, email_external=None
+    culminating_project,
+    instructor=None,
+    external_examiner=None,
+    external_name=None,
+    email_external=None,
 ):
-    """Advisor adds a committee member — an internal Instructor or an external
-    reader (name + optional email)."""
+    """Advisor adds a committee member — an internal Instructor, a vetted External
+    Examiner, or (legacy) a free-text external reader."""
     project = frappe.get_doc("Culminating Project", culminating_project)
     _require_advisor(project)
     if instructor:
@@ -1003,6 +1191,19 @@ def add_committee_member(
                 )
             )
         project.append("committee", {"instructor": instructor})
+    elif external_examiner:
+        if any(
+            c.external_examiner == external_examiner for c in project.committee or []
+        ):
+            frappe.throw(
+                _("{0} is already on the committee.").format(
+                    frappe.db.get_value(
+                        "External Examiner", external_examiner, "examiner_name"
+                    )
+                    or external_examiner
+                )
+            )
+        project.append("committee", {"external_examiner": external_examiner})
     elif external_name:
         project.append(
             "committee",
@@ -1013,7 +1214,9 @@ def add_committee_member(
             },
         )
     else:
-        frappe.throw(_("Choose an instructor or enter an external member's name."))
+        frappe.throw(
+            _("Choose an instructor, an External Examiner, or enter an external name.")
+        )
     project.save(ignore_permissions=True)
     return {"committee": _committee(project)}
 

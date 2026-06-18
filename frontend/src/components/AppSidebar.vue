@@ -90,6 +90,10 @@ const links = computed(() => {
 	const isAlumni = userResource?.data?.is_alumni
 	const isEvaluator = userResource?.data?.is_evaluator
 	const hasCulminatingProjects = userResource?.data?.has_culminating_projects
+	const facultyCaps = userResource?.data?.faculty_capabilities || []
+	const hasFacultyWorklist =
+		facultyCaps.includes('Manual-Verification Verifier') ||
+		facultyCaps.includes('Placement Examiner')
 	const allowEnroll = seminarySettings.data?.allow_portal_enroll
 	return [
 		{
@@ -123,6 +127,11 @@ const links = computed(() => {
 			label: __('Culminating Project'),
 			to: '/culminating-project',
 			icon: ScrollText,
+		}] : []),
+		...(hasFacultyWorklist ? [{
+			label: __('Faculty Worklist'),
+			to: '/faculty-worklist',
+			icon: ClipboardCheck,
 		}] : []),
 		...((isStudent || isAlumni) ? [{
 			label: __('Jobs'),

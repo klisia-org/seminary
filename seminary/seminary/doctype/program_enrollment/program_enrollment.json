@@ -44,6 +44,10 @@
   "graduation_policy",
   "grad_candidate",
   "graduation_requirements",
+  "leveling_section",
+  "leveling_profile",
+  "leveling",
+  "placement_assessments",
   "req_on_enroll_section",
   "required_on_enroll_courses",
   "enrolled_courses",
@@ -359,6 +363,36 @@
    "fieldtype": "Table",
    "label": "Graduation Requirements",
    "options": "Student Graduation Requirement"
+  },
+  {
+   "collapsible": 1,
+   "description": "Per-student leveling / advanced-standing. Apply a Leveling Profile to seed rows, then override. Exemptions place the student out of mandatory courses; Required leveling courses must be passed to graduate.",
+   "fieldname": "leveling_section",
+   "fieldtype": "Section Break",
+   "label": "Leveling & Advanced Standing"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Last Leveling Profile applied (provenance). Use the Apply Leveling Profile action to seed the plan below.",
+   "fieldname": "leveling_profile",
+   "fieldtype": "Link",
+   "label": "Leveling Profile",
+   "options": "Leveling Profile"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "leveling",
+   "fieldtype": "Table",
+   "label": "Leveling Plan",
+   "options": "Program Enrollment Leveling"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Placement exams this student has taken, with scores (ADR 060). The durable score store the leveling resolver reads; scored by a department Placement Examiner.",
+   "fieldname": "placement_assessments",
+   "fieldtype": "Table",
+   "label": "Placement Assessments",
+   "options": "Program Enrollment Placement Assessment"
   },
   {
    "collapsible": 1,

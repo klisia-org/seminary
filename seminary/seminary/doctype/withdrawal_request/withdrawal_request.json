@@ -44,6 +44,7 @@
   "student_comment",
   "section_break_rule",
   "withdrawal_rule",
+  "refund_due",
   "withdrawal_effective_date",
   "column_break_grade",
   "resulting_grade",
@@ -303,6 +304,14 @@
    "fieldtype": "Link",
    "label": "Withdrawal Rule",
    "options": "Withdrawal Rules"
+  },
+  {
+   "default": "0",
+   "description": "Computed in validate(): 1 when this withdrawal could produce a refund (a withdrawal rule with refunds applies and the program is not free). The workflow reads this to decide whether Academic approval must route through Financial Review or may Conclude directly.",
+   "fieldname": "refund_due",
+   "fieldtype": "Check",
+   "label": "Refund Due",
+   "read_only": 1
   },
   {
    "default": "Today",

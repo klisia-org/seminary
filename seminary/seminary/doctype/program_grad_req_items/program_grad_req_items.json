@@ -11,9 +11,14 @@
   "column_break_ibds",
   "activation_mode",
   "mandatory",
+  "blocks_graduation_request",
   "quantity_required",
   "internship_link_doctype",
   "internship_hours_required",
+  "section_break_applies",
+  "applies_to_emphasis",
+  "section_break_cred",
+  "activation_credits",
   "section_break_pwhj",
   "on_document",
   "column_break_kagr",
@@ -26,6 +31,8 @@
   "offset_unit",
   "section_break_odat",
   "prerequisite_requirement",
+  "section_break_coursepre",
+  "prerequisite_course",
   "section_break_evid",
   "student_evidence_required",
   "student_evidence_label",
@@ -67,15 +74,27 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Activation Mode",
-   "options": "Always Active\nAfter Requirement\nOn Document Status\nTime Offset"
+   "options": "Always Active\nAfter Requirement\nCredits Passed\nCourse Passed\nOn Document Status\nTime Offset"
   },
   {
    "default": "0",
+   "description": "Defaults from the Graduation Requirement Item but is overridable per program: tick it here to make the requirement mandatory for this program (e.g. mandatory for MABC, optional for MDiv). This per-program value is what the student snapshot (SGR) treats as truly required.",
    "fetch_from": "grad_requirement_item.mandatory",
+   "fetch_if_empty": 1,
    "fieldname": "mandatory",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Is Mandatory"
+  },
+  {
+   "default": "0",
+   "depends_on": "mandatory",
+   "description": "Defaults from the Graduation Requirement Item but is overridable per program. When checked, the student cannot file a Graduation Request until this requirement is Fulfilled or Waived. Only meaningful when the requirement is mandatory.",
+   "fetch_from": "grad_requirement_item.blocks_graduation_request",
+   "fetch_if_empty": 1,
+   "fieldname": "blocks_graduation_request",
+   "fieldtype": "Check",
+   "label": "Blocks Graduation Request"
   },
   {
    "default": "1",
@@ -111,11 +130,52 @@
   },
   {
    "depends_on": "eval:doc.activation_mode=='After Requirement'",
-   "description": "This requirement becomes active only after every selected library requirement (in this same program's policy) reaches Fulfilled or Waived status.",
+   "description": "This requirement becomes active only after the selected library requirement (in this same program's policy) reaches Fulfilled or Waived status. To require more than one prerequisite, chain requirements (each After Requirement pointing at the previous one).",
    "fieldname": "prerequisite_requirement",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "Prerequisite Requirement",
-   "options": "Program Grad Req Items"
+   "options": "Graduation Requirement Item"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Course Passed'",
+   "fieldname": "section_break_coursepre",
+   "fieldtype": "Section Break",
+   "label": "Course Prerequisite"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Course Passed'",
+   "description": "This requirement becomes active only once the student has passed this course (a Program Enrollment Course with status 'Pass'). A single passing attempt satisfies the gate permanently — even for a repeatable course, regardless of any other attempt. 'Course Passed' and 'After Requirement' are mutually exclusive; to gate on both a course and a prior requirement, chain two requirements (the first using Course Passed, the second using After Requirement on the first).",
+   "fieldname": "prerequisite_course",
+   "fieldtype": "Link",
+   "label": "Prerequisite Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "section_break_applies",
+   "fieldtype": "Section Break",
+   "label": "Applies To"
+  },
+  {
+   "description": "Leave empty to apply this requirement to every student in the program. Pick an emphasis (a Program Track marked as emphasis) to scope it: the requirement materializes only for students who have declared that emphasis (advisory-only emphases never count), and is added when the student declares it — even after enrollment. To apply one requirement to several emphases, add it once per emphasis; a student in more than one gets a single row (deduped by requirement).",
+   "fieldname": "applies_to_emphasis",
+   "fieldtype": "Link",
+   "label": "Applies to Emphasis",
+   "options": "Program Track"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Credits Passed'",
+   "fieldname": "section_break_cred",
+   "fieldtype": "Section Break",
+   "label": "Credits Passed"
+  },
+  {
+   "depends_on": "eval:doc.activation_mode=='Credits Passed'",
+   "description": "This requirement becomes active only once the student's total passed credits (Program Enrollment.totalcredits — the sum of Program Enrollment Course credits with status 'Pass') reaches this number.",
+   "fieldname": "activation_credits",
+   "fieldtype": "Int",
+   "label": "Credits Passed to Activate",
+   "mandatory_depends_on": "eval:doc.activation_mode=='Credits Passed'",
+   "non_negative": 1
   },
   {
    "depends_on": "eval:doc.activation_mode=='On Document Status'",

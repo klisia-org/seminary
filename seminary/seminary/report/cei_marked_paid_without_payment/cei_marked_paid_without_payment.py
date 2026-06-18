@@ -3,14 +3,17 @@
 
 """CEI Marked Paid Without Payment — audit report.
 
-Surfaces Course Enrollment Individuals whose workflow_state is "Submitted"
-because someone explicitly clicked the "Mark as Paid" workflow action, but
-whose linked Sales Invoices contain no actually-paid receivable.
+Surfaces Course Enrollment Individuals that reached "Submitted" because someone
+explicitly clicked the "Mark as Paid" workflow action, but whose linked Sales
+Invoices contain no actually-paid receivable.
 
 Detection signal (robust against stale `is_free` / `require_pay_submit`
 fields on older docs):
 
-  1. CEI is currently Submitted (docstatus=1, workflow_state='Submitted').
+  1. CEI is Submitted or Concluded (docstatus=1). Concluded is included so an
+     unpaid balance is not hidden once the course ends: Send Grades moves the
+     CEI Submitted -> Concluded via `db.set_value` (leaving no workflow
+     comment), so the "Mark as Paid" signal in steps 2-3 is unaffected.
   2. A Workflow Comment with content='Awaiting Payment' exists on the doc —
      the CEI passed through Awaiting Payment at some point.
   3. A later Workflow Comment with content='Submitted' exists — the only
@@ -126,7 +129,10 @@ def _columns():
 
 
 def _rows(filters):
-    conditions = ["cei.workflow_state = 'Submitted'", "cei.docstatus = 1"]
+    conditions = [
+        "cei.workflow_state IN ('Submitted', 'Concluded')",
+        "cei.docstatus = 1",
+    ]
     params = {}
 
     if filters.get("from_date"):

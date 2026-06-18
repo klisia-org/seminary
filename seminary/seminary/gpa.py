@@ -45,8 +45,15 @@ def _recompute_gpa_only(pe_name):
     point_sum = 0.0
     counted_rows = 0
 
+    # Leveling / remedial courses (ADR 058) never count toward GPA.
+    from seminary.seminary.leveling import leveling_excluded_courses
+
+    excluded = leveling_excluded_courses(pe_name)
+
     for pec in pe.courses or []:
         if not pec.count_in_gpa:
+            continue
+        if pec.course in excluded:
             continue
         if pec.pec_finalgradenum is None:
             continue

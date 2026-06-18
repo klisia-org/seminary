@@ -1,7 +1,7 @@
 {
  "app": "seminary",
  "charts": [],
- "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"YvhXKY1l7S\",\"type\":\"card\",\"data\":{\"card_name\":\"Communications\",\"col\":4}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
+ "content": "[{\"id\":\"VHdkuUQK3Z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Seminary Academic Operations</span>\",\"col\":12}},{\"id\":\"zi5exLz2Ml\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Frontend\",\"col\":12}},{\"id\":\"QueCLtLC8V\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Schedule\",\"col\":4}},{\"id\":\"fmXhi9CYtQ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Planned Course Schedule\",\"col\":4}},{\"id\":\"UyA_LpkLWY\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Enrollment\",\"col\":4}},{\"id\":\"H4c_L6l-lU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Students x Courses\",\"col\":7}},{\"id\":\"8ERW2yV4Lx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Open Withdrawal Requests\",\"col\":5}},{\"id\":\"B6iYu_pAzF\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"JLdU9r7_Hy\",\"type\":\"card\",\"data\":{\"card_name\":\"Students\",\"col\":4}},{\"id\":\"xY2Lrv7tXY\",\"type\":\"card\",\"data\":{\"card_name\":\"Enrollment\",\"col\":4}},{\"id\":\"IEbCHxYLtP\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule\",\"col\":4}},{\"id\":\"az4aYpJGlB\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"_dTwXdeDFe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":3}},{\"id\":\"YvhXKY1l7S\",\"type\":\"card\",\"data\":{\"card_name\":\"Communications\",\"col\":4}},{\"id\":\"vvx4Xm03WG\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"ZFwtqM21wy\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Tuition Management</b></span>\",\"col\":12}},{\"id\":\"BFBXs1bA-k\",\"type\":\"card\",\"data\":{\"card_name\":\"Financial Links\",\"col\":4}},{\"id\":\"aL5wHVb6UA\",\"type\":\"card\",\"data\":{\"card_name\":\"Scholarships\",\"col\":8}},{\"id\":\"Qv5XvDCLBh\",\"type\":\"spacer\",\"data\":{\"col\":12}}]",
  "creation": "2024-03-16 19:07:39.821658",
  "custom_blocks": [
   {
@@ -14,7 +14,7 @@
  "for_user": "",
  "hide_custom": 0,
  "icon": "non-profit",
- "idx": 6,
+ "idx": 7,
  "indicator_color": "",
  "is_hidden": 0,
  "label": "Seminary",
@@ -295,8 +295,8 @@
    "type": "Link"
   }
  ],
- "modified": "2026-06-13 02:41:08.643682",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-17 22:58:19.665107",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary",
  "number_cards": [],
@@ -324,11 +324,56 @@
  "sequence_id": 1.0,
  "shortcuts": [
   {
+   "color": "Green",
+   "doc_view": "List",
+   "format": "{} Live",
+   "label": "Course Schedule",
+   "link_to": "Course Schedule",
+   "stats_filter": "[[\"Course Schedule\",\"workflow_state\",\"in\",[\"Open for Enrollment\",\"Enrollment Closed\",\"Grading\"]]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": "{} Active Course Enrollments",
+   "label": "Students x Courses",
+   "link_to": "Course Enrollment Individual",
+   "stats_filter": "[[\"Course Enrollment Individual\",\"workflow_state\",\"=\",\"Submitted\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": "{} Draft",
+   "label": "Planned Course Schedule",
+   "link_to": "Course Schedule",
+   "stats_filter": "[[\"Course Schedule\",\"workflow_state\",\"=\",\"Draft\"]]",
+   "type": "DocType"
+  },
+  {
    "color": "Grey",
    "doc_view": "List",
    "label": "Dashboard",
    "link_to": "Seminary",
    "type": "Dashboard"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} in process",
+   "label": "Open Withdrawal Requests",
+   "link_to": "Withdrawal Request",
+   "stats_filter": "[[\"Withdrawal Request\",\"workflow_state\",\"in\",[\"Academic Review\",\"Financial Review\"]]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": "{} Active",
+   "label": "Program Enrollment",
+   "link_to": "Program Enrollment",
+   "stats_filter": "[[\"Program Enrollment\",\"status\",\"=\",\"Active\"]]",
+   "type": "DocType"
   }
  ],
  "title": "Seminary",

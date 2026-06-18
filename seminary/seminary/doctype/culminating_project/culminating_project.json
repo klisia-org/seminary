@@ -13,13 +13,16 @@
   "column_break_pe",
   "student_grad_requirement",
   "project_type",
+  "academic_unit",
   "section_break_about",
   "project_title",
   "abstract",
   "section_break_advisors",
   "advisor",
   "column_break_advisors",
+  "second_reader_type",
   "second_reader",
+  "third_reader_type",
   "third_reader",
   "section_break_dates",
   "proposal_approved_on",
@@ -75,6 +78,14 @@
    "options": "Culminating Project Type"
   },
   {
+   "description": "The Academic Department this project belongs to (student-declared). The department assigns the advisor from its Thesis/CP Advisor pool; required to activate the project.",
+   "fieldname": "academic_unit",
+   "fieldtype": "Link",
+   "label": "Academic Unit",
+   "options": "Academic Unit",
+   "reqd": 1
+  },
+  {
    "fieldname": "section_break_about",
    "fieldtype": "Section Break",
    "label": "Project"
@@ -97,21 +108,31 @@
    "label": "Advisors"
   },
   {
+   "description": "Assigned by the Academic Unit from its Thesis/CP Advisor pool (Assign Advisor action). Required to move the project from Draft to Active.",
    "fieldname": "advisor",
    "fieldtype": "Link",
    "label": "Advisor",
    "options": "Instructor",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "column_break_advisors",
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
+   "default": "Instructor",
+   "fieldname": "second_reader_type",
+   "fieldtype": "Select",
+   "label": "Second Reader Type",
+   "options": "Instructor\nExternal Examiner"
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "second_reader",
-   "fieldtype": "Link",
+   "fieldtype": "Dynamic Link",
    "label": "Second Reader",
-   "options": "Instructor"
+   "options": "second_reader_type"
   },
   {
    "collapsible": 1,
@@ -220,10 +241,19 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "default": "Instructor",
+   "fieldname": "third_reader_type",
+   "fieldtype": "Select",
+   "label": "Third Reader Type",
+   "options": "Instructor\nExternal Examiner"
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "third_reader",
-   "fieldtype": "Link",
+   "fieldtype": "Dynamic Link",
    "label": "Third reader",
-   "options": "Instructor"
+   "options": "third_reader_type"
   },
   {
    "fieldname": "committee_section",

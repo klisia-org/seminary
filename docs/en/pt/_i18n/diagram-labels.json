@@ -2,6 +2,7 @@
   "enrollment.draft": "Rascunho",
   "enrollment.awaitingPayment": "Aguardando Pagamento",
   "enrollment.submitted": "Enviado",
+  "enrollment.concluded": "Concluído",
   "enrollment.withdrawn": "Cancelado",
   "courseSchedule.draft": "Rascunho",
   "courseSchedule.openForEnrollment": "Aberto para Inscrições",
@@ -15,5 +16,14 @@
   "graduationRequest.financialReview": "Revisão Financeira",
   "graduationRequest.approved": "Aprovado",
   "graduationRequest.cancelled": "Cancelado",
-  "graduationRequest.freeSkips": "ignorar programas gratuitos"
+  "graduationRequest.freeSkips": "ignorar programas gratuitos",
+
+  "withdrawal.draft": "Rascunho",
+  "withdrawal.academicReview": "Revisão Acadêmica",
+  "withdrawal.financialReview": "Revisão Financeira",
+  "withdrawal.completed": "Concluído",
+  "withdrawal.rejected": "Rejeitado",
+  "withdrawal.refundDue": "reembolso devido",
+  "withdrawal.noRefund": "sem reembolso",
+  "withdrawal.ongoingFree": "contínuo + gratuito"
 }

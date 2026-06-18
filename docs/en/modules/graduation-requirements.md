@@ -128,14 +128,24 @@ Each row picks a library item and adds program-specific binding metadata:
 #### Activation modes
 
 A requirement might be due *the day a student enrolls* — or only after some
-trigger. The four modes:
+trigger. The modes:
 
 - **Always Active** — due from day one. Use this for anything the student
   can start at any time (chapel attendance, doctrinal statement).
-- **After Requirement** — due only after one or more *other* requirements in
-  this same policy have been fulfilled or waived. Use this for prerequisite
-  chains: *"Ordination Interview"* becomes due only after *"Pastoral
-  Recommendation Letter"* and *"Doctrinal Statement"* are both fulfilled.
+- **After Requirement** — due only after one *other* requirement in this same
+  policy has been fulfilled or waived. Use this for prerequisite chains:
+  *"Ordination Interview"* becomes due only after *"Doctrinal Statement"* is
+  fulfilled. To require more than one prerequisite, chain requirements (each
+  pointing at the previous one).
+- **Credits Passed** — due only once the student's total passed credits
+  reach a number you set.
+- **Course Passed** — due only once the student has **passed** the course you
+  set (e.g. *"Thesis"* becomes due only after the student passes *"Writing a
+  Thesis"*). A single passing attempt satisfies the gate **permanently** —
+  even for a repeatable course, and regardless of any other attempt. **Course
+  Passed and After Requirement are mutually exclusive on one row;** to gate on
+  *both* a course and a prior requirement, chain two requirements — the first
+  using Course Passed, the second using After Requirement pointing at the first.
 - **On Document Status** — due only after a related document reaches a
   given status. The library item's `link_doctype` and the chosen
   `linked_doc_status` together define the gate.
@@ -144,6 +154,27 @@ trigger. The four modes:
   value, and a unit (Days or Academic Term). *"Senior Recital — due 60 days
   before Expected Graduation Date"* is offset = -60, unit = Days, anchor =
   Expected Graduation Date.
+
+#### Scoping a requirement to an emphasis
+
+By default a policy row applies to **every** student in the program. To make a
+requirement apply only to students on a particular emphasis (e.g. *"Counseling
+Internship"* for the Counseling emphasis), set **Applies to Emphasis** to one of
+the program's emphases (Program Tracks marked as emphasis). The row then
+materializes only for students who have declared that emphasis. Advisory-only
+emphases never count. Leave the field empty to apply the requirement to everyone.
+To apply one requirement to several emphases, add it once per emphasis — a
+student who holds more than one of them still gets a single row.
+
+Because an emphasis can be declared *after* enrollment, an emphasis-scoped
+requirement is added to a student's audit the moment they declare the matching
+emphasis — not only at enrollment. If a student later **drops** the emphasis, the
+requirement is **not** removed automatically (they may already have started or
+completed it); instead it appears on the **Orphan Graduation Requirements** report
+for a registrar to Cancel, Waive, or Withdraw. To avoid changing the requirement
+set out from under an in-flight graduation, **emphasis changes are blocked once a
+Graduation Request exists** — delete or cancel the graduation request first, then
+change the emphasis.
 
 A row whose activation has not yet been triggered shows on the audit as
 *Not Yet Active*, and even if mandatory does **not** block graduation
@@ -329,6 +360,9 @@ Paper*. Each type defines:
   earns credit and a grade like any other course. The type names which Course
   backs it.
 - **Milestones** — the staged plan every project of this type follows (below).
+- **Reader policy** — the type decides the project's reader *composition* so it
+  isn't re-decided per project (below, under *Readers, committee, and external
+  examiners*).
 
 On the requirement's library item you list the **Culminating Project Types
 Allowed**. If you allow exactly one, the student is auto-assigned it; if you
@@ -371,6 +405,50 @@ readers signing off the Defense milestone, exactly like any other milestone.
 Students, advisors, and readers do all of this from the **Culminating Project
 workbench** (a portal page) where they see milestones and due dates, upload
 submissions, and record sign-offs.
+
+### Academic unit and advisor assignment
+
+A project belongs to an **Academic Unit** (an academic department) that the
+student declares when the project is created — the advisor field is no longer
+filled by the student. The **department assigns the advisor**: from the project,
+use **Assign Advisor**, which offers only **qualified** advisors — instructors
+wired with the *Thesis/CP Advisor* capability who still have capacity. The
+project stays in **Draft** until an advisor is assigned, then moves to **Active**;
+the advisor's capacity is claimed (and released if you reassign).
+
+By default the advisor picker is a wide net across all academic units, so a dean
+can step in. On the Culminating Project Type, tick **Advisor from Project's
+Academic Unit** to narrow it to advisors from the project's own department. (See
+[Academic Units & Faculty](./academic-units.md) for how advisor pools and
+capacity work.)
+
+### Readers, committee, and external examiners
+
+Reader *composition* is policy, set on the **Culminating Project Type**, not
+decided per project. On the type, tick **Apply Policy to Reader Selection** and
+set:
+
+- **Readers Required** — how many named readers (beyond the advisor): 0, 1, or 2.
+  A project has exactly two named slots (Second and Third Reader); put any
+  further reviewers on the committee.
+- For each slot, the **reader type** — **Instructor** or **External Examiner** —
+  and, for instructor slots, **Allow Instructors from Other Units** (off = must
+  be a member of the project's academic unit).
+
+Projects of that type then inherit the composition: each slot's type is fixed,
+extra slots are disallowed, and an instructor reader is checked against the unit
+rule. With the policy off, staff pick reader types and members freely.
+
+An **External Examiner** is a vetted outside reader, recorded once (Desk →
+External Examiner) and reused — Person-backed, with their institution,
+qualifications, and an *Invite Again* note so "do we want them back?" doesn't
+live in someone's head. They are deliberately **not** instructors (reduced
+access, no teaching). External readers don't sign milestones themselves; the
+advisor records their sign-off on their behalf, as for committee members.
+
+The **committee** (managed by the advisor on the workbench) takes internal
+instructors or External Examiners; the advisor signs milestones on the
+committee's behalf.
 
 ## How attendance events are handled
 
@@ -524,6 +602,44 @@ consolidated view:
 A student is shown `Eligible to graduate` only when both sections are
 clear of unfulfilled mandatory items.
 
+## Leveling and advanced standing
+
+Some students arrive needing **leveling** (remedial courses, e.g. biblical
+languages) or qualify for **advanced standing** (placed out of courses or
+requirements). This is per-student and lives on the **Program Enrollment**, in
+the *Leveling & Advanced Standing* section — separate from the program-flat
+policy and from emphasis.
+
+- **Register the common cases once** as a **Leveling Profile** (global, or
+  filtered to one program). On a student's enrollment, use **Apply Leveling
+  Profile** to seed an editable plan, then override per student. You can also
+  add rows by hand with no profile.
+- Each plan row is one of: **Leveling Course** (must pass, unless placed out),
+  **Course Exemption** (placed out outright), **Placement Assessment** (a
+  placement exam whose recorded **score** gates the leveling courses), or
+  **Requirement Waiver** (waive a graduation requirement).
+- **Placement Assessments are their own thing** (no longer a graduation
+  requirement). Define each exam once as a **Placement Assessment** (Desk →
+  Placement Assessment) and give it an **Academic Unit** — that unit's **Placement
+  Examiner** capability holders grade it. The score lives on the student's
+  enrollment, not in their graduation-requirement list, so leveling and graduation
+  stay separate.
+- **Score-gated placement.** Give each leveling course an *"Exempt if Score ≥"*
+  threshold and point its *Placement Assessment* at the exam (the threshold sits
+  on the same row). A **Placement Examiner** records the score from their
+  [Faculty Worklist](./academic-units.md#the-faculty-worklist-portal); each course
+  then resolves to **Exempt** or **Required** automatically (e.g. a Greek score of
+  80 places out of Greek I & II, still requires Greek III). Manual overrides stick
+  (tick *Overridden*); use **Resolve Leveling Plan** after hand-edits.
+- **Effects.** An exemption clears the course for graduation (and satisfies a
+  *Course Passed* prerequisite on other requirements) but earns **no credit and
+  no grade**. Leveling courses keep their credit for enrollment but **don't count
+  toward the degree**. A **Required** (unmet) leveling course **blocks
+  graduation** — waive the row if a student should be let through.
+- **Before enrollment**, an applicant can flag *Requesting requirement review*;
+  that raises a registrar to-do but changes nothing on its own (the plan is
+  always built on the enrollment, once transcripts can be verified).
+
 ## Quick reference
 
 | If you want to... | Do this |
@@ -535,7 +651,12 @@ clear of unfulfilled mandatory items.
 | Define a project's stages and defense | Add milestones to the Culminating Project Type (anchor + offset, sign-off roles, Creates Event for the defense) |
 | Require attendance at a one-off event | Create an Event Custom Category, then Create Event (cohort) or Schedule Required Event (per student) |
 | Make a requirement due only after another | Activation Mode = After Requirement, pick prerequisites |
+| Make a requirement due only after a course is passed | Activation Mode = Course Passed, set the Prerequisite Course |
+| Apply a requirement only to one emphasis | Set Applies to Emphasis on the policy row (add the row per emphasis for several) |
 | Make a requirement due X days before graduation | Activation Mode = Time Offset, anchor = Expected Graduation Date |
+| Resolve a requirement left behind by a dropped emphasis | Orphan Graduation Requirements report → Cancel / Waive / Withdraw |
+| Set up leveling / advanced standing for common entrance cases | Create a Leveling Profile, then Apply Leveling Profile on the enrollment |
+| Place a student out of a course by exam score | Leveling row: Leveling Course + Gating Assessment + "Exempt if Score ≥"; verify the exam with a score |
 | Confirm a student satisfied something | Open the SGR row, set status = Fulfilled |
 | Excuse a student from a requirement | Open the SGR row, tick Waived, give a reason |
 | Update the seminary catalog | Publish a new Program Graduation Requirement with a new Active from date — do not edit old one |

@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "instructor",
+  "external_examiner",
   "is_external",
   "contact_external",
   "external_name",
@@ -21,28 +22,39 @@
    "options": "Instructor"
   },
   {
-   "default": "0",
-   "fieldname": "is_external",
-   "fieldtype": "Check",
-   "label": "External Member"
-  },
-  {
-   "fieldname": "external_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Full Name of External Member"
-  },
-  {
-   "fieldname": "email_external",
-   "fieldtype": "Data",
-   "label": "Email of external member"
-  },
-  {
-   "description": "Try to find the contact in our database, otherwise a contact will be created with the information below.",
-   "fieldname": "contact_external",
+   "description": "A vetted External Examiner (outside reader). Fill this OR Instructor. Replaces the free-text external fields below (ADR 060).",
+   "fieldname": "external_examiner",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Linked Contact of External Member",
+   "label": "External Examiner",
+   "options": "External Examiner"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.is_external || doc.external_name",
+   "description": "Deprecated (ADR 060) — use External Examiner instead. Kept for existing committee rows.",
+   "fieldname": "is_external",
+   "fieldtype": "Check",
+   "label": "External Member (deprecated)"
+  },
+  {
+   "depends_on": "eval:doc.is_external || doc.external_name",
+   "fieldname": "external_name",
+   "fieldtype": "Data",
+   "label": "Full Name of External Member (deprecated)"
+  },
+  {
+   "depends_on": "eval:doc.is_external || doc.external_name",
+   "fieldname": "email_external",
+   "fieldtype": "Data",
+   "label": "Email of external member (deprecated)"
+  },
+  {
+   "depends_on": "eval:doc.is_external || doc.external_name",
+   "description": "Deprecated. Try to find the contact in our database, otherwise a contact will be created with the information below.",
+   "fieldname": "contact_external",
+   "fieldtype": "Link",
+   "label": "Linked Contact of External Member (deprecated)",
    "options": "Contact"
   }
  ],

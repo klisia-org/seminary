@@ -2,6 +2,7 @@
   "enrollment.draft": "Draft",
   "enrollment.awaitingPayment": "Awaiting Payment",
   "enrollment.submitted": "Submitted",
+  "enrollment.concluded": "Concluded",
   "enrollment.withdrawn": "Withdrawn",
 
   "courseSchedule.draft": "Draft",
@@ -18,6 +19,15 @@
   "graduationRequest.approved": "Approved",
   "graduationRequest.cancelled": "Cancelled",
   "graduationRequest.freeSkips": "free programs skip",
+
+  "withdrawal.draft": "Draft",
+  "withdrawal.academicReview": "Academic Review",
+  "withdrawal.financialReview": "Financial Review",
+  "withdrawal.completed": "Completed",
+  "withdrawal.rejected": "Rejected",
+  "withdrawal.refundDue": "refund due",
+  "withdrawal.noRefund": "no refund",
+  "withdrawal.ongoingFree": "ongoing + free",
 
    "internship.type": "Internship Type",
     "internship.position": "Internship Position",

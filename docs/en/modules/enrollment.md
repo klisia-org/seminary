@@ -14,13 +14,14 @@ Students can self-enroll through the LMS portal during configured enrollment win
 
 ## Course Enrollment lifecycle
 
-A Course Enrollment Individual moves through a four-state workflow:
+A Course Enrollment Individual moves through a five-state workflow:
 
 <LifecycleDiagram type="enrollment" />
 
 - **Draft** — created but not yet submitted; nothing has happened beyond saving the row
 - **Awaiting Payment** — submitted, Sales Invoices generated, but the student has not been added to the course roster yet (no LMS access)
-- **Submitted** — the student is fully enrolled: on the course roster, on the Program Enrollment's course list, eligible to receive grades
+- **Submitted** — the student is **currently enrolled**: on the course roster, on the Program Enrollment's course list, eligible to receive grades. Filter the CEI list view by `workflow_state = Submitted` to see everyone actively enrolled right now
+- **Concluded** — the course section has finished and grades were sent. When a Course Schedule's **Send Grades** action runs, it closes the section and moves every active enrollment **Submitted → Concluded** (audits included). This is a system-driven transition with no Desk button — it keeps "currently enrolled" (Submitted) cleanly separate from "already completed" (Concluded). The completed course still appears in the student's course list and transcript
 - **Withdrawn** — automatically set when a Withdrawal Request reaches Academic Approval; visible in the CEI list view as a list-state pill
 
 Which path the CEI takes from Draft depends on the **Program** the course belongs to:

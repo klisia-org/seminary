@@ -361,12 +361,14 @@ def has_student_role(member=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_courses_for_student(student):
-    """Courses the student is actually enrolled in — i.e. with a Submitted CEI.
+    """Courses the student is actually enrolled in — i.e. a Submitted or
+    Concluded CEI.
 
-    Gating on the Submitted enrollment state excludes the enrollments a student
+    Gating on these two enrollment states excludes the enrollments a student
     can't enter — cancelled (docstatus 2), Waitlisted, Unseated, Awaiting
-    Payment, and Withdrawn — while still showing completed courses (whose
-    Submitted CEI stays Submitted; only the roster is finalized to active=0).
+    Payment, and Withdrawn — while still showing completed courses: when grades
+    are sent the CEI moves Submitted -> Concluded (and the roster is finalized
+    to active=0), so completed courses must be matched via 'Concluded'.
     ``student`` is the User (email)."""
     courses = frappe.db.sql(
         """select cei.coursesc_ce as name, cei.course_data as course,
@@ -377,7 +379,7 @@ join `tabCourse Schedule` cs on cs.name = cei.coursesc_ce
 where cs.published = 1
   and cei.stu_user = %s
   and cei.docstatus = 1
-  and cei.workflow_state = 'Submitted'
+  and cei.workflow_state in ('Submitted', 'Concluded')
   and IFNULL(cei.course_cancelled, 0) = 0
   and IFNULL(cei.withdrawn, 0) = 0""",
         student,
@@ -1305,9 +1307,20 @@ def get_enrollment(master, document, student):
             string: Enrollment Name if exists else returns empty string
     """
     if master == "program":
+        # A student who left without completing (Withdrawn / Dismissed /
+        # Transferred) may self-enroll again, so such enrollments must not count
+        # as "already enrolled" here. Graduated does NOT qualify — they already
+        # completed this program. Mirrors ProgramEnrollment.validate_duplication.
+        from seminary.seminary.program_status import REENROLLABLE_STATUSES
+
         enrollments = frappe.get_all(
             "Program Enrollment",
-            filters={"student": student, "program": document, "docstatus": 1},
+            filters={
+                "student": student,
+                "program": document,
+                "docstatus": 1,
+                "status": ("not in", list(REENROLLABLE_STATUSES)),
+            },
         )
     if master == "course":
         enrollments = frappe.get_all(

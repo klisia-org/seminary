@@ -30,6 +30,46 @@ class PartnerTranscriptImportBatch(Document):
                     "{0} row(s) still lack a resolved Student. Run Dry-Run again."
                 ).format(len(missing_student))
             )
+        self._validate_transfer_credit_cap()
+
+    def _validate_transfer_credit_cap(self):
+        """Block submission when importing would push a student past the
+        Program's max_transfer_credits (ADR 057). 0 = no cap. Counts existing
+        committed transfer credits (is_transfer=1, Pass) for the student on this
+        program plus the credits this batch would add."""
+        cap = int(
+            frappe.db.get_value("Program", self.target_program, "max_transfer_credits")
+            or 0
+        )
+        if cap <= 0:
+            return
+
+        new_by_student = {}
+        for row in self.rows:
+            if not row.student:
+                continue
+            new_by_student[row.student] = new_by_student.get(row.student, 0) + int(
+                flt(row.resolved_credit) or 0
+            )
+
+        for student, new_credits in new_by_student.items():
+            existing = frappe.db.sql(
+                """SELECT COALESCE(SUM(pec.credits), 0)
+                   FROM `tabProgram Enrollment Course` pec
+                   INNER JOIN `tabProgram Enrollment` pe ON pe.name = pec.parent
+                   WHERE pe.student = %s AND pe.program = %s AND pe.docstatus = 1
+                     AND pec.status = 'Pass' AND pec.is_transfer = 1""",
+                (student, self.target_program),
+            )[0][0]
+            total = int(existing) + new_credits
+            if total > cap:
+                frappe.throw(
+                    _(
+                        "Student {0}: importing {1} transfer credit(s) would bring the "
+                        "transfer total to {2}, over this program's cap of {3}. "
+                        "Remove or reduce rows for this student."
+                    ).format(student, new_credits, total, cap)
+                )
 
     def on_submit(self):
         self._commit_rows()
@@ -278,13 +318,25 @@ def _meets_minimum(resolved_threshold, scale_name, minimum_grade_code):
 
 def _refresh_totalcredits(pe_name):
     """Re-sum credits from passing Program Enrollment Course rows and write to
-    Program Enrollment.totalcredits. Bypass validate_update_after_submit via db_set."""
+    Program Enrollment.totalcredits. Bypass validate_update_after_submit via db_set.
+    Leveling / remedial courses (ADR 058) are excluded — they gate, not count."""
+    from seminary.seminary.leveling import leveling_excluded_courses
+
+    excluded = leveling_excluded_courses(pe_name)
     total = frappe.db.sql(
         """SELECT COALESCE(SUM(credits), 0)
            FROM `tabProgram Enrollment Course`
            WHERE parent = %s AND status = 'Pass'""",
         (pe_name,),
     )[0][0]
+    if excluded:
+        lvl = frappe.db.sql(
+            """SELECT COALESCE(SUM(credits), 0)
+               FROM `tabProgram Enrollment Course`
+               WHERE parent = %s AND status = 'Pass' AND course IN %s""",
+            (pe_name, tuple(excluded)),
+        )[0][0]
+        total = (total or 0) - (lvl or 0)
     frappe.db.set_value(
         "Program Enrollment", pe_name, "totalcredits", int(total), update_modified=False
     )

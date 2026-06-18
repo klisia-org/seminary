@@ -19,6 +19,8 @@
   "column_break_readmission",
   "charges_readmission_fee",
   "readmission_fee_category",
+  "graduation_policy_section",
+  "min_graduation_gpa",
   "alumni_portal_section",
   "allow_alumni_create_partner_org",
   "amended_from",
@@ -107,6 +109,21 @@
    "options": "Fee Category"
   },
   {
+   "fieldname": "graduation_policy_section",
+   "fieldtype": "Section Break",
+   "label": "Graduation Policy"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0.0",
+   "description": "Default minimum cumulative GPA required to graduate, for programs at this level. 0 = no minimum. Fetched onto each Program as a default and overridable there. Ignored for ongoing levels.",
+   "fieldname": "min_graduation_gpa",
+   "fieldtype": "Float",
+   "label": "Minimum Graduation GPA",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
    "fieldname": "alumni_portal_section",
    "fieldtype": "Section Break",
    "label": "Alumni Portal"
@@ -144,7 +161,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-02 03:15:51.948266",
+ "modified": "2026-06-18 02:43:09.686752",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program Level",
@@ -182,7 +199,9 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "pgm_level"
 }

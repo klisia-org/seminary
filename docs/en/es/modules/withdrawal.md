@@ -68,7 +68,7 @@ Si es necesario ajustar manualmente las fechas a las que aplica una regla, esto 
 
 La mayoría de los seminarios no necesitarán editar el Workflow preconfigurado. Sin embargo, es posible hacerlo y las instituciones más grandes pueden beneficiarse especialmente de personalizaciones. Dado que esta es una funcionalidad de ERPNext, su [documentación](https://docs.frappe.io/erpnext/workflows) puede resultar útil.
 
-![Pantalla del Workflow de retiro](/modules/withdrawal/img/withdrawal-workflow.png)
+<LifecycleDiagram type="withdrawal" />
 
 ### Rápidas rutas para programas en curso y gratuitos
 

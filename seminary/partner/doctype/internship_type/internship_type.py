@@ -5,8 +5,11 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary import faculty
+
 SUBMITTABLE_LOG = "Submittable Log"
 INHERIT_EVAL = "Inherited from Course"
+INTERNSHIP_ADVISOR_ROUTE = "Internship Advisor"
 
 
 class InternshipType(Document):
@@ -14,6 +17,19 @@ class InternshipType(Document):
         self._validate_evaluation_model()
         self._validate_hour_log_template()
         self._validate_multi_site()
+        self._validate_advisor_unit()
+
+    def _validate_advisor_unit(self):
+        """Auto-assign draws from an Academic Unit's Internship Advisor pool, so
+        a unit must be resolvable — either set explicitly here or via the backing
+        course's Academic Unit."""
+        if self.auto_assign_faculty and not advisor_unit(self):
+            frappe.throw(
+                _(
+                    "Auto-Assign Faculty needs an Advisor Pool Unit — set one here, "
+                    "or choose a backing course that has an Academic Unit."
+                )
+            )
 
     def _validate_evaluation_model(self):
         """Evaluation follows the course when one is set; otherwise the type must
@@ -79,37 +95,41 @@ class InternshipType(Document):
             frappe.throw(_("Set Max Sites to at least 1 when multi-site is allowed."))
 
 
+def advisor_unit(internship_type):
+    """The Academic Unit whose Internship Advisor pool feeds this type: the
+    explicit unit if set, else the backing course's unit. Accepts a doc or a
+    name."""
+    doc = (
+        internship_type
+        if isinstance(internship_type, Document)
+        else frappe.get_doc("Internship Type", internship_type)
+    )
+    if doc.academic_unit:
+        return doc.academic_unit
+    if doc.course:
+        return frappe.db.get_value("Course", doc.course, "academic_unit")
+    return None
+
+
 def claim_advisor_slot(internship_type):
-    """Pick the advisor with the most remaining capacity, increment their count,
-    and return the instructor — or None when the type opts out or the pool is full.
-    Used by Internship Application on acceptance (ADR 054 §7)."""
+    """Pick the advisor with the most remaining capacity from the type's Academic
+    Unit Internship Advisor pool, increment their count, and return the instructor
+    — or None when the type opts out or no one is eligible. Used by Internship
+    Application on acceptance (ADR 054 §7; pool generalized in ADR 059)."""
     doc = frappe.get_doc("Internship Type", internship_type)
-    if not doc.auto_assign_faculty or not doc.advisor_slots:
+    if not doc.auto_assign_faculty:
         return None
-
-    def remaining(slot):
-        # max_students 0 means unlimited — treat as effectively infinite capacity.
-        cap = slot.max_students or 0
-        return float("inf") if cap == 0 else cap - (slot.current_students or 0)
-
-    candidates = [s for s in doc.advisor_slots if remaining(s) > 0]
-    if not candidates:
+    unit = advisor_unit(doc)
+    if not unit:
         return None
-
-    chosen = max(candidates, key=remaining)
-    chosen.current_students = (chosen.current_students or 0) + 1
-    doc.save(ignore_permissions=True)
-    return chosen.instructor
+    return faculty.claim_capability(unit, INTERNSHIP_ADVISOR_ROUTE)
 
 
 def release_advisor_slot(internship_type, instructor):
     """Decrement an advisor's assigned count when an application is withdrawn or
     its advisor changes."""
-    if not internship_type or not instructor:
+    if not (internship_type and instructor):
         return
-    doc = frappe.get_doc("Internship Type", internship_type)
-    for slot in doc.advisor_slots:
-        if slot.instructor == instructor and (slot.current_students or 0) > 0:
-            slot.current_students -= 1
-            doc.save(ignore_permissions=True)
-            break
+    unit = advisor_unit(internship_type)
+    if unit:
+        faculty.release_capability(unit, instructor, INTERNSHIP_ADVISOR_ROUTE)

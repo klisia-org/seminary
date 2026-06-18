@@ -29,6 +29,7 @@ def after_install():
     create_partner_role()
     create_registrar_role()
     create_instructor_role()
+    create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
     get_custom_fields()
@@ -40,6 +41,7 @@ def after_install():
     seed_grading_scale()
     seed_culminating_project_types()
     seed_disciplinary_actions()
+    seed_faculty_capabilities()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
@@ -477,6 +479,61 @@ def seed_disciplinary_actions():
                 "action_name": action_name,
                 "severity": severity,
                 "triggers_dismissal": triggers,
+                "is_active": 1,
+                "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_faculty_capabilities():
+    """Seed the starter Faculty Capabilities if they don't already exist (ADR 059).
+
+    NOT fixtures: seminaries curate the catalog on the desk and a fixture
+    re-import would clobber edits. One starter capability per ``routes_to``
+    machine key; schools rename the display name or add more freely.
+    """
+    # (capability_name, routes_to, tracks_capacity, description). Capacity-aware
+    # routes (advising/examining/verifying) feed claim_capability's round-robin;
+    # Course Instructor (CS-driven) / Mentor (free link) / Board carry no cap.
+    defaults = [
+        ("Course Instructor", "Course Instructor", 0, _("Teaches course sections.")),
+        (
+            "Thesis/CP Advisor",
+            "Thesis/CP Advisor",
+            1,
+            _("Advises culminating projects."),
+        ),
+        ("Internship Advisor", "Internship Advisor", 1, _("Oversees internships.")),
+        (
+            "Placement Examiner",
+            "Placement Examiner",
+            1,
+            _("Grades placement assessments."),
+        ),
+        (
+            "Manual-Verification Verifier",
+            "Manual-Verification Verifier",
+            1,
+            _("Verifies manual graduation requirements."),
+        ),
+        ("Mentor", "Mentor", 0, _("Mentors student groups.")),
+        (
+            "Committee/Board Member",
+            "Committee/Board Member",
+            0,
+            _("Serves on a board or committee (no instructor record required)."),
+        ),
+    ]
+    for capability_name, routes_to, tracks_capacity, description in defaults:
+        if frappe.db.exists("Faculty Capability", capability_name):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Faculty Capability",
+                "capability_name": capability_name,
+                "routes_to": routes_to,
+                "tracks_capacity": tracks_capacity,
                 "is_active": 1,
                 "description": description,
             }
@@ -1230,6 +1287,16 @@ def create_instructor_role():
         ).save()
 
 
+def create_external_examiner_role():
+    """Reduced-access role for outside readers/examiners (ADR 059/060). Portal
+    gates on this (is_external_examiner) so they reach the CP screens without
+    inheriting instructor access. No desk access."""
+    if not frappe.db.exists("Role", "External Examiner"):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": "External Examiner", "desk_access": 0}
+        ).save()
+
+
 def create_program_chair_role():
     """Broad academic authority over programs & curriculum.
 
@@ -1359,6 +1426,7 @@ def after_migrate():
     setup_withdrawal_workflow()
     create_alumni_role()
     create_partner_role()
+    create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
     setup_sales_invoice_permissions()
@@ -1366,6 +1434,7 @@ def after_migrate():
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
+    seed_faculty_capabilities()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()

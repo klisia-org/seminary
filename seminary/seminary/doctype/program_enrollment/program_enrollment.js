@@ -52,6 +52,18 @@ frappe.ui.form.on('Program Enrollment', {
 			};
 		});
 
+		// Leveling (ADR 058): profile picker scoped to this program (or global),
+		// and the gating-assessment picker restricted to Manual Verification GRIs.
+		frm.set_query('leveling_profile', () => ({
+			filters: [
+				['disabled', '=', 0],
+				['program', 'in', [frm.doc.program, '']],
+			],
+		}));
+		frm.set_query('gating_assessment', 'leveling', () => ({
+			filters: { requirement_type: 'Manual Verification' },
+		}));
+
 		if (frm.doc.docstatus === 1) {
 			frm.add_custom_button(__('Payers for this Program'), function() {
 				frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
@@ -64,6 +76,17 @@ frappe.ui.form.on('Program Enrollment', {
 			frm.add_custom_button(__('Schedule Required Event'), function() {
 				schedule_requirement_event(frm);
 			}, __('Graduation'));
+
+			// Leveling / advanced standing (ADR 058)
+			frm.add_custom_button(__('Apply Leveling Profile'), function() {
+				apply_leveling_profile(frm);
+			}, __('Leveling'));
+			frm.add_custom_button(__('Resolve Leveling Plan'), function() {
+				frappe.call({
+					method: 'seminary.seminary.leveling.resolve_leveling_plan',
+					args: { program_enrollment: frm.doc.name },
+				}).then(() => frm.reload_doc());
+			}, __('Leveling'));
 
 			// Program-status lifecycle actions (see program_status.py / ADR 030)
 			const TERMINAL = ['Withdrawn', 'Dismissed', 'Graduated', 'Transferred'];
@@ -511,6 +534,43 @@ function place_on_leave(frm) {
 					d.hide();
 					frm.reload_doc();
 				},
+			});
+		},
+	});
+	d.show();
+}
+
+function apply_leveling_profile(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __('Apply Leveling Profile'),
+		fields: [
+			{
+				fieldname: 'profile',
+				fieldtype: 'Link',
+				label: __('Leveling Profile'),
+				options: 'Leveling Profile',
+				reqd: 1,
+				get_query: () => ({
+					filters: [
+						['disabled', '=', 0],
+						['program', 'in', [frm.doc.program, '']],
+					],
+				}),
+			},
+		],
+		primary_action_label: __('Apply'),
+		primary_action(values) {
+			d.hide();
+			frappe.call({
+				method: 'seminary.seminary.leveling.apply_leveling_profile',
+				args: { program_enrollment: frm.doc.name, profile: values.profile },
+			}).then((r) => {
+				const added = (r.message && r.message.added) || 0;
+				frappe.show_alert({
+					message: __('Added {0} leveling row(s).', [added]),
+					indicator: 'green',
+				});
+				frm.reload_doc();
 			});
 		},
 	});

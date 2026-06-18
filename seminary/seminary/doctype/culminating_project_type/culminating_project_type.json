@@ -13,6 +13,15 @@
   "is_active",
   "column_break_main",
   "course",
+  "readers_section",
+  "apply_reader_policy",
+  "advisor_from_academic_unit",
+  "readers_required",
+  "second_reader_type",
+  "second_reader_allow_other_units",
+  "column_break_readers",
+  "third_reader_type",
+  "third_reader_allow_other_units",
   "section_break_about",
   "description",
   "section_break_milestones",
@@ -46,6 +55,72 @@
    "in_list_view": 1,
    "label": "Backing Course",
    "options": "Course"
+  },
+  {
+   "fieldname": "readers_section",
+   "fieldtype": "Section Break",
+   "label": "Reader Policy"
+  },
+  {
+   "default": "0",
+   "description": "When on, projects of this type inherit the reader composition below: each reader slot's type is fixed and reader selection is validated against the unit rules. When off, staff pick reader types and members freely per project.",
+   "fieldname": "apply_reader_policy",
+   "fieldtype": "Check",
+   "label": "Apply Policy to Reader Selection"
+  },
+  {
+   "default": "1",
+   "depends_on": "apply_reader_policy",
+   "description": "When on, the Assign Advisor picker is limited to instructors who are members of the project's Academic Unit (same scoping as readers). Turn off to let a dean or outside advisor step in.",
+   "fieldname": "advisor_from_academic_unit",
+   "fieldtype": "Check",
+   "label": "Advisor from Project's Academic Unit"
+  },
+  {
+   "default": "0",
+   "description": "How many named readers (beyond the advisor) this project carries. A project has at most two (Second and Third Reader); put any further reviewers on the committee.",
+   "fieldname": "readers_required",
+   "fieldtype": "Int",
+   "label": "Readers Required",
+   "non_negative": 1
+  },
+  {
+   "default": "Instructor",
+   "depends_on": "eval:doc.apply_reader_policy && doc.readers_required>=1",
+   "description": "Whether the Second Reader is an internal Instructor or an External Examiner.",
+   "fieldname": "second_reader_type",
+   "fieldtype": "Select",
+   "label": "Second Reader Type",
+   "options": "Instructor\nExternal Examiner"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.apply_reader_policy && doc.readers_required>=1 && doc.second_reader_type=='Instructor'",
+   "description": "Allow a Second Reader from outside the project's Academic Unit. Off = must be a member of the project's unit.",
+   "fieldname": "second_reader_allow_other_units",
+   "fieldtype": "Check",
+   "label": "Allow Instructors from Other Units"
+  },
+  {
+   "fieldname": "column_break_readers",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Instructor",
+   "depends_on": "eval:doc.apply_reader_policy && doc.readers_required>=2",
+   "description": "Whether the Third Reader is an internal Instructor or an External Examiner.",
+   "fieldname": "third_reader_type",
+   "fieldtype": "Select",
+   "label": "Third Reader Type",
+   "options": "Instructor\nExternal Examiner"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.apply_reader_policy && doc.readers_required>=2 && doc.third_reader_type=='Instructor'",
+   "description": "Allow a Third Reader from outside the project's Academic Unit. Off = must be a member of the project's unit.",
+   "fieldname": "third_reader_allow_other_units",
+   "fieldtype": "Check",
+   "label": "Allow Instructors from Other Units"
   },
   {
    "fieldname": "section_break_about",

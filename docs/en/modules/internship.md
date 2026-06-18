@@ -83,11 +83,20 @@ When a student is accepted, the type's templates are **snapshotted** into live
 
 ### Faculty assignment
 
-A type can carry an **advisor pool**: turn on **Auto-Assign Faculty** and list
-instructors with a per-instructor **Max Students** cap. When an application is
-accepted, the advisor with the most remaining capacity is assigned automatically
-(round-robin). Entering an advisor by hand always wins, and a withdrawal frees
-the slot again.
+Turn on **Auto-Assign Faculty** and the type draws advisors from an **Academic
+Unit's Internship Advisor pool** (see [Academic Units & Faculty](./academic-units.md)).
+Set the **Advisor Pool Unit** on the type, or leave it blank to use the backing
+course's unit — one of the two is required when auto-assign is on. The advisors
+themselves are the unit members wired with the **Internship Advisor** capability,
+each carrying a **Max Students** cap on their membership.
+
+When an application is accepted, the advisor with the most remaining capacity is
+assigned automatically (round-robin); entering an advisor by hand always wins,
+and a withdrawal frees the slot again.
+
+> The older per-type advisor-slot table is retired — advisor pools now live on
+> the Academic Unit, so a professor's capacity is maintained in one place across
+> every internship type they advise.
 
 ## Positions
 

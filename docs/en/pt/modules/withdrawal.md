@@ -68,7 +68,7 @@ Se houver necessidade de ajuste manual das datas em que uma regra se aplica, iss
 
 A maioria dos seminários não precisará editar o fluxo de trabalho pré-configurado. No entanto, isso é possível e instituições maiores podem se beneficiar especialmente de personalizações. Como isso é um recurso do ERPNext, a [documentação](https://docs.frappe.io/erpnext/workflows) deles pode ser útil.
 
-![Tela do Fluxo de Trabalho de Trancamento](/modules/withdrawal/img/withdrawal-workflow.png)
+<LifecycleDiagram type="withdrawal" />
 
 ### Vias rápidas para programas em andamento e gratuitos
 
