@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "EXAM-.#####",
+ "creation": "2026-06-18 00:00:00",
+ "description": "A vetted reader/examiner from outside the seminary who may serve on culminating-project committees or as a named reader (ADR 059/060). Person-backed so contact details live in one place; deliberately NOT an Instructor (no teaching, reduced portal access). Holds reusable vetting so 'do we invite them again?' doesn't live in someone's head.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#external-examiners",
+ "engine": "InnoDB",
+ "field_order": [
+  "person",
+  "examiner_name",
+  "email",
+  "column_break_id",
+  "institution",
+  "qualifications",
+  "is_active",
+  "vetting_section",
+  "invite_again",
+  "last_served",
+  "column_break_vetting",
+  "notes"
+ ],
+ "fields": [
+  {
+   "description": "The human on record (shared contact spine). Create or pick a Person; their name and email are pulled from it.",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "person.full_name",
+   "fieldname": "examiner_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "person.primary_email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_id",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Home institution / affiliation.",
+   "fieldname": "institution",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Institution"
+  },
+  {
+   "description": "Degrees / credentials qualifying them to examine.",
+   "fieldname": "qualifications",
+   "fieldtype": "Small Text",
+   "label": "Qualifications"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "vetting_section",
+   "fieldtype": "Section Break",
+   "label": "Vetting"
+  },
+  {
+   "default": "1",
+   "description": "Whether the seminary would invite this examiner again (institutional memory).",
+   "fieldname": "invite_again",
+   "fieldtype": "Check",
+   "label": "Invite Again"
+  },
+  {
+   "description": "When this examiner last served (maintained as projects use them).",
+   "fieldname": "last_served",
+   "fieldtype": "Date",
+   "label": "Last Served"
+  },
+  {
+   "fieldname": "column_break_vetting",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "External Examiner",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "examiner_name",
+ "track_changes": 1
+}

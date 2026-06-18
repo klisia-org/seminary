@@ -645,6 +645,9 @@ fixtures = [
                 "in",
                 [
                     "Submit",
+                    "Submit & Approve Academically",
+                    "Submit & Conclude",
+                    "Approve Academically & Conclude",
                     "Send for Academic Review",
                     "Approve Academically",
                     "Send for Financial Review",

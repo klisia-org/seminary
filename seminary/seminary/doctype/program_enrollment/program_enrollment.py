@@ -39,9 +39,53 @@ class ProgramEnrollment(Document):
         # validate() doesn't run on update-after-submit saves, so resolve
         # graduation-requirement choices (umbrella morph / project-type pick)
         # here — covers both desk grid edits and the portal choose actions.
-        from seminary.seminary.graduation import apply_sgr_choices
+        from seminary.seminary.graduation import (
+            apply_sgr_choices,
+            ensure_emphasis_scoped_requirements,
+        )
+        from seminary.seminary.leveling import resolve_rows_hook
 
+        # ADR 056: an emphasis change is frozen once a Graduation Request exists;
+        # otherwise materialize any newly-applicable emphasis-scoped requirements
+        # (e.g. an emphasis declared after enrollment).
+        self._guard_emphasis_change_after_grad_request()
+        ensure_emphasis_scoped_requirements(self)
         apply_sgr_choices(self)
+        # ADR 058: keep leveling resolutions in sync with current exam scores on
+        # every save (side effects — Exempt rows, waivers — run at explicit points).
+        resolve_rows_hook(self)
+
+    def _guard_emphasis_change_after_grad_request(self):
+        """Block user-initiated emphasis changes once a non-cancelled Graduation
+        Request exists for this enrollment (ADR 056). The system auto-grant path
+        bypasses via flags.ignore_emphasis_freeze."""
+        if self.flags.get("ignore_emphasis_freeze"):
+            return
+        before = getattr(self, "_doc_before_save", None)
+        if not before:
+            return
+
+        def _key(doc):
+            return sorted(
+                (e.emphasis_track, e.status) for e in (doc.get("emphases") or [])
+            )
+
+        if _key(self) == _key(before):
+            return
+        if frappe.db.exists(
+            "Graduation Request",
+            {
+                "program_enrollment": self.name,
+                "workflow_state": ("!=", "Cancelled"),
+                "docstatus": ("!=", 2),
+            },
+        ):
+            frappe.throw(
+                _(
+                    "This enrollment has a Graduation Request. Delete or cancel "
+                    "the graduation request first, then change the emphasis."
+                )
+            )
 
     def on_update_after_submit(self):
         self._backlink_spawned_choices()
@@ -172,18 +216,32 @@ class ProgramEnrollment(Document):
             )
 
     def validate_duplication(self):
-        enrollment = frappe.db.exists(
+        # A docstatus-only check wrongly bars a separated student from ever
+        # re-enrolling, because Withdrawn / Dismissed / Graduated / Transferred
+        # all keep docstatus=1. Only statuses the student left *without
+        # completing* (REENROLLABLE_STATUSES) permit a fresh enrollment; every
+        # other status still blocks — Active / Leave of Absence (still enrolled)
+        # and Graduated (already completed this program).
+        from seminary.seminary.program_status import REENROLLABLE_STATUSES
+
+        existing = frappe.db.get_all(
             "Program Enrollment",
-            {
+            filters={
                 "student": self.student,
                 "program": self.program,
-                "academic_term": self.academic_term,
                 "docstatus": ("<", 2),
-                "name": ("!=", self.name),
+                "status": ("not in", list(REENROLLABLE_STATUSES)),
+                "name": ("!=", self.name or ""),
             },
+            pluck="name",
+            limit=1,
         )
-        if enrollment:
-            frappe.throw(_("Student is already enrolled."))
+        if existing:
+            frappe.throw(
+                _("Student is already enrolled in {0} ({1}).").format(
+                    self.program, get_link_to_form("Program Enrollment", existing[0])
+                )
+            )
 
     def validate_reenrollment_holds(self):
         """Block a NEW enrollment for a student with an active re-enrollment

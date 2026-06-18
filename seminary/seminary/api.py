@@ -867,6 +867,24 @@ def get_user_info():
     user.has_culminating_projects = _has_culminating_projects(
         user.student, user.instructor
     )
+    # Faculty-capability routing (ADR 059): the units/capabilities this instructor
+    # is wired to drive which worklist tabs (advising, verifications, placement
+    # exams) the portal shows.
+    from seminary.seminary import faculty
+
+    _fc = faculty.faculty_context(user.name)
+    user.faculty_units = _fc["units"]
+    user.faculty_capabilities = _fc["capabilities"]
+    # External examiners are NOT instructors (reduced access, ADR 059/060): gate
+    # their CP views on this flag, never on is_instructor.
+    user.is_external_examiner = "External Examiner" in _roles
+    user.external_examiner = None
+    if user.is_external_examiner:
+        _person = frappe.db.get_value("Person", {"user": user.name}, "name")
+        if _person:
+            user.external_examiner = frappe.db.get_value(
+                "External Examiner", {"person": _person}, "name"
+            )
     return user
 
 
@@ -2010,6 +2028,11 @@ def get_program_audit(program_enrollment):
 
     # Graduation eligibility check
     graduation_eligible = True
+
+    # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
+    min_gpa = float(program.get("min_graduation_gpa") or 0)
+    if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
+        graduation_eligible = False
 
     if program.program_type == "Credits-based":
         if (pe.totalcredits or 0) < effective_total:
@@ -4302,6 +4325,12 @@ def send_grades(doc=None, **kwargs):
             credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
             if fgradepass == "Fail":
                 credits = 0
+            # Leveling / remedial courses (ADR 058) never count toward the degree.
+            elif frappe.db.exists(
+                "Program Enrollment Leveling",
+                {"parent": pe, "course": course_sc, "kind": "Leveling Course"},
+            ):
+                credits = 0
             newcredits = (int(totalcredits) if totalcredits else 0) + (
                 int(credits) if credits is not None else 0
             )
@@ -4325,6 +4354,22 @@ def send_grades(doc=None, **kwargs):
     # so the Desk Action menu can't bypass the grade computation and PEC
     # update above). Mirrors the cancel_course pattern.
     frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
+
+    # Mirror the schedule's terminal "Closed" state onto each student's Course
+    # Enrollment Individual: with grades sent, every active enrollment in this
+    # section is now historical, so Submitted -> Concluded. System-driven like
+    # the schedule transition above (no Desk action, intentionally absent from
+    # the workflow fixture). Audit enrollments also sit in Submitted and are
+    # likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
+    # are left untouched — they never became active enrollments here. This is
+    # what makes "currently enrolled" = workflow_state == "Submitted".
+    frappe.db.set_value(
+        "Course Enrollment Individual",
+        {"coursesc_ce": docname, "workflow_state": "Submitted", "docstatus": 1},
+        "workflow_state",
+        "Concluded",
+        update_modified=False,
+    )
 
     # After grades are sent, recalculate track credits and check auto-grant emphases
     affected_pes = set()
@@ -4445,6 +4490,9 @@ def _check_auto_grant_emphases(pe_name):
                 },
             )
             pe.flags.ignore_validate = True
+            # Auto-grant is system-driven: bypass the ADR 056 emphasis-freeze
+            # guard so granting an emphasis never fails an in-flight save.
+            pe.flags.ignore_emphasis_freeze = True
             pe.save(ignore_permissions=True)
             frappe.msgprint(
                 f"Emphasis '{track.track_name}' auto-granted for {pe.student_name}",

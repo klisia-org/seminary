@@ -31,8 +31,7 @@ Once the student submitted the request, its status will be visible at the top of
 
 
 ### Registar Request
-Registars or other assigned users can create and track progression of the Withdrawal Request within Desk.
-In the image below, a request with status "Academically Approved" is shown, with the Action to be performed (top right) being "Send for Financial Review."
+Registars or other assigned users can create and track progression of the Withdrawal Request within Desk, advancing it through the workflow with the Action menu (top right).
 Seminary ERP ships with a pre-defined Workflow, that can be customized by the Seminary administrator. This is particularly helpful to include email notifications, among other possibilities.
 
 ![Withdrawal Requests Desk screen](/modules/withdrawal/img/withdrawal_request_desk.png)
@@ -64,7 +63,11 @@ If there is a need for manual adjustment of the dates a rule apply, this can be 
 ## Withdrawal Request Workflow
 Most seminaries will not need to edit the pre-configured workflow. However, it is possible to do so and larger institutions may particularly benefit from customizations. Since this is a ERPNext feature, their [documentation](https://docs.frappe.io/erpnext/workflows) may prove useful.
 
-![Withdrawal Workflow screen](/modules/withdrawal/img/withdrawal-workflow.png)
+<LifecycleDiagram type="withdrawal" />
+
+The workflow has five states: **Draft → Academic Review → Financial Review → Completed**, plus **Rejected**. Academic Review is the registrar's queue; Financial Review belongs to the Accounts User. The *action* you take carries the meaning — approving academically routes the request onward, and the side effects (withdrawing the course enrollment, issuing refunds, finalizing a program separation) are applied as those actions are taken.
+
+The Academic Review step adapts to whether money is involved. When a refund could be due (a withdrawal rule with refunds applies and the program is not free), the registrar's approval is **Approve Academically**, which sends the request to Financial Review. When no refund is due, that same step becomes **Approve Academically & Conclude**, which settles the request in one click without a Financial Review stop.
 
 ### Fast-paths for Ongoing and Free programs
 
@@ -77,11 +80,12 @@ The buttons available on a Draft Withdrawal Request adapt automatically:
 
 | Program flags | Button shown on Draft | Lands at |
 | --- | --- | --- |
-| Neither flag | **Submit** (standard) | Submitted → standard Academic Review → Financial Review chain |
-| Free only | **Submit** (standard) | Submitted → Academic Review → Academically Approved; from there the academic user can pick *Complete* to skip Financial Review |
-| Ongoing only | **Submit & Skip Academic Review** (Academics User) | Academically Approved → Financial Review (one-off paid courses still settle) |
-| Ongoing **and** Free | **Submit & Complete** (Student or Academics User) | Completed (no review at all) |
+| Neither flag | **Submit** | Academic Review (standard Academic → Financial → Completed chain) |
+| Free only | **Submit** | Academic Review; with no refund due, the registrar's approval appears as *Approve Academically & Conclude* and settles it in one step (no Financial Review) |
+| Ongoing only, refund due | **Submit & Approve Academically** (Registrar) | Financial Review (academic auto-approved; paid courses still settle) |
+| Ongoing only, no refund | **Submit & Conclude** (Registrar) | Completed |
+| Ongoing **and** Free | **Submit & Conclude** (Student or Registrar) | Completed (no review at all) |
 
-When a request lands at *Academically Approved* via the **Submit & Skip Academic Review** path, no grade treatment is applied — the system simply marks the underlying Course Enrollment as withdrawn.
+On the ongoing-program fast-paths no grade treatment is applied — the system simply marks the underlying Course Enrollment as withdrawn.
 
-If a student initiates a withdrawal for an ongoing-but-paid program, they still see the standard **Submit** button; the academic user later walks the request through Academic Review, where the academic processing for ongoing programs is a no-op by design.
+If a student initiates a withdrawal for an ongoing-but-paid program, they still see the standard **Submit** button; the registrar later walks the request through Academic Review, where the academic processing for ongoing programs is a no-op by design.

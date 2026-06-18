@@ -11,7 +11,7 @@
  "engine": "InnoDB",
  "field_order": [
   "program_name",
-  "department",
+  "academic_unit",
   "program_director",
   "program_type",
   "column_break_3",
@@ -28,6 +28,7 @@
   "section_break_pgmtype",
   "terms_complete",
   "credits_complete",
+  "max_transfer_credits",
   "column_break_voqj",
   "max_time_enrolled",
   "students_can_request_graduation",
@@ -36,6 +37,7 @@
   "basis_for_gpa",
   "is_weighted",
   "accept_transfer_gpa",
+  "min_graduation_gpa",
   "column_break_gpa",
   "honors_levels",
   "attendance_section_pgm",
@@ -59,6 +61,7 @@
   "display_enrollment_window",
   "display_cta",
   "route",
+  "slug",
   "blurb",
   "image_blurb",
   "program_description",
@@ -79,14 +82,6 @@
    "label": "Program Name",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "description": "ERPNext Department is all about HR. Instead of deleting the field, it is hidden until a definition of Academic Departments is made.",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fieldname": "column_break_3",
@@ -124,6 +119,15 @@
    "in_list_view": 1,
    "label": "Credits for completion",
    "mandatory_depends_on": "eval:!doc.is_ongoing && doc.program_type==\"Credits-based\""
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:!doc.is_ongoing",
+   "description": "Maximum credits a student may apply toward this program from transfer / partner-transcript imports. 0 = no limit. Enforced when a Partner Transcript Import Batch is submitted.",
+   "fieldname": "max_transfer_credits",
+   "fieldtype": "Int",
+   "label": "Max Transfer Credits",
+   "non_negative": 1
   },
   {
    "default": "0",
@@ -181,6 +185,16 @@
    "fieldname": "accept_transfer_gpa",
    "fieldtype": "Check",
    "label": "Accept Transfer Grades in GPA"
+  },
+  {
+   "default": "0.0",
+   "depends_on": "eval:!doc.is_ongoing",
+   "description": "Minimum cumulative GPA required to graduate. Defaults from the Program Level (re-pulled when the level changes) but is overridable here. 0 = no minimum. Enforced as a graduation-candidacy gate.",
+   "fieldname": "min_graduation_gpa",
+   "fieldtype": "Float",
+   "label": "Minimum Graduation GPA",
+   "non_negative": 1,
+   "precision": "2"
   },
   {
    "fieldname": "column_break_gpa",
@@ -408,7 +422,8 @@
   {
    "fieldname": "route",
    "fieldtype": "Data",
-   "label": "Route (slug)"
+   "label": "Route",
+   "read_only": 1
   },
   {
    "fieldname": "program_director",
@@ -470,6 +485,19 @@
    "fieldname": "order_pd",
    "fieldtype": "Data",
    "label": "Order in Programs and Degrees"
+  },
+  {
+   "description": "Optional Program Committee that owns this program. Degree programs span academic departments, so academic ownership flows through courses, not the program.",
+   "fieldname": "academic_unit",
+   "fieldtype": "Link",
+   "label": "Academic Unit",
+   "options": "Academic Unit"
+  },
+  {
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "label": "Slug (auto-generated)",
+   "read_only": 1
   }
  ],
  "has_web_view": 1,
@@ -494,8 +522,8 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-13 07:33:12.183259",
- "modified_by": "murilomelodts@gmail.com",
+ "modified": "2026-06-18 19:01:47.301071",
+ "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",
  "naming_rule": "By fieldname",

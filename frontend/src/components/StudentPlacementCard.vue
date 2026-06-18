@@ -75,7 +75,8 @@ const trackingHint = computed(() => {
 const canGiveFeedback = computed(() => ['Completed', 'Terminated'].includes(props.placement.placement_status))
 
 // Hours
-const hoursForm = reactive({ log_date: '', hours: null, description: '' })
+const today = () => new Date().toISOString().slice(0, 10)
+const hoursForm = reactive({ log_date: today(), hours: null, description: '' })
 const hours = createResource({
 	url: 'seminary.partner.internship_api.list_hours',
 	makeParams: () => ({ placement: props.placement.name }),

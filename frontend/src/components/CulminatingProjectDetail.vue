@@ -254,12 +254,17 @@
           <Button :variant="memberForm.kind === 'internal' ? 'solid' : 'subtle'" size="sm" @click="memberForm.kind = 'internal'">
             {{ __('Instructor') }}
           </Button>
+          <Button :variant="memberForm.kind === 'examiner' ? 'solid' : 'subtle'" size="sm" @click="memberForm.kind = 'examiner'">
+            {{ __('External Examiner') }}
+          </Button>
           <Button :variant="memberForm.kind === 'external' ? 'solid' : 'subtle'" size="sm" @click="memberForm.kind = 'external'">
-            {{ __('External') }}
+            {{ __('One-off') }}
           </Button>
         </div>
         <Link v-if="memberForm.kind === 'internal'" doctype="Instructor" :label="__('Instructor')"
           :value="memberForm.instructor" @change="(v) => (memberForm.instructor = v)" />
+        <Link v-else-if="memberForm.kind === 'examiner'" doctype="External Examiner" :label="__('External Examiner')"
+          :value="memberForm.external_examiner" @change="(v) => (memberForm.external_examiner = v)" />
         <template v-else>
           <FormControl type="text" :label="__('Name')" v-model="memberForm.external_name" class="mb-3" />
           <FormControl type="text" :label="__('Email (optional)')" v-model="memberForm.email_external" />
@@ -267,7 +272,7 @@
       </template>
       <template #actions>
         <Button variant="solid" :loading="busy"
-          :disabled="memberForm.kind === 'internal' ? !memberForm.instructor : !memberForm.external_name"
+          :disabled="memberForm.kind === 'internal' ? !memberForm.instructor : (memberForm.kind === 'examiner' ? !memberForm.external_examiner : !memberForm.external_name)"
           @click="addMember">{{ __('Add') }}</Button>
       </template>
     </Dialog>
@@ -424,9 +429,9 @@ async function doScheduleDefense() {
 
 // Committee management (advisor)
 const committeeDialog = ref(false)
-const memberForm = reactive({ kind: 'internal', instructor: '', external_name: '', email_external: '' })
+const memberForm = reactive({ kind: 'internal', instructor: '', external_examiner: '', external_name: '', email_external: '' })
 function openAddMember() {
-  Object.assign(memberForm, { kind: 'internal', instructor: '', external_name: '', email_external: '' })
+  Object.assign(memberForm, { kind: 'internal', instructor: '', external_examiner: '', external_name: '', email_external: '' })
   committeeDialog.value = true
 }
 async function addMember() {
@@ -435,6 +440,7 @@ async function addMember() {
     await call('seminary.seminary.doctype.culminating_project.culminating_project.add_committee_member', {
       culminating_project: props.name,
       instructor: memberForm.kind === 'internal' ? memberForm.instructor : null,
+      external_examiner: memberForm.kind === 'examiner' ? memberForm.external_examiner : null,
       external_name: memberForm.kind === 'external' ? memberForm.external_name : null,
       email_external: memberForm.kind === 'external' ? memberForm.email_external || null : null,
     })

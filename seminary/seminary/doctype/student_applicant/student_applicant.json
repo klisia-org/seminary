@@ -98,6 +98,7 @@
   "gospelunderst",
   "testimony",
   "pgmexpect",
+  "requests_requirement_review",
   "contacts"
  ],
  "fields": [
@@ -514,6 +515,14 @@
    "fieldname": "pgmexpect",
    "fieldtype": "Long Text",
    "label": "How enrolling in this program will help you serve the church?"
+  },
+  {
+   "default": "None",
+   "description": "Self-reported circumstance that may need leveling (remedial courses) or advanced-standing exemptions. Flags the registrar to review your requirements; it does not change them.",
+   "fieldname": "requests_requirement_review",
+   "fieldtype": "Select",
+   "label": "Requesting requirement review?",
+   "options": "None\nLeveling\nExemption / Advanced Standing\nBoth"
   },
   {
    "fieldname": "employment_section",

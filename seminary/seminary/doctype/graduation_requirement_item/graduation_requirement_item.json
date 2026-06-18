@@ -14,6 +14,7 @@
   "blocks_graduation_request",
   "column_break_gwiy",
   "requirement_type",
+  "academic_unit",
   "section_break_euxl",
   "event_custom_category",
   "column_break_jscs",
@@ -45,7 +46,8 @@
    "default": "0",
    "fieldname": "mandatory",
    "fieldtype": "Check",
-   "label": "Is Mandatory"
+   "label": "Is Mandatory",
+   "description": "Only select this if it is mandatory for ALL programs using this requirement"
   },
   {
    "default": "0",
@@ -66,6 +68,14 @@
    "label": "Requirement Type",
    "options": "Event Attendance\nChapel Attendance\nManual Verification\nLinked Document\nChoose Option",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.requirement_type=='Manual Verification'",
+   "description": "Owning Academic Unit whose Manual-Verification Verifier capability holders verify this requirement and see it in their worklist (ADR 059 §7).",
+   "fieldname": "academic_unit",
+   "fieldtype": "Link",
+   "label": "Academic Unit",
+   "options": "Academic Unit"
   },
   {
    "depends_on": "eval:doc.requirement_type=='Event Attendance' || doc.requirement_type=='Linked Document'",

@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:assessment_name",
+ "creation": "2026-06-18 00:00:00",
+ "description": "A leveling/intake placement exam (e.g. Greek Placement Exam) whose score places a student out of leveling courses. Owned by an Academic Unit whose Placement Examiner capability grades it (ADR 060).",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/leveling.html#placement-assessments",
+ "engine": "InnoDB",
+ "field_order": [
+  "assessment_name",
+  "academic_unit",
+  "is_active",
+  "description",
+  "evidence_section",
+  "default_student_evidence_required",
+  "default_student_evidence_label",
+  "column_break_evidence",
+  "default_staff_evidence_required",
+  "default_staff_evidence_label"
+ ],
+ "fields": [
+  {
+   "fieldname": "assessment_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Owning Academic Unit — its Placement Examiner capability holders grade this assessment and see it in their worklist (ADR 059 §7).",
+   "fieldname": "academic_unit",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Unit",
+   "options": "Academic Unit"
+  },
+  {
+   "default": "1",
+   "description": "Uncheck to retire this assessment without deleting it.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "evidence_section",
+   "fieldtype": "Section Break",
+   "label": "Evidence"
+  },
+  {
+   "default": "0",
+   "description": "If checked, the student is given a button on the portal to attach evidence themselves (e.g. an official score report).",
+   "fieldname": "default_student_evidence_required",
+   "fieldtype": "Check",
+   "label": "Evidence Submitted by Student"
+  },
+  {
+   "depends_on": "default_student_evidence_required",
+   "description": "Label shown on the student-side upload button.",
+   "fieldname": "default_student_evidence_label",
+   "fieldtype": "Data",
+   "label": "Student Upload Label"
+  },
+  {
+   "fieldname": "column_break_evidence",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "If checked, the Placement Examiner must attach verifying evidence when recording the score.",
+   "fieldname": "default_staff_evidence_required",
+   "fieldtype": "Check",
+   "label": "Evidence Required by Staff"
+  },
+  {
+   "depends_on": "default_staff_evidence_required",
+   "description": "Label shown on the examiner-side upload.",
+   "fieldname": "default_staff_evidence_label",
+   "fieldtype": "Data",
+   "label": "Staff Verification Label"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Placement Assessment",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

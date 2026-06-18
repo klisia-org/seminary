@@ -86,6 +86,41 @@ class StudentApplicant(Document):
 
     def on_update(self):
         self._repromote_to_person()
+        self._flag_requirement_review()
+
+    def _flag_requirement_review(self):
+        """ADR 058: when an applicant self-reports a circumstance needing
+        leveling / advanced-standing review, raise an open ToDo per Registrar so
+        they build the leveling plan on the new enrollment. Idempotent."""
+        choice = self.get("requests_requirement_review")
+        if not choice or choice == "None":
+            return
+        from seminary.seminary.cei_lifecycle import _registrar_emails
+
+        for user in _registrar_emails():
+            if frappe.db.exists(
+                "ToDo",
+                {
+                    "allocated_to": user,
+                    "reference_type": "Student Applicant",
+                    "reference_name": self.name,
+                    "status": "Open",
+                },
+            ):
+                continue
+            frappe.get_doc(
+                {
+                    "doctype": "ToDo",
+                    "owner": user,
+                    "allocated_to": user,
+                    "reference_type": "Student Applicant",
+                    "reference_name": self.name,
+                    "description": _(
+                        "Applicant {0} requested requirement review ({1}). "
+                        "Plan leveling / advanced standing on their enrollment."
+                    ).format(self.name, choice),
+                }
+            ).insert(ignore_permissions=True)
 
     def _promote_to_person(self):
         from seminary.seminary import person as person_spine

@@ -38,6 +38,7 @@ def evaluate_candidacy(pe_name: str) -> bool:
             "docstatus",
             "pgmenrol_active",
             "totalcredits",
+            "current_gpa",
             "grad_candidate",
         ],
         as_dict=True,
@@ -110,19 +111,34 @@ def _compute(pe) -> bool:
     if not program.graduation_request_trigger:
         return False
 
+    # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
+    # 0 = no minimum. Ongoing programs already returned above.
+    min_gpa = float(program.get("min_graduation_gpa") or 0)
+    if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
+        return False
+
     completed, in_progress = _course_status_sets(pe.name)
     mandatory_program = _mandatory_program_courses(program)
     mandatory_emphasis = _mandatory_emphasis_courses(pe, program)
     in_progress_credits = _credit_sum(program, in_progress)
 
+    # Leveling / advanced standing (ADR 058): placed-out courses are satisfied;
+    # Required leveling courses must be passed to graduate.
+    from seminary.seminary.leveling import leveling_sets
+
+    exempted, required_leveling, _lvl = leveling_sets(pe.name)
+
     count_in_progress = (
         program.graduation_request_trigger == "Enrolled in final courses"
     )
-    satisfied = completed | (in_progress if count_in_progress else set())
+    satisfied = completed | exempted | (in_progress if count_in_progress else set())
 
     if mandatory_program - satisfied:
         return False
     if mandatory_emphasis - satisfied:
+        return False
+    # Required leveling courses must actually be passed (not merely in progress).
+    if required_leveling - completed:
         return False
 
     completed_credits = pe.totalcredits or 0

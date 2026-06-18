@@ -1,6 +1,7 @@
 [pre_model_sync]
 seminary.seminary.patches.convert_room_capacity_to_int
 seminary.seminary.patches.stash_scholarship_links
+seminary.seminary.patches.rename_department_to_academic_unit
 
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
@@ -38,3 +39,10 @@ seminary.seminary.patches.retire_article_and_course_topic
 seminary.seminary.patches.backfill_partner_listing_status
 seminary.seminary.patches.backfill_allowed_graduation_documents
 seminary.seminary.patches.backfill_person_gender
+seminary.seminary.patches.backfill_cei_concluded_state
+seminary.seminary.patches.migrate_withdrawal_workflow_to_five_states
+
+seminary.seminary.patches.remove_grad_req_multiselect_doctypes
+seminary.seminary.patches.set_faculty_capability_capacity_flag
+seminary.seminary.patches.migrate_internship_advisor_slots_to_capabilities
+seminary.seminary.patches.backfill_cp_reader_type

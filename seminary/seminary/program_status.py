@@ -21,6 +21,14 @@ TERMINAL_STATUSES = {"Withdrawn", "Dismissed", "Graduated", "Transferred"}
 ACTIVE_STATUS = "Active"
 LEAVE_STATUS = "Leave of Absence"
 
+# Statuses under which a student may re-enroll in the SAME program: they left
+# without completing it, so a fresh enrollment is legitimate. Any other status
+# blocks a duplicate enrollment — including Active / Leave of Absence (still
+# enrolled) and Graduated (already completed this program; re-enrolling makes
+# no sense). A subset of TERMINAL_STATUSES, minus Graduated. Used only by the
+# duplicate-enrollment guards, NOT the status lifecycle.
+REENROLLABLE_STATUSES = {"Withdrawn", "Dismissed", "Transferred"}
+
 # Maps a terminal Program Enrollment status to the Student Leaving Record's
 # reason_for_leaving Select.
 _TERMINAL_REASON = {

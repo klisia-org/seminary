@@ -10,6 +10,20 @@ frappe.ui.form.on("Program Graduation Requirement", {
 			filters: { workflow_state: ["!=", "Retired"] },
 		}));
 
+		// Same retired filter for the After-Requirement prerequisite picker.
+		frm.set_query("prerequisite_requirement", "pgr_items", () => ({
+			filters: { workflow_state: ["!=", "Retired"] },
+		}));
+
+		// Program Track is a child table (no independent read permission), so the
+		// default link search throws "no permission for Program Track". Reuse the
+		// whitelisted get_emphasis query (raw SQL, bypasses that check) to list
+		// only THIS program's emphases for the applies_to_emphasis scope picker.
+		frm.set_query("applies_to_emphasis", "pgr_items", () => ({
+			query: "seminary.seminary.doctype.program_enrollment.program_enrollment.get_emphasis",
+			filters: { program: frm.doc.program_name },
+		}));
+
 		// Once retired via 'Change Version', point the registrar at the Draft
 		// successor that was spawned for editing.
 		if (frm.doc.superseded_by) {

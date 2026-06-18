@@ -24,6 +24,7 @@
   "evaluation_model",
   "section_break_faculty",
   "auto_assign_faculty",
+  "academic_unit",
   "advisor_slots",
   "section_break_about",
   "description"
@@ -126,18 +127,28 @@
   },
   {
    "default": "0",
-   "description": "When on, an accepted application is assigned a faculty advisor by round-robin over the pool below (manual entry always wins).",
+   "description": "When on, an accepted application is assigned a faculty advisor by round-robin over the Academic Unit's Internship Advisor pool (manual entry always wins).",
    "fieldname": "auto_assign_faculty",
    "fieldtype": "Check",
    "label": "Auto-Assign Faculty"
   },
   {
    "depends_on": "auto_assign_faculty",
-   "description": "Advisor pool for round-robin assignment. The slot with the most remaining capacity is picked.",
+   "description": "Which Academic Unit's Internship Advisor pool to draw from. Leave blank to use the backing course's Academic Unit. One of the two is required when Auto-Assign is on.",
+   "fieldname": "academic_unit",
+   "fieldtype": "Link",
+   "label": "Advisor Pool Unit",
+   "options": "Academic Unit"
+  },
+  {
+   "depends_on": "auto_assign_faculty",
+   "description": "Deprecated (ADR 059): advisors now come from the Academic Unit's Internship Advisor capability pool. Retained for one release to migrate existing rows; no longer used for assignment.",
    "fieldname": "advisor_slots",
    "fieldtype": "Table",
-   "label": "Advisor Pool",
-   "options": "Internship Type Advisor Slot"
+   "hidden": 1,
+   "label": "Advisor Pool (deprecated)",
+   "options": "Internship Type Advisor Slot",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_about",

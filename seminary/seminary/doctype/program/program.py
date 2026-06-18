@@ -6,13 +6,17 @@ import frappe
 from frappe import _
 from frappe.utils import format_date, getdate, today
 from frappe.website.website_generator import WebsiteGenerator
+from seminary.seminary.utils import slugify
 
 
 class Program(WebsiteGenerator):
     def autoname(self):
         self.name = self.program_name
+        self.slug = slugify(self.program_name)
 
     def validate(self):
+        self._hydrate_graduation_gpa_default()
+
         # Free programs cannot gate enrollment on payment — there are no invoices.
         # Force the gating fields off so the CEI workflow conditions evaluate
         # cleanly regardless of fetch_from chain timing.
@@ -22,6 +26,24 @@ class Program(WebsiteGenerator):
 
         self._stamp_course_disabled_on()
         self._validate_course_term_and_credits()
+
+    def _hydrate_graduation_gpa_default(self):
+        """Default min_graduation_gpa from the Program Level, but keep it
+        overridable: pull the level's value only on create or when the level
+        changes, so an explicit per-program value (including 0 = no minimum) is
+        preserved. fetch_from is not used here because it would overwrite the
+        override on every save (ADR 057)."""
+        if not self.program_level:
+            return
+        before = self.get_doc_before_save()
+        if before and before.program_level == self.program_level:
+            return  # level unchanged — respect any per-program override
+        self.min_graduation_gpa = (
+            frappe.db.get_value(
+                "Program Level", self.program_level, "min_graduation_gpa"
+            )
+            or 0
+        )
 
     def _stamp_course_disabled_on(self):
         for pc in self.courses or []:

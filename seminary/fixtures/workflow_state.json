@@ -254,5 +254,13 @@
   "name": "Ended",
   "style": "",
   "workflow_state_name": "Ended"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "fa fa-graduation-cap",
+  "name": "Concluded",
+  "style": "Success",
+  "workflow_state_name": "Concluded"
  }
 ]

@@ -6,6 +6,10 @@ frappe.ui.form.on('Program', {
 		frm.set_query('program_level', function() {
 			return { filters: { 'docstatus': 1 } };
 		});
+		// A program is owned (optionally) by a Program Committee.
+		frm.set_query('academic_unit', function() {
+			return { filters: { is_active: 1, unit_type: 'Program Committee' } };
+		});
 	},
 	refresh: function(frm) {
 		frm.set_query('program_track', 'pgm_courses_track', function() {

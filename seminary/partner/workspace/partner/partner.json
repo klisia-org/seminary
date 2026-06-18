@@ -1,0 +1,210 @@
+{
+ "app": "seminary",
+ "charts": [],
+ "content": "[{\"id\": \"PtnrHeader01\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h2\\\">Partners &amp; Internships</span>\", \"col\": 12}}, {\"id\": \"PtnrCardOrg0\", \"type\": \"card\", \"data\": {\"card_name\": \"Partner Organizations\", \"col\": 4}}, {\"id\": \"PtnrCardInt0\", \"type\": \"card\", \"data\": {\"card_name\": \"Internships\", \"col\": 4}}, {\"id\": \"PtnrCardJob0\", \"type\": \"card\", \"data\": {\"card_name\": \"Career &amp; Jobs\", \"col\": 4}}]",
+ "creation": "2026-06-17 09:30:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "handshake",
+ "idx": 0,
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Partner",
+ "link_type": "DocType",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Partner Organizations",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Partner Organizations",
+   "link_count": 0,
+   "link_to": "Partner Organization",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Organization Locations",
+   "link_count": 0,
+   "link_to": "Partner Organization Location",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Partner Types",
+   "link_count": 0,
+   "link_to": "Partner Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internships",
+   "link_count": 9,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internship Types",
+   "link_count": 0,
+   "link_to": "Internship Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internship Positions",
+   "link_count": 0,
+   "link_to": "Internship Position",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internship Applications",
+   "link_count": 0,
+   "link_to": "Internship Application",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internship Placements",
+   "link_count": 0,
+   "link_to": "Internship Placement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Requirement Templates",
+   "link_count": 0,
+   "link_to": "Internship Requirement Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Internship Requirements",
+   "link_count": 0,
+   "link_to": "Internship Requirement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Hours Logs",
+   "link_count": 0,
+   "link_to": "Internship Hours Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supervisor Evaluations",
+   "link_count": 0,
+   "link_to": "Internship Supervisor Evaluation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Feedback",
+   "link_count": 0,
+   "link_to": "Student Internship Feedback",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Career & Jobs",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Job Openings",
+   "link_count": 0,
+   "link_to": "Partner Job Opening",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Job Applications",
+   "link_count": 0,
+   "link_to": "Partner Job Application",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-06-17 09:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Partner",
+ "name": "Partner",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "Seminary",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Administrator"
+  },
+  {
+   "role": "Seminary Manager"
+  },
+  {
+   "role": "Program Chair"
+  }
+ ],
+ "sequence_id": 26.0,
+ "shortcuts": [],
+ "title": "Partner",
+ "type": "Workspace"
+}

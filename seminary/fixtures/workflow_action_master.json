@@ -8,6 +8,24 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "name": "Submit & Approve Academically",
+  "workflow_action_name": "Submit & Approve Academically"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Submit & Conclude",
+  "workflow_action_name": "Submit & Conclude"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "name": "Approve Academically & Conclude",
+  "workflow_action_name": "Approve Academically & Conclude"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "name": "Send for Academic Review",
   "workflow_action_name": "Send for Academic Review"
  },

@@ -10,6 +10,7 @@ class WithdrawalRequest(Document):
         self.validate_documentation_required()
         self.set_resulting_grade()
         self.auto_assign_withdrawal_rule()
+        self.set_refund_due()
         if (
             self.withdrawal_scope
             in ("All Courses This Term", "Full Program Withdrawal")
@@ -17,6 +18,21 @@ class WithdrawalRequest(Document):
         ):
             self.is_parent = 1
         self.validate_separation_timing()
+
+    def set_refund_due(self):
+        """Denormalize whether this withdrawal could yield a refund, so the
+        workflow's no-refund fast-track condition can read it off the doc.
+
+        Mirrors process_financial_approval's gate: a refund is possible only
+        when a withdrawal rule applies, that rule has refunds configured, and
+        the program is not free (free programs are never invoiced). Computed at
+        submit (validate runs on submit) and then frozen for the 1->1
+        transitions, which don't re-run validate."""
+        if self.is_free or not self.withdrawal_rule:
+            self.refund_due = 0
+            return
+        rule = frappe.get_cached_doc("Withdrawal Rules", self.withdrawal_rule)
+        self.refund_due = 1 if (rule.has_refund and rule.withdrawal_refunds) else 0
 
     def validate_enrollment_active(self):
         """Block new top-level requests against a Program Enrollment that has
@@ -50,15 +66,24 @@ class WithdrawalRequest(Document):
             )
 
     def on_submit(self):
-        if not self.is_parent:
-            return
-        if self._is_deferred_separation():
-            # Defer the course-withdrawal cascade to the effective date; the
-            # daily scheduler (process_due_separations) spawns the children then.
-            self._resolve_separation_effective_date()
-            return
-        self.create_child_withdrawal_requests()
-        self.db_set("cascade_done", 1, update_modified=False)
+        from seminary.seminary.withdrawal import dispatch_withdrawal_effects
+
+        if self.is_parent:
+            if self._is_deferred_separation():
+                # Defer the course-withdrawal cascade to the effective date; the
+                # daily scheduler (process_due_separations) spawns the children
+                # then.
+                self._resolve_separation_effective_date()
+            else:
+                self.create_child_withdrawal_requests()
+                self.db_set("cascade_done", 1, update_modified=False)
+
+        # A Draft fast-path submit (ongoing program -> Financial Review /
+        # Completed) crosses docstatus 0->1, so on_update_after_submit never
+        # fires; apply its side effects here. A normal Draft -> Academic Review
+        # submit is a no-op. Runs after the cascade so a parent's children
+        # already exist before process_completion checks them.
+        dispatch_withdrawal_effects(self)
 
     def _is_deferred_separation(self):
         return (

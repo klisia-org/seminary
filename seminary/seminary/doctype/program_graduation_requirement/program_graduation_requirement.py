@@ -13,6 +13,7 @@ class ProgramGraduationRequirement(Document):
         self._validate_date_window()
         self._validate_no_active_overlap()
         self._validate_linked_doc_status_values()
+        self._normalize_blocks_graduation_request()
 
     def on_update_after_submit(self):
         self._spawn_successor_on_supersede()
@@ -105,6 +106,15 @@ class ProgramGraduationRequirement(Document):
                         "Two policies for the same program cannot be active simultaneously."
                     ).format(other.name)
                 )
+
+    def _normalize_blocks_graduation_request(self):
+        """`blocks_graduation_request` is only meaningful for mandatory rows
+        (mirrors the GRI's depends_on). If a non-mandatory row still carries the
+        flag — e.g. the grid editor didn't hide it — silently clear it so the
+        snapshot can't inherit a contradictory state."""
+        for row in self.pgr_items or []:
+            if row.blocks_graduation_request and not row.mandatory:
+                row.blocks_graduation_request = 0
 
     def _validate_linked_doc_status_values(self):
         """Catch typos in linked_doc_status at policy authoring time."""

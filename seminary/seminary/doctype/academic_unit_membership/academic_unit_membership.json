@@ -1,0 +1,128 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2026-06-18 00:00:00",
+ "description": "A person's participation in an Academic Unit, carrying the list of capabilities (duties) they hold there. Keyed on Person so non-instructors (board members) belong too; instructor is set when the person is faculty.",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "documentation": "https://docs.seminaryerp.org/modules/academic-units.html#membership",
+ "engine": "InnoDB",
+ "field_order": [
+  "unit",
+  "person",
+  "person_name",
+  "column_break_head",
+  "instructor",
+  "is_active",
+  "capabilities_section",
+  "capabilities"
+ ],
+ "fields": [
+  {
+   "fieldname": "unit",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Unit",
+   "options": "Academic Unit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "person.full_name",
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Person Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "instructor",
+   "description": "Auto-derived from the Person's Instructor record (read-only). Present when the person is faculty — required for any academic-routing capability; absent for a non-instructor board/committee member.",
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Instructor",
+   "options": "Instructor",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "capabilities_section",
+   "fieldtype": "Section Break",
+   "label": "Capabilities"
+  },
+  {
+   "description": "The duties this person performs in this unit, each with an optional capacity cap.",
+   "fieldname": "capabilities",
+   "fieldtype": "Table",
+   "label": "Capabilities",
+   "options": "Academic Unit Capability"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-18 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Academic Unit Membership",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "person_name",
+ "track_changes": 1
+}
