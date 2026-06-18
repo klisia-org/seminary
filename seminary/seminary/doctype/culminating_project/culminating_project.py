@@ -685,6 +685,40 @@ _ROLE_SIGNOFF_FIELD = {
 }
 
 
+def external_examiner_for_user(user=None):
+    """The External Examiner record linked (via Person) to this user, if any."""
+    person = frappe.db.get_value(
+        "Person", {"user": user or frappe.session.user}, "name"
+    )
+    return (
+        frappe.db.get_value("External Examiner", {"person": person}, "name")
+        if person
+        else None
+    )
+
+
+def cp_names_for_external_examiner(examiner):
+    """Projects where an External Examiner serves — as a named reader or on the
+    committee. Reduced-access external readers see (read-only) just these."""
+    if not examiner:
+        return []
+    names = set(
+        frappe.get_all(
+            "Culminating Project",
+            or_filters={"second_reader": examiner, "third_reader": examiner},
+            pluck="name",
+        )
+    )
+    names |= set(
+        frappe.get_all(
+            "Culminating Project Committee",
+            filters={"external_examiner": examiner},
+            pluck="parent",
+        )
+    )
+    return list(names)
+
+
 def _responsible_signoff_roles(role):
     """Sign-off roles a user in `role` must action. The advisor also signs on
     the committee's behalf, so they carry the Committee role too."""
@@ -748,6 +782,29 @@ def get_my_culminating_projects():
                 None,
             )
             advisor_projects.append(_project_row(cp, my_role, instructor))
+
+    # External Examiners (reduced access) see the projects they read, read-only.
+    examiner = external_examiner_for_user()
+    if examiner:
+        seen = {p["name"] for p in advisor_projects}
+        for name in cp_names_for_external_examiner(examiner):
+            if name in seen:
+                continue
+            cp = frappe.db.get_value(
+                "Culminating Project",
+                name,
+                [
+                    "name",
+                    "project_title",
+                    "project_type",
+                    "program_enrollment",
+                    "workflow_state",
+                    "student",
+                ],
+                as_dict=True,
+            )
+            if cp:
+                advisor_projects.append(_project_row(cp, "External Reader", None))
 
     return {"student_projects": student_projects, "advisor_projects": advisor_projects}
 
@@ -913,13 +970,24 @@ def get_culminating_project(name):
         else None
     )
     is_reader = my_role is not None
-    if not (is_owner or is_reader or is_staff):
+    # An External Examiner reads (read-only) the projects they serve on; they do
+    # not sign — the advisor records their sign-off on their behalf.
+    examiner = external_examiner_for_user()
+    is_external = bool(examiner) and (
+        examiner in (project.second_reader, project.third_reader)
+        or any(c.external_examiner == examiner for c in project.committee or [])
+    )
+    if not (is_owner or is_reader or is_staff or is_external):
         frappe.throw(
             _("You are not permitted to view this project."), frappe.PermissionError
         )
     if is_owner:
         my_role = "Student"
-    elif my_role is None:
+    elif is_reader:
+        pass  # my_role already set
+    elif is_external:
+        my_role = "External Reader"
+    else:
         my_role = "Staff"
 
     from seminary.seminary.utils import get_instructor_contact_channels

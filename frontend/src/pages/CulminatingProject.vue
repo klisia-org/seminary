@@ -16,7 +16,7 @@
             {{ __('My Project') }}
           </Button>
           <Button :variant="view === 'advisor' ? 'solid' : 'subtle'" @click="view = 'advisor'">
-            {{ __('Projects I Advise') }} ({{ advisorProjects.length }})
+            {{ __('Projects I Advise / Read') }} ({{ advisorProjects.length }})
           </Button>
         </div>
 
@@ -133,8 +133,10 @@ function overdue(p) {
   return p.due && p.due < today
 }
 
-// Instructor table filters
-const filters = ref({ program: '', project_type: '', status: '', my_role: '' })
+// Instructor table filters. Default the status to Active so withdrawn/completed
+// projects (people no longer on a prof's plate) don't clutter the list — pick
+// "All Statuses" to see everyone.
+const filters = ref({ program: '', project_type: '', status: 'Active', my_role: '' })
 const distinct = (key) => computed(() => [...new Set(advisorProjects.value.map((p) => p[key]).filter(Boolean))].sort())
 const filterDefs = [
   { key: 'program', label: __('All Programs'), options: distinct('program') },

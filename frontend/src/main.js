@@ -44,6 +44,7 @@ configurePortals({
 	},
 	portals: [
 		{ id: 'student', label: 'Courses', url: '/seminary', roles: ['Student', 'Academics User', 'Instructor'] },
+		{ id: 'examiner', label: 'Project Reviews', url: '/seminary/culminating-project', roles: ['External Examiner'] },
 		{ id: 'alumni', label: 'Alumni', url: '/seminary/alumni', roles: ['Alumni'] },
 		{ id: 'partner', label: 'Partner', url: '/seminary/partner', roles: ['Partner'] },
 		{ id: 'donor', label: 'Donate', url: '/donate/donorportal' },
