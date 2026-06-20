@@ -25,7 +25,13 @@ import frappe
 
 
 def execute():
-    if frappe.db.has_column("Partner Organization", "listing_status"):
+    # On a site where the Partner module tables haven't been created yet,
+    # `has_column` raises TableMissingError (it no longer returns False for a
+    # missing table). Guard every table access with `table_exists` first — a
+    # site without these tables has no rows to backfill, so skipping is correct.
+    if frappe.db.table_exists("Partner Organization") and frappe.db.has_column(
+        "Partner Organization", "listing_status"
+    ):
         frappe.db.sql(
             """UPDATE `tabPartner Organization`
                SET listing_status = 'Listed'
@@ -50,7 +56,9 @@ def execute():
 
     # Apply the "default on" to existing Program Levels (the field is new, so no
     # row was ever set deliberately).
-    if frappe.db.has_column("Program Level", "allow_alumni_create_partner_org"):
+    if frappe.db.table_exists("Program Level") and frappe.db.has_column(
+        "Program Level", "allow_alumni_create_partner_org"
+    ):
         frappe.db.sql(
             "UPDATE `tabProgram Level` SET allow_alumni_create_partner_org = 1"
         )
