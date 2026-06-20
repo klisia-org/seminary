@@ -235,6 +235,8 @@ def seed_fee_categories():
     row whose dependencies aren't present yet (so install ordering can't make us
     throw); the next migrate, with fixtures loaded, fills it in.
     """
+    if not frappe.db.exists("DocType", "Fee Category"):
+        return
     # category_name, fc_event, item, is_audit, is_credit
     defaults = [
         ("Program Admission Fee", "Program Enrollment", "Admission Fee", 0, 0),
@@ -275,6 +277,8 @@ def seed_assessment_criteria():
     mis-typed as a Discussion Activity — a per-course transactional doctype, not
     a catalog — so it never became a real criterion; it's seeded correctly here.)
     """
+    if not frappe.db.exists("DocType", "Assessment Criteria"):
+        return
     # assessment_criteria (name), type
     defaults = [
         ("Project", "Assignment"),
@@ -304,6 +308,8 @@ def seed_course_cancellation_reasons():
     re-import would clobber those edits (and the is_active toggle) every migrate.
     Created once, create-only-if-missing.
     """
+    if not frappe.db.exists("DocType", "Course Cancellation Reason"):
+        return
     # reason_name, description
     defaults = [
         (
@@ -358,6 +364,8 @@ def seed_grading_scale():
     scales; a fixture re-import would clobber edits every migrate. Created once,
     create-only-if-missing, and submitted (docstatus=1) so it can be used.
     """
+    if not frappe.db.exists("DocType", "Grading Scale"):
+        return
     name = "Default Numeric Scale"
     if frappe.db.exists("Grading Scale", name):
         return
@@ -496,6 +504,8 @@ def seed_faculty_capabilities():
     re-import would clobber edits. One starter capability per ``routes_to``
     machine key; schools rename the display name or add more freely.
     """
+    if not frappe.db.exists("DocType", "Faculty Capability"):
+        return
     # (capability_name, routes_to, tracks_capacity, description). Capacity-aware
     # routes (advising/examining/verifying) feed claim_capability's round-robin;
     # Course Instructor (CS-driven) / Mentor (free link) / Board carry no cap.
@@ -553,6 +563,8 @@ def seed_room_features():
     which the standalone Room.accessible check could never express. Created
     once, create-only-if-missing.
     """
+    if not frappe.db.exists("DocType", "Room Feature"):
+        return
     defaults = [
         ("Wheelchair Accessible", "Specialized"),
         ("Projector", "AV Equipment"),
@@ -596,6 +608,8 @@ def seed_communication_channels():
     instructor contact icons (formerly the Messaging App master) render from the
     channel itself — without clobbering a seminary's edits.
     """
+    if not frappe.db.exists("DocType", "Communication Channel"):
+        return
     # name, description, portal_contactable, weblink_prefix, svg_icon
     defaults = [
         ("Email", _("Email delivery."), 1, "mailto:", _EMAIL_SVG),
@@ -646,6 +660,8 @@ def seed_communication_channels():
 def seed_mailing_label_formats():
     """Seed common Avery label layouts (ADR 045). Create-only-if-missing; a
     seminary edits these or adds its own measured stock."""
+    if not frappe.db.exists("DocType", "Mailing Label Format"):
+        return
     # name, page, cols, rows, label_w, label_h, margin_top, margin_left, description
     defaults = [
         (
@@ -717,6 +733,8 @@ def seed_channel_provider_accounts():
     """Default provider accounts so Email and In-App work out of the box
     (ADR 043). Create-only-if-missing per CHANNEL — if the seminary configured
     any account for a channel (even renamed), we never add another."""
+    if not frappe.db.exists("DocType", "Channel Provider Account"):
+        return
     defaults = [
         ("Default Email", "Email", "frappe-email"),
         ("Portal Inbox", "In-App", "in-app"),
@@ -747,6 +765,8 @@ def seed_communication_templates():
     clobber them. Bodies are deliberately NOT gettext-wrapped: per-language
     copy lives in additional Communication Template Version rows, not .po
     files."""
+    if not frappe.db.exists("DocType", "Communication Template"):
+        return
     defaults = [
         {
             "template_key": "waitlist-promoted",
@@ -1070,6 +1090,12 @@ def seed_internship_communication():
     the communication ledger (ADR 043), so they never spam."""
     if not frappe.db.exists("DocType", "Communication Trigger"):
         return
+    # The triggers below link to the Internship Application doctype via
+    # `reference_doctype`. On a site that hasn't synced the internship doctypes
+    # yet, that Link fails validation — skip until it exists (after_migrate runs
+    # every migrate, so this self-heals once the doctype lands).
+    if not frappe.db.exists("DocType", "Internship Application"):
+        return
 
     templates = [
         (
@@ -1302,6 +1328,8 @@ def setup_customer_person_field():
     """Reverse link Customer → Person (ADR 042 addendum): Person.customer
     records the financial party; this mirrors it on the Customer so finance
     views show which human a Customer is. Maintained by person.link_customer."""
+    if not frappe.db.exists("DocType", "Person"):
+        return
     if frappe.db.exists("Custom Field", "Customer-person"):
         return
     frappe.get_doc(
@@ -1545,30 +1573,39 @@ def setup_withdrawal_workflow():
                 doc = frappe.get_doc(action_data)
                 doc.insert(ignore_permissions=True)
 
-    # Create workflow
-    if not frappe.db.exists("Workflow", "Course Withdrawal"):
-        wf_path = os.path.join(fixtures_dir, "workflow.json")
-        if os.path.exists(wf_path):
-            with open(wf_path) as f:
-                workflows = json.load(f)
-            for wf_data in workflows:
-                wf_data.pop("creation", None)
-                wf_data.pop("modified", None)
-                wf_data.pop("modified_by", None)
-                doc = frappe.get_doc(wf_data)
-                doc.insert(ignore_permissions=True)
+    # Create workflows (create-only-if-missing, per workflow — so a workflow
+    # whose doctype only lands in a later release still gets seeded then).
+    wf_path = os.path.join(fixtures_dir, "workflow.json")
+    if os.path.exists(wf_path):
+        with open(wf_path) as f:
+            workflows = json.load(f)
+        for wf_data in workflows:
+            if frappe.db.exists("Workflow", wf_data.get("workflow_name")):
+                continue
+            # A version-skewed site may not carry every workflow's target
+            # doctype yet — skip those rather than abort the whole migrate on a
+            # link-validation error (a later migrate seeds it once it lands).
+            if not frappe.db.exists("DocType", wf_data.get("document_type")):
+                continue
+            wf_data.pop("creation", None)
+            wf_data.pop("modified", None)
+            wf_data.pop("modified_by", None)
+            doc = frappe.get_doc(wf_data)
+            doc.insert(ignore_permissions=True)
 
     frappe.db.commit()
 
 
 def after_migrate():
     setup_genders()
-    setup_withdrawal_workflow()
+    # Roles first: the Course Withdrawal workflow's transitions link to several
+    # of these roles, so they must exist before setup_withdrawal_workflow runs.
     create_alumni_role()
     create_partner_role()
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
+    setup_withdrawal_workflow()
     setup_sales_invoice_permissions()
     seed_fee_categories()
     seed_assessment_criteria()
