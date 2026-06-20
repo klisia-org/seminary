@@ -1,0 +1,47 @@
+{#-
+	Public website navbar (ADR 061). Brand-coloured bar; logo + colours come
+	from the Website Branding singleton (exposed as `branding` by
+	seminary.overrides.update_website_context). Menu items remain
+	Desk-configurable via Website Settings top bar (`top_bar_items`).
+	Rendered by base.html with the full page context (values=_context_dict).
+-#}
+<nav class="sem-navbar">
+	<div class="container">
+		<a class="sem-navbar__brand" href="{{ (home_page or '/') | abs_url }}">
+			{%- if branding and branding.website_logo -%}
+				<img class="sem-navbar__logo" src="{{ branding.website_logo }}" alt="{{ _('Home') }}">
+			{%- else -%}
+				<span>{{ (frappe.get_hooks('brand_html') or [_('Home')])[0] }}</span>
+			{%- endif -%}
+		</a>
+
+		<button
+			class="sem-navbar__toggle"
+			type="button"
+			aria-label="{{ _('Toggle navigation') }}"
+			onclick="this.closest('.sem-navbar').querySelector('.sem-navbar__links').classList.toggle('is-open')"
+		>&#9776;</button>
+
+		<ul class="sem-navbar__links">
+			{%- for item in (top_bar_items or []) -%}
+				{%- if not item.parent_label -%}
+					{%- set url = item.url or '#' -%}
+					<li>
+						<a class="nav-link" href="{{ url if url.startswith('#') else url | abs_url }}"
+							{% if item.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}>
+							{{ _(item.label) }}
+						</a>
+					</li>
+				{%- endif -%}
+			{%- endfor -%}
+
+			{#- Login link (Guest) / account dropdown (logged in). Reuses Frappe's
+				partial + website JS that toggles the two states. -#}
+			{% include "templates/includes/navbar/navbar_login.html" %}
+		</ul>
+
+		{%- if call_to_action and call_to_action_url -%}
+			<a class="sem-navbar__cta" href="{{ call_to_action_url | abs_url }}">{{ _(call_to_action) }}</a>
+		{%- endif -%}
+	</div>
+</nav>

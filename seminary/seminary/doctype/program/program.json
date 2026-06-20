@@ -61,7 +61,6 @@
   "display_enrollment_window",
   "display_cta",
   "route",
-  "slug",
   "blurb",
   "image_blurb",
   "program_description",
@@ -492,12 +491,6 @@
    "fieldtype": "Link",
    "label": "Academic Unit",
    "options": "Academic Unit"
-  },
-  {
-   "fieldname": "slug",
-   "fieldtype": "Data",
-   "label": "Slug (auto-generated)",
-   "read_only": 1
   }
  ],
  "has_web_view": 1,
@@ -522,7 +515,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-18 19:01:47.301071",
+ "modified": "2026-06-19 23:43:42.530902",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

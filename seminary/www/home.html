@@ -1,0 +1,40 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+{% set b = branding %}
+<div class="sem-page">
+	<div class="sem-hero" {% if b and b.hero_image %}style="background-image: url('{{ b.hero_image }}');"{% endif %}>
+		<div class="sem-hero__overlay">
+			<h1 class="sem-hero__headline">{{ (b.hero_headline if b and b.hero_headline else app_name) }}</h1>
+			{% if b and b.hero_subtext %}<p class="sem-hero__subtext">{{ b.hero_subtext }}</p>{% endif %}
+			{% if b and b.hero_cta_label and b.hero_cta_link %}
+			<a class="sem-hero__cta" href="{{ b.hero_cta_link }}">{{ b.hero_cta_label }}</a>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="sem-cards">
+		<a class="sem-card" href="/programs">
+			<div class="sem-card__body">
+				<div class="sem-card__title">{{ _("Our Programs") }}</div>
+				<div class="sem-card__blurb">{{ _("Explore our degrees and certificates.") }}</div>
+				<div class="sem-card__cta">{{ _("Browse programs") }} &rarr;</div>
+			</div>
+		</a>
+		<a class="sem-card" href="/our-team">
+			<div class="sem-card__body">
+				<div class="sem-card__title">{{ _("Who We Are") }}</div>
+				<div class="sem-card__blurb">{{ _("Meet our faculty and leadership.") }}</div>
+				<div class="sem-card__cta">{{ _("Our team") }} &rarr;</div>
+			</div>
+		</a>
+		<a class="sem-card" href="/what-we-believe">
+			<div class="sem-card__body">
+				<div class="sem-card__title">{{ _("What We Believe") }}</div>
+				<div class="sem-card__blurb">{{ _("Our doctrinal foundation.") }}</div>
+				<div class="sem-card__cta">{{ _("Read more") }} &rarr;</div>
+			</div>
+		</a>
+	</div>
+</div>
+{% endblock %}

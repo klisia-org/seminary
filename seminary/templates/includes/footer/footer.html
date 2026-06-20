@@ -1,0 +1,7 @@
+{#-
+	Seminary override of Frappe's footer include (ADR 061). Same rationale as the
+	navbar override: Web Forms hardcode this include instead of honoring
+	Website Settings `footer_template`. Renders the same shared partial the
+	Seminary Footer Web Template uses. base.html pages are unaffected.
+-#}
+{% include "templates/includes/seminary_chrome/footer.html" %}

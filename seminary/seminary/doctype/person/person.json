@@ -9,12 +9,16 @@
  "engine": "InnoDB",
  "field_order": [
   "identity_section",
+  "salutation",
   "first_name",
   "middle_name",
   "last_name",
   "full_name",
   "column_break_identity",
   "image",
+  "block_from_web",
+  "position",
+  "web_bio",
   "language",
   "country",
   "gender",
@@ -53,6 +57,13 @@
    "label": "Identity"
   },
   {
+   "description": "Title such as Dr, Prof, Rev. Optionally shown before the name on the public website team roster.",
+   "fieldname": "salutation",
+   "fieldtype": "Link",
+   "label": "Salutation",
+   "options": "Salutation"
+  },
+  {
    "fieldname": "first_name",
    "fieldtype": "Data",
    "in_global_search": 1,
@@ -86,6 +97,25 @@
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
+  },
+  {
+   "default": "0",
+   "description": "Hide this person from public website rosters (e.g. \"Our Team\"). Use for staff serving in security-sensitive or restricted-access contexts. Does not affect desk or portal visibility.",
+   "fieldname": "block_from_web",
+   "fieldtype": "Check",
+   "label": "Block from Public Website"
+  },
+  {
+   "description": "Role/title shown on the public website team roster, e.g. \"Board Member\", \"President\", \"Dean of Students\". For instructors this overrides the auto-derived role (Chair / capability / Faculty).",
+   "fieldname": "position",
+   "fieldtype": "Data",
+   "label": "Position / Title"
+  },
+  {
+   "description": "Short bio shown on the public website team roster. For instructors, the Instructor \"Shorter bio for LMS\" is used as a fallback when this is blank.",
+   "fieldname": "web_bio",
+   "fieldtype": "Small Text",
+   "label": "Public Mini-Bio"
   },
   {
    "description": "Language used for outbound communication (templates render in this language). Distinct from the desk/portal UI language on User.",
@@ -301,7 +331,7 @@
    "parent_doctype": "Partner Organization"
   }
  ],
- "modified": "2026-06-10 16:00:00.000000",
+ "modified": "2026-06-19 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",

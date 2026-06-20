@@ -14,6 +14,7 @@
   },
   "resolutions": {
     "esbuild": "^0.25.0",
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "dompurify": "^3.4.11"
   }
 }

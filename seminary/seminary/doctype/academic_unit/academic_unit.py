@@ -3,12 +3,40 @@
 
 import frappe
 from frappe import _
-from frappe.model.document import Document
+from frappe.website.website_generator import WebsiteGenerator
+
+from seminary.seminary.utils import slugify
 
 
-class AcademicUnit(Document):
+class AcademicUnit(WebsiteGenerator):
     def validate(self):
         self._validate_member_units()
+        self._set_web_route()
+
+    def _set_web_route(self):
+        """Publishable units get a stable /team/<slug> route. The `team/` prefix
+        is deliberately distinct from the /our-team listing page (a static www
+        page would otherwise shadow the dynamic unit routes nested under it).
+        Built from the unit name so it stays readable; only generated when
+        missing, never clobbered if an admin set one."""
+        if self.publish_on_web and not self.route:
+            self.route = "team/" + slugify(self.unit_name)
+
+    def get_context(self, context):
+        from seminary.seminary import faculty
+        from seminary.seminary.seo import page_metatags
+
+        context.no_cache = 1
+        context.roster = faculty.get_unit_roster(self.name, public=True)
+        context.show_salutations = bool(
+            frappe.db.get_single_value("Website Branding", "show_team_salutations")
+        )
+        context.parents = [{"name": _("Our Team"), "route": "/our-team"}]
+        context.title = self.unit_name
+        context.metatags = page_metatags(
+            self.unit_name,
+            self.description or _("Faculty and members of {0}.").format(self.unit_name),
+        )
 
     def _validate_member_units(self):
         """Member units belong only to an Academic Interdepartment, and must be

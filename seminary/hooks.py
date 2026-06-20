@@ -52,7 +52,10 @@ app_include_js = [
 # app_include_js = "seminary/public/js/global_seminary.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/seminary/css/seminary.css"
+# Public website branding (website_brand.css) is injected with an mtime-based
+# cache-buster by seminary.overrides.update_website_context — a raw web_include_css
+# path gets no ?v= and is cached indefinitely, which breaks color/style updates
+# (ADR 061).
 # web_include_js = "/assets/seminary/js/seminary.js"
 
 # include custom scss in every website theme (without file extension ".scss")

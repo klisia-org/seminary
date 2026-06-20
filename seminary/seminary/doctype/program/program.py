@@ -76,10 +76,16 @@ class Program(WebsiteGenerator):
 
     def get_context(self, context):
         from seminary.seminary.api import get_application_web_form_route
+        from seminary.seminary.seo import page_metatags
 
         context.open_windows = []
         context.continuous_term = None
         context.apply_route = get_application_web_form_route(self.name)
+        context.metatags = page_metatags(
+            self.program_name,
+            self.blurb or self.program_description,
+            image=self.hero_image or self.image_blurb,
+        )
 
         if self.enrollment_mode == "Timed":
             context.open_windows = self._resolve_open_windows()

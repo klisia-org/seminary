@@ -36,7 +36,7 @@
     </div>
 </div>
 
-{% if blurb %}
+{% if blurb and blurb | striptags | trim %}
 <div class="pgm-blurb">{{ blurb }}</div>
 {% endif %}
 
@@ -89,20 +89,20 @@
 </section>
 {% endif %}
 
-{% if program_description %}
+{% if program_description and program_description | striptags | trim %}
 <section class="pgm-section">
     {{ program_description }}
 </section>
 {% endif %}
 
-{% if program_requirements %}
+{% if program_requirements and program_requirements | striptags | trim %}
 <section class="pgm-section">
     <h2>{{ _("Program Requirements") }}</h2>
     {{ program_requirements }}
 </section>
 {% endif %}
 
-{% if duration_txt %}
+{% if duration_txt and duration_txt | striptags | trim %}
 <section class="pgm-section">
     <h2>{{ _("Program Duration") }}</h2>
     {{ duration_txt }}

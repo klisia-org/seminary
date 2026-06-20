@@ -298,18 +298,39 @@ def require_capability(unit: str, route: str) -> None:
 
 
 @frappe.whitelist()
-def get_unit_roster(unit: str) -> list:
+def get_unit_roster(unit: str, public: bool = False) -> list:
     """Read-only roster of a unit's faculty and their capabilities — for an
     Academic Interdepartment this is the transitive union of its member units
-    (ADR 059). Display only: this never stores or copies any rows."""
+    (ADR 059). Display only: this never stores or copies any rows.
+
+    With public=True (the website "Our Team" page, ADR 061), people flagged
+    `Person.block_from_web` are excluded and each entry is enriched with the
+    member's photo, short bio, and whether they chair the unit — for rich cards.
+    """
+    public = frappe.parse_json(public) if isinstance(public, str) else public
     units = _resolve_units(unit)
     if not units:
         return []
+
+    chair_by_unit = dict(
+        frappe.get_all(
+            "Academic Unit",
+            filters={"name": ("in", units)},
+            fields=["name", "chair"],
+            as_list=True,
+        )
+    )
+
     rows = frappe.db.sql(
         """
-        SELECT m.unit, m.person, m.person_name, m.instructor,
+        SELECT m.unit, m.person, m.person_name, m.instructor, m.web_order AS member_order,
+               i.instructor_name, i.profileimage, i.shortbio, p.image AS person_image,
+               p.salutation, p.position, p.web_bio,
+               COALESCE(p.block_from_web, 0) AS block_from_web,
                fc.capability_name, fc.routes_to, c.max_students, c.current_students
         FROM `tabAcademic Unit Membership` m
+        LEFT JOIN `tabInstructor` i ON i.name = m.instructor
+        LEFT JOIN `tabPerson` p ON p.name = m.person
         LEFT JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
         LEFT JOIN `tabFaculty Capability` fc ON fc.name = c.capability
         WHERE m.unit IN %(units)s AND m.is_active = 1
@@ -320,13 +341,23 @@ def get_unit_roster(unit: str) -> list:
     )
     roster = {}
     for r in rows:
+        if public and r.block_from_web:
+            continue
         entry = roster.setdefault(
             (r.unit, r.person),
             {
                 "unit": r.unit,
                 "person": r.person,
                 "person_name": r.person_name,
+                "salutation": r.salutation,
+                "position": r.position,
                 "instructor": r.instructor,
+                "member_order": r.member_order or 0,
+                "photo": r.profileimage or r.person_image,
+                "short_bio": r.web_bio or r.shortbio,
+                "is_chair": bool(
+                    r.instructor and r.instructor == chair_by_unit.get(r.unit)
+                ),
                 "capabilities": [],
             },
         )
@@ -339,7 +370,15 @@ def get_unit_roster(unit: str) -> list:
                     "current_students": r.current_students,
                 }
             )
-    return list(roster.values())
+
+    # Members with an explicit web_order come first in that order; the rest fall
+    # back to chair-first, then alphabetical (SQL already ordered by name).
+    def _sort_key(e):
+        if e["member_order"] > 0:
+            return (0, e["member_order"], e["person_name"] or "")
+        return (1, 0 if e["is_chair"] else 1, e["person_name"] or "")
+
+    return sorted(roster.values(), key=_sort_key)
 
 
 def faculty_context(user: str | None = None) -> dict:

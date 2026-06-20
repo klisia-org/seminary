@@ -1,0 +1,38 @@
+{% extends "templates/web.html" %}
+{% from "templates/includes/team_cards.html" import team_cards %}
+
+{% block page_content %}
+<div class="sem-page">
+	<h1>{{ _("Our Team") }}</h1>
+
+	{% for u in inline_units %}
+	<section class="sem-unit">
+		<h2 class="sem-unit__heading">{{ u.unit_name }}</h2>
+		{% if u.description %}<p class="sem-unit__desc">{{ u.description }}</p>{% endif %}
+		{% if u.roster %}
+			{{ team_cards(u.roster, show_salutation=show_salutations) }}
+		{% else %}
+			<p>{{ _("No public members listed yet.") }}</p>
+		{% endif %}
+	</section>
+	{% endfor %}
+
+	{% if card_units %}
+	<div class="sem-cards">
+		{% for u in card_units %}
+		<a class="sem-card" href="/{{ u.route }}">
+			<div class="sem-card__body">
+				<div class="sem-card__title">{{ u.unit_name }}</div>
+				{% if u.description %}<div class="sem-card__blurb">{{ u.description }}</div>{% endif %}
+				<div class="sem-card__cta">{{ _("Meet the team") }} &rarr;</div>
+			</div>
+		</a>
+		{% endfor %}
+	</div>
+	{% endif %}
+
+	{% if not card_units and not inline_units %}
+	<p>{{ _("Team information is coming soon.") }}</p>
+	{% endif %}
+</div>
+{% endblock %}

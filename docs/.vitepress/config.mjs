@@ -61,6 +61,7 @@ export default withMermaid(defineConfig({
             collapsed: true,
             items: [
               { text: 'Programs', link: '/modules/program' },
+              { text: 'Public Website', link: '/modules/website' },
               { text: 'Enrollment', link: '/modules/enrollment' },
               { text: 'Rooms & Facilities', link: '/modules/rooms' },
               { text: 'Withdrawal', link: '/modules/withdrawal' },

@@ -59,7 +59,7 @@
     "postcss": "^8.5.6",
     "sass": "^1.92.1",
     "sass-embedded": "^1.86.3",
-    "vite": "^8.0.14"
+    "vite": "^8.0.16"
   },
   "resolutions": {
     "esbuild": "^0.28.1",
@@ -71,7 +71,7 @@
     "immutable": "^5.1.5",
     "yaml": "^2.8.3",
     "socket.io-parser": ">=4.2.6",
-    "dompurify": ">=3.4.0",
+    "dompurify": "^3.4.11",
     "brace-expansion": ">=5.0.6",
     "defu": ">=6.1.5",
     "postcss": ">=8.5.10",
