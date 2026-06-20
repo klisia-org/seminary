@@ -1,0 +1,16 @@
+{% extends "templates/web.html" %}
+{% from "templates/includes/team_cards.html" import team_cards %}
+
+{% block page_content %}
+<div class="sem-page">
+	<p class="sem-breadcrumb"><a href="/our-team">&larr; {{ _("Our Team") }}</a></p>
+	<h1>{{ title }}</h1>
+	{% if description %}<p class="sem-lead">{{ description }}</p>{% endif %}
+
+	{% if roster %}
+		{{ team_cards(roster, show_salutation=show_salutations) }}
+	{% else %}
+		<p>{{ _("No public members listed for this unit yet.") }}</p>
+	{% endif %}
+</div>
+{% endblock %}

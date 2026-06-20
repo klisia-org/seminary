@@ -1,0 +1,28 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page">
+	<h1>{{ programs_label }}</h1>
+
+	{% for g in groups %}
+	<section class="sem-level">
+		{% if groups | length > 1 %}<h2 class="sem-level__heading">{{ g.level }}</h2>{% endif %}
+		<div class="sem-cards sem-cards--lg">
+			{% for p in g.programs %}
+			<a class="sem-card" href="/{{ p.route }}">
+				{% if p.image_blurb %}<img class="sem-card__img" src="{{ p.image_blurb }}" alt="{{ p.program_name }}">{% endif %}
+				<div class="sem-card__body">
+					<div class="sem-card__title">{{ p.program_name }}</div>
+					{% if p.program_duration %}<div class="sem-card__meta">{{ p.program_duration }} {{ _(p.duration_unit) if p.duration_unit else '' }}</div>{% endif %}
+					{% if p.blurb %}<div class="sem-card__blurb">{{ p.blurb | striptags | truncate(160, True) }}</div>{% endif %}
+					<div class="sem-card__cta">{{ _("Learn more") }} &rarr;</div>
+				</div>
+			</a>
+			{% endfor %}
+		</div>
+	</section>
+	{% endfor %}
+
+	{% if not groups %}<p>{{ _("Programs will be listed here soon.") }}</p>{% endif %}
+</div>
+{% endblock %}

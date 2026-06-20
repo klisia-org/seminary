@@ -11,6 +11,7 @@
   "pgm_level",
   "ongoing",
   "description",
+  "web_order",
   "leave_policy_section",
   "loa_billing_suspension_days",
   "suspend_monthly",
@@ -42,6 +43,13 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "default": "0",
+   "description": "Order of this level's section on the public Programs page (lowest first; ties fall back to the level name).",
+   "fieldname": "web_order",
+   "fieldtype": "Int",
+   "label": "Web Order"
   },
   {
    "default": "0",
@@ -161,7 +169,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-18 02:43:09.686752",
+ "modified": "2026-06-19 17:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program Level",

@@ -1,0 +1,13 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page sem-prose">
+	<h1>{{ _("What We Believe") }}</h1>
+	{% if statement %}
+		{% if statement.ds_title %}<h2>{{ statement.ds_title }}</h2>{% endif %}
+		{{ statement.doctrinal_statement }}
+	{% else %}
+		<p>{{ _("Our doctrinal statement will be published here soon.") }}</p>
+	{% endif %}
+</div>
+{% endblock %}

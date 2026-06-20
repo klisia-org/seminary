@@ -5,10 +5,13 @@
  "autoname": "field:unit_name",
  "creation": "2026-06-18 00:00:00",
  "description": "A typed organisational unit the seminary routes academic work through — a teaching department that owns courses, a program committee that owns programs, an interdepartment that co-owns joint courses, or a board/committee. The org spine faculty, courses, and routing hang on.",
+ "allow_guest_to_view": 1,
  "doctype": "DocType",
  "document_type": "Setup",
  "documentation": "https://docs.seminaryerp.org/modules/academic-units.html",
  "engine": "InnoDB",
+ "has_web_view": 1,
+ "is_published_field": "publish_on_web",
  "field_order": [
   "unit_name",
   "unit_code",
@@ -16,8 +19,10 @@
   "column_break_head",
   "chair",
   "publish_on_web",
+  "web_order",
   "is_active",
   "description",
+  "route",
   "interdepartment_section",
   "member_units"
  ],
@@ -61,10 +66,18 @@
   },
   {
    "default": "0",
-   "description": "Publish this unit (and a future faculty roster) on the public website.",
+   "description": "Publish this unit and its faculty roster on the public website (\"Our Team\").",
    "fieldname": "publish_on_web",
    "fieldtype": "Check",
    "label": "Publish on Web"
+  },
+  {
+   "default": "0",
+   "depends_on": "publish_on_web",
+   "description": "Controls order on the public \"Our Team\" page. 0 = render this unit's roster inline on the page; greater than 0 = show a card (in this order) linking to the unit's own page.",
+   "fieldname": "web_order",
+   "fieldtype": "Int",
+   "label": "Web Order"
   },
   {
    "default": "1",
@@ -78,6 +91,14 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Route",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.unit_type==\"Academic Interdepartment\"",
@@ -95,7 +116,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-18 00:00:00",
+ "modified": "2026-06-19 18:00:00",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Unit",

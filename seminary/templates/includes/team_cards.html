@@ -1,0 +1,29 @@
+{#- Reusable faculty roster cards (ADR 061). Used by the Academic Unit detail
+    page and inline on the Our Team page. `roster` is the list from
+    faculty.get_unit_roster(..., public=True). `show_salutation` toggles the
+    salutation prefix (Website Branding.show_team_salutations). -#}
+{%- macro team_cards(roster, show_salutation=False) -%}
+<div class="sem-team">
+	{%- for m in roster -%}
+	<div class="sem-team__card">
+		{%- if m.photo -%}
+		<img class="sem-team__photo" src="{{ m.photo }}" alt="{{ m.person_name }}">
+		{%- else -%}
+		<div class="sem-team__photo sem-team__photo--initials">{{ (m.person_name or '?')[:1] | upper }}</div>
+		{%- endif -%}
+		<div class="sem-team__name">
+			{%- if show_salutation and m.salutation %}{{ m.salutation }} {% endif -%}
+			{{ m.person_name }}
+		</div>
+		<div class="sem-team__role">
+			{%- if m.position -%}{{ m.position }}
+			{%- elif m.is_chair -%}{{ _("Chair") }}
+			{%- elif m.capabilities -%}{{ _(m.capabilities[0].capability) }}
+			{%- elif m.instructor -%}{{ _("Faculty") }}
+			{%- else -%}{{ _("Member") }}{%- endif -%}
+		</div>
+		{%- if m.short_bio -%}<div class="sem-team__bio">{{ m.short_bio }}</div>{%- endif -%}
+	</div>
+	{%- endfor -%}
+</div>
+{%- endmacro -%}

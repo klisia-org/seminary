@@ -53,6 +53,9 @@ def after_install():
     seed_allowed_graduation_documents()
     seed_internship_types()
     seed_internship_communication()
+    seed_website_branding()
+    seed_website_navigation()
+    seed_website_pages()
     setup_customer_person_field()
 
 
@@ -884,6 +887,143 @@ def seed_portal_messaging_rules():
     frappe.db.commit()
 
 
+def seed_website_branding():
+    """Seed the Website Branding singleton (ADR 061). Copies the legacy
+    Seminary Settings website logo across on first run and fills the default
+    colour/font scheme when unset. Create-only-if-empty per field, so a
+    seminary's own choices are never overwritten. NOT fixtures: Website
+    Branding is user-configurable; a re-import would clobber desk edits.
+    """
+    if not frappe.db.exists("DocType", "Website Branding"):
+        return
+    branding = frappe.get_single("Website Branding")
+    changed = False
+
+    if not branding.website_logo:
+        try:
+            legacy_logo = frappe.db.get_single_value(
+                "Seminary Settings", "website_logo"
+            )
+        except Exception:
+            legacy_logo = None
+        if legacy_logo:
+            branding.website_logo = legacy_logo
+            changed = True
+
+    defaults = {
+        "primary_color": "#0d3049",
+        "secondary_color": "#1b4a6b",
+        "tertiary_color": "#c8a24b",
+        "accent_color": "#b3801f",
+        "background_color": "#ffffff",
+        "text_color": "#1a2330",
+        "heading_font": "Poppins",
+        "body_font": "Inter",
+    }
+    for field, value in defaults.items():
+        if not branding.get(field):
+            branding.set(field, value)
+            changed = True
+
+    if changed:
+        branding.flags.ignore_permissions = True
+        branding.save()
+        frappe.db.commit()
+
+
+def seed_website_navigation():
+    """Point the public website at the seminary's custom navbar/footer Web
+    Templates and seed the starter top-bar / footer links (ADR 061).
+    Create-only-if-empty: if a site already has a navbar template or top bar
+    items configured, we leave its navigation untouched. NOT fixtures:
+    Website Settings is user-configurable.
+    """
+    if not frappe.db.exists("Web Template", "Seminary Navbar"):
+        return
+    ws = frappe.get_single("Website Settings")
+    changed = False
+
+    if not ws.navbar_template:
+        ws.navbar_template = "Seminary Navbar"
+        changed = True
+    if not ws.footer_template and frappe.db.exists("Web Template", "Seminary Footer"):
+        ws.footer_template = "Seminary Footer"
+        changed = True
+    if not ws.home_page:
+        # "/" serves the public marketing Home page (www/home).
+        ws.home_page = "home"
+        changed = True
+
+    if not ws.get("top_bar_items"):
+        # "/program" is the existing published Program list route; the other
+        # routes are delivered in ADR 061 Phase B.
+        for label, url in [
+            ("Home", "/"),
+            ("Our Programs", "/programs"),
+            ("Who We Are", "/our-team"),
+            ("What We Believe", "/what-we-believe"),
+            ("Contact", "/contact"),
+        ]:
+            ws.append("top_bar_items", {"label": label, "url": url})
+        changed = True
+
+    if not ws.get("footer_items"):
+        ws.append("footer_items", {"label": "Privacy", "url": "/privacy"})
+        changed = True
+
+    if changed:
+        ws.flags.ignore_permissions = True
+        ws.save()
+        frappe.db.commit()
+
+
+def seed_website_pages():
+    """Seed starter public prose Web Pages (History / Privacy / Contact) for the
+    website (ADR 061). Create-only-if-missing by route; staff edit them in Desk
+    afterwards (Website > Web Page). NOT fixtures — this is staff-owned content.
+    """
+    if not frappe.db.exists("DocType", "Web Page"):
+        return
+    pages = [
+        {
+            "title": "Our History",
+            "route": "our-history",
+            "main_section": "<p>Share your seminary's story here — its founding, "
+            "mission, and milestones. Edit this page under Website &gt; Web Page.</p>",
+        },
+        {
+            "title": "Privacy Policy",
+            "route": "privacy",
+            "main_section": "<p>Add your privacy policy here. "
+            "Edit this page under Website &gt; Web Page.</p>",
+        },
+        {
+            "title": "Contact Us",
+            "route": "contact",
+            "main_section": "<p>We'd love to hear from you.</p>"
+            '<p>Email: <a href="mailto:info@example.org">info@example.org</a><br>'
+            "Phone: +00 000 000 0000<br>Address: Your address here</p>"
+            "<p>Edit this page under Website &gt; Web Page.</p>",
+        },
+    ]
+    for p in pages:
+        if frappe.db.exists("Web Page", {"route": p["route"]}):
+            continue
+        doc = frappe.get_doc(
+            {
+                "doctype": "Web Page",
+                "title": p["title"],
+                "route": p["route"],
+                "published": 1,
+                "content_type": "Rich Text",
+                "main_section": p["main_section"],
+            }
+        )
+        doc.flags.ignore_permissions = True
+        doc.insert()
+    frappe.db.commit()
+
+
 def seed_partner_types():
     """Seed the starter Partner Types if they don't already exist (ADR 053).
 
@@ -1446,6 +1586,9 @@ def after_migrate():
     seed_allowed_graduation_documents()
     seed_internship_types()
     seed_internship_communication()
+    seed_website_branding()
+    seed_website_navigation()
+    seed_website_pages()
     setup_customer_person_field()
     setup_donor_person_field()
 

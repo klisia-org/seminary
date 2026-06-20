@@ -1,0 +1,247 @@
+{
+ "actions": [],
+ "description": "Public website branding for the unregistered-visitor site (ADR 061): logo, favicon, colour scheme and fonts. These feed CSS custom properties (--brand-*) injected into the website head and the custom navbar/footer. Portal/desk logos live on Seminary Settings, not here.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "website_logo",
+  "column_break_identity",
+  "favicon",
+  "colours_section",
+  "primary_color",
+  "secondary_color",
+  "tertiary_color",
+  "accent_color",
+  "column_break_surface",
+  "background_color",
+  "text_color",
+  "typography_section",
+  "heading_font",
+  "column_break_type",
+  "body_font",
+  "social_section",
+  "social_links",
+  "homepage_section",
+  "hero_headline",
+  "hero_subtext",
+  "hero_image",
+  "column_break_hero",
+  "hero_cta_label",
+  "hero_cta_link",
+  "labels_section",
+  "programs_label_override",
+  "show_team_salutations"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Logo & Identity"
+  },
+  {
+   "description": "Logo shown in the public website navbar. Recommended height ~40px, transparent PNG/SVG.",
+   "fieldname": "website_logo",
+   "fieldtype": "Attach Image",
+   "label": "Website Logo"
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Browser tab icon for public pages (square, e.g. 64x64 PNG or .ico).",
+   "fieldname": "favicon",
+   "fieldtype": "Attach Image",
+   "label": "Favicon"
+  },
+  {
+   "description": "Brand colours follow brand-manual convention. Primary drives the navbar, primary buttons and links; tertiary/accent are used for call-to-action highlights.",
+   "fieldname": "colours_section",
+   "fieldtype": "Section Break",
+   "label": "Colour Scheme"
+  },
+  {
+   "default": "#0d3049",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary"
+  },
+  {
+   "default": "#1b4a6b",
+   "fieldname": "secondary_color",
+   "fieldtype": "Color",
+   "label": "Secondary"
+  },
+  {
+   "default": "#c8a24b",
+   "fieldname": "tertiary_color",
+   "fieldtype": "Color",
+   "label": "Tertiary"
+  },
+  {
+   "default": "#b3801f",
+   "fieldname": "accent_color",
+   "fieldtype": "Color",
+   "label": "Accent"
+  },
+  {
+   "fieldname": "column_break_surface",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Page background.",
+   "fieldname": "background_color",
+   "fieldtype": "Color",
+   "label": "Background"
+  },
+  {
+   "default": "#1a2330",
+   "description": "Default body text colour. Pair with Background for adequate contrast.",
+   "fieldname": "text_color",
+   "fieldtype": "Color",
+   "label": "Text"
+  },
+  {
+   "description": "Fonts are self-hosted (no external Google Fonts call at page load).",
+   "fieldname": "typography_section",
+   "fieldtype": "Section Break",
+   "label": "Typography"
+  },
+  {
+   "default": "Poppins",
+   "description": "Used for headings and the brand wordmark.",
+   "fieldname": "heading_font",
+   "fieldtype": "Select",
+   "label": "Heading Font",
+   "options": "Inter\nPoppins\nLora\nSource Serif 4"
+  },
+  {
+   "fieldname": "column_break_type",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Inter",
+   "description": "Used for body copy.",
+   "fieldname": "body_font",
+   "fieldtype": "Select",
+   "label": "Body Font",
+   "options": "Inter\nPoppins\nLora\nSource Serif 4"
+  },
+  {
+   "description": "Social media accounts to link from the public website footer. Shown as icons in the order listed.",
+   "fieldname": "social_section",
+   "fieldtype": "Section Break",
+   "label": "Social Links"
+  },
+  {
+   "fieldname": "social_links",
+   "fieldtype": "Table",
+   "label": "Social Links",
+   "options": "Website Social Link"
+  },
+  {
+   "description": "Hero banner shown at the top of the public Home page.",
+   "fieldname": "homepage_section",
+   "fieldtype": "Section Break",
+   "label": "Home Page Hero"
+  },
+  {
+   "description": "Main hero headline. Leave blank to fall back to the site name.",
+   "fieldname": "hero_headline",
+   "fieldtype": "Data",
+   "label": "Hero Headline"
+  },
+  {
+   "fieldname": "hero_subtext",
+   "fieldtype": "Small Text",
+   "label": "Hero Subtext"
+  },
+  {
+   "description": "Large background/hero image for the Home page.",
+   "fieldname": "hero_image",
+   "fieldtype": "Attach Image",
+   "label": "Hero Image"
+  },
+  {
+   "fieldname": "column_break_hero",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Apply Now",
+   "description": "Text for the hero call-to-action button. Leave the link blank to hide the button.",
+   "fieldname": "hero_cta_label",
+   "fieldtype": "Data",
+   "label": "Hero Button Label"
+  },
+  {
+   "description": "Where the hero button links (e.g. /program, or a direct application URL). Leave blank to hide the button.",
+   "fieldname": "hero_cta_link",
+   "fieldtype": "Data",
+   "label": "Hero Button Link"
+  },
+  {
+   "fieldname": "labels_section",
+   "fieldtype": "Section Break",
+   "label": "Display Options"
+  },
+  {
+   "description": "Optional. Overrides the auto singular/plural label for the programs catalogue (\"Our Program\" vs \"Our Programs\"). Leave blank to let the site pick based on how many programs are published.",
+   "fieldname": "programs_label_override",
+   "fieldtype": "Data",
+   "label": "Programs Menu Label Override"
+  },
+  {
+   "default": "0",
+   "description": "Show each team member's salutation (Dr, Prof, Rev, ...) before their name on the public \"Our Team\" roster.",
+   "fieldname": "show_team_salutations",
+   "fieldtype": "Check",
+   "label": "Show Salutations on Team Roster"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-19 18:30:00.000000",
+ "module": "Seminary",
+ "name": "Website Branding",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Website Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -15,6 +15,7 @@
   "column_break_head",
   "instructor",
   "is_active",
+  "web_order",
   "capabilities_section",
   "capabilities"
  ],
@@ -67,6 +68,13 @@
    "label": "Is Active"
   },
   {
+   "default": "0",
+   "description": "Order of this person on the public website roster for this unit (lowest first, e.g. 1 = President, 2 = Vice-President). 0 = unordered: falls back to chair-first, then alphabetical.",
+   "fieldname": "web_order",
+   "fieldtype": "Int",
+   "label": "Web Order"
+  },
+  {
    "fieldname": "capabilities_section",
    "fieldtype": "Section Break",
    "label": "Capabilities"
@@ -80,7 +88,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-18 00:00:00",
+ "modified": "2026-06-19 19:00:00",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Academic Unit Membership",

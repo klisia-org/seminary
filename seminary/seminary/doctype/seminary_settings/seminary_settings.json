@@ -757,9 +757,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Deprecated (ADR 061): the public website logo now lives on Website Branding. Kept for migration; set the logo there instead.",
    "fieldname": "website_logo",
    "fieldtype": "Attach Image",
-   "label": "Website logo"
+   "hidden": 1,
+   "label": "Website logo (deprecated)",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_zlxm",

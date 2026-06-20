@@ -1,0 +1,12 @@
+{#-
+	Seminary override of Frappe's navbar include (ADR 061).
+
+	Web Forms (frappe/website/doctype/web_form/templates/web_form.html) hardcode
+	`{% include "templates/includes/navbar/navbar.html" %}` instead of honoring
+	Website Settings `navbar_template`, so they'd otherwise show the default
+	Frappe navbar. Frappe's jinja loader searches installed apps reversed (this
+	app before frappe), so this file shadows frappe's. Renders the same shared
+	partial the Seminary Navbar Web Template uses. base.html pages are unaffected
+	(they use web_block(navbar_template), not this include).
+-#}
+{% include "templates/includes/seminary_chrome/navbar.html" %}
