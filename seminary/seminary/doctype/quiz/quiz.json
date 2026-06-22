@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_bulk_edit": 1,
  "allow_import": 1,
  "autoname": "format:{title}-{###}",
  "creation": "2025-03-19 12:16:53.160358",
@@ -11,6 +12,7 @@
  "field_order": [
   "title",
   "course",
+  "standalone",
   "questions",
   "quiz_configuration_section",
   "passing_percentage",
@@ -130,14 +132,22 @@
    "fieldname": "qbyquestion",
    "fieldtype": "Check",
    "label": "Question by Question"
+  },
+  {
+   "default": "0",
+   "fieldname": "standalone",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Standalone",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2025-03-26 15:53:13.555294",
- "modified_by": "Administrator",
+ "modified": "2026-06-23 03:08:06.272063",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Quiz",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

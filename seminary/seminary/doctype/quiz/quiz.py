@@ -92,9 +92,14 @@ def set_total_points(questions):
 
 
 @frappe.whitelist()
-def quiz_summary(quiz, course, time_taken, results):
-    print("Time Taken", time_taken)
-    print("Results", results)
+def quiz_summary(
+    quiz,
+    course=None,
+    time_taken=None,
+    results=None,
+    document_distribution=None,
+    document_distribution_registry=None,
+):
     score = 0
     results = results and json.loads(results)
     percentage = 0
@@ -102,7 +107,7 @@ def quiz_summary(quiz, course, time_taken, results):
     quiz_details = frappe.db.get_value(
         "Quiz",
         quiz,
-        ["total_points", "passing_percentage"],
+        ["total_points", "passing_percentage", "standalone"],
         as_dict=1,
     )
 
@@ -198,20 +203,25 @@ def quiz_summary(quiz, course, time_taken, results):
 
     submission = frappe.new_doc("Quiz Submission")
     # Score and percentage are calculated by the controller function
-    submission.update(
-        {
-            "doctype": "Quiz Submission",
-            "quiz": quiz,
-            "course": course,
-            "result": results,
-            "time_taken": time_taken,
-            "score": 0,
-            "score_out_of": score_out_of,
-            "member": frappe.session.user,
-            "percentage": 0,
-            "passing_percentage": quiz_details.passing_percentage,
-        }
-    )
+    data = {
+        "quiz": quiz,
+        "result": results,
+        "time_taken": time_taken,
+        "score": 0,
+        "score_out_of": score_out_of,
+        "member": frappe.session.user,
+        "percentage": 0,
+        "passing_percentage": quiz_details.passing_percentage,
+        "standalone": quiz_details.standalone,
+    }
+    if course:
+        data["course"] = course
+    # Standalone context (e.g. Aretenic document training); fields are custom-added by the consumer.
+    if document_distribution:
+        data["document_distribution"] = document_distribution
+    if document_distribution_registry:
+        data["document_distribution_registry"] = document_distribution_registry
+    submission.update(data)
     submission.save(ignore_permissions=True)
     print("Submission ", submission.name, " saved at ", submission.creation)
 

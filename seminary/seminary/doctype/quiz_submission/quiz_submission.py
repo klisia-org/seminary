@@ -12,23 +12,53 @@ class QuizSubmission(Document):
     def validate(self):
         from seminary.seminary.utils import backfill_submission_course_if_missing
 
-        backfill_submission_course_if_missing(self)
+        # A standalone quiz is taken for some other record (e.g. Aretenic document training) rather
+        # than a Course Schedule; skip the LMS course wiring for it. See decisions/026.
+        self.standalone = frappe.db.get_value("Quiz", self.quiz, "standalone") or 0
+        if not self.standalone:
+            backfill_submission_course_if_missing(self)
         self.validate_if_max_attempts_exceeded()
         self.validate_points()
         self.set_percentage()
         self.populate()
+        self.validate_context()
+
+    def validate_context(self):
+        # mandatory_depends_on is client-side only in this Frappe version, so enforce the per-path
+        # required fields here (server-authoritative). See decisions/026.
+        if self.standalone:
+            if not self.get("document_distribution_registry"):
+                frappe.throw(
+                    _(
+                        "A standalone quiz submission requires a context (Document Distribution Registry)."
+                    ),
+                    frappe.MandatoryError,
+                )
+        else:
+            missing = [f for f in ("course", "course_assess") if not self.get(f)]
+            if missing:
+                frappe.throw(
+                    _("Missing mandatory fields: {0}").format(", ".join(missing)),
+                    frappe.MandatoryError,
+                )
 
     def on_update(self):
         self.notify_member()
 
     def validate_if_max_attempts_exceeded(self):
         max_attempts = frappe.db.get_value("Quiz", self.quiz, ["max_attempts"])
-        if max_attempts == 0:
+        if not max_attempts:
             return
 
-        current_user_submission_count = frappe.db.count(
-            self.doctype, filters={"quiz": self.quiz, "member": frappe.session.user}
-        )
+        filters = {"quiz": self.quiz, "member": frappe.session.user}
+        # Standalone attempts are scoped to their context so the same quiz taken for two records
+        # isn't mutually blocking.
+        if self.standalone and self.get("document_distribution_registry"):
+            filters["document_distribution_registry"] = (
+                self.document_distribution_registry
+            )
+
+        current_user_submission_count = frappe.db.count(self.doctype, filters=filters)
         if current_user_submission_count >= max_attempts:
             frappe.throw(
                 _(
@@ -55,8 +85,10 @@ class QuizSubmission(Document):
             self.percentage = (self.score / self.score_out_of) * 100
 
     def populate(self):
-        self.student = frappe.db.get_value("Student", {"user": self.member})
         self.submission_date = frappe.utils.now_datetime()
+        if self.standalone:
+            return  # no Course Schedule / gradebook wiring for standalone quizzes
+        self.student = frappe.db.get_value("Student", {"user": self.member})
         self.course_assess = frappe.db.get_value(
             "Scheduled Course Assess Criteria",
             {"quiz": self.quiz, "parent": self.course},
