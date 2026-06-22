@@ -176,19 +176,16 @@ def quiz_summary(
             r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, result["answer"]
         )
 
-    # avoid duplication of quiz submission
-    existing_submission = frappe.get_value(
-        "Quiz Submission",
-        {
-            "quiz": quiz,
-            "owner": frappe.session.user,
-            "creation": [
-                ">=",
-                frappe.utils.add_to_date(frappe.utils.now(), seconds=-5),
-            ],
-        },
-        "name",  # Fetch the name of the existing submission
-    )
+    # avoid duplication of quiz submission (scope by context so the same quiz taken for two
+    # different records isn't deduped together)
+    dedup_filter = {
+        "quiz": quiz,
+        "owner": frappe.session.user,
+        "creation": [">=", frappe.utils.add_to_date(frappe.utils.now(), seconds=-5)],
+    }
+    if document_distribution_registry:
+        dedup_filter["document_distribution_registry"] = document_distribution_registry
+    existing_submission = frappe.get_value("Quiz Submission", dedup_filter, "name")
     if existing_submission:
         print("Submission already exists, skipping")
         # Fetch the existing submission details
