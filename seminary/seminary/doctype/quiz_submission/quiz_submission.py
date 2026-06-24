@@ -24,23 +24,23 @@ class QuizSubmission(Document):
         self.validate_context()
 
     def validate_context(self):
-        # mandatory_depends_on is client-side only in this Frappe version, so enforce the per-path
-        # required fields here (server-authoritative). See decisions/026.
+        # mandatory_depends_on is client-side only in this Frappe version, so enforce the
+        # course requirement here too (server-authoritative). See decisions/026.
+        #
+        # A standalone quiz is not bound to a Course Schedule. Its context (e.g. aretenic's
+        # Document Distribution Registry) is owned and validated by the consuming app via its
+        # own doc_events hook, so seminary stays independent and installable without aretenic.
         if self.standalone:
-            if not self.get("document_distribution_registry"):
-                frappe.throw(
-                    _(
-                        "A standalone quiz submission requires a context (Document Distribution Registry)."
-                    ),
-                    frappe.MandatoryError,
-                )
-        else:
-            missing = [f for f in ("course", "course_assess") if not self.get(f)]
-            if missing:
-                frappe.throw(
-                    _("Missing mandatory fields: {0}").format(", ".join(missing)),
-                    frappe.MandatoryError,
-                )
+            return
+
+        # course is seminary's non-standalone context. course_assess is NOT required: it's
+        # derived in populate() from the SCAC linking this quiz to the course, and legitimately
+        # stays empty when no such SCAC exists. Requiring it regressed normal submissions.
+        if not self.get("course"):
+            frappe.throw(
+                _("Missing mandatory fields: {0}").format("course"),
+                frappe.MandatoryError,
+            )
 
     def on_update(self):
         self.notify_member()
@@ -50,14 +50,10 @@ class QuizSubmission(Document):
         if not max_attempts:
             return
 
+        # Seminary counts attempts per quiz + member. A consuming app that reuses one standalone
+        # quiz across many records (e.g. aretenic, scoped per Document Distribution Registry)
+        # owns its own per-context attempt limiting so seminary stays independent of it.
         filters = {"quiz": self.quiz, "member": frappe.session.user}
-        # Standalone attempts are scoped to their context so the same quiz taken for two records
-        # isn't mutually blocking.
-        if self.standalone and self.get("document_distribution_registry"):
-            filters["document_distribution_registry"] = (
-                self.document_distribution_registry
-            )
-
         current_user_submission_count = frappe.db.count(self.doctype, filters=filters)
         if current_user_submission_count >= max_attempts:
             frappe.throw(

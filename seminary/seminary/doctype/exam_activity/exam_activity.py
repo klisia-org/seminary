@@ -154,7 +154,7 @@ def exam_summary(exam, course, time_taken, results):
         "score": score,
         "score_out_of": score_out_of,
         "submission": submission.name,
-        "pass": percentage == exam_details.passing_percentage,
+        "pass": percentage >= exam_details.passing_percentage,
         "percentage": percentage,
     }
 

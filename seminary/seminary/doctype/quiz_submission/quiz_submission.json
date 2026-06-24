@@ -167,7 +167,6 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Assessment",
-   "mandatory_depends_on": "eval:!doc.standalone",
    "options": "Scheduled Course Assess Criteria",
    "reqd": 0
   },

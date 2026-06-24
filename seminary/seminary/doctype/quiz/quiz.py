@@ -158,6 +158,21 @@ def quiz_summary(
             result["points"] = points
             score += points
 
+        elif question_details.type == "Choices":
+            # Grade authoritatively from the selected-vs-correct sets; never trust the
+            # client-submitted per-option list. The frontend sends `selected` (the list of
+            # chosen option texts); fall back to splitting the joined `answer` for older payloads.
+            selected = result.get("selected")
+            if selected is None:
+                selected = [
+                    a for a in cstr(result.get("answer")).split(",") if a.strip()
+                ]
+            correct = choice_is_correct(result["question_name"], selected)
+            result["is_correct"] = correct
+            points = question_details.points if correct else 0
+            result["points"] = points
+            score += points
+
         elif question_details.type != "Open Ended":
             correct = result["is_correct"][0]
             for point in result["is_correct"]:
@@ -230,7 +245,7 @@ def quiz_summary(
         "score": round(score, 2),
         "score_out_of": score_out_of,
         "submission": submission.name,
-        "pass": percentage == quiz_details.passing_percentage,
+        "pass": percentage >= quiz_details.passing_percentage,
         "percentage": percentage,
     }
 
@@ -467,6 +482,28 @@ def check_reading_report(question, answer):
     pages_total = cint(frappe.db.get_value("Question", question, "pages_total"))
     pages_read = min(max(cint(answer), 0), pages_total)
     return 1 if pages_total and pages_read >= pages_total else 0
+
+
+def choice_is_correct(question, selected):
+    """Authoritative scalar verdict for a Choices question: correct iff the set of selected
+    option texts exactly equals the set of correct option texts. Ignores empty option slots,
+    so questions with fewer than four filled options grade correctly (issue #182), and a missed
+    correct option fails the question (set inequality). Returns 1 or 0.
+
+    Use this for scoring. `check_choice_answers` returns the per-option list for result display.
+    """
+    fields = []
+    for num in range(1, 5):
+        fields += [f"option_{num}", f"is_correct_{num}"]
+    q = frappe.db.get_value("Question", question, fields, as_dict=1) or frappe._dict()
+
+    correct = {
+        q.get(f"option_{num}")
+        for num in range(1, 5)
+        if q.get(f"option_{num}") and q.get(f"is_correct_{num}")
+    }
+    chosen = {s for s in (selected or []) if s}
+    return 1 if correct and chosen == correct else 0
 
 
 def check_choice_answers(question, answers):
