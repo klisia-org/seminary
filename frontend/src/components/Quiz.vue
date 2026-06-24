@@ -760,6 +760,9 @@ const addToLocalStorage = () => {
 	let questionData = {
 		question_name: currentQuestion.value,
 		answer: getAnswers().join(),
+		// Full selected-option list so the server can grade choices authoritatively
+		// (set comparison) rather than re-folding the per-option list. See quiz.py quiz_summary.
+		selected: getAnswers(),
 		is_correct: showAnswers.filter((answer) => {
 			return answer != undefined
 		}),
@@ -821,15 +824,17 @@ const submitQuizComplete = async () => {
 	// Iterate through all questions and collect answers
 	for (let i = 0; i < all_questions_details.data.length; i++) {
 		const question = all_questions_details.data[i];
-		const answer = answers[i]?.[0] || ""; // Get the first recorded answer or an empty string
+		const selected = answers[i] || []; // All recorded selections for this question
+		const isChoices = question.type === 'Choices';
+		// Choices can be multi-select; other types carry a single value.
+		const answer = isChoices ? selected.join(', ') : (selected[0] || "");
 
-
-
-		// Call the backend to validate the answer
+		// Call the backend to validate the answer. For Choices, send the FULL selected
+		// set so per-option feedback and server grading see every selection.
 		const response = await call('seminary.seminary.doctype.quiz.quiz.check_answer', {
 			question: question.question, // Pass the unique question identifier
 			type: question.type,
-			answers: JSON.stringify([answer]), // Send the answer as an array
+			answers: JSON.stringify(isChoices ? selected : [selected[0] || ""]),
 		});
 
 		// Extract only the relevant value for `is_correct`
@@ -837,8 +842,9 @@ const submitQuizComplete = async () => {
 
 		results.push({
 			question_name: question.question, // Use the unique question identifier
-			answer: answer, // Use the single answer string
-			is_correct: is_correct, // Ensure this contains only the relevant value
+			answer: answer, // Display string (joined for multi-select choices)
+			selected: selected, // Full selected list; server grades choices from this set
+			is_correct: is_correct, // Server recomputes the choice verdict authoritatively
 		});
 
 		// Add detailed question data (correct_answer will be fetched later)

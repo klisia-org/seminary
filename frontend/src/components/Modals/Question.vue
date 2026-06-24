@@ -70,13 +70,17 @@
 								:required="n <= 2 ? true : false"
 							/>
 							<FormControl
-								:label="__('Explanation')"
-								v-model="question[`explanation_${n}`]"
-							/>
-							<FormControl
 								:label="__('Correct Answer')"
 								v-model="question[`is_correct_${n}`]"
 								type="checkbox"
+							/>
+							<!-- Only correct options' explanations are shown to students,
+							     so the field appears only once an option is marked correct. -->
+							<FormControl
+								v-if="question[`is_correct_${n}`]"
+								:label="__('Explanation')"
+								v-model="question[`explanation_${n}`]"
+								:description="__('Shown to students when reviewing this correct answer.')"
 							/>
 						</div>
 					</div>
