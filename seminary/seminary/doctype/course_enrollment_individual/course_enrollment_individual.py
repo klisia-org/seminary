@@ -7,8 +7,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils.csvutils import getlink
 
-from seminary.seminary.billing import build_and_create_invoice as create_payer_invoice
-
 # Roles allowed to bypass the prerequisite gate via the no_prereq flag.
 _PREREQ_OVERRIDE_ROLES = {
     "Registrar",
@@ -299,109 +297,14 @@ class CourseEnrollmentIndividual(Document):
 
     @frappe.whitelist()
     def get_inv_data_ce(self):
-        audithours = frappe.db.get_single_value("Seminary Settings", "auditcredit")
-        is_audit = self.audit
-        stulink = self.student_ce
-        # Only the student's own payer line carries a scholarship; resolve it at
-        # invoice time and book the forgiveness to a separate invoice.
-        student_customer = (
-            frappe.db.get_value("Student", stulink, "customer") or stulink
-        )
-        academic_term = self.academic_term or frappe.db.get_value(
-            "Course Schedule", self.coursesc_ce, "academic_term"
-        )
-        inv_data = []
-        inv_data = frappe.db.sql(
-            """select cei.student_ce, cei.audit, cei.credits, cei.program_data,  pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate
-		from `tabCourse Enrollment Individual` cei,  `tabFee Category` fc, `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabCustomer Group` cg, `tabItem Price` ip
-		where cei.name = %s and
-		cei.program_ce = pfc.pf_pe and
-		pep.parent = pfc.name and
-		pep.fee_category = fc.category_name and
-		pep.fee_category = fc.name and
-		cg.default_price_list = ip.price_list and
-		ip.item_code = fc.item and
-		pfc.pf_custgroup = cg.customer_group_name and
-		cei.cei_si =0 and
-		fc.is_audit = %s and
-		pep.pep_event = 'Course Enrollment'""",
-            (self.name, is_audit),
-            as_list=1,
-        )
-        rows = frappe.db.sql(
-            """select count(pep.payer)
-		from `tabCourse Enrollment Individual` cei,  `tabFee Category` fc, `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabCustomer Group` cg, `tabItem Price` ip
-		where cei.name = %s and
-		cei.program_ce = pfc.pf_pe and
-		pep.parent = pfc.name and
-		pep.fee_category = fc.category_name and
-		pep.fee_category = fc.name and
-		cg.default_price_list = ip.price_list and
-		ip.item_code = fc.item and
-		pfc.pf_custgroup = cg.customer_group_name and
-		cei.cei_si =0 and
-		fc.is_audit = %s and
-		pep.pep_event = 'Course Enrollment'""",
-            (self.name, is_audit),
-        )[0][0]
+        """Raise this enrollment's Sales Invoices via the financial backend.
 
-        audit_suffix = _(" (Audit)") if is_audit == 1 else ""
-        summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
+        The billing engine (payer resolution, scholarship math, invoice
+        construction) lives in the oikonomos bridge; seminary keeps only this
+        whitelisted entry point so the desk form button and the lifecycle still
+        call it by name. With no backend installed this is a no-op and the
+        enrollment proceeds as free.
+        """
+        from seminary.seminary.financial.backend import get_financial_backend
 
-        from seminary.seminary.billing import (
-            create_scholarship_invoice,
-            resolve_scholarship,
-        )
-
-        i = 0
-        while i < rows:
-            row = inv_data[i]
-            if row[11] == 1:
-                qty = row[2] * row[7] / 100
-            elif is_audit == 1 and audithours == 1:
-                qty = row[2] * row[7] / 100
-            else:
-                qty = row[7] / 100
-
-            fee_category = row[4]
-            price_list_rate = row[14]
-            forgiven, award = 0, None
-            if row[5] == student_customer:
-                student_gross = round(qty * (price_list_rate or 0), 2)
-                forgiven, award = resolve_scholarship(
-                    program_enrollment=self.program_ce,
-                    fee_category=fee_category,
-                    student_gross=student_gross,
-                    academic_term=academic_term,
-                )
-
-            create_payer_invoice(
-                customer=row[5],
-                item_code=row[12],
-                qty=qty,
-                price_list_rate=price_list_rate,
-                selling_price_list=row[13],
-                payment_terms_template=row[8],
-                summary=summary,
-                student=stulink,
-                link_field="custom_cei",
-                link_value=self.name,
-                discount_amount=(forgiven if (forgiven and award) else 0),
-            )
-
-            if forgiven and award:
-                create_scholarship_invoice(
-                    award=award,
-                    fee_category=fee_category,
-                    academic_term=academic_term,
-                    scope=self.name,
-                    forgiven=forgiven,
-                    item_code=row[12],
-                    selling_price_list=row[13],
-                    payment_terms_template=row[8],
-                    summary=summary,
-                    student=stulink,
-                    link_field="custom_cei",
-                    link_value=self.name,
-                )
-            i += 1
+        return get_financial_backend().generate_enrollment_invoice(self)
