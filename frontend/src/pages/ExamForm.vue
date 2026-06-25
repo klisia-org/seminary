@@ -2,6 +2,9 @@
 	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
 		<Breadcrumbs :items="breadcrumbs" />
 		<div class="space-x-2">
+			<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
+				{{ __('Back to lesson') }}
+			</Button>
 			<!-- <router-link
 				v-if="examDetails.data?.name"
 				:to="{
@@ -156,7 +159,11 @@ import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import { examStore } from '@/stores/exam'
+import { useActivityReturn } from '@/composables/useActivityReturn'
 
+const { showBackToLesson, backToLesson } = useActivityReturn(
+	() => examDetails.data?.name
+)
 
 const showOpenQuestionModal = ref(false)
 const currentQuestion = reactive({

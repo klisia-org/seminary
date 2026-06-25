@@ -1101,6 +1101,7 @@ def get_lesson_details(chapter, progress=False):
         lesson_details.assessments_submitted = _lesson_assessments_submitted(
             lesson_details
         )
+        lesson_details.has_graded_activity = _lesson_has_graded_activity(lesson_details)
 
         if progress:
             lesson_details.is_complete = get_progress(
@@ -1725,6 +1726,27 @@ def _lesson_activities_by_type(content_json):
                 if activity:
                     activities.setdefault(scac_type, set()).add(activity)
     return activities
+
+
+def _lesson_has_graded_activity(lesson_row):
+    """True iff the lesson embeds at least one activity that is actually graded
+    on its course, i.e. referenced by a Scheduled Course Assess Criteria on the
+    Course Schedule (same notion as the Gradeable* API checks). Practice
+    quizzes and ungraded discussions are embedded activities but return False."""
+    course_sc = lesson_row.get("course_sc")
+    if not course_sc or not lesson_row.get("content"):
+        return False
+    activities_by_type = _lesson_activities_by_type(lesson_row.content)
+    for scac_type, activities in activities_by_type.items():
+        # SCAC stores the activity link in a field named after its type:
+        # Quiz->quiz, Exam->exam, Assignment->assignment, Discussion->discussion.
+        field = scac_type.lower()
+        if frappe.db.exists(
+            "Scheduled Course Assess Criteria",
+            {"parent": course_sc, field: ["in", list(activities)]},
+        ):
+            return True
+    return False
 
 
 def _lesson_assessments_submitted(lesson_row, member=None):

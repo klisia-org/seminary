@@ -8,7 +8,17 @@
 
 html,
 body {
+	height: 100%;
 	background-color: var(--surface-white);
+}
+
+/* The app shell (DesktopLayout/MobileLayout) is exactly viewport height and
+   owns its own scroller (#scrollContainer). Pin #app to the viewport and clip
+   any stray in-flow elements rendered as siblings of the layout (e.g. the
+   global Tiptap editor) so the window itself never grows a second scrollbar. */
+#app {
+	height: 100%;
+	overflow: hidden;
 }
 
 #scrollContainer > header.sticky {

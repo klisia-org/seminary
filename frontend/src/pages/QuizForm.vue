@@ -4,6 +4,9 @@
 	>
 		<Breadcrumbs :items="breadcrumbs" />
 		<div class="space-x-2">
+			<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
+				{{ __('Back to lesson') }}
+			</Button>
 			<router-link
 				v-if="quizDetails.data?.name"
 				:to="{
@@ -226,6 +229,11 @@ import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import { examStore } from '@/stores/exam'
+import { useActivityReturn } from '@/composables/useActivityReturn'
+
+const { showBackToLesson, backToLesson } = useActivityReturn(
+	() => quizDetails.data?.name
+)
 
 const showQuestionModal = ref(false)
 const currentQuestion = reactive({
