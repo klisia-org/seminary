@@ -239,7 +239,6 @@ notification_config = "seminary.notifications.get_notification_config"
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
     "Partner Organization": "seminary.partner.permissions.org_query",
@@ -259,7 +258,6 @@ permission_query_conditions = {
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
     "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
@@ -350,22 +348,21 @@ doc_events = {
     "Scheduled Course Roster": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
     },
-    "Student": {
-        "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
-    },
+    # Student Balance creation + Sales Invoice balance tracking are owned by the
+    # oikonomos bridge (Student.after_insert + Sales Invoice events there). The
+    # Sales Invoice / Payment Entry hooks below are payment-reactive academic
+    # advancement; they reference ERPNext doctypes and simply never fire on a
+    # Frappe-only install.
     "Sales Invoice": {
         "on_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
             "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
             "seminary.seminary.graduation_request_lifecycle.on_si_submit",
         ],
         "on_update_after_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
             "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
             "seminary.seminary.graduation_request_lifecycle.on_si_update_after_submit",
         ],
         "on_cancel": [
-            "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
             "seminary.seminary.cei_lifecycle.maybe_notify_registrar_on_invoice_cancel",
         ],
     },
