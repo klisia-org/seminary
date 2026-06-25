@@ -506,21 +506,26 @@ def seed_faculty_capabilities():
     """
     if not frappe.db.exists("DocType", "Faculty Capability"):
         return
-    # (capability_name, routes_to, tracks_capacity, description). Capacity-aware
-    # routes (advising/examining/verifying) feed claim_capability's round-robin;
-    # Course Instructor (CS-driven) / Mentor (free link) / Board carry no cap.
+    # (capability_name, routes_to, tracks_capacity, requires_instructor, description).
+    # Capacity-aware routes (advising/examining/verifying) feed claim_capability's
+    # round-robin; Course Instructor (CS-driven) / Mentor (free link) / Board carry no
+    # cap. requires_instructor is 0 only for organizational capacities a plain Person
+    # may hold (Board/Committee, training oversight); academic routes need a faculty
+    # record (ADR 062).
     defaults = [
-        ("Course Instructor", "Course Instructor", 0, _("Teaches course sections.")),
+        ("Course Instructor", "Course Instructor", 0, 1, _("Teaches course sections.")),
         (
             "Thesis/CP Advisor",
             "Thesis/CP Advisor",
             1,
+            1,
             _("Advises culminating projects."),
         ),
-        ("Internship Advisor", "Internship Advisor", 1, _("Oversees internships.")),
+        ("Internship Advisor", "Internship Advisor", 1, 1, _("Oversees internships.")),
         (
             "Placement Examiner",
             "Placement Examiner",
+            1,
             1,
             _("Grades placement assessments."),
         ),
@@ -528,17 +533,34 @@ def seed_faculty_capabilities():
             "Manual-Verification Verifier",
             "Manual-Verification Verifier",
             1,
+            1,
             _("Verifies manual graduation requirements."),
         ),
-        ("Mentor", "Mentor", 0, _("Mentors student groups.")),
+        ("Mentor", "Mentor", 0, 1, _("Mentors student groups.")),
         (
             "Committee/Board Member",
             "Committee/Board Member",
             0,
+            0,
             _("Serves on a board or committee (no instructor record required)."),
         ),
+        (
+            "Unit Training Overseer",
+            "Oversees Unit Training",
+            0,
+            0,
+            _(
+                "Oversees the training of a unit's members (no instructor record required)."
+            ),
+        ),
     ]
-    for capability_name, routes_to, tracks_capacity, description in defaults:
+    for (
+        capability_name,
+        routes_to,
+        tracks_capacity,
+        requires_instructor,
+        description,
+    ) in defaults:
         if frappe.db.exists("Faculty Capability", capability_name):
             continue
         frappe.get_doc(
@@ -547,6 +569,7 @@ def seed_faculty_capabilities():
                 "capability_name": capability_name,
                 "routes_to": routes_to,
                 "tracks_capacity": tracks_capacity,
+                "requires_instructor": requires_instructor,
                 "is_active": 1,
                 "description": description,
             }

@@ -43,11 +43,12 @@ configurePortals({
 		logoUrl: '/assets/seminary/images/klisia_icon.png',
 	},
 	portals: [
-		{ id: 'student', label: 'Courses', url: '/seminary', roles: ['Student', 'Academics User', 'Instructor'] },
+		{ id: 'student', label: 'Academics', description: 'Academic Portal', url: '/seminary', roles: ['Student', 'Academics User', 'Instructor'] },
+		{ id: 'aretenic', label: 'Aretenic', description: 'Quality Management', url: '/aretenic', roles: ['Academics User', 'Instructor'] },
 		{ id: 'examiner', label: 'Project Reviews', url: '/seminary/culminating-project', roles: ['External Examiner'] },
-		{ id: 'alumni', label: 'Alumni', url: '/seminary/alumni', roles: ['Alumni'] },
-		{ id: 'partner', label: 'Partner', url: '/seminary/partner', roles: ['Partner'] },
-		{ id: 'donor', label: 'Donate', url: '/donate/donorportal' },
+		{ id: 'alumni', label: 'Alumni', description: 'Alumni Portal',url: '/seminary/alumni', roles: ['Alumni'] },
+		{ id: 'partner', label: 'Partner', description: 'Jobs and Internship Management',url: '/seminary/partner', roles: ['Partner'] },
+		{ id: 'donor', label: 'Donate', description: 'Donor Portal', url: '/donate/donorportal' },
 	],
 	sessionFetcher: async () => {
 		await userResource.promise

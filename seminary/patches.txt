@@ -47,3 +47,4 @@ seminary.seminary.patches.set_faculty_capability_capacity_flag
 seminary.seminary.patches.migrate_internship_advisor_slots_to_capabilities
 seminary.seminary.patches.backfill_cp_reader_type
 seminary.seminary.patches.move_website_logo_to_branding
+seminary.seminary.patches.set_faculty_capability_requires_instructor

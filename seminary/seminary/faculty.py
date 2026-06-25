@@ -1,11 +1,17 @@
 # Copyright (c) 2026, Frappe Technologies and contributors
 # For license information, please see license.txt
-"""Generic faculty capability routing (ADR 059).
+"""Generic unit capability routing (ADR 059; person-keyed in ADR 062).
 
 One capacity-aware claim/release that replaces the per-subsystem advisor pools.
 It reads ``Academic Unit Membership`` rows (and their ``Academic Unit Capability``
 children) wired to a given capability ``route`` (a ``Faculty Capability.routes_to``
 machine key), generalizing the internship ``claim_advisor_slot`` round-robin.
+
+The core resolver is keyed on ``m.person`` (always present); ``m.instructor`` is
+optional metadata. Academic capabilities (``requires_instructor=1``) route through the
+instructor-bearing subset (``_instructor_rows``) and behave exactly as before;
+organizational capacities (``requires_instructor=0``, e.g. "Oversees Unit Training")
+resolve by Person and may be held by non-instructor staff.
 
 For an Academic Interdepartment the eligible faculty are resolved **transitively**
 from its member units at query time — never copied in.
@@ -55,21 +61,22 @@ def _remaining(row) -> float:
 
 
 def _capability_rows(unit: str, route: str):
-    """Active, instructor-bearing capability rows in ``unit`` (resolved
-    transitively) wired to ``route``."""
+    """Active capability rows in ``unit`` (resolved transitively) wired to ``route``,
+    keyed on Person. ``instructor`` may be null for organizational capacities that a
+    plain Person holds (ADR 062). Academic routing filters to the instructor-bearing
+    subset via ``_instructor_rows``."""
     units = _resolve_units(unit)
     if not units:
         return []
     return frappe.db.sql(
         """
-        SELECT m.name AS membership, m.instructor AS instructor, m.unit AS unit,
-               c.name AS cap_row, c.max_students, c.current_students
+        SELECT m.name AS membership, m.person AS person, m.instructor AS instructor,
+               m.unit AS unit, c.name AS cap_row, c.max_students, c.current_students
         FROM `tabAcademic Unit Membership` m
         JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
         JOIN `tabFaculty Capability` fc ON fc.name = c.capability
         WHERE m.unit IN %(units)s
           AND m.is_active = 1
-          AND m.instructor IS NOT NULL AND m.instructor != ''
           AND fc.routes_to = %(route)s
           AND fc.is_active = 1
         """,
@@ -78,12 +85,19 @@ def _capability_rows(unit: str, route: str):
     )
 
 
+def _instructor_rows(unit: str, route: str):
+    """``_capability_rows`` filtered to instructor-bearing memberships — the basis for
+    every instructor-keyed (academic) routing helper. Behaviour matches the pre-ADR-062
+    instructor-only core."""
+    return [r for r in _capability_rows(unit, route) if r.instructor]
+
+
 def eligible_instructors(unit: str, route: str) -> list[dict]:
     """Instructors in ``unit`` (transitive for an interdepartment) wired to
     ``route`` and with remaining capacity, most-available first. One entry per
     instructor (their best-remaining capability row)."""
     best: dict[str, frappe._dict] = {}
-    for row in _capability_rows(unit, route):
+    for row in _instructor_rows(unit, route):
         if _remaining(row) <= 0:
             continue
         current = best.get(row.instructor)
@@ -105,7 +119,7 @@ def claim_capability(unit: str, route: str) -> str | None:
     """Pick the instructor with the most remaining capacity for ``route``,
     increment their counter, and return the instructor — or None when no one is
     eligible. Caller decides whether to auto-assign (manual entry wins)."""
-    candidates = [r for r in _capability_rows(unit, route) if _remaining(r) > 0]
+    candidates = [r for r in _instructor_rows(unit, route) if _remaining(r) > 0]
     if not candidates:
         return None
     chosen = max(candidates, key=_remaining)
@@ -126,7 +140,7 @@ def claim_for(unit: str, route: str, instructor: str) -> bool:
     untracked)."""
     if not (unit and instructor):
         return False
-    for row in _capability_rows(unit, route):
+    for row in _instructor_rows(unit, route):
         if row.instructor == instructor:
             frappe.db.set_value(
                 "Academic Unit Capability",
@@ -249,7 +263,7 @@ def release_capability(unit: str, instructor: str, route: str) -> None:
     is withdrawn or changed."""
     if not (unit and instructor):
         return
-    for row in _capability_rows(unit, route):
+    for row in _instructor_rows(unit, route):
         if row.instructor == instructor and (row.current_students or 0) > 0:
             frappe.db.set_value(
                 "Academic Unit Capability",
@@ -280,7 +294,86 @@ def has_full_access(user: str | None = None) -> bool:
 def wired_instructors(unit: str, route: str) -> set:
     """Every instructor wired to (unit, route), ignoring capacity (transitive for
     an interdepartment). Used for authorization and worklist routing."""
-    return {r.instructor for r in _capability_rows(unit, route)}
+    return {r.instructor for r in _instructor_rows(unit, route)}
+
+
+# ---------------------------------------------------------------------------
+# Person-keyed capability resolution (ADR 062)
+# ---------------------------------------------------------------------------
+# Organizational capacities (e.g. "Oversees Unit Training") may be held by a plain
+# Person with no Instructor record, so these resolve on m.person rather than
+# m.instructor. They are the generic spine that consuming apps (e.g. aretenic's
+# team training oversight) build on — seminary never references those apps.
+
+# routes_to machine key for the organizational training-oversight capacity.
+TRAINING_OVERSIGHT_ROUTE = "Oversees Unit Training"
+
+
+def persons_with_capacity(unit: str, route: str) -> set:
+    """Every Person wired to (unit, route), ignoring capacity and instructor status
+    (transitive for an interdepartment). The person-keyed counterpart to
+    ``wired_instructors``."""
+    return {r.person for r in _capability_rows(unit, route) if r.person}
+
+
+def units_with_capacity(person: str, route: str) -> set:
+    """The units where ``person`` holds an active capability for ``route`` — direct
+    memberships only (no interdepartment/parent expansion; callers expand as needed,
+    e.g. via ``academic_unit.descendant_units`` for org rollup)."""
+    if not person:
+        return set()
+    rows = frappe.db.sql(
+        """
+        SELECT DISTINCT m.unit
+        FROM `tabAcademic Unit Membership` m
+        JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
+        JOIN `tabFaculty Capability` fc ON fc.name = c.capability
+        WHERE m.person = %(person)s AND m.is_active = 1
+          AND fc.routes_to = %(route)s AND fc.is_active = 1
+        """,
+        {"person": person, "route": route},
+    )
+    return {r[0] for r in rows}
+
+
+def holds_unit_capacity(person: str, route: str, unit: str | None = None) -> bool:
+    """True if ``person`` holds an active capability for ``route`` — anywhere, or within
+    ``unit`` (transitive) when given. Person-keyed, so it covers non-instructor holders.
+    """
+    if not person:
+        return False
+    params = {"person": person, "route": route}
+    unit_clause = ""
+    if unit:
+        params["units"] = tuple(_resolve_units(unit))
+        unit_clause = "AND m.unit IN %(units)s"
+    return bool(
+        frappe.db.sql(
+            f"""
+            SELECT 1
+            FROM `tabAcademic Unit Membership` m
+            JOIN `tabAcademic Unit Capability` c ON c.parent = m.name
+            JOIN `tabFaculty Capability` fc ON fc.name = c.capability
+            WHERE m.person = %(person)s AND m.is_active = 1
+              AND fc.routes_to = %(route)s AND fc.is_active = 1 {unit_clause}
+            LIMIT 1
+            """,
+            params,
+        )
+    )
+
+
+def require_unit_capacity(person: str, route: str, unit: str) -> None:
+    """Raise PermissionError unless ``person`` holds ``route`` for ``unit`` — a
+    full-access role, or a member wired to the unit with that capacity."""
+    if has_full_access():
+        return
+    if person and unit and holds_unit_capacity(person, route, unit):
+        return
+    frappe.throw(
+        _("You are not authorized to perform this for this unit."),
+        frappe.PermissionError,
+    )
 
 
 def require_capability(unit: str, route: str) -> None:

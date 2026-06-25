@@ -1,0 +1,2 @@
+import{Mn as e,cr as t,fn as n,hn as r}from"./frappe-ui-D-1VJN-F.js";var i={class:`flex items-center justify-center h-[250px]`},a={class:`text-ink-gray-5`},o={__name:`MissingData`,props:{message:{type:String,default:__(`No data found`)}},setup(o){return(s,c)=>(e(),r(`div`,i,[n(`p`,a,t(o.message),1)]))}};export{o as t};
+//# sourceMappingURL=MissingData-DGlVEFZY.js.map
