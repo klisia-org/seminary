@@ -4,7 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:unit_name",
  "creation": "2026-06-18 00:00:00",
- "description": "A typed organisational unit the seminary routes academic work through — a teaching department that owns courses, a program committee that owns programs, an interdepartment that co-owns joint courses, or a board/committee. The org spine faculty, courses, and routing hang on.",
+ "description": "A typed organisational unit the seminary routes work through — a teaching department that owns courses, a program committee that owns programs, an interdepartment that co-owns joint courses, a board/committee, or an administrative office / task force. The org spine faculty, courses, routing, and oversight hang on. Units may roll up under a Parent Unit (org hierarchy), distinct from an Interdepartment's Member Units (academic co-ownership).",
  "allow_guest_to_view": 1,
  "doctype": "DocType",
  "document_type": "Setup",
@@ -16,6 +16,7 @@
   "unit_name",
   "unit_code",
   "unit_type",
+  "parent_unit",
   "column_break_head",
   "chair",
   "publish_on_web",
@@ -44,14 +45,21 @@
    "label": "Code"
   },
   {
-   "description": "What this unit owns/does. Academic Department owns courses; Program Committee owns programs; Academic Interdepartment co-owns joint courses (lists its member units below); Board / Other Committee are governance groupings.",
+   "description": "What this unit owns/does. Academic Department owns courses; Program Committee owns programs; Academic Interdepartment co-owns joint courses (lists its member units below); Board / Other Committee are governance groupings; Administrative Office / Task Force are non-academic organizational units.",
    "fieldname": "unit_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "Academic Department\nAcademic Interdepartment\nProgram Committee\nBoard\nOther Committee",
+   "options": "Academic Department\nAcademic Interdepartment\nProgram Committee\nBoard\nOther Committee\nAdministrative Office\nTask Force",
    "reqd": 1
+  },
+  {
+   "description": "Optional parent in the organizational hierarchy (e.g. a department under a school). Used for oversight roll-up; independent of an Interdepartment's Member Units (academic co-ownership). Cannot form a cycle.",
+   "fieldname": "parent_unit",
+   "fieldtype": "Link",
+   "label": "Parent Unit",
+   "options": "Academic Unit"
   },
   {
    "fieldname": "column_break_head",

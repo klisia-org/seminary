@@ -4,7 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:capability_name",
  "creation": "2026-06-18 00:00:00",
- "description": "A kind of academic work a faculty member can be wired to perform in an Academic Unit (advising, verification, examining, etc.). The routes_to machine key lets routing code filter by meaning, not by the editable display name. Add the capabilities your school uses.",
+ "description": "A kind of work a person can be wired to perform in an Academic Unit. Most route academic work and need a faculty record (advising, verification, examining, etc.); organizational capacities (e.g. overseeing unit training) need only a Person. The routes_to machine key lets routing code filter by meaning, not by the editable display name. Add the capabilities your organization uses.",
  "doctype": "DocType",
  "document_type": "Setup",
  "documentation": "https://docs.seminaryerp.org/modules/academic-units.html#faculty-capabilities",
@@ -12,6 +12,7 @@
  "field_order": [
   "capability_name",
   "routes_to",
+  "requires_instructor",
   "tracks_capacity",
   "is_active",
   "description"
@@ -32,8 +33,16 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Routes To",
-   "options": "Course Instructor\nThesis/CP Advisor\nInternship Advisor\nPlacement Examiner\nManual-Verification Verifier\nMentor\nCommittee/Board Member",
+   "options": "Course Instructor\nThesis/CP Advisor\nInternship Advisor\nPlacement Examiner\nManual-Verification Verifier\nMentor\nCommittee/Board Member\nOversees Unit Training",
    "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Academic routes need a faculty record — keep this checked. Clear it for organizational capacities (e.g. Oversees Unit Training, Committee/Board Member) that a plain Person may hold without being an Instructor.",
+   "fieldname": "requires_instructor",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Requires Instructor"
   },
   {
    "default": "0",

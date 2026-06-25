@@ -18,6 +18,10 @@ export function getPortalConfig() {
   return config
 }
 
+// Generic fallback: identifies the logged-in user. Roles come from the User doc's child table when
+// readable (admins); regular users see it empty, so apps that gate on roles MUST supply their own
+// sessionFetcher (e.g. a whitelisted current_user method). We deliberately do NOT query `Has Role`
+// directly — that 403s for non-privileged users and surfaces a PermissionError in the console.
 async function defaultSessionFetcher() {
   const userId = readCookie('user_id')
   if (!userId || userId === 'Guest') return null
@@ -30,16 +34,7 @@ async function defaultSessionFetcher() {
   const { message } = await res.json()
   if (!message) return null
 
-  const rolesRes = await fetch(
-    '/api/method/frappe.client.get_list?doctype=Has%20Role&filters=' +
-      encodeURIComponent(JSON.stringify([['parent', '=', userId]])) +
-      '&fields=' +
-      encodeURIComponent(JSON.stringify(['role'])) +
-      '&limit_page_length=0',
-    { credentials: 'same-origin' }
-  )
-  const rolesData = rolesRes.ok ? await rolesRes.json() : { message: [] }
-  const roles = (rolesData.message || []).map((r) => r.role)
+  const roles = (message.roles || []).map((r) => r.role)
 
   return {
     user: userId,

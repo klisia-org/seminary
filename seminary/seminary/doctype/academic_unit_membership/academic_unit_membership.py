@@ -5,11 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-# routes_to value that does NOT require an Instructor record — a board/committee
-# seat may be held by a plain Person. Every other capability routes academic work
-# that needs a faculty record.
-NON_FACULTY_ROUTE = "Committee/Board Member"
-
 
 class AcademicUnitMembership(Document):
     def validate(self):
@@ -48,19 +43,20 @@ class AcademicUnitMembership(Document):
             )
 
     def _validate_instructor_for_capabilities(self):
-        """Academic-routing capabilities require an Instructor record; only a
-        Committee/Board Member seat may be held by a person without one."""
+        """Capabilities flagged ``requires_instructor`` need a faculty record (ADR 062);
+        organizational capacities (the flag cleared, e.g. Committee/Board Member,
+        Oversees Unit Training) may be held by a plain Person."""
         if self.instructor:
             return
         for row in self.capabilities:
-            routes_to = frappe.db.get_value(
-                "Faculty Capability", row.capability, "routes_to"
-            )
-            if routes_to and routes_to != NON_FACULTY_ROUTE:
+            if frappe.db.get_value(
+                "Faculty Capability", row.capability, "requires_instructor"
+            ):
                 frappe.throw(
                     _(
                         "Capability {0} routes academic work and needs an Instructor — "
-                        "set the Instructor, or use only Committee/Board Member for a "
-                        "non-instructor member."
+                        "set the Instructor, or use only organizational capacities "
+                        "(those that do not require an instructor) for a non-instructor "
+                        "member."
                     ).format(row.capability)
                 )
