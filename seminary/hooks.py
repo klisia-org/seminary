@@ -18,13 +18,9 @@ required_apps = ["erpnext"]
 
 # Financial backend (oikonomos decoupling). Seminary routes all billing facts /
 # side effects through `seminary.seminary.financial.backend.get_financial_backend`,
-# which resolves the implementation registered here (last wins) or falls back to
-# NullFinancialBackend (Frappe-only install). During Phase 0 the real
-# implementation still lives in seminary; once oikonomos owns it, REMOVE this
-# line and let oikonomos register `seminary_financial_backend` from its hooks.py.
-seminary_financial_backend = [
-    "seminary.seminary.financial.erpnext_backend.SeminaryErpnextBackend"
-]
+# which resolves whatever app registers `seminary_financial_backend` (the
+# oikonomos bridge does) or falls back to NullFinancialBackend on a Frappe-only
+# install. Seminary itself never registers a backend.
 
 # Include app in Apps Screen
 # --------------------------
