@@ -28,7 +28,6 @@ from frappe.translate import get_all_translations
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
-import erpnext
 from datetime import datetime
 import zipfile
 import os
@@ -3441,6 +3440,11 @@ def update_card(doc, method):
 
 
 def _billing_context():
+    # Lazy import: api.py must import on a Frappe-only (no-erpnext) install. This
+    # billing helper is only reached when a financial backend is present, and it
+    # relocates into oikonomos with the rest of the billing block.
+    import erpnext
+
     company = frappe.db.get_single_value("Seminary Settings", "company")
     return {
         "today": frappe.utils.today(),
