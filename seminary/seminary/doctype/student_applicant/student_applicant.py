@@ -70,19 +70,10 @@ class StudentApplicant(Document):
         # insert — no User exists yet.
         self._promote_to_person()
 
-        # Generate Application-fee Sales Invoice(s) on creation, not on submit:
-        # web-form-created applicants stay at docstatus=0 indefinitely (no submit
-        # action), so on_submit never fires. Billing must run on insert so the
-        # post-application payment page has an SI to charge against.
-        from seminary.seminary.api import generate_application_invoices
-
-        try:
-            generate_application_invoices(self.name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"Application invoice generation failed for {self.name}",
-            )
+        # Application-fee Sales Invoice(s) are raised on insert (not on submit:
+        # web-form applicants stay at docstatus=0, so on_submit never fires) by
+        # the oikonomos bridge, which subscribes to this doctype's after_insert.
+        # With no bridge installed, applying is free.
 
     def on_update(self):
         self._repromote_to_person()
