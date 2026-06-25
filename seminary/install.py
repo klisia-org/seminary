@@ -32,7 +32,6 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    get_custom_fields()
     setup_sales_invoice_permissions()
     update_company_in_item_details()
     seed_fee_categories()
@@ -1506,36 +1505,6 @@ def create_seminary_manager_role():
         frappe.get_doc(
             {"doctype": "Role", "role_name": _("Seminary Manager"), "desk_access": 1}
         ).save()
-
-
-def get_custom_fields():
-    """Seminary specific custom fields that needs to be added to the Sales Invoice DocType."""
-    return {
-        "Sales Invoice": [
-            {
-                "fieldname": "student_info_section",
-                "fieldtype": "Section Break",
-                "label": _("Student Info"),
-                "collapsible": 1,
-                "insert_after": "ignore_pricing_rule",
-            },
-            {
-                "fieldname": "student",
-                "fieldtype": "Link",
-                "label": _("Student"),
-                "options": _("Student"),
-                "insert_after": "student_info_section",
-            },
-            {
-                "fieldname": "custom_cei",
-                "fieldtype": "Link",
-                "options": "Course Enrollment Individual",
-                "label": _("Course Enrollment Individual"),
-                "insert_after": "custom_student",
-                "read_only": 1,
-            },
-        ],
-    }
 
 
 def update_company_in_item_details():
