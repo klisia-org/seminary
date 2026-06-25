@@ -557,7 +557,6 @@ override_whitelisted_methods = {
 # Export and Import Fixtures
 # --------------------------
 fixtures = [
-    "Trigger Fee Events",
     # Grading Scale is NOT fixtured: it's submittable and seminaries define their
     # own scales; a re-import would clobber edits. Seeded create-only-if-missing
     # by install.seed_grading_scale() instead.
