@@ -66,6 +66,11 @@ class FinancialBackend(ABC):
         """Raise the Sales Invoice(s) for a non-free Course Enrollment
         Individual. Idempotency on the CEI (`cei_si`) is handled by the caller."""
 
+    @abstractmethod
+    def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
+        """Raise the Program-Enrollment Sales Invoices for a Payers Fee Category
+        PE. Returns a {"created", "skipped", "failed"} count dict."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -82,6 +87,9 @@ class NullFinancialBackend(FinancialBackend):
 
     def generate_enrollment_invoice(self, cei_doc) -> None:
         return None
+
+    def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
+        return {"created": 0, "skipped": 0, "failed": 0}
 
 
 def get_financial_backend() -> FinancialBackend:
