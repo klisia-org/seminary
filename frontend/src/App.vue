@@ -8,7 +8,6 @@
 	</Layout>
 
 	<Dialogs /> <!-- Ensure this line is present -->
-	<Tiptap />
 
 	</FrappeUIProvider>
 </template>
@@ -24,7 +23,6 @@ import { computed, watch} from 'vue'
 import { useScreenSize } from './utils/composables'
 import DesktopLayout from './components/DesktopLayout.vue'
 import MobileLayout from './components/MobileLayout.vue'
-import Tiptap  from './components/Tiptap.vue'
 import { useRouter } from 'vue-router'
 import { posthogSettings } from '@/telemetry'
 

@@ -81,6 +81,13 @@
 												class="h-4 w-4 stroke-1" />
 											<FileText v-else class="h-4 w-4 text-ink-gray-7 stroke-1" />
 											<span>{{ lesson.lesson_title }}</span>
+											<span
+												v-if="lesson.has_graded_activity"
+												class="rounded bg-surface-amber-1 px-1.5 py-0.5 text-xs font-medium text-ink-amber-3"
+												:title="__('This lesson has a graded activity')"
+											>
+												{{ __('Graded') }}
+											</span>
 											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
 												class="h-4 w-4 text-ink-green-3"
 												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />

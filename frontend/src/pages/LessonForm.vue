@@ -49,6 +49,9 @@
 							<label class="block font-medium text-ink-gray-5 mb-1">
 								{{ __('Content') }}
 							</label>
+							<p v-if="!lessonName" class="text-xs text-ink-gray-4 mb-2">
+								{{ __('Click in the area below, then use the + on the left to add text, media, a quiz, exam, assignment or discussion.') }}
+							</p>
 							<div id="content"
 								class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal py-3">
 							</div>
@@ -68,13 +71,24 @@ import {
 	onMounted,
 	inject,
 	ref,
+	watch,
 	onBeforeUnmount,
 } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import EditorJS from '@editorjs/editorjs'
 import { ChevronRight } from 'lucide-vue-next'
 import { updateDocumentTitle, createToast, getEditorTools } from '@/utils'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
+import { examStore } from '@/stores/exam'
+
+// Editor block type -> the data key that carries the linked activity's name.
+const ACTIVITY_DATA_KEY = {
+	quiz: 'quiz',
+	exam: 'exam',
+	assignment: 'assignment',
+	discussionActivity: 'discussion',
+}
 
 const editor = ref(null)
 const instructorEditor = ref(null)
@@ -82,7 +96,14 @@ const user = inject('$user')
 const openInstructorEditor = ref(false)
 const settingsStore = useSettings()
 let autoSaveInterval
-let showSuccessMessage = false
+let titleSaveTimer
+// Name of the persisted Course Lesson once it exists (loaded or autosaved).
+const lessonName = ref(null)
+// Editors are created exactly once, after the first details fetch resolves.
+const initialized = ref(false)
+// Serializes every save so autosave, the title debounce, the route-leave guard
+// and the pending-insert flow can never race into creating duplicate lessons.
+let saveChain = Promise.resolve()
 
 const props = defineProps({
 	courseName: {
@@ -106,7 +127,6 @@ onMounted(() => {
 		window.location.href = '/login'
 	}
 	capture('lesson_form_opened')
-	instructorEditor.value = renderEditor('instructor-notes')
 	window.addEventListener('keydown', keyboardShortcut)
 })
 
@@ -145,14 +165,19 @@ const lessonDetails = createResource({
 	},
 	auto: true,
 	onSuccess(data) {
+		// Build the editors exactly once. Reloads (e.g. after an autosave) must
+		// not re-render the editor or they would wipe what the user is typing.
+		if (initialized.value) return
+		initialized.value = true
+
 		const course = data?.course_title
 		const courseName = props.courseName
 
 		editor.value = renderEditor('content', course, courseName)
-		console.log('LessonForm: Editor rendered with course:', course, 'and courseName:', courseName) // Debugging log
 		instructorEditor.value = renderEditor('instructor-notes', course, courseName)
 
 		if (data.lesson) {
+			lessonName.value = data.lesson.name
 			Object.keys(data.lesson).forEach((key) => {
 				if (key === 'allow_discuss' || key === 'include_in_preview') return
 				lesson[key] = data.lesson[key]
@@ -161,25 +186,70 @@ const lessonDetails = createResource({
 			lesson.include_in_preview = Boolean(data.lesson.include_in_preview)
 			lesson.allow_discuss = Boolean(data.lesson.allow_discuss)
 
-			addLessonContent(data)
 			addInstructorNotes(data)
-			enableAutoSave()
 		}
+
+		// Render saved content and splice in any activity created via the
+		// "create new activity -> back to lesson" round-trip.
+		initContent(data)
+		enableAutoSave()
 	},
 })
 
+// Autosave a brand-new lesson as soon as it has a title, so adding activities
+// (which navigates away) or a reload never discards the prof's work.
+watch(
+	() => lesson.lesson_title,
+	(title) => {
+		if (!initialized.value || lessonName.value) return
+		if (!title || !title.trim()) return
+		clearTimeout(titleSaveTimer)
+		titleSaveTimer = setTimeout(() => persistLesson(), 1200)
+	}
+)
 
-const addLessonContent = (data) => {
-	editor.value.isReady.then(() => {
-		if (data.lesson.content) {
-			editor.value.render(JSON.parse(data.lesson.content))
-		} else if (data.lesson.body) {
-			let blocks = convertToJSON(data.lesson)
-			editor.value.render({
-				blocks: blocks,
-			})
+
+const initContent = async (data) => {
+	await editor.value.isReady
+
+	let contentObj = null
+	if (data.lesson?.content) {
+		try {
+			contentObj = JSON.parse(data.lesson.content)
+		} catch {
+			contentObj = null
 		}
-	})
+	} else if (data.lesson?.body) {
+		contentObj = { blocks: convertToJSON(data.lesson) }
+	}
+
+	// Returning from "create new activity": splice the freshly created activity
+	// into the content, replacing the empty placeholder block left behind.
+	const pending = examStore.pendingInsert
+	const dataKey = pending ? ACTIVITY_DATA_KEY[pending.type] : null
+	if (pending?.id && dataKey) {
+		if (!contentObj || !Array.isArray(contentObj.blocks)) {
+			contentObj = { blocks: [] }
+		}
+		contentObj.blocks = contentObj.blocks.filter(
+			(b) => !(b.type === pending.type && !b.data?.[dataKey])
+		)
+		contentObj.blocks.push({ type: pending.type, data: { [dataKey]: pending.id } })
+	}
+
+	if (contentObj && Array.isArray(contentObj.blocks) && contentObj.blocks.length) {
+		await editor.value.render(contentObj)
+	}
+
+	if (pending?.id) {
+		examStore.clearPendingInsert()
+		try {
+			await persistLesson()
+			toast.success(__('Activity added to the lesson'))
+		} catch {
+			toast.error(__('Add a lesson title to save this activity.'))
+		}
+	}
 }
 
 const addInstructorNotes = (data) => {
@@ -197,7 +267,9 @@ const addInstructorNotes = (data) => {
 
 const enableAutoSave = () => {
 	autoSaveInterval = setInterval(() => {
-		saveLesson({ showSuccessMessage: false })
+		if (lesson.lesson_title && lesson.lesson_title.trim()) {
+			persistLesson()
+		}
 	}, 10000)
 }
 
@@ -216,7 +288,21 @@ const keyboardShortcut = (e) => {
 onBeforeUnmount(() => {
 	localStorage.removeItem('activeCourseName');
 	clearInterval(autoSaveInterval)
+	clearTimeout(titleSaveTimer)
 	window.removeEventListener('keydown', keyboardShortcut)
+})
+
+// Persist before navigating away (e.g. jumping to an activity form) so content
+// is never lost. Best-effort: never block navigation on a save failure.
+onBeforeRouteLeave(async () => {
+	if (lesson.lesson_title && lesson.lesson_title.trim()) {
+		try {
+			await persistLesson()
+		} catch {
+			/* don't trap the user on the page */
+		}
+	}
+	return true
 })
 
 
@@ -417,99 +503,65 @@ const convertToJSON = (lessonData) => {
 	return blocks
 }
 
-const saveLesson = (e) => {
-	showSuccessMessage = false;
-	if (typeof e != 'undefined' && e.showSuccessMessage) {
-		showSuccessMessage = true;
+// Core save. Serialized through saveChain so concurrent triggers (the 10s
+// autosave, the title debounce, the route-leave guard and the pending-insert
+// flow) can never race into creating two lessons for the same slot.
+const persistLesson = () => {
+	saveChain = saveChain.then(() => persistLessonInner())
+	return saveChain
+}
+
+const persistLessonInner = async () => {
+	if (!editor.value) return
+
+	const contentData = await editor.value.save()
+	lesson.content = JSON.stringify(contentData)
+
+	if (instructorEditor.value) {
+		const instructorData = await instructorEditor.value.save()
+		lesson.instructor_content = JSON.stringify(instructorData)
 	}
 
-	editor.value.save().then((outputData) => {
-		console.log("Editor Output Data:", outputData); // Debugging log
-		lesson.content = JSON.stringify(outputData);
+	// Keep the legacy discussion_id field in step with the content (the content
+	// JSON remains the source of truth). Blocks created by the tool use the
+	// `discussion` key; older ones used `discussionID`.
+	const discussionBlock = contentData.blocks.find(
+		(block) =>
+			['discussionActivity', 'discussionactivity'].includes(block.type) &&
+			(block.data?.discussion || block.data?.discussionID)
+	)
+	lesson.discussion_id = discussionBlock
+		? discussionBlock.data.discussion || discussionBlock.data.discussionID
+		: null
 
-		instructorEditor.value.save().then((outputData) => {
-			console.log("Instructor Editor Output Data:", outputData); // Debugging log
-			lesson.instructor_content = JSON.stringify(outputData);
+	if (lessonName.value) {
+		await editLesson.submit({ lesson: lessonName.value }, { validate: validateLesson })
+	} else {
+		const data = await newLessonResource.submit({}, { validate: validateLesson })
+		lessonName.value = data.name
+		await lessonReference.submit({ lesson: data.name })
+		capture('lesson_created')
+	}
+}
 
-			// Ensure discussion_id is included in the lesson object
-			const discussionBlock = outputData.blocks.find(
-				(block) =>
-					['discussionActivity', 'discussionactivity'].includes(block.type) &&
-					block.data?.discussionID
+const saveLesson = async (e) => {
+	const wantsMessage = typeof e !== 'undefined' && e.showSuccessMessage
+	const wasNew = !lessonName.value
+	try {
+		await persistLesson()
+		if (wantsMessage) {
+			toast.success(
+				wasNew ? __('Lesson created successfully') : __('Lesson updated successfully')
 			)
-			lesson.discussion_id = discussionBlock ? discussionBlock.data.discussionID : null;
-
-			// Log only if discussion_id is null or during manual save
-			if (!lesson.discussion_id || showSuccessMessage) {
-				console.log("Lesson Object Before Save:", lesson);
-			}
-
-			if (lessonDetails.data?.lesson) {
-				editCurrentLesson();
-			} else {
-				createNewLesson();
-			}
-		});
-	});
-}
-
-const createNewLesson = () => {
-	newLessonResource.submit(
-		{},
-		{
-			validate() {
-				return validateLesson()
-			},
-			onSuccess(data) {
-				lessonReference.submit(
-					{ lesson: data.name },
-					{
-						onSuccess() {
-							capture('lesson_created')
-							toast.success(__('Lesson created successfully'));
-							/* if (!settingsStore.onboardingDetails.data?.is_onboarded) {
-								settingsStore.onboardingDetails.reload()
-							} */
-							lessonDetails.reload()
-						},
-					}
-				)
-			},
-			onError(err) {
-				toast.error(err.messages?.[0] || err)
-			},
 		}
-	)
-}
-
-const editCurrentLesson = () => {
-	editLesson.submit(
-		{
-			lesson: lessonDetails.data.lesson.name,
-		},
-		{
-			validate() {
-				return validateLesson()
-			},
-			onSuccess() {
-				console.log("Lesson updated successfully"); // Debugging log
-				showSuccessMessage
-					? toast.success(__('Lesson updated successfully'))
-					: ''
-			},
-			onError(err) {
-				toast.error(err.messages?.[0] || err)
-			},
-		}
-	)
+	} catch (err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not save the lesson'))
+	}
 }
 
 const validateLesson = () => {
 	if (!lesson.lesson_title) {
 		return __('Title is required')
-	}
-	if (!lesson.content) {
-		return __('Content is required')
 	}
 }
 
@@ -539,9 +591,9 @@ const breadcrumbs = computed(() => {
 		},
 	]
 
-	if (lessonDetails?.data?.lesson) {
+	if (lessonName.value) {
 		crumbs.push({
-			label: lessonDetails.data.lesson.lesson_title,
+			label: lesson.lesson_title || lessonDetails.data?.lesson?.lesson_title,
 			route: {
 				name: 'Lesson',
 				params: {
@@ -553,7 +605,7 @@ const breadcrumbs = computed(() => {
 		})
 	}
 	crumbs.push({
-		label: lessonDetails?.data?.lesson ? __('Edit Lesson') : __('Create Lesson'),
+		label: lessonName.value ? __('Edit Lesson') : __('Create Lesson'),
 		route: {
 			name: 'LessonForm',
 			params: {
@@ -695,5 +747,26 @@ iframe {
 
 .tc-table {
 	border-left: 1px solid #e8e8eb;
+}
+
+/* editorjs hard-codes a near-black icon colour for the add-block (+) and the
+   drag/settings handle, so they vanish on a dark background. Restore them. */
+[data-theme='dark'] .ce-toolbar__plus,
+[data-theme='dark'] .ce-toolbar__settings-btn {
+	color: var(--ink-gray-7);
+}
+
+[data-theme='dark'] .ce-toolbar__plus:hover,
+[data-theme='dark'] .ce-toolbar__settings-btn:hover {
+	background-color: var(--surface-gray-3);
+	color: var(--ink-gray-8);
+}
+
+/* Keep the "+" add-block button visible at all times (editorjs only shows the
+   toolbar once a block is hovered/focused) so a blank new lesson is
+   discoverable instead of looking like an empty canvas. */
+#content .ce-toolbar,
+#instructor-notes .ce-toolbar {
+	display: block;
 }
 </style>

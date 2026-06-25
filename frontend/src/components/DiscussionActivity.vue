@@ -9,11 +9,14 @@
 					{{ __('Submission by') }} {{ submissionResource.doc?.member_name }}
 				</div>
 			</div>
-			<div class="text-lg text-ink-gray-7 font-medium mb-2">
-				{{ __('Discussion Prompt') }}:
-			</div>
-			<div v-html="discussion.doc.prompt"
-				class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
+			<div class="mb-5 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-4">
+				<div class="text-base font-semibold text-ink-blue-3 mb-2 flex items-center gap-2">
+					<MessagesSquare class="h-5 w-5 shrink-0" />
+					{{ __('Discussion Prompt') }}
+				</div>
+				<div v-html="discussion.doc.prompt"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal text-ink-gray-8">
+				</div>
 			</div>
 			<div v-if="isStudent && minRepliesRequired > 0"
 				class="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm"
@@ -28,7 +31,8 @@
 
 			<div v-if="
 				all_discussions.data && (hasSavedSubmission || (!hasSavedSubmission && !post_before) || !isStudent)
-			" class="flex-1 border-l p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
+			" ref="threadScrollEl" @scroll="onThreadScroll"
+				class="flex-1 border-l p-5 overflow-y-auto h-[calc(100vh-3.2rem)]">
 				<div v-if="!isStudent && studentGroups.length > 1" class="mb-4 mt-4">
 					<label for="groupFilter" class="block text-sm font-medium text-ink-gray-7">
 						{{ __('Filter by Group') }}
@@ -357,10 +361,10 @@ import {
 	FileUploader,
 	toast,
 } from 'frappe-ui'
-import { computed, inject, onMounted, onBeforeUnmount, ref, watch, toRaw } from 'vue'
+import { computed, inject, onMounted, onBeforeUnmount, ref, watch, toRaw, nextTick } from 'vue'
 import dayjsModule from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import { FileText, X } from 'lucide-vue-next'
+import { FileText, X, MessagesSquare } from 'lucide-vue-next'
 import { getFileSize, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import RichTextEditor from '@/components/RichTextEditor.vue'
@@ -439,8 +443,45 @@ const gradingCriteriaResource = createResource({
 })
 const isGradedActivity = computed(() => !!gradingCriteriaResource.data)
 
+// ── Remember the view per discussion for the session ──────────────────────────
+// Restore the instructor's group filter and the thread scroll position when the
+// user navigates out and back, scoped by discussion id so different discussions
+// don't bleed into each other.
+const threadScrollEl = ref(null)
+let scrollSaveTimer = null
+const groupFilterKey = () => `disc:groupfilter:${props.discussionID}`
+const scrollKey = () => `disc:scroll:${props.discussionID}`
+
+const saveScroll = () => {
+	if (!threadScrollEl.value) return
+	try {
+		sessionStorage.setItem(scrollKey(), String(threadScrollEl.value.scrollTop))
+	} catch { /* storage unavailable */ }
+}
+
+const onThreadScroll = () => {
+	clearTimeout(scrollSaveTimer)
+	scrollSaveTimer = setTimeout(saveScroll, 200)
+}
+
+const restoreScroll = () => {
+	const saved = sessionStorage.getItem(scrollKey())
+	if (!saved) return
+	nextTick(() => {
+		if (threadScrollEl.value) threadScrollEl.value.scrollTop = parseInt(saved, 10) || 0
+	})
+}
+
+watch(selectedGroupFilter, (value) => {
+	try {
+		sessionStorage.setItem(groupFilterKey(), value)
+	} catch { /* storage unavailable */ }
+})
+
 onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)
+	const savedGroup = sessionStorage.getItem(groupFilterKey())
+	if (savedGroup) selectedGroupFilter.value = savedGroup
 	reloadDiscussionLists()
 	StudentData.reload()
 	fetchStudentGroups()
@@ -471,6 +512,9 @@ const keyboardShortcut = (e) => {
 
 onBeforeUnmount(() => {
 	window.removeEventListener('keydown', keyboardShortcut)
+	// Persist scroll position before tearing down so returning restores it.
+	clearTimeout(scrollSaveTimer)
+	saveScroll()
 	// Clear state to prevent stale data on remount
 	gradingComments.value = []
 	studentNewComment.value = ''
@@ -590,7 +634,8 @@ const all_discussions = createResource({
 				discussion.new_reply = ''
 			}
 		})
-
+		// Threads are now in the DOM; put the user back where they were.
+		restoreScroll()
 	},
 })
 
@@ -1066,6 +1111,13 @@ const fetchStudentGroups = () => {
 	})
 		.then((response) => {
 			studentGroups.value = response || [];
+			// Drop a restored filter that no longer maps to an existing group.
+			if (
+				selectedGroupFilter.value !== 'all' &&
+				!studentGroups.value.some((g) => g.student_group === selectedGroupFilter.value)
+			) {
+				selectedGroupFilter.value = 'all'
+			}
 		})
 		.catch((error) => {
 			console.error('Error fetching student groups:', error);

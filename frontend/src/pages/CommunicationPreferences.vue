@@ -38,41 +38,32 @@
 			<p class="mb-4 text-sm text-ink-gray-5">
 				{{ __('Promotional messages are only sent if you opt in. Operational messages (enrollment, payments) pause only where you explicitly opt out. Emergency notices are always delivered.') }}
 			</p>
-			<div class="overflow-x-auto">
-				<table class="w-full text-sm">
-					<thead>
-						<tr class="border-b border-outline-gray-2 text-left text-ink-gray-5">
-							<th class="py-2 pr-3 font-medium">{{ __('Category') }}</th>
-							<th
-								v-for="c in prefs.data.channels"
-								:key="c"
-								class="px-2 py-2 font-medium"
-							>
-								{{ __(c) }}
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="cat in prefs.data.categories"
-							:key="cat"
-							class="border-b border-outline-gray-1"
+			<div class="space-y-3">
+				<div
+					v-for="cat in prefs.data.categories"
+					:key="cat"
+					class="rounded-md border border-outline-gray-1 p-3"
+				>
+					<p class="mb-2 text-sm font-medium text-ink-gray-8">{{ __(cat) }}</p>
+					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+						<label
+							v-for="ch in prefs.data.channels"
+							:key="ch"
+							class="flex flex-col gap-1"
 						>
-							<td class="py-2 pr-3 text-ink-gray-8">{{ __(cat) }}</td>
-							<td v-for="ch in prefs.data.channels" :key="ch" class="px-2 py-2">
-								<select
-									v-model="consents[`${ch}::${cat}`]"
-									class="rounded-md border-outline-gray-2 bg-surface-white text-xs text-ink-gray-7 focus:ring-0"
-									:disabled="cat === 'Emergency'"
-								>
-									<option value="Unset">{{ __('Default') }}</option>
-									<option value="Opted In">{{ __('Opted In') }}</option>
-									<option value="Opted Out">{{ __('Opted Out') }}</option>
-								</select>
-							</td>
-						</tr>
-					</tbody>
-				</table>
+							<span class="text-xs text-ink-gray-5">{{ __(ch) }}</span>
+							<select
+								v-model="consents[`${ch}::${cat}`]"
+								class="w-full rounded-md border-outline-gray-2 bg-surface-white text-xs text-ink-gray-7 focus:ring-0"
+								:disabled="cat === 'Emergency'"
+							>
+								<option value="Unset">{{ __('Default') }}</option>
+								<option value="Opted In">{{ __('Opted In') }}</option>
+								<option value="Opted Out">{{ __('Opted Out') }}</option>
+							</select>
+						</label>
+					</div>
+				</div>
 			</div>
 		</section>
 

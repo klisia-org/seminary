@@ -19,15 +19,15 @@
 				</div>
 				<div>
 					<Link v-if="type == 'quiz'" v-model="quiz" doctype="Quiz" :label="__('Select a quiz')"
-						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm()" />
+						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else-if="type == 'exam'" v-model="exam" doctype="Exam Activity"
 						:filters="course ? { course: course } : {}" :label="__('Select an exam')"
-						:onCreate="(value, close) => redirectToForm()" />
+						:onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else-if="type == 'discussionactivity'" v-model="discussionactivity"
 						doctype="Discussion Activity" :label="__('Select a discussion activity')"
-						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm()" />
+						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
 					<Link v-else v-model="assignment" doctype="Assignment Activity" :label="__('Select an assignment')"
-						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm()" />
+						:filters="course ? { course: course } : {}" :onCreate="(value, close) => redirectToForm(close)" />
 				</div>
 				<div class="flex justify-end space-x-2">
 					<Button variant="solid" @click="addAssessment()">
@@ -41,7 +41,20 @@
 <script setup>
 import { Dialog, Button } from 'frappe-ui'
 import { onMounted, ref, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
+import { examStore } from '@/stores/exam'
+
+const router = useRouter()
+
+// Maps the plugin type to the activity form route and the editor block type
+// LessonForm should insert when the user returns from creating the activity.
+const FORM_BY_TYPE = {
+	quiz: { name: 'QuizForm', param: 'quizID', insertType: 'quiz' },
+	exam: { name: 'ExamForm', param: 'examID', insertType: 'exam' },
+	assignment: { name: 'AssignmentForm', param: 'assignmentID', insertType: 'assignment' },
+	discussionactivity: { name: 'DiscussionActivityForm', param: 'discussionID', insertType: 'discussionActivity' },
+}
 
 const show = ref(false)
 const quiz = ref(null)
@@ -81,10 +94,25 @@ const addAssessment = () => {
 	show.value = false
 }
 
-const redirectToForm = () => {
-	if (props.type == 'quiz') window.open('/seminary/quizzes/new', '_blank')
-	else if (props.type == 'exam') window.open('/seminary/exams/new', '_blank')
-	else if (props.type == 'discussionactivity') window.open('/seminary/discussion-activities/new', '_blank')
-	else window.open('/seminary/assignments/new', '_blank')
+// Navigate (same tab) to the activity form to create a new activity. We pre-fill
+// the course and stash a return context so the form can offer a "Back to lesson"
+// button that splices the created activity straight back into the lesson.
+// LessonForm's route-leave guard saves the lesson first, so nothing is lost.
+const redirectToForm = (close) => {
+	const target = FORM_BY_TYPE[props.type] || FORM_BY_TYPE.assignment
+	examStore.setPrefillData({ title: '', course: props.course || '' })
+	examStore.setReturnContext({
+		route: {
+			name: router.currentRoute.value.name,
+			params: { ...router.currentRoute.value.params },
+		},
+		insertType: target.insertType,
+	})
+	// Close this dialog (and the Link popover) first; otherwise its teleported
+	// overlay lingers over the destination page and the redirect looks like a
+	// no-op until the user dismisses the modal.
+	close?.()
+	show.value = false
+	router.push({ name: target.name, params: { [target.param]: 'new' } })
 }
 </script>
