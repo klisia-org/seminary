@@ -9,11 +9,71 @@ frappe.ui.form.on("Person", {
 	refresh(frm) {
 		if (frm.is_new()) return;
 		render_conversation(frm);
+		render_org_footprint(frm);
 		["Email", "SMS", "In-App"].forEach((channel) => {
 			frm.add_custom_button(__(channel), () => compose(frm, channel), __("Compose"));
 		});
 	},
 });
+
+// Org Footprint tab (ADR 062): the Person's Academic Unit memberships + capabilities, plus
+// Department / Reports To when HRMS is enabled — so a manager can confirm someone is wired into
+// everything that drives their access and training.
+function render_org_footprint(frm) {
+	const wrapper = frm.get_field("org_footprint_html").$wrapper;
+	wrapper.html(`<div class="text-muted">${__("Loading footprint...")}</div>`);
+	frappe
+		.call("seminary.seminary.faculty.person_org_footprint", { person: frm.doc.name })
+		.then((r) => {
+			const fp = r.message || {};
+			const units = fp.units || [];
+			const esc = frappe.utils.escape_html;
+			const blocks = [];
+
+			if (fp.department || fp.reports_to) {
+				blocks.push(`<div style="margin-bottom:12px">
+					${fp.department ? `<div><b>${__("Department")}:</b> ${esc(fp.department)}</div>` : ""}
+					${fp.reports_to ? `<div><b>${__("Reports To")}:</b> ${esc(fp.reports_to)}</div>` : ""}
+				</div>`);
+			}
+
+			if (!units.length) {
+				blocks.push(`<div class="text-muted">${__("No Academic Unit memberships.")}</div>`);
+			} else {
+				const rows = units.map((u) => {
+					const caps = (u.capabilities || [])
+						.map((c) => {
+							const cap = esc(c.capability);
+							const slots =
+								c.max_students > 0 ? ` (${c.current_students || 0}/${c.max_students})` : "";
+							return `<span class="indicator-pill blue" style="margin:1px">${cap}${slots}</span>`;
+						})
+						.join(" ");
+					const dim = u.is_active ? "" : 'style="opacity:0.5"';
+					const parent = u.parent_unit
+						? ` <span class="text-muted small">↑ ${esc(u.parent_unit)}</span>`
+						: "";
+					return `<tr ${dim}>
+						<td style="padding:6px 8px;border-bottom:1px solid var(--border-color)">
+							<a href="/app/academic-unit/${encodeURIComponent(u.unit)}">${esc(u.unit)}</a>${parent}
+							${u.is_active ? "" : ` <span class="text-muted small">(${__("inactive")})</span>`}
+						</td>
+						<td class="text-muted small" style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${esc(u.unit_type || "")}</td>
+						<td style="padding:6px 8px;border-bottom:1px solid var(--border-color)">${caps || '<span class="text-muted small">—</span>'}</td>
+					</tr>`;
+				});
+				blocks.push(`<table style="width:100%;border-collapse:collapse">
+					<thead><tr class="text-muted small">
+						<th style="text-align:left;padding:6px 8px">${__("Unit")}</th>
+						<th style="text-align:left;padding:6px 8px">${__("Type")}</th>
+						<th style="text-align:left;padding:6px 8px">${__("Capabilities")}</th>
+					</tr></thead>
+					<tbody>${rows.join("")}</tbody>
+				</table>`);
+			}
+			wrapper.html(blocks.join(""));
+		});
+}
 
 const STATUS_COLORS = {
 	Queued: "orange",

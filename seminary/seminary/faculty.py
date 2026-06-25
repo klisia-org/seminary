@@ -376,6 +376,115 @@ def require_unit_capacity(person: str, route: str, unit: str) -> None:
     )
 
 
+def org_footprint(person: str) -> dict:
+    """A Person's organizational footprint (ADR 062): every Academic Unit membership with its
+    capabilities, plus — when HRMS is enabled — the Employee's department and reports-to. Lets a
+    manager confirm someone is wired into the units/capacities that drive their access and training.
+
+    Plain helper (no permission gate); callers gate (the whitelisted wrapper below, or aretenic's
+    team-scope-gated endpoint).
+    """
+    if not person:
+        return {}
+    memberships = frappe.db.sql(
+        """
+        SELECT m.name AS membership, m.unit AS unit, m.is_active AS is_active,
+               au.unit_type AS unit_type, au.parent_unit AS parent_unit
+        FROM `tabAcademic Unit Membership` m
+        JOIN `tabAcademic Unit` au ON au.name = m.unit
+        WHERE m.person = %(person)s
+        ORDER BY m.is_active DESC, m.unit
+        """,
+        {"person": person},
+        as_dict=True,
+    )
+    cap_rows = (
+        frappe.get_all(
+            "Academic Unit Capability",
+            filters={"parent": ["in", [m.membership for m in memberships]]},
+            fields=["parent", "capability", "max_students", "current_students"],
+        )
+        if memberships
+        else []
+    )
+    fc = (
+        {
+            f.name: f
+            for f in frappe.get_all(
+                "Faculty Capability",
+                filters={"name": ["in", list({c.capability for c in cap_rows})]},
+                fields=["name", "capability_name", "routes_to"],
+            )
+        }
+        if cap_rows
+        else {}
+    )
+    caps_by_m: dict = {}
+    for c in cap_rows:
+        meta = fc.get(c.capability, frappe._dict())
+        caps_by_m.setdefault(c.parent, []).append(
+            {
+                "capability": meta.get("capability_name") or c.capability,
+                "routes_to": meta.get("routes_to"),
+                "max_students": c.max_students,
+                "current_students": c.current_students,
+            }
+        )
+
+    units = [
+        {
+            "unit": m.unit,
+            "unit_type": m.unit_type,
+            "parent_unit": m.parent_unit,
+            "is_active": m.is_active,
+            "capabilities": caps_by_m.get(m.membership, []),
+        }
+        for m in memberships
+    ]
+    out = {"person": person, "units": units, "department": None, "reports_to": None}
+
+    if frappe.db.get_single_value(
+        "Seminary Settings", "hrms_enable"
+    ) and frappe.db.exists("DocType", "Employee"):
+        user = frappe.db.get_value("Person", person, "user")
+        emp = (
+            frappe.db.get_value(
+                "Employee",
+                {"user_id": user},
+                ["department", "reports_to"],
+                as_dict=True,
+            )
+            if user
+            else None
+        )
+        if emp:
+            out["department"] = emp.department
+            if emp.reports_to:
+                mgr_user = frappe.db.get_value("Employee", emp.reports_to, "user_id")
+                out["reports_to"] = (
+                    mgr_user
+                    and frappe.db.get_value("Person", {"user": mgr_user}, "full_name")
+                ) or frappe.db.get_value("Employee", emp.reports_to, "employee_name")
+    return out
+
+
+@frappe.whitelist()
+def person_org_footprint(person: str) -> dict:
+    """Whitelisted footprint for desk use: visible to full-access roles, the person themselves, or
+    anyone with Person read permission. Other consumers (e.g. aretenic) call ``org_footprint`` behind
+    their own gate."""
+    own = frappe.db.get_value("Person", {"user": frappe.session.user}, "name")
+    if not (
+        has_full_access()
+        or person == own
+        or frappe.has_permission("Person", "read", person)
+    ):
+        frappe.throw(
+            _("Not permitted to view this person's footprint."), frappe.PermissionError
+        )
+    return org_footprint(person)
+
+
 def require_capability(unit: str, route: str) -> None:
     """Raise PermissionError unless the caller may perform ``route`` for ``unit``
     — a full-access role, or an instructor wired to the unit with that capability."""

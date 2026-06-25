@@ -48,7 +48,9 @@
   "preferred_application_phone",
   "conversation_tab",
   "conversation_html",
-  "connections_tab"
+  "connections_tab",
+  "footprint_tab",
+  "org_footprint_html"
  ],
  "fields": [
   {
@@ -295,6 +297,16 @@
    "fieldtype": "Tab Break",
    "label": "Roles",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "footprint_tab",
+   "fieldtype": "Tab Break",
+   "label": "Org Footprint"
+  },
+  {
+   "fieldname": "org_footprint_html",
+   "fieldtype": "HTML",
+   "label": "Org Footprint"
   }
  ],
  "image_field": "image",
