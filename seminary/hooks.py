@@ -380,11 +380,8 @@ doc_events = {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",
         "on_update": "seminary.seminary.overrides.seminary_settings.on_update",
     },
-    "Salary Slip": {
-        "before_validate": "seminary.seminary.overrides.salary_slip.populate_instructor_summary",
-        "on_submit": "seminary.seminary.overrides.salary_slip.post_submit_instructor_log_payments",
-        "on_cancel": "seminary.seminary.overrides.salary_slip.cancel_instructor_log_payments",
-    },
+    # Salary Slip (instructor payroll) is owned by the oikonomos bridge — it
+    # subscribes to Salary Slip's lifecycle from its own hooks.py.
     "Graduation Requirement Item": {
         "on_update": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
         "on_trash": "seminary.seminary.graduation.invalidate_linked_doctype_cache",

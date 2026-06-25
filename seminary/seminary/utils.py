@@ -12,6 +12,18 @@ import requests
 from frappe.desk.doctype.dashboard_chart.dashboard_chart import get_result
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from frappe.desk.search import get_user_groups
+
+
+def _hrms_enabled() -> bool:
+    """True when HRMS is installed and instructor payroll is enabled in Seminary
+    Settings. A feature gate used by academic instructor code and (in the
+    oikonomos bridge) the Salary Slip integration. Frappe-only installs have no
+    HRMS, so this is always False."""
+    if "hrms" not in frappe.get_installed_apps():
+        return False
+    return bool(frappe.db.get_single_value("Seminary Settings", "hrms_enable"))
+
+
 from frappe.desk.notifications import extract_mentions
 from frappe.utils import (
     add_months,

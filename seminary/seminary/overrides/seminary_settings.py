@@ -28,13 +28,6 @@ def on_update(doc, method=None):
 
         frappe.enqueue(locations.backfill, queue="long")
 
-    if not doc.hrms_enable:
-        return
-
-    from seminary.seminary.overrides.salary_slip import (
-        ensure_custom_fields,
-        ensure_salary_components,
-    )
-
-    ensure_custom_fields()
-    ensure_salary_components()
+    # Instructor-payroll provisioning (Salary Slip custom fields + Instructor Pay
+    # component) is owned by the oikonomos bridge, which subscribes to Seminary
+    # Settings on_update. Nothing payroll-related runs here on a Frappe-only install.
