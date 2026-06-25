@@ -20,7 +20,6 @@ still owns user-visible buttons.
 """
 
 import frappe
-from frappe.utils import flt
 
 
 # 100% payment is required to approve a Graduation Request. Hard-coded
@@ -95,36 +94,21 @@ def _recompute_and_react(gr_name):
 
 
 def _recompute_paid_percent(gr_name):
-    rows = frappe.db.sql(
-        """SELECT COALESCE(SUM(grand_total), 0) AS invoiced,
-                  COALESCE(SUM(grand_total - outstanding_amount), 0) AS paid,
-                  COUNT(*) AS si_count
-           FROM `tabSales Invoice`
-           WHERE custom_graduation_request = %s
-             AND docstatus = 1
-             AND is_return = 0""",
-        (gr_name,),
-        as_dict=True,
-    )
-    invoiced = flt(rows[0].invoiced) if rows else 0.0
-    paid = flt(rows[0].paid) if rows else 0.0
-    si_count = int(rows[0].si_count) if rows else 0
+    """Aggregate submitted invoices linked to a Graduation Request via the
+    financial backend and stamp paid_percent. With no financial backend this
+    reads fully-paid, so the GR clears its payment gate as free."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    if invoiced > 0:
-        paid_percent = paid / invoiced * 100.0
-    elif si_count > 0:
-        paid_percent = 100.0  # all-zero invoices (full scholarship)
-    else:
-        paid_percent = 0.0
+    agg = get_financial_backend().payment_status_for_graduation(gr_name)
 
     frappe.db.set_value(
         "Graduation Request",
         gr_name,
         "paid_percent",
-        paid_percent,
+        agg.paid_percent,
         update_modified=False,
     )
-    return paid_percent
+    return agg.paid_percent
 
 
 def _advance_to_academic_review(gr_name):

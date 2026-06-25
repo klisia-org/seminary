@@ -168,7 +168,11 @@ class CourseEnrollmentIndividual(Document):
         if frappe.db.get_value("Program", self.program_data, "is_free"):
             self.db_set("cei_si", 1)
             return
-        self.get_inv_data_ce()
+        # Billing is delegated to the financial backend; with none installed the
+        # null backend is a no-op and the enrollment proceeds as free.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        get_financial_backend().generate_enrollment_invoice(self)
         self.db_set("cei_si", 1)
 
     def before_cancel(self):

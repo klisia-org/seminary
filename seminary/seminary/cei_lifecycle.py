@@ -168,30 +168,16 @@ def _ceis_from_payment_entry(pe_doc):
 
 
 def _recompute_cei_payment_status(cei_name):
-    """Aggregate submitted Sales Invoices linked to a CEI. Update tracking
-    fields on the CEI and return (paid_percent, threshold)."""
-    rows = frappe.db.sql(
-        """SELECT COALESCE(SUM(grand_total), 0) AS invoiced,
-                  COALESCE(SUM(grand_total - outstanding_amount), 0) AS paid,
-                  COUNT(*) AS si_count
-           FROM `tabSales Invoice`
-           WHERE custom_cei = %s
-             AND docstatus = 1
-             AND is_return = 0""",
-        (cei_name,),
-        as_dict=True,
-    )
-    invoiced = flt(rows[0].invoiced) if rows else 0.0
-    paid = flt(rows[0].paid) if rows else 0.0
-    si_count = int(rows[0].si_count) if rows else 0
+    """Aggregate submitted invoices linked to a CEI via the financial backend,
+    write the tracking fields on the CEI, and return (paid_percent, threshold).
 
-    if invoiced > 0:
-        paid_percent = paid / invoiced * 100.0
-    elif si_count > 0:
-        # All linked invoices are $0 (e.g. full scholarship) — vacuously paid.
-        paid_percent = 100.0
-    else:
-        paid_percent = 0.0
+    The invoice aggregate is a financial fact (owned by the backend); the
+    tracking-field bookkeeping and the program payment threshold are academic
+    and stay here. With no financial backend the aggregate reads fully-paid, so
+    `threshold` is vacuously met and the CEI advances as free."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    agg = get_financial_backend().payment_status_for_cei(cei_name)
 
     threshold = flt(
         frappe.db.get_value("Course Enrollment Individual", cei_name, "percent_to_pay")
@@ -202,13 +188,13 @@ def _recompute_cei_payment_status(cei_name):
         "Course Enrollment Individual",
         cei_name,
         {
-            "total_invoiced": invoiced,
-            "total_paid": paid,
-            "paid_percent": paid_percent,
+            "total_invoiced": agg.invoiced,
+            "total_paid": agg.paid,
+            "paid_percent": agg.paid_percent,
         },
         update_modified=False,
     )
-    return paid_percent, threshold
+    return agg.paid_percent, threshold
 
 
 def _advance_cei_to_submitted(cei_name):
