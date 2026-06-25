@@ -13,11 +13,38 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, today
 
-from seminary.seminary.doctype.scholarship_award.scholarship_award import (
-    ACTIVE_STATE,
-    OCCUPYING_STATES,
-    get_active_award,
-)
+# Scholarship Award workflow primitives. The Scholarship Award doctype now lives
+# in the oikonomos bridge, so seminary can't import its controller. These stable
+# workflow constants and the active-award lookup (a pure query, no controller
+# dependency) are kept here so seminary's retention scheduler, portal endpoints,
+# and reports stay Frappe-only. oikonomos's scholarship_award.py holds the
+# canonical copies for the billing engine.
+ACTIVE_STATE = "Active"
+OCCUPYING_STATES = ("Draft", "Submitted", "Under Review", "Active", "Suspended")
+
+
+def get_active_award(program_enrollment):
+    """Name of the single active Scholarship Award for an enrollment, or None.
+    'Active' = workflow_state Active and today within the effective window."""
+    if not program_enrollment:
+        return None
+    td = today()
+    rows = frappe.get_all(
+        "Scholarship Award",
+        filters={
+            "program_enrollment": program_enrollment,
+            "workflow_state": ACTIVE_STATE,
+        },
+        fields=["name", "effective_from", "effective_to"],
+        order_by="effective_from desc",
+    )
+    for r in rows:
+        if r.effective_from and getdate(r.effective_from) > getdate(td):
+            continue
+        if r.effective_to and getdate(r.effective_to) < getdate(td):
+            continue
+        return r.name
+    return None
 
 
 # --------------------------------------------------------------------------
