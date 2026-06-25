@@ -71,6 +71,12 @@ class FinancialBackend(ABC):
         """Raise the Program-Enrollment Sales Invoices for a Payers Fee Category
         PE. Returns a {"created", "skipped", "failed"} count dict."""
 
+    @abstractmethod
+    def process_withdrawal_refunds(self, withdrawal_doc) -> None:
+        """Generate credit notes (and any scholarship clawback invoice) for a
+        withdrawn enrollment, per its Withdrawal Rule. Called by the seminary
+        withdrawal dispatcher when the workflow reaches the refund transition."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -90,6 +96,9 @@ class NullFinancialBackend(FinancialBackend):
 
     def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
         return {"created": 0, "skipped": 0, "failed": 0}
+
+    def process_withdrawal_refunds(self, withdrawal_doc) -> None:
+        return None
 
 
 def get_financial_backend() -> FinancialBackend:
