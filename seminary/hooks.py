@@ -344,34 +344,12 @@ doc_events = {
     "Scheduled Course Roster": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
     },
-    # Student Balance creation + Sales Invoice balance tracking are owned by the
-    # oikonomos bridge (Student.after_insert + Sales Invoice events there). The
-    # Sales Invoice / Payment Entry hooks below are payment-reactive academic
-    # advancement; they reference ERPNext doctypes and simply never fire on a
-    # Frappe-only install.
-    "Sales Invoice": {
-        "on_submit": [
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_submit",
-        ],
-        "on_update_after_submit": [
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_update_after_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.cei_lifecycle.maybe_notify_registrar_on_invoice_cancel",
-        ],
-    },
-    "Payment Entry": {
-        "on_submit": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_cancel",
-        ],
-    },
+    # Billing documents (Sales Invoice, Payment Entry) belong entirely to the
+    # financial backend: the bridge (oikonomos) subscribes to them from its own
+    # hooks.py and calls seminary's academic advancement entry points
+    # (cei_lifecycle.react_to_cei_payment / graduation_request_lifecycle.
+    # react_to_gr_payment). Seminary never names an ERPNext billing doctype, so a
+    # different backend (e.g. a QBO bridge) could drive the same academic flow.
     "Seminary Settings": {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",
         "on_update": "seminary.seminary.overrides.seminary_settings.on_update",

@@ -11,8 +11,11 @@ crosses the program's `percent_to_pay` threshold.
 
 Hook entry points (registered in hooks.py):
 - CEI on_update_after_submit → on_workflow_update
-- Sales Invoice on_submit / on_update_after_submit → maybe_advance_cei_on_payment
-- Sales Invoice on_cancel → maybe_notify_registrar_on_invoice_cancel
+
+Payment-driven advancement is invoked by the financial backend (oikonomos), which
+reacts to its own billing documents and calls `react_to_cei_payment(cei_name)`
+here. A Frappe-only seminary has no payment documents, so this is never reached —
+enrollments advance as free.
 """
 
 import frappe
@@ -94,54 +97,18 @@ def _pec_exists(program_enrollment, course_schedule):
 
 
 # ---------------------------------------------------------------------------
-# Payment-driven advancement
+# Payment-driven advancement (entry point called by the financial backend)
 # ---------------------------------------------------------------------------
 
 
-def maybe_advance_cei_on_payment(doc, method=None):
-    """Sales Invoice hook. Note: ERPNext updates SI.outstanding_amount via
-    db.set_value on payment, which doesn't trigger on_update_after_submit —
-    the actual payment-driven advancement happens in `on_payment_entry_submit`.
-    This hook still fires for direct SI form saves and runs the same
-    recompute, harmlessly."""
-    cei_name = getattr(doc, "custom_cei", None)
-    if not cei_name:
-        return
-    _recompute_and_react(cei_name)
-
-
-def maybe_notify_registrar_on_invoice_cancel(doc, method=None):
-    """Sales Invoice on_cancel hook. If a refund/cancellation drops the linked
-    CEI's paid_percent below the program threshold while the CEI is already in
-    Submitted state, notify registrars (Registrar role) — but do NOT
-    revert the workflow state. See plan §7."""
-    cei_name = getattr(doc, "custom_cei", None)
-    if not cei_name:
-        return
-
-    _recompute_and_react(cei_name)
-
-
-def on_payment_entry_submit(doc, method=None):
-    """Payment Entry hook. ERPNext updates Sales Invoice.outstanding_amount via
-    db.set_value when a payment posts, which bypasses SI's on_update_after_submit
-    — so we hook on Payment Entry directly. For each linked SI that traces back
-    to a CEI, recompute payment status and advance / notify as needed."""
-    for cei_name in _ceis_from_payment_entry(doc):
-        _recompute_and_react(cei_name)
-
-
-def on_payment_entry_cancel(doc, method=None):
-    """Payment Entry on_cancel — refund/reversal path. Same fan-out as submit:
-    recompute every linked CEI, notify registrar if a Submitted CEI drops below
-    threshold."""
-    for cei_name in _ceis_from_payment_entry(doc):
-        _recompute_and_react(cei_name)
-
-
-def _recompute_and_react(cei_name):
+def react_to_cei_payment(cei_name):
     """Refresh tracking fields on the CEI and either auto-advance (if threshold
-    crossed upward) or notify registrar (if a Submitted CEI fell below)."""
+    crossed upward) or notify registrar (if a Submitted CEI fell below).
+
+    The academic entry point for payment-driven advancement: it asks the
+    financial backend for the payment aggregate and acts on the academic state
+    machine. The bridge (oikonomos) calls this from its own Sales Invoice /
+    Payment Entry handlers; seminary itself never reacts to billing documents."""
     paid_percent, threshold = _recompute_cei_payment_status(cei_name)
 
     state = frappe.db.get_value(
@@ -151,20 +118,6 @@ def _recompute_and_react(cei_name):
         _advance_cei_to_submitted(cei_name)
     elif state == "Submitted" and paid_percent < threshold:
         _notify_registrar_payment_dropped(cei_name, paid_percent, threshold)
-
-
-def _ceis_from_payment_entry(pe_doc):
-    """Distinct CEI names traced from this Payment Entry's references via
-    Sales Invoice.custom_cei. Skips reference rows that aren't Sales Invoices
-    or whose SI has no linked CEI."""
-    cei_names = set()
-    for ref in pe_doc.references or []:
-        if ref.reference_doctype != "Sales Invoice" or not ref.reference_name:
-            continue
-        cei = frappe.db.get_value("Sales Invoice", ref.reference_name, "custom_cei")
-        if cei:
-            cei_names.add(cei)
-    return cei_names
 
 
 def _recompute_cei_payment_status(cei_name):
