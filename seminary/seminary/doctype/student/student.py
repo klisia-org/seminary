@@ -7,7 +7,6 @@ from frappe import _
 from frappe.desk.form.linked_with import get_linked_doctypes
 from frappe.model.document import Document
 from frappe.utils import getdate, today
-from erpnext import get_default_currency
 from frappe.utils.nestedset import get_root_of
 
 
