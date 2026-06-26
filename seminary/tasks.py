@@ -1,12 +1,6 @@
 import frappe
 from frappe.utils import getdate
 
-from seminary.seminary.api import (
-    generate_monthly_invoices,
-    generate_nat_invoices,
-    generate_nay_invoices,
-)
-
 # Scheduler hooks — see hooks.py scheduler_events
 # Documentation: https://frappeframework.com/docs/user/en/api/background_jobs
 
@@ -24,11 +18,9 @@ def daily():
 
     recompute_all()
 
-    if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
-        _run_nat_for_due_terms(today)
-        _run_nay_for_due_years(today)
-        if today.day == 1:
-            generate_monthly_invoices(today)
+    # Automatic billing (NAT / NAY / monthly invoices) is driven by the oikonomos
+    # bridge's own daily scheduler task (oikonomos.financial.invoicing.
+    # run_billing_automation); seminary's scheduler stays purely academic.
 
     if frappe.db.get_single_value("Seminary Settings", "auto_advance_course_schedule"):
         from seminary.seminary.cs_lifecycle import (
@@ -43,9 +35,15 @@ def daily():
 
     process_follow_ups()
 
-    from seminary.seminary.scholarship import review_scholarship_retention
+    # Scholarships are an oikonomos (financial) concept — the Scholarship Award
+    # doctype lives in the bridge. A Frappe-only seminary has none, so skip the
+    # daily retention review when no financial backend is installed.
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    review_scholarship_retention(today)
+    if get_financial_backend().has_financials():
+        from seminary.seminary.scholarship import review_scholarship_retention
+
+        review_scholarship_retention(today)
 
 
 @frappe.whitelist()
@@ -116,32 +114,6 @@ def _reconcile_loa(today):
     from seminary.seminary.program_status import reconcile_loa_billing
 
     reconcile_loa_billing(today)
-
-
-def _run_nat_for_due_terms(today):
-    due = frappe.db.get_all(
-        "Academic Term",
-        filters={
-            "term_start_date": ["<=", today],
-            "invoiced_nat_on": ["is", "not set"],
-        },
-        pluck="name",
-    )
-    for term in due:
-        generate_nat_invoices(term)
-
-
-def _run_nay_for_due_years(today):
-    due = frappe.db.get_all(
-        "Academic Year",
-        filters={
-            "year_start_date": ["<=", today],
-            "invoiced_nay_on": ["is", "not set"],
-        },
-        pluck="name",
-    )
-    for year in due:
-        generate_nay_invoices(year)
 
 
 def _maybe_warn_need_acadterm(today):

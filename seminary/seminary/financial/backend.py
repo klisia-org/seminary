@@ -88,6 +88,13 @@ class FinancialBackend(ABC):
         lives on the Program Level as oikonomos-owned custom fields, so the
         backend reads it. No-op with no financial app — readmission is free."""
 
+    @abstractmethod
+    def sync_enrollment_payers(self, pe_name: str) -> None:
+        """(Re)build the billing payer snapshot (Payers Fee Category PE + rows)
+        for a Program Enrollment from its program's current Program Fees. Called
+        from the PE form's save action; a no-op with no financial app — a
+        Frappe-only seminary has no payer rows to keep in sync."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -112,6 +119,9 @@ class NullFinancialBackend(FinancialBackend):
         return None
 
     def charge_readmission(self, pe_name: str, effective_date) -> None:
+        return None
+
+    def sync_enrollment_payers(self, pe_name: str) -> None:
         return None
 
 

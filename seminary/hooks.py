@@ -297,9 +297,9 @@ doc_events = {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
     "Program Enrollment": {
-        # Payer-row construction (api.get_payers) is owned by the oikonomos bridge
-        # (Program Enrollment before_submit). A Frappe-only seminary just fulfills
-        # required enrollments — no billing.
+        # Payer-row construction (oikonomos.financial.payers.get_payers) is owned
+        # by the oikonomos bridge (Program Enrollment before_submit). A Frappe-only
+        # seminary just fulfills required enrollments — no billing.
         "on_submit": [
             "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
         ],
