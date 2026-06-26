@@ -258,7 +258,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "The Academic Foundation",
-   "link_count": 4,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -290,16 +290,6 @@
    "link_count": 0,
    "link_to": "Instructor",
    "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "** Time to check your Pricing before enrollment",
-   "link_count": 0,
-   "link_to": "program-pricing",
-   "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   },
