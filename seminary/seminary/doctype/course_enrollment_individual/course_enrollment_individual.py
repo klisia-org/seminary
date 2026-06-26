@@ -198,22 +198,9 @@ class CourseEnrollmentIndividual(Document):
                     ).format(start_date)
                 )
 
-    def on_cancel(self):
-        """Cancel linked Sales Invoices when CEI is cancelled."""
-        invoices = frappe.get_all(
-            "Sales Invoice",
-            filters={
-                "custom_cei": self.name,
-                "docstatus": 1,
-                "is_return": 0,
-            },
-            pluck="name",
-        )
-
-        for inv_name in invoices:
-            si = frappe.get_doc("Sales Invoice", inv_name)
-            si.flags.ignore_permissions = True
-            si.cancel()
+    # Cancelling the linked Sales Invoices on CEI cancel is owned by the oikonomos
+    # bridge (oikonomos.financial.backend.on_cei_cancel, via doc_events). A
+    # Frappe-only seminary cancels a CEI without touching billing.
 
     def validate_duplicate(self):
         CEI = frappe.get_list(
