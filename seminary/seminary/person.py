@@ -194,21 +194,10 @@ def _link_user(person, user):
     return False
 
 
-def link_customer(person_name, customer):
-    """Record the financial party on the Person (first link wins) and mirror
-    the reverse link on the Customer's custom person field."""
-    if not customer or not person_name:
-        return
-    if not frappe.db.get_value("Person", person_name, "customer"):
-        frappe.db.set_value(
-            "Person", person_name, "customer", customer, update_modified=False
-        )
-    if frappe.db.has_column("Customer", "person") and not frappe.db.get_value(
-        "Customer", customer, "person"
-    ):
-        frappe.db.set_value(
-            "Customer", customer, "person", person_name, update_modified=False
-        )
+# link_customer (Person <-> Customer) moved to the oikonomos bridge
+# (oikonomos.financial.customer_person.link_customer). Customer is an ERPNext
+# doctype, so the link is owned there; the Person spine here stays Frappe-only.
+# (The Donor <-> Person link in integrations/giving.py is the sibling pattern.)
 
 
 def set_channel_address(person_name, channel, value):

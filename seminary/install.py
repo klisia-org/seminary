@@ -55,7 +55,6 @@ def after_install():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
 
 
 def check_erpnext():
@@ -1346,28 +1345,10 @@ def seed_skill_tags():
     frappe.db.commit()
 
 
-def setup_customer_person_field():
-    """Reverse link Customer → Person (ADR 042 addendum): Person.customer
-    records the financial party; this mirrors it on the Customer so finance
-    views show which human a Customer is. Maintained by person.link_customer."""
-    if not frappe.db.exists("DocType", "Person"):
-        return
-    if frappe.db.exists("Custom Field", "Customer-person"):
-        return
-    frappe.get_doc(
-        {
-            "doctype": "Custom Field",
-            "dt": "Customer",
-            "fieldname": "person",
-            "fieldtype": "Link",
-            "options": "Person",
-            "label": "Person",
-            "insert_after": "customer_group",
-            "read_only": 1,
-            "search_index": 1,
-        }
-    ).insert(ignore_permissions=True)
-    frappe.db.commit()
+# setup_customer_person_field moved to the oikonomos bridge
+# (oikonomos.financial.customer_person.setup_custom_fields), which owns the
+# Customer<->Person link fields. Customer is an ERPNext doctype, so seminary
+# (Frappe-only) never provisions fields on it.
 
 
 def setup_donor_person_field():
@@ -1618,7 +1599,6 @@ def after_migrate():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
     setup_donor_person_field()
 
 

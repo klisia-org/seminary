@@ -22,13 +22,9 @@ class Student(Document):
             self.update_applicant_status()
 
     def on_update(self):
-        # for each student check whether a customer exists or not if it does not exist then create a customer with customer group student
-        # This prevents from polluting users data
-        self.set_customer_group()
-        if self.customer:
-            self.update_linked_customer()
-        else:
-            self.create_customer()
+        # Customer (billing identity) creation + Person<->Customer linking is owned
+        # by the oikonomos bridge (it subscribes to Student.on_update). With no
+        # bridge installed the Student is purely academic.
         self.update_person_links()
 
     def resolve_person(self):
@@ -83,9 +79,8 @@ class Student(Document):
             self.student_mobile_number = spine.primary_mobile
 
     def update_person_links(self):
-        """Attach the system records this role created to the spine."""
-        from seminary.seminary import person as person_spine
-
+        """Attach the academic system records this role created to the spine
+        (User, Gender). The Customer link is owned by the oikonomos bridge."""
         if not self.person:
             return
         if self.user and not frappe.db.get_value("Person", self.person, "user"):
@@ -101,17 +96,6 @@ class Student(Document):
             frappe.db.set_value(
                 "Person", self.person, "gender", self.gender, update_modified=False
             )
-        customer = self.customer or frappe.db.get_value(
-            "Student", self.name, "customer"
-        )
-        person_spine.link_customer(self.person, customer)
-
-    def set_customer_group(self):
-        if frappe.flags.in_demo_install:
-            return
-        if not self.customer_group:
-            self.customer_group = _("Student")
-            frappe.db.set_value("Student", self.name, "customer_group", _("Student"))
 
     # Validate Functions
     def set_title(self):
@@ -204,60 +188,6 @@ class Student(Document):
             return program_enrollments
 
     # End of Validate Functions
-
-    # On Update Functions
-    def update_linked_customer(self):
-        customer = frappe.get_doc("Customer", self.customer)
-        if self.customer_group:
-            customer.customer_group = self.customer_group
-        customer.customer_name = self.student_name
-        customer.image = self.image
-        customer.save()
-
-        frappe.msgprint(_("Customer {0} updated").format(customer.name), alert=True)
-
-    def create_customer(self):
-        customer = frappe.get_doc(
-            {
-                "doctype": "Customer",
-                "customer_name": self.student_name,
-                "customer_group": self.customer_group
-                or frappe.db.get_single_value("Selling Settings", "customer_group"),
-                "customer_type": "Individual",
-                "image": self.image,
-            }
-        ).insert()
-
-        frappe.db.set_value("Student", self.name, "customer", customer.name)
-        frappe.msgprint(
-            _("Customer {0} created and linked to Student").format(customer.name),
-            alert=True,
-        )
-
-        self._create_contact(customer.name)
-
-    def _create_contact(self, customer_name):
-        contact = frappe.get_doc(
-            {
-                "doctype": "Contact",
-                "first_name": self.first_name,
-                "last_name": self.last_name,
-                "is_primary_contact": 1,
-                "email_ids": [{"email_id": self.student_email_id, "is_primary": 1}],
-                "links": [
-                    {
-                        "link_doctype": "Customer",
-                        "link_name": customer_name,
-                    }
-                ],
-            }
-        )
-        contact.insert(ignore_permissions=True)
-
-        frappe.msgprint(
-            _("Contact {0} created and linked to Customer").format(contact.name),
-            alert=True,
-        )
 
     def enroll_in_program(self, program_name):
         try:

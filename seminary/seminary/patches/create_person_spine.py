@@ -56,22 +56,26 @@ def execute():
         link(doctype, row_name, person_name)
         return person_name
 
-    # 1) Students — authoritative names, and they carry user + customer.
+    # 1) Students — authoritative names, and they carry user (and, when the
+    # oikonomos bridge is installed, a customer).
+    _has_customer = frappe.db.has_column("Student", "customer")
+    _student_fields = [
+        "name",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "student_email_id",
+        "student_mobile_number",
+        "user",
+        "country",
+        "image",
+    ]
+    if _has_customer:
+        _student_fields.append("customer")
     for s in frappe.get_all(
         "Student",
         filters={"person": ("is", "not set")},
-        fields=[
-            "name",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "student_email_id",
-            "student_mobile_number",
-            "user",
-            "customer",
-            "country",
-            "image",
-        ],
+        fields=_student_fields,
     ):
         person_name = resolve(
             "Student",
@@ -90,8 +94,10 @@ def execute():
             first=s.first_name,
             last=s.last_name,
         )
-        if person_name:
-            spine.link_customer(person_name, s.customer)
+        if person_name and _has_customer and s.get("customer"):
+            from oikonomos.financial.customer_person import link_customer
+
+            link_customer(person_name, s.customer)
 
     # 2) Applicants — admitted ones resolve to their Student's Person by email.
     for a in frappe.get_all(

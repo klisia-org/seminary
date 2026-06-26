@@ -7,12 +7,19 @@ ways. Idempotent (first link wins, never overwrites).
 
 import frappe
 
-from seminary.install import setup_customer_person_field
-from seminary.seminary.person import link_customer
-
 
 def execute():
-    setup_customer_person_field()
+    # Customer + the Person<->Customer linker now live in the oikonomos bridge.
+    # Nothing to backfill on a Frappe-only install; deferred import keeps this
+    # historical patch loadable without oikonomos.
+    if "oikonomos" not in frappe.get_installed_apps():
+        return
+    from oikonomos.financial.customer_person import (
+        setup_custom_fields,
+        link_customer,
+    )
+
+    setup_custom_fields()
 
     linked = 0
     for p in frappe.get_all(
