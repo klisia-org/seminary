@@ -70,7 +70,6 @@
   "duration_unit",
   "order_pd",
   "financial_tab",
-  "pgm_pgmfees",
   "connections_tab"
  ],
  "fields": [
@@ -391,14 +390,6 @@
    "fieldname": "financial_tab",
    "fieldtype": "Tab Break",
    "label": "Financial"
-  },
-  {
-   "depends_on": "eval:!doc.is_free",
-   "fieldname": "pgm_pgmfees",
-   "fieldtype": "Table",
-   "label": "Program Fees",
-   "mandatory_depends_on": "eval:!doc.is_free",
-   "options": "Program Fees"
   },
   {
    "default": "1",

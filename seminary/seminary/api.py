@@ -3002,7 +3002,7 @@ def get_payers_fees(pen):
 			from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
 			where pe.student = s.name and
 			pe.program = p.name and
-			p.name = pf.parent and
+			p.name = pf.program and
 			pf.pgm_feecategory = fc.name and
 			pe.name = %s""",
         (pen),
@@ -3012,7 +3012,7 @@ def get_payers_fees(pen):
         """select count(pf.pgm_feecategory) from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
 			where pe.student = s.name and
 			pe.program = p.name and
-			p.name = pf.parent and
+			p.name = pf.program and
 			pf.pgm_feecategory = fc.name and
 			pe.name = %s""",
         (pen),
@@ -4857,7 +4857,7 @@ def get_program_fees(program):
     program_fees = []
     program_fees = frappe.get_all(
         "Program Fees",
-        filters={"parent": program},
+        filters={"program": program},
         fields=["pgm_feecategory"],
     )
     print(program_fees)
@@ -5854,9 +5854,9 @@ def get_program_pricing_html():
     if program_names:
         fee_rows = frappe.get_all(
             "Program Fees",
-            filters={"parenttype": "Program", "parent": ["in", program_names]},
-            fields=["parent", "pgm_feecategory", "pgm_feeevent", "idx"],
-            order_by="parent asc, idx asc",
+            filters={"program": ["in", program_names]},
+            fields=["program", "pgm_feecategory", "pgm_feeevent", "idx"],
+            order_by="program asc, idx asc",
         )
 
     fee_category_names = sorted(
@@ -5885,7 +5885,7 @@ def get_program_pricing_html():
         item = fc.get("item")
         if item:
             referenced_items.add(item)
-        fees_by_program.setdefault(r["parent"], []).append(
+        fees_by_program.setdefault(r["program"], []).append(
             {
                 "fee_category": fc.get("category_name") or r.get("pgm_feecategory"),
                 "event": r.get("pgm_feeevent"),

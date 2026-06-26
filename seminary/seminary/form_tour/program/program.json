@@ -143,25 +143,6 @@
    "position": "Bottom",
    "title": "Publish on Web",
    "ui_tour": 0
-  },
-  {
-   "child_doctype": "Program Fees",
-   "description": "This is key for financial automation. Fee Categories declared here will be automatically triggered for students enrolled in this program according to the event to charge (this field is read-only as it merely brings the setting in Fee Category).",
-   "fieldname": "pgm_feecategory",
-   "fieldtype": "Link",
-   "has_next_condition": 0,
-   "hide_buttons": 0,
-   "is_table_field": 1,
-   "label": "Fee Category",
-   "modal_trigger": 0,
-   "next_on_click": 0,
-   "offset_x": 0,
-   "offset_y": 0,
-   "parent_fieldname": "pgm_pgmfees",
-   "popover_element": 0,
-   "position": "Bottom",
-   "title": "Fee Category",
-   "ui_tour": 0
   }
  ],
  "title": "Program",
