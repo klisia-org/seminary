@@ -110,6 +110,15 @@ class GraduationRequest(Document):
         if self.program:
             self.is_free = frappe.db.get_value("Program", self.program, "is_free") or 0
 
+        # Without a financial backend (a Frappe-only seminary) there is no
+        # graduation fee to collect, so treat the request as free — the workflow
+        # then routes Draft → Academic Review instead of stalling at Awaiting
+        # Payment with no way to pay.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        if not get_financial_backend().has_financials():
+            self.is_free = 1
+
     def _revoke_diploma_if_issued(self):
         """Mark the Diploma revoked rather than deleting it — preserves the
         verification hash for the future v2 page (which should report the
