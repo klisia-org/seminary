@@ -1526,23 +1526,16 @@ def get_student_enrollments_for_term(program_enrollment):
         else:
             cei["status"] = "Enrolled"
 
-        # For Awaiting Payment, surface the unpaid invoice so the student
-        # can click through to pay.
+        # For Awaiting Payment, surface the unpaid invoice (a financial fact owned
+        # by the backend) so the student can click through to pay. None with no
+        # backend — a Frappe-only enrollment never sits in Awaiting Payment.
         cei["sales_invoice"] = None
         if cei["status"] == "Awaiting Payment":
-            si_rows = frappe.get_all(
-                "Sales Invoice",
-                filters={
-                    "custom_cei": cei.name,
-                    "docstatus": 1,
-                    "is_return": 0,
-                },
-                fields=["name", "grand_total", "outstanding_amount"],
-                order_by="creation desc",
-                limit=1,
+            from seminary.seminary.financial.backend import get_financial_backend
+
+            cei["sales_invoice"] = get_financial_backend().unpaid_invoice_for_cei(
+                cei.name
             )
-            if si_rows:
-                cei["sales_invoice"] = si_rows[0]
 
     return ceis
 
@@ -2164,25 +2157,13 @@ def _active_graduation_request_summary(pe_name):
     if not rows:
         return None
     gr = rows[0]
-    # No financial backend (a Frappe-only seminary) means no Sales Invoice table;
-    # a graduation request simply carries no invoices.
+    # The linked invoices are a financial fact owned by the backend; a Frappe-only
+    # seminary's graduation request simply carries none.
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if get_financial_backend().has_financials():
-        sales_invoices = frappe.get_all(
-            "Sales Invoice",
-            filters={
-                "custom_graduation_request": gr.name,
-                "docstatus": 1,
-                "is_return": 0,
-            },
-            fields=["name", "grand_total", "outstanding_amount"],
-        )
-    else:
-        sales_invoices = []
     return {
         **gr,
-        "sales_invoices": sales_invoices,
+        "sales_invoices": get_financial_backend().graduation_request_invoices(gr.name),
     }
 
 
@@ -2284,95 +2265,11 @@ def create_graduation_request(
 
 @frappe.whitelist()
 def get_pe_unpaid_invoices(program_enrollment):
-    """Aggregate every unpaid Sales Invoice tied to this Program Enrollment,
-    grouped by payer (Customer). Covers three linkage paths:
-
-    - Course Enrollment Individual via Sales Invoice.custom_cei
-    - Graduation Request via Sales Invoice.custom_graduation_request
-    - Trigger invoices (NAT/NAY/Monthly/etc.) via the seminary_trigger
-      tag's last segment, which is the pgm_enroll_payers row name.
-
-    Returns a list grouped by customer:
-        [{
-            "customer": "Cust A",
-            "invoices": [{name, grand_total, outstanding_amount, source}],
-            "total_unpaid": 123.45,
-        }, ...]
-
-    Sorted by total_unpaid desc.
-    """
-    if not program_enrollment:
-        return []
-
-    # No financial backend (a Frappe-only seminary) means no Sales Invoice table
-    # to query — there are no unpaid invoices, so report none. Guards both the
-    # Graduation Request desk form and the Program Audit SPA, which call this.
+    """Unpaid invoices for a Program Enrollment, grouped by payer (empty on a
+    Frappe-only seminary)."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return []
-
-    rows = frappe.db.sql(
-        """
-        SELECT * FROM (
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Course Enrollment' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabCourse Enrollment Individual` cei ON cei.name = si.custom_cei
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND cei.program_ce = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Graduation Request' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabGraduation Request` gr ON gr.name = si.custom_graduation_request
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND gr.program_enrollment = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Recurring Fee' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabpgm_enroll_payers` pep
-                ON pep.name = SUBSTRING_INDEX(si.seminary_trigger, ':', -1)
-            INNER JOIN `tabPayers Fee Category PE` pfc ON pfc.name = pep.parent
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND si.seminary_trigger IS NOT NULL
-              AND si.seminary_trigger != ''
-              AND pfc.pf_pe = %(pe)s
-        ) AS u
-        ORDER BY u.customer, u.name
-        """,
-        {"pe": program_enrollment},
-        as_dict=True,
-    )
-
-    # Group by customer
-    by_customer = {}
-    for r in rows:
-        bucket = by_customer.setdefault(
-            r.customer, {"customer": r.customer, "invoices": [], "total_unpaid": 0.0}
-        )
-        bucket["invoices"].append(
-            {
-                "name": r.name,
-                "grand_total": float(r.grand_total or 0),
-                "outstanding_amount": float(r.outstanding_amount or 0),
-                "source": r.source,
-            }
-        )
-        bucket["total_unpaid"] += float(r.outstanding_amount or 0)
-
-    return sorted(by_customer.values(), key=lambda b: b["total_unpaid"], reverse=True)
+    return get_financial_backend().pe_unpaid_invoices(program_enrollment)
 
 
 def _course_category_map(pe, program):
@@ -3047,95 +2944,10 @@ def get_scholarship(student):
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    # If the caller is a student user, always scope to their own Student
-    # record — ignore any client-supplied `student` parameter to prevent a
-    # student from querying someone else's invoices.
-    # No financial backend (a Frappe-only seminary) -> no invoices, and oikonomos
-    # (which owns the permission helpers + Sales Invoice) is not installed, so
-    # return before importing it.
+    """The student's invoices for the Fees page (empty on a Frappe-only seminary)."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return []
-
-    from oikonomos.financial.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        if not student:
-            return []
-
-    if not student:
-        frappe.throw("student is required")
-
-    # Only show invoices where the student is the customer (not church/scholarship)
-    student_customer = frappe.db.get_value("Student", student, "customer")
-
-    si_filters = {"custom_student": student, "docstatus": 1}
-    if student_customer:
-        si_filters["customer"] = student_customer
-
-    sales_invoice_list = frappe.get_all(
-        "Sales Invoice",
-        filters=si_filters,
-        fields=[
-            "name",
-            "customer",
-            "posting_date",
-            "due_date",
-            "total",
-            "outstanding_amount",
-            "status",
-            "is_return",
-            "return_against",
-            "custom_cei",
-            "seminary_summary",
-        ],
-    )
-    for invoice in sales_invoice_list:
-        invoice["name"] = frappe.get_value("Sales Invoice", invoice["name"], "name")
-        invoice["customer"] = frappe.get_value(
-            "Customer", invoice["customer"], "customer_name"
-        )
-        # Prefer the explicit seminary_summary; fall back to the legacy CEI course
-        # label so invoices that pre-date the summary field still get a label.
-        summary = invoice.get("seminary_summary")
-        if not summary and invoice.get("custom_cei"):
-            course = frappe.db.get_value(
-                "Course Enrollment Individual", invoice["custom_cei"], "course_data"
-            )
-            summary = _("Course: {0}").format(course) if course else None
-        invoice["summary"] = summary
-        invoice["course"] = summary  # back-compat for Fees.vue field name
-        invoice["posting_date"] = frappe.utils.formatdate(invoice["posting_date"])
-        invoice["outstanding_raw"] = invoice["outstanding_amount"]
-        invoice["total_raw"] = invoice["total"]
-        if invoice["is_return"]:
-            invoice["status"] = "Return"
-        invoice["total"] = "{:,.2f}".format(invoice["total"])
-        invoice["outstanding_amount"] = "{:,.2f}".format(invoice["outstanding_amount"])
-    sales_invoice_list = sorted(
-        sales_invoice_list, key=lambda x: (x["status"], x["posting_date"]), reverse=True
-    )
-
-    return sales_invoice_list
-
-
-def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
-    payment_entry = frappe.qb.DocType("Payment Entry")
-    payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
-    q = (
-        frappe.qb.from_(payment_entry)
-        .inner_join(payment_entry_reference)
-        .on(payment_entry.name == payment_entry_reference.parent)
-        .select(payment_entry.posting_date)
-        .where(payment_entry_reference.reference_name == sales_invoice)
-    ).run(as_dict=1)
-    payment_date = q[0].get("posting_date")
-    return payment_date
+    return get_financial_backend().student_invoices(student)
 
 
 @frappe.whitelist()
@@ -4080,136 +3892,11 @@ def get_doctrinal_statement():
 
 @frappe.whitelist(allow_guest=True)
 def get_application_payment_url(applicant_name):
-    """Return a payment URL for a Student Applicant's outstanding Application
-    Sales Invoice, plus any alternative payment instructions configured on
-    Seminary Settings. Used by the public Student Applicant web form to let
-    applicants pay immediately after submitting.
-
-    Returns a dict:
-        payment_url: gateway URL (None if no gateway / no SI / already paid)
-        amount: outstanding amount on the invoice
-        currency: invoice currency
-        alternative_instructions: HTML from Seminary Settings (if configured)
-    Returns None if applicant doesn't exist.
-    """
-    # No financial backend (Frappe-only seminary): there is no Application fee
-    # and no Sales Invoice table to query. Applying is free, so the post-submit
-    # payment page shows only the thank-you message.
+    """Payment URL + instructions for an applicant's Application invoice (public
+    web form). Delegates to the financial backend; None on a Frappe-only seminary."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return None
-
-    if not applicant_name or not frappe.db.exists("Student Applicant", applicant_name):
-        return None
-
-    settings = frappe.get_single("Seminary Settings")
-    alternative_instructions = settings.get("alternative_payment_instructions") or None
-
-    invoice = frappe.db.sql(
-        """
-        SELECT name, currency, outstanding_amount
-        FROM `tabSales Invoice`
-        WHERE seminary_trigger LIKE %(prefix)s
-          AND docstatus < 2
-          AND outstanding_amount > 0
-        ORDER BY creation DESC
-        LIMIT 1
-        """,
-        {"prefix": f"APP:{applicant_name}:%"},
-        as_dict=True,
-    )
-
-    if not invoice:
-        return {
-            "payment_url": None,
-            "amount": None,
-            "currency": None,
-            "alternative_instructions": alternative_instructions,
-        }
-
-    inv = invoice[0]
-    payment_url = None
-    if settings.portal_payment_enable and settings.payment_gateway:
-        try:
-            payment_url = _create_application_payment_url(inv.name, settings)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"get_application_payment_url({applicant_name})",
-            )
-
-    return {
-        "payment_url": payment_url,
-        "amount": inv.outstanding_amount,
-        "currency": inv.currency,
-        "alternative_instructions": alternative_instructions,
-    }
-
-
-def _create_application_payment_url(invoice_name, settings):
-    """Create a Payment Request for an Application SI and return the URL.
-    Mirrors get_invoice_payment_url but skips the student-permission gate
-    (applicant payments come from the guest web form context — they need
-    to pay before they have a Student record)."""
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        return None
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_amount,
-        get_gateway_details,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
-        )
-        or frappe._dict()
-    )
-
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        return None
-
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Application Payment for {0}").format(ref_doc.customer),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.flags.ignore_permissions = True
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-    return pr.get_payment_url()
+    return get_financial_backend().application_payment_url(applicant_name)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4807,288 +4494,26 @@ def delete_submission_comment(name):
 
 @frappe.whitelist()
 def get_invoice_payment_url(invoice_name):
-    """Create a Payment Request for a Sales Invoice and return the payment URL.
-
-    Students can only request payment for their own invoices (validated via
-    custom_student on the Sales Invoice).
-    """
+    """Gateway payment URL for one of the student's invoices."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return None
-
-    from oikonomos.financial.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    # Validate that the student owns this invoice
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        invoice_student = frappe.db.get_value(
-            "Sales Invoice", invoice_name, "custom_student"
-        )
-        if not student or invoice_student != student:
-            frappe.throw(_("You do not have permission to pay this invoice."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(
-            _("Online payments are not enabled. Please contact the administration.")
-        )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_gateway_details,
-        get_amount,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
-        )
-        or frappe._dict()
-    )
-
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        frappe.throw(_("This invoice has already been paid."))
-
-    # Cancel any incomplete Payment Requests (submitted but not paid),
-    # following the webshop pattern for re-payment attempts.
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Payment Request for {0}").format(invoice_name),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    return {"payment_url": pr.get_payment_url()}
+    return get_financial_backend().invoice_payment_url(invoice_name)
 
 
 @frappe.whitelist()
 def get_student_balance_payment_url():
-    """Pay the full outstanding on the student's open Student Balance."""
+    """Gateway payment URL for the student's full outstanding balance."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return None
-
-    from oikonomos.financial.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Set allocated_amount = outstanding_amount on each non-return row
-    for row in sb.invoices:
-        if not row.is_return and flt(row.outstanding_amount) > 0:
-            row.allocated_amount = row.outstanding_amount
-        else:
-            row.allocated_amount = 0
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, sb.net_outstanding, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
+    return get_financial_backend().student_balance_payment_url()
 
 
 @frappe.whitelist()
 def get_student_partial_balance_payment_url(amount=None, invoices=None):
-    """Pay a partial amount against the student's open Student Balance.
-
-    Args:
-        amount: Fixed amount to pay (allocated by due date order).
-        invoices: JSON list of {"sales_invoice": name, "amount": value} dicts.
-    """
+    """Gateway payment URL for a partial balance payment."""
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if not get_financial_backend().has_financials():
-        return None
-
-    from oikonomos.financial.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Reset all allocations
-    for row in sb.invoices:
-        row.allocated_amount = 0
-
-    if invoices:
-        # Parse if string
-        if isinstance(invoices, str):
-            invoices = json.loads(invoices)
-        invoice_map = {item["sales_invoice"]: flt(item["amount"]) for item in invoices}
-        for row in sb.invoices:
-            if row.sales_invoice in invoice_map:
-                alloc = min(invoice_map[row.sales_invoice], flt(row.outstanding_amount))
-                row.allocated_amount = alloc
-    elif amount:
-        amount = flt(amount)
-        if amount <= 0 or amount > flt(sb.net_outstanding):
-            frappe.throw(_("Invalid payment amount."))
-        # Allocate by due date
-        remaining = amount
-        sorted_rows = sorted(sb.invoices, key=lambda r: r.due_date or "9999-12-31")
-        for row in sorted_rows:
-            if row.is_return or flt(row.outstanding_amount) <= 0:
-                continue
-            alloc = min(flt(row.outstanding_amount), remaining)
-            row.allocated_amount = alloc
-            remaining -= alloc
-            if remaining <= 0:
-                break
-    else:
-        frappe.throw(_("Please specify an amount or select invoices to pay."))
-
-    total_allocated = sum(
-        flt(row.allocated_amount)
-        for row in sb.invoices
-        if not row.is_return and flt(row.allocated_amount) > 0
-    )
-    if total_allocated <= 0:
-        frappe.throw(_("No amount allocated for payment."))
-
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, total_allocated, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
-
-
-def _get_open_student_balance(student):
-    """Get the open Student Balance for a student, or throw."""
-    sb_name = frappe.db.get_value(
-        "Student Balance", {"student": student, "is_open": 1}, "name"
-    )
-    if not sb_name:
-        frappe.throw(_("No open balance found for this student."))
-    return frappe.get_doc("Student Balance", sb_name)
-
-
-def _create_balance_payment_request(sb, amount, settings):
-    """Create and submit a Payment Request against a Student Balance."""
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-    )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        ["name", "payment_gateway", "payment_account", "payment_channel", "message"],
-        as_dict=True,
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    cancel_old_payment_requests("Student Balance", sb.name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway_account.name,
-            "payment_gateway": gateway_account.payment_gateway,
-            "payment_account": gateway_account.payment_account,
-            "payment_channel": gateway_account.payment_channel,
-            "payment_request_type": "Inward",
-            "currency": sb.currency,
-            "grand_total": amount,
-            "email_to": frappe.session.user,
-            "subject": _("Payment for Student Balance {0}").format(sb.name),
-            "message": gateway_account.message or "",
-            "reference_doctype": "Student Balance",
-            "reference_name": sb.name,
-            "company": sb.company,
-            "party_type": "Customer",
-            "party": sb.customer,
-            "mute_email": 1,
-        }
-    )
-    # Add a payment_reference row so that validate_payment_request_amount
-    # is skipped — it only knows standard doctypes like Sales Invoice.
-    pr.append(
-        "payment_reference",
-        {
-            "amount": amount,
-            "description": _("Student Balance {0}").format(sb.name),
-        },
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    sb.db_set("payment_request", pr.name)
-    return pr
+    return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 
 @frappe.whitelist()

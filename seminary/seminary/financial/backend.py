@@ -113,6 +113,45 @@ class FinancialBackend(ABC):
         """Create a Scholarship Award request from the portal. Raises with no
         financial app — there are no scholarships to apply for."""
 
+    # -- Student-facing invoice reads + payment-gateway URLs -----------------
+    # The portal (Fees / Enrollment / Program Audit pages, the applicant web
+    # form) calls these; a Frappe-only seminary returns empty / None (no
+    # invoices, no gateway).
+
+    @abstractmethod
+    def student_invoices(self, student: str | None = None) -> list:
+        """The student's submitted invoices, formatted for the Fees page."""
+
+    @abstractmethod
+    def pe_unpaid_invoices(self, program_enrollment: str) -> list:
+        """Unpaid invoices for a Program Enrollment, grouped by payer."""
+
+    @abstractmethod
+    def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
+        """The latest unpaid invoice for a Course Enrollment Individual, or None."""
+
+    @abstractmethod
+    def graduation_request_invoices(self, gr_name: str) -> list:
+        """Submitted invoices linked to a Graduation Request."""
+
+    @abstractmethod
+    def application_payment_url(self, applicant_name: str) -> dict | None:
+        """Payment URL + instructions for an applicant's Application invoice."""
+
+    @abstractmethod
+    def invoice_payment_url(self, invoice_name: str) -> dict | None:
+        """Gateway payment URL for one of the student's invoices."""
+
+    @abstractmethod
+    def student_balance_payment_url(self) -> dict | None:
+        """Gateway payment URL for the student's full outstanding balance."""
+
+    @abstractmethod
+    def student_partial_balance_payment_url(
+        self, amount=None, invoices=None
+    ) -> dict | None:
+        """Gateway payment URL for a partial balance payment."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -152,6 +191,32 @@ class NullFinancialBackend(FinancialBackend):
         self, program_enrollment: str, scholarship: str, comment: str | None = None
     ) -> str | None:
         frappe.throw(frappe._("Scholarship applications are not enabled."))
+
+    def student_invoices(self, student: str | None = None) -> list:
+        return []
+
+    def pe_unpaid_invoices(self, program_enrollment: str) -> list:
+        return []
+
+    def unpaid_invoice_for_cei(self, cei_name: str) -> dict | None:
+        return None
+
+    def graduation_request_invoices(self, gr_name: str) -> list:
+        return []
+
+    def application_payment_url(self, applicant_name: str) -> dict | None:
+        return None
+
+    def invoice_payment_url(self, invoice_name: str) -> dict | None:
+        return None
+
+    def student_balance_payment_url(self) -> dict | None:
+        return None
+
+    def student_partial_balance_payment_url(
+        self, amount=None, invoices=None
+    ) -> dict | None:
+        return None
 
 
 def get_financial_backend() -> FinancialBackend:
