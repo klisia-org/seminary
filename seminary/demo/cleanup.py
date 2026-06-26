@@ -10,9 +10,7 @@ DEMO_DOCTYPES = [
     "Course Schedule",
     "Program Enrollment",
     "Student",
-    # 2. Auto-created by scripts/hooks
-    "Customer",
-    # 3. Core demo records
+    # 2. Core demo records
     "Instructor",
     "Program",
     "Course",
@@ -34,42 +32,15 @@ def remove_demo_data():
 
     deleted_counts = {}
 
-    # Sales Invoices are auto-created when CEIs are submitted (not tagged as demo).
-    # Delete them first so CEI deletion isn't blocked by FK references. Sales
-    # Invoice is an ERPNext doctype, so skip this entirely on a Frappe-only
-    # (no-oikonomos) site, where no invoices exist and the table is absent.
-    from seminary.seminary.financial.backend import get_financial_backend
-
-    demo_ceis = frappe.get_all(
-        "Tag Link",
-        filters={"document_type": "Course Enrollment Individual", "tag": DEMO_TAG},
-        pluck="document_name",
-    )
-    if demo_ceis and get_financial_backend().has_financials():
-        linked_invoices = frappe.get_all(
-            "Sales Invoice",
-            filters={"custom_cei": ("in", demo_ceis)},
-            pluck="name",
-        )
-        si_count = 0
-        for inv_name in linked_invoices:
-            try:
-                # Force docstatus=2 directly to bypass GL validations / payment checks
-                frappe.db.set_value(
-                    "Sales Invoice", inv_name, "docstatus", 2, update_modified=False
-                )
-                frappe.delete_doc(
-                    "Sales Invoice",
-                    inv_name,
-                    force=True,
-                    ignore_permissions=True,
-                    delete_permanently=True,
-                )
-                si_count += 1
-            except Exception:
-                frappe.log_error(f"Failed to delete Sales Invoice {inv_name}")
-        if si_count:
-            deleted_counts["Sales Invoice"] = si_count
+    # Billing demo records (Sales Invoices, Customers) are owned by the financial
+    # bridge and reference the academic docs below. Let oikonomos tear its own
+    # down first via the seminary_demo_cleanup hook; a no-op on a Frappe-only
+    # seminary, which has no billing records.
+    for fn in frappe.get_hooks("seminary_demo_cleanup"):
+        try:
+            frappe.get_attr(fn)(deleted_counts)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "seminary_demo_cleanup")
 
     for doctype in DEMO_DOCTYPES:
         # Find all docs with the demo tag

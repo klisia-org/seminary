@@ -152,6 +152,11 @@ class FinancialBackend(ABC):
     ) -> dict | None:
         """Gateway payment URL for a partial balance payment."""
 
+    @abstractmethod
+    def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
+        """Names of the invoices linked to a Course Enrollment Individual. Used by
+        the regenerate-invoice action. Empty with no financial app."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -217,6 +222,9 @@ class NullFinancialBackend(FinancialBackend):
         self, amount=None, invoices=None
     ) -> dict | None:
         return None
+
+    def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
+        return []
 
 
 def get_financial_backend() -> FinancialBackend:

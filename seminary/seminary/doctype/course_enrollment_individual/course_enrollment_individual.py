@@ -347,11 +347,10 @@ class CourseEnrollmentIndividual(Document):
 
         Returns the list of Sales Invoices now linked to the enrollment.
         """
-        existing = frappe.get_all(
-            "Sales Invoice",
-            filters={"custom_cei": self.name, "docstatus": ("<", 2)},
-            pluck="name",
-        )
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        backend = get_financial_backend()
+        existing = backend.cei_invoices(self.name)
         if existing:
             frappe.throw(
                 _("A Sales Invoice already exists for this enrollment: {0}").format(
@@ -362,6 +361,4 @@ class CourseEnrollmentIndividual(Document):
             # Prior attempt marked it done but left no invoice — allow a retry.
             self.db_set("cei_si", 0)
         self.generate_enrollment_invoice()
-        return frappe.get_all(
-            "Sales Invoice", filters={"custom_cei": self.name}, pluck="name"
-        )
+        return backend.cei_invoices(self.name, include_cancelled=True)
