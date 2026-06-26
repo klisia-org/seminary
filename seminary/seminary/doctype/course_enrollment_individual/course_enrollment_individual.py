@@ -144,6 +144,16 @@ class CourseEnrollmentIndividual(Document):
         self.percent_to_pay = flags.percent_to_pay or 0
         self.registrar_block_cei = flags.registrar_block_cei or 0
 
+        # Without a financial backend (a Frappe-only seminary) there is no billing,
+        # so payment can never gate enrollment. Force the payment-required flags
+        # off so the workflow routes Draft → Submitted (free) instead of stalling
+        # the enrollment at Awaiting Payment with no way to pay.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        if not get_financial_backend().has_financials():
+            self.require_pay_submit = 0
+            self.percent_to_pay = 0
+
     def on_submit(self):
         # Waitlisted students hold a queue position, not a seat — no invoice is
         # raised until they are promoted (see waitlist._promote_cei, which calls
