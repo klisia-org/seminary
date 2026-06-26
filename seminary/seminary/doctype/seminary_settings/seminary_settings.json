@@ -108,7 +108,8 @@
   "internship_share_program",
   "internship_share_credits",
   "internship_share_gpa",
-  "internship_share_expected_graduation"
+  "internship_share_expected_graduation",
+  "has_oikonomos"
  ],
  "fields": [
   {
@@ -122,7 +123,8 @@
    "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
    "fieldname": "sync_rooms_to_asset_locations",
    "fieldtype": "Check",
-   "label": "Sync rooms to Asset Locations"
+   "label": "Sync rooms to Asset Locations",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "collapsible": 1,
@@ -222,14 +224,16 @@
    "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
-   "label": "Submit Sales Invoice from Enrollments"
+   "label": "Submit Sales Invoice from Enrollments",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "1",
    "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
-   "label": "Enable Automated Billing"
+   "label": "Enable Automated Billing",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "1",
@@ -317,7 +321,8 @@
    "description": "If not checked, the corresponding fee will be the same for all audited courses.",
    "fieldname": "auditcredit",
    "fieldtype": "Check",
-   "label": "Should audit be charged per credit hour?"
+   "label": "Should audit be charged per credit hour?",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "0",
@@ -477,7 +482,8 @@
    "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
    "fieldname": "portal_payment_enable",
    "fieldtype": "Check",
-   "label": "Enable Online Payments"
+   "label": "Enable Online Payments",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "fieldname": "section_break_fxlm",
@@ -499,7 +505,8 @@
    "description": "This requires the installation of another app \"HRMS\" by Frappe. HRMS enables payroll for salaried and per-course instructors via Salary Structure, Payroll Entry, and Salary Slip.",
    "fieldname": "hrms_enable",
    "fieldtype": "Check",
-   "label": "Enable HRMS Payroll"
+   "label": "Enable HRMS Payroll",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "End of period",
@@ -753,6 +760,15 @@
    "fieldname": "internship_share_expected_graduation",
    "fieldtype": "Check",
    "label": "Share Applicant's Expected Graduation"
+  },
+  {
+   "fieldname": "has_oikonomos",
+   "fieldtype": "Check",
+   "label": "Oikonomos (billing bridge) installed",
+   "hidden": 1,
+   "read_only": 1,
+   "default": "0",
+   "description": "Set by the oikonomos bridge on install/migrate. Gates the billing UI."
   }
  ],
  "issingle": 1,

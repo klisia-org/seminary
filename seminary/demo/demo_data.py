@@ -163,12 +163,14 @@ def create_students():
             doc = insert_demo_doc("Student", student_data)
             # Store generated student ID for enrollment
             student_data["name"] = doc.name
-            # Tag auto-created Customer
-            customer = frappe.db.get_value(
-                "Customer", {"customer_name": doc.student_name}
-            )
-            if customer:
-                frappe.get_doc("Customer", customer).add_tag(DEMO_TAG)
+            # Tag the auto-created Customer (only when the oikonomos bridge is
+            # installed — a Frappe-only seminary has no Customer doctype).
+            if frappe.db.exists("DocType", "Customer"):
+                customer = frappe.db.get_value(
+                    "Customer", {"customer_name": doc.student_name}
+                )
+                if customer:
+                    frappe.get_doc("Customer", customer).add_tag(DEMO_TAG)
 
 
 def create_instructor_categories():
