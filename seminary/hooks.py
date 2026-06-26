@@ -11,10 +11,13 @@ app_logo_url = "/assets/seminary/images/SeminaryERP_tile.png"
 source_link = "https://github.com/klisia-org/seminary"
 app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
-app_license = "GNU GPL V3"
+app_license = "mit"
 app_home = "/desk/seminary"
 
-required_apps = ["erpnext"]
+# Seminary runs on the Frappe framework alone. Billing/payments/ERPNext
+# integration lives in the optional `oikonomos` bridge app (which depends on
+# both seminary and erpnext). Seminary never requires erpnext.
+required_apps = []
 
 # Financial backend (oikonomos decoupling). Seminary routes all billing facts /
 # side effects through `seminary.seminary.financial.backend.get_financial_backend`,
@@ -211,7 +214,6 @@ seminary_markdown_macro_renderers = {
 # Installation
 # ------------
 
-before_install = "seminary.install.before_install"
 after_install = "seminary.install.after_install"
 after_migrate = "seminary.install.after_migrate"
 

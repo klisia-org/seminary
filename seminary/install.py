@@ -16,12 +16,7 @@ from frappe import _
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
 
 
-def before_install():
-    check_erpnext()
-
-
 def after_install():
-    check_erpnext()
     setup_fixtures()
     create_studentappl_role()
     create_student_role()
@@ -55,134 +50,15 @@ def after_install():
     seed_website_pages()
 
 
-def check_erpnext():
-    check_erpnext_installed()
-    status = check_erpnext_setup_complete()
-    if status["errors"]:
-        frappe.throw(
-            _(
-                "ERPNext setup is incomplete. Please complete the setup before installing {0}"
-            ).format("SeminaryERP"),
-            title=_("Setup Incomplete"),
-        )
-
-
-def check_erpnext_installed():
-    """Check if ERPNext app is installed on the site."""
-    installed_apps = frappe.get_installed_apps()
-    if "erpnext" not in installed_apps:
-        frappe.throw(
-            _("ERPNext must be installed before installing {0}").format("SeminaryERP"),
-            title=_("Missing Dependency"),
-        )
-
-
-def check_erpnext_setup_complete():
-    """
-    Check if ERPNext has been set up (i.e., the Setup Wizard was completed
-    and at least one Company exists).
-    Returns a dict with detailed status.
-    """
-    status = {
-        "company_exists": False,
-        "fiscal_year_exists": False,
-        "selling_price_list_exists": False,
-        "buying_price_list_exists": False,
-        "default_company": None,
-        "errors": [],
-    }
-
-    # Check for Company
-    companies = frappe.get_all("Company", limit=1, pluck="name")
-    if companies:
-        status["company_exists"] = True
-        status["default_company"] = companies[0]
-    else:
-        status["errors"].append(
-            _("No Company found. Please complete the ERPNext Setup Wizard first.")
-        )
-
-    # Check for Fiscal Year
-    if frappe.db.count("Fiscal Year") > 0:
-        status["fiscal_year_exists"] = True
-    else:
-        status["errors"].append(_("No Fiscal Year found."))
-
-    # Check for Selling Price List
-    selling_pl = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
-    if selling_pl:
-        status["selling_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Selling Price List found."))
-
-    # Check for Buying Price List
-    buying_pl = frappe.db.get_value("Price List", {"buying": 1, "enabled": 1}, "name")
-    if buying_pl:
-        status["buying_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Buying Price List found."))
-
-    return status
+# ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
+# before_install — oikonomos is the app that requires ERPNext, so it verifies the
+# ERPNext setup. Seminary installs on Frappe alone.
 
 
 def setup_fixtures():
-    default_price_list = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
-    )
+    # Academic setup only. The ERPNext groups (Item Group, Customer Groups,
+    # Supplier Group, billing UOMs) are created by the oikonomos bridge.
     records = [
-        # Item Group Records
-        {"doctype": "Item Group", "item_group_name": "Tuition"},
-        # Customer Group Records
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Student",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Donor",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Church",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Denomination",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Seminary",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Para-church Organization",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Alumni",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Board Member",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Volunteer",
-            "default_price_list": default_price_list,
-        },
-        # UOM
-        {"doctype": "UOM", "uom_name": _("Academic Event"), "must_be_whole_number": 0},
-        {"doctype": "UOM", "uom_name": _("Credit hour"), "must_be_whole_number": 0},
-        # Supplier Group for non-employee instructors (volunteers, guest lecturers)
-        {"doctype": "Supplier Group", "supplier_group_name": _("Instructor")},
         # Instructor Category defaults — schools can add/remove
         {
             "doctype": "Instructor Category",
