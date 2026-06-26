@@ -155,10 +155,9 @@ webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    "Customer": "seminary/public/js/customer.js",
-    "Item Price": "seminary/public/js/item_price.js",
-}
+# Customer / Item Price form customizations are ERPNext-facing and live in the
+# oikonomos bridge (oikonomos/public/js/{customer,item_price}.js).
+# doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
