@@ -693,6 +693,7 @@
     "action": "Send for Financial Review",
     "allow_self_approval": 1,
     "allowed": "Registrar",
+    "condition": "not doc.is_free",
     "next_state": "Financial Review",
     "state": "Academic Review"
    },
