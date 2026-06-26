@@ -95,16 +95,18 @@
   {
    "fieldname": "refund_section",
    "fieldtype": "Section Break",
-   "label": "Refund"
+   "label": "Refund",
+   "depends_on": "eval:frappe.boot.versions.oikonomos"
   },
   {
    "default": "0",
    "fieldname": "has_refund",
    "fieldtype": "Check",
-   "label": "Has Refund"
+   "label": "Has Refund",
+   "depends_on": "eval:frappe.boot.versions.oikonomos"
   },
   {
-   "depends_on": "eval:doc.has_refund==1",
+   "depends_on": "eval:doc.has_refund==1 && frappe.boot.versions.oikonomos",
    "fieldname": "withdrawal_refunds",
    "fieldtype": "Table",
    "label": "Withdrawal Refunds",
