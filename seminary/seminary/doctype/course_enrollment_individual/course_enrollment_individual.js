@@ -109,19 +109,39 @@ frappe.ui.form.on("Course Enrollment Individual", {
         if (frm.doc.program_ce && !frm.courses) {
             load_courses_for_program(frm);
         }
-        if (!frm.doc.cei_si) {
-
-            frm.add_custom_button("Create Sales Invoice(s)", function() {
-                frm.call('get_inv_data_ce')
-                    .then(r => {
-                        frm.set_value("cei_si", 1);
-                        frm.save();
-                        frm.refresh();
-                    })
-                    .catch(e => {
-                        frappe.msgprint("Error creating Sales Invoice(s)!");
+        // Billing actions exist only when the oikonomos bridge is installed.
+        // Show the (re)generate button whenever a submitted, non-free, billable
+        // enrollment has no Sales Invoice yet — this covers both a fresh
+        // enrollment and one stranded by an earlier billing-config gap (cei_si
+        // set but no invoice). get_inv_data_ce is idempotent and refuses to
+        // duplicate an existing invoice.
+        const _oikonomos = frappe.boot.versions && frappe.boot.versions.oikonomos;
+        const _billable = ["Awaiting Payment", "Submitted"].includes(frm.doc.workflow_state);
+        if (_oikonomos && frm.doc.docstatus === 1 && !frm.doc.is_free && _billable) {
+            frappe.db.get_list("Sales Invoice", {
+                filters: { custom_cei: frm.doc.name, docstatus: ["<", 2] },
+                limit: 1,
+            }).then((rows) => {
+                if (rows && rows.length) return; // already invoiced — no button
+                frm.add_custom_button(__("Generate Sales Invoice"), function () {
+                    frm.call("get_inv_data_ce").then((r) => {
+                        const invs = (r && r.message) || [];
+                        if (invs.length) {
+                            frappe.show_alert({ message: __("Sales Invoice created: {0}", [invs.join(", ")]), indicator: "green" });
+                        } else {
+                            frappe.msgprint({
+                                title: __("No invoice raised"),
+                                indicator: "orange",
+                                message: __("No Course Enrollment fee is configured for this program (or the fee's Item Price is missing). Fix the program's fee setup, then click Generate Sales Invoice again."),
+                            });
+                        }
+                        frm.reload_doc();
+                    }).catch(() => {
+                        frappe.msgprint({ title: __("Billing error"), indicator: "red", message: __("Could not generate the Sales Invoice. Check the Error Log.") });
                     });
-            }).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});};
+                }).css({ "color": "white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px" });
+            });
+        }
 
         if (frm.doc.docstatus === 1 && !frm.doc.withdrawn && !frm.doc.withdrawal_request) {
             frm.add_custom_button(__("Request Withdrawal"), function() {

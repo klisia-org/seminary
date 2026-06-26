@@ -62,9 +62,12 @@ class FinancialBackend(ABC):
         """Aggregate of submitted invoices linked to a Graduation Request."""
 
     @abstractmethod
-    def generate_enrollment_invoice(self, cei_doc) -> None:
-        """Raise the Sales Invoice(s) for a non-free Course Enrollment
-        Individual. Idempotency on the CEI (`cei_si`) is handled by the caller."""
+    def generate_enrollment_invoice(self, cei_doc) -> int:
+        """Raise the Sales Invoice(s) for a non-free Course Enrollment Individual
+        and return how many payer lines were billed. Idempotency on the CEI
+        (`cei_si`) is handled by the caller, which must only flag the enrollment
+        as invoiced when the return is non-zero — a 0 means nothing was billable
+        (no fee wired up / missing price), not 'successfully free'."""
 
     @abstractmethod
     def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
@@ -99,8 +102,8 @@ class NullFinancialBackend(FinancialBackend):
     def payment_status_for_graduation(self, gr_name: str) -> PaymentAggregate:
         return PaymentAggregate(paid_percent=100.0)
 
-    def generate_enrollment_invoice(self, cei_doc) -> None:
-        return None
+    def generate_enrollment_invoice(self, cei_doc) -> int:
+        return 0
 
     def generate_program_enrollment_invoices(self, pfc_doc) -> dict:
         return {"created": 0, "skipped": 0, "failed": 0}

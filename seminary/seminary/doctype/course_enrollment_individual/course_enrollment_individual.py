@@ -207,8 +207,20 @@ class CourseEnrollmentIndividual(Document):
         # null backend is a no-op and the enrollment proceeds as free.
         from seminary.seminary.financial.backend import get_financial_backend
 
-        get_financial_backend().generate_enrollment_invoice(self)
-        self.db_set("cei_si", 1)
+        backend = get_financial_backend()
+        if not backend.has_financials():
+            # No billing system: nothing to invoice, the enrollment is free.
+            self.db_set("cei_si", 1)
+            return
+        billed = backend.generate_enrollment_invoice(self)
+        # Only flag the enrollment as invoiced when an invoice was actually
+        # raised. billed == 0 means the program has no Course Enrollment fee
+        # wired into its payers (or the fee's Item Price is missing): leave
+        # cei_si = 0 so the gap stays visible and staff can fix the config and
+        # regenerate (get_inv_data_ce), instead of silently stranding an unbilled
+        # enrollment with cei_si = 1 and no Sales Invoice.
+        if billed:
+            self.db_set("cei_si", 1)
 
     def before_cancel(self):
         """Block cancellation if the course has already started.
@@ -321,14 +333,35 @@ class CourseEnrollmentIndividual(Document):
 
     @frappe.whitelist()
     def get_inv_data_ce(self):
-        """Raise this enrollment's Sales Invoices via the financial backend.
+        """(Re)raise this enrollment's Sales Invoice via the financial backend.
 
-        The billing engine (payer resolution, scholarship math, invoice
-        construction) lives in the oikonomos bridge; seminary keeps only this
-        whitelisted entry point so the desk form button and the lifecycle still
-        call it by name. With no backend installed this is a no-op and the
-        enrollment proceeds as free.
+        Desk-button entry point. The billing engine (payer resolution,
+        scholarship math, invoice construction) lives in the oikonomos bridge;
+        seminary keeps only this whitelisted trigger. It is regenerate-safe:
+
+        - refuses to create a second invoice when one already exists;
+        - clears a stale ``cei_si`` (a prior attempt that flagged the enrollment
+          invoiced but produced nothing — a billing-config gap) so this retries;
+        - routes through ``generate_enrollment_invoice``, which re-sets
+          ``cei_si`` only if an invoice is actually raised.
+
+        Returns the list of Sales Invoices now linked to the enrollment.
         """
-        from seminary.seminary.financial.backend import get_financial_backend
-
-        return get_financial_backend().generate_enrollment_invoice(self)
+        existing = frappe.get_all(
+            "Sales Invoice",
+            filters={"custom_cei": self.name, "docstatus": ("<", 2)},
+            pluck="name",
+        )
+        if existing:
+            frappe.throw(
+                _("A Sales Invoice already exists for this enrollment: {0}").format(
+                    ", ".join(existing)
+                )
+            )
+        if self.cei_si:
+            # Prior attempt marked it done but left no invoice — allow a retry.
+            self.db_set("cei_si", 0)
+        self.generate_enrollment_invoice()
+        return frappe.get_all(
+            "Sales Invoice", filters={"custom_cei": self.name}, pluck="name"
+        )
