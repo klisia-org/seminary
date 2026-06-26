@@ -18,11 +18,16 @@ def validate(doc, method=None):
 
 
 def on_update(doc, method=None):
-    """Provision Salary Slip custom fields + Instructor Pay component when HRMS is on;
-    backfill Asset Locations when room sync is switched on."""
+    """Backfill Asset Locations when room sync is switched on (ERPNext only).
+
+    Room→Asset Location sync and the root_asset_location field require ERPNext's
+    Location doctype, so the backfill is guarded: it never runs on a Frappe-only
+    install. Instructor-payroll provisioning is owned by the oikonomos bridge
+    (it subscribes to Seminary Settings on_update separately)."""
     if (
         doc.has_value_changed("sync_rooms_to_asset_locations")
         and doc.sync_rooms_to_asset_locations
+        and frappe.db.exists("DocType", "Location")
     ):
         from seminary.seminary import locations
 
