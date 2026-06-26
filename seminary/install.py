@@ -32,7 +32,6 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    setup_sales_invoice_permissions()
     update_company_in_item_details()
     seed_fee_categories()
     seed_assessment_criteria()
@@ -1422,26 +1421,9 @@ def create_partner_role():
         ).save()
 
 
-def setup_sales_invoice_permissions():
-    """Grant the Student and Alumni roles read + print access to Sales Invoice.
-
-    Row-level access is scoped to the user's own linked Student record by
-    seminary.seminary.sales_invoice_permissions. Idempotent: re-running only
-    ensures the read/print flags are set, it never duplicates the rule.
-    """
-    from frappe.permissions import add_permission, update_permission_property
-
-    if not frappe.db.exists("DocType", "Sales Invoice"):
-        return
-
-    for role in (_("Student"), _("Alumni")):
-        if not frappe.db.exists("Role", role):
-            continue
-        add_permission("Sales Invoice", role, 0)
-        update_permission_property("Sales Invoice", role, 0, "read", 1)
-        update_permission_property("Sales Invoice", role, 0, "print", 1)
-
-    frappe.db.commit()
+# setup_sales_invoice_permissions moved to the oikonomos bridge
+# (oikonomos.install): granting Student/Alumni roles access to Sales Invoice (an
+# ERPNext doctype) belongs with the financial bridge, not Frappe-only seminary.
 
 
 def create_registrar_role():
@@ -1579,7 +1561,6 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_withdrawal_workflow()
-    setup_sales_invoice_permissions()
     seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()

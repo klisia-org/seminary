@@ -87,13 +87,8 @@ calendars = [
 ]
 
 standard_portal_menu_items = [
-    {
-        "title": "Financials",
-        "route": "/financials",
-        "reference_doctype": "Sales Invoice",
-        "role": "Student",
-        "condition": "frappe.get_all('Sales Invoice', filters={'custom_student': frappe.session.user})",
-    },
+    # The "Financials" portal item (references the ERPNext Sales Invoice doctype)
+    # is contributed by the oikonomos bridge.
     {
         "title": "Alumni",
         "route": "/seminary/alumni",
@@ -238,7 +233,6 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
     "Partner Organization": "seminary.partner.permissions.org_query",
@@ -257,7 +251,6 @@ permission_query_conditions = {
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",

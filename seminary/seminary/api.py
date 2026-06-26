@@ -3126,7 +3126,7 @@ def get_student_invoices(student=None):
     # If the caller is a student user, always scope to their own Student
     # record — ignore any client-supplied `student` parameter to prevent a
     # student from querying someone else's invoices.
-    from seminary.seminary.sales_invoice_permissions import (
+    from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
     )
@@ -5217,7 +5217,7 @@ def get_invoice_payment_url(invoice_name):
     Students can only request payment for their own invoices (validated via
     custom_student on the Sales Invoice).
     """
-    from seminary.seminary.sales_invoice_permissions import (
+    from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
     )
@@ -5306,7 +5306,7 @@ def get_invoice_payment_url(invoice_name):
 @frappe.whitelist()
 def get_student_balance_payment_url():
     """Pay the full outstanding on the student's open Student Balance."""
-    from seminary.seminary.sales_invoice_permissions import (
+    from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
     )
@@ -5347,7 +5347,7 @@ def get_student_partial_balance_payment_url(amount=None, invoices=None):
         amount: Fixed amount to pay (allocated by due date order).
         invoices: JSON list of {"sales_invoice": name, "amount": value} dicts.
     """
-    from seminary.seminary.sales_invoice_permissions import (
+    from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
     )
