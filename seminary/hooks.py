@@ -279,7 +279,7 @@ has_permission = {
 
 
 override_doctype_class = {
-    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    # Payment Request (ERPNext doctype) is overridden by the oikonomos bridge.
     # Frappe gap: webform_include_js is only wired for standard web forms.
     # Frappe workaround — registry: docs/frappe-workarounds.md (#4).
     "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
