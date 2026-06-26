@@ -15,6 +15,10 @@ class Program(WebsiteGenerator):
         self.slug = slugify(self.program_name)
 
     def validate(self):
+        # WebsiteGenerator.validate sets/scrubs the web `route` from the title for
+        # published programs. We override validate, so call super first or the
+        # route field is never populated and the program's web page has no URL.
+        super().validate()
         self._hydrate_graduation_gpa_default()
 
         # Free programs cannot gate enrollment on payment — there are no invoices.
