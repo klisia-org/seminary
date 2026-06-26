@@ -348,12 +348,16 @@ class CourseSchedule(Document):
         return self.room
 
     def before_insert(self):
-        if not self.workflow_state:
-            from seminary.seminary.cs_lifecycle import get_default_initial_state
-
-            self.workflow_state = get_default_initial_state(self)
-
         self._seed_assessment_criteria_from_course()
+
+    def after_insert(self):
+        # Frappe forbids *inserting* a document directly into a non-initial
+        # workflow state, so a Course Schedule is always born in Draft. Promote
+        # it to Open for Enrollment here (system-driven, db.set_value) when
+        # enrollment is already open — see cs_lifecycle.open_new_schedule_if_due.
+        from seminary.seminary.cs_lifecycle import open_new_schedule_if_due
+
+        open_new_schedule_if_due(self)
 
     def _seed_assessment_criteria_from_course(self):
         """Auto-populate courseassescrit_sc from Course.assessment_criteria.

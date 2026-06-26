@@ -35,13 +35,17 @@ def remove_demo_data():
     deleted_counts = {}
 
     # Sales Invoices are auto-created when CEIs are submitted (not tagged as demo).
-    # Delete them first so CEI deletion isn't blocked by FK references.
+    # Delete them first so CEI deletion isn't blocked by FK references. Sales
+    # Invoice is an ERPNext doctype, so skip this entirely on a Frappe-only
+    # (no-oikonomos) site, where no invoices exist and the table is absent.
+    from seminary.seminary.financial.backend import get_financial_backend
+
     demo_ceis = frappe.get_all(
         "Tag Link",
         filters={"document_type": "Course Enrollment Individual", "tag": DEMO_TAG},
         pluck="document_name",
     )
-    if demo_ceis:
+    if demo_ceis and get_financial_backend().has_financials():
         linked_invoices = frappe.get_all(
             "Sales Invoice",
             filters={"custom_cei": ("in", demo_ceis)},

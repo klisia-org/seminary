@@ -160,6 +160,20 @@ class CourseEnrollmentIndividual(Document):
         # generate_enrollment_invoice at that point).
         if self.workflow_state == "Waitlisted":
             return
+
+        # A raw submit() that doesn't go through apply_workflow (e.g. demo data,
+        # or any system-driven code path) lands in the first doc_status=1 state —
+        # "Awaiting Payment" — ignoring the workflow's pay-gate condition. When the
+        # enrollment is actually free / ungated (is_free or not require_pay_submit;
+        # always so with no financial backend), correct it to Submitted so the
+        # student is rostered instead of stranded in a payment state with nothing
+        # to pay. Mirrors the Draft→Submitted workflow condition; a legitimate paid
+        # enrollment (require_pay_submit and not is_free) stays in Awaiting Payment.
+        if self.workflow_state == "Awaiting Payment" and (
+            self.is_free or not self.require_pay_submit
+        ):
+            self.db_set("workflow_state", "Submitted", update_modified=False)
+
         self.generate_enrollment_invoice()
 
         # A free / no-payment-gate enrollment goes straight Draft → Submitted on
