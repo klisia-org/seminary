@@ -792,6 +792,26 @@ def submit_student_evidence(program_enrollment, sgr_name, attachment_url):
     if row.status in ("Not Started", "In Progress"):
         row.status = "Submitted"
     pe.save(ignore_permissions=True)
+
+    # The student uploads evidence as an unattached private file (they have no
+    # write permission on Program Enrollment, by design — see ProgramAudit.vue).
+    # Attach their own uploaded file to the enrollment now, with elevated
+    # permission, so reviewing staff (who can read the PE) can open the private
+    # file. Scoped to a file the student themselves owns.
+    if attachment_url:
+        file_name = frappe.db.get_value(
+            "File", {"file_url": attachment_url, "owner": frappe.session.user}, "name"
+        )
+        if file_name:
+            frappe.db.set_value(
+                "File",
+                file_name,
+                {
+                    "attached_to_doctype": "Program Enrollment",
+                    "attached_to_name": program_enrollment,
+                },
+                update_modified=False,
+            )
     return {"status": row.status}
 
 

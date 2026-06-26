@@ -281,7 +281,7 @@
                     {{ __('Check in') }}
                   </button>
                   <FileUploader v-else-if="canStudentUpload(req)"
-                    :upload-args="{ doctype: 'Program Enrollment', docname: audit.data.program_enrollment, folder: 'Home/Attachments', private: 1 }"
+                    :upload-args="{ folder: 'Home/Attachments', private: 1 }"
                     :validate-file="validateFileSize"
                     @success="(file) => onStudentEvidenceUploaded(req, file)">
                     <template #default="{ openFileSelector }">
