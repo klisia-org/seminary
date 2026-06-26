@@ -419,14 +419,9 @@ def calculate_dynamic_date(withdrawal_rule, academic_term):
 
 
 def _company_holidays():
-    """Holiday dates from the default Seminary company's holiday list, as a set."""
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    if not company:
-        return set()
-    holiday_list = frappe.db.get_value("Company", company, "default_holiday_list")
-    if not holiday_list:
-        return set()
-    dates = frappe.get_all(
-        "Holiday", filters={"parent": holiday_list}, pluck="holiday_date"
-    )
-    return {frappe.utils.getdate(d) for d in dates if d}
+    """Holiday dates the withdrawal date-rule engine adjusts around. Owned by the
+    financial backend (the ERPNext Company holiday list lives in the bridge);
+    empty on a Frappe-only seminary."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    return get_financial_backend().company_holiday_dates()

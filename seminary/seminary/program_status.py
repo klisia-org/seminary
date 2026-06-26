@@ -142,22 +142,13 @@ def return_from_leave(pe, effective_date=None):
 
 
 def _set_payers_active(pe_name, active):
-    """Keep the PE's Payers Fee Category PE.pf_active in sync with billability.
-    The spine uses db_set, so get_payers' save-time sync does not run."""
-    # Payers live in the oikonomos bridge; a Frappe-only seminary has no Payers
-    # Fee Category PE table to sync — so every terminal/leave transition (which
-    # routes through here) stays billing-free.
-    if not frappe.db.exists("DocType", "Payers Fee Category PE"):
-        return
-    pfc = frappe.db.get_value("Payers Fee Category PE", {"pf_pe": pe_name}, "name")
-    if pfc:
-        frappe.db.set_value(
-            "Payers Fee Category PE",
-            pfc,
-            "pf_active",
-            1 if active else 0,
-            update_modified=False,
-        )
+    """Keep the enrollment's billing payer snapshot in sync with billability when
+    a terminal/leave transition flips it. Delegated to the financial backend
+    (payers live in the bridge); a no-op on a Frappe-only seminary, so every such
+    transition stays billing-free."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    get_financial_backend().set_enrollment_payers_active(pe_name, active)
 
 
 @frappe.whitelist()

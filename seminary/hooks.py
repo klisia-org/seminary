@@ -121,7 +121,6 @@ global_search_doctypes = {
         {"doctype": "Course", "index": 3},
         {"doctype": "Instructor", "index": 4},
         {"doctype": "Student", "index": 5},
-        {"doctype": "Fee Category", "index": 6},
         {"doctype": "Grading Scale", "index": 7},
         {"doctype": "Assessment Criteria", "index": 8},
         {"doctype": "Course Schedule", "index": 9},

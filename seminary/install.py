@@ -27,7 +27,6 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
@@ -87,57 +86,6 @@ def setup_fixtures():
         },
     ]
     make_records(records)
-
-
-def seed_fee_categories():
-    """Seed the starter Fee Categories if they don't already exist.
-
-    NOT fixtures: Fee Category.validate_audit() cross-checks a category's
-    is_credit against Seminary Settings (auditcredit / allow_audit). The moment a
-    seminary flips that setting — or edits a category — a fixture re-import on
-    migrate re-validates the shipped rows and throws (e.g. "set to charge audit
-    as a flat fee, not per credit"). So we create the defaults once
-    (create-only-if-missing) and never re-touch them.
-
-    The Audit Fee is seeded as a flat fee (is_credit=0) to match the default
-    auditcredit=0 setting, so a fresh seed validates cleanly; a seminary that
-    charges audit per credit flips both the setting and this category itself.
-
-    Each row references a fixtured Item and Payment Terms Template — we skip any
-    row whose dependencies aren't present yet (so install ordering can't make us
-    throw); the next migrate, with fixtures loaded, fills it in.
-    """
-    if not frappe.db.exists("DocType", "Fee Category"):
-        return
-    # category_name, fc_event, item, is_audit, is_credit
-    defaults = [
-        ("Program Admission Fee", "Program Enrollment", "Admission Fee", 0, 0),
-        ("Registration fee (new term)", "New Academic Term", "Admission Fee", 0, 0),
-        ("Credit hour", "Course Enrollment", "Credit hour", 0, 1),
-        ("Audit Fee", "Course Enrollment", "Audit Flat Fee", 1, 0),
-    ]
-    payment_term_template = "For immediate payment"
-    has_payment_term = frappe.db.exists("Payment Terms Template", payment_term_template)
-    for category_name, fc_event, item, is_audit, is_credit in defaults:
-        if frappe.db.exists("Fee Category", category_name):
-            continue
-        if not frappe.db.exists("Item", item):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Fee Category",
-                "category_name": category_name,
-                "feecategory_type": "Tuition",
-                "fc_event": fc_event,
-                "item": item,
-                "is_audit": is_audit,
-                "is_credit": is_credit,
-                "payment_term_template": (
-                    payment_term_template if has_payment_term else None
-                ),
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
 
 
 def seed_assessment_criteria():
@@ -1409,7 +1357,6 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_withdrawal_workflow()
-    seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()

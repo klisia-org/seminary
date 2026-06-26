@@ -3905,17 +3905,13 @@ def get_default_phone_country():
     string (e.g. "United States"). Frappe's Phone control reads
     `frappe.sys_defaults.country` and matches by name; web forms set this
     on load to override the hard-coded "India" default."""
-    # Seminary Settings.company and the Company doctype are owned by oikonomos.
-    # With a financial backend, source the country from the configured Company;
-    # on a Frappe-only install fall back to the system default country.
+    # The billing Company (and its country) is owned by the financial backend; on
+    # a Frappe-only install fall back to the system default country.
     from seminary.seminary.financial.backend import get_financial_backend
 
-    if get_financial_backend().has_financials():
-        company = frappe.db.get_single_value("Seminary Settings", "company")
-        if company:
-            country = frappe.db.get_value("Company", company, "country")
-            if country:
-                return country
+    country = get_financial_backend().company_country()
+    if country:
+        return country
     return frappe.db.get_single_value("System Settings", "country")
 
 
@@ -4134,16 +4130,9 @@ def get_student_info():
     return student_info
 
 
-@frappe.whitelist()
-def get_program_fees(program):
-    program_fees = []
-    program_fees = frappe.get_all(
-        "Program Fees",
-        filters={"program": program},
-        fields=["pgm_feecategory"],
-    )
-    print(program_fees)
-    return program_fees
+# get_program_fees (Program Fees is an oikonomos pricing doctype) lives in the
+# bridge now: oikonomos.financial.pricing.get_program_fees, called from the
+# oikonomos Scholarships form.
 
 
 @frappe.whitelist()

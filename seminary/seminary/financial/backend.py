@@ -157,6 +157,24 @@ class FinancialBackend(ABC):
         """Names of the invoices linked to a Course Enrollment Individual. Used by
         the regenerate-invoice action. Empty with no financial app."""
 
+    @abstractmethod
+    def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
+        """Sync the active flag on a Program Enrollment's payer snapshot when its
+        billability changes (terminal / leave transitions). No-op with no
+        financial app — there are no payer rows."""
+
+    # -- ERPNext company context (the bridge owns the Company / Holiday List) ---
+
+    @abstractmethod
+    def company_country(self) -> str | None:
+        """Country of the configured billing Company, or None with no financial
+        app (callers fall back to the system default)."""
+
+    @abstractmethod
+    def company_holiday_dates(self) -> set:
+        """Holiday dates from the billing Company's holiday list. Empty with no
+        financial app."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -225,6 +243,15 @@ class NullFinancialBackend(FinancialBackend):
 
     def cei_invoices(self, cei_name: str, include_cancelled: bool = False) -> list:
         return []
+
+    def set_enrollment_payers_active(self, pe_name: str, active: bool) -> None:
+        return None
+
+    def company_country(self) -> str | None:
+        return None
+
+    def company_holiday_dates(self) -> set:
+        return set()
 
 
 def get_financial_backend() -> FinancialBackend:
