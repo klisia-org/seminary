@@ -7,3 +7,4 @@ defusedxml
 bleach>=6.0
 pypdf
 python-docx
+holidays
