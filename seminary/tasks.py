@@ -35,15 +35,9 @@ def daily():
 
     process_follow_ups()
 
-    # Scholarships are an oikonomos (financial) concept — the Scholarship Award
-    # doctype lives in the bridge. A Frappe-only seminary has none, so skip the
-    # daily retention review when no financial backend is installed.
-    from seminary.seminary.financial.backend import get_financial_backend
-
-    if get_financial_backend().has_financials():
-        from seminary.seminary.scholarship import review_scholarship_retention
-
-        review_scholarship_retention(today)
+    # Scholarship retention review is an oikonomos (financial) concern — it runs
+    # from the bridge's own daily scheduler task
+    # (oikonomos.financial.scholarship.review_scholarship_retention).
 
 
 @frappe.whitelist()

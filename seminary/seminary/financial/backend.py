@@ -95,6 +95,24 @@ class FinancialBackend(ABC):
         from the PE form's save action; a no-op with no financial app — a
         Frappe-only seminary has no payer rows to keep in sync."""
 
+    @abstractmethod
+    def student_scholarships(self, student: str) -> list:
+        """Active Scholarship Award(s) for a student, with retention info, for the
+        Fees portal. Empty with no financial app — scholarships are an oikonomos
+        concept."""
+
+    @abstractmethod
+    def available_scholarships(self, student: str) -> list:
+        """Scholarship templates the student may apply for on the portal. Empty
+        with no financial app."""
+
+    @abstractmethod
+    def apply_for_scholarship(
+        self, program_enrollment: str, scholarship: str, comment: str | None = None
+    ) -> str | None:
+        """Create a Scholarship Award request from the portal. Raises with no
+        financial app — there are no scholarships to apply for."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -123,6 +141,17 @@ class NullFinancialBackend(FinancialBackend):
 
     def sync_enrollment_payers(self, pe_name: str) -> None:
         return None
+
+    def student_scholarships(self, student: str) -> list:
+        return []
+
+    def available_scholarships(self, student: str) -> list:
+        return []
+
+    def apply_for_scholarship(
+        self, program_enrollment: str, scholarship: str, comment: str | None = None
+    ) -> str | None:
+        frappe.throw(frappe._("Scholarship applications are not enabled."))
 
 
 def get_financial_backend() -> FinancialBackend:
