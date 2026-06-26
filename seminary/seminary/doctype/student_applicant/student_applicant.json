@@ -23,8 +23,6 @@
   "section_break_xuzu",
   "student_email_id",
   "term_admission",
-  "customer",
-  "customer_group",
   "image",
   "person",
   "column_break_lvby",
@@ -194,22 +192,6 @@
    "fieldtype": "Link",
    "label": "Term Admission",
    "options": "Term Admission"
-  },
-  {
-   "description": "The Customer record used to bill the Application fee. Auto-created on submit if blank, using the applicant's name and Customer Group.",
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer",
-   "read_only": 1
-  },
-  {
-   "default": "Individual",
-   "description": "Customer Group used to bill the Application fee. Drives which Price List is applied.",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "Customer Group",
-   "options": "Customer Group"
   },
   {
    "fieldname": "image",

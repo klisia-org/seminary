@@ -77,6 +77,14 @@ class FinancialBackend(ABC):
         withdrawn enrollment, per its Withdrawal Rule. Called by the seminary
         withdrawal dispatcher when the workflow reaches the refund transition."""
 
+    @abstractmethod
+    def charge_readmission(self, pe_name: str, effective_date) -> None:
+        """Bill the readmission fee for an enrollment returning from leave.
+
+        The readmission policy (whether a fee is charged and which Fee Category)
+        lives on the Program Level as oikonomos-owned custom fields, so the
+        backend reads it. No-op with no financial app — readmission is free."""
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -98,6 +106,9 @@ class NullFinancialBackend(FinancialBackend):
         return {"created": 0, "skipped": 0, "failed": 0}
 
     def process_withdrawal_refunds(self, withdrawal_doc) -> None:
+        return None
+
+    def charge_readmission(self, pe_name: str, effective_date) -> None:
         return None
 
 

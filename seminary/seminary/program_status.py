@@ -326,18 +326,18 @@ def _upsert_leaving_record(
 
 
 def _leave_policy(program):
-    """Leave & readmission policy for a program's Program Level (or None)."""
+    """Leave-billing-suspension policy for a program's Program Level (or None).
+
+    Only the academic billing-suspension threshold lives here; the readmission
+    fee policy is owned by the financial backend (oikonomos custom fields on
+    Program Level) and is read there — see _maybe_charge_readmission."""
     program_level = frappe.db.get_value("Program", program, "program_level")
     if not program_level:
         return None
     return frappe.db.get_value(
         "Program Level",
         program_level,
-        [
-            "loa_billing_suspension_days",
-            "charges_readmission_fee",
-            "readmission_fee_category",
-        ],
+        ["loa_billing_suspension_days"],
         as_dict=True,
     )
 
@@ -387,14 +387,11 @@ def reconcile_loa_billing(today=None):
 
 
 def _maybe_charge_readmission(pe_doc, effective_date):
-    """Fire a Readmission fee on return from leave when the Program Level is
-    configured to charge one."""
-    policy = _leave_policy(pe_doc.program)
-    if not policy or not policy.get("charges_readmission_fee"):
-        return
-    fee_category = policy.get("readmission_fee_category")
-    if not fee_category:
-        return
-    from seminary.seminary.api import generate_readmission_invoice
+    """Fire a Readmission fee on return from leave.
 
-    generate_readmission_invoice(pe_doc.name, fee_category, effective_date)
+    Delegated to the financial backend: the readmission policy (whether to
+    charge and which Fee Category) lives on the Program Level as oikonomos
+    custom fields, so the backend reads it and bills. No-op with no backend."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    get_financial_backend().charge_readmission(pe_doc.name, effective_date)
