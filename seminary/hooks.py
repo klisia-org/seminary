@@ -547,9 +547,6 @@ fixtures = [
     # Grading Scale is NOT fixtured: it's submittable and seminaries define their
     # own scales; a re-import would clobber edits. Seeded create-only-if-missing
     # by install.seed_grading_scale() instead.
-    "Item",
-    "Payment Term",
-    "Payment Terms Template",
     # Fee Category is NOT fixtured: its validate_audit() cross-checks each row
     # against Seminary Settings, so a re-import throws once a seminary changes
     # the audit setting or edits a category. Seeded create-only-if-missing by
@@ -564,10 +561,10 @@ fixtures = [
     "Custom HTML Block",
     # Course Cancellation Reason is NOT fixtured: seeded create-only-if-missing
     # by install.seed_course_cancellation_reasons() so seminary edits survive.
-    {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
+        # Seminary Sales Invoice print format is owned by oikonomos.
         "dt": "Print Format",
-        "filters": [["name", "in", ["Seminary Sales Invoice", "Seminary Diploma"]]],
+        "filters": [["name", "in", ["Seminary Diploma"]]],
     },
     {
         "dt": "Workflow",
@@ -584,7 +581,6 @@ fixtures = [
                     "Graduation Request Lifecycle",
                     "Program Graduation Requirement Versioning",
                     "Graduation Requirement Item",
-                    "Scholarship Award Lifecycle",
                 ],
             ]
         ],

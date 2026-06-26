@@ -32,7 +32,6 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    update_company_in_item_details()
     seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
