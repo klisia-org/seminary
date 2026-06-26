@@ -162,6 +162,19 @@ class CourseEnrollmentIndividual(Document):
             return
         self.generate_enrollment_invoice()
 
+        # A free / no-payment-gate enrollment goes straight Draft → Submitted on
+        # this initial submit. Frappe fires on_submit (not on_update_after_submit)
+        # for that 0→1 transition, so on_workflow_update — which builds the
+        # Scheduled Course Roster + Program Enrollment Course rows — never runs.
+        # Create them here so the student is actually rostered (and can reach the
+        # LMS). Idempotent: enroll_student no-ops if the rows already exist, and a
+        # paid enrollment lands in Awaiting Payment here, so this is skipped and
+        # the roster is built later when payment advances it to Submitted.
+        if self.workflow_state == "Submitted":
+            from seminary.seminary.cei_lifecycle import enroll_student
+
+            enroll_student(self)
+
     def generate_enrollment_invoice(self):
         """Raise the enrollment Sales Invoice once. Free programs just flag
         ``cei_si``; everyone else gets an invoice via ``get_inv_data_ce``.
