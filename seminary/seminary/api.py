@@ -4536,6 +4536,14 @@ def get_application_payment_url(applicant_name):
         alternative_instructions: HTML from Seminary Settings (if configured)
     Returns None if applicant doesn't exist.
     """
+    # No financial backend (Frappe-only seminary): there is no Application fee
+    # and no Sales Invoice table to query. Applying is free, so the post-submit
+    # payment page shows only the thank-you message.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
+        return None
+
     if not applicant_name or not frappe.db.exists("Student Applicant", applicant_name):
         return None
 
