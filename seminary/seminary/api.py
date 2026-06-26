@@ -2844,7 +2844,9 @@ def get_student_contacts(student):
     :param student: Student.
     """
     contacts = frappe.get_all(
-        "Student Contacts", fields=["contact"], filters={"parent": student}
+        "Student Contacts",
+        fields=["contact_name", "relation", "emergency"],
+        filters={"parent": student},
     )
     return contacts
 
@@ -4662,10 +4664,18 @@ def get_default_phone_country():
     string (e.g. "United States"). Frappe's Phone control reads
     `frappe.sys_defaults.country` and matches by name; web forms set this
     on load to override the hard-coded "India" default."""
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    if not company:
-        return None
-    return frappe.db.get_value("Company", company, "country")
+    # Seminary Settings.company and the Company doctype are owned by oikonomos.
+    # With a financial backend, source the country from the configured Company;
+    # on a Frappe-only install fall back to the system default country.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if get_financial_backend().has_financials():
+        company = frappe.db.get_single_value("Seminary Settings", "company")
+        if company:
+            country = frappe.db.get_value("Company", company, "country")
+            if country:
+                return country
+    return frappe.db.get_single_value("System Settings", "country")
 
 
 @frappe.whitelist(allow_guest=True)
