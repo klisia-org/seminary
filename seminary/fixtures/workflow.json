@@ -697,6 +697,14 @@
     "state": "Academic Review"
    },
    {
+    "action": "Approve & Conclude",
+    "allow_self_approval": 1,
+    "allowed": "Registrar",
+    "condition": "doc.is_free",
+    "next_state": "Approved",
+    "state": "Academic Review"
+   },
+   {
     "action": "Approve Financially",
     "allow_self_approval": 1,
     "allowed": "Accounts User",
