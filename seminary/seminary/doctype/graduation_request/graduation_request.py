@@ -61,9 +61,33 @@ class GraduationRequest(Document):
     def on_update_after_submit(self):
         if self.workflow_state != "Approved":
             return
-        if frappe.db.exists("Diploma", {"graduation_request": self.name}):
+        if not frappe.db.exists("Diploma", {"graduation_request": self.name}):
+            self._issue_diploma()
+        # Flip the enrollment to Graduated. Kept outside the diploma guard (and
+        # idempotent) so an approval whose diploma already exists still settles
+        # the enrollment status.
+        self._mark_enrollment_graduated()
+
+    def _mark_enrollment_graduated(self):
+        """Transition the Program Enrollment to Graduated on approval.
+
+        Routes through the status spine (history + leaving record + stop billing).
+        Idempotent — set_program_status no-ops if the enrollment is already
+        Graduated — and passes this request as the cascade's source so the spine
+        does not cancel the very request that triggered the graduation."""
+        if not self.program_enrollment:
             return
-        self._issue_diploma()
+        from seminary.seminary.program_status import set_program_status
+
+        set_program_status(
+            self.program_enrollment,
+            to_status="Graduated",
+            category="Academic",
+            reason="Graduation",
+            effective_date=self.expected_graduation_date or today(),
+            source_doctype="Graduation Request",
+            source_name=self.name,
+        )
 
     def on_cancel(self):
         """Stamp workflow_state and revoke any issued diploma.

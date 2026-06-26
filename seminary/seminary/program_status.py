@@ -144,6 +144,11 @@ def return_from_leave(pe, effective_date=None):
 def _set_payers_active(pe_name, active):
     """Keep the PE's Payers Fee Category PE.pf_active in sync with billability.
     The spine uses db_set, so get_payers' save-time sync does not run."""
+    # Payers live in the oikonomos bridge; a Frappe-only seminary has no Payers
+    # Fee Category PE table to sync — so every terminal/leave transition (which
+    # routes through here) stays billing-free.
+    if not frappe.db.exists("DocType", "Payers Fee Category PE"):
+        return
     pfc = frappe.db.get_value("Payers Fee Category PE", {"pf_pe": pe_name}, "name")
     if pfc:
         frappe.db.set_value(
@@ -237,7 +242,13 @@ def _on_terminal(
         cascade_cancel_graduation_requests,
     )
 
-    cascade_cancel_graduation_requests(pe_doc.name)
+    # When graduation itself is the terminal transition, the approved Graduation
+    # Request is the *source* — exclude it so its own success doesn't cancel it
+    # (and revoke the diploma it just issued).
+    cascade_cancel_graduation_requests(
+        pe_doc.name,
+        exclude=source_name if source_doctype == "Graduation Request" else None,
+    )
 
     # A terminal separation stops recurring billing for this enrollment.
     _set_payers_active(pe_doc.name, 0)

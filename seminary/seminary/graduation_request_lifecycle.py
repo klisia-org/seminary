@@ -134,13 +134,17 @@ def _advance_to_academic_review(gr_name):
 # ---------------------------------------------------------------------------
 
 
-def cascade_cancel_graduation_requests(pe_name):
+def cascade_cancel_graduation_requests(pe_name, exclude=None):
     """Cancel every active Graduation Request bound to this Program Enrollment.
 
     Triggered when a PE is deactivated (`pgmenrol_active` 1→0) or otherwise
     withdrawn. The fee is non-refundable per the per-program policy, so the
     cancel path on each GR skips Sales Invoice cancellation when the
     `cascade_from_pe_withdrawal` flag is set on the doc.
+
+    ``exclude`` names a Graduation Request to leave untouched — used by the
+    graduation terminal transition, where the approved request is the source of
+    the status change and must not cancel itself.
     """
     grs = frappe.get_all(
         "Graduation Request",
@@ -161,6 +165,8 @@ def cascade_cancel_graduation_requests(pe_name):
         pluck="name",
     )
     for name in grs:
+        if name == exclude:
+            continue
         try:
             gr = frappe.get_doc("Graduation Request", name)
             gr.flags.cascade_from_pe_withdrawal = 1
