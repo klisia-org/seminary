@@ -23,6 +23,15 @@ ACTIVE_STATE = "Active"
 OCCUPYING_STATES = ("Draft", "Submitted", "Under Review", "Active", "Suspended")
 
 
+def _scholarships_available() -> bool:
+    """Scholarships live in the oikonomos bridge (the Scholarships / Scholarship
+    Award doctypes). Without a financial backend installed there are none, so the
+    portal endpoints return empty instead of querying a missing doctype."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    return get_financial_backend().has_financials()
+
+
 def get_active_award(program_enrollment):
     """Name of the single active Scholarship Award for an enrollment, or None.
     'Active' = workflow_state Active and today within the effective window."""
@@ -136,6 +145,8 @@ def get_scholarship_availability(scholarship):
     the current fiscal year) and slots_total/slots_used (headcount), plus an
     ``is_open`` flag the portal uses to enable/disable Apply.
     """
+    if not _scholarships_available():
+        return {"scholarship": scholarship, "is_open": False}
     tpl = frappe.db.get_value(
         "Scholarships",
         scholarship,
@@ -194,6 +205,8 @@ def get_student_scholarship(student):
     plus the student's current GPA and current-term credits, so the portal can
     show what's needed to keep the award and how the student is tracking. Returns
     a list (the existing Fees.vue shape reads ``[0]``)."""
+    if not _scholarships_available():
+        return []
     awards = frappe.get_all(
         "Scholarship Award",
         filters={"student": student, "workflow_state": ACTIVE_STATE},
@@ -239,6 +252,8 @@ def get_available_scholarships(student):
     active enrollment in the template's program, and not already hold/await an award
     on that enrollment.
     """
+    if not _scholarships_available():
+        return []
     if not frappe.db.get_single_value("Seminary Settings", "allow_portal_scholarship"):
         return []
 
@@ -345,6 +360,8 @@ def apply_for_scholarship(program_enrollment, scholarship, comment=None):
     """Student-facing: create a Scholarship Award request (Draft → Submitted).
     Enforces both portal gates, availability, the one-award-per-enrollment rule,
     and basic granting criteria."""
+    if not _scholarships_available():
+        frappe.throw(_("Scholarship applications are not enabled."))
     if not frappe.db.get_single_value("Seminary Settings", "allow_portal_scholarship"):
         frappe.throw(_("Scholarship applications are not enabled."))
 

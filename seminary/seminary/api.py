@@ -2177,15 +2177,22 @@ def _active_graduation_request_summary(pe_name):
     if not rows:
         return None
     gr = rows[0]
-    sales_invoices = frappe.get_all(
-        "Sales Invoice",
-        filters={
-            "custom_graduation_request": gr.name,
-            "docstatus": 1,
-            "is_return": 0,
-        },
-        fields=["name", "grand_total", "outstanding_amount"],
-    )
+    # No financial backend (a Frappe-only seminary) means no Sales Invoice table;
+    # a graduation request simply carries no invoices.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if get_financial_backend().has_financials():
+        sales_invoices = frappe.get_all(
+            "Sales Invoice",
+            filters={
+                "custom_graduation_request": gr.name,
+                "docstatus": 1,
+                "is_return": 0,
+            },
+            fields=["name", "grand_total", "outstanding_amount"],
+        )
+    else:
+        sales_invoices = []
     return {
         **gr,
         "sales_invoices": sales_invoices,
@@ -2308,6 +2315,14 @@ def get_pe_unpaid_invoices(program_enrollment):
     Sorted by total_unpaid desc.
     """
     if not program_enrollment:
+        return []
+
+    # No financial backend (a Frappe-only seminary) means no Sales Invoice table
+    # to query — there are no unpaid invoices, so report none. Guards both the
+    # Graduation Request desk form and the Program Audit SPA, which call this.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
         return []
 
     rows = frappe.db.sql(
@@ -3126,6 +3141,14 @@ def get_student_invoices(student=None):
     # If the caller is a student user, always scope to their own Student
     # record — ignore any client-supplied `student` parameter to prevent a
     # student from querying someone else's invoices.
+    # No financial backend (a Frappe-only seminary) -> no invoices, and oikonomos
+    # (which owns the permission helpers + Sales Invoice) is not installed, so
+    # return before importing it.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
+        return []
+
     from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
@@ -5217,6 +5240,11 @@ def get_invoice_payment_url(invoice_name):
     Students can only request payment for their own invoices (validated via
     custom_student on the Sales Invoice).
     """
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
+        return None
+
     from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
@@ -5306,6 +5334,11 @@ def get_invoice_payment_url(invoice_name):
 @frappe.whitelist()
 def get_student_balance_payment_url():
     """Pay the full outstanding on the student's open Student Balance."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
+        return None
+
     from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
@@ -5347,6 +5380,11 @@ def get_student_partial_balance_payment_url(amount=None, invoices=None):
         amount: Fixed amount to pay (allocated by due date order).
         invoices: JSON list of {"sales_invoice": name, "amount": value} dicts.
     """
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    if not get_financial_backend().has_financials():
+        return None
+
     from oikonomos.financial.sales_invoice_permissions import (
         _current_student,
         _should_restrict,
