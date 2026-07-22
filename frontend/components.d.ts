@@ -18,6 +18,7 @@ declare module 'vue' {
     Autocomplete: typeof import('./src/components/Controls/Autocomplete.vue')['default']
     CareerProfileFields: typeof import('./src/components/CareerProfileFields.vue')['default']
     ChapterModal: typeof import('./src/components/Modals/ChapterModal.vue')['default']
+    CLOAssessmentMapperModal: typeof import('./src/components/Modals/CLOAssessmentMapperModal.vue')['default']
     CommentSidebar: typeof import('./src/components/AssignmentViewers/CommentSidebar.vue')['default']
     ContactChannelIcons: typeof import('./src/components/ContactChannelIcons.vue')['default']
     CourseAssessmentModal: typeof import('./src/components/Modals/CourseAssessmentModal.vue')['default']

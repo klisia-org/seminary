@@ -1,12 +1,5 @@
 {
- "cards": [
-  {
-   "card": "Active Scholarships"
-  },
-  {
-   "card": "CEIs Marked Paid Without Payment"
-  }
- ],
+ "cards": [],
  "charts": [
   {
    "chart": "Enrolled Students",

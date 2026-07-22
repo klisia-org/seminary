@@ -36,17 +36,7 @@
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
-  "accounts_section",
-  "column_break_wmyg",
-  "company",
-  "cost_center",
-  "column_break_lhee",
-  "receivable_account",
-  "income_account",
   "scholarships_section",
-  "scholarship_cc",
-  "column_break_wnvm",
-  "scholarship_cust",
   "section_break_7",
   "instructor_created_by",
   "column_break_zlxm",
@@ -70,7 +60,6 @@
   "column_break_smoh",
   "allow_portal_withdrawal",
   "allow_portal_scholarship",
-  "payment_gateway",
   "alternative_payment_instructions",
   "section_break_fxlm",
   "calendar_instructions",
@@ -100,7 +89,6 @@
   "portal_messaging_rules",
   "facilities_section",
   "sync_rooms_to_asset_locations",
-  "root_asset_location",
   "plagiarism_section",
   "plagiarism_enabled",
   "plagiarism_default_provider",
@@ -120,7 +108,8 @@
   "internship_share_program",
   "internship_share_credits",
   "internship_share_gpa",
-  "internship_share_expected_graduation"
+  "internship_share_expected_graduation",
+  "has_oikonomos"
  ],
  "fields": [
   {
@@ -130,19 +119,12 @@
    "label": "Facilities & Assets"
   },
   {
-   "default": "1",
+   "default": "0",
    "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
    "fieldname": "sync_rooms_to_asset_locations",
    "fieldtype": "Check",
-   "label": "Sync rooms to Asset Locations"
-  },
-  {
-   "depends_on": "sync_rooms_to_asset_locations",
-   "description": "Optional. Root of the Location subtree the seminary's campuses/rooms hang under. Leave blank to auto-create and use a \"Seminary Locations\" root.",
-   "fieldname": "root_asset_location",
-   "fieldtype": "Link",
-   "label": "Root Asset Location",
-   "options": "Location"
+   "label": "Sync rooms to Asset Locations",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "collapsible": 1,
@@ -242,14 +224,16 @@
    "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
-   "label": "Submit Sales Invoice from Enrollments"
+   "label": "Submit Sales Invoice from Enrollments",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "1",
    "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
-   "label": "Enable Automated Billing"
+   "label": "Enable Automated Billing",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "1",
@@ -309,50 +293,6 @@
    "label": "Grade Close Offset (days)"
   },
   {
-   "fieldname": "accounts_section",
-   "fieldtype": "Section Break",
-   "label": "Accounts"
-  },
-  {
-   "fetch_from": "company.default_receivable_account",
-   "fieldname": "receivable_account",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Receivable Account",
-   "options": "Account",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_wmyg",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Company",
-   "options": "Company",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "company.default_income_account",
-   "fieldname": "income_account",
-   "fieldtype": "Link",
-   "label": "Income Account",
-   "options": "Account"
-  },
-  {
-   "fetch_from": "company.cost_center",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center"
-  },
-  {
-   "fieldname": "column_break_lhee",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "section_break_qqak",
    "fieldtype": "Section Break",
    "label": "Course Defaults"
@@ -381,7 +321,8 @@
    "description": "If not checked, the corresponding fee will be the same for all audited courses.",
    "fieldname": "auditcredit",
    "fieldtype": "Check",
-   "label": "Should audit be charged per credit hour?"
+   "label": "Should audit be charged per credit hour?",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "0",
@@ -394,23 +335,6 @@
    "fieldname": "scholarships_section",
    "fieldtype": "Section Break",
    "label": "Scholarships"
-  },
-  {
-   "fieldname": "scholarship_cc",
-   "fieldtype": "Link",
-   "label": "Scholarship - Cost Center",
-   "options": "Cost Center"
-  },
-  {
-   "fieldname": "column_break_wnvm",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "This customer will be used in all Sales Invoices of Scholarships.",
-   "fieldname": "scholarship_cust",
-   "fieldtype": "Link",
-   "label": "Scholarship - Customer",
-   "options": "Customer"
   },
   {
    "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
@@ -558,19 +482,12 @@
    "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
    "fieldname": "portal_payment_enable",
    "fieldtype": "Check",
-   "label": "Enable Online Payments"
+   "label": "Enable Online Payments",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "fieldname": "section_break_fxlm",
    "fieldtype": "Section Break"
-  },
-  {
-   "depends_on": "eval:doc.portal_payment_enable",
-   "fieldname": "payment_gateway",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Payment Gateway",
-   "options": "Payment Gateway"
   },
   {
    "description": "Optional HTML shown on the Student Applicant payment screen alongside (or instead of) the online gateway button. Use for bank transfer details, manual payment instructions, contact info for payment plans, etc.",
@@ -588,7 +505,8 @@
    "description": "This requires the installation of another app \"HRMS\" by Frappe. HRMS enables payroll for salaried and per-course instructors via Salary Structure, Payroll Entry, and Salary Slip.",
    "fieldname": "hrms_enable",
    "fieldtype": "Check",
-   "label": "Enable HRMS Payroll"
+   "label": "Enable HRMS Payroll",
+   "depends_on": "eval:doc.has_oikonomos"
   },
   {
    "default": "End of period",
@@ -790,7 +708,7 @@
   {
    "default": "0",
    "depends_on": "allow_alumni_view_partner_directory",
-   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control — both this and the Program Level toggle must be on.",
+   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control \u2014 both this and the Program Level toggle must be on.",
    "fieldname": "allow_alumni_create_partner_org",
    "fieldtype": "Check",
    "label": "Allow Alumni to create Partner Organizations?"
@@ -809,13 +727,13 @@
   },
   {
    "default": "0",
-   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal — an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
+   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal \u2014 an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
    "fieldname": "show_ungated_internships_to_all",
    "fieldtype": "Check",
    "label": "Show Ungated Internships to All Students"
   },
   {
-   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default — the partner sees only the applicant's name unless you opt in here.",
+   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default \u2014 the partner sees only the applicant's name unless you opt in here.",
    "fieldname": "internship_share_column",
    "fieldtype": "Column Break"
   },
@@ -842,11 +760,20 @@
    "fieldname": "internship_share_expected_graduation",
    "fieldtype": "Check",
    "label": "Share Applicant's Expected Graduation"
+  },
+  {
+   "fieldname": "has_oikonomos",
+   "fieldtype": "Check",
+   "label": "Oikonomos (billing bridge) installed",
+   "hidden": 1,
+   "read_only": 1,
+   "default": "0",
+   "description": "Set by the oikonomos bridge on install/migrate. Gates the billing UI."
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-07 19:03:22.253387",
+ "modified": "2026-06-26 04:49:22.147387",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

@@ -8,7 +8,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from seminary.seminary.overrides.salary_slip import _hrms_enabled
+from seminary.seminary.utils import _hrms_enabled
 
 EDU_MIRROR_FIELDS = (
     "school_univ",

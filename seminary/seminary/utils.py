@@ -12,6 +12,25 @@ import requests
 from frappe.desk.doctype.dashboard_chart.dashboard_chart import get_result
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from frappe.desk.search import get_user_groups
+
+
+def _hrms_enabled() -> bool:
+    """True when HRMS is installed and instructor payroll is enabled in Seminary
+    Settings. A feature gate used by academic instructor code and (in the
+    oikonomos bridge) the Salary Slip integration. Frappe-only installs have no
+    HRMS, so this is always False."""
+    if "hrms" not in frappe.get_installed_apps():
+        return False
+    return bool(frappe.db.get_single_value("Seminary Settings", "hrms_enable"))
+
+
+def _aretenic_enabled() -> bool:
+    """True when the optional Aretenic accreditation app is installed. Gates seminary-side
+    aretenic-aware hooks (e.g. cutting an outcome-attainment snapshot when grades are sent), so
+    Frappe-only installs without aretenic run unchanged. See aretenic ADR 030/032."""
+    return "aretenic" in frappe.get_installed_apps()
+
+
 from frappe.desk.notifications import extract_mentions
 from frappe.utils import (
     add_months,
@@ -151,6 +170,36 @@ def slugify(title, used_slugs=None):
         if new_slug not in used_slugs:
             return new_slug
         count = count + 1
+
+
+# Codes that flow into identifiers and URLs (e.g. Program Abbreviation, Course Code,
+# and downstream aretenic PLO/CLO codes) must be slug-safe. Unlike slugify(), this
+# preserves case and is non-destructive to already-clean codes (MDIV stays MDIV).
+RE_URL_SAFE_CODE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def url_safe_code(value):
+    """Strip a value down to URL/code-safe characters, preserving case.
+
+    Spaces and disallowed characters are removed, e.g. "ST 501" -> "ST501",
+    "M.Div." -> "MDiv". Returns "" for an empty/None input.
+    """
+    return re.sub(r"[^A-Za-z0-9_-]", "", (value or "").strip())
+
+
+def is_url_safe_code(value):
+    return bool(value) and bool(RE_URL_SAFE_CODE.match(value))
+
+
+def assert_url_safe_code(value, label):
+    """Throw if a non-empty value is not slug-safe (letters, digits, - and _ only)."""
+    if value and not is_url_safe_code(value):
+        frappe.throw(
+            _(
+                "{0} may contain only letters, numbers, hyphens and underscores "
+                "(no spaces or punctuation): {1}"
+            ).format(label, value)
+        )
 
 
 def generate_slug(title, doctype):

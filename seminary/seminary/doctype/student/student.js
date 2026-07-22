@@ -11,7 +11,9 @@ frappe.ui.form.on('Student', {
 			};
 		});
 
-		if(!frm.is_new()) {
+		// The Accounting Ledger (ERPNext General Ledger) is only meaningful when the
+		// oikonomos bridge is installed — that's what gives a Student a Customer.
+		if(!frm.is_new() && frm.doc.customer) {
 			frm.add_custom_button(__('Accounting Ledger'), function() {
 				frappe.set_route('query-report', 'General Ledger',
 					{party_type:'Customer', party:frm.doc.customer});

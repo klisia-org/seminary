@@ -186,7 +186,7 @@ REGISTRAR_TOOLS = [
             ' seminary_trigger check."),\n'
             "        () => {\n"
             "            frappe.call({\n"
-            "                method: 'seminary.seminary.api.regenerate_current_term_invoices',\n"
+            "                method: 'oikonomos.financial.invoicing.regenerate_current_term_invoices',\n"
             "                freeze: true,\n"
             "                freeze_message: __('Regenerating invoices...'),\n"
             "                callback: (r) => {\n"
@@ -358,7 +358,18 @@ def run():
         ],
     )
 
-    _attach_custom_blocks("Registrar", REGISTRAR_TOOLS)
+    # The Regenerate-Invoices tool drives an oikonomos billing method; only attach
+    # it where a financial backend is installed (a Frappe-only seminary can't bill).
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    tools = REGISTRAR_TOOLS
+    if not get_financial_backend().has_financials():
+        tools = [
+            t
+            for t in REGISTRAR_TOOLS
+            if t["name"] != "Registrar - Regenerate Current-Term Invoices"
+        ]
+    _attach_custom_blocks("Registrar", tools)
     _ensure_sidebars()
     frappe.db.commit()
     print("Done.")

@@ -4,8 +4,7 @@
 import unittest
 
 import frappe
-from erpnext import get_default_company
-from frappe.utils import add_days, add_months, getdate
+from frappe.utils import add_days, getdate
 
 from seminary.seminary.doctype.student.test_student import create_student
 
@@ -13,7 +12,6 @@ from seminary.seminary.doctype.student.test_student import create_student
 class TestStudentLeaveApplication(unittest.TestCase):
     def setUp(self):
         frappe.db.sql("""delete from `tabStudent Leave Application`""")
-        create_holiday_list()
 
     def test_attendance_record_creation(self):
         leave_application = create_leave_application()
@@ -49,43 +47,6 @@ class TestStudentLeaveApplication(unittest.TestCase):
             "docstatus",
         )
         self.assertTrue(attendance_status, 2)
-
-    def test_holiday(self):
-        today = getdate()
-        leave_application = create_leave_application(
-            from_date=today, to_date=add_days(today, 1), submit=0
-        )
-
-        # holiday list validation
-        company = get_default_company() or frappe.get_all("Company")[0].name
-        frappe.db.set_value("Company", company, "default_holiday_list", "")
-        self.assertRaises(frappe.ValidationError, leave_application.save)
-
-        frappe.db.set_value(
-            "Company", company, "default_holiday_list", "Test Holiday List for Student"
-        )
-        leave_application.save()
-
-        leave_application.reload()
-        self.assertEqual(leave_application.total_leave_days, 1)
-
-        # check no attendance record created for a holiday
-        leave_application.submit()
-        self.assertIsNone(
-            frappe.db.exists(
-                "Student Attendance",
-                {
-                    "leave_application": leave_application.name,
-                    "date": add_days(today, 1),
-                },
-            )
-        )
-
-    def tearDown(self):
-        company = get_default_company() or frappe.get_all("Company")[0].name
-        frappe.db.set_value(
-            "Company", company, "default_holiday_list", "_Test Holiday List"
-        )
 
 
 def create_leave_application(from_date=None, to_date=None, mark_as_present=0, submit=1):
@@ -123,22 +84,3 @@ def get_student():
     return create_student(
         dict(email="test_student@gmail.com", first_name="Test", last_name="Student")
     )
-
-
-def create_holiday_list():
-    holiday_list = "Test Holiday List for Student"
-    today = getdate()
-    if not frappe.db.exists("Holiday List", holiday_list):
-        frappe.get_doc(
-            dict(
-                doctype="Holiday List",
-                holiday_list_name=holiday_list,
-                from_date=add_months(today, -6),
-                to_date=add_months(today, 6),
-                holidays=[dict(holiday_date=add_days(today, 1), description="Test")],
-            )
-        ).insert()
-
-    company = get_default_company() or frappe.get_all("Company")[0].name
-    frappe.db.set_value("Company", company, "default_holiday_list", holiday_list)
-    return holiday_list

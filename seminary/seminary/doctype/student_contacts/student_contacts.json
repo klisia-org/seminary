@@ -6,27 +6,16 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "contact",
   "contact_name",
   "relation",
   "emergency"
  ],
  "fields": [
   {
-   "fieldname": "contact",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Connected to",
-   "options": "Customer",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "contact.customer_name",
    "fieldname": "contact_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Connection Name",
-   "read_only": 1,
    "reqd": 1
   },
   {

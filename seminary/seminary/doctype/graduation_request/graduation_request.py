@@ -7,16 +7,17 @@ Lifecycle (mirrors ADR 016 — Course Enrollment Individual):
                             ↓
                         Cancelled
 
-Sales Invoice generation runs in `on_submit` (regardless of which
-post-submit state the workflow lands in). The `gr_si` flag is the
-idempotency guard — re-saves never re-bill.
+This controller owns only the academic lifecycle (candidacy guard, diploma
+issue/revoke, workflow stamping). Fee billing on submit and the cancellation of
+unpaid invoices are owned by the oikonomos bridge
+(`oikonomos.financial.graduation`, via doc_events); the `gr_si` idempotency flag
+is stamped there. With no bridge installed the request is free.
 """
 
 import frappe
-import erpnext
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, today
+from frappe.utils import today
 
 
 NAME_LOCKED_STATES = ("Academic Review", "Financial Review", "Approved")
@@ -53,28 +54,47 @@ class GraduationRequest(Document):
                 ).format(self.program_enrollment)
             )
 
-    def on_submit(self):
-        if self.gr_si:
-            return
-        if self.is_free:
-            self.db_set("gr_si", 1, update_modified=False)
-            return
-        self._generate_sales_invoices()
-        self.db_set("gr_si", 1, update_modified=False)
+    # Sales Invoice generation on submit is owned by the oikonomos bridge
+    # (oikonomos.financial.graduation.on_submit, via doc_events). With no bridge
+    # the graduation request submits free; oikonomos stamps gr_si.
 
     def on_update_after_submit(self):
         if self.workflow_state != "Approved":
             return
-        if frappe.db.exists("Diploma", {"graduation_request": self.name}):
+        if not frappe.db.exists("Diploma", {"graduation_request": self.name}):
+            self._issue_diploma()
+        # Flip the enrollment to Graduated. Kept outside the diploma guard (and
+        # idempotent) so an approval whose diploma already exists still settles
+        # the enrollment status.
+        self._mark_enrollment_graduated()
+
+    def _mark_enrollment_graduated(self):
+        """Transition the Program Enrollment to Graduated on approval.
+
+        Routes through the status spine (history + leaving record + stop billing).
+        Idempotent — set_program_status no-ops if the enrollment is already
+        Graduated — and passes this request as the cascade's source so the spine
+        does not cancel the very request that triggered the graduation."""
+        if not self.program_enrollment:
             return
-        self._issue_diploma()
+        from seminary.seminary.program_status import set_program_status
+
+        set_program_status(
+            self.program_enrollment,
+            to_status="Graduated",
+            category="Academic",
+            reason="Graduation",
+            effective_date=self.expected_graduation_date or today(),
+            source_doctype="Graduation Request",
+            source_name=self.name,
+        )
 
     def on_cancel(self):
-        """Stamp workflow_state and cancel any unpaid linked Sales Invoices.
+        """Stamp workflow_state and revoke any issued diploma.
 
-        When the cancellation cascades from a PE withdrawal, the fee is
-        non-refundable per the per-program policy — `flags.cascade_from_pe_withdrawal`
-        is checked to skip SI cancellation in that path.
+        Cancelling the linked Sales Invoices is owned by the oikonomos bridge
+        (oikonomos.financial.graduation.on_cancel), which also honours the
+        non-refundable `flags.cascade_from_pe_withdrawal` path.
         """
         frappe.db.set_value(
             self.doctype,
@@ -85,26 +105,6 @@ class GraduationRequest(Document):
         )
 
         self._revoke_diploma_if_issued()
-
-        if getattr(self.flags, "cascade_from_pe_withdrawal", False):
-            return
-
-        invoices = frappe.get_all(
-            "Sales Invoice",
-            filters={
-                "custom_graduation_request": self.name,
-                "docstatus": 1,
-                "is_return": 0,
-            },
-            fields=["name", "outstanding_amount", "grand_total"],
-        )
-        for inv in invoices:
-            # Only cancel if fully unpaid; partial payments leave the SI alone
-            # so registrar can decide on refund handling explicitly.
-            if flt(inv.outstanding_amount) == flt(inv.grand_total):
-                si = frappe.get_doc("Sales Invoice", inv.name)
-                si.flags.ignore_permissions = True
-                si.cancel()
 
     # ------------------------------------------------------------------
     # Validators
@@ -133,6 +133,15 @@ class GraduationRequest(Document):
         )
         if self.program:
             self.is_free = frappe.db.get_value("Program", self.program, "is_free") or 0
+
+        # Without a financial backend (a Frappe-only seminary) there is no
+        # graduation fee to collect, so treat the request as free — the workflow
+        # then routes Draft → Academic Review instead of stalling at Awaiting
+        # Payment with no way to pay.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        if not get_financial_backend().has_financials():
+            self.is_free = 1
 
     def _revoke_diploma_if_issued(self):
         """Mark the Diploma revoked rather than deleting it — preserves the
@@ -229,150 +238,3 @@ class GraduationRequest(Document):
                     "An active Graduation Request already exists for this enrollment: {0}."
                 ).format(existing[0])
             )
-
-    # ------------------------------------------------------------------
-    # Sales Invoice generation (mirrors get_inv_data_ce in CEI)
-    # ------------------------------------------------------------------
-
-    def _generate_sales_invoices(self):
-        """Generate one Sales Invoice per payer configured for this PE
-        with `pep_event = 'Graduation Request'`. Mirrors the CEI pattern.
-
-        Resolved progressively so the error message points at the actual
-        missing piece (payer row, fee category, item, item price,
-        customer group price list) instead of a blanket "not configured".
-        """
-        payer_rows = frappe.db.sql(
-            """SELECT pep.name AS pep_name,
-                      pep.fee_category,
-                      pep.payer AS customer,
-                      pfc.pf_custgroup,
-                      pep.pay_percent,
-                      pep.payterm_payer
-               FROM `tabPayers Fee Category PE` pfc
-               INNER JOIN `tabpgm_enroll_payers` pep ON pep.parent = pfc.name
-               WHERE pfc.pf_pe = %s
-                 AND pep.pep_event = 'Graduation Request'""",
-            (self.program_enrollment,),
-            as_dict=True,
-        )
-
-        if not payer_rows:
-            frappe.throw(
-                _(
-                    "No 'Graduation Request' payer is configured on Program Enrollment {0}. "
-                    "Open the enrollment's Payers Fee Category section and add a payer row "
-                    "with Event = 'Graduation Request' before submitting."
-                ).format(self.program_enrollment)
-            )
-
-        company = frappe.defaults.get_defaults().company
-        currency = erpnext.get_company_currency(company)
-        receivable_account = frappe.db.get_single_value(
-            "Seminary Settings", "receivable_account"
-        )
-        submit_invoice = frappe.db.get_single_value(
-            "Seminary Settings", "auto_submit_sales_invoice"
-        )
-        cost_center = frappe.db.get_single_value("Seminary Settings", "cost_center")
-        sch_cost_center = frappe.db.get_single_value(
-            "Seminary Settings", "scholarship_cc"
-        )
-        sch_customer = frappe.db.get_single_value(
-            "Seminary Settings", "scholarship_cust"
-        )
-
-        income_account_row = frappe.db.sql(
-            "SELECT default_income_account FROM `tabCompany` WHERE name=%s", company
-        )
-        income_account = income_account_row[0][0] if income_account_row else None
-
-        for payer in payer_rows:
-            item, price_list, price_list_rate = self._resolve_pricing(payer)
-            qty = flt(payer.pay_percent) / 100.0
-            grand_total = qty * flt(price_list_rate)
-            row_cost_center = (
-                sch_cost_center if payer.customer == sch_customer else cost_center
-            )
-            discount = 100 if payer.customer == sch_customer else 0
-            summary = _("Graduation Request: {0}").format(self.name)
-
-            sales_invoice = frappe.get_doc(
-                {
-                    "doctype": "Sales Invoice",
-                    "naming_series": "ACC-SINV-.YYYY.-",
-                    "posting_date": today(),
-                    "company": company,
-                    "currency": currency,
-                    "debit_to": receivable_account,
-                    "income_account": income_account,
-                    "conversion_rate": 1,
-                    "customer": payer.customer,
-                    "selling_price_list": price_list,
-                    "base_grand_total": grand_total,
-                    "payment_terms_template": payer.payterm_payer,
-                    "remarks": summary,
-                    "items": [
-                        {
-                            "doctype": "Sales Invoice Item",
-                            "item_code": item,
-                            "qty": qty,
-                            "rate": 0,
-                            "description": summary,
-                            "income_account": income_account,
-                            "cost_center": row_cost_center,
-                            "base_rate": 0,
-                            "price_list_rate": price_list_rate,
-                        }
-                    ],
-                    "cost_center": row_cost_center,
-                    "custom_student": self.student,
-                    "custom_graduation_request": self.name,
-                    "additional_discount_percentage": discount,
-                    "seminary_summary": summary,
-                }
-            )
-            # Authorization was already enforced at the endpoint and in
-            # before_submit; the SI is a trusted side effect (the Student
-            # role doesn't hold Sales Invoice permissions).
-            sales_invoice.flags.ignore_permissions = True
-            sales_invoice.insert(ignore_permissions=True)
-            if submit_invoice == 1:
-                sales_invoice.submit()
-
-    def _resolve_pricing(self, payer):
-        """Look up item + price list rate for one payer row. Each lookup
-        throws a specific error if the supporting data is missing."""
-        item = frappe.db.get_value("Fee Category", payer.fee_category, "item")
-        if not item:
-            frappe.throw(
-                _(
-                    "Fee Category {0} has no Item set; cannot generate an invoice."
-                ).format(payer.fee_category)
-            )
-
-        price_list = frappe.db.get_value(
-            "Customer Group", payer.pf_custgroup, "default_price_list"
-        )
-        if not price_list:
-            frappe.throw(
-                _(
-                    "Customer Group {0} has no default Price List; cannot price the "
-                    "Graduation Request fee."
-                ).format(payer.pf_custgroup)
-            )
-
-        price_list_rate = frappe.db.get_value(
-            "Item Price",
-            {"item_code": item, "price_list": price_list},
-            "price_list_rate",
-        )
-        if price_list_rate is None:
-            frappe.throw(
-                _(
-                    "No Item Price found for Item {0} on Price List {1}. "
-                    "Add an Item Price before submitting the Graduation Request."
-                ).format(item, price_list)
-            )
-
-        return item, price_list, price_list_rate

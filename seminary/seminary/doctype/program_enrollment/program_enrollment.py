@@ -391,6 +391,16 @@ class ProgramEnrollment(Document):
                 "Student", self.student, "joining_date", date[0].enrollment_date
             )
 
+    @frappe.whitelist()
+    def get_payers(self):
+        """Re-sync this enrollment's billing payer snapshot from the program's
+        current fees. Called by the PE form's on_save (see program_enrollment.js,
+        gated on the oikonomos bridge). Delegates to the financial backend, so a
+        Frappe-only seminary no-ops — it has no payer rows."""
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        get_financial_backend().sync_enrollment_payers(self.name)
+
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs

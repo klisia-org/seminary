@@ -163,12 +163,8 @@ def create_students():
             doc = insert_demo_doc("Student", student_data)
             # Store generated student ID for enrollment
             student_data["name"] = doc.name
-            # Tag auto-created Customer
-            customer = frappe.db.get_value(
-                "Customer", {"customer_name": doc.student_name}
-            )
-            if customer:
-                frappe.get_doc("Customer", customer).add_tag(DEMO_TAG)
+            # The auto-created Customer (a billing identity) is tagged for cleanup
+            # by the oikonomos demo installer — seminary stays Frappe-only here.
 
 
 def create_instructor_categories():

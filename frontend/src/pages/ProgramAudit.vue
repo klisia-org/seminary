@@ -55,8 +55,8 @@
             </Button>
           </div>
 
-          <!-- Awaiting Payment -->
-          <div v-else-if="audit.data.graduation_request && audit.data.graduation_request.workflow_state === 'Awaiting Payment'">
+          <!-- Awaiting Payment (only when a fee actually applies) -->
+          <div v-else-if="audit.data.graduation_request && audit.data.graduation_request.workflow_state === 'Awaiting Payment' && !gradReqIsFree">
             <div class="flex items-center justify-between gap-4">
               <div>
                 <div class="font-semibold text-ink-gray-8">{{ __('Graduation Request — Awaiting Payment') }}</div>
@@ -76,11 +76,12 @@
             </div>
           </div>
 
-          <!-- Academic Review / Financial Review -->
-          <div v-else-if="audit.data.graduation_request && (audit.data.graduation_request.workflow_state === 'Academic Review' || audit.data.graduation_request.workflow_state === 'Financial Review')"
+          <!-- Under Review: Academic / Financial Review, plus a free request's
+               Awaiting Payment (which has no fee to settle) -->
+          <div v-else-if="audit.data.graduation_request && ['Academic Review', 'Financial Review', 'Awaiting Payment'].includes(audit.data.graduation_request.workflow_state)"
             class="text-ink-blue-3 font-semibold">
             {{ __('Graduation Request — Under Review') }}
-            <span class="text-sm text-ink-gray-5 font-normal ml-1">
+            <span v-if="!gradReqIsFree" class="text-sm text-ink-gray-5 font-normal ml-1">
               ({{ audit.data.graduation_request.workflow_state }})
             </span>
             <div class="text-sm text-ink-gray-5 font-normal mt-1">
@@ -281,7 +282,7 @@
                     {{ __('Check in') }}
                   </button>
                   <FileUploader v-else-if="canStudentUpload(req)"
-                    :upload-args="{ doctype: 'Program Enrollment', docname: audit.data.program_enrollment, folder: 'Home/Attachments', private: 1 }"
+                    :upload-args="{ folder: 'Home/Attachments', private: 1 }"
                     :validate-file="validateFileSize"
                     @success="(file) => onStudentEvidenceUploaded(req, file)">
                     <template #default="{ openFileSelector }">
@@ -533,6 +534,12 @@ const totalUnpaid = computed(() => {
   if (!unpaidInvoices.data) return 0
   return unpaidInvoices.data.reduce((sum, row) => sum + (row.total_unpaid || 0), 0)
 })
+
+// A free graduation request — every one on a Frappe-only seminary (no billing
+// backend), and any free program — has no payment/financial stage. The portal
+// then shows a single generic "Under Review" status instead of surfacing the
+// specific (and financially-flavoured) workflow state to the student.
+const gradReqIsFree = computed(() => !!audit.data?.graduation_request?.is_free)
 
 function formatCurrency(value) {
   const n = Number(value || 0)

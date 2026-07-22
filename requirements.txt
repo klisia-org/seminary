@@ -1,5 +1,4 @@
 # frappe -- https://github.com/frappe/frappe is installed via 'bench init'
-erpnext
 markdown
 fuzzywuzzy
 ics
@@ -7,3 +6,4 @@ defusedxml
 bleach>=6.0
 pypdf
 python-docx
+holidays

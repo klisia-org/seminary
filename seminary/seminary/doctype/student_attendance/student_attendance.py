@@ -3,7 +3,6 @@
 
 
 import frappe
-from erpnext import get_default_company
 
 # from erpnext.setup.doctype.holiday_list.holiday_list import is_holiday
 from frappe import _

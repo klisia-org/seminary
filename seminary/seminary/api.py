@@ -28,7 +28,6 @@ from frappe.translate import get_all_translations
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
-import erpnext
 from datetime import datetime
 import zipfile
 import os
@@ -860,6 +859,10 @@ def get_user_info():
     # Reported for the optional, separately-distributed Aretenic accreditation
     # app (its own role; created by that app, never required by seminary).
     user.is_aretenic = "Aretenic User" in _roles
+    # Whether the Aretenic app is installed at all (distinct from the per-user role above):
+    # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
+    # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
+    user.has_aretenic = "aretenic" in frappe.get_installed_apps()
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
@@ -1166,8 +1169,8 @@ def first_term(doc):
 
 @frappe.whitelist()
 def roll_students(academic_term=None):
-    # Student-advancement only. Invoice generation lives in tasks.daily() now
-    # (see generate_nat_invoices / generate_nay_invoices / generate_monthly_invoices).
+    # Student-advancement only. Invoice generation is owned by the oikonomos
+    # bridge (oikonomos.financial.invoicing); seminary never bills.
     # Role gate moved here from the (retired) Registrar Hub page.
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     summary = roll_pe()
@@ -1179,19 +1182,6 @@ def roll_students(academic_term=None):
         summary["tb_skipped"],
         summary["tb_failed"],
     )
-
-
-@frappe.whitelist()
-def regenerate_current_term_invoices():
-    """Manual recovery: clear invoiced_nat_on on the current Academic Term and
-    re-run the NAT generator. Safety-net seminary_trigger check still prevents
-    duplicates for invoices that already exist."""
-    frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
-    current = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
-    if not current:
-        frappe.throw(_("No current Academic Term set."))
-    frappe.db.set_value("Academic Term", current, "invoiced_nat_on", None)
-    return generate_nat_invoices(current)
 
 
 @frappe.whitelist()
@@ -1540,23 +1530,16 @@ def get_student_enrollments_for_term(program_enrollment):
         else:
             cei["status"] = "Enrolled"
 
-        # For Awaiting Payment, surface the unpaid invoice so the student
-        # can click through to pay.
+        # For Awaiting Payment, surface the unpaid invoice (a financial fact owned
+        # by the backend) so the student can click through to pay. None with no
+        # backend — a Frappe-only enrollment never sits in Awaiting Payment.
         cei["sales_invoice"] = None
         if cei["status"] == "Awaiting Payment":
-            si_rows = frappe.get_all(
-                "Sales Invoice",
-                filters={
-                    "custom_cei": cei.name,
-                    "docstatus": 1,
-                    "is_return": 0,
-                },
-                fields=["name", "grand_total", "outstanding_amount"],
-                order_by="creation desc",
-                limit=1,
+            from seminary.seminary.financial.backend import get_financial_backend
+
+            cei["sales_invoice"] = get_financial_backend().unpaid_invoice_for_cei(
+                cei.name
             )
-            if si_rows:
-                cei["sales_invoice"] = si_rows[0]
 
     return ceis
 
@@ -2178,18 +2161,13 @@ def _active_graduation_request_summary(pe_name):
     if not rows:
         return None
     gr = rows[0]
-    sales_invoices = frappe.get_all(
-        "Sales Invoice",
-        filters={
-            "custom_graduation_request": gr.name,
-            "docstatus": 1,
-            "is_return": 0,
-        },
-        fields=["name", "grand_total", "outstanding_amount"],
-    )
+    # The linked invoices are a financial fact owned by the backend; a Frappe-only
+    # seminary's graduation request simply carries none.
+    from seminary.seminary.financial.backend import get_financial_backend
+
     return {
         **gr,
-        "sales_invoices": sales_invoices,
+        "sales_invoices": get_financial_backend().graduation_request_invoices(gr.name),
     }
 
 
@@ -2291,87 +2269,11 @@ def create_graduation_request(
 
 @frappe.whitelist()
 def get_pe_unpaid_invoices(program_enrollment):
-    """Aggregate every unpaid Sales Invoice tied to this Program Enrollment,
-    grouped by payer (Customer). Covers three linkage paths:
+    """Unpaid invoices for a Program Enrollment, grouped by payer (empty on a
+    Frappe-only seminary)."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    - Course Enrollment Individual via Sales Invoice.custom_cei
-    - Graduation Request via Sales Invoice.custom_graduation_request
-    - Trigger invoices (NAT/NAY/Monthly/etc.) via the seminary_trigger
-      tag's last segment, which is the pgm_enroll_payers row name.
-
-    Returns a list grouped by customer:
-        [{
-            "customer": "Cust A",
-            "invoices": [{name, grand_total, outstanding_amount, source}],
-            "total_unpaid": 123.45,
-        }, ...]
-
-    Sorted by total_unpaid desc.
-    """
-    if not program_enrollment:
-        return []
-
-    rows = frappe.db.sql(
-        """
-        SELECT * FROM (
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Course Enrollment' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabCourse Enrollment Individual` cei ON cei.name = si.custom_cei
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND cei.program_ce = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Graduation Request' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabGraduation Request` gr ON gr.name = si.custom_graduation_request
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND gr.program_enrollment = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Recurring Fee' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabpgm_enroll_payers` pep
-                ON pep.name = SUBSTRING_INDEX(si.seminary_trigger, ':', -1)
-            INNER JOIN `tabPayers Fee Category PE` pfc ON pfc.name = pep.parent
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND si.seminary_trigger IS NOT NULL
-              AND si.seminary_trigger != ''
-              AND pfc.pf_pe = %(pe)s
-        ) AS u
-        ORDER BY u.customer, u.name
-        """,
-        {"pe": program_enrollment},
-        as_dict=True,
-    )
-
-    # Group by customer
-    by_customer = {}
-    for r in rows:
-        bucket = by_customer.setdefault(
-            r.customer, {"customer": r.customer, "invoices": [], "total_unpaid": 0.0}
-        )
-        bucket["invoices"].append(
-            {
-                "name": r.name,
-                "grand_total": float(r.grand_total or 0),
-                "outstanding_amount": float(r.outstanding_amount or 0),
-                "source": r.source,
-            }
-        )
-        bucket["total_unpaid"] += float(r.outstanding_amount or 0)
-
-    return sorted(by_customer.values(), key=lambda b: b["total_unpaid"], reverse=True)
+    return get_financial_backend().pe_unpaid_invoices(program_enrollment)
 
 
 def _course_category_map(pe, program):
@@ -2830,7 +2732,9 @@ def get_student_contacts(student):
     :param student: Student.
     """
     contacts = frappe.get_all(
-        "Student Contacts", fields=["contact"], filters={"parent": student}
+        "Student Contacts",
+        fields=["contact_name", "relation", "emergency"],
+        filters={"parent": student},
     )
     return contacts
 
@@ -2923,37 +2827,6 @@ def get_grade(grading_scale, percentage):
 
 
 @frappe.whitelist()
-def get_payers(program_enrollment, method):
-    pe = program_enrollment
-    pen = pe.name
-    active = pe.pgmenrol_active
-    student = pe.student
-    turn = 1
-    while turn <= 2:
-        if (
-            not frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-            and turn == 1
-        ):
-            print("Creating Payers Fee Category PE -turn " + str(turn) + pen)
-            pfc = frappe.new_doc("Payers Fee Category PE")
-            pfc.pf_pe = pen
-            pfc.pf_student = student
-            pfc.pf_active = active
-            pfc.pf_custgroup = "Student"
-            pfc.insert()
-            pfc.save()
-            turn += 1
-        elif (
-            frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-            and turn == 2
-        ):
-            print("Payers Fee Category PE already exists - turn " + str(turn))
-            get_payers_fees(pen)
-            break
-    return
-
-
-@frappe.whitelist()
 def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
@@ -2990,55 +2863,6 @@ def quizresult_to_card(doc, method):
     card.graded_card = 1 if doc.percentage not in (None, "") else 0
     # Save the updated card
     card.save(ignore_permissions=True)
-
-
-@frappe.whitelist()
-def get_payers_fees(pen):
-
-    pfc = frappe.get_doc({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-
-    doc = []
-    doc = frappe.db.sql(
-        """select pf.pgm_feecategory as feecat, pf.pgm_feeevent as event, s.customer, '1' as percentage, fc.payment_term_template as term
-			from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
-			where pe.student = s.name and
-			pe.program = p.name and
-			p.name = pf.parent and
-			pf.pgm_feecategory = fc.name and
-			pe.name = %s""",
-        (pen),
-        as_list=1,
-    )
-    row_count = frappe.db.sql(
-        """select count(pf.pgm_feecategory) from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
-			where pe.student = s.name and
-			pe.program = p.name and
-			p.name = pf.parent and
-			pf.pgm_feecategory = fc.name and
-			pe.name = %s""",
-        (pen),
-    )[0][0]
-    i = 0
-    while i < row_count:
-        feecat = doc[i][0]
-        event = doc[i][1]
-        customer = doc[i][2]
-        term = doc[i][3]
-        percentage = doc[i][4]
-        print(pen, feecat, event, customer, term, percentage)
-        ppe = frappe.new_doc("pgm_enroll_payers")
-        ppe.parent = pen
-        ppe.parentfield = "pf_payers"
-        ppe.parenttype = "Payers Fee Category PE"
-        ppe.fee_category = feecat
-        ppe.pep_event = event
-        ppe.payer = customer
-        ppe.payterm_payer = term
-        ppe.pay_percent = "100"
-        ppe.insert()
-        ppe.save()
-        i += 1
-    return
 
 
 @frappe.whitelist()
@@ -3124,87 +2948,10 @@ def get_scholarship(student):
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    # If the caller is a student user, always scope to their own Student
-    # record — ignore any client-supplied `student` parameter to prevent a
-    # student from querying someone else's invoices.
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
+    """The student's invoices for the Fees page (empty on a Frappe-only seminary)."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        if not student:
-            return []
-
-    if not student:
-        frappe.throw("student is required")
-
-    # Only show invoices where the student is the customer (not church/scholarship)
-    student_customer = frappe.db.get_value("Student", student, "customer")
-
-    si_filters = {"custom_student": student, "docstatus": 1}
-    if student_customer:
-        si_filters["customer"] = student_customer
-
-    sales_invoice_list = frappe.get_all(
-        "Sales Invoice",
-        filters=si_filters,
-        fields=[
-            "name",
-            "customer",
-            "posting_date",
-            "due_date",
-            "total",
-            "outstanding_amount",
-            "status",
-            "is_return",
-            "return_against",
-            "custom_cei",
-            "seminary_summary",
-        ],
-    )
-    for invoice in sales_invoice_list:
-        invoice["name"] = frappe.get_value("Sales Invoice", invoice["name"], "name")
-        invoice["customer"] = frappe.get_value(
-            "Customer", invoice["customer"], "customer_name"
-        )
-        # Prefer the explicit seminary_summary; fall back to the legacy CEI course
-        # label so invoices that pre-date the summary field still get a label.
-        summary = invoice.get("seminary_summary")
-        if not summary and invoice.get("custom_cei"):
-            course = frappe.db.get_value(
-                "Course Enrollment Individual", invoice["custom_cei"], "course_data"
-            )
-            summary = _("Course: {0}").format(course) if course else None
-        invoice["summary"] = summary
-        invoice["course"] = summary  # back-compat for Fees.vue field name
-        invoice["posting_date"] = frappe.utils.formatdate(invoice["posting_date"])
-        invoice["outstanding_raw"] = invoice["outstanding_amount"]
-        invoice["total_raw"] = invoice["total"]
-        if invoice["is_return"]:
-            invoice["status"] = "Return"
-        invoice["total"] = "{:,.2f}".format(invoice["total"])
-        invoice["outstanding_amount"] = "{:,.2f}".format(invoice["outstanding_amount"])
-    sales_invoice_list = sorted(
-        sales_invoice_list, key=lambda x: (x["status"], x["posting_date"]), reverse=True
-    )
-
-    return sales_invoice_list
-
-
-def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
-    payment_entry = frappe.qb.DocType("Payment Entry")
-    payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
-    q = (
-        frappe.qb.from_(payment_entry)
-        .inner_join(payment_entry_reference)
-        .on(payment_entry.name == payment_entry_reference.parent)
-        .select(payment_entry.posting_date)
-        .where(payment_entry_reference.reference_name == sales_invoice)
-    ).run(as_dict=1)
-    payment_date = q[0].get("posting_date")
-    return payment_date
+    return get_financial_backend().student_invoices(student)
 
 
 @frappe.whitelist()
@@ -3440,403 +3187,6 @@ def update_card(doc, method):
             new.insert()
 
 
-def _billing_context():
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    return {
-        "today": frappe.utils.today(),
-        "company": company,
-        "currency": erpnext.get_company_currency(company),
-        "receivable_account": frappe.db.get_single_value(
-            "Seminary Settings", "receivable_account"
-        ),
-        "income_account": frappe.db.get_value(
-            "Company", company, "default_income_account"
-        ),
-        "cost_center": frappe.db.get_single_value("Seminary Settings", "cost_center")
-        or None,
-        "auto_submit": bool(
-            frappe.db.get_single_value("Seminary Settings", "auto_submit_sales_invoice")
-        ),
-    }
-
-
-def _empty_invoice_result(reason=""):
-    return {"created": 0, "skipped": 0, "failed": 0, "reason": reason}
-
-
-def _create_trigger_invoice(row, tag, ctx, counts, summary=""):
-    # Safety net: an SI with this tag already exists — partial prior run or flag cleared.
-    if frappe.db.exists(
-        "Sales Invoice", {"seminary_trigger": tag, "docstatus": ["<", 2]}
-    ):
-        counts["skipped"] += 1
-        return
-    try:
-        items = [
-            {
-                "doctype": "Sales Invoice Item",
-                "item_code": row.item,
-                "qty": (row.pay_percent or 0) / 100,
-                "rate": 0,
-                "description": summary or f"Fee for {row.fee_category}",
-                "income_account": ctx["income_account"],
-                "cost_center": ctx["cost_center"],
-                "base_rate": 0,
-                "price_list_rate": row.price_list_rate,
-            }
-        ]
-        si = frappe.get_doc(
-            {
-                "doctype": "Sales Invoice",
-                "naming_series": "ACC-SINV-.YYYY.-",
-                "posting_date": ctx["today"],
-                "company": ctx["company"],
-                "currency": ctx["currency"],
-                "debit_to": ctx["receivable_account"],
-                "income_account": ctx["income_account"],
-                "conversion_rate": 1,
-                "custom_student": row.student,
-                "customer": row.customer,
-                "selling_price_list": row.default_price_list,
-                "base_grand_total": row.price_list_rate,
-                "payment_terms_template": row.payterm_payer,
-                "seminary_trigger": tag,
-                "seminary_summary": summary,
-                "items": items,
-            }
-        )
-        si.run_method("set_missing_values")
-        si.insert(ignore_permissions=True)
-        if ctx["auto_submit"]:
-            si.submit()
-        counts["created"] += 1
-    except Exception:
-        counts["failed"] += 1
-        frappe.log_error(frappe.get_traceback(), f"seminary billing tag {tag}")
-
-
-@frappe.whitelist()
-def generate_nat_invoices(academic_term):
-    """Generate 'New Academic Term' Sales Invoices for the given term.
-
-    Idempotent: fast-path exits if the term's invoiced_nat_on flag is set;
-    per-row safety net checks seminary_trigger before each insert."""
-    if not academic_term:
-        return _empty_invoice_result("no term")
-    if frappe.db.get_value("Academic Term", academic_term, "invoiced_nat_on"):
-        return _empty_invoice_result("already invoiced")
-
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'New Academic Term'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nat, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-        """,
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    term_label = (
-        frappe.db.get_value("Academic Term", academic_term, "term_name")
-        or academic_term
-    )
-    for r in rows:
-        summary = _("New Academic Term \u2014 {0} ({1})").format(
-            term_label, r.fee_category
-        )
-        _create_trigger_invoice(
-            r, f"NAT:{academic_term}:{r.pep_name}", ctx, counts, summary=summary
-        )
-    frappe.db.set_value("Academic Term", academic_term, "invoiced_nat_on", getdate())
-    frappe.logger().info(f"generate_nat_invoices({academic_term}): {counts}")
-    return counts
-
-
-@frappe.whitelist()
-def generate_nay_invoices(academic_year):
-    """Generate 'New Academic Year' Sales Invoices for the given year.
-
-    Idempotent via invoiced_nay_on flag + seminary_trigger safety net."""
-    if not academic_year:
-        return _empty_invoice_result("no year")
-    if frappe.db.get_value("Academic Year", academic_year, "invoiced_nay_on"):
-        return _empty_invoice_result("already invoiced")
-
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'New Academic Year'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nay, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-        """,
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    for r in rows:
-        summary = _("New Academic Year \u2014 {0} ({1})").format(
-            academic_year, r.fee_category
-        )
-        _create_trigger_invoice(
-            r, f"NAY:{academic_year}:{r.pep_name}", ctx, counts, summary=summary
-        )
-    frappe.db.set_value("Academic Year", academic_year, "invoiced_nay_on", getdate())
-    frappe.logger().info(f"generate_nay_invoices({academic_year}): {counts}")
-    return counts
-
-
-@frappe.whitelist()
-def generate_readmission_invoice(program_enrollment, fee_category, as_of=None):
-    """Bill a one-off readmission fee for a Program Enrollment returning from
-    leave, reusing the standard trigger-invoice pipeline. Idempotent per
-    (PE, date, payer) via the seminary_trigger tag."""
-    if not program_enrollment or not fee_category:
-        return _empty_invoice_result("missing args")
-
-    as_of = getdate(as_of) if as_of else getdate()
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pfc.pf_pe = %s
-          AND pep.fee_category = %s
-        """,
-        (program_enrollment, fee_category),
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    tag_date = as_of.strftime("%Y-%m-%d")
-    for r in rows:
-        summary = _("Readmission Fee — {0}").format(r.fee_category)
-        _create_trigger_invoice(
-            r,
-            f"READMIT:{program_enrollment}:{tag_date}:{r.pep_name}",
-            ctx,
-            counts,
-            summary=summary,
-        )
-    frappe.logger().info(
-        f"generate_readmission_invoice({program_enrollment}): {counts}"
-    )
-    return counts
-
-
-def _ensure_applicant_customer(applicant):
-    """Return the Customer for a Student Applicant, creating one if missing.
-
-    Strategy: prefer the link already on the applicant, then a Customer
-    matching the applicant's email, then create a fresh Customer using the
-    applicant's title and customer_group (defaulting to "Individual").
-    """
-    if applicant.customer and frappe.db.exists("Customer", applicant.customer):
-        return applicant.customer
-
-    if applicant.student_email_id:
-        existing = frappe.db.get_value(
-            "Customer",
-            {"email_id": applicant.student_email_id},
-            "name",
-        )
-        if existing:
-            applicant.db_set("customer", existing, update_modified=False)
-            return existing
-
-    customer_group = applicant.customer_group or "Individual"
-    if not frappe.db.exists("Customer Group", customer_group):
-        frappe.throw(
-            _(
-                "Customer Group {0} does not exist; set a valid Customer Group on the applicant before submitting."
-            ).format(customer_group)
-        )
-
-    customer = frappe.get_doc(
-        {
-            "doctype": "Customer",
-            "customer_name": applicant.title or applicant.name,
-            "customer_type": "Individual",
-            "customer_group": customer_group,
-            "email_id": applicant.student_email_id,
-        }
-    )
-    customer.flags.ignore_permissions = True
-    customer.insert(ignore_permissions=True)
-    applicant.db_set("customer", customer.name, update_modified=False)
-    return customer.name
-
-
-def generate_application_invoices(applicant_name):
-    """Generate Application-fee Sales Invoices for a Student Applicant.
-
-    Walks `Program.pgm_pgmfees` rows where `pgm_feeevent = 'Application'`
-    and creates one Sales Invoice per submitted Fee Category that has an
-    Item Price under the resolved Customer Group's default price list.
-
-    Idempotent: per-row safety net via `seminary_trigger = APP:<applicant>:<pf_row>`.
-    Free programs and applicants whose Program has no Application fee
-    configured are no-ops.
-    """
-    if not applicant_name:
-        return _empty_invoice_result("no applicant")
-    applicant = frappe.get_doc("Student Applicant", applicant_name)
-    if not applicant.program:
-        return _empty_invoice_result("no program")
-    program = frappe.get_doc("Program", applicant.program)
-    if program.is_free:
-        return _empty_invoice_result("free program")
-
-    application_rows = [
-        row
-        for row in (program.pgm_pgmfees or [])
-        if row.pgm_feeevent == "Application" and row.pgm_feecategory
-    ]
-    if not application_rows:
-        return _empty_invoice_result("no Application fee configured on program")
-
-    customer = _ensure_applicant_customer(applicant)
-    customer_group = frappe.db.get_value("Customer", customer, "customer_group")
-    default_price_list = frappe.db.get_value(
-        "Customer Group", customer_group, "default_price_list"
-    )
-    if not default_price_list:
-        frappe.throw(
-            _(
-                "Customer Group {0} has no default Price List; cannot price the Application fee."
-            ).format(customer_group)
-        )
-
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-
-    for pf_row in application_rows:
-        tag = f"APP:{applicant_name}:{pf_row.name}"
-        if frappe.db.exists(
-            "Sales Invoice", {"seminary_trigger": tag, "docstatus": ["<", 2]}
-        ):
-            counts["skipped"] += 1
-            continue
-
-        fc = frappe.db.get_value(
-            "Fee Category",
-            pf_row.pgm_feecategory,
-            ["item", "payment_term_template", "docstatus"],
-            as_dict=True,
-        )
-        if not fc or fc.docstatus != 1 or not fc.item:
-            counts["skipped"] += 1
-            continue
-
-        price_list_rate = frappe.db.get_value(
-            "Item Price",
-            {"price_list": default_price_list, "item_code": fc.item},
-            "price_list_rate",
-        )
-        if price_list_rate is None:
-            counts["skipped"] += 1
-            frappe.log_error(
-                f"No Item Price for {fc.item} on {default_price_list}; "
-                f"skipped Application fee for {applicant_name}.",
-                "generate_application_invoices",
-            )
-            continue
-
-        summary = _("Application — {0}").format(pf_row.pgm_feecategory)
-        try:
-            si = frappe.get_doc(
-                {
-                    "doctype": "Sales Invoice",
-                    "naming_series": "ACC-SINV-.YYYY.-",
-                    "posting_date": ctx["today"],
-                    "company": ctx["company"],
-                    "currency": ctx["currency"],
-                    "debit_to": ctx["receivable_account"],
-                    "income_account": ctx["income_account"],
-                    "conversion_rate": 1,
-                    "customer": customer,
-                    "selling_price_list": default_price_list,
-                    "base_grand_total": price_list_rate,
-                    "payment_terms_template": fc.payment_term_template,
-                    "remarks": summary,
-                    "seminary_trigger": tag,
-                    "seminary_summary": summary,
-                    "items": [
-                        {
-                            "doctype": "Sales Invoice Item",
-                            "item_code": fc.item,
-                            "qty": 1,
-                            "rate": 0,
-                            "description": _("Application fee for program {0}").format(
-                                applicant.program
-                            ),
-                            "income_account": ctx["income_account"],
-                            "cost_center": ctx["cost_center"],
-                            "base_rate": 0,
-                            "price_list_rate": price_list_rate,
-                        }
-                    ],
-                    "cost_center": ctx["cost_center"],
-                }
-            )
-            si.flags.ignore_permissions = True
-            si.run_method("set_missing_values")
-            si.insert(ignore_permissions=True)
-            if ctx["auto_submit"]:
-                si.submit()
-            counts["created"] += 1
-        except Exception:
-            counts["failed"] += 1
-            frappe.log_error(
-                frappe.get_traceback(), f"seminary application billing tag {tag}"
-            )
-
-    frappe.logger().info(f"generate_application_invoices({applicant_name}): {counts}")
-    return counts
-
-
 @frappe.whitelist()
 def insert_cs_assessment(criteria):
     # If criteria is already a dict, use it directly.
@@ -3870,85 +3220,6 @@ def insert_cs_assessment(criteria):
     frappe.db.commit()
 
     return {"success": True}
-
-
-@frappe.whitelist()
-def generate_monthly_invoices(as_of=None):
-    """Generate 'Monthly' Sales Invoices on the 1st of the month for every
-    active Program Enrollment whose linked Fee Categories use fc_event='Monthly'.
-
-    Idempotent: skips PEs whose last_monthly_invoiced_on is already >= the
-    first of the current month; safety-net tag check prevents duplicates."""
-    from frappe.utils import get_first_day
-
-    as_of = getdate(as_of) if as_of else getdate()
-    first_of_month = get_first_day(as_of)
-    month_tag = as_of.strftime("%Y-%m")
-
-    active_pes = frappe.db.sql(
-        """
-        SELECT DISTINCT pfc.pf_pe AS pe_name
-        FROM `tabPayers Fee Category PE` pfc
-        INNER JOIN `tabpgm_enroll_payers` pep ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'Monthly'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_monthly, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-          AND (pe.last_monthly_invoiced_on IS NULL OR pe.last_monthly_invoiced_on < %s)
-          AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)
-        """,
-        (first_of_month,),
-        as_dict=True,
-    )
-
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    month_label = as_of.strftime("%B %Y")
-    for pe_row in active_pes:
-        pe_name = pe_row.pe_name
-        rows = frappe.db.sql(
-            """
-            SELECT pep.name AS pep_name, pfc.stu_link AS student,
-                   pep.fee_category, pep.payer AS customer,
-                   pep.pay_percent, pep.payterm_payer,
-                   fc.item,
-                   cg.default_price_list, ip.price_list_rate
-            FROM `tabpgm_enroll_payers` pep
-            INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-            INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-            INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-            INNER JOIN `tabItem Price` ip
-                    ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-            INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-            WHERE pfc.pf_active = 1
-              AND fc.docstatus = 1
-              AND pep.pep_event = 'Monthly'
-              AND pfc.pf_pe = %s
-              AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)
-            """,
-            (pe_name,),
-            as_dict=True,
-        )
-        for r in rows:
-            summary = _("Monthly \u2014 {0} ({1})").format(month_label, r.fee_category)
-            _create_trigger_invoice(
-                r,
-                f"MONTHLY:{month_tag}:{r.pep_name}",
-                ctx,
-                counts,
-                summary=summary,
-            )
-        frappe.db.set_value(
-            "Program Enrollment", pe_name, "last_monthly_invoiced_on", first_of_month
-        )
-    frappe.logger().info(f"generate_monthly_invoices({as_of}): {counts}")
-    return counts
 
 
 @frappe.whitelist()
@@ -4400,6 +3671,20 @@ def send_grades(doc=None, **kwargs):
         _check_auto_grant_emphases(pe_name)
         recompute_program_enrollment_gpa(pe_name)
 
+    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+    # after commit so a snapshot failure can never roll back grades. Seminary never requires
+    # aretenic (ADR 030/032).
+    from seminary.seminary.utils import _aretenic_enabled
+
+    if _aretenic_enabled():
+        frappe.enqueue(
+            "aretenic.attainment.snapshot_offering_on_send_grades",
+            queue="long",
+            enqueue_after_commit=True,
+            course_schedule=docname,
+        )
+
     return "All grades sent"
 
 
@@ -4625,128 +3910,11 @@ def get_doctrinal_statement():
 
 @frappe.whitelist(allow_guest=True)
 def get_application_payment_url(applicant_name):
-    """Return a payment URL for a Student Applicant's outstanding Application
-    Sales Invoice, plus any alternative payment instructions configured on
-    Seminary Settings. Used by the public Student Applicant web form to let
-    applicants pay immediately after submitting.
+    """Payment URL + instructions for an applicant's Application invoice (public
+    web form). Delegates to the financial backend; None on a Frappe-only seminary."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    Returns a dict:
-        payment_url: gateway URL (None if no gateway / no SI / already paid)
-        amount: outstanding amount on the invoice
-        currency: invoice currency
-        alternative_instructions: HTML from Seminary Settings (if configured)
-    Returns None if applicant doesn't exist.
-    """
-    if not applicant_name or not frappe.db.exists("Student Applicant", applicant_name):
-        return None
-
-    settings = frappe.get_single("Seminary Settings")
-    alternative_instructions = settings.get("alternative_payment_instructions") or None
-
-    invoice = frappe.db.sql(
-        """
-        SELECT name, currency, outstanding_amount
-        FROM `tabSales Invoice`
-        WHERE seminary_trigger LIKE %(prefix)s
-          AND docstatus < 2
-          AND outstanding_amount > 0
-        ORDER BY creation DESC
-        LIMIT 1
-        """,
-        {"prefix": f"APP:{applicant_name}:%"},
-        as_dict=True,
-    )
-
-    if not invoice:
-        return {
-            "payment_url": None,
-            "amount": None,
-            "currency": None,
-            "alternative_instructions": alternative_instructions,
-        }
-
-    inv = invoice[0]
-    payment_url = None
-    if settings.portal_payment_enable and settings.payment_gateway:
-        try:
-            payment_url = _create_application_payment_url(inv.name, settings)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"get_application_payment_url({applicant_name})",
-            )
-
-    return {
-        "payment_url": payment_url,
-        "amount": inv.outstanding_amount,
-        "currency": inv.currency,
-        "alternative_instructions": alternative_instructions,
-    }
-
-
-def _create_application_payment_url(invoice_name, settings):
-    """Create a Payment Request for an Application SI and return the URL.
-    Mirrors get_invoice_payment_url but skips the student-permission gate
-    (applicant payments come from the guest web form context — they need
-    to pay before they have a Student record)."""
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        return None
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_amount,
-        get_gateway_details,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
-        )
-        or frappe._dict()
-    )
-
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        return None
-
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Application Payment for {0}").format(ref_doc.customer),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.flags.ignore_permissions = True
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-    return pr.get_payment_url()
+    return get_financial_backend().application_payment_url(applicant_name)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4755,10 +3923,14 @@ def get_default_phone_country():
     string (e.g. "United States"). Frappe's Phone control reads
     `frappe.sys_defaults.country` and matches by name; web forms set this
     on load to override the hard-coded "India" default."""
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    if not company:
-        return None
-    return frappe.db.get_value("Company", company, "country")
+    # The billing Company (and its country) is owned by the financial backend; on
+    # a Frappe-only install fall back to the system default country.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    country = get_financial_backend().company_country()
+    if country:
+        return country
+    return frappe.db.get_single_value("System Settings", "country")
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4976,16 +4148,9 @@ def get_student_info():
     return student_info
 
 
-@frappe.whitelist()
-def get_program_fees(program):
-    program_fees = []
-    program_fees = frappe.get_all(
-        "Program Fees",
-        filters={"parent": program},
-        fields=["pgm_feecategory"],
-    )
-    print(program_fees)
-    return program_fees
+# get_program_fees (Program Fees is an oikonomos pricing doctype) lives in the
+# bridge now: oikonomos.financial.pricing.get_program_fees, called from the
+# oikonomos Scholarships form.
 
 
 @frappe.whitelist()
@@ -5336,273 +4501,26 @@ def delete_submission_comment(name):
 
 @frappe.whitelist()
 def get_invoice_payment_url(invoice_name):
-    """Create a Payment Request for a Sales Invoice and return the payment URL.
+    """Gateway payment URL for one of the student's invoices."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    Students can only request payment for their own invoices (validated via
-    custom_student on the Sales Invoice).
-    """
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    # Validate that the student owns this invoice
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        invoice_student = frappe.db.get_value(
-            "Sales Invoice", invoice_name, "custom_student"
-        )
-        if not student or invoice_student != student:
-            frappe.throw(_("You do not have permission to pay this invoice."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(
-            _("Online payments are not enabled. Please contact the administration.")
-        )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_gateway_details,
-        get_amount,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
-        )
-        or frappe._dict()
-    )
-
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        frappe.throw(_("This invoice has already been paid."))
-
-    # Cancel any incomplete Payment Requests (submitted but not paid),
-    # following the webshop pattern for re-payment attempts.
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Payment Request for {0}").format(invoice_name),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    return {"payment_url": pr.get_payment_url()}
+    return get_financial_backend().invoice_payment_url(invoice_name)
 
 
 @frappe.whitelist()
 def get_student_balance_payment_url():
-    """Pay the full outstanding on the student's open Student Balance."""
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
+    """Gateway payment URL for the student's full outstanding balance."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Set allocated_amount = outstanding_amount on each non-return row
-    for row in sb.invoices:
-        if not row.is_return and flt(row.outstanding_amount) > 0:
-            row.allocated_amount = row.outstanding_amount
-        else:
-            row.allocated_amount = 0
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, sb.net_outstanding, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
+    return get_financial_backend().student_balance_payment_url()
 
 
 @frappe.whitelist()
 def get_student_partial_balance_payment_url(amount=None, invoices=None):
-    """Pay a partial amount against the student's open Student Balance.
+    """Gateway payment URL for a partial balance payment."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    Args:
-        amount: Fixed amount to pay (allocated by due date order).
-        invoices: JSON list of {"sales_invoice": name, "amount": value} dicts.
-    """
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Reset all allocations
-    for row in sb.invoices:
-        row.allocated_amount = 0
-
-    if invoices:
-        # Parse if string
-        if isinstance(invoices, str):
-            invoices = json.loads(invoices)
-        invoice_map = {item["sales_invoice"]: flt(item["amount"]) for item in invoices}
-        for row in sb.invoices:
-            if row.sales_invoice in invoice_map:
-                alloc = min(invoice_map[row.sales_invoice], flt(row.outstanding_amount))
-                row.allocated_amount = alloc
-    elif amount:
-        amount = flt(amount)
-        if amount <= 0 or amount > flt(sb.net_outstanding):
-            frappe.throw(_("Invalid payment amount."))
-        # Allocate by due date
-        remaining = amount
-        sorted_rows = sorted(sb.invoices, key=lambda r: r.due_date or "9999-12-31")
-        for row in sorted_rows:
-            if row.is_return or flt(row.outstanding_amount) <= 0:
-                continue
-            alloc = min(flt(row.outstanding_amount), remaining)
-            row.allocated_amount = alloc
-            remaining -= alloc
-            if remaining <= 0:
-                break
-    else:
-        frappe.throw(_("Please specify an amount or select invoices to pay."))
-
-    total_allocated = sum(
-        flt(row.allocated_amount)
-        for row in sb.invoices
-        if not row.is_return and flt(row.allocated_amount) > 0
-    )
-    if total_allocated <= 0:
-        frappe.throw(_("No amount allocated for payment."))
-
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, total_allocated, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
-
-
-def _get_open_student_balance(student):
-    """Get the open Student Balance for a student, or throw."""
-    sb_name = frappe.db.get_value(
-        "Student Balance", {"student": student, "is_open": 1}, "name"
-    )
-    if not sb_name:
-        frappe.throw(_("No open balance found for this student."))
-    return frappe.get_doc("Student Balance", sb_name)
-
-
-def _create_balance_payment_request(sb, amount, settings):
-    """Create and submit a Payment Request against a Student Balance."""
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-    )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        ["name", "payment_gateway", "payment_account", "payment_channel", "message"],
-        as_dict=True,
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    cancel_old_payment_requests("Student Balance", sb.name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway_account.name,
-            "payment_gateway": gateway_account.payment_gateway,
-            "payment_account": gateway_account.payment_account,
-            "payment_channel": gateway_account.payment_channel,
-            "payment_request_type": "Inward",
-            "currency": sb.currency,
-            "grand_total": amount,
-            "email_to": frappe.session.user,
-            "subject": _("Payment for Student Balance {0}").format(sb.name),
-            "message": gateway_account.message or "",
-            "reference_doctype": "Student Balance",
-            "reference_name": sb.name,
-            "company": sb.company,
-            "party_type": "Customer",
-            "party": sb.customer,
-            "mute_email": 1,
-        }
-    )
-    # Add a payment_reference row so that validate_payment_request_amount
-    # is skipped — it only knows standard doctypes like Sales Invoice.
-    pr.append(
-        "payment_reference",
-        {
-            "amount": amount,
-            "description": _("Student Balance {0}").format(sb.name),
-        },
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    sb.db_set("payment_request", pr.name)
-    return pr
+    return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 
 @frappe.whitelist()
@@ -5858,217 +4776,6 @@ def preview_announcement_letter(name):
         }
     ).insert(ignore_permissions=True)
     return {"file_url": f.file_url}
-
-
-_PROGRAM_PRICING_TEMPLATE = """
-<style>
-.program-pricing { font-size: 13px; margin-left: 6px; }
-.program-pricing h2 { margin-top: 1.5rem; padding-bottom: 0.25rem; border-bottom: 2px solid #333; }
-.program-pricing h2 .currency { font-weight: normal; color: #555; font-size: 0.85em; }
-.program-pricing .customer-groups { margin: 0.5rem 0 1rem; color: #444; }
-.program-pricing .program-block { margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 4px; page-break-inside: avoid; }
-.program-pricing .program-block h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
-.program-pricing .program-meta { list-style: none; padding: 0; margin: 0 0 0.75rem; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; color: #333; }
-.program-pricing .program-meta li { margin: 0; }
-.program-pricing .fees-table { width: 100%; border-collapse: collapse; }
-.program-pricing .fees-table th, .program-pricing .fees-table td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
-.program-pricing .fees-table th { background: #f5f5f5; font-weight: 600; }
-.program-pricing .fees-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.program-pricing .not-priced { color: #c0392b; font-weight: 600; }
-.program-pricing .check { color: #2e7d32; font-weight: 700; }
-.program-pricing .no-fees { color: #777; font-style: italic; margin: 0; }
-@media print {
-  .program-pricing h2 { page-break-after: avoid; }
-}
-</style>
-<div class="program-pricing">
-{% for pl in price_lists %}
-  <section class="price-list-section">
-    <h2>{{ _("Price List") }}: {{ pl.name }}{% if pl.currency %} <span class="currency">— {{ _("Currency") }}: {{ pl.currency }}</span>{% endif %}</h2>
-    <p class="customer-groups">
-      <strong>{{ _("This price list affects the following customer groups:") }}</strong>
-      {% if pl.customer_groups %}{{ pl.customer_groups | join(", ") }}{% else %}<em>{{ _("None") }}</em>{% endif %}
-    </p>
-    {% for program in programs %}
-      <article class="program-block">
-        <h3>{{ program.program_name or program.name }}</h3>
-        <ul class="program-meta">
-          <li><strong>{{ _("Free Program") }}:</strong> {% if program.is_free %}<span class="check">✓</span>{% else %}—{% endif %}</li>
-          <li><strong>{{ _("Require Payment Before Enrollment") }}:</strong> {% if program.require_pay_submit %}<span class="check">✓</span>{% else %}—{% endif %}</li>
-          <li><strong>{{ _("Minimum Payment %") }}:</strong> {{ (program.percent_to_pay or 0) }}%</li>
-        </ul>
-        {% if program.fees %}
-        <table class="fees-table">
-          <thead>
-            <tr>
-              <th>{{ _("Fee Category") }}</th>
-              <th>{{ _("Event to charge") }}</th>
-              <th>{{ _("Item") }}</th>
-              <th>{{ _("Academic Credit") }}</th>
-              <th>{{ _("Audit") }}</th>
-              <th>{{ _("Payment Term") }}</th>
-              <th>{{ _("Item Price") }}</th>
-              <th>{{ _("Price last modified on") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for fee in program.fees %}
-              {% set price = pl.prices.get(fee.item) if fee.item else None %}
-              <tr>
-                <td>{{ fee.fee_category or "—" }}</td>
-                <td>{{ fee.event or "—" }}</td>
-                <td>{{ fee.item or "—" }}</td>
-                <td>{% if fee.is_credit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
-                <td>{% if fee.is_audit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
-                <td>{{ fee.payment_term_template or "—" }}</td>
-                {% if price %}
-                  <td class="num">{{ "{:,.2f}".format(price.rate or 0) }}</td>
-                  <td>{{ price.modified_display or "—" }}</td>
-                {% else %}
-                  <td class="not-priced">{{ _("Not priced") }}</td>
-                  <td class="not-priced">—</td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="no-fees">{{ _("No fees configured.") }}</p>
-        {% endif %}
-      </article>
-    {% endfor %}
-  </section>
-{% else %}
-  <p>{{ _("No selling price lists found.") }}</p>
-{% endfor %}
-</div>
-"""
-
-
-@frappe.whitelist()
-def get_program_pricing_html():
-    """Render the Program Pricing report (one block per selling Price List).
-
-    Resolves: customer groups whose default_price_list = the price list,
-    every Program with its Program Fees rows, the Fee Category lookups
-    (item, is_credit, is_audit, payment_term_template), and the matching
-    Item Price for the chosen Price List.
-    """
-    price_lists = frappe.get_all(
-        "Price List",
-        filters={"selling": 1, "enabled": 1},
-        fields=["name", "currency"],
-        order_by="name asc",
-    )
-
-    programs_raw = frappe.get_all(
-        "Program",
-        fields=[
-            "name",
-            "program_name",
-            "is_free",
-            "require_pay_submit",
-            "percent_to_pay",
-        ],
-        order_by="program_name asc",
-    )
-    program_names = [p["name"] for p in programs_raw]
-
-    fee_rows = []
-    if program_names:
-        fee_rows = frappe.get_all(
-            "Program Fees",
-            filters={"parenttype": "Program", "parent": ["in", program_names]},
-            fields=["parent", "pgm_feecategory", "pgm_feeevent", "idx"],
-            order_by="parent asc, idx asc",
-        )
-
-    fee_category_names = sorted(
-        {r["pgm_feecategory"] for r in fee_rows if r.get("pgm_feecategory")}
-    )
-    fee_categories = {}
-    if fee_category_names:
-        for fc in frappe.get_all(
-            "Fee Category",
-            filters={"name": ["in", fee_category_names]},
-            fields=[
-                "name",
-                "category_name",
-                "item",
-                "is_credit",
-                "is_audit",
-                "payment_term_template",
-            ],
-        ):
-            fee_categories[fc["name"]] = fc
-
-    fees_by_program = {}
-    referenced_items = set()
-    for r in fee_rows:
-        fc = fee_categories.get(r.get("pgm_feecategory")) or {}
-        item = fc.get("item")
-        if item:
-            referenced_items.add(item)
-        fees_by_program.setdefault(r["parent"], []).append(
-            {
-                "fee_category": fc.get("category_name") or r.get("pgm_feecategory"),
-                "event": r.get("pgm_feeevent"),
-                "item": item,
-                "is_credit": fc.get("is_credit"),
-                "is_audit": fc.get("is_audit"),
-                "payment_term_template": fc.get("payment_term_template"),
-            }
-        )
-
-    programs = []
-    for p in programs_raw:
-        programs.append({**p, "fees": fees_by_program.get(p["name"], [])})
-
-    enriched_price_lists = []
-    for pl in price_lists:
-        customer_groups = [
-            cg["name"]
-            for cg in frappe.get_all(
-                "Customer Group",
-                filters={"default_price_list": pl["name"]},
-                fields=["name"],
-                order_by="name asc",
-            )
-        ]
-
-        prices = {}
-        if referenced_items:
-            for ip in frappe.get_all(
-                "Item Price",
-                filters={
-                    "price_list": pl["name"],
-                    "item_code": ["in", list(referenced_items)],
-                },
-                fields=["item_code", "price_list_rate", "modified"],
-                order_by="modified desc",
-            ):
-                if ip["item_code"] in prices:
-                    continue
-                prices[ip["item_code"]] = {
-                    "rate": ip.get("price_list_rate"),
-                    "modified_display": frappe.utils.format_datetime(
-                        ip.get("modified"), "yyyy-MM-dd HH:mm"
-                    ),
-                }
-
-        enriched_price_lists.append(
-            {
-                "name": pl["name"],
-                "currency": pl.get("currency"),
-                "customer_groups": customer_groups,
-                "prices": prices,
-            }
-        )
-
-    return frappe.render_template(
-        _PROGRAM_PRICING_TEMPLATE,
-        {"price_lists": enriched_price_lists, "programs": programs},
-    )
 
 
 @frappe.whitelist()

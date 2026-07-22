@@ -45,9 +45,7 @@
   "contacts",
   "customer_details_tab",
   "customer_details_section",
-  "customer",
   "column_break_rgpi",
-  "customer_group",
   "program_enrollment_section",
   "pe_html",
   "services_section",
@@ -318,21 +316,6 @@
    "fieldname": "customer_details_section",
    "fieldtype": "Section Break",
    "label": "Customer Details"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer",
-   "read_only": 1
-  },
-  {
-   "default": "Student",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "Customer Group",
-   "options": "Customer Group",
-   "reqd": 1
   },
   {
    "fieldname": "column_break_rgpi",

@@ -25,6 +25,9 @@ frappe.ui.form.on('Program Enrollment', {
 		});
 	},
 	on_save: function(frm) {
+		// Payer rows are owned by the oikonomos bridge; a Frappe-only seminary has
+		// no Payers Fee Category PE, so skip the payer build entirely.
+		if (!frappe.boot.versions.oikonomos) return;
 		frm.call('get_payers')
 			.fail(() => {
 				frappe.msgprint("Error adding payers");
@@ -65,9 +68,13 @@ frappe.ui.form.on('Program Enrollment', {
 		}));
 
 		if (frm.doc.docstatus === 1) {
-			frm.add_custom_button(__('Payers for this Program'), function() {
-				frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
-			}).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
+			// The Payers (billing) view is an oikonomos-only doctype; hide the
+			// button on a Frappe-only seminary.
+			if (frappe.boot.versions.oikonomos) {
+				frm.add_custom_button(__('Payers for this Program'), function() {
+					frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
+				}).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
+			}
 
 			frm.add_custom_button(__('View Full Audit'), function() {
 				show_full_audit(frm);

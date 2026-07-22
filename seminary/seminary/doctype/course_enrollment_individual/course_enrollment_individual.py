@@ -7,8 +7,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils.csvutils import getlink
 
-from seminary.seminary.billing import build_and_create_invoice as create_payer_invoice
-
 # Roles allowed to bypass the prerequisite gate via the no_prereq flag.
 _PREREQ_OVERRIDE_ROLES = {
     "Registrar",
@@ -146,13 +144,50 @@ class CourseEnrollmentIndividual(Document):
         self.percent_to_pay = flags.percent_to_pay or 0
         self.registrar_block_cei = flags.registrar_block_cei or 0
 
+        # Without a financial backend (a Frappe-only seminary) there is no billing,
+        # so payment can never gate enrollment. Force the payment-required flags
+        # off so the workflow routes Draft → Submitted (free) instead of stalling
+        # the enrollment at Awaiting Payment with no way to pay.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        if not get_financial_backend().has_financials():
+            self.require_pay_submit = 0
+            self.percent_to_pay = 0
+
     def on_submit(self):
         # Waitlisted students hold a queue position, not a seat — no invoice is
         # raised until they are promoted (see waitlist._promote_cei, which calls
         # generate_enrollment_invoice at that point).
         if self.workflow_state == "Waitlisted":
             return
+
+        # A raw submit() that doesn't go through apply_workflow (e.g. demo data,
+        # or any system-driven code path) lands in the first doc_status=1 state —
+        # "Awaiting Payment" — ignoring the workflow's pay-gate condition. When the
+        # enrollment is actually free / ungated (is_free or not require_pay_submit;
+        # always so with no financial backend), correct it to Submitted so the
+        # student is rostered instead of stranded in a payment state with nothing
+        # to pay. Mirrors the Draft→Submitted workflow condition; a legitimate paid
+        # enrollment (require_pay_submit and not is_free) stays in Awaiting Payment.
+        if self.workflow_state == "Awaiting Payment" and (
+            self.is_free or not self.require_pay_submit
+        ):
+            self.db_set("workflow_state", "Submitted", update_modified=False)
+
         self.generate_enrollment_invoice()
+
+        # A free / no-payment-gate enrollment goes straight Draft → Submitted on
+        # this initial submit. Frappe fires on_submit (not on_update_after_submit)
+        # for that 0→1 transition, so on_workflow_update — which builds the
+        # Scheduled Course Roster + Program Enrollment Course rows — never runs.
+        # Create them here so the student is actually rostered (and can reach the
+        # LMS). Idempotent: enroll_student no-ops if the rows already exist, and a
+        # paid enrollment lands in Awaiting Payment here, so this is skipped and
+        # the roster is built later when payment advances it to Submitted.
+        if self.workflow_state == "Submitted":
+            from seminary.seminary.cei_lifecycle import enroll_student
+
+            enroll_student(self)
 
     def generate_enrollment_invoice(self):
         """Raise the enrollment Sales Invoice once. Free programs just flag
@@ -168,8 +203,24 @@ class CourseEnrollmentIndividual(Document):
         if frappe.db.get_value("Program", self.program_data, "is_free"):
             self.db_set("cei_si", 1)
             return
-        self.get_inv_data_ce()
-        self.db_set("cei_si", 1)
+        # Billing is delegated to the financial backend; with none installed the
+        # null backend is a no-op and the enrollment proceeds as free.
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        backend = get_financial_backend()
+        if not backend.has_financials():
+            # No billing system: nothing to invoice, the enrollment is free.
+            self.db_set("cei_si", 1)
+            return
+        billed = backend.generate_enrollment_invoice(self)
+        # Only flag the enrollment as invoiced when an invoice was actually
+        # raised. billed == 0 means the program has no Course Enrollment fee
+        # wired into its payers (or the fee's Item Price is missing): leave
+        # cei_si = 0 so the gap stays visible and staff can fix the config and
+        # regenerate (get_inv_data_ce), instead of silently stranding an unbilled
+        # enrollment with cei_si = 1 and no Sales Invoice.
+        if billed:
+            self.db_set("cei_si", 1)
 
     def before_cancel(self):
         """Block cancellation if the course has already started.
@@ -196,22 +247,9 @@ class CourseEnrollmentIndividual(Document):
                     ).format(start_date)
                 )
 
-    def on_cancel(self):
-        """Cancel linked Sales Invoices when CEI is cancelled."""
-        invoices = frappe.get_all(
-            "Sales Invoice",
-            filters={
-                "custom_cei": self.name,
-                "docstatus": 1,
-                "is_return": 0,
-            },
-            pluck="name",
-        )
-
-        for inv_name in invoices:
-            si = frappe.get_doc("Sales Invoice", inv_name)
-            si.flags.ignore_permissions = True
-            si.cancel()
+    # Cancelling the linked Sales Invoices on CEI cancel is owned by the oikonomos
+    # bridge (oikonomos.financial.backend.on_cei_cancel, via doc_events). A
+    # Frappe-only seminary cancels a CEI without touching billing.
 
     def validate_duplicate(self):
         CEI = frappe.get_list(
@@ -295,109 +333,32 @@ class CourseEnrollmentIndividual(Document):
 
     @frappe.whitelist()
     def get_inv_data_ce(self):
-        audithours = frappe.db.get_single_value("Seminary Settings", "auditcredit")
-        is_audit = self.audit
-        stulink = self.student_ce
-        # Only the student's own payer line carries a scholarship; resolve it at
-        # invoice time and book the forgiveness to a separate invoice.
-        student_customer = (
-            frappe.db.get_value("Student", stulink, "customer") or stulink
-        )
-        academic_term = self.academic_term or frappe.db.get_value(
-            "Course Schedule", self.coursesc_ce, "academic_term"
-        )
-        inv_data = []
-        inv_data = frappe.db.sql(
-            """select cei.student_ce, cei.audit, cei.credits, cei.program_data,  pep.fee_category, pep.payer as Customer, pfc.pf_custgroup, pep.pay_percent, pep.payterm_payer, pep.pep_event, fc.feecategory_type, fc.is_credit, fc.item, cg.default_price_list, ip.price_list_rate
-		from `tabCourse Enrollment Individual` cei,  `tabFee Category` fc, `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabCustomer Group` cg, `tabItem Price` ip
-		where cei.name = %s and
-		cei.program_ce = pfc.pf_pe and
-		pep.parent = pfc.name and
-		pep.fee_category = fc.category_name and
-		pep.fee_category = fc.name and
-		cg.default_price_list = ip.price_list and
-		ip.item_code = fc.item and
-		pfc.pf_custgroup = cg.customer_group_name and
-		cei.cei_si =0 and
-		fc.is_audit = %s and
-		pep.pep_event = 'Course Enrollment'""",
-            (self.name, is_audit),
-            as_list=1,
-        )
-        rows = frappe.db.sql(
-            """select count(pep.payer)
-		from `tabCourse Enrollment Individual` cei,  `tabFee Category` fc, `tabpgm_enroll_payers` pep, `tabPayers Fee Category PE` pfc, `tabCustomer Group` cg, `tabItem Price` ip
-		where cei.name = %s and
-		cei.program_ce = pfc.pf_pe and
-		pep.parent = pfc.name and
-		pep.fee_category = fc.category_name and
-		pep.fee_category = fc.name and
-		cg.default_price_list = ip.price_list and
-		ip.item_code = fc.item and
-		pfc.pf_custgroup = cg.customer_group_name and
-		cei.cei_si =0 and
-		fc.is_audit = %s and
-		pep.pep_event = 'Course Enrollment'""",
-            (self.name, is_audit),
-        )[0][0]
+        """(Re)raise this enrollment's Sales Invoice via the financial backend.
 
-        audit_suffix = _(" (Audit)") if is_audit == 1 else ""
-        summary = _("Course: {0}{1}").format(self.course_data, audit_suffix)
+        Desk-button entry point. The billing engine (payer resolution,
+        scholarship math, invoice construction) lives in the oikonomos bridge;
+        seminary keeps only this whitelisted trigger. It is regenerate-safe:
 
-        from seminary.seminary.billing import (
-            create_scholarship_invoice,
-            resolve_scholarship,
-        )
+        - refuses to create a second invoice when one already exists;
+        - clears a stale ``cei_si`` (a prior attempt that flagged the enrollment
+          invoiced but produced nothing — a billing-config gap) so this retries;
+        - routes through ``generate_enrollment_invoice``, which re-sets
+          ``cei_si`` only if an invoice is actually raised.
 
-        i = 0
-        while i < rows:
-            row = inv_data[i]
-            if row[11] == 1:
-                qty = row[2] * row[7] / 100
-            elif is_audit == 1 and audithours == 1:
-                qty = row[2] * row[7] / 100
-            else:
-                qty = row[7] / 100
+        Returns the list of Sales Invoices now linked to the enrollment.
+        """
+        from seminary.seminary.financial.backend import get_financial_backend
 
-            fee_category = row[4]
-            price_list_rate = row[14]
-            forgiven, award = 0, None
-            if row[5] == student_customer:
-                student_gross = round(qty * (price_list_rate or 0), 2)
-                forgiven, award = resolve_scholarship(
-                    program_enrollment=self.program_ce,
-                    fee_category=fee_category,
-                    student_gross=student_gross,
-                    academic_term=academic_term,
+        backend = get_financial_backend()
+        existing = backend.cei_invoices(self.name)
+        if existing:
+            frappe.throw(
+                _("A Sales Invoice already exists for this enrollment: {0}").format(
+                    ", ".join(existing)
                 )
-
-            create_payer_invoice(
-                customer=row[5],
-                item_code=row[12],
-                qty=qty,
-                price_list_rate=price_list_rate,
-                selling_price_list=row[13],
-                payment_terms_template=row[8],
-                summary=summary,
-                student=stulink,
-                link_field="custom_cei",
-                link_value=self.name,
-                discount_amount=(forgiven if (forgiven and award) else 0),
             )
-
-            if forgiven and award:
-                create_scholarship_invoice(
-                    award=award,
-                    fee_category=fee_category,
-                    academic_term=academic_term,
-                    scope=self.name,
-                    forgiven=forgiven,
-                    item_code=row[12],
-                    selling_price_list=row[13],
-                    payment_terms_template=row[8],
-                    summary=summary,
-                    student=stulink,
-                    link_field="custom_cei",
-                    link_value=self.name,
-                )
-            i += 1
+        if self.cei_si:
+            # Prior attempt marked it done but left no invoice — allow a retry.
+            self.db_set("cei_si", 0)
+        self.generate_enrollment_invoice()
+        return backend.cei_invoices(self.name, include_cancelled=True)

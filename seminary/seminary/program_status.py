@@ -142,17 +142,13 @@ def return_from_leave(pe, effective_date=None):
 
 
 def _set_payers_active(pe_name, active):
-    """Keep the PE's Payers Fee Category PE.pf_active in sync with billability.
-    The spine uses db_set, so get_payers' save-time sync does not run."""
-    pfc = frappe.db.get_value("Payers Fee Category PE", {"pf_pe": pe_name}, "name")
-    if pfc:
-        frappe.db.set_value(
-            "Payers Fee Category PE",
-            pfc,
-            "pf_active",
-            1 if active else 0,
-            update_modified=False,
-        )
+    """Keep the enrollment's billing payer snapshot in sync with billability when
+    a terminal/leave transition flips it. Delegated to the financial backend
+    (payers live in the bridge); a no-op on a Frappe-only seminary, so every such
+    transition stays billing-free."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    get_financial_backend().set_enrollment_payers_active(pe_name, active)
 
 
 @frappe.whitelist()
@@ -237,7 +233,13 @@ def _on_terminal(
         cascade_cancel_graduation_requests,
     )
 
-    cascade_cancel_graduation_requests(pe_doc.name)
+    # When graduation itself is the terminal transition, the approved Graduation
+    # Request is the *source* — exclude it so its own success doesn't cancel it
+    # (and revoke the diploma it just issued).
+    cascade_cancel_graduation_requests(
+        pe_doc.name,
+        exclude=source_name if source_doctype == "Graduation Request" else None,
+    )
 
     # A terminal separation stops recurring billing for this enrollment.
     _set_payers_active(pe_doc.name, 0)
@@ -315,18 +317,18 @@ def _upsert_leaving_record(
 
 
 def _leave_policy(program):
-    """Leave & readmission policy for a program's Program Level (or None)."""
+    """Leave-billing-suspension policy for a program's Program Level (or None).
+
+    Only the academic billing-suspension threshold lives here; the readmission
+    fee policy is owned by the financial backend (oikonomos custom fields on
+    Program Level) and is read there — see _maybe_charge_readmission."""
     program_level = frappe.db.get_value("Program", program, "program_level")
     if not program_level:
         return None
     return frappe.db.get_value(
         "Program Level",
         program_level,
-        [
-            "loa_billing_suspension_days",
-            "charges_readmission_fee",
-            "readmission_fee_category",
-        ],
+        ["loa_billing_suspension_days"],
         as_dict=True,
     )
 
@@ -376,14 +378,11 @@ def reconcile_loa_billing(today=None):
 
 
 def _maybe_charge_readmission(pe_doc, effective_date):
-    """Fire a Readmission fee on return from leave when the Program Level is
-    configured to charge one."""
-    policy = _leave_policy(pe_doc.program)
-    if not policy or not policy.get("charges_readmission_fee"):
-        return
-    fee_category = policy.get("readmission_fee_category")
-    if not fee_category:
-        return
-    from seminary.seminary.api import generate_readmission_invoice
+    """Fire a Readmission fee on return from leave.
 
-    generate_readmission_invoice(pe_doc.name, fee_category, effective_date)
+    Delegated to the financial backend: the readmission policy (whether to
+    charge and which Fee Category) lives on the Program Level as oikonomos
+    custom fields, so the backend reads it and bills. No-op with no backend."""
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    get_financial_backend().charge_readmission(pe_doc.name, effective_date)

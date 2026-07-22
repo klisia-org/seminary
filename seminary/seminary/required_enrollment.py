@@ -41,8 +41,11 @@ from frappe.utils import getdate
 
 
 def fulfill_for_program_enrollment_hook(doc, method=None):
-    """PE on_submit hook. Runs after api.get_payers (hooks.py ordering) so any
-    auto-created CEI can invoice against a populated fee structure."""
+    """PE on_submit hook. When the oikonomos bridge is installed it builds the
+    payer/fee structure on PE before_submit (oikonomos.financial.backend.
+    prepare_enrollment_payers), so it is in place before this runs and any
+    auto-created CEI can invoice against it. On a Frappe-only seminary there is
+    no billing structure and enrollments are free."""
     # Trust the freshly-submitted in-memory doc for the active check; the DB
     # row's derived pgmenrol_active mirror is reliably defaulted to 1 on a new
     # Active enrollment.

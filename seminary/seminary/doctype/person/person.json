@@ -40,7 +40,6 @@
   "links_section",
   "user",
   "column_break_links",
-  "customer",
   "career_section",
   "skills",
   "resume",
@@ -241,12 +240,6 @@
   {
    "fieldname": "column_break_links",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
   },
   {
    "collapsible": 1,

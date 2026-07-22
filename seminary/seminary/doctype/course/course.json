@@ -124,11 +124,14 @@
    "options": "Course_prerequisite"
   },
   {
+   "description": "Short slug-safe code (letters, numbers, - and _ only). Used in CLO codes and URLs.",
    "fieldname": "coursecode",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Course Code"
+   "label": "Course Code",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "default": "0",

@@ -16,12 +16,7 @@ from frappe import _
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
 
 
-def before_install():
-    check_erpnext()
-
-
 def after_install():
-    check_erpnext()
     setup_fixtures()
     create_studentappl_role()
     create_student_role()
@@ -32,10 +27,6 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    get_custom_fields()
-    setup_sales_invoice_permissions()
-    update_company_in_item_details()
-    seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
@@ -56,137 +47,17 @@ def after_install():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
 
 
-def check_erpnext():
-    check_erpnext_installed()
-    status = check_erpnext_setup_complete()
-    if status["errors"]:
-        frappe.throw(
-            _(
-                "ERPNext setup is incomplete. Please complete the setup before installing {0}"
-            ).format("SeminaryERP"),
-            title=_("Setup Incomplete"),
-        )
-
-
-def check_erpnext_installed():
-    """Check if ERPNext app is installed on the site."""
-    installed_apps = frappe.get_installed_apps()
-    if "erpnext" not in installed_apps:
-        frappe.throw(
-            _("ERPNext must be installed before installing {0}").format("SeminaryERP"),
-            title=_("Missing Dependency"),
-        )
-
-
-def check_erpnext_setup_complete():
-    """
-    Check if ERPNext has been set up (i.e., the Setup Wizard was completed
-    and at least one Company exists).
-    Returns a dict with detailed status.
-    """
-    status = {
-        "company_exists": False,
-        "fiscal_year_exists": False,
-        "selling_price_list_exists": False,
-        "buying_price_list_exists": False,
-        "default_company": None,
-        "errors": [],
-    }
-
-    # Check for Company
-    companies = frappe.get_all("Company", limit=1, pluck="name")
-    if companies:
-        status["company_exists"] = True
-        status["default_company"] = companies[0]
-    else:
-        status["errors"].append(
-            _("No Company found. Please complete the ERPNext Setup Wizard first.")
-        )
-
-    # Check for Fiscal Year
-    if frappe.db.count("Fiscal Year") > 0:
-        status["fiscal_year_exists"] = True
-    else:
-        status["errors"].append(_("No Fiscal Year found."))
-
-    # Check for Selling Price List
-    selling_pl = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
-    if selling_pl:
-        status["selling_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Selling Price List found."))
-
-    # Check for Buying Price List
-    buying_pl = frappe.db.get_value("Price List", {"buying": 1, "enabled": 1}, "name")
-    if buying_pl:
-        status["buying_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Buying Price List found."))
-
-    return status
+# ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
+# before_install — oikonomos is the app that requires ERPNext, so it verifies the
+# ERPNext setup. Seminary installs on Frappe alone.
 
 
 def setup_fixtures():
-    default_price_list = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
-    )
+    # Academic setup only. The ERPNext groups (Item Group, Customer Groups,
+    # Supplier Group, billing UOMs) are created by the oikonomos bridge.
     records = [
-        # Item Group Records
-        {"doctype": "Item Group", "item_group_name": "Tuition"},
-        # Customer Group Records
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Student",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Donor",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Church",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Denomination",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Seminary",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Para-church Organization",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Alumni",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Board Member",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Volunteer",
-            "default_price_list": default_price_list,
-        },
-        # UOM
-        {"doctype": "UOM", "uom_name": _("Academic Event"), "must_be_whole_number": 0},
-        {"doctype": "UOM", "uom_name": _("Credit hour"), "must_be_whole_number": 0},
-        # Supplier Group for non-employee instructors (volunteers, guest lecturers)
-        {"doctype": "Supplier Group", "supplier_group_name": _("Instructor")},
         # Instructor Category defaults — schools can add/remove
         {
             "doctype": "Instructor Category",
@@ -215,57 +86,6 @@ def setup_fixtures():
         },
     ]
     make_records(records)
-
-
-def seed_fee_categories():
-    """Seed the starter Fee Categories if they don't already exist.
-
-    NOT fixtures: Fee Category.validate_audit() cross-checks a category's
-    is_credit against Seminary Settings (auditcredit / allow_audit). The moment a
-    seminary flips that setting — or edits a category — a fixture re-import on
-    migrate re-validates the shipped rows and throws (e.g. "set to charge audit
-    as a flat fee, not per credit"). So we create the defaults once
-    (create-only-if-missing) and never re-touch them.
-
-    The Audit Fee is seeded as a flat fee (is_credit=0) to match the default
-    auditcredit=0 setting, so a fresh seed validates cleanly; a seminary that
-    charges audit per credit flips both the setting and this category itself.
-
-    Each row references a fixtured Item and Payment Terms Template — we skip any
-    row whose dependencies aren't present yet (so install ordering can't make us
-    throw); the next migrate, with fixtures loaded, fills it in.
-    """
-    if not frappe.db.exists("DocType", "Fee Category"):
-        return
-    # category_name, fc_event, item, is_audit, is_credit
-    defaults = [
-        ("Program Admission Fee", "Program Enrollment", "Admission Fee", 0, 0),
-        ("Registration fee (new term)", "New Academic Term", "Admission Fee", 0, 0),
-        ("Credit hour", "Course Enrollment", "Credit hour", 0, 1),
-        ("Audit Fee", "Course Enrollment", "Audit Flat Fee", 1, 0),
-    ]
-    payment_term_template = "For immediate payment"
-    has_payment_term = frappe.db.exists("Payment Terms Template", payment_term_template)
-    for category_name, fc_event, item, is_audit, is_credit in defaults:
-        if frappe.db.exists("Fee Category", category_name):
-            continue
-        if not frappe.db.exists("Item", item):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Fee Category",
-                "category_name": category_name,
-                "feecategory_type": "Tuition",
-                "fc_event": fc_event,
-                "item": item,
-                "is_audit": is_audit,
-                "is_credit": is_credit,
-                "payment_term_template": (
-                    payment_term_template if has_payment_term else None
-                ),
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
 
 
 def seed_assessment_criteria():
@@ -1347,28 +1167,10 @@ def seed_skill_tags():
     frappe.db.commit()
 
 
-def setup_customer_person_field():
-    """Reverse link Customer → Person (ADR 042 addendum): Person.customer
-    records the financial party; this mirrors it on the Customer so finance
-    views show which human a Customer is. Maintained by person.link_customer."""
-    if not frappe.db.exists("DocType", "Person"):
-        return
-    if frappe.db.exists("Custom Field", "Customer-person"):
-        return
-    frappe.get_doc(
-        {
-            "doctype": "Custom Field",
-            "dt": "Customer",
-            "fieldname": "person",
-            "fieldtype": "Link",
-            "options": "Person",
-            "label": "Person",
-            "insert_after": "customer_group",
-            "read_only": 1,
-            "search_index": 1,
-        }
-    ).insert(ignore_permissions=True)
-    frappe.db.commit()
+# setup_customer_person_field moved to the oikonomos bridge
+# (oikonomos.financial.customer_person.setup_custom_fields), which owns the
+# Customer<->Person link fields. Customer is an ERPNext doctype, so seminary
+# (Frappe-only) never provisions fields on it.
 
 
 def setup_donor_person_field():
@@ -1442,26 +1244,9 @@ def create_partner_role():
         ).save()
 
 
-def setup_sales_invoice_permissions():
-    """Grant the Student and Alumni roles read + print access to Sales Invoice.
-
-    Row-level access is scoped to the user's own linked Student record by
-    seminary.seminary.sales_invoice_permissions. Idempotent: re-running only
-    ensures the read/print flags are set, it never duplicates the rule.
-    """
-    from frappe.permissions import add_permission, update_permission_property
-
-    if not frappe.db.exists("DocType", "Sales Invoice"):
-        return
-
-    for role in (_("Student"), _("Alumni")):
-        if not frappe.db.exists("Role", role):
-            continue
-        add_permission("Sales Invoice", role, 0)
-        update_permission_property("Sales Invoice", role, 0, "read", 1)
-        update_permission_property("Sales Invoice", role, 0, "print", 1)
-
-    frappe.db.commit()
+# setup_sales_invoice_permissions moved to the oikonomos bridge
+# (oikonomos.install): granting Student/Alumni roles access to Sales Invoice (an
+# ERPNext doctype) belongs with the financial bridge, not Frappe-only seminary.
 
 
 def create_registrar_role():
@@ -1508,66 +1293,9 @@ def create_seminary_manager_role():
         ).save()
 
 
-def get_custom_fields():
-    """Seminary specific custom fields that needs to be added to the Sales Invoice DocType."""
-    return {
-        "Sales Invoice": [
-            {
-                "fieldname": "student_info_section",
-                "fieldtype": "Section Break",
-                "label": _("Student Info"),
-                "collapsible": 1,
-                "insert_after": "ignore_pricing_rule",
-            },
-            {
-                "fieldname": "student",
-                "fieldtype": "Link",
-                "label": _("Student"),
-                "options": _("Student"),
-                "insert_after": "student_info_section",
-            },
-            {
-                "fieldname": "custom_cei",
-                "fieldtype": "Link",
-                "options": "Course Enrollment Individual",
-                "label": _("Course Enrollment Individual"),
-                "insert_after": "custom_student",
-                "read_only": 1,
-            },
-        ],
-    }
-
-
-def update_company_in_item_details():
-    """
-    Update the company in the "Item Default" table to use the default company
-    instead of the hardcoded value 'ToBeReplaced' in fixtures.
-    """
-    # Get the default company
-    default_company = frappe.db.get_single_value("Global Defaults", "default_company")
-    default_price_list = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
-    )
-    default_income_account = frappe.db.get_value(
-        "Company", {"company_name": default_company}, "default_income_account"
-    )
-    # Update the company in the "Item Default" table
-
-    items_to_update = frappe.db.sql(
-        "SELECT name FROM `tabItem Default` WHERE company = 'ToBeReplaced'"
-    )
-
-    if items_to_update:
-        frappe.db.sql(
-            """
-            UPDATE `tabItem Default`
-            SET company = %s, default_price_list = %s, income_account = %s
-            WHERE company = 'ToBeReplaced'
-            """,
-            (default_company, default_price_list, default_income_account),
-        )
-
-    frappe.db.commit()
+# update_company_in_item_details moved to the oikonomos bridge
+# (oikonomos.financial.seed._update_item_company_defaults) — it operates on
+# ERPNext Item Defaults, which a Frappe-only seminary doesn't have.
 
 
 def setup_withdrawal_workflow():
@@ -1629,8 +1357,6 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_withdrawal_workflow()
-    setup_sales_invoice_permissions()
-    seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
@@ -1649,7 +1375,6 @@ def after_migrate():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
     setup_donor_person_field()
 
 

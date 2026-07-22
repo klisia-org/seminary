@@ -11,10 +11,19 @@ app_logo_url = "/assets/seminary/images/SeminaryERP_tile.png"
 source_link = "https://github.com/klisia-org/seminary"
 app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
-app_license = "GNU GPL V3"
+app_license = "mit"
 app_home = "/desk/seminary"
 
-required_apps = ["erpnext"]
+# Seminary runs on the Frappe framework alone. Billing/payments/ERPNext
+# integration lives in the optional `oikonomos` bridge app (which depends on
+# both seminary and erpnext). Seminary never requires erpnext.
+required_apps = []
+
+# Financial backend (oikonomos decoupling). Seminary routes all billing facts /
+# side effects through `seminary.seminary.financial.backend.get_financial_backend`,
+# which resolves whatever app registers `seminary_financial_backend` (the
+# oikonomos bridge does) or falls back to NullFinancialBackend on a Frappe-only
+# install. Seminary itself never registers a backend.
 
 # Include app in Apps Screen
 # --------------------------
@@ -81,13 +90,8 @@ calendars = [
 ]
 
 standard_portal_menu_items = [
-    {
-        "title": "Financials",
-        "route": "/financials",
-        "reference_doctype": "Sales Invoice",
-        "role": "Student",
-        "condition": "frappe.get_all('Sales Invoice', filters={'custom_student': frappe.session.user})",
-    },
+    # The "Financials" portal item (references the ERPNext Sales Invoice doctype)
+    # is contributed by the oikonomos bridge.
     {
         "title": "Alumni",
         "route": "/seminary/alumni",
@@ -117,7 +121,6 @@ global_search_doctypes = {
         {"doctype": "Course", "index": 3},
         {"doctype": "Instructor", "index": 4},
         {"doctype": "Student", "index": 5},
-        {"doctype": "Fee Category", "index": 6},
         {"doctype": "Grading Scale", "index": 7},
         {"doctype": "Assessment Criteria", "index": 8},
         {"doctype": "Course Schedule", "index": 9},
@@ -151,10 +154,9 @@ webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    "Customer": "seminary/public/js/customer.js",
-    "Item Price": "seminary/public/js/item_price.js",
-}
+# Customer / Item Price form customizations are ERPNext-facing and live in the
+# oikonomos bridge (oikonomos/public/js/{customer,item_price}.js).
+# doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -210,7 +212,6 @@ seminary_markdown_macro_renderers = {
 # Installation
 # ------------
 
-before_install = "seminary.install.before_install"
 after_install = "seminary.install.after_install"
 after_migrate = "seminary.install.after_migrate"
 
@@ -232,8 +233,6 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
     "Partner Organization": "seminary.partner.permissions.org_query",
@@ -252,8 +251,6 @@ permission_query_conditions = {
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
@@ -275,7 +272,7 @@ has_permission = {
 
 
 override_doctype_class = {
-    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    # Payment Request (ERPNext doctype) is overridden by the oikonomos bridge.
     # Frappe gap: webform_include_js is only wired for standard web forms.
     # Frappe workaround — registry: docs/frappe-workarounds.md (#4).
     "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
@@ -299,8 +296,10 @@ doc_events = {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
     "Program Enrollment": {
+        # Payer-row construction (oikonomos.financial.payers.get_payers) is owned
+        # by the oikonomos bridge (Program Enrollment before_submit). A Frappe-only
+        # seminary just fulfills required enrollments — no billing.
         "on_submit": [
-            "seminary.seminary.api.get_payers",
             "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
         ],
     },
@@ -344,44 +343,18 @@ doc_events = {
     "Scheduled Course Roster": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
     },
-    "Student": {
-        "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
-    },
-    "Sales Invoice": {
-        "on_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_submit",
-        ],
-        "on_update_after_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_update_after_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
-            "seminary.seminary.cei_lifecycle.maybe_notify_registrar_on_invoice_cancel",
-        ],
-    },
-    "Payment Entry": {
-        "on_submit": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_cancel",
-        ],
-    },
+    # Billing documents (Sales Invoice, Payment Entry) belong entirely to the
+    # financial backend: the bridge (oikonomos) subscribes to them from its own
+    # hooks.py and calls seminary's academic advancement entry points
+    # (cei_lifecycle.react_to_cei_payment / graduation_request_lifecycle.
+    # react_to_gr_payment). Seminary never names an ERPNext billing doctype, so a
+    # different backend (e.g. a QBO bridge) could drive the same academic flow.
     "Seminary Settings": {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",
         "on_update": "seminary.seminary.overrides.seminary_settings.on_update",
     },
-    "Salary Slip": {
-        "before_validate": "seminary.seminary.overrides.salary_slip.populate_instructor_summary",
-        "on_submit": "seminary.seminary.overrides.salary_slip.post_submit_instructor_log_payments",
-        "on_cancel": "seminary.seminary.overrides.salary_slip.cancel_instructor_log_payments",
-    },
+    # Salary Slip (instructor payroll) is owned by the oikonomos bridge — it
+    # subscribes to Salary Slip's lifecycle from its own hooks.py.
     "Graduation Requirement Item": {
         "on_update": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
         "on_trash": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
@@ -551,13 +524,9 @@ override_whitelisted_methods = {
 # Export and Import Fixtures
 # --------------------------
 fixtures = [
-    "Trigger Fee Events",
     # Grading Scale is NOT fixtured: it's submittable and seminaries define their
     # own scales; a re-import would clobber edits. Seeded create-only-if-missing
     # by install.seed_grading_scale() instead.
-    "Item",
-    "Payment Term",
-    "Payment Terms Template",
     # Fee Category is NOT fixtured: its validate_audit() cross-checks each row
     # against Seminary Settings, so a re-import throws once a seminary changes
     # the audit setting or edits a category. Seeded create-only-if-missing by
@@ -572,10 +541,10 @@ fixtures = [
     "Custom HTML Block",
     # Course Cancellation Reason is NOT fixtured: seeded create-only-if-missing
     # by install.seed_course_cancellation_reasons() so seminary edits survive.
-    {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
+        # Seminary Sales Invoice print format is owned by oikonomos.
         "dt": "Print Format",
-        "filters": [["name", "in", ["Seminary Sales Invoice", "Seminary Diploma"]]],
+        "filters": [["name", "in", ["Seminary Diploma"]]],
     },
     {
         "dt": "Workflow",
@@ -592,7 +561,6 @@ fixtures = [
                     "Graduation Request Lifecycle",
                     "Program Graduation Requirement Versioning",
                     "Graduation Requirement Item",
-                    "Scholarship Award Lifecycle",
                 ],
             ]
         ],
