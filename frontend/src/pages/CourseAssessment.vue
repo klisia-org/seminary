@@ -49,6 +49,7 @@
         <th class="p-2 border">{{ __('Points') }}</th>
         <th class="p-2 border">{{ __('Due Date') }}</th>
         <th class="p-2 border">{{ __('In Lesson') }}</th>
+        <th v-if="hasAretenic" class="p-2 border">{{ __('CLOs') }}</th>
         <th class="p-2 border">{{ __('Delete') }}</th>
       </tr>
     </thead>
@@ -113,6 +114,18 @@
             ✘
           </span>
         </td>
+        <td v-if="hasAretenic" class="p-2 border text-center align-middle">
+          <Tooltip v-if="!criteria.name" :text="__('Save the assessment before mapping outcomes')">
+            <Button variant="ghost" size="sm" :disabled="true">
+              <Target class="h-4 w-4 stroke-1.5" />
+            </Button>
+          </Tooltip>
+          <Tooltip v-else :text="__('Map to Course Learning Outcomes')">
+            <Button variant="ghost" size="sm" @click="openCloMapper(criteria)">
+              <Target class="h-4 w-4 stroke-1.5" />
+            </Button>
+          </Tooltip>
+        </td>
         <td class="p-2 border text-center align-middle">
           <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
             <Trash2 class="h-4 w-4 stroke-1.5" />
@@ -134,6 +147,10 @@
 
     <CourseAssessmentModal v-model="showCourseAssessmentModal" v-model:modalcriteria="modalcriteria"
       :courseName="props.courseName" @assessment-saved="onAssessmentSaved" />
+
+    <CLOAssessmentMapperModal v-if="hasAretenic" v-model="showCloMapper" :course="course.data?.course"
+      :courseSchedule="props.courseName" :scheduledAssessCriteria="activeCriteria?.name"
+      :assessmentType="activeCriteria?.type" :criteriaTitle="activeCriteria?.title" />
   </div>
 </template>
 
@@ -141,9 +158,10 @@
 import { createResource, Breadcrumbs, Button, FormControl, Tooltip, toast, DateTimePicker } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, Target } from 'lucide-vue-next'
 import { updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
+import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperModal.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
 
@@ -155,6 +173,16 @@ const user = inject('$user')
 const settingsStore = useSettings()
 const showCourseAssessmentModal = ref(false)
 const show = defineModel()
+
+// Optional CLO assessment mapper — only when the Aretenic app is installed (ADR 030).
+const hasAretenic = computed(() => !!user?.data?.has_aretenic)
+const showCloMapper = ref(false)
+const activeCriteria = ref(null)
+
+function openCloMapper(criteria) {
+  activeCriteria.value = criteria
+  showCloMapper.value = true
+}
 
 const props = defineProps({
   courseName: {

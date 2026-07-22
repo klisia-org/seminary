@@ -859,6 +859,10 @@ def get_user_info():
     # Reported for the optional, separately-distributed Aretenic accreditation
     # app (its own role; created by that app, never required by seminary).
     user.is_aretenic = "Aretenic User" in _roles
+    # Whether the Aretenic app is installed at all (distinct from the per-user role above):
+    # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
+    # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
+    user.has_aretenic = "aretenic" in frappe.get_installed_apps()
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
@@ -3666,6 +3670,20 @@ def send_grades(doc=None, **kwargs):
         _recalculate_emphasis_credits(pe_name)
         _check_auto_grant_emphases(pe_name)
         recompute_program_enrollment_gpa(pe_name)
+
+    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+    # after commit so a snapshot failure can never roll back grades. Seminary never requires
+    # aretenic (ADR 030/032).
+    from seminary.seminary.utils import _aretenic_enabled
+
+    if _aretenic_enabled():
+        frappe.enqueue(
+            "aretenic.attainment.snapshot_offering_on_send_grades",
+            queue="long",
+            enqueue_after_commit=True,
+            course_schedule=docname,
+        )
 
     return "All grades sent"
 

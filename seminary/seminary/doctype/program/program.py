@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import format_date, getdate, today
 from frappe.website.website_generator import WebsiteGenerator
-from seminary.seminary.utils import slugify
+from seminary.seminary.utils import assert_url_safe_code, slugify
 
 
 class Program(WebsiteGenerator):
@@ -19,6 +19,7 @@ class Program(WebsiteGenerator):
         # published programs. We override validate, so call super first or the
         # route field is never populated and the program's web page has no URL.
         super().validate()
+        assert_url_safe_code(self.program_abbreviation, _("Program Abbreviation"))
         self._hydrate_graduation_gpa_default()
 
         # Free programs cannot gate enrollment on payment — there are no invoices.

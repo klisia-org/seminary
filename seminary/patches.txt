@@ -2,6 +2,7 @@
 seminary.seminary.patches.convert_room_capacity_to_int
 seminary.seminary.patches.stash_scholarship_links
 seminary.seminary.patches.rename_department_to_academic_unit
+seminary.seminary.patches.backfill_outcome_code_fields
 
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
