@@ -17,10 +17,20 @@ import frappe
 from frappe import _
 
 from seminary.seminary.integrations import client
-from seminary.seminary.integrations.bible_books import BOOK_ALIASES, normalize
+from seminary.seminary.integrations.bible_books import (
+    BOOK_ALIASES,
+    normalize,
+    verse_ordinal,
+)
 
 
 _REF_PATTERN = re.compile(r"^\s*(\S.*?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?\s*$")
+
+# Richer pattern for parse_reference_segments: book, chapter, optional verse,
+# optional end (with an optional end-chapter for cross-chapter ranges).
+_SEGMENT_PATTERN = re.compile(
+    r"^\s*(\S.*?)\s+(\d+)(?::(\d+))?(?:\s*-\s*(?:(\d+)\s*:\s*)?(\d+))?\s*$"
+)
 
 
 def parse_reference(ref: str) -> str:
@@ -64,6 +74,79 @@ def parse_reference(ref: str) -> str:
     if verse_end is None:
         return f"{osis}.{chapter}.{verse_start}"
     return f"{osis}.{chapter}.{verse_start}-{osis}.{chapter}.{verse_end}"
+
+
+def parse_reference_segments(ref: str) -> list[dict]:
+    """Expand a (possibly cross-chapter / multi-passage) reference into one or
+    more queryable segments.
+
+    Each segment is {display, resolved_ref, verse_start_ord, verse_end_ord}:
+        "Jn 3:16"          -> [JHN.3.16]                  one verse
+        "Jn 3:16-18"       -> [JHN.3.16-JHN.3.18]         same-chapter range
+        "Jn 3:36-4:3"      -> [JHN.3.36-JHN.4.3]          cross-chapter range
+        "Sl 23"            -> [PSA.23]                    whole chapter
+        "Jn 3:16; Rm 8:28" -> two segments
+
+    Unlike parse_reference (kept strict for the quiz caller), this accepts
+    cross-chapter and multi-passage input. The ordinals make range-overlap a
+    single indexed query; resolved_ref is still OSIS for api.bible text.
+    """
+    if not ref or not ref.strip():
+        frappe.throw(_("Bible reference is empty."))
+    segments = [
+        _parse_one_segment(part.strip())
+        for part in re.split(r"[;\n]", ref)
+        if part.strip()
+    ]
+    if not segments:
+        frappe.throw(_("Could not parse '{0}'.").format(ref))
+    return segments
+
+
+def _parse_one_segment(raw: str) -> dict:
+    m = _SEGMENT_PATTERN.match(raw)
+    if not m:
+        frappe.throw(
+            _(
+                "Could not parse '{0}'. Try 'Jn 3:16', 'Jn 3:16-18', 'Jn 3:36-4:3', or 'Sl 23'."
+            ).format(raw)
+        )
+    book_raw, c1, v1, c2, v2 = m.groups()
+    osis = BOOK_ALIASES.get(normalize(book_raw))
+    if not osis:
+        frappe.throw(
+            _(
+                "Unknown book '{0}'. Try a standard abbreviation like Jn, Sl, Rm, Ap."
+            ).format(book_raw)
+        )
+    chap = int(c1)
+    if v1 is None:  # whole chapter
+        return {
+            "display": raw,
+            "resolved_ref": f"{osis}.{chap}",
+            "verse_start_ord": verse_ordinal(osis, chap, 0),
+            "verse_end_ord": verse_ordinal(osis, chap, 999),
+        }
+    v_start = int(v1)
+    start = verse_ordinal(osis, chap, v_start)
+    if v2 is None:  # single verse
+        return {
+            "display": raw,
+            "resolved_ref": f"{osis}.{chap}.{v_start}",
+            "verse_start_ord": start,
+            "verse_end_ord": start,
+        }
+    end_chap = int(c2) if c2 else chap
+    v_end = int(v2)
+    end = verse_ordinal(osis, end_chap, v_end)
+    if end < start:
+        frappe.throw(_("Reference '{0}' ends before it starts.").format(raw))
+    return {
+        "display": raw,
+        "resolved_ref": f"{osis}.{chap}.{v_start}-{osis}.{end_chap}.{v_end}",
+        "verse_start_ord": start,
+        "verse_end_ord": end,
+    }
 
 
 def fetch_text_for_passage(ref: str, bible_id: str | None = None) -> dict:
@@ -120,6 +203,12 @@ def _get_api_key(settings) -> str:
 def _resolve_bible_id(settings, explicit: str | None) -> str:
     if explicit:
         return explicit
+    # A signed-in reader's own preferred version wins over the language default.
+    user = getattr(frappe.session, "user", None)
+    if user and user != "Guest":
+        preferred = frappe.db.get_value("User", user, "preferred_bible_id")
+        if preferred:
+            return preferred
     user_lang = frappe.local.lang
     if user_lang:
         for row in settings.language_defaults or []:
@@ -223,3 +312,71 @@ def test_connection() -> dict:
 @frappe.whitelist()
 def lookup(passage_ref: str, bible_id: str | None = None) -> dict:
     return lookup_passage(passage_ref, bible_id)
+
+
+@frappe.whitelist()
+def passage_text(resolved_ref: str, bible_id: str | None = None) -> dict:
+    """Clean, verse-numbered text for an already-resolved OSIS ref (e.g.
+    'JHN.3.16-JHN.4.3'). The Exegetical reader holds resolved_ref per passage, so
+    this skips parsing and handles cross-chapter ranges the strict parser rejects.
+    Honors the reader's preferred Bible via _resolve_bible_id."""
+    settings = _get_settings()
+    actual = _resolve_bible_id(settings, bible_id)
+    payload = client.get(
+        base_url=settings.base_url,
+        path=f"bibles/{actual}/passages/{resolved_ref}",
+        auth_header="api-key",
+        auth_value=_get_api_key(settings),
+        params={
+            "content-type": "text",
+            "include-notes": "false",
+            "include-titles": "false",
+            "include-chapter-numbers": "false",
+            "include-verse-numbers": "true",
+            "include-verse-spans": "false",
+        },
+    )
+    data = (payload or {}).get("data") or {}
+    return {
+        "resolved_ref": resolved_ref,
+        "reference": data.get("reference") or resolved_ref,
+        "text": (data.get("content") or "").strip(),
+    }
+
+
+@frappe.whitelist()
+def get_available_bibles_for_user() -> dict:
+    """Portal-safe Bible picker source: the versions offered for the reader's
+    language plus the global default, and their current preference. No role gate
+    (unlike list_bibles / get_bible_name), and it never exposes the API key."""
+    settings = _get_settings()
+    user_lang = frappe.local.lang
+    bibles, seen = [], set()
+    for row in settings.language_defaults or []:
+        if row.language == user_lang and row.bible_id and row.bible_id not in seen:
+            bibles.append(
+                {"bible_id": row.bible_id, "bible_name": row.bible_name or row.bible_id}
+            )
+            seen.add(row.bible_id)
+    if settings.default_bible_id and settings.default_bible_id not in seen:
+        bibles.append(
+            {
+                "bible_id": settings.default_bible_id,
+                "bible_name": settings.default_bible_id,
+            }
+        )
+        seen.add(settings.default_bible_id)
+    current = None
+    user = getattr(frappe.session, "user", None)
+    if user and user != "Guest":
+        current = frappe.db.get_value("User", user, "preferred_bible_id")
+    return {"bibles": bibles, "current": current}
+
+
+@frappe.whitelist()
+def set_user_bible(bible_id: str | None = None) -> dict:
+    """Set (or clear, with an empty value) the current user's preferred Bible."""
+    frappe.db.set_value(
+        "User", frappe.session.user, "preferred_bible_id", bible_id or None
+    )
+    return {"success": True, "current": bible_id or None}

@@ -20,10 +20,21 @@ import { FolderTool } from '@/utils/foldertool'
 import { IframeEmbed } from '@/utils/iframetool'
 import { VideoRecord } from '@/utils/videorecord'
 
-export function createToast(options) {
-	toast({
-		position: 'bottom-right',
-		...options,
+export function createToast(options = {}) {
+	// frappe-ui's `toast` is an object (toast.create/success/error/…), not a
+	// callable. Map the app's historical {title, text, icon, timeout} shape onto
+	// toast.create({message, type, duration}).
+	const { title, message, text, icon, type, timeout, duration } = options
+	let toastType = type
+	if (!toastType) {
+		if (icon === 'check') toastType = 'success'
+		else if (icon === 'alert-circle') toastType = 'warning'
+		else toastType = 'info'
+	}
+	toast.create({
+		message: message || title || text || '',
+		type: toastType,
+		duration: duration ?? timeout ?? 5,
 	})
 }
 

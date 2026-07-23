@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "COHORT-.#####",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A discipleship / mentoring cohort. Carries lineage so a split-off child traces back to its root family; the leader manages the cohort and its offshoots.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cohort_name",
+  "cohort_type",
+  "status",
+  "column_break_head",
+  "leader",
+  "visibility",
+  "max_size",
+  "lineage_section",
+  "parent_cohort",
+  "column_break_lineage",
+  "lineage_root",
+  "root_distance"
+ ],
+ "fields": [
+  {
+   "fieldname": "cohort_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Cohort Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cohort_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cohort Type",
+   "options": "Cohort Type",
+   "reqd": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nArchived"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The cohort's leader — a Person with special, membership-derived access.",
+   "fieldname": "leader",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Leader",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "default": "cohort_only",
+   "description": "Default reach for posts in this cohort (inherited from the Cohort Type). There is no anonymous tier.",
+   "fieldname": "visibility",
+   "fieldtype": "Select",
+   "label": "Default Visibility",
+   "options": "cohort_only\nportal_users"
+  },
+  {
+   "description": "Soft ceiling on active members (0 = unlimited). Defaults from the Cohort Type.",
+   "fieldname": "max_size",
+   "fieldtype": "Int",
+   "label": "Max Size",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "lineage_section",
+   "fieldtype": "Section Break",
+   "label": "Lineage"
+  },
+  {
+   "description": "The cohort this one was split from. Empty for a root cohort.",
+   "fieldname": "parent_cohort",
+   "fieldtype": "Link",
+   "label": "Parent Cohort",
+   "options": "Cohort",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_lineage",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Denormalized root of this cohort's family — set once on creation, never changes. Makes 'show me this whole cohort family' a single filtered query.",
+   "fieldname": "lineage_root",
+   "fieldtype": "Link",
+   "label": "Lineage Root",
+   "options": "Cohort",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Generations from the root cohort (root = 0; each split adds 1). Lets the whole family tree be mapped and sorted by depth.",
+   "fieldname": "root_distance",
+   "fieldtype": "Int",
+   "label": "Root Distance",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "cohort_name,cohort_type,leader",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "cohort_name",
+ "track_changes": 1
+}

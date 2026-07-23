@@ -230,3 +230,36 @@ for _osis, _aliases in _BOOKS:
         # The "jo" alias under JHN intentionally wins over any Job aliasing —
         # see the disambiguation note in the module docstring.
         BOOK_ALIASES.setdefault(_key, _osis)
+
+
+# Canonical book position (1..66), derived from the Protestant-canon order of
+# _BOOKS above. Used to build monotonic verse ordinals for range queries.
+BOOK_ORDER: dict[str, int] = {
+    osis: i for i, (osis, _aliases) in enumerate(_BOOKS, start=1)
+}
+
+
+def verse_ordinal(osis: str, chapter: int, verse: int) -> int:
+    """A canonical, strictly-monotonic integer for a book/chapter/verse.
+
+    ordinal = book_index * 1_000_000 + chapter * 1_000 + verse
+
+    Chapters and verses are always < 1000, so the ordinal increases through the
+    whole canon. Ordinals are *non-contiguous* (there are gaps between chapters
+    and books), which is fine: they are only ever compared for ordering and
+    range-overlap, never counted between.
+    """
+    return BOOK_ORDER[osis] * 1_000_000 + chapter * 1_000 + verse
+
+
+# Canonical display name per book (the first, full-form alias), and the reverse
+# of BOOK_ORDER (index → OSIS) for decoding ordinals back into references.
+BOOK_NAMES: dict[str, str] = {osis: aliases[0] for osis, aliases in _BOOKS}
+OSIS_BY_ORDER: dict[int, str] = {i: osis for osis, i in BOOK_ORDER.items()}
+
+
+def decode_ordinal(value: int) -> tuple[int, int, int]:
+    """Inverse of verse_ordinal → (book_index, chapter, verse)."""
+    book_index = value // 1_000_000
+    rem = value % 1_000_000
+    return book_index, rem // 1_000, rem % 1_000
