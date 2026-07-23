@@ -164,6 +164,59 @@ def list_feed(
 
 
 @frappe.whitelist()
+def search_posts(cohort, query, limit=30):
+    """Scoped search over one cohort's posts — title/content plus topic and
+    scripture-reference matches. Cohort-scoped (an indexed column) so it stays
+    fast; get_list applies the visibility permission clause."""
+    query = (query or "").strip()
+    if len(query) < 2:
+        return []
+    like = f"%{query}%"
+    names = set(
+        frappe.get_list(
+            "Cohort Post",
+            filters={"cohort": cohort, "status": ["in", ["published", "pinned"]]},
+            or_filters=[["title", "like", like], ["content", "like", like]],
+            pluck="name",
+            page_length=int(limit),
+        )
+    )
+    topics = frappe.get_all(
+        "Cohort Post Topic", filters={"topic_name": ["like", like]}, pluck="name"
+    )
+    if topics:
+        names.update(
+            frappe.get_all(
+                "Cohort Post Topic Link",
+                filters={"topic": ["in", topics]},
+                pluck="parent",
+            )
+        )
+    names.update(
+        frappe.get_all(
+            "Cohort Post Scripture Ref",
+            filters={"display": ["like", like]},
+            pluck="parent",
+        )
+    )
+    if not names:
+        return []
+    posts = frappe.get_list(
+        "Cohort Post",
+        filters={
+            "name": ["in", list(names)],
+            "cohort": cohort,
+            "status": ["in", ["published", "pinned"]],
+        },
+        fields=_FEED_FIELDS,
+        order_by="creation desc",
+        page_length=int(limit),
+    )
+    _decorate_posts(posts)
+    return posts
+
+
+@frappe.whitelist()
 def get_thread(post):
     doc = frappe.get_doc("Cohort Post", post)
     if not post_has(doc, user=frappe.session.user):
@@ -180,6 +233,7 @@ def get_thread(post):
             "author",
             "content",
             "anchor_type",
+            "is_private",
             "timestamp_s",
             "verse_start_ord",
             "verse_end_ord",
@@ -193,6 +247,20 @@ def get_thread(post):
         ],
         order_by="creation asc",
     )
+    # private replies: only the post author, the reply's writer, and cohort
+    # leaders/staff may see them.
+    from seminary.seminary.discipleship.permissions import led_cohorts
+
+    viewer = find_person(user=frappe.session.user)
+    can_lead = _is_staff() or doc.cohort in led_cohorts(frappe.session.user)
+    comments = [
+        c
+        for c in comments
+        if not c.get("is_private")
+        or can_lead
+        or c["author"] == viewer
+        or doc.author == viewer
+    ]
     _attach_names(comments, "author")
     _attach_reactions(comments, target="comment")
     # foreground intra-cohort voices: tag each reply and rank members first
@@ -237,15 +305,20 @@ def _mark_thread_seen(person, post):
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
 def add_comment(
-    post, content, parent_comment=None, anchor_type="General", anchor_data=None
+    post,
+    content,
+    parent_comment=None,
+    anchor_type="General",
+    anchor_data=None,
+    is_private=0,
 ):
     person = _my_person()
     post_doc = frappe.get_doc("Cohort Post", post)
     if not post_has(post_doc, user=frappe.session.user):
         frappe.throw(_("You cannot reply to this post."), frappe.PermissionError)
-    # portal-wide posts invite extra-cohort engagement; cohort/private/direct
-    # posts stay members-only (plus the author/recipient of a direct post).
-    party = person in (post_doc.author, post_doc.direct_recipient)
+    # portal-wide posts invite extra-cohort engagement; cohort/private posts stay
+    # members-only (plus the post author).
+    party = person == post_doc.author
     portal_wide = post_doc.visibility == "portal_users"
     if not (portal_wide or party or _is_member(post_doc.cohort, person) or _is_staff()):
         frappe.throw(_("Only cohort members can reply here."), frappe.PermissionError)
@@ -256,6 +329,7 @@ def add_comment(
         "author": person,
         "content": content,
         "anchor_type": anchor_type or "General",
+        "is_private": 1 if int(is_private or 0) else 0,
     }
     anchor = frappe.parse_json(anchor_data) if anchor_data else {}
     if (
@@ -508,6 +582,7 @@ def edit_post(
     direct_recipient=None,
     topics=None,
     scripture=None,
+    video_url=None,
 ):
     _require_author_or_staff(post)
     doc = frappe.get_doc("Cohort Post", post)
@@ -515,6 +590,8 @@ def edit_post(
         doc.title = title
     if content is not None:
         doc.content = content  # controller re-sanitizes
+    if video_url is not None:
+        doc.video_url = video_url  # controller requires it for Sermon Lab posts
     if visibility:
         doc.visibility = visibility
         doc.direct_recipient = direct_recipient if visibility == "direct" else None

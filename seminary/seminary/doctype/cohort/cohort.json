@@ -18,7 +18,8 @@
   "lineage_section",
   "parent_cohort",
   "column_break_lineage",
-  "lineage_root"
+  "lineage_root",
+  "root_distance"
  ],
  "fields": [
   {
@@ -99,6 +100,14 @@
    "options": "Cohort",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Generations from the root cohort (root = 0; each split adds 1). Lets the whole family tree be mapped and sorted by depth.",
+   "fieldname": "root_distance",
+   "fieldtype": "Int",
+   "label": "Root Distance",
+   "read_only": 1
   }
  ],
  "links": [],

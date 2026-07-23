@@ -79,7 +79,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Visibility",
-   "options": "cohort_only\nportal_users\nprivate\ndirect",
+   "options": "cohort_only\nportal_users\nprivate",
    "reqd": 1
   },
   {

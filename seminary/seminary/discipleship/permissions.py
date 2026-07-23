@@ -202,19 +202,38 @@ def post_has(doc, ptype=None, user=None):
 
 
 def comment_query(user=None):
-    return _visibility_clause(
-        user or frappe.session.user,
-        "Cohort Post Comment",
-        "post_author",
-        "status",
-        "author",
+    user = user or frappe.session.user
+    base = _visibility_clause(
+        user, "Cohort Post Comment", "post_author", "status", "author"
     )
+    if not base:  # staff bypass
+        return ""
+    # private replies: only the writer, the post author, and cohort leaders.
+    person = find_person(user=user)
+    me = frappe.db.escape(person) if person else "''"
+    t = "`tabCohort Post Comment`"
+    parts = [
+        f"{t}.`is_private` = 0",
+        f"{t}.`author` = {me}",
+        f"{t}.`post_author` = {me}",
+    ]
+    led = led_cohorts(user)
+    if led:
+        joined = ", ".join(frappe.db.escape(c) for c in led)
+        parts.append(f"{t}.`cohort` in ({joined})")
+    return f"({base} AND (" + " OR ".join(parts) + "))"
 
 
 def comment_has(doc, ptype=None, user=None):
-    return _visibility_has(
-        doc, user or frappe.session.user, "post_author", "status", "author"
-    )
+    user = user or frappe.session.user
+    if not _visibility_has(doc, user, "post_author", "status", "author"):
+        return False
+    if int(getattr(doc, "is_private", 0) or 0) and _should_restrict(user):
+        person = find_person(user=user)
+        if person and person in (doc.get("author"), doc.get("post_author")):
+            return True
+        return doc.get("cohort") in led_cohorts(user)
+    return True
 
 
 def reaction_query(user=None):

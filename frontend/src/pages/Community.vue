@@ -53,6 +53,13 @@
 					class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
 					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
 				</select>
+				<button v-if="cohorts.length > 1 && selectedCohort" :title="__('Save as default cohort')"
+					class="text-ink-gray-5 hover:text-ink-gray-8" @click="setDefaultCohort">
+					<Star class="h-4 w-4" />
+				</button>
+				<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
+					<template #prefix><Megaphone class="h-4 w-4" /></template>
+				</Button>
 				<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
 					<template #prefix><UsersRound class="h-4 w-4" /></template>
 				</Button>
@@ -70,8 +77,20 @@
 		</div>
 
 		<template v-else>
+			<!-- search -->
+			<div class="mb-3 flex items-center gap-2 rounded-md border border-outline-gray-2 bg-surface-white px-2">
+				<Search class="h-4 w-4 text-ink-gray-4" />
+				<input v-model="searchQuery" type="text" :placeholder="__('Search posts, topics, passages…')"
+					class="w-full bg-transparent py-1.5 text-sm text-ink-gray-8 focus:outline-none" />
+				<button v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
+			</div>
+			<div v-if="searchActive" class="mb-3 flex items-center gap-2 text-xs text-ink-gray-5">
+				<span v-if="searchRes.loading">{{ __('Searching…') }}</span>
+				<span v-else>{{ __('{0} result(s)').format(posts.length) }}</span>
+			</div>
+
 			<!-- channel filter -->
-			<div class="mb-4 flex flex-wrap gap-2">
+			<div v-show="!searchActive" class="mb-4 flex flex-wrap gap-2">
 				<button
 					class="rounded-full border px-3 py-1 text-sm"
 					:class="channelFilter === '' ? 'border-outline-gray-3 bg-surface-gray-3 text-ink-gray-9' : 'border-outline-gray-2 text-ink-gray-6'"
@@ -226,6 +245,7 @@
 								:style="{ marginLeft: Math.min(c.depth, 4) * 16 + 'px' }">
 								<div class="text-sm">
 									<span class="font-medium text-ink-gray-9">{{ c.author_name || c.author }}</span>
+									<span v-if="c.is_private" class="ml-1 inline-flex items-center gap-0.5 rounded bg-surface-gray-2 px-1.5 text-xs text-ink-gray-6"><Lock class="h-3 w-3" />{{ __('private') }}</span>
 									<span class="text-ink-gray-5">· {{ timeAgo(c.creation) }}</span>
 								</div>
 								<div class="prose-sm max-w-none text-ink-gray-8" v-html="c.content"></div>
@@ -245,6 +265,7 @@
 										<Send class="h-4 w-4" />
 									</Button>
 								</div>
+									<label class="mt-1 flex items-center gap-1 text-xs text-ink-gray-5"><input type="checkbox" v-model="replyPrivate" class="rounded" /><Lock class="h-3 w-3" />{{ __('Private — only the author and leaders will see this') }}</label>
 							</div>
 
 							<!-- linked reflections -->
@@ -305,10 +326,7 @@
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
 							<option value="private">{{ __('Only me') }}</option>
-							<option value="direct">{{ __('Direct (one person)') }}</option>
 						</select>
-						<Input v-if="draft.visibility === 'direct'" v-model="draft.direct_recipient" type="text"
-							:placeholder="__('Recipient Person ID')" class="flex-1" />
 					</div>
 					<Input v-model="draft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
 					<Input v-model="draft.scripture" type="text"
@@ -347,6 +365,10 @@
 			<template #body-content>
 				<div class="flex flex-col gap-3">
 					<Input v-model="editDraft.title" type="text" :placeholder="__('Title (optional)')" />
+					<div v-if="editDraft.channel_kind === 'video_timestamp'" class="flex items-center gap-2">
+						<Video class="h-4 w-4 text-ink-gray-5" />
+						<Input v-model="editDraft.video_url" type="text" :placeholder="__('YouTube link')" class="flex-1" />
+					</div>
 					<div class="flex items-center gap-2">
 						<label class="text-sm text-ink-gray-6">{{ __('Visibility') }}</label>
 						<select v-model="editDraft.visibility"
@@ -354,10 +376,7 @@
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
 							<option value="private">{{ __('Only me') }}</option>
-							<option value="direct">{{ __('Direct (one person)') }}</option>
 						</select>
-						<Input v-if="editDraft.visibility === 'direct'" v-model="editDraft.direct_recipient" type="text"
-							:placeholder="__('Recipient Person ID')" class="flex-1" />
 					</div>
 					<Input v-model="editDraft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
 					<Input v-model="editDraft.scripture" type="text"
@@ -370,6 +389,28 @@
 				<div class="flex justify-end gap-2">
 					<Button :label="__('Cancel')" @click="showEdit = false" />
 					<Button variant="solid" :label="__('Save')" :loading="editPostRes.loading" @click="submitEdit" />
+				</div>
+			</template>
+		</Dialog>
+
+		<!-- message leaders (Inbox broadcast) -->
+		<Dialog v-model="showBroadcast" :options="{ title: __('Message leaders') }">
+			<template #body-content>
+				<div class="flex flex-col gap-3">
+					<Input v-model="broadcastSubject" type="text" :placeholder="__('Subject')" />
+					<textarea v-model="broadcastMessage" rows="4"
+						class="w-full rounded-md border border-outline-gray-2 bg-surface-white p-2 text-sm text-ink-gray-8"
+						:placeholder="__('Message to the leaders you oversee…')"></textarea>
+					<label class="flex items-center gap-1 text-sm text-ink-gray-6">
+						<input type="checkbox" v-model="broadcastEmail" class="rounded" />{{ __('Also send by email') }}
+					</label>
+					<p class="text-xs text-ink-gray-4">{{ __('Goes to each leader’s Community inbox.') }}</p>
+				</div>
+			</template>
+			<template #actions>
+				<div class="flex justify-end gap-2">
+					<Button :label="__('Cancel')" @click="showBroadcast = false" />
+					<Button variant="solid" :label="__('Send')" :loading="broadcastRes.loading" @click="submitBroadcast" />
 				</div>
 			</template>
 		</Dialog>
@@ -528,7 +569,7 @@ import { Button, Dialog, Input, createResource } from 'frappe-ui'
 import {
 	MessagesSquare, SquarePen, MessageCircle, Send, Pin, X,
 	Lock, Users, Globe, Mail, BookOpen, Check, Video, Flag, Shield, Ban, Pencil, Trash2,
-	Bookmark, BookmarkCheck, UsersRound, ChevronRight, ChevronDown,
+	Bookmark, BookmarkCheck, UsersRound, ChevronRight, ChevronDown, Search, Star, Megaphone,
 } from 'lucide-vue-next'
 import { timeAgo, createToast } from '@/utils'
 import RichTextEditor from '@/components/RichTextEditor.vue'
@@ -548,6 +589,7 @@ const draft = reactive({ channel: '', title: '', content: '', visibility: 'cohor
 const prayerView = ref('active')
 const scopeFilter = ref('')
 const savedOnly = ref(false)
+const searchQuery = ref('')
 const showPassage = ref(false)
 const showMembers = ref(false)
 const inviteEmail = ref('')
@@ -559,9 +601,14 @@ const splitName = ref('')
 const splitOriginal = ref([])
 const splitMoving = ref([])
 const splitLeader = ref(null)
+const replyPrivate = ref(false)
+const showBroadcast = ref(false)
+const broadcastSubject = ref('')
+const broadcastMessage = ref('')
+const broadcastEmail = ref(false)
 const showEdit = ref(false)
 const editKey = ref(0)
-const editDraft = reactive({ name: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '' })
+const editDraft = reactive({ name: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', channel_kind: '' })
 const showAnswer = ref(false)
 const answerNote = ref('')
 const answerPost = ref(null)
@@ -572,9 +619,17 @@ const cohortsRes = createResource({
 	url: 'seminary.seminary.discipleship.feed_api.my_cohorts_list',
 	auto: true,
 	onSuccess(data) {
-		if (data?.length && !selectedCohort.value) selectedCohort.value = data[0].name
+		if (data?.length && !selectedCohort.value) {
+			const saved = localStorage.getItem('community:defaultCohort')
+			selectedCohort.value = saved && data.some((c) => c.name === saved) ? saved : data[0].name
+		}
 	},
 })
+function setDefaultCohort() {
+	if (!selectedCohort.value) return
+	localStorage.setItem('community:defaultCohort', selectedCohort.value)
+	createToast({ title: __('Default cohort saved.'), icon: 'check' })
+}
 const channelsRes = createResource({
 	url: 'seminary.seminary.discipleship.feed_api.list_channels',
 	auto: true,
@@ -629,6 +684,8 @@ const bibleTree = createResource({ url: 'seminary.seminary.discipleship.scriptur
 const chaptersRes = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_chapters' })
 const versesRes = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_verses' })
 const passagePostsRes = createResource({ url: 'seminary.seminary.discipleship.scripture.posts_in_range' })
+const searchRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.search_posts' })
+const broadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.broadcast_to_leaders' })
 
 // --- derived ---
 const cohorts = computed(() => cohortsRes.data || [])
@@ -637,7 +694,11 @@ const selectedChannelKind = computed(() => channels.value.find((c) => c.name ===
 const isPrayerChannel = computed(() => selectedChannelKind.value === 'prayer')
 const composeChannelKind = computed(() => channels.value.find((c) => c.name === draft.channel)?.channel_kind || null)
 const reactionTypes = computed(() => reactionTypesRes.data || [])
-const posts = computed(() => (passageFilter.value ? (passagePostsRes.data || []) : (feed.data || [])))
+const searchActive = computed(() => searchQuery.value.trim().length >= 2)
+const posts = computed(() => {
+	if (searchActive.value) return searchRes.data || []
+	return passageFilter.value ? (passagePostsRes.data || []) : (feed.data || [])
+})
 const chapters = computed(() => chaptersRes.data || [])
 const verses = computed(() => versesRes.data || [])
 const passageLabel = computed(() => passageFilter.value?.label || '')
@@ -700,6 +761,8 @@ function openEdit(post) {
 		direct_recipient: post.direct_recipient || '',
 		topics: (post.topics || []).join(', '),
 		scripture: (post.scripture || []).map((s) => s.display).join('\n'),
+		video_url: post.video_url || '',
+		channel_kind: post.channel_kind || '',
 	})
 	editKey.value++
 	showEdit.value = true
@@ -714,6 +777,7 @@ function submitEdit() {
 			direct_recipient: editDraft.visibility === 'direct' ? editDraft.direct_recipient : null,
 			topics: editDraft.topics.split(',').map((t) => t.trim()).filter(Boolean),
 			scripture: editDraft.scripture.split('\n').map((s) => s.trim()).filter(Boolean),
+			video_url: editDraft.channel_kind === 'video_timestamp' ? editDraft.video_url : null,
 		})
 		.then(() => { showEdit.value = false; refresh() })
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not save.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
@@ -903,8 +967,27 @@ function react(post, rtName) {
 function submitReply(post) {
 	if (!replyText.value.trim()) return
 	addComment
-		.submit({ post: post.name, content: replyText.value, parent_comment: replyTo.value?.name || null })
-		.then(() => { replyText.value = ''; replyTo.value = null; thread.fetch(); feed.fetch() })
+		.submit({
+			post: post.name,
+			content: replyText.value,
+			parent_comment: replyTo.value?.name || null,
+			is_private: replyPrivate.value ? 1 : 0,
+		})
+		.then(() => { replyText.value = ''; replyTo.value = null; replyPrivate.value = false; thread.fetch(); feed.fetch() })
+}
+function openBroadcast() {
+	broadcastSubject.value = ''
+	broadcastMessage.value = ''
+	broadcastEmail.value = false
+	showBroadcast.value = true
+}
+function submitBroadcast() {
+	if (!broadcastSubject.value.trim() || !broadcastMessage.value.trim())
+		return createToast({ title: __('Subject and message are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+	broadcastRes
+		.submit({ subject: broadcastSubject.value, message: broadcastMessage.value, email: broadcastEmail.value ? 1 : 0 })
+		.then((r) => { showBroadcast.value = false; createToast({ title: __('Sent to {0} leader(s).').format(r.sent), icon: 'check' }) })
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
 }
 function openCompose() {
 	Object.assign(draft, { channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
@@ -938,6 +1021,20 @@ function submitPost() {
 
 // --- reactive refetch + realtime ---
 watch([selectedCohort, channelFilter], () => { expandedPost.value = null; refresh() })
+
+// debounced search: cohort-scoped, only fires at 2+ chars
+let searchTimer = null
+watch(searchQuery, (q) => {
+	clearTimeout(searchTimer)
+	const term = (q || '').trim()
+	if (term.length < 2) { searchRes.data = []; return }
+	if (passageFilter.value) clearPassage()
+	searchTimer = setTimeout(
+		() => searchRes.submit({ cohort: selectedCohort.value, query: term }),
+		300,
+	)
+})
+watch(selectedCohort, () => { searchQuery.value = '' })
 
 // Mark-on-LEAVE (not on load): the "New" divider baseline stays frozen while you
 // read a channel, and only advances when you leave it, switch cohort, or close

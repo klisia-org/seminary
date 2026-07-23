@@ -23,14 +23,24 @@ class Cohort(Document):
             self.max_size = ct.default_max_size
 
     def after_insert(self):
-        # Denormalize the lineage root once, immutably: a root cohort is its own
-        # root; a split-off child inherits its parent's root. Makes "this whole
-        # cohort family" a single filtered query (ADR 064).
+        # Denormalize lineage once, immutably: a root cohort is its own root at
+        # distance 0; a split-off child inherits its parent's root and sits one
+        # generation deeper. Makes "this whole cohort family" a single filtered
+        # query, sortable by depth (ADR 064).
         if self.parent_cohort:
-            root = frappe.db.get_value("Cohort", self.parent_cohort, "lineage_root")
+            parent = frappe.db.get_value(
+                "Cohort",
+                self.parent_cohort,
+                ["lineage_root", "root_distance"],
+                as_dict=True,
+            )
+            root = parent.lineage_root
+            distance = (parent.root_distance or 0) + 1
         else:
             root = self.name
+            distance = 0
         self.db_set("lineage_root", root, update_modified=False)
+        self.db_set("root_distance", distance, update_modified=False)
         self._ensure_leader_membership()
 
     def _ensure_leader_membership(self):

@@ -13,6 +13,7 @@
   "author",
   "column_break_head",
   "status",
+  "is_private",
   "anchor_type",
   "content_section",
   "content",
@@ -70,6 +71,13 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "published\nblocked"
+  },
+  {
+   "default": "0",
+   "description": "A private reply is visible only to the post's author, its writer, and cohort leaders/staff.",
+   "fieldname": "is_private",
+   "fieldtype": "Check",
+   "label": "Private reply"
   },
   {
    "default": "General",

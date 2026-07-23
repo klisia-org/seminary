@@ -299,6 +299,28 @@ def split_cohort(cohort, new_cohort_name, member_ids, new_leader=None):
         m.save(ignore_permissions=True)
         moved += 1
 
+    # Keep the parent's leader connected to their offshoot as a Mentor, so they
+    # retain ownership/visibility of what they multiplied. (Management authority
+    # over the child already flows from lineage — they lead an ancestor.)
+    if (
+        parent.leader
+        and parent.leader != new_leader
+        and not frappe.db.exists(
+            "Cohort Membership",
+            {"cohort": child.name, "person": parent.leader, "active": 1},
+        )
+    ):
+        frappe.get_doc(
+            {
+                "doctype": "Cohort Membership",
+                "cohort": child.name,
+                "person": parent.leader,
+                "role": "Mentor",
+                "is_leader": 0,
+                "invite_status": "Active",
+            }
+        ).insert(ignore_permissions=True)
+
     frappe.msgprint(
         _("Created {0} and moved {1} member(s).").format(child.name, moved),
         alert=True,
@@ -417,3 +439,90 @@ def reassign_leader(cohort, new_leader):
         if om:
             frappe.db.set_value("Cohort Membership", om, "is_leader", 0)
     return new_leader
+
+
+# --------------------------------------------------------------------------- #
+# Leader-to-leader communication (Inbox broadcast, ADR 043 comms)
+# --------------------------------------------------------------------------- #
+def _leader_recipients(user):
+    """Staff reach every cohort leader; a leader reaches the leaders of the
+    cohorts in their own subtree (their descendant leaders)."""
+    from seminary.seminary.discipleship.permissions import led_cohorts
+
+    if _is_staff(user):
+        return set(
+            frappe.get_all(
+                "Cohort Membership",
+                filters={"active": 1, "is_leader": 1},
+                pluck="person",
+            )
+        )
+    cohorts = led_cohorts(user)
+    if not cohorts:
+        return set()
+    return set(
+        frappe.get_all(
+            "Cohort Membership",
+            filters={"cohort": ["in", list(cohorts)], "active": 1, "is_leader": 1},
+            pluck="person",
+        )
+    )
+
+
+@frappe.whitelist()
+def can_broadcast():
+    from seminary.seminary.discipleship.permissions import led_cohorts
+
+    user = frappe.session.user
+    return _is_staff(user) or bool(led_cohorts(user))
+
+
+@frappe.whitelist()
+def broadcast_to_leaders(subject, message, email=0):
+    """Send an In-App (+ optional Email) message to the leaders the sender may
+    reach. Fans out through the comms ledger (ADR 043) — lands in each leader's
+    portal Inbox."""
+    from seminary.seminary import comms
+    from seminary.seminary.api import sanitize_html
+    from seminary.seminary.discipleship.permissions import led_cohorts
+
+    user = frappe.session.user
+    if not (_is_staff(user) or led_cohorts(user)):
+        frappe.throw(
+            _("Only leaders or staff can message leaders."), frappe.PermissionError
+        )
+    subject = (subject or "").strip()
+    body = sanitize_html(message or "")
+    if not subject or not body:
+        frappe.throw(_("A subject and message are required."))
+
+    sender = find_person(user=user)
+    recipients = _leader_recipients(user)
+    recipients.discard(sender)
+    sent = 0
+    for person in recipients:
+        try:
+            comms.send_message(
+                channel="In-App",
+                subject=subject,
+                message=body,
+                person=person,
+                category="Community",
+                triggered_by=user,
+            )
+            if int(email or 0):
+                addr = frappe.db.get_value("Person", person, "primary_email")
+                if addr:
+                    comms.send_message(
+                        channel="Email",
+                        subject=subject,
+                        message=body,
+                        person=person,
+                        to_address=addr,
+                        category="Community",
+                        triggered_by=user,
+                    )
+            sent += 1
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "leader broadcast failed")
+    return {"sent": sent}

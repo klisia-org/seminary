@@ -10,18 +10,21 @@ export function parseYouTubeId(url) {
 	if (!url || typeof url !== 'string') return null
 	const trimmed = url.trim()
 
-	// youtu.be/<id>
-	const short = trimmed.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/)
-	if (short) return short[1]
+	// a bare 11-character video id pasted on its own
+	if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed
 
-	// youtube.com/embed/<id>
-	const embed = trimmed.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/)
-	if (embed) return embed[1]
-
-	// youtube.com/watch?v=<id>
-	const watch = trimmed.match(/[?&]v=([A-Za-z0-9_-]{6,})/)
-	if (watch) return watch[1]
-
+	// youtu.be/<id>, /embed/<id>, /live/<id>, /shorts/<id>, watch?v=<id>
+	const patterns = [
+		/youtu\.be\/([A-Za-z0-9_-]{6,})/,
+		/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
+		/youtube\.com\/live\/([A-Za-z0-9_-]{6,})/,
+		/youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
+		/[?&]v=([A-Za-z0-9_-]{6,})/,
+	]
+	for (const re of patterns) {
+		const m = trimmed.match(re)
+		if (m) return m[1]
+	}
 	return null
 }
 
