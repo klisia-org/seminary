@@ -245,6 +245,12 @@ permission_query_conditions = {
     "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_query",
     "Internship Requirement": "seminary.partner.permissions.internship_requirement_query",
     "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_query",
+    "Cohort": "seminary.seminary.discipleship.permissions.cohort_query",
+    "Cohort Membership": "seminary.seminary.discipleship.permissions.membership_query",
+    "Cohort Post": "seminary.seminary.discipleship.permissions.post_query",
+    "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_query",
+    "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_query",
+    "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -264,6 +270,12 @@ has_permission = {
     "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_has",
     "Internship Requirement": "seminary.partner.permissions.internship_requirement_has",
     "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_has",
+    "Cohort": "seminary.seminary.discipleship.permissions.cohort_has",
+    "Cohort Membership": "seminary.seminary.discipleship.permissions.membership_has",
+    "Cohort Post": "seminary.seminary.discipleship.permissions.post_has",
+    "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_has",
+    "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_has",
+    "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
 }
 
 # DocType Class

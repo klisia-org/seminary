@@ -27,6 +27,7 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
+    create_cohort_participant_role()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
@@ -47,6 +48,9 @@ def after_install():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
+    seed_cohort_reaction_types()
+    seed_cohort_channels()
+    setup_user_bible_field()
 
 
 # ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
@@ -1273,6 +1277,99 @@ def create_external_examiner_role():
         ).save()
 
 
+def create_cohort_participant_role():
+    """Portal role for invited cohort participants (e.g. pastors mentored by
+    alumni). No desk access; record-level scoping in
+    seminary.seminary.discipleship.permissions limits them to their cohorts and
+    portal-wide channels."""
+    if not frappe.db.exists("Role", "Cohort Participant"):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 0}
+        ).save()
+
+
+def seed_cohort_reaction_types():
+    """Seed the starter community reaction set. Create-only-if-missing so a
+    seminary can add or rename reactions without them being clobbered."""
+    if not frappe.db.exists("DocType", "Cohort Reaction Type"):
+        return
+    # label, glyph, sort_order
+    defaults = [
+        (_("Like"), "\U0001f44d", 1),
+        (_("Amen"), "\U0001f64c", 2),
+        (_("Pray"), "\U0001f64f", 3),
+        (_("Insightful"), "\U0001f4a1", 4),
+    ]
+    for label, glyph, order in defaults:
+        if not frappe.db.exists("Cohort Reaction Type", label):
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Reaction Type",
+                    "label": label,
+                    "glyph": glyph,
+                    "enabled": 1,
+                    "sort_order": order,
+                }
+            ).insert(ignore_permissions=True)
+
+
+def seed_cohort_channels():
+    """Seed the starter community channels. Create-only-if-missing; a seminary
+    adds, renames, or disables channels from the desk without them reverting."""
+    if not frappe.db.exists("DocType", "Cohort Channel"):
+        return
+    # name, kind, icon, description
+    defaults = [
+        (
+            "Sermon Lab",
+            "video_timestamp",
+            "\U0001f3a5",
+            _("Timestamped feedback on sermon videos."),
+        ),
+        (
+            "Exegetical Insight",
+            "bible_passage",
+            "\U0001f4d6",
+            _("Discussion anchored to Bible passages."),
+        ),
+        ("Prayer", "prayer", "\U0001f64f", _("Prayer requests and answered prayers.")),
+        (
+            "Family Ministry",
+            "generic",
+            "\U0001f46a",
+            _("Family and marriage ministry."),
+        ),
+        ("Children's Ministry", "generic", "\U0001f9f8", _("Children's ministry.")),
+        (
+            "Discipleship",
+            "generic",
+            "\U0001f331",
+            _("Discipleship and spiritual growth."),
+        ),
+        ("Missions", "generic", "\U0001f30d", _("Missions and outreach.")),
+        (
+            "Personal Challenges",
+            "generic",
+            "\U0001f4aa",
+            _("Personal struggles and encouragement."),
+        ),
+    ]
+    for i, (name, kind, icon, desc) in enumerate(defaults):
+        if not frappe.db.exists("Cohort Channel", name):
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Channel",
+                    "channel_name": name,
+                    "channel_kind": kind,
+                    "enabled": 1,
+                    "icon": icon,
+                    "default_visibility": "cohort_only",
+                    "sort_order": i,
+                    "description": desc,
+                }
+            ).insert(ignore_permissions=True)
+
+
 def create_program_chair_role():
     """Broad academic authority over programs & curriculum.
 
@@ -1375,7 +1472,29 @@ def after_migrate():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
+    seed_cohort_reaction_types()
+    seed_cohort_channels()
     setup_donor_person_field()
+    setup_user_bible_field()
+    create_cohort_participant_role()
+
+
+def setup_user_bible_field():
+    """Per-user preferred Bible version. A Data field on User holding an api.bible
+    bible_id; the Bible integration prefers it over the language default when
+    rendering scripture. Re-checked on every migrate (idempotent)."""
+    if not frappe.db.exists("Custom Field", "User-preferred_bible_id"):
+        frappe.get_doc(
+            {
+                "doctype": "Custom Field",
+                "dt": "User",
+                "fieldname": "preferred_bible_id",
+                "fieldtype": "Data",
+                "label": "Preferred Bible Version",
+                "insert_after": "language",
+                "no_copy": 1,
+            }
+        ).insert(ignore_permissions=True)
 
 
 def setup_genders():

@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "COHORT-MB-.#####",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A person's membership in a cohort — one record per person per cohort, tracking their role, invite status, and join/leave history.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cohort",
+  "person",
+  "column_break_head",
+  "role",
+  "is_leader",
+  "status_section",
+  "invite_status",
+  "active",
+  "invited_by",
+  "column_break_status",
+  "joined_on",
+  "left_on",
+  "enrollment_section",
+  "course_enrollment"
+ ],
+ "fields": [
+  {
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cohort",
+   "options": "Cohort",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Member",
+   "fieldname": "role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "Member\nMentor",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "A leader has membership-derived management access over this cohort (and its split-off subtree).",
+   "fieldname": "is_leader",
+   "fieldtype": "Check",
+   "label": "Is Leader"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "Active",
+   "fieldname": "invite_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Invite Status",
+   "options": "Invited\nActive\nLeft\nRemoved",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Derived: set only while Invite Status is Active. Filter on this for the live roster.",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Active",
+   "read_only": 1
+  },
+  {
+   "description": "The leader (Person) who invited this member.",
+   "fieldname": "invited_by",
+   "fieldtype": "Link",
+   "label": "Invited By",
+   "options": "Person"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "joined_on",
+   "fieldtype": "Date",
+   "label": "Joined On"
+  },
+  {
+   "fieldname": "left_on",
+   "fieldtype": "Date",
+   "label": "Left On"
+  },
+  {
+   "fieldname": "enrollment_section",
+   "fieldtype": "Section Break",
+   "label": "Course Enrollment"
+  },
+  {
+   "description": "Set when a billable cohort auto-enrolls this member into its backing course.",
+   "fieldname": "course_enrollment",
+   "fieldtype": "Link",
+   "label": "Course Enrollment",
+   "options": "Course Enrollment Individual",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Membership",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "cohort,person,role",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,183 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:type_name",
+ "creation": "2026-07-22 12:00:00",
+ "description": "Template that sets the defaults and rules for a family of cohorts: default visibility and size, whether members auto-enroll into a backing course, and whether leaders may split their cohort.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type_name",
+  "category",
+  "is_active",
+  "column_break_head",
+  "graduates_to",
+  "academic_section",
+  "program",
+  "course",
+  "auto_enroll_on_join",
+  "policy_section",
+  "open_enrollment",
+  "allow_self_split",
+  "column_break_policy",
+  "default_visibility",
+  "default_max_size",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "The relational shape of cohorts of this type.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Student\nPastor-Mentoring\nAlumni-Peer\nMixed",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "When a cohort of this type graduates, the type its members flow into next (e.g. Student → Alumni-Peer). Optional.",
+   "fieldname": "graduates_to",
+   "fieldtype": "Link",
+   "label": "Graduates To",
+   "options": "Cohort Type"
+  },
+  {
+   "fieldname": "academic_section",
+   "fieldtype": "Section Break",
+   "label": "Academic Binding"
+  },
+  {
+   "description": "Optional program context for cohorts of this type.",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "description": "Backing course. When set together with Auto-Enroll on Join, a joining member is enrolled into this course and billed like any other course enrollment. Should be one of the program's courses.",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.course",
+   "description": "Auto-enroll a joining member (with an active Program Enrollment) into the backing course.",
+   "fieldname": "auto_enroll_on_join",
+   "fieldtype": "Check",
+   "label": "Auto-Enroll on Join"
+  },
+  {
+   "fieldname": "policy_section",
+   "fieldtype": "Section Break",
+   "label": "Policy Defaults"
+  },
+  {
+   "default": "0",
+   "description": "Members may join without a leader invite.",
+   "fieldname": "open_enrollment",
+   "fieldtype": "Check",
+   "label": "Open Enrollment"
+  },
+  {
+   "default": "0",
+   "description": "Leaders may split / multiply a cohort of this type.",
+   "fieldname": "allow_self_split",
+   "fieldtype": "Check",
+   "label": "Allow Self-Split"
+  },
+  {
+   "fieldname": "column_break_policy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "cohort_only",
+   "description": "Default reach for new posts. Members may still choose private/direct per post. There is no anonymous tier.",
+   "fieldname": "default_visibility",
+   "fieldtype": "Select",
+   "label": "Default Visibility",
+   "options": "cohort_only\nportal_users"
+  },
+  {
+   "description": "Soft ceiling on active members (0 = unlimited).",
+   "fieldname": "default_max_size",
+   "fieldtype": "Int",
+   "label": "Default Max Size",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

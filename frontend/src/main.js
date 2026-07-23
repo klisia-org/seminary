@@ -48,6 +48,7 @@ configurePortals({
 		{ id: 'examiner', label: 'Project Reviews', url: '/seminary/culminating-project', roles: ['External Examiner'] },
 		{ id: 'alumni', label: 'Alumni', description: 'Alumni Portal',url: '/seminary/alumni', roles: ['Alumni'] },
 		{ id: 'partner', label: 'Partner', description: 'Jobs and Internship Management',url: '/seminary/partner', roles: ['Partner'] },
+		{ id: 'community', label: 'Community', description: 'Discipleship Community', url: '/seminary/community', roles: ['Cohort Participant'] },
 		{ id: 'donor', label: 'Donate', description: 'Donor Portal', url: '/donate/donorportal' },
 	],
 	sessionFetcher: async () => {

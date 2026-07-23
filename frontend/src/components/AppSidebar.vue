@@ -53,7 +53,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2 } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
@@ -102,6 +102,7 @@ watch(
 const links = computed(() => {
 	const isStudent = userResource?.data?.is_student
 	const isAlumni = userResource?.data?.is_alumni
+	const isParticipant = (userResource?.data?.roles || []).includes('Cohort Participant')
 	const isEvaluator = userResource?.data?.is_evaluator
 	const hasCulminatingProjects = userResource?.data?.has_culminating_projects
 	const facultyCaps = userResource?.data?.faculty_capabilities || []
@@ -114,6 +115,11 @@ const links = computed(() => {
 			label: __('Courses'),
 			to: '/courses',
 			icon: BookOpen,
+		}] : []),
+		...((isMember.value || isAlumni || isParticipant) ? [{
+			label: __('Community'),
+			to: '/community',
+			icon: MessagesSquare,
 		}] : []),
 		...(isStudent ? [
 			{

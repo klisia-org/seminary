@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:topic_name",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A topic used to tag and connect posts across channels. Topics can be nested under a parent topic.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "topic_name",
+  "parent_topic",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "topic_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Topic Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "parent_topic",
+   "fieldtype": "Link",
+   "label": "Parent Topic",
+   "options": "Cohort Post Topic"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Post Topic",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

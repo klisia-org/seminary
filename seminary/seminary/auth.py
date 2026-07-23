@@ -6,6 +6,7 @@ PORTAL_HOME = (
     ("Student", "/seminary/courses"),
     ("Partner", "/seminary/partner"),
     ("Alumni", "/seminary/alumni"),
+    ("Cohort Participant", "/seminary/community"),
 )
 STAFF_ROLES = {
     "Instructor",
