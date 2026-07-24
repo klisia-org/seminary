@@ -19,7 +19,11 @@
   "parent_cohort",
   "column_break_lineage",
   "lineage_root",
-  "root_distance"
+  "root_distance",
+  "provenance_section",
+  "source_course_schedule",
+  "column_break_provenance",
+  "source_student_group"
  ],
  "fields": [
   {
@@ -108,6 +112,34 @@
    "fieldtype": "Int",
    "label": "Root Distance",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "provenance_section",
+   "fieldtype": "Section Break",
+   "label": "Origin"
+  },
+  {
+   "description": "The course offering this cohort was created from. The cohort is independently managed thereafter — student-group changes don't sync back.",
+   "fieldname": "source_course_schedule",
+   "fieldtype": "Link",
+   "label": "Source Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_provenance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The student group this cohort was seeded from.",
+   "fieldname": "source_student_group",
+   "fieldtype": "Link",
+   "label": "Source Student Group",
+   "options": "Student Group",
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "links": [],

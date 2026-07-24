@@ -883,7 +883,8 @@ def get_course_location(room):
 
 @frappe.whitelist()
 def get_roster(course):
-    """Returns the course roster."""
+    """Returns the course roster, each row enriched with the student's gender
+    (used to split community cohorts by gender)."""
     roster = frappe.get_all(
         "Scheduled Course Roster",
         {"course_sc": course},
@@ -898,6 +899,19 @@ def get_roster(course):
         ],
         order_by="stuname_roster",
     )
+    student_ids = [r.student for r in roster if r.student]
+    genders = {}
+    if student_ids:
+        genders = {
+            s.name: s.gender
+            for s in frappe.get_all(
+                "Student",
+                filters={"name": ["in", student_ids]},
+                fields=["name", "gender"],
+            )
+        }
+    for r in roster:
+        r["gender"] = genders.get(r.student)
     return roster
 
 

@@ -24,6 +24,9 @@
   "disable_reason",
   "prerequisites_section",
   "course_prerequisite",
+  "community_cohort_section",
+  "forms_community_cohort",
+  "cohort_type",
   "assessment_tab",
   "assessment",
   "default_grading_scale",
@@ -122,6 +125,27 @@
    "fieldtype": "Table",
    "label": "Course Prerequisites",
    "options": "Course_prerequisite"
+  },
+  {
+   "fieldname": "community_cohort_section",
+   "fieldtype": "Section Break",
+   "label": "Community Cohort"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, this course can seed discipleship community cohorts from its student groups (e.g. Spiritual Formation courses).",
+   "fieldname": "forms_community_cohort",
+   "fieldtype": "Check",
+   "label": "Forms Community Cohorts"
+  },
+  {
+   "depends_on": "eval:doc.forms_community_cohort",
+   "description": "The cohort type that cohorts created from this course belong to.",
+   "fieldname": "cohort_type",
+   "fieldtype": "Link",
+   "label": "Cohort Type",
+   "mandatory_depends_on": "eval:doc.forms_community_cohort",
+   "options": "Cohort Type"
   },
   {
    "description": "Short slug-safe code (letters, numbers, - and _ only). Used in CLO codes and URLs.",

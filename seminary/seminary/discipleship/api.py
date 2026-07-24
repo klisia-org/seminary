@@ -13,7 +13,7 @@ membership records correctly.
 
 import frappe
 from frappe import _
-from frappe.utils import today
+from frappe.utils import today, cint
 
 from seminary.seminary.person import ensure_person, find_person
 from seminary.seminary.discipleship.permissions import STAFF_BYPASS
@@ -528,6 +528,318 @@ def reassign_leader(cohort, new_leader):
         if om:
             frappe.db.set_value("Cohort Membership", om, "is_leader", 0)
     return new_leader
+
+
+# --------------------------------------------------------------------------- #
+# Seeding cohorts from a course's student groups (reverse enrollment direction)
+# --------------------------------------------------------------------------- #
+def _require_course_staff(course_schedule):
+    """Staff, or an instructor of this course schedule, may manage its cohorts."""
+    user = frappe.session.user
+    if _is_staff(user):
+        return
+    inst = frappe.db.get_value("Instructor", {"user": user}, "name")
+    if inst and frappe.db.exists(
+        "Course Schedule Instructors",
+        {"parent": course_schedule, "instructor": inst},
+    ):
+        return
+    frappe.throw(
+        _("Only staff or an instructor of this course may manage its cohorts."),
+        frappe.PermissionError,
+    )
+
+
+def _resolve_instructor_person(group_instructor):
+    """A group instructor (stored as a User id by the Configure Student Groups UI)
+    resolved to a Person via the identity spine, with Instructor fallbacks."""
+    if not group_instructor:
+        return None
+    person = find_person(user=group_instructor)
+    if person:
+        return person
+    return frappe.db.get_value(
+        "Instructor", {"user": group_instructor}, "person"
+    ) or frappe.db.get_value("Instructor", group_instructor, "person")
+
+
+@frappe.whitelist()
+def cohort_seed_preview(course_schedule):
+    """The 'Community Cohort' section data: each student group of a cohort-forming
+    course with its members (resolved to Person), a suggested instructor-leader,
+    whether a cohort already exists, and which students already belong to a cohort
+    of this type."""
+    from seminary.seminary.discipleship.enrollment import (
+        course_cohort_binding,
+        student_person,
+        active_cohort_of_type,
+    )
+    from seminary.seminary.utils import get_student_groups
+
+    _require_course_staff(course_schedule)
+    _course, cohort_type = course_cohort_binding(course_schedule)
+    if not cohort_type:
+        return {"forms_cohort": False, "cohort_type": None, "groups": []}
+
+    grouped = {}
+    for r in get_student_groups(course_schedule):
+        g = grouped.setdefault(
+            r["student_group"],
+            {
+                "student_group": r["student_group"],
+                "group_name": r.get("group_name"),
+                "group_instructor": r.get("group_instructor"),
+                "students": [],
+            },
+        )
+        person = student_person(r["student"])
+        g["students"].append(
+            {
+                "student": r["student"],
+                "student_name": r.get("student_name"),
+                "person": person,
+                "already_in_cohort": (
+                    active_cohort_of_type(person, cohort_type) if person else None
+                ),
+            }
+        )
+
+    groups = []
+    for g in grouped.values():
+        inst_person = _resolve_instructor_person(g["group_instructor"])
+        groups.append(
+            {
+                **g,
+                "instructor_person": inst_person,
+                "instructor_name": (
+                    frappe.db.get_value("Person", inst_person, "full_name")
+                    if inst_person
+                    else g["group_instructor"]
+                ),
+                "existing_cohort": frappe.db.get_value(
+                    "Cohort", {"source_student_group": g["student_group"]}, "name"
+                ),
+            }
+        )
+    return {"forms_cohort": True, "cohort_type": cohort_type, "groups": groups}
+
+
+@frappe.whitelist()
+def cohort_placement_status(course_schedule):
+    """Reconciliation view: every active enrolled student on the roster with their
+    placement status in a cohort of this type (Placed / Invited / Not placed), plus
+    the active cohorts of this type available as assignment targets."""
+    from seminary.seminary.discipleship.enrollment import (
+        course_cohort_binding,
+        student_person,
+        active_cohort_of_type,
+        pending_cohort_of_type,
+    )
+    from seminary.seminary.utils import get_roster
+
+    _require_course_staff(course_schedule)
+    _course, cohort_type = course_cohort_binding(course_schedule)
+    if not cohort_type:
+        return {"cohort_type": None, "students": [], "cohorts": []}
+
+    students = []
+    for r in get_roster(course_schedule):
+        if not r.get("active") or r.get("audit_bool"):
+            continue
+        person = student_person(r["student"])
+        placed = active_cohort_of_type(person, cohort_type) if person else None
+        invited = (
+            None
+            if placed
+            else (pending_cohort_of_type(person, cohort_type) if person else None)
+        )
+        students.append(
+            {
+                "student": r["student"],
+                "student_name": r.get("stuname_roster"),
+                "email": r.get("stuemail_rc"),
+                "person": person,
+                "status": (
+                    "Placed" if placed else ("Invited" if invited else "Not placed")
+                ),
+                "cohort": placed or invited,
+            }
+        )
+    students.sort(key=lambda s: (s["status"] == "Placed", s["student_name"] or ""))
+
+    cohorts = frappe.get_all(
+        "Cohort",
+        filters={"cohort_type": cohort_type, "status": "Active"},
+        fields=["name", "cohort_name", "source_course_schedule"],
+    )
+    return {"cohort_type": cohort_type, "students": students, "cohorts": cohorts}
+
+
+@frappe.whitelist()
+def create_cohorts_from_student_groups(
+    course_schedule, include_instructor_as_leader=0, leaders_by_group=None
+):
+    """Create one self-managing Community Cohort per student group of a
+    cohort-forming course, seeded with the group's students as active members and
+    a leader (each group's instructor, or a chosen student). Idempotent: groups
+    that already have a cohort are skipped, and (when cohorts persist) students
+    already in a cohort of this type are not re-placed — so re-running across a
+    course sequence is a safe no-op."""
+    from seminary.seminary.discipleship.enrollment import (
+        course_cohort_binding,
+        student_person,
+        active_cohort_of_type,
+        cohorts_persist,
+        live_cei_for_student_course,
+    )
+    from seminary.seminary.utils import get_student_groups
+
+    _require_course_staff(course_schedule)
+    course, cohort_type = course_cohort_binding(course_schedule)
+    if not cohort_type:
+        frappe.throw(_("This course does not form community cohorts."))
+
+    include_instructor = cint(include_instructor_as_leader)
+    leaders = frappe.parse_json(leaders_by_group) if leaders_by_group else {}
+    persist = cohorts_persist()
+
+    grouped = {}
+    for r in get_student_groups(course_schedule):
+        grouped.setdefault(
+            r["student_group"],
+            {
+                "group_name": r.get("group_name"),
+                "group_instructor": r.get("group_instructor"),
+                "students": [],
+            },
+        )["students"].append(r["student"])
+
+    created, skipped = [], []
+    for sg, g in grouped.items():
+        if frappe.db.exists("Cohort", {"source_student_group": sg}):
+            skipped.append({"student_group": sg, "reason": "cohort already exists"})
+            continue
+
+        if include_instructor:
+            leader_person = _resolve_instructor_person(g["group_instructor"])
+            leader_student = None
+            if not leader_person:
+                skipped.append({"student_group": sg, "reason": "no instructor to lead"})
+                continue
+        else:
+            leader_student = leaders.get(sg)
+            leader_person = student_person(leader_student) if leader_student else None
+            if not leader_person:
+                skipped.append({"student_group": sg, "reason": "no leader chosen"})
+                continue
+
+        # New members only (dedup across the course sequence when cohorts persist).
+        new_members = []
+        for st in g["students"]:
+            person = student_person(st)
+            if not person:
+                continue
+            if persist and active_cohort_of_type(person, cohort_type):
+                continue
+            new_members.append((st, person))
+
+        # The leader is seated by Cohort.after_insert; don't double-seat them.
+        seatable = [(st, p) for st, p in new_members if p != leader_person]
+        leader_is_new = bool(leader_student) and any(
+            st == leader_student for st, _ in new_members
+        )
+        if not seatable and not leader_is_new:
+            skipped.append(
+                {"student_group": sg, "reason": "all members already placed"}
+            )
+            continue
+
+        cohort = frappe.get_doc(
+            {
+                "doctype": "Cohort",
+                "cohort_name": g["group_name"] or sg,
+                "cohort_type": cohort_type,
+                "leader": leader_person,
+                "status": "Active",
+                "source_course_schedule": course_schedule,
+                "source_student_group": sg,
+            }
+        ).insert(ignore_permissions=True)
+
+        seeded = 0
+        for st, person in seatable:
+            max_size = frappe.db.get_value("Cohort", cohort.name, "max_size") or 0
+            if max_size and _active_count(cohort.name) >= max_size:
+                break
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Membership",
+                    "cohort": cohort.name,
+                    "person": person,
+                    "role": "Member",
+                    "invite_status": "Active",
+                    "joined_on": today(),
+                    "course_enrollment": live_cei_for_student_course(st, course),
+                }
+            ).insert(ignore_permissions=True)
+            seeded += 1
+
+        created.append(
+            {
+                "cohort": cohort.name,
+                "cohort_name": cohort.cohort_name,
+                "student_group": sg,
+                "leader": leader_person,
+                "seeded": seeded,
+            }
+        )
+
+    return {"created": created, "skipped": skipped}
+
+
+@frappe.whitelist()
+def place_student_in_cohort(course_schedule, student, cohort):
+    """Reconciliation action: place a straggler enrolled student into an existing
+    cohort of this course's type, as a pending invite they accept."""
+    from seminary.seminary.discipleship.enrollment import (
+        course_cohort_binding,
+        student_person,
+        active_cohort_of_type,
+    )
+
+    _require_course_staff(course_schedule)
+    _course, cohort_type = course_cohort_binding(course_schedule)
+    if not cohort_type:
+        frappe.throw(_("This course does not form community cohorts."))
+    if frappe.db.get_value("Cohort", cohort, "cohort_type") != cohort_type:
+        frappe.throw(_("That cohort is not of this course's cohort type."))
+    person = student_person(student)
+    if not person:
+        frappe.throw(_("This student has no linked person record."))
+    if active_cohort_of_type(person, cohort_type):
+        frappe.throw(_("This student is already in a cohort of this type."))
+    if frappe.db.exists(
+        "Cohort Membership",
+        {
+            "cohort": cohort,
+            "person": person,
+            "invite_status": ["in", ["Invited", "Active"]],
+        },
+    ):
+        frappe.throw(_("This student already has a pending or active membership here."))
+    _assert_room(cohort)
+    membership = frappe.get_doc(
+        {
+            "doctype": "Cohort Membership",
+            "cohort": cohort,
+            "person": person,
+            "role": "Member",
+            "invite_status": "Invited",
+            "invited_by": find_person(user=frappe.session.user),
+        }
+    ).insert(ignore_permissions=True)
+    _onboard_and_notify(membership)
+    return membership.name
 
 
 # --------------------------------------------------------------------------- #

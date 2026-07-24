@@ -37,11 +37,3 @@ class CohortMembership(Document):
                     frappe.bold(self.person)
                 )
             )
-
-    def on_update(self):
-        # When a membership goes active in a billable cohort type, enroll the
-        # member's Program Enrollment into the backing course (billing rides the
-        # CEI seam). Guarded + idempotent; non-enrolled members are skipped.
-        from seminary.seminary.discipleship.enrollment import maybe_auto_enroll
-
-        maybe_auto_enroll(self)

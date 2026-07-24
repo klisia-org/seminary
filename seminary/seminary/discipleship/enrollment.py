@@ -1,77 +1,98 @@
-"""Auto-enroll cohort members into a Cohort Type's backing course (Phase 7).
+"""Seed discipleship cohorts from a course's student groups.
 
-When a membership becomes active in a cohort whose type sets a `course` and
-`auto_enroll_on_join`, the member's active Program Enrollment is enrolled into
-that course by reusing `api.course_enroll` — the same primitive culminating
-projects and required-enrollment use. Billing then rides the Course Enrollment
-Individual's own `on_submit` → FinancialBackend (ADR 063); this module never
-names a billing doctype. Members without an active Program Enrollment (e.g.
-invited pastors) are skipped.
+This is the reverse of the retired cohort→course auto-enroll: course registration
+is the entry point. Students enroll in a cohort-forming course (e.g. Spiritual
+Formation), get organized into student groups, and staff spin up self-managing
+Community Cohorts from those groups. Once created a cohort is independently
+managed — student-group edits no longer sync.
+
+This module holds the pure resolution helpers; the whitelisted orchestration
+(`cohort_seed_preview`, `cohort_placement_status`, `create_cohorts_from_student_groups`)
+lives in `discipleship/api.py`.
 """
 
 import frappe
 
 
-def maybe_auto_enroll(membership):
-    """Idempotent: link/create the backing-course CEI for an active membership."""
-    if not membership.active or membership.course_enrollment:
-        return
-    ct_name = frappe.db.get_value("Cohort", membership.cohort, "cohort_type")
-    if not ct_name:
-        return
-    ct = frappe.get_cached_doc("Cohort Type", ct_name)
-    if not (ct.course and ct.auto_enroll_on_join):
-        return
-
-    pe = _member_active_pe(membership.person, ct.program)
-    if not pe:
-        return  # non-enrolled member (e.g. a pastor) — nothing to bill
-
-    # Already has a live enrollment for this course? Just record the tie.
-    existing = _live_cei(pe.name, ct.course)
-    if existing:
-        membership.db_set("course_enrollment", existing, update_modified=False)
-        return
-
-    from seminary.seminary.api import course_enroll
-    from seminary.seminary.required_enrollment import _open_offerings, _pick_offering
-
-    cs_name = _pick_offering(_open_offerings(ct.course), pe.academic_term)
-    if not cs_name:
-        return  # no open offering yet — nothing to enroll into
-
-    try:
-        result = course_enroll(pe.name, cs_name)
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"cohort auto-enroll failed (membership={membership.name}, course={ct.course})",
-        )
-        return
-
-    cei = (result or {}).get("name")
-    if cei:
-        membership.db_set("course_enrollment", cei, update_modified=False)
+def course_cohort_binding(course_schedule):
+    """Return (course, cohort_type) for a Course Schedule whose Course forms
+    community cohorts. `cohort_type` is None when the course is not cohort-forming
+    (or has no type set); `course` is None only when the schedule is unknown."""
+    course = frappe.db.get_value("Course Schedule", course_schedule, "course")
+    if not course:
+        return None, None
+    binding = frappe.db.get_value(
+        "Course", course, ["forms_community_cohort", "cohort_type"], as_dict=True
+    )
+    if not binding or not (binding.forms_community_cohort and binding.cohort_type):
+        return course, None
+    return course, binding.cohort_type
 
 
-def _member_active_pe(person, program=None):
-    """The member's active Program Enrollment (optionally within the type's
-    program), resolved Person → Student → Program Enrollment."""
-    student = frappe.db.get_value("Student", {"person": person}, "name")
-    if not student:
+def student_person(student):
+    """Resolve a Student to its Person (ADR 042 spine), or None."""
+    return frappe.db.get_value("Student", student, "person")
+
+
+def instructor_person(instructor):
+    """Resolve an Instructor to its Person, or None."""
+    return frappe.db.get_value("Instructor", instructor, "person")
+
+
+def active_cohort_of_type(person, cohort_type):
+    """The cohort (name) of `cohort_type` in which this person has an active
+    membership, if any — the dedup key across a 1→2→3 course sequence."""
+    if not (person and cohort_type):
         return None
-    filters = {"student": student, "pgmenrol_active": 1, "docstatus": 1}
-    if program:
-        filters["program"] = program
-    pe_name = frappe.db.get_value("Program Enrollment", filters, "name")
-    if not pe_name:
+    cohorts = frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "active": 1},
+        pluck="cohort",
+    )
+    if not cohorts:
         return None
     return frappe.db.get_value(
-        "Program Enrollment", pe_name, ["name", "academic_term"], as_dict=True
+        "Cohort", {"name": ["in", cohorts], "cohort_type": cohort_type}, "name"
     )
 
 
-def _live_cei(pe_name, course):
+def pending_cohort_of_type(person, cohort_type):
+    """The cohort (name) of `cohort_type` this person has a pending (Invited)
+    membership in, if any — used to report placement status."""
+    if not (person and cohort_type):
+        return None
+    cohorts = frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "invite_status": "Invited"},
+        pluck="cohort",
+    )
+    if not cohorts:
+        return None
+    return frappe.db.get_value(
+        "Cohort", {"name": ["in", cohorts], "cohort_type": cohort_type}, "name"
+    )
+
+
+def cohorts_persist():
+    """Seminary-wide toggle: do students stay in their cohort across courses?"""
+    return bool(
+        frappe.db.get_single_value(
+            "Seminary Settings", "cohorts_persist_across_courses"
+        )
+    )
+
+
+def live_cei_for_student_course(student, course):
+    """The student's live Course Enrollment Individual for `course` (via any
+    active Program Enrollment), for recording the audit tie on the membership.
+    Optional — returns None when there is no live enrollment."""
+    pe_name = frappe.db.get_value(
+        "Program Enrollment",
+        {"student": student, "pgmenrol_active": 1, "docstatus": 1},
+        "name",
+    )
+    if not pe_name:
+        return None
     return frappe.db.get_value(
         "Course Enrollment Individual",
         {
