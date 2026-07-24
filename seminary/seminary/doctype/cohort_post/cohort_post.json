@@ -235,6 +235,10 @@
   },
   {
    "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
    "role": "Alumni"
   }
  ],
