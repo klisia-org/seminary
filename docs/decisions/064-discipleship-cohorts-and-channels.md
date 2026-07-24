@@ -37,8 +37,8 @@ Three doctypes, mirroring the spine/role/membership separation the codebase alre
 
 | Doctype | Key fields |
 |---|---|
-| **Cohort Type** (guardrail template) | `type_name`, `category` (Student / Pastor-Mentoring / Alumni-Peer / Mixed), `program` (Link, nullable), `course` (Link → Course, filtered by the program's courses), `auto_enroll_on_join` (Check), `open_enrollment` (Check), `allow_self_split` (Check), `default_visibility` (cohort_only / portal_users), `default_max_size` (Int), `default_channels` (Table MultiSelect → Cohort Channel), `graduates_to` (Link → Cohort Type, nullable) |
-| **Cohort** | `cohort_name`, `leader` (Link → Person), `cohort_type` (Link), `parent_cohort` (Link → Cohort, nullable = root), `lineage_root` (Link → Cohort, denormalized, set on create, immutable), `status` (Active / Archived), `visibility` (defaults from type), `max_size` (defaults from type) |
+| **Cohort Type** (guardrail template) | `type_name`, `category` (Student / Pastor-Mentoring / Alumni-Peer / Mixed), `program` (Link, nullable), `open_enrollment` (Check), `allow_self_split` (Check), `default_visibility` (cohort_only / portal_users), `default_max_size` (Int), `graduates_to` (Link → Cohort Type, nullable). The course binding lives on **Course** (`forms_community_cohort` + `cohort_type`), not here — see §6. |
+| **Cohort** | `cohort_name`, `leader` (Link → Person), `cohort_type` (Link), `parent_cohort` (Link → Cohort, nullable = root), `lineage_root` (Link → Cohort, denormalized, set on create, immutable), `root_distance` (Int), `status` (Active / Archived), `visibility` (defaults from type), `max_size` (defaults from type), `source_course_schedule` + `source_student_group` (provenance, §6) |
 | **Cohort Membership** (standalone, **not** a child table) | `cohort` (Link), `person` (Link), `role` (Mentor / Member), `is_leader` (Check), `invited_by` (Link → Person), `invite_status` (Invited / Active / Left / Removed), `course_enrollment` (Link → Course Enrollment Individual, read-only), `joined_on`, `left_on`, `active` (Check) |
 
 `lineage_root` is denormalized on creation (root → self; child → parent's root) so "show me this whole
@@ -191,17 +191,31 @@ doctypes carry `"module": "Seminary"`. Registered in `hooks.py` alongside the ex
 light portal `User` with the `Cohort Participant` role, scoped by §5 to their cohort(s) + portal-wide
 channels only.
 
-**Billing mirrors the Culminating Project pattern — no new financial seam.** When `Cohort Type.course`
-is set and `auto_enroll_on_join` is on, activating a membership **auto-enrolls the member's active
-Program Enrollment into that course** by reusing the existing primitive `course_enroll(pe_name,
-course_schedule)` — exactly how `enroll_in_project_course()`
-(`doctype/culminating_project/culminating_project.py`) and `required_enrollment.py` already do it.
-Billing then rides the **CEI's own** `on_submit` → `generate_enrollment_invoice()` →
-`FinancialBackend` → oikonomos ([ADR 063](063-financial-backend-boundary-and-bridge-apps.md)). The
-subsystem creates a CEI and lets the standard workflow invoice it; it **never names a billing
-doctype**. Auto-enroll is guarded to members with an active Program Enrollment; pastor-only members in
-a free cohort simply skip it. The membership's read-only `course_enrollment` link records the tie for
-audit and idempotency, mirroring `Culminating Project.course_enrollment`.
+**Enrollment drives cohort placement, not the reverse.** *(Superseded — see the revision note.)*
+The original design had a membership *cause* a course enrollment: when `Cohort Type.course` was set and
+`auto_enroll_on_join` was on, activating a membership auto-enrolled the member's Program Enrollment into
+that course. In practice seminaries work the other way — students register for the formation courses
+first, then get organized into cohorts. The direction is now reversed:
+
+- A **Course** carries `forms_community_cohort` + a `cohort_type` link (the binding moved off Cohort
+  Type, which dropped `course`/`auto_enroll_on_join`). Many courses in a sequence (Spiritual Formation
+  1, 2, 3…) point to one type.
+- Staff seed cohorts from the roster's **Student Groups** via the Configure Student Groups UI: a
+  **Community Cohort** section creates one `Cohort` per student group
+  (`create_cohorts_from_student_groups`), seeded with the group's students as active members
+  (Student → Person via ADR 042) and a leader — each group's instructor, or a chosen student. Groups
+  can be split single-gender at creation. Provenance is recorded on the cohort
+  (`source_course_schedule`, `source_student_group`); thereafter the cohort is independently managed.
+- `Seminary Settings.cohorts_persist_across_courses` (default on) keeps students in their cohort across
+  the sequence; the seeder dedups already-placed people so re-running on a later course is a no-op. A
+  `cohort_placement_status` reconciliation view surfaces enrolled-but-unplaced students for the
+  instructor to assign. The membership's `course_enrollment` link still records the CEI tie for audit.
+
+Billing is unchanged and independent: a course enrollment bills through the **CEI's own** `on_submit` →
+`generate_enrollment_invoice()` → `FinancialBackend` → oikonomos
+([ADR 063](063-financial-backend-boundary-and-bridge-apps.md)) whether or not a cohort is ever formed.
+The subsystem still **never names a billing doctype**. A later lifecycle concern (not yet built) is
+optional teardown of a cohort when its course ends under a persist-off policy.
 
 ### 7. Notifications avoid per-member fan-out; portal-wide threads foreground the cohort
 
@@ -256,7 +270,7 @@ a genuinely new concern this app has not had before.
 4. **Prayer & journal** — prayer channel + `prayer_*` flags; active/answered views; `private`/`direct` visibility; journal linkage that resurfaces reflections when a prayer is answered.
 5. **Sermon Lab** — video-timestamp channel reusing the anchor model.
 6. **Exegetical Insight** — segment parser + passage reader + verse-anchored comments + per-user preferred Bible version.
-7. **Billing wiring** — `Cohort Type.course` + `auto_enroll_on_join` → `course_enroll` on activation → CEI/FinancialBackend.
+7. **Course-driven cohort seeding** — `Course.forms_community_cohort` + `cohort_type`; the Community Cohort section of Configure Student Groups seeds one cohort per student group (gender-split option, instructor/student leader), with a placement-reconciliation view. Course enrollment bills independently via the CEI/FinancialBackend seam (§6).
 8. **Pastor onboarding** — invite flow, `Cohort Participant` role + new portal, comms invites.
 9. **Portal-wide engagement + moderation** — extra-cohort posts, intra-cohort ranking, `Cohort Content Flag` queue + Leader/Staff moderation, blocking/pinning.
 

@@ -109,6 +109,8 @@
   "internship_share_credits",
   "internship_share_gpa",
   "internship_share_expected_graduation",
+  "community_cohort_section",
+  "cohorts_persist_across_courses",
   "has_oikonomos"
  ],
  "fields": [
@@ -760,6 +762,18 @@
    "fieldname": "internship_share_expected_graduation",
    "fieldtype": "Check",
    "label": "Share Applicant's Expected Graduation"
+  },
+  {
+   "fieldname": "community_cohort_section",
+   "fieldtype": "Section Break",
+   "label": "Community / Discipleship"
+  },
+  {
+   "default": "1",
+   "description": "Students remain in their community cohort after completing the course. When on, creating cohorts from a later course in a sequence won't re-place students who already belong to a cohort of that type.",
+   "fieldname": "cohorts_persist_across_courses",
+   "fieldtype": "Check",
+   "label": "Cohorts persist across courses"
   },
   {
    "fieldname": "has_oikonomos",

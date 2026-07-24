@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "field:type_name",
  "creation": "2026-07-22 12:00:00",
- "description": "Template that sets the defaults and rules for a family of cohorts: default visibility and size, whether members auto-enroll into a backing course, and whether leaders may split their cohort.",
+ "description": "Template that sets the defaults and rules for a family of cohorts: default visibility and size, and whether leaders may split their cohort.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -15,8 +15,6 @@
   "graduates_to",
   "academic_section",
   "program",
-  "course",
-  "auto_enroll_on_join",
   "policy_section",
   "open_enrollment",
   "allow_self_split",
@@ -68,26 +66,11 @@
    "label": "Academic Binding"
   },
   {
-   "description": "Optional program context for cohorts of this type.",
+   "description": "Optional program context for cohorts of this type. Courses that form cohorts of this type point here via their Cohort Type field.",
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
    "options": "Program"
-  },
-  {
-   "description": "Backing course. When set together with Auto-Enroll on Join, a joining member is enrolled into this course and billed like any other course enrollment. Should be one of the program's courses.",
-   "fieldname": "course",
-   "fieldtype": "Link",
-   "label": "Course",
-   "options": "Course"
-  },
-  {
-   "default": "0",
-   "depends_on": "eval: doc.course",
-   "description": "Auto-enroll a joining member (with an active Program Enrollment) into the backing course.",
-   "fieldname": "auto_enroll_on_join",
-   "fieldtype": "Check",
-   "label": "Auto-Enroll on Join"
   },
   {
    "fieldname": "policy_section",
