@@ -1279,13 +1279,16 @@ def create_external_examiner_role():
 
 def create_cohort_participant_role():
     """Portal role for invited cohort participants (e.g. pastors mentored by
-    alumni). No desk access; record-level scoping in
-    seminary.seminary.discipleship.permissions limits them to their cohorts and
-    portal-wide channels."""
+    alumni). desk_access=1 like Student/Alumni — the SPA lives at /seminary and
+    the participants are System Users, so they need desk access to query the
+    community doctypes and to avoid an error at /app; record-level scoping in
+    seminary.seminary.discipleship.permissions confines them to their cohorts."""
     if not frappe.db.exists("Role", "Cohort Participant"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 0}
+            {"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 1}
         ).save()
+    elif not frappe.db.get_value("Role", "Cohort Participant", "desk_access"):
+        frappe.db.set_value("Role", "Cohort Participant", "desk_access", 1)
 
 
 def seed_cohort_reaction_types():

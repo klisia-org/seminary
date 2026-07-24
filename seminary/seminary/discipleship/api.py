@@ -34,7 +34,11 @@ def _grant_participant_role(user):
             "Has Role", {"parent": user, "role": COHORT_PARTICIPANT_ROLE}
         )
     ):
-        frappe.get_doc("User", user).add_roles(COHORT_PARTICIPANT_ROLE)
+        # A leader inviting a pastor is a non-staff portal user; add_roles() saves
+        # the User, so it needs elevated permissions like the rest of onboarding.
+        u = frappe.get_doc("User", user)
+        u.flags.ignore_permissions = True
+        u.add_roles(COHORT_PARTICIPANT_ROLE)
 
 
 def _ensure_participant_user(person_doc):
@@ -51,6 +55,10 @@ def _ensure_participant_user(person_doc):
     else:
         u = frappe.get_doc(
             {
+                # System User like Student/Alumni portal users — the Cohort
+                # Participant role carries desk_access so they don't error at
+                # /app, and get_list works (Website Users can't query these
+                # doctypes). They're still redirected to /seminary/community.
                 "doctype": "User",
                 "email": email,
                 "first_name": person_doc.first_name or email,
@@ -164,20 +172,28 @@ def _assert_room(cohort):
 
 @frappe.whitelist()
 def invite_member(
-    cohort, person=None, email=None, first_name=None, last_name=None, role="Member"
+    cohort,
+    person=None,
+    email=None,
+    first_name=None,
+    last_name=None,
+    mobile=None,
+    role="Member",
 ):
-    """Invite a Person into a cohort. Provide an existing `person`, or an `email`
-    (with optional name) to get-or-create one via ensure_person. The row starts
-    Invited/inactive until accepted."""
+    """Invite a Person into a cohort. Provide an existing `person`, or a name +
+    email (+ optional mobile) to get-or-create one via ensure_person, so the
+    Person and User are created properly up front. Starts Invited until login."""
     inviter = _require_leader(cohort)
     if role not in ("Member", "Mentor"):
         frappe.throw(_("Role must be Member or Mentor."))
     _assert_room(cohort)
 
     if not person:
-        if not email:
-            frappe.throw(_("Provide a person or an email to invite."))
-        person = ensure_person(email, first_name=first_name, last_name=last_name)
+        if not (email and first_name):
+            frappe.throw(_("A first name and email are required to invite someone."))
+        person = ensure_person(
+            email, first_name=first_name, last_name=last_name, mobile=mobile
+        )
 
     existing = frappe.db.exists(
         "Cohort Membership",
@@ -218,6 +234,67 @@ def accept_invite(membership):
     _assert_room(doc.cohort)
     doc.invite_status = "Active"
     doc.joined_on = today()
+    doc.save(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
+def resend_invite(membership):
+    """Re-deliver a pending invite (In-App + Email) — for a leader to nudge."""
+    doc = frappe.get_doc("Cohort Membership", membership)
+    _require_leader(doc.cohort)
+    if doc.invite_status != "Invited":
+        frappe.throw(_("This membership is not a pending invite."))
+    person_doc = frappe.get_doc("Person", doc.person)
+    _ensure_participant_user(person_doc)  # in case the account wasn't provisioned
+    person_doc.reload()
+    _deliver_invite(doc, person_doc)
+    return True
+
+
+@frappe.whitelist()
+def my_pending_invites():
+    """The caller's pending cohort invitations — drives the in-app accept/decline
+    banner (reliable where an after-login hook is not, e.g. first login via a
+    password-reset link)."""
+    person = find_person(user=frappe.session.user)
+    if not person:
+        return []
+    out = []
+    for m in frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "invite_status": "Invited"},
+        fields=["name", "cohort", "invited_by"],
+    ):
+        out.append(
+            {
+                "membership": m.name,
+                "cohort": m.cohort,
+                "cohort_name": frappe.db.get_value("Cohort", m.cohort, "cohort_name")
+                or m.cohort,
+                "invited_by": (
+                    frappe.db.get_value("Person", m.invited_by, "full_name")
+                    if m.invited_by
+                    else None
+                ),
+            }
+        )
+    return out
+
+
+@frappe.whitelist()
+def decline_invite(membership):
+    """Decline a pending invite (callable by the invited person or staff)."""
+    doc = frappe.get_doc("Cohort Membership", membership)
+    user = frappe.session.user
+    if not _is_staff(user) and find_person(user=user) != doc.person:
+        frappe.throw(
+            _("You can only decline your own invitation."), frappe.PermissionError
+        )
+    if doc.invite_status != "Invited":
+        frappe.throw(_("This membership is not a pending invite."))
+    doc.invite_status = "Removed"
+    doc.left_on = today()
     doc.save(ignore_permissions=True)
     return doc.name
 
@@ -370,12 +447,15 @@ def cohort_members(cohort):
     members = []
     for m in frappe.get_all(
         "Cohort Membership",
-        filters={"cohort": cohort, "active": 1},
-        fields=["name", "person", "role", "is_leader", "joined_on"],
+        filters={"cohort": cohort, "invite_status": ["in", ["Active", "Invited"]]},
+        fields=["name", "person", "role", "is_leader", "joined_on", "invite_status"],
     ):
         info = (
             frappe.db.get_value(
-                "Person", m.person, ["full_name", "primary_email"], as_dict=True
+                "Person",
+                m.person,
+                ["full_name", "primary_email", "primary_mobile"],
+                as_dict=True,
             )
             or {}
         )
@@ -385,8 +465,10 @@ def cohort_members(cohort):
                 "person": m.person,
                 "name": info.get("full_name") or m.person,
                 "email": info.get("primary_email"),
+                "mobile": info.get("primary_mobile"),
                 "role": m.role,
                 "is_leader": m.is_leader,
+                "invite_status": m.invite_status,
                 "joined_on": m.joined_on,
                 "last_visited": frappe.db.get_value(
                     "Cohort Feed Read State",
@@ -402,7 +484,14 @@ def cohort_members(cohort):
                 ),
             }
         )
-    members.sort(key=lambda x: (0 if x["is_leader"] else 1, x["name"] or ""))
+    # leaders first, then active members, then pending invites; then by name
+    members.sort(
+        key=lambda x: (
+            0 if x["is_leader"] else 1,
+            0 if x["invite_status"] == "Active" else 1,
+            x["name"] or "",
+        )
+    )
     can_lead = _is_staff(user) or bool(
         frappe.db.exists(
             "Cohort Membership",

@@ -53,9 +53,11 @@
 					class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
 					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
 				</select>
-				<button v-if="cohorts.length > 1 && selectedCohort" :title="__('Save as default cohort')"
-					class="text-ink-gray-5 hover:text-ink-gray-8" @click="setDefaultCohort">
-					<Star class="h-4 w-4" />
+				<button v-if="cohorts.length > 1 && selectedCohort"
+					:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
+					@click="setDefaultCohort">
+					<Star class="h-4 w-4"
+						:class="defaultCohort === selectedCohort ? 'fill-current text-yellow-500' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
 				</button>
 				<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
 					<template #prefix><Megaphone class="h-4 w-4" /></template>
@@ -72,7 +74,22 @@
 			</div>
 		</div>
 
-		<div v-if="!cohorts.length" class="mt-16 text-center text-ink-gray-5">
+		<!-- pending invitations banner -->
+			<div v-if="pendingRes.data?.length" class="mb-4 flex flex-col gap-2">
+				<div v-for="inv in pendingRes.data" :key="inv.membership"
+					class="flex flex-wrap items-center gap-3 rounded-md border border-outline-gray-3 bg-surface-gray-1 px-3 py-2 text-sm">
+					<Mail class="h-4 w-4 shrink-0 text-ink-gray-6" />
+					<span class="text-ink-gray-8">
+						{{ __('You’re invited to') }} <b>{{ inv.cohort_name }}</b><span v-if="inv.invited_by"> {{ __('by') }} {{ inv.invited_by }}</span>.
+					</span>
+					<div class="ml-auto flex gap-2">
+						<Button variant="solid" :label="__('Accept')" :loading="acceptInviteRes.loading" @click="acceptInvite(inv)" />
+						<Button :label="__('Decline')" :loading="declineInviteRes.loading" @click="declineInvite(inv)" />
+					</div>
+				</div>
+			</div>
+
+			<div v-if="!cohorts.length && !pendingRes.data?.length" class="mt-16 text-center text-ink-gray-5">
 			{{ __('You are not part of any cohort yet.') }}
 		</div>
 
@@ -475,11 +492,18 @@
 		<Dialog v-model="showMembers" :options="{ title: __('My cohort'), size: 'xl' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
-					<div v-if="membersRes.data?.is_leader" class="flex flex-wrap items-center gap-2">
-						<Input v-model="inviteEmail" type="text" :placeholder="__('Invite by email')" class="w-56"
-							@keyup.enter="inviteMember" />
-						<Button variant="solid" :label="__('Invite')" :loading="inviteRes.loading" @click="inviteMember" />
-						<Button v-if="membersRes.data?.allow_split" :label="__('Split cohort')" @click="openSplit" />
+					<div v-if="membersRes.data?.is_leader" class="flex flex-col gap-2 rounded-md border border-outline-gray-2 p-2">
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-medium text-ink-gray-6">{{ __('Invite someone') }}</span>
+							<Button v-if="membersRes.data?.allow_split" variant="subtle" :label="__('Split cohort')" @click="openSplit" />
+						</div>
+						<div class="flex flex-wrap items-center gap-2">
+							<Input v-model="inviteDraft.first_name" type="text" :placeholder="__('First name *')" class="w-32" />
+							<Input v-model="inviteDraft.last_name" type="text" :placeholder="__('Last name')" class="w-32" />
+							<Input v-model="inviteDraft.email" type="text" :placeholder="__('Email *')" class="w-48" @keyup.enter="inviteMember" />
+							<Input v-model="inviteDraft.mobile" type="text" :placeholder="__('Phone (optional)')" class="w-36" />
+							<Button variant="solid" :label="__('Invite')" :loading="inviteRes.loading" @click="inviteMember" />
+						</div>
 					</div>
 					<table class="w-full text-sm">
 						<thead>
@@ -495,7 +519,9 @@
 							<tr v-for="m in membersRes.data?.members || []" :key="m.person" class="border-t border-outline-gray-1">
 								<td class="py-1.5">
 									<div class="font-medium text-ink-gray-9">
-										{{ m.name }}<span v-if="m.is_leader" class="ml-1 text-xs text-ink-gray-5">({{ __('leader') }})</span>
+										{{ m.name }}
+										<span v-if="m.is_leader" class="ml-1 text-xs text-ink-gray-5">({{ __('leader') }})</span>
+										<span v-if="m.invite_status === 'Invited'" class="ml-1 rounded bg-surface-gray-2 px-1.5 text-xs text-ink-gray-6">{{ __('invited') }}</span>
 									</div>
 									<a v-if="m.email" :href="'mailto:' + m.email" class="text-xs text-ink-blue-3 hover:underline">{{ m.email }}</a>
 								</td>
@@ -503,7 +529,14 @@
 								<td class="text-ink-gray-6">{{ m.last_visited ? timeAgo(m.last_visited) : '—' }}</td>
 								<td class="text-ink-gray-6">{{ m.last_post_on ? timeAgo(m.last_post_on) : '—' }}</td>
 								<td class="text-right">
-									<button v-if="membersRes.data?.is_leader && !m.is_leader"
+									<div v-if="membersRes.data?.is_leader && m.invite_status === 'Invited'"
+										class="flex items-center justify-end gap-2 text-xs">
+										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="resendInvite(m)">{{ __('Re-send') }}</button>
+										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="copyInvite(m)">{{ __('Copy') }}</button>
+										<a v-if="m.mobile" :href="whatsappUrl(m)" target="_blank" rel="noopener" class="text-green-600 hover:underline">WhatsApp</a>
+										<a :href="telegramUrl(m)" target="_blank" rel="noopener" class="text-blue-500 hover:underline">Telegram</a>
+									</div>
+									<button v-else-if="membersRes.data?.is_leader && !m.is_leader"
 										class="text-xs text-ink-gray-6 hover:text-ink-gray-9" @click="makeLeader(m)">
 										{{ __('Make leader') }}
 									</button>
@@ -592,7 +625,7 @@ const savedOnly = ref(false)
 const searchQuery = ref('')
 const showPassage = ref(false)
 const showMembers = ref(false)
-const inviteEmail = ref('')
+const inviteDraft = reactive({ first_name: '', last_name: '', email: '', mobile: '' })
 const expandedBook = ref(null)
 const expandedChapter = ref(null)
 const passageFilter = ref(null)
@@ -625,10 +658,18 @@ const cohortsRes = createResource({
 		}
 	},
 })
+const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')
 function setDefaultCohort() {
 	if (!selectedCohort.value) return
-	localStorage.setItem('community:defaultCohort', selectedCohort.value)
-	createToast({ title: __('Default cohort saved.'), icon: 'check' })
+	if (defaultCohort.value === selectedCohort.value) {
+		localStorage.removeItem('community:defaultCohort')
+		defaultCohort.value = ''
+		createToast({ title: __('Default cohort cleared.'), icon: 'check' })
+	} else {
+		localStorage.setItem('community:defaultCohort', selectedCohort.value)
+		defaultCohort.value = selectedCohort.value
+		createToast({ title: __('Default cohort saved.'), icon: 'check' })
+	}
 }
 const channelsRes = createResource({
 	url: 'seminary.seminary.discipleship.feed_api.list_channels',
@@ -678,6 +719,10 @@ const toggleSaveRes = createResource({ url: 'seminary.seminary.discipleship.feed
 const passageRes = createResource({ url: 'seminary.seminary.integrations.bible.passage_text' })
 const membersRes = createResource({ url: 'seminary.seminary.discipleship.api.cohort_members' })
 const inviteRes = createResource({ url: 'seminary.seminary.discipleship.api.invite_member' })
+const resendRes = createResource({ url: 'seminary.seminary.discipleship.api.resend_invite' })
+const pendingRes = createResource({ url: 'seminary.seminary.discipleship.api.my_pending_invites', auto: true })
+const acceptInviteRes = createResource({ url: 'seminary.seminary.discipleship.api.accept_invite' })
+const declineInviteRes = createResource({ url: 'seminary.seminary.discipleship.api.decline_invite' })
 const reassignRes = createResource({ url: 'seminary.seminary.discipleship.api.reassign_leader' })
 const splitRes = createResource({ url: 'seminary.seminary.discipleship.api.split_cohort' })
 const bibleTree = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_books' })
@@ -880,12 +925,55 @@ function openMembers() {
 	showMembers.value = true
 	membersRes.fetch({ cohort: selectedCohort.value })
 }
+function acceptInvite(inv) {
+	acceptInviteRes.submit({ membership: inv.membership }).then(() => {
+		pendingRes.reload()
+		cohortsRes.reload()
+		createToast({ title: __('Joined {0}.').format(inv.cohort_name), icon: 'check' })
+	})
+}
+function declineInvite(inv) {
+	declineInviteRes.submit({ membership: inv.membership }).then(() => {
+		pendingRes.reload()
+		createToast({ title: __('Invitation declined.'), icon: 'check' })
+	})
+}
 function inviteMember() {
-	if (!inviteEmail.value.trim()) return
+	if (!inviteDraft.first_name.trim() || !inviteDraft.email.trim())
+		return createToast({ title: __('First name and email are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
 	inviteRes
-		.submit({ cohort: selectedCohort.value, email: inviteEmail.value.trim() })
-		.then(() => { inviteEmail.value = ''; membersRes.fetch({ cohort: selectedCohort.value }); createToast({ title: __('Invitation sent.'), icon: 'check' }) })
+		.submit({
+			cohort: selectedCohort.value,
+			first_name: inviteDraft.first_name.trim(),
+			last_name: inviteDraft.last_name.trim() || null,
+			email: inviteDraft.email.trim(),
+			mobile: inviteDraft.mobile.trim() || null,
+		})
+		.then(() => {
+			Object.assign(inviteDraft, { first_name: '', last_name: '', email: '', mobile: '' })
+			membersRes.fetch({ cohort: selectedCohort.value })
+			createToast({ title: __('Invitation sent.'), icon: 'check' })
+		})
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+}
+function resendInvite(m) {
+	resendRes.submit({ membership: m.membership }).then(() => createToast({ title: __('Invite re-sent.'), icon: 'check' }))
+}
+function inviteMessage(m) {
+	const cohortName = cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
+	const url = window.location.origin + '/seminary/community'
+	return __('Hi {0}, you are invited to join the cohort "{1}". Sign in at {2} to accept — first time? use "Forgot password" to set your password.')
+		.format(m.name || '', cohortName, url)
+}
+function copyInvite(m) {
+	navigator.clipboard?.writeText(inviteMessage(m)).then(() => createToast({ title: __('Invite copied.'), icon: 'check' }))
+}
+function whatsappUrl(m) {
+	return `https://wa.me/${(m.mobile || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(inviteMessage(m))}`
+}
+function telegramUrl(m) {
+	const url = window.location.origin + '/seminary/community'
+	return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(inviteMessage(m))}`
 }
 function makeLeader(m) {
 	if (!window.confirm(__('Make this person the cohort leader?'))) return
