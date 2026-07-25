@@ -1,0 +1,198 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:PIMP-{YY}-{#####}",
+ "creation": "2026-07-25 12:00:00",
+ "description": "Onboard people in bulk. Provide a spreadsheet of contact details plus role checkboxes; the tool creates the Person and every requested role record in the correct order (Person, User, Student -> Customer, Instructor, Alumni, Donor, permission roles). Validate with Dry-Run, then submit to commit.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "batch_status",
+  "send_welcome_emails",
+  "column_break_header",
+  "default_language",
+  "default_country",
+  "source_section",
+  "source_file",
+  "image_match_html",
+  "rows_section",
+  "rows",
+  "audit_section",
+  "import_summary",
+  "committed_on",
+  "committed_by",
+  "column_break_audit",
+  "notes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Draft",
+   "description": "Draft → Dry-Run Clean (validation passed or overridden) → Committing (async) → Committed (submitted).",
+   "fieldname": "batch_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch Status",
+   "options": "Draft\nDry-Run Clean\nCommitting\nCommitted",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Off (recommended for bulk) suppresses the welcome/login email new Users would otherwise receive. When on, Dry-Run also checks that an outgoing email account is configured.",
+   "fieldname": "send_welcome_emails",
+   "fieldtype": "Check",
+   "label": "Send Welcome Emails"
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Applied to rows that leave Language blank.",
+   "fieldname": "default_language",
+   "fieldtype": "Link",
+   "label": "Default Language",
+   "options": "Language"
+  },
+  {
+   "description": "Applied to rows that leave Country blank.",
+   "fieldname": "default_country",
+   "fieldtype": "Link",
+   "label": "Default Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "description": "CSV matching the downloadable template. Use 'Load Rows from File' to populate the grid.",
+   "fieldname": "source_file",
+   "fieldtype": "Attach",
+   "label": "Source CSV"
+  },
+  {
+   "fieldname": "image_match_html",
+   "fieldtype": "HTML",
+   "label": "Image Match"
+  },
+  {
+   "fieldname": "rows_section",
+   "fieldtype": "Section Break",
+   "label": "Rows"
+  },
+  {
+   "fieldname": "rows",
+   "fieldtype": "Table",
+   "label": "Rows",
+   "options": "Person Import Row"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "audit_section",
+   "fieldtype": "Section Break",
+   "label": "Audit"
+  },
+  {
+   "allow_on_submit": 1,
+   "bold": 1,
+   "fieldname": "import_summary",
+   "fieldtype": "Small Text",
+   "label": "Import Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_on",
+   "fieldtype": "Datetime",
+   "label": "Committed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_by",
+   "fieldtype": "Link",
+   "label": "Committed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Person Import Batch",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-25 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person Import Batch",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

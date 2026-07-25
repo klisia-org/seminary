@@ -1,0 +1,336 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-07-25 12:00:00",
+ "description": "Child table of Person Import Batch. One row per human being onboarded, with the roles to grant them.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "primary_email",
+  "first_name",
+  "middle_name",
+  "last_name",
+  "primary_mobile",
+  "gender",
+  "country",
+  "language",
+  "image_filename",
+  "optional_section",
+  "address_line_1",
+  "address_line_2",
+  "city",
+  "state",
+  "pincode",
+  "date_of_birth",
+  "program_completed",
+  "class_year",
+  "roles_section",
+  "is_student",
+  "is_instructor",
+  "is_alumni",
+  "is_donor",
+  "column_break_roles",
+  "is_registrar",
+  "is_programchair",
+  "is_seminarymanager",
+  "results_section",
+  "row_status",
+  "messages",
+  "override_note",
+  "created_links_section",
+  "created_person",
+  "created_user",
+  "created_student",
+  "created_instructor",
+  "column_break_created",
+  "created_alumni",
+  "created_donor",
+  "created_customer",
+  "assigned_roles"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "description": "The match/identity key. One Person is resolved per email (ADR 042). Format is validated during Dry-Run, not at save, so bad values can be staged and reported.",
+   "fieldname": "primary_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Primary Email",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "First Name"
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name"
+  },
+  {
+   "columns": 1,
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Last Name"
+  },
+  {
+   "fieldname": "primary_mobile",
+   "fieldtype": "Data",
+   "label": "Primary Mobile"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "options": "Language"
+  },
+  {
+   "description": "Bare filename only (e.g. john.jpg). Match it by uploading the photos via the batch's 'Upload Images' button; the file is attached to the Person on commit.",
+   "fieldname": "image_filename",
+   "fieldtype": "Data",
+   "label": "Image Filename"
+  },
+  {
+   "fieldname": "optional_section",
+   "fieldtype": "Section Break",
+   "label": "Optional Details"
+  },
+  {
+   "description": "Mailing address, stored on the Person (and the Student, when the row is a student).",
+   "fieldname": "address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State / Province"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Postal Code"
+  },
+  {
+   "description": "YYYY-MM-DD. Format/validity is checked in Dry-Run (not at save) so bad values can be staged and reported. Stored on the Student record; non-student rows are warned that DOB has no home.",
+   "fieldname": "date_of_birth",
+   "fieldtype": "Data",
+   "label": "Date of Birth"
+  },
+  {
+   "description": "Alumni only — the Program name this person graduated from. Existence is checked in Dry-Run and enforced at commit.",
+   "fieldname": "program_completed",
+   "fieldtype": "Data",
+   "label": "Program Completed"
+  },
+  {
+   "description": "Alumni only — graduating class year (e.g. 2024).",
+   "fieldname": "class_year",
+   "fieldtype": "Data",
+   "label": "Class Year"
+  },
+  {
+   "fieldname": "roles_section",
+   "fieldtype": "Section Break",
+   "label": "Roles"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "is_student",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Student"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_instructor",
+   "fieldtype": "Check",
+   "label": "Instructor"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_alumni",
+   "fieldtype": "Check",
+   "label": "Alumni"
+  },
+  {
+   "default": "0",
+   "description": "Requires the frappe_giving app. Skipped with a warning when absent.",
+   "fieldname": "is_donor",
+   "fieldtype": "Check",
+   "label": "Donor"
+  },
+  {
+   "fieldname": "column_break_roles",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Grants the Registrar desk role to the person's User.",
+   "fieldname": "is_registrar",
+   "fieldtype": "Check",
+   "label": "Registrar"
+  },
+  {
+   "default": "0",
+   "description": "Grants the Program Chair desk role to the person's User.",
+   "fieldname": "is_programchair",
+   "fieldtype": "Check",
+   "label": "Program Chair"
+  },
+  {
+   "default": "0",
+   "description": "Grants the Seminary Manager desk role to the person's User.",
+   "fieldname": "is_seminarymanager",
+   "fieldtype": "Check",
+   "label": "Seminary Manager"
+  },
+  {
+   "collapsible": 1,
+   "description": "Populated by Dry-Run and Commit.",
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Results"
+  },
+  {
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "row_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Row Status",
+   "no_copy": 1,
+   "options": "Pending\nValid\nWarning\nError\nCommitted",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "messages",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Messages",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Reason for accepting a row the dry-run flagged as a Warning. Unblocks commit for that row.",
+   "fieldname": "override_note",
+   "fieldtype": "Small Text",
+   "label": "Override Note"
+  },
+  {
+   "fieldname": "created_links_section",
+   "fieldtype": "Section Break",
+   "label": "Created Records"
+  },
+  {
+   "fieldname": "created_person",
+   "fieldtype": "Link",
+   "label": "Created Person",
+   "no_copy": 1,
+   "options": "Person",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_user",
+   "fieldtype": "Link",
+   "label": "Created User",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_student",
+   "fieldtype": "Link",
+   "label": "Created Student",
+   "no_copy": 1,
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_instructor",
+   "fieldtype": "Link",
+   "label": "Created Instructor",
+   "no_copy": 1,
+   "options": "Instructor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_created",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_alumni",
+   "fieldtype": "Link",
+   "label": "Created Alumni Profile",
+   "no_copy": 1,
+   "options": "Alumni Profile",
+   "read_only": 1
+  },
+  {
+   "description": "Donor name (frappe_giving). Stored as text so the field never depends on the optional app being installed.",
+   "fieldname": "created_donor",
+   "fieldtype": "Data",
+   "label": "Created Donor",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Customer name created by the oikonomos bridge on Student save. Stored as text (optional app).",
+   "fieldname": "created_customer",
+   "fieldtype": "Data",
+   "label": "Created Customer",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "assigned_roles",
+   "fieldtype": "Small Text",
+   "label": "Assigned Roles",
+   "no_copy": 1,
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-25 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person Import Row",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
