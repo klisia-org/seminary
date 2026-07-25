@@ -44,8 +44,12 @@ const config = getPortalConfig()
 const { user, signOut } = useSession()
 
 const visiblePortals = computed(() => {
-	const userRoles = user.value?.roles || []
+	const session = user.value
+	const userRoles = session?.roles || []
 	return config.portals.filter((p) => {
+		// Optional capability gate: a portal may declare `when(session)` to hide
+		// itself unless some feature is present (e.g. an optional app being installed).
+		if (typeof p.when === 'function' && !p.when(session)) return false
 		if (!p.roles || p.roles.length === 0) return true
 		return p.roles.some((r) => userRoles.includes(r))
 	})

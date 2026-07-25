@@ -100,7 +100,7 @@
    "label": "Image"
   },
   {
-   "default": "0",
+   "default": "1",
    "description": "Hide this person from public website rosters (e.g. \"Our Team\"). Use for staff serving in security-sensitive or restricted-access contexts. Does not affect desk or portal visibility.",
    "fieldname": "block_from_web",
    "fieldtype": "Check",
@@ -333,7 +333,8 @@
    "group": "Roles",
    "link_doctype": "Partner Contact",
    "link_fieldname": "person",
-   "parent_doctype": "Partner Organization"
+   "parent_doctype": "Partner Organization",
+   "table_fieldname": "contacts"
   }
  ],
  "modified": "2026-06-19 18:30:00.000000",
