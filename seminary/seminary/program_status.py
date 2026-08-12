@@ -108,6 +108,13 @@ def set_program_status(
             pe_doc, to_status, reason, effective_date, source_doctype, source_name
         )
 
+    # This spine writes with db_set, which bypasses Program Enrollment's
+    # on_update_after_submit — recompute candidacy here or the flag keeps
+    # whatever value it held before the status changed.
+    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
+    evaluate_candidacy_safe(pe_doc.name)
+
     return pe_doc
 
 

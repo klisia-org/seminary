@@ -30,6 +30,8 @@ class GraduationRequest(Document):
         self._guard_name_edits_after_review()
 
     def before_submit(self):
+        from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
         program = frappe.get_cached_doc("Program", self.program)
         if not program.students_can_request_graduation:
             frappe.throw(
@@ -37,16 +39,12 @@ class GraduationRequest(Document):
                     self.program
                 )
             )
-        if not program.graduation_request_trigger:
-            frappe.throw(
-                _("Program {0} has no graduation_request_trigger configured.").format(
-                    self.program
-                )
-            )
-        candidate = frappe.db.get_value(
-            "Program Enrollment", self.program_enrollment, "grad_candidate"
-        )
-        if not candidate:
+        # An unset graduation_request_trigger is not a veto — it resolves to the
+        # default (see graduation_candidate.resolve_request_trigger), so a
+        # program that was never explicitly configured still graduates students.
+        # Candidacy is recomputed here rather than read off the enrollment: the
+        # stored flag is hook-maintained and several paths bypass those hooks.
+        if not evaluate_candidacy_safe(self.program_enrollment):
             frappe.throw(
                 _(
                     "Student is not yet a graduation candidate on enrollment {0}. "

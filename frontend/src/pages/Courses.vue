@@ -9,6 +9,12 @@
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
     <!-- To Do Column -->
     <div class="w-full lg:w-1/4 p-4">
+      <!--
+        Optional Aretenic surface (ADR 030). Above the assessment to-dos because a feedback window
+        closes and does not reopen, while an assignment can be caught up on (decisions/035 §6).
+      -->
+      <OpenQuestionnairesPanel />
+
       <h2 class="text-lg font-semibold text-ink-gray-9">{{ __('To Do') }}</h2>
       <hr class="border-outline-gray-2 mb-4" />
       <div v-if="isStudent || isInstructor">
@@ -99,6 +105,7 @@ import { createResource, Badge } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
 import { usersStore } from '../stores/user'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
+import OpenQuestionnairesPanel from '@/components/OpenQuestionnairesPanel.vue'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 
 const user = inject('$user')
