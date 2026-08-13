@@ -2127,13 +2127,23 @@ def get_program_audit(program_enrollment):
     result["graduation_eligible"] = graduation_eligible
 
     # Graduation Request CTA inputs (consumed by ProgramAudit.vue).
+    from seminary.seminary.graduation_candidate import (
+        evaluate_candidacy_safe,
+        resolve_request_trigger,
+    )
+
     result["students_can_request_graduation"] = bool(
         getattr(program, "students_can_request_graduation", 0)
     )
-    result["graduation_request_trigger"] = (
-        getattr(program, "graduation_request_trigger", None) or None
-    )
-    result["grad_candidate"] = bool(pe.grad_candidate)
+    result["graduation_request_trigger"] = resolve_request_trigger(program)
+    # Recompute rather than trusting the stored flag: `grad_candidate` is
+    # maintained by hooks that several paths bypass (status changes go through
+    # set_program_status's db_set, and a program's graduation config can be
+    # turned on long after the student enrolled), so a stale 0 would silently
+    # hide the CTA from a student who is in fact a candidate. The evaluator
+    # persists the fresh value itself; we use its return so the answer is right
+    # even on a request whose write never commits.
+    result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
     result["graduation_request"] = _active_graduation_request_summary(pe.name)
     result["student_phonetic_name"] = (
         frappe.db.get_value("Student", pe.student, "phonetic_name") or ""
@@ -2200,7 +2210,6 @@ def create_graduation_request(
             "student",
             "program",
             "expected_graduation_date",
-            "grad_candidate",
             "docstatus",
             "pgmenrol_active",
         ],
@@ -2231,14 +2240,15 @@ def create_graduation_request(
     program_flags = frappe.db.get_value(
         "Program",
         pe.program,
-        ["students_can_request_graduation", "graduation_request_trigger"],
+        ["students_can_request_graduation"],
         as_dict=True,
     )
     if not program_flags or not program_flags.students_can_request_graduation:
         frappe.throw(_("This program does not allow Graduation Requests."))
-    if not program_flags.graduation_request_trigger:
-        frappe.throw(_("This program has no graduation request trigger configured."))
-    if not pe.grad_candidate:
+    # Recompute instead of reading the stored flag — see get_program_audit.
+    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
+    if not evaluate_candidacy_safe(pe.name):
         frappe.throw(_("Not yet a graduation candidate."))
 
     if phonetic_name:

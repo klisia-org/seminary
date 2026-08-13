@@ -32,6 +32,37 @@ class Program(WebsiteGenerator):
         self._stamp_course_disabled_on()
         self._validate_course_term_and_credits()
 
+    def on_update(self):
+        # WebsiteGenerator.on_update drives the search-index refresh; same
+        # reason validate() calls super — skipping it silently breaks the
+        # program's web page indexing.
+        super().on_update()
+        self._recompute_candidacy_on_graduation_config_change()
+
+    def _recompute_candidacy_on_graduation_config_change(self):
+        """Re-evaluate every active enrollment when the graduation-request
+        config changes. `grad_candidate` is otherwise only refreshed by
+        enrollment-side hooks, so turning the feature on for an existing program
+        would leave students who already finished their courses stuck at 0.
+
+        Enqueued: the fan-out is one evaluation per active enrollment and must
+        not make saving the Program slow. Nothing user-facing waits on it — the
+        audit page and the request endpoint recompute candidacy on read — so
+        this only settles the stored flag that reports read.
+        """
+        before = self.get_doc_before_save()
+        if not before:
+            return
+        watched = ("students_can_request_graduation", "graduation_request_trigger")
+        if all(before.get(f) == self.get(f) for f in watched):
+            return
+        frappe.enqueue(
+            "seminary.seminary.graduation_candidate.recompute_for_program",
+            queue="long",
+            program=self.name,
+            enqueue_after_commit=True,
+        )
+
     def _hydrate_graduation_gpa_default(self):
         """Default min_graduation_gpa from the Program Level, but keep it
         overridable: pull the level's value only on create or when the level

@@ -150,8 +150,12 @@
 
     <CLOAssessmentMapperModal v-if="hasAretenic" v-model="showCloMapper" :course="course.data?.course"
       :courseSchedule="props.courseName" :scheduledAssessCriteria="activeCriteria?.name"
-      :assessmentType="activeCriteria?.type" :criteriaTitle="activeCriteria?.title" />
+      :assessmentType="activeCriteria?.type" :criteriaTitle="activeCriteria?.title"
+      @saved="cloCoverageKey++" />
   </div>
+
+  <!-- The reverse view, next to where the mapping is actually authored (decisions/034 section 4). -->
+  <CLOCoveragePanel v-if="hasAretenic" :courseSchedule="props.courseName" :refreshKey="cloCoverageKey" />
 </template>
 
 <script setup>
@@ -162,6 +166,7 @@ import { Trash2, Target } from 'lucide-vue-next'
 import { updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperModal.vue'
+import CLOCoveragePanel from '@/components/CLOCoveragePanel.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
 
@@ -178,6 +183,8 @@ const show = defineModel()
 const hasAretenic = computed(() => !!user?.data?.has_aretenic)
 const showCloMapper = ref(false)
 const activeCriteria = ref(null)
+// Bumped when a mapping is saved, so the coverage panel below reflects it without a page reload.
+const cloCoverageKey = ref(0)
 
 function openCloMapper(criteria) {
   activeCriteria.value = criteria

@@ -167,6 +167,22 @@ const routes = [
     props: true,
   },
   {
+    // Optional Aretenic surface (ADR 030). Renders an explanatory empty state when the app is
+    // absent or no report exists yet, so the route is harmless either way.
+    path: "/courses/:courseName/outcome-report",
+    name: "CourseOutcomeReport",
+    component: () => import('@/pages/CourseOutcomeReport.vue'),
+    props: true,
+  },
+  {
+    // Optional Aretenic surface (ADR 030). No token appears on this path — end-of-course feedback
+    // is portal-only, so the invitation resolves from the session (decisions/035 section 7).
+    path: "/courses/:courseName/feedback",
+    name: "CourseFeedback",
+    component: () => import('@/pages/CourseFeedback.vue'),
+    props: true,
+  },
+  {
 		path: '/courses/:courseName/learn/:chapterNumber-:lessonNumber',
 		name: 'Lesson',
 		component: () => import('@/pages/Lesson.vue'),
