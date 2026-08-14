@@ -4298,6 +4298,49 @@ def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
 
 
 @frappe.whitelist()
+def update_chapter_index(course, chapter, idx):
+    """Move a chapter to position `idx` in its course's outline.
+
+    Chapter order is the order of the Course Schedule's `chapters` child rows,
+    so reordering rewrites that table — the same shape as reordering lessons
+    inside a chapter."""
+    _assert_can_edit_outline(course)
+    idx = max(cint(idx) or 1, 1)
+
+    course_doc = frappe.get_doc("Course Schedule", course)
+    rows = [row.chapter for row in course_doc.chapters if row.chapter != chapter]
+    if len(rows) == len(course_doc.chapters):
+        frappe.throw(_("Chapter {0} not found in course {1}").format(chapter, course))
+
+    idx = min(idx, len(rows) + 1)
+    rows.insert(idx - 1, chapter)
+
+    course_doc.set("chapters", [])
+    for chapter_name in rows:
+        course_doc.append("chapters", {"chapter": chapter_name})
+    course_doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"message": _("Chapter index updated successfully.")}
+
+
+def _assert_can_edit_outline(course):
+    """Mirror of the outline editor's client-side gate (CourseOutline's
+    `allowEdit`): a course-editing role, or an instructor on this course."""
+    from seminary.seminary.utils import is_instructor
+
+    roles = set(frappe.get_roles())
+    if roles & {"Seminary Manager", "Program Chair", "Instructor", "System Manager"}:
+        return
+    if is_instructor(course):
+        return
+    frappe.throw(
+        _("You are not permitted to edit this course outline."),
+        frappe.PermissionError,
+    )
+
+
+@frappe.whitelist()
 def GradeableDiscussion(courseName, discussionID):
     count = frappe.db.sql(
         """select count(c.name)

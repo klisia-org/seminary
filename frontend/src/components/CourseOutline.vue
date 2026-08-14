@@ -11,9 +11,20 @@
 		<div :class="{
 			'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
 		}">
-			<Disclosure v-slot="{ open }" v-for="(chapter, index) in outline.data" :key="chapter.name"
-				:defaultOpen="openChapterDetail(chapter.idx)">
-				<DisclosureButton ref="" class="flex w-full items-center p-2 group">
+			<template v-for="(chapter, index) in outline.data" :key="chapter.name">
+			<div v-if="props.allowEdit"
+				class="mx-2 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
+				@dragover.prevent="onChapterDragOver($event)" @drop.prevent="onChapterDrop($event, index)">
+			</div>
+			<Disclosure v-slot="{ open }" :defaultOpen="openChapterDetail(chapter.idx)">
+				<!-- Rendered as a div, not the default button: Firefox and Safari do
+				     not reliably start a native drag from a <button>. role/tabindex
+				     keep it keyboard-operable — headlessui already wires the
+				     click/keydown handlers and aria-expanded. -->
+				<DisclosureButton as="div" role="button" tabindex="0"
+					class="flex w-full items-center p-2 group"
+					:class="{ 'cursor-grab': props.allowEdit }" :draggable="props.allowEdit"
+					@dragstart="onChapterDragStart($event, chapter, index)" @dragend="onChapterDragFinish">
 					<ChevronRight :class="{
 						'rotate-90 transform duration-200': open,
 						'duration-200': !open,
@@ -24,7 +35,7 @@
 						@click="redirectToChapter(chapter)">
 						{{ chapter.chapter_title }}
 					</div>
-					<div v-if="props.allowEdit" class="ml-auto flex space-x-4">
+					<div v-if="props.allowEdit" class="ml-auto flex items-center space-x-4">
 						<Tooltip :text="__('Edit Chapter')" placement="bottom">
 							<FilePenLine @click.prevent="openChapterModal(chapter)"
 								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible" />
@@ -33,6 +44,8 @@
 							<Trash2 @click.prevent="trashChapter(chapter.name)"
 								class="h-4 w-4 text-red-500 invisible group-hover:visible" />
 						</Tooltip>
+						<GripVertical class="h-4 w-4 text-ink-gray-5 invisible group-hover:visible"
+							aria-hidden="true" />
 					</div>
 				</DisclosureButton>
 				<DisclosurePanel v-if="!chapter.is_scorm_package">
@@ -130,6 +143,13 @@
 					</div>
 				</DisclosurePanel>
 			</Disclosure>
+			</template>
+			<div v-if="props.allowEdit && outline.data?.length"
+				class="mx-2 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
+				@dragover.prevent="onChapterDragOver($event)"
+				@drop.prevent="onChapterDrop($event, outline.data.length)">
+				{{ __('Drop here to move to the end of the course') }}
+			</div>
 		</div>
 	</div>
 	<ChapterModal v-model="showChapterModal" v-model:outline="outline" :course="courseName"
@@ -164,6 +184,7 @@ const user = inject('$user')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const draggedLesson = ref(null); // Use a ref to store the dragged lesson
+const draggedChapter = ref(null); // Same, for a chapter being reordered
 
 const props = defineProps({
 	courseName: {
@@ -234,6 +255,24 @@ const updateLessonIndex = createResource({
 	onSuccess() {
 		outline.reload()
 		toast.success(__('Lesson moved successfully'))
+	},
+})
+
+const updateChapterIndex = createResource({
+	url: 'seminary.seminary.api.update_chapter_index',
+	makeParams(values) {
+		return {
+			course: props.courseName,
+			chapter: values.chapter,
+			idx: parseInt(values.idx, 10),
+		}
+	},
+	onSuccess() {
+		outline.reload()
+		toast.success(__('Chapter moved successfully'))
+	},
+	onError(err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not move the chapter'))
 	},
 })
 
@@ -398,5 +437,61 @@ const onDrop = (event, chapter, targetIndex) => {
 
 const onDragFinish = () => {
 	draggedLesson.value = null
+}
+
+const onChapterDragStart = (event, chapter, chapterIndex) => {
+	if (!props.allowEdit) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move'
+		event.dataTransfer.setData('text/plain', chapter.name)
+	}
+	draggedChapter.value = {
+		chapterName: chapter.name,
+		sourceIndex: chapterIndex,
+	}
+}
+
+const onChapterDragOver = (event) => {
+	// Guarded on draggedChapter so a lesson dragged over a chapter drop zone
+	// is not accepted there (and vice versa in onDragOver).
+	if (!props.allowEdit || !draggedChapter.value) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.dropEffect = 'move'
+	}
+}
+
+const onChapterDrop = (event, targetIndex) => {
+	if (!props.allowEdit || !draggedChapter.value) {
+		return
+	}
+	event?.preventDefault?.()
+
+	const { chapterName, sourceIndex } = draggedChapter.value
+
+	// Removing the chapter first shifts every later slot down by one.
+	let insertionIndex = targetIndex
+	if (targetIndex > sourceIndex) {
+		insertionIndex = targetIndex - 1
+	}
+
+	if (insertionIndex === sourceIndex) {
+		draggedChapter.value = null
+		return
+	}
+
+	updateChapterIndex.submit({
+		chapter: chapterName,
+		idx: insertionIndex + 1,
+	})
+
+	draggedChapter.value = null
+}
+
+const onChapterDragFinish = () => {
+	draggedChapter.value = null
 }
 </script>
