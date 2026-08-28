@@ -30,6 +30,10 @@ from .constants import (
     EXAM_FIELDS,
     EXAM_QUESTION_FIELDS,
     EXPORT_ROLES,
+    COURSE_COMPETENCY_DIMENSION_FIELDS,
+    COURSE_COMPETENCY_FIELDS,
+    ASSESSMENT_DIMENSION_WEIGHT_FIELDS,
+    GRADING_SCALE_DIMENSION_FIELDS,
     GRADING_SCALE_FIELDS,
     GRADING_SCALE_INTERVAL_FIELDS,
     LESSON_FIELDS,
@@ -245,7 +249,36 @@ class _Exporter:
             "intervals": [
                 self._pick(r, GRADING_SCALE_INTERVAL_FIELDS) for r in gs.intervals
             ],
+            "dimensions": [
+                self._pick(r, GRADING_SCALE_DIMENSION_FIELDS)
+                for r in (gs.get("gradingscaledimensions") or [])
+            ],
         }
+
+    def _competencies(self):
+        """Course competencies travel with the pack (ADR 065).
+
+        They are course-level curriculum, not a per-offering choice, so a pack
+        without them would import a competency-based course that cannot be
+        graded. Keyed by competency_code, which is the stable identifier
+        assessments and chapters are remapped against on import.
+        """
+        rows = []
+        for name in frappe.get_all(
+            "Course Competency", filters={"course": self.cs.course}, pluck="name"
+        ):
+            doc = frappe.get_doc("Course Competency", name)
+            rows.append(
+                {
+                    "src_name": name,
+                    "fields": self._pick(doc, COURSE_COMPETENCY_FIELDS),
+                    "dimensions": [
+                        self._pick(d, COURSE_COMPETENCY_DIMENSION_FIELDS)
+                        for d in (doc.dimensions or [])
+                    ],
+                }
+            )
+        return rows
 
     def _add_assessment_criteria(self, name):
         if not name or name in self.assessment_criteria:
@@ -282,6 +315,7 @@ class _Exporter:
             "chapters": chapters,
             "lessons": lessons,
             "scac": scac,
+            "competencies": self._competencies(),
         }
         return manifest
 
@@ -290,6 +324,20 @@ class _Exporter:
         for row in self.cs.courseassescrit_sc:
             rec = {"src_name": row.name, "fields": self._pick(row, SCAC_FIELDS)}
             rec["assesscriteria_scac"] = row.assesscriteria_scac
+            # Carried by code, not by record name: the competency is recreated
+            # on the target site with a different name (ADR 065).
+            rec["competency_code"] = (
+                frappe.db.get_value(
+                    "Course Competency", row.course_competency, "competency_code"
+                )
+                if row.get("course_competency")
+                else None
+            )
+            rec["dimension_weights"] = frappe.get_all(
+                "Assessment Dimension Weight",
+                filters={"assess_criteria": row.name},
+                fields=list(ASSESSMENT_DIMENSION_WEIGHT_FIELDS),
+            )
             self._add_assessment_criteria(row.assesscriteria_scac)
             for field, doctype in _ACTIVITY_LINK_FIELDS:
                 value = row.get(field)
@@ -319,6 +367,19 @@ class _Exporter:
                 "fields": self._pick(ch, CHAPTER_FIELDS),
                 "scorm_media": None,
                 "lessons": [],
+                # By code, not by record name: the competency is recreated under
+                # a different name on the target site (ADR 065). This mapping is
+                # what gives a competency its place in the outline, and with it
+                # the end-of-competency self-assessment trigger and content
+                # gating, so a pack that dropped it would import a course whose
+                # pacing silently stopped working.
+                "competency_code": (
+                    frappe.db.get_value(
+                        "Course Competency", ch.course_competency, "competency_code"
+                    )
+                    if ch.get("course_competency")
+                    else None
+                ),
             }
             if ch.get("scorm_package"):
                 furl = frappe.db.get_value("File", ch.scorm_package, "file_url")

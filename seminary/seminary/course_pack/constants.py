@@ -132,8 +132,34 @@ SCAC_FIELDS = (
     "weight_scac",
     "extracredit_scac",
     "fudgepoints_scac",
+    "grading_mode_override",
 )  # assesscriteria_scac (stable key) + quiz/assignment/exam/discussion remapped;
-# due_date and lesson label intentionally dropped (per-instance)
+# due_date and lesson label intentionally dropped (per-instance).
+# course_competency is a Link to a per-course record, so it is remapped on import
+# by competency_code rather than carried as a raw name (ADR 065).
+
+# Per-dimension weights travel with the assessment: they say what the activity
+# measures, which is part of the course design rather than a per-offering choice.
+ASSESSMENT_DIMENSION_WEIGHT_FIELDS = (
+    "dimension_code",
+    "weight",
+)
+
+# Competencies are course-level curriculum, so a course pack that omitted them
+# would import a competency-based course that cannot be graded.
+COURSE_COMPETENCY_FIELDS = (
+    "competency_code",
+    "competency_name",
+    "sequence",
+    "statement",
+    "is_active",
+)
+
+COURSE_COMPETENCY_DIMENSION_FIELDS = (
+    "dimension_code",
+    "demonstrated_by",
+    "weight",
+)
 
 GRADING_SCALE_FIELDS = (
     "grading_scale_name",
@@ -153,6 +179,15 @@ GRADING_SCALE_INTERVAL_FIELDS = (
     "threshold",
     "grade_description",
     "grade_pass",
+)
+
+# A competency scale's dimensions are part of its vocabulary: without them an
+# imported competency has no dimension to describe (ADR 065).
+GRADING_SCALE_DIMENSION_FIELDS = (
+    "dimension",
+    "dimension_code",
+    "sequence",
+    "description",
 )
 
 # Activity doctypes referenced from lesson content, keyed by the EditorJS block

@@ -1,0 +1,196 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "ACG-.#######",
+ "creation": "2026-08-29 09:00:00.000000",
+ "description": "One evaluator's proficiency level for one student on one graded activity. Several evaluators may grade the same activity, and a school may collect a level per dimension.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#activity-grades",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "roster",
+  "student",
+  "course_schedule",
+  "column_break_acg1",
+  "assess_criteria",
+  "course_competency",
+  "dimension_code",
+  "grade_section",
+  "instructor",
+  "instructor_category",
+  "column_break_acg2",
+  "level_code",
+  "level_value",
+  "graded_on",
+  "narrative_section",
+  "narrative"
+ ],
+ "fields": [
+  {
+   "fieldname": "roster",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Roster",
+   "options": "Scheduled Course Roster",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_acg1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The graded activity this level is for.",
+   "fieldname": "assess_criteria",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency",
+   "read_only": 1
+  },
+  {
+   "description": "Leave blank when the level covers the whole activity rather than one dimension.",
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension Code"
+  },
+  {
+   "fieldname": "grade_section",
+   "fieldtype": "Section Break",
+   "label": "Grade"
+  },
+  {
+   "description": "The mentor giving this level. Students do not grade activities; their self-assessment is recorded on the competency instead.",
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Evaluator",
+   "options": "Instructor",
+   "reqd": 1
+  },
+  {
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "label": "Evaluator Type",
+   "options": "Instructor Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_acg2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "A grade code from the competency scale, for example Developing or Competent.",
+   "fieldname": "level_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Level",
+   "reqd": 1
+  },
+  {
+   "fieldname": "level_value",
+   "fieldtype": "Float",
+   "label": "Level Value",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "narrative_section",
+   "fieldtype": "Section Break",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "narrative",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-29 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Activity Competency Grade",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

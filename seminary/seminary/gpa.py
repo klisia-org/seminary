@@ -139,14 +139,39 @@ def _convert_to_gpa_points(pec, scale, basis):
         return _clamp(pts, 0, basis)
 
     if scale.grscale_type == "Descriptive":
-        if not pec.pec_finalgradecode:
+        return _points_from_code(pec, scale, basis)
+
+    if scale.grscale_type == "Competency-based education":
+        # Most competency-based programs report levels and no GPA at all, so the
+        # framework decides (ADR 065 section 7). When it does want one, the
+        # arithmetic is the Descriptive path unchanged: the level's threshold is
+        # its point value. send_grades also sets count_in_gpa to match, so a
+        # non-GPA row leaves the denominator too rather than being silently
+        # dropped from the numerator only.
+        if not _framework_emits_gpa(pec):
             return None
-        for interval in scale.intervals or []:
-            if interval.grade_code == pec.pec_finalgradecode:
-                return _clamp(float(interval.threshold or 0), 0, basis)
-        return None
+        return _points_from_code(pec, scale, basis)
 
     return None
+
+
+def _points_from_code(pec, scale, basis):
+    """Grade points read off the matching interval's threshold."""
+    if not pec.pec_finalgradecode:
+        return None
+    for interval in scale.intervals or []:
+        if interval.grade_code == pec.pec_finalgradecode:
+            return _clamp(float(interval.threshold or 0), 0, basis)
+    return None
+
+
+def _framework_emits_gpa(pec):
+    if not pec.course:
+        return False
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(pec.course)
+    return bool(framework and framework.emit_gpa)
 
 
 def _resolve_honor(program, gpa):

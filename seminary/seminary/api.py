@@ -3320,6 +3320,22 @@ def grade_thisstudent(name):
         csr.save()
         return "done"
 
+    if grading_scale.grscale_type == "Competency-based education":
+        # rawscore_card holds a *level* (1-4), not a percentage, so there is no
+        # weighting to apply: the cell's grade is simply the level it landed on.
+        # The competency roll-up that produced it lives in cbe.py (ADR 065).
+        for row in detail:
+            if row.rawscore_card is not None:
+                row.grade = get_grade(grading_scale.name, row.rawscore_card)
+                row.score = row.rawscore_card
+                frappe.db.set_value(
+                    "Course Assess Results Detail",
+                    row.name,
+                    {"grade": row.grade, "score": row.score},
+                )
+        csr.save()
+        return "done"
+
 
 @frappe.whitelist()
 def get_gradepass(grading_scale, percentage):
@@ -3368,7 +3384,46 @@ def fgrade_this_std(name):
             {"fgrade": fgrade, "fgradepass": fgradepass},
         )
         return "done"
-    elif csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+
+    if grading_scale.grscale_type == "Competency-based education":
+        from seminary.seminary import cbe
+
+        # The course's standing is its competencies combined, not a sum of
+        # weighted percentages. Each Competency Result has already been through
+        # the ADR 065 section 6a pipeline, so this only combines them.
+        cbe.rollup_all_for_roster(csr)
+        results = frappe.get_all(
+            "Competency Result",
+            filters={"student": csr.student, "course_schedule": cs},
+            fields=["final_value"],
+        )
+        values = [r.final_value for r in results if r.final_value is not None]
+        framework = cbe.framework_doc(cs)
+        fscore = (
+            cbe.aggregate(
+                values,
+                framework.aggregation_method if framework else "Average",
+                None,
+                framework.rounding if framework else None,
+            )
+            if values
+            else None
+        )
+        fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
+        fgradepass = (
+            get_gradepass(grading_scale.name, fscore) if fscore is not None else None
+        )
+        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+            fgrade = grading_scale.fa_code
+            fgradepass = "Fail"
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            name,
+            {"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
+        )
+        return "done"
+
+    if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
         # Non-points scale: still honor the FA override.
         frappe.db.set_value(
             "Scheduled Course Roster",
@@ -3527,8 +3582,286 @@ def undo_fail_for_absence(name):
     return {"failed_for_absence": 0}
 
 
+# Sending grades writes transcript rows, awards credits and closes a section.
+# It had no role check at all before ADR 065 — any authenticated user, a student
+# included, could call it.
+GRADE_SEND_ROLES = {
+    "Instructor",
+    "Program Chair",
+    "Seminary Manager",
+    "Registrar",
+    "System Manager",
+}
+
+
+def _assert_may_send_grades():
+    if not (GRADE_SEND_ROLES & set(frappe.get_roles(frappe.session.user))):
+        frappe.throw(
+            _("Only teaching staff and the registrar can send grades."),
+            frappe.PermissionError,
+        )
+
+
+def _ungraded_roster_count(course_schedule, rosters=None):
+    """How many still-active students have an ungraded cell.
+
+    Already-finalized students are excluded for free: finalize_roster clears
+    `active`, and this counts only active rosters.
+    """
+    params = [course_schedule]
+    scope = ""
+    if rosters is not None:
+        if not rosters:
+            return 0
+        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+        params.extend(rosters)
+
+    rows = frappe.db.sql(
+        """
+        SELECT COUNT(DISTINCT scr.name)
+        FROM `tabCourse Assess Results Detail` card
+        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+        LEFT JOIN `tabCourse Enrollment Individual` cei
+            ON cei.coursesc_ce = scr.course_sc
+           AND cei.student_ce = scr.student
+           AND cei.docstatus = 1
+        WHERE scr.course_sc = %s
+          AND scr.active = 1
+          AND scr.audit_bool = 0
+          AND COALESCE(cei.course_cancelled, 0) = 0
+          AND COALESCE(card.graded_card, 0) = 0
+        """
+        + scope,
+        params,
+    )
+    return rows[0][0] if rows else 0
+
+
+def _assert_evaluators_finished(course_schedule, roster_names):
+    """Block a send while a required evaluator still owes a grade (ADR 065).
+
+    Named rather than counted: an instructor told only that "someone has not
+    graded" has to go hunting, which is the delay the whole mentor-resolution
+    design exists to remove.
+    """
+    from seminary.seminary import cbe
+
+    if not cbe.framework_for(course_schedule):
+        return
+    outstanding = []
+    for name in roster_names:
+        outstanding.extend(cbe.missing_required_evaluators(name))
+    if outstanding:
+        frappe.throw(
+            _("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20])
+        )
+
+
+def finalize_roster(roster_name):
+    """Finalize one student: grade, write the transcript row, award credits.
+
+    Extracted so send_grades and send_selected_grades cannot drift apart.
+
+    Idempotent by construction: it acts only on a roster that is still `active`
+    and clears the flag as its last step. That matters more than it looks —
+    credits are *accumulated* into Program Enrollment.totalcredits rather than
+    recomputed, so a second pass over the same roster would silently double a
+    student's credit total.
+
+    Returns the Program Enrollment it touched, or None when there was nothing
+    to do.
+    """
+    record = frappe.db.get_value(
+        "Scheduled Course Roster",
+        roster_name,
+        ["name", "course_sc", "student", "program_std_scr", "audit_bool", "active"],
+        as_dict=True,
+    )
+    if not record or record.audit_bool or not record.active:
+        return None
+
+    pe = frappe.db.get_value(
+        "Program Enrollment",
+        {"student": record.student, "program": record.program_std_scr},
+        "name",
+    )
+    if not pe:
+        return None
+    totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
+
+    grade_thisstudent(record.name)
+    fgrade_this_std(record.name)
+    fscore, fgrade, fgradepass = frappe.db.get_value(
+        "Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
+    )
+
+    pec = frappe.db.get_value(
+        "Program Enrollment Course",
+        {"parent": pe, "course": record.course_sc},
+        "name",
+    )
+    if not pec:
+        return None
+    credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
+    if fgradepass == "Fail":
+        credits = 0
+    # Leveling / remedial courses (ADR 058) never count toward the degree.
+    elif frappe.db.exists(
+        "Program Enrollment Leveling",
+        {"parent": pe, "course": record.course_sc, "kind": "Leveling Course"},
+    ):
+        credits = 0
+    newcredits = (int(totalcredits) if totalcredits else 0) + (
+        int(credits) if credits is not None else 0
+    )
+
+    values = {
+        "pec_finalgradenum": fscore,
+        "pec_finalgradecode": fgrade,
+        "status": fgradepass,
+    }
+    # Competency-based programs report levels, not a grade point average, unless
+    # the framework asks for one (ADR 065 section 7). Excluding the row from the
+    # denominator as well as the numerator is what keeps a mixed school's GPA
+    # honest rather than silently diluted.
+    gpa_flag = _cbe_count_in_gpa(record.course_sc)
+    if gpa_flag is not None:
+        values["count_in_gpa"] = gpa_flag
+
+    frappe.db.set_value("Program Enrollment Course", pec, values)
+    frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
+    frappe.db.set_value("Scheduled Course Roster", record.name, "active", 0)
+    return pe
+
+
+def _cbe_count_in_gpa(course_schedule):
+    """1/0 for a competency-based section, or None when the question does not apply."""
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return None
+    return 1 if framework.emit_gpa else 0
+
+
+def _conclude_enrollments(course_schedule, students=None):
+    filters = {
+        "coursesc_ce": course_schedule,
+        "workflow_state": "Submitted",
+        "docstatus": 1,
+    }
+    if students is not None:
+        if not students:
+            return
+        filters["student_ce"] = ("in", list(students))
+    frappe.db.set_value(
+        "Course Enrollment Individual",
+        filters,
+        "workflow_state",
+        "Concluded",
+        update_modified=False,
+    )
+
+
+def _post_finalization(pe_names):
+    from seminary.seminary.gpa import recompute_program_enrollment_gpa
+
+    for pe_name in pe_names:
+        _recalculate_emphasis_credits(pe_name)
+        _check_auto_grant_emphases(pe_name)
+        recompute_program_enrollment_gpa(pe_name)
+
+
+@frappe.whitelist()
+def send_selected_grades(course_schedule, rosters):
+    """Finalize some students without closing the section (ADR 065 section 7a).
+
+    Offered only for open-ended sections. Those serve a self-paced competency
+    framework, where by design there is no moment when everyone is done — so a
+    terminal-only operation would mean grades never reach the transcript, and
+    one student still working would hold every classmate's transcript row
+    hostage. Every dated section keeps its all-or-nothing guarantee.
+
+    `open_ended` is the only check needed: a section may only carry that flag
+    when its course sits in a self-paced competency-based program, which
+    CourseSchedule.validate_open_ended enforces at the source. Re-deriving the
+    pacing here would be a second condition that can fall out of step with the
+    first.
+    """
+    _assert_may_send_grades()
+
+    if isinstance(rosters, str):
+        rosters = json.loads(rosters)
+    rosters = [r for r in (rosters or [])]
+    if not rosters:
+        frappe.throw(_("Select at least one student."))
+
+    cs = frappe.db.get_value(
+        "Course Schedule",
+        course_schedule,
+        ["workflow_state", "open_ended"],
+        as_dict=True,
+    )
+    if not cs:
+        frappe.throw(_("Course Schedule {0} not found.").format(course_schedule))
+    if not cs.open_ended:
+        frappe.throw(
+            _(
+                "This section has an end date, so grades are sent for the whole "
+                "class at once. Sending grades for selected students is only "
+                "available for open-ended sections in self-paced programs."
+            )
+        )
+    if cs.workflow_state != "Grading":
+        frappe.throw(
+            _(
+                "Send Grades is only available while the course is in the "
+                "Grading state. Current state: {0}."
+            ).format(cs.workflow_state or _("(none)"))
+        )
+
+    stray = [
+        r
+        for r in rosters
+        if frappe.db.get_value("Scheduled Course Roster", r, "course_sc")
+        != course_schedule
+    ]
+    if stray:
+        frappe.throw(
+            _("These rosters do not belong to this section: {0}.").format(
+                ", ".join(stray)
+            )
+        )
+
+    missing_count = _ungraded_roster_count(course_schedule, rosters)
+    if missing_count:
+        frappe.throw(
+            _(
+                "Cannot send grades: {0} of the selected student(s) still have "
+                "ungraded assessments. Fill in all grades (or 0 explicitly) "
+                "before sending."
+            ).format(missing_count)
+        )
+    _assert_evaluators_finished(course_schedule, rosters)
+
+    finalized, students, pes = [], set(), set()
+    for roster_name in rosters:
+        student = frappe.db.get_value("Scheduled Course Roster", roster_name, "student")
+        pe = finalize_roster(roster_name)
+        if pe:
+            finalized.append(roster_name)
+            students.add(student)
+            pes.add(pe)
+
+    _conclude_enrollments(course_schedule, students)
+    _post_finalization(pes)
+
+    return {"finalized": len(finalized), "rosters": finalized}
+
+
 @frappe.whitelist()
 def send_grades(doc=None, **kwargs):
+    _assert_may_send_grades()
 
     if isinstance(doc, str):
         # Parse the JSON string if it's a string
@@ -3541,6 +3874,72 @@ def send_grades(doc=None, **kwargs):
     state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
     if state == "Closed":
         return "All grades sent"
+    if state != "Grading":
+        frappe.throw(
+            _(
+                "Send Grades is only available while the course is in the "
+                "Grading state. Current state: {0}."
+            ).format(state or _("(none)"))
+        )
+
+    missing_count = _ungraded_roster_count(docname)
+    if missing_count:
+        frappe.throw(
+            _(
+                "Cannot send grades: {0} student(s) still have ungraded "
+                "assessments. Fill in all grades (or 0 explicitly) before sending."
+            ).format(missing_count)
+        )
+
+    records = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": docname, "active": 1, "audit_bool": 0},
+        fields=["name"],
+    )
+    _assert_evaluators_finished(docname, [r.name for r in records])
+
+    affected_pes = set()
+    for record in records:
+        pe = finalize_roster(record.name)
+        if pe:
+            affected_pes.add(pe)
+
+    # System-driven transition: bypass the workflow validator (the "Send
+    # Grades" transition is intentionally absent from the workflow fixture
+    # so the Desk Action menu can't bypass the grade computation and PEC
+    # update above). Mirrors the cancel_course pattern.
+    frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
+
+    # Mirror the schedule's terminal "Closed" state onto each student's Course
+    # Enrollment Individual: with grades sent, every active enrollment in this
+    # section is now historical, so Submitted -> Concluded. System-driven like
+    # the schedule transition above (no Desk action, intentionally absent from
+    # the workflow fixture). Audit enrollments also sit in Submitted and are
+    # likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
+    # are left untouched — they never became active enrollments here. This is
+    # what makes "currently enrolled" = workflow_state == "Submitted".
+    _conclude_enrollments(docname)
+
+    # After grades are sent, recalculate track credits and check auto-grant emphases
+    _post_finalization(affected_pes)
+
+    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+    # after commit so a snapshot failure can never roll back grades. Seminary never requires
+    # aretenic (ADR 030/032). Partial sends deliberately produce no snapshot: an
+    # attainment record for a half-graded offering would be an auditable claim
+    # about something unfinished (ADR 065 section 7a).
+    from seminary.seminary.utils import _aretenic_enabled
+
+    if _aretenic_enabled():
+        frappe.enqueue(
+            "aretenic.attainment.snapshot_offering_on_send_grades",
+            queue="long",
+            enqueue_after_commit=True,
+            course_schedule=docname,
+        )
+
+    return "All grades sent"
     if state != "Grading":
         frappe.throw(
             _(
