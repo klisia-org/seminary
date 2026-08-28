@@ -337,21 +337,29 @@ doc_events = {
     "Scheduled Course Assess Criteria": {
         "on_update": "seminary.seminary.api.update_card",
     },
+    # before_insert on every submission: content gating (ADR 065) has to refuse
+    # the submission itself, not only hide the activity in the outline.
     "Quiz Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
         ],
     },
     "Exam Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
-        "before_insert": "seminary.seminary.api.sanitize_submission",
+        "before_insert": [
+            "seminary.seminary.cbe.assert_activity_unlocked",
+            "seminary.seminary.api.sanitize_submission",
+        ],
         "before_save": "seminary.seminary.api.sanitize_submission",
     },
     "Discussion Submission Replies": {
@@ -467,6 +475,9 @@ scheduler_events = {
     "daily": [
         "seminary.tasks.daily",
         "seminary.partner.internship.activate_due_placements",
+        # Content gating means a student who stops reflecting locks themselves
+        # out; nothing else would surface that (ADR 065).
+        "seminary.seminary.cbe.notify_stalled_self_assessments",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [

@@ -39,13 +39,15 @@
   {
    "fieldname": "dimension_icon",
    "fieldtype": "Attach Image",
-   "label": "Dimension Icon"
+   "label": "Dimension Icon",
+   "in_list_view": 1
   },
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description",
-   "translatable": 1
+   "translatable": 1,
+   "in_list_view": 1
   }
  ],
  "grid_page_length": 50,

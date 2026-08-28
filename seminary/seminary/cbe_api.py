@@ -774,3 +774,85 @@ def _pending_verdicts(roster_row, instructor, my_roles):
         if not done:
             pending.append({"competency": c.name, "label": c.competency_name})
     return pending
+
+
+# ---------------------------------------------------------------- outline
+
+
+@frappe.whitelist()
+def get_outline_competencies(course_schedule):
+    """Per-chapter competency guidance and lock state for the course outline.
+
+    One call rather than two: the panel and the lock are the same mapping seen
+    from different angles, and splitting them would let the outline render a
+    competency's descriptors above a chapter it has already decided is closed.
+
+    Staff see the competency panels with nothing locked -- gating is about a
+    student's own progress, and an instructor looking at the outline is not
+    walking through it.
+    """
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False, "chapters": {}}
+
+    chapters = frappe.get_all(
+        "Course Schedule Chapter",
+        filters={"coursesc": course_schedule, "course_competency": ("is", "set")},
+        fields=["name", "course_competency"],
+    )
+
+    student = _current_student()
+    gating = {"mode": framework.content_release_mode, "gated": False, "chapters": {}}
+    if student and not _is_staff():
+        roster = _roster_for(course_schedule, student)
+        if roster:
+            gating = cbe.visible_outline(roster)
+
+    out = {}
+    for ch in chapters:
+        competency = frappe.get_doc("Course Competency", ch.course_competency)
+        submitted = (
+            {
+                a.stage
+                for a in frappe.get_all(
+                    "Competency Assessment",
+                    filters={
+                        "student": student,
+                        "course_schedule": course_schedule,
+                        "course_competency": ch.course_competency,
+                        "evaluator_kind": "Self",
+                        "status": "Submitted",
+                    },
+                    fields=["stage"],
+                )
+            }
+            if student
+            else set()
+        )
+        state = gating["chapters"].get(ch.name, {})
+        out[ch.name] = {
+            "competency": ch.course_competency,
+            "competency_name": competency.competency_name,
+            "statement": competency.statement,
+            "dimensions": [
+                {
+                    "dimension_code": d.dimension_code,
+                    "dimension": d.dimension,
+                    "demonstrated_by": d.demonstrated_by,
+                }
+                for d in competency.dimensions
+            ],
+            "self_assessment_submitted": sorted(submitted),
+            "locked": bool(state.get("locked")),
+            "activities_locked": bool(state.get("activities_locked")),
+            "reason": state.get("reason"),
+            "unlock_competency": state.get("unlock_competency"),
+        }
+
+    return {
+        "is_cbe": True,
+        "mode": gating.get("mode"),
+        "gated": gating.get("gated", False),
+        "self_eval_enabled": cint(framework.course_self_eval),
+        "chapters": out,
+    }

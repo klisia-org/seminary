@@ -49,6 +49,61 @@
 					</div>
 				</DisclosureButton>
 				<DisclosurePanel v-if="!chapter.is_scorm_package">
+					<!-- Competency guidance and lock state (ADR 065). The student
+					     reads what they are being formed into in the same place
+					     they do the work, and a lock always says why. -->
+					<div v-if="competencyOf(chapter)" class="ml-8 mr-4 mb-3 rounded-lg border p-3"
+						:class="competencyOf(chapter).locked
+							? 'border-outline-gray-3 bg-surface-gray-1'
+							: 'border-outline-blue-2 bg-surface-blue-1'">
+						<div class="flex flex-wrap items-center gap-2">
+							<Lock v-if="competencyOf(chapter).locked" class="h-4 w-4 text-ink-gray-6" />
+							<span class="text-sm font-medium text-ink-gray-8">
+								{{ competencyOf(chapter).competency_name }}
+							</span>
+							<span v-if="competencyOf(chapter).self_assessment_submitted?.length"
+								class="rounded bg-surface-green-1 px-1.5 py-0.5 text-xs text-ink-green-3">
+								{{ __('Self-assessed') }}
+							</span>
+						</div>
+						<div v-if="competencyOf(chapter).statement"
+							class="prose-sm mt-1 text-ink-gray-6" v-html="competencyOf(chapter).statement" />
+						<dl v-if="!competencyOf(chapter).locked" class="mt-2 space-y-1">
+							<div v-for="d in competencyOf(chapter).dimensions" :key="d.dimension_code"
+								class="text-xs">
+								<dt class="inline font-medium text-ink-gray-7">{{ d.dimension }}:</dt>
+								<dd class="ml-1 inline text-ink-gray-6" v-html="d.demonstrated_by" />
+							</div>
+						</dl>
+						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">
+							{{ competencyOf(chapter).reason }}
+						</p>
+						<router-link v-if="competencyOf(chapter).unlock_competency" :to="{
+							name: 'CompetencySelfAssessment',
+							params: {
+								courseName: courseName,
+								competency: competencyOf(chapter).unlock_competency,
+							},
+						}">
+							<Button size="sm" variant="subtle" class="mt-2">
+								{{ __('Open that self-assessment') }}
+							</Button>
+						</router-link>
+						<router-link v-else-if="competencies.data?.self_eval_enabled" :to="{
+							name: 'CompetencySelfAssessment',
+							params: { courseName: courseName, competency: competencyOf(chapter).competency },
+						}">
+							<Button size="sm" variant="subtle" class="mt-2">
+								{{ __('Assess your own growth') }}
+							</Button>
+						</router-link>
+					</div>
+
+					<div v-if="competencyOf(chapter)?.locked" class="ml-8 mr-4 mb-4 text-sm text-ink-gray-5">
+						{{ __('The lessons in this chapter open once the previous self-assessment is in.') }}
+					</div>
+
+					<template v-else>
 					<div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson.name" class="lesson-wrapper">
 						<div v-if="props.allowEdit"
 							class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
@@ -101,6 +156,14 @@
 											>
 												{{ __('Graded') }}
 											</span>
+											<span
+												v-if="lesson.has_graded_activity && competencyOf(chapter)?.activities_locked"
+												class="flex items-center gap-1 rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6"
+												:title="competencyOf(chapter).reason"
+											>
+												<Lock class="h-3 w-3" />
+												{{ __('Locked') }}
+											</span>
 											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
 												class="h-4 w-4 text-ink-green-3"
 												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />
@@ -119,6 +182,7 @@
 							</div>
 						</div>
 					</div>
+					</template>
 					<div v-if="props.allowEdit"
 						class="ml-8 mr-4 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
 						@dragover.prevent="onDragOver($event)"
@@ -172,6 +236,7 @@ import {
 	Trash2,
 	FileUp,
 	GripVertical,
+	Lock,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDate } from '@/utils'
@@ -208,6 +273,19 @@ const props = defineProps({
 		default: false,
 	},
 })
+
+// Optional-feature gate: an ordinary section returns is_cbe false and every
+// panel below simply does not render.
+const competencies = createResource({
+	url: 'seminary.seminary.cbe_api.get_outline_competencies',
+	params: {
+		course_schedule: props.courseName,
+	},
+	auto: true,
+	onError: () => {},
+})
+
+const competencyOf = (chapter) => competencies.data?.chapters?.[chapter.name]
 
 const outline = createResource({
 	url: 'seminary.seminary.utils.get_course_outline',

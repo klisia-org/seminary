@@ -19,7 +19,7 @@ and each stage is stored, so a result can always be explained afterwards.
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, now_datetime
+from frappe.utils import cint, date_diff, flt, getdate, now_datetime, nowdate
 
 CBE_SCALE_TYPE = "Competency-based education"
 
@@ -849,3 +849,305 @@ def stamp_override(doc, method=None):
         if not doc.overridden_by:
             doc.overridden_by = frappe.session.user
             doc.overridden_on = now_datetime()
+
+
+# ---------------------------------------------------------------- content release
+
+PER_ACTIVITY = "Per activity (current rules)"
+CHAPTER_GATED = "Chapter unlocks after previous competency self-assessed"
+ACTIVITIES_GATED = (
+    "Content open, activities locked until previous competency self-assessed"
+)
+
+
+def _mapped_chapters(course_schedule):
+    """Chapters that deliver a competency, in outline order.
+
+    Order comes from Course Schedule Chapter Reference rather than the chapter
+    records themselves: the outline is what the student walks through, and it is
+    reorderable independently of when chapters were created.
+    """
+    refs = frappe.get_all(
+        "Course Schedule Chapter Reference",
+        filters={"parent": course_schedule, "parenttype": "Course Schedule"},
+        fields=["chapter", "idx"],
+        order_by="idx asc",
+    )
+    out = []
+    for ref in refs:
+        row = frappe.db.get_value(
+            "Course Schedule Chapter",
+            ref.chapter,
+            ["name", "chapter_title", "course_competency"],
+            as_dict=True,
+        )
+        if row:
+            row["idx"] = ref.idx
+            out.append(row)
+    return out
+
+
+def _self_assessment_submitted(student, course_schedule, competency, stage="Final"):
+    return bool(
+        frappe.db.exists(
+            "Competency Assessment",
+            {
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": competency,
+                "evaluator_kind": "Self",
+                "stage": stage,
+                "status": "Submitted",
+            },
+        )
+    )
+
+
+def visible_outline(roster):
+    """Which chapters and activities are open to this student, and why not.
+
+    Gating is decided here rather than in the page: a locked activity has to
+    refuse a submission too, and a rule enforced only in the Vue layer is not a
+    rule. The reason travels with the lock because a lock the student cannot
+    explain is worse than no lock at all.
+
+    Falls back to no gating whenever the course has not mapped competencies onto
+    chapters, since there would be nothing to gate on.
+    """
+    roster_doc = (
+        roster
+        if isinstance(roster, frappe.model.document.Document)
+        else frappe.get_doc("Scheduled Course Roster", roster)
+    )
+    framework = framework_doc(roster_doc.course_sc)
+    mode = framework.content_release_mode if framework else PER_ACTIVITY
+    chapters = _mapped_chapters(roster_doc.course_sc)
+    mapped = [c for c in chapters if c.course_competency]
+
+    result = {"mode": mode, "gated": False, "chapters": {}}
+    for c in chapters:
+        result["chapters"][c.name] = {
+            "chapter_title": c.chapter_title,
+            "competency": c.course_competency,
+            "locked": False,
+            "activities_locked": False,
+            "reason": None,
+            "unlock_competency": None,
+        }
+
+    if mode == PER_ACTIVITY or not mapped:
+        return result
+
+    result["gated"] = True
+    previous = None
+    for c in mapped:
+        # The first mapped chapter is always open: there is no prior competency
+        # to have reflected on.
+        if previous is not None and not _self_assessment_submitted(
+            roster_doc.student, roster_doc.course_sc, previous.course_competency
+        ):
+            entry = result["chapters"][c.name]
+            entry["unlock_competency"] = previous.course_competency
+            entry["reason"] = _(
+                "Opens once you have submitted your self-assessment for {0}."
+            ).format(
+                frappe.db.get_value(
+                    "Course Competency", previous.course_competency, "competency_name"
+                )
+                or previous.chapter_title
+            )
+            if mode == CHAPTER_GATED:
+                entry["locked"] = True
+                entry["activities_locked"] = True
+            else:
+                entry["activities_locked"] = True
+        previous = c
+    return result
+
+
+def _chapter_for_competency(course_schedule, competency):
+    return frappe.db.get_value(
+        "Course Schedule Chapter",
+        {"coursesc": course_schedule, "course_competency": competency},
+        "name",
+    )
+
+
+def assert_activity_unlocked(doc, method=None):
+    """Refuse a submission for an activity the student has not unlocked.
+
+    Hooked onto every submission doctype. Without it the gate would live only in
+    the outline, and a direct call would walk straight past it.
+    """
+    course_schedule = getattr(doc, "coursesc", None) or getattr(doc, "course", None)
+    criteria = getattr(doc, "course_assess", None)
+    student = getattr(doc, "student", None)
+    if not (course_schedule and criteria and student):
+        return
+    if not framework_for(course_schedule):
+        return
+
+    competency = frappe.db.get_value(
+        "Scheduled Course Assess Criteria", criteria, "course_competency"
+    )
+    if not competency:
+        return
+    chapter = _chapter_for_competency(course_schedule, competency)
+    if not chapter:
+        return
+
+    roster = frappe.db.get_value(
+        "Scheduled Course Roster",
+        {"course_sc": course_schedule, "student": student},
+        "name",
+    )
+    if not roster:
+        return
+
+    state = visible_outline(roster)["chapters"].get(chapter) or {}
+    if state.get("activities_locked"):
+        frappe.throw(
+            _("This activity is not open yet. {0}").format(state.get("reason") or ""),
+            frappe.PermissionError,
+        )
+
+
+# ---------------------------------------------------------------- escalation
+
+
+def _stall_clock_start(roster_doc, mapped, index):
+    """When the clock started for the self-assessment at `index`.
+
+    Measured from the previous competency's self-assessment, because that is
+    the moment the student could first have written this one. For the first
+    competency there is no such moment, so the section's start date stands in.
+    """
+    if index == 0:
+        return frappe.db.get_value(
+            "Course Schedule", roster_doc.course_sc, "c_datestart"
+        )
+    previous = mapped[index - 1].course_competency
+    return frappe.db.get_value(
+        "Competency Assessment",
+        {
+            "student": roster_doc.student,
+            "course_schedule": roster_doc.course_sc,
+            "course_competency": previous,
+            "evaluator_kind": "Self",
+            "stage": "Final",
+            "status": "Submitted",
+        },
+        "submitted_on",
+    )
+
+
+def stalled_self_assessments(course_schedule=None):
+    """Students sitting on an unsubmitted self-assessment past the framework's
+    patience. Returns the findings without sending anything, so the same
+    calculation backs both the job and any report of it."""
+    filters = {"active": 1, "audit_bool": 0}
+    if course_schedule:
+        filters["course_sc"] = course_schedule
+
+    findings = []
+    for r in frappe.get_all(
+        "Scheduled Course Roster",
+        filters=filters,
+        fields=["name", "student", "stuname_roster", "course_sc"],
+        limit=5000,
+    ):
+        framework = framework_doc(r.course_sc)
+        if not framework or not cint(framework.stall_escalation_days):
+            continue
+        if frappe.db.get_value("Course Schedule", r.course_sc, "workflow_state") in (
+            "Closed",
+            "Cancelled",
+            "Draft",
+        ):
+            continue
+
+        mapped = [c for c in _mapped_chapters(r.course_sc) if c.course_competency]
+        if not mapped:
+            continue
+
+        roster_doc = frappe.get_doc("Scheduled Course Roster", r.name)
+        for index, chapter in enumerate(mapped):
+            if _self_assessment_submitted(
+                r.student, r.course_sc, chapter.course_competency
+            ):
+                continue
+            started = _stall_clock_start(roster_doc, mapped, index)
+            if not started:
+                break  # the student has not reached this competency yet
+            overdue = date_diff(nowdate(), getdate(started))
+            if overdue > cint(framework.stall_escalation_days):
+                findings.append(
+                    {
+                        "roster": r.name,
+                        "student": r.student,
+                        "student_name": r.stuname_roster,
+                        "course_schedule": r.course_sc,
+                        "competency": chapter.course_competency,
+                        "chapter": chapter.name,
+                        "days_overdue": overdue,
+                    }
+                )
+            # Only the first outstanding competency matters: everything after it
+            # is blocked behind this one, and naming them all would bury it.
+            break
+    return findings
+
+
+def notify_stalled_self_assessments():
+    """Daily job: tell mentors when a student has stopped reflecting.
+
+    Content gating means a student who stops submitting self-assessments locks
+    themselves out of the course, and nothing else would surface that. Messages
+    are deduplicated per student, competency and day so a long stall produces
+    one note a day rather than a growing pile.
+    """
+    from seminary.seminary import comms
+
+    for item in stalled_self_assessments():
+        competency_name = (
+            frappe.db.get_value(
+                "Course Competency", item["competency"], "competency_name"
+            )
+            or item["competency"]
+        )
+        subject = _("{0} has not submitted a self-assessment").format(
+            item["student_name"]
+        )
+        message = _(
+            "{0} has not submitted their self-assessment for {1} in {2}. It has "
+            "been {3} days. Until they do, the rest of the course stays closed to "
+            "them."
+        ).format(
+            item["student_name"],
+            competency_name,
+            item["course_schedule"],
+            item["days_overdue"],
+        )
+        for evaluator in evaluators_for(item["roster"]):
+            person = frappe.db.get_value(
+                "Instructor", evaluator["instructor"], "person"
+            )
+            if not person:
+                continue
+            try:
+                comms.send_message(
+                    channel="In-App",
+                    subject=subject,
+                    message=message,
+                    person=person,
+                    category="Academic",
+                    reference_doctype="Scheduled Course Roster",
+                    reference_name=item["roster"],
+                    dedupe_key=(
+                        f"cbe-stall-{item['roster']}-{item['competency']}-{nowdate()}"
+                    ),
+                )
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(), "CBE stall notification failed"
+                )

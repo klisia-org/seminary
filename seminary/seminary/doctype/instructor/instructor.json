@@ -15,8 +15,8 @@
   "gender",
   "column_break_5",
   "status",
-  "department",
   "profileimage",
+  "default_inst_category",
   "hr_payroll_section",
   "instructor_type",
   "employee",
@@ -85,15 +85,6 @@
   {
    "fieldname": "column_break_5",
    "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "employee.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fieldname": "log_details",
@@ -218,11 +209,18 @@
    "fieldtype": "Datetime",
    "label": "Education Last Pushed to Employee",
    "read_only": 1
+  },
+  {
+   "description": "This is particularly useful for non-faculty instructors in CBE (nonacademic mentors).",
+   "fieldname": "default_inst_category",
+   "fieldtype": "Link",
+   "label": "Default Instructor Category",
+   "options": "Instructor Category"
   }
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-06-13 09:40:29.201303",
+ "modified": "2026-08-29 03:01:53.753415",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
