@@ -21,6 +21,8 @@
   "section_break_fa",
   "fa_code",
   "fa_gpa",
+  "competency_based_education_section",
+  "gradingscaledimensions",
   "grading_intervals_section",
   "intervals",
   "amended_from",
@@ -71,7 +73,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Type of Scale",
-   "options": "Points\nDescriptive",
+   "options": "Points\nDescriptive\nCompetency-based education",
    "reqd": 1,
    "translatable": 1
   },
@@ -127,11 +129,22 @@
    "fieldname": "fa_gpa",
    "fieldtype": "Check",
    "label": "Consider FA in GPA"
+  },
+  {
+   "fieldname": "competency_based_education_section",
+   "fieldtype": "Section Break",
+   "label": "Competency based education"
+  },
+  {
+   "fieldname": "gradingscaledimensions",
+   "fieldtype": "Table",
+   "label": "Grading Scale Dimensions",
+   "options": "Grading Scale Dimensions"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-30 15:49:11.463072",
+ "modified": "2026-08-28 18:49:47.792767",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Grading Scale",

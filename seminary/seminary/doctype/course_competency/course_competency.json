@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "format:{coursecode}-{competency_code}",
+ "creation": "2026-08-28 21:00:00.000000",
+ "description": "A competency a course develops, with a description of how it is demonstrated in each dimension. In competency-based education a course states one outcome and the competencies inside it are what students demonstrate.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#course-competencies",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "course",
+  "coursecode",
+  "competency_code",
+  "column_break_cc1",
+  "competency_name",
+  "sequence",
+  "is_active",
+  "statement_section",
+  "statement",
+  "dimensions_section",
+  "dimensions"
+ ],
+ "fields": [
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course",
+   "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.coursecode",
+   "fieldname": "coursecode",
+   "fieldtype": "Data",
+   "label": "Course Code",
+   "read_only": 1
+  },
+  {
+   "description": "Short, stable key for this competency, unique within the course. Used in record names and links, so avoid changing it once students have been assessed.",
+   "fieldname": "competency_code",
+   "fieldtype": "Data",
+   "label": "Competency Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cc1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "competency_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Competency Name",
+   "reqd": 1,
+   "translatable": 1
+  },
+  {
+   "description": "Order in which this competency is developed within the course.",
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sequence"
+  },
+  {
+   "default": "1",
+   "description": "Uncheck to retire this competency without deleting past results.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "statement_section",
+   "fieldtype": "Section Break",
+   "label": "Description"
+  },
+  {
+   "description": "General description of the competency, shown to students in the course outline.",
+   "fieldname": "statement",
+   "fieldtype": "Text Editor",
+   "label": "Statement"
+  },
+  {
+   "description": "One row per dimension, describing how this competency is demonstrated there.",
+   "fieldname": "dimensions_section",
+   "fieldtype": "Section Break",
+   "label": "Demonstrated By"
+  },
+  {
+   "fieldname": "dimensions",
+   "fieldtype": "Table",
+   "label": "Dimensions",
+   "options": "Course Competency Dimension"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-28 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Competency",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "competency_name,course",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "competency_name",
+ "track_changes": 1
+}

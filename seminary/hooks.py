@@ -233,6 +233,10 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
+    # Competency assessments and results carry a student's own account of their
+    # formation; the list view must not become a way to read a classmate's.
+    "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
+    "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
     "Partner Organization": "seminary.partner.permissions.org_query",
@@ -257,6 +261,8 @@ permission_query_conditions = {
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+    "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
+    "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
@@ -307,6 +313,15 @@ doc_events = {
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
+    # Competency roll-ups (ADR 065). An activity grade feeds the existing
+    # gradebook cell, so everything downstream of Course Assess Results Detail
+    # keeps working without competency awareness.
+    "Activity Competency Grade": {
+        "on_update": "seminary.seminary.cbe.on_activity_grade_update",
+    },
+    "Competency Assessment": {
+        "on_update": "seminary.seminary.cbe.on_assessment_update",
+    },
     "Program Enrollment": {
         # Payer-row construction (oikonomos.financial.payers.get_payers) is owned
         # by the oikonomos bridge (Program Enrollment before_submit). A Frappe-only
@@ -322,21 +337,29 @@ doc_events = {
     "Scheduled Course Assess Criteria": {
         "on_update": "seminary.seminary.api.update_card",
     },
+    # before_insert on every submission: content gating (ADR 065) has to refuse
+    # the submission itself, not only hide the activity in the outline.
     "Quiz Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
         ],
     },
     "Exam Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
-        "before_insert": "seminary.seminary.api.sanitize_submission",
+        "before_insert": [
+            "seminary.seminary.cbe.assert_activity_unlocked",
+            "seminary.seminary.api.sanitize_submission",
+        ],
         "before_save": "seminary.seminary.api.sanitize_submission",
     },
     "Discussion Submission Replies": {
@@ -452,6 +475,9 @@ scheduler_events = {
     "daily": [
         "seminary.tasks.daily",
         "seminary.partner.internship.activate_due_placements",
+        # Content gating means a student who stops reflecting locks themselves
+        # out; nothing else would surface that (ADR 065).
+        "seminary.seminary.cbe.notify_stalled_self_assessments",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [

@@ -1,0 +1,381 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:framework_name",
+ "creation": "2026-08-28 21:00:00.000000",
+ "description": "How your school runs competency-based education: who evaluates, when students assess themselves, how grades are combined into a competency verdict, and how course content is released. Programs point at a framework to become competency-based.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#competency-framework",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "framework_name",
+  "status",
+  "column_break_cf1",
+  "grading_scale",
+  "supersedes",
+  "evaluators_section",
+  "evaluators",
+  "program_self_eval_section",
+  "program_self_eval",
+  "program_self_eval_points",
+  "course_self_eval_section",
+  "course_self_eval",
+  "course_self_eval_points",
+  "column_break_cse",
+  "self_eval_counts_in_final",
+  "self_eval_weight",
+  "mentor_sees_self_eval",
+  "activity_grading_section",
+  "activity_grading_mode",
+  "activity_evaluators_required",
+  "verdict_section",
+  "verdict_source",
+  "aggregation_method",
+  "include_self_in_verdict",
+  "column_break_cv",
+  "rounding",
+  "report_basis",
+  "report_max",
+  "content_release_section",
+  "content_release_mode",
+  "stall_escalation_days",
+  "cohort_section",
+  "default_pacing_mode",
+  "program_cohort_source",
+  "completion_section",
+  "require_pdp",
+  "pdp_blocks_completion",
+  "emit_gpa"
+ ],
+ "fields": [
+  {
+   "fieldname": "framework_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Draft",
+   "description": "Only Active frameworks can be attached to a program.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nRetired",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cf1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The scale that defines the proficiency levels and the dimensions (for example knowledge, character, craft) used everywhere in this framework.",
+   "fieldname": "grading_scale",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Grading Scale",
+   "link_filters": "[[\"Grading Scale\",\"grscale_type\",\"=\",\"Competency-based education\"],[\"Grading Scale\",\"docstatus\",\"=\",1]]",
+   "options": "Grading Scale",
+   "reqd": 1
+  },
+  {
+   "description": "The earlier framework this one replaces. Keeps past cohorts on the rules they started under.",
+   "fieldname": "supersedes",
+   "fieldtype": "Link",
+   "label": "Supersedes",
+   "options": "Competency Framework"
+  },
+  {
+   "description": "Who assesses students, and how each one is found.",
+   "fieldname": "evaluators_section",
+   "fieldtype": "Section Break",
+   "label": "Evaluators"
+  },
+  {
+   "fieldname": "evaluators",
+   "fieldtype": "Table",
+   "label": "Evaluators",
+   "options": "Competency Framework Evaluator"
+  },
+  {
+   "description": "Self-assessment covering the whole program.",
+   "fieldname": "program_self_eval_section",
+   "fieldtype": "Section Break",
+   "label": "Student Self-Assessment - Program"
+  },
+  {
+   "default": "0",
+   "fieldname": "program_self_eval",
+   "fieldtype": "Check",
+   "label": "Students Self-Assess at Program Level"
+  },
+  {
+   "default": "Start and end of program",
+   "depends_on": "program_self_eval",
+   "fieldname": "program_self_eval_points",
+   "fieldtype": "Select",
+   "label": "When",
+   "options": "Start of program\nEnd of program\nStart and end of program"
+  },
+  {
+   "description": "Self-assessment inside each course. Choose 'End of each competency' only when the course outline maps competencies to chapters.",
+   "fieldname": "course_self_eval_section",
+   "fieldtype": "Section Break",
+   "label": "Student Self-Assessment - Course"
+  },
+  {
+   "default": "1",
+   "fieldname": "course_self_eval",
+   "fieldtype": "Check",
+   "label": "Students Self-Assess in Courses"
+  },
+  {
+   "default": "Start and end of course",
+   "depends_on": "course_self_eval",
+   "fieldname": "course_self_eval_points",
+   "fieldtype": "Select",
+   "label": "When",
+   "options": "Start of course\nEnd of course\nStart and end of course\nEnd of each competency\nStart of course and end of each competency"
+  },
+  {
+   "fieldname": "column_break_cse",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "course_self_eval",
+   "description": "Include the student's own rating when calculating the final competency verdict.",
+   "fieldname": "self_eval_counts_in_final",
+   "fieldtype": "Check",
+   "label": "Self-Assessment Counts Toward the Verdict"
+  },
+  {
+   "default": "1",
+   "depends_on": "self_eval_counts_in_final",
+   "fieldname": "self_eval_weight",
+   "fieldtype": "Float",
+   "label": "Self-Assessment Weight",
+   "precision": "2"
+  },
+  {
+   "default": "After mentor submits",
+   "depends_on": "course_self_eval",
+   "description": "When a mentor may see what the student wrote about themselves.",
+   "fieldname": "mentor_sees_self_eval",
+   "fieldtype": "Select",
+   "label": "Mentor Sees Self-Assessment",
+   "options": "Always\nAfter mentor submits\nNever"
+  },
+  {
+   "fieldname": "activity_grading_section",
+   "fieldtype": "Section Break",
+   "label": "Activity Grading"
+  },
+  {
+   "default": "One grade per evaluator",
+   "description": "How many grades an activity collects.",
+   "fieldname": "activity_grading_mode",
+   "fieldtype": "Select",
+   "label": "Activity Grading Mode",
+   "options": "One grade per activity\nOne grade per evaluator\nOne grade per evaluator per dimension",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Block sending grades until every required evaluator has graded every activity.",
+   "fieldname": "activity_evaluators_required",
+   "fieldtype": "Check",
+   "label": "Require All Evaluators Before Sending Grades"
+  },
+  {
+   "description": "How the separate ratings become one result per competency.",
+   "fieldname": "verdict_section",
+   "fieldtype": "Section Break",
+   "label": "Competency Verdict"
+  },
+  {
+   "default": "Both",
+   "fieldname": "verdict_source",
+   "fieldtype": "Select",
+   "label": "Verdict Source",
+   "options": "Final assessments only\nActivity grades only\nBoth",
+   "reqd": 1
+  },
+  {
+   "default": "Average",
+   "fieldname": "aggregation_method",
+   "fieldtype": "Select",
+   "label": "Aggregation Method",
+   "options": "Average\nSum\nWeighted average\nHighest\nLowest\nInstructor of record decides",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Include the student's self-assessment among the values being combined.",
+   "fieldname": "include_self_in_verdict",
+   "fieldtype": "Check",
+   "label": "Include Self-Assessment in the Verdict"
+  },
+  {
+   "fieldname": "column_break_cv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Nearest",
+   "fieldname": "rounding",
+   "fieldtype": "Select",
+   "label": "Rounding",
+   "options": "Nearest\nDown\nUp\nNone",
+   "reqd": 1
+  },
+  {
+   "default": "Framework scale",
+   "description": "Framework scale reports on the same levels the scale defines (for example 1 to 4). Summed reports the total of the contributing ratings (for example 1 to 12).",
+   "fieldname": "report_basis",
+   "fieldtype": "Select",
+   "label": "Report Basis",
+   "options": "Framework scale\nSummed",
+   "reqd": 1
+  },
+  {
+   "description": "Highest value a reported result can reach. Calculated from the scale and the contributing evaluators.",
+   "fieldname": "report_max",
+   "fieldtype": "Float",
+   "label": "Reported Maximum",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "How much of a course a student can see before reflecting on what came before.",
+   "fieldname": "content_release_section",
+   "fieldtype": "Section Break",
+   "label": "Content Release"
+  },
+  {
+   "default": "Per activity (current rules)",
+   "fieldname": "content_release_mode",
+   "fieldtype": "Select",
+   "label": "Content Release Mode",
+   "options": "Per activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Days a student may leave a self-assessment unsubmitted before their mentors are notified. 0 turns the reminder off.",
+   "fieldname": "stall_escalation_days",
+   "fieldtype": "Int",
+   "label": "Notify Mentors After (Days)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "cohort_section",
+   "fieldtype": "Section Break",
+   "label": "Cohorts and Pacing"
+  },
+  {
+   "default": "Cohort-paced",
+   "description": "Starting pacing for programs that adopt this framework. Each program can override it.",
+   "fieldname": "default_pacing_mode",
+   "fieldtype": "Select",
+   "label": "Default Pacing Mode",
+   "options": "Cohort-paced\nSelf-paced",
+   "reqd": 1
+  },
+  {
+   "default": "None",
+   "description": "Which existing grouping serves as the program cohort. Student Group keeps it a course grading group; Discipleship Cohort reuses the student's formation group so the same roster is not kept twice.",
+   "fieldname": "program_cohort_source",
+   "fieldtype": "Select",
+   "label": "Program Cohort Source",
+   "options": "None\nStudent Group\nDiscipleship Cohort",
+   "reqd": 1
+  },
+  {
+   "fieldname": "completion_section",
+   "fieldtype": "Section Break",
+   "label": "Completion"
+  },
+  {
+   "default": "0",
+   "description": "Students write a development plan at the end of each course.",
+   "fieldname": "require_pdp",
+   "fieldtype": "Check",
+   "label": "Require a Development Plan"
+  },
+  {
+   "default": "0",
+   "depends_on": "require_pdp",
+   "description": "Grades cannot be sent until every student has submitted their development plan.",
+   "fieldname": "pdp_blocks_completion",
+   "fieldtype": "Check",
+   "label": "Development Plan Blocks Course Completion"
+  },
+  {
+   "default": "0",
+   "description": "Most competency-based programs report levels instead of a grade point average. Leave this off unless your school needs one.",
+   "fieldname": "emit_gpa",
+   "fieldtype": "Check",
+   "label": "Calculate a GPA"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-28 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Competency Framework",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

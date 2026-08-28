@@ -38,6 +38,8 @@
   "loa_max_return_date",
   "status_history_section",
   "status_history",
+  "mentors_section",
+  "mentors",
   "audit_section",
   "audit_summary",
   "grad_requirements_section",
@@ -409,6 +411,19 @@
    "label": "Required on Enrollment",
    "options": "Program Enrollment Required Course",
    "read_only": 1
+  },
+  {
+   "fieldname": "mentors_section",
+   "fieldtype": "Section Break",
+   "label": "Mentors"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Mentors who follow this student through the program. Recorded once here; the system attaches them to each of the student's course schedules automatically, so they do not need to be added to sections. Close a row with a To Date instead of deleting it to keep the history.",
+   "fieldname": "mentors",
+   "fieldtype": "Table",
+   "label": "Mentors",
+   "options": "Program Enrollment Mentor"
   }
  ],
  "image_field": "image",
@@ -420,7 +435,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-06-08 18:06:46.643347",
+ "modified": "2026-08-28 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

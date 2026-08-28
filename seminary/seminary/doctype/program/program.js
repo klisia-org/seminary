@@ -10,6 +10,17 @@ frappe.ui.form.on('Program', {
 		frm.set_query('academic_unit', function() {
 			return { filters: { is_active: 1, unit_type: 'Program Committee' } };
 		});
+		// A competency-based program may only contain courses that use the
+		// framework's grading scale (ADR 065). The eligible set depends on this
+		// program's framework, which link_filters cannot express, so the picker
+		// is narrowed here and Program.validate enforces it on save.
+		frm.set_query('course', 'courses', function() {
+			if (!frm.doc.competency_framework) return {};
+			return {
+				query: 'seminary.seminary.doctype.program.program.get_competency_courses',
+				filters: { competency_framework: frm.doc.competency_framework }
+			};
+		});
 	},
 	refresh: function(frm) {
 		frm.set_query('program_track', 'pgm_courses_track', function() {

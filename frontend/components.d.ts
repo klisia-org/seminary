@@ -64,6 +64,7 @@ declare module 'vue' {
     Question: typeof import('./src/components/Modals/Question.vue')['default']
     Quiz: typeof import('./src/components/Quiz.vue')['default']
     QuizBlock: typeof import('./src/components/QuizBlock.vue')['default']
+    RadarChart: typeof import('./src/components/RadarChart.vue')['default']
     RecorderPlugin: typeof import('./src/components/RecorderPlugin.vue')['default']
     ReportDisciplinaryIncidentModal: typeof import('./src/components/Modals/ReportDisciplinaryIncidentModal.vue')['default']
     RichTextEditor: typeof import('./src/components/RichTextEditor.vue')['default']

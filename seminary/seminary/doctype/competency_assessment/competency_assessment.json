@@ -1,0 +1,214 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "CASMT-.######",
+ "creation": "2026-08-29 09:00:00.000000",
+ "description": "One person's judgement of how far a student has come in one competency, given as a level per dimension plus a written comment. Students assess themselves at the start and end; mentors give their assessment at the end.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#competency-assessments",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "program_enrollment",
+  "course_schedule",
+  "column_break_ca1",
+  "course_competency",
+  "stage",
+  "status",
+  "submitted_on",
+  "evaluator_section",
+  "evaluator_kind",
+  "instructor",
+  "instructor_category",
+  "ratings_section",
+  "ratings",
+  "narrative_section",
+  "narrative"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ca1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competency",
+   "options": "Course Competency",
+   "reqd": 1
+  },
+  {
+   "default": "Final",
+   "description": "Baseline is taken before the work begins and is what the radar compares against. Final is taken at the end.",
+   "fieldname": "stage",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stage",
+   "options": "Baseline\nFinal",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "description": "A Draft is still the author's own. Only Submitted assessments count toward a result or unlock gated content.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nSubmitted",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "evaluator_section",
+   "fieldtype": "Section Break",
+   "label": "Assessed By"
+  },
+  {
+   "default": "Self",
+   "fieldname": "evaluator_kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Assessed By",
+   "options": "Self\nMentor",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.evaluator_kind=='Mentor'",
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "label": "Mentor",
+   "mandatory_depends_on": "eval:doc.evaluator_kind=='Mentor'",
+   "options": "Instructor"
+  },
+  {
+   "depends_on": "eval:doc.evaluator_kind=='Mentor'",
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "label": "Mentor Type",
+   "options": "Instructor Category",
+   "read_only": 1
+  },
+  {
+   "description": "One level per dimension of this competency.",
+   "fieldname": "ratings_section",
+   "fieldtype": "Section Break",
+   "label": "Levels"
+  },
+  {
+   "fieldname": "ratings",
+   "fieldtype": "Table",
+   "label": "Ratings",
+   "options": "Competency Assessment Rating"
+  },
+  {
+   "fieldname": "narrative_section",
+   "fieldtype": "Section Break",
+   "label": "In Your Own Words"
+  },
+  {
+   "description": "The descriptive part of the assessment. Numbers alone do not carry formation.",
+   "fieldname": "narrative",
+   "fieldtype": "Text Editor",
+   "label": "Narrative"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-29 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Competency Assessment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-28 21:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "dimension_code",
+  "dimension",
+  "demonstrated_by",
+  "weight"
+ ],
+ "fields": [
+  {
+   "description": "One of the dimensions defined on the course's grading scale.",
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dimension",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "description": "What a student does or shows that demonstrates this competency in this dimension.",
+   "fieldname": "demonstrated_by",
+   "fieldtype": "Text Editor",
+   "label": "Demonstrated By",
+   "reqd": 1
+  },
+  {
+   "description": "Optional relative weight of this dimension within the competency.",
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "label": "Weight",
+   "precision": "2"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-28 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Competency Dimension",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

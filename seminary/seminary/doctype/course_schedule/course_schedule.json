@@ -23,6 +23,7 @@
   "section_break_6",
   "c_datestart",
   "c_dateend",
+  "open_ended",
   "room",
   "max_enrollment",
   "column_break_9",
@@ -116,12 +117,13 @@
    "reqd": 1
   },
   {
+   "description": "Leave blank only for an open-ended section (see Open Ended). Self-paced competency-based programs may run sections with no fixed end so a student can keep working toward competency.",
    "fieldname": "c_dateend",
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "End Date",
-   "permlevel": 1,
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.open_ended",
+   "permlevel": 1
   },
   {
    "fieldname": "modality",
@@ -607,12 +609,21 @@
    "fieldname": "web_meeting",
    "fieldtype": "Data",
    "label": "Web Meeting Link"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.modality!='Presential'",
+   "description": "This section has no fixed end date: students keep working until they reach competency. Allowed only for courses in a self-paced competency-based program. Open-ended sections have no class meetings and no attendance policy.",
+   "fieldname": "open_ended",
+   "fieldtype": "Check",
+   "label": "Open Ended",
+   "permlevel": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-06-13 09:38:31.594661",
+ "modified": "2026-08-28 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
