@@ -138,6 +138,14 @@ const routes = [
     component: () => import('@/pages/Grades.vue'),
   },
   {
+    // The radar and narrative timeline for a competency-based programme
+    // (ADR 065). Renders an explanatory empty state for everyone else, so the
+    // route needs no role guard.
+    path: "/competency-profile",
+    name: "CompetencyProfile",
+    component: () => import('@/pages/CompetencyProfile.vue'),
+  },
+  {
     path: "/courses",
     name: "Courses",
     component: () => import('@/pages/Courses.vue'),

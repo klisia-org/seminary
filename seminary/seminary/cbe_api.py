@@ -856,3 +856,378 @@ def get_outline_competencies(course_schedule):
         "self_eval_enabled": cint(framework.course_self_eval),
         "chapters": out,
     }
+
+
+# ---------------------------------------------------------------- profile
+
+
+def _assert_own_enrollment(program_enrollment):
+    student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
+    if not student:
+        frappe.throw(_("Enrollment not found."))
+    if not _is_staff():
+        mine = _current_student()
+        if not mine or mine != student:
+            frappe.throw(_("Not permitted."), frappe.PermissionError)
+    return student
+
+
+def _cbe_enrollments(student):
+    """The student's enrollments whose programme runs on a framework."""
+    out = []
+    for pe in frappe.get_all(
+        "Program Enrollment",
+        filters={"student": student, "docstatus": 1},
+        fields=["name", "program", "status", "pgmenrol_active"],
+        order_by="pgmenrol_active desc, creation desc",
+    ):
+        framework = frappe.db.get_value("Program", pe.program, "competency_framework")
+        if not framework:
+            continue
+        pe["framework"] = framework
+        out.append(pe)
+    return out
+
+
+def _instructor_names(instructors):
+    if not instructors:
+        return {}
+    return {
+        r.name: r.instructor_name
+        for r in frappe.get_all(
+            "Instructor",
+            filters={"name": ("in", list(instructors))},
+            fields=["name", "instructor_name"],
+        )
+    }
+
+
+def _profile_assessments(student, course_schedule, competency):
+    """Every submitted assessment of one competency, split by who gave it.
+
+    Drafts never surface: an unsubmitted rating is a thought in progress, and
+    the whole point of the radar is to compare positions people have taken.
+    """
+    rows = frappe.get_all(
+        "Competency Assessment",
+        filters={
+            "student": student,
+            "course_schedule": course_schedule,
+            "course_competency": competency,
+            "status": "Submitted",
+        },
+        fields=[
+            "name",
+            "stage",
+            "evaluator_kind",
+            "instructor",
+            "instructor_category",
+            "narrative",
+            "submitted_on",
+        ],
+        order_by="submitted_on asc",
+    )
+    if not rows:
+        return rows, {}
+    ratings = {}
+    for r in frappe.get_all(
+        "Competency Assessment Rating",
+        filters={"parent": ("in", [x.name for x in rows])},
+        fields=[
+            "parent",
+            "dimension_code",
+            "dimension",
+            "level_code",
+            "level_value",
+            "narrative",
+        ],
+        order_by="idx asc",
+    ):
+        ratings.setdefault(r.parent, []).append(r)
+    return rows, ratings
+
+
+def _series_from(rows, ratings, predicate):
+    """Average the matching assessments' levels, per dimension.
+
+    Averaging rather than taking the latest: when a school runs two mentors,
+    both verdicts are real and the radar would otherwise silently drop one.
+    """
+    picked = [r for r in rows if predicate(r)]
+    if not picked:
+        return None
+    buckets = {}
+    for r in picked:
+        for rating in ratings.get(r.name, []):
+            if rating.level_value is None:
+                continue
+            buckets.setdefault(rating.dimension_code, []).append(
+                flt(rating.level_value)
+            )
+    if not buckets:
+        return None
+    return {code: sum(vals) / len(vals) for code, vals in buckets.items()}
+
+
+def _overall(values):
+    """One number for a competency from its dimension values."""
+    present = [v for v in (values or {}).values() if v is not None]
+    return sum(present) / len(present) if present else None
+
+
+@frappe.whitelist()
+def get_competency_transcript(program_enrollment=None):
+    """Finalized competency standing, keyed by course schedule.
+
+    Feeds the transcript, so it reports only what has actually been sent: a
+    Competency Result reaches "Competent" as soon as one activity is graded and
+    keeps moving until the roster is finalized (ADR 065 section 7a), and a
+    transcript that showed the working number would be wrong most of the time.
+    """
+    student = _current_student()
+    if not student:
+        return {}
+
+    rosters = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"student": student},
+        fields=["name", "course_sc", "active", "audit_bool"],
+    )
+    out = {}
+    for r in rosters:
+        if r.active or r.audit_bool:
+            continue
+        framework = cbe.framework_for(r.course_sc)
+        if not framework:
+            continue
+        results = frappe.get_all(
+            "Competency Result",
+            filters={"student": student, "course_schedule": r.course_sc},
+            fields=[
+                "name",
+                "course_competency",
+                "competency_name",
+                "status",
+                "final_code",
+                "final_value",
+            ],
+        )
+        if not results:
+            continue
+        if program_enrollment:
+            pe = frappe.db.get_value(
+                "Competency Result", results[0].name, "program_enrollment"
+            )
+            if pe != program_enrollment:
+                continue
+        for res in results:
+            res["dimensions"] = frappe.get_all(
+                "Competency Result Dimension",
+                filters={"parent": res.name},
+                fields=["dimension_code", "dimension", "final_code", "final_value"],
+                order_by="idx asc",
+            )
+        out[r.course_sc] = {
+            "framework": framework,
+            "grading_scale": cbe.scale_for(r.course_sc),
+            "competencies": results,
+        }
+    return out
+
+
+@frappe.whitelist()
+def get_competency_profile(program_enrollment=None):
+    """The radar and the narrative timeline for one programme enrollment.
+
+    Scoped to an enrollment rather than to the student because the dimensions
+    and the level vocabulary come from the programme's framework: two programmes
+    can disagree about what the axes even are, and a radar drawn across both
+    would be a picture of nothing.
+    """
+    student = _current_student()
+    if not student and not _is_staff():
+        frappe.throw(_("This page is for students."), frappe.PermissionError)
+
+    if program_enrollment:
+        student = _assert_own_enrollment(program_enrollment)
+
+    enrollments = _cbe_enrollments(student)
+    if not enrollments:
+        return {"is_cbe": False, "enrollments": []}
+
+    chosen = None
+    for pe in enrollments:
+        if program_enrollment and pe.name == program_enrollment:
+            chosen = pe
+    if not chosen:
+        chosen = enrollments[0]
+
+    framework = frappe.get_cached_doc("Competency Framework", chosen.framework)
+    scale = framework.grading_scale
+    levels = cbe.levels_for(scale)
+    dimensions = frappe.get_all(
+        "Grading Scale Dimensions",
+        filters={"parent": scale},
+        fields=["dimension_code", "dimension", "description", "dimension_icon"],
+        order_by="sequence asc, idx asc",
+    )
+
+    rosters = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"student": student},
+        fields=["name", "course_sc", "active", "audit_bool"],
+    )
+
+    courses = []
+    for r in rosters:
+        if cbe.framework_for(r.course_sc) != chosen.framework:
+            continue
+        cs = frappe.db.get_value(
+            "Course Schedule",
+            r.course_sc,
+            ["course", "title", "academic_term", "c_datestart"],
+            as_dict=True,
+        )
+        # A section's own title is optional; the course's name is what the
+        # student recognises when it is missing.
+        course_name = cs.title or frappe.db.get_value(
+            "Course", cs.course, "course_name"
+        )
+        finalized = not r.active and not r.audit_bool
+        competencies = []
+        for c in frappe.get_all(
+            "Course Competency",
+            filters={"course": cs.course, "is_active": 1},
+            fields=["name", "competency_name", "statement", "sequence"],
+            order_by="sequence asc, competency_name asc",
+        ):
+            rows, ratings = _profile_assessments(student, r.course_sc, c.name)
+            series = {
+                "baseline": _series_from(
+                    rows,
+                    ratings,
+                    lambda x: x.evaluator_kind == "Self" and x.stage == "Baseline",
+                ),
+                "self_final": _series_from(
+                    rows,
+                    ratings,
+                    lambda x: x.evaluator_kind == "Self" and x.stage == "Final",
+                ),
+                "mentor_final": _series_from(
+                    rows,
+                    ratings,
+                    lambda x: x.evaluator_kind != "Self" and x.stage == "Final",
+                ),
+            }
+            series["result"] = _result_series(student, r.course_sc, c.name, finalized)
+            c["series"] = series
+            c["overall"] = {k: _overall(v) for k, v in series.items()}
+            c["narratives"] = _narrative_timeline(rows, ratings)
+            competencies.append(c)
+
+        if not competencies:
+            continue
+        courses.append(
+            {
+                "course_schedule": r.course_sc,
+                "course": cs.course,
+                "course_name": course_name,
+                "academic_term": cs.academic_term,
+                "start_date": cs.c_datestart,
+                "finalized": finalized,
+                "competencies": competencies,
+            }
+        )
+
+    courses.sort(key=lambda c: (c["start_date"] or "", c["course_name"] or ""))
+
+    return {
+        "is_cbe": True,
+        "enrollments": [
+            {
+                "name": pe.name,
+                "program": pe.program,
+                "status": pe.status,
+                "active": pe.pgmenrol_active,
+            }
+            for pe in enrollments
+        ],
+        "program_enrollment": chosen.name,
+        "program": chosen.program,
+        "grading_scale": scale,
+        "levels": levels,
+        "max_value": max([flt(x.threshold) for x in levels] or [4]),
+        "dimensions": dimensions,
+        "self_eval_enabled": cint(framework.course_self_eval),
+        "courses": courses,
+    }
+
+
+def _result_series(student, course_schedule, competency, finalized):
+    """The recorded verdict, per dimension — only once grades have been sent."""
+    if not finalized:
+        return None
+    result = frappe.db.get_value(
+        "Competency Result",
+        {
+            "student": student,
+            "course_schedule": course_schedule,
+            "course_competency": competency,
+        },
+        "name",
+    )
+    if not result:
+        return None
+    values = {
+        d.dimension_code: flt(d.final_value)
+        for d in frappe.get_all(
+            "Competency Result Dimension",
+            filters={"parent": result},
+            fields=["dimension_code", "final_value"],
+        )
+        if d.final_value is not None
+    }
+    return values or None
+
+
+def _narrative_timeline(rows, ratings):
+    """Every narrative anyone wrote about this competency, in order.
+
+    The competency-level narrative and the per-dimension ones are flattened into
+    one list because the reader is asking "what did people say about this", not
+    "which field was it stored in".
+    """
+    names = _instructor_names({r.instructor for r in rows if r.instructor})
+    out = []
+    for r in rows:
+        who = (
+            _("You")
+            if r.evaluator_kind == "Self"
+            else (names.get(r.instructor) or r.instructor or r.instructor_category)
+        )
+        base = {
+            "assessment": r.name,
+            "evaluator_kind": r.evaluator_kind,
+            "evaluator": who,
+            "instructor_category": r.instructor_category,
+            "stage": r.stage,
+            "submitted_on": r.submitted_on,
+        }
+        if r.narrative:
+            out.append(
+                dict(base, dimension_code=None, dimension=None, narrative=r.narrative)
+            )
+        for rating in ratings.get(r.name, []):
+            if not rating.narrative and rating.level_code is None:
+                continue
+            out.append(
+                dict(
+                    base,
+                    dimension_code=rating.dimension_code,
+                    dimension=rating.dimension,
+                    level_code=rating.level_code,
+                    level_value=rating.level_value,
+                    narrative=rating.narrative,
+                )
+            )
+    return out

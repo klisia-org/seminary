@@ -77,6 +77,11 @@ export default defineConfig({
           if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
             return 'socketio';
           }
+          // Only the competency profile draws a chart. Without this branch
+          // echarts lands in `vendor`, which every page loads.
+          if (id.includes('node_modules/echarts') || id.includes('node_modules/zrender')) {
+            return 'echarts';
+          }
           // Keep all frappe-ui modules together in one chunk
           if (id.includes('frappe-ui')) {
             return 'frappe-ui';

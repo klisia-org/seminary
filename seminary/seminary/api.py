@@ -1084,6 +1084,7 @@ def get_student_programs(student):
     grades = frappe.db.sql(
         """SELECT pe.program, pe.name AS program_enrollment, pe.pgmenrol_active,
             pe.student, pe.totalcredits,
+            pec.course AS course_schedule,
             pec.course_name, pec.academic_term, pec.credits,
             pec.pec_finalgradecode, pec.pec_finalgradenum, pec.status
         FROM `tabProgram Enrollment` pe
