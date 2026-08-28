@@ -116,6 +116,18 @@
 					</span>
 				</Button>
 			</router-link>
+			<router-link v-if="(user?.data?.is_moderator || is_instructor()) && isCompetencyBased" :to="{
+				name: 'CompetencyGradebook',
+				params: {
+					courseName: course.data.name,
+				},
+			}">
+				<Button variant="subtle" class="w-full mt-2" size="md">
+					<span>
+						{{ __('Competency Assessment') }}
+					</span>
+				</Button>
+			</router-link>
 			<router-link v-if="user?.data?.is_moderator || is_instructor()" :to="{
 				name: 'StudentAttendanceCS',
 				params: {
@@ -244,6 +256,19 @@ function checkinErrorMsg(e) {
 	return m || __('Could not check in. Please try again.')
 }
 
+// Optional-feature gate, same shape as the aretenic panels: a silent error and
+// an absent button on an ordinary section, rather than a control that explains
+// it does not apply here.
+const competencyContext = createResource({
+	url: 'seminary.seminary.cbe_api.get_competency_context',
+	makeParams() {
+		return { course_schedule: props.course.data?.name }
+	},
+	onError: () => {},
+})
+
+const isCompetencyBased = computed(() => !!competencyContext.data?.is_cbe)
+
 const checkinContext = createResource({
 	url: 'seminary.seminary.course_checkin.get_course_checkin_context',
 	makeParams() {
@@ -253,7 +278,11 @@ const checkinContext = createResource({
 
 watch(
 	() => props.course.data?.name,
-	(name) => name && checkinContext.reload(),
+	(name) => {
+		if (!name) return
+		checkinContext.reload()
+		competencyContext.reload()
+	},
 	{ immediate: true }
 )
 

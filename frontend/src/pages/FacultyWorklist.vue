@@ -53,8 +53,44 @@
           </div>
         </section>
 
-        <p v-if="!showVerifications && !showPlacement" class="text-sm text-ink-gray-5">
-          {{ __('You are not wired to any verification or examining work.') }}
+        <!-- Competency assessments (ADR 065). Mentors are never added to a
+             section, so this list is where a Personal Mentor finds out they
+             have work to do. -->
+        <section v-if="competency.data?.length">
+          <h3 class="font-semibold text-ink-gray-8 mb-2">
+            {{ __('Competency Assessments Due') }}
+            <Badge :label="String(competency.data.length)" theme="gray" class="ml-1" />
+          </h3>
+          <div class="border rounded-md divide-y">
+            <div v-for="it in competency.data" :key="it.roster"
+              class="flex items-start justify-between p-3 gap-3">
+              <div class="min-w-0">
+                <div class="font-medium text-ink-gray-8 truncate">{{ it.student_name }}</div>
+                <div class="text-xs text-ink-gray-5 truncate">{{ it.course_schedule }}</div>
+                <ul v-if="it.activities?.length" class="mt-1 text-xs text-ink-gray-6 list-inside list-disc">
+                  <li v-for="(a, i) in it.activities.slice(0, 4)" :key="i">{{ a }}</li>
+                  <li v-if="it.activities.length > 4">
+                    {{ __('and {0} more').format(it.activities.length - 4) }}
+                  </li>
+                </ul>
+                <div v-if="it.verdicts?.length" class="mt-1 text-xs text-ink-gray-6">
+                  {{ __('Final assessment pending:') }}
+                  {{ it.verdicts.map((v) => v.label).join(', ') }}
+                </div>
+              </div>
+              <router-link :to="{
+                name: 'CompetencyGradebook',
+                params: { courseName: it.course_schedule },
+              }">
+                <Button variant="solid" size="sm">{{ __('Open') }}</Button>
+              </router-link>
+            </div>
+          </div>
+        </section>
+
+        <p v-if="!showVerifications && !showPlacement && !competency.data?.length"
+          class="text-sm text-ink-gray-5">
+          {{ __('You are not wired to any verification, examining or mentoring work.') }}
         </p>
       </template>
     </div>
@@ -121,6 +157,14 @@ const uploadArgs = { private: 1, folder: 'Home/Attachments' }
 const worklist = createResource({
   url: 'seminary.seminary.faculty.get_my_faculty_worklist',
   auto: true,
+})
+
+// Loaded separately and silently: a user with no mentoring assignments gets an
+// empty list rather than an error, and the section simply does not render.
+const competency = createResource({
+  url: 'seminary.seminary.cbe_api.get_competency_worklist',
+  auto: true,
+  onError: () => {},
 })
 
 const verifications = computed(() => worklist.data?.['Manual-Verification Verifier'] || [])

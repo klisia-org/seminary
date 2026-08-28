@@ -37,6 +37,21 @@
         {{ __('Save changes before sending.') }}
       </span>
     </div>
+    <!-- Open-ended sections only (ADR 065 section 7a): a dated section is always
+         finalized for the whole class at once, so the control is absent rather
+         than disabled there. -->
+    <div v-if="canSendSelected" class="flex flex-wrap items-center gap-2 mb-4 ml-5">
+      <Button variant="solid" theme="blue" :disabled="!selectedRosters.length || hasUnsavedChanges || sendingSelected"
+        :loading="sendingSelected" @click="sendSelected">
+        <template #prefix>
+          <Send class="h-4 w-4" />
+        </template>
+        {{ __('Send Grades for Selected') }}<span v-if="selectedRosters.length">&nbsp;({{ selectedRosters.length }})</span>
+      </Button>
+      <span class="text-sm text-ink-gray-6">
+        {{ __('This section has no end date, so students can be finalized as they finish. Sending is final for those students.') }}
+      </span>
+    </div>
     <!-- No Students Message -->
     <div v-if="students.length === 0" class="text-ink-gray-5 text-center mt-4">
       {{ __('There are no students enrolled in this course.') }}
@@ -50,6 +65,10 @@
           <tr>
             <th class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 sm:px-4 min-w-[180px]">
               {{ __('Student') }}
+            </th>
+            <th v-if="canSendSelected"
+              class="border border-outline-gray-2 bg-surface-gray-2 px-2 py-2 text-sm">
+              {{ __('Send') }}
             </th>
             <th v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
               :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : 'bg-surface-gray-2'"
@@ -127,6 +146,13 @@
                 </Tooltip>
               </div>
             </td>
+            <td v-if="canSendSelected"
+              class="border border-outline-gray-2 px-2 py-2 text-center">
+              <input v-if="student.active && !student.audit_bool" type="checkbox"
+                :value="student.name" v-model="selectedRosters"
+                :aria-label="__('Select {0}').format(student.stuname_roster)" />
+              <span v-else class="text-xs text-ink-gray-5">{{ __('Sent') }}</span>
+            </td>
 
             <!-- Grade Cells -->
             <td v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
@@ -175,6 +201,8 @@ const students = ref([]); // Array of students
 const assessments = ref([]); // Array of assessment criteria
 const changedCells = ref({}); // Track changed cells
 const sendingGrades = ref(false);
+const selectedRosters = ref([]);
+const sendingSelected = ref(false);
 
 // onMounted(() => {
 //   if (!user.data?.is_moderator && !user.data?.is_instructor) {
@@ -196,7 +224,7 @@ const courseSchedule = createResource({
   url: 'frappe.client.get_value',
   params: {
     doctype: 'Course Schedule',
-    fieldname: 'workflow_state',
+    fieldname: ['workflow_state', 'open_ended'],
     filters: { name: props.courseName },
   },
   auto: true,
@@ -210,6 +238,39 @@ const canSendGrades = computed(() => {
     user.data.is_moderator;
   return hasRole && courseSchedule.data?.workflow_state === 'Grading';
 })
+
+// Partial finalization exists only for open-ended sections, which serve a
+// self-paced competency framework (ADR 065 section 7a). A dated section keeps
+// its all-or-nothing guarantee, so the control does not appear at all.
+const canSendSelected = computed(
+  () => canSendGrades.value && !!courseSchedule.data?.open_ended
+)
+
+const sendSelected = async () => {
+  const names = students.value
+    .filter((s) => selectedRosters.value.includes(s.name))
+    .map((s) => s.stuname_roster)
+  const message = __(
+    'Send grades for {0}? This writes their transcript and cannot be undone. The section stays open for everyone else.'
+  ).format(names.join(', '));
+  if (!window.confirm(message)) return;
+
+  sendingSelected.value = true;
+  try {
+    const res = await call('seminary.seminary.api.send_selected_grades', {
+      course_schedule: props.courseName,
+      rosters: JSON.stringify(selectedRosters.value),
+    });
+    toast.success(__('Grades sent for {0} student(s)').format(res.finalized));
+    selectedRosters.value = [];
+    courseSchedule.reload();
+    gradebook.reload();
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Failed to send grades'));
+  } finally {
+    sendingSelected.value = false;
+  }
+}
 
 const isFinalized = computed(() => {
   const state = courseSchedule.data?.workflow_state;

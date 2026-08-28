@@ -167,6 +167,14 @@ const routes = [
     props: true,
   },
   {
+    // Student-facing competency self-assessment (ADR 065). Without a competency
+    // it lists them; with one it opens that competency's form.
+    path: "/courses/:courseName/self-assessment/:competency?",
+    name: "CompetencySelfAssessment",
+    component: () => import('@/pages/CompetencySelfAssessment.vue'),
+    props: true,
+  },
+  {
     // Optional Aretenic surface (ADR 030). Renders an explanatory empty state when the app is
     // absent or no report exists yet, so the route is harmless either way.
     path: "/courses/:courseName/outcome-report",
@@ -308,6 +316,15 @@ const routes = [
 		path: '/gradebook/:courseName',
 		name: 'Gradebook',
 		component: () => import('@/pages/Gradebook.vue'),
+		props: true,
+	},
+	{
+		// Competency-based sections get their own grading surface rather than
+		// extra columns in the numeric gradebook (ADR 065 section 9). The route
+		// exists unconditionally and explains itself on an ordinary section.
+		path: '/competency-gradebook/:courseName',
+		name: 'CompetencyGradebook',
+		component: () => import('@/pages/CompetencyGradebook.vue'),
 		props: true,
 	},
 	{
