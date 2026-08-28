@@ -1,7 +1,7 @@
 # 065 — Competency-Based Education
 
 **Date:** 2026-08-28
-**Status:** Accepted 2026-08-28 — implementation phased; Phase 1 in progress
+**Status:** Accepted 2026-08-28 — implementation phased; Phases 1-2 complete, Phase 3 next
 
 ## Context
 
@@ -118,6 +118,7 @@ The school's pedagogical choices live in one place, versioned, reusable across p
 | `content_release_mode` | Select | `Per activity (current rules)` / `Chapter unlocks after previous competency self-assessed` / `Content open, activities locked until previous competency self-assessed`; see §2 |
 | `stall_escalation_days` | Int | days a student may sit on an unsubmitted self-assessment before their mentor is notified; 0 disables |
 | **Cohorts and completion** | | |
+| `default_pacing_mode` | Select | `Cohort-paced` / `Self-paced` — the starting pacing for programs adopting this framework; each program may override it (see §5) |
 | `program_cohort_source` | Select | `Student Group` / `Discipleship Cohort` / `None`; see §5 |
 | `require_pdp` | Check | Personal Development Plan required at end of course |
 | `pdp_blocks_completion` | Check | |
@@ -171,8 +172,12 @@ On [Program](../../seminary/seminary/doctype/program/program.json), a CBE sectio
 | field | type | notes |
 |---|---|---|
 | `competency_framework` | Link → Competency Framework | its presence *is* "this is a CBE program" |
-| `pacing_mode` | Select | `Cohort-paced` / `Self-paced`; hydrated on create from the framework using the override-preserving pattern of `_hydrate_graduation_gpa_default` ([ADR 057](057-graduation-eligibility-floors.md)), **not** `fetch_from` |
+| `pacing_mode` | Select | `Cohort-paced` / `Self-paced`; hydrated on create from the framework's `default_pacing_mode` (§3) using the override-preserving pattern of `_hydrate_graduation_gpa_default` ([ADR 057](057-graduation-eligibility-floors.md)), **not** `fetch_from` |
 | `cohort_failure_policy` | Select | `Repeat competency in place` / `Move to next intake cohort` / `Individual remediation plan` / `Not defined — registrar decides` (default) |
+
+**Self-paced programs may run open-ended sections.** Where cohort-paced schools bound a course by the term, self-paced schools let a student keep working until they reach competency — so a section may legitimately have no end date. [Course Schedule](../../seminary/seminary/doctype/course_schedule/course_schedule.json) gains `open_ended` (Check, permlevel 1 alongside the dates); `c_dateend` becomes `mandatory_depends_on: eval:!doc.open_ended` rather than unconditionally required. The flag is only accepted when the course sits in at least one self-paced competency-based program, so it cannot become a general way around the end date. An open-ended section has no class meetings, so meeting generation and calendar export refuse it explicitly and the attendance policy is forced to `Disabled` — an absence limit derived from an empty meeting list is meaningless. The enrollment and grading windows already degrade correctly: `cs_lifecycle._cs_anchor_dates` simply reports a `None` anchor, which `resolve_window_dates` documents as "no rule, no window".
+
+This also fixes a latent crash: `CourseSchedule.validate_date` compared `c_datestart`/`c_dateend` against the term without null-guarding either operand, raising `TypeError: '<' not supported between instances of 'NoneType' and 'datetime.date'` instead of a validation message whenever a date was absent. Each comparison is now guarded on its own operands.
 
 **The program-course filter.** Today any course can belong to any program. When `competency_framework` is set, `Program.validate` requires each non-disabled `Program Course` row's course to (a) use a `default_grading_scale` equal to the framework's scale, and (b) carry at least one active `Course Competency`. `link_filters` on `Program Course.course` narrows the picker declaratively per ADR 023. This delivers the uniform transcript that motivated putting config on the grading scale, without imposing a global same-scale rule on non-CBE programs.
 
@@ -222,7 +227,20 @@ Either way no third grouping doctype appears, and the `Student Group Members` li
 
 **Activities are graded by mentors only — there is no `evaluator_kind` here.** The framework configures self-evaluation at the competency level, never at the activity level, so a `Self` value on an activity grade would be a state no configuration can produce. Self-evaluation lives entirely in `Competency Assessment`, where `evaluator_kind` does the work and `instructor` is blank. `instructor` is consequently required on every activity grade, which also makes the required-evaluator check in `send_grades` a simple presence test.
 
-[Scheduled Course Assess Criteria](../../seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json) gains `course_competency` (Link) and `grading_mode_override` (Select, blank inherits the framework), anchoring each activity to the competency it develops.
+[Scheduled Course Assess Criteria](../../seminary/seminary/doctype/scheduled_course_assess_criteria/scheduled_course_assess_criteria.json) gains `course_competency` (Link), `grading_mode_override` (Select, blank inherits the framework) and `dimension_weights` (Table → Assessment Dimension Weight), anchoring each activity to the competency it develops and to the dimensions it actually measures.
+
+**`Assessment Dimension Weight`** (child on Scheduled Course Assess Criteria): `dimension_code` (Data, reqd), `dimension` (Data, read-only label), `weight` (Float, reqd, default 0).
+
+**Not every assessment measures every dimension equally.** A reading response is mostly knowledge; a field placement report is mostly craft; a spiritual-formation journal is mostly character. Forcing each to contribute equally to all three would flatten precisely the distinction competency assessment exists to make. So each assessment declares, per dimension of its competency, how much it counts. Weights are relative, not percentages: `60/20/20` and `3/1/1` behave identically, and a weight of `0` means the assessment does not measure that dimension at all and is excluded from it entirely rather than pulling it toward the mean.
+
+An assessment that declares no weights falls back to equal weight across its competency's dimensions, so a school that does not care about this never has to configure it.
+
+**Dimension weights are deliberately *not* multiplied by `weight_scac`.** `Scheduled Course Assess Criteria.weight_scac` is the activity's share of the numeric course grade and must total 100 across the section; it belongs to the percentage spine. If it also scaled competency contributions, an activity's administrative weight in a gradebook would silently distort a formation verdict, and a registrar rebalancing course percentages would move competency outcomes without knowing it. The two axes stay independent: `weight_scac` governs the numeric grade, `dimension_weights` governs the competency verdict.
+
+Note also that there are two distinct weightings, at two different levels, and they compose rather than compete:
+
+- **assessments → dimension**: `Assessment Dimension Weight` (here) — how much each assessment counts toward one dimension's result.
+- **dimensions → competency**: `Course Competency Dimension.weight` (§2) — how much each dimension counts toward the competency's overall verdict, used when `aggregation_method = Weighted average`.
 
 **`Competency Result`** — `autoname: CRES-.######`. The persisted rollup per student × course competency; what transcripts and the radar read.
 
@@ -230,13 +248,39 @@ Either way no third grouping doctype appears, and the `Student Group Members` li
 |---|---|---|
 | `student`, `program_enrollment`, `course_schedule`, `course_competency` | Link | reqd |
 | `dimensions` | Table → Competency Result Dimension | |
-| `final_value` | Float | aggregate per the framework rule |
+| `computed_value` | Float | read-only — dimensions rolled up per the framework rule |
+| `override_value` / `override_reason` | Float / Small Text | instructor-of-record override; the reason is required |
+| `overridden_by` / `overridden_on` | Link User / Datetime | read-only |
+| `final_value` | Float | read-only — the rounded result |
 | `final_code` | Data | matching interval grade code |
 | `status` | Select | Not Started / In Progress / Competent / Not Yet Competent |
 | `decided_on` / `decided_by` | Datetime / Link User | |
-| `override_value` / `override_reason` | Float / Small Text | instructor-of-record override |
 
-**`Competency Result Dimension`** (child): `dimension_code`, `dimension`, `baseline_value`, `final_value`, `delta`, `final_code`. `baseline_value` is copied from the Baseline self-assessment; that pair is precisely the radar's two series.
+**`Competency Result Dimension`** (child):
+
+| field | type | notes |
+|---|---|---|
+| `dimension_code` / `dimension` | Data | |
+| `baseline_value` | Float | from the Baseline self-assessment; the radar's first series |
+| `computed_value` | Float | read-only — the weighted average of the assessments, before any edit |
+| `override_value` | Float | an editor's replacement for the computed value |
+| `override_reason` | Small Text | required whenever `override_value` is set |
+| `overridden_by` / `overridden_on` | Link User / Datetime | read-only, stamped on save |
+| `final_value` | Float | read-only — the rounded result; the radar's second series |
+| `final_code` | Data | read-only — the interval `final_value` lands in |
+| `delta` | Float | `final_value` − `baseline_value` |
+
+### 6a. The verdict pipeline: weighted average, then edit, then round
+
+The order of these three steps is a decision, not an implementation detail, and every result record stores each stage rather than only the answer.
+
+1. **Weighted average of the assessments,** per dimension:
+   `computed_value(d) = Σ(weight(a,d) × level(a,d)) / Σ weight(a,d)` over assessments `a` with `weight(a,d) > 0`.
+   Where `activity_grading_mode` is `One grade per evaluator per dimension`, `level(a,d)` is the grade given for that dimension; under the coarser modes the whole-activity grade stands in for every dimension the assessment weights. Where more than one evaluator graded, their ratings are combined by the framework's `aggregation_method` first, so the multi-evaluator rule is applied once and in one place.
+2. **Editable, and recorded as edited.** An evaluator with authority may replace the computed value. `computed_value` is never overwritten — `override_value`, `override_reason`, `overridden_by` and `overridden_on` sit beside it, so the arithmetic the system produced and the judgement a human substituted are both legible afterwards. A verdict that quietly replaced its own inputs would be unreviewable, and in formation assessment the reason for a departure matters as much as the number. `override_reason` is required whenever `override_value` is set.
+3. **Then rounding,** per the framework's `rounding` setting. Rounding runs *after* the override, not before: the editor works in the same continuous space the average produced (a considered `2.6`), and the framework decides how that becomes a reported level. Rounding first would force the editor to choose between levels and then round a value that was already a level — discarding the distinction the override was making.
+
+`Competency Result` carries the same four-stage shape at competency level (`computed_value`, `override_value`, `override_reason`, `overridden_by`, `overridden_on`, `final_value`, `final_code`), rolling its dimensions up by `Course Competency Dimension.weight` when the framework aggregates by weighted average. Its `override_value` / `override_reason` replace the single pair sketched in §6.
 
 ### 7. Backend convergence
 
@@ -247,8 +291,10 @@ New module `seminary/seminary/cbe.py`, shaped like [`faculty.py`](../../seminary
 - `competency_boundaries(course_schedule)` — maps competencies to chapters (§2) and reports which are complete, driving the `End of each competency` self-evaluation trigger.
 - `visible_outline(roster)` — applies `content_release_mode` (§2) to the chapter/lesson/activity tree. The submission endpoints call the same function, so a locked activity refuses a POST rather than merely being hidden.
 - `aggregate(values, method, weights, rounding)` — the single place the Average / Sum / Weighted / Highest / Lowest variation lives.
+- `dimension_weights_for(assess_criteria)` — an assessment's per-dimension weights (§6a), falling back to equal weight across the competency's dimensions when none are configured.
+- `weighted_dimension_value(roster, course_competency, dimension_code)` — step 1 of the verdict pipeline: the weighted average across assessments, returned unrounded so the override and rounding stages can act on it in order.
 - `rollup_activity_grades(roster, assess_criteria)` — aggregates `Activity Competency Grade` rows and writes the resulting level into the existing `Course Assess Results Detail.rawscore_card` and `graded_card`. **This is the convergence point.** `Gradebook`, `cs_lifecycle.maybe_advance_to_grading`, attendance-failure and `send_grades` keep working untouched.
-- `rollup_competency_result(roster, course_competency)` — writes `Competency Result`.
+- `rollup_competency_result(roster, course_competency)` — writes `Competency Result`, running the §6a pipeline in order and preserving any existing override rather than recomputing over it.
 
 Wired in [hooks.py](../../seminary/hooks.py) `doc_events`: `Activity Competency Grade → {on_update: cbe.on_activity_grade_update}`, `Competency Assessment → {on_update: cbe.on_assessment_update}`.
 
@@ -260,8 +306,32 @@ Touch points in existing grading code:
   - `emit_gpa = 1` — the branch reuses the existing `Descriptive` path verbatim: match `interval.grade_code == pec.pec_finalgradecode` and take `interval.threshold` as the point value, then scale to `Program.basis_for_gpa`. `count_in_gpa = 1`, and `Program.is_weighted` / `Honors Levels` apply unchanged.
 
   Implementing both arms now costs a handful of lines because the Descriptive path already exists, and it avoids the rework of retrofitting a GPA into a shipped transcript. What is *not* free and stays out of scope: `Program.min_graduation_gpa` and the graduation eligibility floors ([ADR 057](057-graduation-eligibility-floors.md)) are meaningful only under `emit_gpa = 1`; `Program.validate` warns when a CBE program sets a GPA floor with `emit_gpa = 0`, rather than silently never meeting it.
-- `send_grades` — extend the pre-flight guard with required-evaluator and development-plan checks alongside the existing "all cells graded" check.
+- `send_grades` — extend the pre-flight guard with required-evaluator and development-plan checks alongside the existing "all cells graded" check, and split it as described in §7a.
 - [`course_pack/constants.py`](../../seminary/seminary/course_pack/constants.py) — add the new competency fields to the export allowlist so course packs round-trip ([ADR 041](041-course-pack-portable-bundle.md)).
+
+### 7a. Partial finalization: Send Selected Grades, for open-ended sections only
+
+`send_grades` is all-or-nothing and terminal. It refuses to run until *every* active, non-audit roster is fully graded, and when it runs it finalizes everyone, flips the section to `Closed`, and concludes every enrollment in it. For a section with an end date that is exactly right: the term ends, everyone is graded together, and the section closes as one act. **That behaviour does not change.**
+
+It breaks down only on the open-ended sections introduced in §5 — the ones serving a self-paced competency framework, where a student keeps working until they reach competency. There, by design, there is no moment when everyone is done. A terminal-only operation means grades never reach the transcript at all, and one student still working holds every classmate's `Program Enrollment Course` row hostage indefinitely. Graduation candidacy reads those rows, so a classmate who finished can be blocked from graduating by someone who has not — which is the point at which the delay costs the most.
+
+**Decision: separate per-student finalization from section closure, and offer the partial path only where the section is open ended.**
+
+- `finalize_roster(roster)` — internal helper holding the existing per-student block verbatim: `grade_thisstudent`, `fgrade_this_std`, the `Program Enrollment Course` write (`pec_finalgradenum`, `pec_finalgradecode`, `status`), the credit award with its Fail and leveling-course exclusions, and `Scheduled Course Roster.active = 0`. Extracted rather than reimplemented so the two entry points cannot drift.
+- `send_selected_grades(course_schedule, rosters)` — whitelisted. **Refuses any section that is not `open_ended`**, then requires the section to be in `Grading`; checks for ungraded cells **among the selected rosters only**; finalizes each; concludes **only those students'** Course Enrollment Individual records; and runs the emphasis-credit, auto-grant-emphasis and GPA recomputation for only their enrollments. It does not touch `workflow_state`.
+- `send_grades(...)` — unchanged signature and meaning, and unchanged behaviour for every dated section. Becomes: finalize every roster still `active`, then close the section, conclude the remaining enrollments, and enqueue the aretenic snapshot.
+
+**`open_ended` is the whole gate, and it is the only check.** A section may only be open ended when its course sits in a self-paced competency-based program (§5), which `CourseSchedule.validate_open_ended` already enforces at the source. So testing `open_ended` transitively guarantees the framework and the pacing without `send_selected_grades` re-deriving either. Re-checking the program's `pacing_mode` here would be a second condition that can fall out of step with the first; there is one rule, in one place, and this reads it.
+
+Partial finalization is therefore not a general capability. A dated section — the ordinary case, cohort-paced or numeric — remains strictly all-or-nothing, and the invariant that its grades are finalized in a single act is preserved exactly as today. Nothing about a conventional term changes.
+
+**Idempotency comes free from `active`.** `finalize_roster` acts only on rosters with `active = 1` and clears the flag as its last step, so a student finalized by a partial send is skipped by the later full send. This matters more than it looks: credits are *accumulated* into `Program Enrollment.totalcredits` rather than recomputed, so a second pass over the same roster would silently double a student's credit total. The `active` flag is what prevents that, and the same flag already keeps finalized students out of the "still ungraded" pre-flight count.
+
+**The aretenic snapshot stays on the closing path only.** `attainment.snapshot_offering_on_send_grades` cuts an offering-level attainment record for accreditation; a snapshot taken when half the section is graded would be an auditable claim about an offering that is not finished. Partial sends produce no snapshot.
+
+**Surface.** Row selection and a *Send Selected Grades* action appear **only when the section is open ended** — in the new Competency Gradebook (§9), and in the numeric [Gradebook.vue](../../frontend/src/pages/Gradebook.vue) for an open-ended section that still grades numerically. Everywhere else the gradebook looks and behaves exactly as it does now, with *Send Grades* alone. Showing a disabled *Send Selected* on every ordinary section would advertise a capability that does not apply and invite the question of why it is greyed out; a control that is absent needs no explanation. Where it does appear, *Send Selected* is the ordinary path and closing the section is an administrative act the school takes when it judges the section finished — or never.
+
+**Security gap to close in the same pass.** `send_grades` is `@frappe.whitelist()` with **no role check at all** — no `frappe.only_for`, no permission call — so today any authenticated user, a Student included, can finalize grades, write transcript rows, award credits and close a section. `api.py` already has both the idiom (`frappe.only_for`, used elsewhere in the file) and the constant (`_GRADER_ROLES`). Both entry points get the gate when this split lands.
 
 ### 8. Personal Development Plan
 
@@ -341,6 +411,9 @@ ADR 064 already draws the line between `Cohort` (discipleship, Person-keyed, ADR
 - **The registrar's workload does not grow with the number of mentor types.** Sections carry course instructors only; mentors are recorded once per student and resolved through CEI. Cost: the mentor↔section relationship is derived rather than stored, so an upstream data problem (a missing CEI, a mentor row with a stale `to_date`) surfaces as "no evaluator found" at grading time rather than at assignment time. The Program Enrollments by Mentor report exists to catch that before a section starts grading, and `send_grades` names the missing evaluator rather than failing generically.
 - One chapter↔competency mapping serves three purposes: the descriptors render in the outline, "end of each competency" becomes computable, and content gating has something to gate on. Cost: a course that skips the mapping silently loses both the timing trigger and the gating modes, falling back to course-level timing and per-activity rules — so the feature is only as good as the outline authoring, and the Desk form must say so.
 - Content gating is enforced in `cbe.visible_outline` on the server, so the submission endpoints gain a guard they did not have. Cost: a new class of support question ("why can't I open chapter 3?"), mitigated by making the lock explain itself and link to the unlocking self-assessment; and a student who stops reflecting stalls indefinitely, which `stall_escalation_days` notifies but does not resolve.
+- Per-assessment dimension weights let a school say what each piece of work actually measures, and storing computed value, override and rounded result separately means a verdict can always be explained after the fact. Cost: a third weighting concept in a system that already has `weight_scac` and `Course Competency Dimension.weight`, and three fields where a naive design would have one. The Desk form has to make the distinction obvious or authors will conflate the two weights.
+- Splitting finalization from closure is what makes open-ended sections reach a transcript at all, and stops a student who has finished being held back by one who has not. Confining it to `open_ended` sections keeps every dated section's all-or-nothing guarantee intact, so no conventional term changes behaviour. Cost: an **open-ended** section in `Grading` may hold a mix of finalized and unfinalized students, and `workflow_state` does not express that — the roster's `active` flag is the only record of who is done. Anything reasoning about completion from the section's state alone will be wrong for those sections, and their gradebook has to show the distinction clearly or an instructor will not know who is still outstanding.
+- Open-ended sections make self-paced programs workable, and fix a real `TypeError` on the way. Cost: `c_dateend` is no longer unconditionally required, so every consumer of it becomes a place a `None` can reach. The ones that exist today are handled — meeting generation, calendar export, window resolution — but new code must not assume a section ends.
 - GPA is a framework toggle wired on both arms from the start, so a school that later wants one does not force a transcript rewrite. Cost: with the default `emit_gpa = 0`, a school running both CBE and conventional programs sees `Program Enrollment.current_gpa` populated for some students and not others, and honors levels do not apply to CBE students. That is pedagogically correct and will still read as a gap in the registrar UI until the transcript work lands.
 - Development plans stay per-course and independent, with continuity supplied by a reading surface rather than by links between plans. This keeps each plan a closed, reviewable artifact and avoids goals accumulating across four years into a debt ledger. Cost: continuity now depends entirely on `SelfDevelopmentPlans.vue` and on schools actually configuring standard questions — a framework with no questions gives the aggregate view nothing to align on, and it degrades to a chronological list.
 - `Personal Development Note` is explicitly mentor-readable, granted by document permission through `cbe.evaluators_for` rather than by loosening any field or file. Cost: this is genuinely sensitive pastoral content in a system that also holds disciplinary records, and a mentor's read access must revoke cleanly the moment their `Program Enrollment Mentor` row closes. The permission check must resolve at read time, never be cached onto the note.
@@ -352,15 +425,17 @@ ADR 064 already draws the line between `Cohort` (discipleship, Person-keyed, ADR
 1. **What happens when a student fails in a cohort-paced program?** The school does not know: do groups shrink, merge, change mentors? This ships as `cohort_failure_policy = "Not defined — registrar decides"` with `Student Group Members` lifecycle fields in place so whatever they choose is recordable. Revisit when they have grown enough to need the rule.
 2. **Does `report_basis = Summed` belong on the transcript, or only in the portal?** A 1–12 summed score is an internal aggregation artifact; printing it on a transcript alongside a 1–4 competency verdict may confuse receiving institutions. Deferred to the transcript work.
 3. **`emit_gpa = 1` interacts with graduation floors in ways we have not modelled.** The GPA arithmetic is wired (§7), but `Program.min_graduation_gpa`, honors bands and the eligibility floors of [ADR 057](057-graduation-eligibility-floors.md) were designed against percentage scales; a four-point competency scale compresses the distribution enough that existing floor values would not transfer. Revisit when a school actually asks for it.
-4. **Is `stall_escalation_days` enough of a response to a stalled student?** It notifies the mentor. It does not withdraw, flag academically, or open a hold. Whether a persistent stall should reach [ADR 030](030-program-status-lifecycle-spine.md)'s status spine is the same question as the failure policy in (1), and waits on the same answer.
-5. **Who else may read a development note, and for how long?** Mentors, resolved live, is the shipped answer. A former mentor loses access when their row closes; whether a program director, a registrar handling a disciplinary matter, or the student's next mentor should see historical notes is a policy question no school has yet posed to us. Deliberately not modelled — widening this later is easy, narrowing it after staff have read things is not.
+4. **Who may override a competency result?** §6a records *that* an override happened and by whom, but not who is entitled to make one. The obvious candidate is the instructor of record, which `Instructor Category.is_instructor_of_record` already identifies; whether a Personal Mentor should be able to override a dimension they graded is a question about authority in the mentoring relationship, not about software. Shipped as: any evaluator with `gives_competency_verdict` may override, and the record says who did.
+5. **Can a sent grade be un-sent?** No — and partial sending makes the question sharper, because sending early and often is now the normal rhythm rather than a single end-of-term act. Reversing would have to unwind a `Program Enrollment Course` row, subtract accumulated credits, reactivate the roster and re-open the enrollment, and `send_grades` has never had that. Until it does, *Send Selected Grades* is as final per student as *Send Grades* is per section, and the UI must say so before confirming.
+6. **Is `stall_escalation_days` enough of a response to a stalled student?** It notifies the mentor. It does not withdraw, flag academically, or open a hold. Whether a persistent stall should reach [ADR 030](030-program-status-lifecycle-spine.md)'s status spine is the same question as the failure policy in (1), and waits on the same answer.
+7. **Who else may read a development note, and for how long?** Mentors, resolved live, is the shipped answer. A former mentor loses access when their row closes; whether a program director, a registrar handling a disciplinary matter, or the student's next mentor should see historical notes is a policy question no school has yet posed to us. Deliberately not modelled — widening this later is easy, narrowing it after staff have read things is not.
 
 ### Phasing
 
 1. Scale hardening — the cache-key fix, `Grading Scale Dimensions` extension (including `dimension_icon`), CBE validation.
 2. Config layer — `Competency Framework` and evaluator child, `Course Competency` and dimension child, the `Course Schedule Chapter` competency link, `Instructor Category` flags, Program binding and the program-course filter, `Program Enrollment Mentor`, and the Program Enrollments by Mentor report.
-3. Record layer and convergence — `Activity Competency Grade`, `Competency Assessment`, `Competency Result`, `cbe.py`, hooks, the `grade_thisstudent` / `fgrade_this_std` / `gpa` (both `emit_gpa` arms) / `send_grades` branches.
-4. Portal — self-assessment, competency gradebook, mentor worklist tab, competency panels in the course outline.
+3. Record layer and convergence — `Activity Competency Grade`, `Competency Assessment`, `Assessment Dimension Weight`, `Competency Result` and its dimension child, `cbe.py` (including the section 6a pipeline), hooks, the `grade_thisstudent` / `fgrade_this_std` / `gpa` (both `emit_gpa` arms) branches, and the section 7a split of `send_grades` into `finalize_roster` + `send_selected_grades` + `send_grades`, with the missing role gate on both entry points.
+4. Portal — self-assessment, competency gradebook, mentor worklist tab, competency panels in the course outline, and row selection plus Send Selected Grades in both gradebooks.
 5. Content release — `cbe.visible_outline`, the submission-side guard, lock explanations in the outline, and the `stall_escalation_days` job.
 6. Radar and transcript — `RadarChart.vue`, `CompetencyProfile.vue`, CBE rendering in `CourseStatus` and `Grades`.
 7. Personal Development Plan — `Standard Development Question` on the framework, plan + goal doctypes, `PersonalDevelopmentPlan.vue`, `send_grades` guard.

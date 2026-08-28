@@ -3808,6 +3808,15 @@ def _check_auto_grant_emphases(pe_name):
 @frappe.whitelist()
 def course_event(name):
     course = frappe.get_doc("Course Schedule", name)
+    # An open-ended section (ADR 065) has no end date and no meetings, so there
+    # is no bounded span to put on a calendar.
+    if not course.c_datestart or not course.c_dateend:
+        frappe.throw(
+            _(
+                "Course Schedule {0} has no start and end date, so it cannot be "
+                "placed on a calendar."
+            ).format(name)
+        )
     color = course.color
     datest = str(course.c_datestart)  # Convert datet to a string
     timest = str(course.from_time)  # Convert timest to a string

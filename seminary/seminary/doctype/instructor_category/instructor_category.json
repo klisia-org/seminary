@@ -12,6 +12,8 @@
  "field_order": [
   "category_name",
   "is_instructor_of_record",
+  "is_competency_evaluator",
+  "mentor_scope",
   "description",
   "rates_section",
   "rates"
@@ -50,10 +52,27 @@
    "fieldtype": "Table",
    "label": "Rates",
    "options": "Instructor Category Rate"
+  },
+  {
+   "default": "0",
+   "description": "Marks this category as one that assesses students in competency-based programs. Only these categories can be chosen as evaluators on a Competency Framework or as a student's mentor.",
+   "fieldname": "is_competency_evaluator",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Competency Evaluator?"
+  },
+  {
+   "default": "Course",
+   "depends_on": "is_competency_evaluator",
+   "description": "Course: assigned to a course schedule and assesses everyone in it. Program: assigned to a student on their program enrollment and follows them from course to course.",
+   "fieldname": "mentor_scope",
+   "fieldtype": "Select",
+   "label": "Mentor Scope",
+   "options": "Course\nProgram"
   }
  ],
  "links": [],
- "modified": "2026-06-08 05:52:34.721586",
+ "modified": "2026-08-28 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor Category",

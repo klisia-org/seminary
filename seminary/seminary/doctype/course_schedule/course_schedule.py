@@ -37,6 +37,7 @@ class CourseSchedule(Document):
         self.set_title()
         if frappe.flags.in_demo_install:
             return
+        self.validate_open_ended()
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
@@ -462,19 +463,75 @@ class CourseSchedule(Document):
         )
         start_date = self.convert_to_date(start_date)
         end_date = self.convert_to_date(end_date)
-        course_datestart = self.c_datestart
-        course_dateend = self.c_dateend
-        course_datestart = self.convert_to_date(course_datestart)
-        course_dateend = self.convert_to_date(course_dateend)
-        if (
-            start_date
-            and end_date
-            and ((course_datestart < start_date) or (course_dateend > end_date))
-        ):
+        course_datestart = self.convert_to_date(self.c_datestart)
+        course_dateend = self.convert_to_date(self.c_dateend)
+
+        # Each comparison is guarded on its own operands. An open-ended section
+        # (ADR 065) legitimately has no end date, and a missing start date is
+        # caught by the mandatory check — neither should surface as a TypeError.
+        outside = (
+            start_date and course_datestart and course_datestart < start_date
+        ) or (end_date and course_dateend and course_dateend > end_date)
+        if outside:
             frappe.throw(
                 _(
                     "Schedule date selected does not lie within the Academic Term: {}"
                 ).format(self.academic_term)
+            )
+
+    def validate_open_ended(self):
+        """An open-ended section is only meaningful under self-paced pacing.
+
+        Cohort-paced programs move students together, so a section with no end
+        would have nothing to move them past; and a conventional numeric course
+        needs an end date for grading windows and attendance. Restricting the
+        flag here keeps it from becoming a way to sidestep the end date
+        generally (ADR 065).
+        """
+        if not self.open_ended:
+            # mandatory_depends_on is evaluated client-side only, so dropping
+            # reqd from c_dateend would leave every API, import and script path
+            # able to create an undated section. Enforce it here instead.
+            if not self.c_dateend:
+                frappe.throw(
+                    _(
+                        "End Date is required. Tick Open Ended only if this section "
+                        "belongs to a self-paced competency-based program and has no "
+                        "fixed end."
+                    )
+                )
+            return
+
+        self.c_dateend = None
+
+        self_paced = frappe.get_all(
+            "Program Course",
+            filters={"course": self.course, "disabled": 0},
+            fields=["parent"],
+        )
+        if not any(
+            frappe.db.get_value("Program", p.parent, "pacing_mode") == "Self-paced"
+            and frappe.db.get_value("Program", p.parent, "competency_framework")
+            for p in self_paced
+        ):
+            frappe.throw(
+                _(
+                    "Course {0} is not in any self-paced competency-based program, so "
+                    "this section cannot be open ended. Give it an end date, or set "
+                    "the program's pacing to Self-paced."
+                ).format(self.course)
+            )
+
+        # No meetings means no absences to count; leaving a policy configured
+        # would produce an absence limit derived from an empty meeting list.
+        if self.attendance_policy != "Disabled":
+            self.attendance_policy = "Disabled"
+            frappe.msgprint(
+                _(
+                    "Attendance tracking has been disabled: an open-ended section "
+                    "has no scheduled class meetings."
+                ),
+                alert=True,
             )
 
     def validate_time(self):
@@ -519,6 +576,15 @@ class CourseSchedule(Document):
         """Returns a list of meeting dates and also creates child documents for each meeting date"""
         meeting_dates = []
         meeting_dates_errors = []
+
+        if not self.c_dateend:
+            frappe.throw(
+                _(
+                    "This section has no end date, so class meetings cannot be "
+                    "generated. Open-ended sections are worked through at the "
+                    "student's own pace and have no fixed meeting schedule."
+                )
+            )
 
         # Remove existing meeting dates through the ORM (not raw SQL)
         self.set("cs_meetinfo", [])

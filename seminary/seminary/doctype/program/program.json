@@ -42,6 +42,11 @@
   "honors_levels",
   "attendance_section_pgm",
   "default_max_absence_percent",
+  "cbe_section",
+  "competency_framework",
+  "pacing_mode",
+  "column_break_cbe",
+  "cohort_failure_policy",
   "section_break_courses",
   "courses",
   "tracks_tab",
@@ -485,6 +490,41 @@
    "fieldtype": "Link",
    "label": "Academic Unit",
    "options": "Academic Unit"
+  },
+  {
+   "depends_on": "eval:!doc.is_ongoing",
+   "fieldname": "cbe_section",
+   "fieldtype": "Section Break",
+   "label": "Competency-Based Education"
+  },
+  {
+   "description": "Attach a framework to run this program on competencies instead of numeric grades. Every course in the program must then use the framework's grading scale and define at least one competency.",
+   "fieldname": "competency_framework",
+   "fieldtype": "Link",
+   "label": "Competency Framework",
+   "link_filters": "[[\"Competency Framework\",\"status\",\"=\",\"Active\"]]",
+   "options": "Competency Framework"
+  },
+  {
+   "depends_on": "competency_framework",
+   "description": "Cohort-paced: students move through the program together. Self-paced: each student progresses at their own speed. Defaults from the framework and can be changed here.",
+   "fieldname": "pacing_mode",
+   "fieldtype": "Select",
+   "label": "Pacing Mode",
+   "options": "\nCohort-paced\nSelf-paced"
+  },
+  {
+   "fieldname": "column_break_cbe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Not defined - registrar decides",
+   "depends_on": "eval:doc.competency_framework && doc.pacing_mode=='Cohort-paced'",
+   "description": "What happens to a student who does not reach competency while their cohort moves on. Leave as undecided until your school has a rule.",
+   "fieldname": "cohort_failure_policy",
+   "fieldtype": "Select",
+   "label": "Cohort Failure Policy",
+   "options": "Not defined - registrar decides\nRepeat competency in place\nMove to next intake cohort\nIndividual remediation plan"
   }
  ],
  "has_web_view": 1,
@@ -509,7 +549,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-19 23:43:42.530902",
+ "modified": "2026-08-28 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

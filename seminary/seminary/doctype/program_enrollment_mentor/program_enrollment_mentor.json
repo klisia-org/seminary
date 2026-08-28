@@ -1,0 +1,99 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-28 21:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "instructor",
+  "instructor_name",
+  "instructor_category",
+  "column_break_pem",
+  "from_date",
+  "to_date",
+  "active",
+  "change_reason"
+ ],
+ "fields": [
+  {
+   "allow_on_submit": 1,
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Mentor",
+   "link_filters": "[[\"Instructor\",\"status\",\"=\",\"Active\"]]",
+   "options": "Instructor",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "instructor.instructor_name",
+   "fieldname": "instructor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Mentor Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The kind of mentoring this person provides for this student.",
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Mentor Type",
+   "link_filters": "[[\"Instructor Category\",\"is_competency_evaluator\",\"=\",1]]",
+   "options": "Instructor Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_pem",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "From Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Leave blank while the mentoring continues. Set a date to close the assignment; the row stays for the record.",
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Why this mentor was assigned or the assignment ended.",
+   "fieldname": "change_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-28 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Program Enrollment Mentor",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

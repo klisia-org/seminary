@@ -29,8 +29,10 @@ class Program(WebsiteGenerator):
             self.require_pay_submit = 0
             self.percent_to_pay = 0
 
+        self._hydrate_pacing_mode_default()
         self._stamp_course_disabled_on()
         self._validate_course_term_and_credits()
+        self._validate_competency_courses()
 
     def on_update(self):
         # WebsiteGenerator.on_update drives the search-index refresh; same
@@ -80,6 +82,81 @@ class Program(WebsiteGenerator):
             )
             or 0
         )
+
+    def _hydrate_pacing_mode_default(self):
+        """Default pacing_mode from the Competency Framework, but keep it
+        overridable: pull the framework's value only on create or when the
+        framework changes. Same reasoning as _hydrate_graduation_gpa_default —
+        fetch_from would overwrite a per-program override on every save
+        (ADR 057)."""
+        if not self.competency_framework:
+            return
+        before = self.get_doc_before_save()
+        if (
+            before
+            and before.competency_framework == self.competency_framework
+            and self.pacing_mode
+        ):
+            return  # framework unchanged — respect any per-program override
+        self.pacing_mode = frappe.db.get_value(
+            "Competency Framework", self.competency_framework, "default_pacing_mode"
+        )
+
+    def _validate_competency_courses(self):
+        """A competency-based program's curriculum has to be able to carry
+        competencies (ADR 065).
+
+        Without this, any course could sit in a CBE program and would simply
+        produce no competency results at grading time — a failure that surfaces
+        at the end of a term rather than when the curriculum is built. Both
+        conditions are checked together so the registrar fixes the whole list in
+        one pass rather than one course per save.
+        """
+        if not self.competency_framework:
+            return
+
+        framework_scale = frappe.db.get_value(
+            "Competency Framework", self.competency_framework, "grading_scale"
+        )
+        if not framework_scale:
+            return
+
+        wrong_scale, no_competency = [], []
+        for pc in self.courses or []:
+            if pc.disabled or not pc.course:
+                continue
+            course_scale = frappe.db.get_value(
+                "Course", pc.course, "default_grading_scale"
+            )
+            if course_scale != framework_scale:
+                wrong_scale.append(f"{pc.course} ({course_scale or _('no scale')})")
+                continue
+            if not frappe.db.exists(
+                "Course Competency", {"course": pc.course, "is_active": 1}
+            ):
+                no_competency.append(pc.course)
+
+        problems = []
+        if wrong_scale:
+            problems.append(
+                _(
+                    "These courses do not use the framework's grading scale {0}: {1}."
+                ).format(framework_scale, ", ".join(wrong_scale))
+            )
+        if no_competency:
+            problems.append(
+                _("These courses define no active competency: {0}.").format(
+                    ", ".join(no_competency)
+                )
+            )
+        if problems:
+            frappe.throw(
+                _("Program {0} uses competency framework {1}.").format(
+                    self.name, self.competency_framework
+                )
+                + "<br><br>"
+                + "<br><br>".join(problems)
+            )
 
     def _stamp_course_disabled_on(self):
         for pc in self.courses or []:
@@ -255,6 +332,43 @@ def get_program_tracks(doctype, txt, searchfield, start, page_len, filters):
         LIMIT %(start)s, %(page_len)s""",
         {
             "program": filters["program"],
+            "txt": "%{0}%".format(txt),
+            "start": start,
+            "page_len": page_len,
+        },
+    )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_competency_courses(doctype, txt, searchfield, start, page_len, filters):
+    """Courses eligible for a competency-based program's curriculum (ADR 065).
+
+    A course qualifies when it uses the framework's grading scale and defines at
+    least one active competency. Program.validate enforces the same rule; this
+    only keeps the registrar from picking a course that would be rejected.
+    """
+    framework = (filters or {}).get("competency_framework")
+    if not framework:
+        return []
+    scale = frappe.db.get_value("Competency Framework", framework, "grading_scale")
+    if not scale:
+        return []
+
+    return frappe.db.sql(
+        """SELECT c.name, c.coursecode
+        FROM `tabCourse` c
+        WHERE c.disabled = 0
+            AND c.default_grading_scale = %(scale)s
+            AND EXISTS (
+                SELECT 1 FROM `tabCourse Competency` cc
+                WHERE cc.course = c.name AND cc.is_active = 1
+            )
+            AND (c.name LIKE %(txt)s OR c.coursecode LIKE %(txt)s)
+        ORDER BY c.name
+        LIMIT %(start)s, %(page_len)s""",
+        {
+            "scale": scale,
             "txt": "%{0}%".format(txt),
             "start": start,
             "page_len": page_len,
