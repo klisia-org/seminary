@@ -682,6 +682,9 @@ def get_course_outline(course, progress=False):
                 "is_scorm_package",
                 "launch_file",
                 "scorm_package",
+                # The competency this chapter delivers (ADR 065). Carried so the
+                # editor can show the current mapping without a second call.
+                "course_competency",
             ],
             as_dict=True,
         )

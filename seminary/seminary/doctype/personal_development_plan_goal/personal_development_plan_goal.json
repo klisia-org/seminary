@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-01 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "standard_question",
+  "question_text",
+  "course_competency",
+  "dimension_code",
+  "column_break_pdg1",
+  "target_date",
+  "status",
+  "goal_section",
+  "goal",
+  "action_steps",
+  "support_needed"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "description": "The framework prompt this goal answers, if any. Stored as the key rather than a Link because the questions are child rows of Competency Framework and a Link cannot target one.",
+   "fieldname": "standard_question",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Standard Question Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "question_text",
+   "fieldtype": "Small Text",
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Competency",
+   "options": "Course Competency"
+  },
+  {
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "label": "Dimension"
+  },
+  {
+   "fieldname": "column_break_pdg1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "target_date",
+   "fieldtype": "Date",
+   "label": "Target Date"
+  },
+  {
+   "columns": 1,
+   "default": "Planned",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Planned\nIn Progress\nAchieved"
+  },
+  {
+   "fieldname": "goal_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "goal",
+   "fieldtype": "Text Editor",
+   "label": "Goal",
+   "reqd": 1
+  },
+  {
+   "fieldname": "action_steps",
+   "fieldtype": "Text Editor",
+   "label": "Action Steps"
+  },
+  {
+   "fieldname": "support_needed",
+   "fieldtype": "Small Text",
+   "label": "Support Needed"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-01 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Personal Development Plan Goal",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

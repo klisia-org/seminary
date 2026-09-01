@@ -1,0 +1,204 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "PDP-.######",
+ "creation": "2026-09-01 11:00:00.000000",
+ "description": "A student's own plan for what they will work on next, written at the end of a course. The framework's standard questions supply the prompts; goals may also stand on their own. Each course's plan is independent -- nothing carries forward, because a plan that inherits last course's unfinished business becomes a debt rather than a reflection.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#personal-development-plan",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "program_enrollment",
+  "column_break_pdp1",
+  "course_schedule",
+  "roster",
+  "status",
+  "reflection_section",
+  "reflection",
+  "goals_section",
+  "goals",
+  "review_section",
+  "submitted_on",
+  "reviewed_by",
+  "reviewed_on",
+  "column_break_pdp2",
+  "mentor_feedback"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_pdp1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1
+  },
+  {
+   "fieldname": "roster",
+   "fieldtype": "Link",
+   "label": "Roster",
+   "options": "Scheduled Course Roster",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nSubmitted\nReviewed\nAccepted"
+  },
+  {
+   "fieldname": "reflection_section",
+   "fieldtype": "Section Break",
+   "label": "Reflection"
+  },
+  {
+   "fieldname": "reflection",
+   "fieldtype": "Text Editor",
+   "label": "Looking back on this course"
+  },
+  {
+   "fieldname": "goals_section",
+   "fieldtype": "Section Break",
+   "label": "Goals"
+  },
+  {
+   "fieldname": "goals",
+   "fieldtype": "Table",
+   "label": "Goals",
+   "options": "Personal Development Plan Goal"
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Mentor Review"
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "options": "Instructor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Reviewed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pdp2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mentor_feedback",
+   "fieldtype": "Text Editor",
+   "label": "Mentor Feedback"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-01 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Personal Development Plan",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

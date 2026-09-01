@@ -64,28 +64,38 @@ def framework_for(course_schedule):
     cs = frappe.db.get_value(
         "Course Schedule", course_schedule, ["course", "gradesc_cs"], as_dict=True
     )
-    framework = None
-    if cs and is_cbe_scale(cs.gradesc_cs):
-        candidates = set()
-        for row in frappe.get_all(
-            "Program Course",
-            filters={"course": cs.course, "disabled": 0},
-            fields=["parent"],
-        ):
-            fw = frappe.db.get_value("Program", row.parent, "competency_framework")
-            if (
-                fw
-                and frappe.db.get_value("Competency Framework", fw, "grading_scale")
-                == cs.gradesc_cs
-            ):
-                candidates.add(fw)
-        # Deterministic when a course is shared by two programs on the same
-        # framework-compatible scale: they agree on the vocabulary, so either
-        # answer is valid, but the same one has to come back every time.
-        framework = sorted(candidates)[0] if candidates else None
+    framework = framework_for_course_and_scale(cs.course, cs.gradesc_cs) if cs else None
 
     cache[course_schedule] = framework
     return framework
+
+
+def framework_for_course_and_scale(course, grading_scale):
+    """The framework a section on this course and scale would resolve to.
+
+    Split out of framework_for so a Course Schedule can ask the question about
+    itself while still unsaved -- validation runs before the row exists, and
+    reading it back from the database would always answer None.
+    """
+    if not is_cbe_scale(grading_scale):
+        return None
+    candidates = set()
+    for row in frappe.get_all(
+        "Program Course",
+        filters={"course": course, "disabled": 0},
+        fields=["parent"],
+    ):
+        fw = frappe.db.get_value("Program", row.parent, "competency_framework")
+        if (
+            fw
+            and frappe.db.get_value("Competency Framework", fw, "grading_scale")
+            == grading_scale
+        ):
+            candidates.add(fw)
+    # Deterministic when a course is shared by two programs on the same
+    # framework-compatible scale: they agree on the vocabulary, so either
+    # answer is valid, but the same one has to come back every time.
+    return sorted(candidates)[0] if candidates else None
 
 
 def framework_doc(course_schedule):
@@ -333,6 +343,100 @@ def dimension_weights_for(assess_criteria, course_competency=None):
 # ---------------------------------------------------------------- activity grades
 
 
+PER_ACTIVITY_MODE = "One grade per activity"
+PER_EVALUATOR_MODE = "One grade per evaluator"
+PER_DIMENSION_MODE = "One grade per evaluator per dimension"
+
+
+def grading_shape(assess_criteria, framework=None):
+    """How many grades this assessment asks for: the shape before the cells."""
+    override = frappe.db.get_value(
+        "Scheduled Course Assess Criteria", assess_criteria, "grading_mode_override"
+    )
+    if override:
+        return override
+    if framework is None:
+        parent = frappe.db.get_value(
+            "Scheduled Course Assess Criteria", assess_criteria, "parent"
+        )
+        framework = framework_doc(parent)
+    return framework.activity_grading_mode if framework else PER_ACTIVITY_MODE
+
+
+def grading_matrix_for(assess_criteria):
+    """Explicit cell choices for one assessment, as {(category, dim): graded}.
+
+    Only what an instructor actually set. Absence is not "off": it means the
+    shape stands, which is why this returns the overrides rather than a filled
+    grid (ADR 065 section 11b).
+    """
+    cache = _cache().setdefault("grading_matrix_for", {})
+    if assess_criteria not in cache:
+        cache[assess_criteria] = {
+            (r.instructor_category, r.dimension_code): bool(cint(r.graded))
+            for r in frappe.get_all(
+                "Assessment Grading Matrix",
+                filters={"assess_criteria": assess_criteria},
+                fields=["instructor_category", "dimension_code", "graded"],
+            )
+        }
+    return cache[assess_criteria]
+
+
+def is_cell_graded(assess_criteria, instructor_category, dimension_code, shape=None):
+    """Does this kind of evaluator judge this dimension on this activity?
+
+    An opted-out cell is *not applicable* -- not missing, not zero. Nothing may
+    ask for it, wait for it, or average it in.
+    """
+    shape = shape or grading_shape(assess_criteria)
+    # With one grade for the whole activity there are no axes to switch off.
+    if shape == PER_ACTIVITY_MODE:
+        return True
+    matrix = grading_matrix_for(assess_criteria)
+    if shape == PER_EVALUATOR_MODE:
+        # No dimension axis: a category is on unless every one of its cells is
+        # off, which is how "this mentor does not grade this activity" is said.
+        cells = [v for (cat, _d), v in matrix.items() if cat == instructor_category]
+        return any(cells) if cells else True
+    explicit = matrix.get((instructor_category, dimension_code))
+    return True if explicit is None else explicit
+
+
+def graded_dimensions_for(assess_criteria, instructor_category, dimension_codes):
+    """The dimensions this evaluator is asked to judge on this assessment."""
+    shape = grading_shape(assess_criteria)
+    if shape != PER_DIMENSION_MODE:
+        return list(dimension_codes)
+    return [
+        d
+        for d in dimension_codes
+        if is_cell_graded(assess_criteria, instructor_category, d, shape)
+    ]
+
+
+def _any_evaluator_grades(roster_doc, assess_criteria, dimension_code):
+    """Is anyone at all asked to judge this dimension on this assessment?
+
+    A dimension every evaluator has opted out of does not participate in the
+    competency's average; the other assessments carry it.
+    """
+    shape = grading_shape(assess_criteria)
+    if shape != PER_DIMENSION_MODE:
+        return True
+    categories = {
+        e["instructor_category"]
+        for e in evaluators_for(roster_doc)
+        if e["grades_activities"]
+    }
+    if not categories:
+        return True
+    return any(
+        is_cell_graded(assess_criteria, cat, dimension_code, shape)
+        for cat in categories
+    )
+
+
 def _grades_for(roster_name, assess_criteria, dimension_code=None):
     filters = {"roster": roster_name, "assess_criteria": assess_criteria}
     rows = frappe.get_all(
@@ -415,6 +519,10 @@ def weighted_dimension_value(roster, course_competency, dimension_code):
     for c in criteria:
         weight = dimension_weights_for(c.name, course_competency).get(dimension_code, 0)
         if weight <= 0:
+            continue
+        # Opted out is not zero: the assessment simply does not speak to this
+        # dimension, so it leaves the average rather than dragging it down.
+        if not _any_evaluator_grades(roster_doc, c.name, dimension_code):
             continue
         level = level_for_assessment(roster_doc, c.name, dimension_code, framework)
         if level is None:
@@ -812,9 +920,26 @@ def missing_required_evaluators(roster):
         )
     }
 
+    dimension_codes = [
+        d.dimension_code
+        for d in frappe.get_all(
+            "Grading Scale Dimensions",
+            filters={"parent": scale_for(roster_doc.course_sc)},
+            fields=["dimension_code"],
+        )
+    ]
+
     missing = []
     for c in criteria:
         for e in required:
+            # Nothing is owed where every cell for this evaluator is switched
+            # off: they were never asked to judge this activity.
+            if not graded_dimensions_for(
+                c.name, e["instructor_category"], dimension_codes
+            ):
+                continue
+            if not is_cell_graded(c.name, e["instructor_category"], None):
+                continue
             if (c.name, e["instructor"]) not in graded:
                 missing.append(
                     _("{0} has not graded {1}").format(e["instructor"], c.title)
@@ -903,6 +1028,27 @@ def _self_assessment_submitted(student, course_schedule, competency, stage="Fina
     )
 
 
+def content_release_mode(course_schedule, framework=None):
+    """The release mode actually in force for a section.
+
+    A section may override the framework's mode only where the framework says
+    so (`override_contentrelease`). Resolution honours the flag rather than
+    trusting the stored value, because a school that turns the permission off
+    means it from that moment on — leaving old overrides in force would make the
+    flag a suggestion. The Course Schedule controller refuses new overrides in
+    that state, so the two agree; this is the side that has to hold.
+    """
+    framework = framework or framework_doc(course_schedule)
+    if not framework:
+        return PER_ACTIVITY
+    if not cint(framework.override_contentrelease):
+        return framework.content_release_mode
+    override = frappe.db.get_value(
+        "Course Schedule", course_schedule, "content_release_override"
+    )
+    return override or framework.content_release_mode
+
+
 def visible_outline(roster):
     """Which chapters and activities are open to this student, and why not.
 
@@ -920,7 +1066,7 @@ def visible_outline(roster):
         else frappe.get_doc("Scheduled Course Roster", roster)
     )
     framework = framework_doc(roster_doc.course_sc)
-    mode = framework.content_release_mode if framework else PER_ACTIVITY
+    mode = content_release_mode(roster_doc.course_sc, framework)
     chapters = _mapped_chapters(roster_doc.course_sc)
     mapped = [c for c in chapters if c.course_competency]
 
@@ -1151,3 +1297,226 @@ def notify_stalled_self_assessments():
                 frappe.log_error(
                     frappe.get_traceback(), "CBE stall notification failed"
                 )
+
+
+# ---------------------------------------------------------------- mentor scope
+
+
+def mentors_of_student(student):
+    """Every instructor who is currently a mentor to this student.
+
+    The same two sources as `evaluators_for`, composed at student scope instead
+    of section scope, because a development note need not belong to any course
+    (ADR 065 section 8a). Resolved live rather than stored: a mentor's access
+    ends when their row closes, and a stored grant would outlive the
+    relationship it was standing in for.
+    """
+    if not student:
+        return set()
+
+    today = getdate()
+    out = set()
+
+    enrollments = frappe.get_all(
+        "Program Enrollment",
+        filters={"student": student, "docstatus": 1},
+        fields=["name", "program"],
+    )
+    for pe in enrollments:
+        if not frappe.db.get_value("Program", pe.program, "competency_framework"):
+            continue
+        for m in frappe.get_all(
+            "Program Enrollment Mentor",
+            filters={"parent": pe.name, "active": 1},
+            fields=["instructor", "from_date", "to_date"],
+        ):
+            if m.from_date and getdate(m.from_date) > today:
+                continue
+            if m.to_date and getdate(m.to_date) < today:
+                continue
+            out.add(m.instructor)
+
+    # Section instructors count only while the student is still active in the
+    # section: a professor who taught them two years ago is not a mentor now.
+    for r in frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"student": student, "active": 1, "audit_bool": 0},
+        fields=["name", "course_sc"],
+    ):
+        if not framework_for(r.course_sc):
+            continue
+        for e in evaluators_for(r.name):
+            out.add(e["instructor"])
+
+    out.discard(None)
+    return out
+
+
+def is_mentor_of(instructor, student):
+    if not instructor or not student:
+        return False
+    return instructor in mentors_of_student(student)
+
+
+def mentees_of(instructor):
+    """The students an instructor currently mentors.
+
+    The inversion of `mentors_of_student`, and the same resolution behind the
+    competency worklist: a mentor is never added to a section, so this is the
+    only thing that can tell them whose formation they are following.
+    """
+    if not instructor:
+        return []
+
+    students = set()
+    for m in frappe.get_all(
+        "Program Enrollment Mentor",
+        filters={"instructor": instructor, "active": 1},
+        fields=["parent", "from_date", "to_date"],
+    ):
+        today = getdate()
+        if m.from_date and getdate(m.from_date) > today:
+            continue
+        if m.to_date and getdate(m.to_date) < today:
+            continue
+        pe = frappe.db.get_value(
+            "Program Enrollment",
+            m.parent,
+            ["student", "program", "docstatus"],
+            as_dict=True,
+        )
+        if not pe or pe.docstatus != 1:
+            continue
+        if not frappe.db.get_value("Program", pe.program, "competency_framework"):
+            continue
+        students.add(pe.student)
+
+    sections = frappe.get_all(
+        "Course Schedule Instructors",
+        filters={"instructor": instructor},
+        pluck="parent",
+    )
+    for cs in set(sections):
+        if not framework_for(cs):
+            continue
+        for r in frappe.get_all(
+            "Scheduled Course Roster",
+            filters={"course_sc": cs, "active": 1, "audit_bool": 0},
+            fields=["name", "student"],
+        ):
+            if any(e["instructor"] == instructor for e in evaluators_for(r.name)):
+                students.add(r.student)
+
+    return sorted(students)
+
+
+# ---------------------------------------------------------------- prompt timing
+
+
+START_OF_COURSE = "Start of course"
+END_OF_COURSE = "End of course"
+END_OF_EACH_COMPETENCY = "End of each competency"
+
+
+def self_assessment_prompts(roster):
+    """When to actually ask this student to assess themselves.
+
+    `course_self_eval_points` has always distinguished start of course, end of
+    course and end of each competency, but the outline offered the prompt on
+    every mapped chapter regardless -- so a school set to "start of course and
+    end of each competency" was greeted at the *beginning* of each competency
+    and never at the start (ADR 065 section 11e).
+
+    Returns {"baseline": bool, "chapters": {chapter: competency}, "final_all":
+    bool}: whether the opening baseline is due, which chapters have finished and
+    so are ready for their competency's final self-assessment, and whether the
+    end-of-course prompt is due.
+    """
+    roster_doc = (
+        roster
+        if isinstance(roster, frappe.model.document.Document)
+        else frappe.get_doc("Scheduled Course Roster", roster)
+    )
+    framework = framework_doc(roster_doc.course_sc)
+    empty = {"baseline": False, "chapters": {}, "final_all": False, "points": None}
+    if not framework or not cint(framework.course_self_eval):
+        return empty
+
+    when = framework.course_self_eval_points or ""
+    out = dict(empty, points=when)
+    # Matched case-insensitively on purpose: the Select reads "Start of course
+    # and end of each competency", so a capitalised constant matches the option
+    # that starts with it and silently misses the one that does not.
+    phrase = when.lower()
+
+    mapped = [c for c in _mapped_chapters(roster_doc.course_sc) if c.course_competency]
+
+    if "start" in phrase:
+        # Due until it is done: the baseline is the first thing asked and the
+        # last thing a student thinks to go back for.
+        out["baseline"] = any(
+            not _self_assessment_submitted(
+                roster_doc.student,
+                roster_doc.course_sc,
+                c.course_competency,
+                "Baseline",
+            )
+            for c in mapped
+        )
+
+    complete = _completed_chapters(roster_doc)
+
+    if END_OF_EACH_COMPETENCY.lower() in phrase:
+        for c in mapped:
+            if c.name in complete and not _self_assessment_submitted(
+                roster_doc.student, roster_doc.course_sc, c.course_competency, "Final"
+            ):
+                out["chapters"][c.name] = c.course_competency
+
+    if END_OF_COURSE.lower() in phrase and END_OF_EACH_COMPETENCY.lower() not in phrase:
+        # The whole outline, not just the mapped part: an intro chapter is still
+        # work the student has to finish before the course is over.
+        chapters = _mapped_chapters(roster_doc.course_sc)
+        out["final_all"] = bool(chapters) and all(c.name in complete for c in chapters)
+
+    return out
+
+
+def _completed_chapters(roster_doc):
+    """Chapters whose lessons this student has all finished.
+
+    Read from the same Course Schedule Progress rows the outline already uses,
+    so "end of a competency" needs no new state to mean something.
+    """
+    chapters = [c.name for c in _mapped_chapters(roster_doc.course_sc)]
+    if not chapters:
+        return set()
+
+    lessons_by_chapter = {}
+    for ref in frappe.get_all(
+        "Course Schedule Lesson Reference",
+        filters={"parenttype": "Course Schedule Chapter", "parent": ("in", chapters)},
+        fields=["parent", "lesson"],
+    ):
+        lessons_by_chapter.setdefault(ref.parent, []).append(ref.lesson)
+
+    done = {
+        p.lesson
+        for p in frappe.get_all(
+            "Course Schedule Progress",
+            filters={
+                "course": roster_doc.course_sc,
+                "member": frappe.db.get_value("Student", roster_doc.student, "user"),
+                "status": "Complete",
+            },
+            fields=["lesson"],
+        )
+    }
+
+    complete = set()
+    for chapter, lessons in lessons_by_chapter.items():
+        # A chapter with no lessons is not "finished" -- there was nothing to do,
+        # so there is nothing to reflect on either.
+        if lessons and all(lesson in done for lesson in lessons):
+            complete.add(chapter)
+    return complete

@@ -1,0 +1,146 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "PDN-.#######",
+ "creation": "2026-09-01 12:00:00.000000",
+ "description": "A student's own journal entry about their formation, optionally anchored to a plan, a competency or a dimension, and not tied to any course finishing. Not private: the student's active mentors can read these, and the portal says so at the point of writing.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#development-notes",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "program_enrollment",
+  "note_date",
+  "column_break_pdn1",
+  "course_schedule",
+  "course_competency",
+  "dimension_code",
+  "development_plan",
+  "note_section",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "note_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Written"
+  },
+  {
+   "fieldname": "column_break_pdn1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule"
+  },
+  {
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency"
+  },
+  {
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "label": "Dimension"
+  },
+  {
+   "fieldname": "development_plan",
+   "fieldtype": "Link",
+   "label": "Development Plan",
+   "options": "Personal Development Plan"
+  },
+  {
+   "fieldname": "note_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Text Editor",
+   "label": "Note",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-01 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Personal Development Note",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "note_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

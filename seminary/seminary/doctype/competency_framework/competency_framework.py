@@ -27,7 +27,29 @@ class CompetencyFramework(Document):
     def validate(self):
         self.validate_grading_scale()
         self.validate_evaluators()
+        self.validate_development_questions()
         self.set_report_max()
+
+    def validate_development_questions(self):
+        """Question keys are the join between four years of separate plans.
+
+        The text may be reworded freely; the key may not, because it is what
+        lets a student read every answer they have given to the same prompt
+        across every course. Uniqueness is therefore enforced here rather than
+        left to convention (ADR 065 section 8).
+        """
+        from seminary.seminary.utils import assert_url_safe_code
+
+        seen = {}
+        for row in self.development_questions or []:
+            assert_url_safe_code(row.question_key, _("Question Key"))
+            if row.question_key in seen:
+                frappe.throw(
+                    _("Question key {0} appears in rows {1} and {2}.").format(
+                        row.question_key, seen[row.question_key], row.idx
+                    )
+                )
+            seen[row.question_key] = row.idx
 
     def validate_grading_scale(self):
         scale_type = frappe.db.get_value(

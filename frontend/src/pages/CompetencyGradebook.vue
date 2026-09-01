@@ -88,6 +88,20 @@
 					</p>
 
 					<template v-else-if="detail.data">
+						<!-- The plan is the student's word on what comes next; a
+						     mentor reads and responds to it here (ADR 065 §8). -->
+						<div v-if="requiresPdp" class="mb-4 flex justify-end">
+							<router-link :to="{
+								name: 'PersonalDevelopmentPlan',
+								params: { courseName: props.courseName },
+								query: { student: detail.data.student },
+							}">
+								<Button variant="subtle" size="sm">
+									{{ __('Development Plan') }}
+								</Button>
+							</router-link>
+						</div>
+
 						<div v-if="detail.data.missing_evaluators?.length"
 							class="mb-4 rounded-md bg-surface-amber-1 px-4 py-3 text-sm text-ink-amber-3">
 							<p class="font-medium">{{ __('Still outstanding') }}</p>
@@ -252,6 +266,7 @@ watch(
 )
 
 const levels = computed(() => context.data?.levels || [])
+const requiresPdp = computed(() => !!context.data?.framework?.require_pdp)
 const isFinalized = computed(() =>
 	['Closed', 'Cancelled'].includes(context.data?.workflow_state)
 )

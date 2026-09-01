@@ -55,6 +55,7 @@
   "short_introduction",
   "course_description_for_lms",
   "chapters",
+  "content_release_override",
   "meeting_dates_tab",
   "meeting_dates_section",
   "cs_meetinfo",
@@ -529,6 +530,14 @@
    "options": "Course Schedule Chapter Reference"
   },
   {
+   "depends_on": "eval:doc.gradesc_cs",
+   "description": "Competency-based sections only, and only when the programme's Competency Framework allows it. Leave blank to follow the framework.",
+   "fieldname": "content_release_override",
+   "fieldtype": "Select",
+   "label": "Content Release Override",
+   "options": "\nPer activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
+  },
+  {
    "description": "This will appear on the course card and on the very top of the first page on the LMS.",
    "fieldname": "short_introduction",
    "fieldtype": "Small Text",
@@ -623,7 +632,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-08-28 22:00:00.000000",
+ "modified": "2026-09-01 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

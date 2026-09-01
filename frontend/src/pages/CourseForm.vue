@@ -146,6 +146,22 @@
 							</div>
 						</div>
 					</div>
+					<!-- Competency-based sections whose framework hands the choice
+					     to the instructor (ADR 065 section 2). Absent that
+					     permission the school's mode stands and there is nothing
+					     to decide here. -->
+					<div v-if="canSetContentRelease" class="container border-t">
+						<div class="text-lg font-semibold mt-5 mb-4">
+							{{ __('Content Release') }}
+						</div>
+						<FormControl type="select" :options="contentReleaseOptions"
+							v-model="course.content_release_override"
+							:label="__('How students reach the content')" class="mb-2" />
+						<p class="text-sm text-ink-gray-5">
+							{{ __('Leave on “{0}” to follow your programme.').format(frameworkDefaultLabel) }}
+						</p>
+					</div>
+
 					<div class="container border-t">
 						<div v-if="user.data?.is_moderator" class="text-lg font-semibold mt-5 mb-4">
 							{{ __('Settings') }}
@@ -290,7 +306,39 @@ const course = reactive({
 	course_image: null,
 	published: false,
 	web_meeting: '',
+	content_release_override: '',
 })
+
+// --- Content release (ADR 065) ---------------------------------------------
+// Optional feature, gated like the other competency surfaces: an ordinary
+// section never sees this resolve and the form is unchanged.
+const competencyContext = createResource({
+	url: 'seminary.seminary.cbe_api.get_competency_context',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	auto: true,
+	onError: () => {},
+})
+
+const canSetContentRelease = computed(
+	() =>
+		!!competencyContext.data?.is_cbe &&
+		!!competencyContext.data?.framework?.override_contentrelease
+)
+
+const frameworkDefaultLabel = computed(
+	() => competencyContext.data?.framework?.content_release_mode || ''
+)
+
+// The choices come from the doctype, so the page cannot drift from the Select.
+const contentReleaseOptions = computed(() => [
+	{
+		label: __('Follow my programme ({0})').format(frameworkDefaultLabel.value),
+		value: '',
+	},
+	...(competencyContext.data?.framework?.content_release_options || []).map(
+		(o) => ({ label: o, value: o })
+	),
+])
 
 // --- Online (virtual) meetings: instructor self-service (ADR 051) ----------
 const showVirtualDialog = ref(false)
@@ -467,6 +515,10 @@ const getCsrfToken = () =>
 
 const submitCourse = async () => {
 	if (!courseResource.data) return;
+	// Sent only when this form is the one that owns the setting; otherwise the
+	// key is absent and the server leaves any existing override alone.
+	const course_data = { ...course }
+	if (!canSetContentRelease.value) delete course_data.content_release_override
 	try {
 		const response = await fetch('/api/method/seminary.seminary.api.save_course', {
 			method: 'POST',
@@ -476,7 +528,7 @@ const submitCourse = async () => {
 			},
 			body: JSON.stringify({
 				course: courseResource.data.name,
-				course_data: course,
+				course_data,
 			}),
 		});
 		const payload = await response.json().catch(() => ({}));

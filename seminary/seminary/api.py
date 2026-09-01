@@ -672,6 +672,19 @@ def save_course(course, course_data):
     try:
         if isinstance(course_data, str):
             course_data = json.loads(course_data)
+        # First, because it is the only field here that a controller can refuse:
+        # the rest are written with set_value, which skips validation, so doing
+        # this last would leave them applied while the save reported failure.
+        # Sent only when the form owns the setting, so a client that does not
+        # show the field cannot clear an override it knows nothing about
+        # (ADR 065 section 2).
+        if "content_release_override" in course_data:
+            cs = frappe.get_doc("Course Schedule", course)
+            cs.content_release_override = (
+                course_data.get("content_release_override") or None
+            )
+            cs.save()
+
         # Update course details
         frappe.db.set_value(
             "Course Schedule",
@@ -709,9 +722,13 @@ def save_course(course, course_data):
         return {"success": True}
 
     except Exception as e:
+        # Drop whatever did land: the writes above are a mix of validated and
+        # unvalidated, and half-saving a course is worse than not saving it.
+        frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Error saving course")
-        print("Error saving course:", str(e))
-        return {"success": False, "message": str(e)}
+        # `error` is the key the portal reads; `message` is kept for anything
+        # that already relied on it.
+        return {"success": False, "error": str(e), "message": str(e)}
 
 
 _CS_MEETING_STAFF_ROLES = {
@@ -2933,6 +2950,13 @@ def save_course_assessment(course, assessment_data):
             doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
+            # Competency wiring (ADR 065 section 11b). Written only when the
+            # form sent the key, so a caller that does not show these fields
+            # cannot blank a mapping it knows nothing about.
+            if "course_competency" in data:
+                doc.course_competency = data.get("course_competency") or None
+            if "grading_mode_override" in data:
+                doc.grading_mode_override = data.get("grading_mode_override") or None
             # These are usually already set, but include them if needed:
             doc.parent = course
             doc.parentfield = "courseassescrit_sc"
@@ -2957,11 +2981,19 @@ def save_course_assessment(course, assessment_data):
                     "assignment": data.get("assignment", ""),
                     "exam": data.get("exam", ""),
                     "discussion": data.get("discussion", ""),
+                    "course_competency": data.get("course_competency") or None,
+                    "grading_mode_override": data.get("grading_mode_override") or None,
                 }
             )
             print("Creating new doc with data:", doc.as_dict())
             doc.insert(ignore_permissions=True)
             print("Created new doc:", doc.name)
+
+    # Save the parent once at the end: the weight total and the
+    # chapter -> lesson -> assessment competency check live on the Course
+    # Schedule controller (ADR 023), and saving child rows one at a time never
+    # runs them.
+    frappe.get_doc("Course Schedule", course).save(ignore_permissions=True)
 
     frappe.db.commit()
     return {"success": True}
@@ -3658,6 +3690,40 @@ def _assert_evaluators_finished(course_schedule, roster_names):
         )
 
 
+def _assert_pdp_complete(course_schedule, roster_names):
+    """Block a send while a required development plan is missing (ADR 065 §8).
+
+    Two settings, deliberately separate: `require_pdp` says the plan is part of
+    the course, `pdp_blocks_completion` says the course cannot close without it.
+    A school can ask for the plan and still not hold a grade hostage to it, and
+    most will — so only the second gate blocks, and it names the students rather
+    than reporting a count.
+    """
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework or not cint(framework.pdp_blocks_completion):
+        return
+
+    missing = []
+    for name in roster_names:
+        if frappe.db.exists(
+            "Personal Development Plan",
+            {"roster": name, "status": ("!=", "Draft")},
+        ):
+            continue
+        missing.append(
+            frappe.db.get_value("Scheduled Course Roster", name, "stuname_roster")
+            or name
+        )
+    if missing:
+        frappe.throw(
+            _("These students have not submitted a development plan yet:")
+            + "<br>"
+            + "<br>".join(missing[:20])
+        )
+
+
 def finalize_roster(roster_name):
     """Finalize one student: grade, write the transcript row, award credits.
 
@@ -3844,6 +3910,7 @@ def send_selected_grades(course_schedule, rosters):
             ).format(missing_count)
         )
     _assert_evaluators_finished(course_schedule, rosters)
+    _assert_pdp_complete(course_schedule, rosters)
 
     finalized, students, pes = [], set(), set()
     for roster_name in rosters:
@@ -3898,6 +3965,7 @@ def send_grades(doc=None, **kwargs):
         fields=["name"],
     )
     _assert_evaluators_finished(docname, [r.name for r in records])
+    _assert_pdp_complete(docname, [r.name for r in records])
 
     affected_pes = set()
     for record in records:
@@ -4359,8 +4427,42 @@ def active_term():
     return {"academic_term": at, "academic_year": ay}
 
 
+OUTLINE_EDIT_ROLES = {
+    "Instructor",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _assert_may_edit_outline():
+    """Who may write a chapter.
+
+    Students hold `write` on Course Schedule Chapter so progress can be recorded
+    against it, which means a doctype permission check would let them through.
+    That was tolerable while a chapter was only a title; it is not now that the
+    chapter carries the competency mapping the content gating reads (ADR 065
+    section 2), because clearing it would unlock the course. The role set
+    mirrors `canEditOutline` in the portal, so nothing that could edit an
+    outline before can stop now.
+    """
+    if not (OUTLINE_EDIT_ROLES & set(frappe.get_roles())):
+        frappe.throw(
+            _("You are not permitted to edit this course outline."),
+            frappe.PermissionError,
+        )
+
+
 @frappe.whitelist()
-def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+def upsert_chapter(
+    chapter_title,
+    course,
+    is_scorm_package,
+    scorm_package,
+    name=None,
+    course_competency=None,
+):
+    _assert_may_edit_outline()
     course_title = frappe.get_value("Course Schedule", course, "course")
     values = frappe._dict(
         {
@@ -4370,6 +4472,12 @@ def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=
             "course_title": course_title,
         }
     )
+
+    # Absent means "leave the mapping alone" so callers that know nothing about
+    # competencies cannot clear one; an empty string is the explicit unlink
+    # (ADR 065 section 2).
+    if course_competency is not None:
+        values["course_competency"] = course_competency or None
 
     if is_scorm_package:
         scorm_package = frappe._dict(scorm_package)

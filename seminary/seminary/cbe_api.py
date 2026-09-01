@@ -68,6 +68,16 @@ def _assert_own_roster(roster):
     return student
 
 
+def _select_options(doctype, fieldname):
+    """A Select field's choices, read off the doctype.
+
+    Sent to the portal rather than typed into the page so the two can never
+    disagree about what the modes are.
+    """
+    options = frappe.get_meta(doctype).get_field(fieldname).options or ""
+    return [o for o in options.split("\n") if o]
+
+
 # ---------------------------------------------------------------- context
 
 
@@ -85,7 +95,14 @@ def get_competency_context(course_schedule):
     cs = frappe.db.get_value(
         "Course Schedule",
         course_schedule,
-        ["course", "gradesc_cs", "workflow_state", "open_ended", "c_dateend"],
+        [
+            "course",
+            "gradesc_cs",
+            "workflow_state",
+            "open_ended",
+            "c_dateend",
+            "content_release_override",
+        ],
         as_dict=True,
     )
     scale = cs.gradesc_cs
@@ -122,21 +139,58 @@ def get_competency_context(course_schedule):
         c["chapter"] = chapter_by_competency.get(c.name)
         competencies.append(c)
 
+    # The competency a chapter forces on its assessments, resolved through the
+    # same lesson index the Course Schedule controller validates against, so the
+    # picker greys out exactly what the server would refuse (ADR 065 11b).
+    from seminary.seminary.utils import (
+        _build_lesson_index_for_course,
+        _scac_activity_key,
+    )
+
+    lesson_index = _build_lesson_index_for_course(course_schedule)
+
+    def _chapter_competency(row):
+        lesson = lesson_index.get(_scac_activity_key(row))
+        if not lesson:
+            return None
+        chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
+        if not chapter:
+            return None
+        return frappe.db.get_value(
+            "Course Schedule Chapter", chapter, "course_competency"
+        )
+
     assessments = []
     for a in frappe.get_all(
         "Scheduled Course Assess Criteria",
-        filters={"parent": course_schedule, "course_competency": ("is", "set")},
+        filters={"parent": course_schedule},
         fields=[
             "name",
             "title",
             "course_competency",
             "grading_mode_override",
             "due_date",
+            "type",
+            "quiz",
+            "assignment",
+            "exam",
+            "discussion",
         ],
         order_by="idx asc",
     ):
+        a["chapter_competency"] = _chapter_competency(a)
         a["weights"] = cbe.dimension_weights_for(a.name, a.course_competency)
-        a["grading_mode"] = a.grading_mode_override or framework.activity_grading_mode
+        a["grading_mode"] = cbe.grading_shape(a.name, framework)
+        # The instructor's explicit cell choices, as a flat list the grid can
+        # render; absence still means "follow the shape" (ADR 065 section 11b).
+        a["matrix"] = [
+            {
+                "instructor_category": cat,
+                "dimension_code": dim,
+                "graded": graded,
+            }
+            for (cat, dim), graded in cbe.grading_matrix_for(a.name).items()
+        ]
         assessments.append(a)
 
     return {
@@ -145,10 +199,28 @@ def get_competency_context(course_schedule):
         "workflow_state": cs.workflow_state,
         "open_ended": bool(cs.open_ended),
         "grading_scale": scale,
+        "content_release_override": cs.content_release_override,
+        "effective_content_release": cbe.content_release_mode(
+            course_schedule, framework
+        ),
         "levels": cbe.levels_for(scale),
         "dimensions": dimensions,
         "competencies": competencies,
         "assessments": assessments,
+        "grading_categories": [
+            {
+                "instructor_category": e.instructor_category,
+                "assignment_source": e.assignment_source,
+                "required": cint(e.required),
+            }
+            for e in framework.evaluators
+            if cint(e.grades_activities)
+        ],
+        "verdict_categories": [
+            e.instructor_category
+            for e in framework.evaluators
+            if cint(e.gives_competency_verdict)
+        ],
         "framework": {
             "name": framework.name,
             "activity_grading_mode": framework.activity_grading_mode,
@@ -160,6 +232,15 @@ def get_competency_context(course_schedule):
             "course_self_eval": cint(framework.course_self_eval),
             "course_self_eval_points": framework.course_self_eval_points,
             "mentor_sees_self_eval": framework.mentor_sees_self_eval,
+            # The framework's own setting, whether sections may depart from it,
+            # and what is actually in force here. The dialog that explains the
+            # mapping reads the effective mode; the form that offers the choice
+            # reads the flag.
+            "content_release_mode": framework.content_release_mode,
+            "override_contentrelease": cint(framework.override_contentrelease),
+            "content_release_options": _select_options(
+                "Competency Framework", "content_release_mode"
+            ),
             "require_pdp": cint(framework.require_pdp),
         },
         "viewer": {
@@ -802,11 +883,20 @@ def get_outline_competencies(course_schedule):
     )
 
     student = _current_student()
-    gating = {"mode": framework.content_release_mode, "gated": False, "chapters": {}}
+    gating = {
+        "mode": cbe.content_release_mode(course_schedule, framework),
+        "gated": False,
+        "chapters": {},
+    }
+    prompts = {"baseline": False, "chapters": {}, "final_all": False, "points": None}
     if student and not _is_staff():
         roster = _roster_for(course_schedule, student)
         if roster:
             gating = cbe.visible_outline(roster)
+            # When to *ask*, as against what to show: the outline used to offer
+            # the prompt on every mapped chapter regardless of the framework's
+            # timing or the student's progress (ADR 065 section 11e).
+            prompts = cbe.self_assessment_prompts(roster)
 
     out = {}
     for ch in chapters:
@@ -843,6 +933,7 @@ def get_outline_competencies(course_schedule):
                 for d in competency.dimensions
             ],
             "self_assessment_submitted": sorted(submitted),
+            "final_due": ch.name in prompts["chapters"],
             "locked": bool(state.get("locked")),
             "activities_locked": bool(state.get("activities_locked")),
             "reason": state.get("reason"),
@@ -854,6 +945,9 @@ def get_outline_competencies(course_schedule):
         "mode": gating.get("mode"),
         "gated": gating.get("gated", False),
         "self_eval_enabled": cint(framework.course_self_eval),
+        "self_eval_points": framework.course_self_eval_points,
+        "baseline_due": prompts["baseline"],
+        "final_all_due": prompts["final_all"],
         "chapters": out,
     }
 
@@ -1231,3 +1325,611 @@ def _narrative_timeline(rows, ratings):
                 )
             )
     return out
+
+
+# ---------------------------------------------------------------- development plan
+
+
+def _plan_questions(framework):
+    return [
+        {
+            "question_key": q.question_key,
+            "question_text": q.question_text,
+            "sequence": q.sequence,
+        }
+        for q in sorted(
+            [q for q in framework.development_questions if cint(q.active)],
+            key=lambda q: (cint(q.sequence), cint(q.idx)),
+        )
+    ]
+
+
+def _plan_payload(doc, framework, course_schedule):
+    questions = _plan_questions(framework)
+    answered = {g.standard_question for g in doc.goals if g.standard_question}
+    return {
+        "name": doc.name,
+        "status": doc.status,
+        "reflection": doc.reflection,
+        "submitted_on": doc.submitted_on,
+        "mentor_feedback": doc.mentor_feedback,
+        "reviewed_by": doc.reviewed_by,
+        "reviewed_on": doc.reviewed_on,
+        "goals": [
+            {
+                "standard_question": g.standard_question,
+                "question_text": g.question_text,
+                "course_competency": g.course_competency,
+                "dimension_code": g.dimension_code,
+                "goal": g.goal,
+                "action_steps": g.action_steps,
+                "target_date": g.target_date,
+                "support_needed": g.support_needed,
+                "status": g.status,
+            }
+            for g in doc.goals
+        ],
+        # The prompts still without an answer, so the page can offer them
+        # without the student hunting for which ones they have done.
+        "unanswered": [q for q in questions if q["question_key"] not in answered],
+        "questions": questions,
+        "course_schedule": course_schedule,
+    }
+
+
+@frappe.whitelist()
+def get_development_plan(course_schedule, student=None):
+    """A student's plan for one section, with the framework's prompts.
+
+    Staff may read another student's; a student may only read their own, which
+    `_assert_own_roster` decides rather than the caller.
+    """
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False}
+
+    student = student if (student and _is_staff()) else _current_student()
+    if not student:
+        frappe.throw(_("This page is for students."), frappe.PermissionError)
+    roster = _roster_for(course_schedule, student)
+    if not roster:
+        return {"is_cbe": True, "enrolled": False}
+    _assert_own_roster(roster)
+
+    name = frappe.db.get_value("Personal Development Plan", {"roster": roster}, "name")
+    if name:
+        doc = frappe.get_doc("Personal Development Plan", name)
+    else:
+        # Not created here: an unsaved shape lets the page render the prompts
+        # without leaving an empty plan behind for a student who never returns.
+        doc = frappe.new_doc("Personal Development Plan")
+        doc.roster = roster
+
+    payload = _plan_payload(doc, framework, course_schedule)
+    payload.update(
+        {
+            "is_cbe": True,
+            "enrolled": True,
+            "roster": roster,
+            "student": student,
+            "student_name": frappe.db.get_value("Student", student, "student_name"),
+            "require_pdp": cint(framework.require_pdp),
+            "blocks_completion": cint(framework.pdp_blocks_completion),
+            "competencies": frappe.get_all(
+                "Course Competency",
+                filters={
+                    "course": frappe.db.get_value(
+                        "Course Schedule", course_schedule, "course"
+                    ),
+                    "is_active": 1,
+                },
+                fields=["name", "competency_name"],
+                order_by="sequence asc, competency_name asc",
+            ),
+            "dimensions": frappe.get_all(
+                "Grading Scale Dimensions",
+                filters={"parent": cbe.scale_for(course_schedule)},
+                fields=["dimension_code", "dimension"],
+                order_by="sequence asc, idx asc",
+            ),
+            "viewer_is_staff": _is_staff(),
+        }
+    )
+    return payload
+
+
+@frappe.whitelist()
+def save_development_plan(course_schedule, goals, reflection=None, submit=0):
+    """Write the student's own plan. Submitting is not reversible by the student.
+
+    Only the student writes here; a mentor's response goes through
+    `review_development_plan`, so a review can never overwrite the reflection it
+    is responding to.
+    """
+    student = _current_student()
+    if not student:
+        frappe.throw(_("This page is for students."), frappe.PermissionError)
+    roster = _roster_for(course_schedule, student)
+    if not roster:
+        frappe.throw(_("You are not enrolled in this course."), frappe.PermissionError)
+    if not cbe.framework_for(course_schedule):
+        frappe.throw(_("This course is not competency-based."))
+
+    name = frappe.db.get_value("Personal Development Plan", {"roster": roster}, "name")
+    doc = (
+        frappe.get_doc("Personal Development Plan", name)
+        if name
+        else frappe.new_doc("Personal Development Plan")
+    )
+    if doc.status != "Draft":
+        frappe.throw(_("This plan has been submitted and can no longer be changed."))
+
+    doc.roster = roster
+    doc.reflection = reflection
+    doc.goals = []
+    for row in json.loads(goals) if isinstance(goals, str) else goals:
+        if not (row.get("goal") or "").strip():
+            continue
+        doc.append(
+            "goals",
+            {
+                "standard_question": row.get("standard_question") or None,
+                "course_competency": row.get("course_competency") or None,
+                "dimension_code": row.get("dimension_code") or None,
+                "goal": row.get("goal"),
+                "action_steps": row.get("action_steps"),
+                "target_date": row.get("target_date") or None,
+                "support_needed": row.get("support_needed"),
+                "status": row.get("status") or "Planned",
+            },
+        )
+    if cint(submit):
+        if not doc.goals:
+            frappe.throw(_("Add at least one goal before submitting."))
+        doc.status = "Submitted"
+    doc.flags.ignore_permissions = True
+    doc.save()
+    return {"name": doc.name, "status": doc.status}
+
+
+@frappe.whitelist()
+def review_development_plan(plan, mentor_feedback=None, accept=0):
+    """A mentor's response to a submitted plan.
+
+    Separate from the student's write path so a review cannot edit the goals it
+    is responding to; the mentor answers, they do not rewrite.
+    """
+    _assert_staff()
+    doc = frappe.get_doc("Personal Development Plan", plan)
+    if doc.status == "Draft":
+        frappe.throw(_("This plan has not been submitted yet."))
+
+    instructor = _current_instructor()
+    if instructor and not any(
+        e["instructor"] == instructor for e in cbe.evaluators_for(doc.roster)
+    ):
+        frappe.throw(
+            _("You are not an evaluator for this student."), frappe.PermissionError
+        )
+
+    doc.mentor_feedback = mentor_feedback
+    doc.reviewed_by = instructor
+    doc.reviewed_on = frappe.utils.now_datetime()
+    doc.status = "Accepted" if cint(accept) else "Reviewed"
+    doc.flags.ignore_permissions = True
+    doc.save()
+    return {"name": doc.name, "status": doc.status}
+
+
+# ---------------------------------------------------------------- the arc
+
+
+def _assert_may_read_student(student):
+    """A student reads their own arc; a mentor reads their mentees'.
+
+    Resolved here rather than trusted from the caller, because this endpoint is
+    the whole reading surface for a student's journal.
+    """
+    mine = _current_student()
+    if mine and mine == student:
+        return
+    if set(frappe.get_roles()) & {
+        "Seminary Manager",
+        "System Manager",
+        "Program Chair",
+    }:
+        return
+    instructor = _current_instructor()
+    if instructor and cbe.is_mentor_of(instructor, student):
+        return
+    frappe.throw(_("Not permitted."), frappe.PermissionError)
+
+
+@frappe.whitelist()
+def get_mentees():
+    """The students an instructor currently mentors, for the mentor's selector."""
+    instructor = _current_instructor()
+    if not instructor:
+        return []
+    return [
+        {
+            "student": s,
+            "student_name": frappe.db.get_value("Student", s, "student_name"),
+        }
+        for s in cbe.mentees_of(instructor)
+    ]
+
+
+@frappe.whitelist()
+def get_development_arc(student=None):
+    """Every plan, goal and note a student has written, across every course.
+
+    This is the answer to the lifelong-journey problem (ADR 065 section 8a), and
+    the reason plans need no `carried_forward_from`: continuity is produced by
+    reading the independent records together, not by one plan claiming another's
+    goals. The same payload is grouped three ways -- by question, by competency,
+    by course -- because those are three different questions about the same
+    material and a page cannot re-derive the last two cheaply.
+    """
+    student = student or _current_student()
+    if not student:
+        frappe.throw(_("This page is for students."), frappe.PermissionError)
+    _assert_may_read_student(student)
+
+    plans = frappe.get_all(
+        "Personal Development Plan",
+        filters={"student": student},
+        fields=[
+            "name",
+            "course_schedule",
+            "status",
+            "reflection",
+            "submitted_on",
+            "mentor_feedback",
+            "reviewed_on",
+        ],
+    )
+    if not plans:
+        return _empty_arc(student)
+
+    course_names = _course_labels([p.course_schedule for p in plans])
+    starts = {
+        cs.name: cs.c_datestart
+        for cs in frappe.get_all(
+            "Course Schedule",
+            filters={"name": ("in", [p.course_schedule for p in plans])},
+            fields=["name", "c_datestart"],
+        )
+    }
+    plans.sort(key=lambda p: (starts.get(p.course_schedule) or "", p.name))
+
+    goals = frappe.get_all(
+        "Personal Development Plan Goal",
+        filters={"parent": ("in", [p.name for p in plans])},
+        fields=[
+            "parent",
+            "idx",
+            "standard_question",
+            "question_text",
+            "course_competency",
+            "dimension_code",
+            "goal",
+            "action_steps",
+            "target_date",
+            "support_needed",
+            "status",
+        ],
+        order_by="idx asc",
+    )
+    by_plan = {}
+    for g in goals:
+        by_plan.setdefault(g.parent, []).append(g)
+
+    for p in plans:
+        p["course_name"] = course_names.get(p.course_schedule, p.course_schedule)
+        p["start_date"] = starts.get(p.course_schedule)
+        p["goals"] = by_plan.get(p.name, [])
+
+    competency_names = _competency_labels(
+        {g.course_competency for g in goals if g.course_competency}
+    )
+
+    return {
+        "student": student,
+        "student_name": frappe.db.get_value("Student", student, "student_name"),
+        "viewer_is_owner": _current_student() == student,
+        "courses": plans,
+        "by_question": _group_by_question(plans),
+        "by_competency": _group_by_competency(plans, competency_names),
+        "notes": get_development_notes(student),
+        "competency_names": competency_names,
+    }
+
+
+def _empty_arc(student):
+    return {
+        "student": student,
+        "student_name": frappe.db.get_value("Student", student, "student_name"),
+        "viewer_is_owner": _current_student() == student,
+        "courses": [],
+        "by_question": [],
+        "by_competency": [],
+        "notes": get_development_notes(student),
+        "competency_names": {},
+    }
+
+
+def _course_labels(course_schedules):
+    labels = {}
+    for cs in frappe.get_all(
+        "Course Schedule",
+        filters={"name": ("in", list(course_schedules))},
+        fields=["name", "title", "course"],
+    ):
+        labels[cs.name] = cs.title or frappe.db.get_value(
+            "Course", cs.course, "course_name"
+        )
+    return labels
+
+
+def _competency_labels(names):
+    if not names:
+        return {}
+    return {
+        c.name: c.competency_name
+        for c in frappe.get_all(
+            "Course Competency",
+            filters={"name": ("in", list(names))},
+            fields=["name", "competency_name"],
+        )
+    }
+
+
+def _group_by_question(plans):
+    """Every answer to the same prompt, in course order.
+
+    This is where growth becomes visible without any goal being copied forward:
+    four years of answers to "where do you most need to grow in character?",
+    read down the page. Keyed on `question_key`, which is why the key is stable
+    and separate from the editable text.
+    """
+    groups = {}
+    for p in plans:
+        for g in p["goals"]:
+            if not g.standard_question:
+                continue
+            entry = groups.setdefault(
+                g.standard_question,
+                {
+                    "question_key": g.standard_question,
+                    "question_text": g.question_text,
+                    "answers": [],
+                },
+            )
+            # The most recent wording wins: a reworded prompt is still the same
+            # question, and showing the oldest phrasing would misdescribe it.
+            if g.question_text:
+                entry["question_text"] = g.question_text
+            entry["answers"].append(
+                {
+                    "course_schedule": p.course_schedule,
+                    "course_name": p["course_name"],
+                    "start_date": p["start_date"],
+                    "goal": g.goal,
+                    "action_steps": g.action_steps,
+                    "status": g.status,
+                    "target_date": g.target_date,
+                }
+            )
+    return sorted(groups.values(), key=lambda x: x["question_key"])
+
+
+def _group_by_competency(plans, competency_names):
+    groups = {}
+    for p in plans:
+        for g in p["goals"]:
+            if not g.course_competency:
+                continue
+            key = (g.course_competency, g.dimension_code or "")
+            entry = groups.setdefault(
+                key,
+                {
+                    "course_competency": g.course_competency,
+                    "competency_name": competency_names.get(
+                        g.course_competency, g.course_competency
+                    ),
+                    "dimension_code": g.dimension_code,
+                    "goals": [],
+                },
+            )
+            entry["goals"].append(
+                {
+                    "course_schedule": p.course_schedule,
+                    "course_name": p["course_name"],
+                    "start_date": p["start_date"],
+                    "goal": g.goal,
+                    "status": g.status,
+                }
+            )
+    return sorted(
+        groups.values(), key=lambda x: (x["competency_name"], x["dimension_code"] or "")
+    )
+
+
+@frappe.whitelist()
+def get_development_notes(student=None, limit=200):
+    student = student or _current_student()
+    if not student:
+        return []
+    _assert_may_read_student(student)
+    notes = frappe.get_all(
+        "Personal Development Note",
+        filters={"student": student},
+        fields=[
+            "name",
+            "note",
+            "note_date",
+            "course_schedule",
+            "course_competency",
+            "dimension_code",
+            "development_plan",
+            "owner",
+        ],
+        order_by="note_date desc",
+        limit=cint(limit),
+        ignore_permissions=True,
+    )
+    labels = _course_labels({n.course_schedule for n in notes if n.course_schedule})
+    competencies = _competency_labels(
+        {n.course_competency for n in notes if n.course_competency}
+    )
+    for n in notes:
+        n["course_name"] = labels.get(n.course_schedule)
+        n["competency_name"] = competencies.get(n.course_competency)
+    return notes
+
+
+@frappe.whitelist()
+def save_development_note(
+    note,
+    name=None,
+    course_schedule=None,
+    course_competency=None,
+    dimension_code=None,
+    development_plan=None,
+):
+    """Only the student writes their own journal.
+
+    Mentors read; they respond on the plan, not in the journal. Enforced here as
+    well as on the doctype, because a mentor holds the Instructor role and would
+    otherwise inherit whatever that role is granted.
+    """
+    student = _current_student()
+    if not student:
+        frappe.throw(_("This is your own journal."), frappe.PermissionError)
+
+    doc = (
+        frappe.get_doc("Personal Development Note", name)
+        if name
+        else frappe.new_doc("Personal Development Note")
+    )
+    if doc.student and doc.student != student:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+
+    doc.student = student
+    doc.note = note
+    doc.course_schedule = course_schedule or None
+    doc.course_competency = course_competency or None
+    doc.dimension_code = dimension_code or None
+    doc.development_plan = development_plan or None
+    doc.flags.ignore_permissions = True
+    doc.save()
+    return {"name": doc.name}
+
+
+@frappe.whitelist()
+def delete_development_note(name):
+    student = _current_student()
+    owner = frappe.db.get_value("Personal Development Note", name, "student")
+    if not student or owner != student:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    frappe.delete_doc(
+        "Personal Development Note",
+        name,
+        ignore_permissions=True,
+        delete_permanently=True,
+    )
+    return {"deleted": name}
+
+
+# ---------------------------------------------------------------- assessment config
+
+
+@frappe.whitelist()
+def save_assessment_competency_config(course_schedule, config):
+    """Dimension weights and the grading matrix for a section's assessments.
+
+    Separate from `save_course_assessment` because these are separate records --
+    `Assessment Dimension Weight` and `Assessment Grading Matrix` are standalone
+    doctypes, not columns on the criteria row -- and because the criteria have to
+    exist and be named before anything can point at them.
+    """
+    _assert_staff()
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        frappe.throw(_("This section is not competency-based."))
+
+    config = json.loads(config) if isinstance(config, str) else config
+    for row in config:
+        criteria = row.get("assess_criteria")
+        if not criteria:
+            continue
+        if (
+            frappe.db.get_value("Scheduled Course Assess Criteria", criteria, "parent")
+            != course_schedule
+        ):
+            frappe.throw(_("Assessment {0} is not in this section.").format(criteria))
+        _save_dimension_weights(criteria, row.get("weights") or {})
+        _save_grading_matrix(criteria, row.get("matrix") or [])
+    return {"saved": len(config)}
+
+
+def _save_dimension_weights(assess_criteria, weights):
+    """Upsert the per-dimension weights, deleting any the form dropped."""
+    existing = {
+        w.dimension_code: w.name
+        for w in frappe.get_all(
+            "Assessment Dimension Weight",
+            filters={"assess_criteria": assess_criteria},
+            fields=["name", "dimension_code"],
+        )
+    }
+    for code, value in weights.items():
+        if code in existing:
+            doc = frappe.get_doc("Assessment Dimension Weight", existing.pop(code))
+        else:
+            doc = frappe.new_doc("Assessment Dimension Weight")
+            doc.assess_criteria = assess_criteria
+            doc.dimension_code = code
+        doc.weight = flt(value)
+        doc.flags.ignore_permissions = True
+        doc.save()
+    for name in existing.values():
+        frappe.delete_doc(
+            "Assessment Dimension Weight", name, ignore_permissions=True, force=True
+        )
+
+
+def _save_grading_matrix(assess_criteria, cells):
+    """Upsert cell choices, deleting the ones the form no longer states.
+
+    Deleting rather than writing `graded = 1` matters: an absent row means
+    "follow the shape", which is not the same claim as "explicitly on", and a
+    section that later changes its grading mode should follow the new one.
+    """
+    existing = {
+        (c.instructor_category, c.dimension_code): c.name
+        for c in frappe.get_all(
+            "Assessment Grading Matrix",
+            filters={"assess_criteria": assess_criteria},
+            fields=["name", "instructor_category", "dimension_code"],
+        )
+    }
+    for cell in cells:
+        key = (cell.get("instructor_category"), cell.get("dimension_code"))
+        if not all(key):
+            continue
+        if key in existing:
+            doc = frappe.get_doc("Assessment Grading Matrix", existing.pop(key))
+        else:
+            doc = frappe.new_doc("Assessment Grading Matrix")
+            doc.assess_criteria = assess_criteria
+            doc.instructor_category = key[0]
+            doc.dimension_code = key[1]
+        doc.graded = cint(cell.get("graded"))
+        doc.flags.ignore_permissions = True
+        doc.save()
+    for name in existing.values():
+        frappe.delete_doc(
+            "Assessment Grading Matrix", name, ignore_permissions=True, force=True
+        )

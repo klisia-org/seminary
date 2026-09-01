@@ -9,7 +9,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, formatdate, get_time, getdate, now
+from frappe.utils import add_days, cint, formatdate, get_time, getdate, now
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
@@ -38,6 +38,7 @@ class CourseSchedule(Document):
         if frappe.flags.in_demo_install:
             return
         self.validate_open_ended()
+        self.validate_content_release_override()
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
@@ -436,17 +437,81 @@ class CourseSchedule(Document):
             self.name = self.name.replace("/", "-").replace("\\", "-")
 
     def validate_assessment_criteria(self):
-        """Validates if the total weightage of all assessment criteria is 100%"""
-        if self.courseassescrit_sc:
-            total_weight_scac = 0
-            for criteria in self.courseassescrit_sc:
-                if criteria.extracredit_scac == 0:
-                    total_weight_scac += criteria.weight_scac or 0
-                elif criteria.extracredit_scac == 1:
-                    continue
-            if total_weight_scac != 100:
+        """Total weightage must be 100% -- except where weights mean nothing.
+
+        `weight_scac` is a percentage contribution to a numeric final grade. A
+        competency section has no such number: activity levels roll into a
+        Competency Result, not a weighted sum (ADR 065 section 11a). Demanding
+        100% there forces an instructor to invent weights nothing reads, and
+        refuses the save until they do.
+        """
+        from seminary.seminary import cbe
+
+        if not self.courseassescrit_sc:
+            return
+
+        if cbe.framework_for_course_and_scale(self.course, self.gradesc_cs):
+            self.validate_assessment_competencies()
+            return
+
+        total_weight_scac = 0
+        for criteria in self.courseassescrit_sc:
+            if criteria.extracredit_scac == 0:
+                total_weight_scac += criteria.weight_scac or 0
+            elif criteria.extracredit_scac == 1:
+                continue
+        if total_weight_scac != 100:
+            frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
+
+    def validate_assessment_competencies(self):
+        """Chapter -> lesson -> assessment must agree on the competency.
+
+        The outline has already told the student which competency they are
+        working on in a chapter; an activity inside it cannot be filed under a
+        different one. Where the chain resolves the competency is defaulted from
+        it, so the instructor only has to choose for assessments that sit
+        outside the outline -- a course-wide capstone, say.
+        """
+        from seminary.seminary.utils import (
+            _build_lesson_index_for_course,
+            _scac_activity_key,
+        )
+
+        if self.is_new():
+            # The lesson index is built from saved activity links; on a brand
+            # new section there is nothing to resolve against yet.
+            return
+
+        index = _build_lesson_index_for_course(self.name)
+        chapter_competency = {}
+
+        for row in self.courseassescrit_sc:
+            lesson = index.get(_scac_activity_key(row))
+            if not lesson:
+                continue
+            chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
+            if not chapter:
+                continue
+            if chapter not in chapter_competency:
+                chapter_competency[chapter] = frappe.db.get_value(
+                    "Course Schedule Chapter", chapter, "course_competency"
+                )
+            competency = chapter_competency[chapter]
+            if not competency:
+                continue
+            if not row.course_competency:
+                row.course_competency = competency
+            elif row.course_competency != competency:
                 frappe.throw(
-                    _("Total Weight of all Assessment Criteria must total 100%")
+                    _(
+                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
+                        "cannot be filed under {3}."
+                    ).format(
+                        row.idx,
+                        row.title or row.assesscriteria_scac,
+                        competency,
+                        row.course_competency,
+                    )
                 )
 
     def convert_to_date(self, date):
@@ -478,6 +543,39 @@ class CourseSchedule(Document):
                     "Schedule date selected does not lie within the Academic Term: {}"
                 ).format(self.academic_term)
             )
+
+    def validate_content_release_override(self):
+        """A section may only set its own release mode where the framework allows.
+
+        Refused rather than quietly dropped so the instructor learns the school
+        has not opened this up, instead of saving a setting that does nothing.
+        `cbe.content_release_mode` independently ignores a stale override, which
+        covers the case where the permission is withdrawn afterwards.
+        """
+        if not self.content_release_override:
+            return
+
+        from seminary.seminary import cbe
+
+        # Resolved from this document's own course and scale, not from the saved
+        # row: validation runs before a new section exists.
+        name = cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
+        if name:
+            framework = frappe.get_cached_doc("Competency Framework", name)
+            if cint(framework.override_contentrelease):
+                return
+            frappe.throw(
+                _(
+                    "Competency Framework {0} does not let sections choose their own "
+                    "content release mode."
+                ).format(name)
+            )
+        frappe.throw(
+            _(
+                "Content Release Override applies only to competency-based sections. "
+                "Leave it blank."
+            )
+        )
 
     def validate_open_ended(self):
         """An open-ended section is only meaningful under self-paced pacing.
