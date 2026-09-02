@@ -112,10 +112,10 @@
   {
    "default": "0",
    "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
-   "description": "Close the membership when a student withdraws from, or transfers out of, the bound program. Off leaves the decision to the leader.",
+   "description": "Close the membership when a student leaves the bound program without finishing it \u2014 withdrawn, transferred out, or dismissed. Off leaves the decision to the leader. Graduation is not a separation: that is Graduates To.",
    "fieldname": "remove_on_withdrawal",
    "fieldtype": "Check",
-   "label": "Remove Withdrawn or Transferred Students"
+   "label": "Remove Separated Students"
   },
   {
    "collapsible": 1,

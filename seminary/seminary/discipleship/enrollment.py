@@ -93,9 +93,11 @@ def cohorts_persist(cohort_type):
     )
 
 
-# A separation the student initiated or that moved them elsewhere. Graduation is
-# deliberately absent: that is `graduates_to`, a move rather than a removal.
-SEPARATION_STATUSES = ("Withdrawn", "Transferred")
+# Every way of leaving a program short of finishing it. The three are one case
+# here: whoever decided and for whatever reason, the student is no longer in the
+# program the cohort is bound to. Graduation is deliberately absent -- that is
+# `graduates_to`, a move rather than a removal.
+SEPARATION_STATUSES = ("Withdrawn", "Transferred", "Dismissed")
 
 
 def release_from_program_cohorts(pe_doc, to_status, effective_date=None):

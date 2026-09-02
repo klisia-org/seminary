@@ -264,9 +264,12 @@ to happen anyway.
 - **7.2 - A student goes on leave.** A `Throughout Program` cohort runs from enrollment to graduation, and a
   leave of absence is neither. Membership stays open with the student marked absent rather than closed,
   or they lose the cohort they will return to. Solution: Since what happens with the student varies, we need to create a report to make this evident for manual action. 
-- **7.3 - A student withdraws or transfers programs.** The binding no longer matches. A `program`-bound cohort
-  must release them; a `program_level`-bound one may not need to. Both need to be decided, not left to
-  whichever query runs first. Solution: that is a policy decision, thus it should live in Cohort Type. If Cohort Type = `Paced Program` or `Throughout Program` we make available a new field "Automatically remove withdrawn/transferred students" (and wire it)
+- **7.3 - A student withdraws, transfers, or is dismissed.** The binding no longer matches. A
+  `program`-bound cohort must release them; a `program_level`-bound one may not need to. Both need to be
+  decided, not left to whichever query runs first. Solution: that is a policy decision, thus it lives in
+  Cohort Type. `Paced Program` and `Throughout Program` types carry **Remove Separated Students**, and
+  the three ways of leaving short of finishing are one case — the student is no longer in the program,
+  and which of them decided it changes nothing about the cohort.
 
 **Groups changing shape.**
 
@@ -399,9 +402,11 @@ members, because archiving a group should not erase anyone's account of having b
 Reactivating is deliberately unguarded; it is the way back. 7.7: `Cohort Type.is_active` gates
 *creation* only — retiring a type stops new cohorts and leaves the students already in one
 mid-relationship alone. 7.3: `remove_on_withdrawal` fires from `set_program_status`'s terminal branch,
-on `Withdrawn` and `Transferred` only — graduation is `graduates_to`, a move rather than a removal — and
-never releases a leader (the cohort still needs someone; who replaces them is a decision) or a member of
-a level-bound cohort who is still enrolled elsewhere at that level (7.10).
+on **`Withdrawn`, `Transferred` and `Dismissed`** — every way of leaving a program short of finishing
+it, which is one case here: whoever decided and for whatever reason, the student is no longer in the
+program the cohort is bound to. `Graduated` is deliberately excluded; that is `graduates_to`, a move
+rather than a removal. It never releases a leader (the cohort still needs someone; who replaces them is
+a decision) or a member of a level-bound cohort who is still enrolled elsewhere at that level (7.10).
 
 7.1 and 7.2 are answered with **visibility, not automation**. Nothing is auto-closed: a membership
 closed by a job cannot be told from one closed on purpose, and who takes a group over is a pastoral
