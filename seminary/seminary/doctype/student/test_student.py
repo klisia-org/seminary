@@ -34,25 +34,35 @@ class TestStudent(unittest.TestCase):
         enrollment = student.enroll_in_program("_Test Program 1")
         test_enrollment = frappe.get_all(
             "Program Enrollment",
-            filters={"student": student.name, "Program": "_Test Program 1"},
+            filters={"student": student.name, "program": "_Test Program 1"},
         )
         self.assertTrue(len(test_enrollment))
         self.assertEqual(test_enrollment[0]["name"], enrollment.name)
         frappe.db.rollback()
 
-    def test_get_program_enrollments(self):
+    def test_get_pgmenrollments(self):
+        # Renamed from get_program_enrollments, and it now returns a list of
+        # dicts rather than a program-keyed mapping.
         student = get_student("_test_student@example.com")
-        enrollment = student.enroll_in_program("_Test Program 1")
-        program_enrollments = student.get_program_enrollments()
-        self.assertTrue("_Test Program 1" in program_enrollments)
+        student.enroll_in_program("_Test Program 1")
+        rows = student.get_pgmenrollments()
+        self.assertIn("_Test Program 1", [r["program"] for r in rows])
         frappe.db.rollback()
 
     def tearDown(self):
-
-        for entry in frappe.db.get_all("Program Enrollment"):
-            doc = frappe.get_doc("Program Enrollment", entry.name)
-            doc.cancel()
-            doc.delete()
+        # Scoped to this test's own student. The original swept *every* Program
+        # Enrollment on the site, which would have destroyed a school's records
+        # the first time anyone ran the suite outside a throwaway database.
+        student = get_student("_test_student@example.com")
+        if student:
+            for entry in frappe.db.get_all(
+                "Program Enrollment", filters={"student": student.name}
+            ):
+                doc = frappe.get_doc("Program Enrollment", entry.name)
+                if doc.docstatus == 1:
+                    doc.cancel()
+                doc.delete()
+        frappe.db.rollback()
 
 
 def create_student(student_dict):

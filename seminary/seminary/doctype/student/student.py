@@ -10,6 +10,19 @@ from frappe.utils import getdate, today
 from frappe.utils.nestedset import get_root_of
 
 
+def _current_academic_term():
+    """The term a self-service enrollment belongs to.
+
+    One app-wide definition, read from one place: `api.current_academic_term`.
+    Not `Seminary Settings` — `seminary_keydict` there maps a
+    `current_academic_term` key the doctype has no field for, so asking for it
+    raises rather than returning a default.
+    """
+    from seminary.seminary.api import current_academic_term
+
+    return current_academic_term()
+
+
 class Student(Document):
     def validate(self):
         self.resolve_person()
@@ -169,23 +182,19 @@ class Student(Document):
 
     @frappe.whitelist()
     def get_pgmenrollments(self):
-        print("get_program_enrollments was called")
-        program_enrollments = []
-        program_enrollments = frappe.get_all(
+        # `date_of_comcusion` was a typo for `date_of_conclusion`, so every call
+        # to this whitelisted method raised OperationalError on an unknown
+        # column. Nothing in the app called it, which is how it survived.
+        return frappe.get_all(
             "Program Enrollment",
             filters={"student": self.name},
             fields=[
                 "program",
                 "pgmenrol_active",
                 "enrollment_date",
-                "date_of_comcusion",
+                "date_of_conclusion",
             ],
         )
-        if not program_enrollments:
-            return "No Program Enrollments Found"
-        else:
-            print(program_enrollments)
-            return program_enrollments
 
     # End of Validate Functions
 
@@ -196,15 +205,24 @@ class Student(Document):
                     "doctype": "Program Enrollment",
                     "student": self.name,
                     "academic_year": frappe.get_last_doc("Academic Year").name,
+                    # Required since the term became mandatory on Program
+                    # Enrollment; without it self-enrollment (utils.
+                    # enroll_in_program, a whitelisted portal endpoint) could
+                    # not create a record at all.
+                    "academic_term": _current_academic_term(),
                     "program": program_name,
-                    "enrollment_date": frappe.utils.datetime.datetime.now(),
+                    # `today()`, not `datetime.now()`: validation compares this
+                    # against the system timezone's today, and the process's
+                    # local clock can land on the other side of midnight from
+                    # it — the enrollment then fails as "before today".
+                    "enrollment_date": today(),
                 }
             )
             enrollment.save(ignore_permissions=True)
         except frappe.exceptions.ValidationError:
             enrollment_name = frappe.get_list(
                 "Program Enrollment",
-                filters={"student": self.name, "Program": program_name},
+                filters={"student": self.name, "program": program_name},
             )[0].name
             return frappe.get_doc("Program Enrollment", enrollment_name)
         else:

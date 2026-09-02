@@ -1153,36 +1153,15 @@ def get_student_programs(student):
     return grades
 
 
-@frappe.whitelist()
-def first_term(doc):
-    # Set the first term as the current term if no term is set as current
-    # currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
-    # print("Current term is: ", currentterm)
-    print("Self.name is: ", doc)
-    # if not currentterm:
-    # 	frappe.db.set_value("Academic Term", doc, "iscurrent_acterm", 1)
-    # 	print("The current term has been set to this term.")
-    # else:
-    # 	return print("There is already a current term. Terms will roll automatically according to their dates.")
-    academic_terms = frappe.get_all(
-        "Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"]
-    )
-    today = getdate()
-    currentterm = frappe.db.sql(
-        """select name from `tabAcademic Term` where iscurrent_acterm = 1"""
-    )
-
-    for term in academic_terms:
-        if term.term_start_date <= today <= term.term_end_date:
-            if term.name != currentterm[0][0]:
-                frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
-                frappe.db.set_value("Academic Term", term.name, "open", 1)
-            else:
-                break
-
-        else:
-            frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 0)
-    return "Active term updated successfully"
+# `first_term` lived here: a second writer of `iscurrent_acterm`, called from
+# Academic Term's after_save — which already fires `tasks.refresh_term_flags_on_save`
+# through doc_events. Two writers doing the same job on the same save, and the
+# worse one could leave two terms flagged: on finding that the covering term was
+# already current it `break`ed out of the loop, so every term after it in an
+# unordered result set kept whatever stale flag it had. It also indexed
+# `currentterm[0][0]` without checking, so it raised whenever no term was
+# flagged at all. `tasks._update_term_flags` is now the only writer, and it sets
+# the flag exclusively.
 
 
 @frappe.whitelist()
@@ -1430,14 +1409,35 @@ def course_enroll(pe_name, course):
     }
 
 
+def current_academic_term():
+    """The current academic term — the app-wide answer, or None.
+
+    `Academic Term.iscurrent_acterm` is where a school states this, and
+    `tasks._update_term_flags` keeps exactly one term carrying it. Everything
+    that needs "what term is it" asks here, so there is one definition to fix if
+    it is ever wrong.
+
+    Degrades the same way `_resolve_display_terms` does, because the flag can be
+    momentarily stale (the daily task not yet run on a fresh site) and refusing
+    to answer would be worse than answering from the dates.
+    """
+    terms = _resolve_display_terms()
+    return terms[0] if terms else None
+
+
 def _resolve_display_terms():
     """Academic term(s) to treat as 'this term' for the portal.
+
+    Returns a list only because of its fallback arm; with the single-current
+    invariant enforced (`AcademicTerm.enforce_single_current_term`,
+    `tasks._update_term_flags`) the first two branches yield at most one term.
+    Prefer `current_academic_term()` unless you specifically want the list.
 
     Prefers the flagged current term, but degrades gracefully so the student's
     "My Enrollments This Term" panel never blanks out just because the daily
     scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
     gap between consecutive terms:
-      1. the flagged current term(s);
+      1. the flagged current term;
       2. else the term whose date range contains today (flag not yet set);
       3. else, during an inter-term gap, the nearest OPEN term by date distance
          (the upcoming term the student is enrolling into).

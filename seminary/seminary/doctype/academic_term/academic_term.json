@@ -82,6 +82,7 @@
   },
   {
    "default": "0",
+   "description": "Derived from the term dates, not typed: the term containing today is the current one, and exactly one term carries this at a time. Maintained on save and by the daily task.",
    "fieldname": "iscurrent_acterm",
    "fieldtype": "Check",
    "label": "Current Academic Term?",

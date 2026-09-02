@@ -25,8 +25,16 @@ class TestProgramEnrollment(unittest.TestCase):
         )
 
     def tearDown(self):
-
-        for entry in frappe.db.get_all("Program Enrollment"):
-            doc = frappe.get_doc("Program Enrollment", entry.name)
-            doc.cancel()
-            doc.delete()
+        # Scoped to this test's own student. The original swept *every* Program
+        # Enrollment on the site, which would have destroyed a school's records
+        # the first time anyone ran the suite outside a throwaway database.
+        student = get_student("_test_student@example.com")
+        if student:
+            for entry in frappe.db.get_all(
+                "Program Enrollment", filters={"student": student.name}
+            ):
+                doc = frappe.get_doc("Program Enrollment", entry.name)
+                if doc.docstatus == 1:
+                    doc.cancel()
+                doc.delete()
+        frappe.db.rollback()
