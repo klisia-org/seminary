@@ -21,6 +21,7 @@ declare module 'vue' {
     CLOAssessmentMapperModal: typeof import('./src/components/Modals/CLOAssessmentMapperModal.vue')['default']
     CLOCoveragePanel: typeof import('./src/components/CLOCoveragePanel.vue')['default']
     CommentSidebar: typeof import('./src/components/AssignmentViewers/CommentSidebar.vue')['default']
+    CompetencyActivityGrading: typeof import('./src/components/CompetencyActivityGrading.vue')['default']
     ContactChannelIcons: typeof import('./src/components/ContactChannelIcons.vue')['default']
     CourseAssessmentModal: typeof import('./src/components/Modals/CourseAssessmentModal.vue')['default']
     CourseCardOverlay: typeof import('./src/components/CourseCardOverlay.vue')['default']

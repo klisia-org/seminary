@@ -56,11 +56,13 @@
         <th class="p-2 border">{{ __('Due Date') }}</th>
         <th class="p-2 border">{{ __('In Lesson') }}</th>
         <th v-if="hasAretenic" class="p-2 border">{{ __('CLOs') }}</th>
+        <th v-if="isCbe" class="p-2 border">{{ __('Weights') }}</th>
         <th class="p-2 border">{{ __('Delete') }}</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <template v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <tr>
         <td class="p-2 border">
           <FormControl v-model="criteria.title" class="mb-4 overflow-visible" :required="false" />
         </td>
@@ -139,13 +141,15 @@
             </Button>
           </Tooltip>
         </td>
-        <td class="p-2 border text-center align-middle">
-          <Button v-if="isCbe" variant="ghost" size="sm" class="mr-1"
+        <td v-if="isCbe" class="p-2 border text-center align-middle">
+          <Button variant="ghost" size="sm"
             :disabled="!criteria.name"
             :title="criteria.name ? __('Dimensions and evaluators') : __('Save first')"
             @click="toggleDetail(criteria)">
             <SlidersHorizontal class="h-4 w-4 stroke-1.5" />
           </Button>
+        </td>
+        <td class="p-2 border text-center align-middle">
           <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
             <Trash2 class="h-4 w-4 stroke-1.5" />
           </Button>
@@ -154,7 +158,7 @@
       <!-- Dimension weights and the grading matrix (ADR 065 section 11b).
            Both are separate records keyed to a saved criteria row, which is
            why the opener waits for a name. -->
-      <tr v-if="isCbe && openDetail === criteria.name" :key="`d-${index}`">
+      <tr v-if="isCbe && openDetail === criteria.name">
         <td :colspan="detailColspan" class="p-4 border bg-surface-gray-1">
           <div class="grid gap-6 lg:grid-cols-2">
             <div>
@@ -204,6 +208,7 @@
           </div>
         </td>
       </tr>
+      </template>
     </tbody>
   </table>
 
@@ -251,11 +256,33 @@ const settingsStore = useSettings()
 const showCourseAssessmentModal = ref(false)
 const show = defineModel()
 
+// Optional CLO assessment mapper — only when the Aretenic app is installed (ADR 030).
+const hasAretenic = computed(() => !!user?.data?.has_aretenic)
+const showCloMapper = ref(false)
+const activeCriteria = ref(null)
+// Bumped when a mapping is saved, so the coverage panel below reflects it without a page reload.
+const cloCoverageKey = ref(0)
+
+function openCloMapper(criteria) {
+  activeCriteria.value = criteria
+  showCloMapper.value = true
+}
+
+const props = defineProps({
+  courseName: {
+    type: String,
+    required: true,
+  },
+})
+
 // --- Competency mode (ADR 065 section 11b) ---------------------------------
 // One derived mode drives every competency-specific column, validation and
 // sub-editor on this page, so it cannot end up half in one world. Derived from
 // the grading scale rather than stored, because the scale is already the
 // authority on whether a section is competency-based.
+//
+// Declared after `props`, because `auto: true` runs `makeParams` during setup
+// and `props` is only bound where `defineProps` is called.
 const competencyContext = createResource({
   url: 'seminary.seminary.cbe_api.get_competency_context',
   makeParams: () => ({ course_schedule: props.courseName }),
@@ -291,8 +318,10 @@ const openDetail = ref(null)
 const savingDetail = ref(false)
 const detail = reactive({ weights: {}, matrix: [] })
 
+// Title, type, activity, due date, in lesson, delete — then the conditional
+// pairs: competency + weights, extra credit + points.
 const detailColspan = computed(
-  () => 7 + (isCbe.value ? 1 : 0) + (weightsApply.value ? 2 : 0) + (hasAretenic.value ? 1 : 0)
+  () => 6 + (isCbe.value ? 2 : 0) + (weightsApply.value ? 2 : 0) + (hasAretenic.value ? 1 : 0)
 )
 
 function toggleDetail(criteria) {
@@ -363,25 +392,6 @@ async function saveDetail(criteria) {
     savingDetail.value = false
   }
 }
-
-// Optional CLO assessment mapper — only when the Aretenic app is installed (ADR 030).
-const hasAretenic = computed(() => !!user?.data?.has_aretenic)
-const showCloMapper = ref(false)
-const activeCriteria = ref(null)
-// Bumped when a mapping is saved, so the coverage panel below reflects it without a page reload.
-const cloCoverageKey = ref(0)
-
-function openCloMapper(criteria) {
-  activeCriteria.value = criteria
-  showCloMapper.value = true
-}
-
-const props = defineProps({
-  courseName: {
-    type: String,
-    required: true,
-  },
-})
 
 const modalcriteria = reactive({
   title: '',

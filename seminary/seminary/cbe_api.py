@@ -390,9 +390,15 @@ def get_student_competency_detail(roster):
             fields=["name", "title", "grading_mode_override", "due_date"],
             order_by="idx asc",
         )
+        dimension_codes = [d.dimension_code for d in c["dimensions"]]
         for a in c["assessments"]:
             a["grades"] = grade_index.get(a.name, {})
             a["weights"] = cbe.dimension_weights_for(a.name, c.name)
+            a["grading_mode"] = cbe.grading_shape(a.name, framework)
+            # Which (evaluator, dimension) cells this assessment actually asks
+            # for. An opted-out cell must not render a picker: it is not
+            # applicable, not merely unfilled (ADR 065 section 11b).
+            a["graded_cells"] = _graded_cells(a, evaluators, dimension_codes)
         c["assessments_by_mentor"] = _mentor_assessments(roster_doc, c.name, show_self)
         competencies.append(c)
 
@@ -406,6 +412,27 @@ def get_student_competency_detail(roster):
         "competencies": competencies,
         "missing_evaluators": cbe.missing_required_evaluators(roster_doc),
     }
+
+
+def _graded_cells(assessment, evaluators, dimension_codes):
+    """{"<category>|<dimension_code>": True} for the cells that are asked for."""
+    shape = assessment["grading_mode"]
+    cells = {}
+    for e in evaluators:
+        if not e["grades_activities"]:
+            continue
+        category = e["instructor_category"]
+        if not cbe.is_cell_graded(assessment["name"], category, None, shape):
+            continue
+        if shape == cbe.PER_DIMENSION_MODE:
+            for code in cbe.graded_dimensions_for(
+                assessment["name"], category, dimension_codes
+            ):
+                cells["{0}|{1}".format(category, code)] = True
+        else:
+            for code in dimension_codes:
+                cells["{0}|{1}".format(category, code)] = True
+    return cells
 
 
 def _mentor_assessments(roster_doc, competency, show_self):
@@ -462,6 +489,386 @@ def _mentor_assessments(roster_doc, competency, show_self):
         )
         out.append(r)
     return out
+
+
+# ------------------------------------------------- the submission surfaces (11c)
+
+# Every submission doctype names the criteria row it was graded under and the
+# student who sat it, so one panel serves all four surfaces rather than four
+# near-copies drifting apart. The value is the field naming the Course Schedule,
+# which is the only thing they spell differently.
+SUBMISSION_DOCTYPES = {
+    "Quiz Submission": "course",
+    "Exam Submission": "course",
+    "Assignment Submission": "course",
+    "Discussion Submission": "coursesc",
+}
+
+
+@frappe.whitelist()
+def get_activity_grading_panel(submission_doctype, submission):
+    """The level pickers one activity offers for one student (ADR 065 11c).
+
+    A competency section grades an activity in levels per dimension, not in
+    points, so the four submission pages ask here what to render instead of
+    each deciding for itself. `is_cbe` False means "keep your numeric box".
+    """
+    _assert_staff()
+    schedule_field = SUBMISSION_DOCTYPES.get(submission_doctype)
+    if not schedule_field:
+        frappe.throw(_("{0} is not a graded submission.").format(submission_doctype))
+
+    sub = frappe.db.get_value(
+        submission_doctype,
+        submission,
+        [schedule_field, "student", "course_assess"],
+        as_dict=True,
+    )
+    if not sub:
+        frappe.throw(_("That submission no longer exists."))
+    course_schedule = sub.get(schedule_field)
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False}
+    if not sub.course_assess:
+        # A competency section grades through its criteria row; a submission
+        # that is not tied to one has nothing to record a level against.
+        return {
+            "is_cbe": True,
+            "unmapped": True,
+            "course_schedule": course_schedule,
+        }
+
+    roster = _roster_for(course_schedule, sub.student)
+    if not roster:
+        return {
+            "is_cbe": True,
+            "unmapped": True,
+            "course_schedule": course_schedule,
+        }
+    return _grading_panel(roster, sub.course_assess, framework)
+
+
+def _grading_panel(roster, assess_criteria, framework):
+    """What one evaluator may record on one activity for one student."""
+    roster_doc = frappe.get_doc("Scheduled Course Roster", roster)
+    course_schedule = roster_doc.course_sc
+    criteria = frappe.db.get_value(
+        "Scheduled Course Assess Criteria",
+        assess_criteria,
+        ["name", "title", "course_competency"],
+        as_dict=True,
+    )
+    competency = criteria.course_competency
+    if not competency:
+        return {
+            "is_cbe": True,
+            "unmapped": True,
+            "course_schedule": course_schedule,
+            "assessment_title": criteria.title,
+        }
+
+    comp = frappe.db.get_value(
+        "Course Competency", competency, ["competency_name", "statement"], as_dict=True
+    )
+    dimensions = frappe.get_all(
+        "Course Competency Dimension",
+        filters={"parent": competency},
+        fields=["dimension_code", "dimension", "demonstrated_by"],
+        order_by="idx asc",
+    )
+    # A dimension this assessment does not measure is not graded here; that is
+    # the same "Not measured here" the per-student panel already shows.
+    weights = cbe.dimension_weights_for(assess_criteria, competency)
+    dimensions = [d for d in dimensions if flt(weights.get(d.dimension_code)) > 0]
+
+    shape = cbe.grading_shape(assess_criteria, framework)
+    grades = {}
+    for g in frappe.get_all(
+        "Activity Competency Grade",
+        filters={"roster": roster, "assess_criteria": assess_criteria},
+        fields=[
+            "instructor",
+            "dimension_code",
+            "level_code",
+            "level_value",
+            "narrative",
+        ],
+    ):
+        grades[(g.instructor, g.dimension_code or "")] = g
+
+    me = _current_instructor()
+    is_manager = bool(
+        {"Seminary Manager", "System Manager", "Program Chair"}
+        & set(frappe.get_roles())
+    )
+    evaluators = [e for e in cbe.evaluators_for(roster_doc) if e["grades_activities"]]
+    names = _instructor_names({e["instructor"] for e in evaluators})
+
+    rows = []
+    for e in evaluators:
+        # With one grade for the whole activity there is no evaluator axis, so
+        # only the person grading it is offered a picker.
+        if shape == cbe.PER_ACTIVITY_MODE and e["instructor"] != me and not is_manager:
+            continue
+        if not cbe.is_cell_graded(
+            assess_criteria, e["instructor_category"], None, shape
+        ):
+            continue
+        if shape == cbe.PER_DIMENSION_MODE:
+            codes = cbe.graded_dimensions_for(
+                assess_criteria,
+                e["instructor_category"],
+                [d.dimension_code for d in dimensions],
+            )
+            cells = [
+                {
+                    "dimension_code": d.dimension_code,
+                    "dimension": d.dimension,
+                    "demonstrated_by": d.demonstrated_by,
+                    "grade": grades.get((e["instructor"], d.dimension_code)),
+                }
+                for d in dimensions
+                if d.dimension_code in codes
+            ]
+        else:
+            cells = [
+                {
+                    "dimension_code": None,
+                    "dimension": _("Overall"),
+                    "demonstrated_by": None,
+                    "grade": grades.get((e["instructor"], "")),
+                }
+            ]
+        if not cells:
+            continue
+        rows.append(
+            {
+                "instructor": e["instructor"],
+                "instructor_name": names.get(e["instructor"], e["instructor"]),
+                "instructor_category": e["instructor_category"],
+                "can_grade": is_manager or e["instructor"] == me,
+                "cells": cells,
+            }
+        )
+
+    workflow_state = frappe.db.get_value(
+        "Course Schedule", course_schedule, "workflow_state"
+    )
+    return {
+        "is_cbe": True,
+        "course_schedule": course_schedule,
+        "roster": roster,
+        "student": roster_doc.student,
+        "student_name": roster_doc.stuname_roster,
+        "assess_criteria": assess_criteria,
+        "assessment_title": criteria.title,
+        "course_competency": competency,
+        "competency_name": comp.competency_name if comp else competency,
+        "statement": comp.statement if comp else None,
+        "grading_mode": shape,
+        "levels": cbe.levels_for(cbe.scale_for(course_schedule)),
+        "read_only": workflow_state in ("Closed", "Cancelled")
+        or bool(not roster_doc.active and not roster_doc.audit_bool),
+        "rows": rows,
+    }
+
+
+# ------------------------------------------------- the bird's-eye gradebook (11d)
+
+
+@frappe.whitelist()
+def get_cbe_gradebook(course_schedule):
+    """Students x competency x assessment x evaluator x dimension (ADR 065 11d).
+
+    The whole-course view. Levels, not scores: a competency section has no
+    weighted total to put in a numeric grid, and the grid it currently gets is
+    meaningless. Read-only by design -- grading happens on the activity or in
+    the per-student panel, where the evaluator can see what they are judging.
+    """
+    _assert_staff()
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False}
+
+    course = frappe.db.get_value("Course Schedule", course_schedule, "course")
+    grading_categories = [
+        e.instructor_category for e in framework.evaluators if cint(e.grades_activities)
+    ]
+
+    criteria = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course_schedule, "course_competency": ("is", "set")},
+        fields=["name", "title", "course_competency"],
+        order_by="idx asc",
+    )
+    by_competency = {}
+    for c in criteria:
+        by_competency.setdefault(c.course_competency, []).append(c)
+
+    groups = []
+    shapes = {}
+    for comp in frappe.get_all(
+        "Course Competency",
+        filters={"course": course, "is_active": 1},
+        fields=["name", "competency_name", "sequence"],
+        order_by="sequence asc, competency_name asc",
+    ):
+        dimensions = frappe.get_all(
+            "Course Competency Dimension",
+            filters={"parent": comp.name},
+            fields=["dimension_code", "dimension"],
+            order_by="idx asc",
+        )
+        assessments = []
+        for c in by_competency.get(comp.name, []):
+            shape = cbe.grading_shape(c.name, framework)
+            shapes[c.name] = shape
+            weights = cbe.dimension_weights_for(c.name, comp.name)
+            leaves = []
+            # One grade for the whole activity has neither axis, so it is a
+            # single column and whoever recorded it lands in it.
+            if shape == cbe.PER_ACTIVITY_MODE:
+                leaves.append(
+                    {
+                        "key": "{0}||".format(c.name),
+                        "instructor_category": None,
+                        "dimension_code": None,
+                        "label": _("Grade"),
+                    }
+                )
+            per_evaluator = [] if shape == cbe.PER_ACTIVITY_MODE else grading_categories
+            for cat in per_evaluator:
+                if not cbe.is_cell_graded(c.name, cat, None, shape):
+                    continue
+                if shape == cbe.PER_DIMENSION_MODE:
+                    codes = cbe.graded_dimensions_for(
+                        c.name,
+                        cat,
+                        [
+                            d.dimension_code
+                            for d in dimensions
+                            if flt(weights.get(d.dimension_code)) > 0
+                        ],
+                    )
+                    for d in dimensions:
+                        if d.dimension_code not in codes:
+                            continue
+                        leaves.append(
+                            {
+                                "key": "{0}|{1}|{2}".format(
+                                    c.name, cat, d.dimension_code
+                                ),
+                                "instructor_category": cat,
+                                "dimension_code": d.dimension_code,
+                                "label": d.dimension,
+                            }
+                        )
+                else:
+                    leaves.append(
+                        {
+                            "key": "{0}|{1}|".format(c.name, cat),
+                            "instructor_category": cat,
+                            "dimension_code": None,
+                            "label": _("Overall"),
+                        }
+                    )
+            if not leaves:
+                continue
+            assessments.append(
+                {
+                    "name": c.name,
+                    "title": c.title,
+                    "grading_mode": shape,
+                    "leaves": leaves,
+                }
+            )
+        groups.append(
+            {
+                "course_competency": comp.name,
+                "competency_name": comp.competency_name,
+                "assessments": assessments,
+                "span": sum(len(a["leaves"]) for a in assessments),
+            }
+        )
+
+    students = []
+    for r in frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course_schedule},
+        fields=["name", "student", "stuname_roster", "active", "audit_bool"],
+        order_by="stuname_roster asc",
+    ):
+        students.append(_gradebook_row(r, course_schedule, shapes))
+
+    return {
+        "is_cbe": True,
+        "course_schedule": course_schedule,
+        "groups": groups,
+        "students": students,
+        "verdict_categories": [
+            e.instructor_category
+            for e in framework.evaluators
+            if cint(e.gives_competency_verdict)
+        ],
+    }
+
+
+def _gradebook_row(roster, course_schedule, shapes):
+    """One student's line: their levels, their mentors, their verdicts."""
+    evaluators = cbe.evaluators_for(roster.name)
+    names = _instructor_names({e["instructor"] for e in evaluators})
+    # Who fills a category is resolved per student, not per section -- that is
+    # the whole point of a mentor recorded on the enrollment (ADR 065 4).
+    category_of = {e["instructor"]: e["instructor_category"] for e in evaluators}
+
+    cells = {}
+    for g in frappe.get_all(
+        "Activity Competency Grade",
+        filters={"roster": roster.name},
+        fields=["assess_criteria", "instructor", "dimension_code", "level_code"],
+    ):
+        if shapes.get(g.assess_criteria) == cbe.PER_ACTIVITY_MODE:
+            key = "{0}||".format(g.assess_criteria)
+        else:
+            category = category_of.get(g.instructor)
+            if not category:
+                continue
+            key = "{0}|{1}|{2}".format(
+                g.assess_criteria, category, g.dimension_code or ""
+            )
+        cells[key] = {
+            "level_code": g.level_code,
+            "instructor": names.get(g.instructor, g.instructor),
+        }
+
+    verdicts = {}
+    for res in frappe.get_all(
+        "Competency Result",
+        filters={"student": roster.student, "course_schedule": course_schedule},
+        fields=["course_competency", "status", "final_code", "final_value"],
+    ):
+        verdicts[res.course_competency] = res
+
+    return {
+        "roster": roster.name,
+        "student": roster.student,
+        "student_name": roster.stuname_roster,
+        "finalized": bool(not roster.active and not roster.audit_bool),
+        # Named rather than counted: an instructor looking at a level someone
+        # else recorded needs to know who to ask about it.
+        "mentors": [
+            {
+                "instructor_name": names.get(e["instructor"], e["instructor"]),
+                "instructor_category": e["instructor_category"],
+            }
+            for e in evaluators
+            if e["assignment_source"] == cbe.COHORT_SOURCE
+        ],
+        "cells": cells,
+        "verdicts": verdicts,
+    }
 
 
 # ---------------------------------------------------------------- staff writes

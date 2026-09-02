@@ -43,9 +43,8 @@
   "content_release_mode",
   "stall_escalation_days",
   "override_contentrelease",
-  "cohort_section",
+  "pacing_section",
   "default_pacing_mode",
-  "program_cohort_source",
   "completion_section",
   "development_questions_section",
   "development_questions",
@@ -277,9 +276,9 @@
    "non_negative": 1
   },
   {
-   "fieldname": "cohort_section",
+   "fieldname": "pacing_section",
    "fieldtype": "Section Break",
-   "label": "Cohorts and Pacing"
+   "label": "Pacing"
   },
   {
    "default": "Cohort-paced",
@@ -288,15 +287,6 @@
    "fieldtype": "Select",
    "label": "Default Pacing Mode",
    "options": "Cohort-paced\nSelf-paced",
-   "reqd": 1
-  },
-  {
-   "default": "None",
-   "description": "Which existing grouping serves as the program cohort. Student Group keeps it a course grading group; Discipleship Cohort reuses the student's formation group so the same roster is not kept twice.",
-   "fieldname": "program_cohort_source",
-   "fieldtype": "Select",
-   "label": "Program Cohort Source",
-   "options": "None\nStudent Group\nDiscipleship Cohort",
    "reqd": 1
   },
   {

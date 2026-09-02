@@ -1,11 +1,5 @@
 {
- "actions": [
-  {
-   "action": "seminary.seminary.api.roll_students",
-   "action_type": "Server Action",
-   "label": "Advance Students"
-  }
- ],
+ "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:title",

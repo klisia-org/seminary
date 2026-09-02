@@ -34,6 +34,13 @@ class Instructor(Document):
         self._resolve_person()
         self.validate_payroll_link()
         self._maybe_auto_pull_education()
+        self._warn_on_deactivation()
+
+    def _warn_on_deactivation(self):
+        """Marking someone inactive says what is still theirs (ADR 066 §7.1)."""
+        from seminary.seminary.instructor_load import warn_on_deactivation
+
+        warn_on_deactivation(self)
 
     def _resolve_person(self):
         """Person spine seam (ADR 042), staff direction: the User exists first

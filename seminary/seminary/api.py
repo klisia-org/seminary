@@ -1186,10 +1186,19 @@ def first_term(doc):
 
 
 @frappe.whitelist()
-def roll_students(academic_term=None):
-    # Student-advancement only. Invoice generation is owned by the oikonomos
-    # bridge (oikonomos.financial.invoicing); seminary never bills.
-    # Role gate moved here from the (retired) Registrar Hub page.
+def roll_students():
+    """Advance every active student one term, globally.
+
+    Student-advancement only. Invoice generation is owned by the oikonomos
+    bridge (oikonomos.financial.invoicing); seminary never bills.
+
+    Deliberately takes no term: it acts on every active enrollment, not on one
+    term's students. It used to be reachable as a Server Action on Academic
+    Term, which read as term-scoped, silently ignored the term you opened it
+    from, and threw away this summary -- Frappe's generic action handler prints
+    "Complete" and discards the return value. The Registrar workspace button is
+    now the only entry point, and it shows what actually happened.
+    """
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     summary = roll_pe()
     return _(
@@ -2877,6 +2886,14 @@ def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
     course_schedule = getattr(doc, "coursesc", None) or doc.course
+    # On a competency section the same cell holds a *level* written by
+    # cbe.rollup_activity_grades (ADR 065 section 7). A percentage out of 100
+    # written here would overwrite it and be read back as a level, so the
+    # numeric path stands down and the competency roll-up owns the cell.
+    from seminary.seminary import cbe
+
+    if cbe.framework_for(course_schedule):
+        return
     max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
     # Fetch the corresponding Course Assess Results Detail record
     cardname = frappe.db.get_value(

@@ -51,6 +51,7 @@ def after_install():
     seed_cohort_reaction_types()
     seed_cohort_channels()
     setup_user_bible_field()
+    ensure_registrar_tools()
 
 
 # ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
@@ -1480,6 +1481,23 @@ def after_migrate():
     setup_donor_person_field()
     setup_user_bible_field()
     create_cohort_participant_role()
+    ensure_registrar_tools()
+
+
+def ensure_registrar_tools():
+    """The Registrar workspace's action buttons are Custom HTML Blocks it names.
+
+    The workspace ships with the app and syncs on migrate; the blocks did not,
+    so every site that never ran workspaces_bootstrap.run by hand had a
+    Registrar workspace with two dead buttons. Create-only — see the docstring
+    on the helper for why this does not break the "don't re-import
+    user-configurable doctypes" rule.
+    """
+    from seminary.seminary.workspaces_bootstrap import (
+        ensure_registrar_tools as _ensure,
+    )
+
+    _ensure()
 
 
 def setup_user_bible_field():

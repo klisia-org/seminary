@@ -1,0 +1,2 @@
+import{Qt as e,dn as t}from"./frappe-ui-cW_8athh.js";import{O as n}from"./index-DBx1hK8s.js";function r(r){let i=e(),a=t(()=>n.returnContext),o=t(()=>!!a.value);function s(){let e=a.value;if(!e)return;let t=r==null?void 0:r();t&&n.setPendingInsert({type:e.insertType,id:t}),n.clearReturnContext(),i.push(e.route)}return{showBackToLesson:o,backToLesson:s}}export{r as t};
+//# sourceMappingURL=useActivityReturn-C448-de1.js.map

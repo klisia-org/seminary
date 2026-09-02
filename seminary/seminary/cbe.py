@@ -24,7 +24,10 @@ from frappe.utils import cint, date_diff, flt, getdate, now_datetime, nowdate
 CBE_SCALE_TYPE = "Competency-based education"
 
 SECTION_SOURCE = "Course Schedule Instructors"
-STUDENT_SOURCE = "Program Enrollment Mentor"
+# Mentors are found through the student's cohort, not through their enrollment
+# (ADR 066 section 4): the cohort is authored and stable, and a mentor rotation
+# over it is one membership change rather than a re-derived group.
+COHORT_SOURCE = "Program Cohort"
 
 
 # ---------------------------------------------------------------- resolution
@@ -103,13 +106,32 @@ def framework_doc(course_schedule):
     return frappe.get_cached_doc("Competency Framework", name) if name else None
 
 
+def cohort_evaluator_rows(framework):
+    """Evaluator rows sourced from a cohort, and actually pointed at one.
+
+    A row with no `cohort_type` names nothing and so confers nothing -- the
+    field is mandatory on the form, but a row left behind by a reconfiguration
+    must not silently widen access on its way out.
+    """
+    return [
+        r
+        for r in (framework.evaluators or [])
+        if r.assignment_source == COHORT_SOURCE and r.cohort_type
+    ]
+
+
 def evaluators_for(roster):
     """Who may evaluate this student in this section, and in what capacity.
 
-    Two sources, per ADR 065 section 4. Section instructors evaluate everyone in
-    the section. Program mentors are recorded once on the student's enrollment
-    and resolved here through their Course Enrollment Individual, which is why
+    Two sources, per ADR 065 section 4 as amended by ADR 066 section 5. Section
+    instructors evaluate everyone in the section. Cohort mentors are found
+    through the student's cohort of the type this framework names, which is why
     the registrar never has to add a mentor to a section.
+
+    Both halves must hold for the second source: the person mentors this
+    student, *and* the framework names the cohort type through which they do it.
+    A mentor of an unnamed type -- a peer leader, a formation cohort the chair
+    never bound to the framework -- resolves to nothing here.
 
     Returns a list of dicts: instructor, instructor_category, assignment_source,
     grades_activities, gives_competency_verdict, required, weight.
@@ -126,9 +148,6 @@ def evaluators_for(roster):
     section_rows = [
         r for r in framework.evaluators if r.assignment_source == SECTION_SOURCE
     ]
-    student_rows = [
-        r for r in framework.evaluators if r.assignment_source == STUDENT_SOURCE
-    ]
 
     resolved = []
 
@@ -143,12 +162,9 @@ def evaluators_for(roster):
             if rule:
                 resolved.append(_evaluator(si.instructor, rule))
 
-    if student_rows:
-        wanted = {r.instructor_category: r for r in student_rows}
-        for m in _program_mentors(roster_doc):
-            rule = wanted.get(m.instructor_category)
-            if rule:
-                resolved.append(_evaluator(m.instructor, rule))
+    for rule in cohort_evaluator_rows(framework):
+        for instructor in cohort_mentors(roster_doc.student, rule.cohort_type):
+            resolved.append(_evaluator(instructor, rule))
 
     return resolved
 
@@ -165,56 +181,116 @@ def _evaluator(instructor, rule):
     }
 
 
-def _program_mentors(roster_doc):
-    """Active mentor rows on the student's enrollment for this section.
+def cohort_mentors(student, cohort_type):
+    """The instructors mentoring this student through a cohort of that type.
 
-    The enrollment is reached through the student's Course Enrollment
-    Individual, which is already the authoritative student-to-section link and
-    is workflow-governed (ADR 016). Mentor rows are then filtered by date
-    against the section's span so a mentor who has handed over does not keep
-    appearing.
+    Four hops, each of which is a place the chain may legitimately end: the
+    student has a Person; that Person is in an active cohort of the type; that
+    cohort has other members whose role is Mentor; and those mentors have an
+    active Instructor record.
+
+    That last hop is what makes ADR 066 pattern **b** safe by construction. A
+    student peer leader holds `role = Mentor` on their own cohort and every
+    cohort capability that comes with it -- invite, split, post -- and simply
+    does not resolve to an Instructor, so no grading or record access follows.
+    It is not a rule anyone has to remember; there is nothing to grant.
+
+    Resolved live rather than stored, for the same reason mentor access always
+    has been: a stored grant outlives the relationship it stood in for.
     """
-    pe = frappe.db.get_value(
-        "Course Enrollment Individual",
-        {
-            "coursesc_ce": roster_doc.course_sc,
-            "student_ce": roster_doc.student,
-            "docstatus": 1,
-        },
-        "program_ce",
-    )
-    if not pe:
+    if not student or not cohort_type:
         return []
 
-    cs = (
-        frappe.db.get_value(
-            "Course Schedule",
-            roster_doc.course_sc,
-            ["c_datestart", "c_dateend"],
-            as_dict=True,
-        )
-        or frappe._dict()
-    )
-    # getdate on every operand: these come back as date objects from some paths
-    # and as strings from others (frappe.utils.today), and comparing the two
-    # raises rather than returning a wrong answer.
-    span_start = getdate(cs.get("c_datestart")) if cs.get("c_datestart") else None
-    # An open-ended section has no end; "now" is the right upper bound for
-    # deciding whether a mentor assignment is currently in force.
-    span_end = getdate(cs.get("c_dateend")) if cs.get("c_dateend") else getdate()
+    cache = _cache().setdefault("cohort_mentors", {})
+    key = (student, cohort_type)
+    if key in cache:
+        return cache[key]
 
-    mentors = []
-    for m in frappe.get_all(
-        "Program Enrollment Mentor",
-        filters={"parent": pe, "active": 1},
-        fields=["instructor", "instructor_category", "from_date", "to_date"],
-    ):
-        if m.from_date and span_end and getdate(m.from_date) > span_end:
-            continue
-        if m.to_date and span_start and getdate(m.to_date) < span_start:
-            continue
-        mentors.append(m)
-    return mentors
+    cache[key] = result = _resolve_cohort_mentors(student, cohort_type)
+    return result
+
+
+def cohort_mentor_rows(student, cohort_type):
+    """`cohort_mentors` with the cohort each mentor was found through.
+
+    Same chain, one more column. The registrar looking at an enrollment needs to
+    know *which* group a mentor comes from, because that is the record they would
+    have to edit to change it.
+    """
+    if not student or not cohort_type:
+        return []
+    cache = _cache().setdefault("cohort_mentor_rows", {})
+    key = (student, cohort_type)
+    if key not in cache:
+        cache[key] = _resolve_cohort_mentors(student, cohort_type, detailed=True)
+    return cache[key]
+
+
+def _resolve_cohort_mentors(student, cohort_type, detailed=False):
+    person = frappe.db.get_value("Student", student, "person")
+    if not person:
+        return []
+
+    theirs = frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "active": 1},
+        pluck="cohort",
+    )
+    if not theirs:
+        return []
+
+    cohorts = frappe.get_all(
+        "Cohort",
+        filters={
+            "name": ("in", theirs),
+            "cohort_type": cohort_type,
+            "status": "Active",
+        },
+        pluck="name",
+    )
+    if not cohorts:
+        return []
+
+    # A cohort's mentors are its Mentor-role memberships. The student is
+    # excluded from their own cohort's mentor list -- a peer leader mentors the
+    # others, not themselves, and self-evaluation is a separate framework
+    # setting with its own weight.
+    memberships = frappe.get_all(
+        "Cohort Membership",
+        filters={
+            "cohort": ("in", cohorts),
+            "active": 1,
+            "role": "Mentor",
+            "person": ("!=", person),
+        },
+        fields=["person", "cohort", "joined_on"],
+    )
+    if not memberships:
+        return []
+
+    instructors = frappe.get_all(
+        "Instructor",
+        filters={
+            "person": ("in", list({m.person for m in memberships})),
+            "status": "Active",
+        },
+        fields=["name", "person", "instructor_name"],
+    )
+    if not detailed:
+        return [i.name for i in instructors]
+
+    by_person = {}
+    for m in memberships:
+        by_person.setdefault(m.person, m)
+    return [
+        {
+            "instructor": i.name,
+            "instructor_name": i.instructor_name,
+            "cohort": by_person[i.person].cohort,
+            "since": by_person[i.person].joined_on,
+        }
+        for i in instructors
+    ]
 
 
 # ---------------------------------------------------------------- scale helpers
@@ -1310,11 +1386,16 @@ def mentors_of_student(student):
     (ADR 065 section 8a). Resolved live rather than stored: a mentor's access
     ends when their row closes, and a stored grant would outlive the
     relationship it was standing in for.
+
+    This used to grant note access to *any* active mentor row in a competency
+    program, in whatever capacity it was recorded -- a real gap, since the
+    disclosure students are shown says "your mentors can read your notes" and
+    meant the mentors the framework named. Both halves are now required, exactly
+    as `evaluators_for` composes them (ADR 066 section 5).
     """
     if not student:
         return set()
 
-    today = getdate()
     out = set()
 
     enrollments = frappe.get_all(
@@ -1323,18 +1404,13 @@ def mentors_of_student(student):
         fields=["name", "program"],
     )
     for pe in enrollments:
-        if not frappe.db.get_value("Program", pe.program, "competency_framework"):
+        framework = frappe.db.get_value("Program", pe.program, "competency_framework")
+        if not framework:
             continue
-        for m in frappe.get_all(
-            "Program Enrollment Mentor",
-            filters={"parent": pe.name, "active": 1},
-            fields=["instructor", "from_date", "to_date"],
+        for rule in cohort_evaluator_rows(
+            frappe.get_cached_doc("Competency Framework", framework)
         ):
-            if m.from_date and getdate(m.from_date) > today:
-                continue
-            if m.to_date and getdate(m.to_date) < today:
-                continue
-            out.add(m.instructor)
+            out.update(cohort_mentors(student, rule.cohort_type))
 
     # Section instructors count only while the student is still active in the
     # section: a professor who taught them two years ago is not a mentor now.
@@ -1352,6 +1428,121 @@ def mentors_of_student(student):
     return out
 
 
+DERIVED = "Cohort"
+AUTHORED = "Authored"
+
+
+def mentors_for_enrollment(program_enrollment):
+    """Who mentors this student, and where that statement comes from.
+
+    Two origins, and the difference matters to whoever is looking (ADR 066
+    section 4). A **derived** mentor is a fact about the student's cohort: the
+    enrollment displays it, and the way to change it is to change the cohort.
+    An **authored** row is a fact about this enrollment, entered by a registrar
+    for a mentor no cohort supplies -- a school running mentors without cohorts
+    at all, or one mentor assigned outside any group.
+
+    Derived rows are resolved live and never written down. Storing them would
+    put a copy of the cohort on every enrollment, which is the duplicate roster
+    this ADR exists to remove, and it would need a sync engine to stay true --
+    the one ADR 065 Phase 8 built and this ADR withdrew.
+
+    Returns dicts: instructor, instructor_name, instructor_category, source,
+    cohort, from_date, to_date, active.
+    """
+    pe = (
+        program_enrollment
+        if isinstance(program_enrollment, frappe.model.document.Document)
+        else frappe.get_doc("Program Enrollment", program_enrollment)
+    )
+
+    out = []
+    framework = frappe.db.get_value("Program", pe.program, "competency_framework")
+    if framework:
+        for rule in cohort_evaluator_rows(
+            frappe.get_cached_doc("Competency Framework", framework)
+        ):
+            for m in cohort_mentor_rows(pe.student, rule.cohort_type):
+                out.append(
+                    {
+                        "instructor": m["instructor"],
+                        "instructor_name": m["instructor_name"],
+                        "instructor_category": rule.instructor_category,
+                        "source": DERIVED,
+                        "cohort": m["cohort"],
+                        "from_date": m["since"],
+                        "to_date": None,
+                        "active": 1,
+                    }
+                )
+
+    # An authored row that duplicates a derived one is not shown twice: the
+    # cohort is the live answer, and a stale hand-entry beside it would read as
+    # two mentorships where there is one.
+    derived_keys = {(m["instructor"], m["instructor_category"]) for m in out}
+    for row in pe.get("mentors") or []:
+        if (row.instructor, row.instructor_category) in derived_keys:
+            continue
+        out.append(
+            {
+                "instructor": row.instructor,
+                "instructor_name": row.instructor_name,
+                "instructor_category": row.instructor_category,
+                "source": AUTHORED,
+                "cohort": None,
+                "from_date": row.from_date,
+                "to_date": row.to_date,
+                "active": cint(row.active),
+            }
+        )
+    return out
+
+
+@frappe.whitelist()
+def enrollment_mentor_panel(program_enrollment):
+    """The derived half of `mentors_for_enrollment`, rendered for the form.
+
+    Read-only by construction: there is nothing here to edit, because every
+    statement on it is made somewhere else.
+    """
+    frappe.has_permission("Program Enrollment", "read", program_enrollment, throw=True)
+    rows = [
+        m for m in mentors_for_enrollment(program_enrollment) if m["source"] == DERIVED
+    ]
+    if not rows:
+        return {"rows": [], "html": ""}
+
+    cells = "".join(
+        "<tr>"
+        "<td>{name}</td><td>{category}</td>"
+        "<td><a href='/app/cohort/{cohort}'>{cohort}</a></td><td>{since}</td>"
+        "</tr>".format(
+            name=frappe.utils.escape_html(m["instructor_name"] or m["instructor"]),
+            category=frappe.utils.escape_html(m["instructor_category"] or ""),
+            cohort=frappe.utils.escape_html(m["cohort"] or ""),
+            since=frappe.utils.escape_html(str(m["from_date"] or "")),
+        )
+        for m in rows
+    )
+    html = (
+        "<table class='table table-bordered' style='margin-bottom:0'>"
+        "<thead><tr><th>{h1}</th><th>{h2}</th><th>{h3}</th><th>{h4}</th></tr></thead>"
+        "<tbody>{cells}</tbody></table>"
+        "<p class='text-muted small' style='margin-top:6px'>{note}</p>"
+    ).format(
+        h1=_("Mentor"),
+        h2=_("Capacity"),
+        h3=_("From cohort"),
+        h4=_("Since"),
+        cells=cells,
+        note=_(
+            "Resolved from the student's cohort. To change a mentor here, change "
+            "the cohort's membership."
+        ),
+    )
+    return {"rows": rows, "html": html}
+
+
 def is_mentor_of(instructor, student):
     if not instructor or not student:
         return False
@@ -1364,32 +1555,16 @@ def mentees_of(instructor):
     The inversion of `mentors_of_student`, and the same resolution behind the
     competency worklist: a mentor is never added to a section, so this is the
     only thing that can tell them whose formation they are following.
+
+    Inverted through the cohort as well, and composed the same way -- leading a
+    cohort the student's framework does not name puts nobody on this list, which
+    is the same statement `mentors_of_student` makes from the other end.
     """
     if not instructor:
         return []
 
     students = set()
-    for m in frappe.get_all(
-        "Program Enrollment Mentor",
-        filters={"instructor": instructor, "active": 1},
-        fields=["parent", "from_date", "to_date"],
-    ):
-        today = getdate()
-        if m.from_date and getdate(m.from_date) > today:
-            continue
-        if m.to_date and getdate(m.to_date) < today:
-            continue
-        pe = frappe.db.get_value(
-            "Program Enrollment",
-            m.parent,
-            ["student", "program", "docstatus"],
-            as_dict=True,
-        )
-        if not pe or pe.docstatus != 1:
-            continue
-        if not frappe.db.get_value("Program", pe.program, "competency_framework"):
-            continue
-        students.add(pe.student)
+    students.update(_cohort_mentees(instructor))
 
     sections = frappe.get_all(
         "Course Schedule Instructors",
@@ -1408,6 +1583,68 @@ def mentees_of(instructor):
                 students.add(r.student)
 
     return sorted(students)
+
+
+def _cohort_mentees(instructor):
+    """Students this instructor mentors through a framework-named cohort.
+
+    Walks the same chain as `cohort_mentors` backwards and applies the same
+    composition at the end: the student's own program framework has to name the
+    type of the cohort they share, or the mentorship is a cohort relationship
+    and nothing more.
+    """
+    person = frappe.db.get_value("Instructor", instructor, "person")
+    if not person:
+        return set()
+
+    leading = frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "active": 1, "role": "Mentor"},
+        pluck="cohort",
+    )
+    if not leading:
+        return set()
+
+    out = set()
+    for cohort in frappe.get_all(
+        "Cohort",
+        filters={"name": ("in", leading), "status": "Active"},
+        fields=["name", "cohort_type"],
+    ):
+        members = frappe.get_all(
+            "Cohort Membership",
+            filters={
+                "cohort": cohort.name,
+                "active": 1,
+                "person": ("!=", person),
+            },
+            pluck="person",
+        )
+        for member in set(members):
+            student = frappe.db.get_value("Student", {"person": member}, "name")
+            if not student:
+                continue
+            if _framework_names_type(student, cohort.cohort_type):
+                out.add(student)
+    return out
+
+
+def _framework_names_type(student, cohort_type):
+    """Does any of this student's competency programs name that cohort type?"""
+    for pe in frappe.get_all(
+        "Program Enrollment",
+        filters={"student": student, "docstatus": 1},
+        fields=["program"],
+    ):
+        framework = frappe.db.get_value("Program", pe.program, "competency_framework")
+        if not framework:
+            continue
+        rows = cohort_evaluator_rows(
+            frappe.get_cached_doc("Competency Framework", framework)
+        )
+        if any(r.cohort_type == cohort_type for r in rows):
+            return True
+    return False
 
 
 # ---------------------------------------------------------------- prompt timing
