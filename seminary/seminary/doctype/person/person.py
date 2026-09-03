@@ -100,44 +100,20 @@ class Person(Document):
     def propagate_to_roles(self):
         """Push spine-owned values into linked role rows.
 
-        Role contact fields are read-only mirrors (ADR 042): kept as real
-        columns so every existing query (announcement recipient resolution,
-        reports) stays valid, refreshed here because Frappe's fetch_from only
-        fires when the *role* doc is saved. db.set_value runs no hooks, so this
-        cannot recurse. Doc names are never touched — Instructor and Alumni
-        Profile autoname from instructor_name/email, so those stay put.
+        What gets pushed where is declared in `person_fields.SPEC` (ADR 068),
+        not written out here — this used to be a hand-maintained dict that
+        disagreed with the JSON flags meant to protect the same fields.
+
+        The push is needed even once the role fields become `fetch_from`
+        mirrors: Frappe re-fetches only when the *role* doc is saved, and there
+        is no reverse hook. `db.set_value` runs no hooks, so this cannot
+        recurse. Doc names are never touched — Instructor and Alumni Profile
+        still autoname from instructor_name/email until ADR 068 section 5, so
+        the registry deliberately declares no binding for those two fields.
         """
-        full = self.full_name
-        names = {
-            "first_name": self.first_name or "",
-            "middle_name": self.middle_name or "",
-            "last_name": self.last_name or "",
-        }
-        targets = {
-            "Student": {**names, "student_name": full},
-            "Student Applicant": {**names, "title": full},
-            "Instructor": {},
-            "Alumni Profile": {"full_name": full},
-        }
-        email_field = {
-            "Student": "student_email_id",
-            "Student Applicant": "student_email_id",
-            "Instructor": "prof_email",
-        }
-        mobile_field = {
-            "Student": "student_mobile_number",
-            "Student Applicant": "student_mobile_number",
-            "Instructor": "phone_message",
-        }
-        for doctype, values in targets.items():
-            values = dict(values)
-            # Never blank a unique/required email mirror from an empty spine.
-            if self.primary_email and doctype in email_field:
-                values[email_field[doctype]] = self.primary_email
-            if self.primary_mobile and doctype in mobile_field:
-                values[mobile_field[doctype]] = self.primary_mobile
-            if not values:
-                continue
+        from seminary.seminary.person_fields import propagation_plan
+
+        for doctype, values in propagation_plan(self).items():
             rows = frappe.get_all(
                 doctype,
                 filters={"person": self.name},

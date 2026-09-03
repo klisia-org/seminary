@@ -13,11 +13,28 @@ it never renames anything (in particular not the email-keyed Frappe User).
 import frappe
 from frappe import _
 
+from seminary.seminary.person_fields import (
+    AUTHORED,
+    SPEC_BY_ARG,
+    SPEC_BY_PERSON_FIELD,
+)
+
 EMAIL_CHANNEL = "Email"
 
-# Spine-owned identity/contact fields settable through ensure/update.
-IDENTITY_FIELDS = ("first_name", "middle_name", "last_name", "primary_mobile")
-FILL_ONLY_FIELDS = ("language", "country", "image")
+# Which fields exist, and whether each is authoritative or fill-only, is
+# declared once in `person_fields.SPEC` (ADR 068). The `IDENTITY_FIELDS` /
+# `FILL_ONLY_FIELDS` tuples that used to live here were a second, partial copy
+# of that list — and `FILL_ONLY_FIELDS` was referenced nowhere at all, so the
+# fill-only behaviour it described was really just `_apply`'s fallthrough.
+
+
+def _values_from_kwargs(kwargs):
+    """Map ensure/update keyword arguments onto Person fieldnames."""
+    return {
+        SPEC_BY_ARG[arg].person_field: value
+        for arg, value in kwargs.items()
+        if arg in SPEC_BY_ARG
+    }
 
 
 def normalize_email(value):
@@ -84,16 +101,18 @@ def ensure_person(
             middle_name = middle_name or lifted.middle_name
             last_name = last_name or lifted.last_name
 
-    values = {
-        "first_name": first_name,
-        "middle_name": middle_name,
-        "last_name": last_name,
-        "primary_mobile": mobile,
-        "language": language,
-        "country": country,
-        "image": image,
-        "gender": gender,
-    }
+    values = _values_from_kwargs(
+        {
+            "first_name": first_name,
+            "middle_name": middle_name,
+            "last_name": last_name,
+            "mobile": mobile,
+            "language": language,
+            "country": country,
+            "image": image,
+            "gender": gender,
+        }
+    )
 
     existing = find_person(email=email, user=user)
     if existing:
@@ -138,16 +157,18 @@ def update_person(
     overwrite=False it behaves like ensure_person's fill-blanks pass.
     """
     person = frappe.get_doc("Person", person_name)
-    values = {
-        "first_name": first_name,
-        "middle_name": middle_name,
-        "last_name": last_name,
-        "primary_mobile": mobile,
-        "language": language,
-        "country": country,
-        "image": image,
-        "gender": gender,
-    }
+    values = _values_from_kwargs(
+        {
+            "first_name": first_name,
+            "middle_name": middle_name,
+            "last_name": last_name,
+            "mobile": mobile,
+            "language": language,
+            "country": country,
+            "image": image,
+            "gender": gender,
+        }
+    )
     changed = _apply(person, values, email=normalize_email(email), overwrite=overwrite)
     changed = _link_user(person, user) or changed
     if changed:
@@ -156,12 +177,19 @@ def update_person(
 
 
 def _apply(person, values, email=None, overwrite=False):
+    """Write `values` (keyed by Person fieldname) with the registry's semantics.
+
+    An AUTHORED field is last-write-wins when the caller is authoritative, but
+    a `never_blank` one is never cleared. Everything else only fills a blank —
+    an existing Person stays authoritative over it.
+    """
     changed = False
     for field, value in values.items():
+        spec = SPEC_BY_PERSON_FIELD[field]
         current = person.get(field)
-        if field in IDENTITY_FIELDS and overwrite:
-            if field == "first_name" and not value:
-                continue  # reqd — never blank
+        if spec.mode == AUTHORED and overwrite:
+            if spec.never_blank and not value:
+                continue
             if (value or "") != (current or ""):
                 person.set(field, value or "")
                 changed = True

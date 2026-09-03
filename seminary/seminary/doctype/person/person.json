@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "PERS-.#####",
- "creation": "2026-06-10 12:00:00.000000",
+ "creation": "2026-06-10 12:00:00",
  "description": "A single human on record, holding their name, contact details, and communication preferences. One Person record is shared by all the roles that human plays (student, instructor, alumni, applicant), so you update their contact info in one place.",
  "doctype": "DocType",
  "document_type": "Document",
@@ -20,7 +20,6 @@
   "position",
   "web_bio",
   "language",
-  "country",
   "gender",
   "reachability_section",
   "primary_email",
@@ -33,6 +32,7 @@
   "column_break_mail",
   "city",
   "state",
+  "country",
   "addresses_section",
   "channel_addresses",
   "consent_section",
@@ -126,14 +126,13 @@
    "options": "Language"
   },
   {
-   "description": "Drives regional provider routing (ADR 043).",
+   "description": "Drives regional provider routing.",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country / Region",
    "options": "Country"
   },
   {
-   "description": "The person's gender. The shared human attribute for every role this person holds (student, instructor, partner contact).",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
@@ -234,7 +233,6 @@
    "fieldtype": "Link",
    "label": "User",
    "options": "User",
-   "search_index": 1,
    "unique": 1
   },
   {
@@ -331,17 +329,18 @@
   },
   {
    "group": "Roles",
+   "is_child_table": 1,
    "link_doctype": "Partner Contact",
    "link_fieldname": "person",
    "parent_doctype": "Partner Organization",
    "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-06-19 18:30:00.000000",
+ "modified": "2026-09-03 05:46:11.575356",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
