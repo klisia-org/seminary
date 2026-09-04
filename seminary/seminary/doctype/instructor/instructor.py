@@ -43,29 +43,22 @@ class Instructor(Document):
         warn_on_deactivation(self)
 
     def _resolve_person(self):
-        """Person spine seam (ADR 042), staff direction: the User exists first
-        and identity is lifted from it. prof_email/phone_message seed the
-        Person on first link; thereafter they are read-only mirrors of
-        primary_email/primary_mobile, hydrated here."""
-        from seminary.seminary import person as person_spine
+        """The spine is the source, not the seed.
 
-        if not self.person:
-            if not self.user:
-                return
-            self.person = person_spine.ensure_person(
-                email=self.prof_email,
-                user=self.user,
-                mobile=self.phone_message,
-                image=self.profileimage,
-            )
-        spine = frappe.db.get_value(
-            "Person", self.person, ["primary_email", "primary_mobile"], as_dict=True
-        )
-        if spine:
-            if spine.primary_email:
-                self.prof_email = spine.primary_email
-            if spine.primary_mobile:
-                self.phone_message = spine.primary_mobile
+        An Instructor is created against an existing Person
+        (`seminary.seminary.intake.make_instructor`) and `person` is reqd, so
+        there is nothing to resolve here. Every identity field is a
+        `fetch_from person.*` mirror (ADR 068 phase 4) — including `gender`,
+        which used to fetch from erpnext's `Employee`, a doctype this app does
+        not require, so on a bench without erpnext the field was simply dead.
+
+        What remains is the check that the mirrors have something to mirror:
+        `prof_email` is no longer `reqd` (a mandatory mirror of a nullable
+        source is unsaveable), so the requirement moved to the spine."""
+        from seminary.seminary import person_fields
+
+        if self.person:
+            person_fields.assert_reachable(frappe.get_doc("Person", self.person))
 
     def validate_payroll_link(self):
         if not self.instructor_type:

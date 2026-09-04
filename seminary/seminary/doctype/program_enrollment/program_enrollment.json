@@ -72,7 +72,7 @@
    "search_index": 1
   },
   {
-   "fetch_from": "student.student_name",
+   "description": "Recorded when this document was created. Deliberately not fetched: a later name change must not rewrite what the record said at the time (ADR 068).",
    "fieldname": "student_name",
    "fieldtype": "Read Only",
    "in_global_search": 1,

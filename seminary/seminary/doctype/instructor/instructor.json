@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:{instructor_name}",
+ "allow_rename": 1,
+ "autoname": "INST-.#####",
  "creation": "2015-11-04 15:56:30.004034",
  "description": "Person who teaches courses, holding their bio for the LMS, contact preferences for students, education history for accreditation, and a log of courses taught. Set up an instructor before assigning them to a course schedule.",
  "doctype": "DocType",
@@ -42,13 +43,14 @@
  "fields": [
   {
    "description": "This is the name that will appear on the LMS.",
+   "fetch_from": "person.full_name",
    "fieldname": "instructor_name",
    "fieldtype": "Data",
    "in_global_search": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Instructor Name",
-   "reqd": 1,
+   "read_only": 1,
    "search_index": 1
   },
   {
@@ -60,22 +62,23 @@
    "reqd": 1
   },
   {
-   "description": "Identity spine record (ADR 042). Created automatically from the User; contact edits happen on the Person.",
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",
    "no_copy": 1,
    "options": "Person",
-   "read_only": 1,
-   "search_index": 1
+   "reqd": 1,
+   "search_index": 1,
+   "unique": 1
   },
   {
-   "fetch_from": "employee.gender",
+   "fetch_from": "person.gender",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
    "options": "Gender",
-   "read_only_depends_on": "employee"
+   "read_only": 1
   },
   {
    "fieldname": "column_break_5",
@@ -91,10 +94,12 @@
    "options": "Active\nInactive"
   },
   {
+   "fetch_from": "person.image",
    "fieldname": "profileimage",
    "fieldtype": "Attach Image",
    "hidden": 1,
-   "label": "Image"
+   "label": "Image",
+   "read_only": 1
   },
   {
    "description": "This is particularly useful for non-faculty instructors in CBE (nonacademic mentors).",
@@ -155,11 +160,11 @@
   },
   {
    "description": "Mirror of the linked Person's Primary Email (ADR 042).",
+   "fetch_from": "person.primary_email",
    "fieldname": "prof_email",
    "fieldtype": "Data",
    "label": "E-mail for student communication",
-   "read_only_depends_on": "eval:doc.person",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "column_break_srsj",
@@ -167,10 +172,11 @@
   },
   {
    "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile.",
+   "fetch_from": "person.primary_mobile",
    "fieldname": "phone_message",
    "fieldtype": "Data",
    "label": "Phone for messaging students",
-   "read_only_depends_on": "eval:doc.person"
+   "read_only": 1
   },
   {
    "default": "1",
@@ -238,7 +244,7 @@
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -277,7 +283,9 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "search_fields": "instructor_name,prof_email",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

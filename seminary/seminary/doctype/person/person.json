@@ -14,13 +14,22 @@
   "middle_name",
   "last_name",
   "full_name",
+  "phonetic_name",
   "column_break_identity",
   "image",
   "block_from_web",
   "position",
   "web_bio",
   "language",
+  "country",
   "gender",
+  "personal_section",
+  "date_of_birth",
+  "nationality",
+  "column_break_personal",
+  "blood_group",
+  "marital_status",
+  "ethnicity",
   "reachability_section",
   "primary_email",
   "column_break_reach",
@@ -32,7 +41,7 @@
   "column_break_mail",
   "city",
   "state",
-  "country",
+  "mailing_country",
   "addresses_section",
   "channel_addresses",
   "consent_section",
@@ -126,7 +135,7 @@
    "options": "Language"
   },
   {
-   "description": "Drives regional provider routing.",
+   "description": "Drives regional provider routing for messaging (ADR 043). This is not the postal country \u2014 see Mailing Country.",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country / Region",
@@ -298,6 +307,62 @@
    "fieldname": "org_footprint_html",
    "fieldtype": "HTML",
    "label": "Org Footprint"
+  },
+  {
+   "description": "How the name should be pronounced (e.g. 'JOH-ann mar-TEEN-ess'). Used for ceremony and roll calls.",
+   "fieldname": "phonetic_name",
+   "fieldtype": "Data",
+   "label": "Phonetic Name"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "personal_section",
+   "fieldtype": "Section Break",
+   "label": "Personal Details"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "description": "Citizenship. Distinct from Country / Region, which routes messaging.",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_personal",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "blood_group",
+   "fieldtype": "Select",
+   "label": "Blood Group",
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "ethnicity",
+   "fieldtype": "Select",
+   "label": "Ethnic Group",
+   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "permlevel": 1
+  },
+  {
+   "description": "Postal country for letters and labels.",
+   "fieldname": "mailing_country",
+   "fieldtype": "Link",
+   "label": "Mailing Country",
+   "options": "Country"
   }
  ],
  "image_field": "image",
@@ -375,6 +440,18 @@
    "report": 1,
    "role": "Program Chair",
    "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

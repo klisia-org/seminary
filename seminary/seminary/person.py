@@ -29,7 +29,14 @@ EMAIL_CHANNEL = "Email"
 
 
 def _values_from_kwargs(kwargs):
-    """Map ensure/update keyword arguments onto Person fieldnames."""
+    """Map ensure/update keyword arguments onto Person fieldnames.
+
+    Callers pass `locals()`. That looks sly, but it is the point: writing the
+    dict out by hand means every attribute added to the registry has to be
+    remembered in two more places, and forgetting one drops it *silently* —
+    which is precisely how the address never reached the spine. Anything not
+    named in the registry (email, user, overwrite, stray locals) is ignored.
+    """
     return {
         SPEC_BY_ARG[arg].person_field: value
         for arg, value in kwargs.items()
@@ -75,6 +82,18 @@ def ensure_person(
     country=None,
     image=None,
     gender=None,
+    date_of_birth=None,
+    nationality=None,
+    phonetic_name=None,
+    mailing_country=None,
+    address_line_1=None,
+    address_line_2=None,
+    city=None,
+    state=None,
+    pincode=None,
+    blood_group=None,
+    marital_status=None,
+    ethnicity=None,
 ):
     """Get-or-create the Person for an email/User; returns the Person name.
 
@@ -101,18 +120,7 @@ def ensure_person(
             middle_name = middle_name or lifted.middle_name
             last_name = last_name or lifted.last_name
 
-    values = _values_from_kwargs(
-        {
-            "first_name": first_name,
-            "middle_name": middle_name,
-            "last_name": last_name,
-            "mobile": mobile,
-            "language": language,
-            "country": country,
-            "image": image,
-            "gender": gender,
-        }
-    )
+    values = _values_from_kwargs(locals())
 
     existing = find_person(email=email, user=user)
     if existing:
@@ -124,7 +132,16 @@ def ensure_person(
         return person.name
 
     person = frappe.new_doc("Person")
-    person.update({field: value for field, value in values.items() if value})
+    # The same Link guard `_apply` uses: this branch writes straight onto a new
+    # doc rather than going through it, so without this an applicant's gender
+    # literal would still raise LinkValidationError on a localised site.
+    person.update(
+        {
+            field: value
+            for field, value in values.items()
+            if value and _link_target_exists(field, value)
+        }
+    )
     person.primary_email = email
     person.user = user
     if not person.first_name:
@@ -147,6 +164,18 @@ def update_person(
     country=None,
     image=None,
     gender=None,
+    date_of_birth=None,
+    nationality=None,
+    phonetic_name=None,
+    mailing_country=None,
+    address_line_1=None,
+    address_line_2=None,
+    city=None,
+    state=None,
+    pincode=None,
+    blood_group=None,
+    marital_status=None,
+    ethnicity=None,
     overwrite=False,
 ):
     """Re-sync a known Person from a role record.
@@ -156,19 +185,8 @@ def update_person(
     including clears; fill-only fields and email still never blank out. With
     overwrite=False it behaves like ensure_person's fill-blanks pass.
     """
+    values = _values_from_kwargs(locals())
     person = frappe.get_doc("Person", person_name)
-    values = _values_from_kwargs(
-        {
-            "first_name": first_name,
-            "middle_name": middle_name,
-            "last_name": last_name,
-            "mobile": mobile,
-            "language": language,
-            "country": country,
-            "image": image,
-            "gender": gender,
-        }
-    )
     changed = _apply(person, values, email=normalize_email(email), overwrite=overwrite)
     changed = _link_user(person, user) or changed
     if changed:
@@ -186,6 +204,8 @@ def _apply(person, values, email=None, overwrite=False):
     changed = False
     for field, value in values.items():
         spec = SPEC_BY_PERSON_FIELD[field]
+        if value and not _link_target_exists(field, value):
+            continue
         current = person.get(field)
         if spec.mode == AUTHORED and overwrite:
             if spec.never_blank and not value:
@@ -204,6 +224,27 @@ def _apply(person, values, email=None, overwrite=False):
         person.primary_email = email
         changed = True
     return changed
+
+
+def _link_target_exists(field, value):
+    """Guard the Select-to-Link hand-offs at the one mutation point.
+
+    `Student Applicant.gender` is a Select of the literals Male/Female while
+    `Person.gender` is a Link to Gender, and `install.setup_genders()` enables
+    the *translated* names — so on a localised site the literal need not exist
+    as a Gender at all. Handing that to a Link raises LinkValidationError, and
+    the caller is an admissions path that must not break on it.
+
+    Skipping is deliberate over throwing: the datum is then simply absent, and
+    absence is what the ADR 067 readiness pre-flight is built to surface. This
+    lives here rather than at each caller because repeating the guard per
+    hand-off is how the spine ended up with four disagreeing versions of every
+    other rule (ADR 068).
+    """
+    df = frappe.get_meta("Person").get_field(field)
+    if not df or df.fieldtype != "Link":
+        return True
+    return bool(frappe.db.exists(df.options, value))
 
 
 def _link_user(person, user):

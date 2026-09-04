@@ -312,10 +312,9 @@ class PersonImportBatch(Document):
                     if dob >= getdate(today()):
                         # Student.validate_dates would reject this at commit.
                         errs.append("dob_not_in_past:%s" % row.date_of_birth)
-                    elif not row.is_student:
-                        # DOB lives on the Student record; nowhere to store it
-                        # for a non-student row.
-                        warns.append("dob_needs_student")
+                    # A DOB on a non-student row used to warn `dob_needs_student`
+                    # because the date only existed on the Student record. It
+                    # lives on Person now (ADR 068), so any row can carry one.
 
             if row.program_completed:
                 if not frappe.db.exists("Program", row.program_completed):
@@ -410,9 +409,19 @@ class PersonImportBatch(Document):
             country=row.country or self.default_country,
             image=image_url,
             gender=row.gender,
+            # Person owns the date of birth now (ADR 068), so it no longer
+            # depends on the row also creating a Student.
+            # `dry_run` has already rejected an unparseable date, and a clean
+            # dry-run is required before submit, so getdate is safe here — the
+            # same assumption `_get_or_create_student` makes.
+            date_of_birth=getdate(row.date_of_birth) if row.date_of_birth else None,
+            address_line_1=row.address_line_1,
+            address_line_2=row.address_line_2,
+            city=row.city,
+            state=row.state,
+            pincode=row.pincode,
         )
         row.db_set("created_person", person, update_modified=False)
-        _apply_person_address(person, row)
 
         # 3. Student — its on_update fires the oikonomos Customer bridge.
         if row.is_student:
@@ -527,22 +536,11 @@ def _ensure_user(email, first_name, last_name, gender, user_type, send_welcome):
     return user.name
 
 
-def _apply_person_address(person_name, row):
-    """Fill blank mailing-address fields on the Person from the row (never
-    clobbers existing values, matching the spine's fill-only convention)."""
-    fields = {
-        "address_line_1": row.address_line_1,
-        "address_line_2": row.address_line_2,
-        "city": row.city,
-        "state": row.state,
-        "pincode": row.pincode,
-    }
-    current = (
-        frappe.db.get_value("Person", person_name, list(fields), as_dict=True) or {}
-    )
-    updates = {f: v for f, v in fields.items() if v and not current.get(f)}
-    if updates:
-        frappe.db.set_value("Person", person_name, updates, update_modified=False)
+# `_apply_person_address` is gone. It wrote the address with `db.set_value`,
+# which runs no hooks — so `Person.validate`/`on_update` never fired for those
+# values, and the geocode trigger (ADR 068 phase 6) would never have seen them
+# either. The five fields go through `ensure_person` below instead: one writer,
+# hooks fire, imported people get geocoded like everyone else.
 
 
 def _get_or_create_student(person, email, first, mid, last, row, image):
@@ -594,20 +592,34 @@ def _get_or_create_instructor(person, user, email, full_name, gender):
 
 
 def _get_or_create_alumni(person, user, email, full_name, row):
-    if email and frappe.db.exists("Alumni Profile", email):
-        return email  # autoname is the email
+    # Keyed on `person` first, then on the email as a *field*. This used to
+    # short-circuit on `exists("Alumni Profile", email)` because the docname
+    # was the email (ADR 068 phase 3 made it opaque) — after the rename that
+    # lookup silently never matches, and re-running an import would create
+    # duplicate profiles for anyone whose Person link predated the row.
     existing = frappe.db.get_value("Alumni Profile", {"person": person})
     if existing:
         return existing
+    if email:
+        existing = frappe.db.get_value("Alumni Profile", {"email": email})
+        if existing:
+            return existing
     alumni = frappe.new_doc("Alumni Profile")
     alumni.user = user
     alumni.email = email
     alumni.full_name = full_name or (email.split("@")[0] if email else None)
     alumni.person = person
+    # Completed programs are rows on the profile (ADR 069), so an imported
+    # alumnus starts with one. There is no enrollment behind it — they
+    # graduated before this system, or elsewhere.
     if row.program_completed and frappe.db.exists("Program", row.program_completed):
-        alumni.program_completed = row.program_completed
-    if row.class_year:
-        alumni.class_year = cint(row.class_year)
+        alumni.append(
+            "graduations",
+            {
+                "program": row.program_completed,
+                "class_year": cint(row.class_year) if row.class_year else None,
+            },
+        )
     alumni.insert(ignore_permissions=True)
     return alumni.name
 

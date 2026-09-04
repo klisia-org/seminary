@@ -66,16 +66,23 @@ class TestStudent(unittest.TestCase):
 
 
 def create_student(student_dict):
+    """Person first, then the Student (ADR 068 §1).
+
+    The identity fields this used to set are `fetch_from person.*` mirrors now,
+    so building a Student from them directly would produce a record with no
+    name and no email — and `person` is required.
+    """
+    from seminary.seminary import intake
+    from seminary.seminary.person import ensure_person
+
     student = get_student(student_dict["email"])
     if not student:
-        student = frappe.get_doc(
-            {
-                "doctype": "Student",
-                "first_name": student_dict["first_name"],
-                "last_name": student_dict["last_name"],
-                "student_email_id": student_dict["email"],
-            }
-        ).insert()
+        person = ensure_person(
+            student_dict["email"],
+            first_name=student_dict["first_name"],
+            last_name=student_dict["last_name"],
+        )
+        student = intake.make_student(person)
     return student
 
 

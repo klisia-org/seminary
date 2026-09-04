@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-04 00:00:00",
+ "description": "One program this alumnus completed. A person may complete several, so this is a row rather than a field on the profile.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "program",
+  "academic_year",
+  "class_year",
+  "column_break_grad",
+  "conclusion_date",
+  "program_enrollment"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "description": "The school's own year identifier, as everywhere else in the app. Free-form text (\"2017-2018\"), which is why the class year beside it is a separate number.",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic Year",
+   "options": "Academic Year"
+  },
+  {
+   "columns": 1,
+   "description": "\"Class of\" \u2014 derived from the academic year's end, not from the calendar year of the conclusion date. An autumn graduate of 2017-2018 is Class of 2018, and taking .year off their December conclusion date called them 2017.",
+   "fieldname": "class_year",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Class Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_grad",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "conclusion_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Conclusion Date"
+  },
+  {
+   "columns": 3,
+   "description": "The enrollment this graduation came from. Blank for an alumnus recorded by import rather than by graduating here.",
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-04 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Alumni",
+ "name": "Alumni Graduation",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

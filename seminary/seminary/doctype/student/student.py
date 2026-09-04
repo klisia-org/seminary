@@ -25,14 +25,17 @@ def _current_academic_term():
 
 class Student(Document):
     def validate(self):
-        self.resolve_person()
-        self.set_title()
         self.validate_dates()
-        self.validate_user()
 
         if self.student_applicant:
             self.check_unique()
             self.update_applicant_status()
+
+    def after_insert(self):
+        # Not in `validate`: this creates a User and grants it the Student
+        # role, and doing that mid-validation committed both even when the
+        # Student itself went on to fail (ADR 068 phase 5).
+        self.provision_user()
 
     def on_update(self):
         # Customer (billing identity) creation + Person<->Customer linking is owned
@@ -40,90 +43,45 @@ class Student(Document):
         # bridge installed the Student is purely academic.
         self.update_person_links()
 
-    def resolve_person(self):
-        """Person spine seam (ADR 042). Admission path: reuse the applicant's
-        Person; standalone creation: ensure one from the typed fields. After
-        the link exists, the Person is authoritative and the local contact
-        fields are read-only mirrors hydrated here (fetch_from can't source
-        Person child rows, and validate_user below needs the email in-row)."""
-        from seminary.seminary import person as person_spine
-
-        if not self.person and self.student_applicant:
-            self.person = frappe.db.get_value(
-                "Student Applicant", self.student_applicant, "person"
-            )
-        if not self.person:
-            if not self.student_email_id:
-                return  # nothing to key on; validate_user will complain anyway
-            self.person = person_spine.ensure_person(
-                email=self.student_email_id,
-                first_name=self.first_name,
-                middle_name=self.middle_name,
-                last_name=self.last_name,
-                mobile=self.student_mobile_number,
-                country=self.country,
-                image=self.image,
-                gender=self.gender,
-            )
-        self._hydrate_from_person()
-
-    def _hydrate_from_person(self):
-        spine = frappe.db.get_value(
-            "Person",
-            self.person,
-            [
-                "first_name",
-                "middle_name",
-                "last_name",
-                "primary_email",
-                "primary_mobile",
-            ],
-            as_dict=True,
-        )
-        if not spine:
-            return
-        if spine.first_name:
-            self.first_name = spine.first_name
-        self.middle_name = spine.middle_name
-        self.last_name = spine.last_name
-        if spine.primary_email:
-            self.student_email_id = spine.primary_email
-        if spine.primary_mobile:
-            self.student_mobile_number = spine.primary_mobile
+    # `resolve_person` is gone. A Student is created against a Person that
+    # already exists — `seminary.seminary.intake.make_student` — and `person`
+    # is reqd, so there is nothing left to resolve. Resolving it here was also
+    # too late to be useful: `_validate_links` runs *before* `validate`, so a
+    # `person` set in this method missed Frappe's `fetch_from` pass and the
+    # mirrors stayed empty until the record was saved a second time.
 
     def update_person_links(self):
-        """Attach the academic system records this role created to the spine
-        (User, Gender). The Customer link is owned by the oikonomos bridge."""
+        """Attach the User this role created to the spine.
+
+        Gender used to be pushed back from here, and it was the only path in
+        the app that could record one. It cannot be any more: `Student.gender`
+        is a `fetch_from person.gender` mirror since ADR 068 phase 4, so
+        pushing it back would just write the spine's own value to itself.
+        Gender is now captured at the applicant form, the importer, or by a
+        Registrar on the Person — which ADR 067's readiness check must account
+        for. The Customer link is owned by the oikonomos bridge."""
         if not self.person:
             return
         if self.user and not frappe.db.get_value("Person", self.person, "user"):
             frappe.db.set_value(
                 "Person", self.person, "user", self.user, update_modified=False
             )
-        # Gender is a shared human attribute: keep the spine current from the
-        # student record (the usual entry point for a student's gender).
-        if (
-            self.gender
-            and frappe.db.get_value("Person", self.person, "gender") != self.gender
-        ):
-            frappe.db.set_value(
-                "Person", self.person, "gender", self.gender, update_modified=False
-            )
 
     # Validate Functions
-    def set_title(self):
-        self.student_name = " ".join(
-            filter(None, [self.first_name, self.middle_name, self.last_name])
-        )
+    # `set_title` is gone: `student_name` is `fetch_from person.full_name` now,
+    # so recomputing it here would fight the mirror (ADR 068).
 
     def validate_dates(self):
-
-        if self.date_of_birth and getdate(self.date_of_birth) >= getdate():
-            frappe.throw(_("Date of Birth cannot be greater than today."))
-
-        if self.date_of_birth and getdate(self.date_of_birth) >= getdate(
-            self.joining_date
-        ):
+        # Date of birth lives on the Person (ADR 068). The "not in the future"
+        # rule belongs there with it; what stays here is the one comparison
+        # that is genuinely about *this* record — you cannot join before you
+        # were born.
+        dob = (
+            frappe.db.get_value("Person", self.person, "date_of_birth")
+            if self.person
+            else None
+        )
+        if dob and self.joining_date and getdate(dob) >= getdate(self.joining_date):
             frappe.throw(_("Date of Birth cannot be greater than Joining Date."))
 
         if self.joining_date:
@@ -133,9 +91,32 @@ class Student(Document):
                 ):
                     frappe.throw(_("Joining Date can not be greater than Leaving Date"))
 
-    def validate_user(self):
-        """Create a website user for student creation if not already exists"""
-        if not frappe.db.exists("User", self.student_email_id):
+    def provision_user(self):
+        """Give the student a portal login, or grant the role to their existing
+        one. Runs from `after_insert`, so `db_set` — a plain assignment there
+        is never written.
+
+        `student_email_id` mirrors `person.primary_email`, which the Person's
+        own `assert_reachable` keeps populated for anyone holding a role. The
+        guard below is for the order-of-operations case where a Student is
+        created against a Person whose email has not landed yet: better to
+        leave the student without a login than to hand `User.autoname` a null
+        and meet an opaque `'NoneType' has no attribute 'strip'`.
+        """
+        if not self.student_email_id:
+            frappe.msgprint(
+                _(
+                    "No email on {0}, so no portal login was created. Add a "
+                    "primary email to the person record and re-save."
+                ).format(self.person),
+                indicator="orange",
+                alert=True,
+            )
+            return
+
+        if frappe.db.exists("User", self.student_email_id):
+            student_user = frappe.get_doc("User", self.student_email_id)
+        else:
             student_user = frappe.get_doc(
                 {
                     "doctype": "User",
@@ -147,14 +128,9 @@ class Student(Document):
                     "user_type": "Website User",
                 }
             )
-            student_user.add_roles("Student")
-            student_user.save(ignore_permissions=True)
-            self.user = student_user.name
-        else:
-            student_user = frappe.get_doc("User", self.student_email_id)
-            student_user.add_roles("Student")
-            student_user.save(ignore_permissions=True)
-            self.user = student_user.name
+        student_user.add_roles("Student")
+        student_user.save(ignore_permissions=True)
+        self.db_set("user", student_user.name, update_modified=False)
 
     def check_unique(self):
         """Validates if the Student Applicant is Unique"""

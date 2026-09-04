@@ -155,16 +155,35 @@ def create_users():
 
 
 def create_students():
+    """Person first, then the Student (ADR 068 §1).
+
+    The demo data used to build Students straight from the JSON, carrying
+    names, email, gender and a date of birth. Those are all attributes of the
+    human, not of their enrollment: the identity fields are `fetch_from
+    person.*` mirrors now and `date_of_birth` no longer exists on Student at
+    all, so the demo has to seed the spine and hang the Student off it.
+    """
+    from seminary.seminary import intake
+    from seminary.seminary.person import ensure_person
+
     students = load_json("students.json")
     for student_data in students:
-        if not frappe.db.exists(
-            "Student", {"student_email_id": student_data.get("student_email_id")}
-        ):
-            doc = insert_demo_doc("Student", student_data)
-            # Store generated student ID for enrollment
-            student_data["name"] = doc.name
-            # The auto-created Customer (a billing identity) is tagged for cleanup
-            # by the oikonomos demo installer — seminary stays Frappe-only here.
+        email = student_data.get("student_email_id")
+        if frappe.db.exists("Student", {"student_email_id": email}):
+            continue
+        person = ensure_person(
+            email,
+            first_name=student_data.get("first_name"),
+            last_name=student_data.get("last_name"),
+            mobile=student_data.get("student_mobile_number"),
+            gender=student_data.get("gender"),
+            date_of_birth=student_data.get("date_of_birth"),
+        )
+        doc = intake.make_student(person, user=student_data.get("user"))
+        # Store generated student ID for enrollment
+        student_data["name"] = doc.name
+        # The auto-created Customer (a billing identity) is tagged for cleanup
+        # by the oikonomos demo installer — seminary stays Frappe-only here.
 
 
 def create_instructor_categories():
@@ -181,10 +200,31 @@ def create_instructor_categories():
 
 
 def create_instructors():
+    """Person first, then the Instructor (ADR 068 §1).
+
+    `instructor_name` is a `fetch_from person.full_name` mirror now, and the
+    JSON carried no `prof_email` at all — which was survivable only while the
+    controller resolved its own Person from the User.
+    """
+    from seminary.seminary import intake
+    from seminary.seminary.person import ensure_person
+
     instructors = load_json("instructors.json")
     for instructor_data in instructors:
-        if not frappe.db.exists("Instructor", {"user": instructor_data.get("user")}):
-            insert_demo_doc("Instructor", instructor_data)
+        user = instructor_data.get("user")
+        if frappe.db.exists("Instructor", {"user": user}):
+            continue
+        name_parts = (instructor_data.get("instructor_name") or "").split(" ", 1)
+        person = ensure_person(
+            user=user,
+            first_name=name_parts[0] or None,
+            last_name=name_parts[1] if len(name_parts) > 1 else None,
+        )
+        intake.make_instructor(
+            person,
+            user=user,
+            shortbio=instructor_data.get("shortbio"),
+        )
 
 
 def create_program_enrollments():

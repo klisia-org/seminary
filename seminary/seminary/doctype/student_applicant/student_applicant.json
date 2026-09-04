@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{academic_term}-{first_name}-{###}",
+ "autoname": "APP-.#####",
  "creation": "2015-09-11 11:50:09.740807",
  "default_view": "List",
  "description": "A prospective student's application to a program, created when someone applies through the public application form or by staff. Review and process it here before admitting the applicant and creating their enrollment.",
@@ -97,7 +97,8 @@
   "testimony",
   "pgmexpect",
   "requests_requirement_review",
-  "contacts"
+  "contacts",
+  "access_key"
  ],
  "fields": [
   {
@@ -604,6 +605,16 @@
    "fieldname": "education_docs",
    "fieldtype": "Attach",
    "label": "Educational records"
+  },
+  {
+   "description": "Unguessable handle for the public payment page. Not a secret the applicant needs to see; it exists so the page cannot be reached by trying docnames.",
+   "fieldname": "access_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Access Key",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "image_field": "image",
@@ -612,7 +623,7 @@
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -690,7 +701,9 @@
  ],
  "route": "apply-to-enroll",
  "row_format": "Dynamic",
+ "search_fields": "title,student_email_id",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

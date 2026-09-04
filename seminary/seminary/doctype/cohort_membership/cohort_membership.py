@@ -130,10 +130,21 @@ class CohortMembership(Document):
         of somewhere: the type has said nothing about which program, and
         inventing one here would be policy this record is not allowed to make.
         """
-        filters = {"person": self.person, "enabled": 1}
+        profile = frappe.db.get_value(
+            "Alumni Profile", {"person": self.person, "enabled": 1}
+        )
+        if not profile:
+            return False
+        if not (policy.get("program") or policy.get("program_level")):
+            return True
+
+        # Completed programs are rows, not a field — a graduate with two
+        # degrees used to be an alumnus of only whichever one happened to be
+        # stored, which silently withheld leadership of a cohort scoped to the
+        # other (ADR 069).
         if policy.get("program"):
-            filters["program_completed"] = policy["program"]
-        elif policy.get("program_level"):
+            programs = [policy["program"]]
+        else:
             programs = frappe.get_all(
                 "Program",
                 filters={"program_level": policy["program_level"]},
@@ -141,5 +152,13 @@ class CohortMembership(Document):
             )
             if not programs:
                 return False
-            filters["program_completed"] = ("in", programs)
-        return bool(frappe.db.exists("Alumni Profile", filters))
+        return bool(
+            frappe.db.exists(
+                "Alumni Graduation",
+                {
+                    "parenttype": "Alumni Profile",
+                    "parent": profile,
+                    "program": ("in", programs),
+                },
+            )
+        )

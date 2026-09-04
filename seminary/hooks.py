@@ -436,6 +436,12 @@ doc_events = {
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
     "*": {
+        # Fills the snapshot fields declared in `person_fields.SNAPSHOTS`
+        # (ADR 068 §3) — a person's name as it stood when the record was
+        # written, never re-derived afterwards. Hung off the wildcard rather
+        # than five controllers so that declaring a new snapshot needs no
+        # controller edit; it is an O(1) dict miss for every other doctype.
+        "before_validate": "seminary.seminary.person_fields.capture_snapshots",
         "on_update": "seminary.seminary.communication_triggers.process",
         "on_update_after_submit": [
             "seminary.seminary.graduation.reflect_linked_doc_status",

@@ -986,26 +986,63 @@ def get_instructor_info():
 def save_student_profile(
     mobile, address_line_1, address_line_2, city, pincode, state, country, image=None
 ):
-    student_name = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
-    if not student_name:
-        frappe.throw("Student record not found")
+    """Self-service profile edit, written to the Person spine.
 
-    update_fields = {
-        "student_mobile_number": mobile,
-        "address_line_1": address_line_1,
-        "address_line_2": address_line_2,
-        "city": city,
-        "pincode": pincode,
-        "state": state,
-        "country": country,
-    }
-    if image:
-        update_fields["image"] = image
+    This used to `db.set_value` straight onto the Student — no hooks, no Person
+    write — so a student's own edit diverged from the spine permanently, and
+    their mobile number was then silently reverted by the next Person save.
+    The address columns it wrote no longer exist on Student at all (ADR 068
+    phase 4); the mailing address has lived on the Person since ADR 046.
+    """
+    from seminary.seminary.person import update_person
 
-    frappe.db.set_value("Student", student_name, update_fields)
-    return frappe.db.get_value(
-        "Student", student_name, list(update_fields.keys()), as_dict=1
+    student = frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, ["name", "person"], as_dict=True
     )
+    if not student:
+        frappe.throw(_("Student record not found"))
+    if not student.person:
+        frappe.throw(_("This student is not linked to a person record yet."))
+
+    update_person(
+        student.person,
+        mobile=mobile,
+        address_line_1=address_line_1,
+        address_line_2=address_line_2,
+        city=city,
+        pincode=pincode,
+        state=state,
+        # The postal country, not the messaging-routing one (ADR 068 phase 2).
+        mailing_country=country,
+        image=image or None,
+        overwrite=True,
+    )
+    row = frappe.db.get_value(
+        "Person",
+        student.person,
+        [
+            "primary_mobile",
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "pincode",
+            "state",
+            "mailing_country",
+            "image",
+        ],
+        as_dict=True,
+    )
+    # Keep the payload shape the profile modal already expects.
+    return {
+        "student_mobile_number": row.primary_mobile,
+        "address_line_1": row.address_line_1,
+        "address_line_2": row.address_line_2,
+        "city": row.city,
+        "pincode": row.pincode,
+        "state": row.state,
+        "country": row.mailing_country,
+        "image": row.image,
+    }
 
 
 @frappe.whitelist()
@@ -1019,19 +1056,35 @@ def save_instructor_profile(
     whatsapp=None,
     profileimage=None,
 ):
+    """Self-service instructor profile.
+
+    The identity half now goes to the Person (ADR 068 phases 4-5). This used to
+    set `instructor_name` on the Instructor and save, which does *not* rename
+    the document — so `Instructor.name` and `instructor_name` silently diverged
+    on any name edit. The name, email, phone and photo are `fetch_from
+    person.*` mirrors; only the bio and the contact-consent flag are genuinely
+    about the teaching role.
+    """
+    from seminary.seminary.person import update_person
+
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
-    doc.instructor_name = instructor_name
+    if doc.person:
+        parts = (instructor_name or "").strip().split(" ", 1)
+        update_person(
+            doc.person,
+            first_name=parts[0] or None,
+            last_name=parts[1] if len(parts) > 1 else None,
+            email=prof_email or None,
+            mobile=phone_message or None,
+            image=profileimage or None,
+            overwrite=True,
+        )
     doc.shortbio = shortbio
     doc.bio = bio
-    if prof_email is not None:
-        doc.prof_email = prof_email
-    if phone_message is not None:
-        doc.phone_message = phone_message
     if students_may_contact is not None:
         doc.students_may_contact = cint(students_may_contact)
-    if profileimage:
-        doc.profileimage = profileimage
     doc.save(ignore_permissions=False)
+    doc.reload()
 
     if whatsapp is not None and doc.person:
         from seminary.seminary.person import set_channel_address
@@ -2172,9 +2225,12 @@ def get_program_audit(program_enrollment):
     # even on a request whose write never commits.
     result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
     result["graduation_request"] = _active_graduation_request_summary(pe.name)
+    # The phonetic name lives on the Person since ADR 068 phase 4 — it is how a
+    # human's name is pronounced, not a fact about their enrollment.
+    person = frappe.db.get_value("Student", pe.student, "person")
     result["student_phonetic_name"] = (
-        frappe.db.get_value("Student", pe.student, "phonetic_name") or ""
-    )
+        frappe.db.get_value("Person", person, "phonetic_name") if person else ""
+    ) or ""
 
     return result
 
@@ -2279,13 +2335,19 @@ def create_graduation_request(
         frappe.throw(_("Not yet a graduation candidate."))
 
     if phonetic_name:
-        frappe.db.set_value(
-            "Student",
-            pe.student,
-            "phonetic_name",
-            phonetic_name,
-            update_modified=False,
-        )
+        # Reusable beyond this graduation, so it belongs on the Person (ADR 068
+        # phase 4) — the Graduation Request keeps its own *snapshot* of the
+        # value below, which is what reaches the diploma and must not move if
+        # the person is renamed later.
+        person = frappe.db.get_value("Student", pe.student, "person")
+        if person:
+            frappe.db.set_value(
+                "Person",
+                person,
+                "phonetic_name",
+                phonetic_name,
+                update_modified=False,
+            )
 
     gr = frappe.get_doc(
         {
@@ -2587,6 +2649,8 @@ def enroll_student(source_name):
     frappe.publish_realtime(
         "enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user
     )
+    from seminary.seminary import intake
+
     student = get_mapped_doc(
         "Student Applicant",
         source_name,
@@ -2595,11 +2659,24 @@ def enroll_student(source_name):
                 "doctype": "Student",
                 "field_map": {
                     "name": "student_applicant",
+                    # `person` is `no_copy` on the applicant, and the mapper
+                    # builds its no-copy set from the *source* meta — so
+                    # same-name copying can never carry the link, and without
+                    # an explicit entry admission forked a second identity for
+                    # the same human. `field_map` bypasses no_copy.
+                    "person": "person",
                 },
-            }
+            },
+            # Child tables are skipped unless mapped, so the emergency contacts
+            # and references collected on the public form were being discarded
+            # at admission. Both applicant fields use this child doctype and
+            # land in `Student.contacts`; the row's `emergency` flag is what
+            # distinguishes a contact from a reference.
+            "Student Contacts": {"doctype": "Student Contacts"},
         },
         ignore_permissions=True,
     )
+    student.person = intake.person_for_applicant(source_name)
     student.save()
 
     student_applicant = frappe.db.get_value(
@@ -4413,10 +4490,28 @@ def get_doctrinal_statement():
 
 
 @frappe.whitelist(allow_guest=True)
-def get_application_payment_url(applicant_name):
+def get_application_payment_url(applicant_name, key=None):
     """Payment URL + instructions for an applicant's Application invoice (public
-    web form). Delegates to the financial backend; None on a Frappe-only seminary."""
+    web form). Delegates to the financial backend; None on a Frappe-only seminary.
+
+    Guest-callable, so the caller must present the applicant's `access_key`
+    (ADR 068 phase 3). Without it this took a bare docname and would happily
+    hand over any applicant's payment link — and confirm that the application
+    exists — to anyone willing to try names.
+    """
+    import hmac
+
     from seminary.seminary.financial.backend import get_financial_backend
+
+    if frappe.session.user == "Guest":
+        expected = frappe.db.get_value(
+            "Student Applicant", applicant_name, "access_key"
+        )
+        if not (expected and key and hmac.compare_digest(str(key), str(expected))):
+            frappe.throw(
+                _("This payment link is invalid or has expired."),
+                frappe.PermissionError,
+            )
 
     return get_financial_backend().application_payment_url(applicant_name)
 

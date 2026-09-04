@@ -13,8 +13,24 @@ class Person(Document):
     def validate(self):
         self.set_full_name()
         self.normalize_reachability()
+        self.assert_reachable()
         self.validate_channel_addresses()
         self.sync_primary_channel_addresses()
+
+    def assert_reachable(self):
+        """A Person holding a role record must keep a primary email.
+
+        Since ADR 068 phase 4 the role addresses are `fetch_from
+        person.primary_email`, and Frappe *blanks* a mirror whose source is
+        null. Those addresses are unique-indexed and provision the portal
+        login, so clearing the spine's email would strand the login on the
+        role's next save — far away from the edit that caused it. Refuse here,
+        where the person doing it can still see why.
+        """
+        from seminary.seminary.person_fields import assert_reachable
+
+        if not self.is_new():
+            assert_reachable(self)
 
     def on_update(self):
         self.warn_on_login_email_drift()
@@ -120,6 +136,11 @@ class Person(Document):
                 fields=["name"] + list(values),
             )
             for row in rows:
+                # No unique-collision guard is needed here. `Student.person`,
+                # `Instructor.person` and `Alumni Profile.person` are unique
+                # (ADR 068 §1), so this loop sees at most one row per doctype,
+                # and `Person.primary_email` is unique too — so no two people
+                # can be pushing the same address at a unique mirror.
                 changed = {
                     field: value
                     for field, value in values.items()

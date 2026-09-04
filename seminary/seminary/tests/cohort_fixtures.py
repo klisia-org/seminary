@@ -27,13 +27,25 @@ def uid(label=""):
 # ------------------------------------------------------------------- identity
 
 
-def make_person(first="Test", last=None, user=None):
+def make_person(first="Test", last=None, user=None, email=None):
+    """A Person always has a primary email.
+
+    `ensure_person` cannot create one without an email or a User, so a Person
+    lacking both was never a state the app could reach — but these fixtures
+    built one, which mattered from ADR 068 phase 4 on: the role addresses are
+    `fetch_from person.primary_email`, and Frappe blanks a mirror whose source
+    is null, so an email-less Person silently produced an email-less Student.
+    """
+    _seq[0] += 1
     doc = frappe.get_doc(
         {
             "doctype": "Person",
             "first_name": PREFIX + " " + first,
             "last_name": last or uid(),
             "user": user,
+            "primary_email": email
+            or (frappe.db.get_value("User", user, "email") if user else None)
+            or ("%s.person.%d@example.test" % (PREFIX.lower(), _seq[0])),
         }
     )
     doc.insert(ignore_permissions=True)
@@ -63,71 +75,49 @@ def make_user(roles=(), email=None):
 
 
 def make_instructor(person=None, status="Active"):
-    """An Instructor needs a User and an email, so the whole chain is built."""
-    user = make_user()
-    person = person or make_person("Instr", user=user.name)
-    if not person.user:
-        person.db_set("user", user.name, update_modified=False)
-    doc = frappe.get_doc(
-        {
-            "doctype": "Instructor",
-            "instructor_name": uid("Instructor"),
-            "user": user.name,
-            "prof_email": user.name,
-            "person": person.name,
-            "status": status,
-        }
-    )
-    doc.insert(ignore_permissions=True)
-    # `_resolve_person` may re-point person from the user; keep the caller's.
-    if doc.person != person.name:
-        doc.db_set("person", person.name, update_modified=False)
-        doc.reload()
-    return doc
+    """Person first, then the role (ADR 068 §1).
+
+    `instructor_name`, `prof_email` and the rest are `fetch_from person.*`
+    mirrors, so setting them on the Instructor is pointless — they come from
+    the spine. The User is created first because `Instructor.user` is reqd and
+    the spine wants the link.
+    """
+    from seminary.seminary import intake
+
+    if person is None:
+        user = make_user()
+        person = make_person("Instr", user=user.name)
+    elif not person.user:
+        person.db_set("user", make_user().name, update_modified=False)
+        person.reload()
+    return intake.make_instructor(person, user=person.user, status=status)
 
 
 def make_student(person=None):
-    """A Student provisions a portal User from its email, so give it one.
+    """Person first, then the role (ADR 068 §1).
 
-    Without an address the User autoname raises on a null email -- a real
-    dependency of the identity spine (ADR 042), not something to work around.
+    The Student's identity fields are mirrors of the Person's, and `person` is
+    required — so there is nothing left to type here.
     """
+    from seminary.seminary import intake
+
     if person is None:
         user = make_user()
         person = make_person("Student", user=user.name)
-        email = user.name
-    else:
-        email = person.user or person.primary_email or make_user().name
-    doc = frappe.get_doc(
-        {
-            "doctype": "Student",
-            "first_name": person.first_name,
-            "last_name": person.last_name,
-            "student_email_id": email,
-            "person": person.name,
-        }
-    )
-    doc.insert(ignore_permissions=True)
-    if doc.person != person.name:
-        doc.db_set("person", person.name, update_modified=False)
-        doc.reload()
-    return doc
+    return intake.make_student(person, user=person.user)
 
 
 def make_alumni_profile(person, program_completed=None, enabled=1):
-    user = person.user or make_user().name
-    doc = frappe.get_doc(
-        {
-            "doctype": "Alumni Profile",
-            "user": user,
-            "email": user,
-            "full_name": person.full_name or person.name,
-            "person": person.name,
-            "program_completed": program_completed,
-            "enabled": enabled,
-        }
-    )
-    doc.insert(ignore_permissions=True)
+    """Completed programs are rows on the profile (ADR 069)."""
+    from seminary.seminary import intake
+
+    if not person.user:
+        person.db_set("user", make_user().name, update_modified=False)
+        person.reload()
+    doc = intake.make_alumni_profile(person, user=person.user, enabled=enabled)
+    if program_completed:
+        doc.append("graduations", {"program": program_completed})
+        doc.save(ignore_permissions=True)
     return doc
 
 
