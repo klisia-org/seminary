@@ -232,6 +232,73 @@ def make_framework(cohort_type=None, instructor_category=None, status="Active"):
     return doc
 
 
+# ----------------------------------------------------------------- org / pool
+
+
+COHORT_MENTORSHIP_ROUTE = "Program Cohort Mentorship"
+
+
+def mentorship_capability():
+    """The seeded capability wired to the cohort-mentorship route.
+
+    Seeded by `install.seed_faculty_capabilities`, so it exists on any migrated
+    site; a school may rename the display name freely, which is exactly why the
+    lookup is on `routes_to` and not on the name.
+    """
+    rows = frappe.get_all(
+        "Faculty Capability",
+        filters={"routes_to": COHORT_MENTORSHIP_ROUTE, "is_active": 1},
+        limit=1,
+        pluck="name",
+    )
+    return rows[0] if rows else None
+
+
+def make_mentoring_unit(chair=None, is_active=1):
+    doc = frappe.get_doc(
+        {
+            "doctype": "Academic Unit",
+            "unit_name": uid("Mentoring"),
+            "unit_type": "Mentoring Department",
+            "chair": chair,
+            "is_active": is_active,
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    return doc
+
+
+def seat_mentor(unit, instructor=None, max_students=0, current_students=0):
+    """An instructor in `unit`, wired to the mentorship route with a ceiling.
+
+    `max_students = 0` means unlimited, which is `faculty._remaining`'s own
+    convention -- so a fixture that wants a *full* mentor has to give them a
+    real ceiling and meet it.
+    """
+    if instructor is None:
+        instructor = make_instructor()
+    capability = mentorship_capability()
+    doc = frappe.get_doc(
+        {
+            "doctype": "Academic Unit Membership",
+            "unit": unit if isinstance(unit, str) else unit.name,
+            "person": instructor.person,
+            "instructor": instructor.name,
+            "is_active": 1,
+            "capabilities": [
+                {
+                    "capability": capability,
+                    "tracks_capacity": 1,
+                    "max_students": max_students,
+                    "current_students": current_students,
+                }
+            ],
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    return doc
+
+
 # --------------------------------------------------------------------- cohort
 
 

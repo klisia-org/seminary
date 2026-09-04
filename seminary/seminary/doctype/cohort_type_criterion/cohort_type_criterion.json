@@ -1,0 +1,55 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-04 00:00:00",
+ "description": "One assignment rule this Cohort Type uses, and where it comes in the order. Filters are all applied; Rankings are applied in the order listed, the first one deciding and the next breaking its ties.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "criterion",
+  "kind",
+  "reads"
+ ],
+ "fields": [
+  {
+   "columns": 5,
+   "fieldname": "criterion",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Rule",
+   "options": "Cohort Assignment Criterion",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "criterion.kind",
+   "fieldname": "kind",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kind",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fetch_from": "criterion.requires_field",
+   "fieldname": "reads",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reads",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-04 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Type Criterion",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -35,6 +35,7 @@ def after_install():
     seed_culminating_project_types()
     seed_disciplinary_actions()
     seed_faculty_capabilities()
+    seed_cohort_assignment_criteria()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
@@ -323,6 +324,39 @@ def seed_disciplinary_actions():
     frappe.db.commit()
 
 
+def seed_cohort_assignment_criteria():
+    """Seed the assignment rules the cohort planner can apply (ADR 067 §8).
+
+    Create-only, like every other catalog: a school renames these, describes
+    them in its own words and retires the ones it does not want, and a re-import
+    on every migrate would undo all three. The `handler` is the docname because
+    it is code, not configuration -- which is also what keeps a rename from
+    orphaning a Cohort Type that lists the rule.
+
+    Seeded inactive is deliberately *not* done: an unused rule costs nothing,
+    and a school that wants one has to add it to a Cohort Type anyway.
+    """
+    if not frappe.db.exists("DocType", "Cohort Assignment Criterion"):
+        return
+    from seminary.seminary.discipleship import criteria
+
+    for handler, rule in criteria.registry().items():
+        if frappe.db.exists("Cohort Assignment Criterion", handler):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Cohort Assignment Criterion",
+                "handler": handler,
+                "criterion_name": _(rule.label),
+                "kind": rule.kind,
+                "requires_field": rule.requires_field,
+                "description": _(rule.description),
+                "is_active": 1,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def seed_faculty_capabilities():
     """Seed the starter Faculty Capabilities if they don't already exist (ADR 059).
 
@@ -363,6 +397,18 @@ def seed_faculty_capabilities():
             _("Verifies manual graduation requirements."),
         ),
         ("Mentor", "Mentor", 0, 1, _("Mentors student groups.")),
+        # Distinct from "Mentor" on purpose: that route is a free link with no
+        # ceiling, and giving it one would silently re-price every row a school
+        # has already created. Capacity is the whole reason this route exists --
+        # the cohort planner will not seat a mentor it cannot budget (ADR 067
+        # section 1).
+        (
+            "Program Cohort Mentorship",
+            "Program Cohort Mentorship",
+            1,
+            1,
+            _("Leads program cohorts, with a ceiling on how many students."),
+        ),
         (
             "Committee/Board Member",
             "Committee/Board Member",
@@ -1463,6 +1509,7 @@ def after_migrate():
     seed_course_cancellation_reasons()
     seed_grading_scale()
     seed_faculty_capabilities()
+    seed_cohort_assignment_criteria()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()

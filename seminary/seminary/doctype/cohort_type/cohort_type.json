@@ -21,8 +21,12 @@
   "persists_across_courses",
   "remove_on_withdrawal",
   "automation_section",
-  "automation_rule",
+  "plannable",
+  "mentor_unit",
+  "column_break_planning",
+  "automation_min_size",
   "automation_max_size",
+  "criteria",
   "policy_section",
   "leader_eligibility",
   "open_enrollment",
@@ -120,25 +124,53 @@
   {
    "collapsible": 1,
    "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
-   "description": "Leave the rule empty and cohorts of this type are made by hand -- automation never touches them. A school wanting both runs two types.",
+   "description": "Settings the Cohort Planner reads when it proposes cohorts of this type. Leave the box below unticked and cohorts of this type are made entirely by hand. A school wanting both runs two types.",
    "fieldname": "automation_section",
    "fieldtype": "Section Break",
-   "label": "Automation"
+   "label": "Bulk Planning"
   },
   {
-   "description": "How the system forms cohorts of this type and puts people in them. Placement happens once, when a person first qualifies; nobody is ever re-placed, so a leader's split or move is never undone.",
-   "fieldname": "automation_rule",
-   "fieldtype": "Select",
-   "label": "Automation Rule",
-   "options": "\nOn Program Enrollment"
+   "description": "Offer this type in the Cohort Planner, where a proposed set of cohorts is reviewed and adjusted before anything is created. Nothing is ever placed automatically: a person always presses Create.",
+   "fieldname": "plannable",
+   "fieldtype": "Check",
+   "label": "May Be Planned in Bulk"
   },
   {
-   "depends_on": "automation_rule",
-   "description": "Part of the rule: a cut larger than this produces several cohorts, named with a .### suffix, rather than one oversized one. 0 = one cohort per cut.",
+   "depends_on": "plannable",
+   "description": "The unit whose members are offered as mentors, and whose capability ceilings say how many students each of them can carry. Without it the planner has no pool and will not run.",
+   "fieldname": "mentor_unit",
+   "fieldtype": "Link",
+   "label": "Mentor Unit",
+   "link_filters": "[[\"Academic Unit\",\"unit_type\",\"=\",\"Mentoring Department\"],[\"Academic Unit\",\"is_active\",\"=\",1]]",
+   "options": "Academic Unit"
+  },
+  {
+   "fieldname": "column_break_planning",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "plannable",
+   "description": "A proposed cohort smaller than this is flagged for review rather than refused -- the planner would rather show you three groups of two than pretend they are healthy. 0 = no minimum.",
+   "fieldname": "automation_min_size",
+   "fieldtype": "Int",
+   "label": "Minimum Planned Cohort Size",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "plannable",
+   "description": "How many students one proposed cohort may hold. The planner decides how many cohorts to open from this and the minimum above, before it places anybody. 0 = no ceiling.",
    "fieldname": "automation_max_size",
    "fieldtype": "Int",
-   "label": "Automation Max Size",
+   "label": "Maximum Planned Cohort Size",
    "non_negative": 1
+  },
+  {
+   "depends_on": "plannable",
+   "description": "How the planner decides who mentors whom. Leave empty and it balances group sizes only. Filters narrow who may be paired; Rankings order the mentors who qualify, the first listed deciding and the next breaking its ties. Whatever it proposes, a person reviews and can override it.",
+   "fieldname": "criteria",
+   "fieldtype": "Table",
+   "label": "Matching Rules",
+   "options": "Cohort Type Criterion"
   },
   {
    "fieldname": "policy_section",

@@ -83,27 +83,37 @@ class TestCohortTypePolicy(IntegrationTestCase):
 
     def test_acting_fields_clear_when_the_category_cannot_use_them(self):
         program = fx.make_program()
+        unit = fx.make_mentoring_unit()
         t = fx.make_cohort_type(
             category="Throughout Program",
             program=program.name,
-            automation_rule="On Program Enrollment",
+            plannable=1,
+            mentor_unit=unit.name,
             automation_max_size=8,
             remove_on_withdrawal=1,
         )
-        self.assertEqual(t.automation_rule, "On Program Enrollment")
+        self.assertTrue(t.plannable)
 
         t.category = "Unrestricted"
         t.save(ignore_permissions=True)
-        self.assertFalse(t.automation_rule)
+        self.assertFalse(t.plannable)
+        self.assertFalse(t.mentor_unit)
         self.assertFalse(t.automation_max_size)
         self.assertFalse(t.remove_on_withdrawal)
         self.assertFalse(t.program)
 
-    def test_max_size_without_a_rule_is_cleared(self):
+    def test_sizes_and_pool_clear_when_the_type_is_not_plannable(self):
         program = fx.make_program()
+        unit = fx.make_mentoring_unit()
         t = fx.make_cohort_type(
-            category="Throughout Program", program=program.name, automation_max_size=9
+            category="Throughout Program",
+            program=program.name,
+            mentor_unit=unit.name,
+            automation_min_size=4,
+            automation_max_size=9,
         )
+        self.assertFalse(t.mentor_unit)
+        self.assertFalse(t.automation_min_size)
         self.assertFalse(t.automation_max_size)
 
     def test_a_parked_type_keeps_its_destination_through_a_plain_save(self):
@@ -136,8 +146,84 @@ class TestCohortTypePolicy(IntegrationTestCase):
         self.assertEqual(t.graduates_to, dest.name)  # and it survives the return
 
 
+class TestPlanningSettings(IntegrationTestCase):
+    """ADR 067 §4 — a plannable type must name a pool the planner can use.
+
+    `mentor_unit` carries a `link_filters` hint on the form, and a picker filter
+    is a convenience rather than a rule: it never runs for a REST insert, an
+    import or a fixture. Every assertion here is about the server check behind
+    it.
+    """
+
+    def _type(self, **kw):
+        program = fx.make_program()
+        values = {"category": "Throughout Program", "program": program.name}
+        values.update(kw)
+        return fx.make_cohort_type(**values)
+
+    def test_a_plannable_type_without_a_unit_is_refused(self):
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            self._type(plannable=1)
+        self.assertIn("Mentor Unit", str(ctx.exception))
+
+    def test_a_unit_of_the_wrong_type_is_refused(self):
+        wrong = frappe.get_doc(
+            {
+                "doctype": "Academic Unit",
+                "unit_name": fx.uid("Committee"),
+                "unit_type": "Program Committee",
+                "is_active": 1,
+            }
+        ).insert(ignore_permissions=True)
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            self._type(plannable=1, mentor_unit=wrong.name)
+        self.assertIn("Mentoring Department", str(ctx.exception))
+
+    def test_an_inactive_unit_is_refused(self):
+        unit = fx.make_mentoring_unit(is_active=0)
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            self._type(plannable=1, mentor_unit=unit.name)
+        self.assertIn("not active", str(ctx.exception))
+
+    def test_a_minimum_above_the_maximum_is_refused(self):
+        unit = fx.make_mentoring_unit()
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            self._type(
+                plannable=1,
+                mentor_unit=unit.name,
+                automation_min_size=9,
+                automation_max_size=4,
+            )
+        self.assertIn("larger than the maximum", str(ctx.exception))
+
+    def test_zero_means_unbounded_on_either_size(self):
+        """0 is "no bound", so it can never contradict the other number."""
+        unit = fx.make_mentoring_unit()
+        t = self._type(
+            plannable=1,
+            mentor_unit=unit.name,
+            automation_min_size=9,
+            automation_max_size=0,
+        )
+        self.assertEqual(t.automation_min_size, 9)
+
+    def test_the_mentorship_route_is_seeded_and_tracks_capacity(self):
+        """The route is deliberately not the generic `Mentor` capability: that
+        one is uncapped, and a ceiling is the whole reason this one exists."""
+        capability = fx.mentorship_capability()
+        self.assertTrue(capability, "the cohort mentorship capability is not seeded")
+        row = frappe.db.get_value(
+            "Faculty Capability",
+            capability,
+            ["tracks_capacity", "requires_instructor"],
+            as_dict=True,
+        )
+        self.assertTrue(row.tracks_capacity)
+        self.assertTrue(row.requires_instructor)
+
+
 class TestGraduationTarget(IntegrationTestCase):
-    """§7.15 — graduating into a type is itself that type's automation."""
+    """§7.15 — graduating into a type is itself how that type gets filled."""
 
     def test_a_type_cannot_graduate_into_itself(self):
         program = fx.make_program()
@@ -147,7 +233,7 @@ class TestGraduationTarget(IntegrationTestCase):
             t.save(ignore_permissions=True)
         self.assertIn("graduate into itself", str(ctx.exception))
 
-    def test_a_receiving_type_may_not_take_an_automation_rule(self):
+    def test_a_receiving_type_may_not_be_planned_in_bulk(self):
         program = fx.make_program()
         dest = fx.make_cohort_type()
         fx.make_cohort_type(
@@ -158,17 +244,19 @@ class TestGraduationTarget(IntegrationTestCase):
         dest.reload()
         dest.category = "Throughout Program"
         dest.program = program.name
-        dest.automation_rule = "On Program Enrollment"
+        dest.plannable = 1
+        dest.mentor_unit = fx.make_mentoring_unit().name
         with self.assertRaises(frappe.ValidationError) as ctx:
             dest.save(ignore_permissions=True)
         self.assertIn("already graduates into this type", str(ctx.exception))
 
-    def test_graduating_into_an_automated_type_is_refused(self):
+    def test_graduating_into_a_plannable_type_is_refused(self):
         program = fx.make_program()
         auto = fx.make_cohort_type(
             category="Throughout Program",
             program=program.name,
-            automation_rule="On Program Enrollment",
+            plannable=1,
+            mentor_unit=fx.make_mentoring_unit().name,
         )
         src = fx.make_cohort_type(category="Throughout Program", program=program.name)
         src.graduates_to = auto.name

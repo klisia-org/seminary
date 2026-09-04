@@ -60,3 +60,5 @@ seminary.seminary.patches.promote_applicant_attributes
 seminary.seminary.patches.drop_instructor_created_by
 seminary.seminary.patches.gender_enabled_to_disabled
 seminary.seminary.patches.backfill_alumni_class_year
+seminary.seminary.patches.retire_cohort_automation_rule
+seminary.seminary.patches.seed_distance_unit
