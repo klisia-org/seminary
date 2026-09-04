@@ -138,6 +138,14 @@ const routes = [
     component: () => import('@/pages/Grades.vue'),
   },
   {
+    // The arc across every course (ADR 065). Without a student it is the
+    // reader's own; with one it is a mentee's, which the server checks.
+    path: "/development-plans/:student?",
+    name: "SelfDevelopmentPlans",
+    component: () => import('@/pages/SelfDevelopmentPlans.vue'),
+    props: true,
+  },
+  {
     // The radar and narrative timeline for a competency-based programme
     // (ADR 065). Renders an explanatory empty state for everyone else, so the
     // route needs no role guard.
@@ -180,6 +188,14 @@ const routes = [
     path: "/courses/:courseName/self-assessment/:competency?",
     name: "CompetencySelfAssessment",
     component: () => import('@/pages/CompetencySelfAssessment.vue'),
+    props: true,
+  },
+  {
+    // The student's own plan for what comes next (ADR 065). Renders an
+    // explanatory empty state on an ordinary course, so no role guard.
+    path: "/courses/:courseName/development-plan",
+    name: "PersonalDevelopmentPlan",
+    component: () => import('@/pages/PersonalDevelopmentPlan.vue'),
     props: true,
   },
   {

@@ -672,6 +672,19 @@ def save_course(course, course_data):
     try:
         if isinstance(course_data, str):
             course_data = json.loads(course_data)
+        # First, because it is the only field here that a controller can refuse:
+        # the rest are written with set_value, which skips validation, so doing
+        # this last would leave them applied while the save reported failure.
+        # Sent only when the form owns the setting, so a client that does not
+        # show the field cannot clear an override it knows nothing about
+        # (ADR 065 section 2).
+        if "content_release_override" in course_data:
+            cs = frappe.get_doc("Course Schedule", course)
+            cs.content_release_override = (
+                course_data.get("content_release_override") or None
+            )
+            cs.save()
+
         # Update course details
         frappe.db.set_value(
             "Course Schedule",
@@ -709,9 +722,13 @@ def save_course(course, course_data):
         return {"success": True}
 
     except Exception as e:
+        # Drop whatever did land: the writes above are a mix of validated and
+        # unvalidated, and half-saving a course is worse than not saving it.
+        frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Error saving course")
-        print("Error saving course:", str(e))
-        return {"success": False, "message": str(e)}
+        # `error` is the key the portal reads; `message` is kept for anything
+        # that already relied on it.
+        return {"success": False, "error": str(e), "message": str(e)}
 
 
 _CS_MEETING_STAFF_ROLES = {
@@ -969,26 +986,63 @@ def get_instructor_info():
 def save_student_profile(
     mobile, address_line_1, address_line_2, city, pincode, state, country, image=None
 ):
-    student_name = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
-    if not student_name:
-        frappe.throw("Student record not found")
+    """Self-service profile edit, written to the Person spine.
 
-    update_fields = {
-        "student_mobile_number": mobile,
-        "address_line_1": address_line_1,
-        "address_line_2": address_line_2,
-        "city": city,
-        "pincode": pincode,
-        "state": state,
-        "country": country,
-    }
-    if image:
-        update_fields["image"] = image
+    This used to `db.set_value` straight onto the Student — no hooks, no Person
+    write — so a student's own edit diverged from the spine permanently, and
+    their mobile number was then silently reverted by the next Person save.
+    The address columns it wrote no longer exist on Student at all (ADR 068
+    phase 4); the mailing address has lived on the Person since ADR 046.
+    """
+    from seminary.seminary.person import update_person
 
-    frappe.db.set_value("Student", student_name, update_fields)
-    return frappe.db.get_value(
-        "Student", student_name, list(update_fields.keys()), as_dict=1
+    student = frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, ["name", "person"], as_dict=True
     )
+    if not student:
+        frappe.throw(_("Student record not found"))
+    if not student.person:
+        frappe.throw(_("This student is not linked to a person record yet."))
+
+    update_person(
+        student.person,
+        mobile=mobile,
+        address_line_1=address_line_1,
+        address_line_2=address_line_2,
+        city=city,
+        pincode=pincode,
+        state=state,
+        # The postal country, not the messaging-routing one (ADR 068 phase 2).
+        mailing_country=country,
+        image=image or None,
+        overwrite=True,
+    )
+    row = frappe.db.get_value(
+        "Person",
+        student.person,
+        [
+            "primary_mobile",
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "pincode",
+            "state",
+            "mailing_country",
+            "image",
+        ],
+        as_dict=True,
+    )
+    # Keep the payload shape the profile modal already expects.
+    return {
+        "student_mobile_number": row.primary_mobile,
+        "address_line_1": row.address_line_1,
+        "address_line_2": row.address_line_2,
+        "city": row.city,
+        "pincode": row.pincode,
+        "state": row.state,
+        "country": row.mailing_country,
+        "image": row.image,
+    }
 
 
 @frappe.whitelist()
@@ -1002,19 +1056,35 @@ def save_instructor_profile(
     whatsapp=None,
     profileimage=None,
 ):
+    """Self-service instructor profile.
+
+    The identity half now goes to the Person (ADR 068 phases 4-5). This used to
+    set `instructor_name` on the Instructor and save, which does *not* rename
+    the document — so `Instructor.name` and `instructor_name` silently diverged
+    on any name edit. The name, email, phone and photo are `fetch_from
+    person.*` mirrors; only the bio and the contact-consent flag are genuinely
+    about the teaching role.
+    """
+    from seminary.seminary.person import update_person
+
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
-    doc.instructor_name = instructor_name
+    if doc.person:
+        parts = (instructor_name or "").strip().split(" ", 1)
+        update_person(
+            doc.person,
+            first_name=parts[0] or None,
+            last_name=parts[1] if len(parts) > 1 else None,
+            email=prof_email or None,
+            mobile=phone_message or None,
+            image=profileimage or None,
+            overwrite=True,
+        )
     doc.shortbio = shortbio
     doc.bio = bio
-    if prof_email is not None:
-        doc.prof_email = prof_email
-    if phone_message is not None:
-        doc.phone_message = phone_message
     if students_may_contact is not None:
         doc.students_may_contact = cint(students_may_contact)
-    if profileimage:
-        doc.profileimage = profileimage
     doc.save(ignore_permissions=False)
+    doc.reload()
 
     if whatsapp is not None and doc.person:
         from seminary.seminary.person import set_channel_address
@@ -1136,43 +1206,31 @@ def get_student_programs(student):
     return grades
 
 
-@frappe.whitelist()
-def first_term(doc):
-    # Set the first term as the current term if no term is set as current
-    # currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
-    # print("Current term is: ", currentterm)
-    print("Self.name is: ", doc)
-    # if not currentterm:
-    # 	frappe.db.set_value("Academic Term", doc, "iscurrent_acterm", 1)
-    # 	print("The current term has been set to this term.")
-    # else:
-    # 	return print("There is already a current term. Terms will roll automatically according to their dates.")
-    academic_terms = frappe.get_all(
-        "Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"]
-    )
-    today = getdate()
-    currentterm = frappe.db.sql(
-        """select name from `tabAcademic Term` where iscurrent_acterm = 1"""
-    )
-
-    for term in academic_terms:
-        if term.term_start_date <= today <= term.term_end_date:
-            if term.name != currentterm[0][0]:
-                frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
-                frappe.db.set_value("Academic Term", term.name, "open", 1)
-            else:
-                break
-
-        else:
-            frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 0)
-    return "Active term updated successfully"
+# `first_term` lived here: a second writer of `iscurrent_acterm`, called from
+# Academic Term's after_save — which already fires `tasks.refresh_term_flags_on_save`
+# through doc_events. Two writers doing the same job on the same save, and the
+# worse one could leave two terms flagged: on finding that the covering term was
+# already current it `break`ed out of the loop, so every term after it in an
+# unordered result set kept whatever stale flag it had. It also indexed
+# `currentterm[0][0]` without checking, so it raised whenever no term was
+# flagged at all. `tasks._update_term_flags` is now the only writer, and it sets
+# the flag exclusively.
 
 
 @frappe.whitelist()
-def roll_students(academic_term=None):
-    # Student-advancement only. Invoice generation is owned by the oikonomos
-    # bridge (oikonomos.financial.invoicing); seminary never bills.
-    # Role gate moved here from the (retired) Registrar Hub page.
+def roll_students():
+    """Advance every active student one term, globally.
+
+    Student-advancement only. Invoice generation is owned by the oikonomos
+    bridge (oikonomos.financial.invoicing); seminary never bills.
+
+    Deliberately takes no term: it acts on every active enrollment, not on one
+    term's students. It used to be reachable as a Server Action on Academic
+    Term, which read as term-scoped, silently ignored the term you opened it
+    from, and threw away this summary -- Frappe's generic action handler prints
+    "Complete" and discards the return value. The Registrar workspace button is
+    now the only entry point, and it shows what actually happened.
+    """
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     summary = roll_pe()
     return _(
@@ -1404,14 +1462,35 @@ def course_enroll(pe_name, course):
     }
 
 
+def current_academic_term():
+    """The current academic term — the app-wide answer, or None.
+
+    `Academic Term.iscurrent_acterm` is where a school states this, and
+    `tasks._update_term_flags` keeps exactly one term carrying it. Everything
+    that needs "what term is it" asks here, so there is one definition to fix if
+    it is ever wrong.
+
+    Degrades the same way `_resolve_display_terms` does, because the flag can be
+    momentarily stale (the daily task not yet run on a fresh site) and refusing
+    to answer would be worse than answering from the dates.
+    """
+    terms = _resolve_display_terms()
+    return terms[0] if terms else None
+
+
 def _resolve_display_terms():
     """Academic term(s) to treat as 'this term' for the portal.
+
+    Returns a list only because of its fallback arm; with the single-current
+    invariant enforced (`AcademicTerm.enforce_single_current_term`,
+    `tasks._update_term_flags`) the first two branches yield at most one term.
+    Prefer `current_academic_term()` unless you specifically want the list.
 
     Prefers the flagged current term, but degrades gracefully so the student's
     "My Enrollments This Term" panel never blanks out just because the daily
     scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
     gap between consecutive terms:
-      1. the flagged current term(s);
+      1. the flagged current term;
       2. else the term whose date range contains today (flag not yet set);
       3. else, during an inter-term gap, the nearest OPEN term by date distance
          (the upcoming term the student is enrolling into).
@@ -2146,9 +2225,12 @@ def get_program_audit(program_enrollment):
     # even on a request whose write never commits.
     result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
     result["graduation_request"] = _active_graduation_request_summary(pe.name)
+    # The phonetic name lives on the Person since ADR 068 phase 4 — it is how a
+    # human's name is pronounced, not a fact about their enrollment.
+    person = frappe.db.get_value("Student", pe.student, "person")
     result["student_phonetic_name"] = (
-        frappe.db.get_value("Student", pe.student, "phonetic_name") or ""
-    )
+        frappe.db.get_value("Person", person, "phonetic_name") if person else ""
+    ) or ""
 
     return result
 
@@ -2253,13 +2335,19 @@ def create_graduation_request(
         frappe.throw(_("Not yet a graduation candidate."))
 
     if phonetic_name:
-        frappe.db.set_value(
-            "Student",
-            pe.student,
-            "phonetic_name",
-            phonetic_name,
-            update_modified=False,
-        )
+        # Reusable beyond this graduation, so it belongs on the Person (ADR 068
+        # phase 4) — the Graduation Request keeps its own *snapshot* of the
+        # value below, which is what reaches the diploma and must not move if
+        # the person is renamed later.
+        person = frappe.db.get_value("Student", pe.student, "person")
+        if person:
+            frappe.db.set_value(
+                "Person",
+                person,
+                "phonetic_name",
+                phonetic_name,
+                update_modified=False,
+            )
 
     gr = frappe.get_doc(
         {
@@ -2561,6 +2649,8 @@ def enroll_student(source_name):
     frappe.publish_realtime(
         "enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user
     )
+    from seminary.seminary import intake
+
     student = get_mapped_doc(
         "Student Applicant",
         source_name,
@@ -2569,11 +2659,24 @@ def enroll_student(source_name):
                 "doctype": "Student",
                 "field_map": {
                     "name": "student_applicant",
+                    # `person` is `no_copy` on the applicant, and the mapper
+                    # builds its no-copy set from the *source* meta — so
+                    # same-name copying can never carry the link, and without
+                    # an explicit entry admission forked a second identity for
+                    # the same human. `field_map` bypasses no_copy.
+                    "person": "person",
                 },
-            }
+            },
+            # Child tables are skipped unless mapped, so the emergency contacts
+            # and references collected on the public form were being discarded
+            # at admission. Both applicant fields use this child doctype and
+            # land in `Student.contacts`; the row's `emergency` flag is what
+            # distinguishes a contact from a reference.
+            "Student Contacts": {"doctype": "Student Contacts"},
         },
         ignore_permissions=True,
     )
+    student.person = intake.person_for_applicant(source_name)
     student.save()
 
     student_applicant = frappe.db.get_value(
@@ -2860,6 +2963,14 @@ def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
     course_schedule = getattr(doc, "coursesc", None) or doc.course
+    # On a competency section the same cell holds a *level* written by
+    # cbe.rollup_activity_grades (ADR 065 section 7). A percentage out of 100
+    # written here would overwrite it and be read back as a level, so the
+    # numeric path stands down and the competency roll-up owns the cell.
+    from seminary.seminary import cbe
+
+    if cbe.framework_for(course_schedule):
+        return
     max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
     # Fetch the corresponding Course Assess Results Detail record
     cardname = frappe.db.get_value(
@@ -2933,6 +3044,13 @@ def save_course_assessment(course, assessment_data):
             doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
+            # Competency wiring (ADR 065 section 11b). Written only when the
+            # form sent the key, so a caller that does not show these fields
+            # cannot blank a mapping it knows nothing about.
+            if "course_competency" in data:
+                doc.course_competency = data.get("course_competency") or None
+            if "grading_mode_override" in data:
+                doc.grading_mode_override = data.get("grading_mode_override") or None
             # These are usually already set, but include them if needed:
             doc.parent = course
             doc.parentfield = "courseassescrit_sc"
@@ -2957,11 +3075,19 @@ def save_course_assessment(course, assessment_data):
                     "assignment": data.get("assignment", ""),
                     "exam": data.get("exam", ""),
                     "discussion": data.get("discussion", ""),
+                    "course_competency": data.get("course_competency") or None,
+                    "grading_mode_override": data.get("grading_mode_override") or None,
                 }
             )
             print("Creating new doc with data:", doc.as_dict())
             doc.insert(ignore_permissions=True)
             print("Created new doc:", doc.name)
+
+    # Save the parent once at the end: the weight total and the
+    # chapter -> lesson -> assessment competency check live on the Course
+    # Schedule controller (ADR 023), and saving child rows one at a time never
+    # runs them.
+    frappe.get_doc("Course Schedule", course).save(ignore_permissions=True)
 
     frappe.db.commit()
     return {"success": True}
@@ -3658,6 +3784,40 @@ def _assert_evaluators_finished(course_schedule, roster_names):
         )
 
 
+def _assert_pdp_complete(course_schedule, roster_names):
+    """Block a send while a required development plan is missing (ADR 065 §8).
+
+    Two settings, deliberately separate: `require_pdp` says the plan is part of
+    the course, `pdp_blocks_completion` says the course cannot close without it.
+    A school can ask for the plan and still not hold a grade hostage to it, and
+    most will — so only the second gate blocks, and it names the students rather
+    than reporting a count.
+    """
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework or not cint(framework.pdp_blocks_completion):
+        return
+
+    missing = []
+    for name in roster_names:
+        if frappe.db.exists(
+            "Personal Development Plan",
+            {"roster": name, "status": ("!=", "Draft")},
+        ):
+            continue
+        missing.append(
+            frappe.db.get_value("Scheduled Course Roster", name, "stuname_roster")
+            or name
+        )
+    if missing:
+        frappe.throw(
+            _("These students have not submitted a development plan yet:")
+            + "<br>"
+            + "<br>".join(missing[:20])
+        )
+
+
 def finalize_roster(roster_name):
     """Finalize one student: grade, write the transcript row, award credits.
 
@@ -3844,6 +4004,7 @@ def send_selected_grades(course_schedule, rosters):
             ).format(missing_count)
         )
     _assert_evaluators_finished(course_schedule, rosters)
+    _assert_pdp_complete(course_schedule, rosters)
 
     finalized, students, pes = [], set(), set()
     for roster_name in rosters:
@@ -3898,6 +4059,7 @@ def send_grades(doc=None, **kwargs):
         fields=["name"],
     )
     _assert_evaluators_finished(docname, [r.name for r in records])
+    _assert_pdp_complete(docname, [r.name for r in records])
 
     affected_pes = set()
     for record in records:
@@ -4328,10 +4490,28 @@ def get_doctrinal_statement():
 
 
 @frappe.whitelist(allow_guest=True)
-def get_application_payment_url(applicant_name):
+def get_application_payment_url(applicant_name, key=None):
     """Payment URL + instructions for an applicant's Application invoice (public
-    web form). Delegates to the financial backend; None on a Frappe-only seminary."""
+    web form). Delegates to the financial backend; None on a Frappe-only seminary.
+
+    Guest-callable, so the caller must present the applicant's `access_key`
+    (ADR 068 phase 3). Without it this took a bare docname and would happily
+    hand over any applicant's payment link — and confirm that the application
+    exists — to anyone willing to try names.
+    """
+    import hmac
+
     from seminary.seminary.financial.backend import get_financial_backend
+
+    if frappe.session.user == "Guest":
+        expected = frappe.db.get_value(
+            "Student Applicant", applicant_name, "access_key"
+        )
+        if not (expected and key and hmac.compare_digest(str(key), str(expected))):
+            frappe.throw(
+                _("This payment link is invalid or has expired."),
+                frappe.PermissionError,
+            )
 
     return get_financial_backend().application_payment_url(applicant_name)
 
@@ -4359,8 +4539,42 @@ def active_term():
     return {"academic_term": at, "academic_year": ay}
 
 
+OUTLINE_EDIT_ROLES = {
+    "Instructor",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _assert_may_edit_outline():
+    """Who may write a chapter.
+
+    Students hold `write` on Course Schedule Chapter so progress can be recorded
+    against it, which means a doctype permission check would let them through.
+    That was tolerable while a chapter was only a title; it is not now that the
+    chapter carries the competency mapping the content gating reads (ADR 065
+    section 2), because clearing it would unlock the course. The role set
+    mirrors `canEditOutline` in the portal, so nothing that could edit an
+    outline before can stop now.
+    """
+    if not (OUTLINE_EDIT_ROLES & set(frappe.get_roles())):
+        frappe.throw(
+            _("You are not permitted to edit this course outline."),
+            frappe.PermissionError,
+        )
+
+
 @frappe.whitelist()
-def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+def upsert_chapter(
+    chapter_title,
+    course,
+    is_scorm_package,
+    scorm_package,
+    name=None,
+    course_competency=None,
+):
+    _assert_may_edit_outline()
     course_title = frappe.get_value("Course Schedule", course, "course")
     values = frappe._dict(
         {
@@ -4370,6 +4584,12 @@ def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=
             "course_title": course_title,
         }
     )
+
+    # Absent means "leave the mapping alone" so callers that know nothing about
+    # competencies cannot clear one; an empty string is the explicit unlink
+    # (ADR 065 section 2).
+    if course_competency is not None:
+        values["course_competency"] = course_competency or None
 
     if is_scorm_package:
         scorm_package = frappe._dict(scorm_package)

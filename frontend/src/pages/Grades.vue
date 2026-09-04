@@ -6,9 +6,14 @@
       {{ __('My Transcripts') }}
       <!-- Only offered once there is something to see: the profile is empty
            and confusing for a student on a numerically graded programme. -->
-      <router-link v-if="hasCompetencies" :to="{ name: 'CompetencyProfile' }">
-        <Button variant="subtle" size="sm">{{ __('My Formation') }}</Button>
-      </router-link>
+      <span v-if="hasCompetencies" class="flex items-center gap-2">
+        <router-link :to="{ name: 'SelfDevelopmentPlans' }">
+          <Button variant="subtle" size="sm">{{ __('My Plans') }}</Button>
+        </router-link>
+        <router-link :to="{ name: 'CompetencyProfile' }">
+          <Button variant="subtle" size="sm">{{ __('My Formation') }}</Button>
+        </router-link>
+      </span>
     </h2>
     <div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
       <div v-for="(group, program) in sortedGroupedData" :key="program" class="mb-6">

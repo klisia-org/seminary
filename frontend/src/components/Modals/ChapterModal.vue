@@ -7,6 +7,27 @@
 		<template #body-content>
 			<div class="chapter-dialog space-y-4 text-base max-h-[70vh] overflow-y-auto">
 				<FormControl label="Title" v-model="chapter.chapter_title" :required="true" />
+
+				<!-- Competency-based sections only (ADR 065). This mapping is not
+				     decoration: it drives when the self-assessment is offered and,
+				     under a gating mode, what the chapter unlocks. -->
+				<div v-if="isCbe">
+					<FormControl
+						type="select"
+						:label="__('Competency delivered by this chapter')"
+						:options="competencyOptions"
+						v-model="chapter.course_competency"
+					/>
+					<p class="mt-1 text-sm text-ink-gray-5">
+						{{ competencyHint }}
+					</p>
+					<div
+						v-if="chapter.course_competency && selectedCompetency?.statement"
+						class="prose-sm mt-2 rounded-md bg-surface-gray-1 p-2 text-ink-gray-6"
+						v-html="selectedCompetency.statement"
+					/>
+				</div>
+
 				<Switch
 					size="sm"
 					:label="__('SCORM Package')"
@@ -98,6 +119,60 @@ const defaultChapterState = () => ({
 	chapter_title: '',
 	is_scorm_package: 0,
 	scorm_package: null,
+	course_competency: '',
+})
+
+// Optional feature, gated the way the other competency surfaces are: an
+// ordinary section never sees this resolve and the dialog is unchanged.
+const competencyContext = createResource({
+	url: 'seminary.seminary.cbe_api.get_competency_context',
+	params: { course_schedule: props.course },
+	auto: true,
+	onError: () => {},
+})
+
+const isCbe = computed(() => !!competencyContext.data?.is_cbe)
+
+// A competency belongs to one chapter, so the ones already spoken for by
+// another chapter are not offered -- the server refuses them anyway, and a
+// picker that lets you choose a value it will reject is worse than one that
+// does not show it.
+const competencyOptions = computed(() => {
+	const mine = props.chapterDetail?.name
+	const available = (competencyContext.data?.competencies || []).filter(
+		(c) => !c.chapter || c.chapter === mine
+	)
+	return [
+		{ label: __('None'), value: '' },
+		...available.map((c) => ({ label: c.competency_name, value: c.name })),
+	]
+})
+
+const selectedCompetency = computed(() =>
+	(competencyContext.data?.competencies || []).find(
+		(c) => c.name === chapter.course_competency
+	)
+)
+
+const competencyHint = computed(() => {
+	// The mode in force here, not the framework's default: a section may have
+	// been given its own, and the dialog must describe what will actually happen.
+	const mode = competencyContext.data?.effective_content_release
+	if (mode === 'Chapter unlocks after previous competency self-assessed') {
+		return __(
+			'Students read this competency here, and the next mapped chapter opens once they have self-assessed it.'
+		)
+	}
+	if (
+		mode === 'Content open, activities locked until previous competency self-assessed'
+	) {
+		return __(
+			'Students read this competency here, and the next mapped chapter’s graded work opens once they have self-assessed it.'
+		)
+	}
+	return __(
+		'Students read the competency and its descriptors here, and are prompted to assess their own growth in it.'
+	)
 })
 
 const chapter = reactive(defaultChapterState())
@@ -115,6 +190,11 @@ const chapterResource = createResource({
 			is_scorm_package: chapter.is_scorm_package,
 			scorm_package: chapter.scorm_package,
 			name: props.chapterDetail?.name,
+			// Only sent for a competency section, so a page that does not show
+			// the field can never clear a mapping it knows nothing about.
+			...(isCbe.value
+				? { course_competency: chapter.course_competency || '' }
+				: {}),
 		}
 	},
 })
@@ -209,6 +289,7 @@ const populateChapter = (detail) => {
 	chapter.chapter_title = detail.chapter_title || ''
 	chapter.is_scorm_package = detail.is_scorm_package || 0
 	chapter.scorm_package = detail.scorm_package || null
+	chapter.course_competency = detail.course_competency || ''
 }
 
 const initializeState = () => {

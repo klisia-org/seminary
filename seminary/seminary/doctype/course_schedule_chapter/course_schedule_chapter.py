@@ -35,6 +35,25 @@ class CourseScheduleChapter(Document):
                 ).format(self.course_competency, competency_course, chapter_course)
             )
 
+        # One chapter per competency per section. Gating resolves a competency
+        # back to "the chapter that delivers it" (cbe._chapter_for_competency),
+        # and with two candidates it would pick one arbitrarily and lock the
+        # other for reasons nobody could explain. Compared after the fact rather
+        # than filtered on `name != self.name`, because autoname has already
+        # stamped a new doc with its name.
+        duplicate = frappe.db.get_value(
+            "Course Schedule Chapter",
+            {"coursesc": self.coursesc, "course_competency": self.course_competency},
+            "name",
+        )
+        if duplicate and (self.is_new() or duplicate != self.name):
+            frappe.throw(
+                _(
+                    "Competency {0} is already delivered by chapter {1} in this "
+                    "section. A competency belongs to one chapter."
+                ).format(self.course_competency, duplicate)
+            )
+
     def on_update(self):
         self.recalculate_course_progress()
 

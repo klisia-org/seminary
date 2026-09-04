@@ -19,17 +19,10 @@ frappe.ui.form.on('Academic Term', {
         render_year_context(frm);
     },
 
-    after_save: function(frm) {
-        frappe.call({
-            method: "seminary.seminary.api.first_term",
-            args: {
-                doc: frm.doc.name
-            },
-            callback: function() {
-                frm.reload_doc();
-            }
-        });
-    }
+    // No after_save call to recompute the current term: saving an Academic Term
+    // already runs tasks.refresh_term_flags_on_save through doc_events, server
+    // side, before the form comes back. The call that used to be here was a
+    // second writer of the same flag racing the first.
 
 });
 

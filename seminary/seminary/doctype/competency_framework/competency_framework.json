@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:framework_name",
- "creation": "2026-08-28 21:00:00.000000",
+ "creation": "2026-08-28 21:00:00",
  "description": "How your school runs competency-based education: who evaluates, when students assess themselves, how grades are combined into a competency verdict, and how course content is released. Programs point at a framework to become competency-based.",
  "doctype": "DocType",
  "document_type": "Setup",
@@ -42,10 +42,12 @@
   "content_release_section",
   "content_release_mode",
   "stall_escalation_days",
-  "cohort_section",
+  "override_contentrelease",
+  "pacing_section",
   "default_pacing_mode",
-  "program_cohort_source",
   "completion_section",
+  "development_questions_section",
+  "development_questions",
   "require_pdp",
   "pdp_blocks_completion",
   "emit_gpa"
@@ -274,9 +276,9 @@
    "non_negative": 1
   },
   {
-   "fieldname": "cohort_section",
+   "fieldname": "pacing_section",
    "fieldtype": "Section Break",
-   "label": "Cohorts and Pacing"
+   "label": "Pacing"
   },
   {
    "default": "Cohort-paced",
@@ -288,18 +290,21 @@
    "reqd": 1
   },
   {
-   "default": "None",
-   "description": "Which existing grouping serves as the program cohort. Student Group keeps it a course grading group; Discipleship Cohort reuses the student's formation group so the same roster is not kept twice.",
-   "fieldname": "program_cohort_source",
-   "fieldtype": "Select",
-   "label": "Program Cohort Source",
-   "options": "None\nStudent Group\nDiscipleship Cohort",
-   "reqd": 1
-  },
-  {
    "fieldname": "completion_section",
    "fieldtype": "Section Break",
    "label": "Completion"
+  },
+  {
+   "description": "Prompts every plan in this framework asks. Reworded text is fine; the key must stay put, or historical answers stop lining up.",
+   "fieldname": "development_questions_section",
+   "fieldtype": "Section Break",
+   "label": "Development Plan Questions"
+  },
+  {
+   "fieldname": "development_questions",
+   "fieldtype": "Table",
+   "label": "Standard Questions",
+   "options": "Standard Development Question"
   },
   {
    "default": "0",
@@ -322,11 +327,18 @@
    "fieldname": "emit_gpa",
    "fieldtype": "Check",
    "label": "Calculate a GPA"
+  },
+  {
+   "default": "0",
+   "description": "If checked, instructors will be able to define how they want the content released for each course schedule.",
+   "fieldname": "override_contentrelease",
+   "fieldtype": "Check",
+   "label": "Allow Instructors to Override"
   }
  ],
  "links": [],
- "modified": "2026-08-28 21:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-09-01 11:00:00.000000",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Competency Framework",
  "naming_rule": "By fieldname",

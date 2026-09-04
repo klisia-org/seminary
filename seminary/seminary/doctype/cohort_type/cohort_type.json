@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "field:type_name",
  "creation": "2026-07-22 12:00:00",
- "description": "Template that sets the defaults and rules for a family of cohorts: default visibility and size, and whether leaders may split their cohort.",
+ "description": "Policy for a family of cohorts: what binds them and when they end, who may lead them, and whether the system forms them. Stated once here and enforced on each Cohort Membership (ADR 066).",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -12,16 +12,24 @@
   "category",
   "is_active",
   "column_break_head",
-  "graduates_to",
+  "description",
   "academic_section",
   "program",
+  "program_level",
+  "graduates_to",
+  "column_break_binding",
+  "persists_across_courses",
+  "remove_on_withdrawal",
+  "automation_section",
+  "automation_rule",
+  "automation_max_size",
   "policy_section",
+  "leader_eligibility",
   "open_enrollment",
   "allow_self_split",
   "column_break_policy",
   "default_visibility",
-  "default_max_size",
-  "description"
+  "default_max_size"
  ],
  "fields": [
   {
@@ -33,13 +41,14 @@
    "unique": 1
   },
   {
-   "description": "The relational shape of cohorts of this type.",
+   "default": "Unrestricted",
+   "description": "What binds cohorts of this type, and what ends them. Paced Program advances with the term; Throughout Program runs from enrollment to graduation; Course scoped is formed by a course; Unrestricted has no lifecycle at all.",
    "fieldname": "category",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Category",
-   "options": "Student\nPastor-Mentoring\nAlumni-Peer\nMixed",
+   "options": "Paced Program\nThroughout Program\nCourse scoped\nUnrestricted",
    "reqd": 1
   },
   {
@@ -54,28 +63,96 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "When a cohort of this type graduates, the type its members flow into next (e.g. Student → Alumni-Peer). Optional.",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "academic_section",
+   "fieldtype": "Section Break",
+   "label": "Binding and Lifecycle"
+  },
+  {
+   "depends_on": "eval:doc.category != 'Unrestricted'",
+   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope.",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "mandatory_depends_on": "eval:doc.category == 'Paced Program'",
+   "options": "Program"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Throughout Program'",
+   "description": "Bind to every program at this level instead of to one program -- a formation cohort spanning the master's degrees, say. Mutually exclusive with Program.",
+   "fieldname": "program_level",
+   "fieldtype": "Link",
+   "label": "Program Level",
+   "options": "Program Level"
+  },
+  {
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "When this cohort's lifecycle ends, the type its members land in next. States where, never when -- what ends the cohort is its Category.",
    "fieldname": "graduates_to",
    "fieldtype": "Link",
    "label": "Graduates To",
    "options": "Cohort Type"
   },
   {
-   "fieldname": "academic_section",
-   "fieldtype": "Section Break",
-   "label": "Academic Binding"
+   "fieldname": "column_break_binding",
+   "fieldtype": "Column Break"
   },
   {
-   "description": "Optional program context for cohorts of this type. Courses that form cohorts of this type point here via their Cohort Type field.",
-   "fieldname": "program",
-   "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program"
+   "default": "1",
+   "depends_on": "eval:doc.category == 'Course scoped'",
+   "description": "Members stay in this cohort after the course that formed it ends, so a later course in the sequence does not re-place them.",
+   "fieldname": "persists_across_courses",
+   "fieldtype": "Check",
+   "label": "Persists Across Courses"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "Close the membership when a student leaves the bound program without finishing it \u2014 withdrawn, transferred out, or dismissed. Off leaves the decision to the leader. Graduation is not a separation: that is Graduates To.",
+   "fieldname": "remove_on_withdrawal",
+   "fieldtype": "Check",
+   "label": "Remove Separated Students"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "Leave the rule empty and cohorts of this type are made by hand -- automation never touches them. A school wanting both runs two types.",
+   "fieldname": "automation_section",
+   "fieldtype": "Section Break",
+   "label": "Automation"
+  },
+  {
+   "description": "How the system forms cohorts of this type and puts people in them. Placement happens once, when a person first qualifies; nobody is ever re-placed, so a leader's split or move is never undone.",
+   "fieldname": "automation_rule",
+   "fieldtype": "Select",
+   "label": "Automation Rule",
+   "options": "\nOn Program Enrollment"
+  },
+  {
+   "depends_on": "automation_rule",
+   "description": "Part of the rule: a cut larger than this produces several cohorts, named with a .### suffix, rather than one oversized one. 0 = one cohort per cut.",
+   "fieldname": "automation_max_size",
+   "fieldtype": "Int",
+   "label": "Automation Max Size",
+   "non_negative": 1
   },
   {
    "fieldname": "policy_section",
    "fieldtype": "Section Break",
-   "label": "Policy Defaults"
+   "label": "Leadership and Policy"
+  },
+  {
+   "default": "Anyone",
+   "description": "Who may hold leadership of a cohort of this type. Checked on the membership when Is Leader is set, against the person in front of it.",
+   "fieldname": "leader_eligibility",
+   "fieldtype": "Select",
+   "label": "Leader Eligibility",
+   "options": "Anyone\nInstructor\nAlumnus of the bound program or level\nStaff",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -104,16 +181,11 @@
    "options": "cohort_only\nportal_users"
   },
   {
-   "description": "Soft ceiling on active members (0 = unlimited).",
+   "description": "Advisory ceiling on active members for hand-authored work (0 = unlimited). Adding past it warns; it does not refuse.",
    "fieldname": "default_max_size",
    "fieldtype": "Int",
    "label": "Default Max Size",
    "non_negative": 1
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description"
   }
  ],
  "links": [],

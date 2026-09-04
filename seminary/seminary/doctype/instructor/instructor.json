@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:{instructor_name}",
+ "allow_rename": 1,
+ "autoname": "INST-.#####",
  "creation": "2015-11-04 15:56:30.004034",
  "description": "Person who teaches courses, holding their bio for the LMS, contact preferences for students, education history for accreditation, and a log of courses taught. Set up an instructor before assigning them to a course schedule.",
  "doctype": "DocType",
@@ -17,6 +18,8 @@
   "status",
   "profileimage",
   "default_inst_category",
+  "commitments_section",
+  "open_commitments_html",
   "hr_payroll_section",
   "instructor_type",
   "employee",
@@ -40,14 +43,82 @@
  "fields": [
   {
    "description": "This is the name that will appear on the LMS.",
+   "fetch_from": "person.full_name",
    "fieldname": "instructor_name",
    "fieldtype": "Data",
    "in_global_search": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Instructor Name",
-   "reqd": 1,
+   "read_only": 1,
    "search_index": 1
+  },
+  {
+   "description": "Please input the User in the system.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "System User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "no_copy": 1,
+   "options": "Person",
+   "reqd": 1,
+   "search_index": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "person.gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fetch_from": "person.image",
+   "fieldname": "profileimage",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "label": "Image",
+   "read_only": 1
+  },
+  {
+   "description": "This is particularly useful for non-faculty instructors in CBE (nonacademic mentors).",
+   "fieldname": "default_inst_category",
+   "fieldtype": "Link",
+   "label": "Default Instructor Category",
+   "options": "Instructor Category"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "commitments_section",
+   "fieldtype": "Section Break",
+   "label": "Open Commitments"
+  },
+  {
+   "fieldname": "open_commitments_html",
+   "fieldtype": "HTML",
+   "label": "Open Commitments"
   },
   {
    "fieldname": "hr_payroll_section",
@@ -83,54 +154,36 @@
    "options": "Supplier"
   },
   {
-   "fieldname": "column_break_5",
+   "fieldname": "communication_preferences_section",
+   "fieldtype": "Section Break",
+   "label": "Communication Preferences"
+  },
+  {
+   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
+   "fetch_from": "person.primary_email",
+   "fieldname": "prof_email",
+   "fieldtype": "Data",
+   "label": "E-mail for student communication",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_srsj",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "log_details",
-   "fieldtype": "Section Break",
-   "label": "Instructor Log"
+   "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile.",
+   "fetch_from": "person.primary_mobile",
+   "fieldname": "phone_message",
+   "fieldtype": "Data",
+   "label": "Phone for messaging students",
+   "read_only": 1
   },
   {
-   "fieldname": "instructor_log",
-   "fieldtype": "Table",
-   "label": "Instructor Log",
-   "options": "Instructor Log"
-  },
-  {
-   "default": "Active",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Active\nInactive"
-  },
-  {
-   "fetch_from": "employee.gender",
-   "fieldname": "gender",
-   "fieldtype": "Link",
-   "label": "Gender",
-   "options": "Gender",
-   "read_only_depends_on": "employee"
-  },
-  {
-   "description": "Please input the User in the system.",
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "System User",
-   "options": "User",
-   "reqd": 1
-  },
-  {
-   "description": "Identity spine record (ADR 042). Created automatically from the User; contact edits happen on the Person.",
-   "fieldname": "person",
-   "fieldtype": "Link",
-   "label": "Person",
-   "no_copy": 1,
-   "options": "Person",
-   "read_only": 1,
-   "search_index": 1
+   "default": "1",
+   "description": "When off, only staff can reach you through the portal; students see no contact icons on your courses.",
+   "fieldname": "students_may_contact",
+   "fieldtype": "Check",
+   "label": "Students may contact me"
   },
   {
    "fieldname": "mini_bio_section",
@@ -147,43 +200,6 @@
    "fieldname": "shortbio",
    "fieldtype": "Small Text",
    "label": "Shorter bio for LMS"
-  },
-  {
-   "fieldname": "profileimage",
-   "fieldtype": "Attach Image",
-   "hidden": 1,
-   "label": "Image"
-  },
-  {
-   "fieldname": "communication_preferences_section",
-   "fieldtype": "Section Break",
-   "label": "Communication Preferences"
-  },
-  {
-   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
-   "fieldname": "prof_email",
-   "fieldtype": "Data",
-   "label": "E-mail for student communication",
-   "read_only_depends_on": "eval:doc.person",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_srsj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Include country code, e.g. +15551234567. Mirror of the linked Person's Primary Mobile.",
-   "fieldname": "phone_message",
-   "fieldtype": "Data",
-   "label": "Phone for messaging students",
-   "read_only_depends_on": "eval:doc.person"
-  },
-  {
-   "default": "1",
-   "description": "When off, only staff can reach you through the portal; students see no contact icons on your courses.",
-   "fieldname": "students_may_contact",
-   "fieldtype": "Check",
-   "label": "Students may contact me"
   },
   {
    "collapsible": 1,
@@ -211,11 +227,15 @@
    "read_only": 1
   },
   {
-   "description": "This is particularly useful for non-faculty instructors in CBE (nonacademic mentors).",
-   "fieldname": "default_inst_category",
-   "fieldtype": "Link",
-   "label": "Default Instructor Category",
-   "options": "Instructor Category"
+   "fieldname": "log_details",
+   "fieldtype": "Section Break",
+   "label": "Instructor Log"
+  },
+  {
+   "fieldname": "instructor_log",
+   "fieldtype": "Table",
+   "label": "Instructor Log",
+   "options": "Instructor Log"
   }
  ],
  "image_field": "profileimage",
@@ -224,7 +244,7 @@
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -263,7 +283,9 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
+ "search_fields": "instructor_name,prof_email",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

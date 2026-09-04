@@ -93,13 +93,19 @@
       <div class="space-y-6">
         <div class="border rounded-lg p-5 bg-surface-white shadow-sm">
           <h2 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Grading') }}</h2>
-          <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
-          <input v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
-            class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm text-sm mb-3"
-            :class="gradeLocked ? '!bg-surface-gray-2 text-ink-gray-5 cursor-not-allowed' : 'focus:border-outline-blue-1 focus:ring-outline-blue-1'" />
-          <Button :variant="gradeLocked ? 'subtle' : 'solid'" @click="gradeLocked ? unlockGrade() : saveGrade()" class="w-full">
-            {{ gradeLocked ? __('Edit Grade') : __('Save Grade') }}
-          </Button>
+          <!-- A competency section grades in levels per dimension, so the
+               numeric grade box is replaced (ADR 065 section 11c). -->
+          <CompetencyActivityGrading v-if="currentSubmission" submission-doctype="Discussion Submission"
+            :submission="currentSubmission" @mode="(m) => (gradeMode = m)" />
+          <template v-if="gradeMode !== 'competency'">
+            <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
+            <input v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
+              class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm text-sm mb-3"
+              :class="gradeLocked ? '!bg-surface-gray-2 text-ink-gray-5 cursor-not-allowed' : 'focus:border-outline-blue-1 focus:ring-outline-blue-1'" />
+            <Button :variant="gradeLocked ? 'subtle' : 'solid'" @click="gradeLocked ? unlockGrade() : saveGrade()" class="w-full">
+              {{ gradeLocked ? __('Edit Grade') : __('Save Grade') }}
+            </Button>
+          </template>
         </div>
 
         <div class="border rounded-lg p-5 bg-surface-white shadow-sm">
@@ -150,6 +156,7 @@ import { useRouter } from 'vue-router'
 import dayjsModule from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import LightEditor from '@/components/LightEditor.vue'
+import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -299,7 +306,12 @@ const fetchComments = () => {
   }
 };
 
-const gradeEmpty = computed(() => !grade.value && grade.value !== 0)
+// A competency section records a level instead of a grade, so feedback must
+// not stay blocked waiting for a number nobody will type (ADR 065 11c).
+const gradeMode = ref('loading')
+const gradeEmpty = computed(
+  () => gradeMode.value !== 'competency' && !grade.value && grade.value !== 0
+)
 
 const addCommentResource = createResource({
   url: 'seminary.seminary.api.add_grading_comment',

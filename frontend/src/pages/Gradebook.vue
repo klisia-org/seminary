@@ -5,6 +5,18 @@
 
     </header>
     <h1 class="text-2xl font-bold mt-5 mb-4 ml-5">{{ __('Gradebook for') }} {{ course?.data?.course }}</h1>
+    <!-- A competency section has no weighted total, so a students-x-assessments
+         grid of numbers says nothing true about it (ADR 065 section 11d). -->
+    <div v-if="isCbe" class="mx-5 my-8 max-w-xl">
+      <h2 class="text-xl font-bold text-ink-gray-8">{{ __('This course is graded by competency') }}</h2>
+      <p class="mt-2 text-sm text-ink-gray-6">
+        {{ __('Its assessments record levels against dimensions, not scores out of a hundred, so they do not fit this grid.') }}
+      </p>
+      <router-link :to="{ name: 'CompetencyGradebook', params: { courseName: props.courseName } }">
+        <Button variant="solid" class="mt-4">{{ __('Open Competency Assessment') }}</Button>
+      </router-link>
+    </div>
+    <template v-else>
     <div v-if="isFinalized" class="mx-5 mb-4 rounded-md bg-surface-blue-1 px-4 py-3 text-sm text-ink-blue-3">
       {{ finalizedMessage }}
     </div>
@@ -178,8 +190,7 @@
         </tbody>
       </table>
     </div>
-
-
+    </template>
   </div>
 </template>
 
@@ -229,6 +240,17 @@ const courseSchedule = createResource({
   },
   auto: true,
 })
+
+// Optional feature: an ordinary section answers is_cbe false, and a failure
+// here must not take the gradebook down with it.
+const competencyContext = createResource({
+  url: 'seminary.seminary.cbe_api.get_competency_context',
+  makeParams: () => ({ course_schedule: props.courseName }),
+  auto: true,
+  onError: () => { },
+})
+
+const isCbe = computed(() => !!competencyContext.data?.is_cbe)
 
 const canSendGrades = computed(() => {
   if (!user?.data) return false;

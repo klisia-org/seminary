@@ -1,21 +1,27 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # For license information, please see license.txt
-"""Program Enrollments by Mentor (ADR 065).
+"""Program Enrollments by Mentor (ADR 065, amended by ADR 066).
 
-Mentors are recorded once on a student's Program Enrollment and the system
-derives their presence in each course section from there. That saves the
-registrar a great deal of work, but it also means a gap — a student with no
-mentor of a required type — is invisible until grading time. This report is
-where that gap is meant to be caught: it is both a mentor's own caseload and the
-registrar's coverage check.
+A mentor reaches a student one of two ways: through the student's cohort, or
+written directly on the enrollment for a student no cohort covers. Either way
+the system derives their presence in each course section from there, which saves
+the registrar a great deal of work — and means a gap, a student with no mentor of
+a required type, is invisible until grading time. This report is where that gap
+is meant to be caught: it is both a mentor's own caseload and the registrar's
+coverage check.
+
+The Source column says which origin a row has, because that is where it would be
+changed: a Cohort row is edited on the cohort, an Authored one here.
 
 The Unmentored filter answers the question the derivation cannot: which active
-students have nobody assigned.
+students have nobody assigned from either origin.
 """
 
 import frappe
 from frappe import _
 from frappe.utils import getdate, today
+
+from seminary.seminary import cbe
 
 
 def execute(filters=None):
@@ -66,6 +72,21 @@ def columns():
             "fieldtype": "Link",
             "options": "Program Enrollment",
             "width": 200,
+        },
+        # Where the statement comes from decides where it is changed: a Cohort
+        # mentor is edited on the cohort, an Authored one on the enrollment.
+        {
+            "label": _("Source"),
+            "fieldname": "source",
+            "fieldtype": "Data",
+            "width": 90,
+        },
+        {
+            "label": _("Cohort"),
+            "fieldname": "cohort",
+            "fieldtype": "Link",
+            "options": "Cohort",
+            "width": 160,
         },
         {
             "label": _("Program"),
@@ -131,71 +152,67 @@ def _enrollments(filters):
 
 
 def mentored_rows(filters):
+    """Both origins in one list, because a caseload does not care which it is.
+
+    A mentor asking "whose formation am I following" wants every student, cohort
+    or not. The Source column is there for the registrar reading the same list
+    with the other question: where do I go to change this.
+    """
     enrollments = _enrollments(filters)
     if not enrollments:
         return []
-    by_name = {e.name: e for e in enrollments}
-
-    mentor_filters = {"parent": ("in", list(by_name))}
-    if filters.get("instructor"):
-        mentor_filters["instructor"] = filters["instructor"]
-    if filters.get("instructor_category"):
-        mentor_filters["instructor_category"] = filters["instructor_category"]
-    if not filters.get("include_closed"):
-        mentor_filters["active"] = 1
-
-    mentors = frappe.get_all(
-        "Program Enrollment Mentor",
-        filters=mentor_filters,
-        fields=[
-            "parent",
-            "instructor",
-            "instructor_name",
-            "instructor_category",
-            "from_date",
-            "to_date",
-            "active",
-        ],
-        order_by="instructor_name asc, from_date asc",
-    )
 
     rows = []
-    for m in mentors:
-        e = by_name[m.parent]
-        rows.append(
-            {
-                "instructor": m.instructor,
-                "instructor_name": m.instructor_name,
-                "instructor_category": m.instructor_category,
-                "student": e.student,
-                "student_name": e.student_name,
-                "program_enrollment": e.name,
-                "program": e.program,
-                "status": e.status,
-                "current_std_term": e.current_std_term,
-                "from_date": m.from_date,
-                "to_date": m.to_date,
-                "active": m.active,
-                "issue": _issue(m),
-            }
-        )
+    for e in enrollments:
+        for m in cbe.mentors_for_enrollment(e.name):
+            if filters.get("instructor") and m["instructor"] != filters["instructor"]:
+                continue
+            if (
+                filters.get("instructor_category")
+                and m["instructor_category"] != filters["instructor_category"]
+            ):
+                continue
+            if not filters.get("include_closed") and not m["active"]:
+                continue
+            rows.append(
+                {
+                    "instructor": m["instructor"],
+                    "instructor_name": m["instructor_name"],
+                    "instructor_category": m["instructor_category"],
+                    "source": m["source"],
+                    "cohort": m["cohort"],
+                    "student": e.student,
+                    "student_name": e.student_name,
+                    "program_enrollment": e.name,
+                    "program": e.program,
+                    "status": e.status,
+                    "current_std_term": e.current_std_term,
+                    "from_date": m["from_date"],
+                    "to_date": m["to_date"],
+                    "active": m["active"],
+                    "issue": _issue(m),
+                }
+            )
+    rows.sort(key=lambda r: (r["instructor_name"] or "", r["student_name"] or ""))
     return rows
 
 
 def _issue(mentor_row):
     """Flag rows whose dates contradict the active flag.
 
-    Evaluator resolution filters mentor rows by date as well as by the flag, so
-    a row that is marked active but has already ended will quietly stop
-    producing an evaluator. Saying so here is the whole point of the report.
+    Only authored rows can contradict themselves. A derived row is a live read
+    of a cohort membership -- it is active because the membership is open, so
+    there is no second field for it to disagree with.
     """
+    if mentor_row["source"] != cbe.AUTHORED:
+        return ""
     if (
-        mentor_row.active
-        and mentor_row.to_date
-        and getdate(mentor_row.to_date) < getdate(today())
+        mentor_row["active"]
+        and mentor_row["to_date"]
+        and getdate(mentor_row["to_date"]) < getdate(today())
     ):
         return _("Marked active but the end date has passed")
-    if not mentor_row.active and not mentor_row.to_date:
+    if not mentor_row["active"] and not mentor_row["to_date"]:
         return _("Closed without an end date")
     return ""
 
@@ -223,7 +240,7 @@ def unmentored_rows(filters):
             "Competency Framework Evaluator",
             filters={
                 "parent": framework,
-                "assignment_source": "Program Enrollment Mentor",
+                "assignment_source": "Program Cohort",
             },
             fields=["instructor_category", "required"],
         )
@@ -236,13 +253,13 @@ def unmentored_rows(filters):
         if not required:
             continue
 
+        # Resolved the same way the grading engine resolves it, so the coverage
+        # check and the thing it is checking cannot drift apart. A student whose
+        # cohort supplies the mentor is covered without anyone typing anything.
         held = {
-            m.instructor_category
-            for m in frappe.get_all(
-                "Program Enrollment Mentor",
-                filters={"parent": e.name, "active": 1},
-                fields=["instructor_category"],
-            )
+            m["instructor_category"]
+            for m in cbe.mentors_for_enrollment(e.name)
+            if m["active"]
         }
         for r in required:
             if r.instructor_category in held:
@@ -252,6 +269,8 @@ def unmentored_rows(filters):
                     "instructor": None,
                     "instructor_name": None,
                     "instructor_category": r.instructor_category,
+                    "source": None,
+                    "cohort": None,
                     "student": e.student,
                     "student_name": e.student_name,
                     "program_enrollment": e.name,

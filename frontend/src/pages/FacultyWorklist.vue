@@ -56,11 +56,24 @@
         <!-- Competency assessments (ADR 065). Mentors are never added to a
              section, so this list is where a Personal Mentor finds out they
              have work to do. -->
-        <section v-if="competency.data?.length">
-          <h3 class="font-semibold text-ink-gray-8 mb-2">
-            {{ __('Competency Assessments Due') }}
-            <Badge :label="String(competency.data.length)" theme="gray" class="ml-1" />
-          </h3>
+        <section v-if="competency.data?.length || mentees.data?.length">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-ink-gray-8">
+              {{ __('Competency Assessments Due') }}
+              <Badge v-if="competency.data?.length"
+                :label="String(competency.data.length)" theme="gray" class="ml-1" />
+            </h3>
+            <!-- The caseload the mentor never had to be assigned to; the arc
+                 view is where their students' own words live (ADR 065 8a). -->
+            <router-link v-if="mentees.data?.length" :to="{ name: 'SelfDevelopmentPlans' }">
+              <Button variant="subtle" size="sm">
+                {{ __('My Students’ Plans') }}
+              </Button>
+            </router-link>
+          </div>
+          <p v-if="!competency.data?.length" class="text-sm text-ink-gray-5">
+            {{ __('Nothing outstanding right now.') }}
+          </p>
           <div class="border rounded-md divide-y">
             <div v-for="it in competency.data" :key="it.roster"
               class="flex items-start justify-between p-3 gap-3">
@@ -88,7 +101,7 @@
           </div>
         </section>
 
-        <p v-if="!showVerifications && !showPlacement && !competency.data?.length"
+        <p v-if="!showVerifications && !showPlacement && !competency.data?.length && !mentees.data?.length"
           class="text-sm text-ink-gray-5">
           {{ __('You are not wired to any verification, examining or mentoring work.') }}
         </p>
@@ -161,6 +174,12 @@ const worklist = createResource({
 
 // Loaded separately and silently: a user with no mentoring assignments gets an
 // empty list rather than an error, and the section simply does not render.
+const mentees = createResource({
+  url: 'seminary.seminary.cbe_api.get_mentees',
+  auto: true,
+  onError: () => { },
+})
+
 const competency = createResource({
   url: 'seminary.seminary.cbe_api.get_competency_worklist',
   auto: true,

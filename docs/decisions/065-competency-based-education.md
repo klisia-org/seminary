@@ -1,7 +1,7 @@
 # 065 — Competency-Based Education
 
 **Date:** 2026-08-28
-**Status:** Accepted 2026-08-28 — implementation phased; Phases 1-6 complete, Phase 7 next
+**Status:** Accepted 2026-08-28 — implementation phased; Phases 1-8 and 10 complete, Phase 9 deferred
 
 ## Context
 
@@ -70,6 +70,18 @@ It is standalone rather than a child table on Course because assessment criteria
 
 **The course outline gives a competency its time boundary.** [Course Schedule Chapter](../../seminary/seminary/doctype/course_schedule_chapter/course_schedule_chapter.json) gains `course_competency` (Link → Course Competency, optional), so a chapter *is* the delivery of a competency. This does three things at once: the competency's `statement` and its per-dimension "demonstrated by" descriptors render in the outline where the student is actually working; activities inside the chapter default their `course_competency` from it; and — decisively — "end of each competency" becomes a computable event (the chapter's lessons are complete), which is what §3's self-evaluation timing needs. A course whose competencies do not map cleanly onto chapters simply leaves the link blank and falls back to course-level timing.
 
+**One chapter per competency, enforced on the controller.** Gating resolves a competency back to the chapter that delivers it (`cbe._chapter_for_competency`); with two candidates it would pick one arbitrarily and lock the other for reasons nobody could explain, so `CourseScheduleChapter.validate` refuses a competency already mapped in the same section, alongside the existing cross-course guard.
+
+**The link is set from the portal, not only from Desk.** Instructors build outlines in [ChapterModal.vue](../../frontend/src/components/Modals/ChapterModal.vue), so the picker lives there — shown only when `get_competency_context` reports the section is competency-based, offering competencies not already taken by another chapter, and stating what the mapping will do in the framework's actual `content_release_mode`. `api.upsert_chapter` gains an optional `course_competency`: absent means "leave the mapping alone" so a caller that knows nothing about competencies cannot clear one, and an empty string is the explicit unlink.
+
+**A section may set its own release mode, where the school allows it.** `Competency Framework.override_contentrelease` (Check) hands the choice to instructors; `Course Schedule.content_release_override` (Select, blank = follow the framework) holds it, edited in [CourseForm.vue](../../frontend/src/pages/CourseForm.vue) and shown only when both the section is competency-based and the flag is set. Everything reads `cbe.content_release_mode(course_schedule)`, never `framework.content_release_mode` directly.
+
+That resolver re-checks the flag rather than trusting the stored value, so a school that withdraws the permission has it withdrawn everywhere at once — leaving old overrides in force would make the flag a suggestion. The stored value is left alone rather than erased, so restoring the permission restores the sections' choices. `CourseSchedule.validate` refuses a *new* override while the flag is off, and refuses one on a non-competency section, so the two directions agree: nothing silently ignored at the point of entry, nothing silently honoured afterwards.
+
+`api.save_course` writes it first, before the `frappe.db.set_value` calls that make up the rest of that endpoint: those skip validation, so ordering the validated write last would leave them applied while the save reported failure. Its exception path now rolls back and returns the message under `error`, the key the portal actually reads.
+
+The `upsert_chapter` endpoint also gains a role gate. Students hold `write` on Course Schedule Chapter so progress can be recorded against it, so a doctype permission check lets them through — tolerable while a chapter was only a title, not once it carries the mapping that content gating reads, since clearing it would unlock the course. The role set mirrors `canEditOutline` in the portal, so nothing that could edit an outline before is stopped now.
+
 **The chapter↔competency link is also the pacing gate.** This seminary holds the student's hand closely, and wants the outline to open progressively as the student reflects. `Competency Framework.content_release_mode` (§3) governs it, and every mode reads the same chapter mapping:
 
 - **`Per activity (current rules)`** — the default and the only behaviour for non-CBE courses. Nothing changes; existing per-activity availability applies.
@@ -117,9 +129,8 @@ The school's pedagogical choices live in one place, versioned, reusable across p
 | **Content release** | | |
 | `content_release_mode` | Select | `Per activity (current rules)` / `Chapter unlocks after previous competency self-assessed` / `Content open, activities locked until previous competency self-assessed`; see §2 |
 | `stall_escalation_days` | Int | days a student may sit on an unsubmitted self-assessment before their mentor is notified; 0 disables |
-| **Cohorts and completion** | | |
+| **Pacing and completion** | | |
 | `default_pacing_mode` | Select | `Cohort-paced` / `Self-paced` — the starting pacing for programs adopting this framework; each program may override it (see §5) |
-| `program_cohort_source` | Select | `Student Group` / `Discipleship Cohort` / `None`; see §5 |
 | `require_pdp` | Check | Personal Development Plan required at end of course |
 | `pdp_blocks_completion` | Check | |
 | `emit_gpa` | Check | default 0; see §7 |
@@ -181,13 +192,13 @@ This also fixes a latent crash: `CourseSchedule.validate_date` compared `c_dates
 
 **The program-course filter.** Today any course can belong to any program. When `competency_framework` is set, `Program.validate` requires each non-disabled `Program Course` row's course to (a) use a `default_grading_scale` equal to the framework's scale, and (b) carry at least one active `Course Competency`. `link_filters` on `Program Course.course` narrows the picker declaratively per ADR 023. This delivers the uniform transcript that motivated putting config on the grading scale, without imposing a global same-scale rule on non-CBE programs.
 
-**The program cohort is an existing grouping, and the school picks which one.** [ADR 064](064-discipleship-cohorts-and-channels.md) deliberately keeps `Cohort` (discipleship, Person-keyed, leader-led) and `Student Group` (course-scoped grading grouping, Student-keyed, mentor-led) apart. A CBE program cohort could reasonably be either: a school that runs cohorts purely as a grading/rostering device wants the Student Group; a school whose cohort *is* its discipleship group — same people, same leader, same formation — wants the Cohort, and would resent maintaining two rosters of the same room. `Competency Framework.program_cohort_source` chooses:
+**Program cohorts are superseded by [ADR 066](066-mentoring-and-program-cohorts.md).** This ADR built them by *derivation*: one Student Group or Cohort per `(program, intake term, mentor)`, reconciled from `Program Enrollment Mentor` on every enrollment save, with `Competency Framework.program_cohort_source` choosing the grouping doctype. That premise — the mentor is part of the cohort's identity — does not survive the mentoring patterns schools actually run, and it inverts the commonest of them: a yearly mentor rotation over a stable cohort would record an annual mass migration in which nobody moved.
 
-- **`Student Group`** — one group per intake, reused across the program's offerings via the existing `reuse` Check, attached to each section through `Student Group Link`. `Student Group` gains `program` (Link), `intake_term` (Link → Academic Term) and `is_program_cohort` (Check); `Student Group Members` gains `joined_on`, `left_on` and `status` (Active / Moved / Withdrawn).
-- **`Discipleship Cohort`** — the program cohort is a [Cohort](../../seminary/seminary/doctype/cohort/cohort.json) whose `Cohort Type.program` points at this program. The bridge already exists in both directions: `Cohort.source_student_group` and `source_course_schedule` are already read-only provenance fields, and `Cohort Membership.course_enrollment` already links a member to their CEI. **Nothing about how Cohorts work changes** — this only automates their creation. Resolution runs Instructor → Person, never the reverse: the mentor is established as always by `Program Enrollment Mentor`, and `Instructor.person` supplies the `Cohort.leader`; members come from the students' CEIs. There is no lookup that can fail on a leader who is not an instructor, because the mentor side is always the origin.
-- **`None`** — self-paced programs, or schools that group by section only.
+ADR 066 replaces it. The cohort is authored and is always a [Cohort](../../seminary/seminary/doctype/cohort/cohort.json); mentoring is a dated `Cohort Membership` on it; the enrollment's mentor is *derived* from the cohort rather than the other way round. Accordingly `program_cohort_source`, the one-program-sourced-evaluator validation, `seminary/seminary/cohorting.py` and the `Student Group` cohort fields are **all withdrawn** — they were built under this ADR and are removed with it.
 
-Either way no third grouping doctype appears, and the `Student Group Members` lifecycle fields land regardless so cohort movement is recordable the day the school decides what a failure means.
+What remains here is the competency side of the relationship, and it is narrowed to that: a competency-based program draws its evaluators from cohorts (§4), and **which** cohorts confer academic privilege is stated by `Competency Framework Evaluator.cohort_type` per ADR 066 §5. Everything about how cohorts are formed, bound, led and moved now lives in ADR 066.
+
+The `Student Group Members` lifecycle fields — `joined_on`, `left_on`, `status` (Active / Moved / Withdrawn) — **stay**. They were introduced here and are wanted regardless of cohorting: a student who moved section is not a student who never joined, and that is true of a grading roster as much as of a cohort.
 
 ### 6. The record layer
 
@@ -341,7 +352,13 @@ Partial finalization is therefore not a general capability. A dated section — 
 
 **`Personal Development Plan`** — `autoname: PDP-.######`: `student`, `program_enrollment`, `course_schedule`, `roster` (Links, reqd), `status` (Draft / Submitted / Reviewed / Accepted), `reflection` (Text Editor), `goals` (Table), `submitted_on`, `reviewed_by` (Link → Instructor), `reviewed_on`, `mentor_feedback` (Text Editor).
 
-**`Personal Development Plan Goal`** (child): `standard_question` (Link → Standard Development Question, optional), `course_competency` (Link, optional), `dimension_code` (optional), `goal` (Text Editor, reqd), `action_steps` (Text Editor), `target_date` (Date), `support_needed` (Small Text), `status` (Planned / In Progress / Achieved).
+One plan per roster row, enforced on the controller; `student`, `course_schedule` and `program_enrollment` are *derived* from the roster rather than trusted from the caller, so a hand-built record cannot claim to belong to a section the student is not in. Students see only their own plans, through `get_permission_query_conditions` and `has_permission` registered in hooks, the same pair `Competency Assessment` and `Competency Result` already use.
+
+**The student writes; the mentor answers.** `cbe_api.save_development_plan` and `cbe_api.review_development_plan` are separate endpoints, not one write path with a role branch, so a review can never overwrite the reflection it is responding to. Submitting is final for the student, as self-assessment is. `PersonalDevelopmentPlan.vue` serves both: a mentor reaches it with `?student=`, which the server honours only for staff who are an evaluator for that student, and everything the student authored is read-only in that mode.
+
+**`require_pdp` and `pdp_blocks_completion` are deliberately two settings.** The first says the plan is part of the course; the second says the course cannot close without it. Most schools will want the first without the second — asking for a plan is formative, holding a transcript hostage to it is not — so only `pdp_blocks_completion` gates `_assert_pdp_complete`, which runs in both `send_grades` and `send_selected_grades` and names the students rather than reporting a count. A plan still in `Draft` does not satisfy it.
+
+**`Personal Development Plan Goal`** (child): `standard_question` (**Data**, holding the question's `question_key`, optional — *not* a Link: `Standard Development Question` is a child row of Competency Framework and a Frappe Link cannot target one; the key is the stable identifier anyway, which is what the join across four years of plans actually needs), `question_text` (Small Text, denormalised from the prompt on every save so a rewording never leaves stale text above the answer it produced), `course_competency` (Link, optional), `dimension_code` (optional), `goal` (Text Editor, reqd), `action_steps` (Text Editor), `target_date` (Date), `support_needed` (Small Text), `status` (Planned / In Progress / Achieved).
 
 **Each course's plan stands alone.** There is no `carried_forward_from` link and no goal that migrates between plans. A course has its own responsibilities, and a plan that inherits last course's unfinished business turns a formative exercise into an accumulating debt. Continuity is a *reading* concern, not a storage one — §9's aggregate view gives the student and the mentor the whole arc across courses without any plan claiming ownership of another's goals.
 
@@ -356,6 +373,10 @@ Some formation goals — spiritual vitality, besetting sin, vocational clarity �
 **`Personal Development Note`** — `autoname: PDN-.#######`: `student` (Link, reqd), `program_enrollment` (Link, reqd), `course_schedule` (Link, optional), `course_competency` (Link, optional), `dimension_code` (Data, optional), `development_plan` (Link → Personal Development Plan, optional), `note` (Text Editor, reqd), `note_date` (Datetime).
 
 Notes are the student's own journal, anchored optionally to a plan, a competency or a dimension, and not tied to a course's completion. They are **not private**: the student's active mentors have read access, granted through Frappe document permissions resolved by `cbe.evaluators_for` rather than by flipping any file or field public (per [ADR 043](043-multichannel-communication-system.md)'s handling of scoped access). Accountability is the point of the mentoring relationship, and the UI says so plainly at the point of writing — a journal whose readership the writer has to guess is worse than one with no readers at all.
+
+**Who counts as a mentor is `cbe.mentors_of_student`,** the same two sources as `evaluators_for` composed at *student* scope rather than section scope — a note need not belong to any course, so a roster-scoped question cannot answer it. Program mentor rows count while active and in date; section instructors count only while the student is still actively rostered in that section, because a professor who taught them two years ago is not a mentor now. `cbe.mentees_of` is the inversion, and drives both the mentor's student selector and the list-view scope.
+
+Nothing is granted, ever: `get_permission_query_conditions` materialises the mentee list per request and `has_permission` re-resolves per document, so access ends the moment a mentor row closes or a roster goes inactive. Mentors read only — `has_permission` returns False for any non-read permission even though they hold the Instructor role, and `save_development_note` re-checks on the endpoint, because a role-granted write would otherwise slip through.
 
 ### 9. Frontend — parallel pages, converging backend
 
@@ -394,6 +415,46 @@ An `echarts` branch is added to `manualChunks` in `frontend/vite.config.js`, whi
 ### 10. Aretenic bridge — a seam, not a build
 
 Seminary keeps `required_apps = []` and never imports aretenic. `Course Competency.competency_code` is url-safe for the same reason `Course.coursecode` is, so aretenic can align a competency to a PLO and pick it up in `attainment.snapshot_offering_on_send_grades`, which `send_grades` already enqueues. Gate server-side on `utils._aretenic_enabled()` and client-side on `has_aretenic`. Documented as a seam; deferred.
+
+### 11. The course-scoped surfaces — assessment configuration and the CBE gradebook
+
+Sections 1-10 settle the *programme* scope: the framework, who evaluates, how ratings become a verdict, the arc across courses. The **course** scope was left half-wired, and the seam shows in four places. The principle that fixes them: **Course Schedule is the hub for everything course-scoped**, and every competency setting that belongs to one section must be reachable from the portal pages that section owns — [CourseAssessment.vue](../../frontend/src/pages/CourseAssessment.vue), [Gradebook.vue](../../frontend/src/pages/Gradebook.vue), [CourseOutline.vue](../../frontend/src/components/CourseOutline.vue) — not only from Desk.
+
+**11a. Weights do not apply to a competency section, and must stop being demanded.** `Scheduled Course Assess Criteria.weight_scac` expresses a percentage contribution to a numeric final grade. A competency section has no such number: `cbe.rollup_activity_grades` writes a *level* into `rawscore_card`, and the final verdict comes from `Competency Result`, not from a weighted sum. Yet `CourseSchedule.validate_assessment_criteria` throws unless the weights total 100, and `CourseAssessment.vue` disables Save until they do — so a competency section cannot save its assessments at all without inventing weights that nothing reads. Both gates become conditional on `cbe.framework_for(section)` being None, and the weight column is hidden rather than shown empty.
+
+**11b. One derived mode drives the whole page.** Everything competency-specific on `CourseAssessment.vue` — which columns exist, which validations run, which sub-editors open — keys off a single computed mode rather than scattered checks, so the page cannot end up half in one world. The mode is **derived** from `get_competency_context(section).is_cbe`, not stored as a new `assessment_mode` field: a stored mode could contradict the grading scale, and the scale is already the authority on whether a section is competency-based (§1). What the mode adds, for a competency section:
+
+- **`course_competency` per assessment.** Already on the doctype since Phase 2, reachable only from Desk. Without it in the portal an instructor cannot say which competency an activity demonstrates, and every downstream roll-up has nothing to aggregate.
+
+  **The chain must agree: chapter -> lesson -> assessment.** An assessment reaches its lesson through its linked activity, and the lesson names its chapter, and the chapter names the competency (section 2). Where that chain resolves, the assessment's `course_competency` is **defaulted from it** and **refused if it contradicts it** -- an activity sitting in the chapter that delivers *Personal Integrity* cannot be filed under *Spiritual Vitality*, because the outline has already told the student which competency they are working on there. An assessment whose activity is in no chapter, or in a chapter with no competency, is free to name one itself; that is how a course-wide capstone stays possible. Validation lives on the `Course Schedule` controller with the rest of the assessment-criteria checks, per [ADR 023](023-course-and-program-course-lifecycle.md), and reads the lesson through the same index `utils.get_assessments` already uses -- `Scheduled Course Assess Criteria.lesson` is computed on read, not stored, so there is nothing to trust.
+- **Per-assessment dimension weights.** `Assessment Dimension Weight` (§6a) is the record that lets one assessment be knowledge-heavy and another character-heavy. It exists, `cbe.dimension_weights_for` reads it, and nothing writes it outside Desk. It renders as an expandable row under each assessment, one weight per dimension of the section's scale, defaulting to equal weights.
+- **`grading_mode_matrix` per assessment** — a grid of **evaluator category x dimension**, each cell on or off, so a single activity can be graded per-dimension inside a course that is **also** graded per-evaluator, and so an instructor can *opt out* of a cell: the faculty mentor may be unable to judge character on a written exam while the personal mentor can.
+
+  **Shape first, then cells.** `activity_grading_mode` (framework) and `grading_mode_override` (assessment) answer *what shape the grid has* — one grade for the whole activity, one per evaluator, or one per evaluator per dimension. Only the last two have axes to switch on and off, and "one grade per activity" has no evaluator or dimension axis at all, so it cannot be expressed as cells. The matrix therefore refines the shape rather than replacing it.
+
+  Stored as **`Assessment Grading Matrix`** — standalone, because `Scheduled Course Assess Criteria` is itself a child table and Frappe has no grandchildren (the same constraint that made `Assessment Dimension Weight` standalone): `assess_criteria` (Link, reqd), `course_schedule` and `course_competency` (denormalised), `instructor_category` (Link, reqd), `dimension_code` (Data, reqd), `dimension` (read-only label), `graded` (Check). Rows exist only where an instructor has made an explicit choice; **absence means "follow the shape"**, so a course that never opens the grid stores nothing and behaves exactly as it does today.
+
+  **An opt-out is not a zero, and this is the part that must not be got wrong.** A cell switched off is *not applicable*, not *missing* and not *failed*. Three existing behaviours change accordingly: `cbe.missing_required_evaluators` must not report an opted-out cell as owed; `cbe.weighted_dimension_value` must drop it from the average rather than contribute a value; and the submission surface (11c) must not render a picker for it. A dimension every evaluator has opted out of has no value for that assessment at all — it simply does not participate, and the competency's other assessments carry it.
+
+**11c. Submissions are graded in dimensions, on the qualitative scale.** The four submission grading surfaces (quiz, assignment, exam, discussion) offer a numeric score box. On a competency section they must instead offer one level picker per dimension of that assessment, labelled with the competency's own "demonstrated by" descriptor, plus the narrative field — the same shape `cbe_api.save_activity_grade` already accepts. Which pickers appear follows `activity_grading_mode`: one for the whole activity, one per evaluator, or one per evaluator per dimension.
+
+  One panel serves all four, because the four submission doctypes differ in almost everything except the two facts this needs: each names the `Scheduled Course Assess Criteria` row it was graded under and the student who sat it. Four near-copies of a level picker would drift apart within a term.
+
+  **A percentage must stop overwriting the level.** `quizresult_to_card` propagates a submission's `percentage` into `Course Assess Results Detail.rawscore_card` -- the same cell `cbe.rollup_activity_grades` writes a *level* into (section 7). On a competency section the two fight, and the percentage wins by arriving last, so a level 3 becomes an 82 that every consumer then reads back as a level. The numeric path therefore stands down when the section has a framework, and the competency roll-up owns the cell.
+
+**11d. The gradebook needs a competency shape, not a numeric grid.** `Gradebook.vue` renders students x assessments x score. For a competency section that grid is meaningless, and it is currently what an instructor sees. Gated on the framework, the section instead gets a **bird's-eye matrix**: rows are students; columns nest **competency -> assessment -> evaluator category (`grades_activities = 1`) -> dimension**, holding a level rather than a score. Below it, the final competency verdicts from evaluators with `gives_competency_verdict = 1`.
+
+The faculty mentor is the arbiter of grades but is not the only person grading, so each student's row carries an icon naming their Personal Mentor on hover — resolved from `cbe.evaluators_for`, the same resolution that put the mentor in the section without a registrar. This is the whole-course view; the existing `CompetencyGradebook.vue` per-student panel becomes its detail pane rather than the only way in.
+
+**11e. Self-assessment is prompted when the framework says, not on every chapter.** `course_self_eval_points` already distinguishes *start of course*, *end of course*, *end of each competency* and *start of course and end of each competency*, but the outline offers the prompt on every mapped chapter regardless of the setting or of the student's progress — so a school configured for "start of course and end of each competency" gets greeted at the *beginning* of each competency and never at the start of the course. The prompt points are derived from the setting instead:
+
+| setting contains | prompt |
+|---|---|
+| *Start of course* | one Baseline prompt at the top of the outline, before any chapter |
+| *End of each competency* | a Final prompt on a chapter once its lessons are complete |
+| *End of course* | a Final prompt once the whole outline is complete |
+
+Chapter completion is the same lesson-completion data `get_course_outline(progress=True)` already returns, so this needs no new state. A competency whose self-assessment is not yet due shows its descriptors without a call to action, which is the point of the panel anyway.
 
 ## Rejected: Grading Scale as the CBE configuration home
 
@@ -447,5 +508,7 @@ ADR 064 already draws the line between `Cohort` (discipleship, Person-keyed, ADR
 6. Radar and transcript — `RadarChart.vue`, `CompetencyProfile.vue`, CBE rendering in `CourseStatus` and `Grades`.
 7. Personal Development Plan — `Standard Development Question` on the framework, plan + goal doctypes, `PersonalDevelopmentPlan.vue`, `send_grades` guard.
 7a. Development notes and the aggregate arc — `Personal Development Note` with mentor read permissions resolved at read time, `SelfDevelopmentPlans.vue` in both student and mentor modes.
-8. Cohort pacing — `program_cohort_source`, Student Group program fields and member lifecycle, Cohort auto-creation from mentors.
+8. Cohort pacing — **withdrawn, superseded by [ADR 066](066-mentoring-and-program-cohorts.md)** (§5). Built and then unwound: `Student Group.program` / `intake_term` / `is_program_cohort`, `cohorting.py`, `program_cohort_source` and the framework's one-leader rule are gone. Only the `Student Group Members` lifecycle fields survive the phase.
+10a. Course-scoped configuration (sections 11a, 11b, 11e) — the weight gates, the derived assessment mode with competency, dimension weights and the `Assessment Grading Matrix` in `CourseAssessment.vue`, the chapter -> lesson -> assessment chain, and self-assessment prompt timing. Sequenced before 8: a competency section could not save its assessment criteria at all.
+10b. Course-scoped grading (sections 11c, 11d) — `CompetencyActivityGrading.vue` shared by the four submission surfaces, the `quizresult_to_card` guard that stops a percentage overwriting a level, and the bird's-eye matrix as an Overview tab in `CompetencyGradebook.vue` with `Gradebook.vue` gated on the framework.
 9. Deferred — aretenic bridge; the failure/remediation policy once the school decides.

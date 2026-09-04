@@ -59,7 +59,13 @@ def visible_cohorts(user=None):
 
 def led_cohorts(user=None):
     """Cohorts the user actively leads, plus their split-off subtree — the scope
-    a leader may moderate."""
+    a leader may moderate.
+
+    Archived cohorts are excluded (ADR 066 §7.6): archiving ends a group's life,
+    and there is nothing left in it to moderate. `visible_cohorts` deliberately
+    keeps them — members still see the cohort and its history, because archiving
+    a group should not erase anyone's account of having been in it.
+    """
     if not user:
         user = frappe.session.user
     person = find_person(user=user)
@@ -70,7 +76,12 @@ def led_cohorts(user=None):
         filters={"person": person, "active": 1, "is_leader": 1},
         pluck="cohort",
     )
-    return _descendants(led) if led else set()
+    if not led:
+        return set()
+    live = frappe.get_all(
+        "Cohort", filters={"name": ["in", led], "status": "Active"}, pluck="name"
+    )
+    return _descendants(live) if live else set()
 
 
 def _in_clause(table, field, names):

@@ -36,11 +36,16 @@
 				<FormControl v-model="submisisonDetails.doc.member_name" :label="__('Student')" :disabled="true" />
 			</div>
 
-			<div class="grid grid-cols-2 gap-5">
+			<!-- A competency section has no percentage to show: the level replaces
+			     it rather than sitting beside it (ADR 065 section 11c). -->
+			<div v-if="gradeMode !== 'competency'" class="grid grid-cols-2 gap-5">
 				<FormControl v-model="submisisonDetails.doc.score" :label="__('Score')" :disabled="true" />
 				<FormControl v-model="submisisonDetails.doc.percentage" :label="__('Percentage')" :disabled="true" />
 			</div>
 		</div>
+
+		<CompetencyActivityGrading submission-doctype="Quiz Submission" :submission="props.submission"
+			@mode="(m) => (gradeMode = m)" />
 
 		<div v-for="(row, index) in submisisonDetails.doc.result" class="border p-5 rounded-md space-y-4">
 			<div class="flex items-start space-x-1 font-semibold text-ink-gray-9">
@@ -53,8 +58,12 @@
 				<span> {{ __('Answer') }}: </span>
 				<span v-html="row.answer"></span>
 			</div>
+			<!-- Points still say which answers were right, but on a competency
+			     section they no longer become the grade, so they are shown
+			     rather than offered for editing. -->
 			<div class="grid grid-cols-2 gap-5">
-				<FormControl v-model="row.points" :label="__('Points')" />
+				<FormControl v-model="row.points" :label="__('Points')"
+					:disabled="gradeMode === 'competency'" />
 				<FormControl v-model="row.points_out_of" :label="__('Points out of')" :disabled="true" />
 			</div>
 		</div>
@@ -71,6 +80,7 @@ import {
 } from 'frappe-ui'
 import { computed, onBeforeUnmount, onMounted, inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -109,6 +119,10 @@ const props = defineProps({
 		required: true,
 	},
 })
+
+// 'loading' until the competency panel reports back, so the numeric summary
+// does not flash on a section that does not grade in points.
+const gradeMode = ref('loading')
 
 const submisisonDetails = createDocumentResource({
 	doctype: 'Quiz Submission',

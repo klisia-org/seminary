@@ -265,6 +265,20 @@ def _on_terminal(
     except ImportError:
         pass
 
+    # Cohort types that ask to release separated students (ADR 066 §7.3).
+    # Wrapped: a cohort that cannot be updated is not a reason a withdrawal
+    # fails, and the registrar has already done the part that matters.
+    try:
+        from seminary.seminary.discipleship.enrollment import (
+            release_from_program_cohorts,
+        )
+
+        release_from_program_cohorts(pe_doc, to_status, effective_date)
+    except Exception:  # noqa: BLE001
+        frappe.log_error(
+            frappe.get_traceback(), f"Cohort release failed: {pe_doc.name}"
+        )
+
 
 def _upsert_leaving_record(
     pe_doc, to_status, effective_date, source_doctype, source_name

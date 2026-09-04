@@ -8,8 +8,6 @@ DIRECTORY_FIELDS = (
     "name",
     "full_name",
     "image",
-    "program_completed",
-    "class_year",
     "current_role",
     "current_organization",
     "linkedin_url",
@@ -46,10 +44,13 @@ def directory_search(
         ["enabled", "=", 1],
         ["show_in_directory", "=", 1],
     ]
+    # Completed programs are rows now (ADR 069), so the program and class-year
+    # filters reach through the child table. Frappe's `[child_doctype, field,
+    # op, value]` filter form does that join for us and keeps permissions.
     if program:
-        filters.append(["program_completed", "=", program])
+        filters.append(["Alumni Graduation", "program", "=", program])
     if class_year:
-        filters.append(["class_year", "=", int(class_year)])
+        filters.append(["Alumni Graduation", "class_year", "=", int(class_year)])
 
     or_filters = None
     if query:
@@ -61,15 +62,41 @@ def directory_search(
             ["city", "like", like],
         ]
 
-    return frappe.get_all(
+    rows = frappe.get_all(
         "Alumni Profile",
         fields=list(DIRECTORY_FIELDS),
         filters=filters,
         or_filters=or_filters,
         limit_page_length=min(int(limit), 100),
         limit_start=int(offset),
-        order_by="class_year desc, full_name asc",
+        # Ordered by name, not by class year. A person can hold several
+        # graduations, so "their class year" is no longer a single sortable
+        # value — ordering by one of them would silently pick a row.
+        order_by="full_name asc",
+        distinct=True,
     )
+    _attach_graduations(rows)
+    return rows
+
+
+def _attach_graduations(rows):
+    """One query for every listed profile's graduations, not one per row."""
+    if not rows:
+        return
+    grads = frappe.get_all(
+        "Alumni Graduation",
+        filters={
+            "parenttype": "Alumni Profile",
+            "parent": ("in", [r["name"] for r in rows]),
+        },
+        fields=["parent", "program", "academic_year", "class_year"],
+        order_by="class_year asc",
+    )
+    by_parent: dict = {}
+    for grad in grads:
+        by_parent.setdefault(grad.parent, []).append(grad)
+    for row in rows:
+        row["graduations"] = by_parent.get(row["name"], [])
 
 
 @frappe.whitelist()
@@ -116,34 +143,45 @@ def mark_as_alumni(program_enrollment: str) -> dict:
             ).format(student.name)
         )
 
-    existing = frappe.db.get_value("Alumni Profile", {"user": student.user}, "name")
-    if existing:
-        return {"name": existing, "already_existed": True}
-
+    # A person has one Alumni Profile and may graduate more than once, so the
+    # second degree is a row on the profile — not a second profile, and not a
+    # silent no-op. This used to return here on the existing profile, which
+    # dropped the second graduation entirely *and* skipped the
+    # `date_of_conclusion` stamp below, because the return preceded it (ADR 069).
     if not pe.date_of_conclusion:
         pe.db_set("date_of_conclusion", today(), update_modified=True)
+        pe.reload()
 
     conclusion_date = getdate(pe.date_of_conclusion)
+    existing = frappe.db.get_value("Alumni Profile", {"person": student.person})
 
-    profile = frappe.get_doc(
-        {
-            "doctype": "Alumni Profile",
-            "user": student.user,
-            "email": student.user,
-            "full_name": student.student_name,
-            "student": student.name,
-            "program_completed": pe.program,
-            "class_year": conclusion_date.year,
-            "graduated_from_enrollment": pe.name,
-        }
-    )
-    profile.insert(ignore_permissions=True)
-    profile.db_set("owner", student.user, update_modified=False)
+    if existing:
+        profile = frappe.get_doc("Alumni Profile", existing)
+        already = profile.record_graduation(pe, conclusion_date)
+        if not already:
+            profile.save(ignore_permissions=True)
+    else:
+        # Person first (ADR 068 §1): the graduate already has one — this is the
+        # same human, not a new identity. `email` and `full_name` are
+        # `fetch_from person.*` mirrors, so passing the Student's copies would
+        # be writing a mirror of a mirror.
+        from seminary.seminary import intake
+
+        profile = intake.make_alumni_profile(
+            student.person, user=student.user, student=student.name
+        )
+        profile.record_graduation(pe, conclusion_date)
+        profile.save(ignore_permissions=True)
+        profile.db_set("owner", student.user, update_modified=False)
 
     user_doc = frappe.get_doc("User", student.user)
     user_doc.add_roles("Alumni")
 
-    return {"name": profile.name, "already_existed": False}
+    return {
+        "name": profile.name,
+        "already_existed": bool(existing),
+        "graduations": len(profile.graduations),
+    }
 
 
 @frappe.whitelist()

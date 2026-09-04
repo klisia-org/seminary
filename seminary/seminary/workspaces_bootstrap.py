@@ -10,11 +10,16 @@ Run manually, once, per site:
 
     bench --site <site> execute seminary.seminary.workspaces_bootstrap.run
 
-Idempotent: skips a workspace that already exists. NOT wired into install or
-migrate on purpose — re-importing would clobber any Desk edits (see the
-"don't fixture user-configurable doctypes" rule). After creation, refine each
-workspace via the sidebar editor or the Workspace form (editing existing
-records works; only the New button is hidden).
+Idempotent: skips a workspace that already exists. Creating *workspaces* is NOT
+wired into install or migrate on purpose — re-importing would clobber any Desk
+edits (see the "don't fixture user-configurable doctypes" rule). After creation,
+refine each workspace via the sidebar editor or the Workspace form (editing
+existing records works; only the New button is hidden).
+
+The one exception is `ensure_registrar_tools`, which install and migrate do call:
+the Registrar workspace ships with the app and names two Custom HTML Blocks in
+its content, so those blocks are a dependency rather than a preference. It only
+ever fills a gap; see its docstring.
 """
 
 import json
@@ -206,9 +211,19 @@ REGISTRAR_TOOLS = [
 ]
 
 
-def _ensure_custom_html_block(block):
+def _ensure_custom_html_block(block, overwrite=True):
+    """Create the block, and with `overwrite` also push its current markup.
+
+    The two callers want different things. `run()` is a deliberate act by an
+    administrator pushing changed HTML, so it overwrites. `ensure_registrar_tools`
+    runs on every migrate and must only ever fill a gap -- rewriting a block on
+    every migrate would silently undo any local edit to it.
+    """
     name = block["name"]
-    if frappe.db.exists("Custom HTML Block", name):
+    exists = frappe.db.exists("Custom HTML Block", name)
+    if exists and not overwrite:
+        return False
+    if exists:
         doc = frappe.get_doc("Custom HTML Block", name)
     else:
         doc = frappe.new_doc("Custom HTML Block")
@@ -218,6 +233,30 @@ def _ensure_custom_html_block(block):
     doc.private = 0
     doc.set("roles", [{"role": r} for r in block.get("roles", [])])
     doc.save(ignore_permissions=True)
+    return not exists
+
+
+def ensure_registrar_tools():
+    """Create the Registrar workspace's action blocks if they are missing.
+
+    The Registrar workspace ships with the app and syncs on migrate, and its
+    content references these blocks by name -- but the blocks themselves were
+    only ever created by `run()`, a manual one-shot. Any site that did not run
+    it by hand got the workspace with two buttons that render as nothing.
+
+    Wired into `after_migrate` because a workspace that names a block has
+    already committed to it existing; that is a dependency, not a preference,
+    and it is create-only so the "don't re-import user-configurable doctypes"
+    rule still holds. The workspace record itself is left alone.
+    """
+    created = [
+        b["name"]
+        for b in REGISTRAR_TOOLS
+        if _ensure_custom_html_block(b, overwrite=False)
+    ]
+    if created:
+        print(f"  created registrar action blocks: {created}")
+    return created
 
 
 def _attach_custom_blocks(workspace, blocks):

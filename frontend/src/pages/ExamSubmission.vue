@@ -111,7 +111,7 @@
           <!-- Points and Buttons -->
           <div class="flex items-center justify-end space-x-5">
             <!-- Buttons for Auto-Grading -->
-            <div class="flex items-center space-x-2">
+            <div v-if="gradeMode !== 'competency'" class="flex items-center space-x-2">
               <Button variant="solid" theme="green" size="sm" @click="setPoints(row, row.points_out_of)">
                 <Check class="w-4 h-4" />
               </Button>
@@ -120,8 +120,10 @@
               </Button>
             </div>
 
-            <!-- Points Input -->
-            <div class="flex flex-col items-end space-y-1">
+            <!-- Points Input. On a competency section the level pickers below
+                 are the grade, so points stay visible but stop being offered
+                 for editing (ADR 065 section 11c). -->
+            <div v-if="gradeMode !== 'competency'" class="flex flex-col items-end space-y-1">
               <div class="flex items-center space-x-2">
                 <FormControl v-model="row.points" type="number" class="w-20 text-right"
                   @change="(val) => onPointsChange(row, val)" />
@@ -148,11 +150,14 @@
 
       <!-- Right Section (1/3 width) -->
       <div class="col-span-1 space-y-4">
+        <CompetencyActivityGrading submission-doctype="Exam Submission" :submission="props.submission"
+          @mode="(m) => (gradeMode = m)" />
         <div class="space-y-4 border p-5 rounded-md">
-          <div class="text-sm text-ink-gray-7">
+          <div v-if="gradeMode !== 'competency'" class="text-sm text-ink-gray-7">
             {{ __('Final grade is auto-calculated') }}
           </div>
-          <FormControl v-model="submisisonDetails.doc.fudge_points" :label="__('Fudge Points')" :disabled="false" />
+          <FormControl v-if="gradeMode !== 'competency'" v-model="submisisonDetails.doc.fudge_points"
+            :label="__('Fudge Points')" :disabled="false" />
           <FormControl v-model="submisisonDetails.doc.status" :label="__('Status')" type="select" :options="[
             {
               label: __('Not Graded'),
@@ -212,6 +217,7 @@ import { computed, onBeforeUnmount, onMounted, inject, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import LightEditor from '@/components/LightEditor.vue'
 import { Check, X } from 'lucide-vue-next'
+import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -257,6 +263,10 @@ const props = defineProps({
     required: true,
   },
 })
+
+// 'loading' until the competency panel reports back, so the points editor does
+// not flash on a section that does not grade in points.
+const gradeMode = ref('loading')
 
 const ExamTitle = createResource({
   url: 'frappe.client.get_value',

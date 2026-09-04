@@ -23,6 +23,8 @@ frappe.ui.form.on("Instructor", {
 	},
 	refresh: function(frm) {
 
+		render_open_commitments(frm);
+
 		if (!frm.is_new() && frm.doc.instructor_type === "Volunteer" && !frm.doc.supplier) {
 			frm.add_custom_button(__("Create Supplier"), function() {
 				frm.call({
@@ -102,3 +104,27 @@ frappe.ui.form.on("Instructor", {
 
 	}
 );
+
+// What this instructor is still carrying — open sections, cohorts they lead,
+// culminating projects they advise (ADR 066 §7.1). The registrar's answer to
+// "what happens if they go on sabbatical", visible before the question is
+// urgent. Nothing here is closed automatically; who takes a group over is a
+// decision, not a consequence.
+function render_open_commitments(frm) {
+	const wrapper = frm.fields_dict.open_commitments_html;
+	if (!wrapper) return;
+	if (frm.is_new()) {
+		wrapper.$wrapper.empty();
+		return;
+	}
+	frappe.call({
+		method: 'seminary.seminary.instructor_load.instructor_commitments',
+		args: { instructor: frm.doc.name },
+		callback: function(r) {
+			const res = r.message || {};
+			wrapper.$wrapper.html(
+				res.html || `<p class="text-muted">${__('Nothing currently assigned.')}</p>`
+			);
+		},
+	});
+}

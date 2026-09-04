@@ -8,6 +8,36 @@
 				{{ __('Add Chapter') }}
 			</Button>
 		</div>
+		<!-- The opening baseline. It belongs above the chapters because that is
+		     when it is asked for, and it had nowhere to live before
+		     (ADR 065 section 11e). -->
+		<div v-if="competencies.data?.baseline_due"
+			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
+			<p class="text-sm font-medium text-ink-gray-8">{{ __('Before you start') }}</p>
+			<p class="mt-1 text-xs text-ink-gray-6">
+				{{ __('Say where you think you are starting on each competency. You will answer again at the end, and comparing the two is the point.') }}
+			</p>
+			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
+				<Button size="sm" variant="subtle" class="mt-2">
+					{{ __('Start my self-assessment') }}
+				</Button>
+			</router-link>
+		</div>
+		<div v-if="competencies.data?.final_all_due"
+			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
+			<p class="text-sm font-medium text-ink-gray-8">
+				{{ __('You have finished the course') }}
+			</p>
+			<p class="mt-1 text-xs text-ink-gray-6">
+				{{ __('Look back over each competency and say where you are now.') }}
+			</p>
+			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
+				<Button size="sm" variant="subtle" class="mt-2">
+					{{ __('Assess my growth') }}
+				</Button>
+			</router-link>
+		</div>
+
 		<div :class="{
 			'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
 		}">
@@ -89,12 +119,15 @@
 								{{ __('Open that self-assessment') }}
 							</Button>
 						</router-link>
-						<router-link v-else-if="competencies.data?.self_eval_enabled" :to="{
+						<!-- Offered when the framework's timing says so and the
+						     student has finished the chapter, not on every panel
+						     regardless (ADR 065 section 11e). -->
+						<router-link v-else-if="competencyOf(chapter).final_due" :to="{
 							name: 'CompetencySelfAssessment',
 							params: { courseName: courseName, competency: competencyOf(chapter).competency },
 						}">
 							<Button size="sm" variant="subtle" class="mt-2">
-								{{ __('Assess your own growth') }}
+								{{ __('You have finished this — assess your growth in it') }}
 							</Button>
 						</router-link>
 					</div>

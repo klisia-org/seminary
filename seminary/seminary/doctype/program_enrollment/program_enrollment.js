@@ -67,6 +67,8 @@ frappe.ui.form.on('Program Enrollment', {
 			filters: { requirement_type: 'Manual Verification' },
 		}));
 
+		render_cohort_mentors(frm);
+
 		if (frm.doc.docstatus === 1) {
 			// The Payers (billing) view is an oikonomos-only doctype; hide the
 			// button on a Frappe-only seminary.
@@ -662,3 +664,25 @@ frappe.ui.form.on('Program Enrollment Course', {
 		};
 },
 });
+
+// Mentors that come from the student's cohort (ADR 066 §4). Derived, so there
+// is nothing to edit here — the panel says where each one comes from and links
+// to the cohort, which is the record that actually decides it. A student with
+// no cohort mentors gets no panel rather than an empty table.
+function render_cohort_mentors(frm) {
+	const wrapper = frm.fields_dict.cohort_mentors_html;
+	if (!wrapper) return;
+	if (frm.is_new()) {
+		wrapper.$wrapper.empty();
+		return;
+	}
+	frappe.call({
+		method: 'seminary.seminary.cbe.enrollment_mentor_panel',
+		args: { program_enrollment: frm.doc.name },
+		callback: function(r) {
+			const html = (r.message || {}).html || '';
+			wrapper.$wrapper.html(html);
+			frm.toggle_display('cohort_mentors_html', !!html);
+		},
+	});
+}

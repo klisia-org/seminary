@@ -11,7 +11,28 @@ class Cohort(Document):
     def validate(self):
         if self.parent_cohort and self.parent_cohort == self.name:
             frappe.throw(_("A cohort cannot be its own parent."))
+        self._guard_inactive_type()
         self._apply_type_defaults()
+
+    def _guard_inactive_type(self):
+        """A deactivated type stops producing cohorts (ADR 066 section 7.7).
+
+        Only on creation. Deactivating a type is how a school retires a kind of
+        cohort -- and the students already in one are mid-relationship, so their
+        cohorts keep working, keep their leaders and keep their channels. What
+        stops is the making of new ones.
+        """
+        if not self.is_new() or not self.cohort_type:
+            return
+        if frappe.db.get_value("Cohort Type", self.cohort_type, "is_active"):
+            return
+        frappe.throw(
+            _(
+                "Cohort Type {0} is not active, so no new cohorts of it may be "
+                "created. Reactivate it, or choose another type. Cohorts that "
+                "already exist are unaffected."
+            ).format(frappe.bold(self.cohort_type))
+        )
 
     def _apply_type_defaults(self):
         if not self.cohort_type:

@@ -682,6 +682,9 @@ def get_course_outline(course, progress=False):
                 "is_scorm_package",
                 "launch_file",
                 "scorm_package",
+                # The competency this chapter delivers (ADR 065). Carried so the
+                # editor can show the current mapping without a second call.
+                "course_competency",
             ],
             as_dict=True,
         )
@@ -2146,20 +2149,18 @@ def has_super_access(user: str | None = None):
 
 
 def create_student_from_current_user():
-    user = frappe.get_doc("User", frappe.session.user)
+    """Self-enrollment's Student, created Person-first (ADR 068 §1).
 
-    student = frappe.get_doc(
-        {
-            "doctype": "Student",
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "student_email_id": user.email,
-            "user": frappe.session.user,
-        }
-    )
+    This used to build a Student straight from the session User's name and
+    email, which forked an identity for anyone who already had a Person — and
+    it is reachable without an application, a review, a doctrinal statement or
+    a fee, gated only by `Program.allow_self_enroll`. The Person hop is what
+    makes it converge on the existing human instead.
+    """
+    from seminary.seminary import intake
 
-    student.save(ignore_permissions=True)
-    return student
+    person = intake.person_for_user(frappe.session.user)
+    return intake.make_student(person, user=frappe.session.user)
 
 
 @frappe.whitelist()

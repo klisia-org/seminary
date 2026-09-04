@@ -43,7 +43,140 @@
 				</div>
 			</div>
 
-			<div class="flex flex-col gap-4 px-3 py-4 sm:flex-row sm:px-5">
+			<!-- Two ways into the same section: the whole class at a glance, and
+			     one student in full. The matrix is the birds-eye view (ADR 065
+			     11d); the panel beside it is its detail pane. -->
+			<div class="border-b px-3 sm:px-5">
+				<nav class="-mb-px flex gap-4">
+					<button v-for="t in tabs" :key="t.value" type="button"
+						class="border-b-2 px-1 py-2 text-sm"
+						:class="tab === t.value
+							? 'border-outline-gray-4 font-medium text-ink-gray-9'
+							: 'border-transparent text-ink-gray-6 hover:text-ink-gray-8'"
+						@click="tab = t.value">
+						{{ t.label }}
+					</button>
+				</nav>
+			</div>
+
+			<section v-if="tab === 'overview'" class="px-3 py-4 sm:px-5">
+				<div v-if="matrix.loading" class="flex justify-center py-12">
+					<LoadingIndicator class="h-6 w-6" />
+				</div>
+				<template v-else-if="matrix.data?.is_cbe">
+					<p v-if="!matrix.data.students.length" class="text-sm text-ink-gray-5">
+						{{ __('There are no students enrolled in this course.') }}
+					</p>
+					<p v-else-if="!gradedGroups.length" class="text-sm text-ink-gray-5">
+						{{ __('No assessment is mapped to a competency yet. Set that in Configure Assessments.') }}
+					</p>
+					<div v-else class="overflow-x-auto">
+						<table class="min-w-full border-collapse text-sm">
+							<thead>
+								<tr>
+									<th rowspan="3"
+										class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-3 py-2 text-left">
+										{{ __('Student') }}
+									</th>
+									<th v-for="g in gradedGroups" :key="g.course_competency" :colspan="g.span"
+										class="border border-outline-gray-2 bg-surface-gray-2 px-3 py-2">
+										{{ g.competency_name }}
+									</th>
+								</tr>
+								<tr>
+									<template v-for="g in gradedGroups" :key="g.course_competency">
+										<th v-for="a in g.assessments" :key="a.name" :colspan="a.leaves.length"
+											class="border border-outline-gray-2 bg-surface-gray-1 px-3 py-1 text-xs font-medium">
+											{{ a.title }}
+										</th>
+									</template>
+								</tr>
+								<tr>
+									<template v-for="g in gradedGroups" :key="g.course_competency">
+										<template v-for="a in g.assessments" :key="a.name">
+											<th v-for="leaf in a.leaves" :key="leaf.key"
+												class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 text-xs font-normal text-ink-gray-6">
+												<div v-if="leaf.instructor_category">{{ leaf.instructor_category }}</div>
+												<div>{{ leaf.label }}</div>
+											</th>
+										</template>
+									</template>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="s in matrix.data.students" :key="s.roster"
+									class="hover:bg-surface-gray-1">
+									<th
+										class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-white px-3 py-2 text-left font-medium">
+										<div class="flex items-center gap-1.5">
+											<button class="truncate text-left hover:underline"
+												@click="openStudent(s.roster)">
+												{{ s.student_name }}
+											</button>
+											<!-- The faculty mentor arbitrates a grade someone else
+											     recorded, so the person to ask is named here. -->
+											<Tooltip v-if="s.mentors.length" :text="mentorText(s)">
+												<UserRound class="h-3.5 w-3.5 shrink-0 text-ink-gray-5" />
+											</Tooltip>
+										</div>
+									</th>
+									<template v-for="g in gradedGroups" :key="g.course_competency">
+										<template v-for="a in g.assessments" :key="a.name">
+											<td v-for="leaf in a.leaves" :key="leaf.key"
+												class="border border-outline-gray-2 px-2 py-2 text-center">
+												<Tooltip v-if="s.cells[leaf.key]" :text="s.cells[leaf.key].instructor">
+													<span class="text-ink-gray-9">{{ s.cells[leaf.key].level_code }}</span>
+												</Tooltip>
+												<span v-else class="text-ink-gray-4">—</span>
+											</td>
+										</template>
+									</template>
+								</tr>
+							</tbody>
+						</table>
+
+						<!-- The verdicts the framework's arbiters give, below the
+						     evidence they were formed from. -->
+						<h3 class="mt-8 text-sm font-semibold uppercase tracking-wide text-ink-gray-6">
+							{{ __('Competency verdicts') }}
+						</h3>
+						<p class="mb-2 text-xs text-ink-gray-5">
+							{{ verdictBy }}
+						</p>
+						<table class="min-w-full border-collapse text-sm">
+							<thead>
+								<tr>
+									<th
+										class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-gray-2 px-3 py-2 text-left">
+										{{ __('Student') }}
+									</th>
+									<th v-for="g in matrix.data.groups" :key="g.course_competency"
+										class="border border-outline-gray-2 bg-surface-gray-2 px-3 py-2">
+										{{ g.competency_name }}
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="s in matrix.data.students" :key="s.roster">
+									<th
+										class="sticky left-0 z-10 border border-outline-gray-2 bg-surface-white px-3 py-2 text-left font-medium">
+										{{ s.student_name }}
+									</th>
+									<td v-for="g in matrix.data.groups" :key="g.course_competency"
+										class="border border-outline-gray-2 px-3 py-2 text-center">
+										<Badge v-if="s.verdicts[g.course_competency]?.final_code"
+											:label="s.verdicts[g.course_competency].final_code"
+											:theme="s.verdicts[g.course_competency].status === 'Competent' ? 'green' : 'orange'" />
+										<span v-else class="text-ink-gray-4">—</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</template>
+			</section>
+
+			<div v-show="tab === 'student'" class="flex flex-col gap-4 px-3 py-4 sm:flex-row sm:px-5">
 				<!-- Roster -->
 				<aside class="w-full shrink-0 sm:w-72">
 					<div class="mb-2 flex items-center justify-between">
@@ -88,6 +221,20 @@
 					</p>
 
 					<template v-else-if="detail.data">
+						<!-- The plan is the student's word on what comes next; a
+						     mentor reads and responds to it here (ADR 065 §8). -->
+						<div v-if="requiresPdp" class="mb-4 flex justify-end">
+							<router-link :to="{
+								name: 'PersonalDevelopmentPlan',
+								params: { courseName: props.courseName },
+								query: { student: detail.data.student },
+							}">
+								<Button variant="subtle" size="sm">
+									{{ __('Development Plan') }}
+								</Button>
+							</router-link>
+						</div>
+
 						<div v-if="detail.data.missing_evaluators?.length"
 							class="mb-4 rounded-md bg-surface-amber-1 px-4 py-3 text-sm text-ink-amber-3">
 							<p class="font-medium">{{ __('Still outstanding') }}</p>
@@ -133,8 +280,11 @@
 												<p v-if="!weightOf(a, d)" class="text-xs text-ink-gray-4">
 													{{ __('Not measured here') }}
 												</p>
+												<div v-else-if="!evaluatorsFor(a, d).length" class="text-xs text-ink-gray-4">
+													{{ __('Nobody grades this here') }}
+												</div>
 												<div v-else class="space-y-2">
-													<div v-for="ev in gradingEvaluators" :key="ev.instructor"
+													<div v-for="ev in evaluatorsFor(a, d)" :key="ev.instructor"
 														class="space-y-1">
 														<div class="text-xs text-ink-gray-5">{{ ev.instructor }}</div>
 														<div class="flex flex-wrap gap-1">
@@ -202,7 +352,7 @@ import {
 	createResource, call, toast,
 } from 'frappe-ui'
 import { computed, inject, ref, watch } from 'vue'
-import { Send } from 'lucide-vue-next'
+import { Send, UserRound } from 'lucide-vue-next'
 import ProgressBar from '@/components/ProgressBar.vue'
 
 const user = inject('$user')
@@ -245,13 +395,53 @@ const detail = createResource({
 	onError: () => {},
 })
 
+const matrix = createResource({
+	url: 'seminary.seminary.cbe_api.get_cbe_gradebook',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	onError: () => {},
+})
+
 watch(
 	() => context.data?.is_cbe,
-	(isCbe) => { if (isCbe) roster.reload() },
+	(isCbe) => {
+		if (!isCbe) return
+		roster.reload()
+		matrix.reload()
+	},
 	{ immediate: true }
 )
 
+const tab = ref('overview')
+const tabs = computed(() => [
+	{ value: 'overview', label: __('Overview') },
+	{ value: 'student', label: __('By student') },
+])
+
+// A competency nothing is assessed under would render as an empty column group
+// with a zero colspan, which browsers collapse into a broken header.
+const gradedGroups = computed(() =>
+	(matrix.data?.groups || []).filter((g) => g.span > 0)
+)
+
+const verdictBy = computed(() => {
+	const cats = matrix.data?.verdict_categories || []
+	return cats.length
+		? __('Given by: {0}').format(cats.join(', '))
+		: __('No evaluator category in this framework gives a competency verdict.')
+})
+
+const mentorText = (student) =>
+	student.mentors
+		.map((m) => `${m.instructor_category}: ${m.instructor_name}`)
+		.join('\n')
+
+const openStudent = (name) => {
+	tab.value = 'student'
+	select(name)
+}
+
 const levels = computed(() => context.data?.levels || [])
+const requiresPdp = computed(() => !!context.data?.framework?.require_pdp)
 const isFinalized = computed(() =>
 	['Closed', 'Cancelled'].includes(context.data?.workflow_state)
 )
@@ -268,6 +458,13 @@ const canSendSelected = computed(
 const gradingEvaluators = computed(
 	() => (detail.data?.evaluators || []).filter((e) => e.grades_activities)
 )
+
+// An opted-out cell is not applicable, so it gets no picker at all — offering
+// one would invite a grade that nothing reads (ADR 065 section 11b).
+const evaluatorsFor = (assessment, dimension) =>
+	gradingEvaluators.value.filter(
+		(e) => assessment.graded_cells?.[`${e.instructor_category}|${dimension.dimension_code}`]
+	)
 
 const canGradeAs = (ev) =>
 	user?.data?.is_moderator || ev.instructor === context.data?.viewer?.instructor
@@ -307,6 +504,7 @@ const setLevel = async (assessment, ev, dimension, level) => {
 		})
 		detail.reload()
 		roster.reload()
+		matrix.reload()
 	} catch (e) {
 		toast.error(errorMessage(e, __('Could not save that level.')))
 	}

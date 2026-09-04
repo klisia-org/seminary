@@ -195,9 +195,22 @@ class ProgramEnrollment(Document):
             self.append("required_on_enroll_courses", {"course": course})
 
     def validate_academic_term(self):
-        start_date, end_date = frappe.db.get_value(
-            "Academic Term", self.academic_term, ["term_start_date", "term_end_date"]
+        # validate() runs before the mandatory check, so a missing term arrives
+        # here as None and the unpack raised `TypeError: cannot unpack
+        # non-iterable NoneType` — a stack trace where the reader should have
+        # got "Academic Term is required". Guard each operand on its own.
+        dates = (
+            frappe.db.get_value(
+                "Academic Term",
+                self.academic_term,
+                ["term_start_date", "term_end_date"],
+            )
+            if self.academic_term
+            else None
         )
+        if not dates:
+            return
+        _start_date, end_date = dates
         if not self.enrollment_date:
             return
 

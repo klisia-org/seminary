@@ -19,7 +19,7 @@ from frappe.utils import flt
 # having to know how resolution works.
 EVALUATES_LABELS = {
     "Course Schedule Instructors": "Every student in the section",
-    "Program Enrollment Mentor": "Only their assigned students",
+    "Program Cohort": "Only the students in their cohort",
 }
 
 
@@ -27,7 +27,55 @@ class CompetencyFramework(Document):
     def validate(self):
         self.validate_grading_scale()
         self.validate_evaluators()
+        self.validate_development_questions()
         self.set_report_max()
+
+    def validate_one_cohort_type(self):
+        """One framework, one kind of cohort (ADR 066 section 7.9).
+
+        Several evaluator rows may draw on the cohort -- a personal mentor and a
+        ministry mentor are different capacities over the same group, and that is
+        ordinary. What may not differ is *which* group: two cohort types would
+        answer the grading and access question twice for the same student, and
+        nothing in the record says which answer wins. Several capacities over
+        one cohort is a rich framework; one capacity over two cohorts is an
+        unanswered question.
+        """
+        types = {
+            row.cohort_type
+            for row in self.evaluators or []
+            if row.assignment_source == "Program Cohort" and row.cohort_type
+        }
+        if len(types) > 1:
+            frappe.throw(
+                _(
+                    "This framework draws evaluators from two kinds of cohort "
+                    "({0}), which would give the same student two answers on "
+                    "grading and record access. Name one cohort type on every "
+                    "cohort-sourced row."
+                ).format(frappe.bold(", ".join(sorted(types))))
+            )
+
+    def validate_development_questions(self):
+        """Question keys are the join between four years of separate plans.
+
+        The text may be reworded freely; the key may not, because it is what
+        lets a student read every answer they have given to the same prompt
+        across every course. Uniqueness is therefore enforced here rather than
+        left to convention (ADR 065 section 8).
+        """
+        from seminary.seminary.utils import assert_url_safe_code
+
+        seen = {}
+        for row in self.development_questions or []:
+            assert_url_safe_code(row.question_key, _("Question Key"))
+            if row.question_key in seen:
+                frappe.throw(
+                    _("Question key {0} appears in rows {1} and {2}.").format(
+                        row.question_key, seen[row.question_key], row.idx
+                    )
+                )
+            seen[row.question_key] = row.idx
 
     def validate_grading_scale(self):
         scale_type = frappe.db.get_value(
@@ -66,6 +114,8 @@ class CompetencyFramework(Document):
                         "activities, give a competency verdict, or both."
                     ).format(row.idx, row.instructor_category)
                 )
+
+        self.validate_one_cohort_type()
 
         if self.status == "Active" and not self.evaluators:
             frappe.throw(_("An active framework needs at least one evaluator."))

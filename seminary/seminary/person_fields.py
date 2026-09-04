@@ -1,0 +1,496 @@
+"""The shared-attribute registry (ADR 068).
+
+One declared list of what a *shared human attribute* is, and where each one
+lives on the role doctypes. Before this module the answer was implicit in four
+places that disagreed: `ensure_person`'s signature, `_apply`'s branching,
+`Person.propagate_to_roles`' target dict, and the `read_only_depends_on` flags
+in the doctype JSONs. The protected set and the propagated set were the same
+arbitrary subset, and every field outside it was an unmanaged second home.
+
+Everything derives from `SPEC` below: the spine module's function signatures,
+its write semantics, the propagation targets, and the JSON flags (asserted by
+`test_person.py`, not generated at runtime — a doctype JSON stays the source of
+truth for Frappe, this just refuses to let it drift).
+
+Adding an attribute means adding one `Spec`. Forgetting a doctype then fails
+the suite instead of becoming the next hole.
+
+**This module currently encodes the spine as it is, not as ADR 068 leaves it.**
+Phase 1 is deliberately behaviour-neutral: every role binding is `LOCAL`, and
+`gender` is still `FILL_ONLY`. The flips — `LOCAL` to `MIRROR`/`SNAPSHOT`, and
+`gender`/address to `AUTHORED` — land in phases 4 and 7, where the JSON changes
+alongside them and the agreement test moves in lockstep.
+"""
+
+# --------------------------------------------------------------- write modes
+
+#: Last-write-wins when the caller is authoritative (`overwrite=True`), but
+#: never blanking: a cleared intake field is an omission, not a correction.
+AUTHORED = "authored"
+
+#: Only ever fills a blank. An existing Person's value is never replaced.
+FILL_ONLY = "fill_only"
+
+
+# ------------------------------------------------------------- binding kinds
+
+#: A writable local column on the role doctype, kept in step by an explicit
+#: push from `Person.on_update`. The pre-068 shape, and the thing 068 retires.
+LOCAL = "local"
+
+#: `fetch_from person.*` + `read_only`. Always current. Answers "who is this
+#: person now" — identity fields, a gradebook row, a faculty picker.
+MIRROR = "mirror"
+
+#: No `fetch_from`. Written once by the controller at a named capture moment
+#: and never re-fetched. Answers "what was recorded at the time" — a program
+#: enrollment's name is the one that reaches the diploma, and a rename after
+#: the degree is complete must not rewrite it (ADR 068 section 3).
+SNAPSHOT = "snapshot"
+
+#: `fetch_from` pointing at something that is *not* the spine. Not a design,
+#: an artefact: the field mirrors whichever doctype its author had in hand.
+#: Declared so the wrong source is visible in the registry and pinned by a
+#: test, rather than reading as a plain local column. Phase 4 repoints these
+#: at Person and they become MIRROR.
+FOREIGN = "foreign"
+
+
+class Binding:
+    """How one Person attribute surfaces on one role doctype."""
+
+    def __init__(self, fieldname, kind=LOCAL, propagate=False, source=None):
+        self.fieldname = fieldname
+        self.kind = kind
+        #: Whether `Person.propagate_to_roles` pushes this field. A MIRROR is
+        #: still pushed: `fetch_from` only fires when the *role* doc is saved,
+        #: and Frappe has no reverse hook.
+        self.propagate = propagate
+        #: FOREIGN only: the `fetch_from` the JSON actually declares today.
+        self.source = source
+
+    def __repr__(self):
+        return "Binding(%r, %s, propagate=%s)" % (
+            self.fieldname,
+            self.kind,
+            self.propagate,
+        )
+
+
+class Spec:
+    """One shared human attribute."""
+
+    def __init__(
+        self,
+        person_field,
+        arg=None,
+        mode=None,
+        roles=None,
+        never_blank=False,
+        push_blank=False,
+        sensitive=False,
+        derived=False,
+    ):
+        self.person_field = person_field
+        #: Keyword name on `ensure_person`/`update_person`. None means the
+        #: attribute is not settable through the spine's entry points.
+        self.arg = arg
+        self.mode = mode
+        self.roles = roles or {}
+        #: `first_name` is reqd on Person, so an authoritative caller may
+        #: change it but never clear it.
+        self.never_blank = never_blank
+        #: Push an empty string when the spine value is blank, rather than
+        #: skipping the push. False for unique/required mirrors, where an empty
+        #: spine would otherwise wipe a role's email.
+        self.push_blank = push_blank
+        #: Held at permlevel 1 on Person.
+        self.sensitive = sensitive
+        #: Resolved by the system, never typed (coordinates). "Mandatory" for a
+        #: derived attribute can only mean *resolvable*.
+        self.derived = derived
+
+    @property
+    def settable(self):
+        return self.arg is not None
+
+    def __repr__(self):
+        return "Spec(%r)" % self.person_field
+
+
+# --------------------------------------------------------------------- specs
+
+STUDENT = "Student"
+APPLICANT = "Student Applicant"
+INSTRUCTOR = "Instructor"
+ALUMNI = "Alumni Profile"
+
+SPEC = (
+    Spec(
+        "first_name",
+        arg="first_name",
+        mode=AUTHORED,
+        never_blank=True,
+        push_blank=True,
+        roles={
+            STUDENT: Binding("first_name", MIRROR, propagate=True),
+            APPLICANT: Binding("first_name", propagate=True),
+        },
+    ),
+    Spec(
+        "middle_name",
+        arg="middle_name",
+        mode=AUTHORED,
+        push_blank=True,
+        roles={
+            STUDENT: Binding("middle_name", MIRROR, propagate=True),
+            APPLICANT: Binding("middle_name", propagate=True),
+        },
+    ),
+    Spec(
+        "last_name",
+        arg="last_name",
+        mode=AUTHORED,
+        push_blank=True,
+        roles={
+            STUDENT: Binding("last_name", MIRROR, propagate=True),
+            APPLICANT: Binding("last_name", propagate=True),
+        },
+    ),
+    Spec(
+        # Computed on Person (`set_full_name`), so not settable from a role.
+        "full_name",
+        push_blank=True,
+        roles={
+            STUDENT: Binding("student_name", MIRROR, propagate=True),
+            APPLICANT: Binding("title", propagate=True),
+            ALUMNI: Binding("full_name", MIRROR, propagate=True),
+            # Excluded until ADR 068 phase 3 made the key opaque: while the
+            # docname *was* `format:{instructor_name}`, pushing a corrected
+            # name would have desynced name from docname, so `person.py` had a
+            # hard-coded `targets["Instructor"] = {}` and every instructor's
+            # displayed name stayed stale forever.
+            INSTRUCTOR: Binding("instructor_name", MIRROR, propagate=True),
+        },
+    ),
+    Spec(
+        "primary_email",
+        # `email` is a positional on ensure_person and handled separately in
+        # `_apply` (it is the match heuristic as well as a value), so it is not
+        # settable through the generic values dict.
+        roles={
+            STUDENT: Binding("student_email_id", MIRROR, propagate=True),
+            APPLICANT: Binding("student_email_id", propagate=True),
+            INSTRUCTOR: Binding("prof_email", MIRROR, propagate=True),
+            # Was the docname (`field:email`) until phase 3 — in the app whose
+            # own ADR says email is data and never a key.
+            ALUMNI: Binding("email", MIRROR, propagate=True),
+        },
+    ),
+    Spec(
+        "primary_mobile",
+        arg="mobile",
+        mode=AUTHORED,
+        roles={
+            STUDENT: Binding("student_mobile_number", MIRROR, propagate=True),
+            APPLICANT: Binding("student_mobile_number", propagate=True),
+            INSTRUCTOR: Binding("phone_message", MIRROR, propagate=True),
+        },
+    ),
+    Spec("language", arg="language", mode=FILL_ONLY),
+    # Messaging provider routing (ADR 043), *not* the postal country — that is
+    # `mailing_country` below. They were conflated until ADR 068 phase 2, which
+    # is how a student's self-service address edit could reach the SMS provider
+    # selector.
+    Spec("country", arg="country", mode=FILL_ONLY),
+    Spec(
+        "date_of_birth",
+        arg="date_of_birth",
+        mode=AUTHORED,
+        roles={
+            APPLICANT: Binding("date_of_birth"),
+        },
+    ),
+    Spec(
+        "nationality",
+        arg="nationality",
+        mode=AUTHORED,
+        roles={
+            APPLICANT: Binding("nationality"),
+        },
+    ),
+    Spec(
+        "phonetic_name",
+        arg="phonetic_name",
+        mode=AUTHORED,
+        roles={},
+    ),
+    Spec(
+        "mailing_country",
+        arg="mailing_country",
+        mode=AUTHORED,
+        roles={APPLICANT: Binding("country")},
+    ),
+    # The postal address. It has lived on Person since ADR 046, but
+    # `ensure_person` accepted no address arguments at all, so the
+    # "registrar-intake snapshot seeds the Person" that 046 describes has never
+    # actually happened — only the importer and the portal preferences page
+    # ever wrote one.
+    Spec(
+        "address_line_1",
+        arg="address_line_1",
+        mode=AUTHORED,
+        roles={
+            APPLICANT: Binding("address_line_1"),
+        },
+    ),
+    Spec(
+        "address_line_2",
+        arg="address_line_2",
+        mode=AUTHORED,
+        roles={
+            APPLICANT: Binding("address_line_2"),
+        },
+    ),
+    Spec(
+        "city",
+        arg="city",
+        mode=AUTHORED,
+        roles={APPLICANT: Binding("city")},
+    ),
+    Spec(
+        "state",
+        arg="state",
+        mode=AUTHORED,
+        roles={APPLICANT: Binding("state")},
+    ),
+    Spec(
+        "pincode",
+        arg="pincode",
+        mode=AUTHORED,
+        roles={
+            # The applicant spells it `zipcode`, which is why `enroll_student`'s
+            # same-name mapper drops the postal code at admission. Phase 7
+            # renames the field and this binding follows.
+            APPLICANT: Binding("zipcode"),
+        },
+    ),
+    Spec(
+        "blood_group",
+        arg="blood_group",
+        mode=AUTHORED,
+        sensitive=True,
+        roles={
+            APPLICANT: Binding("blood_group"),
+        },
+    ),
+    Spec(
+        "marital_status",
+        arg="marital_status",
+        mode=AUTHORED,
+        sensitive=True,
+        roles={APPLICANT: Binding("marital")},
+    ),
+    Spec(
+        "ethnicity",
+        arg="ethnicity",
+        mode=AUTHORED,
+        sensitive=True,
+        roles={APPLICANT: Binding("ethnic")},
+    ),
+    Spec(
+        "image",
+        arg="image",
+        mode=FILL_ONLY,
+        roles={
+            # Not propagated today: Student.image and Instructor.profileimage
+            # are independently writable. Phase 4 makes them mirrors.
+            STUDENT: Binding("image", MIRROR, propagate=True),
+            INSTRUCTOR: Binding("profileimage", MIRROR, propagate=True),
+            # A mirror of a mirror: the alumnus's photo comes from their
+            # Student record rather than from the spine, so an alumnus who was
+            # never a student here has no photo at all.
+            ALUMNI: Binding("image", MIRROR, propagate=True),
+        },
+    ),
+    Spec(
+        "gender",
+        arg="gender",
+        # AUTHORED since phase 4. It was fill-only, which meant
+        # `update_person(overwrite=True)` could not correct a gender at all —
+        # the gap ADR 067 stalled on.
+        mode=AUTHORED,
+        roles={
+            STUDENT: Binding("gender", MIRROR, propagate=True),
+            APPLICANT: Binding("gender"),
+            # Sourced from erpnext's Employee, which is not in `required_apps`
+            # — so on a bench without erpnext the link dangles and the field is
+            # simply dead. Gender is identity, not payroll; phase 4 repoints it
+            # at Person.
+            INSTRUCTOR: Binding("gender", MIRROR, propagate=True),
+        },
+    ),
+)
+
+# ----------------------------------------------------------------- snapshots
+
+
+class Snapshot:
+    """A person's attribute recorded on a document *about* them.
+
+    Not a role binding: the document does not represent the human, it records
+    something that happened to them. So the value answers "what was recorded at
+    the time", and it must not move when the person is later renamed —
+    `Program Enrollment.student_name` is the name that reaches the diploma.
+
+    Captured once from the spine, then left alone. A `fetch_from` here would
+    re-derive it on every save, including `on_update_after_submit`, so the
+    agreement test asserts these fields declare none.
+    """
+
+    def __init__(self, doctype, fieldname, person_field, link_field="student"):
+        self.doctype = doctype
+        self.fieldname = fieldname
+        self.person_field = person_field
+        #: Link to the Student this document is about.
+        self.link_field = link_field
+
+    def __repr__(self):
+        return "Snapshot(%r, %r)" % (self.doctype, self.fieldname)
+
+
+SNAPSHOTS = (
+    # The diploma chain. `Diploma.legal_name` was already a true snapshot; the
+    # two hops feeding it were not.
+    Snapshot("Program Enrollment", "student_name", "full_name"),
+    Snapshot("Graduation Request", "phonetic_name_snapshot", "phonetic_name"),
+    # Records of a decision or an event on a date. Renaming the person does not
+    # change what the register said when it was written.
+    Snapshot("Withdrawal Request", "student_name", "full_name"),
+    Snapshot("Student Leave Application", "student_name", "full_name"),
+    Snapshot("Student Log", "student_name", "full_name"),
+)
+
+SNAPSHOTS_BY_DOCTYPE = {}
+for _snap in SNAPSHOTS:
+    SNAPSHOTS_BY_DOCTYPE.setdefault(_snap.doctype, []).append(_snap)
+del _snap
+
+
+def capture_snapshots(doc, method=None):
+    """Fill any declared snapshot on `doc` that is still empty.
+
+    Only ever fills a blank, so re-saving a record — or amending a submitted
+    one — never re-derives a value that has already been recorded. That is the
+    whole point: a student who changes their name after a degree is complete
+    must not have the change reach the completed enrollment.
+    """
+    import frappe
+
+    for snap in SNAPSHOTS_BY_DOCTYPE.get(doc.doctype, ()):
+        if doc.get(snap.fieldname):
+            continue
+        student = doc.get(snap.link_field)
+        if not student:
+            continue
+        person = frappe.db.get_value("Student", student, "person")
+        if not person:
+            continue
+        value = frappe.db.get_value("Person", person, snap.person_field)
+        if value:
+            doc.set(snap.fieldname, value)
+
+
+def mirror_values(doctype, person_name):
+    """The mirror values a role record should be showing, as a dict.
+
+    Frappe fetches a `fetch_from` field in `_validate_links()`, which runs
+    *before* `validate()` — so a controller that resolves `person` inside
+    `validate()` (every role doctype until ADR 068 phase 5 makes the link reqd
+    and set up-front) misses the fetch and would save with empty mirrors on the
+    very first insert. This fills them for that one case. Once the link is
+    required and set before insert, Frappe does it and this can go.
+    """
+    import frappe
+
+    fields = [
+        (spec.person_field, binding.fieldname)
+        for spec, binding in bindings_for(doctype)
+        if binding.kind == MIRROR
+    ]
+    if not fields or not person_name:
+        return {}
+    spine = frappe.db.get_value(
+        "Person", person_name, [f for f, _ in fields], as_dict=True
+    )
+    if not spine:
+        return {}
+    return {target: spine.get(source) for source, target in fields}
+
+
+def role_doctypes_for_person():
+    """Role records whose existence obliges the spine to stay reachable."""
+    return (STUDENT, INSTRUCTOR, ALUMNI)
+
+
+def assert_reachable(person):
+    """A Person holding a role must keep a primary email.
+
+    The role mirrors (`Student.student_email_id`, `Instructor.prof_email`,
+    `Alumni Profile.email`) are `fetch_from person.primary_email`, and Frappe
+    *blanks* a mirror whose source is null. Those addresses provision the
+    portal login and are unique-indexed, so clearing the spine's email would
+    strand the login on the role's next save — long after the edit that caused
+    it. Refuse at the source instead.
+    """
+    import frappe
+    from frappe import _
+
+    if person.primary_email:
+        return
+    for doctype in role_doctypes_for_person():
+        if frappe.db.exists(doctype, {"person": person.name}):
+            frappe.throw(
+                _(
+                    "{0} holds a {1} record, so a primary email is required — "
+                    "the role's email address is a mirror of this field."
+                ).format(person.full_name or person.name, _(doctype))
+            )
+
+
+SPEC_BY_PERSON_FIELD = {spec.person_field: spec for spec in SPEC}
+SPEC_BY_ARG = {spec.arg: spec for spec in SPEC if spec.settable}
+
+#: Keyword names accepted by `ensure_person` / `update_person`.
+SETTABLE_ARGS = tuple(spec.arg for spec in SPEC if spec.settable)
+
+ROLE_DOCTYPES = (STUDENT, APPLICANT, INSTRUCTOR, ALUMNI)
+
+
+def person_field_for(arg):
+    """The Person fieldname a keyword argument writes to."""
+    spec = SPEC_BY_ARG.get(arg)
+    return spec.person_field if spec else None
+
+
+def bindings_for(doctype):
+    """Every (spec, binding) pair declared for one role doctype."""
+    return [(spec, spec.roles[doctype]) for spec in SPEC if doctype in spec.roles]
+
+
+def propagation_plan(person):
+    """What `Person.on_update` should push, as {doctype: {fieldname: value}}.
+
+    Blank values are pushed as "" only where `push_blank` says so: an empty
+    spine must never wipe a unique or required mirror such as a role's email.
+    """
+    plan = {}
+    for spec in SPEC:
+        value = person.get(spec.person_field)
+        for doctype, binding in spec.roles.items():
+            if not binding.propagate:
+                continue
+            if not value and not spec.push_blank:
+                continue
+            plan.setdefault(doctype, {})[binding.fieldname] = value or ""
+    return plan

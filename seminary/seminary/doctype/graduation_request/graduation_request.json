@@ -150,8 +150,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "How the name should be pronounced at the ceremony. Pre-fills from the student's profile if set.",
-   "fetch_from": "student.phonetic_name",
+   "description": "Recorded when this document was created. Deliberately not fetched: a later name change must not rewrite what the record said at the time (ADR 068).",
    "fetch_if_empty": 1,
    "fieldname": "phonetic_name_snapshot",
    "fieldtype": "Data",

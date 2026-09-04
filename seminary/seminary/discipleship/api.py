@@ -137,6 +137,26 @@ def _ancestors_inclusive(cohort):
     return chain
 
 
+def _assert_not_archived(cohort):
+    """An archived cohort is a record, not a group (ADR 066 section 7.6).
+
+    Archiving used to flip a field nothing read: leaders kept every power over a
+    cohort they had declared finished. It now ends the powers and keeps the
+    record -- members still see the cohort and its history, because archiving a
+    group should not delete anyone's account of having been in it, but nothing
+    further is added to it.
+
+    Reactivating is deliberately not blocked; it is the way back.
+    """
+    if frappe.db.get_value("Cohort", cohort, "status") == "Archived":
+        frappe.throw(
+            _(
+                "{0} is archived. Reactivate it before changing its members or "
+                "its shape."
+            ).format(frappe.db.get_value("Cohort", cohort, "cohort_name") or cohort)
+        )
+
+
 def _require_leader(cohort, user=None):
     """Ensure the caller may manage `cohort`: staff, or an active leader of the
     cohort or any of its ancestors (subtree oversight). Returns the caller's
@@ -164,10 +184,24 @@ def _active_count(cohort):
     return frappe.db.count("Cohort Membership", {"cohort": cohort, "active": 1})
 
 
-def _assert_room(cohort):
+def _warn_if_full(cohort):
+    """The ceiling is advice about a healthy group size, not a limit.
+
+    A registrar deliberately seating a thirteenth student in a group of twelve
+    knows the group is full; refusing them means the record stops matching the
+    room (ADR 066 section 7.4). Automated cuts are sized by the rule
+    (`Cohort Type.automation_max_size`), so what reaches here is always someone
+    making a decision, and a decision is exactly what a warning is for.
+    """
     max_size = frappe.db.get_value("Cohort", cohort, "max_size") or 0
     if max_size and _active_count(cohort) >= max_size:
-        frappe.throw(_("This cohort is at its maximum size ({0}).").format(max_size))
+        frappe.msgprint(
+            _("This cohort is at its suggested size of {0}. Adding anyway.").format(
+                max_size
+            ),
+            indicator="orange",
+            alert=True,
+        )
 
 
 @frappe.whitelist()
@@ -184,9 +218,10 @@ def invite_member(
     email (+ optional mobile) to get-or-create one via ensure_person, so the
     Person and User are created properly up front. Starts Invited until login."""
     inviter = _require_leader(cohort)
+    _assert_not_archived(cohort)
     if role not in ("Member", "Mentor"):
         frappe.throw(_("Role must be Member or Mentor."))
-    _assert_room(cohort)
+    _warn_if_full(cohort)
 
     if not person:
         if not (email and first_name):
@@ -231,7 +266,8 @@ def accept_invite(membership):
         )
     if doc.invite_status != "Invited":
         frappe.throw(_("This membership is not a pending invite."))
-    _assert_room(doc.cohort)
+    # No size check here. The seating decision was made by whoever sent the
+    # invite; warning the invitee about it tells them nothing they can act on.
     doc.invite_status = "Active"
     doc.joined_on = today()
     doc.save(ignore_permissions=True)
@@ -243,6 +279,7 @@ def resend_invite(membership):
     """Re-deliver a pending invite (In-App + Email) — for a leader to nudge."""
     doc = frappe.get_doc("Cohort Membership", membership)
     _require_leader(doc.cohort)
+    _assert_not_archived(doc.cohort)
     if doc.invite_status != "Invited":
         frappe.throw(_("This membership is not a pending invite."))
     person_doc = frappe.get_doc("Person", doc.person)
@@ -319,6 +356,7 @@ def remove_member(membership):
     """A leader removes a member from their cohort."""
     doc = frappe.get_doc("Cohort Membership", membership)
     _require_leader(doc.cohort)
+    _assert_not_archived(doc.cohort)
     if doc.is_leader:
         frappe.throw(_("Reassign leadership before removing a leader."))
     doc.invite_status = "Removed"
@@ -332,6 +370,7 @@ def split_cohort(cohort, new_cohort_name, member_ids, new_leader=None):
     selected active memberships into it, and seat its leader. Requires the Cohort
     Type to allow self-split."""
     _require_leader(cohort)
+    _assert_not_archived(cohort)
     parent = frappe.get_doc("Cohort", cohort)
     ct = frappe.get_cached_doc("Cohort Type", parent.cohort_type)
     if not ct.allow_self_split and not _is_staff(frappe.session.user):
@@ -511,6 +550,7 @@ def cohort_members(cohort):
 def reassign_leader(cohort, new_leader):
     """Hand cohort leadership to another active member."""
     _require_leader(cohort)
+    _assert_not_archived(cohort)
     nm = frappe.db.get_value(
         "Cohort Membership",
         {"cohort": cohort, "person": new_leader, "active": 1},
@@ -701,7 +741,7 @@ def create_cohorts_from_student_groups(
 
     include_instructor = cint(include_instructor_as_leader)
     leaders = frappe.parse_json(leaders_by_group) if leaders_by_group else {}
-    persist = cohorts_persist()
+    persist = cohorts_persist(cohort_type)
 
     grouped = {}
     for r in get_student_groups(course_schedule):
@@ -813,6 +853,7 @@ def place_student_in_cohort(course_schedule, student, cohort):
         frappe.throw(_("This course does not form community cohorts."))
     if frappe.db.get_value("Cohort", cohort, "cohort_type") != cohort_type:
         frappe.throw(_("That cohort is not of this course's cohort type."))
+    _assert_not_archived(cohort)
     person = student_person(student)
     if not person:
         frappe.throw(_("This student has no linked person record."))
@@ -827,7 +868,7 @@ def place_student_in_cohort(course_schedule, student, cohort):
         },
     ):
         frappe.throw(_("This student already has a pending or active membership here."))
-    _assert_room(cohort)
+    _warn_if_full(cohort)
     membership = frappe.get_doc(
         {
             "doctype": "Cohort Membership",

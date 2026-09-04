@@ -81,10 +81,16 @@
       <div v-if="isCbe">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Competencies') }}</h3>
-          <router-link v-if="selfEvalEnabled"
-            :to="{ name: 'CompetencySelfAssessment', params: { courseName: props.courseName } }">
-            <Button variant="subtle" size="sm">{{ __('My Self-Assessment') }}</Button>
-          </router-link>
+          <div class="flex items-center gap-2">
+            <router-link v-if="selfEvalEnabled"
+              :to="{ name: 'CompetencySelfAssessment', params: { courseName: props.courseName } }">
+              <Button variant="subtle" size="sm">{{ __('My Self-Assessment') }}</Button>
+            </router-link>
+            <router-link v-if="requiresPdp"
+              :to="{ name: 'PersonalDevelopmentPlan', params: { courseName: props.courseName } }">
+              <Button variant="subtle" size="sm">{{ __('My Development Plan') }}</Button>
+            </router-link>
+          </div>
         </div>
 
         <div v-if="competencyRows.length" class="space-y-3">
@@ -328,6 +334,9 @@ const competencyOverview = createResource({
 const isCbe = computed(() => !!competencyContext.data?.is_cbe)
 const selfEvalEnabled = computed(
   () => !!competencyContext.data?.framework?.course_self_eval
+)
+const requiresPdp = computed(
+  () => !!competencyContext.data?.framework?.require_pdp
 )
 const competencyRows = computed(() => competencyOverview.data || [])
 

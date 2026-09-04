@@ -42,6 +42,21 @@ class StudentApplicant(Document):
         self.set_title()
         self.validate_dates()
         self.validate_term()
+        self.set_access_key()
+
+    def set_access_key(self):
+        """An unguessable handle for the public payment page.
+
+        `/applicant-payment` and the guest-callable
+        `api.get_application_payment_url` used to take a bare docname, so
+        anyone could walk applicants and pull their payment link. That was
+        already true of `{academic_term}-{first_name}-{###}`; ADR 068 phase 3's
+        sequential `APP-.#####` makes it trivial. Generated in `validate` so it
+        is present on the document the web form returns to the browser, which
+        is the only moment the applicant can be handed it.
+        """
+        if not self.access_key:
+            self.access_key = frappe.generate_hash(length=32)
 
     def set_title(self):
         self.title = " ".join(
