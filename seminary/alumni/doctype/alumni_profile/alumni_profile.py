@@ -30,6 +30,44 @@ def class_year_for(academic_year=None, conclusion_date=None):
 class AlumniProfile(Document):
     def validate(self):
         self._resolve_person()
+        self._set_class_years()
+
+    def _set_class_years(self):
+        """Derive `class_year` on every graduation row, however it got there.
+
+        It used to be computed only in `record_graduation`, the path from a
+        completed Program Enrollment. A registrar adding a row by hand — an
+        alumnus of another institution, or one whose enrollment predates this
+        system — got nothing, and `class_year` is an `Int`, which Frappe stores
+        `NOT NULL DEFAULT 0`. So the field did not read as empty; it read as
+        **Class of 0**, a plausible-looking number that no screen would flag.
+        (The same shape as the geocoded `0.0, 0.0` in ADR 068 §7: an integer
+        column has no way to say "not known".)
+
+        Recomputed whenever it *can* be, rather than filled-if-blank, because
+        the row's academic year is editable and the class year is derived from
+        it — a stale derived value is the same defect wearing a different face.
+
+        But a row with nothing to derive from is not necessarily a broken row:
+        an alumnus imported from before this system may have a class year and
+        no academic year or conclusion date at all, which is exactly what the
+        old flat `class_year` column held and what the ADR 069 migration
+        carried across. Those keep what they have. Only a row that can neither
+        derive a year nor show a stored one is refused — that is the one that
+        would display Class of 0.
+        """
+        for row in self.graduations:
+            derived = class_year_for(row.academic_year, row.conclusion_date)
+            if derived:
+                row.class_year = derived
+            elif not row.class_year:
+                frappe.throw(
+                    _(
+                        "Row {0}: a graduation needs an academic year or a "
+                        "conclusion date — the class year is derived from one "
+                        "of them, and without either it would read as Class of 0."
+                    ).format(row.idx)
+                )
 
     def record_graduation(self, program_enrollment, conclusion_date=None):
         """Add a completed program, unless it is already recorded.
@@ -40,8 +78,6 @@ class AlumniProfile(Document):
         career — a second MA in a different emphasis is a different enrollment,
         not a duplicate row (ADR 069).
         """
-        from frappe.utils import getdate
-
         pe = program_enrollment
         if isinstance(pe, str):
             pe = frappe.get_doc("Program Enrollment", pe)
@@ -56,6 +92,10 @@ class AlumniProfile(Document):
             if pe.academic_term
             else None
         )
+        # `class_year` is deliberately not set here: `_set_class_years` derives
+        # it for every row on save, so this path and a hand-added row get the
+        # same answer from the same code. Computing it in both places is how
+        # the Desk path came to have no answer at all.
         self.append(
             "graduations",
             {
@@ -63,7 +103,6 @@ class AlumniProfile(Document):
                 "program_enrollment": pe.name,
                 "academic_year": academic_year,
                 "conclusion_date": conclusion_date,
-                "class_year": class_year_for(academic_year, conclusion_date),
             },
         )
         return False

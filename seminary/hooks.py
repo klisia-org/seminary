@@ -45,17 +45,34 @@ app_include_css = [
     # Styles for the Local Notes panel rendered by seminary_help.js.
     "assets/seminary/css/seminary_help.css",
 ]
+# **The `.bundle.js` suffix is load-bearing, not a naming convention.**
+# `bundled_asset()` (frappe/utils/jinja_globals.py) rewrites an entry to its
+# content-hashed build output *only* when the name contains `.bundle.`. Any
+# other path is emitted verbatim — no hash, no `?v=` — so a browser keeps
+# serving whatever it cached, forever, and `bench build` has nothing to bump.
+# That is not theoretical: a Desk tab went on calling a whitelisted method for
+# hours after the method had been deleted from this app, because it was still
+# running the previous day's copy of the address autocomplete.
+#
+# So: a file listed here is named `*.bundle.js`, lives in `public/js/`, and is
+# referenced by bare basename (esbuild picks up every `*.bundle.js` there and
+# `assets.json` maps the basename to the hashed URL).
 app_include_js = [
-    "assets/seminary/js/login_redirect.js",
-    "assets/seminary/js/seminary_help.js",
+    "login_redirect.bundle.js",
+    # Address autocomplete, shared by the Person form and the public
+    # application form (ADR 068 §7). No API key reaches the browser: the
+    # predictions come from our own whitelisted endpoints, so this is inert
+    # only when Address Geocoding Settings is disabled.
+    "address_autocomplete.bundle.js",
+    "seminary_help.bundle.js",
     # Fills a Frappe gap: a DocType's `documentation` link is rendered only in
     # list-view empty-state, never in form view. Adds a form-header Help icon.
     # Registry: docs/frappe-workarounds.md (#5).
-    "assets/seminary/js/seminary_doc_link.js",
+    "seminary_doc_link.bundle.js",
     # Guards an upstream Frappe bug: Script Reports with a ref_doctype crash on
     # render when the client meta lacks `masked_fields`.
     # Registry: docs/frappe-workarounds.md (#1); see project_frappe_quirks.md.
-    "assets/seminary/js/masked_fields_report_guard.js",
+    "masked_fields_report_guard.bundle.js",
 ]
 # app_include_js = "/assets/seminary/js/seminary.js"
 # app_include_js = "seminary/public/js/global_seminary.js"
@@ -147,7 +164,14 @@ domains = {
     "Seminary": "seminary.seminary.setup",
 }
 # include js, css files in header of web form
-webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.js"}
+webform_include_js = {
+    "Student Applicant": [
+        # Read from disk and inlined into the form's own script, so this one is
+        # always current regardless of the bundling above.
+        "public/js/address_autocomplete.bundle.js",
+        "public/js/student_applicant_webform.js",
+    ]
+}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
@@ -488,6 +512,10 @@ scheduler_events = {
         # Content gating means a student who stops reflecting locks themselves
         # out; nothing else would surface that (ADR 065).
         "seminary.seminary.cbe.notify_stalled_self_assessments",
+        # A geocode that failed because the provider was down that afternoon
+        # would otherwise stay missing until the address happened to change
+        # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.
+        "seminary.seminary.integrations.geocoding.retry_failed_geocodes",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [

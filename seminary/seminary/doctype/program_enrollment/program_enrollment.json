@@ -72,7 +72,7 @@
    "search_index": 1
   },
   {
-   "description": "Recorded when this document was created. Deliberately not fetched: a later name change must not rewrite what the record said at the time (ADR 068).",
+   "description": "Recorded when this enrollment was created. Corrected from the Person while the enrollment is Active or on Leave of Absence; frozen once it concludes, so a later name change never rewrites a completed degree or the diploma cut from it (ADR 068).",
    "fieldname": "student_name",
    "fieldtype": "Read Only",
    "in_global_search": 1,

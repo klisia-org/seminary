@@ -15,11 +15,11 @@ truth for Frappe, this just refuses to let it drift).
 Adding an attribute means adding one `Spec`. Forgetting a doctype then fails
 the suite instead of becoming the next hole.
 
-**This module currently encodes the spine as it is, not as ADR 068 leaves it.**
-Phase 1 is deliberately behaviour-neutral: every role binding is `LOCAL`, and
-`gender` is still `FILL_ONLY`. The flips — `LOCAL` to `MIRROR`/`SNAPSHOT`, and
-`gender`/address to `AUTHORED` — land in phases 4 and 7, where the JSON changes
-alongside them and the agreement test moves in lockstep.
+A `LOCAL` binding left here is a deliberate statement, not a leftover: the
+Student Applicant bindings are `LOCAL` because that doctype captures data
+*before* a Person exists (ADR 068 §1, §9), so it cannot mirror one. Everywhere
+else a role binding is a `MIRROR` or a `SNAPSHOT`, and the agreement test in
+`test_person.py` fails if a JSON quietly changes kind underneath the registry.
 """
 
 # --------------------------------------------------------------- write modes
@@ -202,7 +202,15 @@ SPEC = (
     # `mailing_country` below. They were conflated until ADR 068 phase 2, which
     # is how a student's self-service address edit could reach the SMS provider
     # selector.
-    Spec("country", arg="country", mode=FILL_ONLY),
+    #
+    # The applicant's single `country` column feeds both, and that is declared
+    # rather than accidental: it is the only country an intake form asks for,
+    # so it is the best first guess at which provider can reach them. FILL_ONLY
+    # keeps it a *seed* — once a Person exists, a later postal move updates
+    # `mailing_country` and leaves the routing field where an admin put it.
+    Spec(
+        "country", arg="country", mode=FILL_ONLY, roles={APPLICANT: Binding("country")}
+    ),
     Spec(
         "date_of_birth",
         arg="date_of_birth",
@@ -269,12 +277,19 @@ SPEC = (
         arg="pincode",
         mode=AUTHORED,
         roles={
-            # The applicant spells it `zipcode`, which is why `enroll_student`'s
-            # same-name mapper drops the postal code at admission. Phase 7
-            # renames the field and this binding follows.
-            APPLICANT: Binding("zipcode"),
+            # Was `zipcode` on the applicant (labelled "ZIP cide") until ADR
+            # 068 phase 7 renamed it. One spelling per attribute is the point:
+            # a second name is what let `enroll_student`'s same-name mapper
+            # drop the postal code at admission without anyone noticing.
+            APPLICANT: Binding("pincode"),
         },
     ),
+    # Resolved from the address by `integrations.geocoding`, never typed — so
+    # they are not settable through the spine's entry points, and "mandatory"
+    # for them can only mean *resolvable*, which a readiness pre-flight checks
+    # rather than a `reqd` flag on a form (ADR 068 §7).
+    Spec("latitude", derived=True, sensitive=True),
+    Spec("longitude", derived=True, sensitive=True),
     Spec(
         "blood_group",
         arg="blood_group",
@@ -307,6 +322,8 @@ SPEC = (
             # are independently writable. Phase 4 makes them mirrors.
             STUDENT: Binding("image", MIRROR, propagate=True),
             INSTRUCTOR: Binding("profileimage", MIRROR, propagate=True),
+            # Capture only, like the rest of the applicant's personal block.
+            APPLICANT: Binding("image"),
             # A mirror of a mirror: the alumnus's photo comes from their
             # Student record rather than from the spine, so an alumnus who was
             # never a student here has no photo at all.
@@ -348,12 +365,23 @@ class Snapshot:
     agreement test asserts these fields declare none.
     """
 
-    def __init__(self, doctype, fieldname, person_field, link_field="student"):
+    def __init__(
+        self, doctype, fieldname, person_field, link_field="student", resync_while=None
+    ):
         self.doctype = doctype
         self.fieldname = fieldname
         self.person_field = person_field
         #: Link to the Student this document is about.
         self.link_field = link_field
+        #: Filters describing a record still open to correction. While a
+        #: document matches them, a spine edit re-takes the snapshot; once it
+        #: stops matching, the value is final. `None` means final on capture.
+        #:
+        #: This is the difference between protecting a legal record and
+        #: punishing a typo: a name misspelt at enrollment would otherwise
+        #: follow the student through a four-year program with no way to fix
+        #: it, because the field is read-only and the document is submitted.
+        self.resync_while = resync_while
 
     def __repr__(self):
         return "Snapshot(%r, %r)" % (self.doctype, self.fieldname)
@@ -362,7 +390,20 @@ class Snapshot:
 SNAPSHOTS = (
     # The diploma chain. `Diploma.legal_name` was already a true snapshot; the
     # two hops feeding it were not.
-    Snapshot("Program Enrollment", "student_name", "full_name"),
+    Snapshot(
+        "Program Enrollment",
+        "student_name",
+        "full_name",
+        # Corrigible while the enrollment is still running, frozen the moment
+        # it concludes. `Graduated` is the one that reaches the diploma;
+        # `Withdrawn`, `Dismissed` and `Transferred` are equally records of a
+        # decision taken on a date, so they freeze too. A cancelled enrollment
+        # (docstatus 2) is not corrected, it is void.
+        resync_while={
+            "status": ["in", ("Active", "Leave of Absence")],
+            "docstatus": ["<", 2],
+        },
+    ),
     Snapshot("Graduation Request", "phonetic_name_snapshot", "phonetic_name"),
     # Records of a decision or an event on a date. Renaming the person does not
     # change what the register said when it was written.
@@ -399,6 +440,51 @@ def capture_snapshots(doc, method=None):
         value = frappe.db.get_value("Person", person, snap.person_field)
         if value:
             doc.set(snap.fieldname, value)
+
+
+def resync_open_snapshots(person_name):
+    """Re-take every snapshot on a document still open to correction.
+
+    A snapshot is not a mirror: it records what was true when the document was
+    written, and `capture_snapshots` only ever fills a blank. That is right for
+    a concluded enrollment — the name on a completed degree must not move — and
+    wrong for a running one, where a misspelling entered at enrollment would
+    otherwise be uncorrectable for the length of the program. The field is
+    `Read Only` with no `allow_on_submit`, so nobody could fix it by hand
+    either.
+
+    Which documents are still open is declared per snapshot (`resync_while`),
+    so the rule lives next to the field it governs rather than in a controller
+    that the next reader has to find.
+
+    `db.set_value` for the same reason `propagate_to_roles` uses it: these
+    documents are submitted, the field is read-only, and running hooks here
+    would recurse back into the spine.
+    """
+    import frappe
+
+    students = frappe.get_all("Student", filters={"person": person_name}, pluck="name")
+    if not students:
+        return 0
+
+    resynced = 0
+    for snap in SNAPSHOTS:
+        if not snap.resync_while:
+            continue
+        value = frappe.db.get_value("Person", person_name, snap.person_field)
+        if not value:
+            # An empty spine never overwrites a recorded name.
+            continue
+        filters = dict(snap.resync_while)
+        filters[snap.link_field] = ["in", students]
+        for name in frappe.get_all(snap.doctype, filters=filters, pluck="name"):
+            if frappe.db.get_value(snap.doctype, name, snap.fieldname) == value:
+                continue
+            frappe.db.set_value(
+                snap.doctype, name, snap.fieldname, value, update_modified=False
+            )
+            resynced += 1
+    return resynced
 
 
 def mirror_values(doctype, person_name):
@@ -494,3 +580,82 @@ def propagation_plan(person):
                 continue
             plan.setdefault(doctype, {})[binding.fieldname] = value or ""
     return plan
+
+
+# ------------------------------------------------------------------- capture
+
+
+def spine_kwargs(doc, doctype=None):
+    """The `ensure_person`/`update_person` keywords a role record carries.
+
+    Derived from the registry rather than written out at the call site. The
+    hand-written version is what lost the applicant's address and gender for
+    the whole life of ADR 042: `_promote_to_person` passed seven arguments,
+    the registry declares fourteen, and nothing anywhere compared the two.
+    Adding a `Spec` with an APPLICANT binding now reaches the spine by itself.
+
+    `primary_email` is absent by design — it is `ensure_person`'s positional
+    match heuristic as well as a value, so the caller passes it separately.
+    """
+    doctype = doctype or doc.doctype
+    return {
+        spec.arg: doc.get(binding.fieldname)
+        for spec, binding in bindings_for(doctype)
+        if spec.settable
+    }
+
+
+def capture_fields(doctype):
+    """Fieldnames on `doctype` that hold a shared attribute someone types.
+
+    Excludes the bindings a role computes for itself: `Student Applicant.title`
+    is `set_title()`'s output, not a captured datum, so freezing it after
+    admission would only make the controller fight its own form.
+    """
+    return tuple(
+        binding.fieldname
+        for spec, binding in bindings_for(doctype)
+        if spec.person_field != "full_name"
+    )
+
+
+#: The attributes an intake form must actually collect. Declared here so ADR
+#: 067's per-program curation layer extends this list instead of starting a
+#: second, parallel one — which is the failure this whole module exists to
+#: prevent. Deliberately short: it names what breaks something downstream if
+#: absent, not everything a registrar would like to have.
+CAPTURE_REQUIRED = ("first_name", "primary_email", "gender")
+
+
+def assert_capture_complete(doc, doctype=None):
+    """Refuse a role record that skipped a required shared attribute.
+
+    `Program.application_web_form` and
+    `Seminary Settings.default_application_web_form` let an admin point intake
+    at any Web Form built against Student Applicant. A form that simply omits
+    a field cannot be caught on the client — the shared script prompts, but a
+    prompt is not a guarantee — and the omission is invisible afterwards,
+    because the applicant record looks complete and only the Person is empty.
+    So the check lives on the document, where every form has to pass through it.
+    """
+    import frappe
+    from frappe import _
+
+    doctype = doctype or doc.doctype
+    meta = frappe.get_meta(doctype)
+    missing = []
+    for person_field in CAPTURE_REQUIRED:
+        binding = SPEC_BY_PERSON_FIELD[person_field].roles.get(doctype)
+        if not binding:
+            continue
+        if not doc.get(binding.fieldname):
+            df = meta.get_field(binding.fieldname)
+            missing.append(_(df.label) if df and df.label else binding.fieldname)
+    if missing:
+        frappe.throw(
+            _(
+                "{0} must be recorded on every application. If the form you used "
+                "does not ask for it, the form itself is incomplete."
+            ).format(", ".join(missing)),
+            title=_("Missing required information"),
+        )

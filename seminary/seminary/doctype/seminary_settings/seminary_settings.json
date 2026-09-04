@@ -36,11 +36,9 @@
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
-  "scholarships_section",
   "section_break_7",
-  "instructor_created_by",
-  "column_break_zlxm",
   "portal_disciplinary",
+  "column_break_zlxm",
   "withdrawal_section",
   "term_based_withdrawal_dates",
   "column_break_withdrawal",
@@ -214,13 +212,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "Full Name",
-   "fieldname": "instructor_created_by",
-   "fieldtype": "Select",
-   "label": "Instructor Records to be created by",
-   "options": "Full Name\nNaming Series\nEmployee Number"
-  },
-  {
    "default": "0",
    "depends_on": "eval:doc.has_oikonomos",
    "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
@@ -331,11 +322,6 @@
    "fieldname": "advancetb",
    "fieldtype": "Check",
    "label": "Auto-advance students in Time-based Programs?"
-  },
-  {
-   "fieldname": "scholarships_section",
-   "fieldtype": "Section Break",
-   "label": "Scholarships"
   },
   {
    "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
@@ -779,7 +765,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-26 04:49:22.147387",
+ "modified": "2026-09-04 09:42:36.727902",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

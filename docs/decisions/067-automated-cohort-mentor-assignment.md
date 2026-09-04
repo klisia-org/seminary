@@ -226,29 +226,21 @@ automation:
   bypassing every hook including the geocoding trigger. It is deleted and its fields passed to the
   `ensure_person` call beside it.
 
-### 8. Coordinates, and who may see them
+### 8. Coordinates come from ADR 068
 
-`Person` gains `latitude`, `longitude`, `geo_status`, `geo_precision`, `geo_source`, `geo_resolved_on`
-and `geo_address_hash`, at **permlevel 1**. The hash of the normalised address makes "has this changed
-since we geocoded it?" an equality test — it stops re-billing an unchanged address and makes a stale
-coordinate detectable rather than merely wrong.
+Superseded by **ADR 068 §7**, which owns having the coordinate at all: the fields on `Person`, the
+`Address Geocoding Settings` single with its Google and vendor-proxy modes, the queued-on-address-change
+trigger, and the daily sweeper that retries a `Failed` lookup but never an `Unresolvable` one.
 
-A home coordinate is more sensitive than the address it came from, because it is trivially mappable.
-Registrar and Seminary Manager read and write at permlevel 1; **Program Chair gets nothing there** —
-they get counts from the readiness report, never a coordinate. The engine reads coordinates server-side
-and returns none to any client.
+What stays here is what this ADR is actually about — how distance *orders a pool*, the readiness
+pre-flight that names mentors without a usable point, and the caveat that distance is only meaningful
+for a distributed program.
 
-**Geocoding is queued on address change, never inline.** A synchronous third-party call inside
-`validate` is how an admission web form times out and how an import of 400 rows becomes a 20-minute
-request. It never throws and never blocks a save: a student must be admissible while the geocoder is
-down. `Unresolvable` (the provider said "no such place") is never retried automatically and clears only
-when the address changes; `Failed` (network, quota) is retried by a daily sweeper up to a bound.
-
-**Provider abstraction, Google adapter, vendor-proxy mode.** Schools we host configure nothing: the
-proxy carries a site token and we hold the key. Nominatim was considered and rejected — its usage
-policy does not permit this shape of lookup, and self-hosting means owning the data refresh. The
-adapter shape copies `seminary/seminary/plagiarism/` and calls through
-`integrations/client.py`, so every request is logged as an Integration Request for free.
+Two consequences of that split worth carrying: `geo_status`, not latitude, is what says whether a
+person has a usable point (Frappe's Float columns are NOT NULL DEFAULT 0, so an unresolved coordinate
+reads as `0.0, 0.0` — a real place in the Gulf of Guinea). And **Program Chair gets nothing at
+permlevel 1**: they get counts from the readiness report, never a coordinate. The engine reads
+coordinates server-side and returns none to any client.
 
 **Consent belongs at collection.** A disclosure on the application form ("your address is used to
 assign you a mentor near you"), and enabling the provider account is the school's own auditable act of

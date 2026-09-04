@@ -18,6 +18,7 @@ from frappe import _
 
 def after_install():
     setup_fixtures()
+    setup_genders()
     create_studentappl_role()
     create_student_role()
     create_alumni_role()
@@ -1518,20 +1519,67 @@ def setup_user_bible_field():
         ).insert(ignore_permissions=True)
 
 
-def setup_genders():
-    """Disable non-binary genders. Runs after fixtures are loaded."""
+#: Genders a seminary starts with. Every other row Frappe's setup wizard seeds
+#: (Genderqueer, Non-Conforming, Transgender, Other, Prefer not to say) is
+#: switched off — not deleted, because that is the school's call to reverse and
+#: because deleting a Gender orphans any record already pointing at it.
+DEFAULT_GENDERS = ("Male", "Female")
 
-    # Check if our custom "enabled" field exists yet
-    if not frappe.db.has_column("Gender", "enabled"):
-        return
 
-    # Disable all genders first
-    frappe.db.sql("UPDATE `tabGender` SET enabled = 0")
+def ensure_gender_disabled_field():
+    """Give Gender a `disabled` Check, and let Frappe do the filtering.
 
-    # Enable only Male and Female
-    frappe.db.sql(
-        "UPDATE `tabGender` SET enabled = 1 WHERE name IN (%s, %s)",
-        (_("Male"), _("Female")),
+    The name is load-bearing. `frappe/desk/search.py` excludes rows from every
+    Link picker when the target doctype has a **Check field called `disabled`**
+    — no `link_filters`, no `set_query`, no per-field wiring, and it applies
+    equally to Desk forms and Web Forms. That last part matters: `Web Form
+    Field` has no `link_filters` column at all, so a per-field filter could not
+    have reached the public application form even if we wrote one.
+
+    This replaces an `enabled` Check that did the same job inverted, which
+    nothing ever filtered on — so all seven of Frappe's seeded genders were
+    offered to applicants.
+    """
+    from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+    create_custom_fields(
+        {
+            "Gender": [
+                {
+                    "fieldname": "disabled",
+                    "fieldtype": "Check",
+                    "label": "Disabled",
+                    "insert_after": "gender",
+                    "description": _(
+                        "Hidden from every Gender picker, including the public "
+                        "application form. Existing records keep their value."
+                    ),
+                }
+            ]
+        },
+        ignore_validate=True,
     )
 
-    frappe.db.commit()
+
+def setup_genders():
+    """Seed the default gender selection — **once**, never on every migrate.
+
+    This used to run from `after_migrate` and begin with
+    `UPDATE tabGender SET enabled = 0`, so a school that enabled a gender in
+    Desk had it switched off again by the next deploy. Seeding a
+    user-configurable table on every migrate is the same defect as fixturing
+    one; the value pass is now create-only and lives behind an explicit
+    "has anyone chosen yet" check.
+    """
+    ensure_gender_disabled_field()
+
+    already_chosen = frappe.db.count("Gender", {"disabled": 1})
+    if already_chosen:
+        return
+
+    for name in frappe.get_all("Gender", pluck="name"):
+        # Match on the translated label as well: `install_fixtures` seeds these
+        # through `_()`, so a site set up in pt-BR has "Masculino", not "Male".
+        keep = name in DEFAULT_GENDERS or name in [_(g) for g in DEFAULT_GENDERS]
+        if not keep:
+            frappe.db.set_value("Gender", name, "disabled", 1, update_modified=False)

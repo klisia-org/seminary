@@ -35,6 +35,38 @@ class Person(Document):
     def on_update(self):
         self.warn_on_login_email_drift()
         self.propagate_to_roles()
+        self.resync_open_snapshots()
+        self.refresh_coordinates()
+
+    def resync_open_snapshots(self):
+        """Correct the snapshots on documents that are still running.
+
+        Distinct from `propagate_to_roles`, and deliberately so: that keeps
+        mirrors current on records that describe *this person now*, while this
+        re-takes a snapshot on a record that describes something that happened
+        to them and has not finished happening yet. A concluded enrollment is
+        never touched by either (ADR 068 §3).
+        """
+        from seminary.seminary.person_fields import resync_open_snapshots
+
+        resync_open_snapshots(self.name)
+
+    def refresh_coordinates(self):
+        """Queue a geocode when the address changed (ADR 068 §7).
+
+        Queued, never inline: an intake form must not block on a third party
+        and a provider outage must not fail the save. This hangs off `Person`
+        rather than each intake path because phase 5 left exactly one address
+        writer — `person_import_batch._apply_person_address` used to write with
+        `db.set_value`, which runs no hooks, so an imported address would never
+        have reached this.
+        """
+        from seminary.seminary.integrations import geocoding
+
+        if not geocoding.is_enabled():
+            return
+        if geocoding.address_changed(self):
+            geocoding.enqueue_for(self.name)
 
     def set_full_name(self):
         self.full_name = " ".join(

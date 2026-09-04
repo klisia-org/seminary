@@ -21,8 +21,10 @@ from frappe.tests import IntegrationTestCase
 from seminary.seminary import person as spine
 from seminary.seminary import person_fields as registry
 from seminary.seminary.tests.cohort_fixtures import (
+    make_enrollment,
     make_instructor,
     make_person,
+    make_program,
     make_student,
     make_user,
 )
@@ -316,6 +318,85 @@ class TestSnapshotsDoNotMove(IntegrationTestCase):
         self.assertIn(
             "MarriedName",
             frappe.db.get_value("Student", student.name, "student_name"),
+        )
+
+    def test_a_running_enrollment_still_follows_a_correction(self):
+        """Frozen-on-capture would punish a typo, not protect a diploma.
+
+        The field is `Read Only` with no `allow_on_submit` on a submitted
+        document, so a name misspelt at enrollment could not be fixed at all —
+        it would follow the student for the length of the program. While the
+        enrollment is running there is no legal record to protect yet, so the
+        spine stays authoritative over it.
+        """
+        person = make_person("Typo")
+        student = make_student(person)
+        enrollment = make_enrollment(student, make_program())
+        self.assertEqual(
+            frappe.db.get_value("Program Enrollment", enrollment.name, "status"),
+            "Active",
+        )
+
+        person.reload()
+        person.last_name = "Corrected"
+        person.save(ignore_permissions=True)
+
+        self.assertIn(
+            "Corrected",
+            frappe.db.get_value("Program Enrollment", enrollment.name, "student_name"),
+        )
+
+    def test_a_concluded_enrollment_does_not(self):
+        """The whole point of the snapshot, tested on each concluding status —
+        `Graduated` is the one that reaches a diploma, but a withdrawal or a
+        dismissal is equally a record of a decision taken on a date."""
+        for status in ("Graduated", "Withdrawn", "Dismissed", "Transferred"):
+            with self.subTest(status=status):
+                person = make_person("Alum%s" % status)
+                student = make_student(person)
+                enrollment = make_enrollment(student, make_program())
+                frappe.db.set_value(
+                    "Program Enrollment",
+                    enrollment.name,
+                    {"status": status, "pgmenrol_active": 0},
+                    update_modified=False,
+                )
+                recorded = frappe.db.get_value(
+                    "Program Enrollment", enrollment.name, "student_name"
+                )
+
+                person.reload()
+                person.last_name = "MarriedName"
+                person.save(ignore_permissions=True)
+
+                self.assertEqual(
+                    frappe.db.get_value(
+                        "Program Enrollment", enrollment.name, "student_name"
+                    ),
+                    recorded,
+                    "a %s enrollment was rewritten by a later rename" % status,
+                )
+
+    def test_an_empty_spine_never_blanks_a_recorded_name(self):
+        """`resync_while` widens who may write the field; it must not widen it
+        to nobody. A snapshot is a record, and an absent source is not a
+        correction."""
+        person = make_person("Present")
+        student = make_student(person)
+        enrollment = make_enrollment(student, make_program())
+        recorded = frappe.db.get_value(
+            "Program Enrollment", enrollment.name, "student_name"
+        )
+        self.assertTrue(recorded)
+
+        frappe.db.set_value(
+            "Person", person.name, "full_name", "", update_modified=False
+        )
+        registry.resync_open_snapshots(person.name)
+
+        self.assertEqual(
+            frappe.db.get_value("Program Enrollment", enrollment.name, "student_name"),
+            recorded,
         )
 
 

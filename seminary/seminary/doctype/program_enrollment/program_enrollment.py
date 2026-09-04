@@ -465,32 +465,17 @@ def get_emphasis(doctype, txt, searchfield, start, page_len, filters):
     )
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def get_students(doctype, txt, searchfield, start, page_len, filters):
-    enrolled_students = []
-    if not filters.get("academic_term"):
-        filters["academic_term"] = frappe.defaults.get_defaults().academic_term
-        enrolled_students = frappe.get_list(
-            "Program Enrollment",
-            filters={
-                "academic_term": filters.get("academic_term"),
-            },
-            fields=["student"],
-        )
-
-    students = [d.student for d in enrolled_students] if enrolled_students else [""]
-
-    return frappe.db.sql(
-        """select
-			name, student_name from tabStudent
-		where
-			name not in (%s)
-		and
-			`%s` LIKE %s
-		order by
-			idx desc, name
-		limit %s, %s"""
-        % (", ".join(["%s"] * len(students)), searchfield, "%s", "%s", "%s"),
-        tuple(students + ["%%%s%%" % txt, start, page_len]),
-    )
+# `get_students` lived here: a whitelisted Link-picker query offering students
+# *not* already enrolled in a term. Removed rather than repaired.
+#
+# No `set_query` in seminary, oikonomos or aretenic ever pointed at it, so it
+# had never run. And it could not have worked: it defaulted the term from
+# `frappe.defaults.get_defaults().academic_term`, a site default published from
+# a Seminary Settings field that no longer exists, so the term resolved to
+# None, the enrolled-student query matched nothing, and the picker excluded the
+# sentinel `""` — returning every student, in a control whose whole purpose was
+# to exclude the enrolled ones.
+#
+# If this is ever wanted again, `api.current_academic_term()` is the term
+# source, and the exclusion belongs in a `frappe.get_all` with a `not in`
+# filter rather than string-interpolated SQL.

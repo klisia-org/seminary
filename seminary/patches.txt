@@ -3,6 +3,8 @@ seminary.seminary.patches.convert_room_capacity_to_int
 seminary.seminary.patches.stash_scholarship_links
 seminary.seminary.patches.rename_department_to_academic_unit
 seminary.seminary.patches.backfill_outcome_code_fields
+seminary.seminary.patches.rename_geocoding_settings
+seminary.seminary.patches.applicant_zipcode_to_pincode
 
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
@@ -54,3 +56,7 @@ seminary.seminary.patches.backfill_person_shared_attributes
 seminary.seminary.patches.opaque_role_docnames
 seminary.seminary.patches.assert_one_role_record_per_person
 seminary.seminary.patches.alumni_graduations_to_rows
+seminary.seminary.patches.promote_applicant_attributes
+seminary.seminary.patches.drop_instructor_created_by
+seminary.seminary.patches.gender_enabled_to_disabled
+seminary.seminary.patches.backfill_alumni_class_year

@@ -43,9 +43,17 @@ def make_person(first="Test", last=None, user=None, email=None):
             "first_name": PREFIX + " " + first,
             "last_name": last or uid(),
             "user": user,
+            # `Person.primary_email` is unique, and a per-process counter is
+            # not: it restarts at zero every run, so any fixture record that
+            # escapes a rollback poisons every later run with a duplicate. The
+            # random suffix makes the address unique across runs, not just
+            # within one.
             "primary_email": email
             or (frappe.db.get_value("User", user, "email") if user else None)
-            or ("%s.person.%d@example.test" % (PREFIX.lower(), _seq[0])),
+            or (
+                "%s.person.%d.%s@example.test"
+                % (PREFIX.lower(), _seq[0], frappe.generate_hash(length=6))
+            ),
         }
     )
     doc.insert(ignore_permissions=True)
@@ -53,7 +61,12 @@ def make_person(first="Test", last=None, user=None, email=None):
 
 
 def make_user(roles=(), email=None):
-    email = email or ("%s.%d@example.test" % (PREFIX.lower(), _seq[0] + 1))
+    # Unique across runs, not merely within one — see make_person. A User that
+    # survives a rollback would otherwise be silently reused by a later test.
+    email = email or (
+        "%s.%d.%s@example.test"
+        % (PREFIX.lower(), _seq[0] + 1, frappe.generate_hash(length=6))
+    )
     _seq[0] += 1
     if frappe.db.exists("User", email):
         return frappe.get_doc("User", email)
@@ -116,7 +129,13 @@ def make_alumni_profile(person, program_completed=None, enabled=1):
         person.reload()
     doc = intake.make_alumni_profile(person, user=person.user, enabled=enabled)
     if program_completed:
-        doc.append("graduations", {"program": program_completed})
+        # A conclusion date even though these tests only care about the
+        # program: `class_year` is derived from the academic year or this, and
+        # a row with neither is refused rather than saved as Class of 0.
+        doc.append(
+            "graduations",
+            {"program": program_completed, "conclusion_date": today()},
+        )
         doc.save(ignore_permissions=True)
     return doc
 

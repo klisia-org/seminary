@@ -102,28 +102,13 @@ def get_leave_applications(date):
     return leave_applicants
 
 
-def get_transportation_details(date, student_list):
-    academic_year = frappe.get_all(
-        "Academic Year",
-        filters=[["year_start_date", "<=", date], ["year_end_date", ">=", date]],
-    )
-    if academic_year:
-        academic_year = academic_year[0].name
-    elif frappe.defaults.get_defaults().academic_year:
-        academic_year = frappe.defaults.get_defaults().academic_year
-    else:
-        return {}
-
-    transportation_details = frappe.get_all(
-        "Program Enrollment",
-        fields=["student", "mode_of_transportation", "vehicle_no"],
-        filters={
-            "student": ("in", student_list),
-            "academic_year": academic_year,
-            "docstatus": ("not in", ["2"]),
-        },
-    )
-    transportation_map = {}
-    for d in transportation_details:
-        transportation_map[d.student] = [d.mode_of_transportation, d.vehicle_no]
-    return transportation_map
+# `get_transportation_details` lived here, mapping each absent student to their
+# `mode_of_transportation` and `vehicle_no` so a school could ring the bus.
+# Removed: nothing in this report called it, **and neither field exists on
+# Program Enrollment** — they are ERPNext Education leftovers, so the
+# `frappe.get_all` would have raised on unknown columns the first time it ran.
+# Its academic-year fallback read a site default that this app stopped
+# publishing when those Seminary Settings fields were dropped.
+#
+# A seminary is not a school district; if transport ever matters it is a
+# property of a person, not of an enrollment.

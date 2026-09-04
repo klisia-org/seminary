@@ -1,7 +1,26 @@
 # 042 — Person identity spine
 
 **Date:** 2026-06-10
-**Status:** Accepted
+**Status:** Accepted — **superseded in part by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
+
+The core decision below stands: Person is a spine beside the role doctypes, not a replacement, with one
+mutation point and an opaque id. Three clauses do not, and 068 replaces them:
+
+- **The mirror mechanism.** "Role contact fields flip read-only once the link exists
+  (`read_only_depends_on: doc.person`, which leaves them typeable on the creation form where
+  `fetch_from` would not)" — Person-first removes that reason, because nothing is typed on a role
+  creation form when the Person already exists. Those fields are `fetch_from person.*` mirrors now, and
+  the ones that are not read-heavy were deleted rather than mirrored.
+- **"Student/Applicant/Instructor/Alumni keep their naming series ... untouched."** Three of the four
+  were keyed on mutable personal data — `format:{instructor_name}`, `field:email`,
+  `format:{academic_term}-{first_name}-{###}` — which is exactly what this ADR says identity must not
+  be. They are opaque now (`INST-`, `ALUM-`, `APP-`); Student was already `format:{YY}-{#####}`.
+- **"Two onboarding heads."** There is one rule — Person first — and one named exception, Student
+  Applicant, because a guest has no User. The asymmetry was the point that got lost.
+
+Also superseded: "hydrated server-side in `validate`". `_validate_links()` runs *before* `validate()`,
+so a `person` resolved there missed the fetch until the second save; `person` is now reqd and set
+before insert.
 
 ## Context
 
