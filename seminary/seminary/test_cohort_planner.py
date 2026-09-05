@@ -1363,3 +1363,67 @@ class TestUnplacedIssueCode(PlannerCase):
         t = self.make_type()
         _cols, rows = report.execute({"cohort_type": t.name, "issue": "unplaced"})
         self.assertEqual(rows, [])
+
+
+class TestADerivedDetailExplainsItself(PlannerCase):
+    """ "Required" on a coordinate reaches no form, so the row has to say what
+    it *does* mean and what would actually make the datum arrive (ADR 067 §9)."""
+
+    def _latitude(self):
+        return frappe.get_doc("Mandatory Personal Field", "latitude")
+
+    def test_it_is_named_the_way_a_school_would_name_it(self):
+        """Nobody requires a "Latitude"; they require an address we can find."""
+        doc = self._latitude()
+        doc.save(ignore_permissions=True)
+        self.assertEqual(doc.field_label, "Address we could locate")
+
+    def test_the_sources_name_the_minimum_and_what_it_buys(self):
+        doc = self._latitude()
+        doc.save(ignore_permissions=True)
+        self.assertIn("Never typed", doc.sources)
+        self.assertIn("City", doc.sources)
+        # The geocoder reads mailing_country, not the comms routing country.
+        self.assertIn("Mailing Country", doc.sources)
+        self.assertIn("town-to-town", doc.sources)
+        self.assertIn("Address Line 1", doc.sources)
+
+    def test_requiring_it_warns_that_no_form_asks_for_it(self):
+        for field in ("city", "mailing_country"):
+            frappe.db.set_value("Mandatory Personal Field", field, "mandatory", 0)
+        frappe.clear_messages()
+        doc = self._latitude()
+        doc.mandatory = 1
+        doc.save(ignore_permissions=True)
+
+        messages = " ".join(str(m) for m in frappe.get_message_log())
+        self.assertIn("City", messages)
+        self.assertIn("Mailing Country", messages)
+        self.assertIn("town", messages)
+
+    def test_the_warning_stops_once_the_minimum_is_required(self):
+        fx.require_personal_field("city", "mailing_country")
+        frappe.clear_messages()
+        doc = self._latitude()
+        doc.mandatory = 1
+        doc.save(ignore_permissions=True)
+
+        messages = " ".join(str(m) for m in frappe.get_message_log())
+        self.assertNotIn("Nothing on a form asks for this", messages)
+
+    def test_it_never_joins_a_form_gate_however_it_is_set(self):
+        """The whole point: a derived detail cannot be demanded of anybody."""
+        from seminary.seminary import person_fields
+        from seminary.seminary.doctype.mandatory_personal_field import (
+            mandatory_personal_field as mpf,
+        )
+
+        fx.require_personal_field("latitude", "city", "mailing_country")
+        self.assertNotIn("latitude", person_fields.capture_required())
+        self.assertNotIn("latitude", mpf.required_fields())
+        self.assertFalse(frappe.get_meta("Person").get_field("latitude").reqd)
+
+    def test_a_detail_nobody_could_honestly_supply_is_not_offered(self):
+        """Address Line 2 is empty for most people and adds nothing to a
+        geocode, so requiring it could not be satisfied honestly."""
+        self.assertFalse(frappe.db.exists("Mandatory Personal Field", "address_line_2"))

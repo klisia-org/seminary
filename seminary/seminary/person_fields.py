@@ -90,6 +90,8 @@ class Spec:
         push_blank=False,
         sensitive=False,
         derived=False,
+        derived_from=(),
+        refined_by=(),
     ):
         self.person_field = person_field
         #: Keyword name on `ensure_person`/`update_person`. None means the
@@ -109,6 +111,14 @@ class Spec:
         #: Resolved by the system, never typed (coordinates). "Mandatory" for a
         #: derived attribute can only mean *resolvable*.
         self.derived = derived
+        #: DERIVED only: the least a person must have typed for this to be
+        #: resolvable at all. Requiring a derived attribute and not requiring
+        #: these is requiring an answer with no question behind it, which is
+        #: what `Mandatory Personal Field` warns about (ADR 067 section 9).
+        self.derived_from = tuple(derived_from)
+        #: DERIVED only: typed fields that do not decide *whether* it resolves,
+        #: only how precisely. Offered, never demanded.
+        self.refined_by = tuple(refined_by)
 
     @property
     def settable(self):
@@ -288,8 +298,26 @@ SPEC = (
     # they are not settable through the spine's entry points, and "mandatory"
     # for them can only mean *resolvable*, which a readiness pre-flight checks
     # rather than a `reqd` flag on a form (ADR 068 §7).
-    Spec("latitude", derived=True, sensitive=True),
-    Spec("longitude", derived=True, sensitive=True),
+    # `derived_from` is the geocoder's own floor: a town and a country resolve
+    # to the centre of that town, which is enough to rank one mentor against
+    # another. `refined_by` is what moves the answer from town-to-town to
+    # door-to-door. Note `mailing_country`, not `country` -- the latter is the
+    # comms routing selector and the geocoder does not read it
+    # (`geocoding.ADDRESS_FIELDS`).
+    Spec(
+        "latitude",
+        derived=True,
+        sensitive=True,
+        derived_from=("city", "mailing_country"),
+        refined_by=("address_line_1", "state", "pincode"),
+    ),
+    Spec(
+        "longitude",
+        derived=True,
+        sensitive=True,
+        derived_from=("city", "mailing_country"),
+        refined_by=("address_line_1", "state", "pincode"),
+    ),
     Spec(
         "blood_group",
         arg="blood_group",

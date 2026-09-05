@@ -325,6 +325,15 @@ def seed_disciplinary_actions():
     frappe.db.commit()
 
 
+#: Shared attributes that make no sense to *require*, so they are not offered.
+#: Two different reasons, same conclusion -- a row nobody can act on is noise in
+#: a settings list. `address_line_2` is empty for most people and adds nothing to
+#: a geocode, so requiring it could not be satisfied honestly. `full_name` is
+#: computed from the name parts, and `first_name` is already required, so it can
+#: never be empty and the requirement could never fire.
+NOT_CURATABLE = ("address_line_2", "full_name")
+
+
 def seed_mandatory_personal_fields():
     """One row per shared personal attribute, for the school to curate (ADR 067 §9).
 
@@ -346,17 +355,56 @@ def seed_mandatory_personal_fields():
         mandatory_personal_field as mpf,
     )
 
+    # Withdrawn rows are removed here rather than by a patch: this list is the
+    # seeder's own, it runs on every migrate, and a patch would need its own
+    # bookkeeping to say the same thing once. Only where nobody has ticked it --
+    # a school that deliberately required one has a reason we do not know, and
+    # silently deleting their setting is worse than an extra row.
+    for fieldname in NOT_CURATABLE:
+        row = frappe.db.get_value(
+            "Mandatory Personal Field", fieldname, ["name", "mandatory"], as_dict=True
+        )
+        if row and not row.mandatory:
+            frappe.delete_doc(
+                "Mandatory Personal Field",
+                row.name,
+                force=True,
+                ignore_permissions=True,
+            )
+
     for spec in person_fields.SPEC:
-        if frappe.db.exists("Mandatory Personal Field", spec.person_field):
+        if spec.person_field in NOT_CURATABLE:
             continue
-        in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
-        frappe.get_doc(
-            {
-                "doctype": "Mandatory Personal Field",
-                "person_field": spec.person_field,
-                "mandatory": 1 if in_use else 0,
-            }
-        ).insert(ignore_permissions=True)
+        existing = frappe.db.get_value(
+            "Mandatory Personal Field",
+            spec.person_field,
+            ["name", "field_label", "sources", "derived", "automation_valid"],
+            as_dict=True,
+        )
+        if not existing:
+            in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
+            frappe.get_doc(
+                {
+                    "doctype": "Mandatory Personal Field",
+                    "person_field": spec.person_field,
+                    "mandatory": 1 if in_use else 0,
+                }
+            ).insert(ignore_permissions=True)
+            continue
+
+        # Create-only applies to `mandatory` -- the school's bit. Everything
+        # else is a projection of the code, so it has to track the code: a row
+        # seeded before a rule started reading it, or before its label was
+        # reworded, would otherwise describe the app as it was.
+        wanted = {
+            "field_label": mpf.label_for(spec),
+            "sources": "\n".join(mpf.sources_for(spec)),
+            "derived": 1 if spec.derived else 0,
+        }
+        if any(existing.get(k) != v for k, v in wanted.items()):
+            frappe.get_doc("Mandatory Personal Field", spec.person_field).save(
+                ignore_permissions=True
+            )
     frappe.db.commit()
 
 

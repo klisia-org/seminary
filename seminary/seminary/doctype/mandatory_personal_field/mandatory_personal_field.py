@@ -29,6 +29,7 @@ class MandatoryPersonalField(Document):
     def validate(self):
         self.refresh_from_registry()
         self.guard_rules_that_depend_on_it()
+        self.warn_about_missing_prerequisites()
 
     def refresh_from_registry(self):
         """Everything but `mandatory` belongs to the code.
@@ -63,6 +64,49 @@ class MandatoryPersonalField(Document):
         )
         self.sources = "\n".join(sources_for(spec))
 
+    def warn_about_missing_prerequisites(self):
+        """Requiring a worked-out detail whose inputs nobody has to give.
+
+        A coordinate is not typed, so requiring it cannot reach a form. What
+        *can* reach a form is the address it is worked out from -- and requiring
+        the coordinate while leaving that optional is requiring an answer with
+        no question behind it. The planner would then report the gap person by
+        person, forever, with nothing upstream ever closing it.
+
+        A warning rather than a refusal: a school may collect addresses reliably
+        without formally demanding them, and that is their call to make.
+        """
+        if not (self.derived and self.mandatory):
+            return
+        # A seeder refreshing a row's wording is not a person choosing to
+        # require something, so it should not lecture them about it.
+        if frappe.flags.in_migrate or frappe.flags.in_install:
+            return
+        from seminary.seminary import person_fields
+
+        spec = person_fields.SPEC_BY_PERSON_FIELD.get(self.person_field)
+        if not spec or not spec.derived_from:
+            return
+        missing = [f for f in spec.derived_from if not is_required(f)]
+        if not missing:
+            return
+        frappe.msgprint(
+            _(
+                "{0} is worked out from the address, so requiring it here only "
+                "means the Cohort Planner will report who is missing it. To make "
+                "it actually arrive, require {1} as well — those give the centre "
+                "of a town, which is enough to rank one mentor against another. "
+                "Add {2} if you want distances door-to-door rather than "
+                "town-to-town."
+            ).format(
+                frappe.bold(self.field_label or self.person_field),
+                frappe.bold(labels_for(missing)),
+                frappe.bold(labels_for(spec.refined_by)),
+            ),
+            indicator="orange",
+            title=_("Nothing on a form asks for this"),
+        )
+
     def guard_rules_that_depend_on_it(self):
         """Un-mandating a detail a live rule reads is refused, by name.
 
@@ -94,10 +138,34 @@ class MandatoryPersonalField(Document):
 
 
 def label_for(spec):
-    """A human name for a Person field, taken from the Person form itself so
-    the two never drift."""
+    """A human name for this detail, in the words a school would use.
+
+    Normally the Person form's own label, so the two never drift. For a
+    *derived* detail a matching rule reads, the rule's own phrasing instead:
+    nobody requires a "Latitude", they require an address we can find, and a
+    settings list that says Latitude reads as a database column and invites
+    exactly the question of how a form could possibly enforce it.
+    """
+    from seminary.seminary.discipleship import criteria
+
+    if spec.derived:
+        for rule in criteria.registry().values():
+            if rule.requires_field == spec.person_field and rule.reads_label:
+                label = _(rule.reads_label)
+                return label[:1].upper() + label[1:]
+
     df = frappe.get_meta("Person").get_field(spec.person_field)
     return _(df.label) if df and df.label else spec.person_field
+
+
+def labels_for(person_fields_):
+    """A readable list of Person field labels."""
+    meta = frappe.get_meta("Person")
+    out = []
+    for fieldname in person_fields_:
+        df = meta.get_field(fieldname)
+        out.append(_(df.label) if df and df.label else fieldname)
+    return ", ".join(out)
 
 
 def sources_for(spec):
@@ -113,11 +181,35 @@ def sources_for(spec):
     binding = spec.roles.get(person_fields.APPLICANT)
     if binding:
         out.append(_("Application form ({0})").format(binding.fieldname))
+
     if spec.derived:
-        out.append(_("Worked out from the address; never typed"))
-    else:
-        out.append(_("Person record, by a Registrar or Seminary Manager"))
-        out.append(_("Person Import Batch"))
+        # Say what "required" can and cannot mean here, and what the answer is
+        # worth: a town centre is enough to rank mentors, a street address is
+        # what makes the number mean a journey.
+        out.append(
+            _(
+                "Worked out from the address. Never typed, so no form can "
+                "demand it — requiring it means the Cohort Planner reports "
+                "who is missing it."
+            )
+        )
+        if spec.derived_from:
+            out.append(
+                _(
+                    "Needs at least: {0} — that resolves to the centre of a town, "
+                    "so distances are town-to-town."
+                ).format(labels_for(spec.derived_from))
+            )
+        if spec.refined_by:
+            out.append(
+                _("Add {0} for door-to-door distances.").format(
+                    labels_for(spec.refined_by)
+                )
+            )
+        return out
+
+    out.append(_("Person record, by a Registrar or Seminary Manager"))
+    out.append(_("Person Import Batch"))
     return out
 
 
