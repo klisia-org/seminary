@@ -295,6 +295,30 @@ planner's answer, so `claim_for` takes an explicit `allow_over_capacity` that th
 after a human confirmed the overrun. Two different questions: *"is there room?"*, which the atomic
 UPDATE answers, and *"will this mentor take one more?"*, which only the mentor can.
 
+> **Amendment, 2026-09-04 (implementation of phase J).** The two questions above are right; the
+> mechanism named for them was not, and building it exposed why. The `allow_over_capacity` parameter is
+> **not** what shipped.
+>
+> Written as specified — `claim_for` refusing by default — it regressed its existing caller.
+> `culminating_project.assign_advisor` sets and saves `project.advisor` *before* claiming, so refusing
+> the increment would not undo the assignment; it would only stop counting it, and an undercounted
+> advisor then looks free to the next round-robin. **An overcount is a fact to report; an undercount is
+> a fact destroyed.** And with the default flipped to allow, the parameter would have been a knob no
+> caller ever set to `False`.
+>
+> So the ceiling binds by **where the choice was made**, not by a flag. `faculty.claim_slot(cap_row,
+> enforce_ceiling=True)` is the primitive; `claim_capability` (the system choosing) enforces the
+> ceiling and now walks its candidates in order, because losing the race should cost the next-best
+> assignee rather than the whole assignment; `claim_for` (a human already chose) never enforces it. A
+> new `faculty.capacity_for` lets the apply path say by how much a mentor went over, instead of
+> learning only that something was refused.
+>
+> The lock is unchanged and is the part that mattered: `SELECT … FOR UPDATE` on the capability row
+> makes the read and the write one critical section for **every** caller, which is the defect the
+> internship and CP claims had carried all along. It is a row lock rather than the conditional `UPDATE`
+> written above, because the caller has to know the outcome and MariaDB's `rowcount` does not reliably
+> report a matched-but-unchanged row.
+
 Ranking ties break on a stable key ending in the opaque Person id — **never `full_name`**, which is
 neither unique nor collation-stable, and would give two mentors called "John Smith" a coin flip nobody
 could reproduce.

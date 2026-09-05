@@ -254,6 +254,33 @@ def mentorship_capability():
     return rows[0] if rows else None
 
 
+def require_personal_field(*person_fields):
+    """Mark a personal detail as one the school requires.
+
+    A Cohort Type may only carry a matching rule whose detail is required, so a
+    test that configures a rule has to say so -- otherwise it passes or fails
+    depending on whether the *site* happens to have that box ticked, which is
+    ambient configuration deciding a test result.
+    """
+    for fieldname in person_fields:
+        if frappe.db.exists("Mandatory Personal Field", fieldname):
+            frappe.db.set_value("Mandatory Personal Field", fieldname, "mandatory", 1)
+
+
+def criteria_fields(criteria):
+    """The person fields a list of criterion rows reads."""
+    names = [
+        row.get("criterion") if isinstance(row, dict) else row for row in criteria or []
+    ]
+    if not names:
+        return []
+    return frappe.get_all(
+        "Cohort Assignment Criterion",
+        filters={"name": ["in", names]},
+        pluck="requires_field",
+    )
+
+
 def make_mentoring_unit(chair=None, is_active=1):
     doc = frappe.get_doc(
         {
@@ -310,6 +337,10 @@ def make_cohort_type(**kw):
         "leader_eligibility": "Anyone",
     }
     values.update(kw)
+    # A rule may only be chosen when its detail is required, so asking for one
+    # here is also asking for that -- rather than every caller remembering, and
+    # every test otherwise depending on how the site is configured.
+    require_personal_field(*criteria_fields(values.get("criteria")))
     doc = frappe.get_doc(values)
     doc.insert(ignore_permissions=True)
     return doc

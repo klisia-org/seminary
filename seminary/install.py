@@ -36,6 +36,7 @@ def after_install():
     seed_disciplinary_actions()
     seed_faculty_capabilities()
     seed_cohort_assignment_criteria()
+    seed_mandatory_personal_fields()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
@@ -319,6 +320,41 @@ def seed_disciplinary_actions():
                 "triggers_dismissal": triggers,
                 "is_active": 1,
                 "description": description,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def seed_mandatory_personal_fields():
+    """One row per shared personal attribute, for the school to curate (ADR 067 §9).
+
+    Create-only on the `mandatory` bit, like every other catalog -- that bit is
+    the school's and a re-import on every migrate would undo their choice. The
+    rest is refreshed from `person_fields.py` by the controller on save, so a
+    row never drifts from the code.
+
+    A field a *live* matching rule already reads is seeded as required. The
+    school chose that rule, which is the same statement; seeding it off would
+    make every Cohort Type using it unsaveable the moment this shipped, which is
+    a migration breaking working configuration rather than a policy being
+    applied.
+    """
+    if not frappe.db.exists("DocType", "Mandatory Personal Field"):
+        return
+    from seminary.seminary import person_fields
+    from seminary.seminary.doctype.mandatory_personal_field import (
+        mandatory_personal_field as mpf,
+    )
+
+    for spec in person_fields.SPEC:
+        if frappe.db.exists("Mandatory Personal Field", spec.person_field):
+            continue
+        in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
+        frappe.get_doc(
+            {
+                "doctype": "Mandatory Personal Field",
+                "person_field": spec.person_field,
+                "mandatory": 1 if in_use else 0,
             }
         ).insert(ignore_permissions=True)
     frappe.db.commit()
@@ -1510,6 +1546,7 @@ def after_migrate():
     seed_grading_scale()
     seed_faculty_capabilities()
     seed_cohort_assignment_criteria()
+    seed_mandatory_personal_fields()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()

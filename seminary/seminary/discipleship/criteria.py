@@ -68,6 +68,10 @@ class Criterion:
     kind = None
     handler = None
     requires_field = None
+    #: How to name the missing datum to a person. `requires_field` is a registry
+    #: key -- telling a chair that four mentors "have no latitude" names a
+    #: column, not the thing they have to go and fix.
+    reads_label = None
     label = None
     description = None
 
@@ -96,11 +100,28 @@ class Criterion:
         """
         return None
 
+    def pair_value(self, student, mentor):
+        """A number for this pairing the page can re-render after a drag.
+
+        The page cannot recompute a distance: the coordinates stay server-side
+        and only what is derived from them is sent (ADR 067 section 10). So a
+        rule whose note is a quantity publishes that quantity per pair, already
+        in the school's unit, and the page renders the comparison itself when a
+        student is moved.
+        """
+        return None
+
+    def pair_suffix(self):
+        """What `pair_value` is measured in, translated. None if not a
+        quantity."""
+        return None
+
 
 class GenderMatch(Criterion):
     kind = FILTER
     handler = "match_gender"
     requires_field = "gender"
+    reads_label = "gender"
     label = "Match student and mentor gender"
     description = (
         "Only offer a mentor of the same gender as the student. A person whose "
@@ -124,8 +145,13 @@ class GenderMatch(Criterion):
     def note(self, student, mentor, alternatives):
         # Worth saying only when it is the binding constraint: a chair about to
         # drag this student needs to know there is nowhere else to drag them.
+        #
+        # "Alternatives" are the other *proposed cohorts*, not the whole mentor
+        # pool -- those are the only places a student can be dragged to. Saying
+        # "the pool" claimed something broader and untrue: there may well be
+        # another matching mentor who is not leading a cohort in this plan.
         if not alternatives:
-            return _("Only mentor in the pool matching this student's gender.")
+            return _("No other cohort here matches this student's gender.")
         return None
 
 
@@ -133,6 +159,7 @@ class NearestMentor(Criterion):
     kind = RANKING
     handler = "nearest_mentor"
     requires_field = "latitude"
+    reads_label = "address we could locate"
     label = "Mentor closest to the student"
     description = (
         "Prefer the nearest mentor. Only meaningful for a distributed program -- "
@@ -153,6 +180,13 @@ class NearestMentor(Criterion):
             mentor["longitude"],
         )
 
+    def pair_value(self, student, mentor):
+        km = self._distance(student, mentor)
+        return None if km is None else round(in_school_unit(km), 1)
+
+    def pair_suffix(self):
+        return unit_suffix()
+
     def rank(self, student, mentor):
         km = self._distance(student, mentor)
         # A mentor with no usable point is not "infinitely far": they are
@@ -171,10 +205,10 @@ class NearestMentor(Criterion):
                 nearer = other_km
                 break
         if nearer is None:
-            return _("{0} away; no other mentor has a usable address.").format(
-                format_distance(km)
-            )
-        return _("{0} away; next nearest mentor {1}.").format(
+            return _(
+                "{0} away; no other cohort here has a mentor we could locate."
+            ).format(format_distance(km))
+        return _("{0} away; next nearest cohort {1}.").format(
             format_distance(km), format_distance(nearer)
         )
 
@@ -209,9 +243,20 @@ def using_unit(unit):
     frappe.local.cohort_distance_unit = unit if unit in (KM, MILES) else KM
 
 
+def in_school_unit(km):
+    """The same distance in whatever the school reads in."""
+    if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
+        return km / _KM_PER_MILE
+    return km
+
+
+def unit_suffix():
+    if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
+        return _("mi")
+    return _("km")
+
+
 def format_distance(km):
     """Distances reach a person, never a coordinate -- the point itself is held
     at permlevel 1 and stays server-side (ADR 067 section 10)."""
-    if getattr(frappe.local, "cohort_distance_unit", KM) == MILES:
-        return _("{0} mi").format(round(km / _KM_PER_MILE, 1))
-    return _("{0} km").format(round(km, 1))
+    return "%s %s" % (round(in_school_unit(km), 1), unit_suffix())

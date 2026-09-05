@@ -18,6 +18,7 @@ frappe.query_reports['Cohorts Needing Attention'] = {
 				{ value: 'no_leader', label: __('No active leader') },
 				{ value: 'inactive_leader', label: __('Leader no longer an active instructor') },
 				{ value: 'member_on_leave', label: __('Member on leave of absence') },
+				{ value: 'unplaced', label: __('Students waiting for a cohort') },
 			],
 			default: '',
 		},

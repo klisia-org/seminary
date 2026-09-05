@@ -204,6 +204,8 @@ class CohortType(Document):
                 ).format(frappe.bold(self.mentor_unit))
             )
 
+        self.validate_criteria_have_their_data()
+
         # 0 means "no bound" on either field, so only two real numbers can
         # contradict each other. A minimum above the maximum is a type that can
         # never propose a group the planner is willing to show without a flag.
@@ -247,4 +249,58 @@ class CohortType(Document):
                     "advance the same student in two directions. Deactivate it "
                     "first, or use another category."
                 ).format(frappe.bold(clash), PACED, frappe.bold(self.program))
+            )
+
+    def validate_criteria_have_their_data(self):
+        """A rule may only be chosen when its datum is guaranteed (ADR 067 §9).
+
+        Checked here and not only in the picker, because a picker filter is a
+        convenience and this is a rule: a REST insert, an import or a fixture
+        never sees one. A criterion whose detail the school has not made
+        required would match nobody and say nothing about why -- the failure
+        would look like a data problem in every individual student rather than
+        a configuration one, which is exactly the shape of bug this refuses.
+        """
+        if not self.criteria:
+            return
+        for row in self.criteria:
+            entry = frappe.db.get_value(
+                "Cohort Assignment Criterion",
+                row.criterion,
+                ["criterion_name", "requires_field", "is_active"],
+                as_dict=True,
+            )
+            if not entry:
+                continue
+            if not entry.is_active:
+                frappe.msgprint(
+                    _(
+                        "{0} has been retired, so it will be skipped when this "
+                        "type is planned."
+                    ).format(frappe.bold(entry.criterion_name)),
+                    indicator="orange",
+                )
+                continue
+            if not entry.requires_field:
+                continue
+            required = frappe.db.get_value(
+                "Mandatory Personal Field",
+                entry.requires_field,
+                ["mandatory", "field_label"],
+                as_dict=True,
+            )
+            if required and required.mandatory:
+                continue
+            frappe.throw(
+                _(
+                    "{0} matches on {1}, so {1} has to be a detail your school "
+                    "requires — otherwise the rule would quietly match nobody. "
+                    "Tick Required on it under Mandatory Personal Field, or "
+                    "remove this rule."
+                ).format(
+                    frappe.bold(entry.criterion_name),
+                    frappe.bold(
+                        (required and required.field_label) or entry.requires_field
+                    ),
+                )
             )

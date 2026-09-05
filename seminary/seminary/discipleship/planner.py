@@ -328,58 +328,75 @@ def group_count(n_students, min_size, max_size):
     return max(1, min(upper, lower) if lower else upper)
 
 
-def _greedy_seed(students, mentors, n_groups, person_rows, filters, rankings):
-    """Pick the mentors who will lead, one at a time.
+def eligibility_classes(students, mentors, person_rows, filters):
+    """Students grouped by *which* mentors may take them.
 
-    Each round takes the mentor who is the best available choice for the most
-    students still unserved. That is an approximation of a facility-location
-    problem and is stated as one -- see this module's docstring for why an
-    approximation is the right answer here.
+    A Filter is a predicate over (student, mentor), but when the mentors are
+    themselves split by the same attribute it induces a partition over the
+    **students**: under gender matching the men and the women are two pools that
+    share no mentor, and a group count taken over the total is a count of a set
+    that can never be one cohort.
+
+    That was a real defect. Six students at a maximum of six produced one group,
+    one seeded mentor, and every student of the other gender unplaced with a
+    correct-but-useless reason -- while an eligible mentor sat in the pool.
     """
+    classes = {}
+    for student in students:
+        row = person_rows.get(student["person"], {})
+        key = frozenset(
+            m["person"]
+            for m in mentors
+            if _eligible(row, person_rows.get(m["person"], {}), filters)[0]
+        )
+        classes.setdefault(key, []).append(student)
+    return classes
+
+
+def _class_score(members, mentor, person_rows, rankings):
+    """How well one mentor serves one class of students, lowest is best.
+
+    The better half of their sort keys rather than the mean: a mentor who is
+    ideal for four students and hopeless for one should beat a mentor who is
+    mediocre for all five, because the four will keep them and the fifth can be
+    dragged.
+    """
+    mentor_row = person_rows.get(mentor["person"], {})
+    keys = sorted(
+        _sort_key(person_rows.get(s["person"], {}), mentor, mentor_row, rankings)
+        for s in members
+    )
+    return keys[: max(1, len(keys) // 2)]
+
+
+def _greedy_seed(students, mentors, min_size, max_size, person_rows, filters, rankings):
+    """Pick the mentors who will lead.
+
+    Per eligibility class, not over the pool as a whole: each class gets the
+    number of groups its own size warrants, and mentors already seeded for an
+    overlapping class count towards it rather than being seeded twice.
+
+    Which mentors lead is a facility-location problem and this solves it
+    greedily, on purpose -- see this module's docstring for why an approximation
+    is the right answer here.
+    """
+    by_person = {m["person"]: m for m in mentors}
+    classes = eligibility_classes(students, mentors, person_rows, filters)
+
     chosen = []
-    remaining = list(mentors)
-    unserved = list(students)
-
-    while remaining and len(chosen) < n_groups and unserved:
-        best = None
-        for mentor in remaining:
-            mentor_row = person_rows.get(mentor["person"], {})
-            score = []
-            for student in unserved:
-                student_row = person_rows.get(student["person"], {})
-                ok, _reason = _eligible(student_row, mentor_row, filters)
-                if ok:
-                    score.append(_sort_key(student_row, mentor, mentor_row, rankings))
-            if not score:
-                continue
-            # Serves the most people, and among equals the one whose people are
-            # best served -- otherwise a mentor eligible for everyone but far
-            # from all of them would win every round.
-            key = (-len(score), sorted(score)[: max(1, len(score) // 2)])
-            if best is None or key < best[0]:
-                best = (key, mentor, score)
-        if best is None:
-            break
-        chosen.append(best[1])
-        remaining.remove(best[1])
-        served = {
-            s["person"]
-            for s in unserved
-            if _eligible(
-                person_rows.get(s["person"], {}),
-                person_rows.get(best[1]["person"], {}),
-                filters,
-            )[0]
-        }
-        unserved = [s for s in unserved if s["person"] not in served]
-
-    # Every student is covered, or nobody left can cover them; if groups remain
-    # to be opened, fill them with the most-available mentors so the ceiling is
-    # honoured rather than the seeding stopping early.
-    for mentor in remaining:
-        if len(chosen) >= n_groups:
-            break
-        chosen.append(mentor)
+    chosen_keys = set()
+    # Largest class first: it has the strongest claim on a mentor that several
+    # classes could use.
+    for eligible, members in sorted(classes.items(), key=lambda kv: -len(kv[1])):
+        if not eligible:
+            continue  # nobody can take these students; they end up unplaced
+        want = group_count(len(members), min_size, max_size)
+        have = sum(1 for person in chosen_keys if person in eligible)
+        candidates = [by_person[p] for p in eligible if p not in chosen_keys]
+        candidates.sort(key=lambda m: _class_score(members, m, person_rows, rankings))
+        for mentor in candidates[: max(0, want - have)]:
+            chosen.append(mentor)
+            chosen_keys.add(mentor["person"])
     return chosen
 
 
@@ -461,9 +478,10 @@ def propose(cohort_type, scope=SCOPE_ALL, exclude_mentors=(), handlers=None):
 
     min_size = settings.automation_min_size or 0
     max_size = settings.automation_max_size or 0
-    n_groups = group_count(len(students), min_size, max_size)
 
-    leaders = _greedy_seed(students, mentors, n_groups, person_rows, filters, rankings)
+    leaders = _greedy_seed(
+        students, mentors, min_size, max_size, person_rows, filters, rankings
+    )
     groups = {
         m["person"]: {
             "key": m["person"],
@@ -502,13 +520,33 @@ def propose(cohort_type, scope=SCOPE_ALL, exclude_mentors=(), handlers=None):
                 student_row, m, person_rows.get(m["person"], {}), rankings
             ),
         )
-        shortlists[student["person"]] = [m["person"] for m in ranked]
+        # Ranked over the whole **pool**, not only the seeded leaders: a chair
+        # may open a cohort under a mentor the matcher did not choose -- a
+        # mentor in the students' own timezone, say -- and the page has to know
+        # whether the rules allow that pairing. Which of these are somewhere a
+        # student can actually be dragged is a question about the groups now on
+        # screen, so the page answers it rather than this.
+        shortlists[student["person"]] = [
+            m["person"]
+            for m in sorted(
+                (
+                    m
+                    for m in mentors
+                    if _eligible(
+                        student_row, person_rows.get(m["person"], {}), filters
+                    )[0]
+                ),
+                key=lambda m: _sort_key(
+                    student_row, m, person_rows.get(m["person"], {}), rankings
+                ),
+            )
+        ]
 
         if not ranked:
             unplaced.append(
                 dict(
                     student,
-                    reason=_no_match_reason(student_row, leaders, person_rows, filters),
+                    reason=_no_match_reason(student_row, mentors, person_rows, filters),
                 )
             )
             continue
@@ -551,6 +589,8 @@ def propose(cohort_type, scope=SCOPE_ALL, exclude_mentors=(), handlers=None):
             )
         )
 
+    pair_values, pair_suffix = _pair_values(handlers, students, mentors, person_rows)
+
     ordered_groups = [groups[m["person"]] for m in leaders]
     for group in ordered_groups:
         group["below_minimum"] = bool(min_size and 0 < len(group["members"]) < min_size)
@@ -568,8 +608,49 @@ def propose(cohort_type, scope=SCOPE_ALL, exclude_mentors=(), handlers=None):
         "empty_groups": [g for g in ordered_groups if not g["members"]],
         "unplaced": unplaced,
         "shortlists": shortlists,
+        "pair_values": pair_values,
+        "pair_suffix": pair_suffix,
         "pool": {"students": len(students), "mentors": len(mentors)},
     }
+
+
+def _pair_values(handlers, students, mentors, person_rows):
+    """Per-pair quantities the page re-renders after a drag.
+
+    A moved student's note stops being true the moment they move -- "next
+    nearest cohort 34 km" was measured against a cohort they are no longer in.
+    The page cannot recompute it, because the coordinates never leave the server
+    (ADR 067 section 10), so what leaves is the derived number, already in the
+    school's unit, whenever a rule that publishes a quantity is in use.
+
+    Covers **every** mentor in the pool, not only the ones the filters allow.
+    How far apart two people live is a fact about them; whether the rules permit
+    the pairing is a separate question. Restricting the matrix to eligible pairs
+    meant that a chair who had deliberately overridden a filter -- which is the
+    entire point of being able to drag -- was looking at a cohort with no
+    distances in it.
+
+    Sent as a matrix rather than fetched per drag. A round trip on every move is
+    what makes a board of two hundred students unusable, and this is a few
+    thousand small numbers.
+    """
+    handler = next((h for h in handlers if h.pair_suffix()), None)
+    if not handler:
+        return {}, None
+
+    values = {}
+    for student in students:
+        student_row = person_rows.get(student["person"], {})
+        row = {}
+        for mentor in mentors:
+            value = handler.pair_value(
+                student_row, person_rows.get(mentor["person"], {})
+            )
+            if value is not None:
+                row[mentor["person"]] = value
+        if row:
+            values[student["person"]] = row
+    return values, handler.pair_suffix()
 
 
 def _rule_stamp(handlers):
@@ -586,14 +667,20 @@ def _rule_stamp(handlers):
     )
 
 
-def _no_match_reason(student_row, leaders, person_rows, filters):
+def _no_match_reason(student_row, mentors, person_rows, filters):
     """Why this student's pool came out empty -- the first refusal, not a count.
 
     A chair needs the datum to fix, and "no mentor matched" is not one.
+
+    Asked of the whole **pool**, not of the seeded leaders. Since every
+    non-empty eligibility class gets at least one leader, a student with no
+    eligible leader has no eligible mentor at all -- and reporting "no mentor
+    has capacity" because no group happened to open would name the wrong
+    problem while a matching mentor sat free.
     """
-    if not leaders:
+    if not mentors:
         return _("No mentor in this unit has capacity.")
-    for mentor in leaders:
+    for mentor in mentors:
         ok, reason = _eligible(
             student_row, person_rows.get(mentor["person"], {}), filters
         )
@@ -634,6 +721,7 @@ def planner_setup(cohort_type):
                 "criterion": handler.handler,
                 "label": handler.label,
                 "reads": handler.requires_field,
+                "reads_label": _(handler.reads_label or handler.requires_field),
                 "mentors_missing": sum(
                     1
                     for m in mentors
@@ -711,3 +799,240 @@ def build_proposal(cohort_type, scope=SCOPE_ALL, exclude_mentors=None, criteria=
         exclude_mentors=exclude_mentors,
         handlers=handlers,
     )
+
+
+# ----------------------------------------------------------------- applying
+
+
+#: What a hand-drag stamps instead of the rules, so the audit can tell a rule
+#: the school can change from a judgement one person made.
+MANUAL_STAMP = "Moved by hand during planning"
+
+
+def _drift(cohort_type, unit, groups):
+    """What has moved since the proposal was built, as a list of sentences.
+
+    Re-derives nothing from the client's payload -- it re-validates it. Trusting
+    a client-computed proposal would make the drag interface a permission bypass:
+    the browser could name any Person and any Instructor it liked.
+    """
+    problems = []
+    wired = faculty.wired_instructors(unit, COHORT_MENTORSHIP_ROUTE)
+    offered = {s["person"]: s for s in students_needing_placement(cohort_type)}
+    _ever, active = _membership_history(cohort_type)
+
+    seen = set()
+    for group in groups:
+        mentor = group.get("mentor")
+        if mentor not in wired:
+            problems.append(
+                _("{0} is no longer a mentor in this unit.").format(
+                    frappe.db.get_value("Instructor", mentor, "instructor_name")
+                    or mentor
+                )
+            )
+        for member in group.get("members") or []:
+            person = member.get("person")
+            if person in active:
+                problems.append(
+                    _(
+                        "{0} has joined a cohort of this type since the plan was "
+                        "made."
+                    ).format(_person_label(person))
+                )
+            elif person not in offered:
+                problems.append(
+                    _(
+                        "{0} is no longer in the group of students this plan was "
+                        "made for."
+                    ).format(_person_label(person))
+                )
+            elif person in seen:
+                problems.append(
+                    _("{0} appears in two of these cohorts.").format(
+                        _person_label(person)
+                    )
+                )
+            seen.add(person)
+    return problems
+
+
+def _person_label(person):
+    return frappe.db.get_value("Person", person, "full_name") or person
+
+
+@frappe.whitelist()
+def create_cohorts(cohort_type, groups):
+    """Apply a reviewed plan. All of it, or none of it.
+
+    A half-applied plan is the one outcome nobody can review: some students
+    notified, some not, and no record of which decision produced which. So any
+    drift refuses the whole thing and says what moved, rather than applying the
+    part that still fits.
+
+    Capacity is checked here but is never a veto (ADR 067 sections 3 and 7). A
+    mentor's ceiling may be a workload agreement, so going past it is the
+    chair's call to make and theirs to confirm with that mentor -- the response
+    carries the exceptions back, generated from what was actually written rather
+    than from what the browser thought it was sending.
+    """
+    settings = _planning_settings(cohort_type)
+    require_planner(settings.mentor_unit)
+    groups = frappe.parse_json(groups) if isinstance(groups, str) else groups
+    groups = [g for g in (groups or []) if (g.get("members") or [])]
+    if not groups:
+        frappe.throw(_("There is nothing to create."))
+
+    # One placement at a time per unit, so two chairs planning the same pool
+    # serialise instead of both spending the same last slot. Different units
+    # never contend, because the lock is the unit row.
+    frappe.db.get_value("Academic Unit", settings.mentor_unit, "name", for_update=True)
+
+    problems = _drift(cohort_type, settings.mentor_unit, groups)
+    if problems:
+        frappe.throw(
+            _("This plan is out of date and nothing has been created:<br>{0}").format(
+                "<br>".join(frappe.utils.escape_html(p) for p in problems)
+            )
+        )
+
+    created = []
+    exceptions = []
+    for group in groups:
+        mentor = group["mentor"]
+        person = frappe.db.get_value("Instructor", mentor, "person")
+        if not person:
+            frappe.throw(
+                _("{0} has no Person record, so they cannot lead a cohort.").format(
+                    mentor
+                )
+            )
+
+        cohort = frappe.get_doc(
+            {
+                "doctype": "Cohort",
+                "cohort_name": (group.get("name") or "").strip()
+                or "%s — %s" % (cohort_type, _person_label(person)),
+                "cohort_type": cohort_type,
+                "leader": person,
+                "status": "Active",
+                "max_size": settings.automation_max_size or 0,
+            }
+        ).insert(ignore_permissions=True)
+
+        before = faculty.capacity_for(
+            settings.mentor_unit, COHORT_MENTORSHIP_ROUTE, mentor
+        )
+        for member in group["members"]:
+            # Active, not Invited: an invite the student must accept leaves the
+            # placement in limbo while the mentor's slot is already spent. A
+            # reviewed batch is a decision taken, announced rather than proposed.
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Membership",
+                    "cohort": cohort.name,
+                    "person": member["person"],
+                    "role": "Member",
+                    "invite_status": "Active",
+                    "placed_by_rule": member.get("placed_by_rule") or MANUAL_STAMP,
+                }
+            ).insert(ignore_permissions=True)
+            faculty.claim_for(settings.mentor_unit, COHORT_MENTORSHIP_ROUTE, mentor)
+
+        after = faculty.capacity_for(
+            settings.mentor_unit, COHORT_MENTORSHIP_ROUTE, mentor
+        )
+        if (
+            after
+            and after["max_students"]
+            and (after["current_students"] > after["max_students"])
+        ):
+            exceptions.append(
+                {
+                    "mentor": mentor,
+                    "mentor_name": _person_label(person),
+                    "current_students": after["current_students"],
+                    "max_students": after["max_students"],
+                    "was": (before or {}).get("current_students"),
+                }
+            )
+        created.append(
+            {
+                "cohort": cohort.name,
+                "cohort_name": cohort.cohort_name,
+                "mentor": mentor,
+                "members": len(group["members"]),
+            }
+        )
+
+    # No commit: this runs inside the request's transaction, so a failure
+    # anywhere above leaves no orphan cohort and no half-spent capacity.
+    return {"created": created, "over_capacity": exceptions}
+
+
+#: A gap list is for acting on, not for browsing. Past this many the count is
+#: the useful number and the answer is an import, not a form.
+READINESS_DETAIL_LIMIT = 200
+
+SIDE_MENTORS = "mentors"
+SIDE_STUDENTS = "students"
+
+
+@frappe.whitelist()
+def readiness_detail(cohort_type, criterion, side=SIDE_MENTORS):
+    """Who is missing the datum a rule needs.
+
+    The readiness check counts; this names. Finding the same people by hand
+    means filtering a list view on "is not set", which is neither obvious nor
+    reachable from where the question was asked.
+
+    It names people and never a coordinate (ADR 067 section 10): for the
+    distance rule this answers "whose address did we fail to locate", which is
+    a list of names, not a list of points.
+    """
+    settings = _planning_settings(cohort_type)
+    require_planner(settings.mentor_unit)
+
+    handler = rules.get(criterion)
+    if not handler:
+        frappe.throw(_("Unknown matching rule."))
+    if side not in (SIDE_MENTORS, SIDE_STUDENTS):
+        frappe.throw(_("Unknown group of people."))
+
+    if side == SIDE_MENTORS:
+        rows = mentor_pool(settings.mentor_unit)
+        # The Person is where the datum lives; the Instructor is how a chair
+        # knows them. Both, so the link goes where the fix is.
+        role_of = {r["person"]: r["instructor"] for r in rows}
+        role_doctype = "Instructor"
+    else:
+        rows = students_needing_placement(cohort_type)
+        role_of = {r["person"]: r["student"] for r in rows}
+        role_doctype = "Student"
+
+    person_rows = _person_rows([r["person"] for r in rows])
+    missing = [
+        {
+            "person": r["person"],
+            "full_name": person_rows.get(r["person"], {}).get("full_name")
+            or r["person"],
+            "role": role_of.get(r["person"]),
+            "role_doctype": role_doctype,
+        }
+        for r in rows
+        if handler.missing(person_rows.get(r["person"], {}))
+    ]
+    missing.sort(key=lambda p: (p["full_name"] or "").lower())
+
+    return {
+        "criterion": criterion,
+        "label": _(handler.label),
+        "reads_label": _(handler.reads_label or handler.requires_field),
+        "side": side,
+        "total": len(missing),
+        "people": missing[:READINESS_DETAIL_LIMIT],
+        "truncated": len(missing) > READINESS_DETAIL_LIMIT,
+        # A Program Chair can plan cohorts and cannot edit a Person, so the
+        # dialog has to say who can rather than offering a link that 403s.
+        "can_edit_person": bool(frappe.has_permission("Person", "write")),
+    }

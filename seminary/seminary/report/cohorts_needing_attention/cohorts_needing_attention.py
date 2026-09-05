@@ -26,6 +26,7 @@ from frappe.utils import getdate, today
 NO_LEADER = "no_leader"
 INACTIVE_LEADER = "inactive_leader"
 MEMBER_ON_LEAVE = "member_on_leave"
+UNPLACED = "unplaced"
 
 
 def execute(filters=None):
@@ -37,6 +38,8 @@ def execute(filters=None):
         rows.extend(leaderless_rows(filters, wanted))
     if wanted in (None, "", MEMBER_ON_LEAVE):
         rows.extend(on_leave_rows(filters))
+    if wanted in (None, "", UNPLACED):
+        rows.extend(unplaced_rows(filters))
     return columns(), rows
 
 
@@ -229,6 +232,55 @@ def on_leave_rows(filters):
                 counts.get(m.cohort, 0),
                 leave.get("loa_start_date"),
             )
+        )
+    return rows
+
+
+def unplaced_rows(filters):
+    """Cohort Types with students waiting for a cohort (ADR 067 section 11).
+
+    The planner is a tool somebody opens; this is what tells them to open it.
+    The exception *record* the earlier draft designed is deliberately not here:
+    it existed to carry a skip reason out of an unattended job, and in a
+    reviewed batch the reason is on screen in front of the person running it.
+    A stored copy would be a second, staler answer to a question the pool query
+    already answers, with its own auto-resolution rules to get wrong.
+
+    One row per type rather than per student. Right after an admissions round
+    every new student is unplaced, and a hundred rows would bury the leadership
+    gaps this report exists for. The count is the signal; the planner names the
+    people.
+    """
+    from seminary.seminary.discipleship import planner
+
+    types = frappe.get_all(
+        "Cohort Type",
+        filters={"plannable": 1, "is_active": 1},
+        fields=["name", "mentor_unit"],
+        order_by="name asc",
+    )
+    wanted_type = filters.get("cohort_type")
+    rows = []
+    for cohort_type in types:
+        if wanted_type and cohort_type.name != wanted_type:
+            continue
+        if not cohort_type.mentor_unit:
+            continue
+        waiting = len(planner.students_needing_placement(cohort_type.name))
+        if not waiting:
+            continue
+        rows.append(
+            {
+                # No cohort: that is the point — these students are not in one.
+                "cohort": None,
+                "cohort_type": cohort_type.name,
+                "issue": UNPLACED,
+                "person": None,
+                "person_name": None,
+                "detail": _("Waiting for a cohort — open the Cohort Planner"),
+                "member_count": waiting,
+                "since": None,
+            }
         )
     return rows
 

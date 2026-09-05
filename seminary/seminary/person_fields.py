@@ -627,6 +627,31 @@ def capture_fields(doctype):
 CAPTURE_REQUIRED = ("first_name", "primary_email", "gender")
 
 
+def capture_required():
+    """What an application must carry: the built-in floor, plus the school's own.
+
+    `CAPTURE_REQUIRED` is what the app cannot work without. A school adds to it
+    by ticking Required on a `Mandatory Personal Field` (ADR 067 section 9), and
+    a matching rule cannot be used until its detail is ticked -- so the rules a
+    school chooses and the questions its application asks stay in step by
+    construction rather than by anybody remembering.
+
+    Only fields that are actually *typed*: a derived one -- a map position --
+    cannot be demanded on a form, so "required" for it means resolvable, which
+    the planner reports and no save refuses.
+    """
+    import frappe
+
+    fields = set(CAPTURE_REQUIRED)
+    if not frappe.db.table_exists("Mandatory Personal Field"):
+        return tuple(sorted(fields))
+    from seminary.seminary.doctype.mandatory_personal_field import (
+        mandatory_personal_field as mpf,
+    )
+
+    return tuple(sorted(fields | mpf.required_fields()))
+
+
 def assert_capture_complete(doc, doctype=None):
     """Refuse a role record that skipped a required shared attribute.
 
@@ -644,7 +669,7 @@ def assert_capture_complete(doc, doctype=None):
     doctype = doctype or doc.doctype
     meta = frappe.get_meta(doctype)
     missing = []
-    for person_field in CAPTURE_REQUIRED:
+    for person_field in capture_required():
         binding = SPEC_BY_PERSON_FIELD[person_field].roles.get(doctype)
         if not binding:
             continue
