@@ -52,7 +52,7 @@
  "fields": [
   {
    "columns": 2,
-   "description": "The match/identity key. One Person is resolved per email (ADR 042). Format is validated during Dry-Run, not at save, so bad values can be staged and reported.",
+   "description": "The match/identity key. One Person is resolved per email. Format is validated during Dry-Run, not at save, so bad values can be staged and reported.",
    "fieldname": "primary_email",
    "fieldtype": "Data",
    "in_list_view": 1,

@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-06-08 00:00:00.000000",
- "description": "Child table of Program Enrollment. Frozen snapshot, captured at submit, of the courses flagged `pgm_course_reqonenroll` (Mandatory on program enrollment) at the time of enrollment. Drives deferred auto-enrollment. Fulfillment status is computed from CEI/PEC, not stored here. See ADR 035.",
+ "description": "Child table of Program Enrollment. Frozen snapshot, captured at submit, of the courses flagged `pgm_course_reqonenroll` (Mandatory on program enrollment) at the time of enrollment. Drives deferred auto-enrollment. Fulfillment status is computed from CEI/PEC, not stored here.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

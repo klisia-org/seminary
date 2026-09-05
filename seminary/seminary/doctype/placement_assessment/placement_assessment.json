@@ -4,7 +4,7 @@
  "allow_rename": 1,
  "autoname": "field:assessment_name",
  "creation": "2026-06-18 00:00:00",
- "description": "A leveling/intake placement exam (e.g. Greek Placement Exam) whose score places a student out of leveling courses. Owned by an Academic Unit whose Placement Examiner capability grades it (ADR 060).",
+ "description": "A leveling/intake placement exam (e.g. Greek Placement Exam) whose score places a student out of leveling courses. Owned by an Academic Unit whose Placement Examiner capability grades it.",
  "doctype": "DocType",
  "document_type": "Setup",
  "documentation": "https://docs.seminaryerp.org/modules/leveling.html#placement-assessments",
@@ -31,7 +31,7 @@
    "unique": 1
   },
   {
-   "description": "Owning Academic Unit — its Placement Examiner capability holders grade this assessment and see it in their worklist (ADR 059 §7).",
+   "description": "Owning Academic Unit — its Placement Examiner capability holders grade this assessment and see it in their worklist.",
    "fieldname": "academic_unit",
    "fieldtype": "Link",
    "in_list_view": 1,

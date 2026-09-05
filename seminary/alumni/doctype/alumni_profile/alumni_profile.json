@@ -56,7 +56,7 @@
    "unique": 1
   },
   {
-   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are.",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",
@@ -226,7 +226,7 @@
    "label": "Bio"
   },
   {
-   "description": "Every program this person completed here. One row per graduation \u2014 a second degree adds a row, it does not replace the first (ADR 069).",
+   "description": "Every program this person completed here. One row per graduation \u2014 a second degree adds a row, it does not replace the first.",
    "fieldname": "graduations",
    "fieldtype": "Table",
    "label": "Graduations",

@@ -94,7 +94,7 @@
    "options": "User"
   },
   {
-   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are.",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",
@@ -117,7 +117,7 @@
    "set_only_once": 1
   },
   {
-   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
+   "description": "Mirror of the linked Person's Primary Email.",
    "fetch_from": "person.primary_email",
    "fieldname": "student_email_id",
    "fieldtype": "Data",
@@ -127,7 +127,7 @@
    "unique": 1
   },
   {
-   "description": "Mirror of the linked Person's Primary Mobile (ADR 042).",
+   "description": "Mirror of the linked Person's Primary Mobile.",
    "fetch_from": "person.primary_mobile",
    "fieldname": "student_mobile_number",
    "fieldtype": "Data",

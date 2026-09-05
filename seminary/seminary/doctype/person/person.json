@@ -143,7 +143,7 @@
    "options": "Language"
   },
   {
-   "description": "Drives regional provider routing for messaging (ADR 043). This is not the postal country \u2014 see Mailing Country.",
+   "description": "Drives regional provider routing for messaging. This is not the postal country \u2014 see Mailing Country.",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country / Region",
@@ -271,7 +271,7 @@
    "options": "Skill Tag Link"
   },
   {
-   "description": "Stored resume / CV, reused to pre-fill job applications. Served privately (ADR 043).",
+   "description": "Stored resume / CV, reused to pre-fill job applications. Served privately.",
    "fieldname": "resume",
    "fieldtype": "Attach",
    "label": "Resume"

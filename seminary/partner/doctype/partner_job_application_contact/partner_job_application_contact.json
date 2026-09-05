@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-06-14 12:00:00",
- "description": "A logged touchpoint with an applicant (email, call, interview). The creator is captured automatically as the row owner. See ADR 053.",
+ "description": "A logged touchpoint with an applicant (email, call, interview). The creator is captured automatically as the row owner.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

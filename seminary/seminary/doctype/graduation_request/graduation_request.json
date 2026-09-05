@@ -150,7 +150,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Recorded when this document was created. Deliberately not fetched: a later name change must not rewrite what the record said at the time (ADR 068).",
+   "description": "Recorded when this document was created. Deliberately not fetched: a later name change must not rewrite what the record said at the time.",
    "fetch_if_empty": 1,
    "fieldname": "phonetic_name_snapshot",
    "fieldtype": "Data",

@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-06-14 12:00:00",
- "description": "A reviewer's rating and notes on a job application. The average of all rows is shown on the application. Status changes are NOT tracked here (kept orthogonal) — who/when a status changed comes from the application's version history. See ADR 053.",
+ "description": "A reviewer's rating and notes on a job application. The average of all rows is shown on the application. Status changes are NOT tracked here (kept orthogonal) — who/when a status changed comes from the application's version history.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

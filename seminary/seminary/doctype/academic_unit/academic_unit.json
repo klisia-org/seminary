@@ -66,7 +66,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Descriptive only — all gating stays role-based (ADR 034). The chair does not get special permissions from this field.",
+   "description": "Descriptive only — all gating stays role-based. The chair does not get special permissions from this field.",
    "fieldname": "chair",
    "fieldtype": "Link",
    "label": "Chair",

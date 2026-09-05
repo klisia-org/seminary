@@ -22,7 +22,7 @@
    "options": "Instructor"
   },
   {
-   "description": "A vetted External Examiner (outside reader). Fill this OR Instructor. Replaces the free-text external fields below (ADR 060).",
+   "description": "A vetted External Examiner (outside reader). Fill this OR Instructor. Replaces the free-text external fields below.",
    "fieldname": "external_examiner",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -32,7 +32,7 @@
   {
    "default": "0",
    "depends_on": "eval:doc.is_external || doc.external_name",
-   "description": "Deprecated (ADR 060) — use External Examiner instead. Kept for existing committee rows.",
+   "description": "Deprecated — use External Examiner instead. Kept for existing committee rows.",
    "fieldname": "is_external",
    "fieldtype": "Check",
    "label": "External Member (deprecated)"

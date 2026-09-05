@@ -247,7 +247,7 @@
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
-   "description": "Identity spine record (ADR 042). Promoted from this form on insert; intake fields stay editable (and re-promote) until admission, then flip to read-only mirrors.",
+   "description": "Identity spine record. Promoted from this form on insert; intake fields stay editable (and re-promote) until admission, then flip to read-only mirrors.",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",

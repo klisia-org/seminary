@@ -72,7 +72,7 @@
    "search_index": 1
   },
   {
-   "description": "Recorded when this enrollment was created. Corrected from the Person while the enrollment is Active or on Leave of Absence; frozen once it concludes, so a later name change never rewrites a completed degree or the diploma cut from it (ADR 068).",
+   "description": "Recorded when this enrollment was created. Corrected from the Person while the enrollment is Active or on Leave of Absence; frozen once it concludes, so a later name change never rewrites a completed degree or the diploma cut from it.",
    "fieldname": "student_name",
    "fieldtype": "Read Only",
    "in_global_search": 1,
@@ -361,7 +361,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Placement exams this student has taken, with scores (ADR 060). The durable score store the leveling resolver reads; scored by a department Placement Examiner.",
+   "description": "Placement exams this student has taken, with scores. The durable score store the leveling resolver reads; scored by a department Placement Examiner.",
    "fieldname": "placement_assessments",
    "fieldtype": "Table",
    "label": "Placement Assessments",
