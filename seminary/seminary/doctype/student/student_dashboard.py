@@ -1,13 +1,4 @@
-from frappe import _
-
-
-""" def get_data():
-	return {
-		"heatmap": True,
-		"heatmap_message": _("This is based on the attendance of this Student"),
-		"fieldname": "student",
-		"non_standard_fieldnames": {"Bank Account": "party"},
-		"transactions": [
-			{"label": _("Fee"), "items": ["Sales Invoice", "Bank Account"]},
-		],
-	} """
+# The Student form dashboard intentionally defines no transactions: the only
+# candidates (Sales Invoice / Bank Account) are ERPNext doctypes owned by the
+# financial bridge, which a Frappe-only seminary doesn't have. If oikonomos wants
+# a Fee dashboard on the Student form it can add one from its own side.

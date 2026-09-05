@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-01 11:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "question_key",
+  "sequence",
+  "active",
+  "question_text"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "description": "Stable, url-safe identifier. The text may be reworded; this must not, or historical answers stop lining up.",
+   "fieldname": "question_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Question Key",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sequence",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sequence"
+  },
+  {
+   "columns": 1,
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "columns": 6,
+   "fieldname": "question_text",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1,
+   "translatable": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-01 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Standard Development Question",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

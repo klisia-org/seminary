@@ -38,6 +38,9 @@
   "loa_max_return_date",
   "status_history_section",
   "status_history",
+  "mentors_section",
+  "cohort_mentors_html",
+  "mentors",
   "audit_section",
   "audit_summary",
   "grad_requirements_section",
@@ -69,11 +72,39 @@
    "search_index": 1
   },
   {
-   "fetch_from": "student.student_name",
+   "description": "Recorded when this enrollment was created. Corrected from the Person while the enrollment is Active or on Leave of Absence; frozen once it concludes, so a later name change never rewrites a completed degree or the diploma cut from it (ADR 068).",
    "fieldname": "student_name",
    "fieldtype": "Read Only",
    "in_global_search": 1,
    "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "enrollment_date",
+   "fieldtype": "Date",
+   "label": "Enrollment Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Anchor used by Time Offset graduation requirements (e.g. 'Recommendation Letter due 30 days before graduation'). Defaulted from program length on enrollment; registrar may override.",
+   "fieldname": "expected_graduation_date",
+   "fieldtype": "Date",
+   "label": "Expected Graduation Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Latest date by which the student must graduate. Auto-set on enrollment submission to enrollment_date + Program.max_time_enrolled years. Editable by the registrar to grant extensions.",
+   "fieldname": "max_graduation_date",
+   "fieldtype": "Date",
+   "label": "Max Graduation Date"
+  },
+  {
+   "fieldname": "date_of_conclusion",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Date of Conclusion",
    "read_only": 1
   },
   {
@@ -91,6 +122,25 @@
    "search_index": 1
   },
   {
+   "fetch_from": "student.student_email_id",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Student email"
+  },
+  {
+   "fieldname": "emphases_section",
+   "fieldtype": "Section Break",
+   "label": "Emphases"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Declare one or more program emphases for this student.",
+   "fieldname": "emphases",
+   "fieldtype": "Table",
+   "label": "Emphases",
+   "options": "Program Enrollment Emphasis"
+  },
+  {
    "allow_on_submit": 1,
    "fieldname": "academic_term",
    "fieldtype": "Link",
@@ -101,55 +151,12 @@
    "search_index": 1
   },
   {
-   "default": "Today",
-   "fieldname": "enrollment_date",
-   "fieldtype": "Date",
-   "label": "Enrollment Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "audit_section",
-   "fieldtype": "Section Break",
-   "label": "Program Progress"
-  },
-  {
-   "fieldname": "audit_summary",
-   "fieldtype": "HTML",
-   "label": "Audit Summary"
-  },
-  {
-   "fieldname": "enrolled_courses",
-   "fieldtype": "Section Break",
-   "label": "Courses Taken"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades. Transferred/legacy rows may be appended via Partner Transcript Import Batch after submission.",
-   "fieldname": "courses",
-   "fieldtype": "Table",
-   "label": "Courses",
-   "options": "Program Enrollment Course"
-  },
-  {
    "allow_on_submit": 1,
    "fetch_from": "student.image",
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image"
-  },
-  {
-   "fieldname": "connections_tab",
-   "fieldtype": "Tab Break",
-   "label": "Connections",
-   "show_dashboard": 1
-  },
-  {
-   "fieldname": "date_of_conclusion",
-   "fieldtype": "Date",
-   "hidden": 1,
-   "label": "Date of Conclusion",
-   "read_only": 1
   },
   {
    "fieldname": "section_break_tfcw",
@@ -189,6 +196,39 @@
    "read_only": 1
   },
   {
+   "default": "1",
+   "fieldname": "current_std_term",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Current Term (index)",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "totalcredits",
+   "fieldtype": "Int",
+   "label": "Total Credits Taken (Passed)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Recomputed from PEC rows that have count_in_gpa=1 and a numeric grade. Updated on grade send, withdrawal academic approval, and transcript import.",
+   "fieldname": "current_gpa",
+   "fieldtype": "Float",
+   "label": "Current GPA",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "Highest level on the Program's Honors Levels table whose Minimum GPA is met by the student's current_gpa.",
+   "fieldname": "current_honor",
+   "fieldtype": "Data",
+   "label": "Current Honor",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_unkt",
    "fieldtype": "Column Break"
   },
@@ -196,6 +236,11 @@
    "fieldname": "inactiveuntil",
    "fieldtype": "Date",
    "label": "Inactive until"
+  },
+  {
+   "fieldname": "inactive_motive",
+   "fieldtype": "Small Text",
+   "label": "Reason for being inactive"
   },
   {
    "allow_on_submit": 1,
@@ -234,104 +279,32 @@
    "read_only": 1
   },
   {
-   "default": "1",
-   "fieldname": "current_std_term",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Current Term (index)",
-   "non_negative": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "inactive_motive",
-   "fieldtype": "Small Text",
-   "label": "Reason for being inactive"
-  },
-  {
-   "fieldname": "emphases_section",
+   "fieldname": "mentors_section",
    "fieldtype": "Section Break",
-   "label": "Emphases"
+   "label": "Mentors"
+  },
+  {
+   "fieldname": "cohort_mentors_html",
+   "fieldtype": "HTML",
+   "label": "Cohort Mentors"
   },
   {
    "allow_on_submit": 1,
-   "description": "Declare one or more program emphases for this student.",
-   "fieldname": "emphases",
+   "description": "Mentors entered here directly, for a student no cohort supplies one for. Mentors who come from the student's cohort are shown above and are not repeated here \u2014 change those on the cohort. Close a row with a To Date instead of deleting it to keep the history.",
+   "fieldname": "mentors",
    "fieldtype": "Table",
-   "label": "Emphases",
-   "options": "Program Enrollment Emphasis"
+   "label": "Mentors",
+   "options": "Program Enrollment Mentor"
   },
   {
-   "fieldname": "section_break_uzvb",
-   "fieldtype": "Section Break"
+   "fieldname": "audit_section",
+   "fieldtype": "Section Break",
+   "label": "Program Progress"
   },
   {
-   "fieldname": "amended",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "options": "Program Enrollment",
-   "read_only": 1
-  },
-  {
-   "description": "Last calendar-1st that a Monthly-event invoice was generated for this enrollment. Clear to allow re-billing in the current month.",
-   "fieldname": "last_monthly_invoiced_on",
-   "fieldtype": "Date",
-   "label": "Last Monthly Invoiced On",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Program Enrollment",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "totalcredits",
-   "fieldtype": "Int",
-   "label": "Total Credits Taken (Passed)",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "description": "Recomputed from PEC rows that have count_in_gpa=1 and a numeric grade. Updated on grade send, withdrawal academic approval, and transcript import.",
-   "fieldname": "current_gpa",
-   "fieldtype": "Float",
-   "label": "Current GPA",
-   "precision": "2",
-   "read_only": 1
-  },
-  {
-   "description": "Highest level on the Program's Honors Levels table whose Minimum GPA is met by the student's current_gpa.",
-   "fieldname": "current_honor",
-   "fieldtype": "Data",
-   "label": "Current Honor",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "student.student_email_id",
-   "fieldname": "email",
-   "fieldtype": "Data",
-   "label": "Student email"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Anchor used by Time Offset graduation requirements (e.g. 'Recommendation Letter due 30 days before graduation'). Defaulted from program length on enrollment; registrar may override.",
-   "fieldname": "expected_graduation_date",
-   "fieldtype": "Date",
-   "label": "Expected Graduation Date"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Latest date by which the student must graduate. Auto-set on enrollment submission to enrollment_date + Program.max_time_enrolled years. Editable by the registrar to grant extensions.",
-   "fieldname": "max_graduation_date",
-   "fieldtype": "Date",
-   "label": "Max Graduation Date"
+   "fieldname": "audit_summary",
+   "fieldtype": "HTML",
+   "label": "Audit Summary"
   },
   {
    "fieldname": "grad_requirements_section",
@@ -409,6 +382,54 @@
    "label": "Required on Enrollment",
    "options": "Program Enrollment Required Course",
    "read_only": 1
+  },
+  {
+   "fieldname": "enrolled_courses",
+   "fieldtype": "Section Break",
+   "label": "Courses Taken"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Courses are populated as the student enrolls in them. Grades are populated only when the instructor submits final grades. Transferred/legacy rows may be appended via Partner Transcript Import Batch after submission.",
+   "fieldname": "courses",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "Program Enrollment Course"
+  },
+  {
+   "fieldname": "section_break_uzvb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Program Enrollment",
+   "read_only": 1
+  },
+  {
+   "description": "Last calendar-1st that a Monthly-event invoice was generated for this enrollment. Clear to allow re-billing in the current month.",
+   "fieldname": "last_monthly_invoiced_on",
+   "fieldtype": "Date",
+   "label": "Last Monthly Invoiced On",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Program Enrollment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "image_field": "image",
@@ -420,7 +441,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-06-08 18:06:46.643347",
+ "modified": "2026-08-28 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

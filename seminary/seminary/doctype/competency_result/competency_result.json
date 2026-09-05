@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "CRES-.######",
+ "creation": "2026-08-29 09:00:00.000000",
+ "description": "Where a student ended up on one competency, dimension by dimension. Holds the calculated value, any edit an evaluator made to it, and the rounded result that appears on the transcript and the radar.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#competency-results",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "program_enrollment",
+  "course_schedule",
+  "column_break_cr1",
+  "course_competency",
+  "competency_name",
+  "status",
+  "dimensions_section",
+  "dimensions",
+  "overall_section",
+  "computed_value",
+  "override_value",
+  "override_reason",
+  "column_break_cr2",
+  "overridden_by",
+  "overridden_on",
+  "final_value",
+  "final_code",
+  "decided_by",
+  "decided_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_cr1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_competency.competency_name",
+   "fieldname": "competency_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Competency Name",
+   "read_only": 1
+  },
+  {
+   "default": "Not Started",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Not Started\nIn Progress\nCompetent\nNot Yet Competent",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dimensions_section",
+   "fieldtype": "Section Break",
+   "label": "By Dimension"
+  },
+  {
+   "fieldname": "dimensions",
+   "fieldtype": "Table",
+   "label": "Dimensions",
+   "options": "Competency Result Dimension"
+  },
+  {
+   "fieldname": "overall_section",
+   "fieldtype": "Section Break",
+   "label": "Overall"
+  },
+  {
+   "description": "The dimensions combined by the framework's rule, before any edit and before rounding.",
+   "fieldname": "computed_value",
+   "fieldtype": "Float",
+   "label": "Computed",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "Replaces the computed value for this competency as a whole.",
+   "fieldname": "override_value",
+   "fieldtype": "Float",
+   "label": "Override",
+   "precision": "2"
+  },
+  {
+   "description": "Why the computed value was replaced. Required whenever an override is set.",
+   "fieldname": "override_reason",
+   "fieldtype": "Small Text",
+   "label": "Override Reason"
+  },
+  {
+   "fieldname": "column_break_cr2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "overridden_by",
+   "fieldtype": "Link",
+   "label": "Overridden By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "overridden_on",
+   "fieldtype": "Datetime",
+   "label": "Overridden On",
+   "read_only": 1
+  },
+  {
+   "description": "The reported result, after any override and after rounding.",
+   "fieldname": "final_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Final",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Final Level",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-29 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Competency Result",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  },
+  {
+   "read": 1,
+   "role": "Student",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "competency_name",
+ "track_changes": 1
+}

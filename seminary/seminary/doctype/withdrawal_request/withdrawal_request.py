@@ -28,6 +28,17 @@ class WithdrawalRequest(Document):
         the program is not free (free programs are never invoiced). Computed at
         submit (validate runs on submit) and then frozen for the 1->1
         transitions, which don't re-run validate."""
+        # No financial backend (a Frappe-only seminary) means no billing, so a
+        # refund can never be issued — short-circuit to the no-refund fast-track
+        # so the workflow skips Financial Review instead of routing to a financial
+        # state that records a refund that was never actually given. (The refund
+        # itself originates on the Withdrawal Rule, whose refund fields are hidden
+        # without oikonomos, but a rule created earlier may still carry one.)
+        from seminary.seminary.financial.backend import get_financial_backend
+
+        if not get_financial_backend().has_financials():
+            self.refund_due = 0
+            return
         if self.is_free or not self.withdrawal_rule:
             self.refund_due = 0
             return

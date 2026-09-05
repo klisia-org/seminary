@@ -8,12 +8,53 @@
 				{{ __('Add Chapter') }}
 			</Button>
 		</div>
+		<!-- The opening baseline. It belongs above the chapters because that is
+		     when it is asked for, and it had nowhere to live before
+		     (ADR 065 section 11e). -->
+		<div v-if="competencies.data?.baseline_due"
+			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
+			<p class="text-sm font-medium text-ink-gray-8">{{ __('Before you start') }}</p>
+			<p class="mt-1 text-xs text-ink-gray-6">
+				{{ __('Say where you think you are starting on each competency. You will answer again at the end, and comparing the two is the point.') }}
+			</p>
+			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
+				<Button size="sm" variant="subtle" class="mt-2">
+					{{ __('Start my self-assessment') }}
+				</Button>
+			</router-link>
+		</div>
+		<div v-if="competencies.data?.final_all_due"
+			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
+			<p class="text-sm font-medium text-ink-gray-8">
+				{{ __('You have finished the course') }}
+			</p>
+			<p class="mt-1 text-xs text-ink-gray-6">
+				{{ __('Look back over each competency and say where you are now.') }}
+			</p>
+			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
+				<Button size="sm" variant="subtle" class="mt-2">
+					{{ __('Assess my growth') }}
+				</Button>
+			</router-link>
+		</div>
+
 		<div :class="{
 			'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
 		}">
-			<Disclosure v-slot="{ open }" v-for="(chapter, index) in outline.data" :key="chapter.name"
-				:defaultOpen="openChapterDetail(chapter.idx)">
-				<DisclosureButton ref="" class="flex w-full items-center p-2 group">
+			<template v-for="(chapter, index) in outline.data" :key="chapter.name">
+			<div v-if="props.allowEdit"
+				class="mx-2 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
+				@dragover.prevent="onChapterDragOver($event)" @drop.prevent="onChapterDrop($event, index)">
+			</div>
+			<Disclosure v-slot="{ open }" :defaultOpen="openChapterDetail(chapter.idx)">
+				<!-- Rendered as a div, not the default button: Firefox and Safari do
+				     not reliably start a native drag from a <button>. role/tabindex
+				     keep it keyboard-operable — headlessui already wires the
+				     click/keydown handlers and aria-expanded. -->
+				<DisclosureButton as="div" role="button" tabindex="0"
+					class="flex w-full items-center p-2 group"
+					:class="{ 'cursor-grab': props.allowEdit }" :draggable="props.allowEdit"
+					@dragstart="onChapterDragStart($event, chapter, index)" @dragend="onChapterDragFinish">
 					<ChevronRight :class="{
 						'rotate-90 transform duration-200': open,
 						'duration-200': !open,
@@ -24,7 +65,7 @@
 						@click="redirectToChapter(chapter)">
 						{{ chapter.chapter_title }}
 					</div>
-					<div v-if="props.allowEdit" class="ml-auto flex space-x-4">
+					<div v-if="props.allowEdit" class="ml-auto flex items-center space-x-4">
 						<Tooltip :text="__('Edit Chapter')" placement="bottom">
 							<FilePenLine @click.prevent="openChapterModal(chapter)"
 								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible" />
@@ -33,9 +74,69 @@
 							<Trash2 @click.prevent="trashChapter(chapter.name)"
 								class="h-4 w-4 text-red-500 invisible group-hover:visible" />
 						</Tooltip>
+						<GripVertical class="h-4 w-4 text-ink-gray-5 invisible group-hover:visible"
+							aria-hidden="true" />
 					</div>
 				</DisclosureButton>
 				<DisclosurePanel v-if="!chapter.is_scorm_package">
+					<!-- Competency guidance and lock state (ADR 065). The student
+					     reads what they are being formed into in the same place
+					     they do the work, and a lock always says why. -->
+					<div v-if="competencyOf(chapter)" class="ml-8 mr-4 mb-3 rounded-lg border p-3"
+						:class="competencyOf(chapter).locked
+							? 'border-outline-gray-3 bg-surface-gray-1'
+							: 'border-outline-blue-2 bg-surface-blue-1'">
+						<div class="flex flex-wrap items-center gap-2">
+							<Lock v-if="competencyOf(chapter).locked" class="h-4 w-4 text-ink-gray-6" />
+							<span class="text-sm font-medium text-ink-gray-8">
+								{{ competencyOf(chapter).competency_name }}
+							</span>
+							<span v-if="competencyOf(chapter).self_assessment_submitted?.length"
+								class="rounded bg-surface-green-1 px-1.5 py-0.5 text-xs text-ink-green-3">
+								{{ __('Self-assessed') }}
+							</span>
+						</div>
+						<div v-if="competencyOf(chapter).statement"
+							class="prose-sm mt-1 text-ink-gray-6" v-html="competencyOf(chapter).statement" />
+						<dl v-if="!competencyOf(chapter).locked" class="mt-2 space-y-1">
+							<div v-for="d in competencyOf(chapter).dimensions" :key="d.dimension_code"
+								class="text-xs">
+								<dt class="inline font-medium text-ink-gray-7">{{ d.dimension }}:</dt>
+								<dd class="ml-1 inline text-ink-gray-6" v-html="d.demonstrated_by" />
+							</div>
+						</dl>
+						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">
+							{{ competencyOf(chapter).reason }}
+						</p>
+						<router-link v-if="competencyOf(chapter).unlock_competency" :to="{
+							name: 'CompetencySelfAssessment',
+							params: {
+								courseName: courseName,
+								competency: competencyOf(chapter).unlock_competency,
+							},
+						}">
+							<Button size="sm" variant="subtle" class="mt-2">
+								{{ __('Open that self-assessment') }}
+							</Button>
+						</router-link>
+						<!-- Offered when the framework's timing says so and the
+						     student has finished the chapter, not on every panel
+						     regardless (ADR 065 section 11e). -->
+						<router-link v-else-if="competencyOf(chapter).final_due" :to="{
+							name: 'CompetencySelfAssessment',
+							params: { courseName: courseName, competency: competencyOf(chapter).competency },
+						}">
+							<Button size="sm" variant="subtle" class="mt-2">
+								{{ __('You have finished this — assess your growth in it') }}
+							</Button>
+						</router-link>
+					</div>
+
+					<div v-if="competencyOf(chapter)?.locked" class="ml-8 mr-4 mb-4 text-sm text-ink-gray-5">
+						{{ __('The lessons in this chapter open once the previous self-assessment is in.') }}
+					</div>
+
+					<template v-else>
 					<div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson.name" class="lesson-wrapper">
 						<div v-if="props.allowEdit"
 							class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
@@ -88,6 +189,14 @@
 											>
 												{{ __('Graded') }}
 											</span>
+											<span
+												v-if="lesson.has_graded_activity && competencyOf(chapter)?.activities_locked"
+												class="flex items-center gap-1 rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6"
+												:title="competencyOf(chapter).reason"
+											>
+												<Lock class="h-3 w-3" />
+												{{ __('Locked') }}
+											</span>
 											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
 												class="h-4 w-4 text-ink-green-3"
 												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />
@@ -106,6 +215,7 @@
 							</div>
 						</div>
 					</div>
+					</template>
 					<div v-if="props.allowEdit"
 						class="ml-8 mr-4 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
 						@dragover.prevent="onDragOver($event)"
@@ -130,6 +240,13 @@
 					</div>
 				</DisclosurePanel>
 			</Disclosure>
+			</template>
+			<div v-if="props.allowEdit && outline.data?.length"
+				class="mx-2 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
+				@dragover.prevent="onChapterDragOver($event)"
+				@drop.prevent="onChapterDrop($event, outline.data.length)">
+				{{ __('Drop here to move to the end of the course') }}
+			</div>
 		</div>
 	</div>
 	<ChapterModal v-model="showChapterModal" v-model:outline="outline" :course="courseName"
@@ -152,6 +269,7 @@ import {
 	Trash2,
 	FileUp,
 	GripVertical,
+	Lock,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { formatDate } from '@/utils'
@@ -164,6 +282,7 @@ const user = inject('$user')
 const showChapterModal = ref(false)
 const currentChapter = ref(null)
 const draggedLesson = ref(null); // Use a ref to store the dragged lesson
+const draggedChapter = ref(null); // Same, for a chapter being reordered
 
 const props = defineProps({
 	courseName: {
@@ -187,6 +306,19 @@ const props = defineProps({
 		default: false,
 	},
 })
+
+// Optional-feature gate: an ordinary section returns is_cbe false and every
+// panel below simply does not render.
+const competencies = createResource({
+	url: 'seminary.seminary.cbe_api.get_outline_competencies',
+	params: {
+		course_schedule: props.courseName,
+	},
+	auto: true,
+	onError: () => {},
+})
+
+const competencyOf = (chapter) => competencies.data?.chapters?.[chapter.name]
 
 const outline = createResource({
 	url: 'seminary.seminary.utils.get_course_outline',
@@ -234,6 +366,24 @@ const updateLessonIndex = createResource({
 	onSuccess() {
 		outline.reload()
 		toast.success(__('Lesson moved successfully'))
+	},
+})
+
+const updateChapterIndex = createResource({
+	url: 'seminary.seminary.api.update_chapter_index',
+	makeParams(values) {
+		return {
+			course: props.courseName,
+			chapter: values.chapter,
+			idx: parseInt(values.idx, 10),
+		}
+	},
+	onSuccess() {
+		outline.reload()
+		toast.success(__('Chapter moved successfully'))
+	},
+	onError(err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not move the chapter'))
 	},
 })
 
@@ -398,5 +548,61 @@ const onDrop = (event, chapter, targetIndex) => {
 
 const onDragFinish = () => {
 	draggedLesson.value = null
+}
+
+const onChapterDragStart = (event, chapter, chapterIndex) => {
+	if (!props.allowEdit) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move'
+		event.dataTransfer.setData('text/plain', chapter.name)
+	}
+	draggedChapter.value = {
+		chapterName: chapter.name,
+		sourceIndex: chapterIndex,
+	}
+}
+
+const onChapterDragOver = (event) => {
+	// Guarded on draggedChapter so a lesson dragged over a chapter drop zone
+	// is not accepted there (and vice versa in onDragOver).
+	if (!props.allowEdit || !draggedChapter.value) {
+		return
+	}
+	if (event?.dataTransfer) {
+		event.dataTransfer.dropEffect = 'move'
+	}
+}
+
+const onChapterDrop = (event, targetIndex) => {
+	if (!props.allowEdit || !draggedChapter.value) {
+		return
+	}
+	event?.preventDefault?.()
+
+	const { chapterName, sourceIndex } = draggedChapter.value
+
+	// Removing the chapter first shifts every later slot down by one.
+	let insertionIndex = targetIndex
+	if (targetIndex > sourceIndex) {
+		insertionIndex = targetIndex - 1
+	}
+
+	if (insertionIndex === sourceIndex) {
+		draggedChapter.value = null
+		return
+	}
+
+	updateChapterIndex.submit({
+		chapter: chapterName,
+		idx: insertionIndex + 1,
+	})
+
+	draggedChapter.value = null
+}
+
+const onChapterDragFinish = () => {
+	draggedChapter.value = null
 }
 </script>

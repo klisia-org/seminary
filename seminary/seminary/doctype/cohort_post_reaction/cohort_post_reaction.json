@@ -1,0 +1,139 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "COHORT-RXN-.#####",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A reaction left by a person on a post or one of its replies.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "post",
+  "comment",
+  "person",
+  "reaction_type",
+  "scope_section",
+  "cohort",
+  "visibility",
+  "post_author",
+  "direct_recipient"
+ ],
+ "fields": [
+  {
+   "fieldname": "post",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Post",
+   "options": "Cohort Post",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Set when the reaction is on a reply rather than the post itself.",
+   "fieldname": "comment",
+   "fieldtype": "Link",
+   "label": "Comment",
+   "options": "Cohort Post Comment",
+   "search_index": 1
+  },
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "reaction_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reaction Type",
+   "options": "Cohort Reaction Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Scope (derived from post)"
+  },
+  {
+   "fetch_from": "post.cohort",
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Cohort",
+   "options": "Cohort",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "post.visibility",
+   "fieldname": "visibility",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Visibility",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "post.author",
+   "fieldname": "post_author",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Post Author",
+   "options": "Person",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "post.direct_recipient",
+   "fieldname": "direct_recipient",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Direct Recipient",
+   "options": "Person",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Post Reaction",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

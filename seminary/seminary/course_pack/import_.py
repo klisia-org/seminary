@@ -49,6 +49,7 @@ class _Importer:
         )  # src activity name -> new (folders merged in: foldername -> new)
         self.folder_map = {}  # src foldername -> new foldername
         self.scac_map = {}  # src SCAC row name -> new
+        self.competency_map = {}  # competency_code -> new Course Competency name
         self.l_map = {}  # src lesson name -> new
         self.course = None
         self.grading_scale = None
@@ -107,9 +108,37 @@ class _Importer:
         gs.grading_scale_name = name
         for iv in dep.get("intervals") or []:
             gs.append("intervals", iv)
+        for dim in dep.get("dimensions") or []:
+            gs.append("gradingscaledimensions", dim)
         gs.flags.ignore_permissions = True
         gs.insert(ignore_mandatory=True)
         return gs.name
+
+    def import_competencies(self, course):
+        """Recreate the course's competencies, keyed by competency_code.
+
+        Existing codes are reused rather than duplicated: importing a pack twice
+        into the same course must not produce two copies of every competency,
+        and any assessment already pointing at one has to keep pointing at it.
+        """
+        for rec in self.m.get("competencies") or []:
+            code = (rec.get("fields") or {}).get("competency_code")
+            if not code:
+                continue
+            existing = frappe.db.get_value(
+                "Course Competency", {"course": course, "competency_code": code}, "name"
+            )
+            if existing:
+                self.competency_map[code] = existing
+                continue
+            doc = frappe.new_doc("Course Competency")
+            doc.update(rec["fields"])
+            doc.course = course
+            for dim in rec.get("dimensions") or []:
+                doc.append("dimensions", dim)
+            doc.flags.ignore_permissions = True
+            doc.insert(ignore_mandatory=True)
+            self.competency_map[code] = doc.name
 
     def resolve_assessment_criteria(self):
         for name, meta in (
@@ -337,12 +366,21 @@ class _Importer:
                         f: (self.a_map.get(rec.get(f)) if rec.get(f) else None)
                         for f in _SCAC_ACTIVITY_FIELDS
                     },
+                    "course_competency": self.competency_map.get(
+                        rec.get("competency_code")
+                    ),
                     **rec["fields"],
                 }
             )
             row.flags.ignore_permissions = True
             row.insert(ignore_mandatory=True)
             self.scac_map[rec["src_name"]] = row.name
+            for w in rec.get("dimension_weights") or []:
+                weight = frappe.new_doc("Assessment Dimension Weight")
+                weight.update(w)
+                weight.assess_criteria = row.name
+                weight.flags.ignore_permissions = True
+                weight.insert(ignore_mandatory=True)
 
     # --- chapters + lessons ----------------------------------------------
     def import_chapters_and_lessons(self, cs):
@@ -351,6 +389,7 @@ class _Importer:
             ch = frappe.new_doc("Course Schedule Chapter")
             ch.coursesc = cs.name
             ch.update(self._rw(chrec["fields"]))
+            ch.course_competency = self.competency_map.get(chrec.get("competency_code"))
             if chrec.get("scorm_media") and chrec["scorm_media"] in self.url_map:
                 ch.scorm_package = frappe.db.get_value(
                     "File", {"file_url": self.url_map[chrec["scorm_media"]]}, "name"
@@ -445,6 +484,9 @@ class _Importer:
         self.grading_scale = self.resolve_grading_scale()
         self.resolve_assessment_criteria()
         self.course = self.resolve_course()
+        # Before SCAC: assessments link to a competency, so the competencies
+        # have to exist for import_scac to remap onto them.
+        self.import_competencies(self.course)
         self.import_media()
         self.import_questions()
         self.import_activities()

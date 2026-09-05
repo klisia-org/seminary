@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-29 09:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "dimension_code",
+  "dimension",
+  "baseline_value",
+  "computed_value",
+  "override_value",
+  "override_reason",
+  "overridden_by",
+  "overridden_on",
+  "final_value",
+  "final_code",
+  "delta"
+ ],
+ "fields": [
+  {
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dimension",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "description": "Where the student placed themselves at the start.",
+   "fieldname": "baseline_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Baseline",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "The weighted average of the assessments, before any edit and before rounding.",
+   "fieldname": "computed_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Computed",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "description": "Replaces the computed value. The computed value is kept so both are visible.",
+   "fieldname": "override_value",
+   "fieldtype": "Float",
+   "label": "Override",
+   "precision": "2"
+  },
+  {
+   "description": "Why the computed value was replaced. Required whenever an override is set.",
+   "fieldname": "override_reason",
+   "fieldtype": "Small Text",
+   "label": "Override Reason"
+  },
+  {
+   "fieldname": "overridden_by",
+   "fieldtype": "Link",
+   "label": "Overridden By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "overridden_on",
+   "fieldtype": "Datetime",
+   "label": "Overridden On",
+   "read_only": 1
+  },
+  {
+   "description": "The reported result, after any override and after rounding.",
+   "fieldname": "final_value",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Final",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Final Level",
+   "read_only": 1
+  },
+  {
+   "description": "Growth from baseline to final.",
+   "fieldname": "delta",
+   "fieldtype": "Float",
+   "label": "Change",
+   "precision": "2",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-29 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Competency Result Dimension",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

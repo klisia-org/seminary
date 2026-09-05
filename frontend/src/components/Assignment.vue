@@ -92,8 +92,13 @@
 				<div v-if="canGradeSubmission" class="space-y-4">
 					<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.status"
 						:label="__('Grading Status')" type="select" :options="submissionStatusOptions" />
-					<FormControl v-if="submissionResource.doc" v-model="submissionResource.doc.grade"
-						:label="__('Score')" type="number" />
+					<!-- A competency section grades in levels per dimension, so the
+					     score box is replaced rather than sat beside (ADR 065 11c). -->
+					<CompetencyActivityGrading v-if="submissionName && submissionName !== 'new'"
+						submission-doctype="Assignment Submission" :submission="submissionName"
+						@mode="(m) => (gradeMode = m)" />
+					<FormControl v-if="submissionResource.doc && showScoreBox"
+						v-model="submissionResource.doc.grade" :label="__('Score')" type="number" />
 					<div>
 						<div class="text-sm text-ink-gray-5 mb-1">
 							{{ __('Comments') }}
@@ -502,6 +507,7 @@ import { getFileSize, uploadLimits, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -516,6 +522,9 @@ const user = inject('$user')
 const showTitle = router.currentRoute.value.name == 'AssignmentSubmission'
 const isDirty = ref(false)
 const editMode = ref(false)
+// 'loading' until the competency panel reports back, so the score box does not
+// flash on a section that does not grade in points (ADR 065 section 11c). A
+// submission that does not exist yet has no panel to ask, so it keeps the box.
 
 const props = defineProps({
 	assignmentID: {
@@ -527,6 +536,14 @@ const props = defineProps({
 		default: 'new',
 	},
 })
+
+const gradeMode = ref('loading')
+const showScoreBox = computed(
+	() =>
+		!props.submissionName ||
+		props.submissionName === 'new' ||
+		gradeMode.value === 'numeric'
+)
 
 onMounted(() => {
 	window.addEventListener('keydown', keyboardShortcut)

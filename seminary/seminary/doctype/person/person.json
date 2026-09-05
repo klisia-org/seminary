@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "PERS-.#####",
- "creation": "2026-06-10 12:00:00.000000",
+ "creation": "2026-06-10 12:00:00",
  "description": "A single human on record, holding their name, contact details, and communication preferences. One Person record is shared by all the roles that human plays (student, instructor, alumni, applicant), so you update their contact info in one place.",
  "doctype": "DocType",
  "document_type": "Document",
@@ -14,6 +14,7 @@
   "middle_name",
   "last_name",
   "full_name",
+  "phonetic_name",
   "column_break_identity",
   "image",
   "block_from_web",
@@ -22,6 +23,13 @@
   "language",
   "country",
   "gender",
+  "personal_section",
+  "date_of_birth",
+  "nationality",
+  "column_break_personal",
+  "blood_group",
+  "marital_status",
+  "ethnicity",
   "reachability_section",
   "primary_email",
   "column_break_reach",
@@ -33,6 +41,15 @@
   "column_break_mail",
   "city",
   "state",
+  "mailing_country",
+  "geo_section",
+  "latitude",
+  "longitude",
+  "column_break_geo",
+  "geocoded_on",
+  "geo_status",
+  "geo_html",
+  "geocode_precision",
   "addresses_section",
   "channel_addresses",
   "consent_section",
@@ -40,7 +57,6 @@
   "links_section",
   "user",
   "column_break_links",
-  "customer",
   "career_section",
   "skills",
   "resume",
@@ -101,7 +117,7 @@
    "label": "Image"
   },
   {
-   "default": "0",
+   "default": "1",
    "description": "Hide this person from public website rosters (e.g. \"Our Team\"). Use for staff serving in security-sensitive or restricted-access contexts. Does not affect desk or portal visibility.",
    "fieldname": "block_from_web",
    "fieldtype": "Check",
@@ -127,14 +143,13 @@
    "options": "Language"
   },
   {
-   "description": "Drives regional provider routing (ADR 043).",
+   "description": "Drives regional provider routing for messaging (ADR 043). This is not the postal country \u2014 see Mailing Country.",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country / Region",
    "options": "Country"
   },
   {
-   "description": "The person's gender. The shared human attribute for every role this person holds (student, instructor, partner contact).",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
@@ -235,18 +250,11 @@
    "fieldtype": "Link",
    "label": "User",
    "options": "User",
-   "search_index": 1,
    "unique": 1
   },
   {
    "fieldname": "column_break_links",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
   },
   {
    "collapsible": 1,
@@ -307,6 +315,121 @@
    "fieldname": "org_footprint_html",
    "fieldtype": "HTML",
    "label": "Org Footprint"
+  },
+  {
+   "description": "How the name should be pronounced (e.g. 'JOH-ann mar-TEEN-ess'). Used for ceremony and roll calls.",
+   "fieldname": "phonetic_name",
+   "fieldtype": "Data",
+   "label": "Phonetic Name"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "personal_section",
+   "fieldtype": "Section Break",
+   "label": "Personal Details"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "description": "Citizenship. Distinct from Country / Region, which routes messaging.",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "fieldname": "column_break_personal",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "blood_group",
+   "fieldtype": "Select",
+   "label": "Blood Group",
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "ethnicity",
+   "fieldtype": "Select",
+   "label": "Ethnic Group",
+   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "permlevel": 1
+  },
+  {
+   "description": "Postal country for letters and labels.",
+   "fieldname": "mailing_country",
+   "fieldtype": "Link",
+   "label": "Mailing Country",
+   "options": "Country"
+  },
+  {
+   "collapsible": 1,
+   "description": "Resolved from the mailing address, never typed. A home coordinate is more sensitive than the address it came from, because it is trivially mappable.",
+   "fieldname": "geo_section",
+   "fieldtype": "Section Break",
+   "label": "Location",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude",
+   "permlevel": 1,
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude",
+   "permlevel": 1,
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_geo",
+   "fieldtype": "Column Break",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "geocoded_on",
+   "fieldtype": "Datetime",
+   "label": "Geocoded On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "What the provider actually matched \u2014 a rooftop is not a city centroid, and a distance ranking built on the latter is noise.",
+   "fieldname": "geocode_precision",
+   "fieldtype": "Data",
+   "label": "Geocode Precision",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Resolved: a usable point. Unresolvable: the provider knows of no such place \u2014 not retried, since asking again costs money and gets the same answer. Failed: network or quota, retried by the daily sweeper.",
+   "fieldname": "geo_status",
+   "fieldtype": "Select",
+   "label": "Geocode Status",
+   "options": "\nResolved\nUnresolvable\nFailed",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "geo_html",
+   "fieldtype": "HTML",
+   "label": "Location Summary",
+   "permlevel": 1
   }
  ],
  "image_field": "image",
@@ -338,16 +461,18 @@
   },
   {
    "group": "Roles",
+   "is_child_table": 1,
    "link_doctype": "Partner Contact",
    "link_fieldname": "person",
-   "parent_doctype": "Partner Organization"
+   "parent_doctype": "Partner Organization",
+   "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-06-19 18:30:00.000000",
+ "modified": "2026-09-03 05:46:11.575356",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -382,6 +507,18 @@
    "report": 1,
    "role": "Program Chair",
    "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

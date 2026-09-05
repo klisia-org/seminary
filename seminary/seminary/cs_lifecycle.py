@@ -16,7 +16,6 @@
 
 import frappe
 from frappe import _
-from frappe.model.workflow import apply_workflow
 from frappe.utils import getdate
 
 from seminary.seminary import date_rules
@@ -72,18 +71,67 @@ def _cs_anchor_dates(cs) -> dict:
 
 
 def get_default_initial_state(cs) -> str:
-    """Return the workflow_state to set on a new Course Schedule.
+    """Return the workflow_state a new Course Schedule should *end up* in.
 
-    If a future enrollment_open_date can be resolved, land in ``Draft`` so the
-    scheduler can promote the doc when the date arrives. Otherwise land
-    directly in ``Open for Enrollment`` (preserves the previous default-open
-    behavior when no rule is configured).
+    If a future enrollment_open_date can be resolved, stay in ``Draft`` so the
+    scheduler can promote the doc when the date arrives. Otherwise it should be
+    ``Open for Enrollment`` (preserves the previous default-open behavior when
+    no rule is configured).
+
+    NB: Frappe forbids *inserting* a document directly into a non-initial
+    workflow state, so this is applied in ``after_insert`` via
+    ``open_new_schedule_if_due`` (system-driven), not as the insert-time state.
     """
     dates = resolve_window_dates(cs)
     open_date = dates.get("enrollment_open")
     if open_date and getdate(open_date) > getdate():
         return "Draft"
     return "Open for Enrollment"
+
+
+def open_new_schedule_if_due(cs) -> None:
+    """Promote a freshly-created Course Schedule Draft → Open for Enrollment when
+    enrollment is already open (no future open date).
+
+    System-driven: the schedule is born in Draft (Frappe forbids inserting
+    straight into a later state) and the workflow's Open Enrollment action is
+    gated on the Program Chair role — which the creator (a script, the demo, the
+    scheduler) may not hold. So we lift it via db.set_value, bypassing
+    apply_workflow's per-user transition gate (ADR 013 system-driven pattern).
+    """
+    if cs.get("workflow_state") and cs.workflow_state != "Draft":
+        return
+    if get_default_initial_state(cs) != "Open for Enrollment":
+        return
+    frappe.db.set_value(
+        "Course Schedule",
+        cs.name,
+        "workflow_state",
+        "Open for Enrollment",
+        update_modified=False,
+    )
+    cs.workflow_state = "Open for Enrollment"
+
+
+def _system_advance_cs_state(cs_name, new_state) -> None:
+    """Set a Course Schedule's workflow_state system-driven (bypassing the
+    Program-Chair-gated apply_workflow) and run the same waitlist side effects
+    the controller's on_update would — db.set_value skips controller hooks.
+    """
+    frappe.db.set_value(
+        "Course Schedule",
+        cs_name,
+        "workflow_state",
+        new_state,
+        update_modified=False,
+    )
+    from seminary.seminary.waitlist import mark_waitlist_unseated, recount_and_promote
+
+    # Leaving Open for Enrollment closes the queue: still-waitlisted students
+    # become Unseated. Mirrors CourseSchedule._handle_capacity_and_waitlist.
+    if new_state not in ("Draft", "Open for Enrollment"):
+        mark_waitlist_unseated(cs_name)
+    recount_and_promote(cs_name)
 
 
 # ── Event-driven trigger: first grade saved → Grading ──────────────────────
@@ -179,7 +227,7 @@ def advance_due_course_schedules(today=None):
         pluck="name",
     ):
         try:
-            apply_workflow(frappe.get_doc("Course Schedule", name), "Open Enrollment")
+            _system_advance_cs_state(name, "Open for Enrollment")
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"CS Draft→Open failed: {name}")
 
@@ -192,7 +240,7 @@ def advance_due_course_schedules(today=None):
         pluck="name",
     ):
         try:
-            apply_workflow(frappe.get_doc("Course Schedule", name), "Close Enrollment")
+            _system_advance_cs_state(name, "Enrollment Closed")
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"CS Open→Closed failed: {name}")
 

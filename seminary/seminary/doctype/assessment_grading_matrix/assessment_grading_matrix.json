@@ -1,0 +1,135 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "hash",
+ "creation": "2026-09-01 13:00:00.000000",
+ "description": "One cell of an assessment's grading grid: whether a given kind of evaluator grades a given dimension on this activity. Rows exist only where an instructor made an explicit choice; absence means the framework's grading mode stands. Switching a cell off means the evaluator does not judge that dimension here at all -- not that they gave it a zero.",
+ "doctype": "DocType",
+ "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#assessment-grading-matrix",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "assess_criteria",
+  "course_schedule",
+  "course_competency",
+  "column_break_agm1",
+  "instructor_category",
+  "dimension_code",
+  "dimension",
+  "graded"
+ ],
+ "fields": [
+  {
+   "fieldname": "assess_criteria",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_agm1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Evaluator Type",
+   "options": "Instructor Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dimension_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dimension",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Dimension",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "graded",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Graded"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-01 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Assessment Grading Matrix",
+ "naming_rule": "Hash",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

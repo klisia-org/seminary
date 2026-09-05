@@ -44,10 +44,11 @@ configurePortals({
 	},
 	portals: [
 		{ id: 'student', label: 'Academics', description: 'Academic Portal', url: '/seminary', roles: ['Student', 'Academics User', 'Instructor'] },
-		{ id: 'aretenic', label: 'Aretenic', description: 'Quality Management', url: '/aretenic', roles: ['Academics User', 'Instructor'] },
+		{ id: 'aretenic', label: 'Aretenic', description: 'Quality Management', url: '/aretenic', roles: ['Academics User', 'Instructor', 'Seminary Manager'], when: (s) => !!s?.has_aretenic },
 		{ id: 'examiner', label: 'Project Reviews', url: '/seminary/culminating-project', roles: ['External Examiner'] },
 		{ id: 'alumni', label: 'Alumni', description: 'Alumni Portal',url: '/seminary/alumni', roles: ['Alumni'] },
 		{ id: 'partner', label: 'Partner', description: 'Jobs and Internship Management',url: '/seminary/partner', roles: ['Partner'] },
+		{ id: 'community', label: 'Community', description: 'Discipleship Community', url: '/seminary/community', roles: ['Cohort Participant'] },
 		{ id: 'donor', label: 'Donate', description: 'Donor Portal', url: '/donate/donorportal' },
 	],
 	sessionFetcher: async () => {
@@ -60,6 +61,9 @@ configurePortals({
 			email: u.email,
 			image: u.user_image,
 			roles: u.roles || [],
+			// Whether the optional Aretenic app is installed (ADR 030); gates the
+			// Aretenic entry in the portal switcher via its `when` predicate.
+			has_aretenic: !!u.has_aretenic,
 		}
 	},
 })

@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{academic_term}-{first_name}-{###}",
+ "autoname": "APP-.#####",
  "creation": "2015-09-11 11:50:09.740807",
  "default_view": "List",
  "description": "A prospective student's application to a program, created when someone applies through the public application form or by staff. Review and process it here before admitting the applicant and creating their enrollment.",
@@ -23,8 +23,6 @@
   "section_break_xuzu",
   "student_email_id",
   "term_admission",
-  "customer",
-  "customer_group",
   "image",
   "person",
   "column_break_lvby",
@@ -63,7 +61,7 @@
   "city",
   "column_break_23",
   "state",
-  "zipcode",
+  "pincode",
   "country",
   "relations_tab",
   "contactsrefs",
@@ -99,7 +97,8 @@
   "testimony",
   "pgmexpect",
   "requests_requirement_review",
-  "contacts"
+  "contacts",
+  "access_key"
  ],
  "fields": [
   {
@@ -196,26 +195,11 @@
    "options": "Term Admission"
   },
   {
-   "description": "The Customer record used to bill the Application fee. Auto-created on submit if blank, using the applicant's name and Customer Group.",
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer",
-   "read_only": 1
-  },
-  {
-   "default": "Individual",
-   "description": "Customer Group used to bill the Application fee. Drives which Price List is applied.",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "Customer Group",
-   "options": "Customer Group"
-  },
-  {
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
-   "label": "Image"
+   "label": "Image",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "section_break_4",
@@ -224,20 +208,23 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Gender",
-   "options": "\nMale\nFemale",
+   "options": "Gender",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
    "reqd": 1
   },
   {
    "fieldname": "blood_group",
    "fieldtype": "Select",
    "label": "Blood Group",
-   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "column_break_12",
@@ -273,7 +260,8 @@
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Country"
+   "options": "Country",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "home_address",
@@ -282,12 +270,14 @@
   {
    "fieldname": "address_line_1",
    "fieldtype": "Data",
-   "label": "Address Line 1"
+   "label": "Address Line 1",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "address_line_2",
    "fieldtype": "Data",
-   "label": "Address Line 2"
+   "label": "Address Line 2",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "column_break_23",
@@ -296,12 +286,14 @@
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State"
+   "label": "State",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "contacts",
@@ -355,7 +347,8 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "titleresp",
@@ -364,9 +357,10 @@
    "options": "Salutation"
   },
   {
-   "fieldname": "zipcode",
+   "fieldname": "pincode",
    "fieldtype": "Data",
-   "label": "ZIP cide"
+   "label": "ZIP / Postal Code",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "social_security_number",
@@ -377,7 +371,8 @@
    "fieldname": "ethnic",
    "fieldtype": "Select",
    "label": "Ethnic Group",
-   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther"
+   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "disabilities_section",
@@ -400,7 +395,8 @@
    "fieldname": "marital",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)"
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "employment_tab",
@@ -622,6 +618,16 @@
    "fieldname": "education_docs",
    "fieldtype": "Attach",
    "label": "Educational records"
+  },
+  {
+   "description": "Unguessable handle for the public payment page. Not a secret the applicant needs to see; it exists so the page cannot be reached by trying docnames.",
+   "fieldname": "access_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Access Key",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "image_field": "image",
@@ -630,7 +636,7 @@
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -708,7 +714,9 @@
  ],
  "route": "apply-to-enroll",
  "row_format": "Dynamic",
+ "search_fields": "title,student_email_id",
  "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

@@ -24,30 +24,18 @@
   "image",
   "section_break_7",
   "student_email_id",
-  "date_of_birth",
-  "blood_group",
   "column_break_3",
   "student_mobile_number",
   "gender",
-  "nationality",
-  "phonetic_name",
   "address_tab",
   "section_break_22",
-  "address_line_1",
-  "address_line_2",
-  "pincode",
   "column_break_20",
-  "city",
-  "state",
-  "country",
   "relations_tab",
   "section_break_18",
   "contacts",
   "customer_details_tab",
   "customer_details_section",
-  "customer",
   "column_break_rgpi",
-  "customer_group",
   "program_enrollment_section",
   "pe_html",
   "services_section",
@@ -77,25 +65,27 @@
    "fieldtype": "Section Break"
   },
   {
+   "fetch_from": "person.first_name",
    "fieldname": "first_name",
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "First Name",
-   "read_only_depends_on": "eval:doc.person",
-   "reqd": 1
+   "read_only": 1
   },
   {
+   "fetch_from": "person.middle_name",
    "fieldname": "middle_name",
    "fieldtype": "Data",
    "label": "Middle Name",
-   "read_only_depends_on": "eval:doc.person"
+   "read_only": 1
   },
   {
+   "fetch_from": "person.last_name",
    "fieldname": "last_name",
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "Last Name",
-   "read_only_depends_on": "eval:doc.person"
+   "read_only": 1
   },
   {
    "fieldname": "user",
@@ -104,14 +94,15 @@
    "options": "User"
   },
   {
-   "description": "Identity spine record (ADR 042). Created automatically; name and contact edits happen on the Person.",
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",
    "no_copy": 1,
    "options": "Person",
-   "read_only": 1,
-   "search_index": 1
+   "reqd": 1,
+   "search_index": 1,
+   "unique": 1
   },
   {
    "fieldname": "column_break_4",
@@ -127,20 +118,22 @@
   },
   {
    "description": "Mirror of the linked Person's Primary Email (ADR 042).",
+   "fetch_from": "person.primary_email",
    "fieldname": "student_email_id",
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "Student Email Address",
-   "read_only_depends_on": "eval:doc.person",
+   "read_only": 1,
    "unique": 1
   },
   {
    "description": "Mirror of the linked Person's Primary Mobile (ADR 042).",
+   "fetch_from": "person.primary_mobile",
    "fieldname": "student_mobile_number",
    "fieldtype": "Data",
    "in_global_search": 1,
    "label": "Student Mobile Number",
-   "read_only_depends_on": "eval:doc.person"
+   "read_only": 1
   },
   {
    "default": "Today",
@@ -150,10 +143,12 @@
    "label": "Joining Date"
   },
   {
+   "fetch_from": "person.image",
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
    "label": "Image",
+   "read_only": 1,
    "width": "10"
   },
   {
@@ -162,37 +157,16 @@
    "label": "Personal Details"
   },
   {
-   "fieldname": "date_of_birth",
-   "fieldtype": "Date",
-   "label": "Date of Birth"
-  },
-  {
-   "fieldname": "blood_group",
-   "fieldtype": "Select",
-   "label": "Blood Group",
-   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
-  },
-  {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "person.gender",
    "fieldname": "gender",
    "fieldtype": "Link",
    "label": "Gender",
-   "options": "Gender"
-  },
-  {
-   "fieldname": "nationality",
-   "fieldtype": "Link",
-   "label": "Nationality",
-   "options": "Country"
-  },
-  {
-   "description": "How the student's name should be pronounced (e.g. 'JOH-ann mar-TEEN-ess'). Used for ceremony and roll calls.",
-   "fieldname": "phonetic_name",
-   "fieldtype": "Data",
-   "label": "Phonetic Name"
+   "options": "Gender",
+   "read_only": 1
   },
   {
    "fieldname": "student_applicant",
@@ -206,39 +180,8 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "address_line_1",
-   "fieldtype": "Data",
-   "label": "Address Line 1"
-  },
-  {
-   "fieldname": "address_line_2",
-   "fieldtype": "Data",
-   "label": "Address Line 2"
-  },
-  {
-   "fieldname": "pincode",
-   "fieldtype": "Data",
-   "label": "Pincode"
-  },
-  {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "city",
-   "fieldtype": "Data",
-   "label": "City"
-  },
-  {
-   "fieldname": "state",
-   "fieldtype": "Data",
-   "label": "State"
-  },
-  {
-   "fieldname": "country",
-   "fieldtype": "Link",
-   "label": "Country",
-   "options": "Country"
   },
   {
    "fieldname": "section_break_18",
@@ -282,10 +225,12 @@
    "options": "Student Hold"
   },
   {
+   "fetch_from": "person.full_name",
    "fieldname": "student_name",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "Student Name"
+   "label": "Student Name",
+   "read_only": 1
   },
   {
    "fieldname": "address_tab",
@@ -318,21 +263,6 @@
    "fieldname": "customer_details_section",
    "fieldtype": "Section Break",
    "label": "Customer Details"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer",
-   "read_only": 1
-  },
-  {
-   "default": "Student",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "Customer Group",
-   "options": "Customer Group",
-   "reqd": 1
   },
   {
    "fieldname": "column_break_rgpi",

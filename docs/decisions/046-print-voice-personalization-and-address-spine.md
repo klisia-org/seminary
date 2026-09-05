@@ -1,7 +1,19 @@
 # 046 — Print & Voice channels, announcement personalization, and the address spine
 
 **Date:** 2026-06-11
-**Status:** Accepted
+**Status:** Accepted — **address clauses superseded by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
+
+The channels, personalization and mailing-label decisions stand. Two things about the address do not:
+
+- **The deliberate Student exception is gone.** "Student ... keeps writable address fields as a
+  registrar-intake snapshot that seeds the Person on creation and then stands as point-in-time backup"
+  — the seeding never happened. `ensure_person()` accepted no address arguments at all, so nothing on
+  the intake path ever wrote one; only the importer and the portal preferences page did. The fields
+  were an unmanaged second copy, not a backup, and they are deleted. This is the "larger reconciliation
+  ... deferred to its own change" that the Open section names.
+- **Postal country is now its own field.** `alumni_profile.mailing_country` fetched `person.country`,
+  which is the messaging-provider routing selector (043) — so a student's self-service address edit
+  could reach comms routing. `Person.mailing_country` is distinct from `Person.country`.
 
 ## Context
 

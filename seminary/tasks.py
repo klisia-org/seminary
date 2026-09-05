@@ -1,12 +1,6 @@
 import frappe
 from frappe.utils import getdate
 
-from seminary.seminary.api import (
-    generate_monthly_invoices,
-    generate_nat_invoices,
-    generate_nay_invoices,
-)
-
 # Scheduler hooks — see hooks.py scheduler_events
 # Documentation: https://frappeframework.com/docs/user/en/api/background_jobs
 
@@ -24,11 +18,9 @@ def daily():
 
     recompute_all()
 
-    if frappe.db.get_single_value("Seminary Settings", "billing_automation_enabled"):
-        _run_nat_for_due_terms(today)
-        _run_nay_for_due_years(today)
-        if today.day == 1:
-            generate_monthly_invoices(today)
+    # Automatic billing (NAT / NAY / monthly invoices) is driven by the oikonomos
+    # bridge's own daily scheduler task (oikonomos.financial.invoicing.
+    # run_billing_automation); seminary's scheduler stays purely academic.
 
     if frappe.db.get_single_value("Seminary Settings", "auto_advance_course_schedule"):
         from seminary.seminary.cs_lifecycle import (
@@ -43,9 +35,9 @@ def daily():
 
     process_follow_ups()
 
-    from seminary.seminary.scholarship import review_scholarship_retention
-
-    review_scholarship_retention(today)
+    # Scholarship retention review is an oikonomos (financial) concern — it runs
+    # from the bridge's own daily scheduler task
+    # (oikonomos.financial.scholarship.review_scholarship_retention).
 
 
 @frappe.whitelist()
@@ -64,27 +56,52 @@ def refresh_term_flags_on_save(doc, method=None):
 def _update_term_flags(today):
     """Flip Academic Term.iscurrent_acterm / open based on today's date.
 
+    `iscurrent_acterm` names *the* current term, singular — one app-wide answer
+    that everything else reads. So this sets it exclusively: it picks the one
+    term covering today and clears the flag on every other term, rather than
+    setting the winner and hoping the losers get cleared by some other branch.
+    The old version only cleared a term whose end date had passed, which left a
+    flag on a *future* term untouched for as long as it stayed future.
+
     Student advancement is NOT done here — that's a manual action in
     api.roll_students, so a registrar can verify grades first."""
     terms = frappe.get_all(
         "Academic Term",
         fields=["name", "term_start_date", "term_end_date", "iscurrent_acterm", "open"],
+        order_by="term_start_date asc",
     )
-    had_current = False
+
+    # Overlapping term dates are a data error, not a case to model: if two cover
+    # today the earlier one wins, deterministically, so the answer does not
+    # depend on row order.
+    current = next(
+        (
+            t.name
+            for t in terms
+            if t.term_start_date
+            and t.term_end_date
+            and t.term_start_date <= today <= t.term_end_date
+        ),
+        None,
+    )
+
     for t in terms:
-        if t.term_end_date < today:
+        should_be_current = 1 if t.name == current else 0
+        if int(t.iscurrent_acterm or 0) != should_be_current:
+            frappe.db.set_value(
+                "Academic Term", t.name, "iscurrent_acterm", should_be_current
+            )
+
+        # `open` is a separate question: a term that has ended is closed, one
+        # that is running is open, and a future term's enrollment window is the
+        # registrar's to decide.
+        if t.term_end_date and t.term_end_date < today:
             if t.open:
                 frappe.db.set_value("Academic Term", t.name, "open", 0)
-            if t.iscurrent_acterm:
-                frappe.db.set_value("Academic Term", t.name, "iscurrent_acterm", 0)
-        elif t.term_start_date <= today <= t.term_end_date:
-            if not t.iscurrent_acterm:
-                frappe.db.set_value("Academic Term", t.name, "iscurrent_acterm", 1)
-            if not t.open:
-                frappe.db.set_value("Academic Term", t.name, "open", 1)
-            had_current = True
+        elif t.name == current and not t.open:
+            frappe.db.set_value("Academic Term", t.name, "open", 1)
 
-    if not had_current:
+    if not current:
         _maybe_warn_need_acadterm(today)
 
 
@@ -116,32 +133,6 @@ def _reconcile_loa(today):
     from seminary.seminary.program_status import reconcile_loa_billing
 
     reconcile_loa_billing(today)
-
-
-def _run_nat_for_due_terms(today):
-    due = frappe.db.get_all(
-        "Academic Term",
-        filters={
-            "term_start_date": ["<=", today],
-            "invoiced_nat_on": ["is", "not set"],
-        },
-        pluck="name",
-    )
-    for term in due:
-        generate_nat_invoices(term)
-
-
-def _run_nay_for_due_years(today):
-    due = frappe.db.get_all(
-        "Academic Year",
-        filters={
-            "year_start_date": ["<=", today],
-            "invoiced_nay_on": ["is", "not set"],
-        },
-        pluck="name",
-    )
-    for year in due:
-        generate_nay_invoices(year)
 
 
 def _maybe_warn_need_acadterm(today):

@@ -1,0 +1,2 @@
+function e(e){if(!e||typeof e!=`string`)return null;let t=e.trim();if(/^[A-Za-z0-9_-]{11}$/.test(t))return t;for(let e of[/youtu\.be\/([A-Za-z0-9_-]{6,})/,/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,/youtube\.com\/live\/([A-Za-z0-9_-]{6,})/,/youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,/[?&]v=([A-Za-z0-9_-]{6,})/]){let n=t.match(e);if(n)return n[1]}return null}function t(e){return!e||typeof e!=`string`?!1:e.toLowerCase().split(`?`)[0].endsWith(`.docx`)}export{e as n,t};
+//# sourceMappingURL=assignmentRendering-DnMiDsB7.js.map

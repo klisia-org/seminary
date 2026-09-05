@@ -12,6 +12,14 @@ The trigger is configured per Program (`graduation_request_trigger`):
 - "Passed final courses":      candidate when the same conditions hold
   *counting only completed courses*.
 
+An unset trigger is not a veto — it resolves to DEFAULT_REQUEST_TRIGGER.
+Graduating is the normal end of a non-ongoing program, so the feature is
+on unless the registrar opts the program out via
+`students_can_request_graduation`. Candidacy never depends on the program
+having a Program Graduation Requirement policy: a program with no
+graduation requirements simply has no extra evidence to satisfy beyond
+its courses and credits.
+
 The evaluator is idempotent and bidirectional — it always recomputes from
 current PEC + CEI state and overwrites `grad_candidate`. A withdrawal
 that drops the student below requirements flips the flag back to 0
@@ -23,6 +31,26 @@ touching the PE's modified timestamp on read-driven recomputation.
 
 import frappe
 from frappe.model.document import Document
+
+
+# Applied when a Program leaves `graduation_request_trigger` empty. Filing as
+# soon as the in-progress courses would close out the program is the more
+# permissive of the two triggers; the request still has to clear Academic
+# Review, which is where "did they actually pass?" is settled.
+DEFAULT_REQUEST_TRIGGER = "Enrolled in final courses"
+
+
+def resolve_request_trigger(program) -> str:
+    """The graduation request trigger in force for a Program (doc or name).
+
+    Falls back to DEFAULT_REQUEST_TRIGGER so a program that was never
+    explicitly configured still lets its students file.
+    """
+    if isinstance(program, str):
+        trigger = frappe.db.get_value("Program", program, "graduation_request_trigger")
+    else:
+        trigger = program.get("graduation_request_trigger")
+    return trigger or DEFAULT_REQUEST_TRIGGER
 
 
 def evaluate_candidacy(pe_name: str) -> bool:
@@ -108,8 +136,7 @@ def _compute(pe) -> bool:
         return False
     if not program.students_can_request_graduation:
         return False
-    if not program.graduation_request_trigger:
-        return False
+    trigger = resolve_request_trigger(program)
 
     # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
     # 0 = no minimum. Ongoing programs already returned above.
@@ -128,9 +155,7 @@ def _compute(pe) -> bool:
 
     exempted, required_leveling, _lvl = leveling_sets(pe.name)
 
-    count_in_progress = (
-        program.graduation_request_trigger == "Enrolled in final courses"
-    )
+    count_in_progress = trigger == "Enrolled in final courses"
     satisfied = completed | exempted | (in_progress if count_in_progress else set())
 
     if mandatory_program - satisfied:

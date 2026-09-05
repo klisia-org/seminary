@@ -13,11 +13,35 @@ it never renames anything (in particular not the email-keyed Frappe User).
 import frappe
 from frappe import _
 
+from seminary.seminary.person_fields import (
+    AUTHORED,
+    SPEC_BY_ARG,
+    SPEC_BY_PERSON_FIELD,
+)
+
 EMAIL_CHANNEL = "Email"
 
-# Spine-owned identity/contact fields settable through ensure/update.
-IDENTITY_FIELDS = ("first_name", "middle_name", "last_name", "primary_mobile")
-FILL_ONLY_FIELDS = ("language", "country", "image")
+# Which fields exist, and whether each is authoritative or fill-only, is
+# declared once in `person_fields.SPEC` (ADR 068). The `IDENTITY_FIELDS` /
+# `FILL_ONLY_FIELDS` tuples that used to live here were a second, partial copy
+# of that list — and `FILL_ONLY_FIELDS` was referenced nowhere at all, so the
+# fill-only behaviour it described was really just `_apply`'s fallthrough.
+
+
+def _values_from_kwargs(kwargs):
+    """Map ensure/update keyword arguments onto Person fieldnames.
+
+    Callers pass `locals()`. That looks sly, but it is the point: writing the
+    dict out by hand means every attribute added to the registry has to be
+    remembered in two more places, and forgetting one drops it *silently* —
+    which is precisely how the address never reached the spine. Anything not
+    named in the registry (email, user, overwrite, stray locals) is ignored.
+    """
+    return {
+        SPEC_BY_ARG[arg].person_field: value
+        for arg, value in kwargs.items()
+        if arg in SPEC_BY_ARG
+    }
 
 
 def normalize_email(value):
@@ -58,6 +82,18 @@ def ensure_person(
     country=None,
     image=None,
     gender=None,
+    date_of_birth=None,
+    nationality=None,
+    phonetic_name=None,
+    mailing_country=None,
+    address_line_1=None,
+    address_line_2=None,
+    city=None,
+    state=None,
+    pincode=None,
+    blood_group=None,
+    marital_status=None,
+    ethnicity=None,
 ):
     """Get-or-create the Person for an email/User; returns the Person name.
 
@@ -84,16 +120,7 @@ def ensure_person(
             middle_name = middle_name or lifted.middle_name
             last_name = last_name or lifted.last_name
 
-    values = {
-        "first_name": first_name,
-        "middle_name": middle_name,
-        "last_name": last_name,
-        "primary_mobile": mobile,
-        "language": language,
-        "country": country,
-        "image": image,
-        "gender": gender,
-    }
+    values = _values_from_kwargs(locals())
 
     existing = find_person(email=email, user=user)
     if existing:
@@ -105,7 +132,16 @@ def ensure_person(
         return person.name
 
     person = frappe.new_doc("Person")
-    person.update({field: value for field, value in values.items() if value})
+    # The same Link guard `_apply` uses: this branch writes straight onto a new
+    # doc rather than going through it, so without this an applicant's gender
+    # literal would still raise LinkValidationError on a localised site.
+    person.update(
+        {
+            field: value
+            for field, value in values.items()
+            if value and _link_target_exists(field, value)
+        }
+    )
     person.primary_email = email
     person.user = user
     if not person.first_name:
@@ -128,6 +164,18 @@ def update_person(
     country=None,
     image=None,
     gender=None,
+    date_of_birth=None,
+    nationality=None,
+    phonetic_name=None,
+    mailing_country=None,
+    address_line_1=None,
+    address_line_2=None,
+    city=None,
+    state=None,
+    pincode=None,
+    blood_group=None,
+    marital_status=None,
+    ethnicity=None,
     overwrite=False,
 ):
     """Re-sync a known Person from a role record.
@@ -137,17 +185,8 @@ def update_person(
     including clears; fill-only fields and email still never blank out. With
     overwrite=False it behaves like ensure_person's fill-blanks pass.
     """
+    values = _values_from_kwargs(locals())
     person = frappe.get_doc("Person", person_name)
-    values = {
-        "first_name": first_name,
-        "middle_name": middle_name,
-        "last_name": last_name,
-        "primary_mobile": mobile,
-        "language": language,
-        "country": country,
-        "image": image,
-        "gender": gender,
-    }
     changed = _apply(person, values, email=normalize_email(email), overwrite=overwrite)
     changed = _link_user(person, user) or changed
     if changed:
@@ -156,12 +195,21 @@ def update_person(
 
 
 def _apply(person, values, email=None, overwrite=False):
+    """Write `values` (keyed by Person fieldname) with the registry's semantics.
+
+    An AUTHORED field is last-write-wins when the caller is authoritative, but
+    a `never_blank` one is never cleared. Everything else only fills a blank —
+    an existing Person stays authoritative over it.
+    """
     changed = False
     for field, value in values.items():
+        spec = SPEC_BY_PERSON_FIELD[field]
+        if value and not _link_target_exists(field, value):
+            continue
         current = person.get(field)
-        if field in IDENTITY_FIELDS and overwrite:
-            if field == "first_name" and not value:
-                continue  # reqd — never blank
+        if spec.mode == AUTHORED and overwrite:
+            if spec.never_blank and not value:
+                continue
             if (value or "") != (current or ""):
                 person.set(field, value or "")
                 changed = True
@@ -176,6 +224,30 @@ def _apply(person, values, email=None, overwrite=False):
         person.primary_email = email
         changed = True
     return changed
+
+
+def _link_target_exists(field, value):
+    """Guard every Link write at the one mutation point.
+
+    `Student Applicant.gender` was a Select of the literals Male/Female while
+    `Person.gender` is a Link to Gender; ADR 068 §9 made both Links so a
+    curated Gender table is actually reachable. The guard stays, because the
+    hand-off is still not guaranteed: Frappe's setup wizard seeds genders
+    through `_()`, so a site set up in another language has rows named in that
+    language and an imported or legacy literal may match none of them. Handing
+    that to a Link raises LinkValidationError, and the caller is an admissions
+    path that must not break on it.
+
+    Skipping is deliberate over throwing: the datum is then simply absent, and
+    absence is what the ADR 067 readiness pre-flight is built to surface. This
+    lives here rather than at each caller because repeating the guard per
+    hand-off is how the spine ended up with four disagreeing versions of every
+    other rule (ADR 068).
+    """
+    df = frappe.get_meta("Person").get_field(field)
+    if not df or df.fieldtype != "Link":
+        return True
+    return bool(frappe.db.exists(df.options, value))
 
 
 def _link_user(person, user):
@@ -194,21 +266,10 @@ def _link_user(person, user):
     return False
 
 
-def link_customer(person_name, customer):
-    """Record the financial party on the Person (first link wins) and mirror
-    the reverse link on the Customer's custom person field."""
-    if not customer or not person_name:
-        return
-    if not frappe.db.get_value("Person", person_name, "customer"):
-        frappe.db.set_value(
-            "Person", person_name, "customer", customer, update_modified=False
-        )
-    if frappe.db.has_column("Customer", "person") and not frappe.db.get_value(
-        "Customer", customer, "person"
-    ):
-        frappe.db.set_value(
-            "Customer", customer, "person", person_name, update_modified=False
-        )
+# link_customer (Person <-> Customer) moved to the oikonomos bridge
+# (oikonomos.financial.customer_person.link_customer). Customer is an ERPNext
+# doctype, so the link is owned there; the Person spine here stays Frappe-only.
+# (The Donor <-> Person link in integrations/giving.py is the sibling pattern.)
 
 
 def set_channel_address(person_name, channel, value):

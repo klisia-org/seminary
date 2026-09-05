@@ -5,10 +5,32 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import cstr, getdate
+
+from seminary.seminary import person_fields
 
 
 class StudentApplicant(Document):
+    """The one doctype that captures personal data before a Person exists.
+
+    ADR 068 is Person-first everywhere else: a role record links to a Person
+    that already exists and mirrors it read-only. This doctype is the single,
+    named exception, and it is an exception on purpose — the public
+    application form is served to guests, a guest has no User, and requiring
+    one would put a signup wall in front of admissions (ADR 042 §4).
+
+    So the personal fields here are *capture*, not a second home for the data:
+
+    - `after_insert` promotes every registry attribute onto a Person;
+    - `on_update` re-promotes while the applicant is still the only role
+      attached, so staff fix typos where they see them;
+    - admission freezes them, and the Person becomes the place to edit.
+
+    What crosses to the Person is `person_fields.spine_kwargs`, derived from
+    the registry. It used to be a hand-written argument list, which is exactly
+    how the address and gender an applicant typed never reached the spine.
+    """
+
     def before_insert(self):
         if self.ds2 and self.ds_body:
             return
@@ -42,6 +64,64 @@ class StudentApplicant(Document):
         self.set_title()
         self.validate_dates()
         self.validate_term()
+        self.set_access_key()
+        person_fields.assert_capture_complete(self)
+        self.freeze_captured_fields()
+
+    def freeze_captured_fields(self):
+        """Once admitted, the Person owns the personal data — not this record.
+
+        The JSON carries `read_only_depends_on` for the same set, but
+        `read_only` is a UI hint that Frappe does not enforce server-side, so
+        on its own it would give a test something to assert and an API client
+        nothing to trip over. After admission `_repromote_to_person` stops
+        pushing, so an edit here would not diverge loudly — it would sit on the
+        applicant looking authoritative while the Person said otherwise.
+        """
+        if self.is_new() or self.application_status != "Admitted":
+            return
+        before = self.get_doc_before_save()
+        if not before or before.application_status != "Admitted":
+            # The save that *performs* the admission may legitimately carry
+            # last-minute corrections; it is the ones afterwards that are late.
+            return
+        # `cstr` on both sides, not a bare `!=`: a Date read back from the
+        # database is a `datetime.date` while the same field on the document in
+        # hand is still the string the form sent, so comparing them directly
+        # reports every admitted applicant as edited and refuses saves that
+        # changed nothing.
+        changed = [
+            fieldname
+            for fieldname in person_fields.capture_fields(self.doctype)
+            if cstr(self.get(fieldname)) != cstr(before.get(fieldname))
+        ]
+        if changed:
+            meta = frappe.get_meta(self.doctype)
+            labels = [
+                _(meta.get_field(f).label or f) for f in changed if meta.get_field(f)
+            ]
+            frappe.throw(
+                _(
+                    "{0} cannot be changed on an admitted application. "
+                    "Edit the Person record ({1}) instead — this application is "
+                    "the record of what was submitted."
+                ).format(", ".join(labels), self.person or _("not yet linked")),
+                title=_("Application is admitted"),
+            )
+
+    def set_access_key(self):
+        """An unguessable handle for the public payment page.
+
+        `/applicant-payment` and the guest-callable
+        `api.get_application_payment_url` used to take a bare docname, so
+        anyone could walk applicants and pull their payment link. That was
+        already true of `{academic_term}-{first_name}-{###}`; ADR 068 phase 3's
+        sequential `APP-.#####` makes it trivial. Generated in `validate` so it
+        is present on the document the web form returns to the browser, which
+        is the only moment the applicant can be handed it.
+        """
+        if not self.access_key:
+            self.access_key = frappe.generate_hash(length=32)
 
     def set_title(self):
         self.title = " ".join(
@@ -70,19 +150,10 @@ class StudentApplicant(Document):
         # insert — no User exists yet.
         self._promote_to_person()
 
-        # Generate Application-fee Sales Invoice(s) on creation, not on submit:
-        # web-form-created applicants stay at docstatus=0 indefinitely (no submit
-        # action), so on_submit never fires. Billing must run on insert so the
-        # post-application payment page has an SI to charge against.
-        from seminary.seminary.api import generate_application_invoices
-
-        try:
-            generate_application_invoices(self.name)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"Application invoice generation failed for {self.name}",
-            )
+        # Application-fee Sales Invoice(s) are raised on insert (not on submit:
+        # web-form applicants stay at docstatus=0, so on_submit never fires) by
+        # the oikonomos bridge, which subscribes to this doctype's after_insert.
+        # With no bridge installed, applying is free.
 
     def on_update(self):
         self._repromote_to_person()
@@ -127,12 +198,7 @@ class StudentApplicant(Document):
 
         person = person_spine.ensure_person(
             email=self.student_email_id,
-            first_name=self.first_name,
-            middle_name=self.middle_name,
-            last_name=self.last_name,
-            mobile=self.student_mobile_number,
-            country=self.country,
-            image=self.image,
+            **person_fields.spine_kwargs(self),
         )
         self.db_set("person", person, update_modified=False)
 
@@ -150,13 +216,8 @@ class StudentApplicant(Document):
         person_spine.update_person(
             self.person,
             email=self.student_email_id,
-            first_name=self.first_name,
-            middle_name=self.middle_name,
-            last_name=self.last_name,
-            mobile=self.student_mobile_number,
-            country=self.country,
-            image=self.image,
             overwrite=True,
+            **person_fields.spine_kwargs(self),
         )
 
     def on_payment_authorized(self, *args, **kwargs):

@@ -138,6 +138,22 @@ const routes = [
     component: () => import('@/pages/Grades.vue'),
   },
   {
+    // The arc across every course (ADR 065). Without a student it is the
+    // reader's own; with one it is a mentee's, which the server checks.
+    path: "/development-plans/:student?",
+    name: "SelfDevelopmentPlans",
+    component: () => import('@/pages/SelfDevelopmentPlans.vue'),
+    props: true,
+  },
+  {
+    // The radar and narrative timeline for a competency-based programme
+    // (ADR 065). Renders an explanatory empty state for everyone else, so the
+    // route needs no role guard.
+    path: "/competency-profile",
+    name: "CompetencyProfile",
+    component: () => import('@/pages/CompetencyProfile.vue'),
+  },
+  {
     path: "/courses",
     name: "Courses",
     component: () => import('@/pages/Courses.vue'),
@@ -164,6 +180,38 @@ const routes = [
     path: "/courses/:courseName/assessment",
     name: "CourseAssessment",
     component: () => import('@/pages/CourseAssessment.vue'),
+    props: true,
+  },
+  {
+    // Student-facing competency self-assessment (ADR 065). Without a competency
+    // it lists them; with one it opens that competency's form.
+    path: "/courses/:courseName/self-assessment/:competency?",
+    name: "CompetencySelfAssessment",
+    component: () => import('@/pages/CompetencySelfAssessment.vue'),
+    props: true,
+  },
+  {
+    // The student's own plan for what comes next (ADR 065). Renders an
+    // explanatory empty state on an ordinary course, so no role guard.
+    path: "/courses/:courseName/development-plan",
+    name: "PersonalDevelopmentPlan",
+    component: () => import('@/pages/PersonalDevelopmentPlan.vue'),
+    props: true,
+  },
+  {
+    // Optional Aretenic surface (ADR 030). Renders an explanatory empty state when the app is
+    // absent or no report exists yet, so the route is harmless either way.
+    path: "/courses/:courseName/outcome-report",
+    name: "CourseOutcomeReport",
+    component: () => import('@/pages/CourseOutcomeReport.vue'),
+    props: true,
+  },
+  {
+    // Optional Aretenic surface (ADR 030). No token appears on this path — end-of-course feedback
+    // is portal-only, so the invitation resolves from the session (decisions/035 section 7).
+    path: "/courses/:courseName/feedback",
+    name: "CourseFeedback",
+    component: () => import('@/pages/CourseFeedback.vue'),
     props: true,
   },
   {
@@ -295,6 +343,15 @@ const routes = [
 		props: true,
 	},
 	{
+		// Competency-based sections get their own grading surface rather than
+		// extra columns in the numeric gradebook (ADR 065 section 9). The route
+		// exists unconditionally and explains itself on an ordinary section.
+		path: '/competency-gradebook/:courseName',
+		name: 'CompetencyGradebook',
+		component: () => import('@/pages/CompetencyGradebook.vue'),
+		props: true,
+	},
+	{
 		path: '/attendance/:courseName',
 		name: 'StudentAttendanceCS',
 		component: () => import('@/pages/StudentAttendanceCS.vue'),
@@ -381,6 +438,11 @@ const routes = [
     path: "/inbox",
     name: "Inbox",
     component: () => import('@/pages/Inbox.vue'),
+  },
+  {
+    path: "/community",
+    name: "Community",
+    component: () => import('@/pages/Community.vue'),
   },
   {
     path: "/preferences",

@@ -16,13 +16,9 @@ from frappe import _
 # TODO: Remove all Customers (with group = Student) & Users created (with role = Student) when Student is created.
 
 
-def before_install():
-    check_erpnext()
-
-
 def after_install():
-    check_erpnext()
     setup_fixtures()
+    setup_genders()
     create_studentappl_role()
     create_student_role()
     create_alumni_role()
@@ -32,16 +28,15 @@ def after_install():
     create_external_examiner_role()
     create_program_chair_role()
     create_seminary_manager_role()
-    get_custom_fields()
-    setup_sales_invoice_permissions()
-    update_company_in_item_details()
-    seed_fee_categories()
+    create_cohort_participant_role()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
     seed_culminating_project_types()
     seed_disciplinary_actions()
     seed_faculty_capabilities()
+    seed_cohort_assignment_criteria()
+    seed_mandatory_personal_fields()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
@@ -56,137 +51,21 @@ def after_install():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
+    seed_cohort_reaction_types()
+    seed_cohort_channels()
+    setup_user_bible_field()
+    ensure_registrar_tools()
 
 
-def check_erpnext():
-    check_erpnext_installed()
-    status = check_erpnext_setup_complete()
-    if status["errors"]:
-        frappe.throw(
-            _(
-                "ERPNext setup is incomplete. Please complete the setup before installing {0}"
-            ).format("SeminaryERP"),
-            title=_("Setup Incomplete"),
-        )
-
-
-def check_erpnext_installed():
-    """Check if ERPNext app is installed on the site."""
-    installed_apps = frappe.get_installed_apps()
-    if "erpnext" not in installed_apps:
-        frappe.throw(
-            _("ERPNext must be installed before installing {0}").format("SeminaryERP"),
-            title=_("Missing Dependency"),
-        )
-
-
-def check_erpnext_setup_complete():
-    """
-    Check if ERPNext has been set up (i.e., the Setup Wizard was completed
-    and at least one Company exists).
-    Returns a dict with detailed status.
-    """
-    status = {
-        "company_exists": False,
-        "fiscal_year_exists": False,
-        "selling_price_list_exists": False,
-        "buying_price_list_exists": False,
-        "default_company": None,
-        "errors": [],
-    }
-
-    # Check for Company
-    companies = frappe.get_all("Company", limit=1, pluck="name")
-    if companies:
-        status["company_exists"] = True
-        status["default_company"] = companies[0]
-    else:
-        status["errors"].append(
-            _("No Company found. Please complete the ERPNext Setup Wizard first.")
-        )
-
-    # Check for Fiscal Year
-    if frappe.db.count("Fiscal Year") > 0:
-        status["fiscal_year_exists"] = True
-    else:
-        status["errors"].append(_("No Fiscal Year found."))
-
-    # Check for Selling Price List
-    selling_pl = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
-    if selling_pl:
-        status["selling_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Selling Price List found."))
-
-    # Check for Buying Price List
-    buying_pl = frappe.db.get_value("Price List", {"buying": 1, "enabled": 1}, "name")
-    if buying_pl:
-        status["buying_price_list_exists"] = True
-    else:
-        status["errors"].append(_("No active Buying Price List found."))
-
-    return status
+# ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
+# before_install — oikonomos is the app that requires ERPNext, so it verifies the
+# ERPNext setup. Seminary installs on Frappe alone.
 
 
 def setup_fixtures():
-    default_price_list = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
-    )
+    # Academic setup only. The ERPNext groups (Item Group, Customer Groups,
+    # Supplier Group, billing UOMs) are created by the oikonomos bridge.
     records = [
-        # Item Group Records
-        {"doctype": "Item Group", "item_group_name": "Tuition"},
-        # Customer Group Records
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Student",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Donor",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Church",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Denomination",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Seminary",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Para-church Organization",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Alumni",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Board Member",
-            "default_price_list": default_price_list,
-        },
-        {
-            "doctype": "Customer Group",
-            "customer_group_name": "Volunteer",
-            "default_price_list": default_price_list,
-        },
-        # UOM
-        {"doctype": "UOM", "uom_name": _("Academic Event"), "must_be_whole_number": 0},
-        {"doctype": "UOM", "uom_name": _("Credit hour"), "must_be_whole_number": 0},
-        # Supplier Group for non-employee instructors (volunteers, guest lecturers)
-        {"doctype": "Supplier Group", "supplier_group_name": _("Instructor")},
         # Instructor Category defaults — schools can add/remove
         {
             "doctype": "Instructor Category",
@@ -215,57 +94,6 @@ def setup_fixtures():
         },
     ]
     make_records(records)
-
-
-def seed_fee_categories():
-    """Seed the starter Fee Categories if they don't already exist.
-
-    NOT fixtures: Fee Category.validate_audit() cross-checks a category's
-    is_credit against Seminary Settings (auditcredit / allow_audit). The moment a
-    seminary flips that setting — or edits a category — a fixture re-import on
-    migrate re-validates the shipped rows and throws (e.g. "set to charge audit
-    as a flat fee, not per credit"). So we create the defaults once
-    (create-only-if-missing) and never re-touch them.
-
-    The Audit Fee is seeded as a flat fee (is_credit=0) to match the default
-    auditcredit=0 setting, so a fresh seed validates cleanly; a seminary that
-    charges audit per credit flips both the setting and this category itself.
-
-    Each row references a fixtured Item and Payment Terms Template — we skip any
-    row whose dependencies aren't present yet (so install ordering can't make us
-    throw); the next migrate, with fixtures loaded, fills it in.
-    """
-    if not frappe.db.exists("DocType", "Fee Category"):
-        return
-    # category_name, fc_event, item, is_audit, is_credit
-    defaults = [
-        ("Program Admission Fee", "Program Enrollment", "Admission Fee", 0, 0),
-        ("Registration fee (new term)", "New Academic Term", "Admission Fee", 0, 0),
-        ("Credit hour", "Course Enrollment", "Credit hour", 0, 1),
-        ("Audit Fee", "Course Enrollment", "Audit Flat Fee", 1, 0),
-    ]
-    payment_term_template = "For immediate payment"
-    has_payment_term = frappe.db.exists("Payment Terms Template", payment_term_template)
-    for category_name, fc_event, item, is_audit, is_credit in defaults:
-        if frappe.db.exists("Fee Category", category_name):
-            continue
-        if not frappe.db.exists("Item", item):
-            continue
-        frappe.get_doc(
-            {
-                "doctype": "Fee Category",
-                "category_name": category_name,
-                "feecategory_type": "Tuition",
-                "fc_event": fc_event,
-                "item": item,
-                "is_audit": is_audit,
-                "is_credit": is_credit,
-                "payment_term_template": (
-                    payment_term_template if has_payment_term else None
-                ),
-            }
-        ).insert(ignore_permissions=True)
-    frappe.db.commit()
 
 
 def seed_assessment_criteria():
@@ -497,6 +325,122 @@ def seed_disciplinary_actions():
     frappe.db.commit()
 
 
+#: Shared attributes that make no sense to *require*, so they are not offered.
+#: Two different reasons, same conclusion -- a row nobody can act on is noise in
+#: a settings list. `address_line_2` is empty for most people and adds nothing to
+#: a geocode, so requiring it could not be satisfied honestly. `full_name` is
+#: computed from the name parts, and `first_name` is already required, so it can
+#: never be empty and the requirement could never fire.
+NOT_CURATABLE = ("address_line_2", "full_name")
+
+
+def seed_mandatory_personal_fields():
+    """One row per shared personal attribute, for the school to curate (ADR 067 §9).
+
+    Create-only on the `mandatory` bit, like every other catalog -- that bit is
+    the school's and a re-import on every migrate would undo their choice. The
+    rest is refreshed from `person_fields.py` by the controller on save, so a
+    row never drifts from the code.
+
+    A field a *live* matching rule already reads is seeded as required. The
+    school chose that rule, which is the same statement; seeding it off would
+    make every Cohort Type using it unsaveable the moment this shipped, which is
+    a migration breaking working configuration rather than a policy being
+    applied.
+    """
+    if not frappe.db.exists("DocType", "Mandatory Personal Field"):
+        return
+    from seminary.seminary import person_fields
+    from seminary.seminary.doctype.mandatory_personal_field import (
+        mandatory_personal_field as mpf,
+    )
+
+    # Withdrawn rows are removed here rather than by a patch: this list is the
+    # seeder's own, it runs on every migrate, and a patch would need its own
+    # bookkeeping to say the same thing once. Only where nobody has ticked it --
+    # a school that deliberately required one has a reason we do not know, and
+    # silently deleting their setting is worse than an extra row.
+    for fieldname in NOT_CURATABLE:
+        row = frappe.db.get_value(
+            "Mandatory Personal Field", fieldname, ["name", "mandatory"], as_dict=True
+        )
+        if row and not row.mandatory:
+            frappe.delete_doc(
+                "Mandatory Personal Field",
+                row.name,
+                force=True,
+                ignore_permissions=True,
+            )
+
+    for spec in person_fields.SPEC:
+        if spec.person_field in NOT_CURATABLE:
+            continue
+        existing = frappe.db.get_value(
+            "Mandatory Personal Field",
+            spec.person_field,
+            ["name", "field_label", "sources", "derived", "automation_valid"],
+            as_dict=True,
+        )
+        if not existing:
+            in_use = bool(mpf.cohort_types_depending_on(spec.person_field))
+            frappe.get_doc(
+                {
+                    "doctype": "Mandatory Personal Field",
+                    "person_field": spec.person_field,
+                    "mandatory": 1 if in_use else 0,
+                }
+            ).insert(ignore_permissions=True)
+            continue
+
+        # Create-only applies to `mandatory` -- the school's bit. Everything
+        # else is a projection of the code, so it has to track the code: a row
+        # seeded before a rule started reading it, or before its label was
+        # reworded, would otherwise describe the app as it was.
+        wanted = {
+            "field_label": mpf.label_for(spec),
+            "sources": "\n".join(mpf.sources_for(spec)),
+            "derived": 1 if spec.derived else 0,
+        }
+        if any(existing.get(k) != v for k, v in wanted.items()):
+            frappe.get_doc("Mandatory Personal Field", spec.person_field).save(
+                ignore_permissions=True
+            )
+    frappe.db.commit()
+
+
+def seed_cohort_assignment_criteria():
+    """Seed the assignment rules the cohort planner can apply (ADR 067 §8).
+
+    Create-only, like every other catalog: a school renames these, describes
+    them in its own words and retires the ones it does not want, and a re-import
+    on every migrate would undo all three. The `handler` is the docname because
+    it is code, not configuration -- which is also what keeps a rename from
+    orphaning a Cohort Type that lists the rule.
+
+    Seeded inactive is deliberately *not* done: an unused rule costs nothing,
+    and a school that wants one has to add it to a Cohort Type anyway.
+    """
+    if not frappe.db.exists("DocType", "Cohort Assignment Criterion"):
+        return
+    from seminary.seminary.discipleship import criteria
+
+    for handler, rule in criteria.registry().items():
+        if frappe.db.exists("Cohort Assignment Criterion", handler):
+            continue
+        frappe.get_doc(
+            {
+                "doctype": "Cohort Assignment Criterion",
+                "handler": handler,
+                "criterion_name": _(rule.label),
+                "kind": rule.kind,
+                "requires_field": rule.requires_field,
+                "description": _(rule.description),
+                "is_active": 1,
+            }
+        ).insert(ignore_permissions=True)
+    frappe.db.commit()
+
+
 def seed_faculty_capabilities():
     """Seed the starter Faculty Capabilities if they don't already exist (ADR 059).
 
@@ -537,6 +481,18 @@ def seed_faculty_capabilities():
             _("Verifies manual graduation requirements."),
         ),
         ("Mentor", "Mentor", 0, 1, _("Mentors student groups.")),
+        # Distinct from "Mentor" on purpose: that route is a free link with no
+        # ceiling, and giving it one would silently re-price every row a school
+        # has already created. Capacity is the whole reason this route exists --
+        # the cohort planner will not seat a mentor it cannot budget (ADR 067
+        # section 1).
+        (
+            "Program Cohort Mentorship",
+            "Program Cohort Mentorship",
+            1,
+            1,
+            _("Leads program cohorts, with a ceiling on how many students."),
+        ),
         (
             "Committee/Board Member",
             "Committee/Board Member",
@@ -1347,28 +1303,10 @@ def seed_skill_tags():
     frappe.db.commit()
 
 
-def setup_customer_person_field():
-    """Reverse link Customer → Person (ADR 042 addendum): Person.customer
-    records the financial party; this mirrors it on the Customer so finance
-    views show which human a Customer is. Maintained by person.link_customer."""
-    if not frappe.db.exists("DocType", "Person"):
-        return
-    if frappe.db.exists("Custom Field", "Customer-person"):
-        return
-    frappe.get_doc(
-        {
-            "doctype": "Custom Field",
-            "dt": "Customer",
-            "fieldname": "person",
-            "fieldtype": "Link",
-            "options": "Person",
-            "label": "Person",
-            "insert_after": "customer_group",
-            "read_only": 1,
-            "search_index": 1,
-        }
-    ).insert(ignore_permissions=True)
-    frappe.db.commit()
+# setup_customer_person_field moved to the oikonomos bridge
+# (oikonomos.financial.customer_person.setup_custom_fields), which owns the
+# Customer<->Person link fields. Customer is an ERPNext doctype, so seminary
+# (Frappe-only) never provisions fields on it.
 
 
 def setup_donor_person_field():
@@ -1442,26 +1380,9 @@ def create_partner_role():
         ).save()
 
 
-def setup_sales_invoice_permissions():
-    """Grant the Student and Alumni roles read + print access to Sales Invoice.
-
-    Row-level access is scoped to the user's own linked Student record by
-    seminary.seminary.sales_invoice_permissions. Idempotent: re-running only
-    ensures the read/print flags are set, it never duplicates the rule.
-    """
-    from frappe.permissions import add_permission, update_permission_property
-
-    if not frappe.db.exists("DocType", "Sales Invoice"):
-        return
-
-    for role in (_("Student"), _("Alumni")):
-        if not frappe.db.exists("Role", role):
-            continue
-        add_permission("Sales Invoice", role, 0)
-        update_permission_property("Sales Invoice", role, 0, "read", 1)
-        update_permission_property("Sales Invoice", role, 0, "print", 1)
-
-    frappe.db.commit()
+# setup_sales_invoice_permissions moved to the oikonomos bridge
+# (oikonomos.install): granting Student/Alumni roles access to Sales Invoice (an
+# ERPNext doctype) belongs with the financial bridge, not Frappe-only seminary.
 
 
 def create_registrar_role():
@@ -1488,6 +1409,102 @@ def create_external_examiner_role():
         ).save()
 
 
+def create_cohort_participant_role():
+    """Portal role for invited cohort participants (e.g. pastors mentored by
+    alumni). desk_access=1 like Student/Alumni — the SPA lives at /seminary and
+    the participants are System Users, so they need desk access to query the
+    community doctypes and to avoid an error at /app; record-level scoping in
+    seminary.seminary.discipleship.permissions confines them to their cohorts."""
+    if not frappe.db.exists("Role", "Cohort Participant"):
+        frappe.get_doc(
+            {"doctype": "Role", "role_name": "Cohort Participant", "desk_access": 1}
+        ).save()
+    elif not frappe.db.get_value("Role", "Cohort Participant", "desk_access"):
+        frappe.db.set_value("Role", "Cohort Participant", "desk_access", 1)
+
+
+def seed_cohort_reaction_types():
+    """Seed the starter community reaction set. Create-only-if-missing so a
+    seminary can add or rename reactions without them being clobbered."""
+    if not frappe.db.exists("DocType", "Cohort Reaction Type"):
+        return
+    # label, glyph, sort_order
+    defaults = [
+        (_("Like"), "\U0001f44d", 1),
+        (_("Amen"), "\U0001f64c", 2),
+        (_("Pray"), "\U0001f64f", 3),
+        (_("Insightful"), "\U0001f4a1", 4),
+    ]
+    for label, glyph, order in defaults:
+        if not frappe.db.exists("Cohort Reaction Type", label):
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Reaction Type",
+                    "label": label,
+                    "glyph": glyph,
+                    "enabled": 1,
+                    "sort_order": order,
+                }
+            ).insert(ignore_permissions=True)
+
+
+def seed_cohort_channels():
+    """Seed the starter community channels. Create-only-if-missing; a seminary
+    adds, renames, or disables channels from the desk without them reverting."""
+    if not frappe.db.exists("DocType", "Cohort Channel"):
+        return
+    # name, kind, icon, description
+    defaults = [
+        (
+            "Sermon Lab",
+            "video_timestamp",
+            "\U0001f3a5",
+            _("Timestamped feedback on sermon videos."),
+        ),
+        (
+            "Exegetical Insight",
+            "bible_passage",
+            "\U0001f4d6",
+            _("Discussion anchored to Bible passages."),
+        ),
+        ("Prayer", "prayer", "\U0001f64f", _("Prayer requests and answered prayers.")),
+        (
+            "Family Ministry",
+            "generic",
+            "\U0001f46a",
+            _("Family and marriage ministry."),
+        ),
+        ("Children's Ministry", "generic", "\U0001f9f8", _("Children's ministry.")),
+        (
+            "Discipleship",
+            "generic",
+            "\U0001f331",
+            _("Discipleship and spiritual growth."),
+        ),
+        ("Missions", "generic", "\U0001f30d", _("Missions and outreach.")),
+        (
+            "Personal Challenges",
+            "generic",
+            "\U0001f4aa",
+            _("Personal struggles and encouragement."),
+        ),
+    ]
+    for i, (name, kind, icon, desc) in enumerate(defaults):
+        if not frappe.db.exists("Cohort Channel", name):
+            frappe.get_doc(
+                {
+                    "doctype": "Cohort Channel",
+                    "channel_name": name,
+                    "channel_kind": kind,
+                    "enabled": 1,
+                    "icon": icon,
+                    "default_visibility": "cohort_only",
+                    "sort_order": i,
+                    "description": desc,
+                }
+            ).insert(ignore_permissions=True)
+
+
 def create_program_chair_role():
     """Broad academic authority over programs & curriculum.
 
@@ -1508,66 +1525,9 @@ def create_seminary_manager_role():
         ).save()
 
 
-def get_custom_fields():
-    """Seminary specific custom fields that needs to be added to the Sales Invoice DocType."""
-    return {
-        "Sales Invoice": [
-            {
-                "fieldname": "student_info_section",
-                "fieldtype": "Section Break",
-                "label": _("Student Info"),
-                "collapsible": 1,
-                "insert_after": "ignore_pricing_rule",
-            },
-            {
-                "fieldname": "student",
-                "fieldtype": "Link",
-                "label": _("Student"),
-                "options": _("Student"),
-                "insert_after": "student_info_section",
-            },
-            {
-                "fieldname": "custom_cei",
-                "fieldtype": "Link",
-                "options": "Course Enrollment Individual",
-                "label": _("Course Enrollment Individual"),
-                "insert_after": "custom_student",
-                "read_only": 1,
-            },
-        ],
-    }
-
-
-def update_company_in_item_details():
-    """
-    Update the company in the "Item Default" table to use the default company
-    instead of the hardcoded value 'ToBeReplaced' in fixtures.
-    """
-    # Get the default company
-    default_company = frappe.db.get_single_value("Global Defaults", "default_company")
-    default_price_list = frappe.db.get_value(
-        "Price List", {"selling": 1, "enabled": 1}, "name", order_by="creation asc"
-    )
-    default_income_account = frappe.db.get_value(
-        "Company", {"company_name": default_company}, "default_income_account"
-    )
-    # Update the company in the "Item Default" table
-
-    items_to_update = frappe.db.sql(
-        "SELECT name FROM `tabItem Default` WHERE company = 'ToBeReplaced'"
-    )
-
-    if items_to_update:
-        frappe.db.sql(
-            """
-            UPDATE `tabItem Default`
-            SET company = %s, default_price_list = %s, income_account = %s
-            WHERE company = 'ToBeReplaced'
-            """,
-            (default_company, default_price_list, default_income_account),
-        )
-
-    frappe.db.commit()
+# update_company_in_item_details moved to the oikonomos bridge
+# (oikonomos.financial.seed._update_item_company_defaults) — it operates on
+# ERPNext Item Defaults, which a Frappe-only seminary doesn't have.
 
 
 def setup_withdrawal_workflow():
@@ -1629,12 +1589,12 @@ def after_migrate():
     create_program_chair_role()
     create_seminary_manager_role()
     setup_withdrawal_workflow()
-    setup_sales_invoice_permissions()
-    seed_fee_categories()
     seed_assessment_criteria()
     seed_course_cancellation_reasons()
     seed_grading_scale()
     seed_faculty_capabilities()
+    seed_cohort_assignment_criteria()
+    seed_mandatory_personal_fields()
     seed_room_features()
     seed_communication_channels()
     seed_channel_provider_accounts()
@@ -1649,24 +1609,109 @@ def after_migrate():
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
-    setup_customer_person_field()
+    seed_cohort_reaction_types()
+    seed_cohort_channels()
     setup_donor_person_field()
+    setup_user_bible_field()
+    create_cohort_participant_role()
+    ensure_registrar_tools()
+
+
+def ensure_registrar_tools():
+    """The Registrar workspace's action buttons are Custom HTML Blocks it names.
+
+    The workspace ships with the app and syncs on migrate; the blocks did not,
+    so every site that never ran workspaces_bootstrap.run by hand had a
+    Registrar workspace with two dead buttons. Create-only — see the docstring
+    on the helper for why this does not break the "don't re-import
+    user-configurable doctypes" rule.
+    """
+    from seminary.seminary.workspaces_bootstrap import (
+        ensure_registrar_tools as _ensure,
+    )
+
+    _ensure()
+
+
+def setup_user_bible_field():
+    """Per-user preferred Bible version. A Data field on User holding an api.bible
+    bible_id; the Bible integration prefers it over the language default when
+    rendering scripture. Re-checked on every migrate (idempotent)."""
+    if not frappe.db.exists("Custom Field", "User-preferred_bible_id"):
+        frappe.get_doc(
+            {
+                "doctype": "Custom Field",
+                "dt": "User",
+                "fieldname": "preferred_bible_id",
+                "fieldtype": "Data",
+                "label": "Preferred Bible Version",
+                "insert_after": "language",
+                "no_copy": 1,
+            }
+        ).insert(ignore_permissions=True)
+
+
+#: Genders a seminary starts with. Every other row Frappe's setup wizard seeds
+#: (Genderqueer, Non-Conforming, Transgender, Other, Prefer not to say) is
+#: switched off — not deleted, because that is the school's call to reverse and
+#: because deleting a Gender orphans any record already pointing at it.
+DEFAULT_GENDERS = ("Male", "Female")
+
+
+def ensure_gender_disabled_field():
+    """Give Gender a `disabled` Check, and let Frappe do the filtering.
+
+    The name is load-bearing. `frappe/desk/search.py` excludes rows from every
+    Link picker when the target doctype has a **Check field called `disabled`**
+    — no `link_filters`, no `set_query`, no per-field wiring, and it applies
+    equally to Desk forms and Web Forms. That last part matters: `Web Form
+    Field` has no `link_filters` column at all, so a per-field filter could not
+    have reached the public application form even if we wrote one.
+
+    This replaces an `enabled` Check that did the same job inverted, which
+    nothing ever filtered on — so all seven of Frappe's seeded genders were
+    offered to applicants.
+    """
+    from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+    create_custom_fields(
+        {
+            "Gender": [
+                {
+                    "fieldname": "disabled",
+                    "fieldtype": "Check",
+                    "label": "Disabled",
+                    "insert_after": "gender",
+                    "description": _(
+                        "Hidden from every Gender picker, including the public "
+                        "application form. Existing records keep their value."
+                    ),
+                }
+            ]
+        },
+        ignore_validate=True,
+    )
 
 
 def setup_genders():
-    """Disable non-binary genders. Runs after fixtures are loaded."""
+    """Seed the default gender selection — **once**, never on every migrate.
 
-    # Check if our custom "enabled" field exists yet
-    if not frappe.db.has_column("Gender", "enabled"):
+    This used to run from `after_migrate` and begin with
+    `UPDATE tabGender SET enabled = 0`, so a school that enabled a gender in
+    Desk had it switched off again by the next deploy. Seeding a
+    user-configurable table on every migrate is the same defect as fixturing
+    one; the value pass is now create-only and lives behind an explicit
+    "has anyone chosen yet" check.
+    """
+    ensure_gender_disabled_field()
+
+    already_chosen = frappe.db.count("Gender", {"disabled": 1})
+    if already_chosen:
         return
 
-    # Disable all genders first
-    frappe.db.sql("UPDATE `tabGender` SET enabled = 0")
-
-    # Enable only Male and Female
-    frappe.db.sql(
-        "UPDATE `tabGender` SET enabled = 1 WHERE name IN (%s, %s)",
-        (_("Male"), _("Female")),
-    )
-
-    frappe.db.commit()
+    for name in frappe.get_all("Gender", pluck="name"):
+        # Match on the translated label as well: `install_fixtures` seeds these
+        # through `_()`, so a site set up in pt-BR has "Masculino", not "Male".
+        keep = name in DEFAULT_GENDERS or name in [_(g) for g in DEFAULT_GENDERS]
+        if not keep:
+            frappe.db.set_value("Gender", name, "disabled", 1, update_modified=False)

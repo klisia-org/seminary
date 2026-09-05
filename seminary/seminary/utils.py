@@ -12,6 +12,25 @@ import requests
 from frappe.desk.doctype.dashboard_chart.dashboard_chart import get_result
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from frappe.desk.search import get_user_groups
+
+
+def _hrms_enabled() -> bool:
+    """True when HRMS is installed and instructor payroll is enabled in Seminary
+    Settings. A feature gate used by academic instructor code and (in the
+    oikonomos bridge) the Salary Slip integration. Frappe-only installs have no
+    HRMS, so this is always False."""
+    if "hrms" not in frappe.get_installed_apps():
+        return False
+    return bool(frappe.db.get_single_value("Seminary Settings", "hrms_enable"))
+
+
+def _aretenic_enabled() -> bool:
+    """True when the optional Aretenic accreditation app is installed. Gates seminary-side
+    aretenic-aware hooks (e.g. cutting an outcome-attainment snapshot when grades are sent), so
+    Frappe-only installs without aretenic run unchanged. See aretenic ADR 030/032."""
+    return "aretenic" in frappe.get_installed_apps()
+
+
 from frappe.desk.notifications import extract_mentions
 from frappe.utils import (
     add_months,
@@ -151,6 +170,36 @@ def slugify(title, used_slugs=None):
         if new_slug not in used_slugs:
             return new_slug
         count = count + 1
+
+
+# Codes that flow into identifiers and URLs (e.g. Program Abbreviation, Course Code,
+# and downstream aretenic PLO/CLO codes) must be slug-safe. Unlike slugify(), this
+# preserves case and is non-destructive to already-clean codes (MDIV stays MDIV).
+RE_URL_SAFE_CODE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def url_safe_code(value):
+    """Strip a value down to URL/code-safe characters, preserving case.
+
+    Spaces and disallowed characters are removed, e.g. "ST 501" -> "ST501",
+    "M.Div." -> "MDiv". Returns "" for an empty/None input.
+    """
+    return re.sub(r"[^A-Za-z0-9_-]", "", (value or "").strip())
+
+
+def is_url_safe_code(value):
+    return bool(value) and bool(RE_URL_SAFE_CODE.match(value))
+
+
+def assert_url_safe_code(value, label):
+    """Throw if a non-empty value is not slug-safe (letters, digits, - and _ only)."""
+    if value and not is_url_safe_code(value):
+        frappe.throw(
+            _(
+                "{0} may contain only letters, numbers, hyphens and underscores "
+                "(no spaces or punctuation): {1}"
+            ).format(label, value)
+        )
 
 
 def generate_slug(title, doctype):
@@ -633,6 +682,9 @@ def get_course_outline(course, progress=False):
                 "is_scorm_package",
                 "launch_file",
                 "scorm_package",
+                # The competency this chapter delivers (ADR 065). Carried so the
+                # editor can show the current mapping without a second call.
+                "course_competency",
             ],
             as_dict=True,
         )
@@ -834,7 +886,8 @@ def get_course_location(room):
 
 @frappe.whitelist()
 def get_roster(course):
-    """Returns the course roster."""
+    """Returns the course roster, each row enriched with the student's gender
+    (used to split community cohorts by gender)."""
     roster = frappe.get_all(
         "Scheduled Course Roster",
         {"course_sc": course},
@@ -849,6 +902,19 @@ def get_roster(course):
         ],
         order_by="stuname_roster",
     )
+    student_ids = [r.student for r in roster if r.student]
+    genders = {}
+    if student_ids:
+        genders = {
+            s.name: s.gender
+            for s in frappe.get_all(
+                "Student",
+                filters={"name": ["in", student_ids]},
+                fields=["name", "gender"],
+            )
+        }
+    for r in roster:
+        r["gender"] = genders.get(r.student)
     return roster
 
 
@@ -2083,20 +2149,18 @@ def has_super_access(user: str | None = None):
 
 
 def create_student_from_current_user():
-    user = frappe.get_doc("User", frappe.session.user)
+    """Self-enrollment's Student, created Person-first (ADR 068 §1).
 
-    student = frappe.get_doc(
-        {
-            "doctype": "Student",
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "student_email_id": user.email,
-            "user": frappe.session.user,
-        }
-    )
+    This used to build a Student straight from the session User's name and
+    email, which forked an identity for anyone who already had a Person — and
+    it is reachable without an application, a review, a doctrinal statement or
+    a fee, gated only by `Program.allow_self_enroll`. The Person hop is what
+    makes it converge on the existing human instead.
+    """
+    from seminary.seminary import intake
 
-    student.save(ignore_permissions=True)
-    return student
+    person = intake.person_for_user(frappe.session.user)
+    return intake.make_student(person, user=frappe.session.user)
 
 
 @frappe.whitelist()

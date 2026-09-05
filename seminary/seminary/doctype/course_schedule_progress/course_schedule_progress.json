@@ -65,7 +65,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student.student_email_id",
+   "fetch_from": "student.stuemail_rc",
    "fieldname": "member",
    "fieldtype": "Link",
    "label": "Student User",
@@ -74,7 +74,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-13 08:49:26.315022",
+ "modified": "2026-09-01 13:30:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Progress",

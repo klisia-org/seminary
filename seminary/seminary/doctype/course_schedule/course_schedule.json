@@ -23,6 +23,7 @@
   "section_break_6",
   "c_datestart",
   "c_dateend",
+  "open_ended",
   "room",
   "max_enrollment",
   "column_break_9",
@@ -54,6 +55,7 @@
   "short_introduction",
   "course_description_for_lms",
   "chapters",
+  "content_release_override",
   "meeting_dates_tab",
   "meeting_dates_section",
   "cs_meetinfo",
@@ -116,12 +118,13 @@
    "reqd": 1
   },
   {
+   "description": "Leave blank only for an open-ended section (see Open Ended). Self-paced competency-based programs may run sections with no fixed end so a student can keep working toward competency.",
    "fieldname": "c_dateend",
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "End Date",
-   "permlevel": 1,
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.open_ended",
+   "permlevel": 1
   },
   {
    "fieldname": "modality",
@@ -527,6 +530,14 @@
    "options": "Course Schedule Chapter Reference"
   },
   {
+   "depends_on": "eval:doc.gradesc_cs",
+   "description": "Competency-based sections only, and only when the programme's Competency Framework allows it. Leave blank to follow the framework.",
+   "fieldname": "content_release_override",
+   "fieldtype": "Select",
+   "label": "Content Release Override",
+   "options": "\nPer activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
+  },
+  {
    "description": "This will appear on the course card and on the very top of the first page on the LMS.",
    "fieldname": "short_introduction",
    "fieldtype": "Small Text",
@@ -607,12 +618,21 @@
    "fieldname": "web_meeting",
    "fieldtype": "Data",
    "label": "Web Meeting Link"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.modality!='Presential'",
+   "description": "This section has no fixed end date: students keep working until they reach competency. Allowed only for courses in a self-paced competency-based program. Open-ended sections have no class meetings and no attendance policy.",
+   "fieldname": "open_ended",
+   "fieldtype": "Check",
+   "label": "Open Ended",
+   "permlevel": 1
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-06-13 09:38:31.594661",
+ "modified": "2026-09-01 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",
@@ -717,6 +737,28 @@
    "read": 1,
    "report": 1,
    "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
    "share": 1,
    "write": 1
   }

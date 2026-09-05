@@ -3,7 +3,7 @@
   <header
     class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
     <Breadcrumbs class="h-7" :items="breadcrumbs" />
-    <div v-if="totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
+    <div v-if="weightsApply && totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
       <Tooltip :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
         <Button variant="subtle" class="ml-2">
           <span>
@@ -28,7 +28,9 @@
       <div v-else class="text-lg font-semibold mb-4">
         {{ __('Assessment Criteria for ' + course.data.course) }}
       </div>
-      <div
+      <!-- A competency section has no weighted total: activity levels roll
+           into a Competency Result, not a percentage (ADR 065 section 11a). -->
+      <div v-if="weightsApply"
         :class="{ 'max-w-full flex justify-between mb-4 mt-5 text-xl': true, 'bg-surface-red-3 text-ink-red-3 rounded px-2': totalPoints !== 100 }">
         <div>
           <strong>{{ __('Total Points') }}:</strong> {{ totalPoints }}
@@ -36,6 +38,9 @@
         <div>
           <strong>{{ __('Max Fudge Points') }}:</strong> {{ maxFudgePoints }}
         </div>
+      </div>
+      <div v-else class="max-w-full mb-4 mt-5 text-sm text-ink-gray-6">
+        {{ __('Graded by competency: each assessment carries a competency and the weight of each dimension within it. Percentages do not apply.') }}
       </div>
     </div>
   </div>
@@ -45,15 +50,19 @@
         <th class="p-2 border">{{ __('Title') }}</th>
         <th class="p-2 border">{{ __('Assessment Type') }}</th>
         <th class="p-2 border">{{ __('Activity Selection') }}</th>
-        <th class="p-2 border">{{ __('Extra Credit?') }}</th>
-        <th class="p-2 border">{{ __('Points') }}</th>
+        <th v-if="isCbe" class="p-2 border">{{ __('Competency') }}</th>
+        <th v-if="weightsApply" class="p-2 border">{{ __('Extra Credit?') }}</th>
+        <th v-if="weightsApply" class="p-2 border">{{ __('Points') }}</th>
         <th class="p-2 border">{{ __('Due Date') }}</th>
         <th class="p-2 border">{{ __('In Lesson') }}</th>
+        <th v-if="hasAretenic" class="p-2 border">{{ __('CLOs') }}</th>
+        <th v-if="isCbe" class="p-2 border">{{ __('Weights') }}</th>
         <th class="p-2 border">{{ __('Delete') }}</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <template v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <tr>
         <td class="p-2 border">
           <FormControl v-model="criteria.title" class="mb-4 overflow-visible" :required="false" />
         </td>
@@ -84,11 +93,18 @@
             <p>{{ __('Offline') }}</p>
           </template>
         </td>
-        <td class="p-2 border text-center">
+        <td v-if="isCbe" class="p-2 border" style="width: 16%;">
+          <FormControl type="select" v-model="criteria.course_competency"
+            :options="competencyOptions" :disabled="!!chapterCompetency(criteria)" />
+          <p v-if="chapterCompetency(criteria)" class="mt-1 text-xs text-ink-gray-5">
+            {{ __('Set by its chapter.') }}
+          </p>
+        </td>
+        <td v-if="weightsApply" class="p-2 border text-center">
           <FormControl v-model="criteria.extracredit_scac" type="checkbox" :required="false" class="mb-4 inline-block"
             :default="false" />
         </td>
-        <td class="p-2 border" style="width: 10%;">
+        <td v-if="weightsApply" class="p-2 border" style="width: 10%;">
           <div v-if="criteria.extracredit_scac" class="mb-4 light-blue-bg p-2 rounded">
             <FormControl v-model="criteria.fudgepoints_scac" :label="__('Fudge Points')" type="float" class="max-w-14ch"
               :required="true" />
@@ -113,12 +129,86 @@
             ✘
           </span>
         </td>
+        <td v-if="hasAretenic" class="p-2 border text-center align-middle">
+          <Tooltip v-if="!criteria.name" :text="__('Save the assessment before mapping outcomes')">
+            <Button variant="ghost" size="sm" :disabled="true">
+              <Target class="h-4 w-4 stroke-1.5" />
+            </Button>
+          </Tooltip>
+          <Tooltip v-else :text="__('Map to Course Learning Outcomes')">
+            <Button variant="ghost" size="sm" @click="openCloMapper(criteria)">
+              <Target class="h-4 w-4 stroke-1.5" />
+            </Button>
+          </Tooltip>
+        </td>
+        <td v-if="isCbe" class="p-2 border text-center align-middle">
+          <Button variant="ghost" size="sm"
+            :disabled="!criteria.name"
+            :title="criteria.name ? __('Dimensions and evaluators') : __('Save first')"
+            @click="toggleDetail(criteria)">
+            <SlidersHorizontal class="h-4 w-4 stroke-1.5" />
+          </Button>
+        </td>
         <td class="p-2 border text-center align-middle">
           <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
             <Trash2 class="h-4 w-4 stroke-1.5" />
           </Button>
         </td>
       </tr>
+      <!-- Dimension weights and the grading matrix (ADR 065 section 11b).
+           Both are separate records keyed to a saved criteria row, which is
+           why the opener waits for a name. -->
+      <tr v-if="isCbe && openDetail === criteria.name">
+        <td :colspan="detailColspan" class="p-4 border bg-surface-gray-1">
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div>
+              <h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Dimension weights') }}</h4>
+              <p class="text-sm text-ink-gray-6 mb-2">
+                {{ __('How much this assessment says about each dimension. Leave them equal if it says the same about all.') }}
+              </p>
+              <div v-for="d in dimensions" :key="d.dimension_code" class="mb-2">
+                <FormControl type="number" :label="d.dimension"
+                  v-model="detail.weights[d.dimension_code]" />
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Who grades what') }}</h4>
+              <p class="text-sm text-ink-gray-6 mb-2">
+                {{ __('Untick a box when that mentor does not judge that dimension here. That is not a zero — it drops out of the average entirely.') }}
+              </p>
+              <table class="text-sm">
+                <thead>
+                  <tr>
+                    <th class="p-1 text-left">{{ __('Evaluator') }}</th>
+                    <th v-for="d in dimensions" :key="d.dimension_code" class="p-1">
+                      {{ d.dimension }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="g in gradingCategories" :key="g.instructor_category">
+                    <td class="p-1 pr-3">{{ g.instructor_category }}</td>
+                    <td v-for="d in dimensions" :key="d.dimension_code" class="p-1 text-center">
+                      <input type="checkbox" :checked="cellGraded(g, d)"
+                        @change="setCell(g, d, $event.target.checked)" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p v-if="!gradingCategories.length" class="text-sm text-ink-gray-5">
+                {{ __('The framework names no evaluators who grade activities.') }}
+              </p>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-2">
+            <Button variant="solid" size="sm" :loading="savingDetail" @click="saveDetail(criteria)">
+              {{ __('Save these') }}
+            </Button>
+            <Button variant="subtle" size="sm" @click="openDetail = null">{{ __('Close') }}</Button>
+          </div>
+        </td>
+      </tr>
+      </template>
     </tbody>
   </table>
 
@@ -134,16 +224,26 @@
 
     <CourseAssessmentModal v-model="showCourseAssessmentModal" v-model:modalcriteria="modalcriteria"
       :courseName="props.courseName" @assessment-saved="onAssessmentSaved" />
+
+    <CLOAssessmentMapperModal v-if="hasAretenic" v-model="showCloMapper" :course="course.data?.course"
+      :courseSchedule="props.courseName" :scheduledAssessCriteria="activeCriteria?.name"
+      :assessmentType="activeCriteria?.type" :criteriaTitle="activeCriteria?.title"
+      @saved="cloCoverageKey++" />
   </div>
+
+  <!-- The reverse view, next to where the mapping is actually authored (decisions/034 section 4). -->
+  <CLOCoveragePanel v-if="hasAretenic" :courseSchedule="props.courseName" :refreshKey="cloCoverageKey" />
 </template>
 
 <script setup>
-import { createResource, Breadcrumbs, Button, FormControl, Tooltip, toast, DateTimePicker } from 'frappe-ui'
+import { call, createResource, Breadcrumbs, Button, FormControl, Tooltip, toast, DateTimePicker } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, Target, SlidersHorizontal } from 'lucide-vue-next'
 import { updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
+import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperModal.vue'
+import CLOCoveragePanel from '@/components/CLOCoveragePanel.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
 
@@ -156,12 +256,142 @@ const settingsStore = useSettings()
 const showCourseAssessmentModal = ref(false)
 const show = defineModel()
 
+// Optional CLO assessment mapper — only when the Aretenic app is installed (ADR 030).
+const hasAretenic = computed(() => !!user?.data?.has_aretenic)
+const showCloMapper = ref(false)
+const activeCriteria = ref(null)
+// Bumped when a mapping is saved, so the coverage panel below reflects it without a page reload.
+const cloCoverageKey = ref(0)
+
+function openCloMapper(criteria) {
+  activeCriteria.value = criteria
+  showCloMapper.value = true
+}
+
 const props = defineProps({
   courseName: {
     type: String,
     required: true,
   },
 })
+
+// --- Competency mode (ADR 065 section 11b) ---------------------------------
+// One derived mode drives every competency-specific column, validation and
+// sub-editor on this page, so it cannot end up half in one world. Derived from
+// the grading scale rather than stored, because the scale is already the
+// authority on whether a section is competency-based.
+//
+// Declared after `props`, because `auto: true` runs `makeParams` during setup
+// and `props` is only bound where `defineProps` is called.
+const competencyContext = createResource({
+  url: 'seminary.seminary.cbe_api.get_competency_context',
+  makeParams: () => ({ course_schedule: props.courseName }),
+  auto: true,
+  onError: () => { },
+})
+
+const isCbe = computed(() => !!competencyContext.data?.is_cbe)
+const weightsApply = computed(() => !isCbe.value)
+const dimensions = computed(() => competencyContext.data?.dimensions || [])
+const gradingCategories = computed(() => competencyContext.data?.grading_categories || [])
+
+const competencyOptions = computed(() => [
+  { label: '—', value: '' },
+  ...(competencyContext.data?.competencies || []).map((c) => ({
+    label: c.competency_name,
+    value: c.name,
+  })),
+])
+
+// The chapter has already told the student which competency they are working
+// on there, so an assessment inside it cannot choose a different one. The
+// server resolves that chain and sends the answer, so the picker greys out
+// exactly what would be refused rather than guessing.
+const chapterCompetency = (criteria) => {
+  const found = (competencyContext.data?.assessments || []).find(
+    (a) => a.name === criteria.name
+  )
+  return found?.chapter_competency || null
+}
+
+const openDetail = ref(null)
+const savingDetail = ref(false)
+const detail = reactive({ weights: {}, matrix: [] })
+
+// Title, type, activity, due date, in lesson, delete — then the conditional
+// pairs: competency + weights, extra credit + points.
+const detailColspan = computed(
+  () => 6 + (isCbe.value ? 2 : 0) + (weightsApply.value ? 2 : 0) + (hasAretenic.value ? 1 : 0)
+)
+
+function toggleDetail(criteria) {
+  if (openDetail.value === criteria.name) {
+    openDetail.value = null
+    return
+  }
+  const stored = (competencyContext.data?.assessments || []).find(
+    (a) => a.name === criteria.name
+  )
+  detail.weights = {}
+  for (const d of dimensions.value) {
+    detail.weights[d.dimension_code] = stored?.weights?.[d.dimension_code] ?? 0
+  }
+  detail.matrix = (stored?.matrix || []).map((m) => ({ ...m }))
+  openDetail.value = criteria.name
+}
+
+// Absence means "follow the grading mode", which is why an untouched cell is
+// ticked and storing nothing is the normal state.
+const cellGraded = (g, d) => {
+  const cell = detail.matrix.find(
+    (m) => m.instructor_category === g.instructor_category
+      && m.dimension_code === d.dimension_code
+  )
+  return cell ? !!cell.graded : true
+}
+
+function setCell(g, d, checked) {
+  const i = detail.matrix.findIndex(
+    (m) => m.instructor_category === g.instructor_category
+      && m.dimension_code === d.dimension_code
+  )
+  if (checked) {
+    // Back to the default rather than an explicit "on": the two are different
+    // claims, and only the first follows a later change of grading mode.
+    if (i >= 0) detail.matrix.splice(i, 1)
+    return
+  }
+  if (i >= 0) detail.matrix[i].graded = 0
+  else detail.matrix.push({
+    instructor_category: g.instructor_category,
+    dimension_code: d.dimension_code,
+    graded: 0,
+  })
+}
+
+async function saveDetail(criteria) {
+  savingDetail.value = true
+  try {
+    await call('seminary.seminary.cbe_api.save_assessment_competency_config', {
+      course_schedule: props.courseName,
+      config: JSON.stringify([{
+        assess_criteria: criteria.name,
+        weights: detail.weights,
+        matrix: detail.matrix,
+      }]),
+    })
+    toast.success(__('Saved'))
+    competencyContext.reload()
+    openDetail.value = null
+  } catch (e) {
+    const msg = Array.isArray(e?.messages) && e.messages.length
+      ? e.messages.join('\n')
+      : (e?.message || '').replace(/^[\w.]+Error:\s*/i, '').trim()
+    toast.error(msg || __('Could not save.'))
+  } finally {
+    savingDetail.value = false
+  }
+}
 
 const modalcriteria = reactive({
   title: '',
@@ -440,6 +670,8 @@ async function submitCourseAssessment() {
       throw new Error(message);
     }
     toast.success(__('Course updated successfully'));
+    // New rows only get a name on save, and the dimension editors key off it.
+    if (isCbe.value) competencyContext.reload();
   } catch (error) {
     console.error('Error:', error);
     toast.error(error?.message || String(error));

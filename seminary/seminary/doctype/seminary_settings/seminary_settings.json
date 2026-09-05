@@ -36,21 +36,9 @@
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
-  "accounts_section",
-  "column_break_wmyg",
-  "company",
-  "cost_center",
-  "column_break_lhee",
-  "receivable_account",
-  "income_account",
-  "scholarships_section",
-  "scholarship_cc",
-  "column_break_wnvm",
-  "scholarship_cust",
   "section_break_7",
-  "instructor_created_by",
-  "column_break_zlxm",
   "portal_disciplinary",
+  "column_break_zlxm",
   "withdrawal_section",
   "term_based_withdrawal_dates",
   "column_break_withdrawal",
@@ -70,7 +58,6 @@
   "column_break_smoh",
   "allow_portal_withdrawal",
   "allow_portal_scholarship",
-  "payment_gateway",
   "alternative_payment_instructions",
   "section_break_fxlm",
   "calendar_instructions",
@@ -100,7 +87,6 @@
   "portal_messaging_rules",
   "facilities_section",
   "sync_rooms_to_asset_locations",
-  "root_asset_location",
   "plagiarism_section",
   "plagiarism_enabled",
   "plagiarism_default_provider",
@@ -120,7 +106,11 @@
   "internship_share_program",
   "internship_share_credits",
   "internship_share_gpa",
-  "internship_share_expected_graduation"
+  "internship_share_expected_graduation",
+  "cohort_planning_section",
+  "distance_unit",
+  "integrations_section",
+  "has_oikonomos"
  ],
  "fields": [
   {
@@ -130,19 +120,12 @@
    "label": "Facilities & Assets"
   },
   {
-   "default": "1",
+   "default": "0",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
    "fieldname": "sync_rooms_to_asset_locations",
    "fieldtype": "Check",
    "label": "Sync rooms to Asset Locations"
-  },
-  {
-   "depends_on": "sync_rooms_to_asset_locations",
-   "description": "Optional. Root of the Location subtree the seminary's campuses/rooms hang under. Leave blank to auto-create and use a \"Seminary Locations\" root.",
-   "fieldname": "root_asset_location",
-   "fieldtype": "Link",
-   "label": "Root Asset Location",
-   "options": "Location"
   },
   {
    "collapsible": 1,
@@ -231,14 +214,8 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "Full Name",
-   "fieldname": "instructor_created_by",
-   "fieldtype": "Select",
-   "label": "Instructor Records to be created by",
-   "options": "Full Name\nNaming Series\nEmployee Number"
-  },
-  {
    "default": "0",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
@@ -246,6 +223,7 @@
   },
   {
    "default": "1",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
@@ -253,13 +231,13 @@
   },
   {
    "default": "1",
-   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft \u2192 Open for Enrollment, Open for Enrollment \u2192 Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
+   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft → Open for Enrollment, Open for Enrollment → Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
    "fieldname": "auto_advance_course_schedule",
    "fieldtype": "Check",
    "label": "Auto-advance Course Schedule states"
   },
   {
-   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window \u2014 Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
+   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window — Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
    "fieldname": "enrollment_window_rules_section",
    "fieldtype": "Section Break",
    "label": "Enrollment Window Rules"
@@ -309,50 +287,6 @@
    "label": "Grade Close Offset (days)"
   },
   {
-   "fieldname": "accounts_section",
-   "fieldtype": "Section Break",
-   "label": "Accounts"
-  },
-  {
-   "fetch_from": "company.default_receivable_account",
-   "fieldname": "receivable_account",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Receivable Account",
-   "options": "Account",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_wmyg",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Company",
-   "options": "Company",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "company.default_income_account",
-   "fieldname": "income_account",
-   "fieldtype": "Link",
-   "label": "Income Account",
-   "options": "Account"
-  },
-  {
-   "fetch_from": "company.cost_center",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Cost Center",
-   "options": "Cost Center"
-  },
-  {
-   "fieldname": "column_break_lhee",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "section_break_qqak",
    "fieldtype": "Section Break",
    "label": "Course Defaults"
@@ -378,6 +312,7 @@
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "If not checked, the corresponding fee will be the same for all audited courses.",
    "fieldname": "auditcredit",
    "fieldtype": "Check",
@@ -389,28 +324,6 @@
    "fieldname": "advancetb",
    "fieldtype": "Check",
    "label": "Auto-advance students in Time-based Programs?"
-  },
-  {
-   "fieldname": "scholarships_section",
-   "fieldtype": "Section Break",
-   "label": "Scholarships"
-  },
-  {
-   "fieldname": "scholarship_cc",
-   "fieldtype": "Link",
-   "label": "Scholarship - Cost Center",
-   "options": "Cost Center"
-  },
-  {
-   "fieldname": "column_break_wnvm",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "This customer will be used in all Sales Invoices of Scholarships.",
-   "fieldname": "scholarship_cust",
-   "fieldtype": "Link",
-   "label": "Scholarship - Customer",
-   "options": "Customer"
   },
   {
    "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
@@ -555,6 +468,7 @@
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
    "fieldname": "portal_payment_enable",
    "fieldtype": "Check",
@@ -563,14 +477,6 @@
   {
    "fieldname": "section_break_fxlm",
    "fieldtype": "Section Break"
-  },
-  {
-   "depends_on": "eval:doc.portal_payment_enable",
-   "fieldname": "payment_gateway",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Payment Gateway",
-   "options": "Payment Gateway"
   },
   {
    "description": "Optional HTML shown on the Student Applicant payment screen alongside (or instead of) the online gateway button. Use for bank transfer details, manual payment instructions, contact info for payment plans, etc.",
@@ -585,6 +491,7 @@
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.has_oikonomos",
    "description": "This requires the installation of another app \"HRMS\" by Frappe. HRMS enables payroll for salaried and per-course instructors via Salary Structure, Payroll Entry, and Salary Slip.",
    "fieldname": "hrms_enable",
    "fieldtype": "Check",
@@ -660,7 +567,7 @@
   },
   {
    "default": "1",
-   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code \u2014 best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
+   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code — best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
    "fieldname": "enforce_time_window",
    "fieldtype": "Check",
    "label": "Enforce meeting time window"
@@ -703,20 +610,20 @@
   },
   {
    "default": "1",
-   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only \u2014 excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
+   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only — excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
    "fieldname": "track_online_attendance",
    "fieldtype": "Check",
    "label": "Track Attendance for Online Meetings"
   },
   {
-   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % \u00d7 the course's scheduled meetings, overridable per Course Schedule by the registrar.",
+   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",
    "fieldname": "attendance_policy_section",
    "fieldtype": "Section Break",
    "label": "Attendance Policy"
   },
   {
    "default": "3",
-   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 \u2192 every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
+   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
    "fieldname": "tardies_per_absence",
    "fieldtype": "Int",
    "label": "Tardies per Absence"
@@ -842,11 +749,38 @@
    "fieldname": "internship_share_expected_graduation",
    "fieldtype": "Check",
    "label": "Share Applicant's Expected Graduation"
+  },
+  {
+   "fieldname": "cohort_planning_section",
+   "fieldtype": "Section Break",
+   "label": "Cohort Planning"
+  },
+  {
+   "default": "Kilometres",
+   "description": "How distances are shown when the Cohort Planner reports how far a student lives from a mentor. One setting for the whole school, so a plan reads the same way to everyone who opens it.",
+   "fieldname": "distance_unit",
+   "fieldtype": "Select",
+   "label": "Distance Unit",
+   "options": "Kilometres\nMiles"
+  },
+  {
+   "fieldname": "integrations_section",
+   "fieldtype": "Section Break",
+   "label": "Integrations"
+  },
+  {
+   "default": "0",
+   "description": "Set by the oikonomos bridge on install/migrate. Gates the billing UI.",
+   "fieldname": "has_oikonomos",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Oikonomos (billing bridge) installed",
+   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-07 19:03:22.253387",
+ "modified": "2026-09-04 09:42:36.727902",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

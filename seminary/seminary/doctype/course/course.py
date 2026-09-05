@@ -9,9 +9,12 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
 
+from seminary.seminary.utils import assert_url_safe_code
+
 
 class Course(Document):
     def validate(self):
+        assert_url_safe_code(self.coursecode, _("Course Code"))
         self.validate_assessment_criteria()
         self.clean_name()
         self.set_disabled_on()

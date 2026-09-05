@@ -21,6 +21,11 @@ STASH = "__scholarship_link_stash"
 
 
 def execute():
+    # Scholarship Award + Payers Fee Category PE now live in the oikonomos bridge.
+    # This historical migration only applies where those doctypes exist; on a
+    # Frappe-only install there is nothing to migrate.
+    if not frappe.db.exists("DocType", "Payers Fee Category PE"):
+        return
     _create_awards_from_stash()
     _restore_student_payer_rows()
     _drop_legacy_column()

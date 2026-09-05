@@ -17,9 +17,6 @@
   "suspend_monthly",
   "suspend_nat",
   "suspend_nay",
-  "column_break_readmission",
-  "charges_readmission_fee",
-  "readmission_fee_category",
   "graduation_policy_section",
   "min_graduation_gpa",
   "alumni_portal_section",
@@ -95,26 +92,6 @@
    "fieldname": "suspend_nay",
    "fieldtype": "Check",
    "label": "Suspend New Academic Year Charges"
-  },
-  {
-   "fieldname": "column_break_readmission",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "description": "Charge a readmission fee when a student returns from leave. The fee is the linked Fee Category, billed through the normal pipeline. It is NOT affected by the date threshold for billing suspension.",
-   "fieldname": "charges_readmission_fee",
-   "fieldtype": "Check",
-   "label": "Charges Readmission Fee"
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "eval:doc.charges_readmission_fee",
-   "fieldname": "readmission_fee_category",
-   "fieldtype": "Link",
-   "label": "Readmission Fee Category",
-   "options": "Fee Category"
   },
   {
    "fieldname": "graduation_policy_section",

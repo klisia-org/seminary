@@ -7,7 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "student",
-  "student_name"
+  "student_name",
+  "status",
+  "joined_on",
+  "left_on"
  ],
  "fields": [
   {
@@ -24,6 +27,27 @@
    "fieldtype": "Data",
    "label": "Student Name",
    "reqd": 1
+  },
+  {
+   "default": "Active",
+   "description": "Moved: this student changed cohort. Withdrawn: they left the program.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nMoved\nWithdrawn",
+   "reqd": 1
+  },
+  {
+   "fieldname": "joined_on",
+   "fieldtype": "Date",
+   "label": "Joined On"
+  },
+  {
+   "depends_on": "eval:doc.status && doc.status != 'Active'",
+   "fieldname": "left_on",
+   "fieldtype": "Date",
+   "label": "Left On"
   }
  ],
  "grid_page_length": 50,

@@ -5,7 +5,10 @@ frappe.query_reports["Term Enrollment Status"] = {
 			"label": __("Academic Term"),
 			"fieldtype": "Link",
 			"options": "Academic Term",
-			"default": frappe.defaults.get_default("iscurrent_acterm"),
+			// Filled in onload, not here: `frappe.defaults.get_default(...)`
+			// used to be read for this and nothing has ever published that key,
+			// so the filter simply opened blank. The term is a document flag,
+			// not a site default.
 			"reqd": 0
 		},
 		{
@@ -20,6 +23,22 @@ frappe.query_reports["Term Enrollment Status"] = {
 			"fieldtype": "Check"
 		}
 	],
+
+	// `Academic Term.iscurrent_acterm` is the app-wide answer to "what term is
+	// it" and `tasks._update_term_flags` is its only writer, so the report asks
+	// the document rather than a site default nobody maintains. Async, hence
+	// onload: a query-report filter `default` is evaluated when the file loads.
+	"onload": function (report) {
+		if (report.get_filter_value("academic_term")) return;
+		frappe.db.get_value("Academic Term", { iscurrent_acterm: 1 }, "name").then((r) => {
+			const term = r && r.message && r.message.name;
+			// Re-check: the user may have typed one while this was in flight.
+			if (term && !report.get_filter_value("academic_term")) {
+				report.set_filter_value("academic_term", term);
+			}
+		});
+	},
+
 	"formatter": function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 		if (column.fieldname === "delta" && data && data.minimum_enrollment) {

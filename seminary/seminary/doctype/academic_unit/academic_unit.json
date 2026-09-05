@@ -51,7 +51,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Type",
-   "options": "Academic Department\nAcademic Interdepartment\nProgram Committee\nBoard\nOther Committee\nAdministrative Office\nTask Force",
+   "options": "Academic Department\nAcademic Interdepartment\nMentoring Department\nProgram Committee\nBoard\nOther Committee\nAdministrative Office\nTask Force",
    "reqd": 1
   },
   {

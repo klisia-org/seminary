@@ -45,8 +45,12 @@
 			<div class="min-w-0 flex-1">
 				<div class="flex flex-wrap items-baseline gap-2">
 					<span class="font-semibold text-ink-gray-8">{{ alum.full_name }}</span>
-					<span v-if="alum.class_year" class="text-xs text-ink-gray-5">
-						{{ __('Class of') }} {{ alum.class_year }}
+					<span
+						v-if="alum.graduations?.length"
+						class="text-xs text-ink-gray-5"
+					>
+						{{ __('Class of') }}
+						{{ alum.graduations.map((g) => g.class_year).filter(Boolean).join(', ') }}
 					</span>
 				</div>
 				<div v-if="alum.current_role || alum.current_organization" class="text-sm text-ink-gray-6">
@@ -54,9 +58,11 @@
 					<span v-if="alum.current_role && alum.current_organization">&nbsp;·&nbsp;</span>
 					{{ alum.current_organization }}
 				</div>
-				<div v-if="alum.program_completed || alum.city" class="mt-1 text-xs text-ink-gray-5">
-					<span v-if="alum.program_completed">{{ alum.program_completed }}</span>
-					<span v-if="alum.program_completed && alum.city">&nbsp;·&nbsp;</span>
+				<div v-if="alum.graduations?.length || alum.city" class="mt-1 text-xs text-ink-gray-5">
+					<span v-if="alum.graduations?.length">
+						{{ alum.graduations.map((g) => g.program).join(' · ') }}
+					</span>
+					<span v-if="alum.graduations?.length && alum.city">&nbsp;·&nbsp;</span>
 					<span v-if="alum.city">{{ alum.city }}</span>
 				</div>
 			</div>

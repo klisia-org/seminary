@@ -109,6 +109,25 @@
 							:students="studentEmails" />
 					</div>
 
+					<!--
+						Optional Aretenic surfaces (ADR 030), for teaching staff only. Prior
+						commitments are shown from the day the offering opens rather than only
+						inside the next report — by then the term is over (decisions/034 section 8).
+					-->
+					<template v-if="isTeachingStaff">
+						<ImprovementActionsPanel :courseSchedule="props.courseName" />
+						<FeedbackStatusPanel :courseSchedule="props.courseName" />
+						<div v-if="user.data?.has_aretenic" class="mt-5 flex justify-center">
+							<Button
+								@click="router.push({ name: 'CourseOutcomeReport', params: { courseName: props.courseName } })">
+								<span>{{ __('Outcome Report') }}</span>
+								<template #suffix>
+									<ClipboardCheck class="h-4 stroke-1.5" />
+								</template>
+							</Button>
+						</div>
+					</template>
+
 				</div>
 			</div>
 		</div>
@@ -125,11 +144,16 @@ import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import AnnouncementModal from '../components/Modals/AnnouncementModal.vue'
-import { Send, MapPin, CalendarDays, Clock, MonitorPlay, Video } from 'lucide-vue-next'
+import { Send, MapPin, CalendarDays, Clock, MonitorPlay, Video, ClipboardCheck } from 'lucide-vue-next'
 import Announcements from '../components/Announcements.vue'
+import ImprovementActionsPanel from '@/components/ImprovementActionsPanel.vue'
+import FeedbackStatusPanel from '@/components/FeedbackStatusPanel.vue'
 
 const user = inject('$user')
 const router = useRouter()
+
+// Outcome reporting is teaching-staff work; students never see these surfaces.
+const isTeachingStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
 const props = defineProps({
 	courseName: {
 		type: String,

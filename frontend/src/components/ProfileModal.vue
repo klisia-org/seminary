@@ -78,7 +78,16 @@
 						</div>
 					</div>
 
-					<!-- Language preference -->
+					<!-- Preferred Bible version -->
+						<div v-if="bibles.length" class="mb-3">
+							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select v-model="selectedBible"
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								<option value="">{{ __('Default') }}</option>
+								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
+							</select>
+						</div>
+						<!-- Language preference -->
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 						<select v-model="selectedLanguage"
@@ -182,6 +191,15 @@
 								</button>
 							</div>
 						</div>
+						<!-- Preferred Bible version -->
+						<div v-if="bibles.length" class="mb-3">
+							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select v-model="selectedBible"
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								<option value="">{{ __('Default') }}</option>
+								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
+							</select>
+						</div>
 						<!-- Language preference -->
 						<div>
 							<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
@@ -257,7 +275,16 @@
 							</button>
 						</div>
 					</div>
-					<!-- Language preference -->
+					<!-- Preferred Bible version -->
+						<div v-if="bibles.length" class="mb-3">
+							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
+							<select v-model="selectedBible"
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								<option value="">{{ __('Default') }}</option>
+								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
+							</select>
+						</div>
+						<!-- Language preference -->
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 						<select v-model="selectedLanguage"
@@ -280,7 +307,7 @@
 
 <script setup>
 import { Dialog, Avatar, FeatherIcon, FileUploader, createResource } from 'frappe-ui'
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { validateFileSize } from '@/utils'
 import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
@@ -325,6 +352,31 @@ const saveLanguageResource = createResource({
 })
 
 const languageChanged = computed(() => selectedLanguage.value !== originalLanguage.value)
+
+// ── Preferred Bible version ──────────────────────────────────────────────────
+const selectedBible = ref('')
+const originalBible = ref('')
+const bibles = ref([])
+createResource({
+	url: 'seminary.seminary.integrations.bible.get_available_bibles_for_user',
+	auto: true,
+	onSuccess(data) {
+		bibles.value = data.bibles || []
+		selectedBible.value = data.current || ''
+		originalBible.value = data.current || ''
+	},
+})
+const saveBibleResource = createResource({
+	url: 'seminary.seminary.integrations.bible.set_user_bible',
+})
+// Bible saves immediately on selection (like the theme toggle), so it doesn't
+// depend on which of the three profile forms is mounted.
+watch(selectedBible, (val) => {
+	if (val !== originalBible.value) {
+		saveBibleResource.submit({ bible_id: val })
+		originalBible.value = val
+	}
+})
 
 // ── Seminary settings (support_user) ─────────────────────────────────────────
 const supportUser = ref('')

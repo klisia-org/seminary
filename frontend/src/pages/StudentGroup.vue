@@ -113,6 +113,15 @@
           class="mt-1 mb-4 block w-full border border-outline-gray-2 bg-surface-white text-ink-gray-9 rounded-md shadow-sm focus:ring-outline-blue-1 focus:border-outline-blue-1 sm:text-sm" />
       </div>
 
+      <!-- Gender separation (cohort-forming courses only) -->
+      <div v-if="formsCohort" class="mb-4 max-w-xl">
+        <FormControl type="checkbox" v-model="separateByGender"
+          :label="__('Separate groups by gender')" />
+        <p class="text-xs text-ink-gray-5 mt-1 ml-6">
+          {{ __('Spiritual-formation groups are usually single-gender. Groups are created separately for each gender; the count above is groups per gender. Students with no gender set are grouped as "Unspecified".') }}
+        </p>
+      </div>
+
       <!-- Instructor selection -->
       <div v-if="hasInstructors" class="mb-4">
         <p class="text-lg font-medium text-ink-gray-7 mb-2">
@@ -159,6 +168,100 @@
           theme: 'red',
           onClick: recreateGroups,
         },
+      ],
+    }" />
+
+    <!-- ============================================ -->
+    <!-- COMMUNITY COHORT SECTION (cohort-forming courses) -->
+    <!-- ============================================ -->
+    <div v-if="hasSavedGroups && formsCohort" class="student-group-page mt-10 border-t pt-8">
+      <div class="flex items-center justify-between mb-2 ml-5 mr-5">
+        <h2 class="text-xl font-bold">{{ __('Community Cohort') }}</h2>
+        <Button variant="solid" theme="blue" size="sm" :loading="isCreatingCohorts"
+          :label="__('Create Community Cohort from Student Group')"
+          @click="showCreateCohortConfirm = true" />
+      </div>
+      <p class="text-sm text-ink-gray-5 mb-4 ml-5 mr-5">
+        {{ __('Turn each student group into a self-managing discipleship cohort of type') }}
+        <b>{{ cohortPreview.data?.cohort_type }}</b>.
+        {{ __('Once created, cohorts are managed independently — later changes to student groups will not sync.') }}
+      </p>
+
+      <!-- Leader mode -->
+      <div class="ml-5 mr-5 mb-4">
+        <FormControl type="checkbox" v-model="includeInstructorAsLeader"
+          :label="__('Include instructor as leader of each cohort')" />
+        <p class="text-xs text-ink-gray-5 mt-1 ml-6">
+          {{ includeInstructorAsLeader
+            ? __("Each group's instructor leads its cohort.")
+            : __('Pick a student from each group to lead its cohort.') }}
+        </p>
+      </div>
+
+      <!-- Group cards -->
+      <div class="mx-5 space-y-4">
+        <div v-for="g in cohortGroups" :key="g.student_group" class="border rounded-lg overflow-hidden">
+          <div class="bg-surface-gray-2 px-4 py-3 flex items-center justify-between">
+            <div>
+              <h3 class="text-md font-semibold text-ink-gray-8">{{ g.group_name || g.student_group }}</h3>
+              <span class="text-xs text-ink-gray-5">
+                {{ g.students.length }} {{ g.students.length === 1 ? 'student' : 'students' }}
+                <template v-if="alreadyPlacedCount(g)"> · {{ alreadyPlacedCount(g) }} already in a cohort</template>
+              </span>
+            </div>
+            <span v-if="g.existing_cohort"
+              class="text-xs font-medium text-ink-green-3 bg-surface-green-1 rounded px-2 py-1">
+              ✓ {{ __('Cohort created') }}
+            </span>
+          </div>
+          <div class="px-4 py-3 space-y-3">
+            <!-- Leader picker (student-led mode, not yet created) -->
+            <div v-if="!includeInstructorAsLeader && !g.existing_cohort">
+              <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Cohort leader') }}</label>
+              <FormControl type="select" :placeholder="__('Choose a student to lead…')"
+                :options="leaderOptions(g)" v-model="groupLeaders[g.student_group]" />
+            </div>
+            <div v-else-if="includeInstructorAsLeader && !g.existing_cohort" class="text-sm text-ink-gray-6">
+              {{ __('Leader') }}: <b>{{ g.instructor_name || __('—') }}</b>
+              <span v-if="!g.instructor_person" class="text-ink-red-3">({{ __('no linked person — pick a student instead') }})</span>
+            </div>
+            <a v-if="g.existing_cohort" href="/seminary/community" target="_blank"
+              class="text-sm text-ink-blue-3 hover:underline">{{ __('Open in Community →') }}</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unplaced students reconciliation -->
+      <div v-if="unplacedStudents.length"
+        class="mx-5 mt-6 p-4 bg-surface-amber-2 border border-outline-amber-2 rounded-lg">
+        <h3 class="text-md font-semibold text-ink-amber-3 mb-3">
+          ⚠️ {{ __('Students not in a cohort') }} ({{ unplacedStudents.length }})
+        </h3>
+        <div class="space-y-2">
+          <div v-for="s in unplacedStudents" :key="s.student"
+            class="flex items-center justify-between bg-surface-white p-2 rounded border border-outline-amber-1">
+            <span class="text-sm font-medium text-ink-gray-7">
+              {{ s.student_name }}
+              <span class="text-xs ml-2 rounded px-1.5 py-0.5"
+                :class="s.status === 'Invited' ? 'bg-surface-blue-1 text-ink-blue-3' : 'bg-surface-gray-3 text-ink-gray-6'">
+                {{ s.status }}
+              </span>
+            </span>
+            <FormControl v-if="s.status !== 'Invited'" type="select" :options="assignableCohorts"
+              :placeholder="__('Assign to cohort…')" size="sm"
+              @change="(val) => placeStudent(s, val)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Community Cohort confirmation -->
+    <Dialog v-model="showCreateCohortConfirm" :options="{
+      title: __('Create Community Cohorts'),
+      message: __('One cohort will be created per student group and seeded with its students. From this point on the cohorts are independently managed — changes to the student groups will not sync back. Continue?'),
+      actions: [
+        { label: __('Cancel'), variant: 'outline', onClick: () => (showCreateCohortConfirm = false) },
+        { label: __('Create Cohorts'), variant: 'solid', theme: 'blue', onClick: createCohorts },
       ],
     }" />
   </div>
@@ -224,6 +327,19 @@ const students = createResource({
   auto: true,
 })
 
+// Community Cohort (reverse enrollment): student groups → discipleship cohorts
+const cohortPreview = createResource({
+  url: 'seminary.seminary.discipleship.api.cohort_seed_preview',
+  params: { course_schedule: props.courseName },
+  auto: true,
+})
+
+const placementStatus = createResource({
+  url: 'seminary.seminary.discipleship.api.cohort_placement_status',
+  params: { course_schedule: props.courseName },
+  auto: true,
+})
+
 // ============================================
 // Computed properties
 // ============================================
@@ -273,6 +389,72 @@ const instructorOptions = computed(() => {
   }))
 })
 
+// ============================================
+// Community Cohort computed + actions
+// ============================================
+
+const formsCohort = computed(() => cohortPreview.data?.forms_cohort === true)
+const cohortGroups = computed(() => cohortPreview.data?.groups || [])
+
+const unplacedStudents = computed(() =>
+  (placementStatus.data?.students || []).filter((s) => s.status !== 'Placed')
+)
+
+const assignableCohorts = computed(() =>
+  (placementStatus.data?.cohorts || []).map((c) => ({
+    label: c.cohort_name || c.name,
+    value: c.name,
+  }))
+)
+
+function alreadyPlacedCount(g) {
+  return (g.students || []).filter((s) => s.already_in_cohort).length
+}
+
+function leaderOptions(g) {
+  return (g.students || [])
+    .filter((s) => s.person)
+    .map((s) => ({ label: s.student_name, value: s.student }))
+}
+
+async function createCohorts() {
+  showCreateCohortConfirm.value = false
+  isCreatingCohorts.value = true
+  try {
+    const r = createResource({
+      url: 'seminary.seminary.discipleship.api.create_cohorts_from_student_groups',
+    })
+    await r.submit({
+      course_schedule: props.courseName,
+      include_instructor_as_leader: includeInstructorAsLeader.value ? 1 : 0,
+      leaders_by_group: JSON.stringify(groupLeaders),
+    })
+    await cohortPreview.reload()
+    await placementStatus.reload()
+  } catch (error) {
+    console.error('Error creating cohorts:', error)
+  } finally {
+    isCreatingCohorts.value = false
+  }
+}
+
+async function placeStudent(student, cohort) {
+  if (!cohort) return
+  try {
+    const r = createResource({
+      url: 'seminary.seminary.discipleship.api.place_student_in_cohort',
+    })
+    await r.submit({
+      course_schedule: props.courseName,
+      student: student.student,
+      cohort,
+    })
+    await placementStatus.reload()
+  } catch (error) {
+    console.error('Error placing student:', error)
+  }
+}
+
 const canCreateGroups = computed(() => {
   return (
     groupCount.value > 1 &&
@@ -291,6 +473,13 @@ const groupCount = ref(2)
 const selectedInstructors = ref([])
 const showRecreateConfirm = ref(false)
 const isSaving = ref(false)
+
+// Community Cohort state
+const separateByGender = ref(false)
+const includeInstructorAsLeader = ref(true)
+const groupLeaders = reactive({})
+const showCreateCohortConfirm = ref(false)
+const isCreatingCohorts = ref(false)
 
 // This holds the working copy of group assignments for manual edits
 // Structure: array of { student, student_name, student_group, group_instructor }
@@ -476,6 +665,40 @@ async function recreateGroups() {
 // Create groups (original logic)
 // ============================================
 
+// Round-robin a list of roster rows into `n` buckets of {member} objects.
+function roundRobin(list, n) {
+  const buckets = Array.from({ length: n }, () => [])
+  list.forEach((student, index) => {
+    buckets[index % n].push({ member: student.student })
+  })
+  return buckets
+}
+
+// Produce the groups to create: a flat list of { members, label }. When
+// separate-by-gender is on, students are bucketed by gender first (the count is
+// groups-per-gender), so every group is single-gender; empty buckets are skipped.
+function buildGroups(filteredStudents) {
+  const out = []
+  if (!separateByGender.value) {
+    roundRobin(filteredStudents, groupCount.value).forEach((members, idx) =>
+      out.push({ members, label: `Group ${idx + 1}` })
+    )
+    return out
+  }
+  const byGender = {}
+  filteredStudents.forEach((s) => {
+    const key = s.gender || 'Unspecified'
+    ;(byGender[key] ||= []).push(s)
+  })
+  Object.entries(byGender).forEach(([gender, list]) => {
+    const n = Math.min(groupCount.value, list.length)
+    roundRobin(list, n).forEach((members, idx) => {
+      if (members.length) out.push({ members, label: `${gender} Group ${idx + 1}` })
+    })
+  })
+  return out
+}
+
 function createGroups() {
   try {
     if (!students.data || !Array.isArray(students.data)) {
@@ -486,20 +709,11 @@ function createGroups() {
       (student) => student.audit_bool === 0 && student.active === 1
     )
 
-    const studentData = filteredStudents.map((student) => ({
-      member: student.student,
-    }))
-
-    const groups = Array.from({ length: groupCount.value }, () => [])
-    studentData.forEach((student, index) => {
-      groups[index % groupCount.value].push(student)
-    })
-
-    groups.forEach((group, index) => {
-      const groupName = `${course.data.name} ${selectedInstructors.value[index] || instructors.data[0].instructor_name} Group ${index + 1}`
+    buildGroups(filteredStudents).forEach((group, index) => {
       const mentor =
         selectedInstructors.value[index] ||
         instructors.data[0].instructor_name
+      const groupName = `${course.data.name} ${mentor} ${group.label}`
 
       createResource({
         url: 'seminary.seminary.utils.create_student_group',
@@ -508,7 +722,7 @@ function createGroups() {
           course: props.courseName,
           group_name: groupName,
           group_instructor: mentor,
-          members: group,
+          members: group.members,
         },
         auto: true,
       })

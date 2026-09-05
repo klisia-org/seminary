@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-28 21:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "instructor_category",
+  "assignment_source",
+  "cohort_type",
+  "evaluates",
+  "column_break_cfe",
+  "grades_activities",
+  "gives_competency_verdict",
+  "required",
+  "weight"
+ ],
+ "fields": [
+  {
+   "description": "The kind of mentor this row describes. Only categories marked as competency evaluators are offered.",
+   "fieldname": "instructor_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Instructor Category",
+   "link_filters": "[[\"Instructor Category\",\"is_competency_evaluator\",\"=\",1]]",
+   "options": "Instructor Category",
+   "reqd": 1
+  },
+  {
+   "description": "Where this evaluator is found. Course Schedule Instructors evaluate everyone in the section; Program Cohort finds the mentors of the student's cohort of the named type.",
+   "fieldname": "assignment_source",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Assignment Source",
+   "options": "Course Schedule Instructors\nProgram Cohort",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.assignment_source == 'Program Cohort'",
+   "description": "Mentors of a cohort of this type evaluate in this capacity. A cohort type no framework names confers no academic privilege at all, however its leaders are configured.",
+   "fieldname": "cohort_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Cohort Type",
+   "mandatory_depends_on": "eval:doc.assignment_source == 'Program Cohort'",
+   "options": "Cohort Type"
+  },
+  {
+   "fieldname": "evaluates",
+   "fieldtype": "Data",
+   "label": "Evaluates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cfe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "This evaluator grades individual activities.",
+   "fieldname": "grades_activities",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Grades Activities"
+  },
+  {
+   "default": "1",
+   "description": "This evaluator gives a final verdict on each competency.",
+   "fieldname": "gives_competency_verdict",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Gives Competency Verdict"
+  },
+  {
+   "default": "1",
+   "description": "Grades cannot be sent until this evaluator has finished.",
+   "fieldname": "required",
+   "fieldtype": "Check",
+   "label": "Required"
+  },
+  {
+   "default": "1",
+   "description": "Relative weight when the framework aggregates by weighted average.",
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "label": "Weight",
+   "precision": "2"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-28 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Competency Framework Evaluator",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

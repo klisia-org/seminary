@@ -1,0 +1,264 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "COHORT-CMT-.#####",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A reply on a cohort post. Replies nest via Parent Comment, and may be anchored to a moment in a video or a passage of Scripture depending on the channel.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "post",
+  "parent_comment",
+  "author",
+  "column_break_head",
+  "status",
+  "is_private",
+  "anchor_type",
+  "content_section",
+  "content",
+  "anchor_section",
+  "timestamp_s",
+  "verse_start_ord",
+  "verse_end_ord",
+  "anchor_ref",
+  "column_break_anchor",
+  "range_from",
+  "range_to",
+  "page",
+  "x_pct",
+  "y_pct",
+  "scope_section",
+  "cohort",
+  "visibility",
+  "post_author",
+  "direct_recipient"
+ ],
+ "fields": [
+  {
+   "fieldname": "post",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Post",
+   "options": "Cohort Post",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "The reply this one is nested under. Empty for a top-level reply.",
+   "fieldname": "parent_comment",
+   "fieldtype": "Link",
+   "label": "Parent Comment",
+   "options": "Cohort Post Comment",
+   "search_index": 1
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Author",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "published",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "published\nblocked"
+  },
+  {
+   "default": "0",
+   "description": "A private reply is visible only to the post's author, its writer, and cohort leaders/staff.",
+   "fieldname": "is_private",
+   "fieldtype": "Check",
+   "label": "Private reply"
+  },
+  {
+   "default": "General",
+   "fieldname": "anchor_type",
+   "fieldtype": "Select",
+   "label": "Anchor Type",
+   "options": "General\nTimestamp\nVerseRange\nTextRange\nRegion"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Content",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval: doc.anchor_type && doc.anchor_type !== 'General'",
+   "fieldname": "anchor_section",
+   "fieldtype": "Section Break",
+   "label": "Anchor"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Timestamp'",
+   "description": "Video position in seconds.",
+   "fieldname": "timestamp_s",
+   "fieldtype": "Int",
+   "label": "Timestamp (s)",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'VerseRange'",
+   "description": "First verse of the range, as a canonical ordinal.",
+   "fieldname": "verse_start_ord",
+   "fieldtype": "Int",
+   "label": "Verse Start Ordinal"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'VerseRange'",
+   "description": "Last verse of the range, as a canonical ordinal.",
+   "fieldname": "verse_end_ord",
+   "fieldtype": "Int",
+   "label": "Verse End Ordinal"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'VerseRange'",
+   "description": "The passage this comment is anchored to, as typed.",
+   "fieldname": "anchor_ref",
+   "fieldtype": "Data",
+   "label": "Anchor Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_anchor",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'TextRange'",
+   "fieldname": "range_from",
+   "fieldtype": "Int",
+   "label": "Range From"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'TextRange'",
+   "fieldname": "range_to",
+   "fieldtype": "Int",
+   "label": "Range To"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Region'",
+   "fieldname": "page",
+   "fieldtype": "Int",
+   "label": "Page",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Region'",
+   "fieldname": "x_pct",
+   "fieldtype": "Float",
+   "label": "X %"
+  },
+  {
+   "depends_on": "eval: doc.anchor_type === 'Region'",
+   "fieldname": "y_pct",
+   "fieldtype": "Float",
+   "label": "Y %"
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Scope (derived from post)"
+  },
+  {
+   "fetch_from": "post.cohort",
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Cohort",
+   "options": "Cohort",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "post.visibility",
+   "fieldname": "visibility",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Visibility",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "post.author",
+   "fieldname": "post_author",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Post Author",
+   "options": "Person",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "post.direct_recipient",
+   "fieldname": "direct_recipient",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Direct Recipient",
+   "options": "Person",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Post Comment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

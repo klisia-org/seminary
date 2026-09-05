@@ -11,10 +11,19 @@ app_logo_url = "/assets/seminary/images/SeminaryERP_tile.png"
 source_link = "https://github.com/klisia-org/seminary"
 app_color = "#0D3049"
 app_email = "support@seminaryerp.org"
-app_license = "GNU GPL V3"
+app_license = "mit"
 app_home = "/desk/seminary"
 
-required_apps = ["erpnext"]
+# Seminary runs on the Frappe framework alone. Billing/payments/ERPNext
+# integration lives in the optional `oikonomos` bridge app (which depends on
+# both seminary and erpnext). Seminary never requires erpnext.
+required_apps = []
+
+# Financial backend (oikonomos decoupling). Seminary routes all billing facts /
+# side effects through `seminary.seminary.financial.backend.get_financial_backend`,
+# which resolves whatever app registers `seminary_financial_backend` (the
+# oikonomos bridge does) or falls back to NullFinancialBackend on a Frappe-only
+# install. Seminary itself never registers a backend.
 
 # Include app in Apps Screen
 # --------------------------
@@ -36,17 +45,34 @@ app_include_css = [
     # Styles for the Local Notes panel rendered by seminary_help.js.
     "assets/seminary/css/seminary_help.css",
 ]
+# **The `.bundle.js` suffix is load-bearing, not a naming convention.**
+# `bundled_asset()` (frappe/utils/jinja_globals.py) rewrites an entry to its
+# content-hashed build output *only* when the name contains `.bundle.`. Any
+# other path is emitted verbatim — no hash, no `?v=` — so a browser keeps
+# serving whatever it cached, forever, and `bench build` has nothing to bump.
+# That is not theoretical: a Desk tab went on calling a whitelisted method for
+# hours after the method had been deleted from this app, because it was still
+# running the previous day's copy of the address autocomplete.
+#
+# So: a file listed here is named `*.bundle.js`, lives in `public/js/`, and is
+# referenced by bare basename (esbuild picks up every `*.bundle.js` there and
+# `assets.json` maps the basename to the hashed URL).
 app_include_js = [
-    "assets/seminary/js/login_redirect.js",
-    "assets/seminary/js/seminary_help.js",
+    "login_redirect.bundle.js",
+    # Address autocomplete, shared by the Person form and the public
+    # application form (ADR 068 §7). No API key reaches the browser: the
+    # predictions come from our own whitelisted endpoints, so this is inert
+    # only when Address Geocoding Settings is disabled.
+    "address_autocomplete.bundle.js",
+    "seminary_help.bundle.js",
     # Fills a Frappe gap: a DocType's `documentation` link is rendered only in
     # list-view empty-state, never in form view. Adds a form-header Help icon.
     # Registry: docs/frappe-workarounds.md (#5).
-    "assets/seminary/js/seminary_doc_link.js",
+    "seminary_doc_link.bundle.js",
     # Guards an upstream Frappe bug: Script Reports with a ref_doctype crash on
     # render when the client meta lacks `masked_fields`.
     # Registry: docs/frappe-workarounds.md (#1); see project_frappe_quirks.md.
-    "assets/seminary/js/masked_fields_report_guard.js",
+    "masked_fields_report_guard.bundle.js",
 ]
 # app_include_js = "/assets/seminary/js/seminary.js"
 # app_include_js = "seminary/public/js/global_seminary.js"
@@ -81,13 +107,8 @@ calendars = [
 ]
 
 standard_portal_menu_items = [
-    {
-        "title": "Financials",
-        "route": "/financials",
-        "reference_doctype": "Sales Invoice",
-        "role": "Student",
-        "condition": "frappe.get_all('Sales Invoice', filters={'custom_student': frappe.session.user})",
-    },
+    # The "Financials" portal item (references the ERPNext Sales Invoice doctype)
+    # is contributed by the oikonomos bridge.
     {
         "title": "Alumni",
         "route": "/seminary/alumni",
@@ -117,7 +138,6 @@ global_search_doctypes = {
         {"doctype": "Course", "index": 3},
         {"doctype": "Instructor", "index": 4},
         {"doctype": "Student", "index": 5},
-        {"doctype": "Fee Category", "index": 6},
         {"doctype": "Grading Scale", "index": 7},
         {"doctype": "Assessment Criteria", "index": 8},
         {"doctype": "Course Schedule", "index": 9},
@@ -144,17 +164,23 @@ domains = {
     "Seminary": "seminary.seminary.setup",
 }
 # include js, css files in header of web form
-webform_include_js = {"Student Applicant": "public/js/student_applicant_webform.js"}
+webform_include_js = {
+    "Student Applicant": [
+        # Read from disk and inlined into the form's own script, so this one is
+        # always current regardless of the bundling above.
+        "public/js/address_autocomplete.bundle.js",
+        "public/js/student_applicant_webform.js",
+    ]
+}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {
-    "Customer": "seminary/public/js/customer.js",
-    "Item Price": "seminary/public/js/item_price.js",
-}
+# Customer / Item Price form customizations are ERPNext-facing and live in the
+# oikonomos bridge (oikonomos/public/js/{customer,item_price}.js).
+# doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -210,7 +236,6 @@ seminary_markdown_macro_renderers = {
 # Installation
 # ------------
 
-before_install = "seminary.install.before_install"
 after_install = "seminary.install.after_install"
 after_migrate = "seminary.install.after_migrate"
 
@@ -232,8 +257,12 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.get_permission_query_conditions",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.get_permission_query_conditions",
+    # Competency assessments and results carry a student's own account of their
+    # formation; the list view must not become a way to read a classmate's.
+    "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
+    "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.get_permission_query_conditions",
+    "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.get_permission_query_conditions",
+    "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
     "Partner Organization": "seminary.partner.permissions.org_query",
@@ -246,14 +275,22 @@ permission_query_conditions = {
     "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_query",
     "Internship Requirement": "seminary.partner.permissions.internship_requirement_query",
     "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_query",
+    "Cohort": "seminary.seminary.discipleship.permissions.cohort_query",
+    "Cohort Membership": "seminary.seminary.discipleship.permissions.membership_query",
+    "Cohort Post": "seminary.seminary.discipleship.permissions.post_query",
+    "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_query",
+    "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_query",
+    "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
-    "Sales Invoice": "seminary.seminary.sales_invoice_permissions.has_permission",
-    "Student Balance": "seminary.seminary.doctype.student_balance.student_balance_permissions.has_permission",
+    "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
+    "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
+    "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.has_permission",
+    "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
@@ -267,6 +304,12 @@ has_permission = {
     "Internship Hours Log": "seminary.partner.permissions.internship_hours_log_has",
     "Internship Requirement": "seminary.partner.permissions.internship_requirement_has",
     "Internship Supervisor Evaluation": "seminary.partner.permissions.internship_supervisor_evaluation_has",
+    "Cohort": "seminary.seminary.discipleship.permissions.cohort_has",
+    "Cohort Membership": "seminary.seminary.discipleship.permissions.membership_has",
+    "Cohort Post": "seminary.seminary.discipleship.permissions.post_has",
+    "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_has",
+    "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_has",
+    "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
 }
 
 # DocType Class
@@ -275,7 +318,7 @@ has_permission = {
 
 
 override_doctype_class = {
-    "Payment Request": "seminary.seminary.overrides.payment_request.SeminaryPaymentRequest",
+    # Payment Request (ERPNext doctype) is overridden by the oikonomos bridge.
     # Frappe gap: webform_include_js is only wired for standard web forms.
     # Frappe workaround — registry: docs/frappe-workarounds.md (#4).
     "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
@@ -298,9 +341,20 @@ doc_events = {
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
+    # Competency roll-ups (ADR 065). An activity grade feeds the existing
+    # gradebook cell, so everything downstream of Course Assess Results Detail
+    # keeps working without competency awareness.
+    "Activity Competency Grade": {
+        "on_update": "seminary.seminary.cbe.on_activity_grade_update",
+    },
+    "Competency Assessment": {
+        "on_update": "seminary.seminary.cbe.on_assessment_update",
+    },
     "Program Enrollment": {
+        # Payer-row construction (oikonomos.financial.payers.get_payers) is owned
+        # by the oikonomos bridge (Program Enrollment before_submit). A Frappe-only
+        # seminary just fulfills required enrollments — no billing.
         "on_submit": [
-            "seminary.seminary.api.get_payers",
             "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
         ],
     },
@@ -311,21 +365,29 @@ doc_events = {
     "Scheduled Course Assess Criteria": {
         "on_update": "seminary.seminary.api.update_card",
     },
+    # before_insert on every submission: content gating (ADR 065) has to refuse
+    # the submission itself, not only hide the activity in the outline.
     "Quiz Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
         ],
     },
     "Exam Submission": {
+        "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
-        "before_insert": "seminary.seminary.api.sanitize_submission",
+        "before_insert": [
+            "seminary.seminary.cbe.assert_activity_unlocked",
+            "seminary.seminary.api.sanitize_submission",
+        ],
         "before_save": "seminary.seminary.api.sanitize_submission",
     },
     "Discussion Submission Replies": {
@@ -344,44 +406,18 @@ doc_events = {
     "Scheduled Course Roster": {
         "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
     },
-    "Student": {
-        "after_insert": "seminary.seminary.doctype.student_balance.student_balance.create_student_balance",
-    },
-    "Sales Invoice": {
-        "on_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.add_invoice_to_student_balance",
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_submit",
-        ],
-        "on_update_after_submit": [
-            "seminary.seminary.doctype.student_balance.student_balance.refresh_balance_on_invoice_update",
-            "seminary.seminary.cei_lifecycle.maybe_advance_cei_on_payment",
-            "seminary.seminary.graduation_request_lifecycle.on_si_update_after_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.doctype.student_balance.student_balance.remove_cancelled_invoice_from_balance",
-            "seminary.seminary.cei_lifecycle.maybe_notify_registrar_on_invoice_cancel",
-        ],
-    },
-    "Payment Entry": {
-        "on_submit": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_submit",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_submit",
-        ],
-        "on_cancel": [
-            "seminary.seminary.cei_lifecycle.on_payment_entry_cancel",
-            "seminary.seminary.graduation_request_lifecycle.on_payment_entry_cancel",
-        ],
-    },
+    # Billing documents (Sales Invoice, Payment Entry) belong entirely to the
+    # financial backend: the bridge (oikonomos) subscribes to them from its own
+    # hooks.py and calls seminary's academic advancement entry points
+    # (cei_lifecycle.react_to_cei_payment / graduation_request_lifecycle.
+    # react_to_gr_payment). Seminary never names an ERPNext billing doctype, so a
+    # different backend (e.g. a QBO bridge) could drive the same academic flow.
     "Seminary Settings": {
         "validate": "seminary.seminary.overrides.seminary_settings.validate",
         "on_update": "seminary.seminary.overrides.seminary_settings.on_update",
     },
-    "Salary Slip": {
-        "before_validate": "seminary.seminary.overrides.salary_slip.populate_instructor_summary",
-        "on_submit": "seminary.seminary.overrides.salary_slip.post_submit_instructor_log_payments",
-        "on_cancel": "seminary.seminary.overrides.salary_slip.cancel_instructor_log_payments",
-    },
+    # Salary Slip (instructor payroll) is owned by the oikonomos bridge — it
+    # subscribes to Salary Slip's lifecycle from its own hooks.py.
     "Graduation Requirement Item": {
         "on_update": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
         "on_trash": "seminary.seminary.graduation.invalidate_linked_doctype_cache",
@@ -424,6 +460,12 @@ doc_events = {
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
     "*": {
+        # Fills the snapshot fields declared in `person_fields.SNAPSHOTS`
+        # (ADR 068 §3) — a person's name as it stood when the record was
+        # written, never re-derived afterwards. Hung off the wildcard rather
+        # than five controllers so that declaring a new snapshot needs no
+        # controller edit; it is an O(1) dict miss for every other doctype.
+        "before_validate": "seminary.seminary.person_fields.capture_snapshots",
         "on_update": "seminary.seminary.communication_triggers.process",
         "on_update_after_submit": [
             "seminary.seminary.graduation.reflect_linked_doc_status",
@@ -467,6 +509,13 @@ scheduler_events = {
     "daily": [
         "seminary.tasks.daily",
         "seminary.partner.internship.activate_due_placements",
+        # Content gating means a student who stops reflecting locks themselves
+        # out; nothing else would surface that (ADR 065).
+        "seminary.seminary.cbe.notify_stalled_self_assessments",
+        # A geocode that failed because the provider was down that afternoon
+        # would otherwise stay missing until the address happened to change
+        # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.
+        "seminary.seminary.integrations.geocoding.retry_failed_geocodes",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [
@@ -551,13 +600,9 @@ override_whitelisted_methods = {
 # Export and Import Fixtures
 # --------------------------
 fixtures = [
-    "Trigger Fee Events",
     # Grading Scale is NOT fixtured: it's submittable and seminaries define their
     # own scales; a re-import would clobber edits. Seeded create-only-if-missing
     # by install.seed_grading_scale() instead.
-    "Item",
-    "Payment Term",
-    "Payment Terms Template",
     # Fee Category is NOT fixtured: its validate_audit() cross-checks each row
     # against Seminary Settings, so a re-import throws once a seminary changes
     # the audit setting or edits a category. Seeded create-only-if-missing by
@@ -572,10 +617,10 @@ fixtures = [
     "Custom HTML Block",
     # Course Cancellation Reason is NOT fixtured: seeded create-only-if-missing
     # by install.seed_course_cancellation_reasons() so seminary edits survive.
-    {"dt": "UOM", "filters": [["name", "=", "Fee"]]},
     {
+        # Seminary Sales Invoice print format is owned by oikonomos.
         "dt": "Print Format",
-        "filters": [["name", "in", ["Seminary Sales Invoice", "Seminary Diploma"]]],
+        "filters": [["name", "in", ["Seminary Diploma"]]],
     },
     {
         "dt": "Workflow",
@@ -592,7 +637,6 @@ fixtures = [
                     "Graduation Request Lifecycle",
                     "Program Graduation Requirement Versioning",
                     "Graduation Requirement Item",
-                    "Scholarship Award Lifecycle",
                 ],
             ]
         ],

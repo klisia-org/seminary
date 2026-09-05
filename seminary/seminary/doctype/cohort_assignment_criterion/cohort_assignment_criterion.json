@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "allow_copy": 0,
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "field:handler",
+ "creation": "2026-09-04 00:00:00",
+ "description": "A rule the Cohort Planner can apply when it proposes cohorts. Filters decide which mentors a student may be given to; Rankings order the mentors who qualify. The catalog ships with the app: you choose which rules a Cohort Type uses, rename them for your school, and retire the ones you do not want.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "criterion_name",
+  "kind",
+  "column_break_head",
+  "handler",
+  "requires_field",
+  "is_active",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "criterion_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "A Filter decides who may be paired: a mentor it rejects is not offered for that student at all. A Ranking never rejects anybody, it puts the mentors who qualify in order. Rules are applied in the order they are listed on the Cohort Type.",
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Kind",
+   "options": "Filter\nRanking",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The rule this record runs. It is part of the program, not a setting, so the name above can be changed freely without changing what the rule does.",
+   "fieldname": "handler",
+   "fieldtype": "Data",
+   "label": "Handler",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "The personal detail this rule reads. A person missing it cannot be matched by this rule, which is what the planner's readiness check reports before a run.",
+   "fieldname": "requires_field",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reads",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Uncheck to withdraw this rule from the planner without deleting it. A Cohort Type that still lists it is warned when it is saved.",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-04 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Assignment Criterion",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "criterion_name",
+ "track_changes": 1
+}

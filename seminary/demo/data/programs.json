@@ -4,16 +4,6 @@
         "program_abbreviation": "DEMO-MDiv",
         "credits_complete": 90,
         "program_description": "A comprehensive graduate program preparing students for pastoral ministry.",
-        "pgm_pgmfees": [
-            {
-                "pgm_feecategory": "Credit hour",
-                "pgm_feeevent": "Course Enrollment"
-            },
-            {
-                "pgm_feecategory": "Program Admission Fee",
-                "pgm_feeevent": "Program Enrollment"
-            }
-        ],
         "courses": [
             {
                 "course": "DEMO-Systematic Theology I",
@@ -36,16 +26,6 @@
         "program_abbreviation": "DEMO-BTh",
         "credits_complete": 60,
         "program_description": "Undergraduate program providing foundational theological education.",
-                "pgm_pgmfees": [
-            {
-                "pgm_feecategory": "Credit hour",
-                "pgm_feeevent": "Course Enrollment"
-            },
-            {
-                "pgm_feecategory": "Program Admission Fee",
-                "pgm_feeevent": "Program Enrollment"
-            }
-        ],
         "courses": [
             {
                 "course": "DEMO-Systematic Theology I",
@@ -68,16 +48,6 @@
         "program_abbreviation": "DEMO-ThM",
         "credits_complete": 120,
         "program_description": "Advanced theological research and writing.",
-                "pgm_pgmfees": [
-            {
-                "pgm_feecategory": "Credit hour",
-                "pgm_feeevent": "Course Enrollment"
-            },
-            {
-                "pgm_feecategory": "Program Admission Fee",
-                "pgm_feeevent": "Program Enrollment"
-            }
-        ],
         "courses": [
             {
                 "course": "DEMO-Systematic Theology I",

@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "allow_copy": 0,
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "field:person_field",
+ "creation": "2026-09-04 00:00:00",
+ "description": "Which personal details your school insists on recording. The list itself ships with the application — you decide which of them are required. A detail that a cohort matching rule reads must be required before that rule can be used, because a rule cannot match on something nobody has filled in.",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "engine": "InnoDB",
+ "field_order": [
+  "field_label",
+  "mandatory",
+  "column_break_head",
+  "person_field",
+  "automation_valid",
+  "derived",
+  "sources_section",
+  "sources"
+ ],
+ "fields": [
+  {
+   "fieldname": "field_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Detail",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Tick to insist this is recorded. On an application form it is refused if left blank; on a person's record and on an import it is a warning, so that correcting an unrelated field is never blocked by a rule enabled after the record was made.",
+   "fieldname": "mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Required"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Where this detail is stored on a person's record. Part of the application, not a setting.",
+   "fieldname": "person_field",
+   "fieldtype": "Data",
+   "label": "Field",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "description": "Whether a cohort matching rule can read this detail. Only a few can.",
+   "fieldname": "automation_valid",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Used by Matching Rules",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Worked out by the system rather than typed — a map position, for example. Required here means it must be resolvable, which the Cohort Planner reports before a run rather than a form refusing a save.",
+   "fieldname": "derived",
+   "fieldtype": "Check",
+   "label": "Worked Out, Not Typed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sources_section",
+   "fieldtype": "Section Break",
+   "label": "Where It Is Entered"
+  },
+  {
+   "fieldname": "sources",
+   "fieldtype": "Small Text",
+   "label": "Entered On",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-04 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Mandatory Personal Field",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "field_label",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "field_label",
+ "track_changes": 1
+}

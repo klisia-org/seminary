@@ -1,0 +1,252 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "COHORT-POST-.#####",
+ "creation": "2026-07-22 12:00:00",
+ "description": "A post in a cohort channel. Its reach is set by Visibility; only members of the cohort see cohort-only posts, and private / direct posts stay with their author and chosen recipient.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "channel",
+  "channel_kind",
+  "cohort",
+  "author",
+  "column_break_head",
+  "visibility",
+  "direct_recipient",
+  "status",
+  "content_section",
+  "title",
+  "content",
+  "video_url",
+  "prayer_section",
+  "prayer_answered",
+  "prayer_answered_on",
+  "prayer_answer_note",
+  "reference_section",
+  "reference_doctype",
+  "reference_name",
+  "tags_section",
+  "topics",
+  "scripture_refs",
+  "links"
+ ],
+ "fields": [
+  {
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Channel",
+   "options": "Cohort Channel",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "channel.channel_kind",
+   "fieldname": "channel_kind",
+   "fieldtype": "Data",
+   "label": "Channel Kind",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Cohort",
+   "options": "Cohort",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Author",
+   "options": "Person",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "cohort_only",
+   "description": "Who can see this post. There is no anonymous tier: portal-wide means any signed-in community member.",
+   "fieldname": "visibility",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Visibility",
+   "options": "cohort_only\nportal_users\nprivate",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.visibility === 'direct'",
+   "description": "The one person a direct post is addressed to.",
+   "fieldname": "direct_recipient",
+   "fieldtype": "Link",
+   "label": "Direct Recipient",
+   "mandatory_depends_on": "eval: doc.visibility === 'direct'",
+   "options": "Person"
+  },
+  {
+   "default": "published",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "draft\npublished\npinned\nblocked"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text Editor",
+   "label": "Content"
+  },
+  {
+   "depends_on": "eval: doc.channel_kind === 'video_timestamp'",
+   "description": "YouTube link to the sermon video. Timestamped comments anchor to moments in this video.",
+   "fieldname": "video_url",
+   "fieldtype": "Data",
+   "label": "Video Link (YouTube)",
+   "mandatory_depends_on": "eval: doc.channel_kind === 'video_timestamp'",
+   "options": "URL"
+  },
+  {
+   "depends_on": "eval: doc.channel_kind === 'prayer'",
+   "fieldname": "prayer_section",
+   "fieldtype": "Section Break",
+   "label": "Prayer"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.channel_kind === 'prayer'",
+   "description": "When checked, this request moves out of the active prayer list into Answered prayers.",
+   "fieldname": "prayer_answered",
+   "fieldtype": "Check",
+   "label": "Answered"
+  },
+  {
+   "depends_on": "eval: doc.prayer_answered",
+   "fieldname": "prayer_answered_on",
+   "fieldtype": "Date",
+   "label": "Answered On",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.prayer_answered",
+   "description": "The testimony of how this prayer was answered.",
+   "fieldname": "prayer_answer_note",
+   "fieldtype": "Text",
+   "label": "Answer Note"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Linked Record"
+  },
+  {
+   "description": "Optional source record, e.g. the video assignment behind a Sermon Lab post.",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Document Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "tags_section",
+   "fieldtype": "Section Break",
+   "label": "Tags & Connections"
+  },
+  {
+   "description": "Topics this post touches, for cross-channel discovery.",
+   "fieldname": "topics",
+   "fieldtype": "Table MultiSelect",
+   "label": "Topics",
+   "options": "Cohort Post Topic Link"
+  },
+  {
+   "description": "Bible passages this post relates to. Ranges are resolved to canonical ordinals so any passage view can surface this post.",
+   "fieldname": "scripture_refs",
+   "fieldtype": "Table",
+   "label": "Scripture References",
+   "options": "Cohort Post Scripture Ref"
+  },
+  {
+   "description": "Other posts this one connects to, e.g. a journal entry behind a prayer.",
+   "fieldname": "links",
+   "fieldtype": "Table",
+   "label": "Linked Posts",
+   "options": "Cohort Post Link"
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Post",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "title,cohort,channel,author",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

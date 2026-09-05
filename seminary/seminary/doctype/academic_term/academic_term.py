@@ -21,6 +21,32 @@ class AcademicTerm(Document):
         self.validate_duplication()
         self.validate_dates()
         self.validate_term_against_year()
+        self.enforce_single_current_term()
+
+    def enforce_single_current_term(self):
+        """`iscurrent_acterm` names one term app-wide.
+
+        Everything that asks "what term is it" reads this flag, so two terms
+        carrying it is not a richer answer, it is no answer -- whichever row the
+        query happened to return first. `tasks._update_term_flags` maintains it
+        from the dates; this is the guard for the other way in, a person ticking
+        the box by hand.
+
+        Ticking it here means it: the other terms are cleared rather than the
+        save refused, because a registrar setting the current term is stating
+        something, not asking permission.
+        """
+        if not self.iscurrent_acterm:
+            return
+        others = frappe.get_all(
+            "Academic Term",
+            filters={"iscurrent_acterm": 1, "name": ("!=", self.name or "")},
+            pluck="name",
+        )
+        for name in others:
+            frappe.db.set_value(
+                "Academic Term", name, "iscurrent_acterm", 0, update_modified=False
+            )
 
     def set_title(self):
         self.title = (

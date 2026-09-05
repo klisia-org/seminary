@@ -25,6 +25,9 @@ frappe.ui.form.on('Program Enrollment', {
 		});
 	},
 	on_save: function(frm) {
+		// Payer rows are owned by the oikonomos bridge; a Frappe-only seminary has
+		// no Payers Fee Category PE, so skip the payer build entirely.
+		if (!frappe.boot.versions.oikonomos) return;
 		frm.call('get_payers')
 			.fail(() => {
 				frappe.msgprint("Error adding payers");
@@ -64,10 +67,16 @@ frappe.ui.form.on('Program Enrollment', {
 			filters: { requirement_type: 'Manual Verification' },
 		}));
 
+		render_cohort_mentors(frm);
+
 		if (frm.doc.docstatus === 1) {
-			frm.add_custom_button(__('Payers for this Program'), function() {
-				frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
-			}).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
+			// The Payers (billing) view is an oikonomos-only doctype; hide the
+			// button on a Frappe-only seminary.
+			if (frappe.boot.versions.oikonomos) {
+				frm.add_custom_button(__('Payers for this Program'), function() {
+					frappe.set_route("Form", "Payers Fee Category PE", frm.doc.name);
+				}).css({"color":"white", "background": "#0d3049", "font-weight": "700", "border-radius": "5px", "padding": "5px 10px", "margin-right": "10px"});
+			}
 
 			frm.add_custom_button(__('View Full Audit'), function() {
 				show_full_audit(frm);
@@ -655,3 +664,25 @@ frappe.ui.form.on('Program Enrollment Course', {
 		};
 },
 });
+
+// Mentors that come from the student's cohort (ADR 066 §4). Derived, so there
+// is nothing to edit here — the panel says where each one comes from and links
+// to the cohort, which is the record that actually decides it. A student with
+// no cohort mentors gets no panel rather than an empty table.
+function render_cohort_mentors(frm) {
+	const wrapper = frm.fields_dict.cohort_mentors_html;
+	if (!wrapper) return;
+	if (frm.is_new()) {
+		wrapper.$wrapper.empty();
+		return;
+	}
+	frappe.call({
+		method: 'seminary.seminary.cbe.enrollment_mentor_panel',
+		args: { program_enrollment: frm.doc.name },
+		callback: function(r) {
+			const html = (r.message || {}).html || '';
+			wrapper.$wrapper.html(html);
+			frm.toggle_display('cohort_mentors_html', !!html);
+		},
+	});
+}

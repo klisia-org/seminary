@@ -12,5 +12,9 @@ def get_data():
                 "label": _("Program and Course"),
                 "items": ["Program", "Course Enrollment", "Course Schedule"],
             },
+            {
+                "label": _("Competencies for CBE"),
+                "items": ["Course Competency"],
+            },
         ],
     }

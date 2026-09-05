@@ -26,8 +26,14 @@ frappe.ready(function () {
         const orig = frappe.web_form.handle_success.bind(frappe.web_form);
         frappe.web_form.handle_success = function (data) {
             if (frappe.web_form.is_new && data && data.name) {
+                // `access_key` is set in validate(), so it is on the document
+                // this response carries. The payment page refuses a guest
+                // without it, which is what stops applicants being walked by
+                // docname (ADR 068 phase 3).
                 window.location.href =
-                    "/applicant-payment?applicant=" + encodeURIComponent(data.name);
+                    "/applicant-payment?applicant=" +
+                    encodeURIComponent(data.name) +
+                    "&key=" + encodeURIComponent(data.access_key || "");
                 return;
             }
             return orig(data);

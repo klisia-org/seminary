@@ -28,7 +28,6 @@ from frappe.translate import get_all_translations
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
-import erpnext
 from datetime import datetime
 import zipfile
 import os
@@ -673,6 +672,19 @@ def save_course(course, course_data):
     try:
         if isinstance(course_data, str):
             course_data = json.loads(course_data)
+        # First, because it is the only field here that a controller can refuse:
+        # the rest are written with set_value, which skips validation, so doing
+        # this last would leave them applied while the save reported failure.
+        # Sent only when the form owns the setting, so a client that does not
+        # show the field cannot clear an override it knows nothing about
+        # (ADR 065 section 2).
+        if "content_release_override" in course_data:
+            cs = frappe.get_doc("Course Schedule", course)
+            cs.content_release_override = (
+                course_data.get("content_release_override") or None
+            )
+            cs.save()
+
         # Update course details
         frappe.db.set_value(
             "Course Schedule",
@@ -710,9 +722,13 @@ def save_course(course, course_data):
         return {"success": True}
 
     except Exception as e:
+        # Drop whatever did land: the writes above are a mix of validated and
+        # unvalidated, and half-saving a course is worse than not saving it.
+        frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Error saving course")
-        print("Error saving course:", str(e))
-        return {"success": False, "message": str(e)}
+        # `error` is the key the portal reads; `message` is kept for anything
+        # that already relied on it.
+        return {"success": False, "error": str(e), "message": str(e)}
 
 
 _CS_MEETING_STAFF_ROLES = {
@@ -860,6 +876,10 @@ def get_user_info():
     # Reported for the optional, separately-distributed Aretenic accreditation
     # app (its own role; created by that app, never required by seminary).
     user.is_aretenic = "Aretenic User" in _roles
+    # Whether the Aretenic app is installed at all (distinct from the per-user role above):
+    # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
+    # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
+    user.has_aretenic = "aretenic" in frappe.get_installed_apps()
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
@@ -966,26 +986,63 @@ def get_instructor_info():
 def save_student_profile(
     mobile, address_line_1, address_line_2, city, pincode, state, country, image=None
 ):
-    student_name = frappe.db.get_value("Student", {"user": frappe.session.user}, "name")
-    if not student_name:
-        frappe.throw("Student record not found")
+    """Self-service profile edit, written to the Person spine.
 
-    update_fields = {
-        "student_mobile_number": mobile,
-        "address_line_1": address_line_1,
-        "address_line_2": address_line_2,
-        "city": city,
-        "pincode": pincode,
-        "state": state,
-        "country": country,
-    }
-    if image:
-        update_fields["image"] = image
+    This used to `db.set_value` straight onto the Student — no hooks, no Person
+    write — so a student's own edit diverged from the spine permanently, and
+    their mobile number was then silently reverted by the next Person save.
+    The address columns it wrote no longer exist on Student at all (ADR 068
+    phase 4); the mailing address has lived on the Person since ADR 046.
+    """
+    from seminary.seminary.person import update_person
 
-    frappe.db.set_value("Student", student_name, update_fields)
-    return frappe.db.get_value(
-        "Student", student_name, list(update_fields.keys()), as_dict=1
+    student = frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, ["name", "person"], as_dict=True
     )
+    if not student:
+        frappe.throw(_("Student record not found"))
+    if not student.person:
+        frappe.throw(_("This student is not linked to a person record yet."))
+
+    update_person(
+        student.person,
+        mobile=mobile,
+        address_line_1=address_line_1,
+        address_line_2=address_line_2,
+        city=city,
+        pincode=pincode,
+        state=state,
+        # The postal country, not the messaging-routing one (ADR 068 phase 2).
+        mailing_country=country,
+        image=image or None,
+        overwrite=True,
+    )
+    row = frappe.db.get_value(
+        "Person",
+        student.person,
+        [
+            "primary_mobile",
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "pincode",
+            "state",
+            "mailing_country",
+            "image",
+        ],
+        as_dict=True,
+    )
+    # Keep the payload shape the profile modal already expects.
+    return {
+        "student_mobile_number": row.primary_mobile,
+        "address_line_1": row.address_line_1,
+        "address_line_2": row.address_line_2,
+        "city": row.city,
+        "pincode": row.pincode,
+        "state": row.state,
+        "country": row.mailing_country,
+        "image": row.image,
+    }
 
 
 @frappe.whitelist()
@@ -999,19 +1056,35 @@ def save_instructor_profile(
     whatsapp=None,
     profileimage=None,
 ):
+    """Self-service instructor profile.
+
+    The identity half now goes to the Person (ADR 068 phases 4-5). This used to
+    set `instructor_name` on the Instructor and save, which does *not* rename
+    the document — so `Instructor.name` and `instructor_name` silently diverged
+    on any name edit. The name, email, phone and photo are `fetch_from
+    person.*` mirrors; only the bio and the contact-consent flag are genuinely
+    about the teaching role.
+    """
+    from seminary.seminary.person import update_person
+
     doc = frappe.get_doc("Instructor", {"user": frappe.session.user})
-    doc.instructor_name = instructor_name
+    if doc.person:
+        parts = (instructor_name or "").strip().split(" ", 1)
+        update_person(
+            doc.person,
+            first_name=parts[0] or None,
+            last_name=parts[1] if len(parts) > 1 else None,
+            email=prof_email or None,
+            mobile=phone_message or None,
+            image=profileimage or None,
+            overwrite=True,
+        )
     doc.shortbio = shortbio
     doc.bio = bio
-    if prof_email is not None:
-        doc.prof_email = prof_email
-    if phone_message is not None:
-        doc.phone_message = phone_message
     if students_may_contact is not None:
         doc.students_may_contact = cint(students_may_contact)
-    if profileimage:
-        doc.profileimage = profileimage
     doc.save(ignore_permissions=False)
+    doc.reload()
 
     if whatsapp is not None and doc.person:
         from seminary.seminary.person import set_channel_address
@@ -1081,6 +1154,7 @@ def get_student_programs(student):
     grades = frappe.db.sql(
         """SELECT pe.program, pe.name AS program_enrollment, pe.pgmenrol_active,
             pe.student, pe.totalcredits,
+            pec.course AS course_schedule,
             pec.course_name, pec.academic_term, pec.credits,
             pec.pec_finalgradecode, pec.pec_finalgradenum, pec.status
         FROM `tabProgram Enrollment` pe
@@ -1132,43 +1206,31 @@ def get_student_programs(student):
     return grades
 
 
-@frappe.whitelist()
-def first_term(doc):
-    # Set the first term as the current term if no term is set as current
-    # currentterm = frappe.db.sql("""select name from `tabAcademic Term` where iscurrent_acterm = 1""")
-    # print("Current term is: ", currentterm)
-    print("Self.name is: ", doc)
-    # if not currentterm:
-    # 	frappe.db.set_value("Academic Term", doc, "iscurrent_acterm", 1)
-    # 	print("The current term has been set to this term.")
-    # else:
-    # 	return print("There is already a current term. Terms will roll automatically according to their dates.")
-    academic_terms = frappe.get_all(
-        "Academic Term", filters={}, fields=["name", "term_start_date", "term_end_date"]
-    )
-    today = getdate()
-    currentterm = frappe.db.sql(
-        """select name from `tabAcademic Term` where iscurrent_acterm = 1"""
-    )
-
-    for term in academic_terms:
-        if term.term_start_date <= today <= term.term_end_date:
-            if term.name != currentterm[0][0]:
-                frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 1)
-                frappe.db.set_value("Academic Term", term.name, "open", 1)
-            else:
-                break
-
-        else:
-            frappe.db.set_value("Academic Term", term.name, "iscurrent_acterm", 0)
-    return "Active term updated successfully"
+# `first_term` lived here: a second writer of `iscurrent_acterm`, called from
+# Academic Term's after_save — which already fires `tasks.refresh_term_flags_on_save`
+# through doc_events. Two writers doing the same job on the same save, and the
+# worse one could leave two terms flagged: on finding that the covering term was
+# already current it `break`ed out of the loop, so every term after it in an
+# unordered result set kept whatever stale flag it had. It also indexed
+# `currentterm[0][0]` without checking, so it raised whenever no term was
+# flagged at all. `tasks._update_term_flags` is now the only writer, and it sets
+# the flag exclusively.
 
 
 @frappe.whitelist()
-def roll_students(academic_term=None):
-    # Student-advancement only. Invoice generation lives in tasks.daily() now
-    # (see generate_nat_invoices / generate_nay_invoices / generate_monthly_invoices).
-    # Role gate moved here from the (retired) Registrar Hub page.
+def roll_students():
+    """Advance every active student one term, globally.
+
+    Student-advancement only. Invoice generation is owned by the oikonomos
+    bridge (oikonomos.financial.invoicing); seminary never bills.
+
+    Deliberately takes no term: it acts on every active enrollment, not on one
+    term's students. It used to be reachable as a Server Action on Academic
+    Term, which read as term-scoped, silently ignored the term you opened it
+    from, and threw away this summary -- Frappe's generic action handler prints
+    "Complete" and discards the return value. The Registrar workspace button is
+    now the only entry point, and it shows what actually happened.
+    """
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     summary = roll_pe()
     return _(
@@ -1179,19 +1241,6 @@ def roll_students(academic_term=None):
         summary["tb_skipped"],
         summary["tb_failed"],
     )
-
-
-@frappe.whitelist()
-def regenerate_current_term_invoices():
-    """Manual recovery: clear invoiced_nat_on on the current Academic Term and
-    re-run the NAT generator. Safety-net seminary_trigger check still prevents
-    duplicates for invoices that already exist."""
-    frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
-    current = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
-    if not current:
-        frappe.throw(_("No current Academic Term set."))
-    frappe.db.set_value("Academic Term", current, "invoiced_nat_on", None)
-    return generate_nat_invoices(current)
 
 
 @frappe.whitelist()
@@ -1413,14 +1462,35 @@ def course_enroll(pe_name, course):
     }
 
 
+def current_academic_term():
+    """The current academic term — the app-wide answer, or None.
+
+    `Academic Term.iscurrent_acterm` is where a school states this, and
+    `tasks._update_term_flags` keeps exactly one term carrying it. Everything
+    that needs "what term is it" asks here, so there is one definition to fix if
+    it is ever wrong.
+
+    Degrades the same way `_resolve_display_terms` does, because the flag can be
+    momentarily stale (the daily task not yet run on a fresh site) and refusing
+    to answer would be worse than answering from the dates.
+    """
+    terms = _resolve_display_terms()
+    return terms[0] if terms else None
+
+
 def _resolve_display_terms():
     """Academic term(s) to treat as 'this term' for the portal.
+
+    Returns a list only because of its fallback arm; with the single-current
+    invariant enforced (`AcademicTerm.enforce_single_current_term`,
+    `tasks._update_term_flags`) the first two branches yield at most one term.
+    Prefer `current_academic_term()` unless you specifically want the list.
 
     Prefers the flagged current term, but degrades gracefully so the student's
     "My Enrollments This Term" panel never blanks out just because the daily
     scheduler hasn't reasserted ``iscurrent_acterm`` or because today falls in a
     gap between consecutive terms:
-      1. the flagged current term(s);
+      1. the flagged current term;
       2. else the term whose date range contains today (flag not yet set);
       3. else, during an inter-term gap, the nearest OPEN term by date distance
          (the upcoming term the student is enrolling into).
@@ -1540,23 +1610,16 @@ def get_student_enrollments_for_term(program_enrollment):
         else:
             cei["status"] = "Enrolled"
 
-        # For Awaiting Payment, surface the unpaid invoice so the student
-        # can click through to pay.
+        # For Awaiting Payment, surface the unpaid invoice (a financial fact owned
+        # by the backend) so the student can click through to pay. None with no
+        # backend — a Frappe-only enrollment never sits in Awaiting Payment.
         cei["sales_invoice"] = None
         if cei["status"] == "Awaiting Payment":
-            si_rows = frappe.get_all(
-                "Sales Invoice",
-                filters={
-                    "custom_cei": cei.name,
-                    "docstatus": 1,
-                    "is_return": 0,
-                },
-                fields=["name", "grand_total", "outstanding_amount"],
-                order_by="creation desc",
-                limit=1,
+            from seminary.seminary.financial.backend import get_financial_backend
+
+            cei["sales_invoice"] = get_financial_backend().unpaid_invoice_for_cei(
+                cei.name
             )
-            if si_rows:
-                cei["sales_invoice"] = si_rows[0]
 
     return ceis
 
@@ -2144,17 +2207,30 @@ def get_program_audit(program_enrollment):
     result["graduation_eligible"] = graduation_eligible
 
     # Graduation Request CTA inputs (consumed by ProgramAudit.vue).
+    from seminary.seminary.graduation_candidate import (
+        evaluate_candidacy_safe,
+        resolve_request_trigger,
+    )
+
     result["students_can_request_graduation"] = bool(
         getattr(program, "students_can_request_graduation", 0)
     )
-    result["graduation_request_trigger"] = (
-        getattr(program, "graduation_request_trigger", None) or None
-    )
-    result["grad_candidate"] = bool(pe.grad_candidate)
+    result["graduation_request_trigger"] = resolve_request_trigger(program)
+    # Recompute rather than trusting the stored flag: `grad_candidate` is
+    # maintained by hooks that several paths bypass (status changes go through
+    # set_program_status's db_set, and a program's graduation config can be
+    # turned on long after the student enrolled), so a stale 0 would silently
+    # hide the CTA from a student who is in fact a candidate. The evaluator
+    # persists the fresh value itself; we use its return so the answer is right
+    # even on a request whose write never commits.
+    result["grad_candidate"] = evaluate_candidacy_safe(pe.name)
     result["graduation_request"] = _active_graduation_request_summary(pe.name)
+    # The phonetic name lives on the Person since ADR 068 phase 4 — it is how a
+    # human's name is pronounced, not a fact about their enrollment.
+    person = frappe.db.get_value("Student", pe.student, "person")
     result["student_phonetic_name"] = (
-        frappe.db.get_value("Student", pe.student, "phonetic_name") or ""
-    )
+        frappe.db.get_value("Person", person, "phonetic_name") if person else ""
+    ) or ""
 
     return result
 
@@ -2178,18 +2254,13 @@ def _active_graduation_request_summary(pe_name):
     if not rows:
         return None
     gr = rows[0]
-    sales_invoices = frappe.get_all(
-        "Sales Invoice",
-        filters={
-            "custom_graduation_request": gr.name,
-            "docstatus": 1,
-            "is_return": 0,
-        },
-        fields=["name", "grand_total", "outstanding_amount"],
-    )
+    # The linked invoices are a financial fact owned by the backend; a Frappe-only
+    # seminary's graduation request simply carries none.
+    from seminary.seminary.financial.backend import get_financial_backend
+
     return {
         **gr,
-        "sales_invoices": sales_invoices,
+        "sales_invoices": get_financial_backend().graduation_request_invoices(gr.name),
     }
 
 
@@ -2222,7 +2293,6 @@ def create_graduation_request(
             "student",
             "program",
             "expected_graduation_date",
-            "grad_candidate",
             "docstatus",
             "pgmenrol_active",
         ],
@@ -2253,24 +2323,31 @@ def create_graduation_request(
     program_flags = frappe.db.get_value(
         "Program",
         pe.program,
-        ["students_can_request_graduation", "graduation_request_trigger"],
+        ["students_can_request_graduation"],
         as_dict=True,
     )
     if not program_flags or not program_flags.students_can_request_graduation:
         frappe.throw(_("This program does not allow Graduation Requests."))
-    if not program_flags.graduation_request_trigger:
-        frappe.throw(_("This program has no graduation request trigger configured."))
-    if not pe.grad_candidate:
+    # Recompute instead of reading the stored flag — see get_program_audit.
+    from seminary.seminary.graduation_candidate import evaluate_candidacy_safe
+
+    if not evaluate_candidacy_safe(pe.name):
         frappe.throw(_("Not yet a graduation candidate."))
 
     if phonetic_name:
-        frappe.db.set_value(
-            "Student",
-            pe.student,
-            "phonetic_name",
-            phonetic_name,
-            update_modified=False,
-        )
+        # Reusable beyond this graduation, so it belongs on the Person (ADR 068
+        # phase 4) — the Graduation Request keeps its own *snapshot* of the
+        # value below, which is what reaches the diploma and must not move if
+        # the person is renamed later.
+        person = frappe.db.get_value("Student", pe.student, "person")
+        if person:
+            frappe.db.set_value(
+                "Person",
+                person,
+                "phonetic_name",
+                phonetic_name,
+                update_modified=False,
+            )
 
     gr = frappe.get_doc(
         {
@@ -2291,87 +2368,11 @@ def create_graduation_request(
 
 @frappe.whitelist()
 def get_pe_unpaid_invoices(program_enrollment):
-    """Aggregate every unpaid Sales Invoice tied to this Program Enrollment,
-    grouped by payer (Customer). Covers three linkage paths:
+    """Unpaid invoices for a Program Enrollment, grouped by payer (empty on a
+    Frappe-only seminary)."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    - Course Enrollment Individual via Sales Invoice.custom_cei
-    - Graduation Request via Sales Invoice.custom_graduation_request
-    - Trigger invoices (NAT/NAY/Monthly/etc.) via the seminary_trigger
-      tag's last segment, which is the pgm_enroll_payers row name.
-
-    Returns a list grouped by customer:
-        [{
-            "customer": "Cust A",
-            "invoices": [{name, grand_total, outstanding_amount, source}],
-            "total_unpaid": 123.45,
-        }, ...]
-
-    Sorted by total_unpaid desc.
-    """
-    if not program_enrollment:
-        return []
-
-    rows = frappe.db.sql(
-        """
-        SELECT * FROM (
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Course Enrollment' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabCourse Enrollment Individual` cei ON cei.name = si.custom_cei
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND cei.program_ce = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Graduation Request' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabGraduation Request` gr ON gr.name = si.custom_graduation_request
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND gr.program_enrollment = %(pe)s
-
-            UNION ALL
-
-            SELECT si.name, si.customer, si.grand_total, si.outstanding_amount,
-                   'Recurring Fee' AS source
-            FROM `tabSales Invoice` si
-            INNER JOIN `tabpgm_enroll_payers` pep
-                ON pep.name = SUBSTRING_INDEX(si.seminary_trigger, ':', -1)
-            INNER JOIN `tabPayers Fee Category PE` pfc ON pfc.name = pep.parent
-            WHERE si.docstatus = 1
-              AND si.is_return = 0
-              AND si.outstanding_amount > 0
-              AND si.seminary_trigger IS NOT NULL
-              AND si.seminary_trigger != ''
-              AND pfc.pf_pe = %(pe)s
-        ) AS u
-        ORDER BY u.customer, u.name
-        """,
-        {"pe": program_enrollment},
-        as_dict=True,
-    )
-
-    # Group by customer
-    by_customer = {}
-    for r in rows:
-        bucket = by_customer.setdefault(
-            r.customer, {"customer": r.customer, "invoices": [], "total_unpaid": 0.0}
-        )
-        bucket["invoices"].append(
-            {
-                "name": r.name,
-                "grand_total": float(r.grand_total or 0),
-                "outstanding_amount": float(r.outstanding_amount or 0),
-                "source": r.source,
-            }
-        )
-        bucket["total_unpaid"] += float(r.outstanding_amount or 0)
-
-    return sorted(by_customer.values(), key=lambda b: b["total_unpaid"], reverse=True)
+    return get_financial_backend().pe_unpaid_invoices(program_enrollment)
 
 
 def _course_category_map(pe, program):
@@ -2648,6 +2649,8 @@ def enroll_student(source_name):
     frappe.publish_realtime(
         "enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user
     )
+    from seminary.seminary import intake
+
     student = get_mapped_doc(
         "Student Applicant",
         source_name,
@@ -2656,11 +2659,24 @@ def enroll_student(source_name):
                 "doctype": "Student",
                 "field_map": {
                     "name": "student_applicant",
+                    # `person` is `no_copy` on the applicant, and the mapper
+                    # builds its no-copy set from the *source* meta — so
+                    # same-name copying can never carry the link, and without
+                    # an explicit entry admission forked a second identity for
+                    # the same human. `field_map` bypasses no_copy.
+                    "person": "person",
                 },
-            }
+            },
+            # Child tables are skipped unless mapped, so the emergency contacts
+            # and references collected on the public form were being discarded
+            # at admission. Both applicant fields use this child doctype and
+            # land in `Student.contacts`; the row's `emergency` flag is what
+            # distinguishes a contact from a reference.
+            "Student Contacts": {"doctype": "Student Contacts"},
         },
         ignore_permissions=True,
     )
+    student.person = intake.person_for_applicant(source_name)
     student.save()
 
     student_applicant = frappe.db.get_value(
@@ -2830,7 +2846,9 @@ def get_student_contacts(student):
     :param student: Student.
     """
     contacts = frappe.get_all(
-        "Student Contacts", fields=["contact"], filters={"parent": student}
+        "Student Contacts",
+        fields=["contact_name", "relation", "emergency"],
+        filters={"parent": student},
     )
     return contacts
 
@@ -2895,6 +2913,41 @@ def get_assessment_criteria(course):
     )
 
 
+def _grading_scale_intervals(grading_scale):
+    """Return a scale's intervals, cached per request and keyed by scale name.
+
+    Both get_grade and get_gradepass read this. The cache must be keyed by scale
+    name: a single request routinely touches more than one scale (a transcript
+    render, or a Points course alongside a Competency-based education course),
+    and an unkeyed cache would serve the first scale's intervals to all of them.
+    All three columns are fetched together so the two callers cannot populate a
+    shared cache with each other's missing fields.
+    """
+    if not hasattr(frappe.local, "grading_scale_intervals"):
+        frappe.local.grading_scale_intervals = {}
+    cache = frappe.local.grading_scale_intervals
+    if grading_scale not in cache:
+        cache[grading_scale] = frappe.get_all(
+            "Grading Scale Interval",
+            fields=["grade_code", "threshold", "grade_pass"],
+            filters={"parent": grading_scale},
+        )
+    return cache[grading_scale]
+
+
+def _resolve_interval(grading_scale, percentage, field):
+    """Walk a scale's thresholds downwards and return `field` of the first match."""
+    intervals_by_threshold = {
+        d.threshold: d.get(field) for d in _grading_scale_intervals(grading_scale)
+    }
+    result = ""
+    for threshold in sorted(intervals_by_threshold.keys(), key=float, reverse=True):
+        if flt(percentage) >= threshold:
+            result = intervals_by_threshold.get(threshold)
+            break
+    return result
+
+
 @frappe.whitelist()
 def get_grade(grading_scale, percentage):
     """Returns Grade based on the Grading Scale and Score.
@@ -2902,55 +2955,7 @@ def get_grade(grading_scale, percentage):
     :param Grading Scale: Grading Scale
     :param Percentage: Score Percentage Percentage
     """
-    grading_scale_intervals = {}
-    if not hasattr(frappe.local, "grading_scale"):
-        grading_scale = frappe.get_all(
-            "Grading Scale Interval",
-            fields=["grade_code", "threshold"],
-            filters={"parent": grading_scale},
-        )
-        frappe.local.grading_scale = grading_scale
-    for d in frappe.local.grading_scale:
-        grading_scale_intervals.update({d.threshold: d.grade_code})
-    intervals = sorted(grading_scale_intervals.keys(), key=float, reverse=True)
-    for interval in intervals:
-        if flt(percentage) >= interval:
-            grade = grading_scale_intervals.get(interval)
-            break
-        else:
-            grade = ""
-    return grade
-
-
-@frappe.whitelist()
-def get_payers(program_enrollment, method):
-    pe = program_enrollment
-    pen = pe.name
-    active = pe.pgmenrol_active
-    student = pe.student
-    turn = 1
-    while turn <= 2:
-        if (
-            not frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-            and turn == 1
-        ):
-            print("Creating Payers Fee Category PE -turn " + str(turn) + pen)
-            pfc = frappe.new_doc("Payers Fee Category PE")
-            pfc.pf_pe = pen
-            pfc.pf_student = student
-            pfc.pf_active = active
-            pfc.pf_custgroup = "Student"
-            pfc.insert()
-            pfc.save()
-            turn += 1
-        elif (
-            frappe.db.exists({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-            and turn == 2
-        ):
-            print("Payers Fee Category PE already exists - turn " + str(turn))
-            get_payers_fees(pen)
-            break
-    return
+    return _resolve_interval(grading_scale, percentage, "grade_code")
 
 
 @frappe.whitelist()
@@ -2958,6 +2963,14 @@ def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
     course_schedule = getattr(doc, "coursesc", None) or doc.course
+    # On a competency section the same cell holds a *level* written by
+    # cbe.rollup_activity_grades (ADR 065 section 7). A percentage out of 100
+    # written here would overwrite it and be read back as a level, so the
+    # numeric path stands down and the competency roll-up owns the cell.
+    from seminary.seminary import cbe
+
+    if cbe.framework_for(course_schedule):
+        return
     max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
     # Fetch the corresponding Course Assess Results Detail record
     cardname = frappe.db.get_value(
@@ -2990,55 +3003,6 @@ def quizresult_to_card(doc, method):
     card.graded_card = 1 if doc.percentage not in (None, "") else 0
     # Save the updated card
     card.save(ignore_permissions=True)
-
-
-@frappe.whitelist()
-def get_payers_fees(pen):
-
-    pfc = frappe.get_doc({"doctype": "Payers Fee Category PE", "pf_pe": pen})
-
-    doc = []
-    doc = frappe.db.sql(
-        """select pf.pgm_feecategory as feecat, pf.pgm_feeevent as event, s.customer, '1' as percentage, fc.payment_term_template as term
-			from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
-			where pe.student = s.name and
-			pe.program = p.name and
-			p.name = pf.parent and
-			pf.pgm_feecategory = fc.name and
-			pe.name = %s""",
-        (pen),
-        as_list=1,
-    )
-    row_count = frappe.db.sql(
-        """select count(pf.pgm_feecategory) from `tabProgram Enrollment`pe, `tabStudent` s, `tabProgram` p, `tabProgram Fees` pf, `tabFee Category` fc
-			where pe.student = s.name and
-			pe.program = p.name and
-			p.name = pf.parent and
-			pf.pgm_feecategory = fc.name and
-			pe.name = %s""",
-        (pen),
-    )[0][0]
-    i = 0
-    while i < row_count:
-        feecat = doc[i][0]
-        event = doc[i][1]
-        customer = doc[i][2]
-        term = doc[i][3]
-        percentage = doc[i][4]
-        print(pen, feecat, event, customer, term, percentage)
-        ppe = frappe.new_doc("pgm_enroll_payers")
-        ppe.parent = pen
-        ppe.parentfield = "pf_payers"
-        ppe.parenttype = "Payers Fee Category PE"
-        ppe.fee_category = feecat
-        ppe.pep_event = event
-        ppe.payer = customer
-        ppe.payterm_payer = term
-        ppe.pay_percent = "100"
-        ppe.insert()
-        ppe.save()
-        i += 1
-    return
 
 
 @frappe.whitelist()
@@ -3080,6 +3044,13 @@ def save_course_assessment(course, assessment_data):
             doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
+            # Competency wiring (ADR 065 section 11b). Written only when the
+            # form sent the key, so a caller that does not show these fields
+            # cannot blank a mapping it knows nothing about.
+            if "course_competency" in data:
+                doc.course_competency = data.get("course_competency") or None
+            if "grading_mode_override" in data:
+                doc.grading_mode_override = data.get("grading_mode_override") or None
             # These are usually already set, but include them if needed:
             doc.parent = course
             doc.parentfield = "courseassescrit_sc"
@@ -3104,11 +3075,19 @@ def save_course_assessment(course, assessment_data):
                     "assignment": data.get("assignment", ""),
                     "exam": data.get("exam", ""),
                     "discussion": data.get("discussion", ""),
+                    "course_competency": data.get("course_competency") or None,
+                    "grading_mode_override": data.get("grading_mode_override") or None,
                 }
             )
             print("Creating new doc with data:", doc.as_dict())
             doc.insert(ignore_permissions=True)
             print("Created new doc:", doc.name)
+
+    # Save the parent once at the end: the weight total and the
+    # chapter -> lesson -> assessment competency check live on the Course
+    # Schedule controller (ADR 023), and saving child rows one at a time never
+    # runs them.
+    frappe.get_doc("Course Schedule", course).save(ignore_permissions=True)
 
     frappe.db.commit()
     return {"success": True}
@@ -3124,87 +3103,10 @@ def get_scholarship(student):
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    # If the caller is a student user, always scope to their own Student
-    # record — ignore any client-supplied `student` parameter to prevent a
-    # student from querying someone else's invoices.
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
+    """The student's invoices for the Fees page (empty on a Frappe-only seminary)."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        if not student:
-            return []
-
-    if not student:
-        frappe.throw("student is required")
-
-    # Only show invoices where the student is the customer (not church/scholarship)
-    student_customer = frappe.db.get_value("Student", student, "customer")
-
-    si_filters = {"custom_student": student, "docstatus": 1}
-    if student_customer:
-        si_filters["customer"] = student_customer
-
-    sales_invoice_list = frappe.get_all(
-        "Sales Invoice",
-        filters=si_filters,
-        fields=[
-            "name",
-            "customer",
-            "posting_date",
-            "due_date",
-            "total",
-            "outstanding_amount",
-            "status",
-            "is_return",
-            "return_against",
-            "custom_cei",
-            "seminary_summary",
-        ],
-    )
-    for invoice in sales_invoice_list:
-        invoice["name"] = frappe.get_value("Sales Invoice", invoice["name"], "name")
-        invoice["customer"] = frappe.get_value(
-            "Customer", invoice["customer"], "customer_name"
-        )
-        # Prefer the explicit seminary_summary; fall back to the legacy CEI course
-        # label so invoices that pre-date the summary field still get a label.
-        summary = invoice.get("seminary_summary")
-        if not summary and invoice.get("custom_cei"):
-            course = frappe.db.get_value(
-                "Course Enrollment Individual", invoice["custom_cei"], "course_data"
-            )
-            summary = _("Course: {0}").format(course) if course else None
-        invoice["summary"] = summary
-        invoice["course"] = summary  # back-compat for Fees.vue field name
-        invoice["posting_date"] = frappe.utils.formatdate(invoice["posting_date"])
-        invoice["outstanding_raw"] = invoice["outstanding_amount"]
-        invoice["total_raw"] = invoice["total"]
-        if invoice["is_return"]:
-            invoice["status"] = "Return"
-        invoice["total"] = "{:,.2f}".format(invoice["total"])
-        invoice["outstanding_amount"] = "{:,.2f}".format(invoice["outstanding_amount"])
-    sales_invoice_list = sorted(
-        sales_invoice_list, key=lambda x: (x["status"], x["posting_date"]), reverse=True
-    )
-
-    return sales_invoice_list
-
-
-def get_posting_date_from_payment_entry_against_sales_invoice(sales_invoice):
-    payment_entry = frappe.qb.DocType("Payment Entry")
-    payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
-    q = (
-        frappe.qb.from_(payment_entry)
-        .inner_join(payment_entry_reference)
-        .on(payment_entry.name == payment_entry_reference.parent)
-        .select(payment_entry.posting_date)
-        .where(payment_entry_reference.reference_name == sales_invoice)
-    ).run(as_dict=1)
-    payment_date = q[0].get("posting_date")
-    return payment_date
+    return get_financial_backend().student_invoices(student)
 
 
 @frappe.whitelist()
@@ -3440,403 +3342,6 @@ def update_card(doc, method):
             new.insert()
 
 
-def _billing_context():
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    return {
-        "today": frappe.utils.today(),
-        "company": company,
-        "currency": erpnext.get_company_currency(company),
-        "receivable_account": frappe.db.get_single_value(
-            "Seminary Settings", "receivable_account"
-        ),
-        "income_account": frappe.db.get_value(
-            "Company", company, "default_income_account"
-        ),
-        "cost_center": frappe.db.get_single_value("Seminary Settings", "cost_center")
-        or None,
-        "auto_submit": bool(
-            frappe.db.get_single_value("Seminary Settings", "auto_submit_sales_invoice")
-        ),
-    }
-
-
-def _empty_invoice_result(reason=""):
-    return {"created": 0, "skipped": 0, "failed": 0, "reason": reason}
-
-
-def _create_trigger_invoice(row, tag, ctx, counts, summary=""):
-    # Safety net: an SI with this tag already exists — partial prior run or flag cleared.
-    if frappe.db.exists(
-        "Sales Invoice", {"seminary_trigger": tag, "docstatus": ["<", 2]}
-    ):
-        counts["skipped"] += 1
-        return
-    try:
-        items = [
-            {
-                "doctype": "Sales Invoice Item",
-                "item_code": row.item,
-                "qty": (row.pay_percent or 0) / 100,
-                "rate": 0,
-                "description": summary or f"Fee for {row.fee_category}",
-                "income_account": ctx["income_account"],
-                "cost_center": ctx["cost_center"],
-                "base_rate": 0,
-                "price_list_rate": row.price_list_rate,
-            }
-        ]
-        si = frappe.get_doc(
-            {
-                "doctype": "Sales Invoice",
-                "naming_series": "ACC-SINV-.YYYY.-",
-                "posting_date": ctx["today"],
-                "company": ctx["company"],
-                "currency": ctx["currency"],
-                "debit_to": ctx["receivable_account"],
-                "income_account": ctx["income_account"],
-                "conversion_rate": 1,
-                "custom_student": row.student,
-                "customer": row.customer,
-                "selling_price_list": row.default_price_list,
-                "base_grand_total": row.price_list_rate,
-                "payment_terms_template": row.payterm_payer,
-                "seminary_trigger": tag,
-                "seminary_summary": summary,
-                "items": items,
-            }
-        )
-        si.run_method("set_missing_values")
-        si.insert(ignore_permissions=True)
-        if ctx["auto_submit"]:
-            si.submit()
-        counts["created"] += 1
-    except Exception:
-        counts["failed"] += 1
-        frappe.log_error(frappe.get_traceback(), f"seminary billing tag {tag}")
-
-
-@frappe.whitelist()
-def generate_nat_invoices(academic_term):
-    """Generate 'New Academic Term' Sales Invoices for the given term.
-
-    Idempotent: fast-path exits if the term's invoiced_nat_on flag is set;
-    per-row safety net checks seminary_trigger before each insert."""
-    if not academic_term:
-        return _empty_invoice_result("no term")
-    if frappe.db.get_value("Academic Term", academic_term, "invoiced_nat_on"):
-        return _empty_invoice_result("already invoiced")
-
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'New Academic Term'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nat, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-        """,
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    term_label = (
-        frappe.db.get_value("Academic Term", academic_term, "term_name")
-        or academic_term
-    )
-    for r in rows:
-        summary = _("New Academic Term \u2014 {0} ({1})").format(
-            term_label, r.fee_category
-        )
-        _create_trigger_invoice(
-            r, f"NAT:{academic_term}:{r.pep_name}", ctx, counts, summary=summary
-        )
-    frappe.db.set_value("Academic Term", academic_term, "invoiced_nat_on", getdate())
-    frappe.logger().info(f"generate_nat_invoices({academic_term}): {counts}")
-    return counts
-
-
-@frappe.whitelist()
-def generate_nay_invoices(academic_year):
-    """Generate 'New Academic Year' Sales Invoices for the given year.
-
-    Idempotent via invoiced_nay_on flag + seminary_trigger safety net."""
-    if not academic_year:
-        return _empty_invoice_result("no year")
-    if frappe.db.get_value("Academic Year", academic_year, "invoiced_nay_on"):
-        return _empty_invoice_result("already invoiced")
-
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'New Academic Year'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_nay, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-        """,
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    for r in rows:
-        summary = _("New Academic Year \u2014 {0} ({1})").format(
-            academic_year, r.fee_category
-        )
-        _create_trigger_invoice(
-            r, f"NAY:{academic_year}:{r.pep_name}", ctx, counts, summary=summary
-        )
-    frappe.db.set_value("Academic Year", academic_year, "invoiced_nay_on", getdate())
-    frappe.logger().info(f"generate_nay_invoices({academic_year}): {counts}")
-    return counts
-
-
-@frappe.whitelist()
-def generate_readmission_invoice(program_enrollment, fee_category, as_of=None):
-    """Bill a one-off readmission fee for a Program Enrollment returning from
-    leave, reusing the standard trigger-invoice pipeline. Idempotent per
-    (PE, date, payer) via the seminary_trigger tag."""
-    if not program_enrollment or not fee_category:
-        return _empty_invoice_result("missing args")
-
-    as_of = getdate(as_of) if as_of else getdate()
-    rows = frappe.db.sql(
-        """
-        SELECT pep.name AS pep_name, pfc.stu_link AS student,
-               pep.fee_category, pep.payer AS customer,
-               pep.pay_percent, pep.payterm_payer,
-               fc.item,
-               cg.default_price_list, ip.price_list_rate
-        FROM `tabpgm_enroll_payers` pep
-        INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-        INNER JOIN `tabItem Price` ip
-                ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pfc.pf_pe = %s
-          AND pep.fee_category = %s
-        """,
-        (program_enrollment, fee_category),
-        as_dict=True,
-    )
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    tag_date = as_of.strftime("%Y-%m-%d")
-    for r in rows:
-        summary = _("Readmission Fee — {0}").format(r.fee_category)
-        _create_trigger_invoice(
-            r,
-            f"READMIT:{program_enrollment}:{tag_date}:{r.pep_name}",
-            ctx,
-            counts,
-            summary=summary,
-        )
-    frappe.logger().info(
-        f"generate_readmission_invoice({program_enrollment}): {counts}"
-    )
-    return counts
-
-
-def _ensure_applicant_customer(applicant):
-    """Return the Customer for a Student Applicant, creating one if missing.
-
-    Strategy: prefer the link already on the applicant, then a Customer
-    matching the applicant's email, then create a fresh Customer using the
-    applicant's title and customer_group (defaulting to "Individual").
-    """
-    if applicant.customer and frappe.db.exists("Customer", applicant.customer):
-        return applicant.customer
-
-    if applicant.student_email_id:
-        existing = frappe.db.get_value(
-            "Customer",
-            {"email_id": applicant.student_email_id},
-            "name",
-        )
-        if existing:
-            applicant.db_set("customer", existing, update_modified=False)
-            return existing
-
-    customer_group = applicant.customer_group or "Individual"
-    if not frappe.db.exists("Customer Group", customer_group):
-        frappe.throw(
-            _(
-                "Customer Group {0} does not exist; set a valid Customer Group on the applicant before submitting."
-            ).format(customer_group)
-        )
-
-    customer = frappe.get_doc(
-        {
-            "doctype": "Customer",
-            "customer_name": applicant.title or applicant.name,
-            "customer_type": "Individual",
-            "customer_group": customer_group,
-            "email_id": applicant.student_email_id,
-        }
-    )
-    customer.flags.ignore_permissions = True
-    customer.insert(ignore_permissions=True)
-    applicant.db_set("customer", customer.name, update_modified=False)
-    return customer.name
-
-
-def generate_application_invoices(applicant_name):
-    """Generate Application-fee Sales Invoices for a Student Applicant.
-
-    Walks `Program.pgm_pgmfees` rows where `pgm_feeevent = 'Application'`
-    and creates one Sales Invoice per submitted Fee Category that has an
-    Item Price under the resolved Customer Group's default price list.
-
-    Idempotent: per-row safety net via `seminary_trigger = APP:<applicant>:<pf_row>`.
-    Free programs and applicants whose Program has no Application fee
-    configured are no-ops.
-    """
-    if not applicant_name:
-        return _empty_invoice_result("no applicant")
-    applicant = frappe.get_doc("Student Applicant", applicant_name)
-    if not applicant.program:
-        return _empty_invoice_result("no program")
-    program = frappe.get_doc("Program", applicant.program)
-    if program.is_free:
-        return _empty_invoice_result("free program")
-
-    application_rows = [
-        row
-        for row in (program.pgm_pgmfees or [])
-        if row.pgm_feeevent == "Application" and row.pgm_feecategory
-    ]
-    if not application_rows:
-        return _empty_invoice_result("no Application fee configured on program")
-
-    customer = _ensure_applicant_customer(applicant)
-    customer_group = frappe.db.get_value("Customer", customer, "customer_group")
-    default_price_list = frappe.db.get_value(
-        "Customer Group", customer_group, "default_price_list"
-    )
-    if not default_price_list:
-        frappe.throw(
-            _(
-                "Customer Group {0} has no default Price List; cannot price the Application fee."
-            ).format(customer_group)
-        )
-
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-
-    for pf_row in application_rows:
-        tag = f"APP:{applicant_name}:{pf_row.name}"
-        if frappe.db.exists(
-            "Sales Invoice", {"seminary_trigger": tag, "docstatus": ["<", 2]}
-        ):
-            counts["skipped"] += 1
-            continue
-
-        fc = frappe.db.get_value(
-            "Fee Category",
-            pf_row.pgm_feecategory,
-            ["item", "payment_term_template", "docstatus"],
-            as_dict=True,
-        )
-        if not fc or fc.docstatus != 1 or not fc.item:
-            counts["skipped"] += 1
-            continue
-
-        price_list_rate = frappe.db.get_value(
-            "Item Price",
-            {"price_list": default_price_list, "item_code": fc.item},
-            "price_list_rate",
-        )
-        if price_list_rate is None:
-            counts["skipped"] += 1
-            frappe.log_error(
-                f"No Item Price for {fc.item} on {default_price_list}; "
-                f"skipped Application fee for {applicant_name}.",
-                "generate_application_invoices",
-            )
-            continue
-
-        summary = _("Application — {0}").format(pf_row.pgm_feecategory)
-        try:
-            si = frappe.get_doc(
-                {
-                    "doctype": "Sales Invoice",
-                    "naming_series": "ACC-SINV-.YYYY.-",
-                    "posting_date": ctx["today"],
-                    "company": ctx["company"],
-                    "currency": ctx["currency"],
-                    "debit_to": ctx["receivable_account"],
-                    "income_account": ctx["income_account"],
-                    "conversion_rate": 1,
-                    "customer": customer,
-                    "selling_price_list": default_price_list,
-                    "base_grand_total": price_list_rate,
-                    "payment_terms_template": fc.payment_term_template,
-                    "remarks": summary,
-                    "seminary_trigger": tag,
-                    "seminary_summary": summary,
-                    "items": [
-                        {
-                            "doctype": "Sales Invoice Item",
-                            "item_code": fc.item,
-                            "qty": 1,
-                            "rate": 0,
-                            "description": _("Application fee for program {0}").format(
-                                applicant.program
-                            ),
-                            "income_account": ctx["income_account"],
-                            "cost_center": ctx["cost_center"],
-                            "base_rate": 0,
-                            "price_list_rate": price_list_rate,
-                        }
-                    ],
-                    "cost_center": ctx["cost_center"],
-                }
-            )
-            si.flags.ignore_permissions = True
-            si.run_method("set_missing_values")
-            si.insert(ignore_permissions=True)
-            if ctx["auto_submit"]:
-                si.submit()
-            counts["created"] += 1
-        except Exception:
-            counts["failed"] += 1
-            frappe.log_error(
-                frappe.get_traceback(), f"seminary application billing tag {tag}"
-            )
-
-    frappe.logger().info(f"generate_application_invoices({applicant_name}): {counts}")
-    return counts
-
-
 @frappe.whitelist()
 def insert_cs_assessment(criteria):
     # If criteria is already a dict, use it directly.
@@ -3870,85 +3375,6 @@ def insert_cs_assessment(criteria):
     frappe.db.commit()
 
     return {"success": True}
-
-
-@frappe.whitelist()
-def generate_monthly_invoices(as_of=None):
-    """Generate 'Monthly' Sales Invoices on the 1st of the month for every
-    active Program Enrollment whose linked Fee Categories use fc_event='Monthly'.
-
-    Idempotent: skips PEs whose last_monthly_invoiced_on is already >= the
-    first of the current month; safety-net tag check prevents duplicates."""
-    from frappe.utils import get_first_day
-
-    as_of = getdate(as_of) if as_of else getdate()
-    first_of_month = get_first_day(as_of)
-    month_tag = as_of.strftime("%Y-%m")
-
-    active_pes = frappe.db.sql(
-        """
-        SELECT DISTINCT pfc.pf_pe AS pe_name
-        FROM `tabPayers Fee Category PE` pfc
-        INNER JOIN `tabpgm_enroll_payers` pep ON pep.parent = pfc.name
-        INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-        INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-        INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
-        LEFT JOIN `tabProgram Level` pl ON pl.name = pgm.program_level
-        WHERE pfc.pf_active = 1
-          AND fc.docstatus = 1
-          AND pep.pep_event = 'Monthly'
-          AND pe.status NOT IN ('Withdrawn', 'Dismissed', 'Graduated', 'Transferred')
-          AND NOT (COALESCE(pe.billing_suspended, 0) = 1 AND COALESCE(pl.suspend_monthly, 0) = 1)
-          AND COALESCE(pgm.is_free, 0) = 0
-          AND (pe.last_monthly_invoiced_on IS NULL OR pe.last_monthly_invoiced_on < %s)
-          AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)
-        """,
-        (first_of_month,),
-        as_dict=True,
-    )
-
-    ctx = _billing_context()
-    counts = {"created": 0, "skipped": 0, "failed": 0}
-    month_label = as_of.strftime("%B %Y")
-    for pe_row in active_pes:
-        pe_name = pe_row.pe_name
-        rows = frappe.db.sql(
-            """
-            SELECT pep.name AS pep_name, pfc.stu_link AS student,
-                   pep.fee_category, pep.payer AS customer,
-                   pep.pay_percent, pep.payterm_payer,
-                   fc.item,
-                   cg.default_price_list, ip.price_list_rate
-            FROM `tabpgm_enroll_payers` pep
-            INNER JOIN `tabPayers Fee Category PE` pfc ON pep.parent = pfc.name
-            INNER JOIN `tabFee Category` fc ON pep.fee_category = fc.name
-            INNER JOIN `tabCustomer Group` cg ON pfc.pf_custgroup = cg.customer_group_name
-            INNER JOIN `tabItem Price` ip
-                    ON cg.default_price_list = ip.price_list AND ip.item_code = fc.item
-            INNER JOIN `tabProgram Enrollment` pe ON pe.name = pfc.pf_pe
-            WHERE pfc.pf_active = 1
-              AND fc.docstatus = 1
-              AND pep.pep_event = 'Monthly'
-              AND pfc.pf_pe = %s
-              AND (fc.effective_from IS NULL OR pe.enrollment_date > fc.effective_from)
-            """,
-            (pe_name,),
-            as_dict=True,
-        )
-        for r in rows:
-            summary = _("Monthly \u2014 {0} ({1})").format(month_label, r.fee_category)
-            _create_trigger_invoice(
-                r,
-                f"MONTHLY:{month_tag}:{r.pep_name}",
-                ctx,
-                counts,
-                summary=summary,
-            )
-        frappe.db.set_value(
-            "Program Enrollment", pe_name, "last_monthly_invoiced_on", first_of_month
-        )
-    frappe.logger().info(f"generate_monthly_invoices({as_of}): {counts}")
-    return counts
 
 
 @frappe.whitelist()
@@ -4021,33 +3447,31 @@ def grade_thisstudent(name):
         csr.save()
         return "done"
 
+    if grading_scale.grscale_type == "Competency-based education":
+        # rawscore_card holds a *level* (1-4), not a percentage, so there is no
+        # weighting to apply: the cell's grade is simply the level it landed on.
+        # The competency roll-up that produced it lives in cbe.py (ADR 065).
+        for row in detail:
+            if row.rawscore_card is not None:
+                row.grade = get_grade(grading_scale.name, row.rawscore_card)
+                row.score = row.rawscore_card
+                frappe.db.set_value(
+                    "Course Assess Results Detail",
+                    row.name,
+                    {"grade": row.grade, "score": row.score},
+                )
+        csr.save()
+        return "done"
+
 
 @frappe.whitelist()
 def get_gradepass(grading_scale, percentage):
-    """Returns Grade based on the Grading Scale and Score.
+    """Returns Pass/Fail based on the Grading Scale and Score.
 
     :param Grading Scale: Grading Scale
     :param Percentage: Score Percentage Percentage
     """
-    grading_scale_intervals = {}
-    if not hasattr(frappe.local, "grading_scale_pass"):
-        grading_scale = frappe.get_all(
-            "Grading Scale Interval",
-            fields=["grade_pass", "threshold"],
-            filters={"parent": grading_scale},
-        )
-        frappe.local.grading_scale = grading_scale
-    for d in frappe.local.grading_scale:
-        grading_scale_intervals.update({d.threshold: d.grade_pass})
-    intervals = sorted(grading_scale_intervals.keys(), key=float, reverse=True)
-    for interval in intervals:
-        if flt(percentage) >= interval:
-            gradepass = grading_scale_intervals.get(interval)
-            print(gradepass)
-            break
-        else:
-            gradepass = ""
-    return gradepass
+    return _resolve_interval(grading_scale, percentage, "grade_pass")
 
 
 @frappe.whitelist()
@@ -4087,7 +3511,46 @@ def fgrade_this_std(name):
             {"fgrade": fgrade, "fgradepass": fgradepass},
         )
         return "done"
-    elif csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+
+    if grading_scale.grscale_type == "Competency-based education":
+        from seminary.seminary import cbe
+
+        # The course's standing is its competencies combined, not a sum of
+        # weighted percentages. Each Competency Result has already been through
+        # the ADR 065 section 6a pipeline, so this only combines them.
+        cbe.rollup_all_for_roster(csr)
+        results = frappe.get_all(
+            "Competency Result",
+            filters={"student": csr.student, "course_schedule": cs},
+            fields=["final_value"],
+        )
+        values = [r.final_value for r in results if r.final_value is not None]
+        framework = cbe.framework_doc(cs)
+        fscore = (
+            cbe.aggregate(
+                values,
+                framework.aggregation_method if framework else "Average",
+                None,
+                framework.rounding if framework else None,
+            )
+            if values
+            else None
+        )
+        fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
+        fgradepass = (
+            get_gradepass(grading_scale.name, fscore) if fscore is not None else None
+        )
+        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+            fgrade = grading_scale.fa_code
+            fgradepass = "Fail"
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            name,
+            {"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
+        )
+        return "done"
+
+    if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
         # Non-points scale: still honor the FA override.
         frappe.db.set_value(
             "Scheduled Course Roster",
@@ -4246,8 +3709,321 @@ def undo_fail_for_absence(name):
     return {"failed_for_absence": 0}
 
 
+# Sending grades writes transcript rows, awards credits and closes a section.
+# It had no role check at all before ADR 065 — any authenticated user, a student
+# included, could call it.
+GRADE_SEND_ROLES = {
+    "Instructor",
+    "Program Chair",
+    "Seminary Manager",
+    "Registrar",
+    "System Manager",
+}
+
+
+def _assert_may_send_grades():
+    if not (GRADE_SEND_ROLES & set(frappe.get_roles(frappe.session.user))):
+        frappe.throw(
+            _("Only teaching staff and the registrar can send grades."),
+            frappe.PermissionError,
+        )
+
+
+def _ungraded_roster_count(course_schedule, rosters=None):
+    """How many still-active students have an ungraded cell.
+
+    Already-finalized students are excluded for free: finalize_roster clears
+    `active`, and this counts only active rosters.
+    """
+    params = [course_schedule]
+    scope = ""
+    if rosters is not None:
+        if not rosters:
+            return 0
+        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+        params.extend(rosters)
+
+    rows = frappe.db.sql(
+        """
+        SELECT COUNT(DISTINCT scr.name)
+        FROM `tabCourse Assess Results Detail` card
+        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+        LEFT JOIN `tabCourse Enrollment Individual` cei
+            ON cei.coursesc_ce = scr.course_sc
+           AND cei.student_ce = scr.student
+           AND cei.docstatus = 1
+        WHERE scr.course_sc = %s
+          AND scr.active = 1
+          AND scr.audit_bool = 0
+          AND COALESCE(cei.course_cancelled, 0) = 0
+          AND COALESCE(card.graded_card, 0) = 0
+        """
+        + scope,
+        params,
+    )
+    return rows[0][0] if rows else 0
+
+
+def _assert_evaluators_finished(course_schedule, roster_names):
+    """Block a send while a required evaluator still owes a grade (ADR 065).
+
+    Named rather than counted: an instructor told only that "someone has not
+    graded" has to go hunting, which is the delay the whole mentor-resolution
+    design exists to remove.
+    """
+    from seminary.seminary import cbe
+
+    if not cbe.framework_for(course_schedule):
+        return
+    outstanding = []
+    for name in roster_names:
+        outstanding.extend(cbe.missing_required_evaluators(name))
+    if outstanding:
+        frappe.throw(
+            _("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20])
+        )
+
+
+def _assert_pdp_complete(course_schedule, roster_names):
+    """Block a send while a required development plan is missing (ADR 065 §8).
+
+    Two settings, deliberately separate: `require_pdp` says the plan is part of
+    the course, `pdp_blocks_completion` says the course cannot close without it.
+    A school can ask for the plan and still not hold a grade hostage to it, and
+    most will — so only the second gate blocks, and it names the students rather
+    than reporting a count.
+    """
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework or not cint(framework.pdp_blocks_completion):
+        return
+
+    missing = []
+    for name in roster_names:
+        if frappe.db.exists(
+            "Personal Development Plan",
+            {"roster": name, "status": ("!=", "Draft")},
+        ):
+            continue
+        missing.append(
+            frappe.db.get_value("Scheduled Course Roster", name, "stuname_roster")
+            or name
+        )
+    if missing:
+        frappe.throw(
+            _("These students have not submitted a development plan yet:")
+            + "<br>"
+            + "<br>".join(missing[:20])
+        )
+
+
+def finalize_roster(roster_name):
+    """Finalize one student: grade, write the transcript row, award credits.
+
+    Extracted so send_grades and send_selected_grades cannot drift apart.
+
+    Idempotent by construction: it acts only on a roster that is still `active`
+    and clears the flag as its last step. That matters more than it looks —
+    credits are *accumulated* into Program Enrollment.totalcredits rather than
+    recomputed, so a second pass over the same roster would silently double a
+    student's credit total.
+
+    Returns the Program Enrollment it touched, or None when there was nothing
+    to do.
+    """
+    record = frappe.db.get_value(
+        "Scheduled Course Roster",
+        roster_name,
+        ["name", "course_sc", "student", "program_std_scr", "audit_bool", "active"],
+        as_dict=True,
+    )
+    if not record or record.audit_bool or not record.active:
+        return None
+
+    pe = frappe.db.get_value(
+        "Program Enrollment",
+        {"student": record.student, "program": record.program_std_scr},
+        "name",
+    )
+    if not pe:
+        return None
+    totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
+
+    grade_thisstudent(record.name)
+    fgrade_this_std(record.name)
+    fscore, fgrade, fgradepass = frappe.db.get_value(
+        "Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
+    )
+
+    pec = frappe.db.get_value(
+        "Program Enrollment Course",
+        {"parent": pe, "course": record.course_sc},
+        "name",
+    )
+    if not pec:
+        return None
+    credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
+    if fgradepass == "Fail":
+        credits = 0
+    # Leveling / remedial courses (ADR 058) never count toward the degree.
+    elif frappe.db.exists(
+        "Program Enrollment Leveling",
+        {"parent": pe, "course": record.course_sc, "kind": "Leveling Course"},
+    ):
+        credits = 0
+    newcredits = (int(totalcredits) if totalcredits else 0) + (
+        int(credits) if credits is not None else 0
+    )
+
+    values = {
+        "pec_finalgradenum": fscore,
+        "pec_finalgradecode": fgrade,
+        "status": fgradepass,
+    }
+    # Competency-based programs report levels, not a grade point average, unless
+    # the framework asks for one (ADR 065 section 7). Excluding the row from the
+    # denominator as well as the numerator is what keeps a mixed school's GPA
+    # honest rather than silently diluted.
+    gpa_flag = _cbe_count_in_gpa(record.course_sc)
+    if gpa_flag is not None:
+        values["count_in_gpa"] = gpa_flag
+
+    frappe.db.set_value("Program Enrollment Course", pec, values)
+    frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
+    frappe.db.set_value("Scheduled Course Roster", record.name, "active", 0)
+    return pe
+
+
+def _cbe_count_in_gpa(course_schedule):
+    """1/0 for a competency-based section, or None when the question does not apply."""
+    from seminary.seminary import cbe
+
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return None
+    return 1 if framework.emit_gpa else 0
+
+
+def _conclude_enrollments(course_schedule, students=None):
+    filters = {
+        "coursesc_ce": course_schedule,
+        "workflow_state": "Submitted",
+        "docstatus": 1,
+    }
+    if students is not None:
+        if not students:
+            return
+        filters["student_ce"] = ("in", list(students))
+    frappe.db.set_value(
+        "Course Enrollment Individual",
+        filters,
+        "workflow_state",
+        "Concluded",
+        update_modified=False,
+    )
+
+
+def _post_finalization(pe_names):
+    from seminary.seminary.gpa import recompute_program_enrollment_gpa
+
+    for pe_name in pe_names:
+        _recalculate_emphasis_credits(pe_name)
+        _check_auto_grant_emphases(pe_name)
+        recompute_program_enrollment_gpa(pe_name)
+
+
+@frappe.whitelist()
+def send_selected_grades(course_schedule, rosters):
+    """Finalize some students without closing the section (ADR 065 section 7a).
+
+    Offered only for open-ended sections. Those serve a self-paced competency
+    framework, where by design there is no moment when everyone is done — so a
+    terminal-only operation would mean grades never reach the transcript, and
+    one student still working would hold every classmate's transcript row
+    hostage. Every dated section keeps its all-or-nothing guarantee.
+
+    `open_ended` is the only check needed: a section may only carry that flag
+    when its course sits in a self-paced competency-based program, which
+    CourseSchedule.validate_open_ended enforces at the source. Re-deriving the
+    pacing here would be a second condition that can fall out of step with the
+    first.
+    """
+    _assert_may_send_grades()
+
+    if isinstance(rosters, str):
+        rosters = json.loads(rosters)
+    rosters = [r for r in (rosters or [])]
+    if not rosters:
+        frappe.throw(_("Select at least one student."))
+
+    cs = frappe.db.get_value(
+        "Course Schedule",
+        course_schedule,
+        ["workflow_state", "open_ended"],
+        as_dict=True,
+    )
+    if not cs:
+        frappe.throw(_("Course Schedule {0} not found.").format(course_schedule))
+    if not cs.open_ended:
+        frappe.throw(
+            _(
+                "This section has an end date, so grades are sent for the whole "
+                "class at once. Sending grades for selected students is only "
+                "available for open-ended sections in self-paced programs."
+            )
+        )
+    if cs.workflow_state != "Grading":
+        frappe.throw(
+            _(
+                "Send Grades is only available while the course is in the "
+                "Grading state. Current state: {0}."
+            ).format(cs.workflow_state or _("(none)"))
+        )
+
+    stray = [
+        r
+        for r in rosters
+        if frappe.db.get_value("Scheduled Course Roster", r, "course_sc")
+        != course_schedule
+    ]
+    if stray:
+        frappe.throw(
+            _("These rosters do not belong to this section: {0}.").format(
+                ", ".join(stray)
+            )
+        )
+
+    missing_count = _ungraded_roster_count(course_schedule, rosters)
+    if missing_count:
+        frappe.throw(
+            _(
+                "Cannot send grades: {0} of the selected student(s) still have "
+                "ungraded assessments. Fill in all grades (or 0 explicitly) "
+                "before sending."
+            ).format(missing_count)
+        )
+    _assert_evaluators_finished(course_schedule, rosters)
+    _assert_pdp_complete(course_schedule, rosters)
+
+    finalized, students, pes = [], set(), set()
+    for roster_name in rosters:
+        student = frappe.db.get_value("Scheduled Course Roster", roster_name, "student")
+        pe = finalize_roster(roster_name)
+        if pe:
+            finalized.append(roster_name)
+            students.add(student)
+            pes.add(pe)
+
+    _conclude_enrollments(course_schedule, students)
+    _post_finalization(pes)
+
+    return {"finalized": len(finalized), "rosters": finalized}
+
+
 @frappe.whitelist()
 def send_grades(doc=None, **kwargs):
+    _assert_may_send_grades()
 
     if isinstance(doc, str):
         # Parse the JSON string if it's a string
@@ -4260,6 +4036,73 @@ def send_grades(doc=None, **kwargs):
     state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
     if state == "Closed":
         return "All grades sent"
+    if state != "Grading":
+        frappe.throw(
+            _(
+                "Send Grades is only available while the course is in the "
+                "Grading state. Current state: {0}."
+            ).format(state or _("(none)"))
+        )
+
+    missing_count = _ungraded_roster_count(docname)
+    if missing_count:
+        frappe.throw(
+            _(
+                "Cannot send grades: {0} student(s) still have ungraded "
+                "assessments. Fill in all grades (or 0 explicitly) before sending."
+            ).format(missing_count)
+        )
+
+    records = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": docname, "active": 1, "audit_bool": 0},
+        fields=["name"],
+    )
+    _assert_evaluators_finished(docname, [r.name for r in records])
+    _assert_pdp_complete(docname, [r.name for r in records])
+
+    affected_pes = set()
+    for record in records:
+        pe = finalize_roster(record.name)
+        if pe:
+            affected_pes.add(pe)
+
+    # System-driven transition: bypass the workflow validator (the "Send
+    # Grades" transition is intentionally absent from the workflow fixture
+    # so the Desk Action menu can't bypass the grade computation and PEC
+    # update above). Mirrors the cancel_course pattern.
+    frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
+
+    # Mirror the schedule's terminal "Closed" state onto each student's Course
+    # Enrollment Individual: with grades sent, every active enrollment in this
+    # section is now historical, so Submitted -> Concluded. System-driven like
+    # the schedule transition above (no Desk action, intentionally absent from
+    # the workflow fixture). Audit enrollments also sit in Submitted and are
+    # likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
+    # are left untouched — they never became active enrollments here. This is
+    # what makes "currently enrolled" = workflow_state == "Submitted".
+    _conclude_enrollments(docname)
+
+    # After grades are sent, recalculate track credits and check auto-grant emphases
+    _post_finalization(affected_pes)
+
+    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+    # after commit so a snapshot failure can never roll back grades. Seminary never requires
+    # aretenic (ADR 030/032). Partial sends deliberately produce no snapshot: an
+    # attainment record for a half-graded offering would be an auditable claim
+    # about something unfinished (ADR 065 section 7a).
+    from seminary.seminary.utils import _aretenic_enabled
+
+    if _aretenic_enabled():
+        frappe.enqueue(
+            "aretenic.attainment.snapshot_offering_on_send_grades",
+            queue="long",
+            enqueue_after_commit=True,
+            course_schedule=docname,
+        )
+
+    return "All grades sent"
     if state != "Grading":
         frappe.throw(
             _(
@@ -4400,6 +4243,20 @@ def send_grades(doc=None, **kwargs):
         _check_auto_grant_emphases(pe_name)
         recompute_program_enrollment_gpa(pe_name)
 
+    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
+    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
+    # after commit so a snapshot failure can never roll back grades. Seminary never requires
+    # aretenic (ADR 030/032).
+    from seminary.seminary.utils import _aretenic_enabled
+
+    if _aretenic_enabled():
+        frappe.enqueue(
+            "aretenic.attainment.snapshot_offering_on_send_grades",
+            queue="long",
+            enqueue_after_commit=True,
+            course_schedule=docname,
+        )
+
     return "All grades sent"
 
 
@@ -4513,6 +4370,15 @@ def _check_auto_grant_emphases(pe_name):
 @frappe.whitelist()
 def course_event(name):
     course = frappe.get_doc("Course Schedule", name)
+    # An open-ended section (ADR 065) has no end date and no meetings, so there
+    # is no bounded span to put on a calendar.
+    if not course.c_datestart or not course.c_dateend:
+        frappe.throw(
+            _(
+                "Course Schedule {0} has no start and end date, so it cannot be "
+                "placed on a calendar."
+            ).format(name)
+        )
     color = course.color
     datest = str(course.c_datestart)  # Convert datet to a string
     timest = str(course.from_time)  # Convert timest to a string
@@ -4624,129 +4490,30 @@ def get_doctrinal_statement():
 
 
 @frappe.whitelist(allow_guest=True)
-def get_application_payment_url(applicant_name):
-    """Return a payment URL for a Student Applicant's outstanding Application
-    Sales Invoice, plus any alternative payment instructions configured on
-    Seminary Settings. Used by the public Student Applicant web form to let
-    applicants pay immediately after submitting.
+def get_application_payment_url(applicant_name, key=None):
+    """Payment URL + instructions for an applicant's Application invoice (public
+    web form). Delegates to the financial backend; None on a Frappe-only seminary.
 
-    Returns a dict:
-        payment_url: gateway URL (None if no gateway / no SI / already paid)
-        amount: outstanding amount on the invoice
-        currency: invoice currency
-        alternative_instructions: HTML from Seminary Settings (if configured)
-    Returns None if applicant doesn't exist.
+    Guest-callable, so the caller must present the applicant's `access_key`
+    (ADR 068 phase 3). Without it this took a bare docname and would happily
+    hand over any applicant's payment link — and confirm that the application
+    exists — to anyone willing to try names.
     """
-    if not applicant_name or not frappe.db.exists("Student Applicant", applicant_name):
-        return None
+    import hmac
 
-    settings = frappe.get_single("Seminary Settings")
-    alternative_instructions = settings.get("alternative_payment_instructions") or None
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    invoice = frappe.db.sql(
-        """
-        SELECT name, currency, outstanding_amount
-        FROM `tabSales Invoice`
-        WHERE seminary_trigger LIKE %(prefix)s
-          AND docstatus < 2
-          AND outstanding_amount > 0
-        ORDER BY creation DESC
-        LIMIT 1
-        """,
-        {"prefix": f"APP:{applicant_name}:%"},
-        as_dict=True,
-    )
-
-    if not invoice:
-        return {
-            "payment_url": None,
-            "amount": None,
-            "currency": None,
-            "alternative_instructions": alternative_instructions,
-        }
-
-    inv = invoice[0]
-    payment_url = None
-    if settings.portal_payment_enable and settings.payment_gateway:
-        try:
-            payment_url = _create_application_payment_url(inv.name, settings)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"get_application_payment_url({applicant_name})",
-            )
-
-    return {
-        "payment_url": payment_url,
-        "amount": inv.outstanding_amount,
-        "currency": inv.currency,
-        "alternative_instructions": alternative_instructions,
-    }
-
-
-def _create_application_payment_url(invoice_name, settings):
-    """Create a Payment Request for an Application SI and return the URL.
-    Mirrors get_invoice_payment_url but skips the student-permission gate
-    (applicant payments come from the guest web form context — they need
-    to pay before they have a Student record)."""
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        return None
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_amount,
-        get_gateway_details,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
+    if frappe.session.user == "Guest":
+        expected = frappe.db.get_value(
+            "Student Applicant", applicant_name, "access_key"
         )
-        or frappe._dict()
-    )
+        if not (expected and key and hmac.compare_digest(str(key), str(expected))):
+            frappe.throw(
+                _("This payment link is invalid or has expired."),
+                frappe.PermissionError,
+            )
 
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        return None
-
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Application Payment for {0}").format(ref_doc.customer),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.flags.ignore_permissions = True
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-    return pr.get_payment_url()
+    return get_financial_backend().application_payment_url(applicant_name)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4755,10 +4522,14 @@ def get_default_phone_country():
     string (e.g. "United States"). Frappe's Phone control reads
     `frappe.sys_defaults.country` and matches by name; web forms set this
     on load to override the hard-coded "India" default."""
-    company = frappe.db.get_single_value("Seminary Settings", "company")
-    if not company:
-        return None
-    return frappe.db.get_value("Company", company, "country")
+    # The billing Company (and its country) is owned by the financial backend; on
+    # a Frappe-only install fall back to the system default country.
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    country = get_financial_backend().company_country()
+    if country:
+        return country
+    return frappe.db.get_single_value("System Settings", "country")
 
 
 @frappe.whitelist(allow_guest=True)
@@ -4768,8 +4539,42 @@ def active_term():
     return {"academic_term": at, "academic_year": ay}
 
 
+OUTLINE_EDIT_ROLES = {
+    "Instructor",
+    "Program Chair",
+    "Seminary Manager",
+    "System Manager",
+}
+
+
+def _assert_may_edit_outline():
+    """Who may write a chapter.
+
+    Students hold `write` on Course Schedule Chapter so progress can be recorded
+    against it, which means a doctype permission check would let them through.
+    That was tolerable while a chapter was only a title; it is not now that the
+    chapter carries the competency mapping the content gating reads (ADR 065
+    section 2), because clearing it would unlock the course. The role set
+    mirrors `canEditOutline` in the portal, so nothing that could edit an
+    outline before can stop now.
+    """
+    if not (OUTLINE_EDIT_ROLES & set(frappe.get_roles())):
+        frappe.throw(
+            _("You are not permitted to edit this course outline."),
+            frappe.PermissionError,
+        )
+
+
 @frappe.whitelist()
-def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=None):
+def upsert_chapter(
+    chapter_title,
+    course,
+    is_scorm_package,
+    scorm_package,
+    name=None,
+    course_competency=None,
+):
+    _assert_may_edit_outline()
     course_title = frappe.get_value("Course Schedule", course, "course")
     values = frappe._dict(
         {
@@ -4779,6 +4584,12 @@ def upsert_chapter(chapter_title, course, is_scorm_package, scorm_package, name=
             "course_title": course_title,
         }
     )
+
+    # Absent means "leave the mapping alone" so callers that know nothing about
+    # competencies cannot clear one; an empty string is the explicit unlink
+    # (ADR 065 section 2).
+    if course_competency is not None:
+        values["course_competency"] = course_competency or None
 
     if is_scorm_package:
         scorm_package = frappe._dict(scorm_package)
@@ -4976,16 +4787,9 @@ def get_student_info():
     return student_info
 
 
-@frappe.whitelist()
-def get_program_fees(program):
-    program_fees = []
-    program_fees = frappe.get_all(
-        "Program Fees",
-        filters={"parent": program},
-        fields=["pgm_feecategory"],
-    )
-    print(program_fees)
-    return program_fees
+# get_program_fees (Program Fees is an oikonomos pricing doctype) lives in the
+# bridge now: oikonomos.financial.pricing.get_program_fees, called from the
+# oikonomos Scholarships form.
 
 
 @frappe.whitelist()
@@ -5120,6 +4924,49 @@ def _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx):
 
     lesson_doc.chapter = target_doc.name
     lesson_doc.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def update_chapter_index(course, chapter, idx):
+    """Move a chapter to position `idx` in its course's outline.
+
+    Chapter order is the order of the Course Schedule's `chapters` child rows,
+    so reordering rewrites that table — the same shape as reordering lessons
+    inside a chapter."""
+    _assert_can_edit_outline(course)
+    idx = max(cint(idx) or 1, 1)
+
+    course_doc = frappe.get_doc("Course Schedule", course)
+    rows = [row.chapter for row in course_doc.chapters if row.chapter != chapter]
+    if len(rows) == len(course_doc.chapters):
+        frappe.throw(_("Chapter {0} not found in course {1}").format(chapter, course))
+
+    idx = min(idx, len(rows) + 1)
+    rows.insert(idx - 1, chapter)
+
+    course_doc.set("chapters", [])
+    for chapter_name in rows:
+        course_doc.append("chapters", {"chapter": chapter_name})
+    course_doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"message": _("Chapter index updated successfully.")}
+
+
+def _assert_can_edit_outline(course):
+    """Mirror of the outline editor's client-side gate (CourseOutline's
+    `allowEdit`): a course-editing role, or an instructor on this course."""
+    from seminary.seminary.utils import is_instructor
+
+    roles = set(frappe.get_roles())
+    if roles & {"Seminary Manager", "Program Chair", "Instructor", "System Manager"}:
+        return
+    if is_instructor(course):
+        return
+    frappe.throw(
+        _("You are not permitted to edit this course outline."),
+        frappe.PermissionError,
+    )
 
 
 @frappe.whitelist()
@@ -5336,273 +5183,26 @@ def delete_submission_comment(name):
 
 @frappe.whitelist()
 def get_invoice_payment_url(invoice_name):
-    """Create a Payment Request for a Sales Invoice and return the payment URL.
+    """Gateway payment URL for one of the student's invoices."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    Students can only request payment for their own invoices (validated via
-    custom_student on the Sales Invoice).
-    """
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    # Validate that the student owns this invoice
-    if _should_restrict(frappe.session.user):
-        student = _current_student(frappe.session.user)
-        invoice_student = frappe.db.get_value(
-            "Sales Invoice", invoice_name, "custom_student"
-        )
-        if not student or invoice_student != student:
-            frappe.throw(_("You do not have permission to pay this invoice."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(
-            _("Online payments are not enabled. Please contact the administration.")
-        )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        "name",
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-        get_gateway_details,
-        get_amount,
-    )
-
-    ref_doc = frappe.get_doc("Sales Invoice", invoice_name)
-    gateway = (
-        get_gateway_details(
-            frappe._dict(
-                {
-                    "payment_gateway_account": gateway_account,
-                    "company": ref_doc.company,
-                }
-            )
-        )
-        or frappe._dict()
-    )
-
-    grand_total = get_amount(ref_doc, gateway.get("payment_account"))
-    if not grand_total:
-        frappe.throw(_("This invoice has already been paid."))
-
-    # Cancel any incomplete Payment Requests (submitted but not paid),
-    # following the webshop pattern for re-payment attempts.
-    cancel_old_payment_requests("Sales Invoice", invoice_name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway.get("name"),
-            "payment_gateway": gateway.get("payment_gateway"),
-            "payment_account": gateway.get("payment_account"),
-            "payment_channel": gateway.get("payment_channel"),
-            "payment_request_type": "Inward",
-            "currency": ref_doc.currency,
-            "grand_total": grand_total,
-            "email_to": ref_doc.owner,
-            "subject": _("Payment Request for {0}").format(invoice_name),
-            "message": gateway.get("message") or "",
-            "reference_doctype": "Sales Invoice",
-            "reference_name": invoice_name,
-            "company": ref_doc.company,
-            "party_type": "Customer",
-            "party": ref_doc.customer,
-            "mute_email": 1,
-        }
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    return {"payment_url": pr.get_payment_url()}
+    return get_financial_backend().invoice_payment_url(invoice_name)
 
 
 @frappe.whitelist()
 def get_student_balance_payment_url():
-    """Pay the full outstanding on the student's open Student Balance."""
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
+    """Gateway payment URL for the student's full outstanding balance."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Set allocated_amount = outstanding_amount on each non-return row
-    for row in sb.invoices:
-        if not row.is_return and flt(row.outstanding_amount) > 0:
-            row.allocated_amount = row.outstanding_amount
-        else:
-            row.allocated_amount = 0
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, sb.net_outstanding, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
+    return get_financial_backend().student_balance_payment_url()
 
 
 @frappe.whitelist()
 def get_student_partial_balance_payment_url(amount=None, invoices=None):
-    """Pay a partial amount against the student's open Student Balance.
+    """Gateway payment URL for a partial balance payment."""
+    from seminary.seminary.financial.backend import get_financial_backend
 
-    Args:
-        amount: Fixed amount to pay (allocated by due date order).
-        invoices: JSON list of {"sales_invoice": name, "amount": value} dicts.
-    """
-    from seminary.seminary.sales_invoice_permissions import (
-        _current_student,
-        _should_restrict,
-    )
-
-    if not _should_restrict(frappe.session.user):
-        frappe.throw(_("This action is only available for students."))
-
-    student = _current_student(frappe.session.user)
-    if not student:
-        frappe.throw(_("Student record not found."))
-
-    settings = frappe.get_single("Seminary Settings")
-    if not settings.portal_payment_enable or not settings.payment_gateway:
-        frappe.throw(_("Online payments are not enabled."))
-
-    sb = _get_open_student_balance(student)
-
-    if flt(sb.net_outstanding) <= 0:
-        frappe.throw(_("No outstanding balance to pay."))
-
-    # Reset all allocations
-    for row in sb.invoices:
-        row.allocated_amount = 0
-
-    if invoices:
-        # Parse if string
-        if isinstance(invoices, str):
-            invoices = json.loads(invoices)
-        invoice_map = {item["sales_invoice"]: flt(item["amount"]) for item in invoices}
-        for row in sb.invoices:
-            if row.sales_invoice in invoice_map:
-                alloc = min(invoice_map[row.sales_invoice], flt(row.outstanding_amount))
-                row.allocated_amount = alloc
-    elif amount:
-        amount = flt(amount)
-        if amount <= 0 or amount > flt(sb.net_outstanding):
-            frappe.throw(_("Invalid payment amount."))
-        # Allocate by due date
-        remaining = amount
-        sorted_rows = sorted(sb.invoices, key=lambda r: r.due_date or "9999-12-31")
-        for row in sorted_rows:
-            if row.is_return or flt(row.outstanding_amount) <= 0:
-                continue
-            alloc = min(flt(row.outstanding_amount), remaining)
-            row.allocated_amount = alloc
-            remaining -= alloc
-            if remaining <= 0:
-                break
-    else:
-        frappe.throw(_("Please specify an amount or select invoices to pay."))
-
-    total_allocated = sum(
-        flt(row.allocated_amount)
-        for row in sb.invoices
-        if not row.is_return and flt(row.allocated_amount) > 0
-    )
-    if total_allocated <= 0:
-        frappe.throw(_("No amount allocated for payment."))
-
-    sb.save(ignore_permissions=True)
-
-    pr = _create_balance_payment_request(sb, total_allocated, settings)
-    return {"payment_url": pr.get_payment_url(), "student_balance": sb.name}
-
-
-def _get_open_student_balance(student):
-    """Get the open Student Balance for a student, or throw."""
-    sb_name = frappe.db.get_value(
-        "Student Balance", {"student": student, "is_open": 1}, "name"
-    )
-    if not sb_name:
-        frappe.throw(_("No open balance found for this student."))
-    return frappe.get_doc("Student Balance", sb_name)
-
-
-def _create_balance_payment_request(sb, amount, settings):
-    """Create and submit a Payment Request against a Student Balance."""
-    from erpnext.accounts.doctype.payment_request.payment_request import (
-        cancel_old_payment_requests,
-    )
-
-    gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {"payment_gateway": settings.payment_gateway},
-        ["name", "payment_gateway", "payment_account", "payment_channel", "message"],
-        as_dict=True,
-    )
-    if not gateway_account:
-        frappe.throw(
-            _("No Payment Gateway Account configured for {0}.").format(
-                settings.payment_gateway
-            )
-        )
-
-    cancel_old_payment_requests("Student Balance", sb.name)
-
-    pr = frappe.new_doc("Payment Request")
-    pr.update(
-        {
-            "payment_gateway_account": gateway_account.name,
-            "payment_gateway": gateway_account.payment_gateway,
-            "payment_account": gateway_account.payment_account,
-            "payment_channel": gateway_account.payment_channel,
-            "payment_request_type": "Inward",
-            "currency": sb.currency,
-            "grand_total": amount,
-            "email_to": frappe.session.user,
-            "subject": _("Payment for Student Balance {0}").format(sb.name),
-            "message": gateway_account.message or "",
-            "reference_doctype": "Student Balance",
-            "reference_name": sb.name,
-            "company": sb.company,
-            "party_type": "Customer",
-            "party": sb.customer,
-            "mute_email": 1,
-        }
-    )
-    # Add a payment_reference row so that validate_payment_request_amount
-    # is skipped — it only knows standard doctypes like Sales Invoice.
-    pr.append(
-        "payment_reference",
-        {
-            "amount": amount,
-            "description": _("Student Balance {0}").format(sb.name),
-        },
-    )
-    pr.insert(ignore_permissions=True)
-    pr.submit()
-
-    sb.db_set("payment_request", pr.name)
-    return pr
+    return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 
 @frappe.whitelist()
@@ -5858,217 +5458,6 @@ def preview_announcement_letter(name):
         }
     ).insert(ignore_permissions=True)
     return {"file_url": f.file_url}
-
-
-_PROGRAM_PRICING_TEMPLATE = """
-<style>
-.program-pricing { font-size: 13px; margin-left: 6px; }
-.program-pricing h2 { margin-top: 1.5rem; padding-bottom: 0.25rem; border-bottom: 2px solid #333; }
-.program-pricing h2 .currency { font-weight: normal; color: #555; font-size: 0.85em; }
-.program-pricing .customer-groups { margin: 0.5rem 0 1rem; color: #444; }
-.program-pricing .program-block { margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 4px; page-break-inside: avoid; }
-.program-pricing .program-block h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
-.program-pricing .program-meta { list-style: none; padding: 0; margin: 0 0 0.75rem; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; color: #333; }
-.program-pricing .program-meta li { margin: 0; }
-.program-pricing .fees-table { width: 100%; border-collapse: collapse; }
-.program-pricing .fees-table th, .program-pricing .fees-table td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
-.program-pricing .fees-table th { background: #f5f5f5; font-weight: 600; }
-.program-pricing .fees-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.program-pricing .not-priced { color: #c0392b; font-weight: 600; }
-.program-pricing .check { color: #2e7d32; font-weight: 700; }
-.program-pricing .no-fees { color: #777; font-style: italic; margin: 0; }
-@media print {
-  .program-pricing h2 { page-break-after: avoid; }
-}
-</style>
-<div class="program-pricing">
-{% for pl in price_lists %}
-  <section class="price-list-section">
-    <h2>{{ _("Price List") }}: {{ pl.name }}{% if pl.currency %} <span class="currency">— {{ _("Currency") }}: {{ pl.currency }}</span>{% endif %}</h2>
-    <p class="customer-groups">
-      <strong>{{ _("This price list affects the following customer groups:") }}</strong>
-      {% if pl.customer_groups %}{{ pl.customer_groups | join(", ") }}{% else %}<em>{{ _("None") }}</em>{% endif %}
-    </p>
-    {% for program in programs %}
-      <article class="program-block">
-        <h3>{{ program.program_name or program.name }}</h3>
-        <ul class="program-meta">
-          <li><strong>{{ _("Free Program") }}:</strong> {% if program.is_free %}<span class="check">✓</span>{% else %}—{% endif %}</li>
-          <li><strong>{{ _("Require Payment Before Enrollment") }}:</strong> {% if program.require_pay_submit %}<span class="check">✓</span>{% else %}—{% endif %}</li>
-          <li><strong>{{ _("Minimum Payment %") }}:</strong> {{ (program.percent_to_pay or 0) }}%</li>
-        </ul>
-        {% if program.fees %}
-        <table class="fees-table">
-          <thead>
-            <tr>
-              <th>{{ _("Fee Category") }}</th>
-              <th>{{ _("Event to charge") }}</th>
-              <th>{{ _("Item") }}</th>
-              <th>{{ _("Academic Credit") }}</th>
-              <th>{{ _("Audit") }}</th>
-              <th>{{ _("Payment Term") }}</th>
-              <th>{{ _("Item Price") }}</th>
-              <th>{{ _("Price last modified on") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for fee in program.fees %}
-              {% set price = pl.prices.get(fee.item) if fee.item else None %}
-              <tr>
-                <td>{{ fee.fee_category or "—" }}</td>
-                <td>{{ fee.event or "—" }}</td>
-                <td>{{ fee.item or "—" }}</td>
-                <td>{% if fee.is_credit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
-                <td>{% if fee.is_audit %}<span class="check">✓</span>{% else %}—{% endif %}</td>
-                <td>{{ fee.payment_term_template or "—" }}</td>
-                {% if price %}
-                  <td class="num">{{ "{:,.2f}".format(price.rate or 0) }}</td>
-                  <td>{{ price.modified_display or "—" }}</td>
-                {% else %}
-                  <td class="not-priced">{{ _("Not priced") }}</td>
-                  <td class="not-priced">—</td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="no-fees">{{ _("No fees configured.") }}</p>
-        {% endif %}
-      </article>
-    {% endfor %}
-  </section>
-{% else %}
-  <p>{{ _("No selling price lists found.") }}</p>
-{% endfor %}
-</div>
-"""
-
-
-@frappe.whitelist()
-def get_program_pricing_html():
-    """Render the Program Pricing report (one block per selling Price List).
-
-    Resolves: customer groups whose default_price_list = the price list,
-    every Program with its Program Fees rows, the Fee Category lookups
-    (item, is_credit, is_audit, payment_term_template), and the matching
-    Item Price for the chosen Price List.
-    """
-    price_lists = frappe.get_all(
-        "Price List",
-        filters={"selling": 1, "enabled": 1},
-        fields=["name", "currency"],
-        order_by="name asc",
-    )
-
-    programs_raw = frappe.get_all(
-        "Program",
-        fields=[
-            "name",
-            "program_name",
-            "is_free",
-            "require_pay_submit",
-            "percent_to_pay",
-        ],
-        order_by="program_name asc",
-    )
-    program_names = [p["name"] for p in programs_raw]
-
-    fee_rows = []
-    if program_names:
-        fee_rows = frappe.get_all(
-            "Program Fees",
-            filters={"parenttype": "Program", "parent": ["in", program_names]},
-            fields=["parent", "pgm_feecategory", "pgm_feeevent", "idx"],
-            order_by="parent asc, idx asc",
-        )
-
-    fee_category_names = sorted(
-        {r["pgm_feecategory"] for r in fee_rows if r.get("pgm_feecategory")}
-    )
-    fee_categories = {}
-    if fee_category_names:
-        for fc in frappe.get_all(
-            "Fee Category",
-            filters={"name": ["in", fee_category_names]},
-            fields=[
-                "name",
-                "category_name",
-                "item",
-                "is_credit",
-                "is_audit",
-                "payment_term_template",
-            ],
-        ):
-            fee_categories[fc["name"]] = fc
-
-    fees_by_program = {}
-    referenced_items = set()
-    for r in fee_rows:
-        fc = fee_categories.get(r.get("pgm_feecategory")) or {}
-        item = fc.get("item")
-        if item:
-            referenced_items.add(item)
-        fees_by_program.setdefault(r["parent"], []).append(
-            {
-                "fee_category": fc.get("category_name") or r.get("pgm_feecategory"),
-                "event": r.get("pgm_feeevent"),
-                "item": item,
-                "is_credit": fc.get("is_credit"),
-                "is_audit": fc.get("is_audit"),
-                "payment_term_template": fc.get("payment_term_template"),
-            }
-        )
-
-    programs = []
-    for p in programs_raw:
-        programs.append({**p, "fees": fees_by_program.get(p["name"], [])})
-
-    enriched_price_lists = []
-    for pl in price_lists:
-        customer_groups = [
-            cg["name"]
-            for cg in frappe.get_all(
-                "Customer Group",
-                filters={"default_price_list": pl["name"]},
-                fields=["name"],
-                order_by="name asc",
-            )
-        ]
-
-        prices = {}
-        if referenced_items:
-            for ip in frappe.get_all(
-                "Item Price",
-                filters={
-                    "price_list": pl["name"],
-                    "item_code": ["in", list(referenced_items)],
-                },
-                fields=["item_code", "price_list_rate", "modified"],
-                order_by="modified desc",
-            ):
-                if ip["item_code"] in prices:
-                    continue
-                prices[ip["item_code"]] = {
-                    "rate": ip.get("price_list_rate"),
-                    "modified_display": frappe.utils.format_datetime(
-                        ip.get("modified"), "yyyy-MM-dd HH:mm"
-                    ),
-                }
-
-        enriched_price_lists.append(
-            {
-                "name": pl["name"],
-                "currency": pl.get("currency"),
-                "customer_groups": customer_groups,
-                "prices": prices,
-            }
-        )
-
-    return frappe.render_template(
-        _PROGRAM_PRICING_TEMPLATE,
-        {"price_lists": enriched_price_lists, "programs": programs},
-    )
 
 
 @frappe.whitelist()

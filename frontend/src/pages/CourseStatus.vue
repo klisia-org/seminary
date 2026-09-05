@@ -74,8 +74,55 @@
         </div>
       </div>
 
+      <!-- Competency standing (ADR 065). A competency section has no
+           percentage, no weights and no class median, so the numeric panels
+           below are replaced rather than supplemented: showing a level of 3 as
+           "3 / 100" would be a lie the student has no way to correct. -->
+      <div v-if="isCbe">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Competencies') }}</h3>
+          <div class="flex items-center gap-2">
+            <router-link v-if="selfEvalEnabled"
+              :to="{ name: 'CompetencySelfAssessment', params: { courseName: props.courseName } }">
+              <Button variant="subtle" size="sm">{{ __('My Self-Assessment') }}</Button>
+            </router-link>
+            <router-link v-if="requiresPdp"
+              :to="{ name: 'PersonalDevelopmentPlan', params: { courseName: props.courseName } }">
+              <Button variant="subtle" size="sm">{{ __('My Development Plan') }}</Button>
+            </router-link>
+          </div>
+        </div>
+
+        <div v-if="competencyRows.length" class="space-y-3">
+          <div v-for="c in competencyRows" :key="c.name"
+            class="rounded-lg border bg-surface-gray-1 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="font-semibold text-ink-gray-8">{{ c.competency_name }}</p>
+              <div class="flex items-center gap-2">
+                <Badge v-for="s in c.self_assessments" :key="s.name"
+                  :label="`${stageLabel(s.stage)}: ${s.status === 'Submitted' ? __('submitted') : __('draft')}`"
+                  :theme="s.status === 'Submitted' ? 'green' : 'gray'" />
+                <Badge v-if="!c.self_assessments?.length" :label="__('Not started')" theme="gray" />
+                <Badge v-if="c.result?.final_code" :label="c.result.final_code"
+                  :theme="c.result.status === 'Competent' ? 'green' : 'orange'" />
+              </div>
+            </div>
+            <div v-if="c.statement" class="prose-sm mt-1 text-ink-gray-6" v-html="c.statement" />
+            <div v-if="c.dimensions?.length" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-gray-5">
+              <span v-for="d in c.dimensions" :key="d.dimension_code">{{ d.dimension }}</span>
+            </div>
+          </div>
+          <p class="text-xs text-ink-gray-5">
+            {{ __('Your result appears here once your grades have been sent. Until then your mentors are still working.') }}
+          </p>
+        </div>
+        <div v-else class="text-ink-gray-5 text-sm">
+          {{ __('No competencies have been set up for this course yet.') }}
+        </div>
+      </div>
+
       <!-- Assessments Table -->
-      <div>
+      <div v-if="!isCbe">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Assessments') }}</h3>
           <Button v-if="status.data.assessments?.length" :variant="simulating ? 'solid' : 'outline'"
@@ -133,7 +180,7 @@
       </div>
 
       <!-- Grade Section -->
-      <div v-if="currentGrade || projectedGrade">
+      <div v-if="!isCbe && (currentGrade || projectedGrade)">
         <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Your Grade') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -197,7 +244,7 @@
 
         </div>
       </div>
-      <div v-else class="text-ink-gray-5 text-sm">{{ __('No assessments available yet to calculate your grade.') }}</div>
+      <div v-else-if="!isCbe" class="text-ink-gray-5 text-sm">{{ __('No assessments available yet to calculate your grade.') }}</div>
 
       <!-- Withdrawal Rules & Button -->
       <div v-if="allowWithdrawal && !status.data.withdrawal_request && withdrawalRules.length > 0" class="border-t pt-4 space-y-3">
@@ -268,6 +315,36 @@ const allowWithdrawal = computed(() => {
 })
 
 const attendance = computed(() => status.data?.attendance)
+
+// Optional feature, gated the way the other CBE surfaces are: silent onError so
+// an ordinary section renders exactly as it did before.
+const competencyContext = createResource({
+  url: 'seminary.seminary.cbe_api.get_competency_context',
+  params: { course_schedule: props.courseName },
+  auto: true,
+  onError: () => { },
+})
+
+const competencyOverview = createResource({
+  url: 'seminary.seminary.cbe_api.get_student_competency_overview',
+  params: { course_schedule: props.courseName },
+  onError: () => { },
+})
+
+const isCbe = computed(() => !!competencyContext.data?.is_cbe)
+const selfEvalEnabled = computed(
+  () => !!competencyContext.data?.framework?.course_self_eval
+)
+const requiresPdp = computed(
+  () => !!competencyContext.data?.framework?.require_pdp
+)
+const competencyRows = computed(() => competencyOverview.data || [])
+
+const stageLabel = (s) => (s === 'Baseline' ? __('Starting point') : __('Where I am now'))
+
+watch(isCbe, (value) => {
+  if (value) competencyOverview.reload()
+}, { immediate: true })
 
 const withdrawalRules = computed(() => {
   if (!status.data?.withdrawal_rules) return []

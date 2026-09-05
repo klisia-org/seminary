@@ -42,10 +42,16 @@
 							&nbsp;·&nbsp;{{ profile.data.current_organization }}
 						</span>
 					</p>
-					<p class="mt-1 text-xs text-ink-gray-5">
-						{{ profile.data.program_completed }}
-						<span v-if="profile.data.class_year">
-							&nbsp;·&nbsp;{{ __('Class of') }} {{ profile.data.class_year }}
+					<!-- One line per completed program: a second degree adds a
+					     row, it does not replace the first (ADR 069). -->
+					<p
+						v-for="grad in profile.data.graduations"
+						:key="grad.name"
+						class="mt-1 text-xs text-ink-gray-5"
+					>
+						{{ grad.program }}
+						<span v-if="grad.class_year">
+							&nbsp;·&nbsp;{{ __('Class of') }} {{ grad.class_year }}
 						</span>
 					</p>
 				</div>

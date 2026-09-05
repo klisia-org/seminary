@@ -14,6 +14,9 @@
   "weight_scac",
   "due_date",
   "lesson",
+  "competency_section",
+  "course_competency",
+  "grading_mode_override",
   "linked_activity_section",
   "quiz",
   "assignment",
@@ -140,12 +143,33 @@
    "in_list_view": 1,
    "label": "Discussion",
    "options": "Discussion Activity"
+  },
+  {
+   "description": "Shown only for competency-based courses. Per-dimension weights for this activity are kept as Assessment Dimension Weight records, reachable from the activity's Connections.",
+   "fieldname": "competency_section",
+   "fieldtype": "Section Break",
+   "label": "Competency"
+  },
+  {
+   "description": "The competency this activity develops. Defaults from the chapter the activity sits in.",
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency"
+  },
+  {
+   "depends_on": "course_competency",
+   "description": "Leave blank to use the framework's setting. Override only when this one activity is graded differently from the rest.",
+   "fieldname": "grading_mode_override",
+   "fieldtype": "Select",
+   "label": "Grading Mode Override",
+   "options": "\nOne grade per activity\nOne grade per evaluator\nOne grade per evaluator per dimension"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-09 16:08:13.324681",
+ "modified": "2026-08-29 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

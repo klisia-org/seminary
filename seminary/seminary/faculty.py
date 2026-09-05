@@ -115,41 +115,102 @@ def eligible_instructors(unit: str, route: str) -> list[dict]:
     ]
 
 
+def claim_slot(cap_row: str, enforce_ceiling: bool = True) -> bool:
+    """Take one slot on a capability row. Returns False when it was refused.
+
+    The read and the write are one critical section. Every claim here used to be
+    read-then-write with no lock, so two placements could see the same last slot
+    and both take it — a latent defect the internship and CP advisor claims have
+    carried all along, hidden only by the fact that humans assign one at a time.
+    A batch is what makes two claims land in the same millisecond.
+
+    Two different questions, and only one of them is this function's to answer:
+    *is there room*, which the lock settles, and *will this person take one
+    more*, which only they can. So the ceiling binds where the **system** is
+    choosing an assignee and not where a **human** already has — see
+    ``claim_capability`` and ``claim_for`` below.
+    """
+    rows = frappe.db.sql(
+        """
+        SELECT max_students, current_students
+        FROM `tabAcademic Unit Capability`
+        WHERE name = %s
+        FOR UPDATE
+        """,
+        cap_row,
+        as_dict=True,
+    )
+    if not rows:
+        return False
+    cap = rows[0].max_students or 0
+    current = rows[0].current_students or 0
+    if cap and current >= cap and enforce_ceiling:
+        return False
+    frappe.db.set_value(
+        "Academic Unit Capability", cap_row, "current_students", current + 1
+    )
+    return True
+
+
 def claim_capability(unit: str, route: str) -> str | None:
     """Pick the instructor with the most remaining capacity for ``route``,
     increment their counter, and return the instructor — or None when no one is
-    eligible. Caller decides whether to auto-assign (manual entry wins)."""
-    candidates = [r for r in _instructor_rows(unit, route) if _remaining(r) > 0]
-    if not candidates:
-        return None
-    chosen = max(candidates, key=_remaining)
-    frappe.db.set_value(
-        "Academic Unit Capability",
-        chosen.cap_row,
-        "current_students",
-        (chosen.current_students or 0) + 1,
+    eligible. Caller decides whether to auto-assign (manual entry wins).
+
+    Walks the candidates rather than taking the best one and trusting it: the
+    unlocked read that ordered them may already be stale by the time the claim
+    runs, and losing the race should cost the next-best assignee, not the whole
+    assignment.
+    """
+    candidates = sorted(
+        (r for r in _instructor_rows(unit, route) if _remaining(r) > 0),
+        key=_remaining,
+        reverse=True,
     )
-    return chosen.instructor
+    for row in candidates:
+        if claim_slot(row.cap_row):
+            return row.instructor
+    return None
 
 
 def claim_for(unit: str, route: str, instructor: str) -> bool:
     """Increment a *specific* instructor's capacity counter for (unit, route) —
-    used when a human picks the assignee (e.g. a CP advisor) instead of
-    round-robin. Returns True if a capacity row was found and incremented; False
-    when the instructor holds no such capability (assignment still proceeds, just
-    untracked)."""
+    used when a human picks the assignee (a CP advisor, a cohort mentor) instead
+    of round-robin. Returns True if a capacity row was found and incremented,
+    False when the instructor holds no such capability (the assignment still
+    proceeds, just untracked).
+
+    **The ceiling does not bind here, deliberately.** By the time this runs the
+    assignment has already been made by a person who meant it, so refusing the
+    increment would not undo the work — it would only stop counting it, and an
+    undercounted advisor then looks free to the next round-robin. Over the
+    ceiling is a fact to report, which is what the caller does; an undercount is
+    a fact destroyed.
+
+    The lock still applies. That was the actual defect (see ``claim_slot``), and
+    it is fixed for every caller.
+    """
     if not (unit and instructor):
         return False
     for row in _instructor_rows(unit, route):
         if row.instructor == instructor:
-            frappe.db.set_value(
-                "Academic Unit Capability",
-                row.cap_row,
-                "current_students",
-                (row.current_students or 0) + 1,
-            )
-            return True
+            return claim_slot(row.cap_row, enforce_ceiling=False)
     return False
+
+
+def capacity_for(unit: str, route: str, instructor: str) -> dict | None:
+    """This instructor's (max, current) for the route, or None if unwired.
+
+    So a caller that may exceed a ceiling can say by how much, rather than
+    learning only that something was refused.
+    """
+    for row in _instructor_rows(unit, route):
+        if row.instructor == instructor:
+            return {
+                "max_students": row.max_students or 0,
+                "current_students": row.current_students or 0,
+            }
+    return None
 
 
 @frappe.whitelist()

@@ -12,6 +12,7 @@
   "course_code",
   "course_title",
   "chapter_title",
+  "course_competency",
   "lessons_section",
   "lessons",
   "scorm_section",
@@ -103,12 +104,19 @@
    "fieldname": "course_code",
    "fieldtype": "Data",
    "label": "Course Code"
+  },
+  {
+   "description": "The competency this chapter delivers, in competency-based courses. Setting it shows the competency and its dimension descriptors in the outline, and marks the point at which students reflect on it.",
+   "fieldname": "course_competency",
+   "fieldtype": "Link",
+   "label": "Competency",
+   "options": "Course Competency"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-24 20:50:09.621230",
+ "modified": "2026-08-28 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",

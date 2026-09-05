@@ -33,7 +33,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Routes To",
-   "options": "Course Instructor\nThesis/CP Advisor\nInternship Advisor\nPlacement Examiner\nManual-Verification Verifier\nMentor\nCommittee/Board Member\nOversees Unit Training",
+   "options": "Course Instructor\nThesis/CP Advisor\nInternship Advisor\nPlacement Examiner\nManual-Verification Verifier\nMentor\nProgram Cohort Mentorship\nCommittee/Board Member\nOversees Unit Training",
    "reqd": 1
   },
   {

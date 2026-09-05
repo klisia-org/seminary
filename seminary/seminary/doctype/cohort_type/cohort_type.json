@@ -1,0 +1,270 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:type_name",
+ "creation": "2026-07-22 12:00:00",
+ "description": "Policy for a family of cohorts: what binds them and when they end, who may lead them, and whether the system forms them. Stated once here and enforced on each Cohort Membership (ADR 066).",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type_name",
+  "category",
+  "is_active",
+  "column_break_head",
+  "description",
+  "academic_section",
+  "program",
+  "program_level",
+  "graduates_to",
+  "column_break_binding",
+  "persists_across_courses",
+  "remove_on_withdrawal",
+  "automation_section",
+  "plannable",
+  "mentor_unit",
+  "column_break_planning",
+  "automation_min_size",
+  "automation_max_size",
+  "criteria",
+  "policy_section",
+  "leader_eligibility",
+  "open_enrollment",
+  "allow_self_split",
+  "column_break_policy",
+  "default_visibility",
+  "default_max_size"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Type Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Unrestricted",
+   "description": "What binds cohorts of this type, and what ends them. Paced Program advances with the term; Throughout Program runs from enrollment to graduation; Course scoped is formed by a course; Unrestricted has no lifecycle at all.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Paced Program\nThroughout Program\nCourse scoped\nUnrestricted",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "academic_section",
+   "fieldtype": "Section Break",
+   "label": "Binding and Lifecycle"
+  },
+  {
+   "depends_on": "eval:doc.category != 'Unrestricted'",
+   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope.",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "mandatory_depends_on": "eval:doc.category == 'Paced Program'",
+   "options": "Program"
+  },
+  {
+   "depends_on": "eval:doc.category == 'Throughout Program'",
+   "description": "Bind to every program at this level instead of to one program -- a formation cohort spanning the master's degrees, say. Mutually exclusive with Program.",
+   "fieldname": "program_level",
+   "fieldtype": "Link",
+   "label": "Program Level",
+   "options": "Program Level"
+  },
+  {
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "When this cohort's lifecycle ends, the type its members land in next. States where, never when -- what ends the cohort is its Category.",
+   "fieldname": "graduates_to",
+   "fieldtype": "Link",
+   "label": "Graduates To",
+   "options": "Cohort Type"
+  },
+  {
+   "fieldname": "column_break_binding",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.category == 'Course scoped'",
+   "description": "Members stay in this cohort after the course that formed it ends, so a later course in the sequence does not re-place them.",
+   "fieldname": "persists_across_courses",
+   "fieldtype": "Check",
+   "label": "Persists Across Courses"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "Close the membership when a student leaves the bound program without finishing it \u2014 withdrawn, transferred out, or dismissed. Off leaves the decision to the leader. Graduation is not a separation: that is Graduates To.",
+   "fieldname": "remove_on_withdrawal",
+   "fieldtype": "Check",
+   "label": "Remove Separated Students"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
+   "description": "Settings the Cohort Planner reads when it proposes cohorts of this type. Leave the box below unticked and cohorts of this type are made entirely by hand. A school wanting both runs two types.",
+   "fieldname": "automation_section",
+   "fieldtype": "Section Break",
+   "label": "Bulk Planning"
+  },
+  {
+   "description": "Offer this type in the Cohort Planner, where a proposed set of cohorts is reviewed and adjusted before anything is created. Nothing is ever placed automatically: a person always presses Create.",
+   "fieldname": "plannable",
+   "fieldtype": "Check",
+   "label": "May Be Planned in Bulk"
+  },
+  {
+   "depends_on": "plannable",
+   "description": "The unit whose members are offered as mentors, and whose capability ceilings say how many students each of them can carry. Without it the planner has no pool and will not run.",
+   "fieldname": "mentor_unit",
+   "fieldtype": "Link",
+   "label": "Mentor Unit",
+   "link_filters": "[[\"Academic Unit\",\"unit_type\",\"=\",\"Mentoring Department\"],[\"Academic Unit\",\"is_active\",\"=\",1]]",
+   "options": "Academic Unit"
+  },
+  {
+   "fieldname": "column_break_planning",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "plannable",
+   "description": "A proposed cohort smaller than this is flagged for review rather than refused -- the planner would rather show you three groups of two than pretend they are healthy. 0 = no minimum.",
+   "fieldname": "automation_min_size",
+   "fieldtype": "Int",
+   "label": "Minimum Planned Cohort Size",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "plannable",
+   "description": "How many students one proposed cohort may hold. The planner decides how many cohorts to open from this and the minimum above, before it places anybody. 0 = no ceiling.",
+   "fieldname": "automation_max_size",
+   "fieldtype": "Int",
+   "label": "Maximum Planned Cohort Size",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "plannable",
+   "description": "How the planner decides who mentors whom. Leave empty and it balances group sizes only. Filters narrow who may be paired; Rankings order the mentors who qualify, the first listed deciding and the next breaking its ties. Whatever it proposes, a person reviews and can override it.",
+   "fieldname": "criteria",
+   "fieldtype": "Table",
+   "label": "Matching Rules",
+   "options": "Cohort Type Criterion"
+  },
+  {
+   "fieldname": "policy_section",
+   "fieldtype": "Section Break",
+   "label": "Leadership and Policy"
+  },
+  {
+   "default": "Anyone",
+   "description": "Who may hold leadership of a cohort of this type. Checked on the membership when Is Leader is set, against the person in front of it.",
+   "fieldname": "leader_eligibility",
+   "fieldtype": "Select",
+   "label": "Leader Eligibility",
+   "options": "Anyone\nInstructor\nAlumnus of the bound program or level\nStaff",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Members may join without a leader invite.",
+   "fieldname": "open_enrollment",
+   "fieldtype": "Check",
+   "label": "Open Enrollment"
+  },
+  {
+   "default": "0",
+   "description": "Leaders may split / multiply a cohort of this type.",
+   "fieldname": "allow_self_split",
+   "fieldtype": "Check",
+   "label": "Allow Self-Split"
+  },
+  {
+   "fieldname": "column_break_policy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "cohort_only",
+   "description": "Default reach for new posts. Members may still choose private/direct per post. There is no anonymous tier.",
+   "fieldname": "default_visibility",
+   "fieldtype": "Select",
+   "label": "Default Visibility",
+   "options": "cohort_only\nportal_users"
+  },
+  {
+   "description": "Advisory ceiling on active members for hand-authored work (0 = unlimited). Adding past it warns; it does not refuse.",
+   "fieldname": "default_max_size",
+   "fieldtype": "Int",
+   "label": "Default Max Size",
+   "non_negative": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-22 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
