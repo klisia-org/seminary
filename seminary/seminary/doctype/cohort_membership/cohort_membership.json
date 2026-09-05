@@ -21,7 +21,8 @@
   "joined_on",
   "left_on",
   "enrollment_section",
-  "course_enrollment"
+  "course_enrollment",
+  "placed_by_rule"
  ],
  "fields": [
   {
@@ -119,6 +120,13 @@
    "fieldtype": "Link",
    "label": "Course Enrollment",
    "options": "Course Enrollment Individual",
+   "read_only": 1
+  },
+  {
+   "description": "How this person came to be in this cohort. Filled by the Cohort Planner: either the rules that proposed the pairing, or a note that somebody moved them by hand while reviewing. It records a decision and changes nothing.",
+   "fieldname": "placed_by_rule",
+   "fieldtype": "Small Text",
+   "label": "Placed By",
    "read_only": 1
   }
  ],

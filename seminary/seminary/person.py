@@ -227,13 +227,16 @@ def _apply(person, values, email=None, overwrite=False):
 
 
 def _link_target_exists(field, value):
-    """Guard the Select-to-Link hand-offs at the one mutation point.
+    """Guard every Link write at the one mutation point.
 
-    `Student Applicant.gender` is a Select of the literals Male/Female while
-    `Person.gender` is a Link to Gender, and `install.setup_genders()` enables
-    the *translated* names — so on a localised site the literal need not exist
-    as a Gender at all. Handing that to a Link raises LinkValidationError, and
-    the caller is an admissions path that must not break on it.
+    `Student Applicant.gender` was a Select of the literals Male/Female while
+    `Person.gender` is a Link to Gender; ADR 068 §9 made both Links so a
+    curated Gender table is actually reachable. The guard stays, because the
+    hand-off is still not guaranteed: Frappe's setup wizard seeds genders
+    through `_()`, so a site set up in another language has rows named in that
+    language and an imported or legacy literal may match none of them. Handing
+    that to a Link raises LinkValidationError, and the caller is an admissions
+    path that must not break on it.
 
     Skipping is deliberate over throwing: the datum is then simply absent, and
     absence is what the ADR 067 readiness pre-flight is built to surface. This

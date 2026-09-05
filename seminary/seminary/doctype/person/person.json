@@ -42,6 +42,14 @@
   "city",
   "state",
   "mailing_country",
+  "geo_section",
+  "latitude",
+  "longitude",
+  "column_break_geo",
+  "geocoded_on",
+  "geo_status",
+  "geo_html",
+  "geocode_precision",
   "addresses_section",
   "channel_addresses",
   "consent_section",
@@ -363,6 +371,65 @@
    "fieldtype": "Link",
    "label": "Mailing Country",
    "options": "Country"
+  },
+  {
+   "collapsible": 1,
+   "description": "Resolved from the mailing address, never typed. A home coordinate is more sensitive than the address it came from, because it is trivially mappable.",
+   "fieldname": "geo_section",
+   "fieldtype": "Section Break",
+   "label": "Location",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude",
+   "permlevel": 1,
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude",
+   "permlevel": 1,
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_geo",
+   "fieldtype": "Column Break",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "geocoded_on",
+   "fieldtype": "Datetime",
+   "label": "Geocoded On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "What the provider actually matched \u2014 a rooftop is not a city centroid, and a distance ranking built on the latter is noise.",
+   "fieldname": "geocode_precision",
+   "fieldtype": "Data",
+   "label": "Geocode Precision",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Resolved: a usable point. Unresolvable: the provider knows of no such place \u2014 not retried, since asking again costs money and gets the same answer. Failed: network or quota, retried by the daily sweeper.",
+   "fieldname": "geo_status",
+   "fieldtype": "Select",
+   "label": "Geocode Status",
+   "options": "\nResolved\nUnresolvable\nFailed",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "geo_html",
+   "fieldtype": "HTML",
+   "label": "Location Summary",
+   "permlevel": 1
   }
  ],
  "image_field": "image",

@@ -249,6 +249,10 @@ class PersonImportBatch(Document):
         seen_emails = set()
         errors_total = 0
         warnings_total = 0
+        # Only the details this import form can actually carry: a school may
+        # require something an import row has no column for, and warning about a
+        # blank nobody could have filled would be noise.
+        mandated = _mandated_columns()
 
         for row in self.rows:
             errs = []
@@ -327,6 +331,14 @@ class PersonImportBatch(Document):
                     warns.append("bad_class_year:%s" % row.class_year)
                 if not row.is_alumni:
                     warns.append("class_year_needs_alumni")
+
+            # A detail the school insists on (ADR 067 §9) warns rather than
+            # errors here. Importing four hundred alumni who will never mentor
+            # anybody should not be hard-blocked by a mentor-matching rule, and
+            # the override note is the record of that judgement.
+            for person_field in mandated:
+                if not (row.get(person_field) or "").strip():
+                    warns.append("required_detail_missing:%s" % person_field)
 
             if errs:
                 row.row_status = "Error"
@@ -648,4 +660,23 @@ def commit_batch_async(batch_name):
         "person_import_complete",
         {"batch": batch.name, "summary": summary},
         user=batch.committed_by or batch.owner,
+    )
+
+
+def _mandated_columns():
+    """Details the school requires that an import row can actually carry.
+
+    A `Person Import Row` is its own flat form, not a mirror of Person, so the
+    two sets only partly overlap. Warning about a detail the row has no column
+    for would be a warning nobody could clear.
+    """
+    if not frappe.db.table_exists("Mandatory Personal Field"):
+        return ()
+    from seminary.seminary.doctype.mandatory_personal_field import (
+        mandatory_personal_field as mpf,
+    )
+
+    meta = frappe.get_meta("Person Import Row")
+    return tuple(
+        field for field in sorted(mpf.required_fields()) if meta.get_field(field)
     )

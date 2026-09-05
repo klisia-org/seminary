@@ -3,52 +3,44 @@
 
 
 import frappe
-import frappe.defaults
 from frappe.model.document import Document
 
-seminary_keydict = {
-    # "key in defaults": "key in Global Defaults"
-    "academic_year": "current_academic_year",
-    "academic_term": "current_academic_term",
-    "validate_course": "validate_course",
-}
+#: Site defaults published from this doctype on save: {default key: fieldname}.
+#:
+#: **Empty, and deliberately so.** It held three entries — `academic_year` and
+#: `academic_term` (from `current_academic_year` / `current_academic_term`) and
+#: `validate_course` — and *none* of the three fields existed on this doctype.
+#: They are ERPNext Education's shape, inherited wholesale; the fields went
+#: during the ERPNext decoupling and the keydict stayed. Every save therefore
+#: published three empty defaults, silently, because `Document.get` returns
+#: None for an unknown key and `set_default` stores it without complaint.
+#:
+#: The term is not coming back here. `Academic Term.iscurrent_acterm` is the
+#: app-wide answer to "what term is it", `tasks._update_term_flags` is its only
+#: writer, and `api.current_academic_term()` is the read. A settings field
+#: restating the same fact would be a second source of truth kept in step by
+#: hand — the failure ADR 068 exists to stop.
+#:
+#: A new entry is fine, but `test_seminary_settings` asserts its field exists.
+seminary_keydict = {}
+
+
+# `instructor_created_by` (Full Name / Naming Series / Employee Number) and the
+# `validate` that acted on it are gone (ADR 068 §7). It toggled the `hidden`
+# property setter of `Instructor.naming_series` — a field Instructor does not
+# have, which is why both calls passed `validate_fields_for_doctype=False` and
+# why nobody ever noticed. ADR 068 §5 then made the docname opaque
+# (`INST-.#####`) unconditionally, so even the intent is gone: an instructor
+# record is never named after its holder again.
 
 
 class SeminarySettings(Document):
     def on_update(self):
-        """update defaults"""
-        for key in seminary_keydict:
-            frappe.db.set_default(key, self.get(seminary_keydict[key], ""))
+        for key, fieldname in seminary_keydict.items():
+            frappe.db.set_default(key, self.get(fieldname))
 
-        # clear cache
+        # Settings are read all over the app and cached per site.
         frappe.clear_cache()
-
-    def get_defaults(self):
-        return frappe.defaults.get_defaults()
-
-    def validate(self):
-        from frappe.custom.doctype.property_setter.property_setter import (
-            make_property_setter,
-        )
-
-        if self.get("instructor_created_by") == "Naming Series":
-            make_property_setter(
-                "Instructor",
-                "naming_series",
-                "hidden",
-                0,
-                "Check",
-                validate_fields_for_doctype=False,
-            )
-        else:
-            make_property_setter(
-                "Instructor",
-                "naming_series",
-                "hidden",
-                1,
-                "Check",
-                validate_fields_for_doctype=False,
-            )
 
 
 @frappe.whitelist()

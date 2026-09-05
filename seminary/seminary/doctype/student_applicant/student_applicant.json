@@ -61,7 +61,7 @@
   "city",
   "column_break_23",
   "state",
-  "zipcode",
+  "pincode",
   "country",
   "relations_tab",
   "contactsrefs",
@@ -198,7 +198,8 @@
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "hidden": 1,
-   "label": "Image"
+   "label": "Image",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "section_break_4",
@@ -207,20 +208,23 @@
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Gender",
-   "options": "\nMale\nFemale",
+   "options": "Gender",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\"",
    "reqd": 1
   },
   {
    "fieldname": "blood_group",
    "fieldtype": "Select",
    "label": "Blood Group",
-   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
+   "options": "\nA+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "column_break_12",
@@ -256,7 +260,8 @@
    "fieldname": "nationality",
    "fieldtype": "Link",
    "label": "Nationality",
-   "options": "Country"
+   "options": "Country",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "home_address",
@@ -265,12 +270,14 @@
   {
    "fieldname": "address_line_1",
    "fieldtype": "Data",
-   "label": "Address Line 1"
+   "label": "Address Line 1",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "address_line_2",
    "fieldtype": "Data",
-   "label": "Address Line 2"
+   "label": "Address Line 2",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "column_break_23",
@@ -279,12 +286,14 @@
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "state",
    "fieldtype": "Data",
-   "label": "State"
+   "label": "State",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "contacts",
@@ -338,7 +347,8 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "titleresp",
@@ -347,9 +357,10 @@
    "options": "Salutation"
   },
   {
-   "fieldname": "zipcode",
+   "fieldname": "pincode",
    "fieldtype": "Data",
-   "label": "ZIP cide"
+   "label": "ZIP / Postal Code",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "social_security_number",
@@ -360,7 +371,8 @@
    "fieldname": "ethnic",
    "fieldtype": "Select",
    "label": "Ethnic Group",
-   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther"
+   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "disabilities_section",
@@ -383,7 +395,8 @@
    "fieldname": "marital",
    "fieldtype": "Select",
    "label": "Marital Status",
-   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)"
+   "options": "\nMarried\nSingle\nSeparated\nDivorced\nWidow(er)",
+   "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
    "fieldname": "employment_tab",

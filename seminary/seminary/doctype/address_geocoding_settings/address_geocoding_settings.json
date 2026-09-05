@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-04 00:00:00",
+ "description": "Resolves a finished postal address to coordinates so distance-based rules can run (ADR 068). Distinct from Frappe's own Geolocation Settings, which completes an address as someone types it \u2014 different job, different provider account.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "provider",
+  "credentials_section",
+  "api_key",
+  "column_break_creds",
+  "base_url",
+  "limits_section",
+  "daily_limit"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "description": "While off, addresses are stored as usual and simply not geocoded.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "default": "Vendor proxy",
+   "description": "Vendor proxy routes lookups through the hosting provider's endpoint with a site token, so a hosted school needs no Google account of its own. Google talks to the Geocoding API directly with your own key.",
+   "fieldname": "provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "Google\nVendor proxy",
+   "reqd": 1
+  },
+  {
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Credentials"
+  },
+  {
+   "description": "Google Cloud key with <b>Geocoding API</b> and <b>Places API (New)</b> enabled, or the site token for Vendor proxy. Restrict it by IP address \u2014 it is used only server-side and is never sent to a browser, including by the address autocomplete, which is proxied through this server for exactly that reason.",
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key"
+  },
+  {
+   "fieldname": "column_break_creds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Set automatically when you pick a provider. Vendor proxy has no default: it is whatever endpoint your host runs.",
+   "fieldname": "base_url",
+   "fieldtype": "Data",
+   "label": "Base URL"
+  },
+  {
+   "fieldname": "limits_section",
+   "fieldtype": "Section Break",
+   "label": "Limits"
+  },
+  {
+   "default": "500",
+   "description": "A ceiling on lookups per day, counted from the Integration Request log. On Vendor proxy the ceiling is your host's to set and enforce, so it is not editable here. On Google it is your own account being billed. 0 means no ceiling.",
+   "fieldname": "daily_limit",
+   "fieldtype": "Int",
+   "label": "Daily Lookup Limit",
+   "read_only_depends_on": "eval:doc.provider == \"Vendor proxy\""
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-04 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Address Geocoding Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

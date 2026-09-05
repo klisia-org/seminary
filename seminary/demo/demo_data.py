@@ -6,10 +6,19 @@ from itertools import cycle
 DEMO_PREFIX = "DEMO-"
 DEMO_TAG = "Seminary Demo Data"
 
+#: The demo faculty member. Held as the *user*, never as an Instructor docname:
+#: since ADR 068 §5 an Instructor is named `INST-.#####`, so the old literal
+#: ("Martin Luther") is not a docname any more and a Link to it fails.
+DEMO_INSTRUCTOR_USER = "demo.mluther@seminary.edu"
+
 
 def install_demo_data():
     """Main entry point to install all demo data."""
-    if frappe.db.exists("Academic Year", f"{DEMO_PREFIX}2024-25"):
+    # The flag, not a hardcoded Academic Year: the calendar is generated from
+    # today now, so no year name is stable enough to key on — and the old guard
+    # had the opposite failure too, silently skipping a *failed* install that
+    # had rolled back and left the flag unset.
+    if frappe.db.get_single_value("Seminary Settings", "demo_data_installed"):
         frappe.log("Demo data already installed, skipping.")
         return
 
@@ -29,6 +38,7 @@ def install_demo_data():
         create_program_enrollments()
         create_course_schedules()
         create_course_enrollments()
+        activate_current_term()
 
         # Mark demo as installed
         frappe.db.set_single_value("Seminary Settings", "demo_data_installed", 1)
@@ -63,17 +73,97 @@ def insert_demo_doc(doctype, data):
     return doc
 
 
+#: Terms within an academic year that starts on 1 August: (label, start month,
+#: start day, end month, end day). Contiguous by construction, so every date in
+#: the year falls inside exactly one term and `tasks._update_term_flags` always
+#: has a term to mark current.
+TERM_SHAPE = (
+    ("Fall", 8, 1, 12, 31),
+    ("Spring", 1, 1, 5, 31),
+    ("Summer", 6, 1, 7, 31),
+)
+
+#: Academic years to build, relative to the one containing today.
+YEAR_OFFSETS = (-1, 0, 1)
+
+
+def demo_calendar(today=None):
+    """The demo's academic years and terms, anchored on today.
+
+    These used to be two JSON files of fixed 2024–2026 dates. A demo whose
+    calendar has already ended is not a demo: there is no current term, so
+    nothing is open for enrollment, no course schedule is live, and every
+    screen that asks "what term is it" answers nothing. It got worse every
+    month after the file was written.
+
+    Anchored instead: the academic year runs 1 August to 31 July, and we build
+    the previous, current and next one — so the demo always has history to look
+    at, a term running now, and a term to register for.
+    """
+    from frappe.utils import getdate
+
+    # `today` is a parameter so the shape can be tested across a whole year
+    # rather than only on the day the suite happens to run.
+    today = getdate(today) if today else getdate()
+    # Before August, the running academic year is the one that began last year.
+    current_start_year = today.year if today.month >= 8 else today.year - 1
+
+    years, terms = [], []
+    for offset in YEAR_OFFSETS:
+        start_year = current_start_year + offset
+        end_year = start_year + 1
+        year_name = "DEMO-%d-%02d" % (start_year, end_year % 100)
+        years.append(
+            {
+                "academic_year_name": year_name,
+                "year_start_date": "%d-08-01" % start_year,
+                "year_end_date": "%d-07-31" % end_year,
+            }
+        )
+        for label, sm, sd, em, ed in TERM_SHAPE:
+            # Fall opens the year; Spring and Summer fall in the calendar year
+            # after it, which is what makes "Fall26" and "Spring27" siblings.
+            term_year = start_year if sm >= 8 else end_year
+            terms.append(
+                {
+                    "academic_year": year_name,
+                    "term_name": "DEMO-%s%02d" % (label, term_year % 100),
+                    "term_start_date": "%d-%02d-%02d" % (term_year, sm, sd),
+                    "term_end_date": "%d-%02d-%02d" % (term_year, em, ed),
+                }
+            )
+    return years, terms
+
+
+def current_demo_term(today=None):
+    """The generated term containing today — the one the demo revolves around."""
+    from frappe.utils import getdate
+
+    today = getdate(today) if today else getdate()
+    for term in demo_calendar(today)[1]:
+        if getdate(term["term_start_date"]) <= today <= getdate(term["term_end_date"]):
+            return term
+    # Unreachable while TERM_SHAPE stays contiguous, but a silent None here
+    # would surface much later as an unenrollable demo.
+    frappe.throw("The demo calendar has no term covering today.")
+
+
+def demo_term_docname(term):
+    """Academic Term autonames `{academic_year} ({term_name})`."""
+    return "%s (%s)" % (term["academic_year"], term["term_name"])
+
+
 def create_academic_years():
-    years = load_json("academic_years.json")
+    years, _terms = demo_calendar()
     for year in years:
         if not frappe.db.exists("Academic Year", year["academic_year_name"]):
             insert_demo_doc("Academic Year", year)
 
 
 def create_academic_terms():
-    terms = load_json("terms.json")
+    _years, terms = demo_calendar()
     for term in terms:
-        if not frappe.db.exists("Academic Term", term.get("term_name")):
+        if not frappe.db.exists("Academic Term", demo_term_docname(term)):
             insert_demo_doc("Academic Term", term)
 
 
@@ -132,7 +222,7 @@ def create_users():
         frappe.logger().info(f"Created user: {email}")
 
     # Instructor user (Martin Luther)
-    instructor_email = "demo.mluther@seminary.edu"
+    instructor_email = DEMO_INSTRUCTOR_USER
     if not frappe.db.exists("User", instructor_email):
         user = insert_demo_doc(
             "User",
@@ -227,6 +317,51 @@ def create_instructors():
         )
 
 
+def demo_instructor():
+    """The demo Instructor's docname, resolved rather than written down.
+
+    `Course Schedule Instructors.instructor` is a `reqd` Link, and the demo
+    used to hardcode "Martin Luther" — which *was* the docname while Instructor
+    autonamed from `instructor_name`. ADR 068 §5 made it opaque, so on any site
+    built after that change the literal names nothing and the whole demo
+    install fails at the course schedules, after the students and instructors
+    are already in. An existing site never noticed: the rename patch moved its
+    record, and the demo skips a doctype it has already created.
+    """
+    name = frappe.db.get_value("Instructor", {"user": DEMO_INSTRUCTOR_USER})
+    if not name:
+        frappe.throw(
+            f"Demo instructor {DEMO_INSTRUCTOR_USER} was not created; "
+            "course schedules cannot be scheduled without it."
+        )
+    return name
+
+
+def activate_current_term():
+    """Leave the demo sitting in a term that is actually running.
+
+    `Academic Term.iscurrent_acterm` is the app-wide answer to "what term is
+    it" — `tasks._update_term_flags` is its only writer, and it runs from the
+    daily scheduler. Creating terms does not set it, so a freshly installed
+    demo has a term covering today and still behaves as though the school were
+    between terms, until the scheduler next happens to run. Call the real
+    writer rather than setting the flag here, so the demo cannot disagree with
+    the rule the rest of the app follows.
+
+    (`Seminary Settings.seminary_keydict` maps `current_academic_year` and
+    `current_academic_term` onto fields that do not exist on that doctype, so
+    those defaults are always written empty. Pre-existing, and not something to
+    paper over from the demo installer.)
+    """
+    from frappe.utils import getdate
+
+    from seminary.tasks import _update_term_flags
+
+    _update_term_flags(getdate())
+    current = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
+    frappe.logger().info(f"Demo current term: {current}")
+
+
 def create_program_enrollments():
     """
     Create program enrollments by:
@@ -285,6 +420,10 @@ def create_program_enrollments():
     # Round-robin: cycle through programs, one per student
     program_cycle = cycle(programs)
 
+    # Enrol into the term that is running now, so the demo opens on an active
+    # enrollment rather than a historical one.
+    term = current_demo_term()
+
     for student in students:
         program = next(program_cycle)
 
@@ -302,8 +441,8 @@ def create_program_enrollments():
                 "student": student.name,  # e.g. "EDU-STU-2024-00001"
                 "student_name": student.student_name,  # e.g. "Jonathan Edwards"
                 "program": program,
-                "enrollment_date": "2024-08-01",
-                "academic_term": "DEMO-2024-25 (DEMO-Fall24)",
+                "enrollment_date": term["term_start_date"],
+                "academic_term": demo_term_docname(term),
             },
         )
 
@@ -322,7 +461,7 @@ def create_course_schedules():
     - Fixed instructor, assessment criteria, and modality
     """
     courses_json = load_json("courses.json")
-    terms_json = load_json("terms.json")
+    _years, terms_json = demo_calendar()
     assess_criteria = frappe.db.get_value(
         "Assessment Criteria", "Academic Paper with Online Submission", "name"
     )
@@ -350,7 +489,7 @@ def create_course_schedules():
     for t in terms_json:
         term = frappe.db.get_value(
             "Academic Term",
-            {"term_name": t["term_name"]},
+            demo_term_docname(t),
             ["name", "term_start_date", "term_end_date"],
             as_dict=True,
         )
@@ -404,9 +543,9 @@ def create_course_schedules():
                     ],
                     "instructor1": [
                         {
-                            "instructor": "Martin Luther",
+                            "instructor": demo_instructor(),
                             "instructor_category": "Instructor of Record",
-                            "user": "demo.mluther@seminary.edu",
+                            "user": DEMO_INSTRUCTOR_USER,
                         }
                     ],
                 },

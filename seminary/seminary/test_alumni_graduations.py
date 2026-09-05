@@ -15,7 +15,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import getdate
 
 from seminary.alumni.doctype.alumni_profile.alumni_profile import class_year_for
-from seminary.seminary.tests.cohort_fixtures import make_person, make_user
+from seminary.seminary.tests.cohort_fixtures import make_person, make_program, make_user
 
 # Deliberately outside the doctype folder. `IntegrationTestCase.setUpClass`
 # only calls `make_test_records` when the module sits in a doctype directory,
@@ -104,3 +104,109 @@ class TestClassYear(IntegrationTestCase):
 
     def test_it_is_none_when_nothing_is_known(self):
         self.assertIsNone(class_year_for(None, None))
+
+
+class TestTheClassYearIsDerivedOnEveryPath(IntegrationTestCase):
+    """A hand-added row is the common case, not the exotic one.
+
+    `record_graduation` computed the class year, and it is only reached from a
+    completed Program Enrollment. A registrar entering an alumnus of another
+    institution, or one whose studies predate this system, adds the row in Desk
+    — and got nothing. `class_year` is an `Int`, which Frappe stores `NOT NULL
+    DEFAULT 0`, so the field did not read as empty. It read as *Class of 0*.
+    """
+
+    def _profile(self, label):
+        from seminary.seminary import intake
+
+        person = make_person(label, user=make_user().name)
+        return intake.make_alumni_profile(person)
+
+    def _academic_year(self, label, start, end):
+        name = "ZZT %s" % label
+        if frappe.db.exists("Academic Year", name):
+            return name
+        return (
+            frappe.get_doc(
+                {
+                    "doctype": "Academic Year",
+                    "academic_year_name": name,
+                    "year_start_date": start,
+                    "year_end_date": end,
+                }
+            )
+            .insert(ignore_permissions=True)
+            .name
+        )
+
+    def test_a_hand_added_row_gets_its_class_year(self):
+        year = self._academic_year("2014-2015", "2014-08-01", "2015-07-31")
+        profile = self._profile("HandEntered")
+        profile.append(
+            "graduations",
+            {
+                "program": make_program().name,
+                "academic_year": year,
+                "conclusion_date": getdate("2014-12-12"),
+            },
+        )
+        profile.save(ignore_permissions=True)
+
+        self.assertEqual(profile.graduations[-1].class_year, 2015)
+
+    def test_editing_the_academic_year_moves_the_class_year(self):
+        """Derived, not filled-once: the row's academic year stays editable, so
+        a stale class year would be the same defect in a different disguise."""
+        early = self._academic_year("2014-2015", "2014-08-01", "2015-07-31")
+        later = self._academic_year("2017-2018", "2017-08-01", "2018-07-31")
+        profile = self._profile("Corrected")
+        program = make_program().name
+        profile.append("graduations", {"program": program, "academic_year": early})
+        profile.save(ignore_permissions=True)
+        self.assertEqual(profile.graduations[-1].class_year, 2015)
+
+        profile.graduations[-1].academic_year = later
+        profile.save(ignore_permissions=True)
+        self.assertEqual(profile.graduations[-1].class_year, 2018)
+
+    def test_a_legacy_row_keeps_the_class_year_it_was_imported_with(self):
+        """An alumnus from before this system may have a class year and no
+        academic year or conclusion date at all — that is exactly what the old
+        flat `class_year` column held, and what the ADR 069 migration carried
+        across. Recomputing those to 0 and refusing the save would have made
+        every imported profile unsaveable."""
+        profile = self._profile("Legacy")
+        profile.append(
+            "graduations", {"program": make_program().name, "class_year": 1998}
+        )
+        profile.save(ignore_permissions=True)
+        profile.reload()
+
+        row = profile.graduations[-1]
+        self.assertEqual(row.class_year, 1998)
+        self.assertFalse(row.academic_year)
+        self.assertFalse(row.conclusion_date)
+
+    def test_a_derivable_year_still_wins_over_a_stored_one(self):
+        """Preserving a legacy value must not turn the field into a free
+        column: where a source exists it is authoritative."""
+        year = self._academic_year("2014-2015", "2014-08-01", "2015-07-31")
+        profile = self._profile("Both")
+        profile.append(
+            "graduations",
+            {"program": make_program().name, "academic_year": year, "class_year": 1998},
+        )
+        profile.save(ignore_permissions=True)
+
+        self.assertEqual(profile.graduations[-1].class_year, 2015)
+
+    def test_a_row_with_nothing_to_derive_from_is_refused(self):
+        """Rather than saving a row that displays Class of 0 — an integer
+        column cannot say "not known", so the misleading value has to be
+        prevented instead of represented."""
+        profile = self._profile("Undatable")
+        # A complete row apart from the two fields the class year comes from,
+        # so the mandatory check cannot pass this test for the wrong reason.
+        profile.append("graduations", {"program": make_program().name})
+        with self.assertRaisesRegex(frappe.ValidationError, "class year"):
+            profile.save(ignore_permissions=True)

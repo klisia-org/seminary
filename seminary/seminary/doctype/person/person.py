@@ -16,6 +16,44 @@ class Person(Document):
         self.assert_reachable()
         self.validate_channel_addresses()
         self.sync_primary_channel_addresses()
+        self.warn_about_required_details()
+
+    def warn_about_required_details(self):
+        """Name the details the school requires that this record still lacks.
+
+        A warning, never a throw (ADR 067 section 9). `ensure_person` is called
+        with nothing but a `user` from the comms, communication-trigger and
+        partner-portal paths, so a hard requirement here would break
+        notification delivery and partner signup outright. And a rule enabled
+        this week must not make a Person created three years ago unsaveable
+        while a registrar is correcting their phone number: the requirement
+        reaches records made *after* the toggle, which is what the planner's
+        readiness check exists to compensate for.
+
+        Skipped on insert, because a Person is very often created by a system
+        path with two fields and filled in afterwards -- warning at that moment
+        would train everyone to ignore it.
+        """
+        if self.is_new() or self.flags.ignore_required_details:
+            return
+        if not frappe.db.table_exists("Mandatory Personal Field"):
+            return
+        from seminary.seminary.doctype.mandatory_personal_field import (
+            mandatory_personal_field as mpf,
+        )
+
+        meta = frappe.get_meta("Person")
+        missing = []
+        for fieldname in sorted(mpf.required_fields()):
+            df = meta.get_field(fieldname)
+            if df and not self.get(fieldname):
+                missing.append(_(df.label) if df.label else fieldname)
+        if missing:
+            frappe.msgprint(
+                _("Still to record for this person: {0}.").format(", ".join(missing)),
+                indicator="orange",
+                alert=True,
+            )
 
     def assert_reachable(self):
         """A Person holding a role record must keep a primary email.
@@ -35,6 +73,38 @@ class Person(Document):
     def on_update(self):
         self.warn_on_login_email_drift()
         self.propagate_to_roles()
+        self.resync_open_snapshots()
+        self.refresh_coordinates()
+
+    def resync_open_snapshots(self):
+        """Correct the snapshots on documents that are still running.
+
+        Distinct from `propagate_to_roles`, and deliberately so: that keeps
+        mirrors current on records that describe *this person now*, while this
+        re-takes a snapshot on a record that describes something that happened
+        to them and has not finished happening yet. A concluded enrollment is
+        never touched by either (ADR 068 §3).
+        """
+        from seminary.seminary.person_fields import resync_open_snapshots
+
+        resync_open_snapshots(self.name)
+
+    def refresh_coordinates(self):
+        """Queue a geocode when the address changed (ADR 068 §7).
+
+        Queued, never inline: an intake form must not block on a third party
+        and a provider outage must not fail the save. This hangs off `Person`
+        rather than each intake path because phase 5 left exactly one address
+        writer — `person_import_batch._apply_person_address` used to write with
+        `db.set_value`, which runs no hooks, so an imported address would never
+        have reached this.
+        """
+        from seminary.seminary.integrations import geocoding
+
+        if not geocoding.is_enabled():
+            return
+        if geocoding.address_changed(self):
+            geocoding.enqueue_for(self.name)
 
     def set_full_name(self):
         self.full_name = " ".join(

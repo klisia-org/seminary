@@ -40,13 +40,13 @@
   "min_graduation_gpa",
   "column_break_gpa",
   "honors_levels",
-  "attendance_section_pgm",
-  "default_max_absence_percent",
   "cbe_section",
   "competency_framework",
   "pacing_mode",
   "column_break_cbe",
   "cohort_failure_policy",
+  "attendance_section_pgm",
+  "default_max_absence_percent",
   "section_break_courses",
   "courses",
   "tracks_tab",
@@ -471,7 +471,7 @@
    "description": "The Program Blurb will appear on the Programs and Degrees page (alongside the program image and duration) and on top of its own page.",
    "fieldname": "blurb",
    "fieldtype": "Text Editor",
-   "label": "Porgram Blurb"
+   "label": "Program Blurb"
   },
   {
    "description": "Attach a square image for the program list",
@@ -549,7 +549,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-08-29 03:07:33.389244",
+ "modified": "2026-09-04 22:15:46.100138",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

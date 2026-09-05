@@ -1,7 +1,7 @@
 # 069 — Alumni academic history as rows
 
 **Date:** 2026-09-04
-**Status:** Proposed
+**Status:** Accepted 2026-09-04
 
 ## Context
 
@@ -62,6 +62,22 @@ sort and filter, so it cannot be the free-form year name. It is now derived from
 academic year's `year_end_date`, falling back to the conclusion date only for an alumnus
 imported without an academic year at all. Deriving it from the year's *end* is what
 fixes the autumn graduate.
+
+**The derivation runs on the parent's `validate`, so it covers every path.** It first
+lived in `record_graduation`, which is only reached from a completed Program Enrollment —
+so a row a registrar adds by hand, for an alumnus of another institution or one whose
+studies predate this system, got no class year at all. That did not surface as an empty
+field: `class_year` is an `Int`, and Frappe stores those `NOT NULL DEFAULT 0`, so the
+profile read **Class of 0**. (The same shape as the unresolved `0.0, 0.0` coordinate in
+ADR 068 §7 — an integer column has no way to say "not known", so the misleading value has
+to be prevented rather than represented.) It is recomputed on every save rather than
+filled once, because the row's academic year stays editable and a stale derived value is
+the same defect wearing a different face — but only where a source exists. An alumnus
+imported from before this system may carry a class year and no academic year or
+conclusion date at all, which is precisely what the old flat column held and what this
+ADR's migration brings across; those rows keep what they have. Only a row that can
+neither derive a year nor show a stored one is refused, because that is the one that
+would display Class of 0.
 
 **The directory no longer sorts by class year.** A person can hold several graduations,
 so "their class year" is not a single sortable value; ordering by one of them would
