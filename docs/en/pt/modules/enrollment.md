@@ -14,13 +14,14 @@ Os estudantes podem se matricular pelo portal do LMS durante os períodos de mat
 
 ## Ciclo de Matrícula em Curso
 
-Uma Matrícula de Curso Individual se move através de um fluxo de trabalho de quatro estados:
+A Course Enrollment Individual moves through a five-state workflow:
 
 <0/>
 
 - **Rascunho** — criado mas ainda não apresentado; nada aconteceu além de salvar a linha
 - **Aguardando pagamento** — enviado, Faturas de Vendas geradas, mas o aluno ainda não foi adicionado à lista de participantes do curso (sem acesso ao LMS)
-- **Enviado** — O aluno está totalmente matriculado: na lista de cursos do curso, na lista de cursos do Programa, elegível para receber as notas
+- **Submitted** — the student is **currently enrolled**: on the course roster, on the Program Enrollment's course list, eligible to receive grades. Filter the CEI list view by `workflow_state = Submitted` to see everyone actively enrolled right now
+- **Concluded** — the course section has finished and grades were sent. When a Course Schedule's **Send Grades** action runs, it closes the section and moves every active enrollment **Submitted → Concluded** (audits included). This is a system-driven transition with no Desk button — it keeps "currently enrolled" (Submitted) cleanly separate from "already completed" (Concluded). The completed course still appears in the student's course list and transcript
 - **Retirada** — defina automaticamente quando uma Solicitação de Retirada chega à Aprovação Acadêmica; visível na vista da lista CI como uma pílula de estado listada
 
 Qual caminho o CEI pega a partir do rascunho depende do **Programa** ao qual o curso pertence:
