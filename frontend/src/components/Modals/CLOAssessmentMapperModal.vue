@@ -150,7 +150,7 @@ function clearQuestions(clo) {
 }
 function questionSummary(clo) {
   const n = (questionsByClo[clo] || []).length
-  return n ? __('{0} of {1} questions', [n, questionList.value.length]) : __('Whole assessment')
+  return n ? __('{0} of {1} questions').format(n, questionList.value.length) : __('Whole assessment')
 }
 
 // Keep a question bucket for every checked CLO so v-model bindings stay valid.

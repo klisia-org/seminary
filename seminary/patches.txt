@@ -62,3 +62,5 @@ seminary.seminary.patches.gender_enabled_to_disabled
 seminary.seminary.patches.backfill_alumni_class_year
 seminary.seminary.patches.retire_cohort_automation_rule
 seminary.seminary.patches.seed_distance_unit
+seminary.seminary.patches.name_unbound_alumnus_leader_rule
+seminary.seminary.patches.set_cohorts_per_member

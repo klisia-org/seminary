@@ -184,6 +184,56 @@ def _active_count(cohort):
     return frappe.db.count("Cohort Membership", {"cohort": cohort, "active": 1})
 
 
+def _seated_count(cohort):
+    """Members plus unanswered invitations.
+
+    What a hard limit has to count: twenty invitations to a group of twelve is
+    a group of thirty-two the moment they all say yes, and a limit that only
+    looked at who had already accepted would be walked straight past by sending
+    them all at once.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        OPEN_STATUSES,
+    )
+
+    return frappe.db.count(
+        "Cohort Membership",
+        {"cohort": cohort, "invite_status": ["in", list(OPEN_STATUSES)]},
+    )
+
+
+def _guard_size(cohort):
+    """Two ceilings, and what separates them is who is on the other side.
+
+    `Cohort.max_size` is advice, and stays advice, because a registrar seating a
+    thirteenth student knows what they are doing and the record has to keep
+    matching the room (ADR 066 section 7.4).
+
+    `Cohort Type.portal_size_limit` is not advice. It exists for cohorts an
+    alumnus runs from the portal, where the school is not in the room and a
+    warning has nobody to inform -- there is no second person who will see the
+    group has become a congregation. So it refuses, and it refuses only the
+    people it was written about: staff working in the desk still get the
+    warning, because for them the original reasoning is untouched.
+    """
+    cohort_type = frappe.db.get_value("Cohort", cohort, "cohort_type")
+    limit = (
+        frappe.db.get_value("Cohort Type", cohort_type, "portal_size_limit") or 0
+        if cohort_type
+        else 0
+    )
+    if limit and not _is_staff(frappe.session.user) and _seated_count(cohort) >= limit:
+        frappe.throw(
+            _(
+                "This cohort has reached {0}, the largest a cohort of this type "
+                "may be from the portal -- counting members and invitations not "
+                "yet answered. Ask the seminary if it should grow, or start a "
+                "second cohort."
+            ).format(limit)
+        )
+    _warn_if_full(cohort)
+
+
 def _warn_if_full(cohort):
     """The ceiling is advice about a healthy group size, not a limit.
 
@@ -221,7 +271,7 @@ def invite_member(
     _assert_not_archived(cohort)
     if role not in ("Member", "Mentor"):
         frappe.throw(_("Role must be Member or Mentor."))
-    _warn_if_full(cohort)
+    _guard_size(cohort)
 
     if not person:
         if not (email and first_name):
@@ -465,6 +515,180 @@ def create_cohort(cohort_name, cohort_type, leader):
             "cohort_name": cohort_name,
             "cohort_type": cohort_type,
             "leader": leader,
+            "status": "Active",
+        }
+    ).insert(ignore_permissions=True)
+    return doc.name
+
+
+def _my_standing_in(person, cohort_type):
+    """This person's open memberships in one cohort type, as the portal shows them.
+
+    Invitations are included, not filtered out: "you have been asked to join
+    this" is one of the three things somebody can be told about a type, and
+    leaving it out would show them an invitation-shaped hole and an offer to
+    start their own.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        OPEN_STATUSES,
+    )
+
+    rows = frappe.db.sql(
+        """
+        SELECT m.name AS membership, m.invite_status, m.is_leader,
+               c.name AS cohort, c.cohort_name, c.status, c.leader,
+               c.lineage_root, c.root_distance
+        FROM `tabCohort Membership` m
+        JOIN `tabCohort` c ON c.name = m.cohort
+        WHERE m.person = %(person)s
+          AND c.cohort_type = %(cohort_type)s
+          AND m.invite_status IN %(open)s
+        ORDER BY c.creation
+        """,
+        {"person": person, "cohort_type": cohort_type, "open": OPEN_STATUSES},
+        as_dict=True,
+    )
+    for row in rows:
+        row["leader_name"] = (
+            frappe.db.get_value("Person", row.leader, "full_name") or row.leader
+            if row.leader
+            else None
+        )
+        row["member_count"] = frappe.db.count(
+            "Cohort Membership", {"cohort": row.cohort, "active": 1}
+        )
+        # Only worth saying when the cohort is part of something larger than
+        # itself -- "part of a family of one" is noise.
+        family = frappe.db.count("Cohort", {"lineage_root": row.lineage_root})
+        row["lineage_size"] = family
+        row["lineage_name"] = (
+            frappe.db.get_value("Cohort", row.lineage_root, "cohort_name")
+            if family > 1 and row.lineage_root != row.cohort
+            else None
+        )
+    return rows
+
+
+@frappe.whitelist()
+def my_communities():
+    """Where this person stands in each cohort type open to them.
+
+    One row per type, carrying their open memberships in it and whether they may
+    start another. Three states fall out of those two facts and the portal reads
+    them off: they are in one, they have been invited to one, or they are in
+    none and may begin. A type they can neither join nor start is left out
+    entirely rather than listed as an absence.
+
+    `may_start` is not simply "is this person allowed to lead". It also asks
+    whether they are already in as many cohorts of this type as it permits, so
+    an offer is never shown that the save would refuse.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import may_lead
+
+    person = find_person(user=frappe.session.user)
+    if not person:
+        return []
+
+    out = []
+    for t in frappe.get_all(
+        "Cohort Type",
+        filters={"alumni_may_create": 1, "is_active": 1},
+        fields=[
+            "name",
+            "type_name",
+            "description",
+            "leader_eligibility",
+            "program",
+            "program_level",
+            "portal_size_limit",
+            "max_lineages_per_member",
+        ],
+        order_by="type_name asc",
+    ):
+        memberships = _my_standing_in(person, t.name)
+        limit = t.max_lineages_per_member or 0
+        lineages = {m.lineage_root or m.cohort for m in memberships}
+        may_start = bool(may_lead(person, t) and (not limit or len(lineages) < limit))
+        if not (memberships or may_start):
+            continue
+        out.append(
+            {
+                "cohort_type": t.name,
+                "type_name": t.type_name,
+                "description": t.description,
+                "portal_size_limit": t.portal_size_limit,
+                "may_start": may_start,
+                "memberships": memberships,
+            }
+        )
+    return out
+
+
+@frappe.whitelist()
+def create_my_cohort(cohort_name, cohort_type):
+    """An alumnus starts their own cohort, without waiting for a staff member.
+
+    Two questions: whether the *type* invites this (`alumni_may_create`), and
+    whether this *person* may lead one. The second is `may_lead` -- the same
+    function the picker asks and the same rule `Cohort Membership` enforces when
+    `Cohort.after_insert` seats the leader, so there is one definition and this
+    is not a second opinion about it.
+
+    Asked *before* the insert, though, and that ordering matters. Letting the
+    membership refuse it leaves the Cohort already written: the exception unwinds
+    to the request, which rolls back, but anything that catches it -- a caller, a
+    savepoint, a test -- keeps a leaderless cohort nobody asked for. The rule
+    stays where it is as the backstop; this just declines to create the record
+    it is going to reject.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import may_lead
+
+    cohort_name = (cohort_name or "").strip()
+    if not cohort_name:
+        frappe.throw(_("Give your cohort a name."))
+
+    person = find_person(user=frappe.session.user)
+    if not person:
+        frappe.throw(
+            _("Only a person with a profile here can start a cohort."),
+            frappe.PermissionError,
+        )
+
+    policy = frappe.db.get_value(
+        "Cohort Type",
+        cohort_type,
+        ["alumni_may_create", "leader_eligibility", "program", "program_level"],
+        as_dict=True,
+    )
+    if not (policy and policy.alumni_may_create):
+        frappe.throw(
+            _("Cohorts of this kind are set up by the seminary."),
+            frappe.PermissionError,
+        )
+    if not may_lead(person, policy):
+        bound = policy.program or policy.program_level
+        frappe.throw(
+            (
+                _("Cohorts of this kind are led by graduates of {0}.").format(
+                    frappe.bold(bound)
+                )
+                if bound
+                else _("Cohorts of this kind are led by graduates of the seminary.")
+            )
+            + " "
+            + _(
+                "Your Alumni Profile does not show that yet -- the registrar can "
+                "correct it if it should."
+            ),
+            frappe.PermissionError,
+        )
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Cohort",
+            "cohort_name": cohort_name,
+            "cohort_type": cohort_type,
+            "leader": person,
             "status": "Active",
         }
     ).insert(ignore_permissions=True)

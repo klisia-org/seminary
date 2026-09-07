@@ -29,6 +29,7 @@ from seminary.seminary.discipleship.enrollment import (
 from seminary.seminary.tests import cohort_fixtures as fx
 
 ALUMNUS = "Alumnus of the bound program or level"
+ANY_ALUMNUS = "Any alumnus"
 
 
 class TestCohortTypePolicy(IntegrationTestCase):
@@ -333,9 +334,6 @@ class TestLeaderEligibility(IntegrationTestCase):
         person = fx.make_person("Alum")
         fx.make_alumni_profile(person, program_completed=program.name)
 
-        unbound = fx.make_cohort_type(leader_eligibility=ALUMNUS)
-        self.assertTrue(fx.make_cohort(unbound.name, person.name).name)
-
         bound = fx.make_cohort_type(
             leader_eligibility=ALUMNUS,
             category="Throughout Program",
@@ -352,6 +350,77 @@ class TestLeaderEligibility(IntegrationTestCase):
             fx.make_cohort(wrong.name, person.name)
         self.assertIn("Alumni Profile", str(ctx.exception))
 
+    def test_the_bound_rule_refuses_a_type_with_nothing_bound(self):
+        """The rule reads the binding, so a type without one has no question.
+
+        It used to accept an alumnus of anywhere, which is leadership granted on
+        a scope the school never named. That meaning now has its own option.
+        """
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            fx.make_cohort_type(leader_eligibility=ALUMNUS)
+        self.assertIn(ANY_ALUMNUS, str(ctx.exception))
+
+    def test_any_alumnus_asks_only_for_a_profile(self):
+        program = fx.make_program()
+        alum = fx.make_person("Alum")
+        fx.make_alumni_profile(alum, program_completed=program.name)
+        plain = fx.make_person("Plain")
+
+        t = fx.make_cohort_type(leader_eligibility=ANY_ALUMNUS)
+        self.assertTrue(fx.make_cohort(t.name, alum.name).name)
+
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            fx.make_cohort(t.name, plain.name)
+        self.assertIn("Alumni Profile", str(ctx.exception))
+
+    def test_any_alumnus_ignores_a_binding_it_happens_to_have(self):
+        """The two options differ in what they read, not in who they let in."""
+        program = fx.make_program()
+        other = fx.make_program()
+        person = fx.make_person("Alum")
+        fx.make_alumni_profile(person, program_completed=other.name)
+
+        t = fx.make_cohort_type(
+            leader_eligibility=ANY_ALUMNUS,
+            category="Throughout Program",
+            program=program.name,
+        )
+        self.assertTrue(fx.make_cohort(t.name, person.name).name)
+
+    def test_a_disabled_profile_does_not_lead(self):
+        program = fx.make_program()
+        person = fx.make_person("Alum")
+        profile = fx.make_alumni_profile(person, program_completed=program.name)
+        frappe.db.set_value("Alumni Profile", profile.name, "enabled", 0)
+
+        t = fx.make_cohort_type(leader_eligibility=ANY_ALUMNUS)
+        with self.assertRaises(frappe.ValidationError):
+            fx.make_cohort(t.name, person.name)
+
+    def test_the_binding_survives_a_category_the_lifecycle_does_not_use(self):
+        """Two reasons to hold a binding; losing the category keeps the other.
+
+        Clearing it on the category change would take away the program and then
+        refuse the save for not naming one -- an error about the field the chair
+        had just filled in.
+        """
+        program = fx.make_program()
+        t = fx.make_cohort_type(
+            leader_eligibility=ALUMNUS,
+            category="Throughout Program",
+            program=program.name,
+        )
+        t.category = "Unrestricted"
+        t.save(ignore_permissions=True)
+        self.assertEqual(t.program, program.name)
+
+    def test_the_binding_still_goes_when_no_rule_reads_it(self):
+        program = fx.make_program()
+        t = fx.make_cohort_type(category="Throughout Program", program=program.name)
+        t.category = "Unrestricted"
+        t.save(ignore_permissions=True)
+        self.assertIsNone(t.program)
+
     def test_staff_rule_reads_the_shared_role_set(self):
         user = fx.make_user(roles=("Registrar",))
         staff = fx.make_person("Staff", user=user.name)
@@ -362,6 +431,425 @@ class TestLeaderEligibility(IntegrationTestCase):
         with self.assertRaises(frappe.ValidationError) as ctx:
             fx.make_cohort(t.name, plain.name)
         self.assertIn("staff role", str(ctx.exception))
+
+
+class TestAlumniRunTheirOwnCohorts(IntegrationTestCase):
+    """The alumnus-led type a school does not set up cohort by cohort.
+
+    Convincing alumni to come back to a platform they have no other reason to
+    open is most of the cost of this kind of programme, and requiring a staff
+    member in the desk for every group is most of the friction. These tests
+    cover what the school still gets to decide once it stops doing that.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.program = fx.make_program()
+        self.user = fx.make_user()
+        self.alum = fx.make_person("Alum", user=self.user.name)
+        fx.make_alumni_profile(self.alum, program_completed=self.program.name)
+        self.addCleanup(frappe.set_user, "Administrator")
+
+    def _type(self, **kw):
+        values = {
+            "leader_eligibility": ANY_ALUMNUS,
+            "alumni_may_create": 1,
+            "portal_size_limit": 2,
+        }
+        values.update(kw)
+        return fx.make_cohort_type(**values)
+
+    # ------------------------------------------------------ the two settings
+
+    def test_the_settings_do_not_survive_a_rule_that_ignores_them(self):
+        """A setting that cannot fire is a rule nobody can see."""
+        t = self._type()
+        t.leader_eligibility = "Instructor"
+        t.save(ignore_permissions=True)
+        self.assertEqual(t.alumni_may_create, 0)
+        self.assertEqual(t.portal_size_limit, 0)
+
+    def test_advising_a_size_the_portal_refuses_is_refused(self):
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            self._type(portal_size_limit=4, default_max_size=10)
+        self.assertIn("Portal Size Limit", str(ctx.exception))
+
+    def test_the_limit_stands_in_when_no_size_was_suggested(self):
+        t = self._type(portal_size_limit=6)
+        cohort = fx.make_cohort(t.name, self.alum.name)
+        self.assertEqual(cohort.max_size, 6)
+
+    # ---------------------------------------------------------- starting one
+
+    def test_an_alumnus_starts_their_own(self):
+        t = self._type()
+        frappe.set_user(self.user.name)
+        name = dapi.create_my_cohort("ZZT My Group", t.name)
+        self.assertEqual(frappe.db.get_value("Cohort", name, "leader"), self.alum.name)
+        self.assertTrue(
+            frappe.db.exists(
+                "Cohort Membership",
+                {"cohort": name, "person": self.alum.name, "is_leader": 1, "active": 1},
+            )
+        )
+
+    def test_a_type_that_did_not_invite_it_refuses(self):
+        t = self._type(alumni_may_create=0)
+        frappe.set_user(self.user.name)
+        with self.assertRaises(frappe.PermissionError):
+            dapi.create_my_cohort("ZZT My Group", t.name)
+
+    def test_the_leadership_rule_still_decides_who(self):
+        """`alumni_may_create` says the setting up is self-service; it does not
+        say who may lead.
+
+        And it is refused before the Cohort is written. Letting the membership
+        rule catch it leaves a leaderless cohort behind for anything that
+        handles the exception short of the request.
+        """
+        other = fx.make_program()
+        t = self._type(
+            leader_eligibility=ALUMNUS,
+            category="Throughout Program",
+            program=other.name,
+        )
+        frappe.set_user(self.user.name)
+        with self.assertRaises(frappe.PermissionError) as ctx:
+            dapi.create_my_cohort("ZZT Not Mine", t.name)
+        self.assertIn(other.name, str(ctx.exception))
+        self.assertFalse(frappe.db.exists("Cohort", {"cohort_name": "ZZT Not Mine"}))
+
+    def test_the_picker_offers_only_what_this_person_may_lead(self):
+        mine = self._type()
+        theirs = self._type(
+            leader_eligibility=ALUMNUS,
+            category="Throughout Program",
+            program=fx.make_program().name,
+        )
+        staff_only = self._type(alumni_may_create=0)
+
+        frappe.set_user(self.user.name)
+        offered = {t["cohort_type"] for t in dapi.my_communities() if t["may_start"]}
+        self.assertIn(mine.name, offered)
+        self.assertNotIn(theirs.name, offered)
+        self.assertNotIn(staff_only.name, offered)
+
+    def test_someone_with_no_profile_here_is_offered_nothing(self):
+        self._type()
+        stranger = fx.make_user()
+        frappe.set_user(stranger.name)
+        self.assertEqual(dapi.my_communities(), [])
+
+
+class TestMyCommunities(IntegrationTestCase):
+    """The three things the portal can tell someone about a cohort type.
+
+    They are in one, they have been asked to join one, or they are in none and
+    may begin -- read off two facts, their open memberships and whether the type
+    would let them start another.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.program = fx.make_program()
+        self.user = fx.make_user()
+        self.alum = fx.make_person("Alum", user=self.user.name)
+        fx.make_alumni_profile(self.alum, program_completed=self.program.name)
+        self.addCleanup(frappe.set_user, "Administrator")
+
+    def _type(self, **kw):
+        values = {"leader_eligibility": ANY_ALUMNUS, "alumni_may_create": 1}
+        values.update(kw)
+        return fx.make_cohort_type(**values)
+
+    def _shepherd(self, program=None):
+        """Somebody else's leader -- who, on these types, is an alumnus too."""
+        person = fx.make_person("Shepherd")
+        fx.make_alumni_profile(person, program_completed=program or self.program.name)
+        return person
+
+    def _row(self, cohort_type):
+        return next(
+            (r for r in dapi.my_communities() if r["cohort_type"] == cohort_type), None
+        )
+
+    def test_belonging_to_none_is_an_offer_to_start(self):
+        t = self._type()
+        frappe.set_user(self.user.name)
+        row = self._row(t.name)
+        self.assertEqual(row["memberships"], [])
+        self.assertTrue(row["may_start"])
+
+    def test_a_membership_is_reported_with_who_leads_it(self):
+        t = self._type()
+        leader = self._shepherd()
+        cohort = fx.make_cohort(t.name, leader.name)
+        fx.add_member(cohort.name, self.alum.name)
+
+        frappe.set_user(self.user.name)
+        (m,) = self._row(t.name)["memberships"]
+        self.assertEqual(m["cohort"], cohort.name)
+        self.assertEqual(m["invite_status"], "Active")
+        self.assertFalse(m["is_leader"])
+        self.assertEqual(m["leader_name"], leader.full_name)
+        self.assertEqual(m["member_count"], 2)
+
+    def test_an_invitation_is_its_own_state(self):
+        """Not filtered out: an invitation is one of the three things to say,
+        and dropping it would show an offer to start instead."""
+        t = self._type()
+        cohort = fx.make_cohort(t.name, self._shepherd().name)
+        fx.add_member(cohort.name, self.alum.name, status="Invited")
+
+        frappe.set_user(self.user.name)
+        (m,) = self._row(t.name)["memberships"]
+        self.assertEqual(m["invite_status"], "Invited")
+
+    def test_being_in_one_withdraws_the_offer_where_only_one_is_allowed(self):
+        t = self._type()  # default: one cohort per member
+        cohort = fx.make_cohort(t.name, self._shepherd().name)
+        fx.add_member(cohort.name, self.alum.name)
+
+        frappe.set_user(self.user.name)
+        row = self._row(t.name)
+        self.assertEqual(len(row["memberships"]), 1)
+        self.assertFalse(row["may_start"])
+
+    def test_both_are_offered_where_more_than_one_is_allowed(self):
+        t = self._type(max_lineages_per_member=0)
+        cohort = fx.make_cohort(t.name, self._shepherd().name)
+        fx.add_member(cohort.name, self.alum.name)
+
+        frappe.set_user(self.user.name)
+        row = self._row(t.name)
+        self.assertEqual(len(row["memberships"]), 1)
+        self.assertTrue(row["may_start"])
+
+    def test_a_type_they_can_neither_join_nor_start_is_left_out(self):
+        t = self._type(
+            leader_eligibility=ALUMNUS,
+            category="Throughout Program",
+            program=fx.make_program().name,
+        )
+        frappe.set_user(self.user.name)
+        self.assertIsNone(self._row(t.name))
+
+    def test_a_membership_shows_even_where_they_could_never_start_one(self):
+        """Someone placed in a cohort of a type they are not eligible to lead
+        still belongs to it, and the page is about where they stand."""
+        theirs = fx.make_program()
+        t = self._type(
+            leader_eligibility=ALUMNUS,
+            category="Throughout Program",
+            program=theirs.name,
+        )
+        cohort = fx.make_cohort(t.name, self._shepherd(theirs.name).name)
+        fx.add_member(cohort.name, self.alum.name)
+
+        frappe.set_user(self.user.name)
+        row = self._row(t.name)
+        self.assertEqual(len(row["memberships"]), 1)
+        self.assertFalse(row["may_start"])
+
+    def test_a_family_is_named_only_when_it_is_larger_than_one(self):
+        t = self._type(max_lineages_per_member=0, allow_self_split=1)
+        leader = self._shepherd()
+        parent = fx.make_cohort(t.name, leader.name)
+        row = fx.add_member(parent.name, self.alum.name)
+
+        frappe.set_user(self.user.name)
+        (before,) = self._row(t.name)["memberships"]
+        self.assertIsNone(before["lineage_name"])
+        self.assertEqual(before["lineage_size"], 1)
+
+        frappe.set_user("Administrator")
+        child = dapi.split_cohort(
+            parent.name,
+            "ZZT Offshoot",
+            frappe.as_json([row.name]),
+            new_leader=leader.name,
+        )
+
+        frappe.set_user(self.user.name)
+        moved = next(
+            m for m in self._row(t.name)["memberships"] if m["cohort"] == child
+        )
+        self.assertEqual(moved["lineage_name"], parent.cohort_name)
+        self.assertEqual(moved["lineage_size"], 2)
+
+    # ------------------------------------------------------------- the limit
+
+    def test_the_portal_refuses_past_the_limit(self):
+        t = self._type(portal_size_limit=2)
+        cohort = fx.make_cohort(t.name, self.alum.name)  # leader is seat 1
+        fx.add_member(cohort.name, fx.make_person("M1").name)  # seat 2
+
+        frappe.set_user(self.user.name)
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            dapi.invite_member(cohort.name, person=fx.make_person("M2").name)
+        self.assertIn("2", str(ctx.exception))
+
+    def test_unanswered_invitations_count_toward_it(self):
+        """Otherwise twenty invitations to a group of twelve walk straight past."""
+        t = self._type(portal_size_limit=2)
+        cohort = fx.make_cohort(t.name, self.alum.name)
+        fx.add_member(cohort.name, fx.make_person("Pending").name, status="Invited")
+
+        # Only the leader has actually joined, so the advisory ceiling would not
+        # have fired here. The hard one still does.
+        frappe.set_user(self.user.name)
+        with self.assertRaises(frappe.ValidationError):
+            dapi.invite_member(cohort.name, person=fx.make_person("M2").name)
+
+    def test_staff_are_warned_where_the_portal_is_refused(self):
+        """§7.4 is untouched for the people it was written about."""
+        t = self._type(portal_size_limit=2)
+        cohort = fx.make_cohort(t.name, self.alum.name)
+        fx.add_member(cohort.name, fx.make_person("M1").name)
+
+        membership = dapi.invite_member(cohort.name, person=fx.make_person("M2").name)
+        self.assertTrue(membership)
+
+    def test_no_limit_leaves_the_portal_as_it_was(self):
+        t = self._type(portal_size_limit=0)
+        cohort = fx.make_cohort(t.name, self.alum.name)
+        frappe.set_user(self.user.name)
+        self.assertTrue(
+            dapi.invite_member(cohort.name, person=fx.make_person("M1").name)
+        )
+
+
+class TestCohortsPerMember(IntegrationTestCase):
+    """How many cohorts of one type a person may be in at once.
+
+    Counted by lineage: a cohort and everything split off from it are one
+    commitment, made once.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.person = fx.make_person("Member")
+        self.leader = fx.make_person("Leader")
+        self.type = fx.make_cohort_type()
+        self.addCleanup(frappe.set_user, "Administrator")
+
+    def test_one_is_the_answer_a_new_type_starts_with(self):
+        self.assertEqual(self.type.max_lineages_per_member, 1)
+
+    def test_a_second_cohort_of_the_same_type_is_refused(self):
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        fx.add_member(first.name, self.person.name)
+
+        second = fx.make_cohort(self.type.name, fx.make_person("Other").name)
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            fx.add_member(second.name, self.person.name)
+        self.assertIn(self.type.name, str(ctx.exception))
+
+    def test_another_type_is_a_different_question(self):
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        fx.add_member(first.name, self.person.name)
+
+        elsewhere = fx.make_cohort(
+            fx.make_cohort_type().name, fx.make_person("Other").name
+        )
+        self.assertTrue(fx.add_member(elsewhere.name, self.person.name).name)
+
+    def test_a_closed_membership_frees_the_seat(self):
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        row = fx.add_member(first.name, self.person.name)
+        row.invite_status = "Left"
+        row.save(ignore_permissions=True)
+
+        second = fx.make_cohort(self.type.name, fx.make_person("Other").name)
+        self.assertTrue(fx.add_member(second.name, self.person.name).name)
+
+    def test_a_pending_invitation_holds_the_seat(self):
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        fx.add_member(first.name, self.person.name, status="Invited")
+
+        second = fx.make_cohort(self.type.name, fx.make_person("Other").name)
+        with self.assertRaises(frappe.ValidationError):
+            fx.add_member(second.name, self.person.name)
+
+    def test_a_split_stays_one_lineage(self):
+        """The whole reason it counts roots and not cohorts.
+
+        A leader multiplying their group must not use up their members'
+        allowance doing it -- they made one commitment, and it grew.
+        """
+        frappe.db.set_value("Cohort Type", self.type.name, "allow_self_split", 1)
+        parent = fx.make_cohort(self.type.name, self.leader.name)
+        row = fx.add_member(parent.name, self.person.name)
+
+        # The split seats `person` over the offshoot and keeps `leader`
+        # connected to it as a Mentor -- a brand new membership, in a second
+        # cohort, for someone already open in the first. Counting cohorts rather
+        # than roots would refuse the split its own author.
+        child = dapi.split_cohort(
+            parent.name,
+            "ZZT Offshoot",
+            frappe.as_json([row.name]),
+            new_leader=self.person.name,
+        )
+        self.assertEqual(
+            frappe.db.get_value("Cohort", child, "lineage_root"),
+            frappe.db.get_value("Cohort", parent.name, "lineage_root"),
+        )
+        self.assertTrue(
+            frappe.db.exists(
+                "Cohort Membership",
+                {"cohort": child, "person": self.leader.name, "active": 1},
+            )
+        )
+        self.assertTrue(
+            frappe.db.exists(
+                "Cohort Membership",
+                {"cohort": parent.name, "person": self.leader.name, "active": 1},
+            )
+        )
+
+    def test_zero_means_as_many_as_they_like(self):
+        frappe.db.set_value("Cohort Type", self.type.name, "max_lineages_per_member", 0)
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        fx.add_member(first.name, self.person.name)
+        second = fx.make_cohort(self.type.name, fx.make_person("Other").name)
+        self.assertTrue(fx.add_member(second.name, self.person.name).name)
+
+    def test_lowering_it_never_breaks_what_already_stands(self):
+        """A rule tightened this week must not make a record unsaveable while
+        somebody edits it for an unrelated reason."""
+        frappe.db.set_value("Cohort Type", self.type.name, "max_lineages_per_member", 0)
+        first = fx.make_cohort(self.type.name, self.leader.name)
+        fx.add_member(first.name, self.person.name)
+        second = fx.make_cohort(self.type.name, fx.make_person("Other").name)
+        row = fx.add_member(second.name, self.person.name)
+
+        frappe.db.set_value("Cohort Type", self.type.name, "max_lineages_per_member", 1)
+        row.reload()
+        row.role = "Mentor"
+        row.save(ignore_permissions=True)  # must not raise
+
+    def test_a_course_scoped_type_cannot_hold_the_limit(self):
+        """One cohort per course, and a student takes several at once."""
+        t = fx.make_cohort_type(category="Course scoped", max_lineages_per_member=1)
+        self.assertEqual(t.max_lineages_per_member, 0)
+
+    def test_it_caps_how_many_an_alumnus_can_gather(self):
+        """The size limit is per cohort; ten cohorts of twelve would be within
+        it. This is what stops that."""
+        program = fx.make_program()
+        user = fx.make_user()
+        alum = fx.make_person("Alum", user=user.name)
+        fx.make_alumni_profile(alum, program_completed=program.name)
+        t = fx.make_cohort_type(
+            leader_eligibility=ANY_ALUMNUS, alumni_may_create=1, portal_size_limit=5
+        )
+
+        frappe.set_user(user.name)
+        self.assertTrue(dapi.create_my_cohort("ZZT Mine", t.name))
+        with self.assertRaises(frappe.ValidationError) as ctx:
+            dapi.create_my_cohort("ZZT Mine Too", t.name)
+        self.assertIn("as many as", str(ctx.exception))
 
 
 class TestMaxSizeIsAdvice(IntegrationTestCase):
@@ -807,6 +1295,11 @@ class TestReleaseOnSeparation(IntegrationTestCase):
         self.assertTrue(self._still_in(self.c_keeps.name))
 
     def test_a_leader_is_not_pulled_out_of_their_own_cohort(self):
+        # Deliberately two cohorts of one type -- a member of one, the leader of
+        # another -- which is the arrangement `max_lineages_per_member` exists
+        # to forbid. The release rule has to be right for a school that allows
+        # it, so this type says so.
+        frappe.db.set_value("Cohort Type", self.asks.name, "max_lineages_per_member", 0)
         led = fx.make_cohort(self.asks.name, self.student.person)
         release_from_program_cohorts(self.enrollment, "Withdrawn")
         self.assertTrue(

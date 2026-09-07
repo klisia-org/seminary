@@ -598,6 +598,7 @@
 
 <script setup>
 import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, createResource } from 'frappe-ui'
 import {
 	MessagesSquare, SquarePen, MessageCircle, Send, Pin, X,
@@ -610,6 +611,7 @@ import SermonLabPlayer from '@/components/SermonLabPlayer.vue'
 import ExegeticalReader from '@/components/ExegeticalReader.vue'
 
 const socket = inject('$socket')
+const route = useRoute()
 
 const selectedCohort = ref('')
 const channelFilter = ref('')
@@ -653,9 +655,15 @@ const cohortsRes = createResource({
 	auto: true,
 	onSuccess(data) {
 		if (data?.length && !selectedCohort.value) {
+			// Arriving from a link that names a cohort (the alumni home does
+			// this) beats the remembered default: the person just said which
+			// one they meant.
+			const asked = route.query.cohort
 			const saved = localStorage.getItem('community:defaultCohort')
-			selectedCohort.value = saved && data.some((c) => c.name === saved) ? saved : data[0].name
+			const known = (name) => name && data.some((c) => c.name === name)
+			selectedCohort.value = known(asked) ? asked : known(saved) ? saved : data[0].name
 		}
+		if (route.query.members && selectedCohort.value) openMembers()
 	},
 })
 const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')

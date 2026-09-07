@@ -18,10 +18,10 @@
 				</div>
 				<div class="mt-0.5 text-xs text-ink-gray-5">
 					<span v-if="q.estimated_minutes">
-						{{ __('About {0} minutes.', [q.estimated_minutes]) }}
+						{{ __('About {0} minutes.').format(q.estimated_minutes) }}
 					</span>
 					<span v-if="q.closes_on">
-						{{ __('Closes {0}.', [dayjs(q.closes_on).format('D MMM')]) }}
+						{{ __('Closes {0}.').format(dayjs(q.closes_on).format('D MMM')) }}
 					</span>
 				</div>
 				<div class="mt-1 text-xs text-ink-gray-5">

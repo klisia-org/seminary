@@ -29,6 +29,9 @@
   "criteria",
   "policy_section",
   "leader_eligibility",
+  "alumni_may_create",
+  "portal_size_limit",
+  "max_lineages_per_member",
   "open_enrollment",
   "allow_self_split",
   "column_break_policy",
@@ -77,8 +80,8 @@
    "label": "Binding and Lifecycle"
   },
   {
-   "depends_on": "eval:doc.category != 'Unrestricted'",
-   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope.",
+   "depends_on": "eval:doc.category != 'Unrestricted' || doc.leader_eligibility == 'Alumnus of the bound program or level'",
+   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope. Also asked for when leaders must be alumni of the bound program — fill this or Program Level, or choose Any alumnus instead.",
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
@@ -86,7 +89,7 @@
    "options": "Program"
   },
   {
-   "depends_on": "eval:doc.category == 'Throughout Program'",
+   "depends_on": "eval:doc.category == 'Throughout Program' || doc.leader_eligibility == 'Alumnus of the bound program or level'",
    "description": "Bind to every program at this level instead of to one program -- a formation cohort spanning the master's degrees, say. Mutually exclusive with Program.",
    "fieldname": "program_level",
    "fieldtype": "Link",
@@ -130,6 +133,7 @@
    "label": "Bulk Planning"
   },
   {
+   "default": "0",
    "description": "Offer this type in the Cohort Planner, where a proposed set of cohorts is reviewed and adjusted before anything is created. Nothing is ever placed automatically: a person always presses Create.",
    "fieldname": "plannable",
    "fieldtype": "Check",
@@ -179,12 +183,38 @@
   },
   {
    "default": "Anyone",
-   "description": "Who may hold leadership of a cohort of this type. Checked on the membership when Is Leader is set, against the person in front of it.",
+   "description": "Who may hold leadership of a cohort of this type. Checked on the membership when Is Leader is set, against the person in front of it. Alumnus of the bound program or level reads the binding above, so it needs one; Any alumnus asks only for an enabled Alumni Profile.",
    "fieldname": "leader_eligibility",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Leader Eligibility",
-   "options": "Anyone\nInstructor\nAlumnus of the bound program or level\nStaff",
+   "options": "Anyone\nInstructor\nAlumnus of the bound program or level\nAny alumnus\nStaff",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:['Alumnus of the bound program or level','Any alumnus'].includes(doc.leader_eligibility)",
+   "description": "Let an alumnus start their own cohort of this type from the portal, instead of waiting for staff to create it here. They lead what they start, and Leader Eligibility above still decides whether they may -- this only says who does the setting up.",
+   "fieldname": "alumni_may_create",
+   "fieldtype": "Check",
+   "label": "Alumni May Start Their Own Cohort"
+  },
+  {
+   "depends_on": "eval:['Alumnus of the bound program or level','Any alumnus'].includes(doc.leader_eligibility)",
+   "description": "A ceiling the portal will not let anyone past (0 = none), counting members and unanswered invitations together. Unlike Default Max Size, which warns and lets the decision through, this one refuses -- an alumnus-led cohort grows where no staff member is watching, and a mentoring group that becomes a whole congregation is no longer the thing this type describes. Staff working here in the desk are still only warned.",
+   "fieldname": "portal_size_limit",
+   "fieldtype": "Int",
+   "label": "Portal Size Limit",
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.category != 'Course scoped'",
+   "description": "How many cohorts of this type one person may belong to at once (0 = any number). A cohort and everything split off from it count as one, so a group that multiplies is still the one commitment its members made. Usually 1: being mentored in two places at once is rarely what a school means, and it is how one leader would otherwise gather far more people than the size limit suggests. Existing memberships are never broken by lowering this -- it applies as people are added.",
+   "fieldname": "max_lineages_per_member",
+   "fieldtype": "Int",
+   "label": "Cohorts Per Member",
+   "non_negative": 1
   },
   {
    "default": "0",
@@ -221,7 +251,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-09-08 02:52:37.204348",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Type",

@@ -140,6 +140,77 @@ automation and be none.
 |---|---|---|
 | `leader_eligibility` | Select | `Anyone` (a peer may lead) / `Instructor` / `Alumnus of the bound program or level` / `Staff`. Enforced on `Cohort Membership` when `is_leader` is set, so the rule is checked against the person in front of it rather than trusted at setup. |
 
+> **Amendment, 2026-09-07.** A fifth option, **`Any alumnus`**, and a binding the fourth one now
+> requires.
+>
+> `Alumnus of the bound program or level` reads the binding, and nothing obliged a type to have one.
+> An unbound type carrying it accepted a graduate of anywhere — `Cohort Membership` returned true as
+> soon as it found an enabled profile — so the leniency was real but unstated: leadership granted on a
+> scope the school never named, by a rule whose own label promised a scope. Two people reading the
+> same configuration would disagree about what it meant, which is the shape of thing this document
+> exists to prevent.
+>
+> So the rule now needs something to read. A type choosing it must name a Program or a Program Level,
+> and `Cohort Type` refuses the save otherwise; the two binding fields are shown for that reason as
+> well as for the category's, since the lifecycle is no longer the only thing asking for them. The old
+> behaviour keeps its meaning and gains a name: `Any alumnus` asks for an enabled Alumni Profile and
+> reads no binding at all, even on a type that happens to have one. A patch moves existing unbound
+> rows onto it, so no row changes who may lead it.
+>
+> Both remain leadership values, not lifecycle ones. The axes are unchanged.
+
+> **Amendment, 2026-09-07 (second).** Two settings that appear only on an alumnus-led type:
+> **`alumni_may_create`** and **`portal_size_limit`**.
+>
+> Asking alumni to lead is asking people who have left to come back to a platform they have no other
+> reason to open, and an old school with many of them has to ask a great number. Requiring a staff
+> member in the desk to set up each group is most of the friction in that ask, for no decision anyone
+> is really making — the school already decided who may lead when it set Leader Eligibility. So a type
+> may say that an alumnus starts their own cohort from the portal: `discipleship/api.create_my_cohort`,
+> guarded by the type's flag and by `may_lead`, which is the same function the portal's picker asks and
+> the same rule `Cohort Membership` enforces when the leader is seated.
+>
+> What that removes is not a decision but a *witness*. Nobody looks at the group as it forms, so
+> nothing catches a mentoring cohort that has quietly become the leader's whole congregation — at which
+> point it is no longer the thing the type describes, and every rule written about it is being applied
+> to something else. The school therefore says in advance how large one may get, and that ceiling
+> refuses rather than warns.
+>
+> **This does not reopen 7.4.** That decision was about a registrar deliberately seating a thirteenth
+> student, and it stands exactly as written: `Cohort.max_size` is advice, and staff working in the desk
+> are still only warned, here too. A warning is the right instrument when a person is making a decision
+> and can be told. `portal_size_limit` covers the case 7.4 did not contemplate, where there is nobody
+> on the other side of the warning to read it. It counts members and unanswered invitations together,
+> because twenty invitations to a group of twelve is a group of thirty-two the moment they are
+> accepted, and it stands in as `max_size` when no size was suggested so a cohort shows the ceiling it
+> actually has.
+>
+> **`max_lineages_per_member`, which is the same question asked from the right end.** The size limit
+> is per cohort, so ten cohorts of twelve is within it — and "how many may one alumnus start" turns out
+> to be the wrong way to ask, because it protects the leader's time rather than the member's. What a
+> school actually holds a view about is how many of these a person can be *in*: being mentored in two
+> places at once is rarely what anyone means. Capping membership caps the gathering as a consequence,
+> since a leader is a member of their own cohort.
+>
+> Counted by **lineage**, not by cohort. `Cohort.lineage_root` already treats a root cohort and
+> everything split off from it as one family — the root is its own root at distance 0 — and that is the
+> right unit: a member made one commitment, and a leader multiplying the group must not spend their
+> members' allowance doing it. `split_cohort` keeps the parent's leader connected to the offshoot, and
+> counting cohorts would have refused the split its own author.
+>
+> Default 1, and 0 means any number. **`Course scoped` types are forced to 0**, which is not an
+> exception but the category read out loud: it forms one cohort per course and a student takes several
+> at once, so a limit of one there would refuse the second course's seeding. Existing types are patched
+> to match what a new one would say, since a Frappe default reaches only documents created after the
+> field exists and one install would otherwise hold two policies depending on when a record was made.
+>
+> The check runs when a membership is *opened*, never on a re-save of one already open — the same
+> principle as the mandatory personal details: a rule tightened this week must not make a record
+> created three years ago unsaveable while somebody edits it for an unrelated reason. Lowering the
+> setting therefore stops new placements without breaking what already stands. Unlike the size ceiling
+> it does not exempt staff: a room having one chair too few is a judgement a registrar is present to
+> make, and whether a person may be mentored twice over is not.
+
 There is no matching `member_eligibility`. An automated type's rule already selects who goes in, and a
 hand-authored type is hand-authored precisely because a person is deciding — a second Select would ask
 the school to restate in configuration what it is doing by hand. Where a guard is wanted for manual
@@ -277,7 +348,9 @@ to happen anyway.
   (`automation_max_size`, §2), so what remains is manual work — and there `discipleship/api.py`
   currently **throws**: "This cohort is at its maximum size." A registrar deliberately seating a
   thirteenth student in a group of twelve should be warned, not refused; the ceiling is advice about a
-  healthy group size, not a statement about what is possible.
+  healthy group size, not a statement about what is possible. *(See the second amendment of
+  2026-09-07: this stands for staff in the desk. An alumnus-led type may also carry a
+  `portal_size_limit`, which refuses — the case here assumes a registrar to warn, and there is none.)*
 - **7.5 Splitting an automated cohort** — *resolved, no rule needed.* `split_cohort` already sets the
   child's `cohort_type` from the parent, so the child inherits `graduates_to` with it and graduates the
   same way. The behaviour is right; it was just never written down.

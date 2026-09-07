@@ -40,8 +40,11 @@ class Cohort(Document):
         ct = frappe.get_cached_doc("Cohort Type", self.cohort_type)
         if not self.visibility:
             self.visibility = ct.default_visibility or "cohort_only"
-        if not self.max_size and ct.default_max_size:
-            self.max_size = ct.default_max_size
+        if not self.max_size:
+            # The portal limit stands in when no size was suggested, so a cohort
+            # the portal will refuse to grow says so on its face instead of
+            # showing no ceiling until someone hits one.
+            self.max_size = ct.default_max_size or ct.portal_size_limit or 0
 
     def after_insert(self):
         # Denormalize lineage once, immutably: a root cohort is its own root at
