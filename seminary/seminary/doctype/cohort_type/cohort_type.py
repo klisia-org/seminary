@@ -41,6 +41,54 @@ BOUND_ALUMNUS = "Alumnus of the bound program or level"
 ANY_ALUMNUS = "Any alumnus"
 ALUMNUS_RULES = (BOUND_ALUMNUS, ANY_ALUMNUS)
 
+# What archiving does to the people in a cohort. Three values rather than a
+# checkbox with a clever default: the right answer follows from the category and
+# the binding, and a box that quietly moved when a chair reclassified the type
+# would give them no way to tell their own choice from the system's.
+ARCHIVE_FOLLOWS_CATEGORY = "Follow the category"
+ARCHIVE_KEEPS_MEMBERS = "Keep members in it"
+ARCHIVE_RELEASES_MEMBERS = "Release members"
+
+
+def releases_on_archive(cohort_type):
+    """Does archiving a cohort of this type end its members' place in it?
+
+    The category answers unless the school has overridden it, and what it turns
+    on is whether the thing the cohort is scoped to can come round again for the
+    same person.
+
+    **Bound to one Program: keep them.** The cohort belonged to that degree;
+    when the degree is done the group is done, and the membership is the record
+    of having been in it. Nothing asks the question a second time, because a
+    second degree is a different program and so a different type.
+
+    **Course scoped: keep them.** Same reason, and one more. A course cohort is
+    scoped to an offering that runs once, but the seeding a registrar does for
+    the next course in a sequence reads *active* memberships to know who is
+    already placed. Releasing on archive would silently undo that: archiving
+    last term's groups would make this term's seeding offer to place everybody
+    again, in a type whose whole point was that it does not.
+
+    **Everything else: release them.** A level-wide type most of all. Someone who
+    took a master's years ago, in a cohort long since archived, is exactly the
+    person a second master's should place in a new one -- holding their seat
+    against a group that ended would refuse them a requirement of the programme
+    they have just started. Unrestricted types, where the alumni cohorts live,
+    are the same case with nothing bound at all.
+    """
+    row = frappe.db.get_value(
+        "Cohort Type", cohort_type, ["on_archive", "category", "program"], as_dict=True
+    )
+    if not row:
+        return False
+    if row.on_archive == ARCHIVE_KEEPS_MEMBERS:
+        return False
+    if row.on_archive == ARCHIVE_RELEASES_MEMBERS:
+        return True
+    if row.category == COURSE_SCOPED:
+        return False
+    return not (row.category in PROGRAM_CATEGORIES and row.program)
+
 
 class CohortType(Document):
     def validate(self):

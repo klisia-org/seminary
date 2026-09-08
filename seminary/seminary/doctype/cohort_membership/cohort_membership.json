@@ -20,6 +20,7 @@
   "column_break_status",
   "joined_on",
   "left_on",
+  "closed_by_archive",
   "enrollment_section",
   "course_enrollment",
   "placed_by_rule"
@@ -108,6 +109,14 @@
    "fieldname": "left_on",
    "fieldtype": "Date",
    "label": "Left On"
+  },
+  {
+   "default": "0",
+   "description": "Set when the cohort was archived and its type releases members, so a membership that ended because the group ended is not mistaken for someone leaving. It is what keeps the archived cohort visible to the people who were in it, and what reactivating reads to put them back.",
+   "fieldname": "closed_by_archive",
+   "fieldtype": "Check",
+   "label": "Closed By Archiving",
+   "read_only": 1
   },
   {
    "fieldname": "enrollment_section",

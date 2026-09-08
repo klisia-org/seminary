@@ -51,6 +51,16 @@ def visible_cohorts(user=None):
         fields=["cohort", "is_leader"],
     )
     cohorts = {m.cohort for m in memberships}
+    # A membership the archiving closed is not somebody leaving, and ADR 066
+    # §7.6 promises the record survives for the people who were in it. Their
+    # seat is gone; their account of having been there is not.
+    cohorts |= set(
+        frappe.get_all(
+            "Cohort Membership",
+            filters={"person": person, "closed_by_archive": 1},
+            pluck="cohort",
+        )
+    )
     led = [m.cohort for m in memberships if m.is_leader]
     if led:
         cohorts |= _descendants(led)

@@ -84,47 +84,8 @@ class CohortMembership(Document):
         if before and before.invite_status in OPEN_STATUSES:
             return
 
-        cohort = frappe.db.get_value(
-            "Cohort", self.cohort, ["cohort_type", "lineage_root"], as_dict=True
-        )
-        if not cohort:
-            return
-        limit = (
-            frappe.db.get_value(
-                "Cohort Type", cohort.cohort_type, "max_lineages_per_member"
-            )
-            or 0
-        )
-        if not limit:
-            return
-
-        # `lineage_root` is written in `Cohort.after_insert`, and the leader's
-        # own membership is created there too -- after it is set, so this reads
-        # a real root. Falling back to the cohort itself keeps a half-built
-        # record from silently counting as everyone else's lineage.
-        mine = cohort.lineage_root or self.cohort
-        others = {
-            row.lineage_root or row.name
-            for row in frappe.db.sql(
-                """
-                SELECT c.name, c.lineage_root
-                FROM `tabCohort Membership` m
-                JOIN `tabCohort` c ON c.name = m.cohort
-                WHERE m.person = %(person)s
-                  AND c.cohort_type = %(cohort_type)s
-                  AND m.invite_status IN %(open)s
-                  AND m.name != %(self)s
-                """,
-                {
-                    "person": self.person,
-                    "cohort_type": cohort.cohort_type,
-                    "open": OPEN_STATUSES,
-                    "self": self.name or "",
-                },
-                as_dict=True,
-            )
-        }
-        if mine in others or len(others) < limit:
+        others = lineages_that_would_block(self.person, self.cohort, ignoring=self.name)
+        if others is None:
             return
 
         frappe.throw(
@@ -135,7 +96,9 @@ class CohortMembership(Document):
             ).format(
                 frappe.bold(self._person_label()),
                 len(others),
-                frappe.bold(cohort.cohort_type),
+                frappe.bold(
+                    frappe.db.get_value("Cohort", self.cohort, "cohort_type") or ""
+                ),
             )
         )
 
@@ -223,6 +186,59 @@ class CohortMembership(Document):
 # fact -- which cohort types may this person start, which buttons should they be
 # shown -- and a second implementation of "is this person an alumnus of that" is
 # a second implementation that can drift from the one that refuses the save.
+
+
+def lineages_that_would_block(person, cohort, ignoring=None):
+    """The other cohort families of this type standing in this person's way.
+
+    `None` when nothing does -- the type sets no limit, they are already in this
+    family, or they are still under it. A set otherwise, so the caller can say
+    how many. Shared rather than inlined because reactivating an archived cohort
+    has to ask the same question *before* reopening a membership: a person freed
+    by the archiving may have joined another group since, and finding that out
+    by catching the refusal would leave a half-restored cohort behind.
+    """
+    row = frappe.db.get_value(
+        "Cohort", cohort, ["cohort_type", "lineage_root"], as_dict=True
+    )
+    if not row:
+        return None
+    limit = (
+        frappe.db.get_value("Cohort Type", row.cohort_type, "max_lineages_per_member")
+        or 0
+    )
+    if not limit:
+        return None
+
+    # `lineage_root` is written in `Cohort.after_insert`, and the leader's own
+    # membership is created there too -- after it is set, so this reads a real
+    # root. Falling back to the cohort itself keeps a half-built record from
+    # silently counting as everyone else's lineage.
+    mine = row.lineage_root or cohort
+    others = {
+        r.lineage_root or r.name
+        for r in frappe.db.sql(
+            """
+            SELECT c.name, c.lineage_root
+            FROM `tabCohort Membership` m
+            JOIN `tabCohort` c ON c.name = m.cohort
+            WHERE m.person = %(person)s
+              AND c.cohort_type = %(cohort_type)s
+              AND m.invite_status IN %(open)s
+              AND m.name != %(ignoring)s
+            """,
+            {
+                "person": person,
+                "cohort_type": row.cohort_type,
+                "open": OPEN_STATUSES,
+                "ignoring": ignoring or "",
+            },
+            as_dict=True,
+        )
+    }
+    if mine in others or len(others) < limit:
+        return None
+    return others
 
 
 def alumni_profile(person):

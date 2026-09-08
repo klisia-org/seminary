@@ -20,6 +20,7 @@
   "column_break_binding",
   "persists_across_courses",
   "remove_on_withdrawal",
+  "on_archive",
   "automation_section",
   "plannable",
   "mentor_unit",
@@ -123,6 +124,14 @@
    "fieldname": "remove_on_withdrawal",
    "fieldtype": "Check",
    "label": "Remove Separated Students"
+  },
+  {
+   "default": "Follow the category",
+   "description": "Archiving ends a cohort's life; this says whether it also ends its members' place in it. Following the category keeps them where the cohort is scoped to something that happens once — one Program, or one course offering — because the membership is then the record of having been there, and next term's course seeding reads it to know who is already placed. It releases them everywhere else, so a group that ended years ago does not keep someone out of a level-wide or unrestricted cohort they now need. Released members keep sight of the archived cohort and its history; what they lose is the seat.",
+   "fieldname": "on_archive",
+   "fieldtype": "Select",
+   "label": "When a Cohort Is Archived",
+   "options": "Follow the category\nKeep members in it\nRelease members"
   },
   {
    "collapsible": 1,

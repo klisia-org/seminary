@@ -354,6 +354,44 @@ to happen anyway.
 - **7.5 Splitting an automated cohort** — *resolved, no rule needed.* `split_cohort` already sets the
   child's `cohort_type` from the parent, so the child inherits `graduates_to` with it and graduates the
   same way. The behaviour is right; it was just never written down.
+> **Amendment, 2026-09-07 (third).** Archiving now ends the *memberships* too, where the type says
+> so — **`Cohort Type.on_archive`**.
+>
+> 7.6 settled that archiving ends a group's life and keeps its record. What it did not ask is whether
+> the members' place in it also ends, and the answer had been no everywhere, by omission rather than
+> decision. That answer collides with `max_lineages_per_member`: someone who took a master's years ago
+> in a cohort long since archived still held the one seat their type allows, so a second master's could
+> not place them in a new one — a requirement of the programme they had just started, refused by a
+> group that ended before it.
+>
+> The rule turns on whether the thing the cohort is scoped to can come round again for the same person.
+> **A type bound to one Program keeps its members**: the cohort belonged to that degree, the membership
+> is the record of having been in it, and nothing asks again, because a second degree is a different
+> program and so a different type. **A `Course scoped` type keeps them too** — the offering runs once,
+> and, decisively, the seeding for the next course in a sequence reads *active* memberships to know who
+> is already placed, so releasing would make archiving last term's groups offer to place everybody
+> again. **Everything else releases**: a level-wide type, where the case above lives, and `Unrestricted`,
+> where the alumni cohorts do.
+>
+> A Select rather than a checkbox with a clever default. `Follow the category` is the value that ships,
+> and the two overrides are named outright, because a box that quietly moved when a chair reclassified
+> the type would leave them no way to tell their own choice from the system's. The Desk form spells out
+> what following resolves to for the type in front of them.
+>
+> **What a released member keeps is 7.6's whole point, so it is kept explicitly.** `Cohort
+> Membership.closed_by_archive` records that the membership ended because the group did, and
+> `visible_cohorts` reads it: they still see the cohort and its history, they simply no longer hold a
+> seat. Without that flag the release would have quietly revoked the promise 7.6 makes, since
+> visibility is keyed on `active`. The flag earns its keep twice — reactivating, which 7.6 calls "the
+> way back", puts back exactly the memberships this cohort's own archiving closed, and nobody else:
+> somebody who had left before it was archived left for their own reasons. Anyone who joined another
+> cohort of the type in the meantime is left where they are, since the newer commitment is the real one
+> and the limit forbids both; they are named in a message rather than silently dropped.
+>
+> `set_cohort_status` now saves the document instead of writing the column, and the release lives on
+> `Cohort.on_update`: a chair changing Status in the desk is doing the same thing as a leader pressing
+> Archive, and a rule only one of them passes through is not a rule.
+
 - **7.6 Archiving is not wired.** `set_cohort_status` flips `Cohort.status` and **nothing reads it** —
   not permissions, not capability, not any listing. An archived cohort still confers leader access to
   its members. Archiving reads as a way to end a relationship and ends nothing, which has to be either

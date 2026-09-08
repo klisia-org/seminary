@@ -496,11 +496,20 @@ def split_cohort(cohort, new_cohort_name, member_ids, new_leader=None):
 
 @frappe.whitelist()
 def set_cohort_status(cohort, status):
-    """Archive or reactivate a cohort."""
+    """Archive or reactivate a cohort.
+
+    Through the document, not `db.set_value`: archiving ends the memberships of
+    a cohort whose type releases them, and reactivating puts them back. Writing
+    the column directly would skip both and leave the status saying one thing
+    while the roster said another.
+    """
     if status not in ("Active", "Archived"):
         frappe.throw(_("Status must be Active or Archived."))
     _require_leader(cohort)
-    frappe.db.set_value("Cohort", cohort, "status", status)
+    doc = frappe.get_doc("Cohort", cohort)
+    doc.status = status
+    doc.flags.ignore_permissions = True
+    doc.save()
     return status
 
 

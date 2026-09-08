@@ -21,6 +21,7 @@ from frappe.tests import IntegrationTestCase
 from seminary.seminary import cbe, instructor_load
 from seminary.seminary.discipleship import api as dapi
 from seminary.seminary.discipleship import permissions as dperm
+from seminary.seminary.discipleship import enrollment as enrollment_mod
 from seminary.seminary.discipleship.enrollment import (
     SEPARATION_STATUSES,
     cohorts_persist,
@@ -850,6 +851,200 @@ class TestCohortsPerMember(IntegrationTestCase):
         with self.assertRaises(frappe.ValidationError) as ctx:
             dapi.create_my_cohort("ZZT Mine Too", t.name)
         self.assertIn("as many as", str(ctx.exception))
+
+
+class TestArchivingAndTheSeat(IntegrationTestCase):
+    """§7.6, revisited — what archiving does to the people in the cohort.
+
+    Ending a group and ending its members' place in it are the same act for
+    most types and different acts for one: a cohort bound to a single Program
+    belonged to that degree, and so does the record of having been in it.
+    Everywhere else the seat has to come free, or a group that ended years ago
+    keeps someone out of one they now need.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.leader = fx.make_person("Leader")
+        self.member = fx.make_person("Member")
+
+    def _archive(self, cohort):
+        doc = frappe.get_doc("Cohort", cohort.name)
+        doc.status = "Archived"
+        doc.save(ignore_permissions=True)
+
+    def _reactivate(self, cohort):
+        doc = frappe.get_doc("Cohort", cohort.name)
+        doc.status = "Active"
+        doc.save(ignore_permissions=True)
+
+    def _standing(self, cohort, person):
+        return frappe.db.get_value(
+            "Cohort Membership",
+            {"cohort": cohort.name, "person": person.name},
+            ["invite_status", "active", "closed_by_archive"],
+            as_dict=True,
+        )
+
+    # --------------------------------------------------- what the rule says
+
+    def test_a_program_bound_type_keeps_them(self):
+        program = fx.make_program()
+        t = fx.make_cohort_type(category="Throughout Program", program=program.name)
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        standing = self._standing(cohort, self.member)
+        self.assertEqual(standing.invite_status, "Active")
+        self.assertFalse(standing.closed_by_archive)
+
+    def test_a_level_bound_type_releases_them(self):
+        """The MACL-then-MACE case: the type spans the level, and a cohort that
+        ended with the first degree must not block a cohort for the second."""
+        level = fx.make_program_level()
+        if not level:
+            self.skipTest("site has no Program Level")
+        t = fx.make_cohort_type(category="Throughout Program", program_level=level)
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        standing = self._standing(cohort, self.member)
+        self.assertEqual(standing.invite_status, "Left")
+        self.assertFalse(standing.active)
+        self.assertTrue(standing.closed_by_archive)
+
+        # And the seat is genuinely free.
+        later = fx.make_cohort(t.name, fx.make_person("Later").name)
+        self.assertTrue(fx.add_member(later.name, self.member.name).name)
+
+    def test_a_course_scoped_type_keeps_them(self):
+        """Not only because the offering runs once. The seeding a registrar does
+        for the next course in a sequence reads active memberships to know who
+        is already placed -- releasing would make archiving last term's groups
+        offer to place everybody again."""
+        t = fx.make_cohort_type(category="Course scoped")
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Active")
+        self.assertEqual(
+            enrollment_mod.active_cohort_of_type(self.member.name, t.name), cohort.name
+        )
+
+    def test_an_unrestricted_type_releases_them(self):
+        t = fx.make_cohort_type()  # Unrestricted, the alumni-cohort shape
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Left")
+
+    def test_the_leader_is_released_too(self):
+        """Unlike a withdrawal, which leaves them in place because the cohort
+        still needs one. An archived cohort needs nobody, and the leader is the
+        person who most needs to be free to begin again."""
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+
+        self._archive(cohort)
+        self.assertEqual(self._standing(cohort, self.leader).invite_status, "Left")
+        self.assertTrue(fx.make_cohort(t.name, self.leader.name).name)
+
+    def test_the_school_may_overrule_the_category(self):
+        program = fx.make_program()
+        t = fx.make_cohort_type(
+            category="Throughout Program",
+            program=program.name,
+            on_archive="Release members",
+        )
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Left")
+
+    def test_keeping_them_is_also_a_choice(self):
+        t = fx.make_cohort_type(on_archive="Keep members in it")
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Active")
+
+    # ------------------------------------------------- what must not be lost
+
+    def test_the_record_of_having_been_there_survives(self):
+        """§7.6's promise: the seat goes, the account of it does not."""
+        user = fx.make_user()
+        member = fx.make_person("Seen", user=user.name)
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, member.name)
+
+        self._archive(cohort)
+        self.assertIn(cohort.name, dperm.visible_cohorts(user.name))
+        self.assertNotIn(cohort.name, dperm.led_cohorts(user.name))
+
+    def test_someone_who_had_already_left_is_not_given_it_back(self):
+        """Leaving early was their own decision; archiving does not revisit it."""
+        user = fx.make_user()
+        gone = fx.make_person("Gone", user=user.name)
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        row = fx.add_member(cohort.name, gone.name)
+        row.invite_status = "Left"
+        row.save(ignore_permissions=True)
+
+        self._archive(cohort)
+        self.assertFalse(self._standing(cohort, gone).closed_by_archive)
+        self.assertNotIn(cohort.name, dperm.visible_cohorts(user.name))
+
+    # ------------------------------------------------------- the way back
+
+    def test_reactivating_puts_them_back(self):
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        self._archive(cohort)
+        self._reactivate(cohort)
+        standing = self._standing(cohort, self.member)
+        self.assertEqual(standing.invite_status, "Active")
+        self.assertFalse(standing.closed_by_archive)
+
+    def test_reactivating_leaves_behind_whoever_moved_on(self):
+        """They made a newer commitment, and the type allows only the one."""
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+        self._archive(cohort)
+
+        elsewhere = fx.make_cohort(t.name, fx.make_person("Other").name)
+        fx.add_member(elsewhere.name, self.member.name)
+
+        self._reactivate(cohort)
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Left")
+        self.assertEqual(
+            frappe.db.get_value(
+                "Cohort Membership",
+                {"cohort": elsewhere.name, "person": self.member.name},
+                "invite_status",
+            ),
+            "Active",
+        )
+
+    def test_the_portal_route_goes_through_the_document(self):
+        """`db.set_value` would skip the release and leave the status saying one
+        thing while the roster said another."""
+        t = fx.make_cohort_type()
+        cohort = fx.make_cohort(t.name, self.leader.name)
+        fx.add_member(cohort.name, self.member.name)
+
+        dapi.set_cohort_status(cohort.name, "Archived")
+        self.assertEqual(self._standing(cohort, self.member).invite_status, "Left")
 
 
 class TestMaxSizeIsAdvice(IntegrationTestCase):
