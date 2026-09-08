@@ -489,7 +489,7 @@
 		</Dialog>
 
 		<!-- my cohort -->
-		<Dialog v-model="showMembers" :options="{ title: __('My cohort'), size: 'xl' }">
+		<Dialog v-model="showMembers" :options="{ title: membersTitle, size: 'xl' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
 					<div v-if="membersRes.data?.is_leader" class="flex flex-col gap-2 rounded-md border border-outline-gray-2 p-2">
@@ -742,6 +742,17 @@ const broadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.b
 
 // --- derived ---
 const cohorts = computed(() => cohortsRes.data || [])
+const selectedCohortName = computed(
+	() => cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
+)
+// Named, not just "My cohort": someone who leads two of them is one click from
+// inviting a person into the wrong one, and the switcher sits behind the dialog
+// where they cannot check it.
+const membersTitle = computed(() =>
+	selectedCohortName.value
+		? __('Cohort: {0}').format(selectedCohortName.value)
+		: __('My cohort')
+)
 const channels = computed(() => channelsRes.data || [])
 const selectedChannelKind = computed(() => channels.value.find((c) => c.name === channelFilter.value)?.channel_kind || null)
 const isPrayerChannel = computed(() => selectedChannelKind.value === 'prayer')
@@ -968,10 +979,9 @@ function resendInvite(m) {
 	resendRes.submit({ membership: m.membership }).then(() => createToast({ title: __('Invite re-sent.'), icon: 'check' }))
 }
 function inviteMessage(m) {
-	const cohortName = cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
 	const url = window.location.origin + '/seminary/community'
 	return __('Hi {0}, you are invited to join the cohort "{1}". Sign in at {2} to accept — first time? use "Forgot password" to set your password.')
-		.format(m.name || '', cohortName, url)
+		.format(m.name || '', selectedCohortName.value, url)
 }
 function copyInvite(m) {
 	navigator.clipboard?.writeText(inviteMessage(m)).then(() => createToast({ title: __('Invite copied.'), icon: 'check' }))
