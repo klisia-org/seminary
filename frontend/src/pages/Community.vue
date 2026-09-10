@@ -489,13 +489,62 @@
 		</Dialog>
 
 		<!-- my cohort -->
-		<Dialog v-model="showMembers" :options="{ title: __('My cohort'), size: 'xl' }">
+		<Dialog v-model="showMembers" :options="{ title: membersTitle, size: 'xl' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
 					<div v-if="membersRes.data?.is_leader" class="flex flex-col gap-2 rounded-md border border-outline-gray-2 p-2">
 						<div class="flex items-center justify-between">
 							<span class="text-xs font-medium text-ink-gray-6">{{ __('Invite someone') }}</span>
 							<Button v-if="membersRes.data?.allow_split" variant="subtle" :label="__('Split cohort')" @click="openSplit" />
+						</div>
+						<!-- Search the alumni directory first: most people a leader
+						     wants are already here, and this is the only place
+						     that can say who is free to join before they ask. -->
+						<div class="flex flex-col gap-1">
+							<Input
+								v-model="alumniQuery"
+								type="text"
+								:placeholder="__('Search alumni by name, role, organization or city')"
+							/>
+							<p v-if="alumniSearch.loading" class="px-1 text-xs text-ink-gray-5">
+								{{ __('Searching...') }}
+							</p>
+							<p
+								v-else-if="alumniQuery.trim().length >= 2 && !alumniSearch.data?.length"
+								class="px-1 text-xs text-ink-gray-5"
+							>
+								{{ __('Nobody in the directory matches. Invite them by email below.') }}
+							</p>
+							<ul v-else-if="alumniSearch.data?.length" class="divide-y divide-outline-gray-1 rounded-md border border-outline-gray-2">
+								<li
+									v-for="cand in alumniSearch.data"
+									:key="cand.person"
+									class="flex items-center justify-between gap-3 p-2"
+								>
+									<div class="min-w-0">
+										<div class="truncate text-sm text-ink-gray-8">{{ cand.full_name }}</div>
+										<div class="truncate text-xs text-ink-gray-5">
+											{{ [cand.current_role, cand.current_organization, cand.city].filter(Boolean).join(' · ') }}
+										</div>
+										<!-- Said plainly rather than hidden: a leader who
+										     cannot see why someone is unpickable just
+										     emails them instead. -->
+										<div v-if="!cand.available" class="text-xs text-ink-amber-3">
+											{{ __('Already in another cohort of this kind') }}
+										</div>
+									</div>
+									<Button
+										variant="subtle"
+										:disabled="!cand.available || inviteRes.loading"
+										:label="cand.available ? __('Invite') : __('Unavailable')"
+										@click="invitePerson(cand)"
+									/>
+								</li>
+							</ul>
+						</div>
+
+						<div class="text-xs text-ink-gray-5">
+							{{ __('Or invite someone who is not in the directory:') }}
 						</div>
 						<div class="flex flex-wrap items-center gap-2">
 							<Input v-model="inviteDraft.first_name" type="text" :placeholder="__('First name *')" class="w-32" />
@@ -598,7 +647,8 @@
 
 <script setup>
 import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { Button, Dialog, Input, createResource } from 'frappe-ui'
+import { useRoute } from 'vue-router'
+import { Button, Dialog, Input, createResource, debounce } from 'frappe-ui'
 import {
 	MessagesSquare, SquarePen, MessageCircle, Send, Pin, X,
 	Lock, Users, Globe, Mail, BookOpen, Check, Video, Flag, Shield, Ban, Pencil, Trash2,
@@ -610,6 +660,7 @@ import SermonLabPlayer from '@/components/SermonLabPlayer.vue'
 import ExegeticalReader from '@/components/ExegeticalReader.vue'
 
 const socket = inject('$socket')
+const route = useRoute()
 
 const selectedCohort = ref('')
 const channelFilter = ref('')
@@ -626,6 +677,21 @@ const searchQuery = ref('')
 const showPassage = ref(false)
 const showMembers = ref(false)
 const inviteDraft = reactive({ first_name: '', last_name: '', email: '', mobile: '' })
+const alumniQuery = ref('')
+const alumniSearch = createResource({
+	url: 'seminary.seminary.discipleship.api.search_invitable_alumni',
+	makeParams: () => ({ cohort: selectedCohort.value, query: alumniQuery.value.trim() }),
+	onError() {},
+})
+// The endpoint returns nothing under two characters, so don't ask.
+const searchAlumniDebounced = debounce(() => {
+	if (alumniQuery.value.trim().length < 2) {
+		alumniSearch.data = []
+		return
+	}
+	alumniSearch.fetch()
+}, 300)
+watch(alumniQuery, searchAlumniDebounced)
 const expandedBook = ref(null)
 const expandedChapter = ref(null)
 const passageFilter = ref(null)
@@ -653,9 +719,15 @@ const cohortsRes = createResource({
 	auto: true,
 	onSuccess(data) {
 		if (data?.length && !selectedCohort.value) {
+			// Arriving from a link that names a cohort (the alumni home does
+			// this) beats the remembered default: the person just said which
+			// one they meant.
+			const asked = route.query.cohort
 			const saved = localStorage.getItem('community:defaultCohort')
-			selectedCohort.value = saved && data.some((c) => c.name === saved) ? saved : data[0].name
+			const known = (name) => name && data.some((c) => c.name === name)
+			selectedCohort.value = known(asked) ? asked : known(saved) ? saved : data[0].name
 		}
+		if (route.query.members && selectedCohort.value) openMembers()
 	},
 })
 const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')
@@ -734,6 +806,17 @@ const broadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.b
 
 // --- derived ---
 const cohorts = computed(() => cohortsRes.data || [])
+const selectedCohortName = computed(
+	() => cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
+)
+// Named, not just "My cohort": someone who leads two of them is one click from
+// inviting a person into the wrong one, and the switcher sits behind the dialog
+// where they cannot check it.
+const membersTitle = computed(() =>
+	selectedCohortName.value
+		? __('Cohort: {0}').format(selectedCohortName.value)
+		: __('My cohort')
+)
 const channels = computed(() => channelsRes.data || [])
 const selectedChannelKind = computed(() => channels.value.find((c) => c.name === channelFilter.value)?.channel_kind || null)
 const isPrayerChannel = computed(() => selectedChannelKind.value === 'prayer')
@@ -956,14 +1039,26 @@ function inviteMember() {
 		})
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
 }
+function invitePerson(candidate) {
+	// The person already exists on the spine, so only the id travels — the
+	// search deliberately returns no email or phone.
+	inviteRes
+		.submit({ cohort: selectedCohort.value, person: candidate.person })
+		.then(() => {
+			alumniQuery.value = ''
+			alumniSearch.data = []
+			membersRes.fetch({ cohort: selectedCohort.value })
+			createToast({ title: __('Invitation sent.'), icon: 'check' })
+		})
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+}
 function resendInvite(m) {
 	resendRes.submit({ membership: m.membership }).then(() => createToast({ title: __('Invite re-sent.'), icon: 'check' }))
 }
 function inviteMessage(m) {
-	const cohortName = cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
 	const url = window.location.origin + '/seminary/community'
 	return __('Hi {0}, you are invited to join the cohort "{1}". Sign in at {2} to accept — first time? use "Forgot password" to set your password.')
-		.format(m.name || '', cohortName, url)
+		.format(m.name || '', selectedCohortName.value, url)
 }
 function copyInvite(m) {
 	navigator.clipboard?.writeText(inviteMessage(m)).then(() => createToast({ title: __('Invite copied.'), icon: 'check' }))

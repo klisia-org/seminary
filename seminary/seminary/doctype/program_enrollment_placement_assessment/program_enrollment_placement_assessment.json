@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-06-18 00:00:00",
- "description": "A placement assessment a student has taken (or must take), with its recorded score. The durable score store for leveling (ADR 060) — read by the resolver, not stored on a graduation requirement.",
+ "description": "A placement assessment a student has taken (or must take), with its recorded score. The durable score store for leveling — read by the resolver, not stored on a graduation requirement.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -72,14 +72,14 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Student-supplied evidence (e.g. an official score report). Surfaced on the portal when the assessment requires student evidence. Private (ADR 043).",
+   "description": "Student-supplied evidence (e.g. an official score report). Surfaced on the portal when the assessment requires student evidence. Private.",
    "fieldname": "student_evidence_attachment",
    "fieldtype": "Attach",
    "label": "Student Evidence"
   },
   {
    "allow_on_submit": 1,
-   "description": "Examiner-supplied verifying evidence attached when recording the score. Private (ADR 043).",
+   "description": "Examiner-supplied verifying evidence attached when recording the score. Private.",
    "fieldname": "staff_evidence_attachment",
    "fieldtype": "Attach",
    "label": "Staff Evidence"

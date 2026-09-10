@@ -95,7 +95,7 @@
   {
    "collapsible": 1,
    "collapsible_depends_on": "eval:!doc.partner_seminary",
-   "description": "Fields populated only when this row represents a transferred or legacy grade from a Partner Seminary. See ADRs 005 & 006.",
+   "description": "Fields populated only when this row represents a transferred or legacy grade from a Partner Seminary.",
    "fieldname": "transfer_section",
    "fieldtype": "Section Break",
    "label": "Transfer / Legacy"
@@ -161,7 +161,7 @@
   },
   {
    "default": "None",
-   "description": "Warning raised during conversion (per ADR 006 rounding/out-of-range rules).",
+   "description": "Warning raised while converting the partner seminary's grade to this school's scale \u2014 a value that had to be rounded, or that fell outside the scale's range.",
    "fieldname": "conversion_warning",
    "fieldtype": "Select",
    "label": "Conversion Warning",

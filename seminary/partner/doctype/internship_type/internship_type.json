@@ -142,7 +142,7 @@
   },
   {
    "depends_on": "auto_assign_faculty",
-   "description": "Deprecated (ADR 059): advisors now come from the Academic Unit's Internship Advisor capability pool. Retained for one release to migrate existing rows; no longer used for assignment.",
+   "description": "Deprecated: advisors now come from the Academic Unit's Internship Advisor capability pool. Retained for one release to migrate existing rows; no longer used for assignment.",
    "fieldname": "advisor_slots",
    "fieldtype": "Table",
    "hidden": 1,

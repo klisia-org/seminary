@@ -19,6 +19,7 @@ from frappe.utils import today
 ANYONE = "Anyone"
 INSTRUCTOR = "Instructor"
 ALUMNUS = "Alumnus of the bound program or level"
+ANY_ALUMNUS = "Any alumnus"
 STAFF = "Staff"
 
 # Only a live membership is checked. A closed row records who led at the time,
@@ -36,6 +37,7 @@ class CohortMembership(Document):
         if self.invite_status in ("Left", "Removed") and not self.left_on:
             self.left_on = today()
         self._guard_single_active()
+        self._guard_lineage_limit()
         self.validate_leader_eligibility()
 
     def _guard_single_active(self):
@@ -57,6 +59,48 @@ class CohortMembership(Document):
                     frappe.bold(self.person)
                 )
             )
+
+    def _guard_lineage_limit(self):
+        """How many cohorts of one type a person may be in at once.
+
+        Counted by lineage, not by cohort: a cohort and everything split off
+        from it are one commitment, made once, and a group that multiplies
+        should not gradually use up its members' allowance. `Cohort.lineage_root`
+        already says this -- a root cohort is its own root -- so the question is
+        just how many distinct roots the person is open in.
+
+        Two things this deliberately does not do. It does not exempt staff: a
+        size ceiling is advice about a room, but being mentored in two places at
+        once is either the school's policy or it isn't, and a registrar in the
+        desk is not better placed to decide that than the type is. And it does
+        not re-check a membership that is already open, so lowering the setting
+        never makes an existing row unsaveable while somebody edits it for an
+        unrelated reason -- it applies as people are added, and what already
+        stands, stands.
+        """
+        if self.invite_status not in OPEN_STATUSES:
+            return
+        before = self.get_doc_before_save()
+        if before and before.invite_status in OPEN_STATUSES:
+            return
+
+        others = lineages_that_would_block(self.person, self.cohort, ignoring=self.name)
+        if others is None:
+            return
+
+        frappe.throw(
+            _(
+                "{0} is already in {1} of these, which is as many as this kind of "
+                "cohort allows at one time. Close the other membership first, or "
+                "raise Cohorts Per Member on {2}."
+            ).format(
+                frappe.bold(self._person_label()),
+                len(others),
+                frappe.bold(
+                    frappe.db.get_value("Cohort", self.cohort, "cohort_type") or ""
+                ),
+            )
+        )
 
     # ------------------------------------------------------------- eligibility
 
@@ -82,17 +126,23 @@ class CohortMembership(Document):
             self._refuse(rule, _("an active Instructor record"))
         elif rule == STAFF and not self._holds_a_staff_role():
             self._refuse(rule, _("a user account with a staff role"))
+        elif rule == ANY_ALUMNUS and not self._alumni_profile():
+            self._refuse(rule, _("an enabled Alumni Profile"))
         elif rule == ALUMNUS and not self._is_alumnus_of(policy):
-            self._refuse(
-                rule,
-                _("an enabled Alumni Profile for {0}").format(
-                    frappe.bold(
-                        policy.get("program")
-                        or policy.get("program_level")
-                        or _("any program")
-                    )
-                ),
-            )
+            self._refuse(rule, self._alumnus_of_what(policy))
+
+    def _alumnus_of_what(self, policy):
+        """What the bound-alumnus rule was asking for, in the type's own terms."""
+        bound = policy.get("program") or policy.get("program_level")
+        if bound:
+            return _("an enabled Alumni Profile for {0}").format(frappe.bold(bound))
+        # The type is refused at save without a binding, so reaching this means
+        # one was edited around validation. Say that, rather than name a program
+        # there isn't one of.
+        return _(
+            "an enabled Alumni Profile for the program this type binds to -- and "
+            "it binds to none, which its Leader Eligibility no longer allows"
+        )
 
     def _refuse(self, rule, needed):
         frappe.throw(
@@ -123,42 +173,126 @@ class CohortMembership(Document):
         user = frappe.db.get_value("Person", self.person, "user")
         return bool(user and STAFF_ROLES & set(frappe.get_roles(user)))
 
+    def _alumni_profile(self):
+        return alumni_profile(self.person)
+
     def _is_alumnus_of(self, policy):
-        """An enabled Alumni Profile, of the bound program or of the level.
+        return is_alumnus_of_bound(self.person, policy)
 
-        An unbound type (no program, no level) asks only that they be an alumnus
-        of somewhere: the type has said nothing about which program, and
-        inventing one here would be policy this record is not allowed to make.
-        """
-        profile = frappe.db.get_value(
-            "Alumni Profile", {"person": self.person, "enabled": 1}
-        )
-        if not profile:
-            return False
-        if not (policy.get("program") or policy.get("program_level")):
-            return True
 
-        # Completed programs are rows, not a field — a graduate with two
-        # degrees used to be an alumnus of only whichever one happened to be
-        # stored, which silently withheld leadership of a cohort scoped to the
-        # other (ADR 069).
-        if policy.get("program"):
-            programs = [policy["program"]]
-        else:
-            programs = frappe.get_all(
-                "Program",
-                filters={"program_level": policy["program_level"]},
-                pluck="name",
-            )
-            if not programs:
-                return False
-        return bool(
-            frappe.db.exists(
-                "Alumni Graduation",
-                {
-                    "parenttype": "Alumni Profile",
-                    "parent": profile,
-                    "program": ("in", programs),
-                },
-            )
+# ------------------------------------------------------------------ the rules
+#
+# Module level, because the portal has to ask the same questions *before* the
+# fact -- which cohort types may this person start, which buttons should they be
+# shown -- and a second implementation of "is this person an alumnus of that" is
+# a second implementation that can drift from the one that refuses the save.
+
+
+def lineages_that_would_block(person, cohort, ignoring=None):
+    """The other cohort families of this type standing in this person's way.
+
+    `None` when nothing does -- the type sets no limit, they are already in this
+    family, or they are still under it. A set otherwise, so the caller can say
+    how many. Shared rather than inlined because reactivating an archived cohort
+    has to ask the same question *before* reopening a membership: a person freed
+    by the archiving may have joined another group since, and finding that out
+    by catching the refusal would leave a half-restored cohort behind.
+    """
+    row = frappe.db.get_value(
+        "Cohort", cohort, ["cohort_type", "lineage_root"], as_dict=True
+    )
+    if not row:
+        return None
+    limit = (
+        frappe.db.get_value("Cohort Type", row.cohort_type, "max_lineages_per_member")
+        or 0
+    )
+    if not limit:
+        return None
+
+    # `lineage_root` is written in `Cohort.after_insert`, and the leader's own
+    # membership is created there too -- after it is set, so this reads a real
+    # root. Falling back to the cohort itself keeps a half-built record from
+    # silently counting as everyone else's lineage.
+    mine = row.lineage_root or cohort
+    others = {
+        r.lineage_root or r.name
+        for r in frappe.db.sql(
+            """
+            SELECT c.name, c.lineage_root
+            FROM `tabCohort Membership` m
+            JOIN `tabCohort` c ON c.name = m.cohort
+            WHERE m.person = %(person)s
+              AND c.cohort_type = %(cohort_type)s
+              AND m.invite_status IN %(open)s
+              AND m.name != %(ignoring)s
+            """,
+            {
+                "person": person,
+                "cohort_type": row.cohort_type,
+                "open": OPEN_STATUSES,
+                "ignoring": ignoring or "",
+            },
+            as_dict=True,
         )
+    }
+    if mine in others or len(others) < limit:
+        return None
+    return others
+
+
+def alumni_profile(person):
+    """A graduate of this school, of nowhere in particular."""
+    return frappe.db.get_value("Alumni Profile", {"person": person, "enabled": 1})
+
+
+def is_alumnus_of_bound(person, policy):
+    """An enabled Alumni Profile, of the bound program or of the level.
+
+    An unbound type is refused rather than waved through. It used to return True
+    -- the type had named no program, so any alumnus passed -- which read as
+    leniency but was really a policy decision this record is not allowed to
+    make. A school that means it now says so on the type, with `Any alumnus`.
+    """
+    profile = alumni_profile(person)
+    if not profile:
+        return False
+
+    # Completed programs are rows, not a field — a graduate with two degrees
+    # used to be an alumnus of only whichever one happened to be stored, which
+    # silently withheld leadership of a cohort scoped to the other (ADR 069).
+    if policy.get("program"):
+        programs = [policy["program"]]
+    elif policy.get("program_level"):
+        programs = frappe.get_all(
+            "Program",
+            filters={"program_level": policy["program_level"]},
+            pluck="name",
+        )
+    else:
+        return False
+    if not programs:
+        return False
+    return bool(
+        frappe.db.exists(
+            "Alumni Graduation",
+            {
+                "parenttype": "Alumni Profile",
+                "parent": profile,
+                "program": ("in", programs),
+            },
+        )
+    )
+
+
+def may_lead(person, policy):
+    """Does this person satisfy an alumnus leadership rule?
+
+    Only the two alumnus rules; the others are asked of a record that exists.
+    """
+    rule = (policy or {}).get("leader_eligibility")
+    if rule == ANY_ALUMNUS:
+        return bool(alumni_profile(person))
+    if rule == ALUMNUS:
+        return is_alumnus_of_bound(person, policy)
+    return False

@@ -63,10 +63,24 @@ class StudentApplicant(Document):
     def validate(self):
         self.set_title()
         self.validate_dates()
+        self.validate_tax_id()
         self.validate_term()
         self.set_access_key()
         person_fields.assert_capture_complete(self)
         self.freeze_captured_fields()
+
+    def validate_tax_id(self):
+        """Check the tax ID before it reaches the Person (ADR 071).
+
+        The shared script prompts on the public form, but a prompt is not a
+        guarantee — a form that simply omits the field cannot be caught on the
+        client, so the value is checked here too. Nationality decides the
+        format, falling back to `country`: an applicant has no Person yet
+        (ADR 068 §1) and so no mailing country to consult.
+        """
+        from seminary.seminary import tax_ids
+
+        tax_ids.assert_on(self)
 
     def freeze_captured_fields(self):
         """Once admitted, the Person owns the personal data — not this record.

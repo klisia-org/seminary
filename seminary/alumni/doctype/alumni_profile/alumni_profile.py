@@ -27,10 +27,39 @@ def class_year_for(academic_year=None, conclusion_date=None):
     return None
 
 
+ALUMNI_ROLE = "Alumni"
+
+
 class AlumniProfile(Document):
     def validate(self):
         self._resolve_person()
         self._set_class_years()
+
+    def after_insert(self):
+        self.grant_alumni_role()
+
+    def grant_alumni_role(self):
+        """Having an alumni profile is what makes someone an alumnus.
+
+        The role used to be granted by `mark_as_alumni` alone, so every other
+        way a profile comes into being — the registrar creating one in Desk for
+        a graduate of another institution, `intake.make_alumni_profile`, an
+        import — produced someone who was listed in the directory but could not
+        open it, and who could be sent a directory message with no way to
+        answer it (ADR 070).
+
+        Deliberately `after_insert` and not `on_update`: a role granted at
+        creation can be taken away afterwards, and a later save of the profile
+        must not hand it back. Revocation is a decision, and re-granting on
+        every edit would quietly undo it.
+        """
+        if not self.user:
+            return
+        if ALUMNI_ROLE in frappe.get_roles(self.user):
+            return
+        user = frappe.get_doc("User", self.user)
+        user.flags.ignore_permissions = True
+        user.add_roles(ALUMNI_ROLE)
 
     def _set_class_years(self):
         """Derive `class_year` on every graduation row, however it got there.

@@ -6,9 +6,45 @@
 // address here, at 2pm, while they are configuring — not from an empty result
 // in the planner later.
 
+// "Follow the category" is the honest default, but a default nobody can read is
+// just a shrug. Spell out what it currently resolves to, and keep it in step as
+// the binding is edited.
+function describe_archive_rule(frm) {
+	const field = frm.get_field("on_archive");
+	if (!field) return;
+
+	// `set_new_description` only rewrites the help box; it does not touch
+	// `df.description`, so the field's own wording stays available to compose
+	// against on every later call.
+	const base = __(field.df.description || "");
+	if (frm.doc.on_archive && frm.doc.on_archive !== "Follow the category") {
+		field.set_new_description(base);
+		return;
+	}
+
+	const scoped_to_one_thing =
+		frm.doc.category === "Course scoped" ||
+		(["Paced Program", "Throughout Program"].includes(frm.doc.category) &&
+			frm.doc.program);
+	const resolved = scoped_to_one_thing
+		? __(
+				"As set up, a cohort of this type belongs to one thing that happens once, so archiving keeps its members."
+		  )
+		: __(
+				"As set up, a cohort of this type is not bound to a single Program, so archiving releases its members."
+		  );
+	field.set_new_description(`${base}<br><b>${resolved}</b>`);
+}
+
 frappe.ui.form.on("Cohort Type", {
+	category: describe_archive_rule,
+	program: describe_archive_rule,
+	program_level: describe_archive_rule,
+	on_archive: describe_archive_rule,
+
 	refresh(frm) {
 		frm.dashboard.clear_headline();
+		describe_archive_rule(frm);
 		if (frm.is_new() || !frm.doc.plannable || !frm.doc.mentor_unit) return;
 
 		frm.add_custom_button(__("Open Cohort Planner"), () =>

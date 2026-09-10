@@ -16,6 +16,8 @@ counting public holidays as absences.
 import frappe
 from frappe.utils import getdate
 
+from seminary.seminary.utils import country_code
+
 
 def is_holiday(date, country=None, subdiv=None) -> bool:
     """True if `date` is a public holiday in the given country (default: the
@@ -24,23 +26,13 @@ def is_holiday(date, country=None, subdiv=None) -> bool:
     if not date:
         return False
     d = getdate(date)
-    code = _iso_code(country or frappe.db.get_default("country"))
+    # The alpha-2 code the holidays library expects. Shared with the tax-ID
+    # registry (ADR 071), so it lives in utils rather than here.
+    code = country_code(country or frappe.db.get_default("country"))
     if not code:
         return False
     cal = _calendar(code, d.year, subdiv)
     return d in cal if cal is not None else False
-
-
-def _iso_code(country):
-    """Map a country name (Frappe Country doctype) or raw code to the uppercase
-    ISO-3166 alpha-2 code the holidays library expects."""
-    if not country:
-        return None
-    # Already a 2-letter code?
-    if len(country) == 2:
-        return country.upper()
-    code = frappe.db.get_value("Country", country, "code")
-    return code.upper() if code else None
 
 
 def _calendar(code, year, subdiv=None):

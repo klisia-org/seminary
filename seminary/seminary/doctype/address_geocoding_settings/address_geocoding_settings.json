@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 0,
  "creation": "2026-09-04 00:00:00",
- "description": "Resolves a finished postal address to coordinates so distance-based rules can run (ADR 068). Distinct from Frappe's own Geolocation Settings, which completes an address as someone types it \u2014 different job, different provider account.",
+ "description": "Resolves a finished postal address to coordinates so distance-based rules can run. Distinct from Frappe's own Geolocation Settings, which completes an address as someone types it \u2014 different job, different provider account.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

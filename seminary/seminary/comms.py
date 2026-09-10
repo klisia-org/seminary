@@ -888,6 +888,8 @@ def get_my_inbox(channel=None, category=None, unread_only=0, limit=100, box="inb
         limit_page_length=cint(limit) or 100,
     )
     _annotate_parties(messages)
+    if box != "sent":
+        _annotate_replyable(messages)
     unread = frappe.db.count(
         "Communication Log",
         {
@@ -932,6 +934,35 @@ def _annotate_parties(messages):
     for m in messages:
         m["sender_name"] = user_names.get(m.triggered_by)
         m["person_name"] = person_names.get(m.person)
+
+
+def _annotate_replyable(messages):
+    """Say which received messages can actually be answered (ADR 070).
+
+    The portal used to offer Reply on any Community message with a named
+    sender, and `reply_portal_message` then refused the ones outside the
+    replier's messaging scope — a button that fails is worse than no button.
+    That was reachable before peer messaging existed (a course message from an
+    instructor you no longer study under) and is easy to hit now: someone can
+    be listed in the alumni directory, and so be reachable, while their own
+    account does not hold a role any messaging rule names.
+
+    Resolved once per distinct sender rather than once per message; with the
+    Alumni Directory audience `may_message` is a single exists() anyway.
+    """
+    from seminary.seminary.person import find_person
+
+    verdict = {}
+    for m in messages:
+        m["can_reply"] = False
+        if not (m.get("triggered_by") and m.get("sender_name")):
+            continue
+        if m["triggered_by"] not in verdict:
+            sender_person = find_person(user=m["triggered_by"])
+            verdict[m["triggered_by"]] = bool(
+                sender_person and may_message(sender_person)
+            )
+        m["can_reply"] = verdict[m["triggered_by"]]
 
 
 @frappe.whitelist()
@@ -988,7 +1019,12 @@ def mark_all_inbox_read():
 @frappe.whitelist()
 def get_my_communication_preferences():
     """Self-service preferences (ADR 043 stage two): language, per
-    channel × category consent, and a read-only view of channel addresses."""
+    channel × category consent, and the person's channel addresses.
+
+    Addresses stopped being read-only in ADR 070: `editable` says whether the
+    portal may change or remove a row (only the ones the person added
+    themselves, and never the primary), while sharing is offered on every row
+    because it changes visibility rather than the datum."""
     person = frappe.get_doc("Person", _my_person())
     consents = {f"{row.channel}::{row.category}": row.status for row in person.consents}
     return {
@@ -1013,17 +1049,34 @@ def get_my_communication_preferences():
             "city": person.city,
             "state": person.state,
             "pincode": person.pincode,
-            "country": person.country,
+            # The postal country, never person.country — that one selects the
+            # comms provider account (ADR 046 addendum, ADR 070).
+            "country": person.mailing_country,
         },
         "countries": frappe.get_all("Country", pluck="name", order_by="name asc"),
+        "self_managed_channels": [
+            c
+            for c in SELF_MANAGED_CHANNELS
+            if frappe.db.exists("Communication Channel", {"name": c, "enabled": 1})
+        ],
+        "directory_sharing_available": bool(
+            frappe.db.exists("Alumni Profile", {"person": person.name, "enabled": 1})
+        ),
         "addresses": [
             {
+                "name": row.name,
                 "channel": row.channel,
                 "value": row.value,
                 "category": row.category,
                 "is_primary": row.is_primary,
                 "verified": row.verified,
+                "verified_on": row.verified_on,
                 "status": row.status,
+                "share_in_directory": row.share_in_directory,
+                "source": row.source,
+                "editable": bool(
+                    row.source == SELF_SERVICE_SOURCE and not row.is_primary
+                ),
             }
             for row in person.channel_addresses
         ],
@@ -1048,9 +1101,12 @@ def update_my_communication_preferences(
         for field in ("address_line_1", "address_line_2", "city", "state", "pincode"):
             person.set(field, (mailing_address.get(field) or "").strip() or None)
         country = (mailing_address.get("country") or "").strip()
-        # Country also drives provider routing — only set a valid one, never clear.
+        # The postal country only. This used to write person.country, which
+        # pick_account reads to choose a provider — so correcting a mailing
+        # address could move someone's messaging region. ADR 046 split
+        # mailing_country out precisely to stop that (ADR 070).
         if country and frappe.db.exists("Country", country):
-            person.country = country
+            person.mailing_country = country
 
     if language:
         if not frappe.db.exists("Language", language):
@@ -1092,6 +1148,180 @@ def update_my_communication_preferences(
                 },
             )
 
+    person.save(ignore_permissions=True)
+    return get_my_communication_preferences()
+
+
+# ------------------------------------------------- self-service addresses
+
+SELF_SERVICE_SOURCE = "Self-service"
+# Channels a person may type an address for. In-App and Print have no address
+# at all, and a Telegram chat id cannot be typed — it is proved by pressing
+# Start in the bot (telegram_adapter.get_my_telegram_link). Letting someone
+# hand-enter one would route their messages into a stranger's chat.
+SELF_MANAGED_CHANNELS = (EMAIL_CHANNEL, SMS_CHANNEL, WHATSAPP_CHANNEL, VOICE_CHANNEL)
+MAX_SELF_ADDRESSES_PER_CHANNEL = 3
+_PHONE_RE = re.compile(r"^\+[1-9]\d{6,14}$")
+
+
+def _my_address_row(row):
+    """Resolve one of the caller's own channel-address rows.
+
+    "Not yours" and "does not exist" throw the same message on purpose: the
+    row name is a global id, so distinguishing them would turn this into an
+    enumeration oracle over everybody's addresses."""
+    person = _my_person()
+    info = frappe.db.get_value(
+        "Person Channel Address",
+        row,
+        ["name", "parent", "parenttype", "channel", "value", "source", "is_primary"],
+        as_dict=True,
+    )
+    if not info or info.parenttype != "Person" or info.parent != person:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    return person, info
+
+
+def _require_self_service(info):
+    if info.source != SELF_SERVICE_SOURCE:
+        frappe.throw(
+            _("The school keeps this address. Ask the registrar to change it.")
+        )
+    if info.is_primary:
+        frappe.throw(_("Your primary address can't be changed here."))
+
+
+def _clean_address(channel, value):
+    """Validate a typed address for a channel, returning the stored form."""
+    value = (value or "").strip()
+    if not value:
+        frappe.throw(_("Enter an address."))
+    if channel not in SELF_MANAGED_CHANNELS:
+        frappe.throw(_("You can't add an address for {0}.").format(_(channel)))
+    if not frappe.db.exists("Communication Channel", {"name": channel, "enabled": 1}):
+        frappe.throw(_("Unknown channel {0}.").format(channel))
+    if channel == EMAIL_CHANNEL:
+        frappe.utils.validate_email_address(value, throw=True)
+        return value.lower()
+    compact = re.sub(r"[\s\-()]", "", value)
+    if not _PHONE_RE.match(compact):
+        frappe.throw(_("Include the country code, e.g. +15551234567."))
+    return compact
+
+
+def _clean_category(category):
+    category = (category or "").strip()
+    if category and category not in PREF_CATEGORIES:
+        frappe.throw(_("Unknown category {0}.").format(category))
+    return category or None
+
+
+@frappe.whitelist(methods=["POST"])
+def add_my_address(channel, value, category=None, share_in_directory=0):
+    """Add a channel address to the caller's own Person (ADR 070).
+
+    Lands unverified: `request_verification` sends the confirmation that makes
+    it usable in the alumni directory."""
+    person_name = _my_person()
+    value = _clean_address(channel, value)
+    category = _clean_category(category)
+    person = frappe.get_doc("Person", person_name)
+    mine = [
+        r
+        for r in person.channel_addresses
+        if r.channel == channel and r.source == SELF_SERVICE_SOURCE
+    ]
+    if len(mine) >= MAX_SELF_ADDRESSES_PER_CHANNEL:
+        frappe.throw(
+            _("You already have {0} {1} addresses.").format(
+                MAX_SELF_ADDRESSES_PER_CHANNEL, _(channel)
+            )
+        )
+    person.append(
+        "channel_addresses",
+        {
+            "channel": channel,
+            "value": value,
+            "category": category,
+            "is_primary": 0,
+            "verified": 0,
+            "status": "Active",
+            "share_in_directory": cint(share_in_directory),
+            "source": SELF_SERVICE_SOURCE,
+        },
+    )
+    # Saved through the parent so validate_channel_addresses runs: it dedupes,
+    # lowercases email and keeps one primary per channel.
+    person.save(ignore_permissions=True)
+
+    if channel == EMAIL_CHANNEL:
+        from seminary.seminary.address_verification import send_verification
+
+        added = next(
+            (
+                r
+                for r in person.channel_addresses
+                if r.channel == channel and r.value == value
+            ),
+            None,
+        )
+        if added:
+            # Best effort: the address is saved either way, and Preferences
+            # offers a re-send. A mail failure must not lose the row.
+            try:
+                send_verification(person.name, channel, value, added.name)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "address verification send")
+    return get_my_communication_preferences()
+
+
+@frappe.whitelist(methods=["POST"])
+def update_my_address(row, value=None, category=None):
+    """Correct an address the caller added themselves."""
+    person_name, info = _my_address_row(row)
+    _require_self_service(info)
+    person = frappe.get_doc("Person", person_name)
+    target = next((r for r in person.channel_addresses if r.name == row), None)
+    if not target:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if value is not None:
+        cleaned = _clean_address(target.channel, value)
+        if cleaned != target.value:
+            target.value = cleaned
+            # A verified address that gets retyped is not a verified address.
+            target.verified = 0
+            target.verified_on = None
+            target.status = "Active"
+    if category is not None:
+        target.category = _clean_category(category)
+    person.save(ignore_permissions=True)
+    return get_my_communication_preferences()
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_my_address(row):
+    """Remove an address the caller added themselves."""
+    person_name, info = _my_address_row(row)
+    _require_self_service(info)
+    person = frappe.get_doc("Person", person_name)
+    person.channel_addresses = [r for r in person.channel_addresses if r.name != row]
+    person.save(ignore_permissions=True)
+    return get_my_communication_preferences()
+
+
+@frappe.whitelist(methods=["POST"])
+def set_address_sharing(row, share_in_directory):
+    """Show or hide one address in the people directory (ADR 070).
+
+    Unlike editing, this works on every row the caller owns — including the
+    registrar-created primary. It changes who sees the address, not the
+    address itself, and the typical alumnus has no other email to offer."""
+    person_name, _info = _my_address_row(row)
+    person = frappe.get_doc("Person", person_name)
+    target = next((r for r in person.channel_addresses if r.name == row), None)
+    if not target:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    target.share_in_directory = cint(share_in_directory)
     person.save(ignore_permissions=True)
     return get_my_communication_preferences()
 
@@ -1171,6 +1401,7 @@ _AUDIENCE_GROUP = {
     "All Instructors": "Instructors",
     "Course Students": "Students",
     "All Students": "Students",
+    "Alumni Directory": "Alumni",
     "Support User": "Support",
     "Specific User": "Direct",
 }
@@ -1207,6 +1438,8 @@ def _resolve_audience(rule, course, staff, settings):
         return _all_instructor_recipients(course) if staff else []
     if audience == "All Students":
         return _all_student_recipients(course) if staff else []
+    if audience == "Alumni Directory":
+        return _alumni_directory_recipients()
     if audience == "Role":
         return _role_recipients(rule.audience_role)
     if audience == "Specific User":
@@ -1214,6 +1447,49 @@ def _resolve_audience(rule, course, staff, settings):
     if audience == "Support User":
         return _user_recipient(settings.support_user, "Support")
     return []
+
+
+def _alumni_directory_recipients():
+    """The people listed in the alumni directory (ADR 070).
+
+    Keyed on `show_in_directory`, not on holding the Alumni role: a graduate
+    who hid themselves from the directory has said they do not want to be
+    found, and an `audience="Role"` rule pointed at Alumni would list them in
+    a compose picker anyway."""
+    rows = frappe.get_all(
+        "Alumni Profile",
+        filters={"enabled": 1, "show_in_directory": 1, "person": ("is", "set")},
+        fields=["person", "full_name"],
+    )
+    return [
+        {"person": r.person, "label": r.full_name, "kind": "Alumni", "courses": []}
+        for r in rows
+    ]
+
+
+def may_message(target, course=None):
+    """Is this one person within the caller's messaging scope?
+
+    `get_my_messaging_scope` materializes every allowed recipient, which is
+    fine for a course roster and not for an alumni body. This answers the
+    single-recipient question the send path actually asks, without building
+    the list; it falls back to the full scope for audiences that have no
+    cheaper test (ADR 070)."""
+    if not target or target == _my_person():
+        return False
+    settings = frappe.get_cached_doc("Seminary Settings")
+    rules = [r for r in (settings.portal_messaging_rules or []) if r.enabled]
+    my_roles = set(frappe.get_roles())
+    mine = [r for r in rules if r.sender_role in my_roles]
+    if mine and all(r.audience == "Alumni Directory" for r in mine):
+        return bool(
+            frappe.db.exists(
+                "Alumni Profile",
+                {"person": target, "enabled": 1, "show_in_directory": 1},
+            )
+        )
+    scope = get_my_messaging_scope(course=course)
+    return any(r["person"] == target for r in scope["recipients"])
 
 
 def _all_instructor_recipients(course=None):
@@ -1509,8 +1785,14 @@ def send_portal_message(
     if recipient:
         targets.append(recipient)
 
-    scope = get_my_messaging_scope(course=course)
+    # The scope is built only when the whole list is genuinely needed: the
+    # all_students expansion, or a multi-recipient send. Naming one recipient
+    # — every send from the alumni directory — takes the targeted check
+    # instead, because materializing an alumni body to test one membership is
+    # a list nobody reads (ADR 070).
+    scope = None
     if cint(all_students):
+        scope = get_my_messaging_scope(course=course)
         if not scope["staff"]:
             frappe.throw(
                 _("Only staff can message all students."), frappe.PermissionError
@@ -1520,10 +1802,16 @@ def send_portal_message(
     targets = [t for t in dict.fromkeys(targets) if t]
     if not targets:
         frappe.throw(_("Pick at least one recipient."))
-    allowed = {r["person"] for r in scope["recipients"]}
-    blocked = [t for t in targets if t not in allowed]
-    if blocked:
-        frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
+    if scope is None and len(targets) == 1:
+        if not may_message(targets[0], course=course):
+            frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
+    else:
+        if scope is None:
+            scope = get_my_messaging_scope(course=course)
+        allowed = {r["person"] for r in scope["recipients"]}
+        blocked = [t for t in targets if t not in allowed]
+        if blocked:
+            frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
 
     if isinstance(attachments, str):
         attachments = json.loads(attachments)
@@ -1594,9 +1882,7 @@ def reply_portal_message(in_reply_to, message):
     sender_person = find_person(user=original.triggered_by)
     if not sender_person or sender_person == me:
         frappe.throw(_("This message can't be replied to."))
-    if sender_person not in {
-        r["person"] for r in get_my_messaging_scope()["recipients"]
-    }:
+    if not may_message(sender_person):
         frappe.throw(_("You can't message this recipient."), frappe.PermissionError)
 
     body = "<p>{0}</p>".format(
@@ -1696,7 +1982,10 @@ _STATUS_ALIASES = {
     "read": "Read",
     "failed": "Failed",
     "bounced": "Bounced",
-    "undelivered": "Failed",
+    # A carrier rejecting the address, not a send that went wrong — which is
+    # what makes it safe to mark the address itself (ADR 070). Plain "failed"
+    # stays a send-attempt failure that MAX_RETRIES owns.
+    "undelivered": "Bounced",
 }
 
 
@@ -1797,6 +2086,52 @@ def _apply_webhook_event(event, account):
     return {"handled": False}
 
 
+def _set_address_state(log, status=None, verified=None):
+    """Carry a provider's verdict from the ledger back to the spine (ADR 070).
+
+    A delivery receipt or a bounce is a fact about the address, not only about
+    one message — but nothing wrote it down, so `Person Channel Address.status`
+    never left "Active" and its Bounced/Invalid options were unreachable.
+
+    Requires `log.person`: an announcement recipient resolved by email alone
+    has none, and matching on (channel, value) across every Person would mark
+    a shared family address bounced on two records. Writes the child row
+    directly rather than saving the Person — this runs as Guest inside a
+    webhook, where a parent save would fire propagation and a queued geocode
+    and could throw on an unrelated duplicate, losing the verdict."""
+    if not (log.person and log.to_address) or log.channel in ADDRESSLESS_CHANNELS:
+        return
+    value = log.to_address.strip()
+    row = None
+    # validate_channel_addresses lowercases stored email; to_address may not be.
+    for candidate in (value, value.lower()):
+        row = frappe.db.get_value(
+            "Person Channel Address",
+            {
+                "parenttype": "Person",
+                "parent": log.person,
+                "channel": log.channel,
+                "value": candidate,
+            },
+            "name",
+        )
+        if row:
+            break
+    if not row:
+        return
+    updates = {}
+    if status:
+        updates["status"] = status
+    if verified is not None:
+        updates["verified"] = cint(verified)
+        if verified:
+            updates["verified_on"] = now_datetime()
+    if updates:
+        frappe.db.set_value(
+            "Person Channel Address", row, updates, update_modified=False
+        )
+
+
 def _apply_status_event(event, account):
     log_name = frappe.db.get_value(
         "Communication Log",
@@ -1818,7 +2153,16 @@ def _apply_status_event(event, account):
             {"status": new_status, "error": _("Reported by provider webhook.")},
             update_modified=False,
         )
+        # Only a bounce. "Failed" is also what a provider outage or a rate-limit
+        # rejection looks like, and marking the address on that would disable a
+        # good one for good, silently, during an incident (ADR 070).
+        if new_status == "Bounced":
+            _set_address_state(log, status="Bounced", verified=0)
     else:
+        if new_status == "Delivered":
+            # A carrier confirming delivery is stronger proof the address
+            # exists than any click-through we could ask for.
+            _set_address_state(log, verified=1)
         if _STATUS_RANK.get(new_status, 0) <= _STATUS_RANK.get(log.status, 0):
             return {"handled": True, "log": log.name, "noop": True}
         updates = {"status": new_status}

@@ -71,7 +71,7 @@
   },
   {
    "depends_on": "eval:doc.requirement_type=='Manual Verification'",
-   "description": "Owning Academic Unit whose Manual-Verification Verifier capability holders verify this requirement and see it in their worklist (ADR 059 §7).",
+   "description": "Owning Academic Unit whose Manual-Verification Verifier capability holders verify this requirement and see it in their worklist.",
    "fieldname": "academic_unit",
    "fieldtype": "Link",
    "label": "Academic Unit",

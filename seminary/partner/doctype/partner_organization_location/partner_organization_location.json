@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "PORG-LOC-.#####",
  "creation": "2026-06-14 12:00:00",
- "description": "A physical site / campus of a Partner Organization. A standalone doctype (not a child table) so a Partner Job Opening can link a specific location and openings stay filterable by ministry setting and size. See ADR 053.",
+ "description": "A physical site / campus of a Partner Organization. A standalone doctype (not a child table) so a Partner Job Opening can link a specific location and openings stay filterable by ministry setting and size.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [

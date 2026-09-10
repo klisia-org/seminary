@@ -635,6 +635,79 @@ class TestWriteSemantics(IntegrationTestCase):
             frappe.db.get_value("Person", person.name, "gender"), genders[1]
         )
 
+    def test_a_photo_can_be_replaced(self):
+        """It was FILL_ONLY, so `update_person(overwrite=True)` could not change
+        an existing photo — every upload after the first was silently dropped
+        and the student kept re-uploading the same picture (ADR 070)."""
+        self.assertEqual(registry.SPEC_BY_PERSON_FIELD["image"].mode, registry.AUTHORED)
+        person = make_person("Pictured")
+        spine.update_person(person.name, image="/files/first.png", overwrite=True)
+        spine.update_person(person.name, image="/files/second.png", overwrite=True)
+        self.assertEqual(
+            frappe.db.get_value("Person", person.name, "image"), "/files/second.png"
+        )
+
+    def test_a_photo_is_not_cleared_by_a_caller_that_has_none(self):
+        """`_values_from_kwargs` passes `locals()`, so an authoritative caller
+        with nothing to say about the photo still sends image=None — and
+        save_instructor_profile sends `profileimage or None`. never_blank keeps
+        that from wiping the spine's photo as a side effect (ADR 070)."""
+        person = make_person("Keeper2")
+        spine.update_person(person.name, image="/files/kept.png", overwrite=True)
+        spine.update_person(person.name, last_name="Elsewhere", overwrite=True)
+        self.assertEqual(
+            frappe.db.get_value("Person", person.name, "image"), "/files/kept.png"
+        )
+
+
+class TestUserImageSync(IntegrationTestCase):
+    """Frappe's avatar is `User.user_image`; the spine's is `Person.image`.
+    Nothing joined them, so an uploaded photo showed on the profile card and
+    left the sidebar circle empty (ADR 070)."""
+
+    def _person_with_user(self, label):
+        user = make_user(f"{label.lower()}@example.com")
+        person = make_person(label)
+        person.user = user.name
+        person.save(ignore_permissions=True)
+        return person, user
+
+    def test_the_spine_photo_reaches_the_login_account(self):
+        person, user = self._person_with_user("Avatar")
+        person.image = "/files/avatar.png"
+        person.save(ignore_permissions=True)
+        self.assertEqual(
+            frappe.db.get_value("User", user.name, "user_image"), "/files/avatar.png"
+        )
+
+    def test_a_gravatar_is_taken_over(self):
+        person, user = self._person_with_user("Gravatared")
+        frappe.db.set_value(
+            "User",
+            user.name,
+            "user_image",
+            "https://secure.gravatar.com/avatar/abc?d=mm",
+            update_modified=False,
+        )
+        person.image = "/files/real.png"
+        person.save(ignore_permissions=True)
+        self.assertEqual(
+            frappe.db.get_value("User", user.name, "user_image"), "/files/real.png"
+        )
+
+    def test_a_deliberately_chosen_avatar_is_left_alone(self):
+        """A photo somebody set on the User in the desk is theirs; the spine
+        does not get to overwrite it just because a Person was saved."""
+        person, user = self._person_with_user("Chosen")
+        frappe.db.set_value(
+            "User", user.name, "user_image", "/files/chosen.png", update_modified=False
+        )
+        person.image = "/files/spine.png"
+        person.save(ignore_permissions=True)
+        self.assertEqual(
+            frappe.db.get_value("User", user.name, "user_image"), "/files/chosen.png"
+        )
+
 
 class TestPropagation(IntegrationTestCase):
     def test_a_spine_edit_reaches_the_role_row(self):

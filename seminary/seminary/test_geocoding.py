@@ -98,7 +98,7 @@ class TestWhenALookupHappens(GeocodingTestCase):
         person = make_person("Geo")
         with patch.object(geocoding, "enqueue_for") as queued:
             _address(person)
-        queued.assert_called_once_with(person.name)
+        queued.assert_called_once_with("Person", person.name)
 
     def test_a_change_that_is_not_the_address_queues_nothing(self):
         """Every Person save would otherwise spend money on an unchanged
@@ -131,7 +131,7 @@ class TestStoringTheResult(GeocodingTestCase):
         self.enable()
         person = _address(make_person("GeoStore"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_OK):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
 
         row = frappe.db.get_value(
             "Person",
@@ -152,10 +152,10 @@ class TestStoringTheResult(GeocodingTestCase):
         self.enable()
         person = _address(make_person("GeoFail"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_OK):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
 
         with patch.object(geocoding.client, "get", side_effect=OSError("boom")):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
 
         self.assertAlmostEqual(
             frappe.db.get_value("Person", person.name, "latitude"), -8.0476, places=4
@@ -172,17 +172,17 @@ class TestStoringTheResult(GeocodingTestCase):
         failed = _address(make_person("GeoSweepFail"))
         gone = _address(make_person("GeoSweepGone"))
         with patch.object(geocoding.client, "get", side_effect=OSError("boom")):
-            geocoding.geocode_person(failed.name)
+            geocoding.geocode_doc("Person", failed.name)
         with patch.object(
             geocoding.client,
             "get",
             return_value={"status": "ZERO_RESULTS", "results": []},
         ):
-            geocoding.geocode_person(gone.name)
+            geocoding.geocode_doc("Person", gone.name)
 
-        with patch.object(geocoding, "geocode_person") as retried:
+        with patch.object(geocoding, "geocode_doc") as retried:
             geocoding.retry_failed_geocodes()
-        attempted = {call.args[0] for call in retried.call_args_list}
+        attempted = {call.args[1] for call in retried.call_args_list}
         self.assertIn(failed.name, attempted)
         self.assertNotIn(gone.name, attempted)
 
@@ -190,7 +190,7 @@ class TestStoringTheResult(GeocodingTestCase):
         self.enable()
         person = _address(make_person("GeoNoMatch"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_OK):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
         self.assertTrue(geocoding.has_coordinates(person.name))
 
         with patch.object(
@@ -198,7 +198,7 @@ class TestStoringTheResult(GeocodingTestCase):
             "get",
             return_value={"status": "ZERO_RESULTS", "results": []},
         ):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
 
         # Frappe's Float columns cannot hold NULL, so the coordinates read as
         # 0.0 — which is a real place. `geocode_precision` is what says whether
@@ -214,15 +214,102 @@ class TestStoringTheResult(GeocodingTestCase):
         self.enable()
         person = make_person("GeoNoAddress")
         with patch.object(geocoding.client, "get") as called:
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
         called.assert_not_called()
 
     def test_a_disabled_integration_stores_nothing(self):
         person = _address(make_person("GeoDisabled"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_OK) as called:
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
         called.assert_not_called()
         self.assertFalse(geocoding.has_coordinates(person.name))
+
+
+def _org(name="Geo Partner", **values):
+    """A Partner Organization with an address, saved."""
+    org = frappe.get_doc(
+        {
+            "doctype": "Partner Organization",
+            "organization_name": name,
+            "address_line_1": values.get("address_line_1", "12 Rua Teste"),
+            "city": values.get("city", "Recife"),
+            "state": values.get("state", "PE"),
+            "pincode": values.get("pincode", "50000-000"),
+        }
+    ).insert(ignore_permissions=True)
+    return org
+
+
+class TestAnOrganizationIsLocatedToo(GeocodingTestCase):
+    """The distance an internship or a job opening is ranked by is the distance
+    to the *organization*, so a Partner Organization carries coordinates on the
+    same terms a Person does — queued on change, cached, never on read."""
+
+    def test_an_address_change_queues_exactly_one_lookup(self):
+        self.enable()
+        with patch.object(geocoding, "enqueue_for") as queued:
+            org = _org("Geo Partner Queue")
+        queued.assert_called_once_with("Partner Organization", org.name)
+
+    def test_a_change_that_is_not_the_address_queues_nothing(self):
+        self.enable()
+        org = _org("Geo Partner Quiet")
+        with patch.object(geocoding, "enqueue_for") as queued:
+            org.reload()
+            org.website = "https://example.test"
+            org.save(ignore_permissions=True)
+        queued.assert_not_called()
+
+    def test_the_postal_country_is_this_doctype_s_own_field(self):
+        """A Person keeps `country` (where they are from) apart from
+        `mailing_country` (where the post goes); an organization has just the
+        one, and it is the address."""
+        self.enable()
+        org = _org("Geo Partner Country")
+        with patch.object(geocoding, "enqueue_for") as queued:
+            org.reload()
+            org.country = "Brazil"
+            org.save(ignore_permissions=True)
+        queued.assert_called_once_with("Partner Organization", org.name)
+        self.assertIn("Brazil", geocoding.address_of(org))
+
+    def test_a_match_is_stored_on_the_organization(self):
+        self.enable()
+        org = _org("Geo Partner Store")
+        with patch.object(geocoding.client, "get", return_value=GOOGLE_OK):
+            geocoding.geocode_doc("Partner Organization", org.name)
+
+        row = frappe.db.get_value(
+            "Partner Organization",
+            org.name,
+            ["latitude", "longitude", "geocode_precision", "geo_status"],
+            as_dict=True,
+        )
+        self.assertAlmostEqual(row.latitude, -8.0476, places=4)
+        self.assertAlmostEqual(row.longitude, -34.877, places=3)
+        self.assertEqual(row.geocode_precision, "ROOFTOP")
+        self.assertTrue(
+            geocoding.has_coordinates(org.name, "Partner Organization"),
+        )
+
+    def test_the_sweeper_retries_organizations_as_well_as_people(self):
+        """Two doctypes, drained independently — a backlog of Persons must not
+        starve the handful of organizations behind it."""
+        self.enable()
+        org = _org("Geo Partner Sweep")
+        with patch.object(geocoding.client, "get", side_effect=OSError("boom")):
+            geocoding.geocode_doc("Partner Organization", org.name)
+        self.assertEqual(
+            frappe.db.get_value("Partner Organization", org.name, "geo_status"),
+            geocoding.FAILED,
+        )
+
+        with patch.object(geocoding, "geocode_doc") as retried:
+            geocoding.retry_failed_geocodes()
+        self.assertIn(
+            ("Partner Organization", org.name),
+            {call.args for call in retried.call_args_list},
+        )
 
 
 #: Captured verbatim from the live endpoint on 2026-09-04 by calling
@@ -248,7 +335,7 @@ class TestProviderFaultsAreNotNoMatches(GeocodingTestCase):
         self.enable()
         person = _address(make_person("GeoBadKey"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_BAD_KEY):
-            geocoding.geocode_person(person.name)
+            geocoding.geocode_doc("Person", person.name)
 
         self.assertEqual(
             frappe.db.get_value("Person", person.name, "geo_status"),
@@ -335,7 +422,7 @@ class TestTheSupportAffordances(GeocodingTestCase):
             "get",
             return_value={"status": "ZERO_RESULTS", "results": []},
         ):
-            result = geocoding.geocode_now(person.name)
+            result = geocoding.geocode_now("Person", person.name)
         self.assertFalse(result["ok"])
         self.assertIn("no such address", result["message"])
 
@@ -358,7 +445,7 @@ class TestTheSupportAffordances(GeocodingTestCase):
         self.enable()
         person = _address(make_person("GeoOnDemandOk"))
         with patch.object(geocoding.client, "get", return_value=GOOGLE_OK):
-            result = geocoding.geocode_now(person.name)
+            result = geocoding.geocode_now("Person", person.name)
         self.assertTrue(result["ok"])
         self.assertAlmostEqual(result["latitude"], -8.0476, places=4)
 

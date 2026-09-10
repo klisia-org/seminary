@@ -31,6 +31,13 @@ CSV_COLUMNS = [
     "primary_mobile",
     "gender",
     "country",
+    # Nationality comes with the tax ID rather than on its own: `country` above
+    # is the messaging-routing one, and it is `nationality` (then the mailing
+    # country) that decides which tax-ID format applies (ADR 071). Importing a
+    # tax ID with no nationality would store every one of them unchecked, which
+    # is the feature quietly off for the one path that creates people in bulk.
+    "nationality",
+    "tax_id",
     "language",
     "image_filename",
     "address_line_1",
@@ -419,6 +426,8 @@ class PersonImportBatch(Document):
             mobile=row.primary_mobile,
             language=row.language or self.default_language,
             country=row.country or self.default_country,
+            nationality=row.nationality,
+            tax_id=row.tax_id,
             image=image_url,
             gender=row.gender,
             # Person owns the date of birth now (ADR 068), so it no longer

@@ -61,6 +61,21 @@
 							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
 					</div>
 
+					<!-- Editable: Tax ID. Label, placeholder and mask come from
+					     the country's rule, so this markup names no country. -->
+					<div class="flex flex-col gap-1">
+						<label class="text-sm text-ink-gray-6">{{ __(taxId.label.value) }}</label>
+						<input v-model="editTaxId" type="text" :placeholder="taxId.placeholder.value"
+							@input="onTaxIdInput" @blur="taxId.validate(editTaxId)"
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+						<p v-if="taxId.error.value" class="text-xs text-ink-red-3">
+							{{ taxId.error.value }}
+						</p>
+						<p v-else-if="taxId.note.value" class="text-xs text-ink-gray-5">
+							{{ __(taxId.note.value) }}
+						</p>
+					</div>
+
 					<!-- Appearance preference -->
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
@@ -313,6 +328,7 @@ import { usersStore } from '../stores/user'
 import LightEditor from '@/components/LightEditor.vue'
 import CareerProfileFields from '@/components/CareerProfileFields.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useTaxId } from '@/composables/useTaxId'
 
 const { theme, setTheme } = useTheme()
 
@@ -404,6 +420,20 @@ const editAddr = ref({
 	address_line_1: '', address_line_2: '', city: '', pincode: '', state: '', country: '',
 })
 
+// The tax ID's format follows nationality, falling back to where they live —
+// the same precedence the server applies (ADR 071). Nationality is read-only
+// on this form, so in practice the rule changes when the address country does.
+const editTaxId = ref('')
+const taxCountry = computed(
+	() => studentInfo.value.nationality || editAddr.value.country || '',
+)
+const taxId = useTaxId(taxCountry, { subject: 'person' })
+
+const onTaxIdInput = () => {
+	editTaxId.value = taxId.format(editTaxId.value)
+	taxId.error.value = ''
+}
+
 const readOnlyFields = computed(() => [
 	{ label: __('Joining Date'), value: studentInfo.value.joining_date },
 	{ label: __('Date of Birth'), value: studentInfo.value.date_of_birth },
@@ -427,7 +457,10 @@ const saveStudentResource = createResource({
 	},
 })
 
-const saveStudent = () => {
+const saveStudent = async () => {
+	// Don't post a tax ID the server is only going to refuse.
+	if (await taxId.validate(editTaxId.value)) return
+
 	if (languageChanged.value) {
 		saveLanguageResource.submit({ language: selectedLanguage.value })
 	}
@@ -441,6 +474,7 @@ const saveStudent = () => {
 		pincode: editAddr.value.pincode,
 		state: editAddr.value.state,
 		country: editAddr.value.country,
+		tax_id: editTaxId.value || null,
 		image: editImage.value || null,
 	})
 }
@@ -529,6 +563,7 @@ watchEffect(() => {
 					state: response.state || '',
 					country: response.country || '',
 				}
+				editTaxId.value = taxId.format(response.tax_id || '')
 				editImage.value = response.image || ''
 			},
 		})

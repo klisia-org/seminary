@@ -24,7 +24,7 @@
 				<div class="h-full bg-blue-500" :style="{ width: pct + '%' }" />
 			</div>
 			<p class="mt-2 text-xs text-ink-gray-5">
-				{{ __('Closes {0}. You will see the results once grades are submitted.', [campaign.closes_on]) }}
+				{{ __('Closes {0}. You will see the results once grades are submitted.').format(campaign.closes_on) }}
 			</p>
 			<p class="mt-1 text-xs text-ink-gray-5">
 				{{ __('Mentioning it in class raises the response rate more than any reminder email does.') }}
@@ -34,7 +34,7 @@
 		<!-- Collected, not yet released -->
 		<div v-else-if="!aggregate"
 			class="rounded border border-dashed border-outline-gray-2 px-3 py-2.5 text-sm text-ink-gray-6">
-			{{ __('Feedback for this offering closed with {0} response(s). Results become visible once grades have been submitted.', [campaign.responded_n]) }}
+			{{ __('Feedback for this offering closed with {0} response(s). Results become visible once grades have been submitted.').format(campaign.responded_n) }}
 		</div>
 
 		<!-- Released -->
@@ -43,7 +43,7 @@
 				<div>
 					<span class="text-2xl font-semibold text-ink-gray-9">{{ aggregate.responded_n }}</span>
 					<span class="ml-1 text-sm text-ink-gray-6">
-						{{ __('of {0} responded', [aggregate.invited_n]) }}
+						{{ __('of {0} responded').format(aggregate.invited_n) }}
 					</span>
 				</div>
 				<div v-if="aggregate.overall_mean">
@@ -73,7 +73,7 @@
 							relative to what every other course scored.
 						-->
 						<span v-if="item.benchmark_mean" class="text-ink-gray-5">
-							{{ __('institution {0}', [item.benchmark_mean]) }}
+							{{ __('institution {0}').format(item.benchmark_mean) }}
 						</span>
 						<span>n = {{ item.responded_n }}</span>
 					</div>

@@ -14,6 +14,8 @@
   "primary_mobile",
   "gender",
   "country",
+  "nationality",
+  "tax_id",
   "language",
   "image_filename",
   "optional_section",
@@ -52,7 +54,7 @@
  "fields": [
   {
    "columns": 2,
-   "description": "The match/identity key. One Person is resolved per email (ADR 042). Format is validated during Dry-Run, not at save, so bad values can be staged and reported.",
+   "description": "The match/identity key. One Person is resolved per email. Format is validated during Dry-Run, not at save, so bad values can be staged and reported.",
    "fieldname": "primary_email",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -94,6 +96,20 @@
    "fieldtype": "Link",
    "label": "Country",
    "options": "Country"
+  },
+  {
+   "description": "Citizenship. Decides which tax-ID format applies.",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Country"
+  },
+  {
+   "description": "National tax or registration number, checked against Nationality.",
+   "fieldname": "tax_id",
+   "fieldtype": "Data",
+   "label": "Tax ID",
+   "length": 32
   },
   {
    "fieldname": "language",
@@ -321,7 +337,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-07-25 12:00:00",
+ "modified": "2026-09-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person Import Row",

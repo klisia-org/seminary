@@ -40,8 +40,100 @@ class Cohort(Document):
         ct = frappe.get_cached_doc("Cohort Type", self.cohort_type)
         if not self.visibility:
             self.visibility = ct.default_visibility or "cohort_only"
-        if not self.max_size and ct.default_max_size:
-            self.max_size = ct.default_max_size
+        if not self.max_size:
+            # The portal limit stands in when no size was suggested, so a cohort
+            # the portal will refuse to grow says so on its face instead of
+            # showing no ceiling until someone hits one.
+            self.max_size = ct.default_max_size or ct.portal_size_limit or 0
+
+    def on_update(self):
+        """Archiving is a lifecycle event, not a flag, so it has consequences.
+
+        On the Cohort rather than in the portal API because a chair flipping
+        Status in the desk is doing the same thing as a leader pressing Archive,
+        and a rule that only one of them passes through is not a rule.
+        """
+        before = self.get_doc_before_save()
+        if not before or before.status == self.status:
+            return
+        if self.status == "Archived":
+            self._release_members()
+        elif before.status == "Archived" and self.status == "Active":
+            self._restore_members()
+
+    def _release_members(self):
+        """End the memberships of a cohort that has ended, where the type says so.
+
+        Everyone, the leader included -- unlike a student's withdrawal, which
+        leaves the leader in place because the cohort still needs one. An
+        archived cohort needs nobody, and the leader is precisely the person who
+        must be free to begin again.
+        """
+        from seminary.seminary.doctype.cohort_type.cohort_type import (
+            releases_on_archive,
+        )
+        from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+            OPEN_STATUSES,
+        )
+
+        if not releases_on_archive(self.cohort_type):
+            return
+        for name in frappe.get_all(
+            "Cohort Membership",
+            filters={"cohort": self.name, "invite_status": ["in", list(OPEN_STATUSES)]},
+            pluck="name",
+        ):
+            row = frappe.get_doc("Cohort Membership", name)
+            row.invite_status = "Left"
+            row.closed_by_archive = 1
+            row.flags.ignore_permissions = True
+            row.save()
+
+    def _restore_members(self):
+        """Reactivating is the way back, so it has to actually lead back.
+
+        Only the memberships this cohort's own archiving closed -- somebody who
+        had left before it was archived left for their own reasons, and
+        reopening the group is not an invitation to them.
+
+        Anyone who has joined another cohort of this type in the meantime is
+        left closed rather than restored: they made a newer commitment, and the
+        type's own limit says they may not hold both. Asked before the write,
+        not discovered by catching the refusal, so the cohort never comes back
+        half-restored.
+        """
+        from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+            lineages_that_would_block,
+        )
+
+        blocked = []
+        for name in frappe.get_all(
+            "Cohort Membership",
+            filters={"cohort": self.name, "closed_by_archive": 1},
+            pluck="name",
+        ):
+            row = frappe.get_doc("Cohort Membership", name)
+            if lineages_that_would_block(row.person, self.name, ignoring=row.name):
+                blocked.append(row.person)
+                continue
+            row.invite_status = "Active"
+            row.left_on = None
+            row.closed_by_archive = 0
+            row.flags.ignore_permissions = True
+            row.save()
+
+        if blocked:
+            names = [
+                frappe.db.get_value("Person", p, "full_name") or p for p in blocked
+            ]
+            frappe.msgprint(
+                _(
+                    "{0} joined another cohort of this type while this one was "
+                    "archived, so they were not put back. Invite them again if "
+                    "they should return."
+                ).format(frappe.bold(", ".join(sorted(names)))),
+                indicator="orange",
+            )
 
     def after_insert(self):
         # Denormalize lineage once, immutably: a root cohort is its own root at

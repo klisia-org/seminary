@@ -50,7 +50,19 @@ frappe.ui.form.on("Student Applicant", {
 			}
 		});
 
+		bind_tax_id(frm);
 
+	},
+
+	// Nationality decides which document is wanted, falling back to the single
+	// country column — an applicant has no Person yet, so no mailing country
+	// (ADR 071).
+	nationality: function(frm) {
+		bind_tax_id(frm);
+	},
+
+	country: function(frm) {
+		bind_tax_id(frm);
 	},
 
 	enroll: function(frm) {
@@ -60,3 +72,12 @@ frappe.ui.form.on("Student Applicant", {
 		})
 	}
 });
+
+// Shared with the Person and Partner Organization forms, and with the public
+// application form: public/js/tax_id.bundle.js.
+function bind_tax_id(frm) {
+	window.seminary?.bindTaxIdField(frm, {
+		country_fields: ["nationality", "country"],
+		subject: "person",
+	});
+}

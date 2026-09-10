@@ -40,7 +40,7 @@
 		<div v-else>
 			<h2 class="text-lg font-semibold text-ink-gray-9">{{ data.title }}</h2>
 			<p v-if="data.estimated_minutes" class="mt-0.5 text-sm text-ink-gray-5">
-				{{ __('About {0} minutes.', [data.estimated_minutes]) }}
+				{{ __('About {0} minutes.').format(data.estimated_minutes) }}
 			</p>
 
 			<!--
@@ -190,7 +190,7 @@ function send() {
 	const collected = collect()
 	const missing = collected.filter((a) => a.required && a.value === null)
 	if (missing.length) {
-		error.value = __('Please answer every required question ({0} remaining).', [missing.length])
+		error.value = __('Please answer every required question ({0} remaining).').format(missing.length)
 		return
 	}
 	submit.submit({

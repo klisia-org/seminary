@@ -29,6 +29,15 @@
 			<FormControl type="text" :label="__('Website')" v-model="form.website" />
 			<FormControl type="email" :label="__('Primary email')" v-model="form.primary_email" />
 			<FormControl type="text" :label="__('Primary phone')" v-model="form.primary_phone" />
+			<!-- Label, placeholder and mask come from the country's rule, so
+			     this markup names no country. -->
+			<div>
+				<FormControl type="text" :label="__(taxId.label.value)" v-model="form.tax_id"
+					:placeholder="taxId.placeholder.value" @input="onTaxIdInput"
+					@blur="taxId.validate(form.tax_id)" />
+				<p v-if="taxId.error.value" class="mt-1 text-xs text-ink-red-3">{{ taxId.error.value }}</p>
+				<p v-else-if="taxId.note.value" class="mt-1 text-xs text-ink-gray-5">{{ __(taxId.note.value) }}</p>
+			</div>
 		</div>
 
 		<div class="mt-4">
@@ -92,13 +101,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { createResource, Button, FormControl, TextEditor, FileUploader, Dialog, toast } from 'frappe-ui'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
+import { useTaxId } from '@/composables/useTaxId'
 
 const { activeOrg } = usePartnerOrg()
 
-const EDITABLE = ['about_us', 'doctrinal_statement', 'website', 'image', 'primary_email', 'primary_phone', 'address_line_1', 'address_line_2', 'pincode', 'city', 'state']
+const EDITABLE = ['about_us', 'doctrinal_statement', 'website', 'tax_id', 'image', 'primary_email', 'primary_phone', 'address_line_1', 'address_line_2', 'pincode', 'city', 'state']
 const form = reactive(Object.fromEntries(EDITABLE.map((k) => [k, ''])))
 
 const ministryOptions = [{ label: '—', value: '' }, ...['Urban', 'Suburban', 'Rural', 'Campus'].map((v) => ({ label: __(v), value: v }))]
@@ -114,6 +124,17 @@ const org = createResource({
 })
 watch(activeOrg, () => org.reload())
 
+// Which registration number is wanted follows the organization's country
+// (ADR 071). The country is not editable from this page, so the rule is read
+// from the loaded record rather than the form.
+const taxCountry = computed(() => org.data?.country || '')
+const taxId = useTaxId(taxCountry, { subject: 'organization' })
+
+const onTaxIdInput = () => {
+	form.tax_id = taxId.format(form.tax_id)
+	taxId.error.value = ''
+}
+
 const save = createResource({
 	url: 'seminary.partner.portal.update_org',
 	makeParams: () => ({ values: { ...form }, org: activeOrg.value }),
@@ -125,7 +146,9 @@ const save = createResource({
 		toast.error(err.messages?.[0] || __('Could not save.'))
 	},
 })
-function onSave() {
+async function onSave() {
+	// Don't post a registration number the server is only going to refuse.
+	if (await taxId.validate(form.tax_id)) return
 	if (!save.loading) save.submit()
 }
 

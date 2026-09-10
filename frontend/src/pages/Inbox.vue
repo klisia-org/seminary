@@ -579,7 +579,10 @@ const replyRes = createResource({
 // Only person-to-person messages (Community) can be replied to; broadcasts /
 // system notices have no individual sender within your messaging scope.
 function canReply(msg) {
-	return box.value === 'inbox' && msg.category === 'Community' && msg.sender_name
+	// `can_reply` is the server's answer, not a guess: it asks whether the
+	// reply would actually be permitted. Offering the button and then failing
+	// on send is worse than not offering it (ADR 070).
+	return box.value === 'inbox' && msg.category === 'Community' && msg.can_reply
 }
 
 function openReply(msg) {

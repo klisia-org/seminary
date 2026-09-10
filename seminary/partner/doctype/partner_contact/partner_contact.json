@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-06-13 12:00:00",
- "description": "A person affiliated with a Partner Organization. Links the human by Person (the identity spine, ADR 042), not Frappe Contact, so one human is one Person across all roles.",
+ "description": "A person affiliated with a Partner Organization. Links the human by Person (the identity spine), not Frappe Contact, so one human is one Person across all roles.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

@@ -237,6 +237,22 @@ SPEC = (
             APPLICANT: Binding("nationality"),
         },
     ),
+    # The national tax/registration number, validated per country by
+    # `tax_ids.py` (ADR 071). AUTHORED because a wrong one has to be
+    # correctable -- it arrives from a free-text box on a public form, and
+    # FILL_ONLY would make the first typo permanent. Sensitive, so it sits at
+    # permlevel 1 with the other things a Program Chair has no business
+    # reading; every write path goes through the spine, which ignores
+    # permissions, so self-service still reaches it.
+    Spec(
+        "tax_id",
+        arg="tax_id",
+        mode=AUTHORED,
+        sensitive=True,
+        roles={
+            APPLICANT: Binding("tax_id"),
+        },
+    ),
     Spec(
         "phonetic_name",
         arg="phonetic_name",
@@ -303,7 +319,7 @@ SPEC = (
     # another. `refined_by` is what moves the answer from town-to-town to
     # door-to-door. Note `mailing_country`, not `country` -- the latter is the
     # comms routing selector and the geocoder does not read it
-    # (`geocoding.ADDRESS_FIELDS`).
+    # (`geocoding.LOCATABLE["Person"]`).
     Spec(
         "latitude",
         derived=True,
@@ -344,7 +360,21 @@ SPEC = (
     Spec(
         "image",
         arg="image",
-        mode=FILL_ONLY,
+        # AUTHORED since ADR 070. It was fill-only, which meant an authoritative
+        # caller could not replace a photo that was already there: the portal's
+        # save_student_profile passes overwrite=True, but _apply honours that
+        # only in the AUTHORED branch, so every upload after the first was
+        # silently dropped and the student kept re-uploading the same picture.
+        # Same defect, same fix, as gender in ADR 068 phase 4.
+        mode=AUTHORED,
+        # ...but never_blank, unlike gender. `_values_from_kwargs` passes
+        # `locals()`, so an authoritative caller that simply has no photo to
+        # offer still sends image=None — and save_instructor_profile sends
+        # `profileimage or None`, which is blank whenever the mirror is. Under
+        # a bare AUTHORED that would clear the spine's photo as a side effect
+        # of saving something else. A blank image argument means "I don't have
+        # one", not "delete theirs"; no UI offers a remove.
+        never_blank=True,
         roles={
             # Not propagated today: Student.image and Instructor.profileimage
             # are independently writable. Phase 4 makes them mirrors.

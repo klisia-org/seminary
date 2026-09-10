@@ -13,6 +13,7 @@ class Person(Document):
     def validate(self):
         self.set_full_name()
         self.normalize_reachability()
+        self.validate_tax_id()
         self.assert_reachable()
         self.validate_channel_addresses()
         self.sync_primary_channel_addresses()
@@ -73,8 +74,43 @@ class Person(Document):
     def on_update(self):
         self.warn_on_login_email_drift()
         self.propagate_to_roles()
+        self.sync_user_image()
         self.resync_open_snapshots()
         self.refresh_coordinates()
+
+    def sync_user_image(self):
+        """Give the login account the photo the person uploaded (ADR 070).
+
+        Frappe's avatar is `User.user_image`; the spine's is `Person.image`,
+        and nothing joined them — so someone who uploaded a photo saw it on
+        their profile card and an empty circle in the sidebar. It lives here
+        rather than in `update_person` because that is only one of several
+        writers (the desk form, applicant promotion and the import batch all
+        bypass it), and it cannot be a `person_fields` Binding because
+        `propagation_plan` finds role records by their `person` field, which
+        `User` does not have.
+
+        We take over an avatar that is empty, a gravatar, or the one we set
+        last time; a photo somebody deliberately chose in the desk stays
+        theirs. `db.set_value` runs no User hooks, and `User.on_update` only
+        enqueues `update_gravatar` when `user_image` is blank, so there is no
+        save loop and no race with it.
+        """
+        if not (self.user and self.image):
+            return
+        current = frappe.db.get_value("User", self.user, "user_image")
+        if current == self.image:
+            return
+        before = self.get_doc_before_save()
+        if (
+            current
+            and not current.startswith("https://secure.gravatar.com")
+            and not (before and current == before.image)
+        ):
+            return
+        frappe.db.set_value(
+            "User", self.user, "user_image", self.image, update_modified=False
+        )
 
     def resync_open_snapshots(self):
         """Correct the snapshots on documents that are still running.
@@ -104,7 +140,7 @@ class Person(Document):
         if not geocoding.is_enabled():
             return
         if geocoding.address_changed(self):
-            geocoding.enqueue_for(self.name)
+            geocoding.enqueue_for(self.doctype, self.name)
 
     def set_full_name(self):
         self.full_name = " ".join(
@@ -115,6 +151,19 @@ class Person(Document):
         # Empty string would collide on the unique index; store NULL instead.
         self.primary_email = (self.primary_email or "").strip().lower() or None
         self.primary_mobile = (self.primary_mobile or "").strip() or None
+
+    def validate_tax_id(self):
+        """Check the tax ID against whichever country decides its format, and
+        store it stripped of punctuation (ADR 071).
+
+        Nationality decides, falling back to the mailing country: a tax number
+        is issued by the state that claims you, and residence is the weaker
+        signal because it moves. A country the registry has no rule for keeps
+        whatever was typed.
+        """
+        from seminary.seminary import tax_ids
+
+        tax_ids.assert_on(self)
 
     def validate_channel_addresses(self):
         seen = set()

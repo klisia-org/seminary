@@ -827,6 +827,25 @@ def seed_communication_templates():
                 "This link expires on {{ expires }}. Thank you."
             ),
         },
+        {
+            "template_key": "address-verification",
+            # Transactional: a confirmation is account service, not outreach,
+            # and must not be silenced by a Community opt-out (ADR 070).
+            "category": "Transactional",
+            "description": (
+                "Confirms a contact address the person added themselves, so it "
+                "can be used and optionally shown in the alumni directory."
+            ),
+            "subject": "Confirm your contact address",
+            "body": (
+                "<p>Please confirm that this address reaches you:</p>"
+                "<p><strong>{{ address }}</strong></p>"
+                '<p><a href="{{ url }}">{{ url }}</a></p>'
+                "<p>The link is valid for {{ days }} days. If you did not add "
+                "this address, you can ignore this message — nothing changes "
+                "until the link is opened.</p>"
+            ),
+        },
     ]
     for tpl in defaults:
         if frappe.db.exists("Communication Template", tpl["template_key"]):

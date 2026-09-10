@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "PJA-.######",
  "creation": "2026-06-14 12:00:00",
- "description": "A person's application to a Partner Job Opening. Identity is auto-filled from Person and the resume defaults from the applicant's stored resume, so people apply without re-entering data. See ADR 053.",
+ "description": "A person's application to a Partner Job Opening. Identity is auto-filled from Person and the resume defaults from the applicant's stored resume, so people apply without re-entering data.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -135,7 +135,7 @@
    "label": "Points of disagreement or reservation"
   },
   {
-   "description": "Defaults from the applicant's stored resume; you can override it for this application. Served privately (ADR 043).",
+   "description": "Defaults from the applicant's stored resume; you can override it for this application. Served privately.",
    "fieldname": "resume",
    "fieldtype": "Attach",
    "label": "Resume"

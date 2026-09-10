@@ -1,6 +1,6 @@
 {
  "actions": [],
- "description": "Public website branding for the unregistered-visitor site (ADR 061): logo, favicon, colour scheme and fonts. These feed CSS custom properties (--brand-*) injected into the website head and the custom navbar/footer. Portal/desk logos live on Seminary Settings, not here.",
+ "description": "Public website branding for the unregistered-visitor site: logo, favicon, colour scheme and fonts. These feed CSS custom properties (--brand-*) injected into the website head and the custom navbar/footer. Portal/desk logos live on Seminary Settings, not here.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

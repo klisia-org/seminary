@@ -26,6 +26,7 @@
   "personal_section",
   "date_of_birth",
   "nationality",
+  "tax_id",
   "column_break_personal",
   "blood_group",
   "marital_status",
@@ -143,7 +144,7 @@
    "options": "Language"
   },
   {
-   "description": "Drives regional provider routing for messaging (ADR 043). This is not the postal country \u2014 see Mailing Country.",
+   "description": "Drives regional provider routing for messaging. This is not the postal country \u2014 see Mailing Country.",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country / Region",
@@ -271,7 +272,7 @@
    "options": "Skill Tag Link"
   },
   {
-   "description": "Stored resume / CV, reused to pre-fill job applications. Served privately (ADR 043).",
+   "description": "Stored resume / CV, reused to pre-fill job applications. Served privately.",
    "fieldname": "resume",
    "fieldtype": "Attach",
    "label": "Resume"
@@ -339,6 +340,15 @@
    "fieldtype": "Link",
    "label": "Nationality",
    "options": "Country"
+  },
+  {
+   "description": "National tax or registration number. Which format is required follows Nationality, or the Mailing Country when no nationality is on record.",
+   "fieldname": "tax_id",
+   "fieldtype": "Data",
+   "label": "Tax ID",
+   "length": 32,
+   "no_copy": 1,
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_personal",
@@ -468,7 +478,7 @@
    "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-09-03 05:46:11.575356",
+ "modified": "2026-09-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",

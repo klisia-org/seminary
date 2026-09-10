@@ -74,7 +74,7 @@
   },
   {
    "depends_on": "eval:!doc.is_internal_legacy",
-   "description": "Optional. Link the relationship-side record when this same external institution is also a ministry/employment partner (job board, internships, alumni placement). Not applicable to internal legacy records. See ADR 053.",
+   "description": "Optional. Link the relationship-side record when this same external institution is also a ministry/employment partner (job board, internships, alumni placement). Not applicable to internal legacy records.",
    "fieldname": "partner_organization",
    "fieldtype": "Link",
    "label": "Partner Organization",

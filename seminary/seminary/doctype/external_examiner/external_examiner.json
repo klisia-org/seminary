@@ -3,7 +3,7 @@
  "allow_rename": 1,
  "autoname": "EXAM-.#####",
  "creation": "2026-06-18 00:00:00",
- "description": "A vetted reader/examiner from outside the seminary who may serve on culminating-project committees or as a named reader (ADR 059/060). Person-backed so contact details live in one place; deliberately NOT an Instructor (no teaching, reduced portal access). Holds reusable vetting so 'do we invite them again?' doesn't live in someone's head.",
+ "description": "A vetted reader/examiner from outside the seminary who may serve on culminating-project committees or as a named reader. Person-backed so contact details live in one place; deliberately NOT an Instructor (no teaching, reduced portal access). Holds reusable vetting so 'do we invite them again?' doesn't live in someone's head.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/graduation-requirements.html#external-examiners",
  "engine": "InnoDB",

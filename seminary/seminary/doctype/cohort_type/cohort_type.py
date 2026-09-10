@@ -33,11 +33,69 @@ PROGRAM_CATEGORIES = (PACED, THROUGHOUT)
 MENTORING_DEPARTMENT = "Mentoring Department"
 COHORT_MENTORSHIP_ROUTE = "Program Cohort Mentorship"
 
+# The one leadership rule that reads the binding rather than the person alone.
+# `Any alumnus` is the same rule with nothing to read, kept as a separate option
+# so an unbound type says which of the two it means instead of leaving the
+# membership check to decide.
+BOUND_ALUMNUS = "Alumnus of the bound program or level"
+ANY_ALUMNUS = "Any alumnus"
+ALUMNUS_RULES = (BOUND_ALUMNUS, ANY_ALUMNUS)
+
+# What archiving does to the people in a cohort. Three values rather than a
+# checkbox with a clever default: the right answer follows from the category and
+# the binding, and a box that quietly moved when a chair reclassified the type
+# would give them no way to tell their own choice from the system's.
+ARCHIVE_FOLLOWS_CATEGORY = "Follow the category"
+ARCHIVE_KEEPS_MEMBERS = "Keep members in it"
+ARCHIVE_RELEASES_MEMBERS = "Release members"
+
+
+def releases_on_archive(cohort_type):
+    """Does archiving a cohort of this type end its members' place in it?
+
+    The category answers unless the school has overridden it, and what it turns
+    on is whether the thing the cohort is scoped to can come round again for the
+    same person.
+
+    **Bound to one Program: keep them.** The cohort belonged to that degree;
+    when the degree is done the group is done, and the membership is the record
+    of having been in it. Nothing asks the question a second time, because a
+    second degree is a different program and so a different type.
+
+    **Course scoped: keep them.** Same reason, and one more. A course cohort is
+    scoped to an offering that runs once, but the seeding a registrar does for
+    the next course in a sequence reads *active* memberships to know who is
+    already placed. Releasing on archive would silently undo that: archiving
+    last term's groups would make this term's seeding offer to place everybody
+    again, in a type whose whole point was that it does not.
+
+    **Everything else: release them.** A level-wide type most of all. Someone who
+    took a master's years ago, in a cohort long since archived, is exactly the
+    person a second master's should place in a new one -- holding their seat
+    against a group that ended would refuse them a requirement of the programme
+    they have just started. Unrestricted types, where the alumni cohorts live,
+    are the same case with nothing bound at all.
+    """
+    row = frappe.db.get_value(
+        "Cohort Type", cohort_type, ["on_archive", "category", "program"], as_dict=True
+    )
+    if not row:
+        return False
+    if row.on_archive == ARCHIVE_KEEPS_MEMBERS:
+        return False
+    if row.on_archive == ARCHIVE_RELEASES_MEMBERS:
+        return True
+    if row.category == COURSE_SCOPED:
+        return False
+    return not (row.category in PROGRAM_CATEGORIES and row.program)
+
 
 class CohortType(Document):
     def validate(self):
         self.clear_fields_the_category_does_not_use()
         self.validate_binding()
+        self.validate_leaders_have_something_to_be_alumni_of()
+        self.validate_alumni_self_service()
         self.validate_graduation_target()
         self.validate_one_paced_type_per_program()
         self.validate_planning_settings()
@@ -58,10 +116,21 @@ class CohortType(Document):
         patch left every existing type in) be reclassified later and find its
         `graduates_to` still there, rather than punishing the chair for having
         opened the record in between.
+
+        The exception is a binding the *leadership* rule reads. The category is
+        not the only reason to hold one, so clearing on a category change would
+        take away the answer and then refuse the save for not having it -- the
+        chair would be told to name a program they had just named.
         """
         if self.category not in PROGRAM_CATEGORIES:
             self.plannable = 0
             self.remove_on_withdrawal = 0
+        if self.category == COURSE_SCOPED:
+            # A course-scoped type forms one cohort per course and a student
+            # takes many courses, often at once. "One cohort per member" is not
+            # a policy a school could hold here; it is a contradiction of the
+            # category, and holding it would refuse the second course's seeding.
+            self.max_lineages_per_member = 0
         if not self.plannable:
             self.mentor_unit = None
             self.automation_min_size = 0
@@ -72,12 +141,16 @@ class CohortType(Document):
             return
         if self.category not in PROGRAM_CATEGORIES:
             self.graduates_to = None
-        if self.category != THROUGHOUT:
+        if self.category != THROUGHOUT and not self.leaders_read_the_binding():
             # Only a program-long cohort can span a whole level; everything else
             # is bound to one program or to none.
             self.program_level = None
-        if self.category == UNRESTRICTED:
+        if self.category == UNRESTRICTED and not self.leaders_read_the_binding():
             self.program = None
+
+    def leaders_read_the_binding(self):
+        """Does the leadership rule need a program or a level to check against?"""
+        return self.leader_eligibility == BOUND_ALUMNUS
 
     def validate_binding(self):
         """What the cohort is bound to, per category."""
@@ -123,6 +196,64 @@ class CohortType(Document):
                     "A {0} cohort runs from enrollment to graduation, so it must "
                     "name the Program or the Program Level it runs alongside."
                 ).format(frappe.bold(THROUGHOUT))
+            )
+
+    def validate_leaders_have_something_to_be_alumni_of(self):
+        """`Alumnus of the bound program or level` needs a binding to read.
+
+        Without one the rule has no question to ask, and the membership check
+        would have to invent an answer: either refuse every candidate, or accept
+        an alumnus of anywhere. It used to do the second silently, which granted
+        leadership on a scope the school never named. `Any alumnus` is now that
+        second answer, said out loud, so this refuses rather than guesses.
+        """
+        if not self.leaders_read_the_binding():
+            return
+        if self.program or self.program_level:
+            return
+        frappe.throw(
+            _(
+                "Leaders of this type must be alumni of the program or level it "
+                "is bound to, and it is bound to neither. Name a {0} or a {1} "
+                "above, or set Leader Eligibility to {2} if any graduate of this "
+                "school may lead."
+            ).format(_("Program"), _("Program Level"), frappe.bold(ANY_ALUMNUS))
+        )
+
+    def validate_alumni_self_service(self):
+        """Cohorts a school does not set up, and the one limit it still sets.
+
+        Asking alumni to lead is asking people who have left to come back to a
+        platform they have no other reason to open, and requiring a staff member
+        in the desk for each group is most of the friction. Letting the alumnus
+        create their own removes it -- but it also removes the moment a person
+        looked at the group, so the type has to say in advance how large one may
+        get. Hence a limit that refuses rather than warns: there is nobody on the
+        other side of the warning.
+
+        Both settings only mean anything on an alumnus-led type, so they are
+        cleared elsewhere rather than left as a rule nobody can see.
+        """
+        if self.leader_eligibility not in ALUMNUS_RULES:
+            self.alumni_may_create = 0
+            self.portal_size_limit = 0
+            return
+
+        # 0 means "no limit" on either field, so only two real numbers can
+        # disagree -- and advising a size the portal then refuses is two answers
+        # to how big a cohort of this type may be.
+        if (
+            self.portal_size_limit
+            and self.default_max_size
+            and self.default_max_size > self.portal_size_limit
+        ):
+            frappe.throw(
+                _(
+                    "Default Max Size ({0}) is above the Portal Size Limit ({1}), "
+                    "so a cohort would be advised to grow to a size the portal "
+                    "refuses to let it reach. Lower the suggestion, or raise the "
+                    "limit."
+                ).format(self.default_max_size, self.portal_size_limit)
             )
 
     def validate_graduation_target(self):

@@ -62,7 +62,7 @@
    "reqd": 1
   },
   {
-   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are (ADR 068).",
+   "description": "The human this record is about, and only one such record per human. Created first: a role record says what someone does here, not who they are.",
    "fieldname": "person",
    "fieldtype": "Link",
    "label": "Person",
@@ -159,7 +159,7 @@
    "label": "Communication Preferences"
   },
   {
-   "description": "Mirror of the linked Person's Primary Email (ADR 042).",
+   "description": "Mirror of the linked Person's Primary Email.",
    "fetch_from": "person.primary_email",
    "fieldname": "prof_email",
    "fieldtype": "Data",

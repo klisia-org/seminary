@@ -89,32 +89,58 @@ def _deliver_invite(membership, person_doc):
         "the login page to set your password."
     ).format(cohort_name)
     inviter_user = frappe.session.user
+    logs = []
     try:
         if person_doc.user:
-            comms.send_message(
-                channel="In-App",
-                subject=subject,
-                message=message,
-                person=person_doc.name,
-                category="Community",
-                reference_doctype="Cohort Membership",
-                reference_name=membership.name,
-                triggered_by=inviter_user,
+            logs.append(
+                comms.send_message(
+                    channel="In-App",
+                    subject=subject,
+                    message=message,
+                    person=person_doc.name,
+                    category="Community",
+                    reference_doctype="Cohort Membership",
+                    reference_name=membership.name,
+                    triggered_by=inviter_user,
+                )
             )
         if person_doc.primary_email:
-            comms.send_message(
-                channel="Email",
-                subject=subject,
-                message=message,
-                person=person_doc.name,
-                to_address=person_doc.primary_email,
-                category="Community",
-                reference_doctype="Cohort Membership",
-                reference_name=membership.name,
-                triggered_by=inviter_user,
+            logs.append(
+                comms.send_message(
+                    channel="Email",
+                    subject=subject,
+                    message=message,
+                    person=person_doc.name,
+                    to_address=person_doc.primary_email,
+                    category="Community",
+                    reference_doctype="Cohort Membership",
+                    reference_name=membership.name,
+                    triggered_by=inviter_user,
+                )
             )
     except Exception:
         frappe.log_error(frappe.get_traceback(), "cohort invite delivery failed")
+        return
+
+    # Invitations go out as Community, so someone who opted out of that
+    # category receives nothing at all. The return values were being dropped,
+    # which meant the leader was told "Invitation sent." either way — the
+    # membership is real, but nobody was told about it (ADR 070).
+    delivered = [
+        log
+        for log in logs
+        if log
+        and frappe.db.get_value("Communication Log", log, "status") != "Cancelled"
+    ]
+    if not delivered:
+        frappe.msgprint(
+            _(
+                "Invitation recorded, but we could not reach them — they may have "
+                "opted out of community messages."
+            ),
+            indicator="orange",
+            alert=True,
+        )
 
 
 def _onboard_and_notify(membership):
@@ -184,6 +210,56 @@ def _active_count(cohort):
     return frappe.db.count("Cohort Membership", {"cohort": cohort, "active": 1})
 
 
+def _seated_count(cohort):
+    """Members plus unanswered invitations.
+
+    What a hard limit has to count: twenty invitations to a group of twelve is
+    a group of thirty-two the moment they all say yes, and a limit that only
+    looked at who had already accepted would be walked straight past by sending
+    them all at once.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        OPEN_STATUSES,
+    )
+
+    return frappe.db.count(
+        "Cohort Membership",
+        {"cohort": cohort, "invite_status": ["in", list(OPEN_STATUSES)]},
+    )
+
+
+def _guard_size(cohort):
+    """Two ceilings, and what separates them is who is on the other side.
+
+    `Cohort.max_size` is advice, and stays advice, because a registrar seating a
+    thirteenth student knows what they are doing and the record has to keep
+    matching the room (ADR 066 section 7.4).
+
+    `Cohort Type.portal_size_limit` is not advice. It exists for cohorts an
+    alumnus runs from the portal, where the school is not in the room and a
+    warning has nobody to inform -- there is no second person who will see the
+    group has become a congregation. So it refuses, and it refuses only the
+    people it was written about: staff working in the desk still get the
+    warning, because for them the original reasoning is untouched.
+    """
+    cohort_type = frappe.db.get_value("Cohort", cohort, "cohort_type")
+    limit = (
+        frappe.db.get_value("Cohort Type", cohort_type, "portal_size_limit") or 0
+        if cohort_type
+        else 0
+    )
+    if limit and not _is_staff(frappe.session.user) and _seated_count(cohort) >= limit:
+        frappe.throw(
+            _(
+                "This cohort has reached {0}, the largest a cohort of this type "
+                "may be from the portal -- counting members and invitations not "
+                "yet answered. Ask the seminary if it should grow, or start a "
+                "second cohort."
+            ).format(limit)
+        )
+    _warn_if_full(cohort)
+
+
 def _warn_if_full(cohort):
     """The ceiling is advice about a healthy group size, not a limit.
 
@@ -221,7 +297,7 @@ def invite_member(
     _assert_not_archived(cohort)
     if role not in ("Member", "Mentor"):
         frappe.throw(_("Role must be Member or Mentor."))
-    _warn_if_full(cohort)
+    _guard_size(cohort)
 
     if not person:
         if not (email and first_name):
@@ -240,6 +316,26 @@ def invite_member(
     )
     if existing:
         frappe.throw(_("That person already has a pending or active membership here."))
+
+    # The opt-out is enforced here, not only in the invite search: this takes a
+    # raw `person` id, so a filter applied while searching is advice a
+    # hand-made request walks straight past. Staff are exempt — a registrar
+    # seating someone is a decision, while the opt-out is about unsolicited
+    # approaches from the portal. Same line _guard_size already draws between
+    # Cohort.max_size as advice and portal_size_limit as refusal (ADR 070).
+    if not _is_staff(frappe.session.user):
+        pref = frappe.db.get_value(
+            "Alumni Profile",
+            {"person": person, "enabled": 1},
+            ["full_name", "open_to_cohort_invites"],
+            as_dict=True,
+        )
+        if pref and not pref.open_to_cohort_invites:
+            frappe.throw(
+                _("{0} is not accepting cohort invitations right now.").format(
+                    pref.full_name
+                )
+            )
 
     membership = frappe.get_doc(
         {
@@ -446,11 +542,20 @@ def split_cohort(cohort, new_cohort_name, member_ids, new_leader=None):
 
 @frappe.whitelist()
 def set_cohort_status(cohort, status):
-    """Archive or reactivate a cohort."""
+    """Archive or reactivate a cohort.
+
+    Through the document, not `db.set_value`: archiving ends the memberships of
+    a cohort whose type releases them, and reactivating puts them back. Writing
+    the column directly would skip both and leave the status saying one thing
+    while the roster said another.
+    """
     if status not in ("Active", "Archived"):
         frappe.throw(_("Status must be Active or Archived."))
     _require_leader(cohort)
-    frappe.db.set_value("Cohort", cohort, "status", status)
+    doc = frappe.get_doc("Cohort", cohort)
+    doc.status = status
+    doc.flags.ignore_permissions = True
+    doc.save()
     return status
 
 
@@ -465,6 +570,180 @@ def create_cohort(cohort_name, cohort_type, leader):
             "cohort_name": cohort_name,
             "cohort_type": cohort_type,
             "leader": leader,
+            "status": "Active",
+        }
+    ).insert(ignore_permissions=True)
+    return doc.name
+
+
+def _my_standing_in(person, cohort_type):
+    """This person's open memberships in one cohort type, as the portal shows them.
+
+    Invitations are included, not filtered out: "you have been asked to join
+    this" is one of the three things somebody can be told about a type, and
+    leaving it out would show them an invitation-shaped hole and an offer to
+    start their own.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        OPEN_STATUSES,
+    )
+
+    rows = frappe.db.sql(
+        """
+        SELECT m.name AS membership, m.invite_status, m.is_leader,
+               c.name AS cohort, c.cohort_name, c.status, c.leader,
+               c.lineage_root, c.root_distance
+        FROM `tabCohort Membership` m
+        JOIN `tabCohort` c ON c.name = m.cohort
+        WHERE m.person = %(person)s
+          AND c.cohort_type = %(cohort_type)s
+          AND m.invite_status IN %(open)s
+        ORDER BY c.creation
+        """,
+        {"person": person, "cohort_type": cohort_type, "open": OPEN_STATUSES},
+        as_dict=True,
+    )
+    for row in rows:
+        row["leader_name"] = (
+            frappe.db.get_value("Person", row.leader, "full_name") or row.leader
+            if row.leader
+            else None
+        )
+        row["member_count"] = frappe.db.count(
+            "Cohort Membership", {"cohort": row.cohort, "active": 1}
+        )
+        # Only worth saying when the cohort is part of something larger than
+        # itself -- "part of a family of one" is noise.
+        family = frappe.db.count("Cohort", {"lineage_root": row.lineage_root})
+        row["lineage_size"] = family
+        row["lineage_name"] = (
+            frappe.db.get_value("Cohort", row.lineage_root, "cohort_name")
+            if family > 1 and row.lineage_root != row.cohort
+            else None
+        )
+    return rows
+
+
+@frappe.whitelist()
+def my_communities():
+    """Where this person stands in each cohort type open to them.
+
+    One row per type, carrying their open memberships in it and whether they may
+    start another. Three states fall out of those two facts and the portal reads
+    them off: they are in one, they have been invited to one, or they are in
+    none and may begin. A type they can neither join nor start is left out
+    entirely rather than listed as an absence.
+
+    `may_start` is not simply "is this person allowed to lead". It also asks
+    whether they are already in as many cohorts of this type as it permits, so
+    an offer is never shown that the save would refuse.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import may_lead
+
+    person = find_person(user=frappe.session.user)
+    if not person:
+        return []
+
+    out = []
+    for t in frappe.get_all(
+        "Cohort Type",
+        filters={"alumni_may_create": 1, "is_active": 1},
+        fields=[
+            "name",
+            "type_name",
+            "description",
+            "leader_eligibility",
+            "program",
+            "program_level",
+            "portal_size_limit",
+            "max_lineages_per_member",
+        ],
+        order_by="type_name asc",
+    ):
+        memberships = _my_standing_in(person, t.name)
+        limit = t.max_lineages_per_member or 0
+        lineages = {m.lineage_root or m.cohort for m in memberships}
+        may_start = bool(may_lead(person, t) and (not limit or len(lineages) < limit))
+        if not (memberships or may_start):
+            continue
+        out.append(
+            {
+                "cohort_type": t.name,
+                "type_name": t.type_name,
+                "description": t.description,
+                "portal_size_limit": t.portal_size_limit,
+                "may_start": may_start,
+                "memberships": memberships,
+            }
+        )
+    return out
+
+
+@frappe.whitelist()
+def create_my_cohort(cohort_name, cohort_type):
+    """An alumnus starts their own cohort, without waiting for a staff member.
+
+    Two questions: whether the *type* invites this (`alumni_may_create`), and
+    whether this *person* may lead one. The second is `may_lead` -- the same
+    function the picker asks and the same rule `Cohort Membership` enforces when
+    `Cohort.after_insert` seats the leader, so there is one definition and this
+    is not a second opinion about it.
+
+    Asked *before* the insert, though, and that ordering matters. Letting the
+    membership refuse it leaves the Cohort already written: the exception unwinds
+    to the request, which rolls back, but anything that catches it -- a caller, a
+    savepoint, a test -- keeps a leaderless cohort nobody asked for. The rule
+    stays where it is as the backstop; this just declines to create the record
+    it is going to reject.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import may_lead
+
+    cohort_name = (cohort_name or "").strip()
+    if not cohort_name:
+        frappe.throw(_("Give your cohort a name."))
+
+    person = find_person(user=frappe.session.user)
+    if not person:
+        frappe.throw(
+            _("Only a person with a profile here can start a cohort."),
+            frappe.PermissionError,
+        )
+
+    policy = frappe.db.get_value(
+        "Cohort Type",
+        cohort_type,
+        ["alumni_may_create", "leader_eligibility", "program", "program_level"],
+        as_dict=True,
+    )
+    if not (policy and policy.alumni_may_create):
+        frappe.throw(
+            _("Cohorts of this kind are set up by the seminary."),
+            frappe.PermissionError,
+        )
+    if not may_lead(person, policy):
+        bound = policy.program or policy.program_level
+        frappe.throw(
+            (
+                _("Cohorts of this kind are led by graduates of {0}.").format(
+                    frappe.bold(bound)
+                )
+                if bound
+                else _("Cohorts of this kind are led by graduates of the seminary.")
+            )
+            + " "
+            + _(
+                "Your Alumni Profile does not show that yet -- the registrar can "
+                "correct it if it should."
+            ),
+            frappe.PermissionError,
+        )
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Cohort",
+            "cohort_name": cohort_name,
+            "cohort_type": cohort_type,
+            "leader": person,
             "status": "Active",
         }
     ).insert(ignore_permissions=True)
@@ -544,6 +823,111 @@ def cohort_members(cohort):
         else False
     )
     return {"members": members, "is_leader": can_lead, "allow_split": allow_split}
+
+
+@frappe.whitelist()
+def search_invitable_alumni(cohort, query="", limit=20):
+    """Find alumni a leader could invite into this cohort (ADR 070).
+
+    Candidates who are already committed elsewhere come back too, marked
+    unavailable with the reason. Hiding them sends the leader off to email;
+    showing them silently unpickable is worse. This is what create_my_cohort
+    already does at the other end — decline the thing you are going to
+    refuse, and say why — applied a step earlier.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        lineages_that_would_block,
+    )
+
+    _require_leader(cohort)
+    _assert_not_archived(cohort)
+
+    query = (query or "").strip()
+    # Without a real query this is "download the alumni roster".
+    if len(query) < 2:
+        return []
+
+    like = f"%{query}%"
+    rows = frappe.get_all(
+        "Alumni Profile",
+        filters={
+            "enabled": 1,
+            # Both flags, deliberately. show_in_directory already decides
+            # whether a leader may see this person's name at all, so ignoring
+            # it here would make the invite search a second, unmoderated way
+            # to enumerate people who asked not to be listed. Someone known
+            # personally can still be invited by name and email.
+            "show_in_directory": 1,
+            "open_to_cohort_invites": 1,
+            "person": ("is", "set"),
+        },
+        or_filters=[
+            ["full_name", "like", like],
+            ["current_role", "like", like],
+            ["current_organization", "like", like],
+            ["city", "like", like],
+        ],
+        fields=[
+            "name",
+            "person",
+            "full_name",
+            "current_role",
+            "current_organization",
+            "city",
+        ],
+        order_by="full_name asc",
+        limit_page_length=min(cint(limit) or 20, 50),
+    )
+    if not rows:
+        return []
+
+    me = find_person(user=frappe.session.user)
+    persons = [r.person for r in rows if r.person != me]
+    if not persons:
+        return []
+
+    # One query for everyone already seated or invited here, using the same
+    # predicate invite_member refuses on.
+    taken = set(
+        frappe.get_all(
+            "Cohort Membership",
+            filters={
+                "cohort": cohort,
+                "person": ("in", persons),
+                "invite_status": ("in", ["Invited", "Active"]),
+            },
+            pluck="person",
+        )
+    )
+    cohort_type = frappe.db.get_value("Cohort", cohort, "cohort_type")
+    per_member = (
+        frappe.db.get_value("Cohort Type", cohort_type, "max_lineages_per_member")
+        if cohort_type
+        else 0
+    )
+
+    out = []
+    for row in rows:
+        if row.person == me or row.person in taken:
+            continue
+        blocked = lineages_that_would_block(row.person, cohort)
+        out.append(
+            {
+                "profile": row.name,
+                "person": row.person,
+                # No email, no mobile: invite_member(cohort, person=...) needs
+                # neither, and the directory decides what contact details a
+                # person publishes.
+                "full_name": row.full_name,
+                "current_role": row.current_role,
+                "current_organization": row.current_organization,
+                "city": row.city,
+                "available": blocked is None,
+                "blocked_count": 0 if blocked is None else len(blocked),
+                "max_lineages_per_member": per_member,
+            }
+        )
+    return out
 
 
 @frappe.whitelist()

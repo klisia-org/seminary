@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-06-14 12:00:00",
- "description": "Junction row linking a Skill Tag to its parent (Person or Partner Job Opening). Used as a Table MultiSelect target so the same controlled vocabulary tags both sides for matching. See ADR 053.",
+ "description": "Junction row linking a Skill Tag to its parent (Person or Partner Job Opening). Used as a Table MultiSelect target so the same controlled vocabulary tags both sides for matching.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
