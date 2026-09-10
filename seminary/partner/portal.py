@@ -30,6 +30,7 @@ ORG_EDITABLE_FIELDS = (
     "about_us",
     "doctrinal_statement",
     "website",
+    "tax_id",
     "image",
     "primary_email",
     "primary_phone",

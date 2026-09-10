@@ -11,7 +11,10 @@
   "category",
   "is_primary",
   "verified",
-  "status"
+  "verified_on",
+  "status",
+  "share_in_directory",
+  "source"
  ],
  "fields": [
   {
@@ -53,17 +56,39 @@
    "label": "Verified"
   },
   {
+   "description": "When this address was last confirmed: a click on its confirmation link, or a provider reporting the message delivered.",
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On",
+   "read_only": 1
+  },
+  {
    "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
    "options": "Active\nBounced\nInvalid"
+  },
+  {
+   "default": "0",
+   "description": "Show this address to other members in a people directory. Off unless the person turns it on. The only reader today is the Alumni Directory, which also requires the alumnus's own \"Show in Directory\" and a verified address (ADR 070).",
+   "fieldname": "share_in_directory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Share in Directory"
+  },
+  {
+   "description": "Who put this row here. Only \"Self-service\" rows may be edited or removed by the person on the portal; everything else — including the blank of a row that predates this field — is the school's and stays locked (ADR 070).",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "\nRegistrar\nSelf-service\nImport\nChannel Onboarding"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-06-10 12:00:00.000000",
+ "modified": "2026-09-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person Channel Address",

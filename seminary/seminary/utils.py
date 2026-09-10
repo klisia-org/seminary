@@ -202,6 +202,24 @@ def assert_url_safe_code(value, label):
         )
 
 
+def country_code(country):
+    """Map a Country doctype name (or a raw code) to its uppercase ISO-3166
+    alpha-2 code, or None when it resolves to nothing.
+
+    Country records are named by their English `country_name`, which is
+    renameable and shown translated, so anything keyed per country keys on the
+    code instead. This lived in `holidays.py` as `_iso_code` until the tax-ID
+    registry (ADR 071) needed the same mapping — one copy, two callers.
+    """
+    if not country:
+        return None
+    # Already a 2-letter code?
+    if len(country) == 2:
+        return country.upper()
+    code = frappe.db.get_value("Country", country, "code")
+    return code.upper() if code else None
+
+
 def generate_slug(title, doctype):
     result = frappe.get_all(doctype, fields=["name"])
     slugs = {row["name"] for row in result}

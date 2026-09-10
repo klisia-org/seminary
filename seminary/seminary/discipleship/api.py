@@ -89,32 +89,58 @@ def _deliver_invite(membership, person_doc):
         "the login page to set your password."
     ).format(cohort_name)
     inviter_user = frappe.session.user
+    logs = []
     try:
         if person_doc.user:
-            comms.send_message(
-                channel="In-App",
-                subject=subject,
-                message=message,
-                person=person_doc.name,
-                category="Community",
-                reference_doctype="Cohort Membership",
-                reference_name=membership.name,
-                triggered_by=inviter_user,
+            logs.append(
+                comms.send_message(
+                    channel="In-App",
+                    subject=subject,
+                    message=message,
+                    person=person_doc.name,
+                    category="Community",
+                    reference_doctype="Cohort Membership",
+                    reference_name=membership.name,
+                    triggered_by=inviter_user,
+                )
             )
         if person_doc.primary_email:
-            comms.send_message(
-                channel="Email",
-                subject=subject,
-                message=message,
-                person=person_doc.name,
-                to_address=person_doc.primary_email,
-                category="Community",
-                reference_doctype="Cohort Membership",
-                reference_name=membership.name,
-                triggered_by=inviter_user,
+            logs.append(
+                comms.send_message(
+                    channel="Email",
+                    subject=subject,
+                    message=message,
+                    person=person_doc.name,
+                    to_address=person_doc.primary_email,
+                    category="Community",
+                    reference_doctype="Cohort Membership",
+                    reference_name=membership.name,
+                    triggered_by=inviter_user,
+                )
             )
     except Exception:
         frappe.log_error(frappe.get_traceback(), "cohort invite delivery failed")
+        return
+
+    # Invitations go out as Community, so someone who opted out of that
+    # category receives nothing at all. The return values were being dropped,
+    # which meant the leader was told "Invitation sent." either way — the
+    # membership is real, but nobody was told about it (ADR 070).
+    delivered = [
+        log
+        for log in logs
+        if log
+        and frappe.db.get_value("Communication Log", log, "status") != "Cancelled"
+    ]
+    if not delivered:
+        frappe.msgprint(
+            _(
+                "Invitation recorded, but we could not reach them — they may have "
+                "opted out of community messages."
+            ),
+            indicator="orange",
+            alert=True,
+        )
 
 
 def _onboard_and_notify(membership):
@@ -290,6 +316,26 @@ def invite_member(
     )
     if existing:
         frappe.throw(_("That person already has a pending or active membership here."))
+
+    # The opt-out is enforced here, not only in the invite search: this takes a
+    # raw `person` id, so a filter applied while searching is advice a
+    # hand-made request walks straight past. Staff are exempt — a registrar
+    # seating someone is a decision, while the opt-out is about unsolicited
+    # approaches from the portal. Same line _guard_size already draws between
+    # Cohort.max_size as advice and portal_size_limit as refusal (ADR 070).
+    if not _is_staff(frappe.session.user):
+        pref = frappe.db.get_value(
+            "Alumni Profile",
+            {"person": person, "enabled": 1},
+            ["full_name", "open_to_cohort_invites"],
+            as_dict=True,
+        )
+        if pref and not pref.open_to_cohort_invites:
+            frappe.throw(
+                _("{0} is not accepting cohort invitations right now.").format(
+                    pref.full_name
+                )
+            )
 
     membership = frappe.get_doc(
         {
@@ -777,6 +823,111 @@ def cohort_members(cohort):
         else False
     )
     return {"members": members, "is_leader": can_lead, "allow_split": allow_split}
+
+
+@frappe.whitelist()
+def search_invitable_alumni(cohort, query="", limit=20):
+    """Find alumni a leader could invite into this cohort (ADR 070).
+
+    Candidates who are already committed elsewhere come back too, marked
+    unavailable with the reason. Hiding them sends the leader off to email;
+    showing them silently unpickable is worse. This is what create_my_cohort
+    already does at the other end — decline the thing you are going to
+    refuse, and say why — applied a step earlier.
+    """
+    from seminary.seminary.doctype.cohort_membership.cohort_membership import (
+        lineages_that_would_block,
+    )
+
+    _require_leader(cohort)
+    _assert_not_archived(cohort)
+
+    query = (query or "").strip()
+    # Without a real query this is "download the alumni roster".
+    if len(query) < 2:
+        return []
+
+    like = f"%{query}%"
+    rows = frappe.get_all(
+        "Alumni Profile",
+        filters={
+            "enabled": 1,
+            # Both flags, deliberately. show_in_directory already decides
+            # whether a leader may see this person's name at all, so ignoring
+            # it here would make the invite search a second, unmoderated way
+            # to enumerate people who asked not to be listed. Someone known
+            # personally can still be invited by name and email.
+            "show_in_directory": 1,
+            "open_to_cohort_invites": 1,
+            "person": ("is", "set"),
+        },
+        or_filters=[
+            ["full_name", "like", like],
+            ["current_role", "like", like],
+            ["current_organization", "like", like],
+            ["city", "like", like],
+        ],
+        fields=[
+            "name",
+            "person",
+            "full_name",
+            "current_role",
+            "current_organization",
+            "city",
+        ],
+        order_by="full_name asc",
+        limit_page_length=min(cint(limit) or 20, 50),
+    )
+    if not rows:
+        return []
+
+    me = find_person(user=frappe.session.user)
+    persons = [r.person for r in rows if r.person != me]
+    if not persons:
+        return []
+
+    # One query for everyone already seated or invited here, using the same
+    # predicate invite_member refuses on.
+    taken = set(
+        frappe.get_all(
+            "Cohort Membership",
+            filters={
+                "cohort": cohort,
+                "person": ("in", persons),
+                "invite_status": ("in", ["Invited", "Active"]),
+            },
+            pluck="person",
+        )
+    )
+    cohort_type = frappe.db.get_value("Cohort", cohort, "cohort_type")
+    per_member = (
+        frappe.db.get_value("Cohort Type", cohort_type, "max_lineages_per_member")
+        if cohort_type
+        else 0
+    )
+
+    out = []
+    for row in rows:
+        if row.person == me or row.person in taken:
+            continue
+        blocked = lineages_that_would_block(row.person, cohort)
+        out.append(
+            {
+                "profile": row.name,
+                "person": row.person,
+                # No email, no mobile: invite_member(cohort, person=...) needs
+                # neither, and the directory decides what contact details a
+                # person publishes.
+                "full_name": row.full_name,
+                "current_role": row.current_role,
+                "current_organization": row.current_organization,
+                "city": row.city,
+                "available": blocked is None,
+                "blocked_count": 0 if blocked is None else len(blocked),
+                "max_lineages_per_member": per_member,
+            }
+        )
+    return out
 
 
 @frappe.whitelist()

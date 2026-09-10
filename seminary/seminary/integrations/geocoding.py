@@ -3,10 +3,16 @@
 
 """Turning a postal address into coordinates (ADR 068 §7).
 
-Coordinates are reachability data about a human — the same category as the
-address they come from — so they live on the Person, and this module is the one
-place that fills them. ADR 067's distance ranking consumes them; it does not
-produce them.
+Coordinates are reachability data about whoever holds the address — the same
+category as the address itself — so they live on the record that carries it,
+and this module is the one place that fills them. ADR 067's distance ranking
+consumes them; it does not produce them.
+
+Two kinds of record hold a postal address: a Person and a Partner Organization
+(an internship placement or a job opening is ranked by how far it is from the
+student, and that distance is the organization's, not a person's). The address
+fields differ between them by one name, so `LOCATABLE` is the registry and
+every function here takes the doctype it is working on.
 
 Three rules the design rests on:
 
@@ -44,15 +50,31 @@ SETTINGS = "Address Geocoding Settings"
 #: would.
 SERVICE_NAME = "Geocoding"
 
-#: Fields that, when changed, invalidate a Person's coordinates.
-ADDRESS_FIELDS = (
-    "address_line_1",
-    "address_line_2",
-    "city",
-    "state",
-    "pincode",
-    "mailing_country",
-)
+#: Fields that, when changed, invalidate a record's coordinates — and, joined
+#: up, the address handed to the provider. Ordered as an address is written.
+#:
+#: Every doctype in this mapping carries the five `RESULT_FIELDS` as well; a
+#: doctype is locatable only if it holds both halves. The country field is the
+#: one that differs: a Person has both a `country` (where they are from) and a
+#: `mailing_country` (where the post goes), and only the latter is an address.
+LOCATABLE = {
+    "Person": (
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "state",
+        "pincode",
+        "mailing_country",
+    ),
+    "Partner Organization": (
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "state",
+        "pincode",
+        "country",
+    ),
+}
 
 #: What we write back. Kept here so the caller cannot half-fill it.
 RESULT_FIELDS = (
@@ -132,9 +154,14 @@ def is_enabled() -> bool:
     return bool(_settings().enabled)
 
 
-def address_of(person) -> str:
+def address_fields(doctype: str) -> tuple:
+    """The address fields of a locatable doctype, or an empty tuple."""
+    return LOCATABLE.get(doctype, ())
+
+
+def address_of(doc) -> str:
     """The one-line address string handed to the provider."""
-    parts = [person.get(f) for f in ADDRESS_FIELDS]
+    parts = [doc.get(f) for f in address_fields(doc.doctype)]
     return ", ".join(p.strip() for p in parts if p and str(p).strip())
 
 
@@ -143,34 +170,37 @@ def address_changed(doc) -> bool:
     before = doc.get_doc_before_save()
     if not before:
         return bool(address_of(doc))
-    return any((before.get(f) or "") != (doc.get(f) or "") for f in ADDRESS_FIELDS)
+    return any(
+        (before.get(f) or "") != (doc.get(f) or "") for f in address_fields(doc.doctype)
+    )
 
 
-def enqueue_for(person_name: str) -> None:
+def enqueue_for(doctype: str, name: str) -> None:
     """Queue a lookup after the transaction commits.
 
     `enqueue_after_commit` matters: without it the job can start before the
     address is visible to another connection and geocode the previous value.
     """
     frappe.enqueue(
-        "seminary.seminary.integrations.geocoding.geocode_person",
+        "seminary.seminary.integrations.geocoding.geocode_doc",
         queue="short",
         enqueue_after_commit=True,
-        person_name=person_name,
+        doctype=doctype,
+        name=name,
     )
 
 
-def geocode_person(person_name: str) -> dict | None:
-    """Resolve and store one Person's coordinates. Safe to call twice."""
+def geocode_doc(doctype: str, name: str) -> dict | None:
+    """Resolve and store one record's coordinates. Safe to call twice."""
     if not is_enabled():
         return None
-    if not frappe.db.exists("Person", person_name):
+    if doctype not in LOCATABLE or not frappe.db.exists(doctype, name):
         return None
 
-    person = frappe.get_doc("Person", person_name)
-    address = address_of(person)
+    doc = frappe.get_doc(doctype, name)
+    address = address_of(doc)
     if not address:
-        _clear(person_name, None)
+        _clear(doctype, name, None)
         return None
 
     try:
@@ -179,17 +209,17 @@ def geocode_person(person_name: str) -> dict | None:
         # A provider outage must not surface as a failed save, and it must not
         # blank a coordinate we already hold — a stale point is better than no
         # point for a distance ranking, and the pre-flight reports staleness.
-        frappe.log_error(frappe.get_traceback(), "geocoding: %s" % person_name)
-        _mark(person_name, FAILED)
+        frappe.log_error(frappe.get_traceback(), "geocoding: %s %s" % (doctype, name))
+        _mark(doctype, name, FAILED)
         return None
 
     if not result:
-        _clear(person_name, UNRESOLVABLE)
+        _clear(doctype, name, UNRESOLVABLE)
         return None
 
     frappe.db.set_value(
-        "Person",
-        person_name,
+        doctype,
+        name,
         {
             "latitude": result["latitude"],
             "longitude": result["longitude"],
@@ -374,22 +404,24 @@ def _shape_place(payload) -> dict | None:
 
 
 @frappe.whitelist()
-def geocode_now(person: str) -> dict:
-    """Look one Person up on demand, from the form's Location button.
+def geocode_now(doctype: str, name: str) -> dict:
+    """Look one record up on demand, from the form's Location button.
 
     Synchronous on purpose, unlike the save-time path: a person clicked a
     button and is waiting for an answer, so silence would be the wrong
     behaviour here even though it is the right one during an intake save.
     """
-    frappe.has_permission("Person", "write", doc=person, throw=True)
+    if doctype not in LOCATABLE:
+        frappe.throw(_("{0} does not hold an address to look up.").format(_(doctype)))
+    frappe.has_permission(doctype, "write", doc=name, throw=True)
     if not is_enabled():
         return {"ok": False, "message": _("Geocoding is not enabled.")}
 
-    result = geocode_person(person)
+    result = geocode_doc(doctype, name)
     if result:
         return {"ok": True, **result}
 
-    status = frappe.db.get_value("Person", person, "geo_status")
+    status = frappe.db.get_value(doctype, name, "geo_status")
     if status == UNRESOLVABLE:
         message = _("The provider knows of no such address.")
     elif status == FAILED:
@@ -399,20 +431,23 @@ def geocode_now(person: str) -> dict:
     return {"ok": False, "message": message}
 
 
-def has_coordinates(person) -> bool:
-    """Whether this Person has a usable point.
+def has_coordinates(doc, doctype: str = "Person") -> bool:
+    """Whether this record has a usable point.
 
     `geo_status`, not latitude, is the presence signal. Frappe's Float columns
     are NOT NULL DEFAULT 0, so an unresolved coordinate reads as `0.0, 0.0` —
     which is a real place in the Gulf of Guinea, and a distance ranking that
     quietly treated it as "unknown" would be guessing.
+
+    `doctype` matters only when `doc` is a name rather than a record; it
+    defaults to Person because that is what the distance ranking asks about.
     """
-    if isinstance(person, str):
-        person = frappe.db.get_value("Person", person, ["geo_status"], as_dict=True)
-    return bool(person and person.get("geo_status") == RESOLVED)
+    if isinstance(doc, str):
+        doc = frappe.db.get_value(doctype, doc, ["geo_status"], as_dict=True)
+    return bool(doc and doc.get("geo_status") == RESOLVED)
 
 
-def _clear(person_name: str, status) -> None:
+def _clear(doctype: str, name: str, status) -> None:
     """No address, or no such place: say so rather than leaving a stale point.
 
     The coordinates go to 0 because the column cannot hold NULL; `geo_status`
@@ -420,8 +455,8 @@ def _clear(person_name: str, status) -> None:
     looked and found nothing" from "never looked".
     """
     frappe.db.set_value(
-        "Person",
-        person_name,
+        doctype,
+        name,
         {
             "latitude": 0,
             "longitude": 0,
@@ -433,7 +468,7 @@ def _clear(person_name: str, status) -> None:
     )
 
 
-def _mark(person_name: str, status) -> None:
+def _mark(doctype: str, name: str, status) -> None:
     """Record an outcome without touching a point we already hold.
 
     A stale coordinate beats none for a ranking, so an outage must not blank
@@ -441,8 +476,8 @@ def _mark(person_name: str, status) -> None:
     the ADR 067 readiness pre-flight read.
     """
     frappe.db.set_value(
-        "Person",
-        person_name,
+        doctype,
+        name,
         {"geocoded_on": now_datetime(), "geo_status": status},
         update_modified=False,
     )
@@ -454,18 +489,23 @@ def retry_failed_geocodes():
     Only `Failed` — an outage, a quota ceiling, a timeout. `Unresolvable` is
     left alone because asking again costs money and gets the same answer, and
     it clears by itself when someone corrects the address.
+
+    `SWEEP_BATCH` is per doctype rather than per run: the doctypes are drained
+    independently, so a backlog of Persons cannot starve the handful of
+    organizations behind it.
     """
     if not is_enabled():
         return
-    names = frappe.get_all(
-        "Person",
-        filters={"geo_status": FAILED},
-        pluck="name",
-        limit=SWEEP_BATCH,
-        order_by="geocoded_on asc",
-    )
-    for name in names:
-        geocode_person(name)
+    for doctype in LOCATABLE:
+        names = frappe.get_all(
+            doctype,
+            filters={"geo_status": FAILED},
+            pluck="name",
+            limit=SWEEP_BATCH,
+            order_by="geocoded_on asc",
+        )
+        for name in names:
+            geocode_doc(doctype, name)
 
 
 def lookup(address: str) -> dict | None:

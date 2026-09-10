@@ -64,6 +64,16 @@ app_include_js = [
     # predictions come from our own whitelisted endpoints, so this is inert
     # only when Address Geocoding Settings is disabled.
     "address_autocomplete.bundle.js",
+    # The Location surface that sits on top of it — the summary of the last
+    # lookup, the on-demand button, and the form wiring — shared by the Person
+    # and Partner Organization forms, which differ only in which Link field
+    # holds the postal country.
+    "geo_location.bundle.js",
+    # The tax-ID field's label, mask and shape check, shared by Person, Student
+    # Applicant, Partner Organization and the public application form (ADR 071).
+    # Country-agnostic: it renders whatever rule `tax_ids.py` hands it, so a new
+    # country is one Python entry and no change here.
+    "tax_id.bundle.js",
     "seminary_help.bundle.js",
     # Fills a Frappe gap: a DocType's `documentation` link is rendered only in
     # list-view empty-state, never in form view. Adds a form-header Help icon.
@@ -169,6 +179,7 @@ webform_include_js = {
         # Read from disk and inlined into the form's own script, so this one is
         # always current regardless of the bundling above.
         "public/js/address_autocomplete.bundle.js",
+        "public/js/tax_id.bundle.js",
         "public/js/student_applicant_webform.js",
     ]
 }

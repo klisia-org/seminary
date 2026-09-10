@@ -137,6 +137,12 @@
 			</ul>
 		</section>
 
+		<!-- The panel decides for itself whether it belongs here: it is shown
+		     where the seminary lets alumni act for an organization, and also
+		     where this one already belongs to something, so an existing link
+		     does not vanish when creation is switched off. -->
+		<MyOrganizationsPanel hide-when-empty />
+
 		<nav class="grid gap-3 sm:grid-cols-2">
 			<router-link
 				to="/alumni/profile"
@@ -158,7 +164,7 @@
 				<div>
 					<div class="font-medium text-ink-gray-8">{{ __('Alumni directory') }}</div>
 					<div class="text-xs text-ink-gray-5">
-						{{ __('Find classmates by program, class year, or organization.') }}
+						{{ __('Find classmates by name, role, organization or city, and filter by program and graduation years.') }}
 					</div>
 				</div>
 			</router-link>
@@ -196,6 +202,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, Dialog, Input, createResource } from 'frappe-ui'
 import { GraduationCap, UserCog, Users } from 'lucide-vue-next'
+import MyOrganizationsPanel from '@/components/MyOrganizationsPanel.vue'
 
 const router = useRouter()
 

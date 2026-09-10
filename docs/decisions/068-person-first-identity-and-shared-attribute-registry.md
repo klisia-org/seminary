@@ -3,7 +3,8 @@
 **Date:** 2026-09-03
 **Status:** Accepted 2026-09-04 — supersedes ADR 042 in part (the `read_only_depends_on` mirror
 mechanism, the "roles keep their naming series untouched" clause, and the two-onboarding-heads framing)
-and closes ADR 046's deferred reconciliation of Student's writable address onto the spine
+and closes ADR 046's deferred reconciliation of Student's writable address onto the spine.
+§7 amended 2026-09-08 — geolocation is no longer Person-only (see the update note there)
 
 ## Context
 
@@ -181,6 +182,28 @@ the spine. `Person` gains `latitude`, `longitude`, `geocoded_on` and `geocode_pr
 `permlevel: 1` — a home coordinate is more sensitive than the address it came from, because it is
 trivially mappable.
 
+> **Update (2026-09-08): a Partner Organization is located too.** The heading still holds — the mentor engine
+> does not own the coordinate — but "the spine" was too narrow a home for it. The distance that ranks an
+> internship placement or a job opening is the distance to the *organization*, and a partner is not a Person.
+> `Partner Organization` therefore gains the same five fields (`latitude`, `longitude`, `geocoded_on`,
+> `geocode_precision`, `geo_status`) and the same queued-on-address-change trigger, and
+> `integrations/geocoding.py` became doctype-agnostic: `LOCATABLE` maps each address-bearing doctype to the
+> fields its address is built from, and every entry point (`enqueue_for`, `geocode_doc`, the whitelisted
+> `geocode_now`, the daily sweeper) takes the doctype. The sweeper's batch ceiling is per doctype, so a Person
+> backlog cannot starve the handful of organizations behind it.
+>
+> Two things deliberately differ. **The country field:** a Person separates `country` (origin, the
+> comms routing selector) from `mailing_country` (where the post goes) and only the latter is part of
+> the address, while an organization has just the one — which is why the address fields are a registry
+> and not a constant. **No `permlevel`:** the sensitivity argument above is about a *home* address; a
+> partner's street address is the one it publishes in the directory, so hiding its coordinate behind a
+> permlevel would protect nothing and only keep it out of the sight of the staff ranking placements.
+>
+> The Location surface follows: the same summary of what the last lookup concluded, the same on-demand
+> button, and the same proxied typeahead now serve the Partner Organization form, shared from
+> `public/js/geo_location.bundle.js` rather than copied — a second copy would mean one form quietly
+> explaining a failure the other does not.
+
 A `Address Geocoding Settings` single, modelled on `Pexels Settings`, selects Google or a **vendor-proxied**
 mode in which our own endpoint carries a site token, so hosted schools configure nothing.
 `integrations/geocoding.py` goes through the existing `integrations/client.py` helper and so inherits
@@ -217,12 +240,12 @@ them on a `Referer` header a non-browser client can spoof, which is why Google's
 them with quota caps.
 
 **Address autocomplete on both intake surfaces**, Person form and public application form, as a
-typeahead served by whitelisted endpoints. A free-text address box is what produces the malformed
-addresses that come back `Unresolvable`, and the applicant is the one person who never sees the Person
-record their address lands on. Place Details returns the coordinates with the components, so an
-address chosen from the typeahead arrives **already located** and needs no Geocoding call at all. A
-session token groups the keystrokes and the details call into one billable session. If the endpoint
-fails the field stays a plain input and the address still saves.
+typeahead served by whitelisted endpoints — and, since the update above, the Partner Organization form as
+well. A free-text address box is what produces the malformed addresses that come back `Unresolvable`, and the
+applicant is the one person who never sees the Person record their address lands on. Place Details returns the
+coordinates with the components, so an address chosen from the typeahead arrives **already located** and needs
+no Geocoding call at all. A session token groups the keystrokes and the details call into one billable
+session. If the endpoint fails the field stays a plain input and the address still saves.
 
 **The daily ceiling is not the school's to set on vendor proxy.** When we host, the quota is ours to
 enforce upstream, so the field is read-only in that mode; on Google it is the school's own account
@@ -342,11 +365,12 @@ subclass plain `unittest.TestCase`, which Frappe v16's discovery does not collec
 tests under `bench run-tests --module …` in every category. They have not been running, so they are not
 evidence of anything; converting them to `IntegrationTestCase` is its own piece of work.
 
-Also deferred: backfilling coordinates for people who already have addresses; a retention decision for
-`social_security_number`, which is a plaintext field on a public form that is dropped at admission and
-never purged (and note that because Frappe leaves the column when a docfield is removed, "deleting" it
-later is not deletion); and the applicant record remaining the sole home for the doctrinal signature,
-testimony and disability accommodation request.
+Also deferred: backfilling coordinates for the people — and, since the §7 update, the partner organizations —
+that already hold an address, which reach a lookup only on their next address edit or from the form's own
+button; a retention decision for `social_security_number`, which is a plaintext field on a public form that is
+dropped at admission and never purged (and note that because Frappe leaves the column when a docfield is
+removed, "deleting" it later is not deletion); and the applicant record remaining the sole home for the
+doctrinal signature, testimony and disability accommodation request.
 
 **Not adopted.** Frappe's `Address` and `Contact` remain rejected — a large engine built on core
 doctypes breaks on upgrade, and this is the reason the mailing address lives on Person in the first

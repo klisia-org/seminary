@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AlumniDirectoryProfile: typeof import('./src/components/AlumniDirectoryProfile.vue')['default']
     AnnouncementModal: typeof import('./src/components/Modals/AnnouncementModal.vue')['default']
     Announcements: typeof import('./src/components/Announcements.vue')['default']
     AppSidebar: typeof import('./src/components/AppSidebar.vue')['default']
@@ -54,6 +55,7 @@ declare module 'vue' {
     MissingData: typeof import('./src/components/MissingData.vue')['default']
     MobileLayout: typeof import('./src/components/MobileLayout.vue')['default']
     MultiSelect: typeof import('./src/components/Controls/MultiSelect.vue')['default']
+    MyOrganizationsPanel: typeof import('./src/components/MyOrganizationsPanel.vue')['default']
     Notes: typeof import('./src/components/Notes.vue')['default']
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
     OpenQuestionnairesPanel: typeof import('./src/components/OpenQuestionnairesPanel.vue')['default']

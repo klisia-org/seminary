@@ -1,0 +1,26 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="sem-page" style="max-width: 680px;">
+	{% if state == "confirmed" %}
+	<div class="sem-success">
+		<div class="sem-success__check">&#10003;</div>
+		<h1>{{ headline }}</h1>
+		<p class="sem-lead">{{ detail }}</p>
+	</div>
+	{% else %}
+	<div class="sem-panel">
+		<h1>{{ headline }}</h1>
+		<p class="sem-lead">{{ detail }}</p>
+	</div>
+	{% endif %}
+
+	{% if address %}
+	<div class="sem-panel">
+		<p>
+			{{ _(channel) }}: <strong>{{ address }}</strong>
+		</p>
+	</div>
+	{% endif %}
+</div>
+{% endblock %}

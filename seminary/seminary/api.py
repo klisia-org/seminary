@@ -984,7 +984,15 @@ def get_instructor_info():
 
 @frappe.whitelist()
 def save_student_profile(
-    mobile, address_line_1, address_line_2, city, pincode, state, country, image=None
+    mobile,
+    address_line_1,
+    address_line_2,
+    city,
+    pincode,
+    state,
+    country,
+    image=None,
+    tax_id=None,
 ):
     """Self-service profile edit, written to the Person spine.
 
@@ -1015,6 +1023,9 @@ def save_student_profile(
         # The postal country, not the messaging-routing one (ADR 068 phase 2).
         mailing_country=country,
         image=image or None,
+        # Validated per country by `tax_ids.py` in `Person.validate` (ADR 071),
+        # so a malformed one is refused here rather than reaching a gateway.
+        tax_id=tax_id,
         overwrite=True,
     )
     row = frappe.db.get_value(
@@ -1028,6 +1039,7 @@ def save_student_profile(
             "pincode",
             "state",
             "mailing_country",
+            "tax_id",
             "image",
         ],
         as_dict=True,
@@ -1041,6 +1053,7 @@ def save_student_profile(
         "pincode": row.pincode,
         "state": row.state,
         "country": row.mailing_country,
+        "tax_id": row.tax_id,
         "image": row.image,
     }
 
@@ -4784,7 +4797,45 @@ def get_student_info():
     if program_enrollment_list:
         current_program = program_enrollment_list[0]
         student_info["current_program"] = current_program
+
+    student_info.update(_spine_details(student_info.get("person")))
     return student_info
+
+
+def _spine_details(person):
+    """The personal details the portal shows, read from the Person.
+
+    `Student.*` used to carry them, but ADR 068 phase 4 moved the address, date
+    of birth and nationality onto the spine and dropped the columns — so a
+    `fields=["*"]` read has been returning nothing for them ever since, and the
+    profile modal has been rendering empty boxes that a student then retypes.
+    `country` here is the *postal* country (ADR 068 phase 2), spelled the way
+    the modal already expects, never the messaging-routing one.
+    """
+    if not person:
+        return {}
+
+    row = (
+        frappe.db.get_value(
+            "Person",
+            person,
+            [
+                "nationality",
+                "tax_id",
+                "date_of_birth",
+                "address_line_1",
+                "address_line_2",
+                "city",
+                "state",
+                "pincode",
+                "mailing_country",
+            ],
+            as_dict=True,
+        )
+        or {}
+    )
+    row["country"] = row.pop("mailing_country", None)
+    return row
 
 
 # get_program_fees (Program Fees is an oikonomos pricing doctype) lives in the

@@ -728,35 +728,60 @@ def _require_directory() -> None:
         )
 
 
-def _alumni_program_level(person: str | None) -> str | None:
-    """The Program Level of the alumnus's completed program (or None)."""
+def _alumni_program_levels(person: str | None) -> list[str]:
+    """The Program Levels this alumnus graduated at.
+
+    Completed programs became rows in ADR 069. This used to read
+    `Alumni Profile.program_completed`, a docfield that migration dropped —
+    and, as that patch's own note records, Frappe leaves the column in the
+    table. The query builder does not check fieldnames against the meta, so
+    the read kept succeeding: a stale pre-migration value for anyone who
+    predated the patch, and NULL for every alumnus created since. Both fall
+    into the permissive branch below, which is how the Program Level gate came
+    to be switched off without anyone changing a setting (ADR 070).
+    """
     if not person:
-        return None
-    program = frappe.db.get_value(
-        "Alumni Profile", {"person": person}, "program_completed"
+        return []
+    profile = frappe.db.get_value("Alumni Profile", {"person": person}, "name")
+    if not profile:
+        return []
+    programs = frappe.get_all(
+        "Alumni Graduation",
+        filters={"parenttype": "Alumni Profile", "parent": profile},
+        pluck="program",
     )
-    if not program:
-        return None
-    return frappe.db.get_value("Program", program, "program_level")
+    if not programs:
+        return []
+    levels = frappe.get_all(
+        "Program",
+        filters={"name": ("in", programs)},
+        pluck="program_level",
+    )
+    return [level for level in dict.fromkeys(levels) if level]
 
 
 def _alumni_can_create(person: str | None) -> bool:
     """Both gates must be on: the seminary-wide create toggle AND the alumnus's
     Program Level toggle. A missing program level defaults to allowed (the
-    Program Level field itself defaults on)."""
+    Program Level field itself defaults on).
+
+    With several graduations the most permissive level wins. Requiring every
+    level to allow it would be stricter than having no data at all — which is
+    backwards, given that no data means allowed — and a Master's graduate who
+    also holds a certificate must not lose a permission the Master's grants.
+    """
     if not _directory_enabled():
         return False
     if not frappe.db.get_single_value(
         "Seminary Settings", "allow_alumni_create_partner_org"
     ):
         return False
-    program_level = _alumni_program_level(person)
-    if not program_level:
+    levels = _alumni_program_levels(person)
+    if not levels:
         return True
-    return bool(
-        frappe.db.get_value(
-            "Program Level", program_level, "allow_alumni_create_partner_org"
-        )
+    return any(
+        frappe.db.get_value("Program Level", level, "allow_alumni_create_partner_org")
+        for level in levels
     )
 
 

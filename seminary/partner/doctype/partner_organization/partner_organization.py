@@ -6,9 +6,11 @@ from frappe.model.document import Document
 class PartnerOrganization(Document):
     def validate(self):
         self._validate_primary_contact()
+        self._validate_tax_id()
 
     def on_update(self):
         self._grant_portal_roles()
+        self._refresh_coordinates()
 
     def _validate_primary_contact(self):
         """At most one contact row may be marked as the primary point of
@@ -17,6 +19,29 @@ class PartnerOrganization(Document):
         primaries = [c for c in self.contacts if c.is_primary]
         if len(primaries) > 1:
             frappe.throw(_("Only one contact can be marked as the primary contact."))
+
+    def _validate_tax_id(self):
+        """Check the registration number against the organization's country and
+        store it stripped of punctuation (ADR 071). An organization is billed as
+        an entity, so in Brazil that is a CNPJ rather than a CPF."""
+        from seminary.seminary import tax_ids
+
+        tax_ids.assert_on(self)
+
+    def _refresh_coordinates(self):
+        """Queue a geocode when the address changed (ADR 068 §7).
+
+        Same contract as `Person.refresh_coordinates`: queued and never inline,
+        so a provider outage cannot fail the save, and only when the address
+        actually moved — every other save would otherwise spend money on an
+        address that has not changed.
+        """
+        from seminary.seminary.integrations import geocoding
+
+        if not geocoding.is_enabled():
+            return
+        if geocoding.address_changed(self):
+            geocoding.enqueue_for(self.doctype, self.name)
 
     def _grant_portal_roles(self):
         """Any contact granted portal access must hold the Partner role so the

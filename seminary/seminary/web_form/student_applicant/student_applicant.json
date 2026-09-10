@@ -24,7 +24,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 0,
- "modified": "2026-09-04 10:16:54.217853",
+ "modified": "2026-09-10 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "student-applicant",
@@ -228,7 +228,7 @@
    "max_value": 0,
    "options": "Country",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -371,10 +371,10 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "social_security_number",
+   "fieldname": "tax_id",
    "fieldtype": "Data",
    "hidden": 0,
-   "label": "Social Security Number",
+   "label": "Tax ID",
    "max_length": 0,
    "max_value": 0,
    "precision": "",

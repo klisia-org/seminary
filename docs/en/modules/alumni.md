@@ -40,11 +40,13 @@ this when:
   to alumni status), and
 - the student is **graduation-eligible** according to the Program Audit.
 
-When those hold, a profile is created automatically — the graduate's name,
-program completed, originating enrollment, and **class year** (taken from the
-enrollment's conclusion date) are all filled in for you, and the graduate
-receives the **Alumni** role. Each person can have only one profile; marking an
-already-converted student again simply returns the existing one.
+When those hold, a profile is created automatically — the graduate's name and a
+**Graduations** row carrying the program, the originating enrollment and the
+**class year** (derived from the academic year's end, so an autumn graduate of
+2017–2018 is Class of 2018) are filled in for you, and the graduate receives
+the **Alumni** role. Each person has one profile; marking an already-converted
+student again adds a row for the new degree rather than creating a second
+profile.
 
 ### Honorary, transfer, or board members (manual)
 
@@ -60,9 +62,11 @@ A profile is organized into a few simple sections:
 - **Identity** — name, email (kept in sync with the linked User), the original
   Student record if there is one, a photo, and two switches: **Enabled** and
   **Show in Directory**.
-- **Academic** — program completed, class year, and the enrollment they
-  graduated from.
-- **Professional** — current role, organization, and LinkedIn.
+- **Academic** — one **Graduations** row per completed program, each with its
+  program, academic year, class year and the enrollment it came from. A second
+  degree adds a row; it does not replace the first.
+- **Professional** — current role, organization, an optional link to a
+  **Partner Organization** the seminary already knows, and LinkedIn.
 - **Mailing address** and a free-text **Bio**.
 
 Two flags govern visibility, and **both** must be on for a profile to appear in
@@ -73,17 +77,28 @@ the directory:
 | **Enabled** | The profile is active. Turn it off to retire a record without deleting it. |
 | **Show in Directory** | The graduate has chosen to be listed. Graduates control this themselves from the portal. |
 
+A third switch, **Open to Cohort Invitations**, is narrower: it leaves the
+graduate listed but keeps other alumni from inviting them into a community
+cohort from the portal. Staff can still place them in one.
+
 ## What the graduate sees on the portal
 
 Once they have the Alumni role, graduates see an **Alumni** entry in the portal
 menu. From there they can:
 
 - **Edit their own profile** — name, current role and organization, LinkedIn,
-  city, country, bio, and whether they appear in the directory. (Academic facts
-  like program and class year are set by the seminary and are not
-  self-editable.)
-- **Search the directory** — browse fellow alumni by name, role, organization,
-  or city, and filter by **program** or **class year**.
+  city, country, bio, whether they appear in the directory, and whether other
+  alumni may invite them into a cohort. (Academic facts like program and class
+  year are set by the seminary and are not self-editable.)
+- **Search the directory** — browse fellow alumni by name, role, organization
+  or city, filter by **program** and by a **range of class years**, and page
+  through the results.
+- **Open a profile** to read someone's bio, see their graduations, and reach
+  them: a directory profile shows the contact addresses that person chose to
+  share (from *Preferences* — one address at a time, and only once confirmed),
+  and offers to send them a message through the portal when the seminary has
+  enabled alumni-to-alumni messaging. Replies arrive in the sender's Inbox. A
+  message never discloses the sender's own address, only their name.
 
 The directory only ever shows profiles that are both **Enabled** and **Show in
 Directory**, so a graduate who would rather stay private simply leaves the

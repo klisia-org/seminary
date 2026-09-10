@@ -120,3 +120,52 @@ frappe.ready(() => {
 		if (bind() || ++tries > 40) clearInterval(timer);
 	}, 150);
 });
+
+
+// The tax ID on the public application form (ADR 071). The applicant is asked
+// for a number whose format depends on where they are from, so the field
+// relabels and re-masks itself when they pick a nationality — a Brazilian sees
+// "CPF" and a mask, and everyone else sees a plain box.
+//
+// Shared with the Desk forms: public/js/tax_id.bundle.js.
+frappe.ready(() => {
+	const country_of = () => {
+		for (const fieldname of ["nationality", "country"]) {
+			const el = document.querySelector(
+				`[data-fieldname="${fieldname}"] input, [data-fieldname="${fieldname}"] select`
+			);
+			if (el && el.value) return el.value;
+		}
+		return "";
+	};
+
+	const bind = () => {
+		const input = document.querySelector('[data-fieldname="tax_id"] input');
+		if (!input || !window.seminary?.bindTaxIdInput) return false;
+
+		const refresh = window.seminary.bindTaxIdInput(input, country_of, {
+			subject: "person",
+		});
+		if (!refresh) return true;
+
+		// Re-fetch the rule when the country they answered for changes.
+		["nationality", "country"].forEach((fieldname) => {
+			const el = document.querySelector(
+				`[data-fieldname="${fieldname}"] input, [data-fieldname="${fieldname}"] select`
+			);
+			if (el) {
+				el.addEventListener("change", () =>
+					window.seminary.bindTaxIdInput(input, country_of, { subject: "person" })
+				);
+			}
+		});
+		return true;
+	};
+
+	// Web form fields render after ready; poll briefly rather than guess.
+	if (bind()) return;
+	let tries = 0;
+	const timer = setInterval(() => {
+		if (bind() || ++tries > 40) clearInterval(timer);
+	}, 150);
+});

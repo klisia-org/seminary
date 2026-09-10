@@ -210,3 +210,43 @@ class TestTheClassYearIsDerivedOnEveryPath(IntegrationTestCase):
         profile.append("graduations", {"program": make_program().name})
         with self.assertRaisesRegex(frappe.ValidationError, "class year"):
             profile.save(ignore_permissions=True)
+
+
+class TestTheAlumniRoleFollowsTheProfile(IntegrationTestCase):
+    """Having a profile is what makes someone an alumnus (ADR 070).
+
+    The role used to be granted only by `mark_as_alumni`, so a profile created
+    any other way — in Desk for a graduate of another institution, through
+    `intake.make_alumni_profile`, by an import — left someone listed in the
+    directory who could not open it, and who could be sent a directory message
+    with no way to reply.
+    """
+
+    def _profile(self, label):
+        from seminary.seminary import intake
+
+        person = make_person(label, user=make_user().name)
+        return intake.make_alumni_profile(person)
+
+    def test_creating_a_profile_grants_the_role(self):
+        profile = self._profile("Roled")
+        self.assertIn("Alumni", frappe.get_roles(profile.user))
+
+    def test_every_profile_has_a_user_to_grant_to(self):
+        """`user` is mandatory (ADR 068 phase 4), so the grant always has a
+        target. The controller still guards for a blank one — the field could
+        be relaxed later, and a role grant is not the place to find out."""
+        self.assertTrue(frappe.get_meta("Alumni Profile").get_field("user").reqd)
+
+    def test_a_revoked_role_is_not_handed_back_by_a_later_save(self):
+        """Creation-only, on purpose: revocation is a decision, and re-granting
+        on every edit would quietly undo it."""
+        profile = self._profile("Revoked")
+        user = frappe.get_doc("User", profile.user)
+        user.flags.ignore_permissions = True
+        user.remove_roles("Alumni")
+        self.assertNotIn("Alumni", frappe.get_roles(profile.user))
+
+        profile.city = "Somewhere"
+        profile.save(ignore_permissions=True)
+        self.assertNotIn("Alumni", frappe.get_roles(profile.user))

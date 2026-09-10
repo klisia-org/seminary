@@ -5,6 +5,7 @@ seminary.seminary.patches.rename_department_to_academic_unit
 seminary.seminary.patches.backfill_outcome_code_fields
 seminary.seminary.patches.rename_geocoding_settings
 seminary.seminary.patches.applicant_zipcode_to_pincode
+seminary.seminary.patches.applicant_ssn_to_tax_id
 
 [post_model_sync]
 seminary.seminary.patches.add_custom_cei_field
@@ -64,3 +65,7 @@ seminary.seminary.patches.retire_cohort_automation_rule
 seminary.seminary.patches.seed_distance_unit
 seminary.seminary.patches.name_unbound_alumnus_leader_rule
 seminary.seminary.patches.set_cohorts_per_member
+seminary.seminary.patches.open_alumni_to_cohort_invites
+seminary.seminary.patches.match_alumni_partner_organizations
+seminary.seminary.patches.backfill_person_mailing_country
+seminary.seminary.patches.normalize_tax_ids
