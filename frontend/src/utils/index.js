@@ -124,8 +124,15 @@ export function effectiveUploadMb() {
  * but its refusal surfaces through the uploader as a bare "Error Uploading File",
  * which tells the user nothing they can act on.
  */
-export function validateFileSize(file) {
-	const maxBytes = effectiveUploadBytes(file)
+export function validateFileSize(file, { allowDirect = true } = {}) {
+	// `allowDirect: false` for callers that always go through a worker — the
+	// Course Folder uploader does, via the legacy `save_file`, which applies its
+	// own cap *before* the file could be offloaded. Measuring those against the
+	// direct ceiling would promise a size the upload cannot actually deliver.
+	const maxBytes = allowDirect
+		? effectiveUploadBytes(file)
+		: uploadLimits.data?.max_upload_bytes || 0
+
 	if (maxBytes && file.size > maxBytes) {
 		return __('This file exceeds the maximum size of {0} MB.').format(
 			Math.round(maxBytes / (1024 * 1024))

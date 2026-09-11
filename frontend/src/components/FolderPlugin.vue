@@ -99,6 +99,7 @@ import { createResource, Button, Tooltip } from 'frappe-ui';
 import { onMounted, ref, watch } from 'vue';
 import Link from '@/components/Controls/Link.vue';
 import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
+import { validateFileSize } from '@/utils';
 import { useRoute } from 'vue-router';
 import { Trash2 } from 'lucide-vue-next';
 
@@ -336,51 +337,103 @@ const uploadFiles = async (event, droppedFiles = null) => {
     return;
   }
 
+  const csrfToken = getCsrfToken();
+  if (!csrfToken) {
+    alert(__('Session expired. Refresh the page and try again.'));
+    isDragActive.value = false;
+    return;
+  }
+
+  // Each file is sent as its own request. Batching them into one body made the
+  // *total* hit the server's request-size limit, so dropping several small files
+  // failed with a 413 that named no file and suggested a limit nobody set. The
+  // limit is per file, and now the request is too.
+  const rejected = [];
+  const failed = [];
+  let uploaded = 0;
+
   try {
-    const formData = new FormData();
     for (const file of fileList) {
+      // Course Folder uploads always go through a worker, so they are bound by
+      // the worker cap even where a direct upload would have allowed more.
+      const tooBig = validateFileSize(file, { allowDirect: false });
+      if (tooBig) {
+        rejected.push(`${file.name} — ${tooBig}`);
+        continue;
+      }
+
+      const formData = new FormData();
       formData.append('files', file);
-    }
-    if (currentFolderId.value) {
-      formData.append('folder_id', currentFolderId.value);
-    }
-    if (currentFolderName.value) {
-      formData.append('foldername', currentFolderName.value);
+      if (currentFolderId.value) {
+        formData.append('folder_id', currentFolderId.value);
+      }
+      if (currentFolderName.value) {
+        formData.append('foldername', currentFolderName.value);
+      }
+
+      try {
+        const response = await fetch('/api/method/seminary.api.folder_upload.upload_folder', {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Frappe-CSRF-Token': csrfToken },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          uploaded += 1;
+          continue;
+        }
+
+        failed.push(`${file.name} — ${await uploadErrorMessage(response)}`);
+      } catch (error) {
+        console.error('Error uploading file:', file.name, error);
+        failed.push(`${file.name} — ${error.message || __('Upload failed.')}`);
+      }
     }
 
-    const csrfToken = getCsrfToken();
-    if (!csrfToken) {
-      alert(__('Session expired. Refresh the page and try again.'));
-      return;
-    }
-
-    const response = await fetch('/api/method/seminary.api.folder_upload.upload_folder', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Frappe-CSRF-Token': csrfToken,
-      },
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      console.error('Error uploading files:', error);
-      alert(`Error: ${error.message || __('Failed to upload files.')}`);
-      return;
-    }
-
-    console.log('Files uploaded successfully.');
     if (event?.target) {
       event.target.value = '';
     }
-    await fetchFiles();
-  } catch (error) {
-    console.error('Error uploading files:', error);
-    alert(__('An error occurred while uploading files.'));
+    if (uploaded) {
+      await fetchFiles();
+    }
+
+    // One summary rather than an alert per file: naming every file that did not
+    // make it, and why, is what lets the user fix it.
+    const problems = [...rejected, ...failed];
+    if (problems.length) {
+      alert(
+        __('{0} of {1} files uploaded.').format(uploaded, fileList.length) +
+          '\n\n' +
+          problems.join('\n')
+      );
+    }
   } finally {
     isDragActive.value = false;
   }
+};
+
+/** Turn a failed upload response into something the user can act on. */
+const uploadErrorMessage = async (response) => {
+  // nginx refuses an oversized body itself, so there is no Frappe error to read.
+  if (response.status === 413) {
+    return __('This file is too large for the server to accept.');
+  }
+  const payload = await response.json().catch(() => ({}));
+  try {
+    const messages = JSON.parse(payload._server_messages || '[]');
+    if (messages.length) {
+      const text = JSON.parse(messages[0]).message;
+      if (text) {
+        const el = document.createElement('div');
+        el.innerHTML = text;
+        return (el.textContent || '').trim();
+      }
+    }
+  } catch (e) {
+    /* fall through */
+  }
+  return payload.exception || payload.message || __('Upload failed.');
 };
 
 const removeFile = async (fileUrl) => {
