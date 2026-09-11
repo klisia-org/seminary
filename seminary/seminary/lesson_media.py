@@ -53,9 +53,15 @@ def get_upload_limits():
     # Frappe's max_file_size and nginx's body cap — so the ceiling there is much
     # higher and is a separate number. Absent, the SPA uses the general cap alone.
     if get_storage_backend().is_configured():
+        from seminary.storage.routing import client_rule
+
         direct_bytes = direct_limit_for_user()
         limits["max_direct_upload_bytes"] = direct_bytes
         limits["max_direct_upload_mb"] = round(direct_bytes / MB)
+        # Which ceiling applies depends on whether *this* file goes direct, so the
+        # SPA needs the routing rule to pick the right one. Published from the
+        # routing constants rather than restated in JS, so it cannot drift.
+        limits["direct_rule"] = client_rule()
 
     return limits
 

@@ -75,22 +75,43 @@ export const uploadLimits = createResource({
 })
 
 /**
- * The size a file may actually be, in bytes.
+ * Whether a file will be uploaded straight to object storage.
  *
- * With object storage configured the browser uploads straight to it, which
- * escapes both Frappe's `max_file_size` and nginx's request-body cap — so the
- * ceiling is `max_direct_upload_bytes`, which is much larger. Without it, the
- * worker limit is the only one that applies. The server enforces both; this is
- * only so the UI tells the truth before a long upload starts.
+ * This has to mirror the server's routing rule exactly, because it decides which
+ * ceiling applies — the large direct one or the much smaller worker one. Rather
+ * than restate the rule here, `get_upload_limits()` publishes it from the same
+ * constants the server routes on (`seminary/storage/routing.py`).
  */
-export function effectiveUploadBytes() {
-	return (
-		uploadLimits.data?.max_direct_upload_bytes || uploadLimits.data?.max_upload_bytes || 0
-	)
+function goesDirect(file) {
+	const rule = uploadLimits.data?.direct_rule
+	if (!rule) return false
+
+	const extension = '.' + (file.name.split('.').pop() || '').toLowerCase()
+	if (rule.never_offload_extensions?.includes(extension)) return false
+	if (file.size < rule.min_bytes) return false
+	if (rule.offload_extensions?.includes(extension)) return true
+	return Boolean(rule.offload_unknown_types)
 }
 
+/**
+ * The size this particular file may be, in bytes.
+ *
+ * A direct upload escapes both Frappe's `max_file_size` and nginx's request-body
+ * cap, so its ceiling is far higher. Anything still going through a worker is
+ * bound by the worker limit — applying the direct ceiling to those would wave a
+ * file through here only for the server to refuse it after the user waited for
+ * the upload.
+ */
+export function effectiveUploadBytes(file) {
+	const direct = uploadLimits.data?.max_direct_upload_bytes
+	if (file && direct && goesDirect(file)) return direct
+	return uploadLimits.data?.max_upload_bytes || direct || 0
+}
+
+/** The headline figure for a "Max N MB" hint, which has no particular file. */
 export function effectiveUploadMb() {
-	const bytes = effectiveUploadBytes()
+	const bytes =
+		uploadLimits.data?.max_direct_upload_bytes || uploadLimits.data?.max_upload_bytes || 0
 	return bytes ? Math.round(bytes / (1024 * 1024)) : null
 }
 
@@ -98,14 +119,16 @@ export function effectiveUploadMb() {
  * Returns an error string when `file` exceeds the allowed upload size, or
  * undefined when it is fine — matching frappe-ui FileUploader's `validateFile`
  * contract (a returned string blocks the upload and is shown to the user).
+ *
+ * Catching this here is what makes the limit legible: the server does enforce it,
+ * but its refusal surfaces through the uploader as a bare "Error Uploading File",
+ * which tells the user nothing they can act on.
  */
 export function validateFileSize(file) {
-	const maxBytes = effectiveUploadBytes()
+	const maxBytes = effectiveUploadBytes(file)
 	if (maxBytes && file.size > maxBytes) {
-		return __('"{0}" is too large ({1} MB). The maximum upload size is {2} MB.').format(
-			file.name,
-			Math.round(file.size / (1024 * 1024)),
-			effectiveUploadMb()
+		return __('This file exceeds the maximum size of {0} MB.').format(
+			Math.round(maxBytes / (1024 * 1024))
 		)
 	}
 }

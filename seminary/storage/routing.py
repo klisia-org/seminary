@@ -103,6 +103,26 @@ def _offload_unknown_types() -> bool:
     return bool(frappe.conf.get("storage_offload_unknown_types"))
 
 
+def client_rule() -> dict:
+    """The offload rule, serialised for the browser.
+
+    The SPA has to know whether a given file will go direct to object storage,
+    because that decides which ceiling applies to it — the large direct one or
+    the much smaller worker one. Getting that wrong means either refusing an
+    upload that would have worked, or accepting one the server will reject after
+    the user has waited for it.
+
+    Published from these same constants rather than restated in JavaScript, so
+    the rule cannot drift between the two.
+    """
+    return {
+        "min_bytes": min_offload_bytes(),
+        "offload_extensions": sorted(OFFLOAD_EXTENSIONS),
+        "never_offload_extensions": sorted(NEVER_OFFLOAD_EXTENSIONS),
+        "offload_unknown_types": _offload_unknown_types(),
+    }
+
+
 def should_offload(file_name: str | None, size: int | None, is_private=None) -> bool:
     """True when this file should live in object storage rather than on disk.
 

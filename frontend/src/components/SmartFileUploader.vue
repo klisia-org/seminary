@@ -91,6 +91,36 @@ function getCsrfToken() {
 	)
 }
 
+/**
+ * Pull a readable sentence out of a Frappe error response.
+ *
+ * Frappe nests the real message two levels deep in `_server_messages` (a JSON
+ * string holding an array of JSON strings) and writes it as HTML. Uploaders that
+ * do not unwrap it fall back to "Error Uploading File", which is what made a size
+ * rejection unactionable. A 413 never reaches Frappe at all — nginx refuses the
+ * body itself — so that one has to be named explicitly.
+ */
+function serverMessage(payload, status) {
+	if (status === 413) {
+		return __('This file is too large for the server to accept.')
+	}
+	try {
+		const messages = JSON.parse(payload._server_messages || '[]')
+		if (messages.length) {
+			const text = JSON.parse(messages[0]).message
+			if (text) {
+				// Frappe's messages carry markup (<br>, <b>); flatten it to text.
+				const el = document.createElement('div')
+				el.innerHTML = text
+				return (el.textContent || '').trim()
+			}
+		}
+	} catch (e) {
+		/* fall through */
+	}
+	return payload?.exception || __('Error Uploading File')
+}
+
 /** The ordinary upload path, for files that do not qualify for a direct upload. */
 function uploadThroughServer(file) {
 	return new Promise((resolve, reject) => {
@@ -122,15 +152,10 @@ function uploadThroughServer(file) {
 				/* fall through to the status check */
 			}
 			if (xhr.status >= 200 && xhr.status < 300) return resolve(payload.message)
-			let message = 'Error Uploading File'
-			try {
-				message = JSON.parse(JSON.parse(payload._server_messages)[0]).message || message
-			} catch (e) {
-				/* keep the default */
-			}
-			reject(new Error(message))
+			reject(new Error(serverMessage(payload, xhr.status)))
 		}
-		xhr.onerror = () => reject(new Error('Error Uploading File'))
+		xhr.onerror = () =>
+			reject(new Error(__('Could not reach the server. Please check your connection.')))
 		xhr.send(form)
 	})
 }
