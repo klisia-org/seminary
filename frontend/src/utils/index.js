@@ -75,17 +75,37 @@ export const uploadLimits = createResource({
 })
 
 /**
+ * The size a file may actually be, in bytes.
+ *
+ * With object storage configured the browser uploads straight to it, which
+ * escapes both Frappe's `max_file_size` and nginx's request-body cap — so the
+ * ceiling is `max_direct_upload_bytes`, which is much larger. Without it, the
+ * worker limit is the only one that applies. The server enforces both; this is
+ * only so the UI tells the truth before a long upload starts.
+ */
+export function effectiveUploadBytes() {
+	return (
+		uploadLimits.data?.max_direct_upload_bytes || uploadLimits.data?.max_upload_bytes || 0
+	)
+}
+
+export function effectiveUploadMb() {
+	const bytes = effectiveUploadBytes()
+	return bytes ? Math.round(bytes / (1024 * 1024)) : null
+}
+
+/**
  * Returns an error string when `file` exceeds the allowed upload size, or
  * undefined when it is fine — matching frappe-ui FileUploader's `validateFile`
  * contract (a returned string blocks the upload and is shown to the user).
  */
 export function validateFileSize(file) {
-	const maxBytes = uploadLimits.data?.max_upload_bytes
+	const maxBytes = effectiveUploadBytes()
 	if (maxBytes && file.size > maxBytes) {
 		return __('"{0}" is too large ({1} MB). The maximum upload size is {2} MB.').format(
 			file.name,
 			Math.round(file.size / (1024 * 1024)),
-			uploadLimits.data.max_upload_mb
+			effectiveUploadMb()
 		)
 	}
 }
