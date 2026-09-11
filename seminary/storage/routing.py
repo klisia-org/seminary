@@ -10,11 +10,12 @@ form (`file.py:812`) hands over the whole `File` doc; the legacy form
 `(fname, content, content_type, is_private)` — no `attached_to_doctype`, no
 folder, no doc, because the row does not exist yet.
 
-Both live seminary paths that carry the most bytes use the *legacy* form:
-`seminary/api/folder_upload.py` (Course Folder instructor materials) and
-`seminary/seminary/course_pack/import_.py`. So a context-aware predicate
-("is this a Course Folder file?") would silently fail exactly where it matters
-most, and route those files to disk while appearing to work everywhere else.
+Seminary's own upload paths have since moved to the modern form — the legacy
+helper enforces a size ceiling that ignores System Settings — but the legacy form
+is still reachable (`integrations/pexels.py`, and any app or Frappe internal that
+calls `file_manager.save_file`), so the predicate must work without a doc. A
+context-aware rule ("is this a Course Folder file?") would be unevaluable there
+and would route those files to disk while appearing to work everywhere else.
 
 Size and extension are available in both forms. They are also the honest
 criteria: what makes a file worth offloading is that it is big and that it is

@@ -67,13 +67,13 @@
           {{ __('No files found in this folder.') }}
         </div>
         <ul v-else class="space-y-2">
-          <li v-for="file in files" :key="file.file_url || file.name"
+          <li v-for="file in files" :key="file.name"
             class="flex items-center gap-3 rounded border border-outline-gray-2 px-3 py-2 transition hover:border-outline-gray-3">
             <a :href="file.file_url" download class="flex-1 truncate text-sm text-ink-blue-link hover:underline">
               {{ file.file_name }}
             </a>
             <Tooltip :text="__('Delete File')" placement="bottom">
-              <Trash2 @click.prevent="removeFile(file.file_url)" class="h-4 w-4 cursor-pointer text-red-500" />
+              <Trash2 @click.prevent="removeFile(file)" class="h-4 w-4 cursor-pointer text-red-500" />
             </Tooltip>
           </li>
         </ul>
@@ -128,7 +128,7 @@ import { createResource, Button, Tooltip } from 'frappe-ui';
 import { onMounted, ref, watch } from 'vue';
 import Link from '@/components/Controls/Link.vue';
 import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
-import { validateFileSize } from '@/utils';
+import { uploadLimits, validateFileSize } from '@/utils';
 import { useRoute } from 'vue-router';
 import { Trash2 } from 'lucide-vue-next';
 
@@ -480,7 +480,13 @@ const uploadFiles = async (event, droppedFiles = null) => {
 const putFile = (file, csrfToken, attempt = 1) => {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
-    formData.append('files', file);
+    formData.append('file', file, file.name);
+    // Frappe's own upload endpoint, with our handler as its `method=` callback.
+    // Posting to a seminary endpoint directly caps the request body at a value no
+    // Desk setting can raise — only a `/api/method/upload_file` path gets the
+    // ceiling that honours System Settings → Max File Size.
+    formData.append('method', 'seminary.api.folder_upload.upload_to_folder');
+    formData.append('is_private', '1');
     if (currentFolderId.value) {
       formData.append('folder_id', currentFolderId.value);
     }
@@ -489,7 +495,7 @@ const putFile = (file, csrfToken, attempt = 1) => {
     }
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/method/seminary.api.folder_upload.upload_folder', true);
+    xhr.open('POST', '/api/method/upload_file', true);
     xhr.withCredentials = true;
     xhr.setRequestHeader('X-Frappe-CSRF-Token', csrfToken);
 
@@ -531,16 +537,17 @@ const putFile = (file, csrfToken, attempt = 1) => {
   });
 };
 
-/** Turn a failed upload response into something the user can act on. */
-const uploadErrorMessage = (xhr) => {
-  // The server refuses an oversized body outright, so there is no Frappe error
-  // to read out of it.
-  if (xhr.status === 413) {
-    return __('This file is too large for the server to accept.');
-  }
+/**
+ * Pull a readable sentence out of a Frappe error body.
+ *
+ * Frappe buries the real message two levels deep in `_server_messages` — a JSON
+ * string holding an array of JSON strings — and writes it as HTML. A caller that
+ * does not unwrap it shows the user nothing useful.
+ */
+const frappeErrorMessage = (responseText, fallback) => {
   let payload = {};
   try {
-    payload = JSON.parse(xhr.responseText);
+    payload = JSON.parse(responseText);
   } catch (e) {
     /* fall through */
   }
@@ -558,24 +565,63 @@ const uploadErrorMessage = (xhr) => {
   } catch (e) {
     /* fall through */
   }
-  return payload.exception || payload.message || __('Upload failed.');
+  return payload.exception || payload.message || fallback;
 };
 
-const removeFile = async (fileUrl) => {
+/** Turn a failed upload response into something the user can act on. */
+const uploadErrorMessage = (xhr) => {
+  // The server refuses an oversized body before any app code runs, so the reply
+  // is a bare werkzeug page with no Frappe message in it. `validateFileSize`
+  // should have caught this first; name the limit anyway so the rare case that
+  // slips through is still actionable.
+  if (xhr.status === 413) {
+    const mb = uploadLimits.data?.max_upload_mb;
+    return mb
+      ? __('This file exceeds the maximum size of {0} MB.').format(mb)
+      : __('This file is too large for the server to accept.');
+  }
+  return frappeErrorMessage(xhr.responseText, __('Upload failed.'));
+};
+
+const removeFile = async (file) => {
   const csrfToken = getCsrfToken();
   if (!csrfToken) {
     alert(__('Session expired. Refresh the page and try again.'));
     return;
   }
-  await fetch('/api/method/seminary.api.folder_upload.delete_file', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Frappe-CSRF-Token': csrfToken,
-    },
-    body: JSON.stringify({ file_url: fileUrl }),
-    credentials: 'include',
-  }).then((response) => response.json());
+  if (
+    !window.confirm(__('Delete {0}? This cannot be undone.').format(file.file_name))
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/method/seminary.api.folder_upload.delete_file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': csrfToken,
+      },
+      // The document name, not the URL: two files can share a URL once identical
+      // bytes are stored once and referenced twice.
+      body: JSON.stringify({
+        file_id: file.name,
+        file_url: file.file_url,
+        folder_id: currentFolderId.value || undefined,
+      }),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw new Error(
+        frappeErrorMessage(await response.text(), __('Could not delete this file.'))
+      );
+    }
+    // Drop it from the list immediately; the refetch below only reconciles.
+    files.value = files.value.filter((f) => f.name !== file.name);
+  } catch (error) {
+    console.error('Error deleting file:', file.file_name, error);
+    alert(error.message || __('Could not delete this file.'));
+  }
 
   await fetchFiles();
 };

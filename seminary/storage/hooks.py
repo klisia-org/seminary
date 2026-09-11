@@ -77,10 +77,14 @@ def _write_from_doc(doc):
 def _write_from_args(fname, content, content_type=None, is_private=0):
     """Legacy form: `frappe.utils.file_manager.save_file` hands us raw values.
 
-    Live callers in seminary: `api/folder_upload.py:115` (Course Folder uploads)
-    and `course_pack/import_.py:204`. Note that upstream has *already* deduped by
-    content hash before reaching us (`get_file_data_from_hash`,
-    file_manager.py:160), so an existing blob never gets here.
+    Seminary's upload paths have moved to the document form (the legacy helper
+    enforces a size ceiling that ignores System Settings), so the live callers left
+    are `integrations/pexels.py` and anything outside this app. It stays supported
+    because the hook is bench-global and any installed app may use either form.
+
+    Note that upstream has *already* deduped by content hash before reaching us
+    (`get_file_data_from_hash`, file_manager.py:160), so an existing blob never
+    gets here.
     """
     from frappe.core.doctype.file.utils import get_content_hash
     from frappe.utils.file_manager import save_file_on_filesystem

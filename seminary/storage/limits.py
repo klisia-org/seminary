@@ -172,33 +172,35 @@ def direct_limit_for_user(user: str | None = None) -> int:
 
 
 def global_max_bytes() -> int:
-    """The size Frappe itself will accept, across *both* of its ceilings.
+    """The size Frappe itself will accept for a browser upload.
 
     Frappe ships two unrelated `get_max_file_size()` functions and which one
     applies depends on how a file was created:
 
     - `frappe.core.api.file.get_max_file_size` — used by `File.check_max_file_size`
-      on the document path. System Settings (MB) → `conf` → 25 MB.
+      on the document path. **System Settings → Max File Size (MB)** → `conf` →
+      25 MB. This is the one an administrator can set from Desk.
     - `frappe.utils.file_manager.get_max_file_size` — used by the legacy
-      `save_file()` path. **`conf.max_file_size` only → 10 MB**, ignoring System
+      `save_file()` path. `conf.max_file_size` only → 10 MB, ignoring System
       Settings completely.
 
-    Seminary uses both paths: `api/folder_upload.py` (Course Folder instructor
-    materials) and `course_pack/import_.py` go through the legacy one. So a site
-    that raises System Settings to 100 MB still has its folder uploads rejected at
-    10 MB, with a message naming a limit nobody configured.
+    Seminary used to reach the legacy one from `api/folder_upload.py` and
+    `course_pack/import_.py`, which meant a site that raised System Settings to
+    100 MB still had its instructor materials rejected at 10 MB, with a message
+    naming a limit nobody had configured. Both now create File documents instead,
+    so every path a user can upload through answers to the Desk setting and this
+    reports it directly. Keep it that way: reintroducing `file_manager.save_file`
+    on an upload path silently reinstates the 10 MB cap *and* makes this hint
+    over-promise, which ADR 040 forbids.
 
-    We report the **lower** of the two, because ADR 040's promise is that the
-    number shown to the user is the number enforced, and a hint that over-promises
-    is worse than one that is conservative. To make the two agree, set
-    `max_file_size` (in *bytes*) in `site_config.json` and leave System Settings →
-    Max File Size at 0: the modern path then falls through to `conf` and both read
-    the same value.
+    The matching ceiling on the request *body* comes from `frappe/app.py:198` and
+    is only the Desk-aware one for paths beginning `/api/method/upload_file` —
+    which is why the folder tool posts there with a `method=` callback rather than
+    to its own endpoint.
     """
     from frappe.core.api.file import get_max_file_size as doc_path_max
-    from frappe.utils.file_manager import get_max_file_size as legacy_path_max
 
-    return min(doc_path_max(), legacy_path_max())
+    return doc_path_max()
 
 
 def enforce_upload_limits(doc, method=None):
