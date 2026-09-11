@@ -67,19 +67,48 @@
           {{ __('No files found in this folder.') }}
         </div>
         <ul v-else class="space-y-2">
-          <li v-for="file in files" :key="file.file_url || file.name"
+          <li v-for="file in files" :key="file.name"
             class="flex items-center gap-3 rounded border border-outline-gray-2 px-3 py-2 transition hover:border-outline-gray-3">
             <a :href="file.file_url" download class="flex-1 truncate text-sm text-ink-blue-link hover:underline">
               {{ file.file_name }}
             </a>
             <Tooltip :text="__('Delete File')" placement="bottom">
-              <Trash2 @click.prevent="removeFile(file.file_url)" class="h-4 w-4 cursor-pointer text-red-500" />
+              <Trash2 @click.prevent="removeFile(file)" class="h-4 w-4 cursor-pointer text-red-500" />
             </Tooltip>
           </li>
         </ul>
       </div>
 
+      <!--
+        Shown instead of the drop zone while uploading. Without it the tab looks
+        frozen for as long as the whole batch takes, which on a slow connection is
+        minutes — long enough for someone to reasonably conclude it has hung and
+        reload, losing the files already sent.
+      -->
+      <div v-if="upload.active" class="rounded-md border border-outline-gray-3 p-4 text-sm">
+        <div class="flex items-center justify-between gap-3">
+          <span class="truncate font-medium text-ink-gray-8">{{ upload.fileName }}</span>
+          <span class="shrink-0 text-ink-gray-6">
+            {{ __('{0} of {1}').format(upload.index, upload.total) }}
+          </span>
+        </div>
+        <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-gray-2">
+          <div
+            class="h-full rounded-full bg-surface-gray-7 transition-[width] duration-150"
+            :style="{ width: upload.percent + '%' }"
+          ></div>
+        </div>
+        <p class="mt-2 text-ink-gray-6">
+          <!-- Byte counts, not just a percentage: on a slow link the percentage can
+               sit still long enough to look stalled, while the transferred figure
+               still moves. -->
+          {{ upload.percent }}% · {{ formatMb(upload.sentBytes) }} / {{ formatMb(upload.totalBytes) }} MB
+          <span v-if="upload.attempt > 1"> · {{ __('retrying…') }}</span>
+        </p>
+      </div>
+
       <div
+        v-else
         class="rounded-md border-2 border-dashed border-outline-gray-3 p-6 text-center text-sm transition-colors duration-200 hover:border-outline-gray-4"
         :class="{ 'bg-surface-blue-1 border-outline-blue-1 text-ink-blue-2': isDragActive }" @dragenter.prevent.stop="onDragEnter"
         @dragover.prevent.stop="onDragOver" @dragleave.prevent.stop="onDragLeave" @drop.prevent.stop="onDrop"
@@ -99,6 +128,7 @@ import { createResource, Button, Tooltip } from 'frappe-ui';
 import { onMounted, ref, watch } from 'vue';
 import Link from '@/components/Controls/Link.vue';
 import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
+import { uploadLimits, validateFileSize } from '@/utils';
 import { useRoute } from 'vue-router';
 import { Trash2 } from 'lucide-vue-next';
 
@@ -118,6 +148,21 @@ const subfolders = ref([]);
 const isDragActive = ref(false);
 const newSubfolderName = ref('');
 const fileInputRef = ref(null);
+
+// Progress for the file currently in flight. `index`/`total` count files,
+// `sentBytes`/`totalBytes` count bytes within the current one.
+const upload = ref({
+  active: false,
+  index: 0,
+  total: 0,
+  fileName: '',
+  percent: 0,
+  sentBytes: 0,
+  totalBytes: 0,
+  attempt: 1,
+});
+
+const formatMb = (bytes) => ((bytes || 0) / (1024 * 1024)).toFixed(1);
 
 const getCsrfToken = () => {
   if (typeof window === 'undefined') {
@@ -326,8 +371,8 @@ const fetchFiles = async ({ folderId, folderLabel } = {}) => {
 };
 
 const uploadFiles = async (event, droppedFiles = null) => {
-  const fileList = droppedFiles || event?.target?.files;
-  if (!fileList || !fileList.length) {
+  const fileList = Array.from(droppedFiles || event?.target?.files || []);
+  if (!fileList.length) {
     return;
   }
 
@@ -336,11 +381,112 @@ const uploadFiles = async (event, droppedFiles = null) => {
     return;
   }
 
-  try {
-    const formData = new FormData();
-    for (const file of fileList) {
-      formData.append('files', file);
+  const csrfToken = getCsrfToken();
+  if (!csrfToken) {
+    alert(__('Session expired. Refresh the page and try again.'));
+    isDragActive.value = false;
+    return;
+  }
+
+  // Check everything before sending anything, so an oversized file is reported
+  // immediately rather than after the user has waited through the ones before it.
+  // Course Folder uploads always go through a worker, so they are bound by the
+  // worker cap even where a direct upload would have allowed more.
+  const rejected = [];
+  const accepted = [];
+  for (const file of fileList) {
+    const tooBig = validateFileSize(file, { allowDirect: false });
+    if (tooBig) {
+      rejected.push(`${file.name} — ${tooBig}`);
+    } else {
+      accepted.push(file);
     }
+  }
+
+  const failed = [];
+  let uploaded = 0;
+
+  try {
+    // One request per file: batching them made the *total* hit the server's
+    // request-size ceiling, so a handful of small files failed together with a
+    // 413 naming none of them. Sequential rather than parallel, because these
+    // uploads are for people on slow connections, where several concurrent
+    // transfers mostly means several that time out together.
+    for (const [position, file] of accepted.entries()) {
+      upload.value = {
+        active: true,
+        index: position + 1,
+        total: accepted.length,
+        fileName: file.name,
+        percent: 0,
+        sentBytes: 0,
+        totalBytes: file.size,
+        attempt: 1,
+      };
+
+      try {
+        const stored = await putFile(file, csrfToken);
+        uploaded += 1;
+        // Show each file the moment it lands, using what the server just told us,
+        // rather than re-listing the folder after every upload. The list fills in
+        // progressively and a slow connection carries one extra request at the
+        // end instead of one per file.
+        if (stored?.files?.length) {
+          files.value = [...files.value, ...stored.files];
+        }
+      } catch (error) {
+        console.error('Error uploading file:', file.name, error);
+        failed.push(`${file.name} — ${error.message || __('Upload failed.')}`);
+      }
+    }
+
+    if (event?.target) {
+      event.target.value = '';
+    }
+
+    // Reconcile once against the server, so the list is authoritative rather than
+    // whatever the optimistic appends left behind.
+    if (uploaded) {
+      await fetchFiles();
+    }
+
+    // One summary rather than an alert per file: naming every file that did not
+    // make it, and why, is what lets the user fix it.
+    const problems = [...rejected, ...failed];
+    if (problems.length) {
+      alert(
+        __('{0} of {1} files uploaded.').format(uploaded, fileList.length) +
+          '\n\n' +
+          problems.join('\n')
+      );
+    }
+  } finally {
+    upload.value = { ...upload.value, active: false };
+    isDragActive.value = false;
+  }
+};
+
+/**
+ * Send one file, reporting progress.
+ *
+ * XHR rather than fetch because only XHR exposes upload progress, and a slow
+ * upload with no progress is indistinguishable from a hung page.
+ *
+ * A dropped connection is retried once. These uploads happen on links that fail
+ * mid-transfer as a matter of course, and losing a finished 8 MB upload to one
+ * blip is worth one automatic attempt. Only transport failures are retried — an
+ * answer from the server, including a refusal, is final.
+ */
+const putFile = (file, csrfToken, attempt = 1) => {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    // Frappe's own upload endpoint, with our handler as its `method=` callback.
+    // Posting to a seminary endpoint directly caps the request body at a value no
+    // Desk setting can raise — only a `/api/method/upload_file` path gets the
+    // ceiling that honours System Settings → Max File Size.
+    formData.append('method', 'seminary.api.folder_upload.upload_to_folder');
+    formData.append('is_private', '1');
     if (currentFolderId.value) {
       formData.append('folder_id', currentFolderId.value);
     }
@@ -348,56 +494,134 @@ const uploadFiles = async (event, droppedFiles = null) => {
       formData.append('foldername', currentFolderName.value);
     }
 
-    const csrfToken = getCsrfToken();
-    if (!csrfToken) {
-      alert(__('Session expired. Refresh the page and try again.'));
-      return;
-    }
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/method/upload_file', true);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('X-Frappe-CSRF-Token', csrfToken);
 
-    const response = await fetch('/api/method/seminary.api.folder_upload.upload_folder', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Frappe-CSRF-Token': csrfToken,
-      },
-      credentials: 'include',
-    });
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      upload.value = {
+        ...upload.value,
+        sentBytes: e.loaded,
+        totalBytes: e.total,
+        percent: Math.round((e.loaded / e.total) * 100),
+      };
+    };
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      console.error('Error uploading files:', error);
-      alert(`Error: ${error.message || __('Failed to upload files.')}`);
-      return;
-    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          // `{folder_id, folder_name, files: [...]}` — the caller shows the
+          // returned entry straight away instead of re-listing the folder.
+          return resolve(JSON.parse(xhr.responseText).message);
+        } catch (e) {
+          return resolve(null);
+        }
+      }
+      reject(new Error(uploadErrorMessage(xhr)));
+    };
 
-    console.log('Files uploaded successfully.');
-    if (event?.target) {
-      event.target.value = '';
-    }
-    await fetchFiles();
-  } catch (error) {
-    console.error('Error uploading files:', error);
-    alert(__('An error occurred while uploading files.'));
-  } finally {
-    isDragActive.value = false;
-  }
+    const onTransportFailure = () => {
+      if (attempt < 2) {
+        upload.value = { ...upload.value, attempt: attempt + 1, percent: 0, sentBytes: 0 };
+        putFile(file, csrfToken, attempt + 1).then(resolve, reject);
+        return;
+      }
+      reject(new Error(__('Connection lost. Please check your network and try again.')));
+    };
+    xhr.onerror = onTransportFailure;
+    xhr.ontimeout = onTransportFailure;
+
+    xhr.send(formData);
+  });
 };
 
-const removeFile = async (fileUrl) => {
+/**
+ * Pull a readable sentence out of a Frappe error body.
+ *
+ * Frappe buries the real message two levels deep in `_server_messages` — a JSON
+ * string holding an array of JSON strings — and writes it as HTML. A caller that
+ * does not unwrap it shows the user nothing useful.
+ */
+const frappeErrorMessage = (responseText, fallback) => {
+  let payload = {};
+  try {
+    payload = JSON.parse(responseText);
+  } catch (e) {
+    /* fall through */
+  }
+  try {
+    const messages = JSON.parse(payload._server_messages || '[]');
+    if (messages.length) {
+      const text = JSON.parse(messages[0]).message;
+      if (text) {
+        // Frappe's messages carry markup; flatten it to plain text.
+        const el = document.createElement('div');
+        el.innerHTML = text;
+        return (el.textContent || '').trim();
+      }
+    }
+  } catch (e) {
+    /* fall through */
+  }
+  return payload.exception || payload.message || fallback;
+};
+
+/** Turn a failed upload response into something the user can act on. */
+const uploadErrorMessage = (xhr) => {
+  // The server refuses an oversized body before any app code runs, so the reply
+  // is a bare werkzeug page with no Frappe message in it. `validateFileSize`
+  // should have caught this first; name the limit anyway so the rare case that
+  // slips through is still actionable.
+  if (xhr.status === 413) {
+    const mb = uploadLimits.data?.max_upload_mb;
+    return mb
+      ? __('This file exceeds the maximum size of {0} MB.').format(mb)
+      : __('This file is too large for the server to accept.');
+  }
+  return frappeErrorMessage(xhr.responseText, __('Upload failed.'));
+};
+
+const removeFile = async (file) => {
   const csrfToken = getCsrfToken();
   if (!csrfToken) {
     alert(__('Session expired. Refresh the page and try again.'));
     return;
   }
-  await fetch('/api/method/seminary.api.folder_upload.delete_file', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Frappe-CSRF-Token': csrfToken,
-    },
-    body: JSON.stringify({ file_url: fileUrl }),
-    credentials: 'include',
-  }).then((response) => response.json());
+  if (
+    !window.confirm(__('Delete {0}? This cannot be undone.').format(file.file_name))
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/method/seminary.api.folder_upload.delete_file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': csrfToken,
+      },
+      // The document name, not the URL: two files can share a URL once identical
+      // bytes are stored once and referenced twice.
+      body: JSON.stringify({
+        file_id: file.name,
+        file_url: file.file_url,
+        folder_id: currentFolderId.value || undefined,
+      }),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw new Error(
+        frappeErrorMessage(await response.text(), __('Could not delete this file.'))
+      );
+    }
+    // Drop it from the list immediately; the refetch below only reconciles.
+    files.value = files.value.filter((f) => f.name !== file.name);
+  } catch (error) {
+    console.error('Error deleting file:', file.file_name, error);
+    alert(error.message || __('Could not delete this file.'));
+  }
 
   await fetchFiles();
 };

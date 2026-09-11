@@ -24,6 +24,13 @@ def on_update(doc, method=None):
     Location doctype, so the backfill is guarded: it never runs on a Frappe-only
     install. Instructor-payroll provisioning is owned by the oikonomos bridge
     (it subscribes to Seminary Settings on_update separately)."""
+    # Per-role upload caps are cached (they are read on every upload), so the
+    # table has to be invalidated here or a changed limit would not take effect
+    # until the cache expired. privatedocs/p004.
+    from seminary.storage import limits
+
+    limits.clear_cache()
+
     if (
         doc.has_value_changed("sync_rooms_to_asset_locations")
         and doc.sync_rooms_to_asset_locations

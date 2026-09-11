@@ -99,8 +99,18 @@ onMounted(() => {
 	}, 0)
 })
 
+const isYoutube = computed(() => {
+	return props.type == 'video/youtube'
+})
+
 const fileURL = computed(() => {
-	if (isYoutube) {
+	// `.value`, not the ref: a ref object is always truthy, so this branch used to
+	// run for *every* video and append YouTube player parameters to ordinary file
+	// URLs. That was invisible while files were served from /private/files/, which
+	// ignores a query string — but an offloaded file's URL carries its object key
+	// in one, and `…?key=media/ab/<hash>?autoplay=0` resolves to no File row, so
+	// the download endpoint refused it as 403 and the player rendered empty.
+	if (isYoutube.value) {
 		let url = props.file
 		if (url.includes('watch?v=')) {
 			url = url.replace('watch?v=', 'embed/')
@@ -108,10 +118,6 @@ const fileURL = computed(() => {
 		return `${url}?autoplay=0&controls=0&disablekb=1&playsinline=1&cc_load_policy=1&cc_lang_pref=auto`
 	}
 	return props.file
-})
-
-const isYoutube = computed(() => {
-	return props.type == 'video/youtube'
 })
 
 const playVideo = () => {

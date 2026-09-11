@@ -4,10 +4,12 @@ activity content. Two concerns:
 * **Activity references** (docnames of Quiz/Exam/Assignment/Discussion/Folder)
   live structurally — in EditorJS `content` blocks and in legacy `body`
   `{{ Tool('id') }}` macros (the grammar `LessonForm.vue::convertToJSON` parses).
-* **Media URLs** (`/files/...`, `/private/files/...`) can appear anywhere — in
-  EditorJS upload/image blocks, body macros, and inside Text Editor HTML
-  (question text, explanations, prompts). These are handled with a generic URL
-  scan/replace, which is simpler and catches embedded images in rich text too.
+* **Media URLs** — both on-disk (`/files/...`, `/private/files/...`) and
+  object-storage-backed (`/api/method/seminary.storage.api.download_file?key=...`)
+  — can appear anywhere: in EditorJS upload/image blocks, body macros, and inside
+  Text Editor HTML (question text, explanations, prompts). These are handled with
+  a generic URL scan/replace, which is simpler and catches embedded images in
+  rich text too.
 
 Dependency-free (no frappe) so it unit-tests in isolation.
 """
@@ -21,7 +23,24 @@ from .constants import ACTIVITY_BLOCKS
 # "/files/My Diagram.png"), so we allow spaces and stop only at the delimiters
 # that always bound a URL in our content: quotes (HTML attrs / JSON values),
 # angle brackets (HTML), close-paren (markdown links) and newlines.
-_URL_RE = re.compile(r"/(?:private/)?files/[^\"'<>)\r\n]+")
+_DISK_URL = r"/(?:private/)?files/[^\"'<>)\r\n]+"
+
+# Object-storage URLs (privatedocs/p004). These MUST be scanned too: a lesson
+# video offloaded to object storage would otherwise be invisible here, and a
+# Course Pack would export successfully while silently omitting the media — the
+# pack imports with broken playback and no error anywhere.
+#
+# The endpoint path is written out rather than imported from
+# `seminary.storage.backend.URL_PREFIX`, to keep this module frappe-free (it is
+# unit-tested in isolation). That is safe from drift because the path is frozen by
+# construction: it is embedded in the `file_url` of every offloaded File row ever
+# written, so renaming it would break existing databases and can never happen.
+# Keys are hex and slashes only, so no space allowance is needed.
+_OFFLOAD_URL = (
+    r"/api/method/seminary\.storage\.api\.download_file\?key=media/[A-Za-z0-9/._-]+"
+)
+
+_URL_RE = re.compile(f"{_DISK_URL}|{_OFFLOAD_URL}")
 
 
 def scan_urls(text):

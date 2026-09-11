@@ -79,6 +79,7 @@ declare module 'vue' {
     ScriptureMemorizationResult: typeof import('./src/components/QuestionTypes/ScriptureMemorizationResult.vue')['default']
     SermonLabPlayer: typeof import('./src/components/SermonLabPlayer.vue')['default']
     SidebarLink: typeof import('./src/components/SidebarLink.vue')['default']
+    SmartFileUploader: typeof import('./src/components/SmartFileUploader.vue')['default']
     StudentPlacementCard: typeof import('./src/components/StudentPlacementCard.vue')['default']
     SubmissionViewer: typeof import('./src/components/AssignmentViewers/SubmissionViewer.vue')['default']
     TextViewer: typeof import('./src/components/AssignmentViewers/TextViewer.vue')['default']

@@ -10,7 +10,7 @@
   <body>
     <div id="app"></div>
     <script>
-      window.csrf_token = '{{ frappe.session.csrf_token }}'
+      window.csrf_token = '{{ csrf_token }}'
       window.__SEMINARY_DEV__ = true
       window.__SEMINARY_HISTORY_BASE__ = '{{ history_base }}'
     </script>

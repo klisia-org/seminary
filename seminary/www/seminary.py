@@ -4,6 +4,8 @@ import socket
 from urllib.parse import urlparse
 from typing import Optional
 
+from frappe.sessions import get_csrf_token
+
 DEV_SERVER_ENV_KEY = "SEMINARY_DEV_SERVER_URL"
 DEFAULT_DEV_SERVER_URL = os.environ.get(DEV_SERVER_ENV_KEY, "http://localhost:8080")
 
@@ -15,6 +17,11 @@ def get_context(context):
         raise frappe.Redirect
 
     context.no_cache = 1
+    # Passed through the context rather than left to `{{ frappe.session.csrf_token }}`,
+    # which reads a snapshot of the Jinja sandbox globals whose build order relative
+    # to this function is not guaranteed. This is also the pattern frappe's own desk
+    # template and the mainstream apps (builder, hrms, insights) use.
+    context.csrf_token = get_csrf_token()
     context.boot = frappe._dict(get_boot_data())
     context.title = "Seminary ERP"
     context.history_base = "/seminary/"
@@ -47,7 +54,14 @@ def get_boot_data():
         "username": user.username,
     }
 
-    boot["csrf_token"] = frappe.session.data.csrf_token
+    # `session.data.csrf_token` is populated *lazily*, by `sessions.get_csrf_token()`
+    # (frappe/sessions.py:194). Nothing on a website page calls it, so reading the
+    # slot directly yields an empty token on a fresh session — and then every
+    # hand-rolled POST that sends `window.csrf_token` fails with "CSRF token not
+    # found". Generating it here fills the slot before the page renders, which also
+    # fixes `{{ frappe.session.csrf_token }}` in the template, since that reads the
+    # same value (frappe/utils/safe_exec.py:363).
+    boot["csrf_token"] = get_csrf_token()
     boot["sitename"] = frappe.local.site
     boot["sysdefaults"] = frappe.defaults.get_defaults()
     boot["session"] = {

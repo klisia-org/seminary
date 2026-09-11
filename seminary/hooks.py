@@ -333,7 +333,25 @@ override_doctype_class = {
     # Frappe gap: webform_include_js is only wired for standard web forms.
     # Frappe workaround — registry: docs/frappe-workarounds.md (#4).
     "Web Form": "seminary.seminary.overrides.web_form.SeminaryWebForm",
+    # Frappe gap: there is no read seam for file content — File.get_content()
+    # open()s a filesystem path, so an object-storage-backed file cannot be read
+    # through any hook. The subclass overrides that one method and delegates to
+    # super() for every non-offloaded file, so it is a no-op unless a storage
+    # backend is configured. See privatedocs/p004.
+    "File": "seminary.storage.overrides.SeminaryFile",
 }
+
+
+# Object storage (privatedocs/p004)
+# ---------------------------------
+# Large media is offloaded to object storage; everything else stays on disk.
+# These are Frappe's only write-side file seams, and both are called with two
+# different signatures — seminary.storage.hooks dispatches on the call form and
+# delegates every non-offloaded branch to the exact upstream default. With no
+# app registering `seminary_storage_backend`, `should_offload` is always False
+# and file handling is byte-identical to a stock install.
+write_file = "seminary.storage.hooks.write_file"
+delete_file_data_content = "seminary.storage.hooks.delete_file_data_content"
 
 
 # Document Events
@@ -344,10 +362,16 @@ doc_events = {
     "Academic Term": {
         "on_update": "seminary.tasks.refresh_term_flags_on_save",
     },
-    # Hard size ceiling for in-platform lesson recordings (the client-side
-    # length cap can be bypassed). Scoped to recorder output by filename prefix.
     "File": {
-        "validate": "seminary.seminary.lesson_media.enforce_recording_limits",
+        "validate": [
+            # Per-role upload caps (privatedocs/p004). Nests *under* Frappe's
+            # global max_file_size, which save_file has already enforced.
+            "seminary.storage.limits.enforce_upload_limits",
+            # Hard size ceiling for in-platform lesson recordings (the client-side
+            # length cap can be bypassed). Scoped to recorder output by filename
+            # prefix, and tighter still than any role cap.
+            "seminary.seminary.lesson_media.enforce_recording_limits",
+        ],
     },
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
@@ -527,6 +551,12 @@ scheduler_events = {
         # would otherwise stay missing until the address happened to change
         # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.
         "seminary.seminary.integrations.geocoding.retry_failed_geocodes",
+        # Generated Course Packs are reproducible artifacts, so they expire rather
+        # than accumulate one stored copy per export (privatedocs/p004).
+        "seminary.seminary.course_pack.export.cleanup_old_packs",
+        # A direct upload the user abandoned leaves an object no File row will ever
+        # reference, and nothing in the database to notice it (privatedocs/p004).
+        "seminary.storage.direct.sweep_pending_uploads",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [

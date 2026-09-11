@@ -1,6 +1,6 @@
 <template>
 	<div class="rounded-md border border-outline-gray-2 p-3">
-		<FileUploader
+		<SmartFileUploader
 			:fileTypes="['image/*', 'video/*', 'audio/*', '.pdf']"
 			:validateFile="validateFile"
 			@success="(data) => addFile(data)"
@@ -10,17 +10,23 @@
 					<Button @click="openFileSelector" :loading="uploading">
 						{{ uploading ? __('Uploading {0}%').format(progress) : __('Upload File') }}
 					</Button>
-					<span v-if="uploadLimits.data?.max_upload_mb" class="text-sm text-ink-gray-5">
-						{{ __('Max {0} MB').format(uploadLimits.data.max_upload_mb) }}
+					<span v-if="maxUploadMb" class="text-sm text-ink-gray-5">
+						{{ __('Max {0} MB').format(maxUploadMb) }}
 					</span>
 				</div>
 			</template>
-		</FileUploader>
+		</SmartFileUploader>
 	</div>
 </template>
 <script setup>
-import { FileUploader, Button } from 'frappe-ui'
-import { uploadLimits, validateFileSize } from '@/utils'
+import { computed } from 'vue'
+import { Button } from 'frappe-ui'
+import SmartFileUploader from '@/components/SmartFileUploader.vue'
+import { effectiveUploadMb, uploadLimits, validateFileSize } from '@/utils'
+
+// With object storage the browser uploads straight to it, so the ceiling here is
+// the (much larger) direct one rather than Frappe's worker limit.
+const maxUploadMb = computed(() => effectiveUploadMb())
 
 const emit = defineEmits(['fileUploaded'])
 
@@ -43,6 +49,9 @@ const validateFile = (file) => {
 	if (!['jpg', 'jpeg', 'png', 'mp4', 'mov', 'mp3', 'pdf'].includes(extension)) {
 		return 'Only image and video files are allowed.'
 	}
-	return validateFileSize(file)
+	// The only call site on the direct path: `SmartFileUploader` sends qualifying
+	// files straight to object storage, so they are bound by the direct ceiling
+	// rather than the much smaller worker one.
+	return validateFileSize(file, { allowDirect: true })
 }
 </script>

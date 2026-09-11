@@ -18,7 +18,6 @@ import zipfile
 import frappe
 from frappe import _
 from frappe.utils import formatdate, nowdate, now
-from frappe.utils.file_manager import save_file
 
 from . import editorjs
 from .constants import (
@@ -201,7 +200,18 @@ class _Importer:
                     )
                 )
             fname = meta.get("file_name") or meta["key"].split("/")[-1]
-            f = save_file(fname, blob, None, None, is_private=meta.get("is_private", 0))
+            # A File *document*, not `file_manager.save_file`: that helper's size
+            # check reads `conf.max_file_size` alone and falls back to 10 MB,
+            # ignoring System Settings, so importing a pack carrying any sizeable
+            # lecture video failed against a limit nobody had configured.
+            f = frappe.get_doc(
+                {
+                    "doctype": "File",
+                    "file_name": fname,
+                    "content": blob,
+                    "is_private": meta.get("is_private", 0),
+                }
+            ).insert(ignore_permissions=True)
             self.url_map[orig_url] = f.file_url
 
     def _folder_media_urls(self):

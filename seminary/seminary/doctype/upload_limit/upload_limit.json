@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "creation": "2026-09-10 12:00:00.000000",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "role",
+  "max_file_size_mb"
+ ],
+ "fields": [
+  {
+   "description": "Users holding this role are capped at the size below. A user with several capped roles gets the most permissive of them, so staff roles are never narrowed by also being a Student.",
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "Role",
+   "reqd": 1
+  },
+  {
+   "description": "Maximum upload size in MB for this role. Must not exceed System Settings → Max File Size, which Frappe enforces first and which should be set to the most permissive role's value.",
+   "fieldname": "max_file_size_mb",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Max File Size (MB)",
+   "non_negative": 1,
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Upload Limit",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -38,7 +38,12 @@
 						{{ __('Start recording') }}
 					</Button>
 					<span class="text-xs text-ink-gray-5">
-						{{ __('Up to {0} — keep it short.').format(formatTime(maxSeconds)) }}
+						<template v-if="capMb">
+							{{ __('Up to {0} or {1} MB, whichever comes first.').format(formatTime(maxSeconds), capMb) }}
+						</template>
+						<template v-else>
+							{{ __('Up to {0} — keep it short.').format(formatTime(maxSeconds)) }}
+						</template>
 					</span>
 				</div>
 
@@ -46,6 +51,10 @@
 					<template #prefix><Square class="h-4 w-4 fill-current" /></template>
 					{{ __('Stop') }}
 				</Button>
+
+				<div v-if="phase === 'recorded' && stoppedAtCap" class="w-full text-center text-xs text-ink-amber-3">
+					{{ __('Recording stopped at the {0} MB limit. Everything up to that point was kept.').format(capMb) }}
+				</div>
 
 				<template v-if="phase === 'recorded'">
 					<Button @click="reset">
@@ -67,9 +76,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Button, FileUploadHandler, toast } from 'frappe-ui'
 import { Circle, Square, RotateCcw, Check, VideoOff } from 'lucide-vue-next'
+import { uploadLimits } from '@/utils'
 
 const props = defineProps({
 	maxSeconds: {
@@ -90,9 +100,22 @@ const error = ref('')
 const elapsed = ref(0)
 const progress = ref(0)
 
+// The clock is not a size limit. `videoBitsPerSecond` is a *hint* a browser may
+// ignore, and screen capture of a moving window routinely encodes far above it,
+// so a clip well inside `maxSeconds` can still be several times the size the
+// server accepts. Watching the bytes as they arrive is what makes the ceiling
+// real; the alternative is discovering it only after a full take, when the
+// recording cannot be recovered.
+const capBytes = computed(
+	() => (uploadLimits.data?.max_recording_mb || 0) * 1024 * 1024
+)
+const capMb = computed(() => uploadLimits.data?.max_recording_mb || 0)
+const stoppedAtCap = ref(false)
+
 let stream = null
 let recorder = null
 let chunks = []
+let recordedBytes = 0
 let timer = null
 let recordedBlob = null
 let recordedExt = 'webm'
@@ -168,6 +191,8 @@ const startRecording = () => {
 	}
 	recordedExt = mimeType.includes('mp4') ? 'mp4' : 'webm'
 	chunks = []
+	recordedBytes = 0
+	stoppedAtCap.value = false
 	// Cap the bitrate so a short clip stays small (~11 MB/min) — the point of
 	// recording in-platform is to avoid the huge files raw recorders produce.
 	const options = { videoBitsPerSecond: 1_500_000, audioBitsPerSecond: 96_000 }
@@ -178,7 +203,16 @@ const startRecording = () => {
 		recorder = new MediaRecorder(stream)
 	}
 	recorder.ondataavailable = (e) => {
-		if (e.data && e.data.size > 0) chunks.push(e.data)
+		if (!e.data || e.data.size <= 0) return
+		chunks.push(e.data)
+		recordedBytes += e.data.size
+		// Stop on the last chunk that still fits. Everything recorded so far is
+		// kept and usable — better than letting the take run on and refusing all
+		// of it at upload.
+		if (capBytes.value && recordedBytes >= capBytes.value) {
+			stoppedAtCap.value = true
+			stopRecording()
+		}
 	}
 	recorder.onstop = () => finalizeRecording()
 	recorder.start(1000)
@@ -225,6 +259,19 @@ const finalizeRecording = () => {
 
 const useRecording = async () => {
 	if (!recordedBlob) return
+	// The byte watch above normally prevents this, but a browser that delivers
+	// one very large final chunk can still overshoot, and the server refuses an
+	// oversized body before any app code runs — so the failure would arrive as a
+	// bare 413 with no message in it. Say the number here instead.
+	if (capBytes.value && recordedBlob.size > capBytes.value) {
+		toast.error(
+			__('This recording is {0} MB, over the {1} MB limit. Please record a shorter clip.').format(
+				Math.round(recordedBlob.size / (1024 * 1024)),
+				capMb.value
+			)
+		)
+		return
+	}
 	phase.value = 'uploading'
 	progress.value = 0
 	const fileName = `lesson-recording-${Date.now()}.${recordedExt}`
@@ -240,7 +287,16 @@ const useRecording = async () => {
 		})
 		props.onRecorded({ file_url: doc.file_url, file_type: recordedExt })
 	} catch (e) {
-		toast.error(__('Upload failed. Please try again.'))
+		// "Try again" is bad advice for a size refusal — the same bytes fail the
+		// same way. Name the limit when that is what happened.
+		const tooLarge = e?.status === 413 || /413|too large|entity/i.test(e?.message || '')
+		toast.error(
+			tooLarge && capMb.value
+				? __('This recording is too large for the server ({0} MB limit). Please record a shorter clip.').format(
+						capMb.value
+				  )
+				: __('Upload failed. Please try again.')
+		)
 		phase.value = 'recorded'
 	}
 }
