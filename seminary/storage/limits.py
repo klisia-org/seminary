@@ -52,6 +52,22 @@ import frappe
 MB = 1024 * 1024
 
 
+def _policy_schema_present() -> bool:
+    """True once this site has migrated far enough to hold an upload policy.
+
+    Guards against the window where new code is deployed but `bench migrate` has
+    not run — `bench update` pulls code first and migrates afterwards, so the
+    window is real on every deployment, not just a forgotten step.
+    """
+    try:
+        if not frappe.db.exists("DocType", "Upload Limit"):
+            return False
+        return frappe.get_meta("Seminary Settings").has_field("default_max_upload_mb")
+    except Exception:
+        # Table missing entirely (a very old site, or mid-install).
+        return False
+
+
 def _policy() -> dict:
     """The configured policy as `{"default": bytes|None, "roles": {role: bytes}}`.
 
@@ -60,6 +76,14 @@ def _policy() -> dict:
     """
 
     def _load():
+        # Both the field and the child doctype arrive with a migration, and this
+        # runs on *every* File validate. On a site that has the new code but has
+        # not migrated yet, `get_single_value` throws InvalidColumnName
+        # (`frappe/database/database.py:918`) and would take every upload down
+        # with it. An unmigrated site simply has no policy configured.
+        if not _policy_schema_present():
+            return {"default": None, "roles": {}}
+
         default_mb = frappe.db.get_single_value(
             "Seminary Settings", "default_max_upload_mb"
         )
