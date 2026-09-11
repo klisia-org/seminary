@@ -59,7 +59,10 @@ class _Exporter:
     def __init__(self, cs_name):
         self.cs = frappe.get_doc("Course Schedule", cs_name)
         self.media = {}  # orig_url -> meta dict
-        self.media_blobs = {}  # media key -> bytes
+        # media key -> source File docname. Deliberately NOT the bytes: a pack of
+        # lecture video would otherwise sit in worker memory in its entirety, on
+        # top of the assembled zip. Blobs are streamed in at write time instead.
+        self.media_sources = {}
         self.questions = {}  # src_name -> record
         self.activities = {}  # src_name -> record
         self.folders = {}  # foldername -> {foldername, files: tree}
@@ -96,21 +99,21 @@ class _Exporter:
         if not rows:
             return
         fdoc = frappe.get_doc("File", rows[0].name)
-        content = fdoc.get_content(encodings=[])
-        if isinstance(content, str):
-            content = content.encode("utf-8")
-        digest = hashlib.sha256(content).hexdigest()
+        digest, size = _hash_media(fdoc)
         ext = os.path.splitext(rows[0].file_name or "")[1]
         sub = "private" if rows[0].is_private else "public"
         key = f"{sub}/{digest[:16]}{ext}"
         self.media[url] = {
             "key": key,
             "sha256": digest,
-            "size": len(content),
+            "size": size,
             "is_private": int(rows[0].is_private or 0),
             "file_name": rows[0].file_name,
         }
-        self.media_blobs[key] = content
+        # Remember where to stream from, not what to stream. Several URLs can map
+        # to one key (identical content), and the first source wins — they are by
+        # definition byte-identical.
+        self.media_sources.setdefault(key, fdoc.name)
 
     def _scan_media(self, fields):
         for value in fields.values():
@@ -446,28 +449,217 @@ def _validate_export(cs_name):
         )
 
 
+def _hash_media(file_doc):
+    """Return `(sha256_hex, size)` for a File, reading it in chunks.
+
+    Streamed rather than loaded so that hashing a 500 MB lecture recording costs
+    a constant amount of memory. Works whether the bytes are on local disk or in
+    object storage (privatedocs/p004).
+
+    The digest is over the raw bytes, exactly as the previous
+    `get_content(encodings=[])` implementation was, so pack keys for existing
+    content are unchanged and old packs stay comparable.
+    """
+    from seminary.storage.files import open_stream
+
+    digest = hashlib.sha256()
+    size = 0
+    with open_stream(file_doc) as chunks:
+        for chunk in chunks:
+            digest.update(chunk)
+            size += len(chunk)
+    return digest.hexdigest(), size
+
+
+def _write_pack(exporter, manifest, fileobj):
+    """Write the pack zip into `fileobj`, streaming each media blob through.
+
+    `manifest.json` is written **last**. The importer reads entries by name
+    (`zf.read("manifest.json")`, `zf.read(f"media/{key}")`), which resolves
+    through the central directory, so physical order carries no meaning — and
+    writing media first means a blob is never held in memory waiting for the
+    manifest.
+    """
+    from seminary.storage.files import open_stream
+
+    with zipfile.ZipFile(fileobj, "w", zipfile.ZIP_DEFLATED) as archive:
+        for key, source in exporter.media_sources.items():
+            with (
+                open_stream(source) as chunks,
+                archive.open(f"media/{key}", "w") as target,
+            ):
+                for chunk in chunks:
+                    target.write(chunk)
+        archive.writestr("manifest.json", json.dumps(manifest, indent=1, default=str))
+
+
+def _pack_filename(manifest):
+    slug = frappe.scrub(manifest["source"].get("course") or "course")
+    return f"coursepack-{slug}-{frappe.utils.nowdate().replace('-', '')}.zip"
+
+
 def build_pack_bytes(cs_name):
-    """Return (filename, zip_bytes) for a Course Schedule. Reusable in tests."""
+    """Return (filename, zip_bytes) for a Course Schedule. Reusable in tests.
+
+    Holds the whole pack in memory, so it is for tests and small packs. The
+    served export path (`export_course_pack`) avoids this whenever object
+    storage is configured.
+    """
     exporter = _Exporter(cs_name)
     manifest = exporter.build()
 
     buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("manifest.json", json.dumps(manifest, indent=1, default=str))
-        for key, blob in exporter.media_blobs.items():
-            archive.writestr(f"media/{key}", blob)
+    _write_pack(exporter, manifest, buffer)
+    return _pack_filename(manifest), buffer.getvalue()
 
-    slug = frappe.scrub(manifest["source"].get("course") or "course")
-    filename = f"coursepack-{slug}-{frappe.utils.nowdate().replace('-', '')}.zip"
-    return filename, buffer.getvalue()
+
+PACK_FOLDER = "Course Packs"
+
+
+def _pack_folder():
+    """The File folder generated packs live in, created on first use.
+
+    A folder rather than a filename convention so packs are visible and
+    manageable in the File UI, and so `cleanup_old_packs` has an unambiguous
+    thing to sweep.
+    """
+    name = f"Home/{PACK_FOLDER}"
+    if frappe.db.exists("File", name):
+        return name
+    folder = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": PACK_FOLDER,
+            "is_folder": 1,
+            "folder": "Home",
+        }
+    )
+    folder.flags.ignore_permissions = True
+    folder.insert(ignore_if_duplicate=True)
+    return folder.name
+
+
+def _store_pack(exporter, manifest, filename, cs_name):
+    """Assemble the pack on disk, upload it in parts, return its File row.
+
+    Memory stays flat: the zip is written to a temporary file and streamed to
+    object storage, so neither the media nor the assembled pack is ever a single
+    `bytes` in the worker. That is the point of this path — ADR 041 noted
+    building packs in memory as a caveat to revisit, and a pack of recorded video
+    is exactly where it hurts.
+
+    The File row is created with `file_url` already pointing at object storage, so
+    `File.is_remote_file` is true and Frappe's disk pipeline no-ops. `content_hash`
+    is MD5 to match `frappe.core.doctype.file.utils.get_content_hash`, which is
+    what the delete refcount compares — and it is computed here rather than taken
+    from the upload's ETag, because a multipart ETag is not a content hash.
+    """
+    import tempfile
+
+    from seminary.storage import get_storage_backend
+    from seminary.storage.backend import object_key, url_for_key
+
+    backend = get_storage_backend()
+
+    with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
+        _write_pack(exporter, manifest, tmp)
+        tmp.flush()
+        size = tmp.tell()
+
+        # Not a security hash: MD5 is what frappe's own `get_content_hash` uses,
+        # and the delete refcount compares against that value.
+        digest = hashlib.md5(usedforsecurity=False)
+        tmp.seek(0)
+        for chunk in iter(lambda: tmp.read(1024 * 1024), b""):
+            digest.update(chunk)
+        content_hash = digest.hexdigest()
+
+        key = object_key(content_hash)
+        tmp.seek(0)
+        backend.put_fileobj(key, tmp, content_type="application/zip")
+
+    file_doc = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_name": filename,
+            "file_url": url_for_key(key),
+            "is_private": 1,
+            "file_size": size,
+            "content_hash": content_hash,
+            "folder": _pack_folder(),
+            "attached_to_doctype": "Course Schedule",
+            "attached_to_name": cs_name,
+        }
+    )
+    file_doc.flags.ignore_permissions = True
+    file_doc.insert()
+    return file_doc
 
 
 @frappe.whitelist(methods=["GET"])
 def export_course_pack(course_schedule):
-    """Stream a Course Pack zip for the given Course Schedule (read-only)."""
+    """Serve a Course Pack zip for the given Course Schedule (read-only).
+
+    With object storage configured the pack is assembled on disk, uploaded, and
+    handed back as a redirect to its permission-checked download URL — so the
+    bytes reach the browser from object storage and never traverse a worker, and
+    pack egress costs nothing. Without it, behaviour is unchanged: the pack is
+    built in memory and streamed through the response as before.
+    """
     _validate_export(course_schedule)
-    filename, content = build_pack_bytes(course_schedule)
-    frappe.local.response.filename = filename
-    frappe.local.response.filecontent = content
-    frappe.local.response.type = "download"
-    frappe.local.response.display_content_as = "attachment"
+
+    from seminary.storage import get_storage_backend
+
+    exporter = _Exporter(course_schedule)
+    manifest = exporter.build()
+    filename = _pack_filename(manifest)
+
+    if not get_storage_backend().is_configured():
+        buffer = io.BytesIO()
+        _write_pack(exporter, manifest, buffer)
+        frappe.local.response.filename = filename
+        frappe.local.response.filecontent = buffer.getvalue()
+        frappe.local.response.type = "download"
+        frappe.local.response.display_content_as = "attachment"
+        return
+
+    file_doc = _store_pack(exporter, manifest, filename, course_schedule)
+    # Redirect to our own download endpoint rather than straight to a presigned
+    # URL, so the pack is served through the same permission check as any other
+    # offloaded file instead of a second, parallel authorization path.
+    frappe.local.response.type = "redirect"
+    frappe.local.response.location = file_doc.file_url
+
+
+def cleanup_old_packs():
+    """Delete generated packs past their retention window (daily scheduler).
+
+    Packs are reproducible artifacts, not records: keeping them forever would
+    grow object storage without bound, one copy per export. Deleting the File row
+    is enough — the storage delete hook removes the object once no row references
+    that content (privatedocs/p004).
+    """
+    days = frappe.conf.get("course_pack_retention_days", 7)
+    if not days:
+        return
+
+    folder = f"Home/{PACK_FOLDER}"
+    if not frappe.db.exists("File", folder):
+        return
+
+    cutoff = frappe.utils.add_days(now(), -int(days))
+    stale = frappe.get_all(
+        "File",
+        filters={"folder": folder, "is_folder": 0, "creation": ["<", cutoff]},
+        pluck="name",
+    )
+    for name in stale:
+        try:
+            frappe.delete_doc(
+                "File", name, ignore_permissions=True, delete_permanently=True
+            )
+        except Exception:
+            frappe.log_error(
+                title="course_pack: could not delete expired pack",
+                message=f"{name}\n{frappe.get_traceback()}",
+            )

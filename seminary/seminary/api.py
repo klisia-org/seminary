@@ -4632,11 +4632,16 @@ def upsert_chapter(
 
 
 def extract_package(course, chapter_title, scorm_package):
-    package = frappe.get_doc("File", scorm_package.name)
-    zip_path = package.get_full_path()
-    # check_for_malicious_code(zip_path)
+    from seminary.storage.files import materialize
+
+    # `zipfile.extractall` needs a real filesystem path, so this is one of the
+    # few readers that cannot go through File.get_content(). `materialize` yields
+    # the on-disk path directly for a local file, or a temporary copy when the
+    # package has been offloaded to object storage (privatedocs/p004).
     extract_path = frappe.get_site_path("public", "scorm", course, chapter_title)
-    zipfile.ZipFile(zip_path).extractall(extract_path)
+    with materialize(scorm_package.name) as zip_path:
+        # check_for_malicious_code(zip_path)
+        zipfile.ZipFile(zip_path).extractall(extract_path)
     return extract_path
 
 

@@ -422,10 +422,21 @@ def _attach_inapp_files(log_name, message, attach_files=None):
     Communication Log, reusing the uploaded bytes (create_attachment_copy).
     The recipient/sender can then download via Frappe's /private/files ACL
     because they can read their own log; nothing is made public."""
+    from seminary.storage.backend import FILE_URL_RE, is_offloaded, normalize_file_url
+
     urls = set(attach_files or [])
-    urls |= set(re.findall(r"/private/files/[^\"'\s>)]+", message or ""))
+    # Scan with FILE_URL_RE, not a bare /private/files/ pattern, so that media
+    # offloaded to object storage is still found and attached (privatedocs/p004).
+    # Public /files/ URLs are skipped as before — they need no attachment.
+    urls |= {
+        url
+        for url in FILE_URL_RE.findall(message or "")
+        if url.startswith("/private/files/") or is_offloaded(url)
+    }
     for url in urls:
-        base = unquote(url.split("?")[0])
+        # normalize_file_url keeps an offloaded URL's ?key= intact while still
+        # stripping Frappe's ?fid= from a private disk URL.
+        base = unquote(normalize_file_url(url))
         name = frappe.db.get_value("File", {"file_url": base}, "name")
         if not name:
             continue

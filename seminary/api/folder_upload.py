@@ -8,6 +8,7 @@ import frappe
 from frappe.utils.file_manager import save_file
 
 from seminary.seminary.utils import user_is_enrolled_in_course
+from seminary.storage.files import copy_into_zip
 
 
 def _resolve_folder(foldername: str | None = None, folder_id: str | None = None) -> str:
@@ -200,10 +201,10 @@ def _add_folder_to_zip(
         if entry.is_folder:
             _add_folder_to_zip(archive, entry.name, entry_path, visited)
             continue
-        content = frappe.get_doc("File", entry.name).get_content(encodings=[])
-        if isinstance(content, str):
-            content = content.encode("utf-8")
-        archive.writestr(entry_path, content)
+        # Streamed rather than read whole: a course folder of lecture video would
+        # otherwise sit in worker memory in its entirety. Works the same whether
+        # the file is on disk or offloaded to object storage (privatedocs/p004).
+        copy_into_zip(archive, entry.name, entry_path)
 
 
 @frappe.whitelist()

@@ -51,6 +51,9 @@
   "demo_data_installed",
   "column_break_xyvi",
   "no_more_demo",
+  "uploads_section",
+  "default_max_upload_mb",
+  "upload_limits",
   "portal_tab",
   "student_course_management_section",
   "allow_portal_enroll",
@@ -335,6 +338,25 @@
    "fieldname": "general_tab",
    "fieldtype": "Tab Break",
    "label": "General"
+  },
+  {
+   "fieldname": "uploads_section",
+   "fieldtype": "Section Break",
+   "label": "Upload Limits"
+  },
+  {
+   "description": "Catch-all cap for everyone without a role row below. Leave at 0 to apply no seminary limit and use only System Settings → Max File Size.",
+   "fieldname": "default_max_upload_mb",
+   "fieldtype": "Int",
+   "label": "Default Max Upload (MB)",
+   "non_negative": 1
+  },
+  {
+   "description": "Per-role exceptions to the default above. Only add roles that differ. A user holding several listed roles gets the most permissive of them; a user listed nowhere gets the default. Frappe enforces System Settings → Max File Size first, so set that to the MOST permissive value here and tighten below it.",
+   "fieldname": "upload_limits",
+   "fieldtype": "Table",
+   "label": "Per-Role Exceptions",
+   "options": "Upload Limit"
   },
   {
    "fieldname": "portal_tab",
