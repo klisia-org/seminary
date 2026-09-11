@@ -49,6 +49,9 @@ const validateFile = (file) => {
 	if (!['jpg', 'jpeg', 'png', 'mp4', 'mov', 'mp3', 'pdf'].includes(extension)) {
 		return 'Only image and video files are allowed.'
 	}
-	return validateFileSize(file)
+	// The only call site on the direct path: `SmartFileUploader` sends qualifying
+	// files straight to object storage, so they are bound by the direct ceiling
+	// rather than the much smaller worker one.
+	return validateFileSize(file, { allowDirect: true })
 }
 </script>

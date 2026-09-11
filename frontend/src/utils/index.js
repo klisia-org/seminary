@@ -124,11 +124,16 @@ export function effectiveUploadMb() {
  * but its refusal surfaces through the uploader as a bare "Error Uploading File",
  * which tells the user nothing they can act on.
  */
-export function validateFileSize(file, { allowDirect = true } = {}) {
-	// `allowDirect: false` for callers that always go through a worker — the
-	// Course Folder uploader does, via the legacy `save_file`, which applies its
-	// own cap *before* the file could be offloaded. Measuring those against the
-	// direct ceiling would promise a size the upload cannot actually deliver.
+export function validateFileSize(file, { allowDirect = false } = {}) {
+	// Defaults to the worker ceiling, and every caller that has *not* adopted the
+	// direct path must keep that default. The direct ceiling is ~80x larger, so
+	// applying it to a worker upload waves a file through here and then loses it
+	// to a 413 — a bare werkzeug page with no message, after the user has already
+	// waited out the whole transfer. Opting in is the safe direction: a new call
+	// site that forgets gets a limit that is too strict, not one that lies.
+	//
+	// `allowDirect: true` belongs only where the upload really goes to object
+	// storage — today that is `UploadPlugin.vue` via `SmartFileUploader`.
 	const maxBytes = allowDirect
 		? effectiveUploadBytes(file)
 		: uploadLimits.data?.max_upload_bytes || 0
