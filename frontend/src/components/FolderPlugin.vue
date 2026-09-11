@@ -79,7 +79,36 @@
         </ul>
       </div>
 
+      <!--
+        Shown instead of the drop zone while uploading. Without it the tab looks
+        frozen for as long as the whole batch takes, which on a slow connection is
+        minutes — long enough for someone to reasonably conclude it has hung and
+        reload, losing the files already sent.
+      -->
+      <div v-if="upload.active" class="rounded-md border border-outline-gray-3 p-4 text-sm">
+        <div class="flex items-center justify-between gap-3">
+          <span class="truncate font-medium text-ink-gray-8">{{ upload.fileName }}</span>
+          <span class="shrink-0 text-ink-gray-6">
+            {{ __('{0} of {1}').format(upload.index, upload.total) }}
+          </span>
+        </div>
+        <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-gray-2">
+          <div
+            class="h-full rounded-full bg-surface-gray-7 transition-[width] duration-150"
+            :style="{ width: upload.percent + '%' }"
+          ></div>
+        </div>
+        <p class="mt-2 text-ink-gray-6">
+          <!-- Byte counts, not just a percentage: on a slow link the percentage can
+               sit still long enough to look stalled, while the transferred figure
+               still moves. -->
+          {{ upload.percent }}% · {{ formatMb(upload.sentBytes) }} / {{ formatMb(upload.totalBytes) }} MB
+          <span v-if="upload.attempt > 1"> · {{ __('retrying…') }}</span>
+        </p>
+      </div>
+
       <div
+        v-else
         class="rounded-md border-2 border-dashed border-outline-gray-3 p-6 text-center text-sm transition-colors duration-200 hover:border-outline-gray-4"
         :class="{ 'bg-surface-blue-1 border-outline-blue-1 text-ink-blue-2': isDragActive }" @dragenter.prevent.stop="onDragEnter"
         @dragover.prevent.stop="onDragOver" @dragleave.prevent.stop="onDragLeave" @drop.prevent.stop="onDrop"
@@ -119,6 +148,21 @@ const subfolders = ref([]);
 const isDragActive = ref(false);
 const newSubfolderName = ref('');
 const fileInputRef = ref(null);
+
+// Progress for the file currently in flight. `index`/`total` count files,
+// `sentBytes`/`totalBytes` count bytes within the current one.
+const upload = ref({
+  active: false,
+  index: 0,
+  total: 0,
+  fileName: '',
+  percent: 0,
+  sentBytes: 0,
+  totalBytes: 0,
+  attempt: 1,
+});
+
+const formatMb = (bytes) => ((bytes || 0) / (1024 * 1024)).toFixed(1);
 
 const getCsrfToken = () => {
   if (typeof window === 'undefined') {
@@ -327,8 +371,8 @@ const fetchFiles = async ({ folderId, folderLabel } = {}) => {
 };
 
 const uploadFiles = async (event, droppedFiles = null) => {
-  const fileList = droppedFiles || event?.target?.files;
-  if (!fileList || !fileList.length) {
+  const fileList = Array.from(droppedFiles || event?.target?.files || []);
+  if (!fileList.length) {
     return;
   }
 
@@ -344,47 +388,52 @@ const uploadFiles = async (event, droppedFiles = null) => {
     return;
   }
 
-  // Each file is sent as its own request. Batching them into one body made the
-  // *total* hit the server's request-size limit, so dropping several small files
-  // failed with a 413 that named no file and suggested a limit nobody set. The
-  // limit is per file, and now the request is too.
+  // Check everything before sending anything, so an oversized file is reported
+  // immediately rather than after the user has waited through the ones before it.
+  // Course Folder uploads always go through a worker, so they are bound by the
+  // worker cap even where a direct upload would have allowed more.
   const rejected = [];
+  const accepted = [];
+  for (const file of fileList) {
+    const tooBig = validateFileSize(file, { allowDirect: false });
+    if (tooBig) {
+      rejected.push(`${file.name} — ${tooBig}`);
+    } else {
+      accepted.push(file);
+    }
+  }
+
   const failed = [];
   let uploaded = 0;
 
   try {
-    for (const file of fileList) {
-      // Course Folder uploads always go through a worker, so they are bound by
-      // the worker cap even where a direct upload would have allowed more.
-      const tooBig = validateFileSize(file, { allowDirect: false });
-      if (tooBig) {
-        rejected.push(`${file.name} — ${tooBig}`);
-        continue;
-      }
-
-      const formData = new FormData();
-      formData.append('files', file);
-      if (currentFolderId.value) {
-        formData.append('folder_id', currentFolderId.value);
-      }
-      if (currentFolderName.value) {
-        formData.append('foldername', currentFolderName.value);
-      }
+    // One request per file: batching them made the *total* hit the server's
+    // request-size ceiling, so a handful of small files failed together with a
+    // 413 naming none of them. Sequential rather than parallel, because these
+    // uploads are for people on slow connections, where several concurrent
+    // transfers mostly means several that time out together.
+    for (const [position, file] of accepted.entries()) {
+      upload.value = {
+        active: true,
+        index: position + 1,
+        total: accepted.length,
+        fileName: file.name,
+        percent: 0,
+        sentBytes: 0,
+        totalBytes: file.size,
+        attempt: 1,
+      };
 
       try {
-        const response = await fetch('/api/method/seminary.api.folder_upload.upload_folder', {
-          method: 'POST',
-          body: formData,
-          headers: { 'X-Frappe-CSRF-Token': csrfToken },
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          uploaded += 1;
-          continue;
+        const stored = await putFile(file, csrfToken);
+        uploaded += 1;
+        // Show each file the moment it lands, using what the server just told us,
+        // rather than re-listing the folder after every upload. The list fills in
+        // progressively and a slow connection carries one extra request at the
+        // end instead of one per file.
+        if (stored?.files?.length) {
+          files.value = [...files.value, ...stored.files];
         }
-
-        failed.push(`${file.name} — ${await uploadErrorMessage(response)}`);
       } catch (error) {
         console.error('Error uploading file:', file.name, error);
         failed.push(`${file.name} — ${error.message || __('Upload failed.')}`);
@@ -394,6 +443,9 @@ const uploadFiles = async (event, droppedFiles = null) => {
     if (event?.target) {
       event.target.value = '';
     }
+
+    // Reconcile once against the server, so the list is authoritative rather than
+    // whatever the optimistic appends left behind.
     if (uploaded) {
       await fetchFiles();
     }
@@ -409,22 +461,95 @@ const uploadFiles = async (event, droppedFiles = null) => {
       );
     }
   } finally {
+    upload.value = { ...upload.value, active: false };
     isDragActive.value = false;
   }
 };
 
+/**
+ * Send one file, reporting progress.
+ *
+ * XHR rather than fetch because only XHR exposes upload progress, and a slow
+ * upload with no progress is indistinguishable from a hung page.
+ *
+ * A dropped connection is retried once. These uploads happen on links that fail
+ * mid-transfer as a matter of course, and losing a finished 8 MB upload to one
+ * blip is worth one automatic attempt. Only transport failures are retried — an
+ * answer from the server, including a refusal, is final.
+ */
+const putFile = (file, csrfToken, attempt = 1) => {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('files', file);
+    if (currentFolderId.value) {
+      formData.append('folder_id', currentFolderId.value);
+    }
+    if (currentFolderName.value) {
+      formData.append('foldername', currentFolderName.value);
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/method/seminary.api.folder_upload.upload_folder', true);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('X-Frappe-CSRF-Token', csrfToken);
+
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      upload.value = {
+        ...upload.value,
+        sentBytes: e.loaded,
+        totalBytes: e.total,
+        percent: Math.round((e.loaded / e.total) * 100),
+      };
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          // `{folder_id, folder_name, files: [...]}` — the caller shows the
+          // returned entry straight away instead of re-listing the folder.
+          return resolve(JSON.parse(xhr.responseText).message);
+        } catch (e) {
+          return resolve(null);
+        }
+      }
+      reject(new Error(uploadErrorMessage(xhr)));
+    };
+
+    const onTransportFailure = () => {
+      if (attempt < 2) {
+        upload.value = { ...upload.value, attempt: attempt + 1, percent: 0, sentBytes: 0 };
+        putFile(file, csrfToken, attempt + 1).then(resolve, reject);
+        return;
+      }
+      reject(new Error(__('Connection lost. Please check your network and try again.')));
+    };
+    xhr.onerror = onTransportFailure;
+    xhr.ontimeout = onTransportFailure;
+
+    xhr.send(formData);
+  });
+};
+
 /** Turn a failed upload response into something the user can act on. */
-const uploadErrorMessage = async (response) => {
-  // nginx refuses an oversized body itself, so there is no Frappe error to read.
-  if (response.status === 413) {
+const uploadErrorMessage = (xhr) => {
+  // The server refuses an oversized body outright, so there is no Frappe error
+  // to read out of it.
+  if (xhr.status === 413) {
     return __('This file is too large for the server to accept.');
   }
-  const payload = await response.json().catch(() => ({}));
+  let payload = {};
+  try {
+    payload = JSON.parse(xhr.responseText);
+  } catch (e) {
+    /* fall through */
+  }
   try {
     const messages = JSON.parse(payload._server_messages || '[]');
     if (messages.length) {
       const text = JSON.parse(messages[0]).message;
       if (text) {
+        // Frappe's messages carry markup; flatten it to plain text.
         const el = document.createElement('div');
         el.innerHTML = text;
         return (el.textContent || '').trim();
