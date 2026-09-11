@@ -34,8 +34,7 @@ Depois que o estudante enviar a solicitação, o status ficará visível no topo
 
 ### Solicitação da Secretaria Acadêmica
 
-Registados ou outros usuários atribuídos podem criar e acompanhar o progresso da Solicitação de Retirada dentro do Desk.
-Na imagem abaixo, é exibida uma solicitação com o status "Aprovado Academicamente", tendo como Ação a ser executada (canto superior direito) "Enviar para Análise Financeira".
+Registars or other assigned users can create and track progression of the Withdrawal Request within Desk, advancing it through the workflow with the Action menu (top right).
 O SeminaryERP vem com um Fluxo de Trabalho predefinido, que pode ser personalizado pelo(a) administrador(a) do seminário. Isso é particularmente útil para incluir notificações por e-mail, entre outras possibilidades.
 
 ![Tela no Desk de Solicitações de Trancamento](/modules/withdrawal/img/withdrawal_request_desk.png)
@@ -70,6 +69,10 @@ A maioria dos seminários não precisará editar o fluxo de trabalho pré-config
 
 <LifecycleDiagram type="withdrawal" />
 
+The workflow has five states: **Draft → Academic Review → Financial Review → Completed**, plus **Rejected**. Academic Review is the registrar's queue; Financial Review belongs to the Accounts User. The _action_ you take carries the meaning — approving academically routes the request onward, and the side effects (withdrawing the course enrollment, issuing refunds, finalizing a program separation) are applied as those actions are taken.
+
+The Academic Review step adapts to whether money is involved. When a refund could be due (a withdrawal rule with refunds applies and the program is not free), the registrar's approval is **Approve Academically**, which sends the request to Financial Review. When no refund is due, that same step becomes **Approve Academically & Conclude**, which settles the request in one click without a Financial Review stop.
+
 ### Vias rápidas para programas em andamento e gratuitos
 
 Duas sinalizações no Programa subjacente alteram os botões mostrados em uma solicitação de cancelamento de matrícula para que os usuários não tenham que clicar através de estados de revisão que não têm nada para avaliar:
@@ -79,13 +82,14 @@ Duas sinalizações no Programa subjacente alteram os botões mostrados em uma s
 
 Os botões disponíveis em uma solicitação de cancelamento em rascunho se adaptam automaticamente:
 
-| Sinalizadores do programa | Botão mostrado no rascunho                                                  | Leva à                                                                                                                                       |
-| ------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nenhum                    | **Enviar** (padrão)                                      | Enviado → Revisão Acadêmica padrão → Revisão Financeira                                                                                      |
-| Apenas grátis             | **Enviar** (padrão)                                      | Enviado → Revisão Acadêmica → Aprovado Academicamente; de lá, o usuário acadêmico pode escolher _Completo_ para ignorar a Revisão Financeira |
-| Somente Contínuo          | **Enviar e Pular Revisão Acadêmica** (Usuário Acadêmico) | Aprovação acadêmica → Revisão financeira (cursos pagos únicos ainda resolvidos)                                           |
-| Contínuo **e** grátis     | **Enviar e Completar** (Usuário Acadêmico ou Acadêmico)  | Concluído (sem revisão alguma)                                                                                            |
+| Sinalizadores do programa | Botão mostrado no rascunho                                                           | Leva à                                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nenhum                    | **Submit**                                                                           | Academic Review (standard Academic → Financial → Completed chain)                                                                                                               |
+| Apenas grátis             | **Submit**                                                                           | Academic Review; with no refund due, the registrar's approval appears as _Approve Academically & Conclude_ and settles it in one step (no Financial Review) |
+| Ongoing only, refund due  | **Submit & Approve Academically** (Registrar) | Financial Review (academic auto-approved; paid courses still settle)                                                                                                            |
+| Ongoing only, no refund   | **Submit & Conclude** (Registrar)             | Completed                                                                                                                                                                                          |
+| Contínuo **e** grátis     | **Submit & Conclude** (Student or Registrar)  | Concluído (sem revisão alguma)                                                                                                                                                  |
 
-Quando um pedido chega ao _Aprovado acadêmico_ através do caminho **Enviar e Pular Revisão Acadêmica**, nenhum tratamento de nota foi aplicado — o sistema simplesmente marca a matrícula do Curso subjacente como cancelada.
+On the ongoing-program fast-paths no grade treatment is applied — the system simply marks the underlying Course Enrollment as withdrawn.
 
-Se um aluno iniciar um cancelamento de matrícula de um programa contínuo mas pago, eles ainda verão o botão padrão de **Enviar**; o usuário acadêmico posteriormente avalia a solicitação por meio da Revisão Acadêmica, onde o processamento acadêmico de programas contínuos é simplificado por natureza.
+If a student initiates a withdrawal for an ongoing-but-paid program, they still see the standard **Submit** button; the registrar later walks the request through Academic Review, where the academic processing for ongoing programs is a no-op by design.

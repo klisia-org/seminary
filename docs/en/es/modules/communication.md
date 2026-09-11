@@ -210,7 +210,9 @@ Recipients manage their channel preferences at **Portal > Preferences**. From th
 - Set their preferred language for communications
 - Opt in or out of Transactional and Promotional categories per channel (Emergency is always active)
 - Edit their **mailing address** (where printed letters go) — written straight to their Person, the single source of truth
-- View their registered channel addresses (email, mobile, Telegram chat id)
+- See their registered channel addresses (email, mobile, Telegram chat id), **add their own**, and edit or remove the ones they added — the addresses the school keeps on file stay locked, and the primary address is never moved from the portal
+- **Confirm** a new email address: adding one sends a short message to that address with a confirmation link, valid for seven days. SMS and WhatsApp numbers confirm themselves when the carrier reports a message delivered, and a bounce marks the address so nothing keeps sending to it. Only a confirmed address can be shown to anyone.
+- Choose, address by address, whether to **show it in the alumni directory**. This is separate from the consent grid above: it decides what other alumni see, never what the seminary may send. Alumni only.
 - Connect their Telegram account via the signed deep-link button
 
 The mailing address lives on the **Person** record (not duplicated onto Student/Alumni). Role records that need to show it — e.g. Alumni Profile — mirror it read-only via `fetch_from`, so there is one place to edit and no drift. Staff can still set it on the Person form (or, for students, on the Student record at intake, which seeds the Person).
