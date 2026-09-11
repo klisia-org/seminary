@@ -1,14 +1,20 @@
 [
 	{
 		"course_name": "TC100",
-		"course_abbreviation": "TC"
+		"course_abbreviation": "TC",
+		"coursecode": "TC100",
+		"default_grading_scale": "_Test Grading Scale"
 	},
 	{
 		"course_name": "TC101",
-		"course_abbreviation": "TC1"
+		"course_abbreviation": "TC1",
+		"coursecode": "TC101",
+		"default_grading_scale": "_Test Grading Scale"
 	},
 	{
 		"course_name": "TC102",
-		"course_abbreviation": "TC2"
+		"course_abbreviation": "TC2",
+		"coursecode": "TC102",
+		"default_grading_scale": "_Test Grading Scale"
 	}
 ]
