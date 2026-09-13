@@ -1634,6 +1634,27 @@ def after_migrate():
     setup_user_bible_field()
     create_cohort_participant_role()
     ensure_registrar_tools()
+    ensure_workspace_sidebars()
+
+
+def ensure_workspace_sidebars():
+    """Build any missing Workspace Sidebars and Desktop Icons.
+
+    Frappe v16 generates them only from its `after_app_install` hook, and only
+    for workspaces that have no sidebar yet. Until the Registrar workspace
+    stopped linking oikonomos's scholarship reports, that generation failed on
+    every install where seminary preceded oikonomos ("Failed To Create
+    Sidebar"), and nothing ever retried it — so those sites were left with no
+    Registrar sidebar or desktop icon for good. Frappe's generator is
+    existence-guarded and safe to re-run, so calling it here heals such sites
+    on their next migrate and is a no-op everywhere else.
+    """
+    try:
+        from frappe.utils.install import auto_generate_icons_and_sidebar
+    except ImportError:  # Frappe without workspace sidebars
+        return
+
+    auto_generate_icons_and_sidebar()
 
 
 def ensure_registrar_tools():
