@@ -640,12 +640,26 @@ def create_course_enrollments():
             ):
                 continue
 
+            # Credits must be set explicitly, as the portal path does
+            # (api.py: "Populate fetch_from fields so get_credits() can resolve
+            # them"). Only the Desk form fills them in, via get_credits() from
+            # its JS, so an insert from here saved credits=0 — silent for the
+            # academic-only demo, but with a billing backend installed the
+            # credit-hour invoice line got qty 0 and ERPNext rejected it.
             cei = insert_demo_doc(
                 "Course Enrollment Individual",
                 {
                     "program_ce": program_enrollment.name,
                     "student_ce": student.name,
                     "coursesc_ce": cs.name,
+                    "program_data": program_enrollment.program,
+                    "course_data": cs.course,
+                    "credits": frappe.db.get_value(
+                        "Program Course",
+                        {"parent": program_enrollment.program, "course": cs.course},
+                        "pgmcourse_credits",
+                    )
+                    or 0,
                 },
             )
             cei.submit()
