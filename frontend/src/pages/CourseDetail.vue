@@ -178,7 +178,10 @@ console.log("Course props:", props.courseName)
 watch(
 	() => course.data,
 	(data) => {
-		if (data && user.data?.is_student && !data.membership) {
+		// Only a pure student is bounced from a course they aren't enrolled in. Staff
+		// can also hold the Student role (and often do while testing), and must still
+		// reach any course to build or teach it.
+		if (data && user.data?.is_student && !data.membership && !isTeachingStaff.value && !user.data?.is_system_manager) {
 			router.push({ name: 'Courses' })
 		}
 	}

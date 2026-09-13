@@ -68,10 +68,15 @@ export function formatNumber(number) {
 // Shared upload size limit, fetched once. Components read `uploadLimits.data`
 // (`{ max_upload_bytes, max_upload_mb, max_recording_mb }`) and validate against
 // it with `validateFileSize` before handing a file to the uploader.
+//
+// Not `auto`: this runs when the module is first imported, which is before
+// main.js calls setConfig('resourceFetcher', frappeRequest). An auto resource
+// then goes through frappe-ui's default fetcher, which requests the bare method
+// name as a relative URL, gets the portal HTML back, and leaves `data` empty.
+// main.js fetches it once the fetcher is configured.
 export const uploadLimits = createResource({
 	url: 'seminary.seminary.lesson_media.get_upload_limits',
 	cache: ['uploadLimits'],
-	auto: true,
 })
 
 /**

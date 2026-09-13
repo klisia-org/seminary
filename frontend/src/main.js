@@ -15,6 +15,7 @@ import { usersStore } from './stores/user'
 import { initSocket } from './socket'
 import { FrappeUI, setConfig, frappeRequest, pageMetaPlugin } from 'frappe-ui'
 import { configurePortals } from '@seminary/portal-shell'
+import { uploadLimits } from '@/utils'
 
 // Fetch system date format early so formatDate() works everywhere
 frappeRequest({ url: '/api/method/seminary.seminary.api.get_school_abbr_logo' }).then(data => {
@@ -24,6 +25,7 @@ frappeRequest({ url: '/api/method/seminary.seminary.api.get_school_abbr_logo' })
 let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)
+uploadLimits.fetch()
 
 app.use(FrappeUI)
 app.use(pinia)

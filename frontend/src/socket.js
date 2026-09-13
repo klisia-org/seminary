@@ -9,8 +9,11 @@ export function initSocket(namespace = '') {
 
   console.log('SocketIO Port from config:', socketio_port)
 
-  // Use the socketio_port if defined; otherwise, default to 9000 (standard Frappe socketio port)
-  let port = socketio_port ? `:${socketio_port}` : ':9000'
+  // Only a dev bench serves socket.io on its own port, and there the page itself
+  // carries a port (localhost:8000). Behind a proxy the page has none and
+  // socket.io is on the same origin at /socket.io; appending :9000 there points
+  // at a port nothing listens on publicly, so the connection times out.
+  let port = window.location.port ? `:${socketio_port || 9000}` : ''
 
   // Dynamically construct the WebSocket URL with the namespace
   let url = `${protocol}://${host}${port}${namespace ? `/${namespace}` : ''}`
