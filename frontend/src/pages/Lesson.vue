@@ -194,7 +194,10 @@ const lesson = createResource({
 	},
 	auto: true,
 	onSuccess(data) {
-		if (data && user.data?.is_student && !data.membership) {
+		// Same rule as CourseDetail: bounce only a pure student who isn't enrolled,
+		// not staff who also hold the Student role.
+		const isStaff = user.data?.is_moderator || user.data?.is_instructor || user.data?.is_system_manager
+		if (data && user.data?.is_student && !data.membership && !isStaff) {
 			router.push({ name: 'Courses' })
 			return
 		}

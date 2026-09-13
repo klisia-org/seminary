@@ -58,11 +58,26 @@ export class Upload {
 			app.mount(this.wrapper)
 			return
 		} else if (file.file_type == 'PDF') {
-			this.wrapper.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${
-				window.location.origin
-			}${encodeURI(
-				file.file_url
-			)}&embedded=true" width='100%' height='700px' class="mb-4" type="application/pdf"></iframe>`
+			// Rendered by the browser on our own origin. This used to go through Google
+			// Docs Viewer, which fetches the URL from Google's servers without the
+			// user's session: private files came back 403 (a blank viewer), and public
+			// ones were handed to a third party on every view. Same-origin framing
+			// sends the session cookie, so Frappe's file permission check applies.
+			const src = encodeURI(file.file_url)
+			const frame = document.createElement('iframe')
+			frame.src = `${src}#view=FitH`
+			frame.width = '100%'
+			frame.height = '700px'
+			frame.className = 'mb-2'
+			frame.title = file.file_url.split('/').pop()
+			// Many mobile browsers don't render PDFs inside iframes; give them a way out.
+			const link = document.createElement('a')
+			link.href = src
+			link.target = '_blank'
+			link.rel = 'noopener'
+			link.className = 'mb-4 inline-block text-sm text-ink-gray-7 underline'
+			link.textContent = __('Open PDF')
+			this.wrapper.replaceChildren(frame, link)
 			return
 		} else {
 			this.wrapper.innerHTML = `<img class="mb-4" src=${encodeURI(
