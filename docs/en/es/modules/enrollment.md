@@ -14,13 +14,14 @@ Los estudiantes pueden autoinscribirse a través del portal del LMS durante las 
 
 ## Ciclo de vida de matriculación del curso
 
-Un registro individual de un curso se mueve a través de un flujo de trabajo de cuatro estados:
+A Course Enrollment Individual moves through a five-state workflow:
 
 <LifecycleDiagram type="enrollment" />
 
 - **Borrador** — creado pero no enviado; nada ha pasado más allá de guardar la fila
 - **Esperando pago** — enviado, facturas de ventas generadas, pero el estudiante aún no ha sido añadido a la lista del curso (sin acceso a LMS)
-- **Enviado** — el estudiante está totalmente inscrito: en la lista de cursos, en la lista de cursos de la Inscripción al programa, elegible para recibir calificaciones
+- **Submitted** — the student is **currently enrolled**: on the course roster, on the Program Enrollment's course list, eligible to receive grades. Filter the CEI list view by `workflow_state = Submitted` to see everyone actively enrolled right now
+- **Concluded** — the course section has finished and grades were sent. When a Course Schedule's **Send Grades** action runs, it closes the section and moves every active enrollment **Submitted → Concluded** (audits included). This is a system-driven transition with no Desk button — it keeps "currently enrolled" (Submitted) cleanly separate from "already completed" (Concluded). The completed course still appears in the student's course list and transcript
 - **Retirada** — se establece automáticamente cuando una Petición de Retiro alcanza Aprobación Académica; visible en la vista de lista CEI como una píldora de estado de lista
 
 ¿Qué camino toma el CEI de Drraft depende del **Programa** al que pertenece el curso:

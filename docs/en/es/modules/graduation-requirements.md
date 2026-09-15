@@ -63,8 +63,10 @@ Cada elemento de la biblioteca elige **uno** de cuatro tipos:
   lo requerido, opcionalmente con evidencia en archivo del estudiante, del personal o
   de ambos. Ejemplo: _"Declaración Doctrinal firmada"_, _"Entrevista de ordenación"_.
 - **Linked Document** — se cumple cuando otro documento del sistema
-  alcanza un estado específico. Ejemplo: una _Recommendation Letter_ pasa a
-  `Approved`, o un _Culminating Project_ pasa a `Completed`.
+  alcanza un estado específico. You pick the document from a curated list (see
+  [Allowed documents](#allowed-documents)). Example: a _Recommendation Letter_
+  moves to `Approved`, a _Culminating Project_ moves to `Completed`, or an
+  _Internship_ moves to `Completed`.
 
 Dos indicadores controlan la evidencia en los elementos de Manual Verification:
 
@@ -123,12 +125,23 @@ Cada fila elige un elemento de biblioteca y agrega metadatos de vinculación esp
 #### Modos de activación
 
 Un requisito puede quedar pendiente _el día que el estudiante se matricula_ — o solo tras algún
-disparador. Los cuatro modos:
+disparador. The modes:
 
 - **Always Active** — pendiente desde el primer día. Úselo para cualquier cosa que el estudiante pueda empezar en cualquier momento (asistencia a capilla, declaración doctrinal).
-- **After Requirement** — pendiente solo después de que uno o más _otros_ requisitos en
-  esta misma política se hayan cumplido o eximido. Úselo para cadenas de prerrequisitos: _"Ordination Interview"_ queda pendiente solo después de _"Pastoral
-  Recommendation Letter"_ y _"Doctrinal Statement"_ estén ambas cumplidas.
+- **After Requirement** — due only after one _other_ requirement in this same
+  policy has been fulfilled or waived. Use this for prerequisite chains:
+  _"Ordination Interview"_ becomes due only after _"Doctrinal Statement"_ is
+  fulfilled. To require more than one prerequisite, chain requirements (each
+  pointing at the previous one).
+- **Credits Passed** — due only once the student's total passed credits
+  reach a number you set.
+- **Course Passed** — due only once the student has **passed** the course you
+  set (e.g. _"Thesis"_ becomes due only after the student passes _"Writing a
+  Thesis"_). A single passing attempt satisfies the gate **permanently** —
+  even for a repeatable course, and regardless of any other attempt. **Course
+  Passed and After Requirement are mutually exclusive on one row;** to gate on
+  _both_ a course and a prior requirement, chain two requirements — the first
+  using Course Passed, the second using After Requirement pointing at the first.
 - **On Document Status** — pendiente solo después de que un documento relacionado alcance un
   estado dado. El `link_doctype` del elemento de biblioteca y el `linked_doc_status`
   seleccionado juntos definen la compuerta.
@@ -137,6 +150,27 @@ disparador. Los cuatro modos:
   y una unidad (Days o Academic Term). _"Recital de último año — pendiente 60 días
   antes de Expected Graduation Date"_ es offset = -60, unit = Days, anchor =
   Expected Graduation Date.
+
+#### Scoping a requirement to an emphasis
+
+By default a policy row applies to **every** student in the program. To make a
+requirement apply only to students on a particular emphasis (e.g. _"Counseling
+Internship"_ for the Counseling emphasis), set **Applies to Emphasis** to one of
+the program's emphases (Program Tracks marked as emphasis). The row then
+materializes only for students who have declared that emphasis. Advisory-only
+emphases never count. Leave the field empty to apply the requirement to everyone.
+To apply one requirement to several emphases, add it once per emphasis — a
+student who holds more than one of them still gets a single row.
+
+Because an emphasis can be declared _after_ enrollment, an emphasis-scoped
+requirement is added to a student's audit the moment they declare the matching
+emphasis — not only at enrollment. If a student later **drops** the emphasis, the
+requirement is **not** removed automatically (they may already have started or
+completed it); instead it appears on the **Orphan Graduation Requirements** report
+for a registrar to Cancel, Waive, or Withdraw. To avoid changing the requirement
+set out from under an in-flight graduation, **emphasis changes are blocked once a
+Graduation Request exists** — delete or cancel the graduation request first, then
+change the emphasis.
 
 Una fila cuya activación aún no se ha disparado aparece en la auditoría como
 _Not Yet Active_, y aunque sea obligatoria **no** bloquea la elegibilidad
@@ -319,6 +353,9 @@ Paper_. Cada tipo define:
   gana crédito y una calificación como cualquier otro curso. Los nombres de tipo que el Curso
   lo respalda.
 - **Hitos** — el plan escalonado que cada proyecto de este tipo sigue (abajo).
+- **Reader policy** — the type decides the project's reader _composition_ so it
+  isn't re-decided per project (below, under _Readers, committee, and external
+  examiners_).
 
 En el elemento de la biblioteca de requerimientos se listan los **tipos de proyecto Culminantes
 Permitidos**. If you allow exactly one, the student is auto-assigned it; if you
@@ -361,6 +398,50 @@ readers signing off the Defense milestone, exactly like any other milestone.
 Students, advisors, and readers do all of this from the **Culminating Project
 workbench** (a portal page) where they see milestones and due dates, upload
 submissions, and record sign-offs.
+
+### Academic unit and advisor assignment
+
+A project belongs to an **Academic Unit** (an academic department) that the
+student declares when the project is created — the advisor field is no longer
+filled by the student. The **department assigns the advisor**: from the project,
+use **Assign Advisor**, which offers only **qualified** advisors — instructors
+wired with the _Thesis/CP Advisor_ capability who still have capacity. The
+project stays in **Draft** until an advisor is assigned, then moves to **Active**;
+the advisor's capacity is claimed (and released if you reassign).
+
+By default the advisor picker is a wide net across all academic units, so a dean
+can step in. On the Culminating Project Type, tick **Advisor from Project's
+Academic Unit** to narrow it to advisors from the project's own department. (See
+[Academic Units & Faculty](./academic-units.md) for how advisor pools and
+capacity work.)
+
+### Readers, committee, and external examiners
+
+Reader _composition_ is policy, set on the **Culminating Project Type**, not
+decided per project. On the type, tick **Apply Policy to Reader Selection** and
+set:
+
+- **Readers Required** — how many named readers (beyond the advisor): 0, 1, or 2.
+  A project has exactly two named slots (Second and Third Reader); put any
+  further reviewers on the committee.
+- For each slot, the **reader type** — **Instructor** or **External Examiner** —
+  and, for instructor slots, **Allow Instructors from Other Units** (off = must
+  be a member of the project's academic unit).
+
+Projects of that type then inherit the composition: each slot's type is fixed,
+extra slots are disallowed, and an instructor reader is checked against the unit
+rule. With the policy off, staff pick reader types and members freely.
+
+An **External Examiner** is a vetted outside reader, recorded once (Desk →
+External Examiner) and reused — Person-backed, with their institution,
+qualifications, and an _Invite Again_ note so "do we want them back?" doesn't
+live in someone's head. They are deliberately **not** instructors (reduced
+access, no teaching). External readers don't sign milestones themselves; the
+advisor records their sign-off on their behalf, as for committee members.
+
+The **committee** (managed by the advisor on the workbench) takes internal
+instructors or External Examiners; the advisor signs milestones on the
+committee's behalf.
 
 ## Cómo se manejan los eventos de asistencia
 
@@ -464,29 +545,39 @@ nueva política. Los estudiantes ya matriculados conservan la anterior. Si un es
 pide explícitamente pasar al nuevo catálogo, use **Resnapshot** en su
 Program Enrollment.
 
-### Agregar un nuevo tipo de documento vinculado sin código
+### Allowed documents
 
-Si más adelante su seminario quiere un _nuevo_ tipo de documento vinculado (por ejemplo,
-_Internship Report_ — un doctype que su equipo de TI crea con su propio flujo de trabajo),
-**no** necesita editar ningún código. Una vez que exista el doctype con un campo
-`workflow_state`:
+A _"Linked Document"_ requirement points at a real document in the system. To
+keep that choice friendly, the document types that may fulfil a requirement are
+curated in a small list — **Allowed Graduation Document** (Desk → Allowed
+Graduation Document). Each entry pairs a document type with a plain-language
+**label** and the **fulfilling status** that marks it done. The seminary ships
+with the built-in options:
 
-1. Cree un elemento de biblioteca con `Type = Linked Document` y elija _Internship
-   Report_ en `Linked Document`.
-2. Agréguelos a las políticas de los programas pertinentes con el modo de activación que
-   desee.
-3. En cada elemento de biblioteca con `Activation Mode = On Document Status`,
-   especifique el estado que señala el cumplimiento (p. ej., `Approved`,
-   `Completed`).
+| Label                        | Document               | Fulfilling status |
+| ---------------------------- | ---------------------- | ----------------- |
+| Thesis / Culminating Project | Culminating Project    | `Completed`       |
+| Recommendation Letter        | Recommendation Letter  | `Approved`        |
+| Internship                   | Internship Application | `Completed`       |
 
-El sistema refleja automáticamente los cambios de estado en las filas SGR.
+When you author a library item with `Type = Linked Document`, you simply pick
+from this list under **Fulfilling Document** — the underlying doctype and the
+status that fulfils it are filled in for you, so you never type a raw doctype
+name or guess a status.
 
-> **Aviso — doctypes a medida.** Dos tipos de requisitos vienen con sus
-> propios doctypes completos porque la vía genérica "Linked Document" se queda
-> corta para ellos: **Recommendation Letter** (con el portal externo para
-> recomendadores) y **Culminating Project** (con rondas de revisión). Para estos,
-> use los doctypes dedicados; el sistema ya los integra en la
-> Program Audit.
+Most seminaries never touch the list itself. If your IT team builds a _new_ kind
+of linked document (say an _Internship Report_ doctype with its own workflow),
+an **advanced user** adds one Allowed Graduation Document row for it — no code —
+and it becomes available to every program policy. The system reflects status
+changes onto SGR rows automatically.
+
+> **Heads-up — bespoke doctypes.** Three requirement types ship with their own
+> complete doctypes because the generic "Linked Document" path is too thin for
+> them: **Recommendation Letter** (with the external recommender portal),
+> **Culminating Project** (with reviewer rounds and milestones), and
+> **Internships** (with org-posted positions, placements, hours, and supervisor
+> evaluations — see [Internships](internship.md)). For these, use the dedicated
+> doctypes; the system already wires them into the graduation audit.
 
 ## Cómo se conecta esto con Program Audit
 
@@ -503,6 +594,44 @@ y consolidada:
 A un estudiante se le muestra `Eligible to graduate` solo cuando ambas secciones están
 libres de elementos obligatorios sin cumplir.
 
+## Leveling and advanced standing
+
+Some students arrive needing **leveling** (remedial courses, e.g. biblical
+languages) or qualify for **advanced standing** (placed out of courses or
+requirements). This is per-student and lives on the **Program Enrollment**, in
+the _Leveling & Advanced Standing_ section — separate from the program-flat
+policy and from emphasis.
+
+- **Register the common cases once** as a **Leveling Profile** (global, or
+  filtered to one program). On a student's enrollment, use **Apply Leveling
+  Profile** to seed an editable plan, then override per student. You can also
+  add rows by hand with no profile.
+- Each plan row is one of: **Leveling Course** (must pass, unless placed out),
+  **Course Exemption** (placed out outright), **Placement Assessment** (a
+  placement exam whose recorded **score** gates the leveling courses), or
+  **Requirement Waiver** (waive a graduation requirement).
+- **Placement Assessments are their own thing** (no longer a graduation
+  requirement). Define each exam once as a **Placement Assessment** (Desk →
+  Placement Assessment) and give it an **Academic Unit** — that unit's **Placement
+  Examiner** capability holders grade it. The score lives on the student's
+  enrollment, not in their graduation-requirement list, so leveling and graduation
+  stay separate.
+- **Score-gated placement.** Give each leveling course an _"Exempt if Score ≥"_
+  threshold and point its _Placement Assessment_ at the exam (the threshold sits
+  on the same row). A **Placement Examiner** records the score from their
+  [Faculty Worklist](./academic-units.md#the-faculty-worklist-portal); each course
+  then resolves to **Exempt** or **Required** automatically (e.g. a Greek score of
+  80 places out of Greek I & II, still requires Greek III). Manual overrides stick
+  (tick _Overridden_); use **Resolve Leveling Plan** after hand-edits.
+- **Effects.** An exemption clears the course for graduation (and satisfies a
+  _Course Passed_ prerequisite on other requirements) but earns **no credit and
+  no grade**. Leveling courses keep their credit for enrollment but **don't count
+  toward the degree**. A **Required** (unmet) leveling course **blocks
+  graduation** — waive the row if a student should be let through.
+- **Before enrollment**, an applicant can flag _Requesting requirement review_;
+  that raises a registrar to-do but changes nothing on its own (the plan is
+  always built on the enrollment, once transcripts can be verified).
+
 ## Referencia rápida
 
 | Si desea...      | Haga esto                                                                                                                                                            |
@@ -514,7 +643,12 @@ libres de elementos obligatorios sin cumplir.
 | Definir las etapas y la defensa de un proyecto                   | Agrega hitos al tipo de proyecto de cultivo (anclaje + desplazamiento, roles de desconexión, Crea Evento para la defensa)                         |
 | Requerir asistencia en un evento único                           | Crear una categoría personalizada de eventos, luego crear un evento (cohorte) o programar un evento requerido (por estudiante) |
 | Hacer que un requisito venza solo después de otro                | Activation Mode = After Requirement, elija los prerrequisitos                                                                                                        |
+| Make a requirement due only after a course is passed             | Activation Mode = Course Passed, set the Prerequisite Course                                                                                                         |
+| Apply a requirement only to one emphasis                         | Set Applies to Emphasis on the policy row (add the row per emphasis for several)                                                                  |
 | Hacer que un requisito venza X días antes de la graduación       | Activation Mode = Time Offset, anchor = Expected Graduation Date                                                                                                     |
+| Resolve a requirement left behind by a dropped emphasis          | Orphan Graduation Requirements report → Cancel / Waive / Withdraw                                                                                                    |
+| Set up leveling / advanced standing for common entrance cases    | Create a Leveling Profile, then Apply Leveling Profile on the enrollment                                                                                             |
+| Place a student out of a course by exam score                    | Leveling row: Leveling Course + Gating Assessment + "Exempt if Score ≥"; verify the exam with a score                                                |
 | Confirmar que un estudiante cumplió algo                         | Abrir la fila SGR, establecer status = Fulfilled                                                                                                                     |
 | Eximir a un estudiante de un requisito                           | Abrir la fila SGR, marcar Waived, dar un motivo                                                                                                                      |
 | Actualizar el catálogo del seminario                             | Publicar un nuevo Program Graduation Requirement con una nueva fecha Active from — no edite el anterior                                                              |
@@ -525,5 +659,7 @@ libres de elementos obligatorios sin cumplir.
 - [Matrícula](enrollment.md) — Program Enrollment es donde vive la instantánea.
 - [Calendario académico](academic-calendar.md) — Eventos usados por los requisitos de Event
   Attendance.
+- [Internships](internship.md) — the bespoke linked-document path for
+  supervised placements, hours, and supervisor evaluations.
 - [Roles de usuario](../administration/user-roles.md) — qué roles pueden crear
   políticas, marcar requisitos como Fulfilled y eximirlos.

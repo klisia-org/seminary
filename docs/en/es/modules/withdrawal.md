@@ -34,8 +34,7 @@ Una vez que el estudiante haya enviado la solicitud, su estado será visible en 
 
 ### Solicitud del registrador
 
-Registros u otros usuarios asignados pueden crear y rastrear la progresión de la Petición de Retiro dentro del Escritorio.
-En la imagen siguiente se muestra una solicitud con estado "Academically Approved", con la Acción a realizar (arriba a la derecha) "Send for Financial Review."
+Registars or other assigned users can create and track progression of the Withdrawal Request within Desk, advancing it through the workflow with the Action menu (top right).
 Seminary ERP incluye un Workflow predefinido, que puede personalizar el administrador del seminario. Esto es particularmente útil para incluir notificaciones por correo electrónico, entre otras posibilidades.
 
 ![Pantalla de Solicitudes de retiro en Desk](/modules/withdrawal/img/withdrawal_request_desk.png)
@@ -70,6 +69,10 @@ La mayoría de los seminarios no necesitarán editar el Workflow preconfigurado.
 
 <LifecycleDiagram type="withdrawal" />
 
+The workflow has five states: **Draft → Academic Review → Financial Review → Completed**, plus **Rejected**. Academic Review is the registrar's queue; Financial Review belongs to the Accounts User. The _action_ you take carries the meaning — approving academically routes the request onward, and the side effects (withdrawing the course enrollment, issuing refunds, finalizing a program separation) are applied as those actions are taken.
+
+The Academic Review step adapts to whether money is involved. When a refund could be due (a withdrawal rule with refunds applies and the program is not free), the registrar's approval is **Approve Academically**, which sends the request to Financial Review. When no refund is due, that same step becomes **Approve Academically & Conclude**, which settles the request in one click without a Financial Review stop.
+
 ### Rápidas rutas para programas en curso y gratuitos
 
 Dos banderas en el programa subyacente cambian los botones mostrados en una solicitud de retiro para que los usuarios no tengan que hacer clic a través de los estados de revisión que no tienen nada que evaluar:
@@ -79,13 +82,14 @@ Dos banderas en el programa subyacente cambian los botones mostrados en una soli
 
 Los botones disponibles en una solicitud de retirada de borrador se adaptan automáticamente:
 
-| Marcas del programa | Botón mostrado en el borrador                                                    | Tierras en                                                                                                                                         |
-| ------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ninguna marca       | **Enviar** (estándar)                                         | Enviado → revisión académica estándar → cadena de revisión financiera                                                                              |
-| Solo gratis         | **Enviar** (estándar)                                         | Enviado → Revisión Académica → Aprobada Académicamente; desde ahí el usuario académico puede elegir _Completar_ para saltar la Revisión Financiera |
-| Solo en curso       | **Enviar y saltar la revisión académica** (Usuario Académico) | Aprobado Académicamente → Revisión Financiera (cursos pagados une-off todavía saldan)                                           |
-| **y** gratis        | **Enviar y completar** (Usuario Profesional o Académico)      | Completado (sin revisión en absoluto)                                                                                           |
+| Marcas del programa      | Botón mostrado en el borrador                                                        | Tierras en                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ninguna marca            | **Submit**                                                                           | Academic Review (standard Academic → Financial → Completed chain)                                                                                                               |
+| Solo gratis              | **Submit**                                                                           | Academic Review; with no refund due, the registrar's approval appears as _Approve Academically & Conclude_ and settles it in one step (no Financial Review) |
+| Ongoing only, refund due | **Submit & Approve Academically** (Registrar) | Financial Review (academic auto-approved; paid courses still settle)                                                                                                            |
+| Ongoing only, no refund  | **Submit & Conclude** (Registrar)             | Completed                                                                                                                                                                                          |
+| **y** gratis             | **Submit & Conclude** (Student or Registrar)  | Completado (sin revisión en absoluto)                                                                                                                                           |
 
-Cuando una solicitud llega a _Aprobada académicamente_ a través de la ruta **Enviar y Saltar Revisión Académica**, no se aplica ningún tratamiento de grado — el sistema simplemente marca la inscripción subyacente al curso como retirada.
+On the ongoing-program fast-paths no grade treatment is applied — the system simply marks the underlying Course Enrollment as withdrawn.
 
-Si un estudiante inicia un retiro de un programa en curso pero pagado, todavía verá el botón estándar **Enviar**; el usuario académico pasea más tarde la solicitud a través de la Revisión Académica, donde el procesamiento académico de los programas en curso es un no-opcional por diseño.
+If a student initiates a withdrawal for an ongoing-but-paid program, they still see the standard **Submit** button; the registrar later walks the request through Academic Review, where the academic processing for ongoing programs is a no-op by design.
