@@ -113,6 +113,66 @@ def rewrite_content_refs(content, ref_map):
     return json.dumps(data)
 
 
+# --- Folder references ------------------------------------------------------
+#
+# A folder block is `{"type": "folder", "data": {"folder_ref": <Course Folder
+# docname>, "folder": <display label>}}`. Blocks written before p006 F2 carry
+# `folder` (a foldername) alone; the patch `course_folder_scopes` adds
+# `folder_ref` to every block it can resolve, and these helpers keep accepting
+# the legacy shape so a pack or a lesson that slipped past the patch still works.
+
+
+def scan_folder_refs(content):
+    """Return [{"folder_ref": docname_or_None, "folder": label_or_None}, ...]
+    for every folder block in EditorJS content, in document order."""
+    refs = []
+    data = _load(content)
+    if not data:
+        return refs
+    for block in data["blocks"]:
+        if not isinstance(block, dict) or block.get("type") != "folder":
+            continue
+        bdata = block.get("data")
+        if not isinstance(bdata, dict):
+            continue
+        ref = bdata.get("folder_ref") or None
+        label = bdata.get("folder") or None
+        if ref or label:
+            refs.append({"folder_ref": ref, "folder": label})
+    return refs
+
+
+def rewrite_folder_refs(content, ref_map, labels=None):
+    """Return EditorJS content with folder blocks remapped.
+
+    `ref_map` maps the block's current key — its `folder_ref`, or its legacy
+    `folder` name when it has no `folder_ref` — to the new Course Folder
+    docname. `labels`, when given, maps a new docname to the display label to
+    store in `folder`; without it the label is left as it was.
+    """
+    if not ref_map:
+        return content
+    data = _load(content)
+    if not data:
+        return content
+    changed = False
+    for block in data["blocks"]:
+        if not isinstance(block, dict) or block.get("type") != "folder":
+            continue
+        bdata = block.get("data")
+        if not isinstance(bdata, dict):
+            continue
+        key = bdata.get("folder_ref") or bdata.get("folder")
+        if not key or key not in ref_map:
+            continue
+        new_ref = ref_map[key]
+        bdata["folder_ref"] = new_ref
+        if labels and new_ref in labels:
+            bdata["folder"] = labels[new_ref]
+        changed = True
+    return json.dumps(data) if changed else content
+
+
 # --- Activity references in legacy `body` macros -----------------------------
 
 _BODY_ACTIVITY_MACROS = {

@@ -125,7 +125,11 @@ DISCUSSION_FIELDS = (
     "min_replies_required",
 )  # course set on import
 
-FOLDER_FIELDS = ("foldername",)  # course set; file_reference/parent_folder rebuilt
+# Folder records in the manifest carry `foldername`, the original `scope` and,
+# for Instructor scope, the originating professor's display name only
+# (`origin_instructor_name`). course / instructor / file_reference /
+# parent_folder are set on import from the destination (p006 F2, ADR §2.2b).
+FOLDER_FIELDS = ("foldername", "scope", "origin_instructor_name")
 
 SCAC_FIELDS = (
     "title",
@@ -198,5 +202,8 @@ ACTIVITY_BLOCKS = {
     "assignment": ("assignment", "Assignment Activity"),
     "discussionActivity": ("discussionID", "Discussion Activity"),
     "discussionactivity": ("discussionID", "Discussion Activity"),
-    "folder": ("folder", "Course Folder"),
+    # A folder block stores the Course Folder docname in `folder_ref`; `folder`
+    # is only the display label (p006 F2). Blocks that predate the docname
+    # reference carry `folder` alone — see editorjs.scan_folder_refs.
+    "folder": ("folder_ref", "Course Folder"),
 }

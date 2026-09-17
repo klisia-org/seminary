@@ -6,8 +6,11 @@ writes so every reference resolves before use (media -> questions -> activities
 validation-first, direct-child-insert, no-parent-save philosophy of
 `Course Schedule.import_template`.
 
-Known v1 limitation: Course Folder file contents are not bundled — folders are
-recreated empty and a warning is returned.
+Course Folders travel with the pack (p006 F2, ADR §2.2b): each folder's file
+tree is bundled and rebuilt here under the scope mapping in `import_folders`,
+every folder file is stored private, and one `Course Folder Activity` row
+records the pack it came from. School folders are never in a pack; the
+exporter's warnings name them and are surfaced here.
 """
 
 import hashlib
@@ -31,7 +34,15 @@ _SCAC_ACTIVITY_FIELDS = ("quiz", "assignment", "exam", "discussion")
 
 class _Importer:
     def __init__(
-        self, manifest, zf, target_mode, course, course_name, academic_term, section
+        self,
+        manifest,
+        zf,
+        target_mode,
+        course,
+        course_name,
+        academic_term,
+        section,
+        instructor=None,
     ):
         self.m = manifest
         self.zf = zf
@@ -40,13 +51,17 @@ class _Importer:
         self.course_name_arg = course_name
         self.academic_term = academic_term
         self.section = section
+        # Destination Instructor: Instructor- and Section-scope folders in the
+        # pack become this professor's Instructor folders (Course scope if none).
+        self.instructor = instructor or None
         self.warnings = []
         self.url_map = {}  # orig file_url -> new file_url
         self.q_map = {}  # src question name -> new
-        self.a_map = (
-            {}
-        )  # src activity name -> new (folders merged in: foldername -> new)
-        self.folder_map = {}  # src foldername -> new foldername
+        self.a_map = {}  # src activity name -> new
+        # src folder key (docname; foldername in packs older than p006) -> new
+        # Course Folder docname, and new docname -> display label.
+        self.folder_map = {}
+        self.folder_labels = {}
         self.scac_map = {}  # src SCAC row name -> new
         self.competency_map = {}  # competency_code -> new Course Competency name
         self.l_map = {}  # src lesson name -> new
@@ -229,22 +244,78 @@ class _Importer:
         return urls
 
     # --- course folders ---------------------------------------------------
+    def _mapped_scope(self, original):
+        """§2.2b: Course stays Course; Instructor and Section become the
+        destination instructor's, or Course when none was chosen; School is
+        never in a pack."""
+        if original in ("Instructor", "Section"):
+            return (
+                ("Instructor", self.instructor) if self.instructor else ("Course", None)
+            )
+        return ("Course", None)
+
     def import_folders(self):
-        for old_name, rec in (self.m.get("folders") or {}).items():
+        from seminary.seminary.doctype.course_folder.course_folder import log_activity
+
+        src = self.m.get("source") or {}
+        gen = self.m.get("generator") or {}
+        provenance = _("from pack {0} exported {1} by {2}").format(
+            src.get("title") or src.get("course") or "?",
+            (
+                formatdate(self.m.get("generated_at"))
+                if self.m.get("generated_at")
+                else "?"
+            ),
+            gen.get("site") or "?",
+        )
+
+        for old_key, rec in (self.m.get("folders") or {}).items():
+            original_scope = rec.get("scope") or "Course"
+            if original_scope == "School":
+                self.warnings.append(
+                    _(
+                        "School folder '{0}' is not carried by a pack; embed your "
+                        "own policies folder."
+                    ).format(rec.get("foldername"))
+                )
+                continue
+            scope, instructor = self._mapped_scope(original_scope)
             base = rec["foldername"]
             final, n = base, 2
             while frappe.db.exists(
-                "Course Folder", {"course": self.course, "foldername": final}
+                "Course Folder",
+                {
+                    "course": self.course,
+                    "scope": scope,
+                    "instructor": instructor or ["is", "not set"],
+                    "course_schedule": ["is", "not set"],
+                    "foldername": final,
+                },
             ):
                 final = f"{base} ({n})"
                 n += 1
             cf = frappe.get_doc(
-                {"doctype": "Course Folder", "course": self.course, "foldername": final}
+                {
+                    "doctype": "Course Folder",
+                    "course": self.course,
+                    "scope": scope,
+                    "instructor": instructor,
+                    "foldername": final,
+                }
             )
             cf.flags.ignore_permissions = True
             cf.insert(ignore_mandatory=True)
-            self._rebuild_folder_tree(cf.file_reference, rec.get("files") or [])
-            self.folder_map[old_name] = final
+            self._rebuild_folder_tree(
+                cf.file_reference, rec.get("files") or [], cf.name
+            )
+            self.folder_map[old_key] = cf.name
+            self.folder_labels[cf.name] = final
+            note = provenance
+            if original_scope != scope:
+                note += _("; scope {0} mapped to {1}").format(original_scope, scope)
+            if rec.get("origin_instructor_name"):
+                note += _("; originally by {0}").format(rec["origin_instructor_name"])
+            log_activity(cf.name, "imported", note=note)
             if final != base:
                 self.warnings.append(
                     _("Folder '{0}' imported as '{1}' (name already in use).").format(
@@ -252,7 +323,7 @@ class _Importer:
                     )
                 )
 
-    def _rebuild_folder_tree(self, parent_file, nodes):
+    def _rebuild_folder_tree(self, parent_file, nodes, course_folder):
         for node in nodes:
             if node.get("type") == "folder":
                 sub = frappe.get_doc(
@@ -262,24 +333,32 @@ class _Importer:
                         "is_folder": 1,
                         "folder": parent_file,
                         "is_private": 1,
+                        "attached_to_doctype": "Course Folder",
+                        "attached_to_name": course_folder,
                     }
                 )
                 sub.flags.ignore_permissions = True
                 sub.insert(ignore_mandatory=True)
-                self._rebuild_folder_tree(sub.name, node.get("children") or [])
+                self._rebuild_folder_tree(
+                    sub.name, node.get("children") or [], course_folder
+                )
             else:
                 meta = (self.m.get("media") or {}).get(node.get("media"))
                 if not meta:
                     continue
                 blob = self.zf.read(f"media/{meta['key']}")
+                # Always private, whatever the manifest says: folder material is
+                # read through the folder's scope rule, never by URL (§2.2b).
                 f = frappe.get_doc(
                     {
                         "doctype": "File",
                         "file_name": node["file_name"],
                         "is_folder": 0,
                         "folder": parent_file,
-                        "is_private": node.get("is_private", 0),
+                        "is_private": 1,
                         "content": blob,
+                        "attached_to_doctype": "Course Folder",
+                        "attached_to_name": course_folder,
                     }
                 )
                 f.flags.ignore_permissions = True
@@ -444,12 +523,15 @@ class _Importer:
     def _rewrite_lesson_fields(self, fields):
         out = self._rw(fields)
         for f in ("content", "instructor_content"):
-            out[f] = editorjs.rewrite_urls(
-                editorjs.rewrite_content_refs(out.get(f), self.a_map), self.url_map
+            content = editorjs.rewrite_content_refs(out.get(f), self.a_map)
+            content = editorjs.rewrite_folder_refs(
+                content, self.folder_map, self.folder_labels
             )
+            out[f] = editorjs.rewrite_urls(content, self.url_map)
+        body_map = {**self.a_map, **self.folder_map}
         for f in ("body", "instructor_notes"):
             out[f] = editorjs.rewrite_urls(
-                editorjs.rewrite_body_refs(out.get(f), self.a_map), self.url_map
+                editorjs.rewrite_body_refs(out.get(f), body_map), self.url_map
             )
         return out
 
@@ -491,6 +573,11 @@ class _Importer:
 
     # --- orchestration ----------------------------------------------------
     def run(self):
+        self._warn_same_site()
+        for w in self.m.get("warnings") or []:
+            self.warnings.append(_("Exporter noted: {0}").format(w))
+        if self.instructor and not frappe.db.exists("Instructor", self.instructor):
+            frappe.throw(_("Instructor {0} does not exist.").format(self.instructor))
         self.grading_scale = self.resolve_grading_scale()
         self.resolve_assessment_criteria()
         self.course = self.resolve_course()
@@ -501,9 +588,6 @@ class _Importer:
         self.import_questions()
         self.import_activities()
         self.import_folders()
-        # Lesson content references folders by foldername; remap alongside
-        # activity docnames so a deduped folder name still resolves.
-        self.a_map.update(self.folder_map)
         cs = self.create_cs()
         self.import_scac(cs)
         n_ch, n_les = self.import_chapters_and_lessons(cs)
@@ -529,12 +613,30 @@ class _Importer:
             "course_schedule": cs.name,
             "chapters": n_ch,
             "lessons": n_les,
-            "activities": len(self.a_map) - len(self.folder_map),
+            "activities": len(self.a_map),
             "questions": len(self.q_map),
             "folders": len(self.folder_map),
             "media": len(self.url_map),
             "warnings": self.warnings,
         }
+
+    def _warn_same_site(self):
+        """Same-site reuse through export → import duplicates storage and
+        detaches the copy — the opposite of the folder model's purpose. Point
+        at Import Course Template instead (§2.2b)."""
+        gen = self.m.get("generator") or {}
+        if gen.get("site") and gen.get("site") == frappe.local.site:
+            src = self.m.get("source") or {}
+            self.warnings.append(
+                _(
+                    "This pack was exported from this site ({0}, from {1}). To build "
+                    "a section from an existing one here, use Import Course Template "
+                    "on the Course Schedule instead: it reuses the folders rather "
+                    "than copying every file."
+                ).format(
+                    gen.get("site"), src.get("course_schedule") or src.get("course")
+                )
+            )
 
 
 def _read_pack_bytes(file_url):
@@ -573,13 +675,21 @@ def import_pack_from_bytes(
     course_name=None,
     academic_term=None,
     section=None,
+    instructor=None,
 ):
     """Core import from raw zip bytes — reusable in tests."""
     with zipfile.ZipFile(io.BytesIO(content)) as zf:
         manifest = json.loads(zf.read("manifest.json"))
         _validate_pack(manifest)
         return _Importer(
-            manifest, zf, target_mode, course, course_name, academic_term, section
+            manifest,
+            zf,
+            target_mode,
+            course,
+            course_name,
+            academic_term,
+            section,
+            instructor=instructor,
         ).run()
 
 
@@ -591,9 +701,12 @@ def import_course_pack(
     course_name=None,
     academic_term=None,
     section=None,
+    instructor=None,
 ):
     """Import an uploaded Course Pack. `file_url` is a prior /api/method/upload_file
-    result. `target_mode` is 'new' or 'existing'."""
+    result. `target_mode` is 'new' or 'existing'. `instructor` is the destination
+    Instructor: the pack's Instructor- and Section-scope folders become that
+    professor's Instructor folders (Course folders when it is left empty)."""
     content = _read_pack_bytes(file_url)
     return import_pack_from_bytes(
         content,
@@ -602,4 +715,5 @@ def import_course_pack(
         course_name=course_name,
         academic_term=academic_term,
         section=section,
+        instructor=instructor,
     )
