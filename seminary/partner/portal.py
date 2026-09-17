@@ -161,6 +161,18 @@ def _parse(values):
     return frappe.parse_json(values) if isinstance(values, str) else (values or {})
 
 
+# Field types whose partner-supplied value is stored (and later rendered) as
+# text or HTML; sanitised with nh3's allow-list before doc.set (p006 F13).
+_SANITIZED_FIELDTYPES = {"Text Editor", "Small Text", "Long Text", "Text"}
+
+
+def _clean(doctype: str, field: str, value):
+    df = frappe.get_meta(doctype).get_field(field)
+    if isinstance(value, str) and df and df.fieldtype in _SANITIZED_FIELDTYPES:
+        return frappe.utils.sanitize_html(value, always_sanitize=True)
+    return value
+
+
 # --------------------------------------------------------------------------- #
 # Profile
 # --------------------------------------------------------------------------- #
@@ -188,7 +200,7 @@ def update_org(values, org=None) -> dict:
     doc = frappe.get_doc("Partner Organization", org)
     for field in ORG_EDITABLE_FIELDS:
         if field in values:
-            doc.set(field, values[field])
+            doc.set(field, _clean("Partner Organization", field, values[field]))
     doc.save(ignore_permissions=True)
     return get_my_org(org)
 
@@ -408,7 +420,7 @@ def save_job_posting(values, name=None, org=None) -> dict:
         doc.partner_org = org
     for field in OPENING_EDITABLE_FIELDS:
         if field in values:
-            doc.set(field, values[field])
+            doc.set(field, _clean("Partner Job Opening", field, values[field]))
     if values.get("status") in ("Open", "Closed"):
         doc.status = values["status"]
     if "skills" in values:
