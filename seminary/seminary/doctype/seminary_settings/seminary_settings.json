@@ -80,6 +80,7 @@
   "course_checkin_tardy_after_mins",
   "track_online_attendance",
   "attendance_policy_section",
+  "registrar_academic_records",
   "tardies_per_absence",
   "column_break_attendance_policy",
   "absence_warning_buffer",
@@ -644,6 +645,13 @@
    "label": "Attendance Policy"
   },
   {
+   "default": "1",
+   "description": "When checked, users with the Registrar role can record attendance and open course gradebooks, in addition to teaching staff. Turn this off if the person acting as registrar is also a student or should not see grades.",
+   "fieldname": "registrar_academic_records",
+   "fieldtype": "Check",
+   "label": "Registrar can record attendance and open gradebooks"
+  },
+  {
    "default": "3",
    "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
    "fieldname": "tardies_per_absence",
@@ -802,7 +810,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-04 09:42:36.727902",
+ "modified": "2026-09-17 11:06:12.650516",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
