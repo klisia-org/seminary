@@ -17,6 +17,16 @@ const getCsrfToken = () => {
   )
 }
 
+const FOLDER_SCOPES = ['Course', 'Instructor', 'Section', 'School']
+
+/**
+ * EditorJS block for an embedded Course Folder.
+ *
+ * Block data is `{ folder_ref, folder }`: `folder_ref` is the Course Folder
+ * docname and is what the API resolves; `folder` is only the display label.
+ * A block that carries `folder` alone predates the docname reference and is
+ * shown as needing re-linking rather than resolved by name (p006 §2.2a).
+ */
 export class FolderTool {
   constructor({ data, api, readOnly }) {
     this.data = data;
@@ -46,8 +56,8 @@ export class FolderTool {
 
   render() {
     this.wrapper = document.createElement('div')
-    if (this.data && this.data.folder) {
-      this.renderFolder(this.data.folder)
+    if (this.data && (this.data.folder_ref || this.data.folder)) {
+      this.renderFolder({ folderRef: this.data.folder_ref, folder: this.data.folder })
     } else {
       this.renderFolderModal()
     }
@@ -64,32 +74,40 @@ export class FolderTool {
     }
   }
 
-  renderFolder(folderName) {
+  renderFolder({ folderRef = null, folder = null } = {}) {
     if (this.readOnly) {
       this.destroyApp()
       this.vueApp = createApp(FolderBlock, {
-        folder: folderName,
+        folderRef: folderRef || null,
+        folder: folder || '',
       })
       this.vueApp.use(translationPlugin)
       this.vueApp.use(router)
       this.vueApp.mount(this.wrapper)
       return
     }
-    this.renderFolderModal(folderName)
+    this.renderFolderModal({ folderRef, folder })
   }
 
-  renderFolderModal(initialFolder = null) {
+  renderFolderModal({ folderRef = null, folder = null } = {}) {
     if (this.readOnly) {
       return
     }
     this.destroyApp()
     this.vueApp = createApp(FolderPlugin, {
-      initialFolder,
-      onAddition: (folder) => {
+      initialFolderRef: folderRef || null,
+      initialFolder: folder || null,
+      onAddition: (selected) => {
         if (!this.data) {
           this.data = {}
         }
-        this.data.folder = folder
+        // Accept both the `{ folder_ref, folder }` shape and a bare docname.
+        if (selected && typeof selected === 'object') {
+          this.data.folder_ref = selected.folder_ref || null
+          this.data.folder = selected.folder || ''
+        } else {
+          this.data.folder_ref = selected || null
+        }
       },
     })
     this.vueApp.use(translationPlugin)
@@ -99,7 +117,8 @@ export class FolderTool {
 
     save(blockContent) {
       return {
-        folder: this.data?.folder,
+        folder_ref: this.data?.folder_ref || null,
+        folder: this.data?.folder || '',
       }
     }
 
@@ -107,18 +126,47 @@ export class FolderTool {
       this.destroyApp()
     }
 
-    async createCourseFolder(courseName, folderName) {
+    /**
+     * Create a Course Folder through the resource API.
+     *
+     * `course` is required for every scope except School; Instructor scope
+     * needs `instructor`, Section scope needs `courseSchedule`.
+     */
+    async createCourseFolder({ course, folderName, scope = 'Course', instructor = null, courseSchedule = null }) {
       const trimmedFolderName = folderName?.trim()
       if (!trimmedFolderName) {
         throw new Error('Folder name is required to create a course folder')
       }
-      if (!courseName) {
+      if (!FOLDER_SCOPES.includes(scope)) {
+        throw new Error(`Unknown folder scope: ${scope}`)
+      }
+      if (scope !== 'School' && !course) {
         throw new Error('Course is required to create a course folder')
+      }
+      if (scope === 'Instructor' && !instructor) {
+        throw new Error('Instructor is required for an Instructor folder')
+      }
+      if (scope === 'Section' && !courseSchedule) {
+        throw new Error('Section is required for a Section folder')
       }
 
       const csrfToken = getCsrfToken()
       if (!csrfToken) {
         throw new Error('CSRF token not found. Please refresh the page and try again.')
+      }
+
+      const body = {
+        foldername: trimmedFolderName,
+        scope,
+      }
+      if (scope !== 'School') {
+        body.course = course
+      }
+      if (scope === 'Instructor') {
+        body.instructor = instructor
+      }
+      if (scope === 'Section') {
+        body.course_schedule = courseSchedule
       }
 
       let responseData
@@ -130,10 +178,7 @@ export class FolderTool {
           'X-Frappe-CSRF-Token': csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({
-          course: courseName,
-          foldername: trimmedFolderName,
-        }),
+        body: JSON.stringify(body),
       })
       try {
         responseData = await response.json()
@@ -150,23 +195,32 @@ export class FolderTool {
       if (!this.data) {
         this.data = {}
       }
+      this.data.folder_ref = data?.name || null
       this.data.folder = data?.foldername || trimmedFolderName
       return data
     }
 
-    async createSubfolder({ parentFolderId, parentFolderName, subfolderName }) {
+    async createSubfolder({ parentFolderId, subfolderName, courseSchedule = null }) {
       const trimmedSubfolderName = subfolderName?.trim()
       if (!trimmedSubfolderName) {
         throw new Error('Sub-folder name is required')
       }
 
-      if (!parentFolderId && !parentFolderName) {
+      if (!parentFolderId) {
         throw new Error('Parent folder information is required to create a sub-folder')
       }
 
       const csrfToken = getCsrfToken()
       if (!csrfToken) {
         throw new Error('CSRF token not found. Please refresh the page and try again.')
+      }
+
+      const body = {
+        parent_folder_id: parentFolderId,
+        subfoldername: trimmedSubfolderName,
+      }
+      if (courseSchedule) {
+        body.course_schedule = courseSchedule
       }
 
       let responseData
@@ -178,11 +232,7 @@ export class FolderTool {
           'X-Frappe-CSRF-Token': csrfToken,
         },
         credentials: 'include',
-        body: JSON.stringify({
-          parent_folder_id: parentFolderId,
-          parent_foldername: parentFolderName,
-          subfoldername: trimmedSubfolderName,
-        }),
+        body: JSON.stringify(body),
       })
 
       try {
