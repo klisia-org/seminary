@@ -4,9 +4,10 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_url, validate_email_address
+from frappe.utils import validate_url, validate_email_address, sanitize_html
 from frappe.email.doctype.email_template.email_template import get_email_template
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
+from seminary.seminary.guards import is_grader, require_grader
 
 
 class AssignmentSubmission(Document):
@@ -14,11 +15,22 @@ class AssignmentSubmission(Document):
         from seminary.seminary.utils import backfill_submission_course_if_missing
 
         backfill_submission_course_if_missing(self)
+        self.sanitize_rich_text()
         self.validate_duplicates()
         self.validate_url()
         self.validate_status()
         self.populate()
         self.sync_percentage_from_grade()
+
+    def sanitize_rich_text(self):
+        """p006 F13: the SPA writes submissions through ``frappe.client.insert``,
+        so this hook is the only server-side gate for student-authored HTML.
+        A URL answer is a bare string, not HTML; ``&`` in a query string must
+        survive, so it is left to ``validate_url``."""
+        if self.answer and self.type != "URL":
+            self.answer = sanitize_html(self.answer, always_sanitize=True)
+        if self.comments:
+            self.comments = sanitize_html(self.comments, always_sanitize=True)
 
     def sync_percentage_from_grade(self):
         """Mirror grade → percentage so quizresult_to_card can propagate the
@@ -136,6 +148,28 @@ def upload_assignment(
     if frappe.session.user == "Guest":
         return
 
+    grader = is_grader()
+    if submission:
+        # p006 F7: only the owner (or a grader) may rewrite a submission.
+        doc = frappe.get_doc("Assignment Submission", submission)
+        if doc.member != frappe.session.user and not grader:
+            frappe.throw(
+                _("You can only update your own assignment submission."),
+                frappe.PermissionError,
+            )
+    else:
+        doc = frappe.get_doc(
+            {
+                "doctype": "Assignment Submission",
+                "assignment": assignment,
+                "lesson": lesson,
+                "member": frappe.session.user,
+            }
+        )
+    if not grader:
+        # Students never set their own grading status.
+        status = "Not Graded"
+
     assignment_details = frappe.db.get_value(
         "Assignment Activity", assignment, ["type", "grade_assignment"], as_dict=1
     )
@@ -150,18 +184,8 @@ def upload_assignment(
     if assignment_type == "URL" and not validate_url(answer):
         frappe.throw(_("Please enter a valid URL."))
 
-    if submission:
-        doc = frappe.get_doc("Assignment Submission", submission)
-    else:
-        doc = frappe.get_doc(
-            {
-                "doctype": "Assignment Submission",
-                "assignment": assignment,
-                "lesson": lesson,
-                "member": frappe.session.user,
-                "type": assignment_type,
-            }
-        )
+    if doc.is_new():
+        doc.type = assignment_type
 
     doc.update(
         {
@@ -195,7 +219,10 @@ def get_assignment(lesson):
 
 @frappe.whitelist()
 def grade_assignment(name, result, comments):
+    require_grader()
     doc = frappe.get_doc("Assignment Submission", name)
     doc.status = result
-    doc.comments = comments
+    doc.comments = (
+        sanitize_html(comments, always_sanitize=True) if comments else comments
+    )
     doc.save(ignore_permissions=True)

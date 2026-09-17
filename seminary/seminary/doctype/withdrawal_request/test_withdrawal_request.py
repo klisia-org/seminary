@@ -10,6 +10,24 @@ from frappe.tests import UnitTestCase
 
 from seminary.seminary import withdrawal
 
+# p006: the p006 tests in this folder build their own minimal fixtures. The
+# automatic link-dependency preload is switched off because the app's Student and
+# Instructor test records predate the Person-first mandatory fields (ADR 068) and
+# abort every IntegrationTestCase in this folder before a test runs.
+IGNORE_TEST_RECORD_DEPENDENCIES = [
+    "Country",
+    "Course Enrollment Individual",
+    "Course Schedule",
+    "Program",
+    "Program Enrollment",
+    "Student",
+    "User",
+    "Withdrawal Reasons",
+    "Withdrawal Request",
+    "Withdrawal Rules",
+    "Workflow State",
+]
+
 
 class _FakeDoc:
     """Minimal stand-in for a Withdrawal Request, enough for the edge-based
