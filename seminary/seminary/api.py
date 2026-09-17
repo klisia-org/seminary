@@ -37,6 +37,11 @@ import defusedxml.ElementTree as ET
 from defusedxml.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
+from seminary.seminary.guards import (
+    REGISTRAR_ROLES,
+    require_grader,
+    require_outline_editor,
+)
 
 ALLOWED_TAGS = [
     "p",
@@ -381,6 +386,7 @@ def get_discussion_submission_summary(
 @frappe.whitelist()
 def save_discussion_submission_grade(submission_name: str, grade: float):
     """Save grade for a discussion submission."""
+    require_grader()
     if not submission_name:
         raise frappe.ValidationError(_("Submission name is required."))
 
@@ -1256,7 +1262,6 @@ def roll_students():
     )
 
 
-@frappe.whitelist()
 def roll_pe():
     # Students' academic terms advance. Time-based enrollments additionally
     # attempt auto-enroll into the new term's courses via petb_enroll. Returns a
@@ -1290,7 +1295,6 @@ def roll_pe():
     return summary
 
 
-@frappe.whitelist()
 def petb_enroll(pe_name, pe_term):
     """Attempt to auto-enroll an active Time-based student into the courses
     scheduled for their new term (Program Course.course_term == pe_term) that
@@ -1392,9 +1396,37 @@ def petb_enroll(pe_name, pe_term):
     return summary
 
 
+def _assert_may_course_enroll(pe_name):
+    from seminary.seminary.utils import get_current_student, has_super_access
+
+    if has_super_access() or (set(frappe.get_roles()) & REGISTRAR_ROLES):
+        return
+    student = get_current_student()
+    owner = frappe.db.get_value("Program Enrollment", pe_name, "student")
+    if not (student and owner and owner == student.name):
+        frappe.throw(
+            _("You can only enroll in courses under your own program enrollment."),
+            frappe.PermissionError,
+        )
+    if not frappe.db.get_single_value("Seminary Settings", "allow_portal_enroll"):
+        frappe.throw(
+            _("Self-enrollment from the portal is not enabled."),
+            frappe.PermissionError,
+        )
+
+
 @frappe.whitelist()
 def course_enroll(pe_name, course):
-    """Enroll student in a course schedule. Creates a draft CEI document."""
+    """Enroll student in a course schedule. Creates a draft CEI document.
+
+    Over the wire this acts only on the caller's own Program Enrollment, and
+    only while Seminary Settings.allow_portal_enroll is on (p006 §2.14). Staff
+    (``has_super_access`` or a registrar role) may enrol anyone: that keeps the
+    server callers -- ``petb_enroll`` under the term roll, which
+    ``roll_students`` opens to Registrar, and ``required_enrollment`` under the
+    Program Enrollment / Course Schedule hooks -- working unchanged.
+    """
+    _assert_may_course_enroll(pe_name)
     student = frappe.get_value("Program Enrollment", pe_name, "student")
     if not student:
         frappe.throw(_("Invalid Program Enrollment"))
@@ -2744,6 +2776,7 @@ def mark_attendance(
     :param meeting: Course Schedule Meeting Dates row (the specific class meeting
         — a section can meet more than once on the same date; ADR 051).
     """
+    require_grader(include_registrar=True)
     if not course_schedule:
         return {"success": False}
 
@@ -3025,6 +3058,7 @@ def save_course_assessment(course, assessment_data):
     :param course: Course.
     :param assessment_data: Assessment Data (JSON).
     """
+    require_outline_editor()
     import json
 
     print("Assessment Data:", assessment_data)
@@ -3352,11 +3386,16 @@ def update_card(doc, method):
             new.extracredit_card = doc.extracredit_scac
             new.maxextrapoints_card = doc.fudgepoints_scac
             new.assessment_title = doc.title
+            # System side-effect of an assessment criterion the caller was
+            # already allowed to create: Import Course Template runs this for
+            # a Registrar, who holds no create permission on grade cards.
+            new.flags.ignore_permissions = True
             new.insert()
 
 
 @frappe.whitelist()
 def insert_cs_assessment(criteria):
+    require_outline_editor()
     # If criteria is already a dict, use it directly.
     # If it's a string, then parse it.
     if isinstance(criteria, str):
@@ -3433,6 +3472,13 @@ def get_course_rosters(name):
 
 @frappe.whitelist()
 def grade_thisstudent(name):
+    """Desk entry point (scheduled_course_roster.js); server callers use
+    ``_grade_thisstudent`` directly (p006 §2.7)."""
+    require_grader(include_registrar=True)
+    return _grade_thisstudent(name)
+
+
+def _grade_thisstudent(name):
 
     csr = frappe.get_doc("Scheduled Course Roster", name)
     cs = csr.course_sc
@@ -3489,6 +3535,13 @@ def get_gradepass(grading_scale, percentage):
 
 @frappe.whitelist()
 def fgrade_this_std(name):
+    """Desk entry point (scheduled_course_roster.js); server callers use
+    ``_fgrade_this_std`` directly (p006 §2.7)."""
+    require_grader(include_registrar=True)
+    return _fgrade_this_std(name)
+
+
+def _fgrade_this_std(name):
     print("fgrade_this_std called")
     csr = frappe.get_doc("Scheduled Course Roster", name)
     cs = csr.course_sc
@@ -3628,7 +3681,7 @@ def fail_for_absence(name):
     fa_gpa = frappe.db.get_value("Grading Scale", scale, "fa_gpa") or 0
 
     frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 1)
-    fgrade_this_std(name)  # now forces FA / Fail on the roster
+    _fgrade_this_std(name)  # now forces FA / Fail on the roster
 
     # Always reflect FA/Fail on the transcript (Program Enrollment Course) — the
     # student may already be graded, or graded-but-skipped (still Enrolled). Only
@@ -3678,8 +3731,8 @@ def undo_fail_for_absence(name):
 
     grades_sent = roster.active == 0
     frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
-    grade_thisstudent(name)
-    fgrade_this_std(name)
+    _grade_thisstudent(name)
+    _fgrade_this_std(name)
     new = frappe.db.get_value(
         "Scheduled Course Roster", name, ["fgrade", "fgradepass"], as_dict=True
     )
@@ -3863,8 +3916,8 @@ def finalize_roster(roster_name):
         return None
     totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
 
-    grade_thisstudent(record.name)
-    fgrade_this_std(record.name)
+    _grade_thisstudent(record.name)
+    _fgrade_this_std(record.name)
     fscore, fgrade, fgradepass = frappe.db.get_value(
         "Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
     )
@@ -4178,8 +4231,8 @@ def send_grades(doc=None, **kwargs):
         totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
         # Perform further operations with the record
         if audit_bool == 0 and active == 1:
-            grade_thisstudent(named)
-            fgrade_this_std(named)
+            _grade_thisstudent(named)
+            _fgrade_this_std(named)
             fscore = frappe.db.get_value("Scheduled Course Roster", named, "fscore")
             fgrade = frappe.db.get_value("Scheduled Course Roster", named, "fgrade")
             fgradepass = frappe.db.get_value(
@@ -4510,13 +4563,15 @@ def get_application_payment_url(applicant_name, key=None):
     Guest-callable, so the caller must present the applicant's `access_key`
     (ADR 068 phase 3). Without it this took a bare docname and would happily
     hand over any applicant's payment link — and confirm that the application
-    exists — to anyone willing to try names.
+    exists — to anyone willing to try names. Every caller must match the key
+    except staff with ``has_super_access`` (p006 §2.11).
     """
     import hmac
 
     from seminary.seminary.financial.backend import get_financial_backend
+    from seminary.seminary.utils import has_super_access
 
-    if frappe.session.user == "Guest":
+    if not has_super_access():
         expected = frappe.db.get_value(
             "Student Applicant", applicant_name, "access_key"
         )
@@ -4732,15 +4787,18 @@ def add_lesson(lesson_title, chapter, course_sc):
 
 @frappe.whitelist()
 def delete_chapter(chapter):
+    require_outline_editor()
     chapterInfo = frappe.db.get_value(
         "Course Schedule Chapter",
         chapter,
-        ["is_scorm_package", "scorm_package_path"],
+        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_path"],
         as_dict=True,
     )
+    if not chapterInfo:
+        frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
 
     if chapterInfo.is_scorm_package:
-        delete_scorm_package(chapterInfo.scorm_package_path)
+        delete_scorm_package(chapterInfo)
 
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
@@ -4748,10 +4806,57 @@ def delete_chapter(chapter):
     frappe.db.delete("Course Schedule Chapter", chapter)
 
 
-def delete_scorm_package(scorm_package_path):
-    scorm_package_path = frappe.get_site_path("public", scorm_package_path[1:])
-    if os.path.exists(scorm_package_path):
-        shutil.rmtree(scorm_package_path)
+def delete_scorm_package(chapter):
+    """Remove the extracted SCORM directory for ``chapter`` (a Course Schedule
+    Chapter row with name, coursesc, chapter_title, scorm_package_path).
+
+    The operand is rebuilt from the chapter exactly as ``extract_package``
+    builds it -- ``public/scorm/<course schedule>/<chapter title>`` -- and must
+    resolve under the scorm root; the stored ``scorm_package_path`` is only a
+    cross-check, never the path that is deleted (p006 §2.1). "Import Course
+    Template" copies ``scorm_package_path`` verbatim, so the directory is left
+    alone while any other chapter still points at it.
+    """
+    if not (chapter and chapter.coursesc and chapter.chapter_title):
+        return
+
+    scorm_root = os.path.realpath(frappe.get_site_path("public", "scorm"))
+    expected = os.path.realpath(
+        frappe.get_site_path("public", "scorm", chapter.coursesc, chapter.chapter_title)
+    )
+    if (
+        expected == scorm_root
+        or os.path.commonpath([expected, scorm_root]) != scorm_root
+    ):
+        frappe.log_error(
+            f"delete_scorm_package: refused path outside scorm root for chapter {chapter.name}: {expected}",
+            "SCORM delete refused",
+        )
+        return
+
+    # Cross-check: the stored path should be the same directory. If it is not,
+    # the row was edited by hand; refuse rather than guess.
+    stored = (chapter.scorm_package_path or "").lstrip("/")
+    if stored and os.path.realpath(frappe.get_site_path("public", stored)) != expected:
+        frappe.log_error(
+            f"delete_scorm_package: stored path does not match rebuilt path for chapter {chapter.name}",
+            "SCORM delete refused",
+        )
+        return
+
+    # Reference count: another chapter (template-derived or source) sharing the
+    # same extracted directory keeps the files.
+    if chapter.scorm_package_path and frappe.db.exists(
+        "Course Schedule Chapter",
+        {
+            "scorm_package_path": chapter.scorm_package_path,
+            "name": ["!=", chapter.name],
+        },
+    ):
+        return
+
+    if os.path.isdir(expected) and not os.path.islink(expected):
+        shutil.rmtree(expected)
 
 
 @frappe.whitelist()
@@ -4863,6 +4968,7 @@ def get_fields(doctype, fields=None):
 
 @frappe.whitelist()
 def delete_lesson(lesson, chapter):
+    require_outline_editor()
     # Delete Reference
     chapter = frappe.get_doc("Course Schedule Chapter", chapter)
     chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
@@ -4913,6 +5019,7 @@ def get_announcements(cs):
 @frappe.whitelist()
 def update_lesson_index(lesson, source_chapter, target_chapter, idx):
     """Update the order of a lesson inside or across chapters."""
+    require_outline_editor()
     idx = cint(idx) or 1
     idx = max(idx, 1)
 
