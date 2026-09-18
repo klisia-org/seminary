@@ -109,8 +109,14 @@
    "write": 1
   },
   {
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
    "read": 1,
-   "role": "Student"
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

@@ -35,6 +35,21 @@ class Instructor(Document):
         self.validate_payroll_link()
         self._maybe_auto_pull_education()
         self._warn_on_deactivation()
+        self._warn_on_missing_user()
+
+    def _warn_on_missing_user(self):
+        """Every course gate resolves the session to an Instructor through
+        `user` (p007 §2.12); an active record without it cannot grade, edit or
+        take attendance in the portal."""
+        if self.status == "Active" and not self.user and not frappe.flags.in_migrate:
+            frappe.msgprint(
+                _(
+                    "This instructor has no User linked. Until one is set they "
+                    "cannot grade, edit outlines or record attendance in the portal."
+                ),
+                indicator="orange",
+                alert=True,
+            )
 
     def _warn_on_deactivation(self):
         """Marking someone inactive says what is still theirs (ADR 066 §7.1)."""

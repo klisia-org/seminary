@@ -156,14 +156,16 @@
    "description": "Set to 1 on manually created requests with multi-course scope",
    "fieldname": "is_parent",
    "fieldtype": "Check",
-   "label": "Is Parent Request"
+   "label": "Is Parent Request",
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "has_parent",
    "fieldtype": "Check",
    "hidden": 1,
-   "label": "Has Parent Request"
+   "label": "Has Parent Request",
+   "permlevel": 1
   },
   {
    "depends_on": "eval:doc.has_parent==1",
@@ -210,14 +212,16 @@
    "fieldname": "separation_timing",
    "fieldtype": "Select",
    "label": "Separation Timing",
-   "options": "Immediate\nEnd of Current Term\nSpecific Date"
+   "options": "Immediate\nEnd of Current Term\nSpecific Date",
+   "permlevel": 1
   },
   {
    "depends_on": "eval:doc.separation_timing!='Immediate'",
    "description": "Date the program separation cascade should run. For End of Current Term this resolves to the current term's end date on submit.",
    "fieldname": "separation_effective_date",
    "fieldtype": "Date",
-   "label": "Separation Effective Date"
+   "label": "Separation Effective Date",
+   "permlevel": 1
   },
   {
    "fieldname": "separation_status",
@@ -251,18 +255,21 @@
   {
    "fieldname": "transfer_to_institution",
    "fieldtype": "Data",
-   "label": "Destination Institution"
+   "label": "Destination Institution",
+   "permlevel": 1
   },
   {
    "fieldname": "transfer_to_program",
    "fieldtype": "Data",
-   "label": "Destination Program"
+   "label": "Destination Program",
+   "permlevel": 1
   },
   {
    "fieldname": "transfer_to_country",
    "fieldtype": "Link",
    "label": "Destination Country",
-   "options": "Country"
+   "options": "Country",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_transfer",
@@ -271,17 +278,20 @@
   {
    "fieldname": "destination_contact",
    "fieldtype": "Data",
-   "label": "Destination Contact"
+   "label": "Destination Contact",
+   "permlevel": 1
   },
   {
    "fieldname": "transcript_sent_on",
    "fieldtype": "Datetime",
-   "label": "Transcript Sent On"
+   "label": "Transcript Sent On",
+   "permlevel": 1
   },
   {
    "fieldname": "transfer_notes",
    "fieldtype": "Small Text",
-   "label": "Transfer Notes"
+   "label": "Transfer Notes",
+   "permlevel": 1
   },
   {
    "fieldname": "section_break_comments",
@@ -303,16 +313,17 @@
    "fieldname": "withdrawal_rule",
    "fieldtype": "Link",
    "label": "Withdrawal Rule",
-   "options": "Withdrawal Rules"
+   "options": "Withdrawal Rules",
+   "permlevel": 1
   },
   {
    "default": "0",
+   "depends_on": "eval:frappe.boot.versions.oikonomos",
    "description": "Computed in validate(): 1 when this withdrawal could produce a refund (a withdrawal rule with refunds applies and the program is not free). The workflow reads this to decide whether Academic approval must route through Financial Review or may Conclude directly.",
    "fieldname": "refund_due",
    "fieldtype": "Check",
    "label": "Refund Due",
-   "read_only": 1,
-   "depends_on": "eval:frappe.boot.versions.oikonomos"
+   "read_only": 1
   },
   {
    "default": "Today",
@@ -345,7 +356,8 @@
    "fieldname": "withdrawal_courses",
    "fieldtype": "Table",
    "label": "Withdrawal Courses",
-   "options": "Withdrawal Courses"
+   "options": "Withdrawal Courses",
+   "permlevel": 1
   },
   {
    "fieldname": "section_break_processing",
@@ -361,18 +373,18 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:frappe.boot.versions.oikonomos",
    "fieldname": "column_break_financial",
-   "fieldtype": "Column Break",
-   "depends_on": "eval:frappe.boot.versions.oikonomos"
+   "fieldtype": "Column Break"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:frappe.boot.versions.oikonomos",
    "fieldname": "financial_processed_by",
    "fieldtype": "Link",
    "label": "Financial Processed By",
    "options": "User",
-   "read_only": 1,
-   "depends_on": "eval:frappe.boot.versions.oikonomos"
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -419,14 +431,6 @@
    "write": 1
   },
   {
-   "create": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "Student",
-   "write": 1
-  },
-  {
    "email": 1,
    "export": 1,
    "print": 1,
@@ -469,6 +473,63 @@
    "report": 1,
    "role": "Program Chair",
    "share": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "permlevel": 0,
+   "print": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Accounts User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
