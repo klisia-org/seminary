@@ -23,7 +23,7 @@ from seminary.seminary.guards import (
     _roles,
     course_of,
     current_student,
-    enrolled_sections,
+    student_sections,
     instructor_tier,
     is_course_staff,
     is_read_ptype,
@@ -34,7 +34,7 @@ from seminary.seminary.guards import (
 
 # doctype -> (student rule, instructor rule)
 #   student rule: ("field", "student") | ("field", "user") | ("name", "student")
-#                 | "published_or_enrolled" | "enrolled_sections" | None
+#                 | "student_sections" | "student_sections_of" | None
 #   instructor rule: "course" (scoped by the section in COURSE_FIELD)
 #                 | "students" (Student rows via the roster) | "any" | None
 CONFIG = {
@@ -51,9 +51,9 @@ CONFIG = {
     "Recommendation Letter": (("student", "student"), None),
     "Culminating Project": (("student", "student"), "any"),
     "Chapel Attendance": (("student", "student"), None),
-    "Course Schedule": ("published_or_enrolled", "course"),
-    "Course Schedule Chapter": ("enrolled_sections", "course"),
-    "Course Lesson": ("enrolled_sections", "course"),
+    "Course Schedule": ("student_sections", "course"),
+    "Course Schedule Chapter": ("student_sections_of", "course"),
+    "Course Lesson": ("student_sections_of", "course"),
     "Student Attendance": (None, "course"),
 }
 
@@ -104,13 +104,11 @@ def _instructor_allows(doctype, doc, ptype, user, rule):
 def _student_allows(doctype, doc, ptype, user, rule):
     if rule is None:
         return False
-    if rule == "published_or_enrolled":
-        if doc.get("published"):
-            return True
-        return doc.name in enrolled_sections(user)
-    if rule == "enrolled_sections":
+    if rule == "student_sections":
+        return doc.name in student_sections(user)
+    if rule == "student_sections_of":
         cs = course_of(doc)
-        return bool(cs) and cs in enrolled_sections(user)
+        return bool(cs) and cs in student_sections(user)
     field, kind = rule
     if kind == "user":
         return (doc.get(field) or "") == user
@@ -137,7 +135,7 @@ def has_for(doctype):
             # The student branch is for students: an instructor reaches a
             # section through their tier, not through the catalogue read.
             return False
-        if student_rule in ("published_or_enrolled", "enrolled_sections") and not (
+        if student_rule in ("student_sections", "student_sections_of") and not (
             is_read_ptype(ptype)
         ):
             return False
@@ -174,14 +172,13 @@ def _instructor_condition(doctype, user, rule):
 def _student_condition(doctype, user, rule):
     if rule is None:
         return None
-    if rule == "published_or_enrolled":
-        enrolled = enrolled_sections(user)
-        cond = f"`tab{doctype}`.published = 1"
-        if enrolled:
-            cond += f" or `tab{doctype}`.name in ({_esc(enrolled)})"
-        return f"({cond})"
-    if rule == "enrolled_sections":
-        enrolled = enrolled_sections(user)
+    if rule == "student_sections":
+        enrolled = student_sections(user)
+        if not enrolled:
+            return None
+        return f"`tab{doctype}`.name in ({_esc(enrolled)})"
+    if rule == "student_sections_of":
+        enrolled = student_sections(user)
         if not enrolled:
             return None
         field = COURSE_FIELD[doctype]

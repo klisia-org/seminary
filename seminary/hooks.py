@@ -530,6 +530,9 @@ doc_events = {
     # Wildcard hook reflects linked-document status changes back onto the
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
+    "Academic Unit Membership": {
+        "after_delete": "seminary.seminary.file_policy.on_membership_gone",
+    },
     "*": {
         # Fills the snapshot fields declared in `person_fields.SNAPSHOTS`
         # (ADR 068 §3) — a person's name as it stood when the record was
@@ -537,7 +540,13 @@ doc_events = {
         # than five controllers so that declaring a new snapshot needs no
         # controller edit; it is an O(1) dict miss for every other doctype.
         "before_validate": "seminary.seminary.person_fields.capture_snapshots",
-        "on_update": "seminary.seminary.communication_triggers.process",
+        "on_update": [
+            "seminary.seminary.communication_triggers.process",
+            # File privacy (p007 §8.2): keeps registered web images in step
+            # with their host and attaches files embedded in lesson content
+            # and submissions. Dict misses for every other doctype.
+            "seminary.seminary.file_policy.on_host_update",
+        ],
         "on_update_after_submit": [
             "seminary.seminary.graduation.reflect_linked_doc_status",
             "seminary.seminary.communication_triggers.process",

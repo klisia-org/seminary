@@ -293,13 +293,34 @@ def enrolled_sections(user=None) -> list:
     return _memo(("enrolled", u), _lookup)
 
 
+def student_sections(user=None) -> list:
+    """Sections a student may open: on the roster **and** published (p007
+    §8.1). Students are enrolled weeks before a term and the instructor keeps
+    editing until the day they publish, so a roster row alone opens nothing."""
+    u = _user(user)
+
+    def _lookup():
+        enrolled = enrolled_sections(u)
+        if not enrolled:
+            return []
+        return sorted(
+            frappe.get_all(
+                "Course Schedule",
+                filters={"name": ["in", enrolled], "published": 1},
+                pluck="name",
+            )
+        )
+
+    return _memo(("student_sections", u), _lookup)
+
+
 def may_read_course_schedule(course_schedule, user=None) -> bool:
     """Instructor-side read reach (school roles, record tier, or a section the
     user is listed on), or the user's own enrolment."""
     readable = readable_course_schedules(user)
     if readable is None or course_schedule in readable:
         return True
-    return course_schedule in enrolled_sections(user)
+    return course_schedule in student_sections(user)
 
 
 def is_course_staff(course_schedule, include_registrar=False, user=None) -> bool:
@@ -331,7 +352,8 @@ def require_course_staff(course_schedule, include_registrar=False):
 
 
 def is_enrolled(course_schedule, user=None) -> bool:
-    """On this section's active roster, or course staff, or a reader of it."""
+    """Course staff, a reader of the section, or a student on the active
+    roster of a published section."""
     u = _user(user)
     if not course_schedule:
         return False
@@ -339,8 +361,10 @@ def is_enrolled(course_schedule, user=None) -> bool:
         return True
     if instructor_tier(u) == "record" and may_read_course_schedule(course_schedule, u):
         return True
+    # A student: on the active roster of a published section (p007 §8.1).
     return bool(
-        frappe.db.exists(
+        is_published(course_schedule)
+        and frappe.db.exists(
             "Scheduled Course Roster",
             {"course_sc": course_schedule, "stuemail_rc": u, "active": 1},
         )

@@ -207,6 +207,51 @@ class TestP007DocPerms(IntegrationTestCase):
         frappe.set_user(user)
         frappe.local.p007_cache = {}
 
+    # ------------------------------------------- §8.1 published AND enrolled
+
+    def test_student_reads_a_section_only_when_published_and_enrolled(self):
+        was = {
+            n: frappe.db.get_value("Course Schedule", n, "published")
+            for n in (self.cs.name, self.cs2.name)
+        }
+        try:
+            for n in was:
+                frappe.db.set_value("Course Schedule", n, "published", 1)
+            self._as(self.stu_a_user)
+            # enrolled + published
+            self.assertTrue(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+            self.assertTrue(guards.is_enrolled(self.cs.name))
+            # published, not enrolled
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs2.name)
+            )
+            listed = frappe.get_list("Course Schedule", pluck="name", limit=0)
+            self.assertEqual(listed, [self.cs.name])
+
+            # enrolled, not published: the roster row alone opens nothing
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", 0)
+            self._as(self.stu_a_user)
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+            self.assertFalse(guards.is_enrolled(self.cs.name))
+            self.assertEqual(guards.student_sections(), [])
+            self.assertEqual(
+                frappe.get_list("Course Schedule", pluck="name", limit=0), []
+            )
+            # the teaching staff are untouched by publication
+            self._as(self.gta_user)
+            self.assertTrue(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+        finally:
+            frappe.set_user("Administrator")
+            for n, v in was.items():
+                frappe.db.set_value("Course Schedule", n, "published", v)
+
     # ---------------------------------------------------------------- tiers
 
     def test_instructor_tiers(self):

@@ -501,7 +501,13 @@ def _publish_embedded_files(message):
         try:
             file_doc = frappe.get_doc("File", name)
             file_doc.is_private = 0
-            file_doc.save(ignore_permissions=True)
+            # p007 §8.2: the recipient's mail client has no session, so this
+            # is one of the two server paths allowed to publish a file.
+            frappe.flags.seminary_public_file = True
+            try:
+                file_doc.save(ignore_permissions=True)
+            finally:
+                frappe.flags.seminary_public_file = False
             message = message.replace(file_url, file_doc.file_url)
         except Exception:
             frappe.log_error(

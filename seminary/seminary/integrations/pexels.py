@@ -138,8 +138,9 @@ def download_photo(src_url: str) -> dict:
     photo_id = _photo_id_from_url(src_url)
     filename = f"pexels-{photo_id}{ext}"
 
-    # Public, like other course images (Courses.vue renders the URL directly).
-    file_doc = save_file(filename, content, None, None, is_private=0)
+    # Private like every other upload (p007 §8.2). Saving it on the course
+    # attaches it, and the section's readers are the people who see the card.
+    file_doc = save_file(filename, content, None, None, is_private=1)
     return {"file_url": file_doc.file_url, "file_name": file_doc.file_name}
 
 

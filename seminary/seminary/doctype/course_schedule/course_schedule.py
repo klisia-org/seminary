@@ -852,9 +852,16 @@ class CourseSchedule(Document):
         # lose any meaningful save-time check.
         scac_name_map = _replace_scac_rows(source_cs, self.name)
         folder_report = _new_folder_report()
-        n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
-            source_cs, self.name, folder_report=folder_report
-        )
+        # Lesson content is copied verbatim, URLs included. Files attached to
+        # the source section get a twin on this one, or the new section's
+        # students could not open them (p007 §8.2, `file_policy.adopt`).
+        frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
+        try:
+            n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
+                source_cs, self.name, folder_report=folder_report
+            )
+        finally:
+            frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
 
         n_scac = len(scac_name_map)

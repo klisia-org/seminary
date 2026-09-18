@@ -13,7 +13,7 @@ import sys
 
 S = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(S, "..", "p006_validation"))
-from p0check import USERS, call, check, summary, H  # noqa: E402,F401
+from p0check import RESULTS, USERS, call, check, jar, summary, H  # noqa: E402,F401
 
 FX = json.load(open(os.path.join(S, "fx1.json")))
 USERS["instr3"] = FX["U3"]  # of record, listed on CS only
@@ -660,11 +660,11 @@ unpub = gv(
     "Course Schedule", {"published": 0, "workflow_state": ["!=", "Cancelled"]}, "name"
 )
 check(
-    "4.3 stuA get_course_outline(CS_B published)",
+    "4.3 stuA get_course_outline(CS_B published, not enrolled) (§8.1)",
     "stuA",
     "seminary.seminary.utils.get_course_outline",
     {"course": CS_B},
-    200,
+    is_403,
 )
 if unpub:
     check(
@@ -1042,11 +1042,11 @@ check(
     ok_json(lambda m: len(m) > len(r_mine.json()["message"]) and CS_B in names(m)),
 )
 check(
-    "4.6 gta get_courses scope=all stays own",
+    "4.6 gta get_courses scope=all stays own (graded + enrolled, §8.1)",
     "gta",
     "seminary.seminary.utils.get_courses",
     {"page_length": 1000, "scope": "all"},
-    ok_json(lambda m: names(m) == [CS]),
+    ok_json(lambda m: sorted(names(m)) == sorted([CS, CS_B])),
 )
 
 
@@ -1257,5 +1257,169 @@ if r is not None and r.status_code == 200:
         "frappe.client.delete",
         {"doctype": "Seminary Announcement", "name": r.json()["message"]["name"]},
     )
+
+# ---------------------------------------------------------------- §8.1 / §8.2
+# Published AND enrolled; private files read through their host document.
+from urllib.parse import quote  # noqa: E402
+
+
+def fetch(label, who, url, expect):
+    path = quote(url) if url.startswith("/private") or url.startswith("/files") else url
+    r = jar(who).get(H + path, allow_redirects=False)
+    ok = r.status_code in (expect if isinstance(expect, tuple) else (expect,))
+    RESULTS.append((label, ok, f"got {r.status_code}"))
+    print(("PASS " if ok else "FAIL ") + f" {label}: got {r.status_code}")
+
+
+def new_file(who, **fields):
+    doc = {"doctype": "File", "content": "p007 probe " + fields["file_name"], **fields}
+    r = call(who, "frappe.client.insert", {"doc": doc})
+    return (r.json().get("message") or {}) if r.status_code == 200 else {}
+
+
+PROBES = []
+f_cs = new_file(
+    "admin",
+    file_name="p007-cs.txt",
+    is_private=1,
+    attached_to_doctype="Course Schedule",
+    attached_to_name=ST_CS,
+)
+f_loose = new_file("admin", file_name="p007-loose.txt", is_private=1)
+PROBES += [f_cs.get("name"), f_loose.get("name")]
+fetch(
+    "8.2 stuA reads a file attached to an enrolled, published section",
+    "stuA",
+    f_cs["file_url"],
+    200,
+)
+f_a = new_file(
+    "admin",
+    file_name="p007-cs-a.txt",
+    is_private=1,
+    attached_to_doctype="Course Schedule",
+    attached_to_name=CS,
+)
+PROBES.append(f_a.get("name"))
+fetch(
+    "8.2 stuB (not on CS) is refused a file attached to CS",
+    "stuB",
+    f_a["file_url"],
+    403,
+)
+fetch("8.2 gta (grades CS) reads it", "gta", f_a["file_url"], 200)
+fetch("8.2 guest is refused", "guest", f_cs["file_url"], 403)
+fetch(
+    "8.2 stuA is refused a private file attached to nothing",
+    "stuA",
+    f_loose["file_url"],
+    403,
+)
+
+check(
+    "8.1 stuA get_courses lists only enrolled sections",
+    "stuA",
+    "seminary.seminary.utils.get_courses",
+    {},
+    ok_json(
+        lambda m: ST_CS in [c["name"] for c in m] and CS_B not in [c["name"] for c in m]
+    ),
+)
+sv("Course Schedule", ST_CS, "published", 0)
+try:
+    fetch(
+        "8.1 unpublished: the enrolled student loses the file",
+        "stuA",
+        f_cs["file_url"],
+        403,
+    )
+    check(
+        "8.1 unpublished: outline refused to the enrolled student",
+        "stuA",
+        "seminary.seminary.utils.get_course_outline",
+        {"course": ST_CS},
+        is_403,
+    )
+    check(
+        "8.1 unpublished: frappe.client.get refused",
+        "stuA",
+        "frappe.client.get",
+        {"doctype": "Course Schedule", "name": ST_CS},
+        is_403,
+    )
+    check(
+        "8.1 unpublished: get_courses drops it",
+        "stuA",
+        "seminary.seminary.utils.get_courses",
+        {},
+        ok_json(lambda m: ST_CS not in [c["name"] for c in m]),
+    )
+    check(
+        "8.1 unpublished: a chair still reads it",
+        "chair",
+        "frappe.client.get",
+        {"doctype": "Course Schedule", "name": ST_CS},
+        200,
+    )
+finally:
+    sv("Course Schedule", ST_CS, "published", 1)
+fetch("8.1 republished: the file is back", "stuA", f_cs["file_url"], 200)
+
+
+def upload(label, who, public_expected):
+    s = jar(who)
+    r = s.post(
+        H + "/api/method/upload_file",
+        files={
+            "file": (f"p007-up-{who}.txt", b"p007 upload " + who.encode(), "text/plain")
+        },
+        data={"is_private": "0", "folder": "Home"},
+    )
+    m = (r.json().get("message") or {}) if r.status_code == 200 else {}
+    ok = r.status_code == 200 and bool(m.get("is_private")) != public_expected
+    RESULTS.append((label, ok, f"got {r.status_code} is_private={m.get('is_private')}"))
+    print(("PASS " if ok else "FAIL ") + f" {label}: is_private={m.get('is_private')}")
+    if m.get("name"):
+        PROBES.append(m["name"])
+    return m
+
+
+up_stu = upload("8.2 a student's public upload lands private", "stuA", False)
+upload("8.2 an instructor's public upload lands private", "instr3", False)
+upload("8.2 Administrator may publish", "admin", True)
+if up_stu.get("name"):
+    check(
+        "8.2 a student cannot flip their file public",
+        "stuA",
+        "frappe.client.set_value",
+        {
+            "doctype": "File",
+            "name": up_stu["name"],
+            "fieldname": "is_private",
+            "value": 0,
+        },
+        is_403,
+        after=lambda: (gv("File", up_stu["name"], "is_private") == 1, "still private"),
+    )
+
+person = gv("Person", {"name": ["like", "%"]}, "name")
+if person:
+    f_av = new_file(
+        "admin",
+        file_name="p007-avatar.txt",
+        is_private=1,
+        attached_to_doctype="Person",
+        attached_to_name=person,
+        attached_to_field="image",
+    )
+    PROBES.append(f_av.get("name"))
+    fetch(
+        "8.2 an avatar is readable by any signed-in user", "stuB", f_av["file_url"], 200
+    )
+    fetch("8.2 an avatar is not readable by a guest", "guest", f_av["file_url"], 403)
+
+for name in filter(None, PROBES):
+    call("admin", "frappe.client.delete", {"doctype": "File", "name": name})
+
 
 sys.exit(summary())

@@ -506,7 +506,12 @@ def _voice_media_url(doc):
         f = frappe.get_doc("File", name)
         if f.is_private:
             f.is_private = 0
-            f.save(ignore_permissions=True)
+            # p007 §8.2: the telephony carrier fetches this with no session.
+            frappe.flags.seminary_public_file = True
+            try:
+                f.save(ignore_permissions=True)
+            finally:
+                frappe.flags.seminary_public_file = False
             url = f.file_url
     return frappe.utils.get_url(url)
 

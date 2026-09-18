@@ -13,7 +13,7 @@ cd /home/drmrmelo/lms/sites
 ../env/bin/python ../apps/seminary/scripts/p006_validation/p0fixtures2.py
 ../env/bin/python ../apps/seminary/scripts/p007_validation/p1fixtures.py   # tiers, gta, instrU, units, withdrawals, chapel rows; writes fx1.json
 cd ../apps/seminary/scripts/p007_validation
-../../../../env/bin/python p1matrix.py                                     # the §4.1–4.7 rows, PASS/FAIL and a summary
+../../../../env/bin/python p1matrix.py                                     # the §4.1–4.7 rows and the §8 block, PASS/FAIL and a summary
 cd /home/drmrmelo/lms/sites
 ../env/bin/python ../apps/seminary/scripts/p006_validation/p0reset.py
 ../env/bin/python ../apps/seminary/scripts/p006_validation/p0matrix.py     # Phase 0 regression: must still pass

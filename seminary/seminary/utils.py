@@ -56,7 +56,6 @@ from seminary.seminary.guards import (
     SCHOOL_ROLES,
     is_course_staff,
     is_enrolled,
-    is_published,
     own_or_staff,
     require_course_staff,
     require_enrolled,
@@ -530,10 +529,26 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
                     return []
                 filters["name"] = ["in", readable]
         else:
-            own = get_own_course_schedules(frappe.session.user)
+            # A grader who is also a student: the sections they work on plus
+            # the published ones they take.
+            from seminary.seminary.guards import student_sections
+
+            own = sorted(
+                set(get_own_course_schedules(frappe.session.user))
+                | set(student_sections())
+            )
             if not own:
                 return []
             filters["name"] = ["in", own]
+    elif not has_super_access():
+        # A student lists the published sections they are enrolled in, not the
+        # school's whole published offering (p007 §8.1).
+        from seminary.seminary.guards import student_sections
+
+        mine = student_sections()
+        if not mine:
+            return []
+        filters["name"] = ["in", mine]
 
     fields = get_course_fields()
 
@@ -771,8 +786,10 @@ def get_course_title(course):
 
 
 def _require_published_or_enrolled(course):
-    """Catalogue reads: a published section, or one the caller is on."""
-    if not (is_published(course) or is_enrolled(course)):
+    """Section reads (p007 §8.1): staff and readers through their tier; a
+    student only when the section is published **and** they are on its roster.
+    The name is historical — the rule used to be a disjunction."""
+    if not is_enrolled(course):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 
@@ -1101,10 +1118,8 @@ def get_lesson(course, chapter, lesson):
         return {}
 
     if not (has_super_access() or has_course_moderator_role() or is_instructor(course)):
-        if not frappe.db.exists(
-            "Scheduled Course Roster",
-            {"stuemail_rc": frappe.session.user, "course_sc": course},
-        ):
+        # Published and on the roster (p007 §8.1).
+        if not is_enrolled(course):
             return {}
 
     lesson_details = frappe.db.get_value(
