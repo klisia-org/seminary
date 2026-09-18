@@ -346,18 +346,6 @@ const is_instructor = () => {
 	return user_is_instructor
 }
 
-const enrollment = createResource({
-	url: 'frappe.client.insert',
-	makeParams() {
-		return {
-			doc: {
-				doctype: 'Scheduled Course Roster',
-				course: props.courseName,
-				member: user.data?.name,
-			},
-		}
-	},
-})
 
 const checkIfDiscussionsAllowed = () => {
 	let quizPresent = false;

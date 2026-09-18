@@ -11,6 +11,8 @@ student's program enrollments. See ADR 033.
 import frappe
 from frappe.utils import today
 
+from seminary.seminary.guards import require_registrar
+
 
 def add_hold(
     student,
@@ -103,7 +105,8 @@ def recompute_standing(student):
 
 @frappe.whitelist()
 def lift_hold(student, hold_row_name):
-    """Deactivate a hold and recompute standing."""
+    """Deactivate a hold and recompute standing (registrar roles only, p006 F5)."""
+    require_registrar()
     frappe.db.set_value(
         "Student Hold",
         hold_row_name,

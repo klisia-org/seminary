@@ -65,11 +65,21 @@ class _Exporter:
         self.media_sources = {}
         self.questions = {}  # src_name -> record
         self.activities = {}  # src_name -> record
-        self.folders = {}  # foldername -> {foldername, files: tree}
+        # Course Folder docname -> {foldername, scope, origin_instructor_name,
+        # files: tree}. Keyed by docname: with scopes "Readings" can exist once
+        # per professor and once for the course (p006 F2).
+        self.folders = {}
         self.assessment_criteria = {}  # name -> {type}
+        self.warnings = []  # folders left out of the pack, and why
+        self.includes_instructor_material = False
         self._seen_q = set()
         self._seen_a = set()
         self._seen_folders = set()
+        self._notified_instructors = set()
+        self._roles = set(frappe.get_roles(frappe.session.user))
+        self._my_instructors = set(
+            frappe.get_all("Instructor", {"user": frappe.session.user}, pluck="name")
+        )
 
     # --- helpers ----------------------------------------------------------
     @staticmethod
@@ -182,31 +192,144 @@ class _Exporter:
         self._scan_media(rec.get("fields", {}))
         self.activities[name] = rec
 
-    # --- course folders (referenced by foldername, not docname) ----------
-    def _ensure_folder(self, foldername):
-        """Bundle a Course Folder's file tree. Lesson content references folders
-        by foldername (the FolderTool stores `data.folder = foldername`), so we
-        resolve the Course Folder by (foldername, course) and walk its File tree."""
-        if not foldername or foldername in self._seen_folders:
-            return
-        self._seen_folders.add(foldername)
-        cf = frappe.db.get_value(
-            "Course Folder",
-            {"foldername": foldername, "course": self.cs.course},
-            ["name", "file_reference"],
-            as_dict=True,
-        ) or frappe.db.get_value(
-            "Course Folder",
-            {"foldername": foldername},
-            ["name", "file_reference"],
-            as_dict=True,
+    # --- course folders ---------------------------------------------------
+    def _resolve_folder_ref(self, ref, label=None):
+        """A folder block carries the Course Folder docname (`folder_ref`).
+
+        A block written before p006 F2 carries only a foldername; that is
+        resolved by (foldername, this course) and never site-wide — the
+        name-only fallback across every course was the p005 A01-5 hole.
+        """
+        if ref and frappe.db.exists("Course Folder", ref):
+            return ref
+        name = label or ref
+        if not name:
+            return None
+        return frappe.db.get_value(
+            "Course Folder", {"foldername": name, "course": self.cs.course}, "name"
         )
-        if not cf or not cf.file_reference:
-            return  # dangling reference — tolerate
-        self.folders[foldername] = {
-            "foldername": foldername,
+
+    def _ensure_folder(self, ref, label=None):
+        """Bundle a Course Folder's file tree, under the §2.2b rules.
+
+        Runs `user_may_read` as the exporting user. Section folders travel only
+        for the exported section; School folders never (they are this
+        institution's policies) and are named in the warnings; an Instructor
+        folder travels when the exporter owns it, is in its
+        `shared_with_instructors`, or is a chair/manager — in the chair/manager
+        case the pack is flagged `includes_instructor_material` and the owning
+        professor is told.
+        """
+        from seminary.seminary.doctype.course_folder.course_folder import (
+            CHAIR_ROLES,
+            resolve_latest,
+            user_may_read,
+        )
+
+        docname = self._resolve_folder_ref(ref, label)
+        if not docname:
+            return  # dangling reference — tolerate, like the frontend
+        docname = resolve_latest(docname)
+        if docname in self._seen_folders:
+            return
+        self._seen_folders.add(docname)
+
+        cf = frappe.get_doc("Course Folder", docname)
+        shown = f"'{cf.foldername}' ({cf.name})"
+        if not cf.file_reference:
+            return
+        if not user_may_read(cf, frappe.session.user):
+            self.warnings.append(
+                _("Folder {0} was not bundled: you cannot read it.").format(shown)
+            )
+            return
+
+        scope = cf.scope or "Course"
+        origin_instructor_name = None
+        if scope == "School":
+            self.warnings.append(
+                _(
+                    "School folder {0} was not bundled: it holds this institution's "
+                    "policies. The receiving school should embed its own."
+                ).format(shown)
+            )
+            return
+        if scope == "Section" and cf.course_schedule != self.cs.name:
+            self.warnings.append(
+                _(
+                    "Section folder {0} belongs to {1}, not to the exported section, "
+                    "and was not bundled."
+                ).format(shown, cf.course_schedule)
+            )
+            return
+        if scope == "Instructor":
+            origin_instructor_name = frappe.db.get_value(
+                "Instructor", cf.instructor, "instructor_name"
+            )
+            owns = cf.instructor in self._my_instructors
+            shared = bool(
+                self._my_instructors
+                & {r.instructor for r in (cf.get("shared_with_instructors") or [])}
+            )
+            is_chair = frappe.session.user == "Administrator" or bool(
+                self._roles & CHAIR_ROLES
+            )
+            if not (owns or shared or is_chair):
+                self.warnings.append(
+                    _(
+                        "Instructor folder {0} of {1} was not bundled: it is not "
+                        "shared with you."
+                    ).format(shown, origin_instructor_name or cf.instructor)
+                )
+                return
+            if not (owns or shared):
+                self.includes_instructor_material = True
+                self._notify_instructor(cf, origin_instructor_name)
+
+        self.folders[cf.name] = {
+            "foldername": cf.foldername,
+            "scope": scope,
+            "origin_instructor_name": origin_instructor_name,
             "files": self._walk_folder(cf.file_reference, set()),
         }
+
+    def _notify_instructor(self, cf, display_name):
+        """One Communication Log line to the professor whose Instructor folder
+        a chair or manager just packed (ADR §5.13). Informational; never fails
+        the export."""
+        if cf.instructor in self._notified_instructors:
+            return
+        self._notified_instructors.add(cf.instructor)
+        try:
+            from seminary.seminary import comms
+            from seminary.seminary.person import find_person
+
+            user = frappe.db.get_value("Instructor", cf.instructor, "user")
+            if not user:
+                return
+            exporter = frappe.utils.get_fullname(frappe.session.user)
+            comms.send_message(
+                channel=comms.IN_APP_CHANNEL,
+                subject=_("Your folder '{0}' was included in a Course Pack").format(
+                    cf.foldername
+                ),
+                message=_(
+                    "{0} exported a Course Pack of {1} that includes your "
+                    "Instructor folder '{2}'. The pack may be imported by another "
+                    "school; your folder here is unchanged."
+                ).format(exporter, self.cs.name, cf.foldername),
+                person=find_person(user=user, email=user),
+                to_address=user,
+                category="Academic",
+                reference_doctype="Course Schedule",
+                reference_name=self.cs.name,
+                triggered_by="course-pack-export",
+            )
+        except Exception:
+            frappe.log_error(
+                title="course_pack: instructor notice failed",
+                message=f"{cf.name}\n{frappe.get_traceback()}",
+            )
 
     def _walk_folder(self, folder_id, visited):
         if folder_id in visited:
@@ -315,6 +438,8 @@ class _Exporter:
             "questions": self.questions,
             "activities": self.activities,
             "folders": self.folders,
+            "includes_instructor_material": int(self.includes_instructor_material),
+            "warnings": list(self.warnings),
             "chapters": chapters,
             "lessons": lessons,
             "scac": scac,
@@ -403,6 +528,9 @@ class _Exporter:
                     continue
                 lesson = frappe.get_doc("Course Lesson", lref.lesson)
                 fields = self._pick(lesson, LESSON_FIELDS)
+                for content in (lesson.content, lesson.instructor_content):
+                    for fref in editorjs.scan_folder_refs(content):
+                        self._ensure_folder(fref["folder_ref"], fref["folder"])
                 refs = (
                     editorjs.scan_content_refs(lesson.content)
                     + editorjs.scan_content_refs(lesson.instructor_content)
@@ -411,7 +539,10 @@ class _Exporter:
                 )
                 for doctype, name in refs:
                     if doctype == "Course Folder":
-                        self._ensure_folder(name)
+                        # Body macros and content blocks already handled above
+                        # by scan_folder_refs; the macro argument may be a
+                        # docname or a legacy foldername.
+                        self._ensure_folder(name, name)
                     else:
                         self._ensure_activity(doctype, name)
                 self._scan_media(fields)
@@ -491,6 +622,36 @@ def _write_pack(exporter, manifest, fileobj):
                 for chunk in chunks:
                     target.write(chunk)
         archive.writestr("manifest.json", json.dumps(manifest, indent=1, default=str))
+
+
+def _record_export(exporter, manifest, filename):
+    """Leave the export trail on the schedule: which folders travelled, and
+    which did not and why. The download response carries only the zip, so the
+    warnings live here and in `manifest.json` (the importer surfaces them)."""
+    from seminary.seminary.doctype.course_folder.course_folder import log_activity
+
+    for docname, rec in exporter.folders.items():
+        log_activity(
+            docname,
+            "exported",
+            section=exporter.cs.name,
+            note=_("in Course Pack {0} by {1}").format(filename, frappe.session.user),
+        )
+    lines = [
+        _("Exported Course Pack {0}: {1} folders bundled.").format(
+            filename, len(exporter.folders)
+        )
+    ]
+    lines.extend(exporter.warnings)
+    try:
+        exporter.cs.add_comment(
+            "Info", "<br>".join(frappe.utils.escape_html(l) for l in lines)
+        )
+    except Exception:
+        frappe.log_error(
+            title="course_pack: export comment failed",
+            message=frappe.get_traceback(),
+        )
 
 
 def _pack_filename(manifest):
@@ -610,9 +771,15 @@ def export_course_pack(course_schedule):
 
     from seminary.storage import get_storage_backend
 
+    # The Desk opens this URL as a GET, which Frappe rolls back unless told
+    # otherwise; the export trail (activity rows, Info comment) and, with object
+    # storage, the pack's own File row must survive the request.
+    frappe.local.flags.commit = True
+
     exporter = _Exporter(course_schedule)
     manifest = exporter.build()
     filename = _pack_filename(manifest)
+    _record_export(exporter, manifest, filename)
 
     if not get_storage_backend().is_configured():
         buffer = io.BytesIO()

@@ -64,10 +64,9 @@ def get_boot_data():
     boot["csrf_token"] = get_csrf_token()
     boot["sitename"] = frappe.local.site
     boot["sysdefaults"] = frappe.defaults.get_defaults()
-    boot["session"] = {
-        "user": frappe.session.user,
-        "sid": frappe.session.sid,
-    }
+    # The session id is carried by the cookie; the SPA never reads it, so it is
+    # not echoed into the page (p006 F8).
+    boot["session"] = {"user": frappe.session.user}
 
     return boot
 

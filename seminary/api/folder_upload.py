@@ -1,3 +1,29 @@
+"""Course Folder file API (p006 F2, ADR §2.2c).
+
+A folder is addressed in exactly two ways:
+
+* `course_folder` — a **Course Folder docname**. The root File folder is its
+  `file_reference`, after `resolve_latest` so an embed of a superseded School
+  folder lands on the newest one.
+* `folder_id` — a **File docname**, for navigating below the root.
+
+There is deliberately no name-based lookup. A bare foldername resolved
+site-wide was the p005 A01-5 hole, and with scopes "Readings" can legitimately
+exist once per professor and once for the course.
+
+Authorisation is one function, `_ensure_folder_permission`: walk up to the
+owning Course Folder and apply `course_folder.user_may_read` / `user_may_write`;
+a File folder that is not under any Course Folder is reachable only by its
+owner or a System Manager. Not-found and not-permitted are the same message,
+"Folder not available", so the API does not confirm which folders exist.
+
+Listing and streaming keep `ignore_permissions=True` — children are private and
+owned by whoever uploaded them — but only after the root check passed.
+
+Every mutation writes a `Course Folder Activity` row: this log is the
+term-to-term record of what changed in a folder.
+"""
+
 from __future__ import annotations
 
 import io
@@ -5,45 +31,65 @@ import zipfile
 from typing import Optional, Set
 
 import frappe
+from frappe import _
 
-from seminary.seminary.utils import user_is_enrolled_in_course
+from seminary.seminary.doctype.course_folder.course_folder import (
+    log_activity,
+    resolve_latest,
+    user_may_read,
+    user_may_write,
+)
 from seminary.storage.backend import normalize_file_url
 from seminary.storage.files import copy_into_zip
 
+NOT_AVAILABLE = "Folder not available"
 
-def _resolve_folder(foldername: str | None = None, folder_id: str | None = None) -> str:
-    """Resolve and return the File document name for the given identifiers."""
+
+def _not_available():
+    frappe.throw(_(NOT_AVAILABLE), frappe.PermissionError)
+
+
+def _resolve_folder(
+    course_folder: str | None = None,
+    folder_id: str | None = None,
+    **_ignored,
+) -> str:
+    """Return the File docname for a Course Folder root or a File subfolder.
+
+    A caller that only knows a foldername gets "Folder not available": names
+    are not identifiers here.
+    """
     if folder_id:
         if frappe.db.exists("File", folder_id):
             return folder_id
-        frappe.throw(f"Folder with id '{folder_id}' not found.")
+        _not_available()
 
-    if foldername:
-        folder = frappe.db.get_value(
-            "File", {"file_name": foldername, "is_folder": 1}, "name"
-        )
-        if folder:
-            return folder
-        frappe.throw(f"Folder '{foldername}' not found.")
+    if course_folder:
+        latest = resolve_latest(course_folder)
+        root = frappe.db.get_value("Course Folder", latest, "file_reference")
+        if root and frappe.db.exists("File", root):
+            return root
+        _not_available()
 
-    frappe.throw("Folder identifier is required.")
+    _not_available()
 
 
 def _get_course_folder_context(folder_id: str) -> Optional[dict[str, str]]:
-    """Return the Course Folder (and Course) linked to the provided File document."""
+    """Return the Course Folder (and Course) owning the provided File folder."""
     visited: Set[str] = set()
     current = folder_id
     while current and current not in visited:
         course_folder = frappe.db.get_value(
             "Course Folder",
             {"file_reference": current},
-            ["name", "course"],
+            ["name", "course", "scope"],
             as_dict=True,
         )
         if course_folder:
             return {
                 "course_folder": course_folder.name,
                 "course": course_folder.course,
+                "scope": course_folder.scope,
             }
         visited.add(current)
         parent = frappe.db.get_value("File", current, "folder")
@@ -84,16 +130,40 @@ def _link_file_to_course_folder(file_name: str, course_folder_name: str) -> None
     )
 
 
-def _ensure_folder_permission(folder_id: str, perm: str = "read") -> None:
-    """Ensure the current user has the specified permission for the folder."""
-    folder_doc = frappe.get_doc("File", folder_id)
-    if folder_doc.has_permission(perm):
+def _ensure_folder_permission(folder_id: str, perm: str = "read") -> Optional[dict]:
+    """Authorise `perm` on a File folder; returns the Course Folder context.
+
+    Under a Course Folder the scope rule decides, nothing else. Outside one
+    (an instructor's personal folder, `Home`, `Home/Attachments`) only the
+    File row's owner or a System Manager gets through — the non-private
+    `File.has_permission("read")` shortcut that opened `Home` is gone.
+    """
+    row = frappe.db.get_value(
+        "File", folder_id, ["name", "owner", "is_folder"], as_dict=True
+    )
+    if not row:
+        _not_available()
+
+    context = _get_course_folder_context(row.name)
+    if context:
+        check = user_may_read if perm == "read" else user_may_write
+        if check(context["course_folder"]):
+            return context
+        _not_available()
+
+    user = frappe.session.user
+    if user == "Administrator" or row.owner == user:
+        return None
+    if "System Manager" in frappe.get_roles(user):
+        return None
+    _not_available()
+
+
+def _log(context: Optional[dict], action: str, file_name: str | None, section):
+    if not context:
         return
-    if perm == "read":
-        context = _get_course_folder_context(folder_doc.name)
-        if context and user_is_enrolled_in_course(context.get("course")):
-            return
-    frappe.throw(frappe._(f"Not permitted to access folder '{folder_doc.file_name}'."))
+    section = section or frappe.form_dict.get("course_schedule")
+    log_activity(context["course_folder"], action, file_name=file_name, section=section)
 
 
 def _store_file(folder: str, file_name: str, content: bytes, context) -> dict:
@@ -138,7 +208,7 @@ def _store_file(folder: str, file_name: str, content: bytes, context) -> dict:
 
 
 @frappe.whitelist()
-def upload_to_folder():
+def upload_to_folder(**kwargs):
     """Store one uploaded file in a course folder.
 
     Reached as the `method=` callback of Frappe's own `/api/method/upload_file`
@@ -161,19 +231,24 @@ def upload_to_folder():
     desk access, so the branch never runs. Clearing `desk_access` on one of them
     would start rejecting PowerPoints with a message about JPGs; that is the thing
     to remember if this ever reports a baffling file-type error.
+
+    Request fields: `folder_id` (File docname of the target folder) or
+    `course_folder` (Course Folder docname, for its root); optional
+    `course_schedule` — the section the lesson was open in, for the activity log.
     """
     folder = _resolve_folder(
-        foldername=frappe.form_dict.get("foldername"),
+        course_folder=frappe.form_dict.get("course_folder"),
         folder_id=frappe.form_dict.get("folder_id"),
     )
-    _ensure_folder_permission(folder, perm="write")
+    context = _ensure_folder_permission(folder, perm="write")
 
     content = frappe.local.uploaded_file
     file_name = frappe.local.uploaded_filename
     if content is None or not file_name:
-        frappe.throw("No file was provided for upload.")
+        frappe.throw(_("No file was provided for upload."))
 
-    stored = _store_file(folder, file_name, content, _get_course_folder_context(folder))
+    stored = _store_file(folder, file_name, content, context)
+    _log(context, "added", stored["file_name"], frappe.form_dict.get("course_schedule"))
 
     return {
         "folder_id": folder,
@@ -183,8 +258,8 @@ def upload_to_folder():
 
 
 @frappe.whitelist()
-def upload_folder():
-    """Handle folder uploads using Frappe's file system.
+def upload_folder(**kwargs):
+    """Handle multi-file uploads posted directly to this endpoint.
 
     Superseded by `upload_to_folder` for the folder tool, which routes through
     Frappe's own upload endpoint to get a Desk-configurable request ceiling. This
@@ -192,33 +267,36 @@ def upload_folder():
     request body is capped at `conf.max_file_size` (default 25 MB) for the *whole*
     request regardless of how many files it carries.
     """
-    foldername = frappe.form_dict.get("foldername")
-    folder_id = frappe.form_dict.get("folder_id")
     uploaded_files = frappe.request.files.getlist("files")
-
     if not uploaded_files:
-        frappe.throw("No files were provided for upload.")
+        frappe.throw(_("No files were provided for upload."))
 
-    folder = _resolve_folder(foldername=foldername, folder_id=folder_id)
-    _ensure_folder_permission(folder, perm="write")
-    context = _get_course_folder_context(folder)
+    folder = _resolve_folder(
+        course_folder=frappe.form_dict.get("course_folder"),
+        folder_id=frappe.form_dict.get("folder_id"),
+    )
+    context = _ensure_folder_permission(folder, perm="write")
+    section = frappe.form_dict.get("course_schedule")
 
-    saved = [
-        _store_file(folder, file.filename, file.stream.read(), context)
-        for file in uploaded_files
-    ]
+    saved = []
+    for file in uploaded_files:
+        stored = _store_file(folder, file.filename, file.stream.read(), context)
+        _log(context, "added", stored["file_name"], section)
+        saved.append(stored)
 
     return {
         "folder_id": folder,
-        "folder_name": foldername or frappe.db.get_value("File", folder, "file_name"),
+        "folder_name": frappe.db.get_value("File", folder, "file_name"),
         "files": saved,
     }
 
 
 @frappe.whitelist()
-def get_files_in_folder(foldername: str | None = None, folder_id: str | None = None):
-    """Retrieve files and sub-folders for the specified folder."""
-    folder = _resolve_folder(foldername=foldername, folder_id=folder_id)
+def get_files_in_folder(
+    course_folder: str | None = None, folder_id: str | None = None, **kwargs
+):
+    """Retrieve files and sub-folders of a Course Folder root or a subfolder."""
+    folder = _resolve_folder(course_folder=course_folder, folder_id=folder_id)
     _ensure_folder_permission(folder, perm="read")
 
     fields = [
@@ -257,10 +335,10 @@ def _resolve_file(
     if file_id:
         if frappe.db.exists("File", file_id):
             return file_id
-        frappe.throw(f"File '{file_id}' not found.")
+        _not_available()
 
     if not file_url:
-        frappe.throw("File identifier is required.")
+        frappe.throw(_("File identifier is required."))
 
     filters = {"file_url": normalize_file_url(file_url), "is_folder": 0}
     if folder_id:
@@ -274,15 +352,26 @@ def _resolve_file(
         ignore_permissions=True,
     )
     if not matches:
-        frappe.throw("File not found.")
+        _not_available()
     if len(matches) > 1:
         # Guessing here would delete somebody else's row. The caller has the
         # document name in the folder listing; ask for it rather than pick one.
         frappe.throw(
-            "More than one file shares this URL. Retry the delete from a "
-            "refreshed folder listing."
+            _(
+                "More than one file shares this URL. Retry the delete from a "
+                "refreshed folder listing."
+            )
         )
     return matches[0]
+
+
+def _file_in_folder(name: str):
+    doc = frappe.get_doc("File", name)
+    if doc.is_folder:
+        frappe.throw(_("This is a folder, not a file."))
+    if not doc.folder:
+        frappe.throw(_("This file does not belong to a folder."))
+    return doc
 
 
 @frappe.whitelist()
@@ -290,6 +379,8 @@ def delete_file(
     file_id: str | None = None,
     file_url: str | None = None,
     folder_id: str | None = None,
+    course_schedule: str | None = None,
+    **kwargs,
 ):
     """Delete one file from a course folder.
 
@@ -305,19 +396,76 @@ def delete_file(
     hash and removes them only when the last row referencing them goes.
     """
     name = _resolve_file(file_id=file_id, file_url=file_url, folder_id=folder_id)
-
-    doc = frappe.get_doc("File", name)
-    if doc.is_folder:
-        frappe.throw("This is a folder, not a file.")
-    if not doc.folder:
-        frappe.throw("This file does not belong to a folder.")
+    doc = _file_in_folder(name)
 
     # Authorised the same way the upload is: write access to the containing
     # folder. `delete_doc` then applies File's own permission check on top.
-    _ensure_folder_permission(doc.folder, perm="write")
+    context = _ensure_folder_permission(doc.folder, perm="write")
     frappe.delete_doc("File", name)
+    _log(context, "removed", doc.file_name, course_schedule)
 
     return {"name": name, "folder_id": doc.folder}
+
+
+@frappe.whitelist()
+def rename_file(
+    file_id: str,
+    new_name: str,
+    course_schedule: str | None = None,
+    **kwargs,
+):
+    """Rename one file (its display `file_name`; the stored bytes are untouched)."""
+    new_name = (new_name or "").strip()
+    if not new_name:
+        frappe.throw(_("A file name is required."))
+    if "/" in new_name or "\\" in new_name:
+        frappe.throw(_("A file name cannot contain a path separator."))
+
+    name = _resolve_file(file_id=file_id)
+    doc = _file_in_folder(name)
+    context = _ensure_folder_permission(doc.folder, perm="write")
+
+    old_name = doc.file_name
+    if old_name != new_name:
+        frappe.db.set_value("File", name, "file_name", new_name)
+        _log(context, "renamed", f"{old_name} -> {new_name}", course_schedule)
+
+    return {"name": name, "file_name": new_name, "folder_id": doc.folder}
+
+
+@frappe.whitelist()
+def move_file(
+    file_id: str,
+    folder_id: str,
+    course_schedule: str | None = None,
+    **kwargs,
+):
+    """Move one file into another folder of the **same** Course Folder tree."""
+    name = _resolve_file(file_id=file_id)
+    doc = _file_in_folder(name)
+    target = _resolve_folder(folder_id=folder_id)
+    if not frappe.db.get_value("File", target, "is_folder"):
+        _not_available()
+
+    context = _ensure_folder_permission(doc.folder, perm="write")
+    target_context = _ensure_folder_permission(target, perm="write")
+    if (context or {}).get("course_folder") != (target_context or {}).get(
+        "course_folder"
+    ):
+        frappe.throw(_("A file can only be moved within its own course folder."))
+
+    if doc.folder != target:
+        source_label = frappe.db.get_value("File", doc.folder, "file_name")
+        target_label = frappe.db.get_value("File", target, "file_name")
+        frappe.db.set_value("File", name, "folder", target)
+        _log(
+            context,
+            "moved",
+            f"{doc.file_name} ({source_label} -> {target_label})",
+            course_schedule,
+        )
+
+    return {"name": name, "folder_id": target}
 
 
 def _add_folder_to_zip(
@@ -356,9 +504,11 @@ def _add_folder_to_zip(
 
 
 @frappe.whitelist()
-def download_folder(foldername: str | None = None, folder_id: str | None = None):
+def download_folder(
+    course_folder: str | None = None, folder_id: str | None = None, **kwargs
+):
     """Stream a zip archive of the folder, including its sub-folders and files."""
-    folder = _resolve_folder(foldername=foldername, folder_id=folder_id)
+    folder = _resolve_folder(course_folder=course_folder, folder_id=folder_id)
     _ensure_folder_permission(folder, perm="read")
 
     root_name = frappe.db.get_value("File", folder, "file_name") or "folder"
@@ -375,19 +525,23 @@ def download_folder(foldername: str | None = None, folder_id: str | None = None)
 
 @frappe.whitelist()
 def create_subfolder(
-    parent_foldername: str | None = None,
     parent_folder_id: str | None = None,
     subfoldername: str | None = None,
+    course_folder: str | None = None,
+    course_schedule: str | None = None,
+    **kwargs,
 ):
-    """Create a sub-folder under the specified parent folder."""
+    """Create a sub-folder under a Course Folder root or one of its subfolders."""
+    subfoldername = (subfoldername or "").strip()
     if not subfoldername:
-        frappe.throw("Sub-folder name is required.")
+        frappe.throw(_("Sub-folder name is required."))
+    if "/" in subfoldername or "\\" in subfoldername:
+        frappe.throw(_("A folder name cannot contain a path separator."))
 
     parent_folder = _resolve_folder(
-        foldername=parent_foldername,
-        folder_id=parent_folder_id,
+        course_folder=course_folder, folder_id=parent_folder_id
     )
-    _ensure_folder_permission(parent_folder, perm="write")
+    context = _ensure_folder_permission(parent_folder, perm="write")
 
     existing = frappe.db.exists(
         "File",
@@ -399,7 +553,9 @@ def create_subfolder(
     )
     if existing:
         frappe.throw(
-            f"A folder named '{subfoldername}' already exists in this location."
+            _("A folder named '{0}' already exists in this location.").format(
+                subfoldername
+            )
         )
 
     folder_doc = frappe.get_doc(
@@ -411,10 +567,12 @@ def create_subfolder(
             "is_private": 1,
         }
     )
-    folder_doc.insert(ignore_permissions=False)
-    context = _get_course_folder_context(folder_doc.name)
+    # Authorised above by the folder's scope rule; the File-level role check
+    # would refuse an Instructor who has no File create permission of their own.
+    folder_doc.insert(ignore_permissions=True)
     if context:
         _link_file_to_course_folder(folder_doc.name, context["course_folder"])
+    _log(context, "added", f"{subfoldername}/", course_schedule)
 
     return {
         "name": folder_doc.name,

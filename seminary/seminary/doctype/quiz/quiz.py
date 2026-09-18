@@ -6,7 +6,7 @@ import frappe
 import re
 from frappe import _, safe_decode
 from frappe.model.document import Document
-from frappe.utils import cstr, comma_and, cint
+from frappe.utils import cstr, comma_and, cint, sanitize_html
 from fuzzywuzzy import fuzz
 from seminary.seminary.utils import generate_slug
 from binascii import Error as BinasciiError
@@ -173,6 +173,17 @@ def quiz_summary(
             result["points"] = points
             score += points
 
+        elif question_details.type == "User Input":
+            # p006 F7: grade on the server with the same fuzzy match the
+            # frontend mirrors; the client-sent is_correct is ignored here.
+            correct = check_input_answers(
+                result["question_name"], cstr(result.get("answer"))
+            )
+            result["is_correct"] = correct
+            points = question_details.points if correct else 0
+            result["points"] = points
+            score += points
+
         elif question_details.type != "Open Ended":
             correct = result["is_correct"][0]
             for point in result["is_correct"]:
@@ -190,6 +201,11 @@ def quiz_summary(
         result["answer"] = re.sub(
             r'<img[^>]*src\s*=\s*["\'](?=data:)(.*?)["\']', _save_file, result["answer"]
         )
+        if question_details.type not in _JSON_ANSWER_TYPES:
+            # p006 F13: the stored answer is rendered as HTML in the review
+            # view. Scripture answers are JSON payloads the server has already
+            # re-validated; the sanitiser would corrupt them, so they are kept.
+            result["answer"] = sanitize_html(result["answer"], always_sanitize=True)
 
     # avoid duplication of quiz submission (scope by context so the same quiz taken for two
     # different records isn't deduped together)
@@ -248,6 +264,10 @@ def quiz_summary(
         "pass": percentage >= quiz_details.passing_percentage,
         "percentage": percentage,
     }
+
+
+# Question types whose stored answer is a JSON payload, not rich text.
+_JSON_ANSWER_TYPES = ("Scripture Matching", "Scripture Memorization")
 
 
 def _question_answer_key(question_name):
@@ -399,7 +419,9 @@ def _save_file(match):
             "file_name": filename,
             "content": content,
             "decode": False,
-            "is_private": False,
+            # An image pasted into an answer. Private; the submission's
+            # `on_update` attaches it so the grader can open it (p007 §8.2).
+            "is_private": True,
         }
     )
     _file.save(ignore_permissions=True)
@@ -427,8 +449,8 @@ def get_question_details(question):
     return
 
 
-@frappe.whitelist()
 def get_all_question_results(questions):
+    """Answer keys. No browser caller; not an endpoint (p007 §2.7)."""
     if isinstance(questions, str):
         questions = json.loads(questions)
 

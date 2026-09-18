@@ -7,6 +7,26 @@ import frappe
 
 from seminary.seminary.utils import student_schedule_conflicts, times_overlap
 
+IGNORE_TEST_RECORD_DEPENDENCIES = [
+    "Academic Term",
+    "Assessment Criteria",
+    "Assignment Activity",
+    "Course",
+    "Course Cancellation Reason",
+    "Course Competency",
+    "Course Schedule Chapter",
+    "Discussion Activity",
+    "Exam Activity",
+    "Grading Scale",
+    "Instructor",
+    "Instructor Category",
+    "Quiz",
+    "Room",
+    "Student Group",
+    "User",
+    "Workflow State",
+]  # p006: fixtures are built in-test; the app's Student/Instructor test records predate Person-first identity
+
 # The legacy conflict tests here referenced fields removed long ago
 # (schedule_date, a single `instructor`/`room` field). Room double-booking is
 # now detected over the cs_meetinfo meeting-date child table using the shared

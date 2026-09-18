@@ -53,29 +53,25 @@ const resetTopic = () => {
 	topic.reply = ''
 }
 
+// Frappe's Discussion doctypes carry a DocPerm for System Manager only, so
+// the portal writes them through gated endpoints, not frappe.client.
 const topicResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.utils.create_discussion_topic',
 	makeParams(values) {
 		return {
-			doc: {
-				doctype: 'Discussion Topic',
-				reference_doctype: props.doctype,
-				reference_docname: props.docname,
-				title: topic.title,
-			},
+			doctype: props.doctype,
+			docname: props.docname,
+			title: topic.title,
 		}
 	},
 })
 
 const replyResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.utils.add_discussion_reply',
 	makeParams(values) {
 		return {
-			doc: {
-				doctype: 'Discussion Reply',
-				topic: values.topic,
-				reply: topic.reply,
-			},
+			topic: values.topic,
+			reply: topic.reply,
 		}
 	},
 })
@@ -95,7 +91,7 @@ const submitTopic = (close) => {
 			onSuccess(data) {
 				replyResource.submit(
 					{
-						topic: data.name,
+						topic: data?.name || data,
 					},
 					{
 						onSuccess() {

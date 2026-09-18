@@ -220,6 +220,7 @@ const initContent = async (data) => {
 			contentObj = null
 		}
 	} else if (data.lesson?.body) {
+		await ensureFoldersFor(data.lesson)
 		contentObj = { blocks: convertToJSON(data.lesson) }
 	}
 
@@ -253,10 +254,11 @@ const initContent = async (data) => {
 }
 
 const addInstructorNotes = (data) => {
-	instructorEditor.value.isReady.then(() => {
+	instructorEditor.value.isReady.then(async () => {
 		if (data.lesson.instructor_content) {
 			instructorEditor.value.render(JSON.parse(data.lesson.instructor_content))
 		} else if (data.lesson.instructor_notes) {
+			await ensureFoldersFor(data.lesson)
 			let blocks = convertToJSON(data.lesson)
 			instructorEditor.value.render({
 				blocks: blocks,
@@ -347,6 +349,72 @@ const lessonReference = createResource({
 	},
 })
 
+// Legacy lessons name a folder by `foldername`; blocks now carry the Course
+// Folder docname (p006 §2.2a). The embeddable list for this section is fetched
+// once, lazily, only when a legacy lesson actually mentions a folder.
+const embeddableFolders = { list: [], instructor: null, loaded: false }
+let embeddableFoldersPromise = null
+
+const mentionsFolder = (lessonData) =>
+	Boolean(
+		lessonData?.folder ||
+			(lessonData?.body && lessonData.body.includes('{{ Folder')) ||
+			(lessonData?.instructor_notes && lessonData.instructor_notes.includes('{{ Folder'))
+	)
+
+const ensureFoldersFor = (lessonData) => {
+	if (!mentionsFolder(lessonData) || embeddableFolders.loaded) return Promise.resolve()
+	if (!embeddableFoldersPromise) {
+		const params = { course_schedule: props.courseName }
+		embeddableFoldersPromise = Promise.all([
+			createResource({
+				url: 'seminary.seminary.doctype.course_folder.course_folder.folder_context',
+				params,
+			}).fetch(),
+			createResource({
+				url: 'seminary.seminary.doctype.course_folder.course_folder.list_embeddable_folders',
+				params,
+			}).fetch(),
+		])
+			.then(([context, list]) => {
+				embeddableFolders.instructor = context?.instructor || null
+				embeddableFolders.list = Array.isArray(list) ? list : []
+			})
+			.catch((error) => {
+				// Leave the list empty: the block is still emitted with only
+				// `folder`, so the reader sees the re-link notice, not lost content.
+				console.error('Error listing embeddable folders:', error)
+			})
+			.finally(() => {
+				embeddableFolders.loaded = true
+			})
+	}
+	return embeddableFoldersPromise
+}
+
+// Resolve a legacy folder name to a block payload. Course scope wins, then the
+// current user's own Instructor folder, then Section (this section first), then
+// School. No match: emit `folder` alone, which renders the re-link notice.
+const folderBlockData = (foldername) => {
+	const candidates = embeddableFolders.list.filter((f) => f.foldername === foldername)
+	const rank = (f) => {
+		switch (f.scope) {
+			case 'Course':
+				return 0
+			case 'Instructor':
+				return f.instructor && f.instructor === embeddableFolders.instructor ? 1 : 5
+			case 'Section':
+				return f.course_schedule === props.courseName ? 2 : 3
+			case 'School':
+				return 4
+			default:
+				return 6
+		}
+	}
+	const match = candidates.sort((a, b) => rank(a) - rank(b))[0]
+	return match ? { folder_ref: match.name, folder: match.foldername } : { folder: foldername }
+}
+
 const convertToJSON = (lessonData) => {
 	let blocks = []
 	if (lessonData.youtube) {
@@ -399,9 +467,7 @@ const convertToJSON = (lessonData) => {
 			let folder = block.match(/\(["']([^"']+?)["']\)/)[1]
 			blocks.push({
 				type: 'folder',
-				data: {
-					folder: folder,
-				},
+				data: folderBlockData(folder),
 			})
 		} else if (block.includes('{{ Video')) {
 			let video = block.match(/\(["']([^"']+?)["']\)/)[1]
@@ -494,9 +560,7 @@ const convertToJSON = (lessonData) => {
 	if (lessonData.folder) {
 		blocks.push({
 			type: 'folder',
-			data: {
-				folder: lessonData.folder,
-			},
+			data: folderBlockData(lessonData.folder),
 		})
 	}
 

@@ -43,6 +43,7 @@ class CourseSchedule(Document):
         self.validate_time()
         self.validate_assessment_criteria()
         self.validate_instructor_categories()
+        self.validate_instructor_of_record_rows()
         self.clean_name()
         self._resolve_dates_if_needed()
         self._guard_attendance_policy()
@@ -422,6 +423,50 @@ class CourseSchedule(Document):
                         "Instructor {0} (row {1}) is missing an Instructor Category. "
                         "Category is required while HRMS Payroll is enabled."
                     ).format(row.instructor or "?", row.idx)
+                )
+
+    def validate_instructor_of_record_rows(self):
+        """p007 §2.8 (decision 8): a section row may carry an of-record
+        category only if the Instructor's default category is of record or
+        empty, or the saving user is Program Chair / Seminary Manager. The
+        registrar assigns professors and graders freely; promoting a grader to
+        instructor of record is the chair's call, made on the Instructor."""
+        if (
+            frappe.flags.in_install
+            or frappe.flags.in_migrate
+            or self.flags.ignore_permissions
+        ):
+            return
+        roles = set(frappe.get_roles())
+        if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
+            return
+        of_record = set(
+            frappe.get_all(
+                "Instructor Category", {"is_instructor_of_record": 1}, pluck="name"
+            )
+        )
+        before = self.get_doc_before_save()
+        unchanged = {
+            (r.instructor, r.instructor_category)
+            for r in (before.get("instructor1") if before else []) or []
+        }
+        for row in self.get("instructor1", []):
+            if row.instructor_category not in of_record:
+                continue
+            if (row.instructor, row.instructor_category) in unchanged:
+                continue
+            default = frappe.db.get_value(
+                "Instructor", row.instructor, "default_inst_category"
+            )
+            if default and default not in of_record:
+                frappe.throw(
+                    _(
+                        "Instructor {0} (row {1}) is a {2} by default. Only a "
+                        "Program Chair or Seminary Manager can list them as "
+                        "{3} on a section; ask them to change the default "
+                        "category on the Instructor record first."
+                    ).format(row.instructor, row.idx, default, row.instructor_category),
+                    title=_("Instructor of record"),
                 )
 
     def set_title(self):
@@ -806,14 +851,21 @@ class CourseSchedule(Document):
         # in-memory 0). Source weights are validated up-front, so we don't
         # lose any meaningful save-time check.
         scac_name_map = _replace_scac_rows(source_cs, self.name)
-        n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
-            source_cs, self.name
-        )
+        folder_report = _new_folder_report()
+        # Lesson content is copied verbatim, URLs included. Files attached to
+        # the source section get a twin on this one, or the new section's
+        # students could not open them (p007 §8.2, `file_policy.adopt`).
+        frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
+        try:
+            n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
+                source_cs, self.name, folder_report=folder_report
+            )
+        finally:
+            frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
 
         n_scac = len(scac_name_map)
-        self.add_comment(
-            "Info",
+        lines = [
             _(
                 "Imported template from {0} on {1} by {2}. "
                 "Copied: {3} chapters, {4} lessons, {5} assessment criteria."
@@ -824,13 +876,30 @@ class CourseSchedule(Document):
                 n_chapters,
                 n_lessons,
                 n_scac,
-            ),
-        )
+            )
+        ]
+        for r in folder_report["rescoped"]:
+            lines.append(
+                _("Folder '{0}' re-scoped from {1} to {2}.").format(
+                    r["foldername"], r["from_scope"], r["to_scope"]
+                )
+            )
+        for c in folder_report["copied"]:
+            lines.append(
+                _("Folder '{0}' copied into a new Instructor folder for {1}.").format(
+                    c["foldername"], c["instructor"]
+                )
+            )
+        lines.extend(folder_report["warnings"])
+        self.add_comment("Info", "<br>".join(lines))
 
         return {
             "chapters": n_chapters,
             "lessons": n_lessons,
             "scac": n_scac,
+            "folder_rescoped": folder_report["rescoped"],
+            "folder_copied": folder_report["copied"],
+            "folder_warnings": folder_report["warnings"],
         }
 
     def _validate_target_for_import(self, source_cs):
@@ -860,6 +929,9 @@ class CourseSchedule(Document):
             frappe.throw(
                 _("Source Course Schedule {0} does not exist.").format(source_cs)
             )
+        # The three roles read every Course Schedule today; the check is here
+        # so Phase 1's course scoping does not reopen the source (p006 §2.2b).
+        frappe.has_permission("Course Schedule", "read", doc=source_cs, throw=True)
 
         source_course = frappe.db.get_value("Course Schedule", source_cs, "course")
         if source_course != self.course:
@@ -1123,7 +1195,11 @@ _LESSON_COPYABLE_FIELDS = (
 )
 
 
-def _copy_chapters_and_lessons(source_cs_name, target_cs_name):
+def _new_folder_report():
+    return {"rescoped": [], "copied": [], "warnings": [], "_seen": {}}
+
+
+def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=None):
     """Clone Course Schedule Chapter + Course Lesson docs from source to target.
 
     All child-table refs (chapter refs on the CS, lesson refs on each new
@@ -1133,12 +1209,19 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name):
     inserts, and a subsequent parent save would race those writes. See
     ``import_template`` for the full rationale.
 
+    After each lesson is copied its folder references are remapped under the
+    p006 F2 scope rules (``_remap_lesson_folders``); ``folder_report``, when
+    given, collects every re-scope and copy for the import result.
+
     Returns ``(n_chapters, n_lessons, lesson_name_map)``. The map is
     ``{source_lesson_name: new_lesson_name}`` — used by the SCAC link remap.
     """
     n_chapters = 0
     n_lessons = 0
     lesson_name_map = {}
+    if folder_report is None:
+        folder_report = _new_folder_report()
+    folder_ctx = _FolderRemapContext(source_cs_name, target_cs_name, folder_report)
 
     chapter_refs = frappe.get_all(
         "Course Schedule Chapter Reference",
@@ -1181,6 +1264,7 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name):
             new_lesson.insert()
             n_lessons += 1
             lesson_name_map[src_lesson.name] = new_lesson.name
+            _remap_lesson_folders(new_lesson, folder_ctx)
 
             # Direct child insert into Course Schedule Chapter.lessons —
             # skips a chapter parent save.
@@ -1213,6 +1297,206 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name):
         chapter_ref.insert()
 
     return n_chapters, n_lessons, lesson_name_map
+
+
+class _FolderRemapContext:
+    """Per-import memo for the folder rules: the two sections' instructors and
+    the decision already taken for each referenced folder, so a folder embedded
+    in five lessons is re-scoped or copied once."""
+
+    def __init__(self, source_cs, target_cs, report):
+        from seminary.seminary.doctype.course_folder.course_folder import (
+            section_instructors,
+        )
+
+        self.source_cs = source_cs
+        self.target_cs = target_cs
+        self.target_instructors = section_instructors(target_cs)
+        self.report = report
+        self.decisions = report.setdefault("_seen", {})  # folder -> new docname
+
+
+def _remap_lesson_folders(lesson, ctx):
+    """Apply the §2.2b "rule on import" table to one copied lesson.
+
+    | referenced folder scope                 | rule                                   |
+    |-----------------------------------------|----------------------------------------|
+    | Course / School                         | keep the reference                     |
+    | Section, an instructor on both sections | re-scope to Instructor for that person |
+    | Section, different instructors          | re-scope to Course                     |
+    | Instructor, same professor on target    | keep the reference                     |
+    | Instructor, different professor         | copy into a new Instructor folder for  |
+    |                                         | the target's first instructor, rewrite |
+
+    Writes go through ``frappe.db.set_value`` on the freshly inserted lesson so
+    ``Course Lesson.on_update`` does not run a second time.
+    """
+    from seminary.seminary.course_pack import editorjs
+
+    update = {}
+    for field in ("content", "instructor_content"):
+        value = lesson.get(field)
+        refs = editorjs.scan_folder_refs(value)
+        if not refs:
+            continue
+        mapping = {}
+        for ref in refs:
+            key = ref["folder_ref"] or ref["folder"]
+            docname = ref["folder_ref"]
+            if not docname and ref["folder"]:
+                # A block that predates docname references: resolve by
+                # (foldername, this course), never site-wide.
+                course = frappe.db.get_value("Course Schedule", ctx.target_cs, "course")
+                docname = frappe.db.get_value(
+                    "Course Folder",
+                    {"foldername": ref["folder"], "course": course},
+                    "name",
+                )
+            if not docname:
+                continue
+            new = _decide_folder(docname, ctx)
+            if new:
+                mapping[key] = new
+        rewritten = editorjs.rewrite_folder_refs(value, mapping)
+        if rewritten != value:
+            update[field] = rewritten
+
+    for field in ("body", "instructor_notes"):
+        value = lesson.get(field)
+        refs = [n for d, n in editorjs.scan_body_refs(value) if d == "Course Folder"]
+        if not refs:
+            continue
+        mapping = {}
+        for name in refs:
+            docname = name if frappe.db.exists("Course Folder", name) else None
+            if not docname:
+                continue
+            new = _decide_folder(docname, ctx)
+            if new and new != name:
+                mapping[name] = new
+        if mapping:
+            update[field] = editorjs.rewrite_body_refs(value, mapping)
+
+    if update:
+        frappe.db.set_value("Course Lesson", lesson.name, update, update_modified=False)
+
+
+def _decide_folder(docname, ctx):
+    """Return the docname the lesson should reference after the rule ran
+    (the same one unless the folder was copied). Memoised per import."""
+    from seminary.seminary.doctype.course_folder import course_folder as cf
+
+    if docname in ctx.decisions:
+        return ctx.decisions[docname]
+
+    folder = frappe.get_doc("Course Folder", docname)
+    scope = folder.scope or "Course"
+    into = _("by template import into {0}").format(ctx.target_cs)
+    result = docname
+
+    if scope in ("Course", "School"):
+        cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+
+    elif scope == "Section":
+        common = [
+            i
+            for i in ctx.target_instructors
+            if i in set(cf.section_instructors(folder.course_schedule))
+        ]
+        if common:
+            cf.rescope(
+                docname,
+                "Instructor",
+                instructor=common[0],
+                note=into,
+                section=ctx.target_cs,
+            )
+            to_scope = "Instructor"
+        else:
+            cf.rescope(docname, "Course", note=into, section=ctx.target_cs)
+            to_scope = "Course"
+        ctx.report["rescoped"].append(
+            {
+                "folder": docname,
+                "foldername": folder.foldername,
+                "from_scope": "Section",
+                "to_scope": to_scope,
+                "instructor": common[0] if common else None,
+            }
+        )
+
+    elif scope == "Instructor":
+        if folder.instructor in ctx.target_instructors:
+            cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+        elif not ctx.target_instructors:
+            ctx.report["warnings"].append(
+                _(
+                    "Folder '{0}' belongs to another instructor and {1} has no "
+                    "instructor yet; the reference was kept. Assign an instructor "
+                    "and re-import, or share the folder."
+                ).format(folder.foldername, ctx.target_cs)
+            )
+            cf.log_activity(docname, "referenced", section=ctx.target_cs, note=into)
+        else:
+            result = _copy_instructor_folder(folder, ctx.target_instructors[0], ctx)
+
+    ctx.decisions[docname] = result
+    return result
+
+
+def _copy_instructor_folder(source, instructor, ctx):
+    """A new Instructor folder for `instructor` with the source's files copied;
+    the source professor keeps control of theirs."""
+    from seminary.seminary.doctype.course_folder import course_folder as cf
+
+    base = source.foldername
+    final, n = base, 2
+    while frappe.db.exists(
+        "Course Folder",
+        {
+            "course": source.course,
+            "scope": "Instructor",
+            "instructor": instructor,
+            "foldername": final,
+        },
+    ):
+        final = f"{base} ({n})"
+        n += 1
+    new = frappe.get_doc(
+        {
+            "doctype": "Course Folder",
+            "course": source.course,
+            "scope": "Instructor",
+            "instructor": instructor,
+            "foldername": final,
+        }
+    )
+    new.flags.ignore_permissions = True
+    new.insert()
+    n_files = cf.copy_file_tree(source.file_reference, new.file_reference, new.name)
+    into = _("by template import into {0}").format(ctx.target_cs)
+    cf.log_activity(
+        new.name,
+        "copied",
+        section=ctx.target_cs,
+        note=_("from {0} ({1} files) {2}").format(source.name, n_files, into),
+    )
+    cf.log_activity(
+        source.name,
+        "copied",
+        section=ctx.target_cs,
+        note=_("to {0} for {1} {2}").format(new.name, instructor, into),
+    )
+    ctx.report["copied"].append(
+        {
+            "source": source.name,
+            "folder": new.name,
+            "foldername": final,
+            "instructor": instructor,
+            "files": n_files,
+        }
+    )
+    return new.name
 
 
 _LESSON_SCAC_LINK_FIELDS = (

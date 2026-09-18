@@ -12,6 +12,9 @@ class StudentAttendanceTool(Document):
 
 @frappe.whitelist()
 def get_student_attendance_records(date=None, course_schedule=None):
+    from seminary.seminary.guards import require_course_staff
+
+    require_course_staff(course_schedule, include_registrar=True)
     student_list = []
     student_attendance_list = []
     student_list = frappe.get_all(

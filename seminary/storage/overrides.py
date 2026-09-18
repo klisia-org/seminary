@@ -13,8 +13,10 @@ email attachments, and anything in Frappe itself that reads a File. Overriding
 the controller covers all of them at once, including the frappe-internal readers
 we do not own and could not otherwise reach.
 
-The override is deliberately narrow: exactly one method, and it delegates to
-`super()` for every file that is not offloaded. On a site with no storage backend
+The storage half is deliberately narrow: one method, which delegates to
+`super()` for every file that is not offloaded. The three privacy methods below
+it belong to `seminary.seminary.file_policy` (p007 §8.2) and live here only
+because a doctype has one controller. On a site with no storage backend
 nothing is ever offloaded, so this class is a strict no-op there.
 """
 
@@ -26,6 +28,29 @@ from seminary.storage.backend import get_storage_backend, key_from_url
 
 
 class SeminaryFile(File):
+    # --- privacy policy (privatedocs/p007 §8.2) ------------------------------
+    # Both run *ahead* of upstream on purpose: `before_insert` writes the bytes
+    # to the public or private directory and `validate` moves them, so the
+    # decision has to be made before either happens. A `doc_events` hook would
+    # run after the controller and find the file already in place.
+
+    def before_insert(self):
+        from seminary.seminary import file_policy
+
+        file_policy.apply_on_insert(self)
+        super().before_insert()
+
+    def validate(self):
+        from seminary.seminary import file_policy
+
+        file_policy.check_on_save(self)
+        super().validate()
+
+    def is_downloadable(self):
+        from seminary.seminary import file_policy
+
+        return bool(super().is_downloadable()) or file_policy.intranet_readable(self)
+
     def get_content(self, encodings=None) -> bytes | str:
         """Return file bytes, fetching from object storage when offloaded.
 

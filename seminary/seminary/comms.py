@@ -31,6 +31,8 @@ import frappe
 from frappe import _
 from frappe.utils import add_to_date, cint, now_datetime
 
+from seminary.seminary.author_templates import render_author_text
+
 ADAPTER_HOOK = "communication_channel_providers"
 IN_APP_CHANNEL = "In-App"
 EMAIL_CHANNEL = "Email"
@@ -240,12 +242,12 @@ def send(
         ctx["doc"] = frappe.get_doc(reference_doctype, reference_name)
     ctx.update(context or {})
 
+    # Template Version text is author text (p006 F10): rendered in a sandbox
+    # with the context and Jinja filters, no Frappe globals.
     return send_message(
         channel=channel,
-        subject=(
-            frappe.render_template(version.subject, ctx) if version.subject else None
-        ),
-        message=frappe.render_template(version.body, ctx),
+        subject=render_author_text(version.subject, ctx) if version.subject else None,
+        message=render_author_text(version.body, ctx),
         person=person_doc,
         to_address=to_address,
         category=category,
@@ -489,10 +491,23 @@ def _publish_embedded_files(message):
         ) or frappe.db.get_value("File", {"file_url": file_url.split("?")[0]}, "name")
         if not name:
             continue
+        # p007 §2.6: only a File the sender may read is made public. System
+        # sends run as Administrator and keep working; a user cannot publish a
+        # private upload they could not open.
+        if frappe.session.user != "Administrator" and not frappe.has_permission(
+            "File", "read", name
+        ):
+            continue
         try:
             file_doc = frappe.get_doc("File", name)
             file_doc.is_private = 0
-            file_doc.save(ignore_permissions=True)
+            # p007 §8.2: the recipient's mail client has no session, so this
+            # is one of the two server paths allowed to publish a file.
+            frappe.flags.seminary_public_file = True
+            try:
+                file_doc.save(ignore_permissions=True)
+            finally:
+                frappe.flags.seminary_public_file = False
             message = message.replace(file_url, file_doc.file_url)
         except Exception:
             frappe.log_error(
@@ -1826,10 +1841,14 @@ def send_portal_message(
 
     if isinstance(attachments, str):
         attachments = json.loads(attachments)
-    attachments = attachments or []
+    # Only the sender's own uploads travel with the message (p007 §2.6): a
+    # file_url naming someone else's private File is dropped, not attached.
+    attachments = _own_attachments(attachments or [])
     attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
 
-    body = frappe.utils.sanitize_html(message)
+    # always_sanitize: skip the JSON/no-tag short-circuit so a comment-wrapped
+    # payload cannot slip past the parser (p006 F13).
+    body = frappe.utils.sanitize_html(message, always_sanitize=True)
     body = _privatize_embedded_files(body)  # belt-and-suspenders on inline images
     body += _attachment_html(attachments)
     sent = 0
@@ -1847,6 +1866,21 @@ def send_portal_message(
         ):
             sent += 1
     return {"sent": sent}
+
+
+def _own_attachments(attachments):
+    from seminary.storage.backend import normalize_file_url
+
+    kept = []
+    for a in attachments:
+        url = a.get("file_url")
+        if not url:
+            continue
+        base = unquote(normalize_file_url(url))
+        owner = frappe.db.get_value("File", {"file_url": base}, "owner")
+        if owner == frappe.session.user:
+            kept.append(a)
+    return kept
 
 
 def _attachment_html(attachments):
@@ -2247,7 +2281,8 @@ def _match_person_by_address(channel, address):
 def get_person_timeline(person, limit=50):
     """The CRM-style conversation feed for a Person (desk form, ADR 044)."""
     frappe.has_permission("Communication Log", "read", throw=True)
-    return frappe.get_all(
+    # get_list, not get_all: the Communication Log row hook applies (p007 §2.6).
+    return frappe.get_list(
         "Communication Log",
         filters={"person": person},
         fields=[

@@ -70,7 +70,9 @@
    "default": "0",
    "fieldname": "is_scorm_package",
    "fieldtype": "Check",
-   "label": "Is SCORM Package"
+   "label": "Is SCORM Package",
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "depends_on": "is_scorm_package",
@@ -83,7 +85,9 @@
    "depends_on": "is_scorm_package",
    "fieldname": "scorm_package_path",
    "fieldtype": "Code",
-   "label": "SCORM Package Path"
+   "label": "SCORM Package Path",
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "depends_on": "is_scorm_package",
@@ -116,7 +120,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-28 21:00:00.000000",
+ "modified": "2026-09-17 11:39:05.583146",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule Chapter",
@@ -160,16 +164,6 @@
    "write": 1
   },
   {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1,
-   "write": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -180,6 +174,40 @@
    "role": "Instructor",
    "share": 1,
    "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

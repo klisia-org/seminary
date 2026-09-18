@@ -121,6 +121,7 @@
    "hidden": 1,
    "label": "Request Token",
    "no_copy": 1,
+   "permlevel": 1,
    "read_only": 1,
    "unique": 1
   },
@@ -157,13 +158,15 @@
    "allow_on_submit": 1,
    "fieldname": "letter_body",
    "fieldtype": "Text Editor",
-   "label": "Letter Body"
+   "label": "Letter Body",
+   "permlevel": 1
   },
   {
    "allow_on_submit": 1,
    "fieldname": "letter_attachment",
    "fieldtype": "Attach",
-   "label": "Letter Attachment"
+   "label": "Letter Attachment",
+   "permlevel": 1
   },
   {
    "collapsible": 1,
@@ -183,7 +186,8 @@
    "allow_on_submit": 1,
    "fieldname": "review_notes",
    "fieldtype": "Small Text",
-   "label": "Review Notes"
+   "label": "Review Notes",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_review",
@@ -276,15 +280,6 @@
    "write": 1
   },
   {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1
-  },
-  {
    "amend": 1,
    "cancel": 1,
    "create": 1,
@@ -296,6 +291,40 @@
    "role": "Seminary Manager",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Registrar",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

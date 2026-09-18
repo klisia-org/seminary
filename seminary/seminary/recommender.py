@@ -8,6 +8,8 @@ token without requiring a Frappe login and let the recommender retrieve the
 request details and submit their letter.
 """
 
+import hmac
+
 import frappe
 from frappe import _
 from frappe.utils import getdate, now_datetime, today
@@ -92,7 +94,7 @@ def submit_letter(name, token, body, attachment_url=None):
         frappe.throw(_("Letter body is required."))
 
     doc.letter_body = body
-    if attachment_url:
+    if attachment_url and _is_own_attachment(doc.name, attachment_url):
         doc.letter_attachment = attachment_url
     doc.submitted_on = now_datetime()
     doc.save(ignore_permissions=True)
@@ -109,20 +111,46 @@ def submit_letter(name, token, body, attachment_url=None):
     return {"name": doc.name, "submitted_on": str(doc.submitted_on)}
 
 
+def _is_own_attachment(name, file_url):
+    """Only a File that `upload_attachment` attached to this very letter may be
+    recorded as its attachment; any other URL is ignored rather than linked."""
+    return bool(
+        frappe.db.exists(
+            "File",
+            {
+                "file_url": file_url,
+                "attached_to_doctype": "Recommendation Letter",
+                "attached_to_name": name,
+            },
+        )
+    )
+
+
 def _validate_token(name, token):
+    """Authenticate the recommender's link. A missing letter, a wrong token and
+    an expired token all fail with the same message and without loading the
+    document, so the endpoint cannot be used to probe which letters exist."""
+    invalid = _("Invalid or expired link.")
     if not name or not token:
-        frappe.throw(_("Invalid link."), frappe.PermissionError)
+        frappe.throw(invalid, frappe.PermissionError)
+
+    row = frappe.db.get_value(
+        "Recommendation Letter",
+        name,
+        ["request_token", "token_expires_on"],
+        as_dict=True,
+    )
+    if (
+        not row
+        or not row.request_token
+        or not hmac.compare_digest(str(row.request_token), str(token))
+    ):
+        frappe.throw(invalid, frappe.PermissionError)
+
+    if row.token_expires_on and getdate(row.token_expires_on) < getdate(today()):
+        frappe.throw(invalid, frappe.PermissionError)
 
     doc = frappe.get_doc("Recommendation Letter", name)
-
-    if not doc.request_token or doc.request_token != token:
-        frappe.throw(_("Invalid or expired link."), frappe.PermissionError)
-
-    if doc.token_expires_on and getdate(doc.token_expires_on) < getdate(today()):
-        frappe.throw(
-            _("This link has expired. Please request a new one."),
-            frappe.PermissionError,
-        )
 
     if doc.workflow_state == "Approved" or doc.workflow_state == "Rejected":
         frappe.throw(

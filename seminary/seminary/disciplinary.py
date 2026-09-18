@@ -405,12 +405,14 @@ def on_incident_update(doc, method=None):
     if existing:
         return
 
+    # Internal body: this path is authorised by the disciplinary flow itself,
+    # not by the registrar-only API wrapper (p006 F6).
     from seminary.seminary.doctype.withdrawal_request.withdrawal_request import (
-        initiate_program_separation,
+        _initiate_program_separation,
     )
 
     reason_label = frappe.db.get_value("Disciplinary Reason", doc.reason, "reason")
-    request = initiate_program_separation(
+    request = _initiate_program_separation(
         program_enrollment=doc.pe,
         withdrawal_reason=_dismissal_withdrawal_reason(),
         effective_date=doc.incident_date,

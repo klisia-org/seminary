@@ -119,12 +119,14 @@
   {
    "fieldname": "score_out_of",
    "fieldtype": "Float",
-   "label": "Max Possible Score"
+   "label": "Max Possible Score",
+   "permlevel": 1
   },
   {
    "fieldname": "percentage",
    "fieldtype": "Float",
-   "label": "Percentage"
+   "label": "Percentage",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_mqxy",
@@ -133,25 +135,29 @@
   {
    "fieldname": "fudge_points",
    "fieldtype": "Float",
-   "label": "Fudge Points"
+   "label": "Fudge Points",
+   "permlevel": 1
   },
   {
    "default": "0",
    "fieldname": "extra_credit",
    "fieldtype": "Check",
-   "label": "Is Extra Credit"
+   "label": "Is Extra Credit",
+   "permlevel": 1
   },
   {
    "default": "Not Graded",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Not Graded\nGraded"
+   "options": "Not Graded\nGraded",
+   "permlevel": 1
   },
   {
    "fieldname": "comments",
    "fieldtype": "Text Editor",
-   "label": "Comments"
+   "label": "Comments",
+   "permlevel": 1
   },
   {
    "fieldname": "original_attachment",
@@ -168,13 +174,15 @@
    "fieldname": "grade",
    "fieldtype": "Float",
    "label": "Grade",
-   "non_negative": 1
+   "non_negative": 1,
+   "permlevel": 1
   },
   {
    "fieldname": "grading_comments",
    "fieldtype": "Table",
    "label": "Grading Comments",
-   "options": "Grading Comment"
+   "options": "Grading Comment",
+   "permlevel": 1
   }
  ],
  "grid_page_length": 50,
@@ -239,23 +247,51 @@
    "create": 1,
    "email": 1,
    "export": 1,
+   "permlevel": 0,
    "print": 1,
    "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "permlevel": 0,
+   "print": 1,
    "report": 1,
    "role": "Student",
    "share": 1,
    "write": 1
   },
   {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "if_owner": 1,
-   "print": 1,
+   "permlevel": 1,
    "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1,
+   "role": "Student"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

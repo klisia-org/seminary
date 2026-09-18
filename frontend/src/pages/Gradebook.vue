@@ -215,13 +215,13 @@ const sendingGrades = ref(false);
 const selectedRosters = ref([]);
 const sendingSelected = ref(false);
 
-// onMounted(() => {
-//   if (!user.data?.is_moderator && !user.data?.is_instructor) {
-//     window.location.href = '/login'
-//   }
-//   capture('gradebook_opened')
-//   window.addEventListener('keydown', keyboardShortcut)
-// })
+// UX only: the server refuses get_gradebook for anyone who is not course
+// staff (p007 §2.4); this just spares a student the empty page.
+onMounted(() => {
+  if (user.data?.name && !user.data?.is_moderator && !user.data?.is_instructor) {
+    window.location.href = '/courses'
+  }
+})
 
 const course = createResource({
   url: 'seminary.seminary.utils.get_course_details',

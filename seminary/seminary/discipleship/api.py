@@ -998,7 +998,7 @@ def cohort_seed_preview(course_schedule):
         student_person,
         active_cohort_of_type,
     )
-    from seminary.seminary.utils import get_student_groups
+    from seminary.seminary.utils import _student_groups as get_student_groups
 
     _require_course_staff(course_schedule)
     _course, cohort_type = course_cohort_binding(course_schedule)
@@ -1059,7 +1059,7 @@ def cohort_placement_status(course_schedule):
         active_cohort_of_type,
         pending_cohort_of_type,
     )
-    from seminary.seminary.utils import get_roster
+    from seminary.seminary.utils import _roster as get_roster
 
     _require_course_staff(course_schedule)
     _course, cohort_type = course_cohort_binding(course_schedule)
@@ -1116,7 +1116,7 @@ def create_cohorts_from_student_groups(
         cohorts_persist,
         live_cei_for_student_course,
     )
-    from seminary.seminary.utils import get_student_groups
+    from seminary.seminary.utils import _student_groups as get_student_groups
 
     _require_course_staff(course_schedule)
     course, cohort_type = course_cohort_binding(course_schedule)

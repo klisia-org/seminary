@@ -282,7 +282,7 @@ const useRecording = async () => {
 	})
 	try {
 		const doc = await uploader.upload(file, {
-			private: false,
+			private: true,
 			folder: 'Home/Attachments',
 		})
 		props.onRecorded({ file_url: doc.file_url, file_type: recordedExt })
