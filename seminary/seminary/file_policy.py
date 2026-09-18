@@ -126,6 +126,13 @@ EMBEDDED_FILE_FIELDS = {
         "children": (),
         "host": lambda doc: ("Course Schedule", doc.get("course_sc")),
     },
+    # A graded discussion is read by the whole section, attachments included,
+    # while the submission itself is readable by its author and the staff only.
+    "Discussion Submission": {
+        "fields": ("original_post", "original_attachment"),
+        "children": (("replies", "reply"), ("replies", "reply_attach")),
+        "host": lambda doc: ("Course Schedule", doc.get("coursesc")),
+    },
     "Exam Submission": {
         "fields": (),
         "children": (("result", "answer"),),
@@ -505,6 +512,8 @@ def find_urls(text) -> set:
     found = set()
     if not text or not isinstance(text, str):
         return found
+    if _is_file_address(text.strip()) and "<" not in text and "\n" not in text:
+        return {text.strip()}  # the value of an Attach field
 
     def walk(node):
         if isinstance(node, dict):

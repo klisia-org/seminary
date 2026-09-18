@@ -1560,4 +1560,68 @@ if lesson_a:
         )
 
 
+# -------------------------------------------- graded discussion replies (§8.8)
+DS_A, DS_B = FX["DS_A"], FX["DS_B"]
+ds_b_cs = gv("Discussion Submission", DS_B, "coursesc")
+ds_a_cs = gv("Discussion Submission", DS_A, "coursesc")
+grade_before = gv("Discussion Submission", DS_B, "grade")
+replier, outsider = ("gta", "stuA") if ds_b_cs == CS_B else ("stuA", "stuB")
+r = check(
+    f"8.8 {replier} (on the section) replies to a classmate's post",
+    replier,
+    "seminary.seminary.api.reply_to_discussion_submission",
+    {"submission": DS_B, "reply": "<p>p007 reply<script>alert(1)</script></p>"},
+    200,
+    after=lambda: (
+        gv("Discussion Submission", DS_B, "grade") == grade_before,
+        "grade untouched",
+    ),
+)
+row = r.json().get("message") if r is not None and r.status_code == 200 else None
+if row:
+    check(
+        "8.8 the row is the session user's, script stripped",
+        "admin",
+        "frappe.client.get_value",
+        {
+            "doctype": "Discussion Submission Replies",
+            "filters": {"name": row},
+            "fieldname": ["member", "reply"],
+            "parent": "Discussion Submission",
+        },
+        ok_json(
+            lambda m: m.get("member") == USERS[replier]
+            and "script" not in m.get("reply", "")
+        ),
+    )
+check(
+    f"8.8 {outsider} (not on that section) cannot reply",
+    outsider,
+    "seminary.seminary.api.reply_to_discussion_submission",
+    {"submission": DS_B, "reply": "<p>nope</p>"},
+    is_403,
+)
+check(
+    "8.8 the frappe.client child insert stays shut",
+    replier,
+    "frappe.client.insert",
+    {
+        "doc": {
+            "doctype": "Discussion Submission Replies",
+            "parent": DS_B,
+            "parenttype": "Discussion Submission",
+            "parentfield": "replies",
+            "reply": "x",
+        }
+    },
+    is_403,
+)
+if row:
+    call(
+        "admin",
+        "frappe.client.delete",
+        {"doctype": "Discussion Submission Replies", "name": row},
+    )
+
+
 sys.exit(summary())

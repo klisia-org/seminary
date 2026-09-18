@@ -237,6 +237,63 @@ def get_discussion_submissions(
 
 
 @frappe.whitelist()
+def reply_to_discussion_submission(submission, reply, reply_attach=None):
+    """Reply to a classmate's post in a graded Discussion Activity.
+
+    The portal used to insert the child row with `frappe.client.insert`, which
+    saves the *parent* and so needs write on the classmate's submission. p007
+    §2.1 took that away (a student writes only their own submission), so the
+    reply is written here: anyone who may open the section may reply, the
+    author fields come from the session and not from the request, and the row
+    is inserted on its own so the classmate's grade fields are never part of
+    the save.
+    """
+    row = frappe.db.get_value(
+        "Discussion Submission", submission, ["name", "coursesc"], as_dict=True
+    )
+    if not row:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    require_enrolled(row.coursesc)
+
+    reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
+    if not frappe.utils.strip_html(reply).strip() and not reply_attach:
+        frappe.throw(_("Reply cannot be empty"))
+
+    from seminary.seminary import file_policy
+    from seminary.seminary.guards import current_student
+
+    user = frappe.session.user
+    host = ("Course Schedule", row.coursesc)
+    if reply_attach:
+        # Classmates read the attachment through the section (p007 §8.2); a
+        # URL the sender cannot read themselves is not adopted.
+        reply_attach = file_policy.adopt(reply_attach, host)
+    for raw in file_policy.find_urls(reply):
+        file_policy.adopt(file_policy._lookup_url(raw), host)
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Discussion Submission Replies",
+            "parent": row.name,
+            "parenttype": "Discussion Submission",
+            "parentfield": "replies",
+            "idx": frappe.db.count(
+                "Discussion Submission Replies", {"parent": row.name}
+            )
+            + 1,
+            "member": user,
+            "student": current_student(user),
+            "member_name": frappe.db.get_value("User", user, "full_name"),
+            "reply": reply,
+            "reply_attach": reply_attach or None,
+            "reply_dt": frappe.utils.now_datetime(),
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
 def get_user_discussion_submission(
     course_name: str | None = None,
     discussion_id: str | None = None,

@@ -45,6 +45,7 @@ GUEST_ALLOWED = {
 
 STUDENT_ALLOWED = {
     # lesson discussions: whoever reads the lesson posts; own-reply rules inside
+    "seminary.seminary.api.reply_to_discussion_submission",
     "seminary.seminary.utils.create_discussion_topic",
     "seminary.seminary.utils.add_discussion_reply",
     "seminary.seminary.utils.edit_discussion_reply",
