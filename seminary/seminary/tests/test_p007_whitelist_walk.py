@@ -44,6 +44,11 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # lesson discussions: whoever reads the lesson posts; own-reply rules inside
+    "seminary.seminary.utils.create_discussion_topic",
+    "seminary.seminary.utils.add_discussion_reply",
+    "seminary.seminary.utils.edit_discussion_reply",
+    "seminary.seminary.utils.delete_discussion_reply",
     # api.py — session-scoped, no target, or scoped by p007 §2.5
     "seminary.seminary.api.get_student_group",
     "seminary.seminary.api.get_student_groups_simple",

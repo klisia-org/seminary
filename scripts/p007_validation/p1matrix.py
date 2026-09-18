@@ -1444,4 +1444,120 @@ for name in filter(None, PROBES):
     call("admin", "frappe.client.delete", {"doctype": "File", "name": name})
 
 
+# ------------------------------------------------ lesson discussion writes (§8.7)
+lesson_a = gv("Course Lesson", {"course_sc": CS}, "name")
+if lesson_a:
+    r = check(
+        "8.7 stuA opens a topic on a lesson of their section",
+        "stuA",
+        "seminary.seminary.utils.create_discussion_topic",
+        {
+            "doctype": "Course Lesson",
+            "docname": lesson_a,
+            "title": "p007 topic",
+            "reply": "<p>first</p>",
+        },
+        200,
+    )
+    topic = r.json().get("message") if r is not None and r.status_code == 200 else None
+    check(
+        "8.7 stuB (not on CS) cannot open a topic there",
+        "stuB",
+        "seminary.seminary.utils.create_discussion_topic",
+        {"doctype": "Course Lesson", "docname": lesson_a, "title": "nope"},
+        is_403,
+    )
+    if topic:
+        r = check(
+            "8.7 stuA replies; script is stripped",
+            "stuA",
+            "seminary.seminary.utils.add_discussion_reply",
+            {"topic": topic, "reply": "<p>hello<script>alert(1)</script></p>"},
+            200,
+        )
+        reply = (
+            r.json().get("message") if r is not None and r.status_code == 200 else None
+        )
+        check(
+            "8.7 stuB cannot reply in a section they are not on",
+            "stuB",
+            "seminary.seminary.utils.add_discussion_reply",
+            {"topic": topic, "reply": "<p>x</p>"},
+            is_403,
+        )
+        check(
+            "8.7 the old frappe.client path stays shut",
+            "stuA",
+            "frappe.client.insert",
+            {"doc": {"doctype": "Discussion Reply", "topic": topic, "reply": "x"}},
+            is_403,
+        )
+        if reply:
+            check(
+                "8.7 stored reply carries no script",
+                "admin",
+                "frappe.client.get_value",
+                {
+                    "doctype": "Discussion Reply",
+                    "filters": {"name": reply},
+                    "fieldname": "reply",
+                },
+                ok_json(
+                    lambda m: "script" not in (m.get("reply") or "")
+                    and "hello" in (m.get("reply") or "")
+                ),
+            )
+            check(
+                "8.7 gta (staff on CS, not the author) cannot edit it",
+                "gta",
+                "seminary.seminary.utils.edit_discussion_reply",
+                {"name": reply, "reply": "<p>edited</p>"},
+                is_403,
+            )
+            check(
+                "8.7 stuA edits their own reply",
+                "stuA",
+                "seminary.seminary.utils.edit_discussion_reply",
+                {"name": reply, "reply": "<p>edited</p>"},
+                200,
+            )
+            check(
+                "8.7 instr2 (not on CS) cannot delete it",
+                "instr2",
+                "seminary.seminary.utils.delete_discussion_reply",
+                {"name": reply},
+                is_403,
+            )
+            check(
+                "8.7 gta (staff on CS) removes it",
+                "gta",
+                "seminary.seminary.utils.delete_discussion_reply",
+                {"name": reply},
+                200,
+            )
+        for n in [
+            x["name"]
+            for x in (
+                call(
+                    "admin",
+                    "frappe.client.get_list",
+                    {"doctype": "Discussion Reply", "filters": {"topic": topic}},
+                )
+                .json()
+                .get("message")
+                or []
+            )
+        ]:
+            call(
+                "admin",
+                "frappe.client.delete",
+                {"doctype": "Discussion Reply", "name": n},
+            )
+        call(
+            "admin",
+            "frappe.client.delete",
+            {"doctype": "Discussion Topic", "name": topic},
+        )
+
+
 sys.exit(summary())

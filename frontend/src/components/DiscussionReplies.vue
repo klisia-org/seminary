@@ -153,14 +153,11 @@ const replies = createResource({
 })
 
 const newReplyResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.utils.add_discussion_reply',
 	makeParams(values) {
 		return {
-			doc: {
-				doctype: 'Discussion Reply',
-				reply: newReply.value,
-				topic: props.topic.name,
-			},
+			reply: newReply.value,
+			topic: props.topic.name,
 		}
 	},
 })
@@ -209,13 +206,11 @@ const postReply = () => {
 }
 
 const editReplyResource = createResource({
-	url: 'frappe.client.set_value',
+	url: 'seminary.seminary.utils.edit_discussion_reply',
 	makeParams(values) {
 		return {
-			doctype: 'Discussion Reply',
 			name: values.name,
-			fieldname: 'reply',
-			value: values.reply,
+			reply: values.reply,
 		}
 	},
 })
@@ -241,10 +236,9 @@ const postEdited = (reply) => {
 }
 
 const deleteReplyResource = createResource({
-	url: 'frappe.client.delete',
+	url: 'seminary.seminary.utils.delete_discussion_reply',
 	makeParams(values) {
 		return {
-			doctype: 'Discussion Reply',
 			name: values.name,
 		}
 	},

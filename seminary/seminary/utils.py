@@ -2283,7 +2283,7 @@ def get_discussion_topics(doctype, docname, single_thread):
         if topic:
             return frappe.db.get_value("Discussion Topic", topic, ["name"], as_dict=1)
         else:
-            return create_discussion_topic(doctype, docname)
+            return _create_single_topic(doctype, docname)
     else:
         topics = frappe.get_all(
             "Discussion Topic",
@@ -2303,7 +2303,7 @@ def get_discussion_topics(doctype, docname, single_thread):
     return topics
 
 
-def create_discussion_topic(doctype, docname):
+def _create_single_topic(doctype, docname):
     doc = frappe.new_doc("Discussion Topic")
     doc.update(
         {
@@ -2371,6 +2371,96 @@ def ensure_single_topic(doctype, docname, title):
     print("Creating new topic:", new_topic)
     new_topic.insert(ignore_permissions=True)
     return new_topic
+
+
+def _topic_reference(topic):
+    ref = frappe.db.get_value(
+        "Discussion Topic", topic, ["reference_doctype", "reference_docname"]
+    )
+    if not ref:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    return ref
+
+
+def _topic_course(topic):
+    doctype, docname = _topic_reference(topic)
+    if doctype == "Course Lesson":
+        return frappe.db.get_value("Course Lesson", docname, "course_sc")
+    if doctype == "Course Schedule":
+        return docname
+    return None
+
+
+def _clean_reply(reply):
+    reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
+    if not frappe.utils.strip_html(reply).strip() and "<img" not in reply:
+        frappe.throw(_("Reply cannot be empty"))
+    return reply
+
+
+# `Discussion Topic` / `Discussion Reply` are Frappe's own doctypes and only a
+# System Manager holds a DocPerm on them. The portal used to write them through
+# `frappe.client.insert/set_value/delete`, which a student can never pass, and
+# granting the roles a DocPerm would open every thread in the school to
+# `frappe.client.*` with no row rule. So the writes are endpoints: whoever may
+# read the lesson may post in its discussion, a reply is edited by its author,
+# and removed by its author or the section's staff.
+@frappe.whitelist()
+def create_discussion_topic(doctype, docname, title, reply=None):
+    _require_reference_read(doctype, docname)
+    title = frappe.utils.strip_html(title or "").strip()
+    if not title:
+        frappe.throw(_("Title cannot be empty."))
+    topic = frappe.get_doc(
+        {
+            "doctype": "Discussion Topic",
+            "reference_doctype": doctype,
+            "reference_docname": docname,
+            "title": title,
+        }
+    )
+    topic.insert(ignore_permissions=True)
+    if reply:
+        add_discussion_reply(topic.name, reply)
+    return topic.name
+
+
+@frappe.whitelist()
+def add_discussion_reply(topic, reply):
+    _require_reference_read(*_topic_reference(topic))
+    doc = frappe.get_doc(
+        {"doctype": "Discussion Reply", "topic": topic, "reply": _clean_reply(reply)}
+    )
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
+def edit_discussion_reply(name, reply):
+    row = frappe.db.get_value(
+        "Discussion Reply", name, ["owner", "topic"], as_dict=True
+    )
+    if not row or row.owner != frappe.session.user:
+        frappe.throw(_("You can only edit your own reply."), frappe.PermissionError)
+    _require_reference_read(*_topic_reference(row.topic))
+    doc = frappe.get_doc("Discussion Reply", name)
+    doc.reply = _clean_reply(reply)
+    doc.save(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
+def delete_discussion_reply(name):
+    row = frappe.db.get_value(
+        "Discussion Reply", name, ["owner", "topic"], as_dict=True
+    )
+    if not row:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if row.owner != frappe.session.user and not is_course_staff(
+        _topic_course(row.topic)
+    ):
+        frappe.throw(_("You can only delete your own reply."), frappe.PermissionError)
+    frappe.delete_doc("Discussion Reply", name, ignore_permissions=True)
 
 
 def _require_reference_read(doctype, docname):
