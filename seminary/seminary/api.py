@@ -968,6 +968,7 @@ def get_user_info():
     user.is_evaluator = "Instructor" in _roles
     user.is_student = "Student" in _roles
     user.is_alumni = "Alumni" in user.roles
+    user.is_registrar = "Registrar" in user.roles
     user.is_system_manager = "System Manager" in user.roles
     # Partner portal (ADR 053): the org this user manages, if any.
     user.is_partner = "Partner" in _roles
