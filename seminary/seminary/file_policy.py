@@ -19,7 +19,9 @@ through to the read permission of the document the File is attached to. So:
 
 One line in `PUBLIC_FILE_FIELDS`: `("Course", "hero_image"): None,`. The value is
 `None` for "always may be public", or a predicate of the host document's name.
-`"*"` as the fieldname covers every Attach field of the doctype. Nothing else has
+`"*"` as the fieldname covers every Attach field of the doctype. A rich-text
+field (Text Editor and kin) can be listed too: the images pasted into it are
+published with the host and the stored HTML is rewritten to their new URL. Nothing else has
 to change: the wildcard `on_update` hook keeps the File in step with its host.
 """
 
@@ -79,6 +81,11 @@ PUBLIC_FILE_FIELDS = {
     ("Partner Organization", "image"): None,
     ("Program", "hero_image"): _program_published,
     ("Program", "image_blurb"): _program_published,
+    # Rich text shown on /programs: images pasted into it follow the program.
+    ("Program", "blurb"): _program_published,
+    ("Program", "program_description"): _program_published,
+    ("Program", "program_requirements"): _program_published,
+    ("Program", "duration_txt"): _program_published,
     ("Person", "image"): person_photo_is_public,
     ("Instructor", "profileimage"): _instructor_photo_is_public,
 }
@@ -371,6 +378,56 @@ def _is_file_url(value) -> bool:
     return bool(value) and bool(FILE_URL_RE.match(value))
 
 
+def _other_address(url):
+    if url.startswith("/private/files/"):
+        return url[len("/private") :]
+    if url.startswith("/files/"):
+        return "/private" + url
+    return None
+
+
+RICH_TEXT_FIELDTYPES = ("Text Editor", "HTML Editor", "Markdown Editor")
+
+
+def _sync_rich_text(doctype, name, field, value, public):
+    """A registered rich-text field: the images pasted into it follow the host.
+
+    Only Files attached to this very document are touched. Frappe attaches a
+    pasted image to the document it was pasted into, so that is exactly the set
+    the editor put there; a URL somebody typed by hand, pointing at a file that
+    hangs elsewhere, is not published by being mentioned on a public page."""
+    if not value or not isinstance(value, str):
+        return
+    content = value
+    for match in set(FILE_URL_RE.findall(value)):
+        url = unquote(normalize_file_url(match))
+        rows = [
+            r
+            for r in _rows_for(url)
+            if (r.attached_to_doctype, r.attached_to_name) == (doctype, name)
+        ]
+        if not rows:
+            # A stale URL: the file was flipped after this HTML was loaded into
+            # a form, and the form saved the old address back. Point it at
+            # where the file lives now.
+            twin = _other_address(url)
+            if twin and any(
+                (r.attached_to_doctype, r.attached_to_name) == (doctype, name)
+                for r in _rows_for(twin)
+            ):
+                content = content.replace(match, set_privacy(twin, public))
+            continue
+        new = set_privacy(url, public, host=(doctype, name))
+        if new != url:
+            # `match` still carries Frappe's `?fid=` suffix on a private URL.
+            content = content.replace(match, new)
+    if content != value:
+        if frappe.get_meta(doctype).issingle:
+            frappe.db.set_single_value(doctype, field, content)
+        else:
+            frappe.db.set_value(doctype, name, field, content, update_modified=False)
+
+
 def sync_public_state(doctype, name):
     """Bring the Files on a host's registered fields in line with the registry:
     public while the predicate holds, private when it stops holding."""
@@ -396,9 +453,18 @@ def sync_public_state(doctype, name):
                 if meta.issingle
                 else frappe.db.get_value(doctype, name, f)
             )
+            public = predicate is None or bool(predicate(name))
+            if meta.get_field(f).fieldtype in RICH_TEXT_FIELDTYPES:
+                try:
+                    _sync_rich_text(doctype, name, f, value, public)
+                except Exception:
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        f"file_policy: could not sync {doctype} {name}.{f}",
+                    )
+                continue
             if not _is_file_url(value):
                 continue
-            public = predicate is None or bool(predicate(name))
             try:
                 set_privacy(value, public, host=(doctype, name, f))
             except Exception:
@@ -515,6 +581,30 @@ def adopt_embedded(doc, source_host=None):
 # --------------------------------------------------------------------------- hooks
 
 
+def _refresh_registered_fields(doc):
+    """A flip renames the file, so the value just saved may be out of date.
+    Put the stored value back on the document: the save response is what the
+    Desk form shows next, and what it would save back."""
+    meta = doc.meta
+    for dt, field in PUBLIC_FILE_FIELDS:
+        if dt != doc.doctype or field == "*" or not meta.has_field(field):
+            continue
+        stored = (
+            frappe.db.get_single_value(dt, field)
+            if meta.issingle
+            else frappe.db.get_value(dt, doc.name, field)
+        )
+        if stored != doc.get(field):
+            doc.set(field, stored)
+    # Frappe's own flip writes the new URL onto the host with a fresh
+    # `modified`, which would make the form the user is looking at stale
+    # ("modified after you have opened it") on their very next save.
+    if not meta.issingle and doc.get("modified"):
+        frappe.db.set_value(
+            doc.doctype, doc.name, "modified", doc.modified, update_modified=False
+        )
+
+
 def on_host_update(doc, method=None):
     """Wildcard `on_update`. Three dict misses for every other doctype."""
     doctype = doc.doctype
@@ -522,6 +612,7 @@ def on_host_update(doc, method=None):
         adopt_embedded(doc, source_host=frappe.flags.seminary_adopt_from)
     if doctype in _host_doctypes():
         sync_public_state(doctype, doc.name)
+        _refresh_registered_fields(doc)
     targets = DEPENDENTS.get(doctype)
     if targets:
         for dt, dn in targets(doc):

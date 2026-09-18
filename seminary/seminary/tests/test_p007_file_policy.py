@@ -186,6 +186,52 @@ class TestP007FilePolicy(IntegrationTestCase):
                 {"published": was.published, "hero_image": was.hero_image},
             )
 
+    def test_images_pasted_into_a_registered_rich_text_field_follow_the_host(self):
+        program = frappe.get_all("Program", pluck="name", limit=1)
+        if not program:
+            self.skipTest("no Program on the test site")
+        program = program[0]
+        was = frappe.db.get_value(
+            "Program", program, ["published", "program_description"], as_dict=True
+        )
+        mine = _file(
+            is_private=1, attached_to_doctype="Program", attached_to_name=program
+        )
+        foreign = _file(
+            is_private=1, attached_to_doctype="Student", attached_to_name=self.stu
+        )
+        html = (
+            f'<p><img src="{mine.file_url}?fid={mine.name}">'
+            f'<img src="{foreign.file_url}"></p>'
+        )
+        try:
+            frappe.db.set_value(
+                "Program", program, {"program_description": html, "published": 1}
+            )
+            file_policy.sync_public_state("Program", program)
+            frappe.db.commit()
+            stored = frappe.db.get_value("Program", program, "program_description")
+            public_url = mine.file_url.replace("/private/files/", "/files/")
+            self.assertIn(f'src="{public_url}"', stored)
+            # a private file that hangs elsewhere is not published by mention
+            self.assertIn(foreign.file_url, stored)
+            self.assertEqual(frappe.db.get_value("File", foreign.name, "is_private"), 1)
+
+            frappe.db.set_value("Program", program, "published", 0)
+            file_policy.sync_public_state("Program", program)
+            frappe.db.commit()
+            stored = frappe.db.get_value("Program", program, "program_description")
+            self.assertIn(mine.file_url, stored)
+        finally:
+            frappe.db.set_value(
+                "Program",
+                program,
+                {
+                    "published": was.published,
+                    "program_description": was.program_description,
+                },
+            )
+
     def test_person_photo_rule(self):
         self.assertFalse(file_policy.person_photo_is_public(None))
         self.assertFalse(file_policy.person_photo_is_public("ZZT-no-such-person"))
