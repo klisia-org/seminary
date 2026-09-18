@@ -203,10 +203,26 @@ const handleCoursesSuccess = (response) => {
   });
 }
 
+// A chair or manager who holds the Instructor role but teaches nothing would
+// land on an empty "My Courses". Fall through to "All Courses" once.
+let scopeFallbackDone = false
 const instructorCourses = createResource({
   url: 'seminary.seminary.utils.get_courses',
   makeParams: () => ({ page_length: 1000, scope: courseScope.value }),
-  onSuccess: handleCoursesSuccess,
+  onSuccess: (data) => {
+    if (
+      !scopeFallbackDone &&
+      courseScope.value === 'mine' &&
+      canListAllCourses.value &&
+      !(data || []).length
+    ) {
+      scopeFallbackDone = true
+      courseScope.value = 'all'
+      return
+    }
+    scopeFallbackDone = true
+    handleCoursesSuccess(data)
+  },
 })
 
 watch(courseScope, () => {

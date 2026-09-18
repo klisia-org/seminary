@@ -1041,6 +1041,28 @@ check(
     {"page_length": 1000, "scope": "all"},
     ok_json(lambda m: len(m) > len(r_mine.json()["message"]) and CS_B in names(m)),
 )
+r_im = call("instr", "seminary.seminary.utils.get_courses", {"page_length": 1000})
+check(
+    "4.6 chair+instructor: My Courses is their own sections only",
+    "instr",
+    "seminary.seminary.utils.get_courses",
+    {"page_length": 1000, "scope": "mine"},
+    ok_json(lambda m: CS in names(m) and CS_B not in names(m)),
+)
+check(
+    "4.6 chair+instructor: All Courses is wider",
+    "instr",
+    "seminary.seminary.utils.get_courses",
+    {"page_length": 1000, "scope": "all"},
+    ok_json(lambda m: len(m) > len(r_im.json()["message"]) and CS_B in names(m)),
+)
+check(
+    "4.6 chair (no Instructor role) sees every section by default",
+    "chair",
+    "seminary.seminary.utils.get_courses",
+    {"page_length": 1000},
+    ok_json(lambda m: CS in names(m) and CS_B in names(m)),
+)
 check(
     "4.6 gta get_courses scope=all stays own (graded + enrolled, §8.1)",
     "gta",

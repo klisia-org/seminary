@@ -519,11 +519,15 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
         filters["published"] = 1
 
     roles = set(frappe.get_roles())
-    if not (roles & COURSE_FULL_ACCESS_ROLES) and "Instructor" in roles:
+    full_access = bool(roles & COURSE_FULL_ACCESS_ROLES)
+    if "Instructor" in roles:
+        # The page offers My Courses / All Courses to every instructor who may
+        # list more than their own, a chair or manager who also teaches
+        # included: "mine" is their own sections whatever else they hold.
         from seminary.seminary.guards import instructor_tier, readable_course_schedules
 
-        if scope == "all" and instructor_tier() == "record":
-            readable = readable_course_schedules()
+        if scope == "all" and (full_access or instructor_tier() == "record"):
+            readable = None if full_access else readable_course_schedules()
             if readable is not None:
                 if not readable:
                     return []
