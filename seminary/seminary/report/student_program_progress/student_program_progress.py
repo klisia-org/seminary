@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from seminary.seminary.api import get_program_audit
+from seminary.seminary.api import _program_audit as get_program_audit
 
 
 def execute(filters=None):

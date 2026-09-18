@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_to_date, cint, getdate, now_datetime, today
 
-from seminary.seminary.api import get_program_audit
+from seminary.seminary.api import _program_audit as get_program_audit
 
 DIRECTORY_FIELDS = (
     "name",

@@ -447,8 +447,8 @@ def get_question_details(question):
     return
 
 
-@frappe.whitelist()
 def get_all_question_results(questions):
+    """Answer keys. No browser caller; not an endpoint (p007 §2.7)."""
     if isinstance(questions, str):
         questions = json.loads(questions)
 
