@@ -20,10 +20,10 @@ def _file(user="Administrator", **fields):
     # which would then race the privacy flips these tests make.
     frappe.set_user(user)
     try:
+        fields.setdefault("file_name", f"zzt-p007-{frappe.generate_hash(length=6)}.txt")
         doc = frappe.get_doc(
             {
                 "doctype": "File",
-                "file_name": f"zzt-p007-{frappe.generate_hash(length=6)}.txt",
                 "content": "p007 " + frappe.generate_hash(length=8),
                 **fields,
             }
@@ -52,7 +52,7 @@ class TestP007FilePolicy(IntegrationTestCase):
     def tearDownClass(cls):
         frappe.set_user("Administrator")
         for name in frappe.get_all(
-            "File", {"file_name": ["like", "zzt-p007-%"]}, pluck="name"
+            "File", {"file_name": ["like", "zzt-p007%"]}, pluck="name"
         ):
             frappe.delete_doc("File", name, force=True, ignore_permissions=True)
         frappe.db.commit()
@@ -283,6 +283,35 @@ class TestP007FilePolicy(IntegrationTestCase):
                 "content": '{"blocks":[{"type":"upload","data":{"file_url":"%s"}}]}'
                 % url,
             }.get(k, d),
+        )
+
+    def test_find_urls_reads_names_with_spaces(self):
+        name = "/private/files/philosophical foundations research ethics.pdf"
+        blocks = '{"blocks":[{"type":"upload","data":{"file_url":"%s"}}]}' % name
+        self.assertEqual(file_policy.find_urls(blocks), {name})
+        html_ = '<p><img src="/files/Team Photo 2026.jpg?x=1"> and <a href="/private/files/a%20b.pdf">x</a></p>'
+        self.assertEqual(
+            file_policy.find_urls(html_),
+            {"/files/Team Photo 2026.jpg?x=1", "/private/files/a%20b.pdf"},
+        )
+        self.assertEqual(
+            file_policy._lookup_url("/private/files/a%20b.pdf?fid=abc"),
+            "/private/files/a b.pdf",
+        )
+        self.assertEqual(
+            file_policy.find_urls("{{ Video('/files/My Lecture 1.mp4') }}"),
+            {"/files/My Lecture 1.mp4"},
+        )
+
+    def test_lesson_content_adopts_a_file_whose_name_has_spaces(self):
+        doc = _file(
+            is_private=1,
+            file_name=f"zzt-p007 with spaces {frappe.generate_hash(length=5)}.txt",
+        )
+        self.assertIn(" ", doc.file_url)
+        file_policy.adopt_embedded(self._lesson_like(doc.file_url, self.cs.name))
+        self.assertEqual(
+            frappe.db.get_value("File", doc.name, "attached_to_name"), self.cs.name
         )
 
     def test_lesson_content_adopts_the_uploaders_file(self):

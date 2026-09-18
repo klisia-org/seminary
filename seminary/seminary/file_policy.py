@@ -27,13 +27,16 @@ to change: the wildcard `on_update` hook keeps the File in step with its host.
 
 from __future__ import annotations
 
-from urllib.parse import unquote
+import html
+import json
+import re
+from urllib.parse import quote, unquote
 
 import frappe
 from frappe import _
 from frappe.utils import cint
 
-from seminary.storage.backend import FILE_URL_RE, normalize_file_url
+from seminary.storage.backend import FILE_URL_RE, URL_PREFIX, normalize_file_url
 
 PUBLISHER_ROLES = {"System Manager", "Website Manager"}
 
@@ -328,14 +331,18 @@ def _replace_in_content(old, new):
             child = frappe.get_meta(doctype).get_field(table_field)
             if child:
                 targets.append((child.options, column))
+        spellings = {(old, new), (quote(old), quote(new))}
         for dt, column in targets:
             if not frappe.db.has_column(dt, column):
                 continue
-            frappe.db.sql(
-                f"update `tab{dt}` set `{column}` = replace(`{column}`, %s, %s) "  # nosec B608
-                f"where `{column}` like %s",
-                (old, new, f"%{old}%"),
-            )
+            for old_s, new_s in spellings:
+                # `%` in a percent-encoded spelling only widens the LIKE
+                # pre-filter; `replace()` itself is exact.
+                frappe.db.sql(
+                    f"update `tab{dt}` set `{column}` = replace(`{column}`, %s, %s) "  # nosec B608
+                    f"where `{column}` like %s",
+                    (old_s, new_s, f"%{old_s}%"),
+                )
 
 
 def set_privacy(url, public, host=None):
@@ -399,8 +406,8 @@ def _sync_rich_text(doctype, name, field, value, public):
     if not value or not isinstance(value, str):
         return
     content = value
-    for match in set(FILE_URL_RE.findall(value)):
-        url = unquote(normalize_file_url(match))
+    for match in find_urls(value):
+        url = _lookup_url(match)
         rows = [
             r
             for r in _rows_for(url)
@@ -477,16 +484,74 @@ def sync_public_state(doctype, name):
 # ------------------------------------------------------------ embedded-file hosts
 
 
+_FILE_PREFIXES = ("/files/", "/private/files/", URL_PREFIX)
+_ATTR_RE = re.compile(r"""(?:src|href|data-src)\s*=\s*(?:"([^"]+)"|'([^']+)')""", re.I)
+_MD_RE = re.compile(r"\]\((/[^)]+)\)")
+_MACRO_RE = re.compile(r"""\(\s*["'](/[^"']+)["']\s*\)""")
+
+
+def _is_file_address(value) -> bool:
+    return isinstance(value, str) and value.startswith(_FILE_PREFIXES)
+
+
+def find_urls(text) -> set:
+    """Every file address written in `text`, exactly as written.
+
+    A bare pattern scan (`FILE_URL_RE`) stops at whitespace, and uploaded files
+    are routinely called "Syllabus Fall 2026.pdf". So read the structure first:
+    EditorJS JSON values, HTML attributes, Markdown links and the legacy
+    `{{ Video("…") }}` macros all delimit the address themselves. The pattern
+    scan only picks up what is left."""
+    found = set()
+    if not text or not isinstance(text, str):
+        return found
+
+    def walk(node):
+        if isinstance(node, dict):
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+        elif isinstance(node, str):
+            if _is_file_address(node) and "<" not in node:
+                found.add(node)
+            else:
+                scan(node)
+
+    def scan(chunk):
+        for rx in (_ATTR_RE, _MD_RE, _MACRO_RE):
+            for m in rx.findall(chunk):
+                value = next((g for g in m if g), "") if isinstance(m, tuple) else m
+                if _is_file_address(value):
+                    found.add(value)
+        for m in FILE_URL_RE.findall(chunk):
+            if not any(f.startswith(m) for f in found):
+                found.add(m)
+
+    stripped = text.lstrip()
+    if stripped[:1] in "{[":
+        try:
+            walk(json.loads(text))
+            return found
+        except ValueError:
+            pass
+    scan(text)
+    return found
+
+
+def _lookup_url(raw) -> str:
+    """The `File.file_url` a written address refers to."""
+    return unquote(normalize_file_url(html.unescape(raw))).rstrip("\\")
+
+
 def _embedded_urls(doc, cfg) -> set:
     chunks = [doc.get(f) or "" for f in cfg["fields"]]
     for table_field, column in cfg["children"]:
         chunks.extend((row.get(column) or "") for row in (doc.get(table_field) or []))
     urls = set()
     for chunk in chunks:
-        if not isinstance(chunk, str):
-            continue
-        for match in FILE_URL_RE.findall(chunk):
-            urls.add(unquote(normalize_file_url(match)).rstrip("\\"))
+        urls.update(_lookup_url(raw) for raw in find_urls(chunk))
     return urls
 
 
