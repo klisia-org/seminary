@@ -12,13 +12,50 @@
       </label>
     </div>
 
-    <div v-if="folderAction === 'select'" class="mt-4 mb-4">
-      <Link v-model="selectedFolder" doctype="Course Folder" options="foldername" :label="__('Select a folder')" />
+    <!--
+      A block saved before folders were referenced by docname only has a name.
+      Names are no longer unique across scopes, so it is not resolved here; the
+      instructor picks the right folder and the block is saved with its docname.
+    -->
+    <div v-if="needsRelink" class="mt-4 rounded border border-outline-amber-1 bg-surface-amber-1 px-3 py-2 text-sm text-ink-amber-3">
+      {{ __('This block refers to folder "{0}" by name and needs re-linking. Select it below to fix it.').format(props.initialFolder) }}
     </div>
 
-    <div v-if="folderAction === 'create'">
+    <div v-if="folderAction === 'select'" class="mt-4 mb-4">
+      <FormControl
+        type="select"
+        v-model="selectedFolder"
+        :label="__('Select a folder')"
+        :options="folderOptions"
+        :placeholder="folders.length ? __('Choose a folder') : __('No folders available')"
+        :disabled="!folders.length"
+      />
+    </div>
+
+    <div v-if="folderAction === 'create'" class="mt-4 space-y-3">
       <input type="text" v-model="newFolderName" :placeholder="__('Enter folder name')" />
-      <Link v-model="course" doctype="Course" :label="__('Select a course')" />
+      <FormControl
+        type="select"
+        v-model="scope"
+        :label="__('Folder belongs to')"
+        :options="scopeOptions"
+      />
+      <p class="text-sm text-ink-gray-6">{{ scopeHelp }}</p>
+      <Link v-if="scope !== 'School'" v-model="course" doctype="Course" :label="__('Course')" />
+      <FormControl
+        v-if="scope === 'Instructor'"
+        type="text"
+        :label="__('Instructor')"
+        :modelValue="folderContext.instructor || __('You have no Instructor record')"
+        disabled
+      />
+      <FormControl
+        v-if="scope === 'Section'"
+        type="text"
+        :label="__('Section')"
+        :modelValue="folderContext.course_schedule || __('No section in this context')"
+        disabled
+      />
       <button @click="createFolder">{{ __('Create Folder') }}</button>
     </div>
 
@@ -124,8 +161,8 @@
 </template>
 
 <script setup>
-import { createResource, Button, Tooltip } from 'frappe-ui';
-import { onMounted, ref, watch } from 'vue';
+import { createResource, Button, Tooltip, FormControl } from 'frappe-ui';
+import { computed, onMounted, ref, watch } from 'vue';
 import Link from '@/components/Controls/Link.vue';
 import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
 import { uploadLimits, validateFileSize } from '@/utils';
@@ -134,13 +171,32 @@ import { Trash2 } from 'lucide-vue-next';
 
 const route = useRoute();
 
+const props = defineProps({
+  onAddition: {
+    type: Function,
+    required: false,
+  },
+  // Course Folder docname stored in the block; the API resolves this.
+  initialFolderRef: {
+    type: String,
+    default: null,
+  },
+  // Display label stored in the block. On its own (no docname) it marks a
+  // block that predates docname references and needs re-linking.
+  initialFolder: {
+    type: String,
+    default: null,
+  },
+})
+
 const folderAction = ref('select');
-const selectedFolder = ref(null);
-const foldername = ref(''); // Declare foldername globally
+const selectedFolder = ref(null); // Course Folder docname
+const foldername = ref(''); // display label of the selected Course Folder
 const newFolderName = ref('');
 const files = ref([]);
 const folders = ref([]);
 const course = ref(null);
+const scope = ref('Course');
 const currentFolderId = ref(null);
 const currentFolderName = ref('');
 const breadcrumbStack = ref([]);
@@ -148,6 +204,16 @@ const subfolders = ref([]);
 const isDragActive = ref(false);
 const newSubfolderName = ref('');
 const fileInputRef = ref(null);
+
+// Who the session user is in this lesson: the Course, the Course Schedule the
+// editor is open in, the user's Instructor record (or null) and whether they
+// may create School-wide folders. Filled by `folder_context`.
+const folderContext = ref({
+  course: null,
+  course_schedule: null,
+  instructor: null,
+  can_school: false,
+});
 
 // Progress for the file currently in flight. `index`/`total` count files,
 // `sentBytes`/`totalBytes` count bytes within the current one.
@@ -176,117 +242,139 @@ const getCsrfToken = () => {
   );
 };
 
-const fetchCourse = async () => {
-  const courseName = route.params.courseName;
-  console.log("Course Name: ", courseName);
-  if (courseName) {
+// The lesson routes carry the Course Schedule docname as `courseName`
+// (`/courses/:courseName/...`). The backend derives the catalogue Course.
+const contextParams = () => {
+  const params = {};
+  if (route.params.courseName) {
+    params.course_schedule = route.params.courseName;
+  } else if (course.value) {
+    params.course = course.value;
+  }
+  return params;
+};
+
+const needsRelink = computed(() => !!props.initialFolder && !props.initialFolderRef);
+
+const scopeOptions = computed(() => {
+  const options = [
+    { label: __('Course (shared by every offering)'), value: 'Course' },
+    {
+      label: __('Instructor (mine, follows me across sections)'),
+      value: 'Instructor',
+      disabled: !folderContext.value.instructor,
+    },
+    {
+      label: __('Section (this offering only)'),
+      value: 'Section',
+      disabled: !folderContext.value.course_schedule,
+    },
+  ];
+  if (folderContext.value.can_school) {
+    options.push({ label: __('School (every course)'), value: 'School' });
+  }
+  return options;
+});
+
+const scopeHelp = computed(() => {
+  switch (scope.value) {
+    case 'Instructor':
+      return __('Only you can edit it; students of every section you teach of this course can read it.');
+    case 'Section':
+      return __('Only students enrolled in this section can read it.');
+    case 'School':
+      return __('Readable by every student and grader; use it for school-wide policies.');
+    default:
+      return __('Shared by every offering of this course, whoever teaches it.');
+  }
+});
+
+// One label per folder that says whose it is, so "Readings (Course)" and
+// "Readings (mine)" can be told apart in a flat list.
+const folderLabel = (folder) => {
+  const ctx = folderContext.value;
+  let suffix;
+  switch (folder.scope) {
+    case 'Instructor':
+      suffix =
+        folder.instructor && folder.instructor === ctx.instructor
+          ? __('mine')
+          : __('Instructor: {0}').format(folder.instructor || '');
+      break;
+    case 'Section':
+      suffix =
+        folder.course_schedule && folder.course_schedule === ctx.course_schedule
+          ? __('this section')
+          : __('Section: {0}').format(folder.course_schedule || '');
+      break;
+    case 'School':
+      suffix = __('School');
+      break;
+    case 'Course':
+      suffix = __('Course');
+      break;
+    default:
+      // Reached only for a block whose folder is not in the embeddable list.
+      suffix = __('not in your list');
+  }
+  return `${folder.foldername} (${suffix})`;
+};
+
+const folderOptions = computed(() =>
+  folders.value.map((folder) => ({ label: folderLabel(folder), value: folder.name }))
+);
+
+const fetchContext = async () => {
+  try {
     const resource = createResource({
-      url: 'frappe.client.get_value',
-      makeParams(values) {
-        return {
-          doctype: 'Course Schedule',
-          fieldname: 'course',
-          filters: {
-            name: courseName,
-          },
-        };
+      url: 'seminary.seminary.doctype.course_folder.course_folder.folder_context',
+      makeParams() {
+        return contextParams();
       },
     });
-    const result = await resource.fetch(); // Wait for the resource to fetch data
-    course.value = result.course; // Assign the fetched course value
-    console.log("Fetched Course: ", course.value);
-  } else {
-    console.error("Course name not found in route params");
-    return null;
+    const result = await resource.fetch();
+    folderContext.value = {
+      course: result?.course || null,
+      course_schedule: result?.course_schedule || null,
+      instructor: result?.instructor || null,
+      can_school: !!result?.can_school,
+    };
+    if (!course.value && folderContext.value.course) {
+      course.value = folderContext.value.course;
+    }
+  } catch (error) {
+    console.error('Error fetching folder context:', error);
   }
 };
-
-const props = defineProps({
-  onAddition: {
-    type: Function,
-    required: false,
-  },
-  initialFolder: {
-    type: String,
-    default: null,
-  },
-})
 
 const addFolder = () => {
-  if (!foldername.value) {
+  if (!selectedFolder.value) {
     return;
   }
 
-  const folder = foldername.value;
   if (typeof props.onAddition === 'function') {
-    props.onAddition(folder);
+    props.onAddition({
+      folder_ref: selectedFolder.value,
+      folder: foldername.value,
+    });
   }
-};
-
-const initializeFromFolder = async (folderLabel, { refreshFolders = true } = {}) => {
-  const targetFolder = folderLabel?.trim();
-  if (!targetFolder) {
-    return;
-  }
-
-  if (refreshFolders || !folders.value.length) {
-    await fetchFolders();
-  }
-
-  const matchingFolder = folders.value.find(
-    (folder) => folder.foldername === targetFolder || folder.name === targetFolder
-  );
-
-  if (matchingFolder) {
-    if (selectedFolder.value !== matchingFolder.name) {
-      selectedFolder.value = matchingFolder.name;
-    }
-    return;
-  }
-
-  foldername.value = targetFolder;
-  currentFolderName.value = targetFolder;
-  breadcrumbStack.value = [
-    {
-      id: null,
-      label: targetFolder,
-      folderName: targetFolder,
-    },
-  ];
-  await fetchFiles({ folderLabel: targetFolder });
-  breadcrumbStack.value = [
-    {
-      id: currentFolderId.value,
-      label: currentFolderName.value || targetFolder,
-      folderName: foldername.value || targetFolder,
-    },
-  ];
 };
 
 const fetchFolders = async () => {
-  if (!course.value) {
-    await fetchCourse();
-  }
-
-  if (!course.value) {
-    return [];
-  }
-
   const foldersResource = createResource({
-    url: 'frappe.client.get_list',
+    url: 'seminary.seminary.doctype.course_folder.course_folder.list_embeddable_folders',
     makeParams() {
-      return {
-        doctype: 'Course Folder',
-        filters: {
-          course: course.value,
-        },
-        fields: ['name', 'foldername', 'file_reference', 'parent_folder'],
-      };
+      return contextParams();
     },
   });
 
-  const result = await foldersResource.fetch();
-  folders.value = result;
+  try {
+    const result = await foldersResource.fetch();
+    folders.value = Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error('Error listing folders:', error);
+    folders.value = [];
+  }
   return folders.value;
 };
 
@@ -296,61 +384,72 @@ const createFolder = async () => {
     return;
   }
 
-  if (!course.value) {
-    await fetchCourse();
+  if (scope.value !== 'School' && !course.value) {
+    await fetchContext();
   }
 
-  if (!course.value) {
+  if (scope.value !== 'School' && !course.value) {
     alert(__('Please select a course before creating a folder.'));
+    return;
+  }
+  if (scope.value === 'Instructor' && !folderContext.value.instructor) {
+    alert(__('You have no Instructor record, so you cannot create an Instructor folder.'));
+    return;
+  }
+  if (scope.value === 'Section' && !folderContext.value.course_schedule) {
+    alert(__('Open the lesson from a section to create a Section folder.'));
     return;
   }
 
   try {
     const tool = new FolderTool({ data: {}, readOnly: false });
-    const folder = await tool.createCourseFolder(course.value, newFolderName.value);
+    const folder = await tool.createCourseFolder({
+      course: course.value,
+      folderName: newFolderName.value,
+      scope: scope.value,
+      instructor: folderContext.value.instructor,
+      courseSchedule: folderContext.value.course_schedule,
+    });
 
     folders.value.push({
       name: folder.name,
       foldername: folder.foldername,
+      scope: folder.scope || scope.value,
+      instructor: folder.instructor || null,
+      course_schedule: folder.course_schedule || null,
       file_reference: folder.file_reference,
       parent_folder: folder.parent_folder,
     });
-    foldername.value = folder.foldername;
-    currentFolderId.value = folder.file_reference;
-    currentFolderName.value = folder.foldername;
-    selectedFolder.value = folder.name;
-    breadcrumbStack.value = [
-      {
-        id: currentFolderId.value,
-        label: currentFolderName.value,
-        folderName: folder.foldername,
-      },
-    ];
     folderAction.value = 'select';
     newFolderName.value = '';
-    await fetchFiles({ folderId: currentFolderId.value, folderLabel: currentFolderName.value });
+    // The selectedFolder watcher loads the root and stores the reference.
+    selectedFolder.value = folder.name;
   } catch (error) {
     console.error('Error creating folder:', error);
     alert(error.message || __('Failed to create folder.'));
   }
 };
 
-const fetchFiles = async ({ folderId, folderLabel } = {}) => {
+// The root of a Course Folder is addressed by its docname (`course_folder`);
+// everything below it by the File docname the listing returned (`folder_id`).
+const fetchFiles = async ({ folderId, courseFolder, folderLabel } = {}) => {
   const targetFolderId = folderId ?? currentFolderId.value;
+  const targetCourseFolder = courseFolder ?? selectedFolder.value;
   const targetFolderLabel = folderLabel ?? currentFolderName.value ?? foldername.value;
 
-  if (!targetFolderId && !targetFolderLabel) {
+  if (!targetFolderId && !targetCourseFolder) {
     console.warn('No folder selected for fetching files.');
     return;
   }
 
+  const params = targetFolderId
+    ? { folder_id: targetFolderId }
+    : { course_folder: targetCourseFolder };
+
   try {
     const FilesInFolder = createResource({
       url: 'seminary.api.folder_upload.get_files_in_folder',
-      params: {
-        folder_id: targetFolderId,
-        foldername: targetFolderLabel,
-      },
+      params,
       auto: true,
     });
     const result = await FilesInFolder.fetch();
@@ -359,9 +458,8 @@ const fetchFiles = async ({ folderId, folderLabel } = {}) => {
     subfolders.value = entries.filter((entry) => entry.is_folder);
     files.value = entries.filter((entry) => !entry.is_folder);
 
-    currentFolderId.value = result?.folder_id || targetFolderId;
-    currentFolderName.value = result?.folder_name || targetFolderLabel;
-    foldername.value = currentFolderName.value;
+    currentFolderId.value = result?.folder_id || targetFolderId || null;
+    currentFolderName.value = result?.folder_name || targetFolderLabel || '';
 
   } catch (error) {
     console.error('Error fetching files:', error);
@@ -376,7 +474,7 @@ const uploadFiles = async (event, droppedFiles = null) => {
     return;
   }
 
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     alert(__('Please select a folder first.'));
     return;
   }
@@ -487,11 +585,10 @@ const putFile = (file, csrfToken, attempt = 1) => {
     // ceiling that honours System Settings → Max File Size.
     formData.append('method', 'seminary.api.folder_upload.upload_to_folder');
     formData.append('is_private', '1');
-    if (currentFolderId.value) {
-      formData.append('folder_id', currentFolderId.value);
-    }
-    if (currentFolderName.value) {
-      formData.append('foldername', currentFolderName.value);
+    formData.append('folder_id', currentFolderId.value);
+    // Which section the lesson was open in, for the folder's activity log.
+    if (folderContext.value.course_schedule) {
+      formData.append('course_schedule', folderContext.value.course_schedule);
     }
 
     const xhr = new XMLHttpRequest();
@@ -608,6 +705,7 @@ const removeFile = async (file) => {
         file_id: file.name,
         file_url: file.file_url,
         folder_id: currentFolderId.value || undefined,
+        course_schedule: folderContext.value.course_schedule || undefined,
       }),
       credentials: 'include',
     });
@@ -629,14 +727,14 @@ const removeFile = async (file) => {
 const onDragEnter = (event) => {
   event.preventDefault();
   event.stopPropagation();
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     return;
   }
   isDragActive.value = true;
 };
 
 const onDragOver = (event) => {
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     return;
   }
   event.preventDefault();
@@ -654,7 +752,7 @@ const onDragLeave = (event) => {
 const onDrop = async (event) => {
   event.preventDefault();
   event.stopPropagation();
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     alert(__('Please select a folder before uploading.'));
     return;
   }
@@ -666,7 +764,7 @@ const onDrop = async (event) => {
 };
 
 const triggerFileSelect = () => {
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     alert(__('Please select a folder first.'));
     return;
   }
@@ -682,7 +780,6 @@ const openSubfolder = async (folder) => {
     {
       id: folder.name,
       label: folder.file_name,
-      folderName: folder.file_name,
     },
   ];
   currentFolderId.value = folder.name;
@@ -698,8 +795,11 @@ const navigateToBreadcrumb = async (index) => {
   breadcrumbStack.value = breadcrumbStack.value.slice(0, index + 1);
   currentFolderId.value = target.id;
   currentFolderName.value = target.label;
-  foldername.value = target.folderName || target.label;
-  await fetchFiles({ folderId: target.id, folderLabel: target.folderName || target.label });
+  if (target.id) {
+    await fetchFiles({ folderId: target.id, folderLabel: target.label });
+  } else {
+    await fetchFiles({ courseFolder: selectedFolder.value, folderLabel: target.label });
+  }
 };
 
 const createSubfolder = async () => {
@@ -708,7 +808,7 @@ const createSubfolder = async () => {
     return;
   }
 
-  if (!currentFolderId.value && !currentFolderName.value) {
+  if (!currentFolderId.value) {
     alert(__('Please select a folder first.'));
     return;
   }
@@ -717,8 +817,8 @@ const createSubfolder = async () => {
     const tool = new FolderTool({ data: {}, readOnly: false });
     await tool.createSubfolder({
       parentFolderId: currentFolderId.value,
-      parentFolderName: currentFolderName.value,
       subfolderName: newSubfolderName.value,
+      courseSchedule: folderContext.value.course_schedule,
     });
 
     newSubfolderName.value = '';
@@ -732,38 +832,27 @@ const createSubfolder = async () => {
 // Watch selectedFolder and update folder state
 watch(selectedFolder, async (newFolder) => {
   if (newFolder) {
-    try {
-      const resource = createResource({
-        url: 'frappe.client.get_value',
-        makeParams() {
-          return {
-            doctype: 'Course Folder',
-            fieldname: ['foldername', 'file_reference', 'parent_folder'],
-            filters: {
-              name: newFolder,
-            },
-          };
-        },
-      });
-      const result = await resource.fetch();
-      foldername.value = result?.foldername || '';
-      currentFolderId.value = result?.file_reference || null;
-      currentFolderName.value = result?.foldername || '';
-      breadcrumbStack.value = [
-        {
-          id: currentFolderId.value,
-          label: currentFolderName.value,
-          folderName: foldername.value,
-        },
-      ];
-      addFolder();
-      await fetchFiles({
-        folderId: currentFolderId.value,
-        folderLabel: currentFolderName.value,
-      });
-    } catch (error) {
-      console.error('Error fetching foldername:', error);
+    const entry = folders.value.find((folder) => folder.name === newFolder);
+    foldername.value = entry?.foldername || '';
+    currentFolderId.value = entry?.file_reference || null;
+    currentFolderName.value = foldername.value;
+    // Root listing by docname; the response carries the File id and label, which
+    // covers a folder whose `file_reference` is missing from the list entry.
+    await fetchFiles({
+      folderId: currentFolderId.value,
+      courseFolder: newFolder,
+      folderLabel: foldername.value,
+    });
+    if (!foldername.value) {
+      foldername.value = currentFolderName.value;
     }
+    breadcrumbStack.value = [
+      {
+        id: currentFolderId.value,
+        label: currentFolderName.value || foldername.value,
+      },
+    ];
+    addFolder();
   } else {
     foldername.value = '';
     currentFolderId.value = null;
@@ -774,29 +863,52 @@ watch(selectedFolder, async (newFolder) => {
   }
 });
 
+const initializeFromFolderRef = async (folderRef) => {
+  if (!folderRef) {
+    return;
+  }
+  if (!folders.value.length) {
+    await fetchFolders();
+  }
+  // A folder the user may no longer embed is still opened by docname so the
+  // block keeps its reference; the listing call decides whether it is readable.
+  if (!folders.value.some((folder) => folder.name === folderRef)) {
+    folders.value.push({
+      name: folderRef,
+      foldername: props.initialFolder || folderRef,
+      scope: null,
+      instructor: null,
+      course_schedule: null,
+      file_reference: null,
+      parent_folder: null,
+    });
+  }
+  if (selectedFolder.value !== folderRef) {
+    selectedFolder.value = folderRef;
+  }
+};
+
 let hasMounted = false;
 
 onMounted(async () => {
   hasMounted = true;
-  await fetchCourse();
+  await fetchContext();
   await fetchFolders();
-  if (props.initialFolder) {
-    await initializeFromFolder(props.initialFolder, { refreshFolders: false });
+  if (props.initialFolderRef) {
+    await initializeFromFolderRef(props.initialFolderRef);
   }
 });
 
 watch(
-  () => props.initialFolder,
+  () => props.initialFolderRef,
   async (newValue, oldValue) => {
     if (!hasMounted) {
       return;
     }
-    const trimmedValue = newValue?.trim();
-    const previous = oldValue?.trim();
-    if (!trimmedValue || trimmedValue === previous) {
+    if (!newValue || newValue === oldValue) {
       return;
     }
-    await initializeFromFolder(trimmedValue);
+    await initializeFromFolderRef(newValue);
   }
 );
 </script>

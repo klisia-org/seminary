@@ -31,6 +31,8 @@ import frappe
 from frappe import _
 from frappe.utils import add_to_date, cint, now_datetime
 
+from seminary.seminary.author_templates import render_author_text
+
 ADAPTER_HOOK = "communication_channel_providers"
 IN_APP_CHANNEL = "In-App"
 EMAIL_CHANNEL = "Email"
@@ -240,12 +242,12 @@ def send(
         ctx["doc"] = frappe.get_doc(reference_doctype, reference_name)
     ctx.update(context or {})
 
+    # Template Version text is author text (p006 F10): rendered in a sandbox
+    # with the context and Jinja filters, no Frappe globals.
     return send_message(
         channel=channel,
-        subject=(
-            frappe.render_template(version.subject, ctx) if version.subject else None
-        ),
-        message=frappe.render_template(version.body, ctx),
+        subject=render_author_text(version.subject, ctx) if version.subject else None,
+        message=render_author_text(version.body, ctx),
         person=person_doc,
         to_address=to_address,
         category=category,
@@ -1829,7 +1831,9 @@ def send_portal_message(
     attachments = attachments or []
     attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
 
-    body = frappe.utils.sanitize_html(message)
+    # always_sanitize: skip the JSON/no-tag short-circuit so a comment-wrapped
+    # payload cannot slip past the parser (p006 F13).
+    body = frappe.utils.sanitize_html(message, always_sanitize=True)
     body = _privatize_embedded_files(body)  # belt-and-suspenders on inline images
     body += _attachment_html(attachments)
     sent = 0

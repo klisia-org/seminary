@@ -18,6 +18,7 @@
         </div>
       </div>
       <button
+        v-if="folderRef"
         type="button"
         class="shrink-0 inline-flex items-center gap-1.5 rounded border border-outline-gray-2 px-3 py-1.5 text-sm font-medium text-ink-gray-8 transition hover:border-outline-gray-3 hover:bg-ink-gray-2 disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="!canDownload || isDownloading"
@@ -35,7 +36,15 @@
       {{ downloadError }}
     </div>
 
-    <div v-if="errorMessage" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
+    <!--
+      A block saved before folders were referenced by docname carries only a
+      display name. Names are no longer unique (one "Readings" per professor is
+      legitimate), so it is not resolved here; the lesson editor re-links it.
+    -->
+    <div v-if="!folderRef" class="rounded border border-outline-amber-1 bg-surface-amber-1 px-3 py-2 text-sm text-ink-amber-3">
+      {{ __('This folder needs re-linking. Open the lesson in the editor and select the folder again.') }}
+    </div>
+    <div v-else-if="errorMessage" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
       {{ errorMessage }}
     </div>
     <div v-else-if="isLoading" class="text-sm text-ink-gray-6">
@@ -92,10 +101,26 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { createResource } from 'frappe-ui'
 
 const props = defineProps({
+  // Course Folder docname. This is what the API resolves.
+  folderRef: {
+    type: String,
+    default: null,
+  },
+  // Display label, or the whole block data `{ folder_ref, folder }`.
   folder: {
     type: [Object, String],
-    required: true,
+    default: '',
   },
+})
+
+const folderRef = computed(() => {
+  if (props.folderRef) {
+    return props.folderRef
+  }
+  if (props.folder && typeof props.folder === 'object') {
+    return props.folder.folder_ref || null
+  }
+  return null
 })
 
 const folderName = computed(() => {
@@ -140,21 +165,21 @@ const humanFileSize = (value) => {
   return `${size} B`
 }
 
-const buildParams = ({ folderId = null, folderLabel = null }) => {
-  const params = {}
+// The root is addressed by the Course Folder docname; anything below it by the
+// File docname the listing returned. Never by name.
+const buildParams = ({ folderId = null }) => {
   if (folderId) {
-    params.folder_id = folderId
+    return { folder_id: folderId }
   }
-  const labelCandidate = folderLabel ?? folderName.value
-  if (!folderId && labelCandidate) {
-    params.foldername = labelCandidate
+  if (folderRef.value) {
+    return { course_folder: folderRef.value }
   }
-  return params
+  return {}
 }
 
 const loadFolder = async ({ folderId = null, folderLabel = null } = {}) => {
-  const params = buildParams({ folderId, folderLabel })
-  if (!params.folder_id && !params.foldername) {
+  const params = buildParams({ folderId })
+  if (!params.folder_id && !params.course_folder) {
     return null
   }
   isLoading.value = true
@@ -189,6 +214,9 @@ const loadFolder = async ({ folderId = null, folderLabel = null } = {}) => {
 }
 
 const openRootFolder = async () => {
+  if (!folderRef.value) {
+    return
+  }
   const root = await loadFolder({ folderLabel: folderName.value })
   if (root) {
     breadcrumbStack.value = [root]
@@ -223,8 +251,8 @@ const downloadAll = async () => {
   const params = new URLSearchParams()
   if (currentFolderId.value) {
     params.set('folder_id', currentFolderId.value)
-  } else if (currentFolderName.value || folderName.value) {
-    params.set('foldername', currentFolderName.value || folderName.value)
+  } else if (folderRef.value) {
+    params.set('course_folder', folderRef.value)
   } else {
     return
   }
@@ -263,16 +291,17 @@ onMounted(async () => {
 })
 
 watch(
-  () => folderName.value,
+  () => folderRef.value,
   async (newValue, oldValue) => {
     if (!hasMounted) {
       return
     }
-    const trimmed = (newValue || '').trim()
-    const previous = (oldValue || '').trim()
-    if (!trimmed || trimmed === previous) {
+    if (!newValue || newValue === oldValue) {
       return
     }
+    breadcrumbStack.value = []
+    currentFolderId.value = null
+    currentFolderName.value = ''
     await openRootFolder()
   },
 )

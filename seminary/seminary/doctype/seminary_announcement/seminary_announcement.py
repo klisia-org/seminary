@@ -5,6 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_datetime, now_datetime, strip_html
 
+from seminary.seminary.author_templates import has_markers, render_author_text
 from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
     resolve_recipients,
 )
@@ -124,25 +125,23 @@ class SeminaryAnnouncement(Document):
         Available tokens: {{ recipient.first_name }}, {{ recipient.last_name }},
         {{ recipient.name }}, {{ recipient.email }}, {{ person.* }}.
 
-        Frappe's Jinja inlines unknown-key errors into the output instead of
-        raising, so we both catch exceptions (syntax) and scan the rendered
-        sample for the 'no such element' marker (a bad token like
-        {{ recipient.first }})."""
+        Rendered through `author_templates` (p006 F10): a sandbox with no
+        Frappe globals and strict undefined names, so a syntax error, an
+        unknown token like {{ recipient.first }} and an attempt at
+        {{ frappe.db.sql(...) }} all raise here and never execute."""
         sample = _sample_context()
         for field in ("subject", "message", "short_message"):
             val = self.get(field)
-            if not val or ("{{" not in val and "{%" not in val):
+            if not has_markers(val):
                 continue
             label = _(self.meta.get_label(field))
             try:
-                rendered = frappe.render_template(val, sample)
+                render_author_text(val, sample)
             except Exception as e:
-                frappe.throw(_("Personalization error in {0}: {1}").format(label, e))
-            if "no such element" in (rendered or ""):
                 frappe.throw(
                     _(
-                        "Unknown personalization token in {0}. Available tokens: {1}."
-                    ).format(label, RECIPIENT_TOKENS)
+                        "Personalization error in {0}: {1}. Available tokens: {2}."
+                    ).format(label, e, RECIPIENT_TOKENS)
                 )
 
     def _normalize_message_images(self):
@@ -416,11 +415,14 @@ def _wrap_letterhead(letter_head, message):
 def _render(template, ctx):
     """Render an author-written Jinja snippet against the recipient context.
     No Jinja markers → returned as-is; a render error falls back to the raw
-    text (submit-time validation surfaces real syntax errors to the author)."""
-    if not template or ("{{" not in template and "{%" not in template):
+    text (submit-time validation surfaces real syntax errors to the author).
+
+    Rendered through `author_templates` (p006 F10): the recipient tokens and
+    Jinja filters, no Frappe globals."""
+    if not has_markers(template):
         return template
     try:
-        return frappe.render_template(template, ctx)
+        return render_author_text(template, ctx)
     except Exception:
         return template
 

@@ -3,6 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
 
+from seminary.seminary.guards import require_registrar
+
 
 class WithdrawalRequest(Document):
     def validate(self):
@@ -277,9 +279,33 @@ def initiate_program_separation(
     separation_category="Voluntary",
     comment=None,
 ):
+    """API entry point for the Program Enrollment form button: registrar roles
+    only (p006 F6). Server-side callers (disciplinary dismissal) use
+    ``_initiate_program_separation`` directly, after their own authorisation."""
+    require_registrar()
+    return _initiate_program_separation(
+        program_enrollment,
+        withdrawal_reason,
+        effective_date=effective_date,
+        timing=timing,
+        separation_status=separation_status,
+        separation_category=separation_category,
+        comment=comment,
+    )
+
+
+def _initiate_program_separation(
+    program_enrollment,
+    withdrawal_reason,
+    effective_date=None,
+    timing="Immediate",
+    separation_status="Withdrawn",
+    separation_category="Voluntary",
+    comment=None,
+):
     """Create a program-level Full Program Withdrawal request (no pre-selected
-    CEI). Shared entry point for the Program Enrollment form button and the
-    disciplinary dismissal path. Returns the new request's name.
+    CEI). Shared body for the Program Enrollment form button (via the gated
+    wrapper) and the disciplinary dismissal path. Returns the new request's name.
 
     The request is created in Draft and flows through the Course Withdrawal
     workflow like any registrar-initiated separation; completion drives the

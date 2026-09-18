@@ -13,6 +13,11 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime
 
+# Student-authored rich text (Text Editor fields), sanitised on every save so
+# the SPA's write path cannot store markup the editor would never produce.
+RICH_TEXT_FIELDS = ("reflection",)
+GOAL_RICH_TEXT_FIELDS = ("goal", "action_steps")
+
 STAFF_ROLES = {
     "Seminary Manager",
     "System Manager",
@@ -26,8 +31,28 @@ class PersonalDevelopmentPlan(Document):
     def validate(self):
         self.set_context()
         self.validate_unique()
+        self.sanitize_rich_text()
         self.validate_goals()
         self.stamp_submission()
+
+    def sanitize_rich_text(self):
+        """nh3 allow-list with always_sanitize, so a comment-wrapped payload is
+        not waved through by the no-tags short-circuit (p006 F13)."""
+        for field in RICH_TEXT_FIELDS:
+            if self.get(field):
+                self.set(
+                    field,
+                    frappe.utils.sanitize_html(self.get(field), always_sanitize=True),
+                )
+        for row in self.goals:
+            for field in GOAL_RICH_TEXT_FIELDS:
+                if row.get(field):
+                    row.set(
+                        field,
+                        frappe.utils.sanitize_html(
+                            row.get(field), always_sanitize=True
+                        ),
+                    )
 
     def set_context(self):
         """Derive the enrollment and student from the roster.

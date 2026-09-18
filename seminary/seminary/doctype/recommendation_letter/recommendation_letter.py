@@ -42,11 +42,18 @@ class RecommendationLetter(Document):
         if updated:
             pe.save(ignore_permissions=True)
 
-    def _send_request_email(self):
+    def _send_request_email(self, resend=False):
+        """Email the recommender the tokenized link. Returns the Communication
+        Log name, or None when nothing was sent (manual delivery, no address,
+        or deduped).
+
+        The first request is deduped per letter; a `resend` (a regenerated
+        token) is deduped per token instead, so the recommender receives the
+        new link rather than being silenced by the original send's key."""
         if self.delivery_method == "Manual Upload":
-            return
+            return None
         if not self.recommender_email:
-            return
+            return None
 
         from seminary.seminary import comms
         from seminary.seminary.person import find_person
@@ -57,7 +64,10 @@ class RecommendationLetter(Document):
         student_name = (
             frappe.db.get_value("Student", self.student, "student_name") or ""
         )
-        comms.send(
+        dedupe_key = f"recommendation-request::{self.name}"
+        if resend:
+            dedupe_key += f"::{self.request_token}"
+        log = comms.send(
             find_person(email=self.recommender_email),
             "recommendation-request",
             to_address=self.recommender_email,
@@ -70,10 +80,11 @@ class RecommendationLetter(Document):
             reference_doctype=self.doctype,
             reference_name=self.name,
             triggered_by="recommendation-request",
-            dedupe_key=f"recommendation-request::{self.name}",
+            dedupe_key=dedupe_key,
         )
         self.db_set("request_sent_on", now_datetime(), update_modified=False)
         _advance_state(self, "Requested")
+        return log
 
     def _reflect_state_to_sgr(self):
         """Mirror workflow_state changes onto the SGR row's status."""
@@ -119,10 +130,28 @@ def _advance_state(doc, target_state):
 
 @frappe.whitelist()
 def regenerate_token(name):
-    """Issue a new token (e.g. when the recommender lost the email)."""
+    """Issue a new token (e.g. when the recommender lost the email) and email
+    it to the recommender (p006 F12).
+
+    Requires write on the letter — Student has no write row, so the student
+    the letter is about cannot mint links for their own recommender. The
+    token itself is never returned: it travels only in the recommender's
+    email. The response carries what the Desk needs to confirm the resend."""
+    frappe.has_permission("Recommendation Letter", "write", doc=name, throw=True)
     doc = frappe.get_doc("Recommendation Letter", name)
     doc.db_set("request_token", _generate_token(), update_modified=False)
     doc.db_set(
         "token_expires_on", add_days(today(), TOKEN_TTL_DAYS), update_modified=False
     )
-    return {"token": doc.request_token, "expires_on": doc.token_expires_on}
+    sent_to = None
+    try:
+        if doc._send_request_email(resend=True):
+            sent_to = doc.recommender_email
+    except Exception:
+        # The token is already rotated; a delivery failure must not undo that
+        # or hide the new expiry from the Desk. Logged for follow-up.
+        frappe.log_error(
+            title=f"Recommendation Letter {name}: resend failed",
+            message=frappe.get_traceback(),
+        )
+    return {"expires_on": doc.token_expires_on, "sent_to": sent_to}

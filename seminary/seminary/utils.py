@@ -52,6 +52,7 @@ from frappe.utils import (
 )
 from frappe.utils.dateutils import get_period
 from seminary.seminary.md import find_macros, markdown_to_html
+from seminary.seminary.guards import require_grader
 
 
 class OverlapError(frappe.ValidationError):
@@ -390,43 +391,51 @@ def get_all_users():
     return {user.name: user for user in users}
 
 
-@frappe.whitelist(allow_guest=True)
+def _role_subject(member=None):
+    """Whose roles a has_*_role check reads: ``member`` only when the caller has
+    super access, otherwise always the session user (p006 §2.11)."""
+    if member and has_super_access():
+        return member
+    return frappe.session.user
+
+
+@frappe.whitelist()
 def has_course_moderator_role(member=None):
     return frappe.db.get_value(
         "Has Role",
-        {"parent": member or frappe.session.user, "role": "Seminary Manager"},
+        {"parent": _role_subject(member), "role": "Seminary Manager"},
         "name",
     )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def has_course_instructor_role(member=None):
     return frappe.db.get_value(
         "Has Role",
-        {"parent": member or frappe.session.user, "role": "Program Chair"},
+        {"parent": _role_subject(member), "role": "Program Chair"},
         "name",
     )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def has_course_evaluator_role(member=None):
     return frappe.db.get_value(
         "Has Role",
-        {"parent": member or frappe.session.user, "role": "Instructor"},
+        {"parent": _role_subject(member), "role": "Instructor"},
         "name",
     )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def has_student_role(member=None):
     return frappe.db.get_value(
         "Has Role",
-        {"parent": member or frappe.session.user, "role": "Student"},
+        {"parent": _role_subject(member), "role": "Student"},
         "name",
     )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_courses_for_student(student):
     """Courses the student is actually enrolled in — i.e. a Submitted or
     Concluded CEI.
@@ -436,7 +445,10 @@ def get_courses_for_student(student):
     Payment, and Withdrawn — while still showing completed courses: when grades
     are sent the CEI moves Submitted -> Concluded (and the roster is finalized
     to active=0), so completed courses must be matched via 'Concluded'.
-    ``student`` is the User (email)."""
+    ``student`` is the User (email); a caller without super access only ever
+    gets their own list (p006 §2.11)."""
+    if not has_super_access():
+        student = frappe.session.user
     courses = frappe.db.sql(
         """select cei.coursesc_ce as name, cei.course_data as course,
                   cs.course_image, cs.course_description_for_lms,
@@ -479,7 +491,7 @@ def get_own_course_schedules(user):
     )
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_courses(filters=None, start=0, page_length=20):
     """Returns the list of courses.
 
@@ -488,11 +500,17 @@ def get_courses(filters=None, start=0, page_length=20):
     are listed as an instructor on.
     """
 
+    if isinstance(filters, str):
+        filters = frappe.parse_json(filters) or {}
     if not filters:
         filters = {}
 
     filters.setdefault("workflow_state", ["!=", "Cancelled"])
-    filters.setdefault("published", 1)
+    # Only staff may list unpublished sections (p006 §2.11).
+    if has_super_access():
+        filters.setdefault("published", 1)
+    else:
+        filters["published"] = 1
 
     roles = set(frappe.get_roles())
     if not (roles & COURSE_FULL_ACCESS_ROLES) and "Instructor" in roles:
@@ -522,7 +540,7 @@ def get_course_card_details(courses):
     return courses
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_instructors(course):
     instructor_details = []
     instructors = frappe.get_all(
@@ -552,7 +570,7 @@ def get_instructors(course):
     return instructor_details
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_instructor(instructorName):
     fields = [
         "name",
@@ -679,7 +697,7 @@ def get_course_or_filters(filters):
     return or_filters
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_course_outline(course, progress=False):
     """Returns the course outline."""
     outline = []
@@ -724,7 +742,7 @@ def get_course_outline(course, progress=False):
     return outline
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_course_title(course):
     return frappe.db.get_value("Course Schedule", course, "course")
 
@@ -773,7 +791,7 @@ def get_course_fields():
     ]
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_course_details(course):
     course_details = frappe.db.get_value(
         "Course Schedule",
@@ -850,6 +868,16 @@ def get_course_details(course):
         m["room_label"] = _room_labels.get(eff_room)
         m["online"] = m.cs_online
         m["web_meeting"] = m.cs_web_meeting or course_details.web_meeting
+
+    # The ICS token and meeting links are for enrolled students and staff only;
+    # everyone else gets the public description (p006 §2.11).
+    # `user_is_enrolled_in_course` takes the catalogue Course, not the section.
+    if not (has_super_access() or user_is_enrolled_in_course(course_details.course)):
+        course_details.calendar_token = None
+        course_details.web_meeting = None
+        for m in course_details.meeting_dates:
+            m["cs_web_meeting"] = None
+            m["web_meeting"] = None
 
     if frappe.session.user == "Guest":
         course_details.membership = None
@@ -1509,8 +1537,13 @@ def get_question_details(question):
 
 @frappe.whitelist()
 def get_all_questions_details(questions):
+    if isinstance(questions, str):
+        questions = frappe.parse_json(questions)
+    questions = [q for q in (questions or []) if q]
+    if not questions:
+        return []
 
-    questions_str = "', '".join(questions)
+    placeholders = ", ".join(["%s"] * len(questions))
     all_question_details = frappe.db.sql(
         f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question, q.type,
 q.pages_total, q.option_1, q.option_2, q.option_3, q.option_4,
@@ -1518,7 +1551,8 @@ q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
 q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
 q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
-where q.name = qq.question and qq.name in ('{questions_str}')""",
+where q.name = qq.question and qq.name in ({placeholders})""",
+        questions,
         as_dict=1,
     )
 
@@ -1916,6 +1950,7 @@ def _build_lesson_index_for_course(course_sc):
 
 @frappe.whitelist()
 def get_gradebook(course):
+    require_grader(include_registrar=True)
     students = frappe.get_all(
         "Scheduled Course Roster",
         filters={"course_sc": course},
@@ -1932,9 +1967,10 @@ def get_gradebook(course):
     )
     for student in students:
         student["assessments"] = frappe.db.sql(
-            f"""select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
-	where r.assessment_criteria = scar.name and r.parent ='{student.name}'""",
+	where r.assessment_criteria = scar.name and r.parent = %s""",
+            (student.name,),
             as_dict=1,
         )
 

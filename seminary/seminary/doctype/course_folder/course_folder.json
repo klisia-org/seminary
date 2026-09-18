@@ -1,18 +1,39 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{course}-{foldername}-{####}",
+ "autoname": "format:{foldername}-{####}",
  "creation": "2025-04-09 08:57:13.280493",
- "description": "A named file folder attached to a course, where instructors store materials students can download. Use it to organize and share course files with enrolled students.",
+ "description": "A named file folder where instructors store materials students can download. Scoped to a catalogue Course, to one Instructor across every section they teach, to one Section, or to the whole School (policies). Students read it through the roster of the sections it applies to.",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "scope",
   "course",
   "foldername",
+  "instructor",
+  "course_schedule",
+  "supersedes",
+  "column_break_scope",
   "file_reference",
-  "parent_folder"
+  "parent_folder",
+  "sharing_section",
+  "shared_with",
+  "shared_with_instructors",
+  "activity_section",
+  "activity"
  ],
  "fields": [
+  {
+   "fieldname": "scope",
+   "fieldtype": "Select",
+   "label": "Scope",
+   "options": "Course\nInstructor\nSection\nSchool",
+   "default": "Course",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Course: every section of the course. Instructor: one teacher's material, followed across every section of the course they teach. Section: one offering only. School: institution-wide (policies)."
+  },
   {
    "fieldname": "course",
    "fieldtype": "Link",
@@ -20,7 +41,7 @@
    "label": "Course",
    "link_filters": "[[\"Course\",\"disabled\",\"=\",0]]",
    "options": "Course",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.scope != \"School\""
   },
   {
    "fieldname": "foldername",
@@ -28,6 +49,34 @@
    "in_list_view": 1,
    "label": "Folder Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "instructor",
+   "fieldtype": "Link",
+   "label": "Instructor",
+   "options": "Instructor",
+   "depends_on": "eval:doc.scope == \"Instructor\"",
+   "mandatory_depends_on": "eval:doc.scope == \"Instructor\""
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "depends_on": "eval:doc.scope == \"Section\"",
+   "mandatory_depends_on": "eval:doc.scope == \"Section\""
+  },
+  {
+   "fieldname": "supersedes",
+   "fieldtype": "Link",
+   "label": "Supersedes",
+   "options": "Course Folder",
+   "depends_on": "eval:doc.scope == \"School\"",
+   "description": "This School folder replaces an older one; lessons embedding the older folder resolve to the newest folder in the chain."
+  },
+  {
+   "fieldname": "column_break_scope",
+   "fieldtype": "Column Break"
   },
   {
    "description": "Link to Frappe file manager",
@@ -44,12 +93,47 @@
    "label": "Parent File",
    "options": "File",
    "read_only": 1
+  },
+  {
+   "fieldname": "sharing_section",
+   "fieldtype": "Section Break",
+   "label": "Sharing",
+   "depends_on": "eval:doc.scope == \"Course\" || doc.scope == \"Instructor\""
+  },
+  {
+   "fieldname": "shared_with",
+   "fieldtype": "Table",
+   "label": "Shared With Courses",
+   "options": "Course Folder Share",
+   "depends_on": "eval:doc.scope == \"Course\"",
+   "description": "Other catalogue courses whose enrolled students may read this folder."
+  },
+  {
+   "fieldname": "shared_with_instructors",
+   "fieldtype": "Table",
+   "label": "Shared With Instructors",
+   "options": "Course Folder Instructor Share",
+   "depends_on": "eval:doc.scope == \"Instructor\"",
+   "description": "Other teachers who may embed this folder in their own lessons so that their students may read it, without a copy."
+  },
+  {
+   "fieldname": "activity_section",
+   "fieldtype": "Section Break",
+   "label": "Activity",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Table",
+   "label": "Activity",
+   "options": "Course Folder Activity",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-01 10:27:50.985465",
+ "modified": "2026-09-17 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Folder",
@@ -118,5 +202,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "foldername"
+ "title_field": "foldername",
+ "track_changes": 1
 }

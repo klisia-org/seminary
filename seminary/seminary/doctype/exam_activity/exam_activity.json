@@ -16,6 +16,7 @@
   "exam_config_section",
   "duration",
   "total_points",
+  "passing_percentage",
   "column_break_jvja",
   "qbyquestion",
   "shuffle_questions",
@@ -74,6 +75,14 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "description": "Score out of 100 required to pass. Default = 0 (no effect)",
+   "fieldname": "passing_percentage",
+   "fieldtype": "Float",
+   "label": "Passing Score",
+   "non_negative": 1
+  },
+  {
    "fieldname": "column_break_jvja",
    "fieldtype": "Column Break"
   },
@@ -99,7 +108,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-28 13:20:04.440410",
+ "modified": "2026-09-17 11:26:58.336544",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Exam Activity",

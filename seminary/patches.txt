@@ -69,3 +69,5 @@ seminary.seminary.patches.open_alumni_to_cohort_invites
 seminary.seminary.patches.match_alumni_partner_organizations
 seminary.seminary.patches.backfill_person_mailing_country
 seminary.seminary.patches.normalize_tax_ids
+
+seminary.seminary.patches.course_folder_scopes

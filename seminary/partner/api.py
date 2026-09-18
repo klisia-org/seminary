@@ -554,7 +554,11 @@ def apply_to_job(
         doc.job_opening = job_opening
         doc.applicant = person
 
-    doc.cover_letter = cover_letter or None
+    doc.cover_letter = (
+        frappe.utils.sanitize_html(cover_letter, always_sanitize=True)
+        if cover_letter
+        else None
+    )
     doc.resume = resume or None
     doc.doctrinal_alignment = doctrinal_alignment or None
     doc.alignment_explanation = alignment_explanation or None

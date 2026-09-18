@@ -71,7 +71,7 @@ def process_academic_approval(doc):
         course's Grading Scale by Pass/Fail. count_in_gpa follows wp_gpa / wf_gpa
         on the scale. The numeric (fscore) is preserved on PEC for transcript truth.
     """
-    from seminary.seminary.api import grade_thisstudent, fgrade_this_std
+    from seminary.seminary.api import _grade_thisstudent, _fgrade_this_std
     from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
     doc.academic_processed_by = frappe.session.user
@@ -166,8 +166,8 @@ def process_academic_approval(doc):
     if not roster_name:
         return
 
-    grade_thisstudent(roster_name)
-    fgrade_this_std(roster_name)
+    _grade_thisstudent(roster_name)
+    _fgrade_this_std(roster_name)
     fscore, calc_grade, fgradepass = frappe.db.get_value(
         "Scheduled Course Roster",
         roster_name,

@@ -12,6 +12,15 @@ from seminary.seminary.doctype.quiz.quiz import (
     quiz_summary,
 )
 
+# p006: the p006 tests in this folder build their own minimal fixtures. The
+# automatic link-dependency preload is switched off because the app's Student and
+# Instructor test records predate the Person-first mandatory fields (ADR 068) and
+# abort every IntegrationTestCase in this folder before a test runs.
+IGNORE_TEST_RECORD_DEPENDENCIES = [
+    "Course",
+    "Question",
+]
+
 
 def _make_choice_question(options, correct_idx):
     """Create a Choices Question. `options` is a list of option texts (2-4);

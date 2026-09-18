@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "creation": "2026-09-17 12:00:00.000000",
+ "description": "One line of the folder's change log: who did what to which file, and from which section (p006 F2, ADR 2.2a). A log, not a snapshot.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "when",
+  "who",
+  "action",
+  "file_name",
+  "section",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "when",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "When",
+   "read_only": 1
+  },
+  {
+   "fieldname": "who",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Who",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "added\nremoved\nrenamed\nmoved\nre-scoped\ncopied\nreferenced\nimported\nexported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "File Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Section",
+   "options": "Course Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-17 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Course Folder Activity",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
