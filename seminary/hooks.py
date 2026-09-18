@@ -292,6 +292,24 @@ permission_query_conditions = {
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_query",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_query",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
+    # p007 §2.2 / §2.8: student-keyed rows and instructor tiers, one factory.
+    "Student": "seminary.seminary.student_permissions.query_student",
+    "Scheduled Course Roster": "seminary.seminary.student_permissions.query_scheduled_course_roster",
+    "Course Enrollment Individual": "seminary.seminary.student_permissions.query_course_enrollment_individual",
+    "Exam Submission": "seminary.seminary.student_permissions.query_exam_submission",
+    "Assignment Submission": "seminary.seminary.student_permissions.query_assignment_submission",
+    "Discussion Submission": "seminary.seminary.student_permissions.query_discussion_submission",
+    "Quiz Submission": "seminary.seminary.student_permissions.query_quiz_submission",
+    "Course Schedule Progress": "seminary.seminary.student_permissions.query_course_schedule_progress",
+    "Withdrawal Request": "seminary.seminary.student_permissions.query_withdrawal_request",
+    "Graduation Request": "seminary.seminary.student_permissions.query_graduation_request",
+    "Recommendation Letter": "seminary.seminary.student_permissions.query_recommendation_letter",
+    "Culminating Project": "seminary.seminary.student_permissions.query_culminating_project",
+    "Chapel Attendance": "seminary.seminary.student_permissions.query_chapel_attendance",
+    "Course Schedule": "seminary.seminary.student_permissions.query_course_schedule",
+    "Course Schedule Chapter": "seminary.seminary.student_permissions.query_course_schedule_chapter",
+    "Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
+    "Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -321,6 +339,24 @@ has_permission = {
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_has",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_has",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
+    # p007 §2.2 / §2.8
+    "Student": "seminary.seminary.student_permissions.has_permission_student",
+    "Scheduled Course Roster": "seminary.seminary.student_permissions.has_permission_scheduled_course_roster",
+    "Course Enrollment Individual": "seminary.seminary.student_permissions.has_permission_course_enrollment_individual",
+    "Exam Submission": "seminary.seminary.student_permissions.has_permission_exam_submission",
+    "Assignment Submission": "seminary.seminary.student_permissions.has_permission_assignment_submission",
+    "Discussion Submission": "seminary.seminary.student_permissions.has_permission_discussion_submission",
+    "Quiz Submission": "seminary.seminary.student_permissions.has_permission_quiz_submission",
+    "Course Schedule Progress": "seminary.seminary.student_permissions.has_permission_course_schedule_progress",
+    "Withdrawal Request": "seminary.seminary.student_permissions.has_permission_withdrawal_request",
+    "Graduation Request": "seminary.seminary.student_permissions.has_permission_graduation_request",
+    "Recommendation Letter": "seminary.seminary.student_permissions.has_permission_recommendation_letter",
+    "Culminating Project": "seminary.seminary.student_permissions.has_permission_culminating_project",
+    "Chapel Attendance": "seminary.seminary.student_permissions.has_permission_chapel_attendance",
+    "Course Schedule": "seminary.seminary.student_permissions.has_permission_course_schedule",
+    "Course Schedule Chapter": "seminary.seminary.student_permissions.has_permission_course_schedule_chapter",
+    "Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
+    "Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
 }
 
 # DocType Class
@@ -494,6 +530,9 @@ doc_events = {
     # Wildcard hook reflects linked-document status changes back onto the
     # student's graduation requirement snapshot. Cheap short-circuit when the
     # doc's doctype isn't a registered Linked Document target.
+    "Academic Unit Membership": {
+        "after_delete": "seminary.seminary.file_policy.on_membership_gone",
+    },
     "*": {
         # Fills the snapshot fields declared in `person_fields.SNAPSHOTS`
         # (ADR 068 §3) — a person's name as it stood when the record was
@@ -501,7 +540,13 @@ doc_events = {
         # than five controllers so that declaring a new snapshot needs no
         # controller edit; it is an O(1) dict miss for every other doctype.
         "before_validate": "seminary.seminary.person_fields.capture_snapshots",
-        "on_update": "seminary.seminary.communication_triggers.process",
+        "on_update": [
+            "seminary.seminary.communication_triggers.process",
+            # File privacy (p007 §8.2): keeps registered web images in step
+            # with their host and attaches files embedded in lesson content
+            # and submissions. Dict misses for every other doctype.
+            "seminary.seminary.file_policy.on_host_update",
+        ],
         "on_update_after_submit": [
             "seminary.seminary.graduation.reflect_linked_doc_status",
             "seminary.seminary.communication_triggers.process",

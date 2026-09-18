@@ -196,13 +196,11 @@ class SeminaryAnnouncement(Document):
         if not self.custom_filter_doctype:
             return
         email_field = self.custom_email_field or "email"
-        meta = frappe.get_meta(self.custom_filter_doctype)
-        if not meta.get_field(email_field) and email_field != "name":
-            frappe.throw(
-                _("Email field {0} does not exist on {1}.").format(
-                    email_field, self.custom_filter_doctype
-                )
-            )
+        from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+            validate_custom_filter,
+        )
+
+        validate_custom_filter(self.custom_filter_doctype, email_field)
 
 
 def send_announcement(announcement: str):
@@ -508,7 +506,12 @@ def _voice_media_url(doc):
         f = frappe.get_doc("File", name)
         if f.is_private:
             f.is_private = 0
-            f.save(ignore_permissions=True)
+            # p007 §8.2: the telephony carrier fetches this with no session.
+            frappe.flags.seminary_public_file = True
+            try:
+                f.save(ignore_permissions=True)
+            finally:
+                frappe.flags.seminary_public_file = False
             url = f.file_url
     return frappe.utils.get_url(url)
 

@@ -419,7 +419,9 @@ def _save_file(match):
             "file_name": filename,
             "content": content,
             "decode": False,
-            "is_private": False,
+            # An image pasted into an answer. Private; the submission's
+            # `on_update` attaches it so the grader can open it (p007 §8.2).
+            "is_private": True,
         }
     )
     _file.save(ignore_permissions=True)
@@ -447,8 +449,8 @@ def get_question_details(question):
     return
 
 
-@frappe.whitelist()
 def get_all_question_results(questions):
+    """Answer keys. No browser caller; not an endpoint (p007 §2.7)."""
     if isinstance(questions, str):
         questions = json.loads(questions)
 

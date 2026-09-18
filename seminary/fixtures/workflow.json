@@ -397,7 +397,13 @@
   "send_email_alert": 0,
   "states": [
    {
-    "allow_edit": "Program Chair",
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Draft"
+   },
+   {
+    "allow_edit": "Seminary Manager",
     "doc_status": "0",
     "is_optional_state": 0,
     "state": "Draft"
@@ -406,7 +412,37 @@
     "allow_edit": "Program Chair",
     "doc_status": "0",
     "is_optional_state": 0,
+    "state": "Draft"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
     "state": "Open for Enrollment"
+   },
+   {
+    "allow_edit": "Seminary Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Open for Enrollment"
+   },
+   {
+    "allow_edit": "Program Chair",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Open for Enrollment"
+   },
+   {
+    "allow_edit": "Registrar",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Enrollment Closed"
+   },
+   {
+    "allow_edit": "Seminary Manager",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "state": "Enrollment Closed"
    },
    {
     "allow_edit": "Program Chair",
@@ -437,21 +473,42 @@
    {
     "action": "Open Enrollment",
     "allow_self_approval": 1,
-    "allowed": "Program Chair",
+    "allowed": "Registrar",
+    "next_state": "Open for Enrollment",
+    "state": "Draft"
+   },
+   {
+    "action": "Open Enrollment",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
     "next_state": "Open for Enrollment",
     "state": "Draft"
    },
    {
     "action": "Close Enrollment",
     "allow_self_approval": 1,
-    "allowed": "Program Chair",
+    "allowed": "Registrar",
+    "next_state": "Enrollment Closed",
+    "state": "Open for Enrollment"
+   },
+   {
+    "action": "Close Enrollment",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
     "next_state": "Enrollment Closed",
     "state": "Open for Enrollment"
    },
    {
     "action": "Begin Grading",
     "allow_self_approval": 1,
-    "allowed": "Program Chair",
+    "allowed": "Registrar",
+    "next_state": "Grading",
+    "state": "Enrollment Closed"
+   },
+   {
+    "action": "Begin Grading",
+    "allow_self_approval": 1,
+    "allowed": "Seminary Manager",
     "next_state": "Grading",
     "state": "Enrollment Closed"
    }

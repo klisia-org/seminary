@@ -940,12 +940,21 @@ print(
     RESULTS[-1][2],
 )
 # graders
+# p007 §2.4: grading is course-scoped, so instr3 (on CS-A only) grades the
+# CS-A submission; the CS-B one is refused.
 check(
     "4.7 instr3 save_discussion_submission_grade",
     "instr3",
     "seminary.seminary.api.save_discussion_submission_grade",
-    {"submission_name": FX["DS_B"], "grade": 90},
+    {"submission_name": FX["DS_A"], "grade": 90},
     not_403,
+)
+check(
+    "4.7 instr3 save_discussion_submission_grade (other section, p007)",
+    "instr3",
+    "seminary.seminary.api.save_discussion_submission_grade",
+    {"submission_name": FX["DS_B"], "grade": 90},
+    403,
 )
 check(
     "4.7 instr3 save_exam_grade",

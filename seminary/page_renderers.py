@@ -27,6 +27,11 @@ def get_profile_url(username):
     This functions looks at the current value from the config and generates
     the URL for the profile.
     """
+    # A User without a username (accounts created by import or by staff often
+    # have none) has no profile page. Frappe renders this inside the Discussion
+    # Reply `after_insert` template, so raising here failed the reply itself.
+    if not username:
+        return ""
     return get_profile_url_prefix() + username
 
 

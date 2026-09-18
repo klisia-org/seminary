@@ -7,6 +7,7 @@ on the draft; they are computed when the announcement is submitted or previewed.
 import json
 
 import frappe
+from frappe import _
 
 
 def resolve_recipients(doc) -> list[dict]:
@@ -190,12 +191,46 @@ def _alumni_recipients(seen):
     return out
 
 
-def _from_custom_filter(doctype, filters, email_field, seen):
-    meta = frappe.get_meta(doctype)
-    if not meta.get_field(email_field) and email_field != "name":
+# Doctypes an announcement may address through a custom filter (ADR 045; p007
+# §2.9). Anything else is refused at validate and at send.
+AUDIENCE_DOCTYPES = (
+    "Student",
+    "Instructor",
+    "Program Enrollment",
+    "Alumni Profile",
+    "Person",
+    "Course Enrollment Individual",
+    "Scheduled Course Roster",
+)
+
+
+def validate_custom_filter(doctype, email_field):
+    """Raise unless `doctype` is an audience doctype and `email_field` is an
+    email-shaped field on it (p007 §2.9)."""
+    if doctype not in AUDIENCE_DOCTYPES:
         frappe.throw(
-            f"Email field '{email_field}' does not exist on doctype '{doctype}'."
+            _("{0} cannot be an announcement audience. Choose one of: {1}.").format(
+                doctype, ", ".join(AUDIENCE_DOCTYPES)
+            ),
+            title=_("Personalization error in custom filter"),
         )
+    meta = frappe.get_meta(doctype)
+    df = meta.get_field(email_field)
+    ok = bool(df) and (
+        df.options == "Email"
+        or "email" in (df.fieldname or "").lower()
+        or "user" == (df.fieldname or "").lower()
+    )
+    if not ok:
+        frappe.throw(
+            _("{0} is not an email field on {1}.").format(email_field, doctype),
+            title=_("Personalization error in custom filter"),
+        )
+
+
+def _from_custom_filter(doctype, filters, email_field, seen):
+    validate_custom_filter(doctype, email_field)
+    meta = frappe.get_meta(doctype)
 
     fields = ["name", email_field]
     user_field = "user" if meta.get_field("user") else None
@@ -209,7 +244,8 @@ def _from_custom_filter(doctype, filters, email_field, seen):
     if name_field:
         fields.append(name_field)
 
-    rows = frappe.get_all(doctype, filters=filters or [], fields=fields)
+    # get_list, not get_all: the author's own row permissions apply (p007 §2.9).
+    rows = frappe.get_list(doctype, filters=filters or [], fields=fields)
 
     out = []
     for r in rows:

@@ -45,6 +45,10 @@ class TestP006ApiGates(FrappeTestCase):
         super().setUpClass()
         cls.student = _make_user("Student", "student")
         cls.instructor = _make_user("Instructor", "instructor")
+        # p007: gates are course-scoped, so the "staff passes" half of every
+        # check runs as a Program Chair (a school role) rather than an
+        # Instructor with no sections.
+        cls.chair = _make_user("Program Chair", "chair")
 
     def setUp(self):
         frappe.set_user("Administrator")
@@ -60,11 +64,11 @@ class TestP006ApiGates(FrappeTestCase):
         with self.assertRaises(frappe.PermissionError):
             fn(*args, **kwargs)
 
-        frappe.set_user(self.instructor)
+        frappe.set_user(self.chair)
         try:
             fn(*args, **kwargs)
         except frappe.PermissionError as e:
-            self.fail("Instructor was refused by the gate: %s" % e)
+            self.fail("Program Chair was refused by the gate: %s" % e)
         except Exception:
             # Missing fixtures are fine; only the gate is under test.
             return
@@ -160,11 +164,15 @@ class TestP006ApiGates(FrappeTestCase):
     # ------------------------------------------------------------ F11 §2.11
 
     def test_utils_endpoints_no_longer_allow_guest(self):
+        # p007 §2.7: the has_*_role helpers are server-side only now.
         for fn in (
             utils.has_student_role,
             utils.has_course_moderator_role,
             utils.has_course_instructor_role,
             utils.has_course_evaluator_role,
+        ):
+            self.assertNotIn(fn, frappe.whitelisted, fn.__name__)
+        for fn in (
             utils.get_courses_for_student,
             utils.get_course_details,
             utils.get_courses,
@@ -181,8 +189,9 @@ class TestP006ApiGates(FrappeTestCase):
         frappe.set_user(self.student)
         self.assertFalse(utils.has_course_evaluator_role(member=self.instructor))
         self.assertTrue(utils.has_student_role(member=self.instructor))
-        # Staff may still ask about another user.
-        frappe.set_user(self.instructor)
+        # Staff may still ask about another user (a school role; an Instructor
+        # with no sections is section tier and reads as a student, p007 §2.8).
+        frappe.set_user(self.chair)
         self.assertTrue(utils.has_student_role(member=self.student))
 
     def test_get_courses_for_student_forces_session_user(self):
@@ -210,10 +219,10 @@ class TestP006ApiGates(FrappeTestCase):
             api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
 
     def test_course_enroll_staff_passes_gate(self):
-        frappe.set_user(self.instructor)
+        frappe.set_user(self.chair)
         try:
             api.course_enroll("ZZT-no-such-pe", "ZZT-no-such-cs")
         except frappe.PermissionError as e:
-            self.fail("Instructor was refused by the gate: %s" % e)
+            self.fail("Program Chair was refused by the gate: %s" % e)
         except Exception:
             return  # missing fixtures are fine; only the gate is under test

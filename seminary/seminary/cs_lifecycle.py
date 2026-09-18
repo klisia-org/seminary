@@ -95,7 +95,7 @@ def open_new_schedule_if_due(cs) -> None:
 
     System-driven: the schedule is born in Draft (Frappe forbids inserting
     straight into a later state) and the workflow's Open Enrollment action is
-    gated on the Program Chair role — which the creator (a script, the demo, the
+    gated on the Registrar (or Seminary Manager) role — which the creator (a script, the demo, the
     scheduler) may not hold. So we lift it via db.set_value, bypassing
     apply_workflow's per-user transition gate (ADR 013 system-driven pattern).
     """
@@ -115,7 +115,7 @@ def open_new_schedule_if_due(cs) -> None:
 
 def _system_advance_cs_state(cs_name, new_state) -> None:
     """Set a Course Schedule's workflow_state system-driven (bypassing the
-    Program-Chair-gated apply_workflow) and run the same waitlist side effects
+    role-gated apply_workflow) and run the same waitlist side effects
     the controller's on_update would — db.set_value skips controller hooks.
     """
     frappe.db.set_value(
@@ -147,7 +147,7 @@ def check_and_advance_to_grading(cs_name):
     already past Enrollment Closed.
 
     System-driven transition — bypasses ``apply_workflow`` because the user
-    saving a grade is typically an Instructor without the Program Chair role
+    saving a grade is typically an Instructor without the Registrar role
     required by the workflow's Begin Grading action.
     """
     if not cs_name:

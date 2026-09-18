@@ -231,15 +231,18 @@ def add_exam_grading_comment(submission_name, comment):
 
     doc = frappe.get_doc("Exam Submission", submission_name)
 
+    from seminary.seminary.guards import is_course_staff
+
     user = frappe.session.user
-    user_doc = frappe.get_doc("User", user)
     is_owner = doc.member == user
-    is_staff = any(
-        r.role in ("Instructor", "Program Chair", "Seminary Manager", "System Manager")
-        for r in user_doc.roles
-    )
+    # The student and the section's staff converse here; another section's
+    # instructor does not (p007 §2.4).
+    is_staff = is_course_staff(doc.course)
     if not is_owner and not is_staff:
-        frappe.throw(_("You do not have permission to comment on this submission."))
+        frappe.throw(
+            _("You do not have permission to comment on this submission."),
+            frappe.PermissionError,
+        )
 
     author_name = frappe.db.get_value("User", user, "full_name") or user
     doc.append(

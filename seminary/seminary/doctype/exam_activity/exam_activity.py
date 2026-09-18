@@ -188,7 +188,9 @@ def _save_file(match):
             "file_name": filename,
             "content": content,
             "decode": False,
-            "is_private": False,
+            # An image pasted into an answer. Private; the submission's
+            # `on_update` attaches it so the grader can open it (p007 §8.2).
+            "is_private": True,
         }
     )
     _file.save(ignore_permissions=True)

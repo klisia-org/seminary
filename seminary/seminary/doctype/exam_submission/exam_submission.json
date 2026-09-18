@@ -77,35 +77,41 @@
   {
    "fieldname": "fudge_points",
    "fieldtype": "Float",
-   "label": "Fudge Points"
+   "label": "Fudge Points",
+   "permlevel": 1
   },
   {
    "fieldname": "comments",
    "fieldtype": "Text Editor",
-   "label": "Comments"
+   "label": "Comments",
+   "permlevel": 1
   },
   {
    "fieldname": "score",
    "fieldtype": "Float",
-   "label": "Score"
+   "label": "Score",
+   "permlevel": 1
   },
   {
    "fetch_from": "exam.total_points",
    "fieldname": "score_out_of",
    "fieldtype": "Float",
-   "label": "Max Possible Score"
+   "label": "Max Possible Score",
+   "permlevel": 1
   },
   {
    "fieldname": "percentage",
    "fieldtype": "Float",
    "label": "Percentage",
-   "non_negative": 1
+   "non_negative": 1,
+   "permlevel": 1
   },
   {
    "fetch_from": "exam.passing_percentage",
    "fieldname": "passing_percentage",
    "fieldtype": "Float",
-   "label": "Passing Percentage"
+   "label": "Passing Percentage",
+   "permlevel": 1
   },
   {
    "fieldname": "course_name",
@@ -146,7 +152,8 @@
    "fieldname": "result",
    "fieldtype": "Table",
    "label": "answers",
-   "options": "Exam Question Result"
+   "options": "Exam Question Result",
+   "permlevel": 1
   },
   {
    "fieldname": "column_break_hfkj",
@@ -174,6 +181,7 @@
    "fieldname": "extra_credit",
    "fieldtype": "Check",
    "label": "Is Extra Credit",
+   "permlevel": 1,
    "read_only": 1
   },
   {
@@ -182,6 +190,7 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "Not Submitted\nNot Graded\nGraded",
+   "permlevel": 1,
    "translatable": 1
   },
   {
@@ -203,7 +212,8 @@
    "fieldname": "grading_comments",
    "fieldtype": "Table",
    "label": "Grading Comments",
-   "options": "Grading Comment"
+   "options": "Grading Comment",
+   "permlevel": 1
   },
   {
    "fieldname": "section_break_akrj",
@@ -278,11 +288,51 @@
    "create": 1,
    "email": 1,
    "export": 1,
+   "permlevel": 0,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Student",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "permlevel": 0,
+   "print": 1,
+   "report": 1,
+   "role": "Student",
    "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

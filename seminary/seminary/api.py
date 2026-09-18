@@ -39,8 +39,15 @@ from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
+    SCHOOL_ROLES,
+    is_course_staff,
+    own_or_staff,
+    require_course_staff,
+    require_enrolled,
     require_grader,
     require_outline_editor,
+    require_own_enrollment,
+    require_registrar,
 )
 
 ALLOWED_TAGS = [
@@ -93,7 +100,6 @@ def get_application_web_form_route(program: str | None = None) -> str:
     return route or DEFAULT_APPLICATION_WEB_FORM_ROUTE
 
 
-@frappe.whitelist()
 def sanitize_html(html):
     if not html:
         return html
@@ -102,13 +108,11 @@ def sanitize_html(html):
     )
 
 
-@frappe.whitelist()
 def sanitize_submission(doc, method):
     if doc.original_post:
         doc.original_post = sanitize_html(doc.original_post)
 
 
-@frappe.whitelist()
 def sanitize_reply(doc, method):
     if doc.reply:
         doc.reply = sanitize_html(doc.reply)
@@ -116,6 +120,8 @@ def sanitize_reply(doc, method):
 
 @frappe.whitelist()
 def get_student_group(course_name: str | None = None, user: str | None = None):
+    require_enrolled(course_name)
+    user = own_or_staff(user, kind="user")
     group = frappe.db.sql(
         """
 		select r.stuname_roster, r.student, r.stuemail_rc, k.student_group, k.group_instructor
@@ -130,6 +136,7 @@ def get_student_group(course_name: str | None = None, user: str | None = None):
 
 @frappe.whitelist()
 def get_student_groups_simple(course_name: str | None = None):
+    require_enrolled(course_name)
     groups = frappe.db.sql(
         """
 		select k.student_group, k.group_instructor
@@ -143,6 +150,11 @@ def get_student_groups_simple(course_name: str | None = None):
 
 @frappe.whitelist()
 def get_student_groups(course_name: str | None = None):
+    require_course_staff(course_name)
+    return _student_groups(course_name)
+
+
+def _student_groups(course_name):
     groups = frappe.db.sql(
         """
 		select k.student_group, k.group_instructor, m.student, m.student_name
@@ -181,6 +193,7 @@ def get_discussion_submissions(
     """Fetch submissions for a discussion activity within a course."""
     if not course_name or not discussion_id:
         raise frappe.ValidationError(_("Course and discussion are required."))
+    require_enrolled(course_name)
 
     filters = {
         "coursesc": course_name,
@@ -207,7 +220,7 @@ def get_discussion_submissions(
     )
 
     # Fetch student groups for the course
-    student_groups = get_student_groups(course_name)
+    student_groups = _student_groups(course_name)
 
     # Append student group and group instructor to each submission
     for submission in submissions:
@@ -224,12 +237,71 @@ def get_discussion_submissions(
 
 
 @frappe.whitelist()
+def reply_to_discussion_submission(submission, reply, reply_attach=None):
+    """Reply to a classmate's post in a graded Discussion Activity.
+
+    The portal used to insert the child row with `frappe.client.insert`, which
+    saves the *parent* and so needs write on the classmate's submission. p007
+    §2.1 took that away (a student writes only their own submission), so the
+    reply is written here: anyone who may open the section may reply, the
+    author fields come from the session and not from the request, and the row
+    is inserted on its own so the classmate's grade fields are never part of
+    the save.
+    """
+    row = frappe.db.get_value(
+        "Discussion Submission", submission, ["name", "coursesc"], as_dict=True
+    )
+    if not row:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    require_enrolled(row.coursesc)
+
+    reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
+    if not frappe.utils.strip_html(reply).strip() and not reply_attach:
+        frappe.throw(_("Reply cannot be empty"))
+
+    from seminary.seminary import file_policy
+    from seminary.seminary.guards import current_student
+
+    user = frappe.session.user
+    host = ("Course Schedule", row.coursesc)
+    if reply_attach:
+        # Classmates read the attachment through the section (p007 §8.2); a
+        # URL the sender cannot read themselves is not adopted.
+        reply_attach = file_policy.adopt(reply_attach, host)
+    for raw in file_policy.find_urls(reply):
+        file_policy.adopt(file_policy._lookup_url(raw), host)
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "Discussion Submission Replies",
+            "parent": row.name,
+            "parenttype": "Discussion Submission",
+            "parentfield": "replies",
+            "idx": frappe.db.count(
+                "Discussion Submission Replies", {"parent": row.name}
+            )
+            + 1,
+            "member": user,
+            "student": current_student(user),
+            "member_name": frappe.db.get_value("User", user, "full_name"),
+            "reply": reply,
+            "reply_attach": reply_attach or None,
+            "reply_dt": frappe.utils.now_datetime(),
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+@frappe.whitelist()
 def get_user_discussion_submission(
     course_name: str | None = None,
     discussion_id: str | None = None,
     owner: str | None = None,
 ):
-
+    require_enrolled(course_name)
+    if not is_course_staff(course_name):
+        owner = frappe.session.user
     submissions = frappe.get_all(
         "Discussion Submission",
         filters={
@@ -262,6 +334,9 @@ def get_user_discussion_replies(
     discussion_id: str | None = None,
     member: str | None = None,
 ):
+    require_enrolled(course_name)
+    if not is_course_staff(course_name):
+        member = frappe.session.user
     replies = frappe.db.sql(
         """
 		select r.reply, r.reply_attach, r.member_name, r.reply_dt, s.original_post, s.student_name
@@ -288,6 +363,7 @@ def get_discussion_submission_summary(
     """
     if not course_name or not discussion_id:
         frappe.throw(_("Course and discussion are required."))
+    require_course_staff(course_name)
 
     # 1. All students in roster
     roster_rows = frappe.db.sql(
@@ -301,7 +377,7 @@ def get_discussion_submission_summary(
     )
 
     # Build student-to-group mapping from get_student_groups
-    group_data = get_student_groups(course_name)
+    group_data = _student_groups(course_name)
     student_to_group = {}
     for g in group_data:
         student_to_group[g["student"]] = g["student_group"]
@@ -391,6 +467,7 @@ def save_discussion_submission_grade(submission_name: str, grade: float):
         raise frappe.ValidationError(_("Submission name is required."))
 
     submission = frappe.get_doc("Discussion Submission", submission_name)
+    require_course_staff(submission.coursesc)
     submission.grade = float(grade)
     submission.status = "Graded"
 
@@ -447,6 +524,13 @@ def get_grading_comments(submission_name: str):
     """Get all grading comments for a discussion submission."""
     if not submission_name:
         frappe.throw(_("Submission name is required."))
+    sub = frappe.db.get_value(
+        "Discussion Submission", submission_name, ["member", "coursesc"], as_dict=True
+    )
+    if not sub or not (
+        sub.member == frappe.session.user or is_course_staff(sub.coursesc)
+    ):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
 
     comments = frappe.get_all(
         "Grading Comment",
@@ -466,6 +550,7 @@ def get_discussion_dashboard(course_name: str, discussion_id: str):
     """
     if not course_name or not discussion_id:
         frappe.throw(_("Course and discussion are required."))
+    require_enrolled(course_name)
 
     # Get student emails from roster to filter out instructor posts
     roster_emails = frappe.db.sql_list(
@@ -522,6 +607,7 @@ def get_quiz_dashboard(course_name: str, quiz_id: str):
     """
     if not course_name or not quiz_id:
         frappe.throw(_("Course and quiz are required."))
+    require_course_staff(course_name)
 
     roster_emails = frappe.db.sql_list(
         """
@@ -562,6 +648,7 @@ def get_exam_dashboard(course_name, exam_id):
     taken (submitted) it."""
     if not course_name or not exam_id:
         frappe.throw(_("Course and exam are required."))
+    require_course_staff(course_name)
 
     roster_emails = frappe.db.sql_list(
         """
@@ -597,6 +684,7 @@ def get_assignment_dashboard(course_name, assignment_id):
     have submitted it."""
     if not course_name or not assignment_id:
         frappe.throw(_("Course and assignment are required."))
+    require_course_staff(course_name)
 
     roster_emails = frappe.db.sql_list(
         """
@@ -661,19 +749,25 @@ def set_user_language(language):
 
 @frappe.whitelist()
 def get_file_info(file_url):
-    print("Get File Info called with file_url: ", file_url)
-    """Get file info for the given file URL."""
+    """Get file info for the given file URL (p007 §2.5: only a File the caller
+    may read)."""
     file_info = frappe.db.get_value(
         "File",
         {"file_url": file_url},
-        ["file_name", "file_size", "file_url"],
+        ["name", "file_name", "file_size", "file_url"],
         as_dict=1,
     )
+    if not file_info:
+        return None
+    if not frappe.has_permission("File", "read", file_info.name):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    file_info.pop("name", None)
     return file_info
 
 
 @frappe.whitelist()
 def save_course(course, course_data):
+    require_course_staff(course)
 
     try:
         if isinstance(course_data, str):
@@ -765,6 +859,7 @@ def _can_manage_virtual_meetings(course_schedule):
 @frappe.whitelist()
 def get_virtual_meetings(course_schedule):
     """Online meetings on a section's calendar (cs_online rows) for the course form."""
+    require_course_staff(course_schedule, include_registrar=True)
     return frappe.get_all(
         "Course Schedule Meeting Dates",
         filters={
@@ -890,6 +985,15 @@ def get_user_info():
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
     user.instructor = frappe.db.get_value("Instructor", {"user": user.name}, "name")
+    # p007 §2.8: how far this instructor reaches, for the Courses page control.
+    from seminary.seminary.guards import faculty_read_scope, instructor_tier
+
+    user.instructor_tier = instructor_tier(user.name)
+    user.faculty_read_scope = faculty_read_scope()
+    user.can_list_all_courses = bool(
+        _roles & {"Program Chair", "Seminary Manager", "System Manager"}
+        or user.instructor_tier == "record"
+    )
     # Faculty-capability routing (ADR 059): the units/capabilities this instructor
     # is wired to drive which worklist tabs (advising, verifications, placement
     # exams) the portal shows.
@@ -1151,7 +1255,6 @@ def get_school_abbr_logo():
     }
 
 
-@frappe.whitelist()
 def get_course(program):
     """Return list of courses for a particular program
     :param program: Program
@@ -1170,6 +1273,7 @@ def get_student_programs(student):
     """Return list of programs for a particular student, with their grades and PE summary.
     :param student: Student
     """
+    student = own_or_staff(student)
     grades = frappe.db.sql(
         """SELECT pe.program, pe.name AS program_enrollment, pe.pgmenrol_active,
             pe.student, pe.totalcredits,
@@ -1451,7 +1555,9 @@ def course_enroll(pe_name, course):
     doc.course_data = frappe.db.get_value("Course Schedule", cs.name, "course")
 
     doc.credits = doc.get_credits()
-    doc.insert()
+    # The Student create row on CEI is gone (p007 §2.1); the gate above already
+    # established this is the caller's own enrollment.
+    doc.insert(ignore_permissions=True)
 
     # Without registrar gating (per-Program flag), advance the draft
     # immediately. submit() raises docstatus and fires on_submit (which
@@ -1582,6 +1688,7 @@ def _resolve_display_terms():
 def get_student_enrollments_for_term(program_enrollment):
     """Return the student's CEIs for the current academic term (with a graceful
     fallback during inter-term gaps — see _resolve_display_terms)."""
+    require_own_enrollment(program_enrollment)
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     student = pe.student
     if not student:
@@ -1679,7 +1786,7 @@ def cancel_draft_enrollment(cei_name):
         "Student", {"user": frappe.session.user}, "name"
     ):
         frappe.throw(_("You can only cancel your own enrollments"))
-    doc.delete()
+    doc.delete(ignore_permissions=True)
     return {"success": True}
 
 
@@ -1807,7 +1914,6 @@ def resolve_schedule_conflict(cei_name):
     }
 
 
-@frappe.whitelist()
 def credits_pe_track():
     """Recalculate track credits for all active program enrollments.
     Iterates over each emphasis in the Program Enrollment Emphasis child table,
@@ -1918,6 +2024,13 @@ def get_program_audit(program_enrollment):
     Includes credit progress, emphasis status, mandatory course completion,
     and graduation eligibility.
     """
+    require_own_enrollment(program_enrollment)
+    return _program_audit(program_enrollment)
+
+
+def _program_audit(program_enrollment):
+    """Server callers (alumni portal, the program progress report) gate on
+    their own terms and call this."""
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = frappe.get_cached_doc("Program", pe.program)
 
@@ -2417,6 +2530,7 @@ def get_pe_unpaid_invoices(program_enrollment):
     Frappe-only seminary)."""
     from seminary.seminary.financial.backend import get_financial_backend
 
+    require_own_enrollment(program_enrollment)
     return get_financial_backend().pe_unpaid_invoices(program_enrollment)
 
 
@@ -2481,6 +2595,7 @@ def get_available_courses_categorized(program_enrollment):
     """
     from seminary.seminary.utils import student_schedule_conflicts
 
+    require_own_enrollment(program_enrollment)
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = frappe.get_cached_doc("Program", pe.program)
 
@@ -2691,6 +2806,7 @@ def enroll_student(source_name):
 
     :param source_name: Student Applicant.
     """
+    require_registrar()
     frappe.publish_realtime(
         "enroll_student_progress", {"progress": [1, 4]}, user=frappe.session.user
     )
@@ -2743,7 +2859,6 @@ def enroll_student(source_name):
     return program_enrollment
 
 
-@frappe.whitelist()
 def check_attendance_records_exist(course_schedule=None, date=None):
     """Check if Attendance Records are made against the specified Course Schedule
 
@@ -2779,6 +2894,7 @@ def mark_attendance(
     require_grader(include_registrar=True)
     if not course_schedule:
         return {"success": False}
+    require_course_staff(course_schedule, include_registrar=True)
 
     def _as_list(value):
         if value is None:
@@ -2885,7 +3001,6 @@ def make_attendance_records(
         frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
 
 
-@frappe.whitelist()
 def get_student_contacts(student):
     """Returns List of contacts of a Student.
 
@@ -2907,6 +3022,7 @@ def get_course_schedule_events(start, end, filters=None):
     :param end: End date-time.
     :param filters: Filters (JSON).
     """
+    frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
     filters = json.loads(filters)
     from frappe.desk.calendar import get_event_conditions
 
@@ -2945,7 +3061,6 @@ def get_course_schedule_events(start, end, filters=None):
     )
 
 
-@frappe.whitelist()
 def get_assessment_criteria(course):
     """Returns Assessmemt Criteria and their Weightage from Course Master.
 
@@ -2994,7 +3109,6 @@ def _resolve_interval(grading_scale, percentage, field):
     return result
 
 
-@frappe.whitelist()
 def get_grade(grading_scale, percentage):
     """Returns Grade based on the Grading Scale and Score.
 
@@ -3004,7 +3118,6 @@ def get_grade(grading_scale, percentage):
     return _resolve_interval(grading_scale, percentage, "grade_code")
 
 
-@frappe.whitelist()
 def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
@@ -3059,6 +3172,7 @@ def save_course_assessment(course, assessment_data):
     :param assessment_data: Assessment Data (JSON).
     """
     require_outline_editor()
+    require_course_staff(course)
     import json
 
     print("Assessment Data:", assessment_data)
@@ -3140,7 +3254,6 @@ def save_course_assessment(course, assessment_data):
     return {"success": True}
 
 
-@frappe.whitelist()
 def get_scholarship(student):
     # Back-compat shim: scholarships are now first-class Scholarship Awards.
     from seminary.seminary.scholarship import get_student_scholarship
@@ -3158,7 +3271,7 @@ def get_student_invoices(student=None):
 
 @frappe.whitelist()
 def courses_for_student(program_ce):
-
+    require_own_enrollment(program_ce)
     pgen_name = program_ce
     # Get available scheduled courses for the student based on program enrollment,
     # emphasis tracks (from child table), academic term, and prerequisites
@@ -3243,7 +3356,6 @@ def courses_for_student(program_ce):
     return courses
 
 
-@frappe.whitelist()
 def copy_data_to_scheduled_course_roster(doc, method):
     student_ce = doc.student_ce
     program = doc.program_data
@@ -3309,7 +3421,6 @@ def copy_data_to_scheduled_course_roster(doc, method):
     return
 
 
-@frappe.whitelist()
 def copy_data_to_program_enrollment_course(doc, method):
     cei = doc.program_ce
     course_lnk = doc.coursesc_ce
@@ -3330,7 +3441,6 @@ def copy_data_to_program_enrollment_course(doc, method):
         program_enrollment_course.insert(ignore_permissions=True)
 
 
-@frappe.whitelist()
 def update_card(doc, method):
     # define who needs update
     existings = frappe.db.sql(
@@ -3400,6 +3510,7 @@ def insert_cs_assessment(criteria):
     # If it's a string, then parse it.
     if isinstance(criteria, str):
         criteria = json.loads(criteria)
+    require_course_staff(criteria.get("parent"))
 
     # Now, criteria is a dict and you can work with it:
     frappe.logger().info(f"Received criteria: {criteria}")
@@ -3431,6 +3542,7 @@ def insert_cs_assessment(criteria):
 
 @frappe.whitelist()
 def get_pgmenrollments(name):
+    name = own_or_staff(name)
     program_enrollments = frappe.get_all(
         "Program Enrollment",
         filters={"student": name, "docstatus": 1},
@@ -3448,6 +3560,7 @@ def get_pgmenrollments(name):
 
 @frappe.whitelist()
 def get_course_rosters(name):
+    require_course_staff(name, include_registrar=True)
     course_rosters = []
     course_rosters = frappe.get_all(
         "Scheduled Course Roster",
@@ -3475,6 +3588,7 @@ def grade_thisstudent(name):
     """Desk entry point (scheduled_course_roster.js); server callers use
     ``_grade_thisstudent`` directly (p006 §2.7)."""
     require_grader(include_registrar=True)
+    require_course_staff(_roster_section(name), include_registrar=True)
     return _grade_thisstudent(name)
 
 
@@ -3523,7 +3637,6 @@ def _grade_thisstudent(name):
         return "done"
 
 
-@frappe.whitelist()
 def get_gradepass(grading_scale, percentage):
     """Returns Pass/Fail based on the Grading Scale and Score.
 
@@ -3538,7 +3651,20 @@ def fgrade_this_std(name):
     """Desk entry point (scheduled_course_roster.js); server callers use
     ``_fgrade_this_std`` directly (p006 §2.7)."""
     require_grader(include_registrar=True)
+    require_course_staff(_roster_section(name), include_registrar=True)
     return _fgrade_this_std(name)
+
+
+def _roster_section(roster_name):
+    return frappe.db.get_value("Scheduled Course Roster", roster_name, "course_sc")
+
+
+def _require_send_scope(course_schedule):
+    """Registrar, chair and manager send grades anywhere; an Instructor only
+    for a section they are listed on (p007 §2.4)."""
+    if set(frappe.get_roles()) & SCHOOL_ROLES:
+        return
+    require_course_staff(course_schedule)
 
 
 def _fgrade_this_std(name):
@@ -4016,6 +4142,7 @@ def send_selected_grades(course_schedule, rosters):
     first.
     """
     _assert_may_send_grades()
+    _require_send_scope(course_schedule)
 
     if isinstance(rosters, str):
         rosters = json.loads(rosters)
@@ -4098,6 +4225,7 @@ def send_grades(doc=None, **kwargs):
     else:
         # Use doc.get("name") if it's already a dictionary (fallback)
         docname = doc.get("name")
+    _require_send_scope(docname)
 
     state = frappe.db.get_value("Course Schedule", docname, "workflow_state")
     if state == "Closed":
@@ -4435,6 +4563,7 @@ def _check_auto_grant_emphases(pe_name):
 
 @frappe.whitelist()
 def course_event(name):
+    require_course_staff(name, include_registrar=True)
     course = frappe.get_doc("Course Schedule", name)
     # An open-ended section (ADR 065) has no end date and no meetings, so there
     # is no bounded span to put on a calendar.
@@ -4615,24 +4744,6 @@ OUTLINE_EDIT_ROLES = {
 }
 
 
-def _assert_may_edit_outline():
-    """Who may write a chapter.
-
-    Students hold `write` on Course Schedule Chapter so progress can be recorded
-    against it, which means a doctype permission check would let them through.
-    That was tolerable while a chapter was only a title; it is not now that the
-    chapter carries the competency mapping the content gating reads (ADR 065
-    section 2), because clearing it would unlock the course. The role set
-    mirrors `canEditOutline` in the portal, so nothing that could edit an
-    outline before can stop now.
-    """
-    if not (OUTLINE_EDIT_ROLES & set(frappe.get_roles())):
-        frappe.throw(
-            _("You are not permitted to edit this course outline."),
-            frappe.PermissionError,
-        )
-
-
 @frappe.whitelist()
 def upsert_chapter(
     chapter_title,
@@ -4642,7 +4753,7 @@ def upsert_chapter(
     name=None,
     course_competency=None,
 ):
-    _assert_may_edit_outline()
+    require_course_staff(course)
     course_title = frappe.get_value("Course Schedule", course, "course")
     values = frappe._dict(
         {
@@ -4796,6 +4907,7 @@ def delete_chapter(chapter):
     )
     if not chapterInfo:
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
+    require_course_staff(chapterInfo.coursesc)
 
     if chapterInfo.is_scorm_package:
         delete_scorm_package(chapterInfo)
@@ -4953,7 +5065,6 @@ def _spine_details(person):
 # oikonomos Scholarships form.
 
 
-@frappe.whitelist()
 def get_fields(doctype, fields=None):
     if fields is None:
         fields = []
@@ -4971,6 +5082,7 @@ def delete_lesson(lesson, chapter):
     require_outline_editor()
     # Delete Reference
     chapter = frappe.get_doc("Course Schedule Chapter", chapter)
+    require_course_staff(chapter.coursesc)
     chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
     chapter.save()
 
@@ -4990,6 +5102,7 @@ def delete_documents(doctype, documents):
 
 @frappe.whitelist()
 def get_announcements(cs):
+    require_enrolled(cs)
     communications = frappe.get_all(
         "Communication",
         filters={
@@ -5030,6 +5143,8 @@ def update_lesson_index(lesson, source_chapter, target_chapter, idx):
         if source_chapter == target_chapter
         else frappe.get_doc("Course Schedule Chapter", target_chapter)
     )
+    require_course_staff(source_doc.coursesc)
+    require_course_staff(target_doc.coursesc)
 
     if source_chapter == target_chapter:
         _reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
@@ -5096,7 +5211,7 @@ def update_chapter_index(course, chapter, idx):
     Chapter order is the order of the Course Schedule's `chapters` child rows,
     so reordering rewrites that table — the same shape as reordering lessons
     inside a chapter."""
-    _assert_can_edit_outline(course)
+    require_course_staff(course)
     idx = max(cint(idx) or 1, 1)
 
     course_doc = frappe.get_doc("Course Schedule", course)
@@ -5114,22 +5229,6 @@ def update_chapter_index(course, chapter, idx):
 
     frappe.db.commit()
     return {"message": _("Chapter index updated successfully.")}
-
-
-def _assert_can_edit_outline(course):
-    """Mirror of the outline editor's client-side gate (CourseOutline's
-    `allowEdit`): a course-editing role, or an instructor on this course."""
-    from seminary.seminary.utils import is_instructor
-
-    roles = set(frappe.get_roles())
-    if roles & {"Seminary Manager", "Program Chair", "Instructor", "System Manager"}:
-        return
-    if is_instructor(course):
-        return
-    frappe.throw(
-        _("You are not permitted to edit this course outline."),
-        frappe.PermissionError,
-    )
 
 
 @frappe.whitelist()
@@ -5201,14 +5300,21 @@ _GRADER_ROLES = ("Instructor", "Program Chair", "Seminary Manager", "System Mana
 
 
 def _can_grade_submission(submission):
-    """Anyone with a grading role can post / edit / resolve anchored comments
-    on a submission. (Authors of a comment can edit their own — checked at
-    the call site.)"""
+    """A grader may post / edit / resolve anchored comments on a submission
+    of a section they teach (p007 §2.4); chairs and managers anywhere. With
+    no submission in hand (plagiarism tooling entry points) this is the role
+    check alone. (Authors of a comment can edit their own — checked at the
+    call site.)"""
     user = frappe.session.user
     if user == "Administrator":
         return True
     user_roles = set(frappe.get_roles(user))
-    return any(role in user_roles for role in _GRADER_ROLES)
+    if not any(role in user_roles for role in _GRADER_ROLES):
+        return False
+    course = submission.get("course") if submission is not None else None
+    if course:
+        return is_course_staff(course)
+    return True
 
 
 @frappe.whitelist()
@@ -5273,6 +5379,7 @@ def add_submission_comment(
     """
     import json as _json
 
+    _require_grader()  # role first; the section check follows the load
     if not comment or not comment.strip():
         frappe.throw(_("Comment text is required."))
 
@@ -5368,7 +5475,6 @@ def get_student_partial_balance_payment_url(amount=None, invoices=None):
     return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 
-@frappe.whitelist()
 def get_my_announcements(limit=100):
     """Return announcements sent to the current user.
 
@@ -5414,7 +5520,9 @@ def preview_announcement_recipients(name):
     )
     from seminary.seminary.person import find_person
 
+    frappe.has_permission("Seminary Announcement", "read", throw=True)
     doc = frappe.get_doc("Seminary Announcement", name)
+    doc.check_permission("read")
     if doc.docstatus != 0:
         frappe.throw(_("Preview is only available on draft announcements."))
 
@@ -5497,6 +5605,7 @@ def generate_announcement_labels(name):
         resolve_recipients,
     )
 
+    frappe.has_permission("Seminary Announcement", "write", throw=True)
     doc = frappe.get_doc("Seminary Announcement", name)
     doc.check_permission("write")
 
@@ -5535,6 +5644,7 @@ def announcement_letters_pdf(name):
         seminary_announcement as sa,
     )
 
+    frappe.has_permission("Seminary Announcement", "read", throw=True)
     doc = frappe.get_doc("Seminary Announcement", name)
     doc.check_permission("read")
     url = sa._attach_letters_pdf(doc)
@@ -5559,8 +5669,9 @@ def preview_announcement_letter(name):
     )
     from seminary.seminary.person import find_person
 
+    frappe.has_permission("Seminary Announcement", "write", throw=True)
     doc = frappe.get_doc("Seminary Announcement", name)
-    doc.check_permission("read")
+    doc.check_permission("write")  # it writes a File (p007 §2.6)
 
     resolved = (
         resolve_recipients(doc)
@@ -5637,6 +5748,7 @@ def room_search(doctype, txt, searchfield, start, page_len, filters):
     course_schedule (optional, for the busy/free flag). All optional — with
     none of them this degrades to a plain capacity-sorted list.
     """
+    frappe.only_for(list(SCHOOL_ROLES | {"Instructor"}))
     filters = (
         frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
     )
@@ -5765,6 +5877,13 @@ def _require_grader():
         frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
+def _require_submission_staff(submission_name):
+    """The submission's section must be one the caller teaches (p007 §2.4)."""
+    course = frappe.db.get_value("Assignment Submission", submission_name, "course")
+    if course:
+        require_course_staff(course)
+
+
 def _latest_plagiarism_result(submission_name):
     rows = frappe.get_all(
         "Plagiarism Check Result",
@@ -5788,6 +5907,7 @@ def run_plagiarism_check(submission_name, provider=None):
         frappe.throw(_("Plagiarism checking is disabled."))
     if not frappe.db.exists("Assignment Submission", submission_name):
         frappe.throw(_("Submission not found."))
+    _require_submission_staff(submission_name)
 
     from seminary.seminary.plagiarism.service import enqueue_check
 
@@ -5800,6 +5920,7 @@ def get_plagiarism_result(submission_name):
     """Latest plagiarism result for a submission (header + matched-source rows,
     without the heavy passage JSON). Returns None when none has been run."""
     _require_grader()
+    _require_submission_staff(submission_name)
     result_name = _latest_plagiarism_result(submission_name)
     if not result_name:
         return None
@@ -5847,6 +5968,9 @@ def get_plagiarism_match_detail(result_name, source_row):
     """The verbatim overlapping passages for one matched-source row (the detail
     modal). Kept off the list call so it stays light."""
     _require_grader()
+    _require_submission_staff(
+        frappe.db.get_value("Plagiarism Check Result", result_name, "submission")
+    )
     row = frappe.db.get_value(
         "Plagiarism Matched Source",
         {"name": source_row, "parent": result_name},

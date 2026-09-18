@@ -269,19 +269,7 @@
 
 <script setup>
 import { ref, computed, inject, watch, reactive } from 'vue'
-import {
-  createResource,
-  Breadcrumbs,
-  ListView,
-  ListHeader,
-  ListHeaderItem,
-  ListRows,
-  ListRow,
-  ListRowItem,
-  FormControl,
-  Button,
-  Dialog,
-} from 'frappe-ui'
+import { createResource, Breadcrumbs, ListView, ListHeader, ListHeaderItem, ListRows, ListRow, ListRowItem, FormControl, Button, Dialog, toast } from 'frappe-ui'
 import { useRouter, useRoute } from 'vue-router'
 import { updateDocumentTitle } from '@/utils'
 
@@ -614,27 +602,13 @@ function discardChanges() {
 // ============================================
 
 async function saveManualChanges() {
+  // Editing saved groups has no server endpoint yet (p007 §2.13 action item:
+  // `update_student_groups`). Until it exists, changes are discarded here
+  // rather than posted to a method that does not exist.
   isSaving.value = true
   try {
-    const saveResource = createResource({
-      url: 'seminary.seminary.utils.update_student_groups',
-      params: {
-        course: props.courseName,
-        group_assignments: editableGroups.value,
-      },
-    })
-    await saveResource.submit()
-
-    // Refresh saved groups from server
-    await saved_groups.reload()
-
-    // Re-sync local state from the fresh server data
-    if (saved_groups.data && saved_groups.data.length > 0) {
-      editableGroups.value = JSON.parse(JSON.stringify(saved_groups.data))
-      originalGroupsSnapshot.value = JSON.stringify(saved_groups.data)
-    }
-  } catch (error) {
-    console.error('Error saving group changes:', error)
+    discardChanges()
+    toast({ title: __('Editing saved groups is not available yet.'), icon: 'info' })
   } finally {
     isSaving.value = false
   }
@@ -645,20 +619,11 @@ async function saveManualChanges() {
 // ============================================
 
 async function recreateGroups() {
+  // Deleting saved groups has no server endpoint yet (p007 §2.13 action item:
+  // `delete_student_groups`); the dialog closes without calling a method that
+  // does not exist.
   showRecreateConfirm.value = false
-  try {
-    const deleteResource = createResource({
-      url: 'seminary.seminary.utils.delete_student_groups',
-      params: { course: props.courseName },
-    })
-    await deleteResource.submit()
-    // Reload saved_groups so hasSavedGroups becomes false, showing create view
-    await saved_groups.reload()
-    editableGroups.value = []
-    originalGroupsSnapshot.value = ''
-  } catch (error) {
-    console.error('Error deleting groups:', error)
-  }
+  toast({ title: __('Recreating groups is not available yet.'), icon: 'info' })
 }
 
 // ============================================

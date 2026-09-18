@@ -1,7 +1,17 @@
 <template>
   <header class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
     <div class="flex items-center">
-      <h1 class="text-xl font-semibold text-ink-gray-9">{{ isStudent ? __('My Courses') : __('All Courses') }}</h1>
+      <h1 class="text-xl font-semibold text-ink-gray-9">{{ headingLabel }}</h1>
+    </div>
+    <!-- p007 §2.8: an instructor of record (or a chair/manager) may widen the
+         list beyond their own sections; graders and assistants never see it. -->
+    <div v-if="canListAllCourses" class="flex items-center gap-2 text-sm">
+      <label for="courseScope" class="text-ink-gray-7">{{ __('Show') }}</label>
+      <select id="courseScope" v-model="courseScope"
+        class="rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm sm:text-sm">
+        <option value="mine">{{ __('My Courses') }}</option>
+        <option value="all">{{ __('All Courses') }}</option>
+      </select>
     </div>
   </header>
 
@@ -124,6 +134,12 @@ const isStudent = computed(() => user.data?.is_student || false)
 const isModerator = computed(() => user.data?.is_moderator || false)
 const isInstructor = computed(() => user.data?.is_instructor || false)
 const isSystemManager = computed(() => user.data?.is_system_manager || false)
+const canListAllCourses = computed(() => !!user.data?.can_list_all_courses && isInstructor.value)
+const courseScope = ref('mine')
+const headingLabel = computed(() => {
+  if (isStudent.value && !isInstructor.value) return __('My Courses')
+  return courseScope.value === 'all' ? __('All Courses') : __('My Courses')
+})
 
 
 const cachedAcademicTerm = ref('');
@@ -187,10 +203,30 @@ const handleCoursesSuccess = (response) => {
   });
 }
 
+// A chair or manager who holds the Instructor role but teaches nothing would
+// land on an empty "My Courses". Fall through to "All Courses" once.
+let scopeFallbackDone = false
 const instructorCourses = createResource({
   url: 'seminary.seminary.utils.get_courses',
-  makeParams: () => ({ page_length: 1000 }),
-  onSuccess: handleCoursesSuccess,
+  makeParams: () => ({ page_length: 1000, scope: courseScope.value }),
+  onSuccess: (data) => {
+    if (
+      !scopeFallbackDone &&
+      courseScope.value === 'mine' &&
+      canListAllCourses.value &&
+      !(data || []).length
+    ) {
+      scopeFallbackDone = true
+      courseScope.value = 'all'
+      return
+    }
+    scopeFallbackDone = true
+    handleCoursesSuccess(data)
+  },
+})
+
+watch(courseScope, () => {
+  if (isInstructor.value) instructorCourses.fetch()
 })
 
 const studentCourses = createResource({

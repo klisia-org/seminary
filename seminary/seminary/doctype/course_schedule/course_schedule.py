@@ -43,6 +43,7 @@ class CourseSchedule(Document):
         self.validate_time()
         self.validate_assessment_criteria()
         self.validate_instructor_categories()
+        self.validate_instructor_of_record_rows()
         self.clean_name()
         self._resolve_dates_if_needed()
         self._guard_attendance_policy()
@@ -422,6 +423,50 @@ class CourseSchedule(Document):
                         "Instructor {0} (row {1}) is missing an Instructor Category. "
                         "Category is required while HRMS Payroll is enabled."
                     ).format(row.instructor or "?", row.idx)
+                )
+
+    def validate_instructor_of_record_rows(self):
+        """p007 §2.8 (decision 8): a section row may carry an of-record
+        category only if the Instructor's default category is of record or
+        empty, or the saving user is Program Chair / Seminary Manager. The
+        registrar assigns professors and graders freely; promoting a grader to
+        instructor of record is the chair's call, made on the Instructor."""
+        if (
+            frappe.flags.in_install
+            or frappe.flags.in_migrate
+            or self.flags.ignore_permissions
+        ):
+            return
+        roles = set(frappe.get_roles())
+        if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
+            return
+        of_record = set(
+            frappe.get_all(
+                "Instructor Category", {"is_instructor_of_record": 1}, pluck="name"
+            )
+        )
+        before = self.get_doc_before_save()
+        unchanged = {
+            (r.instructor, r.instructor_category)
+            for r in (before.get("instructor1") if before else []) or []
+        }
+        for row in self.get("instructor1", []):
+            if row.instructor_category not in of_record:
+                continue
+            if (row.instructor, row.instructor_category) in unchanged:
+                continue
+            default = frappe.db.get_value(
+                "Instructor", row.instructor, "default_inst_category"
+            )
+            if default and default not in of_record:
+                frappe.throw(
+                    _(
+                        "Instructor {0} (row {1}) is a {2} by default. Only a "
+                        "Program Chair or Seminary Manager can list them as "
+                        "{3} on a section; ask them to change the default "
+                        "category on the Instructor record first."
+                    ).format(row.instructor, row.idx, default, row.instructor_category),
+                    title=_("Instructor of record"),
                 )
 
     def set_title(self):
@@ -807,9 +852,16 @@ class CourseSchedule(Document):
         # lose any meaningful save-time check.
         scac_name_map = _replace_scac_rows(source_cs, self.name)
         folder_report = _new_folder_report()
-        n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
-            source_cs, self.name, folder_report=folder_report
-        )
+        # Lesson content is copied verbatim, URLs included. Files attached to
+        # the source section get a twin on this one, or the new section's
+        # students could not open them (p007 §8.2, `file_policy.adopt`).
+        frappe.flags.seminary_adopt_from = ("Course Schedule", source_cs)
+        try:
+            n_chapters, n_lessons, lesson_name_map = _copy_chapters_and_lessons(
+                source_cs, self.name, folder_report=folder_report
+            )
+        finally:
+            frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
 
         n_scac = len(scac_name_map)

@@ -153,20 +153,19 @@ const replies = createResource({
 })
 
 const newReplyResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.utils.add_discussion_reply',
 	makeParams(values) {
 		return {
-			doc: {
-				doctype: 'Discussion Reply',
-				reply: newReply.value,
-				topic: props.topic.name,
-			},
+			reply: newReply.value,
+			topic: props.topic.name,
 		}
 	},
 })
 
 const fetchMentionUsers = () => {
-	if (user.data?.is_student) {
+	// get_all_users is staff-only; a student (or a grader who is also a
+	// student) gets the editor without the mention list rather than a 403.
+	if (user.data?.is_student || !(user.data?.is_instructor || user.data?.is_moderator)) {
 		renderEditor.value = true
 	} else {
 		allUsers.reload(
@@ -207,13 +206,11 @@ const postReply = () => {
 }
 
 const editReplyResource = createResource({
-	url: 'frappe.client.set_value',
+	url: 'seminary.seminary.utils.edit_discussion_reply',
 	makeParams(values) {
 		return {
-			doctype: 'Discussion Reply',
 			name: values.name,
-			fieldname: 'reply',
-			value: values.reply,
+			reply: values.reply,
 		}
 	},
 })
@@ -239,10 +236,9 @@ const postEdited = (reply) => {
 }
 
 const deleteReplyResource = createResource({
-	url: 'frappe.client.delete',
+	url: 'seminary.seminary.utils.delete_discussion_reply',
 	makeParams(values) {
 		return {
-			doctype: 'Discussion Reply',
 			name: values.name,
 		}
 	},

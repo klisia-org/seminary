@@ -826,23 +826,15 @@ const newSubmission = createResource({
 	},
 })
 
+// A reply lives on the classmate's submission, which a student cannot write
+// (p007). The server writes the row and fills in the author from the session.
 const replyResource = createResource({
-	url: 'frappe.client.insert',
+	url: 'seminary.seminary.api.reply_to_discussion_submission',
 	makeParams(values) {
-		const attachment = values.reply_attach
 		return {
-			doc: {
-				doctype: 'Discussion Submission Replies',
-				member: user.data?.name,
-				reply: values.reply,
-				student: values.student,
-				member_name: values.member_name || user.data?.full_name,
-				reply_dt: values.reply_dt,
-				parent: values.name,
-				parentfield: 'replies',
-				parenttype: 'Discussion Submission',
-				reply_attach: attachment?.file_url || null,
-			},
+			submission: values.name,
+			reply: values.reply,
+			reply_attach: values.reply_attach?.file_url || null,
 		}
 	},
 	auto: false,

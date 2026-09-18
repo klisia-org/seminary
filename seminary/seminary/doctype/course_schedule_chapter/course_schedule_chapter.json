@@ -71,8 +71,8 @@
    "fieldname": "is_scorm_package",
    "fieldtype": "Check",
    "label": "Is SCORM Package",
-   "read_only": 1,
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "depends_on": "is_scorm_package",
@@ -86,8 +86,8 @@
    "fieldname": "scorm_package_path",
    "fieldtype": "Code",
    "label": "SCORM Package Path",
-   "read_only": 1,
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1
   },
   {
    "depends_on": "is_scorm_package",
@@ -164,16 +164,6 @@
    "write": 1
   },
   {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Student",
-   "share": 1,
-   "write": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -208,6 +198,16 @@
    "read": 1,
    "role": "Instructor",
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 0,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

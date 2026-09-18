@@ -1,0 +1,477 @@
+# Copyright (c) 2026, Klisia / SeminaryERP and contributors
+# See license.txt
+"""p007 §2.1–2.3, §2.8: the Student DocPerm rewrite, the row hooks, the
+permlevel-1 grading fields and the instructor tiers, exercised through the
+same generic paths the browser uses (``frappe.get_list``, ``doc.save``,
+``frappe.has_permission``).
+
+Fixtures are built in-test (the app's Student/Instructor test records predate
+Person-first identity), so nothing here depends on test_records.json.
+"""
+
+import frappe
+from frappe.tests import IntegrationTestCase
+
+from seminary.seminary import guards
+from seminary.seminary.tests.test_p006_api import _make_user
+
+PREFIX = "ZZT-p007"
+
+
+def _student_for(user, tag):
+    name = frappe.db.get_value("Student", {"user": user}, "name")
+    if name:
+        return name
+    doc = frappe.get_doc(
+        {
+            "doctype": "Student",
+            "first_name": "P007",
+            "last_name": tag,
+            "student_email_id": user,
+            "user": user,
+            "enabled": 1,
+        }
+    )
+    doc.flags.ignore_permissions = True
+    doc.insert(ignore_mandatory=True)
+    return doc.name
+
+
+def _category(name, of_record):
+    if not frappe.db.exists("Instructor Category", name):
+        frappe.get_doc(
+            {
+                "doctype": "Instructor Category",
+                "category_name": name,
+                "is_instructor_of_record": 1 if of_record else 0,
+            }
+        ).insert(ignore_permissions=True)
+    return name
+
+
+def _instructor_for(user, tag, category=None):
+    name = frappe.db.get_value("Instructor", {"user": user}, "name")
+    if name:
+        return name
+    from seminary.seminary import person as person_spine
+
+    person = person_spine.ensure_person(email=user, first_name="P007", last_name=tag)
+    doc = frappe.get_doc(
+        {
+            "doctype": "Instructor",
+            "instructor_name": "P007 %s" % tag,
+            "user": user,
+            "person": person,
+            "status": "Active",
+            "default_inst_category": category,
+        }
+    )
+    doc.flags.ignore_permissions = True
+    doc.insert(ignore_mandatory=True)
+    # The Instructor DocPerm row is `if_owner`; a record created by staff is
+    # not editable by its instructor on Desk (pre-existing, p007 §7.3). Hand
+    # the fixture to its user so the permlevel test exercises the field, not
+    # the owner rule.
+    frappe.db.set_value("Instructor", doc.name, "owner", user, update_modified=False)
+    return doc.name
+
+
+def _any_course_schedule():
+    """Two distinct existing sections (any term) to hang fixtures on."""
+    rows = frappe.get_all(
+        "Course Schedule",
+        filters={"workflow_state": ["!=", "Cancelled"]},
+        fields=["name", "course"],
+        limit=2,
+        order_by="creation asc",
+    )
+    if len(rows) < 2:
+        raise frappe.DoesNotExistError("test site needs two Course Schedules")
+    return rows[0], rows[1]
+
+
+def _list_instructor(cs_name, instructor, category=None):
+    cs = frappe.get_doc("Course Schedule", cs_name)
+    if any(r.instructor == instructor for r in cs.instructor1):
+        return
+    row = frappe.get_doc(
+        {
+            "doctype": "Course Schedule Instructors",
+            "parent": cs_name,
+            "parenttype": "Course Schedule",
+            "parentfield": "instructor1",
+            "instructor": instructor,
+            "instructor_category": category,
+            "idx": len(cs.instructor1) + 1,
+        }
+    )
+    row.flags.ignore_permissions = True
+    row.insert()
+    frappe.local.p007_cache = {}
+
+
+def _roster(cs_name, student, user):
+    name = frappe.db.get_value(
+        "Scheduled Course Roster", {"course_sc": cs_name, "student": student}, "name"
+    )
+    if name:
+        return name
+    doc = frappe.get_doc(
+        {
+            "doctype": "Scheduled Course Roster",
+            "course_sc": cs_name,
+            "student": student,
+            "stuemail_rc": user,
+            "stuname_roster": "P007 " + student,
+            "active": 1,
+        }
+    )
+    doc.flags.ignore_permissions = True
+    doc.insert(ignore_mandatory=True)
+    return doc.name
+
+
+def _submission(cs_name, student, user, answer="first"):
+    name = frappe.db.get_value(
+        "Assignment Submission",
+        {"course": cs_name, "member": user, "assignment_title": PREFIX},
+        "name",
+    )
+    if name:
+        return name
+    doc = frappe.get_doc(
+        {
+            "doctype": "Assignment Submission",
+            "course": cs_name,
+            "member": user,
+            "student": student,
+            "answer": answer,
+            "status": "Not Graded",
+            "grade": 0,
+            "assignment_title": PREFIX,
+            "type": "Text",
+        }
+    )
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_mandatory = True
+    doc.flags.ignore_links = True
+    doc.insert(ignore_mandatory=True)
+    # A real submission is inserted by its student; `if_owner` reads `owner`.
+    frappe.db.set_value(
+        "Assignment Submission", doc.name, "owner", user, update_modified=False
+    )
+    return doc.name
+
+
+class TestP007DocPerms(IntegrationTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        frappe.set_user("Administrator")
+        cls.cs, cls.cs2 = _any_course_schedule()
+        cls.stu_a_user = _make_user("Student", "dp-a")
+        cls.stu_b_user = _make_user("Student", "dp-b")
+        cls.stu_a = _student_for(cls.stu_a_user, "A")
+        cls.stu_b = _student_for(cls.stu_b_user, "B")
+        # A student on no roster at all: invisible to a grader.
+        cls.stu_c_user = _make_user("Student", "dp-c")
+        cls.stu_c = _student_for(cls.stu_c_user, "C")
+        cls.record_cat = _category("P007 Of Record", True)
+        cls.grader_cat = _category("P007 Grader", False)
+        cls.prof_user = _make_user("Instructor", "dp-prof")
+        cls.prof = _instructor_for(cls.prof_user, "prof", cls.record_cat)
+        cls.other_user = _make_user("Instructor", "dp-other")
+        cls.other = _instructor_for(cls.other_user, "other", cls.record_cat)
+        cls.gta_user = _make_user("Student", "dp-gta")
+        frappe.get_doc("User", cls.gta_user).add_roles("Instructor")
+        cls.gta_student = _student_for(cls.gta_user, "GTA")
+        cls.gta = _instructor_for(cls.gta_user, "gta", cls.grader_cat)
+        _list_instructor(cls.cs.name, cls.prof, cls.record_cat)
+        _list_instructor(cls.cs.name, cls.gta, cls.grader_cat)
+        _list_instructor(cls.cs2.name, cls.other, cls.record_cat)
+        cls.roster_a = _roster(cls.cs.name, cls.stu_a, cls.stu_a_user)
+        cls.roster_b = _roster(cls.cs.name, cls.stu_b, cls.stu_b_user)
+        cls.sub_a = _submission(cls.cs.name, cls.stu_a, cls.stu_a_user)
+        cls.sub_b = _submission(cls.cs.name, cls.stu_b, cls.stu_b_user)
+        frappe.db.commit()
+
+    def setUp(self):
+        frappe.set_user("Administrator")
+        frappe.local.p007_cache = {}
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.local.p007_cache = {}
+
+    def _as(self, user):
+        frappe.set_user(user)
+        frappe.local.p007_cache = {}
+
+    # ------------------------------------------- §8.1 published AND enrolled
+
+    def test_student_reads_a_section_only_when_published_and_enrolled(self):
+        was = {
+            n: frappe.db.get_value("Course Schedule", n, "published")
+            for n in (self.cs.name, self.cs2.name)
+        }
+        try:
+            for n in was:
+                frappe.db.set_value("Course Schedule", n, "published", 1)
+            self._as(self.stu_a_user)
+            # enrolled + published
+            self.assertTrue(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+            self.assertTrue(guards.is_enrolled(self.cs.name))
+            # published, not enrolled
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs2.name)
+            )
+            listed = frappe.get_list("Course Schedule", pluck="name", limit=0)
+            self.assertEqual(listed, [self.cs.name])
+
+            # enrolled, not published: the roster row alone opens nothing
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", 0)
+            self._as(self.stu_a_user)
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+            self.assertFalse(guards.is_enrolled(self.cs.name))
+            self.assertEqual(guards.student_sections(), [])
+            self.assertEqual(
+                frappe.get_list("Course Schedule", pluck="name", limit=0), []
+            )
+            # the teaching staff are untouched by publication
+            self._as(self.gta_user)
+            self.assertTrue(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+        finally:
+            frappe.set_user("Administrator")
+            for n, v in was.items():
+                frappe.db.set_value("Course Schedule", n, "published", v)
+
+    # ---------------------------------------------------------------- tiers
+
+    def test_instructor_tiers(self):
+        self.assertEqual(guards.instructor_tier(self.prof_user), "record")
+        self.assertEqual(guards.instructor_tier(self.gta_user), "section")
+        self.assertIsNone(guards.instructor_tier(self.stu_a_user))
+        self.assertIsNone(guards.readable_course_schedules(self.prof_user))
+        self.assertEqual(
+            guards.readable_course_schedules(self.gta_user), [self.cs.name]
+        )
+
+    # ------------------------------------------------------------ §2.1/§2.2
+
+    def test_student_lists_only_own_rows(self):
+        self._as(self.stu_a_user)
+        rows = frappe.get_list("Assignment Submission", pluck="name")
+        self.assertIn(self.sub_a, rows)
+        self.assertNotIn(self.sub_b, rows)
+        rows = frappe.get_list("Scheduled Course Roster", pluck="name")
+        self.assertIn(self.roster_a, rows)
+        self.assertNotIn(self.roster_b, rows)
+        students = frappe.get_list("Student", pluck="name")
+        self.assertEqual(students, [self.stu_a])
+
+    def test_student_cannot_read_classmate(self):
+        self._as(self.stu_a_user)
+        self.assertFalse(frappe.has_permission("Student", "read", self.stu_b))
+        self.assertFalse(
+            frappe.has_permission("Assignment Submission", "read", self.sub_b)
+        )
+        self.assertTrue(
+            frappe.has_permission("Assignment Submission", "read", self.sub_a)
+        )
+
+    def test_student_has_no_write_on_roster_or_section(self):
+        self._as(self.stu_a_user)
+        self.assertFalse(
+            frappe.has_permission("Scheduled Course Roster", "write", self.roster_a)
+        )
+        self.assertFalse(
+            frappe.has_permission("Course Schedule", "write", self.cs.name)
+        )
+        self.assertFalse(
+            frappe.has_permission("Assignment Submission", "delete", self.sub_a)
+        )
+
+    # ---------------------------------------------------------------- §2.3
+
+    def test_student_cannot_grade_own_submission_through_save(self):
+        self._as(self.stu_a_user)
+        doc = frappe.get_doc("Assignment Submission", self.sub_a)
+        self.assertTrue(doc.has_permission("write"))
+        doc.answer = "edited by the student"
+        doc.grade = 100
+        doc.status = "Graded"
+        doc.save()
+        frappe.set_user("Administrator")
+        stored = frappe.db.get_value(
+            "Assignment Submission",
+            self.sub_a,
+            ["answer", "grade", "status"],
+            as_dict=True,
+        )
+        self.assertEqual(stored.answer, "edited by the student")
+        self.assertNotEqual(stored.grade, 100)
+        self.assertNotEqual(stored.status, "Graded")
+
+    def test_student_reads_grade_but_not_letter_body(self):
+        # A level-1 read row lets the student see their grade and the grader's
+        # comments; Recommendation Letter has no such row, so the body, the
+        # attachment and the token stay hidden from the student it is about.
+        sub_meta = frappe.get_meta("Assignment Submission")
+        self.assertEqual(sub_meta.get_field("grade").permlevel, 1)
+        self.assertTrue(
+            any(
+                p.role == "Student" and p.permlevel == 1 and p.read and not p.write
+                for p in sub_meta.permissions
+            )
+        )
+        rl_meta = frappe.get_meta("Recommendation Letter")
+        for field in ("letter_body", "letter_attachment", "request_token"):
+            self.assertEqual(rl_meta.get_field(field).permlevel, 1, field)
+        self.assertFalse(
+            any(p.role == "Student" and p.permlevel == 1 for p in rl_meta.permissions)
+        )
+        self._as(self.stu_a_user)
+        self.assertIn(
+            1,
+            frappe.get_doc("Assignment Submission", self.sub_a).get_permlevel_access(
+                "read"
+            ),
+        )
+        self.assertNotIn(
+            1, frappe.new_doc("Recommendation Letter").get_permlevel_access("read")
+        )
+
+    # ---------------------------------------------------------------- §2.8
+
+    def test_record_tier_reads_everywhere_writes_own_sections(self):
+        self._as(self.other_user)  # of record, listed on cs2 only
+        self.assertTrue(frappe.has_permission("Course Schedule", "read", self.cs.name))
+        self.assertTrue(
+            frappe.has_permission("Assignment Submission", "read", self.sub_a)
+        )
+        self.assertFalse(
+            frappe.has_permission("Course Schedule", "write", self.cs.name)
+        )
+        self.assertFalse(
+            frappe.has_permission("Assignment Submission", "write", self.sub_a)
+        )
+        self.assertTrue(
+            frappe.has_permission("Course Schedule", "write", self.cs2.name)
+        )
+
+    def test_section_tier_is_confined_to_own_sections(self):
+        self._as(self.gta_user)
+        self.assertTrue(frappe.has_permission("Course Schedule", "read", self.cs.name))
+        self.assertTrue(
+            frappe.has_permission("Assignment Submission", "write", self.sub_a)
+        )
+        self.assertFalse(
+            frappe.has_permission("Course Schedule", "write", self.cs2.name)
+        )
+        rows = frappe.get_list("Assignment Submission", pluck="name")
+        self.assertIn(self.sub_a, rows)
+        self.assertIn(self.sub_b, rows)
+        students = set(frappe.get_list("Student", pluck="name"))
+        self.assertTrue({self.stu_a, self.stu_b} <= students)
+        self.assertNotIn(self.stu_c, students)
+        self.assertFalse(frappe.has_permission("Student", "read", self.stu_c))
+        # Course gates agree with the hooks.
+        self.assertTrue(guards.is_course_staff(self.cs.name, user=self.gta_user))
+        self.assertFalse(guards.is_course_staff(self.cs2.name, user=self.gta_user))
+        # A grader is not "super access" any more.
+        from seminary.seminary.utils import has_super_access
+
+        self.assertFalse(has_super_access(self.gta_user))
+        self.assertTrue(has_super_access(self.prof_user))
+
+    def test_grader_cannot_change_own_default_category(self):
+        self._as(self.gta_user)
+        doc = frappe.get_doc("Instructor", self.gta)
+        doc.default_inst_category = self.record_cat
+        doc.shortbio = "p007"
+        doc.save()
+        frappe.set_user("Administrator")
+        stored = frappe.db.get_value(
+            "Instructor", self.gta, ["default_inst_category", "shortbio"], as_dict=True
+        )
+        self.assertEqual(stored.default_inst_category, self.grader_cat)
+        self.assertEqual(stored.shortbio, "p007")
+
+    def test_registrar_cannot_promote_a_grader_on_a_section(self):
+        reg = _make_user("Registrar", "dp-reg")
+        self._as(reg)
+        cs = frappe.get_doc("Course Schedule", self.cs2.name)
+        cs.append(
+            "instructor1",
+            {"instructor": self.gta, "instructor_category": self.record_cat},
+        )
+        with self.assertRaises(frappe.ValidationError):
+            cs.save()
+        frappe.set_user("Administrator")
+        cs = frappe.get_doc("Course Schedule", self.cs2.name)
+        cs.append(
+            "instructor1",
+            {"instructor": self.prof, "instructor_category": self.record_cat},
+        )
+        self._as(reg)
+        cs.save()  # a professor by default: the registrar may list them
+
+    def test_unit_scope_narrows_record_tier(self):
+        frappe.db.set_single_value(
+            "Seminary Settings", "faculty_read_scope", "Academic Unit"
+        )
+        try:
+            unit = "P007 Unit"
+            if not frappe.db.exists("Academic Unit", unit):
+                frappe.get_doc(
+                    {
+                        "doctype": "Academic Unit",
+                        "unit_name": unit,
+                        "unit_type": "Academic Department",
+                    }
+                ).insert(ignore_permissions=True)
+            unit2 = "P007 Unit 2"
+            if not frappe.db.exists("Academic Unit", unit2):
+                frappe.get_doc(
+                    {
+                        "doctype": "Academic Unit",
+                        "unit_name": unit2,
+                        "unit_type": "Academic Department",
+                    }
+                ).insert(ignore_permissions=True)
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", unit)
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", unit2)
+            person = frappe.db.get_value("Instructor", self.other, "person")
+            self.assertTrue(person)
+            if not frappe.db.exists(
+                "Academic Unit Membership", {"person": person, "unit": unit2}
+            ):
+                frappe.get_doc(
+                    {
+                        "doctype": "Academic Unit Membership",
+                        "unit": unit2,
+                        "person": person,
+                    }
+                ).insert(ignore_permissions=True)
+            self._as(self.other_user)
+            readable = guards.readable_course_schedules(self.other_user)
+            self.assertIsNotNone(readable)
+            self.assertIn(self.cs2.name, readable)
+            self.assertNotIn(self.cs.name, readable)
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_single_value(
+                "Seminary Settings", "faculty_read_scope", "School"
+            )
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", None)

@@ -16,3 +16,7 @@ docs/node_modules
 # Private design notes (closed-source product integrations, business-sensitive
 # decisions). Anything in this directory is intentionally not committed.
 /privatedocs/
+
+# validation harness outputs (site-specific fixture names)
+scripts/p006_validation/fx.json
+scripts/p007_validation/fx1.json

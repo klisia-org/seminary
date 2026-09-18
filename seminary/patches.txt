@@ -71,3 +71,4 @@ seminary.seminary.patches.backfill_person_mailing_country
 seminary.seminary.patches.normalize_tax_ids
 
 seminary.seminary.patches.course_folder_scopes
+seminary.seminary.patches.p007_private_files
