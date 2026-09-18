@@ -257,29 +257,34 @@ def user_may_read(folder, user: str | None = None) -> bool:
             doc = _as_doc(latest) or doc
         return bool(roles & SCHOOL_READER_ROLES)
 
-    if roles & GRADER_ROLES:
+    # p007 §2.8: chairs, managers and instructors of record read every folder
+    # (to copy from it); a grader or assistant reads the folders of the
+    # sections they are listed on; a student reads through the roster.
+    from seminary.seminary.guards import instructor_tier, own_course_schedules
+
+    if roles & CHAIR_ROLES or instructor_tier(user) == "record":
+        return True
+
+    if scope == "Course":
+        courses = {doc.course} | {r.course for r in (doc.get("shared_with") or [])}
+        sections = _sections_of_course(courses)
+    elif scope == "Instructor":
+        instructors = {doc.instructor} | {
+            r.instructor for r in (doc.get("shared_with_instructors") or [])
+        }
+        sections = _sections_taught_by(instructors, doc.course)
+    elif scope == "Section":
+        sections = [doc.course_schedule] if doc.course_schedule else []
+    else:
+        return False
+
+    if "Instructor" in roles and set(sections) & set(own_course_schedules(user)):
         return True
 
     student = _student_for(user)
     if not student:
         return False
-
-    if scope == "Course":
-        courses = {doc.course} | {r.course for r in (doc.get("shared_with") or [])}
-        return _on_active_roster(student, _sections_of_course(courses))
-
-    if scope == "Instructor":
-        instructors = {doc.instructor} | {
-            r.instructor for r in (doc.get("shared_with_instructors") or [])
-        }
-        return _on_active_roster(student, _sections_taught_by(instructors, doc.course))
-
-    if scope == "Section":
-        return bool(doc.course_schedule) and _on_active_roster(
-            student, [doc.course_schedule]
-        )
-
-    return False
+    return _on_active_roster(student, sections)
 
 
 def user_may_write(folder, user: str | None = None) -> bool:
@@ -300,9 +305,17 @@ def user_may_write(folder, user: str | None = None) -> bool:
         return True
 
     # From here on the user is an Instructor without a chair/manager role.
+    from seminary.seminary.guards import instructor_tier, own_course_schedules
+
     scope = doc.scope or "Course"
-    if scope in ("Course", "School"):
-        return True
+    if scope == "School":
+        return instructor_tier(user) == "record"
+    if scope == "Course":
+        # p007 §2.8: an instructor writes a Course folder only for a course
+        # they teach a section of (any tier).
+        return bool(
+            set(_sections_of_course([doc.course])) & set(own_course_schedules(user))
+        )
     mine = set(_instructors_for(user))
     if not mine:
         return False

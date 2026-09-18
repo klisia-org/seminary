@@ -429,6 +429,7 @@ def _compute_milestone_due(tmpl, base_context, prev_due):
 def resnapshot_milestones(name):
     """Registrar action: rebuild the milestone snapshot from the current type
     template (e.g. after editing the template). Clears existing rows."""
+    frappe.has_permission("Culminating Project", "write", throw=True)
     project = frappe.get_doc("Culminating Project", name)
     if not frappe.has_permission("Culminating Project", "write", project):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
@@ -469,6 +470,10 @@ def record_signoff(
         # advisor records the sign-off on their behalf, like a committee member.
         if (project.get(f"{reader_field}_type") or "Instructor") == "External Examiner":
             _require_advisor(project)
+        else:
+            _require_reader(project, reader_field)
+    elif role == "Advisor":
+        _require_advisor(project)
 
     # The committee doesn't sign individually — the advisor records its sign-off
     # on the committee's behalf, and the committee must exist first.
@@ -1225,6 +1230,28 @@ def _committee(project):
             }
         )
     return members
+
+
+def _require_reader(project, reader_field):
+    """A named reader signs only in their own slot; the advisor may sign for
+    them; chairs and managers may sign for anyone (p007 §2.6)."""
+    if set(frappe.get_roles()) & {
+        "Program Chair",
+        "Seminary Manager",
+        "System Manager",
+    }:
+        return
+    instructor = frappe.db.get_value(
+        "Instructor", {"user": frappe.session.user}, "name"
+    )
+    if instructor and instructor in (project.get(reader_field), project.advisor):
+        return
+    frappe.throw(
+        _("Only the {0} or the advisor may record this sign-off.").format(
+            reader_field.replace("_", " ")
+        ),
+        frappe.PermissionError,
+    )
 
 
 def _require_advisor(project):

@@ -8,6 +8,7 @@ from seminary.seminary.guards import require_registrar
 
 class WithdrawalRequest(Document):
     def validate(self):
+        self.validate_own_request()
         self.validate_enrollment_active()
         self.validate_documentation_required()
         self.set_resulting_grade()
@@ -20,6 +21,44 @@ class WithdrawalRequest(Document):
         ):
             self.is_parent = 1
         self.validate_separation_timing()
+
+    def validate_own_request(self):
+        """A student files a withdrawal only for themselves (p007 §2.5,
+        decision 7): the request's student, program enrollment and course
+        enrollment must all be the session's own. Staff are not restricted."""
+        from seminary.seminary.guards import current_student, is_school_role
+
+        if self.flags.ignore_permissions or is_school_role():
+            return
+        roles = set(frappe.get_roles())
+        if roles & {"Accounts User", "Accounts Manager"}:
+            return
+        mine = current_student()
+        if not mine or self.student != mine:
+            frappe.throw(
+                _("You can only request a withdrawal for yourself."),
+                frappe.PermissionError,
+            )
+        if self.program_enrollment and (
+            frappe.db.get_value(
+                "Program Enrollment", self.program_enrollment, "student"
+            )
+            != mine
+        ):
+            frappe.throw(
+                _("That program enrollment is not yours."), frappe.PermissionError
+            )
+        if self.course_enrollment_individual and (
+            frappe.db.get_value(
+                "Course Enrollment Individual",
+                self.course_enrollment_individual,
+                "student_ce",
+            )
+            != mine
+        ):
+            frappe.throw(
+                _("That course enrollment is not yours."), frappe.PermissionError
+            )
 
     def set_refund_due(self):
         """Denormalize whether this withdrawal could yield a refund, so the

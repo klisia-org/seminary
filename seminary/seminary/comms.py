@@ -491,6 +491,13 @@ def _publish_embedded_files(message):
         ) or frappe.db.get_value("File", {"file_url": file_url.split("?")[0]}, "name")
         if not name:
             continue
+        # p007 §2.6: only a File the sender may read is made public. System
+        # sends run as Administrator and keep working; a user cannot publish a
+        # private upload they could not open.
+        if frappe.session.user != "Administrator" and not frappe.has_permission(
+            "File", "read", name
+        ):
+            continue
         try:
             file_doc = frappe.get_doc("File", name)
             file_doc.is_private = 0
@@ -1828,7 +1835,9 @@ def send_portal_message(
 
     if isinstance(attachments, str):
         attachments = json.loads(attachments)
-    attachments = attachments or []
+    # Only the sender's own uploads travel with the message (p007 §2.6): a
+    # file_url naming someone else's private File is dropped, not attached.
+    attachments = _own_attachments(attachments or [])
     attach_files = [a["file_url"] for a in attachments if a.get("file_url")]
 
     # always_sanitize: skip the JSON/no-tag short-circuit so a comment-wrapped
@@ -1851,6 +1860,21 @@ def send_portal_message(
         ):
             sent += 1
     return {"sent": sent}
+
+
+def _own_attachments(attachments):
+    from seminary.storage.backend import normalize_file_url
+
+    kept = []
+    for a in attachments:
+        url = a.get("file_url")
+        if not url:
+            continue
+        base = unquote(normalize_file_url(url))
+        owner = frappe.db.get_value("File", {"file_url": base}, "owner")
+        if owner == frappe.session.user:
+            kept.append(a)
+    return kept
 
 
 def _attachment_html(attachments):
@@ -2251,7 +2275,8 @@ def _match_person_by_address(channel, address):
 def get_person_timeline(person, limit=50):
     """The CRM-style conversation feed for a Person (desk form, ADR 044)."""
     frappe.has_permission("Communication Log", "read", throw=True)
-    return frappe.get_all(
+    # get_list, not get_all: the Communication Log row hook applies (p007 §2.6).
+    return frappe.get_list(
         "Communication Log",
         filters={"person": person},
         fields=[

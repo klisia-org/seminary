@@ -196,13 +196,11 @@ class SeminaryAnnouncement(Document):
         if not self.custom_filter_doctype:
             return
         email_field = self.custom_email_field or "email"
-        meta = frappe.get_meta(self.custom_filter_doctype)
-        if not meta.get_field(email_field) and email_field != "name":
-            frappe.throw(
-                _("Email field {0} does not exist on {1}.").format(
-                    email_field, self.custom_filter_doctype
-                )
-            )
+        from seminary.seminary.doctype.seminary_announcement.announcement_recipients import (
+            validate_custom_filter,
+        )
+
+        validate_custom_filter(self.custom_filter_doctype, email_field)
 
 
 def send_announcement(announcement: str):
