@@ -81,6 +81,7 @@
   "track_online_attendance",
   "attendance_policy_section",
   "registrar_academic_records",
+  "faculty_read_scope",
   "tardies_per_absence",
   "column_break_attendance_policy",
   "absence_warning_buffer",
@@ -235,13 +236,13 @@
   },
   {
    "default": "1",
-   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft → Open for Enrollment, Open for Enrollment → Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
+   "description": "If enabled, the daily scheduler advances Course Schedule states by their enrollment dates (Draft \u2192 Open for Enrollment, Open for Enrollment \u2192 Enrollment Closed) and sends late-grade reminders. Disable for seminaries that prefer fully manual control of the lifecycle.",
    "fieldname": "auto_advance_course_schedule",
    "fieldtype": "Check",
    "label": "Auto-advance Course Schedule states"
   },
   {
-   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window — Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
+   "description": "Anchors and offsets used to compute Course Schedule enrollment dates seminary-wide. Anchors: term_start / term_end (from Academic Term); classes_start / classes_end (from each Course Schedule's start/end date). Offset is in days; negative = before anchor. Leave anchor blank to opt out of a window \u2014 Course Schedules will then need explicit overrides or land Open immediately. Individual Course Schedules can override these dates.",
    "fieldname": "enrollment_window_rules_section",
    "fieldtype": "Section Break",
    "label": "Enrollment Window Rules"
@@ -346,14 +347,14 @@
    "label": "Upload Limits"
   },
   {
-   "description": "Catch-all cap for everyone without a role row below. Leave at 0 to apply no seminary limit and use only System Settings → Max File Size.",
+   "description": "Catch-all cap for everyone without a role row below. Leave at 0 to apply no seminary limit and use only System Settings \u2192 Max File Size.",
    "fieldname": "default_max_upload_mb",
    "fieldtype": "Int",
    "label": "Default Max Upload (MB)",
    "non_negative": 1
   },
   {
-   "description": "Per-role exceptions to the default above. Only add roles that differ. A user holding several listed roles gets the most permissive of them; a user listed nowhere gets the default. Frappe enforces System Settings → Max File Size first, so set that to the MOST permissive value here and tighten below it.",
+   "description": "Per-role exceptions to the default above. Only add roles that differ. A user holding several listed roles gets the most permissive of them; a user listed nowhere gets the default. Frappe enforces System Settings \u2192 Max File Size first, so set that to the MOST permissive value here and tighten below it.",
    "fieldname": "upload_limits",
    "fieldtype": "Table",
    "label": "Per-Role Exceptions",
@@ -590,7 +591,7 @@
   },
   {
    "default": "1",
-   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code — best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
+   "description": "When checked, self check-in is time-based: the system auto-selects the meeting happening now (within the window below) and optionally requires a code \u2014 best when your site Time Zone (System Settings) matches the seminary. When unchecked, students instead pick any past meeting they have no attendance for (no clock dependency).",
    "fieldname": "enforce_time_window",
    "fieldtype": "Check",
    "label": "Enforce meeting time window"
@@ -633,13 +634,13 @@
   },
   {
    "default": "1",
-   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only — excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
+   "description": "When checked, online meetings are attendance-bearing (students can check in / instructors mark them, and they count toward each course's scheduled-meeting total). Uncheck to make online meetings calendar-only \u2014 excluded from check-in, instructor marking, and the absence-limit math. (A fully online section can instead set its Attendance Policy to Disabled.)",
    "fieldname": "track_online_attendance",
    "fieldtype": "Check",
    "label": "Track Attendance for Online Meetings"
   },
   {
-   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % × the course's scheduled meetings, overridable per Course Schedule by the registrar.",
+   "description": "Seminary-wide attendance-failure policy. The per-course absence limit is auto-derived from each Program's max absence % \u00d7 the course's scheduled meetings, overridable per Course Schedule by the registrar.",
    "fieldname": "attendance_policy_section",
    "fieldtype": "Section Break",
    "label": "Attendance Policy"
@@ -652,8 +653,16 @@
    "label": "Registrar can record attendance and open gradebooks"
   },
   {
+   "default": "School",
+   "description": "How far an instructor of record can see beyond the sections they teach. School: every section. Academic Unit: only sections of courses owned by an academic unit they belong to (their department, its parent units, and interdepartments it constitutes). Courses with no academic unit, and instructors with no unit membership, are treated as School. Graders and assistants only ever see their own sections.",
+   "fieldname": "faculty_read_scope",
+   "fieldtype": "Select",
+   "label": "Faculty read scope",
+   "options": "School\nAcademic Unit"
+  },
+  {
    "default": "3",
-   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 → every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
+   "description": "How many Tardies count as one Absence toward the limit (e.g. 3 \u2192 every 3 tardies add 1 absence). Set to 0 to disable tardy-to-absence conversion.",
    "fieldname": "tardies_per_absence",
    "fieldtype": "Int",
    "label": "Tardies per Absence"
@@ -727,7 +736,7 @@
   {
    "default": "0",
    "depends_on": "allow_alumni_view_partner_directory",
-   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control — both this and the Program Level toggle must be on.",
+   "description": "Lets alumni submit new Partner Organizations from their portal for staff approval. A second gate at Program Level exists for greater control \u2014 both this and the Program Level toggle must be on.",
    "fieldname": "allow_alumni_create_partner_org",
    "fieldtype": "Check",
    "label": "Allow Alumni to create Partner Organizations?"
@@ -746,13 +755,13 @@
   },
   {
    "default": "0",
-   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal — an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
+   "description": "An internship type with no graduation requirement mapped is 'ungated'. Off (default): such internships are Desk-only and hidden from the student portal \u2014 an empty requirement is treated as a misconfiguration. On: ungated internships are shown to all students (intentional open internships).",
    "fieldname": "show_ungated_internships_to_all",
    "fieldtype": "Check",
    "label": "Show Ungated Internships to All Students"
   },
   {
-   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default — the partner sees only the applicant's name unless you opt in here.",
+   "description": "Academic details shared with a partner organization when it evaluates internship applicants. All off by default \u2014 the partner sees only the applicant's name unless you opt in here.",
    "fieldname": "internship_share_column",
    "fieldtype": "Column Break"
   },
