@@ -6,7 +6,10 @@ on:
     branches: [ main ]
     paths:
       - 'seminary/locale/main.pot'
-      - 'docs/en/**/*.md'
+      # Docs sources are commented out in crowdin.yml while the free-tier
+      # word budget is reserved for app strings. Restore this trigger
+      # alongside the docs blocks there.
+      # - 'docs/en/**/*.md'
 
   # B) Download translations on a schedule
   schedule:
@@ -38,7 +41,12 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+      # Full history + all branches: the cleanup step below needs the
+      # l10n branch and a merge base with main, neither of which exists
+      # under the default shallow single-branch checkout.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download translations from Crowdin
         uses: crowdin/github-action@v2.14.0
@@ -50,7 +58,7 @@ jobs:
           create_pull_request: true
           pull_request_title: 'New Crowdin Translations'
           pull_request_body: 'New Crowdin translations by [Crowdin GH Action](https://github.com/crowdin/github-action)'
-          pull_request_base_branch_name: 'develop'
+          pull_request_base_branch_name: 'main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
@@ -62,7 +70,7 @@ jobs:
           git checkout l10n_crowdin_translations || exit 0
 
           # Find and remove any non-.po files that Crowdin may have added under locale/
-          UNWANTED=$(git diff --name-only develop...HEAD -- seminary/locale/ | grep -v '\.po$' || true)
+          UNWANTED=$(git diff --name-only origin/main...HEAD -- seminary/locale/ | grep -v '\.po$' || true)
           if [ -n "$UNWANTED" ]; then
             echo "Removing non-.po files from translation PR:"
             echo "$UNWANTED"
