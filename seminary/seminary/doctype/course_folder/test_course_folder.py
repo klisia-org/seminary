@@ -124,10 +124,34 @@ def make_cs(course, scale, instructor, section):
     return cs.name
 
 
-def make_teacher():
+def _category(name, of_record):
+    if not frappe.db.exists("Instructor Category", name):
+        frappe.get_doc(
+            {
+                "doctype": "Instructor Category",
+                "category_name": name,
+                "is_instructor_of_record": 1 if of_record else 0,
+            }
+        ).insert(ignore_permissions=True)
+    return name
+
+
+def make_teacher(of_record=True):
+    """An Instructor. Of record by default: p007 §2.8 makes the folder read
+    rule tier-aware, and the ADR §5.10 "a professor reads any folder to copy
+    from it" applies to instructors of record; a grader reads only the
+    folders of the sections they are listed on."""
     user = make_user(roles=("Instructor",))
     person = make_person("Instr", user=user.name)
-    return make_instructor(person).name, user.name
+    inst = make_instructor(person)
+    frappe.db.set_value(
+        "Instructor",
+        inst.name,
+        "default_inst_category",
+        _category("P006 Of Record" if of_record else "P006 Grader", of_record),
+    )
+    frappe.local.p007_cache = {}
+    return inst.name, user.name
 
 
 def make_enrolled_student(*course_schedules):
@@ -267,6 +291,9 @@ class TestCourseFolderScopes(FrappeTestCase):
         self.assertFalse(cf.user_may_write(f, self.user_b))
         self.assertTrue(cf.user_may_write(f, self.user_a))
         self.assertTrue(cf.user_may_write(f, self.chair))
+        # p007 §2.8: a grader listed on no section of this course reads nothing.
+        _, grader = make_teacher(of_record=False)
+        self.assertFalse(cf.user_may_read(f, grader))
 
     def test_instructor_scope_shared_with_instructors(self):
         folder = make_folder(
