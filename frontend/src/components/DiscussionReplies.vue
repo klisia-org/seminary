@@ -166,7 +166,9 @@ const newReplyResource = createResource({
 })
 
 const fetchMentionUsers = () => {
-	if (user.data?.is_student) {
+	// get_all_users is staff-only; a student (or a grader who is also a
+	// student) gets the editor without the mention list rather than a 403.
+	if (user.data?.is_student || !(user.data?.is_instructor || user.data?.is_moderator)) {
 		renderEditor.value = true
 	} else {
 		allUsers.reload(

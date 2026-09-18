@@ -30,11 +30,12 @@ export function useCourseToDo(courseName, user) {
     auto: true,
   })
 
+  // Staff-only since p007 §2.4; a student never asks for it.
   const assessmentsToGrade = createResource({
     url: 'seminary.seminary.utils.get_assessments_tograde',
     cache: ['assessments_tograde', courseName],
     params: { course: courseName },
-    auto: true,
+    auto: !!isInstructor,
   })
 
   const pendingDisciplinary = createResource({

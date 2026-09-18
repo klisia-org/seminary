@@ -804,7 +804,8 @@ watch(
 			canGradeSubmission.value &&
 			oldGrade !== undefined &&
 			newGrade !== oldGrade &&
-			submissionResource.doc
+			submissionResource.doc &&
+			isInstructorView.value
 		) {
 			submissionResource.doc.status = 'Graded';
 			isDirty.value = true;

@@ -12,11 +12,8 @@ export const useSettings = defineStore('settings', () => {
 
 
 
-	/* const onboardingDetails = createResource({
-		url: 'seminary.seminary.utils.is_onboarding_complete',
-		auto: isLoggedIn ? true : false,
-		cache: ['onboardingDetails'],
-	}) */
+	// An onboarding-complete check (`is_onboarding_complete`) was never built
+	// server-side; see privatedocs/p007 §2.13 for the action item.
 
 	return {
 		isSettingsOpen,
