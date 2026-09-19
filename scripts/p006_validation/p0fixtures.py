@@ -108,10 +108,23 @@ if not hold:
 OUT["hold_row"], OUT["hold_field"] = hold.name, hold_field
 
 # 4. Discussion activity + submissions
+# `prompt` is what the student reads above the reply box. The fixture left it
+# empty, so the activity rendered as a bare thread with no question in it and
+# read like a bug on the page rather than like fixture data (2026-09-19).
+# `ensure` returns early when the row exists, so this never overwrites a prompt
+# someone has written on a live site.
 DA = ensure(
     "Discussion Activity",
     {"discussion_name": "P0 Discussion", "course": COURSE},
-    {"discussion_name": "P0 Discussion", "course": COURSE, "title": "P0 Discussion"},
+    {
+        "discussion_name": "P0 Discussion",
+        "course": COURSE,
+        "title": "P0 Discussion",
+        "prompt": (
+            "<p>[p006 fixture] Post one paragraph on this week's reading, "
+            "then reply to a classmate.</p>"
+        ),
+    },
 )
 OUT["DA"] = DA
 OUT["DS_A"] = ensure(
@@ -120,7 +133,7 @@ OUT["DS_A"] = ensure(
     {
         "disc_activity": DA,
         "member": STU_A_USER,
-        "original_post": "<p>P0 post A</p>",
+        "original_post": "<p>[p006 fixture] P0 post A</p>",
         "coursesc": CS,
     },
 )
@@ -130,7 +143,7 @@ OUT["DS_B"] = ensure(
     {
         "disc_activity": DA,
         "member": STU_B_USER,
-        "original_post": "<p>P0 post B</p>",
+        "original_post": "<p>[p006 fixture] P0 post B</p>",
         "coursesc": CS_B,
     },
 )
