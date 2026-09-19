@@ -731,7 +731,17 @@ def withdraw_orphan_requirement(program_enrollment, sgr_name):
     """Registrar action: when the orphan's fulfillment is a linked document
     (e.g. Internship Application, Culminating Project), withdraw that document
     and then drop the orphan row. Errors clearly when there is nothing to
-    withdraw — use Cancel or Waive instead."""
+    withdraw — use Cancel or Waive instead.
+
+    The registrar check comes first on purpose. ``_withdraw_linked_doc`` moves
+    the linked document to Withdrawn with ``db_set`` -- which no permission layer
+    sees -- BEFORE the permission-checked ``pe.save`` below. For a caller without
+    write on the enrollment that was only undone by the failed save rolling the
+    transaction back: correct by accident, and one ``frappe.db.commit()`` away
+    from a student withdrawing someone's internship (p008a G10 inventory)."""
+    from seminary.seminary.guards import require_registrar
+
+    require_registrar()
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     row = _find_sgr(pe, sgr_name)
     if not (row.link_doctype and row.linked_doc):

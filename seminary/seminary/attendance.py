@@ -27,6 +27,8 @@ import frappe
 from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 
+from seminary.seminary.guards import require_course_staff
+
 POLICY_AUTO = "Auto (from program)"
 POLICY_CUSTOM = "Custom"
 POLICY_DISABLED = "Disabled"
@@ -406,7 +408,16 @@ def assert_can_edit_policy():
 @frappe.whitelist()
 def get_course_attendance_standings(course_schedule):
     """Per-student attendance standing for the instructor attendance page,
-    keyed by student id. Empty unless an absence limit is in force."""
+    keyed by student id. Empty unless an absence limit is in force.
+
+    Course staff only. The read below is ``frappe.get_all``, which is
+    ``get_list(ignore_permissions=True)``, so ``query_scheduled_course_roster``
+    (p007 F2) never runs on it — without this gate any authenticated user could
+    read who is one absence from failing out, for any section in the school
+    (p005a A01-18). The registrar is included because attendance standing is a
+    registrar concern as much as an instructor one.
+    """
+    require_course_staff(course_schedule, include_registrar=True)
     rows = frappe.get_all(
         "Scheduled Course Roster",
         filters={"course_sc": course_schedule, "active": 1, "audit_bool": 0},

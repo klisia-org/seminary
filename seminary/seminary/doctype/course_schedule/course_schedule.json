@@ -605,6 +605,7 @@
    "fieldtype": "Data",
    "label": "Calendar Token",
    "length": 64,
+   "permlevel": 1,
    "read_only": 1
   },
   {

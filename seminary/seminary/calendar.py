@@ -1,4 +1,5 @@
 import frappe
+import hmac
 from datetime import datetime
 from datetime import timedelta
 import re
@@ -7,16 +8,21 @@ from ics import Calendar, Event
 import pytz
 
 
-@frappe.whitelist()
 def validate_token(course_schedule: str | None = None, token: str | None = None):
-    """Validate calendar token for a given course schedule."""
+    """Validate calendar token for a given course schedule.
+
+    Not whitelisted: its only caller is :func:`course_ics`, and exposing it was
+    exposing a token-checking oracle (p005a A04-3). The comparison is
+    constant-time — p006 F12 did this for the recommender token and left this
+    one on ``!=`` (p005 A04-2).
+    """
     if not course_schedule or not token:
         raise frappe.ValidationError(_("Course Schedule and token are required."))
 
     stored_token = frappe.db.get_value(
         "Course Schedule", course_schedule, "calendar_token"
     )
-    if not stored_token or stored_token != token:
+    if not stored_token or not hmac.compare_digest(str(stored_token), str(token)):
         raise frappe.ValidationError(_("Invalid calendar token provided."))
 
     return True

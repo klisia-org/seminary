@@ -427,15 +427,30 @@ class CourseSchedule(Document):
 
     def validate_instructor_of_record_rows(self):
         """p007 §2.8 (decision 8): a section row may carry an of-record
-        category only if the Instructor's default category is of record or
-        empty, or the saving user is Program Chair / Seminary Manager. The
-        registrar assigns professors and graders freely; promoting a grader to
-        instructor of record is the chair's call, made on the Instructor."""
-        if (
-            frappe.flags.in_install
-            or frappe.flags.in_migrate
-            or self.flags.ignore_permissions
-        ):
+        category only if the Instructor's default category is of record, or the
+        saving user is Program Chair / Seminary Manager. The registrar assigns
+        professors and graders freely; promoting a grader to instructor of
+        record is the chair's call, made on the Instructor.
+
+        p005a A01-13: this used to read "of record **or empty**", and
+        ``default_inst_category`` is not a required field. An Instructor with a
+        blank default could therefore be listed as of record by anyone who could
+        save the section — including, because the p007 row hook grants write to
+        whoever ``is_course_staff`` says is on it, *themselves*. Reproduced:
+        a section-tier grader promoted their own row and went from one readable
+        section to every section in the school (``instructor_tier`` "section" ->
+        "record"). The default must now be **explicitly** of record.
+
+        Not solved with a permlevel: Course Schedule's permlevel 1 already grants
+        Instructor write, so moving the field there would change nothing, and
+        permlevel 2 is Program Chair only, which would stop the registrar
+        assigning graders at all — the workflow this docstring exists to protect.
+        """
+        # in_install / in_migrate stay: they are bootstrap, not a caller.
+        # self.flags.ignore_permissions deliberately does NOT: a permission
+        # bypass and an integrity rule are different things, and course_pack
+        # import sets that flag on section creation (p005a A08-2).
+        if frappe.flags.in_install or frappe.flags.in_migrate:
             return
         roles = set(frappe.get_roles())
         if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
@@ -458,14 +473,19 @@ class CourseSchedule(Document):
             default = frappe.db.get_value(
                 "Instructor", row.instructor, "default_inst_category"
             )
-            if default and default not in of_record:
+            if default not in of_record:
                 frappe.throw(
                     _(
-                        "Instructor {0} (row {1}) is a {2} by default. Only a "
+                        "Instructor {0} (row {1}) is {2} by default. Only a "
                         "Program Chair or Seminary Manager can list them as "
-                        "{3} on a section; ask them to change the default "
+                        "{3} on a section; ask them to set the default "
                         "category on the Instructor record first."
-                    ).format(row.instructor, row.idx, default, row.instructor_category),
+                    ).format(
+                        row.instructor,
+                        row.idx,
+                        default or _("not an instructor of record"),
+                        row.instructor_category,
+                    ),
                     title=_("Instructor of record"),
                 )
 
@@ -710,13 +730,29 @@ class CourseSchedule(Document):
 
     @frappe.whitelist()
     def regenerate_token(self):
+        """Mint a new calendar token, invalidating existing subscriptions.
+
+        Explicitly write-gated and returns nothing. It previously relied on
+        ``run_doc_method`` checking *read* and ``save()`` later checking write —
+        an accidental gate — and handed the new token straight back to the
+        caller, the pattern p006 F12 removed from
+        ``recommendation_letter.regenerate_token`` (p005a A04-3). Subscribers
+        pick the new token up from ``get_course_details``, which is gated.
+        """
+        frappe.has_permission("Course Schedule", "write", doc=self, throw=True)
         self.calendar_token = secrets.token_hex(32)
         self.save()
-        return self.calendar_token
 
     @frappe.whitelist()
     def schedule_dates(self, days):
         """Returns a list of meeting dates and also creates child documents for each meeting date"""
+        # A whitelisted document method is reached through run_doc_method, which
+        # checks only READ on the document. Everything past that is this
+        # method's own job (p008a G10 inventory).
+        # A student reads the sections they are enrolled in, and this method
+        # wipes cs_meetinfo and saves with ignore_permissions -- so without the
+        # check below any enrolled student could rewrite the section's schedule.
+        self.check_permission("write")
         meeting_dates = []
         meeting_dates_errors = []
 

@@ -163,6 +163,22 @@ class Instructor(Document):
 
         Used for Volunteer / honorarium billing via Purchase Invoice.
         """
+        # A whitelisted document method is reached through run_doc_method, which
+        # checks only READ on the document. Everything past that is this
+        # method's own job (p008a G10 inventory).
+        # Students read instructor profiles, and this inserts a Supplier with
+        # ignore_permissions -- accounting master data. Write on the Instructor is
+        # not the bar either: an instructor holds if_owner write on their own
+        # record, and creating one's own payee is not a self-service action.
+        frappe.only_for(
+            (
+                "Seminary Manager",
+                "Program Chair",
+                "System Manager",
+                "Accounts Manager",
+                "Accounts User",
+            )
+        )
         if self.supplier:
             frappe.msgprint(
                 _("Supplier {0} is already linked to this Instructor.").format(
