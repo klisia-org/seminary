@@ -44,6 +44,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.student_standing",
     "seminary.seminary.doctype.student_attendance_tool.student_attendance_tool",
     "seminary.seminary.doctype.culminating_project.culminating_project",
+    "seminary.seminary.disciplinary",
 )
 
 GUEST_ALLOWED = {
@@ -158,6 +159,15 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
+    # compute_occurrence_number / preview_recommendation / suggest_actions gated
+    # here (p005a A01-16); the rest were already gated.
+    "seminary.seminary.disciplinary.compute_occurrence_number",
+    "seminary.seminary.disciplinary.list_portal_reasons",
+    "seminary.seminary.disciplinary.preview_recommendation",
+    "seminary.seminary.disciplinary.record_incident_action",
+    "seminary.seminary.disciplinary.report_incident",
+    "seminary.seminary.disciplinary.suggest_actions",
     # api.py
     "seminary.seminary.api.get_student_groups",
     "seminary.seminary.api.get_discussion_submission_summary",
@@ -225,6 +235,12 @@ STAFF_ONLY = {
 # nor a plain staff gate: they carry their own ownership rule (the culminating
 # project's student/advisor checks) and are covered by their own test module.
 OWN_RULE = {
+    # disciplinary: these two carry their own rule rather than a throw -- an
+    # unauthorized caller gets [] (fail-closed, no leak), so they are not
+    # STAFF_ONLY in this test's "must raise PermissionError" sense.
+    "seminary.seminary.disciplinary.list_course_enrollments",
+    "seminary.seminary.disciplinary.list_pending_incidents",
+} | {
     "seminary.seminary.doctype.culminating_project.culminating_project." + n
     for n in (
         "record_signoff",
@@ -459,15 +475,6 @@ PENDING_CLASSIFICATION = {
     "seminary.seminary.discipleship.scripture.scripture_books",
     "seminary.seminary.discipleship.scripture.scripture_chapters",
     "seminary.seminary.discipleship.scripture.scripture_verses",
-    # seminary.seminary.disciplinary (8)
-    "seminary.seminary.disciplinary.compute_occurrence_number",
-    "seminary.seminary.disciplinary.list_course_enrollments",
-    "seminary.seminary.disciplinary.list_pending_incidents",
-    "seminary.seminary.disciplinary.list_portal_reasons",
-    "seminary.seminary.disciplinary.preview_recommendation",
-    "seminary.seminary.disciplinary.record_incident_action",
-    "seminary.seminary.disciplinary.report_incident",
-    "seminary.seminary.disciplinary.suggest_actions",
     # seminary.seminary.doctype.academic_term.academic_term (1)
     "seminary.seminary.doctype.academic_term.academic_term.get_academic_year_context",
     # seminary.seminary.doctype.address_geocoding_settings.address_geocoding_settings (1)
@@ -621,7 +628,7 @@ PENDING_CLASSIFICATION = {
     "seminary.workspace_save_fix.save_page",
 }
 
-MAX_PENDING = 302
+MAX_PENDING = 294
 
 # Modules that do not import cleanly outside a request context. Their endpoints
 # are therefore invisible to the walk; keep the list at zero-growth.
