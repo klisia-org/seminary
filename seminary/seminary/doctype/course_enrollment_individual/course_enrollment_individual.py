@@ -347,6 +347,13 @@ class CourseEnrollmentIndividual(Document):
 
         Returns the list of Sales Invoices now linked to the enrollment.
         """
+        # A whitelisted document method is reached through run_doc_method, which
+        # checks only READ on the document. Everything past that is this
+        # method's own job (p008a G10 inventory).
+        # A student reads their own enrollment and an instructor their
+        # sections'; raising an invoice is for whoever may WRITE the enrollment
+        # (Registrar, Seminary Manager, System Manager).
+        self.check_permission("write")
         from seminary.seminary.financial.backend import get_financial_backend
 
         backend = get_financial_backend()

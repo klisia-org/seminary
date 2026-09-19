@@ -746,6 +746,13 @@ class CourseSchedule(Document):
     @frappe.whitelist()
     def schedule_dates(self, days):
         """Returns a list of meeting dates and also creates child documents for each meeting date"""
+        # A whitelisted document method is reached through run_doc_method, which
+        # checks only READ on the document. Everything past that is this
+        # method's own job (p008a G10 inventory).
+        # A student reads the sections they are enrolled in, and this method
+        # wipes cs_meetinfo and saves with ignore_permissions -- so without the
+        # check below any enrolled student could rewrite the section's schedule.
+        self.check_permission("write")
         meeting_dates = []
         meeting_dates_errors = []
 
