@@ -1,5 +1,6 @@
 import { h, createApp } from 'vue'
 import { Code2 } from 'lucide-vue-next'
+import { safeEmbedUrl } from './urlPolicy.js'
 
 /**
  * EditorJS block for embedding arbitrary iframe/HTML content (e.g. Genially,
@@ -7,10 +8,17 @@ import { Code2 } from 'lucide-vue-next'
  * not cover.
  *
  * The author pastes either a full `<iframe …>` embed snippet or a bare URL into
- * a textarea; it is rendered live while editing and as the real iframe in the
- * read-only lesson view. The raw markup is preserved through EditorJS's save
- * sanitizer via the `sanitize` getter below (a tag rule of `true` keeps the tag
- * and all of its attributes).
+ * a textarea. **Only the URL is ever used.** The tool extracts the iframe's `src`
+ * (or takes the bare URL), checks it, and builds its own responsive iframe with
+ * `createElement` -- the author's markup is never written to the DOM.
+ *
+ * p005a A05-10: this block used to keep `div/iframe/span/p/a/br/img` WITH ALL
+ * THEIR ATTRIBUTES through EditorJS's save sanitizer, return any input
+ * containing `<iframe` or `<div` verbatim, and assign it to `innerHTML`. That
+ * does not run `<script>`, but it does run `onerror`/`onload` -- and the
+ * read-only lesson view instantiates this same tool, so one instructor's block
+ * executed in every enrolled student's session. Lesson content is EditorJS JSON,
+ * which Frappe's server sanitiser skips entirely, so nothing else stood in the way.
  */
 export class IframeEmbed {
 	static get toolbox() {
@@ -30,20 +38,10 @@ export class IframeEmbed {
 		return true
 	}
 
-	// Keep the embed markup intact when EditorJS sanitizes the saved block data.
-	// A tag mapped to `true` is preserved together with all of its attributes.
+	// What is SAVED is a bare URL (see save()), so no tag needs to survive
+	// EditorJS's save sanitizer. `false` strips all markup from the field.
 	static get sanitize() {
-		return {
-			html: {
-				div: true,
-				iframe: true,
-				span: true,
-				p: true,
-				a: true,
-				br: true,
-				img: true,
-			},
-		}
+		return { html: false }
 	}
 
 	constructor({ data, readOnly }) {
@@ -66,36 +64,74 @@ export class IframeEmbed {
 	}
 
 	/**
-	 * Normalise the author's input into renderable HTML. A full iframe/HTML
-	 * snippet is used as-is; a bare URL is wrapped in a responsive 16:9 iframe.
+	 * The one thing taken from the author's input: a URL. A bare http(s) URL is
+	 * used as is; from a pasted snippet only the first iframe's `src` is read,
+	 * through DOMParser -- whose document is inert: nothing in it loads or runs.
+	 * The URL must be absolute http(s) and on ANOTHER origin, so an embed can
+	 * never point back at a file uploaded to this site.
 	 */
-	toEmbedHtml(value) {
+	static embedUrl(value) {
 		const trimmed = (value || '').trim()
 		if (!trimmed) return ''
-		if (trimmed.includes('<iframe') || trimmed.includes('<div')) return trimmed
-		if (/^https?:\/\//i.test(trimmed)) {
-			return (
-				'<div style="width: 100%;"><div style="position: relative; padding-bottom: 56.25%; height: 0;">' +
-				`<iframe src="${trimmed}" ` +
-				'style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" ' +
-				'frameborder="0" scrolling="yes" allowfullscreen="true" allownetworking="all"></iframe>' +
-				'</div></div>'
-			)
+		let src = trimmed
+		if (/<\s*iframe/i.test(trimmed)) {
+			const doc = new DOMParser().parseFromString(trimmed, 'text/html')
+			const frame = doc.querySelector('iframe')
+			src = (frame && frame.getAttribute('src')) || ''
 		}
-		return ''
+		return safeEmbedUrl(src)
+	}
+
+	/** The responsive 16:9 shell, built node by node. */
+	static buildEmbed(url) {
+		const outer = document.createElement('div')
+		outer.style.width = '100%'
+		const ratio = document.createElement('div')
+		ratio.style.position = 'relative'
+		ratio.style.paddingBottom = '56.25%'
+		ratio.style.height = '0'
+		const frame = document.createElement('iframe')
+		frame.setAttribute('src', url)
+		frame.setAttribute('frameborder', '0')
+		frame.setAttribute('scrolling', 'yes')
+		frame.setAttribute('allowfullscreen', 'true')
+		frame.setAttribute('loading', 'lazy')
+		frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin')
+		frame.style.position = 'absolute'
+		frame.style.top = '0'
+		frame.style.left = '0'
+		frame.style.width = '100%'
+		frame.style.height = '100%'
+		ratio.appendChild(frame)
+		outer.appendChild(ratio)
+		return outer
+	}
+
+	fillPreview(container, value) {
+		container.replaceChildren()
+		const url = IframeEmbed.embedUrl(value)
+		if (url) {
+			container.appendChild(IframeEmbed.buildEmbed(url))
+		} else if ((value || '').trim() && !this.readOnly) {
+			const note = document.createElement('p')
+			note.style.fontSize = '13px'
+			note.style.color = '#b45309'
+			note.textContent = __(
+				'Nothing to embed: paste an https:// link, or an <iframe> code whose src is an https:// link on another site.'
+			)
+			container.appendChild(note)
+		}
 	}
 
 	renderPreview(target) {
-		const html = this.toEmbedHtml(this.data.html)
-		if (!html) return
 		const container = document.createElement('div')
 		container.classList.add('iframe-embed-preview')
-		container.innerHTML = html
-		target.appendChild(container)
+		this.fillPreview(container, this.data.html)
+		if (container.childNodes.length) target.appendChild(container)
 	}
 
 	renderEditor() {
-		this.wrapper.innerHTML = ''
+		this.wrapper.replaceChildren()
 
 		const textarea = document.createElement('textarea')
 		textarea.classList.add('iframe-embed-input')
@@ -116,7 +152,7 @@ export class IframeEmbed {
 		preview.style.marginTop = '0.75rem'
 
 		const updatePreview = () => {
-			preview.innerHTML = this.toEmbedHtml(textarea.value)
+			this.fillPreview(preview, textarea.value)
 		}
 
 		textarea.addEventListener('input', () => {
@@ -130,8 +166,10 @@ export class IframeEmbed {
 	}
 
 	save() {
+		// One normal form: the checked URL. A pasted snippet is reduced to its
+		// src here, so what is stored can be rendered by anything without trust.
 		return {
-			html: (this.data.html || '').trim(),
+			html: IframeEmbed.embedUrl(this.data.html),
 		}
 	}
 

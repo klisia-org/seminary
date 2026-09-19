@@ -1,6 +1,7 @@
 import { Code } from "lucide-vue-next"
 import { h, createApp } from "vue"
 import hljs from 'highlight.js/lib/core';
+import { sanitize } from './sanitize.js';
 
 
 const DEFAULT_THEMES = ['light', 'dark'];
@@ -90,7 +91,9 @@ export class CodeBox {
 		codeAreaHolder.setAttribute('class', 'codeBoxHolder');
 		this.codeArea.setAttribute('class', `codeBoxTextArea ${this.config.useDefaultTheme} ${this.data.language}`);
 		this.codeArea.setAttribute('contenteditable', 'true');
-		this.codeArea.innerHTML = this.data.code;
+		// data.code is stored WITH highlight.js markup (save() reads innerHTML), so it
+		// cannot be set as text; the 'code' profile keeps span[class], br and div only.
+		this.codeArea.innerHTML = sanitize(this.data.code, 'code');
 		this.api.listeners.on(this.codeArea, 'blur', event => this._highlightCodeArea(event), false);
 		this.api.listeners.on(this.codeArea, 'paste', event => this._handleCodeAreaPaste(event), false);
 
