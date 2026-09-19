@@ -65,3 +65,27 @@ Key choices:
   ADR 040 upload limits. Future: stream to a hub instead of building in memory.
 - Adding a new field to a carried doctype will NOT appear in packs until added to
   the relevant allow-list in `constants.py` (deliberate).
+
+## Amendment — import-side trust (2026-09-19)
+
+The Decision above already says "explicit per-doctype allow-lists in
+`constants.py` (deny-by-default)". The exporter has honoured them since day one;
+the importer did not — it instantiated whatever `doctype` the manifest named and
+`update()`-d it with whatever fields it carried, under `ignore_permissions`. That
+was a defect against this ADR, not a new decision, and it is fixed without
+changing the pack format:
+
+- **A pack is untrusted input** — it is a zip file from another school.
+- The same tuples govern the import. An unknown **field** is dropped silently
+  (version skew between sites); an unknown **doctype** throws (that is not skew).
+- Imported media is always private, whatever the manifest says.
+- The caller's role, then the pack File's read permission and size, then the
+  archive's bounds (entries, uncompressed size, ratio, manifest size) are checked
+  **before** anything inside the archive is read or parsed.
+- SCORM packages travel as files and are never unpacked on import; the three
+  extracted-path fields left the chapter allow-list.
+- An imported Course gets a unique `coursecode` (from `source.course_code`), so
+  Course Competency names no longer collide between imports.
+
+Signed packs, or a trusted-publisher registry for the hub, would change the
+*shape* of a pack and need their own ADR.
