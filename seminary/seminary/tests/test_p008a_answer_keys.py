@@ -218,3 +218,51 @@ class TestP008aAnswerKeys(IntegrationTestCase):
                     self.assertIsNone(fn)
                 else:
                     self.assertNotIn(fn, frappe.whitelisted)
+
+
+class TestP008aCourseFolderList(IntegrationTestCase):
+    """The Course Folder list shows exactly what a per-document read allows.
+
+    The per-document rule (``course_folder.user_may_read``) predates this; the
+    list used to apply the DocPerm alone. The richer personas -- enrolled
+    student, grader, of-record instructor -- are checked the same way against
+    real folders by scripts/p008a_validation on potestas."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.student = _make_user("Student", "g8-cf-student")
+        cls.chair = _make_user("Program Chair", "g8-cf-chair")
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+
+    def _listed_vs_readable(self, user):
+        from seminary.seminary.doctype.course_folder.course_folder import user_may_read
+
+        everything = frappe.get_all("Course Folder", pluck="name")
+        frappe.set_user(user)
+        listed = set(frappe.get_list("Course Folder", pluck="name", limit=0))
+        frappe.set_user("Administrator")
+        readable = {n for n in everything if user_may_read(n, user)}
+        return listed, readable
+
+    def test_list_equals_per_document_read(self):
+        for user in (self.student, self.chair):
+            with self.subTest(user=user):
+                listed, readable = self._listed_vs_readable(user)
+                self.assertEqual(listed, readable)
+
+    def test_condition_shapes(self):
+        from seminary.seminary.doctype.course_folder.course_folder import (
+            get_permission_query_conditions as cond,
+        )
+
+        self.assertEqual(cond("Guest"), "1=0")
+        self.assertEqual(cond("Administrator"), "")
+        self.assertEqual(cond(self.chair), "")
+        # a student on no roster reaches School folders and nothing else
+        student_cond = cond(self.student)
+        self.assertIn("scope = 'School'", student_cond)
+        self.assertNotIn("'Section'", student_cond)
+        self.assertNotIn("'Instructor'", student_cond)

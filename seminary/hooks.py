@@ -268,6 +268,8 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
+    # p008a G8: the list must not show a folder a per-document read would deny.
+    "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.get_permission_query_conditions",
     # Competency assessments and results carry a student's own account of their
     # formation; the list view must not become a way to read a classmate's.
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
@@ -316,6 +318,7 @@ permission_query_conditions = {
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+    "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.has_permission",
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.has_permission",

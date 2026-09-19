@@ -295,23 +295,57 @@ for dead in (
     )
 
 print("=== Course Folder ===")
-r = call(
-    "stuA",
-    "frappe.client.get_list",
-    {
-        "doctype": "Course Folder",
-        "fields": json.dumps(["name", "scope"]),
-        "limit_page_length": 50,
-    },
-    http="GET",
-)
-folders = msg(r) or []
-inst = [f["name"] for f in folders if f.get("scope") == "Instructor"]
-verdict(
-    "Student lists Instructor-scope (personal) Course Folders",
-    bool(inst),
-    f"HTTP {r.status_code}; {len(folders)} folders listed, {len(inst)} Instructor-scope: {inst[:3]}",
-)
+# Per-document read already followed course_folder.user_may_read (the controller
+# override). The leak was the LIST, which applied the DocPerm alone. Note that an
+# Instructor-scope folder is legitimately readable when its instructor teaches a
+# section the student is on -- so the verdict is "listed but not openable", not
+# "lists Instructor-scope folders".
+all_folders = [
+    f["name"]
+    for f in (
+        msg(
+            call(
+                "admin",
+                "frappe.client.get_list",
+                {"doctype": "Course Folder", "limit_page_length": 500},
+                http="GET",
+            )
+        )
+        or []
+    )
+]
+for who in ("stuA", "stuX"):
+    listed = {
+        f["name"]
+        for f in (
+            msg(
+                call(
+                    who,
+                    "frappe.client.get_list",
+                    {"doctype": "Course Folder", "limit_page_length": 500},
+                    http="GET",
+                )
+            )
+            or []
+        )
+    }
+    readable = {
+        n
+        for n in all_folders
+        if call(
+            who,
+            "frappe.client.get",
+            {"doctype": "Course Folder", "name": n},
+            http="GET",
+        ).status_code
+        == 200
+    }
+    verdict(
+        f"{who} lists Course Folders that a per-document read denies",
+        bool(listed - readable),
+        f"listed {len(listed)}, openable {len(readable)}; over-shown {sorted(listed - readable)}; "
+        f"under-shown {sorted(readable - listed)}",
+    )
 
 print("=== summary ===")
 for label, v in VERDICTS:
