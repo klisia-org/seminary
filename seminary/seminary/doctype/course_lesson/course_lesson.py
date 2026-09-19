@@ -11,7 +11,30 @@ import json
 
 
 class CourseLesson(Document):
+    def sanitize_editor_content(self):
+        """Clean the EditorJS blocks before anything else looks at them (p008 F4).
+
+        Frappe's own save-time sanitiser returns JSON unchanged, so without this
+        nothing on the server ever looks inside a lesson, and the lesson view
+        renders several block types as HTML. Repairs and says so; never blocks
+        the save -- see seminary.seminary.editorjs_safety."""
+        from seminary.seminary.editorjs_safety import sanitize_content
+
+        notes = []
+        for fieldname in ("content", "instructor_content"):
+            cleaned, found = sanitize_content(self.get(fieldname))
+            if found:
+                self.set(fieldname, cleaned)
+                notes.extend(found)
+        if notes:
+            frappe.msgprint(
+                "<br>".join(frappe.utils.escape_html(n) for n in notes),
+                title=frappe._("Some lesson content was cleaned on save"),
+                indicator="orange",
+            )
+
     def validate(self):
+        self.sanitize_editor_content()
         # self.check_and_create_folder()
         self.validate_quiz_id()
         self.updates_lessons()

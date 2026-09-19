@@ -23,7 +23,8 @@ const URI = /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.:-]|$))/i
 const RICH = {
 	FORBID_TAGS: RENDER_FORBIDDEN_TAGS,
 	FORBID_ATTR: FORBIDDEN_ATTR,
-	ALLOW_DATA_ATTR: false,
+	// data-* stays (DOMPurify's default), as on the server: the text editor marks
+	// checklists and mentions with it, and the attributes are inert.
 	ALLOWED_URI_REGEXP: URI,
 	ADD_ATTR: ['target'],
 }

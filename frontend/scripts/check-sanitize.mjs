@@ -55,7 +55,6 @@ const kill = [
   ['meta refresh', '<meta http-equiv="refresh" content="0;url=https://evil">x', /<meta/],
   ['math/mtext mutation', '<math><mtext><style><img src=x onerror=alert(1)></style></mtext></math>', /onerror|<math/],
   ['srcdoc', '<iframe srcdoc="<script>1</script>"></iframe>', /srcdoc|<iframe/],
-  ['data- attr', '<p data-x="1">x</p>', /data-x/],
 ]
 for (const [label, html, bad] of kill) { const out = clean(html); must(label, !bad.test(out), out) }
 
@@ -71,6 +70,7 @@ const keep = [
   ['lists + headings', '<h2>T</h2><ol><li>a</li></ol><ul><li>b</li></ul>', ['<h2>', '<ol>', '<ul>']],
   ['external link w/ target', '<a href="https://ok.example" target="_blank">x</a>', ['href="https://ok.example"', 'target="_blank"', 'rel="noopener noreferrer"']],
   ['mailto + relative', '<a href="mailto:a@b.c">m</a><a href="/seminary/courses">r</a>', ['mailto:a@b.c', '/seminary/courses']],
+  ['checklist data-list (editor state)', '<ul><li data-list="checked">done</li></ul>', ['data-list="checked"']],
   ['display + border', '<div style="display: flex; border: 1px solid #ccc; padding: 4px">x</div>', ['display: flex', 'border: 1px solid', 'padding: 4px']],
 ]
 for (const [label, html, needles] of keep) { const out = clean(html); must(label, needles.every((n) => out.includes(n)), out) }

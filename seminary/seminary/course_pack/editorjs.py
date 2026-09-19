@@ -64,7 +64,10 @@ def rewrite_urls(text, url_map):
 # --- Activity references in EditorJS JSON ------------------------------------
 
 
-def _load(content):
+def load_blocks(content):
+    """Parse EditorJS JSON defensively: a dict with a ``blocks`` list, or None.
+    Public because lesson sanitising (seminary.seminary.editorjs_safety) needs
+    exactly this parser and must not grow a second one."""
     if not content:
         return None
     try:
@@ -79,7 +82,7 @@ def _load(content):
 def scan_content_refs(content):
     """Return [(doctype, docname), ...] for activity blocks in EditorJS content."""
     refs = []
-    data = _load(content)
+    data = load_blocks(content)
     if not data:
         return refs
     for block in data["blocks"]:
@@ -97,7 +100,7 @@ def scan_content_refs(content):
 
 def rewrite_content_refs(content, ref_map):
     """Return EditorJS content with activity-block refs remapped (old->new name)."""
-    data = _load(content)
+    data = load_blocks(content)
     if not data:
         return content
     for block in data["blocks"]:
@@ -126,7 +129,7 @@ def scan_folder_refs(content):
     """Return [{"folder_ref": docname_or_None, "folder": label_or_None}, ...]
     for every folder block in EditorJS content, in document order."""
     refs = []
-    data = _load(content)
+    data = load_blocks(content)
     if not data:
         return refs
     for block in data["blocks"]:
@@ -152,7 +155,7 @@ def rewrite_folder_refs(content, ref_map, labels=None):
     """
     if not ref_map:
         return content
-    data = _load(content)
+    data = load_blocks(content)
     if not data:
         return content
     changed = False
