@@ -11,11 +11,21 @@ Writes use ``db_set`` / direct child-row inserts on the (submitted) Program
 Enrollment, so they do NOT re-run ``validate()`` or the controller's
 ``on_update_after_submit``. Because ``db_set`` bypasses that hook, terminal
 transitions invoke the graduation-request cascade here directly. See ADR 030.
+
+That same property makes this module invisible to the Phase 1 permission model:
+``Document.db_set`` performs no permission check, so DocPerms, permlevels and the
+``has_permission`` / ``permission_query_conditions`` hooks never fire on anything
+written here. **Every whitelisted entry point into this spine must therefore carry
+its own explicit gate** — there is no layer underneath to catch an omission. p005a
+A01-11 is what an omission looked like: any authenticated user could put any
+Program Enrollment on leave, and raise a readmission fee against a stranger.
 """
 
 import frappe
 from frappe import _
 from frappe.utils import getdate, today
+
+from seminary.seminary.guards import require_registrar
 
 TERMINAL_STATUSES = {"Withdrawn", "Dismissed", "Graduated", "Transferred"}
 ACTIVE_STATUS = "Active"
@@ -166,7 +176,13 @@ def place_on_leave(
     max_return=None,
     reason=None,
 ):
-    """Form-facing wrapper: put a Program Enrollment on Leave of Absence."""
+    """Form-facing wrapper: put a Program Enrollment on Leave of Absence.
+
+    Registrar-only: the callers are the registrar buttons on the Program
+    Enrollment form. See the module docstring for why the gate is explicit
+    rather than left to DocPerms (p005a A01-11).
+    """
+    require_registrar()
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     set_program_status(
         pe,
@@ -187,7 +203,13 @@ def place_on_leave(
 
 @frappe.whitelist()
 def return_from_leave_action(program_enrollment, effective_date=None):
-    """Form-facing wrapper: bring a Program Enrollment back from leave."""
+    """Form-facing wrapper: bring a Program Enrollment back from leave.
+
+    Registrar-only, as :func:`place_on_leave`. This one also reactivates the
+    payers and may charge a readmission fee, so an ungated caller could bill a
+    student who is not theirs (p005a A01-11).
+    """
+    require_registrar()
     return_from_leave(program_enrollment, effective_date)
     return program_enrollment
 
