@@ -833,4 +833,26 @@ iframe {
 #instructor-notes .ce-toolbar {
 	display: block;
 }
+
+/* editorjs appends a new block when you click the empty strip below the last
+   one, and that is the only way to reach the end of a lesson that finishes in
+   a block with no contenteditable -- a video embed, a PDF, a table. Set the
+   strip here rather than inheriting editorjs's default, so an unscoped rule on
+   another page cannot take it away again. */
+#content .codex-editor__redactor,
+#instructor-notes .codex-editor__redactor {
+	padding-bottom: 300px;
+}
+
+/* A hover band on framed blocks. An iframe keeps mouse events to itself, so
+   moving the pointer over a video never reaches the editor: editorjs never
+   hears "block hovered", the toolbar never moves there, and the "+" stays on
+   whichever block was hovered last. The band belongs to the block, so hovering
+   it targets the right one -- and the frame stays interactive, unlike making
+   it click-through. */
+#content .ce-block__content:has(iframe),
+#instructor-notes .ce-block__content:has(iframe) {
+	padding-top: 14px;
+	padding-bottom: 14px;
+}
 </style>
