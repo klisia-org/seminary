@@ -730,9 +730,18 @@ class CourseSchedule(Document):
 
     @frappe.whitelist()
     def regenerate_token(self):
+        """Mint a new calendar token, invalidating existing subscriptions.
+
+        Explicitly write-gated and returns nothing. It previously relied on
+        ``run_doc_method`` checking *read* and ``save()`` later checking write —
+        an accidental gate — and handed the new token straight back to the
+        caller, the pattern p006 F12 removed from
+        ``recommendation_letter.regenerate_token`` (p005a A04-3). Subscribers
+        pick the new token up from ``get_course_details``, which is gated.
+        """
+        frappe.has_permission("Course Schedule", "write", doc=self, throw=True)
         self.calendar_token = secrets.token_hex(32)
         self.save()
-        return self.calendar_token
 
     @frappe.whitelist()
     def schedule_dates(self, days):

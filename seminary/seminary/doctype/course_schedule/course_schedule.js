@@ -136,10 +136,10 @@ frappe.ui.form.on("Course Schedule", {
 				__('Are you sure? All students and professors will need to re-subscribe to the course calendar.'),
 				function() {
 					frm.call('regenerate_token')
-					.then(r => {
-						if (r.message) {
-							frappe.msgprint(__('New Calendar Token: {0}', [r.message]));
-						}
+					.then(() => {
+						// The token is deliberately not returned (p005a A04-3);
+						// subscribers pick it up from the course calendar page.
+						frappe.msgprint(__('Calendar token regenerated. Existing subscriptions are now invalid.'));
 					});
 				},
 				function() {
