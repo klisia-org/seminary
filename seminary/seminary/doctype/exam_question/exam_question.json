@@ -47,7 +47,8 @@
    "fetch_from": "question.explanation",
    "fieldname": "standard_comments",
    "fieldtype": "Text Editor",
-   "label": "Standard Comments"
+   "label": "Standard Comments",
+   "permlevel": 1
   }
  ],
  "grid_page_length": 50,

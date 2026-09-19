@@ -171,6 +171,30 @@
    "report": 1,
    "role": "Student",
    "share": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
