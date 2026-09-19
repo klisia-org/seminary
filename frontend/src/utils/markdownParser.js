@@ -67,6 +67,11 @@ export class Markdown {
 
 		if (!this.readOnly) {
 			this.wrapper.contentEditable = true
+			// editorjs renders this as the block's placeholder while the block
+			// is empty (its own CSS, on `:empty` / `[data-empty=true]`), which
+			// is where the caret is parked when the form opens. Without it an
+			// empty lesson is a blank rectangle with no hint of what to do.
+			this.wrapper.dataset.placeholderActive = this.placeholder
 
 			this.wrapper.addEventListener('input', (event) => {
 				let value = event.target.textContent
@@ -87,22 +92,6 @@ export class Markdown {
 		}
 
 		return this.wrapper
-	}
-
-	_togglePlaceholder() {
-		const blocks = document.querySelectorAll(
-			'.cdx-block.ce-paragraph[data-placeholder]'
-		)
-		blocks.forEach((block) => {
-			if (block !== this.wrapper) {
-				delete block.dataset.placeholder
-			}
-		})
-		if (this.wrapper.innerHTML.trim() === '') {
-			this.wrapper.dataset.placeholder = this.placeholder
-		} else {
-			delete this.wrapper.dataset.placeholder
-		}
 	}
 
 	convertToHeader(event, value) {

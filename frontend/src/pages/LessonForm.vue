@@ -132,6 +132,10 @@ onMounted(() => {
 
 
 
+// editorjs's `defaultBlock`: the tool used for a plain new block, and the only
+// one focusFreeBlockAtEnd() will append.
+const DEFAULT_BLOCK = 'markdown'
+
 const renderEditor = (holder, course = null, courseName = null) => {
 	// Clear the holder first
 	const el = document.getElementById(holder)
@@ -141,9 +145,38 @@ const renderEditor = (holder, course = null, courseName = null) => {
 	return new EditorJS({
 		holder: holder,
 		tools: getEditorTools(course, courseName),
-		autofocus: true,
-		defaultBlock: 'markdown',
+		// No `autofocus`: it fires before the saved content is rendered, and
+		// both editors are built here, so it ended up in the collapsed
+		// instructor notes. focusFreeBlockAtEnd() places the caret instead,
+		// once the content editor holds the lesson.
+		defaultBlock: DEFAULT_BLOCK,
 	})
+}
+
+/**
+ * Leave the caret in a free block at the end of the content, with the toolbar
+ * beside it: on a new lesson that is the first block, on an existing one a new
+ * block under the last. Someone opening the form then sees where to type and
+ * where the "+" is, rather than a page that looks inert -- and it is the one
+ * spot that works whatever the lesson ends with, including a block that has no
+ * contenteditable of its own. Reuse a trailing block that is already an empty
+ * default one instead of stacking another, which is editorjs's own rule for
+ * the click-to-append strip below the last block.
+ */
+const focusFreeBlockAtEnd = () => {
+	const api = editor.value
+	if (!api) return
+
+	const count = api.blocks.getBlocksCount()
+	const last = count ? api.blocks.getBlockByIndex(count - 1) : null
+
+	if (last && last.name === DEFAULT_BLOCK && last.isEmpty) {
+		api.caret.setToLastBlock('end')
+	} else {
+		api.blocks.insert(DEFAULT_BLOCK, {}, {}, count, true)
+	}
+	// Move the "+" to the block the caret is now in.
+	api.toolbar.open()
 }
 
 const lesson = reactive({
@@ -241,6 +274,8 @@ const initContent = async (data) => {
 	if (contentObj && Array.isArray(contentObj.blocks) && contentObj.blocks.length) {
 		await editor.value.render(contentObj)
 	}
+
+	focusFreeBlockAtEnd()
 
 	if (pending?.id) {
 		examStore.clearPendingInsert()
