@@ -3,9 +3,18 @@ from frappe.utils import getdate
 
 # Scheduler hooks — see hooks.py scheduler_events
 # Documentation: https://frappeframework.com/docs/user/en/api/background_jobs
+#
+# These are NOT whitelisted, deliberately. They are registered only under
+# hooks.py scheduler_events and have no browser caller anywhere in frontend/src,
+# portal-shell or seminary/public/js. While they carried @frappe.whitelist() any
+# authenticated user could POST them and get registrar-grade state transitions
+# (term flags flipped app-wide, separations processed, all attendance
+# recomputed), a mass mail-out, and -- the batch being long and repeatable -- a
+# worker-exhaustion primitive (p005a A01-14). If a manual trigger is ever wanted,
+# add one wrapper with frappe.only_for("System Manager") that calls
+# frappe.enqueue rather than running in-request.
 
 
-@frappe.whitelist()
 def daily():
     today = getdate()
 
@@ -40,7 +49,6 @@ def daily():
     # (oikonomos.financial.scholarship.review_scholarship_retention).
 
 
-@frappe.whitelist()
 def hourly():
     from seminary.seminary.doctype.seminary_announcement.seminary_announcement import (
         process_scheduled_announcements,
