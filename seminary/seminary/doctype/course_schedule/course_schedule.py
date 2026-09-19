@@ -427,15 +427,30 @@ class CourseSchedule(Document):
 
     def validate_instructor_of_record_rows(self):
         """p007 §2.8 (decision 8): a section row may carry an of-record
-        category only if the Instructor's default category is of record or
-        empty, or the saving user is Program Chair / Seminary Manager. The
-        registrar assigns professors and graders freely; promoting a grader to
-        instructor of record is the chair's call, made on the Instructor."""
-        if (
-            frappe.flags.in_install
-            or frappe.flags.in_migrate
-            or self.flags.ignore_permissions
-        ):
+        category only if the Instructor's default category is of record, or the
+        saving user is Program Chair / Seminary Manager. The registrar assigns
+        professors and graders freely; promoting a grader to instructor of
+        record is the chair's call, made on the Instructor.
+
+        p005a A01-13: this used to read "of record **or empty**", and
+        ``default_inst_category`` is not a required field. An Instructor with a
+        blank default could therefore be listed as of record by anyone who could
+        save the section — including, because the p007 row hook grants write to
+        whoever ``is_course_staff`` says is on it, *themselves*. Reproduced:
+        a section-tier grader promoted their own row and went from one readable
+        section to every section in the school (``instructor_tier`` "section" ->
+        "record"). The default must now be **explicitly** of record.
+
+        Not solved with a permlevel: Course Schedule's permlevel 1 already grants
+        Instructor write, so moving the field there would change nothing, and
+        permlevel 2 is Program Chair only, which would stop the registrar
+        assigning graders at all — the workflow this docstring exists to protect.
+        """
+        # in_install / in_migrate stay: they are bootstrap, not a caller.
+        # self.flags.ignore_permissions deliberately does NOT: a permission
+        # bypass and an integrity rule are different things, and course_pack
+        # import sets that flag on section creation (p005a A08-2).
+        if frappe.flags.in_install or frappe.flags.in_migrate:
             return
         roles = set(frappe.get_roles())
         if roles & {"Program Chair", "Seminary Manager", "System Manager"}:
@@ -458,14 +473,19 @@ class CourseSchedule(Document):
             default = frappe.db.get_value(
                 "Instructor", row.instructor, "default_inst_category"
             )
-            if default and default not in of_record:
+            if default not in of_record:
                 frappe.throw(
                     _(
-                        "Instructor {0} (row {1}) is a {2} by default. Only a "
+                        "Instructor {0} (row {1}) is {2} by default. Only a "
                         "Program Chair or Seminary Manager can list them as "
-                        "{3} on a section; ask them to change the default "
+                        "{3} on a section; ask them to set the default "
                         "category on the Instructor record first."
-                    ).format(row.instructor, row.idx, default, row.instructor_category),
+                    ).format(
+                        row.instructor,
+                        row.idx,
+                        default or _("not an instructor of record"),
+                        row.instructor_category,
+                    ),
                     title=_("Instructor of record"),
                 )
 
