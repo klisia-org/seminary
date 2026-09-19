@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from seminary.seminary.api import sanitize_html
 from frappe import _
 from frappe.utils import sanitize_html as _frappe_sanitize_html
-from seminary.seminary.guards import is_grader, require_grader
+from seminary.seminary.guards import is_grader, require_course_staff, require_grader
 import re
 
 
@@ -90,8 +90,31 @@ def _assert_owns_submission(doc):
 
 @frappe.whitelist()
 def save_exam_comment(submission_name, row_name, comments):
-    """Save a single question comment on an Exam Submission."""
+    """Save a single question comment on an Exam Submission.
+
+    ``row_name`` used to be trusted outright: the write was a bare
+    ``frappe.db.set_value`` on any Exam Question Result name, with
+    ``submission_name`` accepted and then ignored. Resolve the row's real parent
+    and gate on *that* section, so a grader cannot reach another section's
+    submission by naming one of its child rows (p005a A01-12).
+    """
     require_grader()
+    parent = frappe.db.get_value(
+        "Exam Question Result",
+        row_name,
+        ["parent", "parenttype"],
+        as_dict=True,
+    )
+    if not parent or parent.parenttype != "Exam Submission":
+        frappe.throw(_("Exam question not found."), frappe.DoesNotExistError)
+    if submission_name and parent.parent != submission_name:
+        frappe.throw(
+            _("That question does not belong to this exam submission."),
+            frappe.PermissionError,
+        )
+    require_course_staff(
+        frappe.db.get_value("Exam Submission", parent.parent, "course")
+    )
     frappe.db.set_value(
         "Exam Question Result", row_name, "comments", _clean_rich_text(comments)
     )
@@ -99,10 +122,19 @@ def save_exam_comment(submission_name, row_name, comments):
 
 @frappe.whitelist()
 def save_exam_grade(submission_name, status, score, percentage, fudge_points, result):
-    """Save instructor grading for an Exam Submission."""
+    """Save instructor grading for an Exam Submission.
+
+    ``require_grader()`` is a role check, and under p007 §2.8 the Instructor role
+    includes the *section* tier — a grader, GTA or mentor attached to one
+    section. Without the section check below, any of them could rewrite the score
+    and every per-question mark of any Exam Submission on the site (p005a
+    A01-12). The sibling writers already did this: see
+    ``api.save_discussion_submission_grade`` and ``add_exam_grading_comment``.
+    """
     require_grader()
     result = frappe.parse_json(result)
     doc = frappe.get_doc("Exam Submission", submission_name)
+    require_course_staff(doc.course)
 
     doc.status = status
     doc.score = score
@@ -117,7 +149,11 @@ def save_exam_grade(submission_name, status, score, percentage, fudge_points, re
                 row.comments = _clean_rich_text(row_data.get("comments")) or ""
                 break
 
-    doc.flags.ignore_permissions = True
+    # ignore_permissions stays OFF: the grading fields are permlevel 1 (p007 F3)
+    # and the grading roles hold the permlevel-1 write row, so the save is
+    # allowed on its own merits. The flag defeated that protection outright.
+    # ignore_validate_update_after_submit is still needed — the submission is
+    # submitted and these fields are not allow-on-submit.
     doc.flags.ignore_validate_update_after_submit = True
     doc.save()
     return doc

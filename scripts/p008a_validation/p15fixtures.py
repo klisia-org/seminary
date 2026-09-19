@@ -84,6 +84,32 @@ else:
     )
 OUT["ROW"] = row.name
 
+# An Exam Question Result row on ES_A. The p006/p007 fixtures recorded one
+# (fx1.json ES_A_row) but the site has none left -- ES_B's is gone too, and it
+# was last touched before this branch existed -- so save_exam_comment has no
+# positive path to test against without rebuilding one.
+FX1 = json.load(open(os.path.join(S, "..", "p007_validation", "fx1.json")))
+ES_A = FX1["ES_A"]
+row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
+if not row:
+    q = db.get_value("Exam Question", {}, "name")
+    es = frappe.get_doc("Exam Submission", ES_A)
+    es.append(
+        "result",
+        {
+            "question": q,
+            "question_name": "p008a probe",
+            "points": 0,
+            "points_out_of": 1,
+            "graded": 0,
+        },
+    )
+    es.flags.ignore_permissions = True
+    es.flags.ignore_validate_update_after_submit = True
+    es.save()
+    row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
+OUT["ES_A"], OUT["ES_A_ROW"] = ES_A, row
+
 db.commit()
 json.dump(OUT, open(os.path.join(S, "fx15.json"), "w"), indent=2)
 print(json.dumps(OUT, indent=2))
