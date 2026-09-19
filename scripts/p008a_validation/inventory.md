@@ -5,10 +5,10 @@ see its docstring for what it over- and under-approximates). **A worklist, not a
 
 | | count |
 |---|---|
-| whitelisted endpoints analysed | 463 |
+| whitelisted endpoints analysed | 462 |
 | reach an unchecked **write**, gate recognised in the entry function | 175 |
 | reach an unchecked **write**, **no gate recognised** | **1** |
-| reach only an unchecked **read** (`frappe.get_all`), no gate recognised | 29 |
+| reach only an unchecked **read** (`frappe.get_all`), no gate recognised | 27 |
 
 ## 1. Unchecked write, no gate recognised in the entry function — review first
 
@@ -37,8 +37,6 @@ The row hooks never run on these reads (p005a A01-18 was one). Many are referenc
 | `s.s.doctype.academic_term.academic_term.get_academic_year_context`:120 |  | `frappe.get_all` s.s.doctype.academic_term.academic_term:135 |
 | `s.s.doctype.course.course.get_programs_without_course`:120 |  | `frappe.get_all` s.s.doctype.course.course:122 |
 | `s.s.doctype.course_competency.course_competency.get_course_dimensions`:98 |  | `frappe.get_all` s.s.doctype.course_competency.course_competency:107 |
-| `s.s.doctype.course_gradebook.course_gradebook.get_student_grades`:10 |  | `frappe.get_all` s.s.doctype.course_gradebook.course_gradebook:13 |
-| `s.s.doctype.exam_submission.exam_submission.get_exam_grading_comments`:249 |  | `frappe.get_all` s.s.doctype.exam_submission.exam_submission:254 |
 | `s.s.doctype.partner_transcript_import_batch.partner_transcript_import_batch.dry_run`:162 |  | `frappe.get_all` s.s.doctype.grade_conversion_policy.grade_conversion_policy:180 |
 | `s.s.doctype.partner_transcript_import_batch.partner_transcript_import_batch.get_import_options`:126 |  | `frappe.get_all` s.s.doctype.partner_transcript_import_batch.partner_transcript_import_batch:132; `frappe.get_all` s.s.doctype.partner_transcript_import_batch.partner_transcript_import_batch:150 |
 | `s.s.doctype.student.student.get_pgmenrollments`:160 |  | `frappe.get_all` s.s.doctype.student.student:164 |

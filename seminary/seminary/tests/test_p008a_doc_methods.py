@@ -59,3 +59,54 @@ class TestP008aDocMethods(IntegrationTestCase):
         frappe.set_user(self.registrar)
         with self.assertRaises(frappe.DoesNotExistError):  # past the gate
             withdraw_orphan_requirement("ZZT-no-such-pe", "ZZT-no-such-row")
+
+
+class TestP008aGradingCommentsRead(IntegrationTestCase):
+    """The reader rule of an exam's grading comments is its writer rule: the
+    student whose submission it is, and the staff of its section."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.owner = _make_user("Student", "g10-owner")
+        cls.classmate = _make_user("Student", "g10-classmate")
+        cls.other_instructor = _make_user("Instructor", "g10-other-instr")
+        sub = frappe.new_doc("Exam Submission")
+        sub.member = cls.owner
+        sub.course = "ZZT-p008a-no-such-section"
+        sub.flags.ignore_links = True
+        sub.flags.ignore_permissions = True
+        sub.insert(ignore_mandatory=True)
+        cls.submission = sub.name
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+
+    def _read(self, name=None):
+        from seminary.seminary.doctype.exam_submission.exam_submission import (
+            get_exam_grading_comments,
+        )
+
+        return get_exam_grading_comments(name or self.submission)
+
+    def test_the_owner_reads_their_own(self):
+        frappe.set_user(self.owner)
+        self.assertEqual(self._read(), [])
+
+    def test_a_classmate_and_an_off_section_instructor_are_refused(self):
+        for user in (self.classmate, self.other_instructor):
+            frappe.set_user(user)
+            with self.subTest(user=user), self.assertRaises(frappe.PermissionError):
+                self._read()
+
+    def test_a_missing_submission_reads_like_a_forbidden_one(self):
+        frappe.set_user(self.classmate)
+        with self.assertRaises(frappe.PermissionError):
+            self._read("ZZT-no-such-submission")
+
+    def test_the_dead_gradebook_method_is_not_whitelisted(self):
+        from seminary.seminary.doctype.course_gradebook.course_gradebook import (
+            CourseGradebook,
+        )
+
+        self.assertNotIn(CourseGradebook.get_student_grades, frappe.whitelisted)

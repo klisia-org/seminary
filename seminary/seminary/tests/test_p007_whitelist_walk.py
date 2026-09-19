@@ -493,8 +493,6 @@ PENDING_CLASSIFICATION = {
     # seminary.seminary.doctype.course_folder.course_folder (2)
     "seminary.seminary.doctype.course_folder.course_folder.folder_context",
     "seminary.seminary.doctype.course_folder.course_folder.list_embeddable_folders",
-    # seminary.seminary.doctype.course_gradebook.course_gradebook (1)
-    "seminary.seminary.doctype.course_gradebook.course_gradebook.get_student_grades",
     # seminary.seminary.doctype.course_lesson.course_lesson (2)
     "seminary.seminary.doctype.course_lesson.course_lesson.get_lesson_info",
     "seminary.seminary.doctype.course_lesson.course_lesson.save_progress",
@@ -625,7 +623,7 @@ PENDING_CLASSIFICATION = {
     "seminary.workspace_save_fix.save_page",
 }
 
-MAX_PENDING = 292
+MAX_PENDING = 291
 
 # Modules that do not import cleanly outside a request context. Their endpoints
 # are therefore invisible to the walk; keep the list at zero-growth.

@@ -247,9 +247,30 @@ def submit_exam(submission_name):
 
 @frappe.whitelist()
 def get_exam_grading_comments(submission_name):
-    """Get all grading comments for an Exam Submission."""
+    """Get all grading comments for an Exam Submission.
+
+    The reader rule is the writer rule (``add_exam_grading_comment``): the
+    student whose submission it is, and the staff of its section. This had no
+    gate at all, and the read is ``frappe.get_all`` -- which the Exam Submission
+    row hook never sees -- so any session could read the grader's comments on
+    any student's exam (found by the p008a G10 inventory; p005a A01-8 class).
+    One message for "no such submission" and "not yours".
+    """
     if not submission_name:
         frappe.throw(_("Submission name is required."))
+
+    from seminary.seminary.guards import is_course_staff
+
+    sub = frappe.db.get_value(
+        "Exam Submission", submission_name, ["member", "course"], as_dict=True
+    )
+    if not sub or (
+        sub.member != frappe.session.user and not is_course_staff(sub.course)
+    ):
+        frappe.throw(
+            _("You do not have permission to read this submission's comments."),
+            frappe.PermissionError,
+        )
 
     return frappe.get_all(
         "Grading Comment",
