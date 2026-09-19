@@ -1397,9 +1397,17 @@ def get_lesson_due_date(lesson):
 
 
 def render_html(lesson):
-    youtube = lesson.youtube
-    quiz_id = lesson.quiz_id
-    body = lesson.body
+    """The legacy ``body`` of a lesson, with the legacy youtube/quiz/assignment
+    macros around it.
+
+    ``body`` is empty on every lesson written in the block editor -- its content
+    is EditorJS JSON in ``content`` -- and concatenating that None raised a
+    TypeError, so ``get_lesson`` returned a 500 for such a lesson and the whole
+    page failed to open (found on the p008 browser pass). Nothing here is
+    required to be set."""
+    youtube = lesson.youtube or ""
+    quiz_id = lesson.quiz_id or ""
+    body = lesson.body or ""
 
     if youtube and "/" in youtube:
         youtube = youtube.split("/")[-1]
@@ -1410,7 +1418,11 @@ def render_html(lesson):
 
     if lesson.question:
         assignment = (
-            "{{ Assignment('" + lesson.question + "-" + lesson.file_type + "') }}"
+            "{{ Assignment('"
+            + lesson.question
+            + "-"
+            + (lesson.file_type or "")
+            + "') }}"
         )
         text = text + assignment
 
