@@ -57,6 +57,7 @@ from seminary.seminary.guards import (
     is_course_staff,
     is_enrolled,
     is_grader,
+    may_read_course_schedule,
     own_or_staff,
     require_course_staff,
     require_enrolled,
@@ -2416,7 +2417,12 @@ def _create_single_topic(doctype, docname):
             "reference_docname": docname,
         }
     )
-    doc.insert()
+    # The container, not the content: one topic per lesson, created by the
+    # system the first time anyone opens the thread. Students hold no create on
+    # Discussion Topic (nor should they), and the sibling create_discussion_topic
+    # has always inserted this way. The reply -- what a person actually writes --
+    # is gated by _require_reference_read above.
+    doc.insert(ignore_permissions=True)
     return doc
 
 
@@ -2568,12 +2574,23 @@ def delete_discussion_reply(name):
 
 
 def _require_reference_read(doctype, docname):
-    """A lesson discussion is readable by whoever may read the lesson (p007 §2.5)."""
-    if (
-        not doctype
-        or not docname
-        or not frappe.has_permission(doctype, "read", docname)
-    ):
+    """A lesson discussion is readable by whoever may read the lesson (p007 §2.5).
+
+    For a Course Lesson that is NOT the Course Lesson DocPerm. p007 F1 took
+    Student read off the doctype on purpose -- a student reads a lesson through
+    the enrolment-checked ``get_lesson``, never through ``frappe.client`` -- so
+    asking ``has_permission`` here refused every student, and lesson discussions
+    stopped working for students the day that landed (found by the p008
+    student-path sweep, the same shape as ``save_progress``). Ask the section,
+    which is the rule ``get_lesson`` itself applies."""
+    if not doctype or not docname:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if doctype == "Course Lesson":
+        course_schedule = frappe.db.get_value("Course Lesson", docname, "course_sc")
+        if course_schedule and may_read_course_schedule(course_schedule):
+            return
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if not frappe.has_permission(doctype, "read", docname):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 

@@ -1,7 +1,9 @@
 import frappe
 
 
-@frappe.whitelist()
+# p008a G6: not whitelisted. No caller anywhere, and it turned every exception
+# -- a PermissionError included -- into {"status": "error"} with HTTP 200, so a
+# refusal was indistinguishable from a success. p007 2.7.
 def create_student_groups(course_name, groups):
     """
     Create student groups and their associations.

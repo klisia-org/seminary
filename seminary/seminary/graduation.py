@@ -15,6 +15,7 @@ from frappe import _
 from frappe.utils import add_days, flt, getdate, now_datetime, today
 
 from seminary.seminary import date_rules
+from seminary.seminary.guards import require_registrar
 
 LINKED_DOC_HOOK_FLAG = "_seminary_grad_link_doctypes"
 
@@ -293,7 +294,11 @@ def _apply_initial_choice_state(row, library):
 @frappe.whitelist()
 def resnapshot(program_enrollment, preserve_waivers=1):
     """Registrar action: rebuild the snapshot from the currently-resolved
-    policy. Preserves waived rows by default."""
+    policy. Preserves waived rows by default.
+
+    Gated in p008a G6: it had no role check, and rebuilding a student's
+    graduation snapshot is not something the permission model can undo."""
+    require_registrar()
     preserve_waivers = int(preserve_waivers or 0)
     enrollment = frappe.get_doc("Program Enrollment", program_enrollment)
 
@@ -716,7 +721,14 @@ def waive_sgr(program_enrollment, sgr_name, reason):
 def cancel_orphan_requirement(program_enrollment, sgr_name):
     """Registrar action (Orphan Graduation Requirements report): drop an
     emphasis-scoped requirement row whose scoping emphasis the student no
-    longer holds. Removes the SGR row outright."""
+    longer holds. Removes the SGR row outright.
+
+    The registrar check is first, as in the sibling ``withdraw_orphan_requirement``
+    (p008a G10). Until p008a G6 the only control was ``pe.save`` -- which is
+    correct as far as it goes, but it leaves the refusal to the end of a function
+    that has already rebuilt the child table, and it says nothing about *which*
+    staff role this action belongs to."""
+    require_registrar()
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     _find_sgr(pe, sgr_name)  # validates existence
     pe.graduation_requirements = [
@@ -739,8 +751,6 @@ def withdraw_orphan_requirement(program_enrollment, sgr_name):
     write on the enrollment that was only undone by the failed save rolling the
     transaction back: correct by accident, and one ``frappe.db.commit()`` away
     from a student withdrawing someone's internship (p008a G10 inventory)."""
-    from seminary.seminary.guards import require_registrar
-
     require_registrar()
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     row = _find_sgr(pe, sgr_name)
@@ -1164,6 +1174,13 @@ def start_recommendation_letter(
         }
     )
     letter.insert(ignore_permissions=True)
+    # The submit is the student's too, and it needs saying: Student holds no
+    # submit on Recommendation Letter (p007 F1 -- the letter is about them, and
+    # its body and token are hidden from them at permlevel 1), so a bare
+    # ``submit()`` raised PermissionError for every student who used this
+    # portal button. The authorisation is _user_owns_enrollment above, as it
+    # already is for the insert one line up (p008 student-path sweep).
+    letter.flags.ignore_permissions = True
     letter.submit()
     return {"name": letter.name}
 
