@@ -536,28 +536,22 @@ class _Importer:
         return out
 
     def _reextract_scorm(self, ch):
+        """Kept under its old name for the call site; it no longer extracts.
+
+        This used to unpack the package into public/scorm/<course>/<title>/ with
+        the title taken from the PACK'S MANIFEST -- a remote file write for
+        anyone who could get a pack imported (p005a A05-8). Packages are stored,
+        not unpacked (p008 F8): pin the File to its new chapter and clear the
+        three path fields a manifest may have carried."""
         if not (ch.get("is_scorm_package") and ch.get("scorm_package")):
             return
-        from seminary.seminary.api import (
-            extract_package,
-            get_launch_file,
-            get_manifest_file,
-        )
+        from seminary.seminary.api import pin_scorm_package
 
-        pkg = frappe._dict({"name": ch.scorm_package})
-        extract_path = extract_package(self.course, ch.chapter_title, pkg)
-        manifest_file = get_manifest_file(extract_path)
-        launch_file = get_launch_file(extract_path)
+        pin_scorm_package(ch.name, ch.scorm_package)
         frappe.db.set_value(
             "Course Schedule Chapter",
             ch.name,
-            {
-                "scorm_package_path": extract_path.split("public")[1],
-                "manifest_file": (
-                    manifest_file.split("public")[1] if manifest_file else None
-                ),
-                "launch_file": launch_file.split("public")[1] if launch_file else None,
-            },
+            {"scorm_package_path": None, "manifest_file": None, "launch_file": None},
         )
 
     def remap_lesson_scac_links(self):

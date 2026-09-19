@@ -29,12 +29,10 @@ import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 from datetime import datetime
-import zipfile
 import os
 import re
 import shutil
 import defusedxml.ElementTree as ET
-from defusedxml.minidom import parseString
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
 from seminary.seminary.guards import (
@@ -4771,16 +4769,17 @@ def upsert_chapter(
     if course_competency is not None:
         values["course_competency"] = course_competency or None
 
+    package_file = None
     if is_scorm_package:
-        scorm_package = frappe._dict(scorm_package)
-        extract_path = extract_package(course, chapter_title, scorm_package)
-
+        # The package is STORED, never unpacked (p008 F8). See pin_scorm_package.
+        # a dict from the SPA's JSON body, or a JSON string from a form post
+        package_file = frappe._dict(frappe.parse_json(scorm_package) or {}).name
         values.update(
             {
-                "scorm_package": scorm_package.name,
-                "scorm_package_path": extract_path.split("public")[1],
-                "manifest_file": get_manifest_file(extract_path).split("public")[1],
-                "launch_file": get_launch_file(extract_path).split("public")[1],
+                "scorm_package": package_file,
+                "scorm_package_path": None,
+                "manifest_file": None,
+                "launch_file": None,
             }
         )
 
@@ -4789,8 +4788,12 @@ def upsert_chapter(
     else:
         chapter = frappe.new_doc("Course Schedule Chapter")
 
+    if package_file:
+        _check_scorm_package(package_file)
     chapter.update(values)
     chapter.save()
+    if package_file:
+        pin_scorm_package(chapter.name, package_file)
 
     if is_scorm_package and not len(chapter.lessons):
         add_lesson(chapter_title, chapter.name, course)
@@ -4798,89 +4801,80 @@ def upsert_chapter(
     return chapter
 
 
-def extract_package(course, chapter_title, scorm_package):
-    from seminary.storage.files import materialize
-
-    # `zipfile.extractall` needs a real filesystem path, so this is one of the
-    # few readers that cannot go through File.get_content(). `materialize` yields
-    # the on-disk path directly for a local file, or a temporary copy when the
-    # package has been offloaded to object storage (privatedocs/p004).
-    extract_path = frappe.get_site_path("public", "scorm", course, chapter_title)
-    with materialize(scorm_package.name) as zip_path:
-        # check_for_malicious_code(zip_path)
-        zipfile.ZipFile(zip_path).extractall(extract_path)
-    return extract_path
-
-
-def check_for_malicious_code(zip_path):
-    suspicious_patterns = [
-        # Unsafe inline JavaScript
-        r'on(click|load|mouseover|error|submit|focus|blur|change|keyup|keydown|keypress|resize)=".*?"',  # Inline event handlers (e.g., onerror, onclick)
-        r'<script.*?src=["\']http',  # External script tags
-        r"eval\(",  # Usage of eval()
-        r"Function\(",  # Usage of Function constructor
-        r"(btoa|atob)\(",  # Base64 encoding/decoding
-        # Dangerous XML patterns
-        r"<!ENTITY",  # XXE-related
-        r"<\?xml-stylesheet .*?>",  # External stylesheets in XML
-    ]
-
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        for file_name in zf.namelist():
-            if file_name.endswith((".html", ".js", ".xml")):
-                with zf.open(file_name) as file:
-                    content = file.read().decode("utf-8", errors="ignore")
-                    for pattern in suspicious_patterns:
-                        if re.search(pattern, content):
-                            frappe.throw(
-                                _("Suspicious pattern found in {0}: {1}").format(
-                                    file_name, pattern
-                                )
-                            )
+# --- SCORM packages are stored, not unpacked (privatedocs p008 F8) -------------
+#
+# p005 A01-6 / p005a A05-8 (Critical). This module used to unpack an uploaded zip
+# into public/scorm/<course>/<chapter_title>/ -- both path segments straight from
+# the request, joined with a bare os.path.join -- and the same function was fed
+# `chapter_title` from an IMPORTED COURSE PACK'S MANIFEST, so importing another
+# school's pack was a remote file write as the bench user. The File was never
+# permission-checked, so any private zip on the site could be named and unpacked
+# into a world-readable directory; the manifest's <resource href> became a stored
+# path; and the content scan was commented out (rightly: every real SCORM player
+# trips it, and any attacker evades it).
+#
+# And nothing ever PLAYED a package: no SCORMChapter route, an unregistered
+# renderer, no SCORM runtime anywhere. So the extraction is gone rather than
+# fenced. The zip is kept, private and attached to its chapter, as the source of
+# record for SCORM delivery -- which is its own ADR (p009: a separate origin, an
+# iframe viewer, a postMessage runtime).
 
 
-def get_manifest_file(extract_path):
-    manifest_file = None
-    for root, dirs, files in os.walk(extract_path):
-        for file in files:
-            if file == "imsmanifest.xml":
-                manifest_file = os.path.join(root, file)
-                break
-        if manifest_file:
-            break
-    return manifest_file
+def _check_scorm_package(file_name):
+    """The caller may read the File, and it is a zip. Runs BEFORE the chapter is
+    saved, so a refusal leaves nothing behind."""
+    if not file_name or not frappe.db.exists("File", file_name):
+        frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
+    f = frappe.get_doc("File", file_name)
+    f.check_permission("read")
+    if f.is_folder or not (f.file_name or "").lower().endswith(".zip"):
+        frappe.throw(_("A SCORM package must be a .zip file."))
+    return f
 
 
-def get_launch_file(extract_path):
-    launch_file = None
-    manifest_file = get_manifest_file(extract_path)
+def pin_scorm_package(chapter_name, file_name):
+    """Make the package private and, if it is attached to nothing, attach it to
+    its chapter -- so the section's staff can read it through the chapter rather
+    than only whoever uploaded it (p007 file policy reads through the host).
 
-    if manifest_file:
-        with open(manifest_file) as file:
-            data = file.read()
-            dom = parseString(data)
-            resource = dom.getElementsByTagName("resource")
-            for res in resource:
-                if (
-                    res.getAttribute("adlcp:scormtype") == "sco"
-                    or res.getAttribute("adlcp:scormType") == "sco"
-                ):
-                    launch_file = res.getAttribute("href")
-                    break
+    A File already attached elsewhere is left where it is: a template import
+    shares one package between sections, and the read check above is the gate.
+    """
+    f = frappe.db.get_value(
+        "File",
+        file_name,
+        ["name", "file_url", "is_private", "attached_to_doctype", "attached_to_name"],
+        as_dict=True,
+    )
+    if not f:
+        return
+    if not f.is_private and f.file_url:
+        from seminary.seminary import file_policy
 
-        if launch_file:
-            launch_file = os.path.join(os.path.dirname(manifest_file), launch_file)
-
-    return launch_file
+        file_policy.set_privacy(f.file_url, public=False)
+    if not f.attached_to_name:
+        frappe.db.set_value(
+            "File",
+            f.name,
+            {
+                "attached_to_doctype": "Course Schedule Chapter",
+                "attached_to_name": chapter_name,
+                "attached_to_field": "scorm_package",
+            },
+        )
 
 
 def add_lesson(lesson_title, chapter, course_sc):
     lesson = frappe.new_doc("Course Lesson")
+    # The fields are `lesson_title` and `course_sc` (fetched from the chapter).
+    # This used to set `title` and `course`, neither of which exists, so the
+    # insert always failed on the mandatory lesson_title -- creating a SCORM
+    # chapter has never completed. Fixed with p008 F8, which keeps ingestion.
     lesson.update(
         {
-            "title": lesson_title,
+            "lesson_title": lesson_title,
             "chapter": chapter,
-            "course": course_sc,
+            "course_sc": course_sc,
         }
     )
     lesson.insert()
