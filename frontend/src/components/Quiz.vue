@@ -643,6 +643,9 @@ const questionDetails = createResource({
 	makeParams(values) {
 		return {
 			question: currentQuestion.value,
+			// The quiz context is what lets the server decide whether
+			// explanations may travel before the answer (p008a G8).
+			quiz: props.quizName,
 		}
 	},
 
@@ -730,11 +733,16 @@ const checkAnswer = () => {
 			question: currentQuestion.value,
 			type: questionDetails.data.type,
 			answers: JSON.stringify(answers),
+			quiz: props.quizName,
 		},
 		auto: true,
 		onSuccess(data) {
 			let type = questionDetails.data.type;
-			if (type === 'Choices') {
+			// No verdict: the server only answers for quizzes with Show Answers
+			// on (p008a G8). The answer is still recorded; quiz_summary grades it.
+			if (data === null || data === undefined) {
+				// nothing to display
+			} else if (type === 'Choices') {
 				selectedOptions.forEach((option, index) => {
 					if (option) {
 						showAnswers[index] = option && data[index];
@@ -835,6 +843,7 @@ const submitQuizComplete = async () => {
 			question: question.question, // Pass the unique question identifier
 			type: question.type,
 			answers: JSON.stringify(isChoices ? selected : [selected[0] || ""]),
+			quiz: props.quizName,
 		});
 
 		// Extract only the relevant value for `is_correct`

@@ -110,6 +110,13 @@ if not row:
     row = db.get_value("Exam Question Result", {"parent": ES_A}, "name")
 OUT["ES_A"], OUT["ES_A_ROW"] = ES_A, row
 
+# A Student who is NOT enrolled in the fixture quiz's course, to prove the G8
+# membership gate (stuA, stuB and reg are all enrolled in it).
+UNENROLLED = "fcavendish@example.net"
+assert "Instructor" not in frappe.get_roles(UNENROLLED)
+update_password(UNENROLLED, PW)
+OUT["UNENROLLED_USER"] = UNENROLLED
+
 db.commit()
 json.dump(OUT, open(os.path.join(S, "fx15.json"), "w"), indent=2)
 print(json.dumps(OUT, indent=2))

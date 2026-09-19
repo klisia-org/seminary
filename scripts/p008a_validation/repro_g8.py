@@ -7,7 +7,7 @@ import sys
 
 S = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(S, "..", "p006_validation"))
-from p0check import call  # noqa: E402
+from p0check import USERS, call  # noqa: E402
 
 FX = json.load(open(os.path.join(S, "..", "p007_validation", "fx1.json")))
 EA, AA, QUIZ = FX["EA"], FX["AA"], FX["QUIZ"]
@@ -212,44 +212,86 @@ verdict(
 )
 
 print("=== quiz endpoints ===")
-r = call("stuA", "seminary.seminary.utils.get_question_details", {"question": QUESTION})
-m = msg(r) or {}
+FX15 = json.load(open(os.path.join(S, "fx15.json")))
+USERS["stuX"] = FX15["UNENROLLED_USER"]  # a Student NOT enrolled in the quiz's course
+D = "seminary.seminary.utils.get_question_details"
+DA = "seminary.seminary.utils.get_all_questions_details"
+CA = "seminary.seminary.doctype.quiz.quiz.check_answer"
+GUESS = {"question": QUESTION, "type": "User Input", "answers": json.dumps(["guess"])}
+
+
+def expl(d):
+    return [k for k in (d or {}) if k.startswith("explanation_")]
+
+
+def set_show_answers(v):
+    call(
+        "admin",
+        "frappe.client.set_value",
+        {"doctype": "Quiz", "name": QUIZ, "fieldname": "show_answers", "value": v},
+    )
+
+
+# The fixture quiz has Show Answers ON, where explanations and verdicts travel by
+# the instructor's choice. The leak is what happens when it is OFF.
+set_show_answers(0)
+r = call("stuA", D, {"question": QUESTION, "quiz": QUIZ})
 verdict(
-    "get_question_details serves explanation_* before the answer (no quiz context)",
-    any(k.startswith("explanation_") for k in m),
-    f"HTTP {r.status_code}; explanation keys: {[k for k in m if k.startswith('explanation_')]}",
+    "show_answers=0: get_question_details serves explanation_* pre-answer",
+    bool(expl(msg(r))),
+    f"HTTP {r.status_code}; {expl(msg(r))}",
 )
-r = call(
-    "stuA",
-    "seminary.seminary.utils.get_all_questions_details",
-    {"questions": json.dumps([QQ_ROW])},
-)
-m = (msg(r) or [{}])[0] if msg(r) else {}
+r = call("stuA", DA, {"questions": json.dumps([QQ_ROW])})
+row = (msg(r) or [{}])[0] if msg(r) else {}
 verdict(
-    "get_all_questions_details serves explanation_* before the answer",
-    any(k.startswith("explanation_") for k in m),
-    f"HTTP {r.status_code}; explanation keys: {[k for k in m if k.startswith('explanation_')]}",
+    "show_answers=0: get_all_questions_details serves explanation_* pre-answer",
+    bool(expl(row)),
+    f"HTTP {r.status_code}; {expl(row)}",
 )
-r = call(
-    "stuA",
-    "seminary.seminary.doctype.quiz.quiz.check_answer",
-    {"question": QUESTION, "type": "User Input", "answers": json.dumps(["guess"])},
-)
+r = call("stuA", CA, dict(GUESS, quiz=QUIZ))
 verdict(
-    "check_answer gives a verdict with no quiz context (oracle)",
+    "show_answers=0: check_answer gives a verdict (oracle before the one attempt)",
     r.status_code == 200 and msg(r) is not None,
-    f"HTTP {r.status_code}; message: {msg(r)!r}",
+    f"HTTP {r.status_code}; {msg(r)!r}",
 )
+set_show_answers(1)
+
+r = call("stuA", CA, GUESS)
+verdict(
+    "check_answer gives a verdict with no quiz context",
+    r.status_code == 200 and msg(r) is not None,
+    f"HTTP {r.status_code}; {msg(r)!r}",
+)
+for label, method, params in (
+    ("get_question_details", D, {"question": QUESTION}),
+    ("get_all_questions_details", DA, {"questions": json.dumps([QQ_ROW])}),
+    ("check_answer", CA, dict(GUESS, quiz=QUIZ)),
+):
+    r = call("stuX", method, params)
+    verdict(
+        f"a Student NOT enrolled in the quiz's course reaches {label}",
+        r.status_code == 200,
+        f"HTTP {r.status_code}; {r.text[:80]}",
+    )
+
+# positive: with Show Answers ON the feature still works for an enrolled student
+r = call("stuA", D, {"question": QUESTION, "quiz": QUIZ})
+r2 = call("stuA", CA, dict(GUESS, quiz=QUIZ))
+print(
+    f"      (show_answers=1, enrolled: explanations {len(expl(msg(r)))}/4, "
+    f"check_answer verdict {msg(r2)!r} -- the feature survives)\n"
+)
+
 for dead in (
     "seminary.seminary.doctype.quiz.quiz.get_question_details",
     "seminary.seminary.doctype.exam_activity.exam_activity.get_question_details",
     "seminary.seminary.doctype.question.question.get_question_details",
 ):
-    r = call("stuA", dead, {"question": QUESTION})
+    r = call("instr", dead, {"question": QUESTION})
     verdict(
-        f"dead endpoint still whitelisted: {dead.rsplit('.', 2)[-2]}.get_question_details",
-        r.status_code != 403 or "not whitelisted" not in r.text,
-        f"HTTP {r.status_code}; {r.text[:90]}",
+        f"dead endpoint still callable: {dead.rsplit('.', 2)[-2]}.get_question_details",
+        r.status_code == 200,
+        f"HTTP {r.status_code} (403 = not whitelisted, 417 = deleted)",
     )
 
 print("=== Course Folder ===")

@@ -147,7 +147,6 @@ STUDENT_ALLOWED = {
     # quiz.py (taking a quiz)
     "seminary.seminary.doctype.quiz.quiz.quiz_summary",
     "seminary.seminary.doctype.quiz.quiz.get_last_submission",
-    "seminary.seminary.doctype.quiz.quiz.get_question_details",
     "seminary.seminary.doctype.quiz.quiz.check_answer",
     # exam / assignment submission (own work)
     "seminary.seminary.doctype.exam_submission.exam_submission.save_exam_draft",
@@ -507,9 +506,8 @@ PENDING_CLASSIFICATION = {
     "seminary.seminary.doctype.course_schedule.course_schedule.regenerate_token",
     "seminary.seminary.doctype.course_schedule.course_schedule.schedule_dates",
     "seminary.seminary.doctype.course_schedule.course_schedule.validate",
-    # seminary.seminary.doctype.exam_activity.exam_activity (2)
+    # seminary.seminary.doctype.exam_activity.exam_activity (1)
     "seminary.seminary.doctype.exam_activity.exam_activity.exam_summary",
-    "seminary.seminary.doctype.exam_activity.exam_activity.get_question_details",
     # seminary.seminary.doctype.instructor.instructor (4)
     "seminary.seminary.doctype.instructor.instructor.create_supplier",
     "seminary.seminary.doctype.instructor.instructor.pull_education_from_employee",
@@ -532,8 +530,7 @@ PENDING_CLASSIFICATION = {
     "seminary.seminary.doctype.program_enrollment.program_enrollment.get_emphasis",
     "seminary.seminary.doctype.program_enrollment.program_enrollment.get_payers",
     "seminary.seminary.doctype.program_enrollment.program_enrollment.get_program_courses",
-    # seminary.seminary.doctype.question.question (3)
-    "seminary.seminary.doctype.question.question.get_question_details",
+    # seminary.seminary.doctype.question.question (2)
     "seminary.seminary.doctype.question.question.refresh_scripture_text",
     "seminary.seminary.doctype.question.question.replace_matching_items",
     # seminary.seminary.doctype.recommendation_letter.recommendation_letter (1)
@@ -628,7 +625,7 @@ PENDING_CLASSIFICATION = {
     "seminary.workspace_save_fix.save_page",
 }
 
-MAX_PENDING = 294
+MAX_PENDING = 292
 
 # Modules that do not import cleanly outside a request context. Their endpoints
 # are therefore invisible to the walk; keep the list at zero-growth.

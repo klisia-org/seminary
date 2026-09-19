@@ -204,7 +204,8 @@ def get_corrupted_image_msg():
     return _("Image: Corrupted Data Stream")
 
 
-@frappe.whitelist()
+# Not whitelisted: no caller in frontend/src, public/js or any doctype .js
+# (p007 §2.7, applied by p008a G8).
 def get_question_details(question):
     if frappe.db.exists("Exam Question", question):
         fields = ["name", "question", "question_detail", "points"]
