@@ -1154,8 +1154,14 @@ empty_default = gv(
     "name",
 )
 if empty_default:
+    # p008a G3 (p005a A01-13) inverted this rule. It used to read "the default
+    # category is of record OR EMPTY", and default_inst_category is not
+    # required -- so an Instructor with a blank default could be listed as of
+    # record by anyone who could save the section, including themselves via the
+    # p007 row hook. This row asserted that permissiveness; it now asserts the
+    # refusal. The promotion is the chair's call, as the next row shows.
     check(
-        "4.6 reg lists an Instructor with empty default as of-record",
+        "4.6 reg cannot list an Instructor with empty default as of-record (p008a G3)",
         "reg",
         "frappe.client.insert",
         {
@@ -1168,7 +1174,7 @@ if empty_default:
                 "instructor_category": OF_RECORD,
             }
         },
-        200,
+        417,
     )
     drop_rows(CS_B, empty_default)
 check(
