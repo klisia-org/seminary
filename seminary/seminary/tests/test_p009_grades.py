@@ -85,8 +85,13 @@ class TestP009Percentage(IntegrationTestCase):
         )
 
 
-class TestP009Passback(_CommitCase):
-    """The write itself, against a real roster, criterion and gradebook cell."""
+class _PassbackCase(_CommitCase):
+    """A section, a roster, a criterion, a gradebook cell and a SCORM lesson.
+
+    Not a `Test*` class, for the reason `_CommitCase` is not: `test_p009_mapping`
+    builds on this fixture, and subclassing a class that holds tests would run
+    every one of them a second time there.
+    """
 
     def setUp(self):
         super().setUp()
@@ -195,6 +200,10 @@ class TestP009Passback(_CommitCase):
                 "cmi.core.score.max": "100",
             }
         )
+
+
+class TestP009Passback(_PassbackCase):
+    """The write itself, against a real roster, criterion and gradebook cell."""
 
     # --------------------------------------------------- the default: nothing
 

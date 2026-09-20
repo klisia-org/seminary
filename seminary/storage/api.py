@@ -162,6 +162,10 @@ def selftest():
     a 400 MB lecture upload. Run with:
 
         bench --site <site> execute seminary.storage.api.selftest
+
+    On a site with a SCORM delivery host this also reports the four-arm SCORM
+    check (`seminary.scorm.selftest`), because SCORM depends on this backend and
+    on four things this one cannot see.
     """
     frappe.only_for("System Manager")
 
@@ -196,9 +200,30 @@ def selftest():
                 message=f"{key}\n{frappe.get_traceback()}",
             )
 
-    return {
+    result = {
         "ok": True,
         "backend": type(backend).__name__,
         "endpoint": DOWNLOAD_ENDPOINT,
         "presigned_sample": url.split("?")[0] + "?…",
     }
+
+    # SCORM rides on this backend but fails in four other places as well (p009
+    # S11). An operator checking storage is the operator who would otherwise
+    # find that out from an instructor, so the fuller check is offered here
+    # rather than hidden behind a second command -- but only on a site that has
+    # a delivery host, and never able to turn a healthy storage verdict into an
+    # unhealthy one. `seminary.scorm.selftest.run` is the full report.
+    if frappe.conf.get("scorm_delivery_host"):
+        from seminary.scorm import selftest as scorm_selftest
+
+        try:
+            scorm = scorm_selftest.run()
+            result["scorm"] = {
+                "ok": scorm["ok"],
+                "arms": {name: arm["ok"] for name, arm in scorm["arms"].items()},
+                "detail": "Run seminary.scorm.selftest.run for the full report.",
+            }
+        except Exception as e:
+            result["scorm"] = {"ok": False, "detail": str(e)}
+
+    return result

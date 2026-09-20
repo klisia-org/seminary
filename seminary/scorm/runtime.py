@@ -170,14 +170,29 @@ def _lesson_for(chapter: str, sco: str) -> str | None:
     )
 
 
+# Read-only and cheap, but it takes a token and answers per SCO, so an
+# unlimited version is a way to walk a stolen token across a package's SCOs at
+# whatever rate the worker pool allows (p010 H6). Well above what a reconnecting
+# player needs; well below a useful enumeration.
 @frappe.whitelist()
+@rate_limit(key="scorm_state", limit=600, seconds=3600, ip_based=False)
 def state(token: str, sco: str) -> dict:
     """The stored state for one SCO, for a player that reconnects.
 
     Same identity rule as `commit`: the launch must be this session's.
     """
+    from seminary.seminary import security_log
+
     launch = tokens.resolve(token)
     if not launch or launch.get("user") != frappe.session.user:
+        # Logged with its own kind rather than left to the `after_request` hook,
+        # which sees only `http_403` with no `cmd` on a REST call. A token
+        # presented by the wrong session is the signal worth grepping for.
+        security_log.record_denial(
+            "scorm_state_identity",
+            package=(launch or {}).get("package"),
+            sco=sco,
+        )
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
     row = frappe.db.get_value(

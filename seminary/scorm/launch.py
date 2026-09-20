@@ -212,7 +212,11 @@ def heartbeat(token: str) -> dict:
     return {"ok": tokens.renew(token)}
 
 
+# Revocation is the cheap half of the token lifecycle and the half an attacker
+# has no use for, but the endpoint still resolves a caller-supplied token, so it
+# gets the same ceiling as the rest (p010 H6). A player calls it once.
 @frappe.whitelist()
+@rate_limit(key="scorm_end", limit=600, seconds=3600, ip_based=False)
 def end(token: str) -> dict:
     """Revoke on unmount. Best effort -- the TTL is the real bound."""
     payload = tokens.resolve(token)

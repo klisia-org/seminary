@@ -4851,11 +4851,29 @@ def _check_scorm_archive(f):
             with zipfile.ZipFile(path) as zf:
                 archive.check_bounds(zf, f.file_size or 0)
     except zipfile.BadZipFile:
+        _refuse_scorm(f, "not a zip archive")
         frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
     except FileNotFoundError:
         frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
     except archive.PackageError as e:
+        # The upload is refused here, synchronously, before a chapter exists --
+        # so `explode`'s own `scorm_explode_refused` line never gets written and
+        # this rejection would otherwise leave no trace at all. A zip bomb
+        # stopped at the door is exactly the event an operator wants to find.
+        _refuse_scorm(f, str(e))
         frappe.throw(str(e))
+
+
+def _refuse_scorm(f, reason: str) -> None:
+    """One line for a package refused at ingest. Never raises, never blocks."""
+    from seminary.seminary import security_log
+
+    security_log.record_denial(
+        "scorm_ingest_refused",
+        file=f.name,
+        file_size=f.file_size,
+        reason=reason,
+    )
 
 
 def _check_scorm_package(file_name):

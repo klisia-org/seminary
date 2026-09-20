@@ -74,6 +74,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SafeHtml: typeof import('./src/components/SafeHtml.vue')['default']
+    ScormGradeMapping: typeof import('./src/components/ScormGradeMapping.vue')['default']
     ScormPlayer: typeof import('./src/components/ScormPlayer.vue')['default']
     ScriptureMatching: typeof import('./src/components/QuestionTypes/ScriptureMatching.vue')['default']
     ScriptureMatchingResult: typeof import('./src/components/QuestionTypes/ScriptureMatchingResult.vue')['default']

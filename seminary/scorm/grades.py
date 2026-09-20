@@ -163,3 +163,120 @@ def _ours(card, attempt) -> bool:
         # gradebook, or a row copied from elsewhere. Do not assume.
         return False
     return abs(float(card.rawscore_card or 0) - float(attempt.pushed_score)) < 0.001
+
+
+# ---------------------------------------------------------------- the mapping
+#
+# §2.12 sketched this link as living on the chapter. It lives on the lesson,
+# because the ADL Golf sample settles the question: four content SCOs and one
+# quiz SCO under a single chapter, so a chapter-level link would force a rollup
+# across five SCOs that nobody specified. Mapping the SCO that *is* the
+# assessment needs no aggregation -- and for a single-SCO package the chapter
+# and its one lesson are the same thing, so §2.12 remains true where it was
+# written.
+
+
+@frappe.whitelist()
+def criteria_for_lesson(lesson: str) -> dict:
+    """The criteria a SCORM lesson could report to, and the one it does.
+
+    Staff-only, and scoped to the lesson's own section: the list a picker can
+    show is exactly the list `set_criteria` will accept.
+    """
+    row = _lesson_context(lesson)
+
+    from seminary.seminary import cbe
+
+    return {
+        "lesson": lesson,
+        "course": row.course,
+        "current": row.scorm_assessment_criteria,
+        # A competency section is told plainly rather than shown a picker that
+        # would silently never fire (rule 1 in this module's docstring).
+        "competency_section": bool(cbe.framework_for(row.course)),
+        "criteria": frappe.get_all(
+            "Scheduled Course Assess Criteria",
+            filters={"parent": row.course, "parenttype": "Course Schedule"},
+            fields=["name", "title", "assesscriteria_scac", "weight_scac", "type"],
+            order_by="idx asc",
+        ),
+    }
+
+
+@frappe.whitelist()
+def set_criteria(lesson: str, criteria: str | None = None) -> dict:
+    """Map this SCORM lesson's score to `criteria`, or clear the mapping.
+
+    Two checks, and the second is the one that matters: the criterion must
+    belong to **this lesson's own section**. Without it an instructor of one
+    section could name a criterion of another and write into a gradebook they
+    have no business in -- the link is a write capability, so it is scoped the
+    same way every other course write is.
+    """
+    row = _lesson_context(lesson)
+
+    criteria = (criteria or "").strip() or None
+    if criteria:
+        owner = frappe.db.get_value(
+            "Scheduled Course Assess Criteria",
+            criteria,
+            ["parent", "parenttype"],
+            as_dict=True,
+        )
+        if not owner or owner.parenttype != "Course Schedule":
+            frappe.throw(
+                frappe._("No such assessment criterion."), frappe.DoesNotExistError
+            )
+        if owner.parent != row.course:
+            from seminary.seminary import security_log
+
+            security_log.record_denial(
+                "scorm_criteria_scope", lesson=lesson, course=row.course
+            )
+            frappe.throw(
+                frappe._("That criterion belongs to a different section."),
+                frappe.PermissionError,
+            )
+
+    frappe.db.set_value("Course Lesson", lesson, "scorm_assessment_criteria", criteria)
+    return {"ok": True, "lesson": lesson, "current": criteria}
+
+
+def _lesson_context(lesson: str):
+    """Resolve the lesson and gate on its section. Both endpoints enter here.
+
+    **The permission check comes before every other refusal, and a lesson that
+    does not resolve is refused the same way one in someone else's section is.**
+    Answering "no such lesson" to a caller who would not have been allowed to
+    see it either way turns the endpoint into a way to probe which lessons
+    exist -- the same disclosure p008 F11 closed on `applicant_payment`.
+
+    Only once the caller is established as this section's staff does the
+    lesson's *kind* matter. A mapping on a lesson that is not a SCO is a promise
+    the gradebook cannot keep, because no commit will ever reach it.
+    """
+    from seminary.seminary.guards import require_course_staff
+
+    row = frappe.db.get_value(
+        "Course Lesson",
+        lesson,
+        ["name", "chapter", "scorm_sco_identifier", "scorm_assessment_criteria"],
+        as_dict=True,
+    )
+    course = (
+        frappe.db.get_value("Course Schedule Chapter", row.chapter, "coursesc")
+        if row and row.chapter
+        else None
+    )
+    if not course:
+        frappe.throw(frappe._("Not permitted."), frappe.PermissionError)
+
+    require_course_staff(course, include_registrar=True)
+
+    if not row.scorm_sco_identifier:
+        frappe.throw(
+            frappe._("This lesson is not part of a SCORM package."),
+            frappe.DoesNotExistError,
+        )
+    row.course = course
+    return row
