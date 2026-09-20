@@ -290,6 +290,38 @@ def user_is_enrolled_in_course(course: str | None, user: str | None = None) -> b
     return None
 
 
+def user_is_enrolled_in_section(
+    course_schedule: str | None, user: str | None = None
+) -> bool:
+    """Return True if the user has an **active** roster row on this exact section.
+
+    The section-level counterpart of :func:`user_is_enrolled_in_course`, with the
+    same ``active = 1`` semantics, for the things that belong to one section
+    rather than to the catalogue course: its calendar token and its meeting link
+    (p005a A01-19).
+
+    Deliberately not ``guards.student_sections()``: that is roster row **and
+    published**, and it does not filter ``active`` — a withdrawn student would
+    keep the join link, which is the opposite of the point.
+    """
+    if not course_schedule:
+        return False
+    user = user or frappe.session.user
+    if not user or user in {"Guest"}:
+        return False
+    student = frappe.db.get_value("Student", {"user": user, "enabled": 1}, "name")
+    if not student:
+        student = frappe.db.get_value("Student", {"student_email_id": user}, "name")
+    if not student:
+        return False
+    return bool(
+        frappe.db.exists(
+            "Scheduled Course Roster",
+            {"student": student, "course_sc": course_schedule, "active": 1},
+        )
+    )
+
+
 def validate_overlap_for(doc, doctype, fieldname, value=None):
     """Checks overlap for specified field.
 
@@ -923,8 +955,15 @@ def get_course_details(course):
 
     # The ICS token and meeting links are for enrolled students and staff only;
     # everyone else gets the public description (p006 §2.11).
-    # `user_is_enrolled_in_course` takes the catalogue Course, not the section.
-    if not (has_super_access() or user_is_enrolled_in_course(course_details.course)):
+    #
+    # Scoped to the SECTION, not the catalogue Course (p005a A01-19). The
+    # course-level gate was an artefact of the only helper that existed:
+    # `user_is_enrolled_in_course` filters Course Schedule by `course`, so it
+    # cannot take a section. The effect was that one active enrolment anywhere
+    # in a course handed out every sibling section's token and join link --
+    # across academic terms, not just parallel sections. Strictly narrowing:
+    # an active row on *this* section always satisfied the old gate too.
+    if not (has_super_access() or user_is_enrolled_in_section(course_details.name)):
         course_details.calendar_token = None
         course_details.web_meeting = None
         for m in course_details.meeting_dates:

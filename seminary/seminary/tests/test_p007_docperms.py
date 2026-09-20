@@ -607,6 +607,81 @@ class TestP007DocPerms(IntegrationTestCase):
             )
             limits.clear_cache()
 
+    # --------------------------------- p010 Block F / p005a A01-19: the ICS
+    # token and meeting link belong to the SECTION, not the catalogue course.
+
+    def test_sibling_section_token_is_not_handed_out(self):
+        """One enrolment must not unlock every section of the same course.
+
+        `stu_a` is on `cs` only. With `cs2` pointed at the same catalogue
+        course, the old course-level gate handed over `cs2`'s calendar token
+        and join link -- across terms, not just parallel sections.
+        """
+        from seminary.seminary.utils import get_course_details
+
+        was_course = frappe.db.get_value("Course Schedule", self.cs2.name, "course")
+        was_pub = frappe.db.get_value("Course Schedule", self.cs2.name, "published")
+        course = frappe.db.get_value("Course Schedule", self.cs.name, "course")
+        try:
+            frappe.db.set_value("Course Schedule", self.cs2.name, "course", course)
+            frappe.db.set_value("Course Schedule", self.cs2.name, "published", 1)
+            for n in (self.cs.name, self.cs2.name):
+                if not frappe.db.get_value("Course Schedule", n, "calendar_token"):
+                    frappe.db.set_value(
+                        "Course Schedule", n, "calendar_token", "t" * 64
+                    )
+            self._as(self.stu_a_user)
+
+            # Their own section still hands over the token -- no loss.
+            own = get_course_details(self.cs.name)
+            self.assertTrue(
+                own.get("calendar_token"),
+                "the enrolled student must still get their own section's token",
+            )
+
+            # The sibling section must not.
+            other = get_course_details(self.cs2.name)
+            self.assertFalse(
+                other.get("calendar_token"),
+                "a sibling section's calendar token must not be handed out",
+            )
+            self.assertFalse(other.get("web_meeting"))
+            self.assertFalse(
+                [m for m in (other.get("meeting_dates") or []) if m.get("web_meeting")]
+            )
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs2.name, "course", was_course)
+            frappe.db.set_value("Course Schedule", self.cs2.name, "published", was_pub)
+            frappe.local.p007_cache = {}
+
+    def test_inactive_enrolment_does_not_keep_the_join_link(self):
+        """The section gate keeps `active = 1`, so a withdrawal revokes."""
+        from seminary.seminary.utils import (
+            get_course_details,
+            user_is_enrolled_in_section,
+        )
+
+        try:
+            if not frappe.db.get_value(
+                "Course Schedule", self.cs.name, "calendar_token"
+            ):
+                frappe.db.set_value(
+                    "Course Schedule", self.cs.name, "calendar_token", "t" * 64
+                )
+            self._as(self.stu_a_user)
+            self.assertTrue(user_is_enrolled_in_section(self.cs.name))
+
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Scheduled Course Roster", self.roster_a, "active", 0)
+            self._as(self.stu_a_user)
+            self.assertFalse(user_is_enrolled_in_section(self.cs.name))
+            self.assertFalse(get_course_details(self.cs.name).get("calendar_token"))
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Scheduled Course Roster", self.roster_a, "active", 1)
+            frappe.local.p007_cache = {}
+
     def test_upload_default_ships_so_a_fresh_install_is_bounded(self):
         """A10-6's real residual: an install with object storage and no policy.
 
