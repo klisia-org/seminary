@@ -245,6 +245,7 @@ import QRCode from 'qrcode'
 import dayjs from 'dayjs'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
+import { getCsrfToken } from '../utils/csrf'
 
 const router = useRouter()
 const route = useRoute()
@@ -501,11 +502,7 @@ const markAttendance = async () => {
   }
 }
 
-const getCsrfToken = () =>
-  window.csrf_token ||
-  window.frappe?.csrf_token ||
-  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-  ''
+
 
 // --- Self check-in code / QR ---------------------------------------------
 const showCodeDialog = ref(false);

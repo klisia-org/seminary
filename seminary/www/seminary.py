@@ -63,7 +63,23 @@ def get_boot_data():
     # same value (frappe/utils/safe_exec.py:363).
     boot["csrf_token"] = get_csrf_token()
     boot["sitename"] = frappe.local.site
-    boot["sysdefaults"] = frappe.defaults.get_defaults()
+    # `sysdefaults` is NOT shipped (p005a A02-1, deferred from p006 F8 pending
+    # this inventory). `frappe.defaults.get_defaults()` returned 92 keys into
+    # `window.sysdefaults` on every page load, and nothing in `frontend/src`,
+    # `portal-shell/src`, `seminary/public` or frappe-ui ever read one of them.
+    #
+    # What it did ship, measured on the canary, was a security-posture
+    # inventory: allow_error_traceback, enable_two_factor_auth and
+    # two_factor_method, allow_consecutive_login_attempts, allow_login_after_
+    # fail, minimum_password_score, password_reset_limit, session_expiry,
+    # deny_multiple_sessions, encrypt_backup, backup_limit,
+    # document_share_key_expiry, max_signups_allowed_per_hour -- plus the
+    # ERPNext commercial defaults (company, country, price lists, warehouse).
+    # An attacker reading the page learnt the lockout threshold and that 2FA
+    # was off before trying a single password.
+    #
+    # If the SPA ever needs a default, add that ONE key here by name.
+    #
     # The session id is carried by the cookie; the SPA never reads it, so it is
     # not echoed into the page (p006 F8).
     boot["session"] = {"user": frappe.session.user}

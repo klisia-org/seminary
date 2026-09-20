@@ -246,6 +246,7 @@ import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperMod
 import CLOCoveragePanel from '@/components/CLOCoveragePanel.vue'
 import { useSettings } from '@/stores/settings'
 import Link from '@/components/Controls/Link.vue'
+import { getCsrfToken } from '../utils/csrf'
 
 
 
@@ -634,11 +635,7 @@ function validateCriteria() {
 }
 
 
-const getCsrfToken = () =>
-  window.csrf_token ||
-  window.frappe?.csrf_token ||
-  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-  ''
+
 
 async function submitCourseAssessment() {
   if (!validateCriteria()) {

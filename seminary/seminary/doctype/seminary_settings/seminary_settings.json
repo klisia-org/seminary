@@ -82,6 +82,8 @@
   "attendance_policy_section",
   "registrar_academic_records",
   "faculty_read_scope",
+  "unit_scope_no_membership",
+  "unit_scope_unassigned_course",
   "tardies_per_absence",
   "column_break_attendance_policy",
   "absence_warning_buffer",
@@ -347,7 +349,8 @@
    "label": "Upload Limits"
   },
   {
-   "description": "Catch-all cap for everyone without a role row below. Leave at 0 to apply no seminary limit and use only System Settings \u2192 Max File Size.",
+   "default": "25",
+   "description": "Catch-all cap for everyone without a role row below. At 0 the normal upload path falls back to System Settings \u2192 Max File Size \u2014 but direct-to-object-storage uploads bypass that setting by design, so at 0 they are bounded only by a built-in 2048 MB ceiling. Set a value here to govern both.",
    "fieldname": "default_max_upload_mb",
    "fieldtype": "Int",
    "label": "Default Max Upload (MB)",
@@ -654,11 +657,29 @@
   },
   {
    "default": "School",
-   "description": "How far an instructor of record can see beyond the sections they teach. School: every section. Academic Unit: only sections of courses owned by an academic unit they belong to (their department, its parent units, and interdepartments it constitutes). Courses with no academic unit, and instructors with no unit membership, are treated as School. Graders and assistants only ever see their own sections.",
+   "description": "How far an instructor of record can see beyond the sections they teach. School: every section. Academic Unit: only sections of courses owned by an academic unit they belong to (their department, its parent units, and interdepartments it constitutes). The two settings below decide what happens when an instructor holds no membership, or a course has no unit \u2014 both default to School. Graders and assistants only ever see their own sections.",
    "fieldname": "faculty_read_scope",
    "fieldtype": "Select",
    "label": "Faculty read scope",
    "options": "School\nAcademic Unit"
+  },
+  {
+   "default": "School",
+   "depends_on": "eval:doc.faculty_read_scope=='Academic Unit'",
+   "description": "What an instructor of record may read when they hold no active Academic Unit Membership. School: every section \u2014 the behaviour before this setting existed, and the default. Own sections only: just the sections they are listed on. Leaving this on School means the Academic Unit scope restricts nothing on a school that has not populated memberships.",
+   "fieldname": "unit_scope_no_membership",
+   "fieldtype": "Select",
+   "label": "Instructor without a unit membership",
+   "options": "School\nOwn sections only"
+  },
+  {
+   "default": "School",
+   "depends_on": "eval:doc.faculty_read_scope=='Academic Unit'",
+   "description": "How a Course with no academic unit is treated under the Academic Unit scope. School: every instructor of record may read its sections \u2014 the behaviour before this setting existed, and the default. Exclude: only the staff listed on the section may read it.",
+   "fieldname": "unit_scope_unassigned_course",
+   "fieldtype": "Select",
+   "label": "Course with no academic unit",
+   "options": "School\nExclude"
   },
   {
    "default": "3",

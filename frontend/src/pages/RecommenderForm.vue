@@ -64,6 +64,7 @@
 import { LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getCsrfToken } from '../utils/csrf'
 
 const route = useRoute()
 const router = useRouter()
@@ -89,7 +90,7 @@ async function onFilePicked(event) {
     const res = await fetch('/api/method/seminary.seminary.recommender.upload_attachment', {
       method: 'POST',
       body: formData,
-      headers: { 'X-Frappe-CSRF-Token': window.csrf_token || 'guest' },
+      headers: { 'X-Frappe-CSRF-Token': getCsrfToken() || 'guest' },
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))

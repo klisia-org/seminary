@@ -4,18 +4,9 @@ import FolderBlock from '@/components/FolderBlock.vue';
 import { FolderOpen } from 'lucide-vue-next';
 import translationPlugin from '../translation'
 import router from '@/router'
+import { getCsrfToken } from './csrf'
 
-const getCsrfToken = () => {
-  if (typeof window === 'undefined') {
-    return null
-  }
-  return (
-    window.csrf_token ||
-    window.frappe?.csrf_token ||
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-    null
-  )
-}
+
 
 const FOLDER_SCOPES = ['Course', 'Instructor', 'Section', 'School']
 

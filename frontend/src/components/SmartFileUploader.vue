@@ -43,6 +43,7 @@ import { computed, ref } from 'vue'
 import { htmlToText } from '@/utils'
 import { ErrorMessage } from 'frappe-ui'
 import { uploadDirect } from '@/utils/directUpload'
+import { getCsrfToken } from '../utils/csrf'
 
 const props = defineProps({
 	fileTypes: { type: [Array, String], default: undefined },
@@ -83,14 +84,7 @@ function openFileSelector() {
 	input.value?.click()
 }
 
-function getCsrfToken() {
-	return (
-		window.csrf_token ||
-		window.frappe?.csrf_token ||
-		document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-		null
-	)
-}
+
 
 /**
  * Pull a readable sentence out of a Frappe error response.

@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { getCsrfToken } from './csrf.js'
 
 const config = reactive({
   brand: { name: 'Portal', logoUrl: null, color: '#0D3049' },
@@ -27,7 +28,7 @@ async function defaultSessionFetcher() {
   if (!userId || userId === 'Guest') return null
 
   const res = await fetch('/api/method/frappe.client.get?doctype=User&name=' + encodeURIComponent(userId), {
-    headers: { 'X-Frappe-CSRF-Token': window.csrf_token || '' },
+    headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
     credentials: 'same-origin',
   })
   if (!res.ok) return null

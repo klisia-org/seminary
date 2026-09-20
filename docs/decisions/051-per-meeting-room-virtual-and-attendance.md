@@ -64,6 +64,33 @@ This **aligns** — does not change — the absence policy: `attendance._counts`
 rows while `_cs_meta.total` counts scheduled meetings (`cs_meetinfo` rows), which were mismatched under
 date-keying; per-meeting rows make them consistent.
 
+### #5 Who the meeting link and ICS token belong to (2026-09-20)
+
+The join link and the section's `calendar_token` are **section-scoped**, and the gate in
+`utils.get_course_details` now asks `user_is_enrolled_in_section(<section>)` rather than
+`user_is_enrolled_in_course(<catalogue course>)`.
+
+p006 F11 already specified the section (`user_is_enrolled_in_course(course)`, where `course` was
+`get_course_details`'s section argument), but the only helper available filtered `Course Schedule`
+by `course`, so a section name matched nothing and always stripped. The implementation had to pass
+the catalogue course to work at all, and left a comment saying so. p005a **A01-19** picked the
+comment up.
+
+The effect, reproduced on the dev site before the change: a student with one active enrolment in
+*Systematic Theology I (Fall 24 §A)* received the calendar token of *Systematic Theology I
+(FA27 §A)* — a different **academic term** they were not on — and that token validated against
+`calendar.course_ics`, returning that section's full schedule with its join links.
+
+The fix is strictly narrowing: an active roster row on *this* section always satisfied the old
+course-level gate too, so nobody who sees a link today loses one. `active = 1` is preserved
+deliberately, which is why this uses a new helper rather than `guards.student_sections()` — that
+one is "roster row **and** published" and does **not** filter `active`, so it would have let a
+withdrawn student keep the join link.
+
+Unchanged and worth naming: `has_super_access()` is a school role or an instructor of record, so a
+grader or GTA listed on a section still does not receive the token through this endpoint. That was
+true before and is out of scope here.
+
 ## Consequences
 
 - Room, online link, and attendance are per-meeting, falling back to section values, so a small

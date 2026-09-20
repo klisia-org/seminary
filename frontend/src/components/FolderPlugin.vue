@@ -168,6 +168,7 @@ import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
 import { uploadLimits, validateFileSize, htmlToText } from '@/utils';
 import { useRoute } from 'vue-router';
 import { Trash2 } from 'lucide-vue-next';
+import { getCsrfToken } from '../utils/csrf'
 
 const route = useRoute();
 
@@ -230,17 +231,6 @@ const upload = ref({
 
 const formatMb = (bytes) => ((bytes || 0) / (1024 * 1024)).toFixed(1);
 
-const getCsrfToken = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return (
-    window.csrf_token ||
-    window.frappe?.csrf_token ||
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-    null
-  );
-};
 
 // The lesson routes carry the Course Schedule docname as `courseName`
 // (`/courses/:courseName/...`). The backend derives the catalogue Course.

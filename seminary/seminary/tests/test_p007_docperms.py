@@ -475,3 +475,272 @@ class TestP007DocPerms(IntegrationTestCase):
             )
             frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
             frappe.db.set_value("Course", self.cs2.course, "academic_unit", None)
+
+    # --------------------------------- p010 Block F / p005a A01-20: the two
+    # Academic-Unit fallbacks to School are settings, not fixed rules.
+
+    def _scope(self, **kw):
+        frappe.db.set_single_value(
+            "Seminary Settings", "faculty_read_scope", "Academic Unit"
+        )
+        for k, v in kw.items():
+            frappe.db.set_single_value("Seminary Settings", k, v)
+        frappe.local.p007_cache = {}
+
+    def _scope_reset(self):
+        frappe.set_user("Administrator")
+        for k, v in (
+            ("faculty_read_scope", "School"),
+            ("unit_scope_no_membership", "School"),
+            ("unit_scope_unassigned_course", "School"),
+        ):
+            frappe.db.set_single_value("Seminary Settings", k, v)
+        frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+        frappe.db.set_value("Course", self.cs2.course, "academic_unit", None)
+        frappe.local.p007_cache = {}
+
+    def _unit(self, name):
+        if not frappe.db.exists("Academic Unit", name):
+            frappe.get_doc(
+                {
+                    "doctype": "Academic Unit",
+                    "unit_name": name,
+                    "unit_type": "Academic Department",
+                }
+            ).insert(ignore_permissions=True)
+        return name
+
+    def test_no_membership_reads_as_school_by_default(self):
+        """The p007 §2.8 behaviour, now explicit: unchanged unless asked."""
+        try:
+            self._scope()
+            self._as(self.prof_user)
+            self.assertIsNone(guards.readable_course_schedules(self.prof_user))
+        finally:
+            self._scope_reset()
+
+    def test_no_membership_can_be_narrowed_to_own_sections(self):
+        try:
+            self._scope(unit_scope_no_membership="Own sections only")
+            self._as(self.prof_user)
+            readable = guards.readable_course_schedules(self.prof_user)
+            self.assertIsNotNone(readable, "the switch must stop reading as School")
+            self.assertIn(self.cs.name, readable)
+            self.assertNotIn(self.cs2.name, readable)
+        finally:
+            self._scope_reset()
+
+    def test_unassigned_course_reads_as_school_by_default(self):
+        unit = self._unit("P010 Unit")
+        person = frappe.db.get_value("Instructor", self.other, "person")
+        if not frappe.db.exists(
+            "Academic Unit Membership", {"person": person, "unit": unit}
+        ):
+            frappe.get_doc(
+                {"doctype": "Academic Unit Membership", "unit": unit, "person": person}
+            ).insert(ignore_permissions=True)
+        try:
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", unit)
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+            self._scope()
+            self._as(self.other_user)
+            readable = guards.readable_course_schedules(self.other_user)
+            self.assertIsNotNone(readable)
+            # cs has no unit at all, and still reads as School.
+            self.assertIn(self.cs.name, readable)
+            self.assertIn(self.cs2.name, readable)
+        finally:
+            self._scope_reset()
+
+    def test_unassigned_course_can_be_excluded(self):
+        unit = self._unit("P010 Unit")
+        person = frappe.db.get_value("Instructor", self.other, "person")
+        if not frappe.db.exists(
+            "Academic Unit Membership", {"person": person, "unit": unit}
+        ):
+            frappe.get_doc(
+                {"doctype": "Academic Unit Membership", "unit": unit, "person": person}
+            ).insert(ignore_permissions=True)
+        try:
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", unit)
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+            self._scope(unit_scope_unassigned_course="Exclude")
+            self._as(self.other_user)
+            readable = guards.readable_course_schedules(self.other_user)
+            self.assertIsNotNone(readable)
+            self.assertIn(self.cs2.name, readable)
+            self.assertNotIn(
+                self.cs.name, readable, "an unassigned course must not leak in"
+            )
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+        finally:
+            self._scope_reset()
+
+    # --------------------------------- p010 Block F / p005a A10-6: the direct
+    # upload ceiling already follows the configured policy; only the wholly
+    # unconfigured state reaches the built-in constant.
+
+    def test_direct_limit_follows_configured_policy(self):
+        """A10-6 as filed said this fell back to 2 GiB. It does not."""
+        from seminary.storage import limits
+
+        was = frappe.db.get_single_value("Seminary Settings", "default_max_upload_mb")
+        try:
+            frappe.db.set_single_value("Seminary Settings", "default_max_upload_mb", 7)
+            limits.clear_cache()
+            # A student holds no exception row, so the default governs. (An
+            # exception row overrides the default outright -- see the
+            # storage.limits module docstring -- so an Instructor here would
+            # resolve to their row, not to this 7.)
+            self.assertEqual(
+                limits.direct_limit_for_user(self.stu_a_user), 7 * limits.MB
+            )
+            self.assertLess(
+                limits.direct_limit_for_user(self.stu_a_user),
+                limits.DEFAULT_MAX_DIRECT_BYTES,
+            )
+        finally:
+            frappe.db.set_single_value(
+                "Seminary Settings", "default_max_upload_mb", was
+            )
+            limits.clear_cache()
+
+    # --------------------------------- p010 Block F / p005a A01-19: the ICS
+    # token and meeting link belong to the SECTION, not the catalogue course.
+
+    def test_sibling_section_token_is_not_handed_out(self):
+        """One enrolment must not unlock every section of the same course.
+
+        `stu_a` is on `cs` only. With `cs2` pointed at the same catalogue
+        course, the old course-level gate handed over `cs2`'s calendar token
+        and join link -- across terms, not just parallel sections.
+        """
+        from seminary.seminary.utils import get_course_details
+
+        was_course = frappe.db.get_value("Course Schedule", self.cs2.name, "course")
+        was_pub = frappe.db.get_value("Course Schedule", self.cs2.name, "published")
+        course = frappe.db.get_value("Course Schedule", self.cs.name, "course")
+        try:
+            frappe.db.set_value("Course Schedule", self.cs2.name, "course", course)
+            frappe.db.set_value("Course Schedule", self.cs2.name, "published", 1)
+            for n in (self.cs.name, self.cs2.name):
+                if not frappe.db.get_value("Course Schedule", n, "calendar_token"):
+                    frappe.db.set_value(
+                        "Course Schedule", n, "calendar_token", "t" * 64
+                    )
+            self._as(self.stu_a_user)
+
+            # Their own section still hands over the token -- no loss.
+            own = get_course_details(self.cs.name)
+            self.assertTrue(
+                own.get("calendar_token"),
+                "the enrolled student must still get their own section's token",
+            )
+
+            # The sibling section must not.
+            other = get_course_details(self.cs2.name)
+            self.assertFalse(
+                other.get("calendar_token"),
+                "a sibling section's calendar token must not be handed out",
+            )
+            self.assertFalse(other.get("web_meeting"))
+            self.assertFalse(
+                [m for m in (other.get("meeting_dates") or []) if m.get("web_meeting")]
+            )
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs2.name, "course", was_course)
+            frappe.db.set_value("Course Schedule", self.cs2.name, "published", was_pub)
+            frappe.local.p007_cache = {}
+
+    def test_inactive_enrolment_does_not_keep_the_join_link(self):
+        """The section gate keeps `active = 1`, so a withdrawal revokes."""
+        from seminary.seminary.utils import (
+            get_course_details,
+            user_is_enrolled_in_section,
+        )
+
+        try:
+            if not frappe.db.get_value(
+                "Course Schedule", self.cs.name, "calendar_token"
+            ):
+                frappe.db.set_value(
+                    "Course Schedule", self.cs.name, "calendar_token", "t" * 64
+                )
+            self._as(self.stu_a_user)
+            self.assertTrue(user_is_enrolled_in_section(self.cs.name))
+
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Scheduled Course Roster", self.roster_a, "active", 0)
+            self._as(self.stu_a_user)
+            self.assertFalse(user_is_enrolled_in_section(self.cs.name))
+            self.assertFalse(get_course_details(self.cs.name).get("calendar_token"))
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Scheduled Course Roster", self.roster_a, "active", 1)
+            frappe.local.p007_cache = {}
+
+    def test_upload_default_ships_so_a_fresh_install_is_bounded(self):
+        """A10-6's real residual: an install with object storage and no policy.
+
+        `after_install` saves Seminary Settings (seed_portal_messaging_rules),
+        and a Single persists its field defaults on save -- so shipping a
+        default here is what bounds a brand-new site's direct upload path.
+        Without it the only ceiling is DEFAULT_MAX_DIRECT_BYTES."""
+        from seminary.storage import limits
+
+        field = frappe.get_meta("Seminary Settings").get_field("default_max_upload_mb")
+        self.assertTrue(
+            field.default and int(field.default) > 0,
+            "default_max_upload_mb must ship a default, or a fresh install's "
+            "direct uploads answer only to the built-in ceiling",
+        )
+        self.assertLess(int(field.default) * limits.MB, limits.DEFAULT_MAX_DIRECT_BYTES)
+
+    def test_direct_limit_reaches_the_constant_only_when_unconfigured(self):
+        from seminary.storage import limits
+
+        was = frappe.db.get_single_value("Seminary Settings", "default_max_upload_mb")
+        rows = frappe.get_all(
+            "Upload Limit",
+            filters={"parenttype": "Seminary Settings"},
+            fields=["name", "role", "max_file_size_mb"],
+        )
+        try:
+            frappe.db.set_single_value("Seminary Settings", "default_max_upload_mb", 0)
+            for r in rows:
+                frappe.db.set_value("Upload Limit", r.name, "max_file_size_mb", 0)
+            limits.clear_cache()
+            self.assertEqual(
+                limits.direct_limit_for_user(self.prof_user),
+                limits.DEFAULT_MAX_DIRECT_BYTES,
+            )
+        finally:
+            frappe.db.set_single_value(
+                "Seminary Settings", "default_max_upload_mb", was
+            )
+            for r in rows:
+                frappe.db.set_value(
+                    "Upload Limit", r.name, "max_file_size_mb", r.max_file_size_mb
+                )
+            limits.clear_cache()
+
+    def test_settings_warns_when_unit_scope_restricts_nothing(self):
+        """The control must not look enabled while reaching everything."""
+        doc = frappe.get_single("Seminary Settings")
+        doc.faculty_read_scope = "Academic Unit"
+        doc.unit_scope_no_membership = "School"
+        doc.unit_scope_unassigned_course = "School"
+        frappe.clear_messages()
+        doc._warn_if_unit_scope_restricts_nothing()
+        messages = " ".join(str(m) for m in frappe.get_message_log())
+        self.assertIn("school-wide", messages)
+
+        # Tightened on both axes: nothing to warn about.
+        doc.unit_scope_no_membership = "Own sections only"
+        doc.unit_scope_unassigned_course = "Exclude"
+        frappe.clear_messages()
+        doc._warn_if_unit_scope_restricts_nothing()
+        self.assertEqual(frappe.get_message_log(), [])

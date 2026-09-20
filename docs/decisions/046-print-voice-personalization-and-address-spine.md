@@ -88,6 +88,38 @@ which keeps writable address fields as a registrar-intake snapshot that seeds th
 Person on creation and then stands as point-in-time backup while live edits flow
 to the Person.
 
+### Escaping: the sink decides, and HTML opts back in (2026-09-20)
+
+Author text is rendered by `author_templates` in a Jinja sandbox with no `frappe` global, no
+session and strict undefined names. That part held. What did not is that it rendered with
+`autoescape=False`, so every value interpolated from the context reached the output raw — and
+recipient names *are* context values, controlled by the recipient.
+
+p005a **A05-7** filed this as "the sandbox renders unescaped", with the caveat that turning
+autoescaping on would break formatting. That caveat is half right, and the half that is wrong is
+the important one: **Jinja escapes the interpolated value, not the template.** A template's own
+markup is literal text and is never touched, so an author's `<b>` survives exactly as written.
+Only `{{ ... }}` output changes — precisely the untrusted half.
+
+The half that is right is the sink. Author text feeds two kinds of destination, and one of them is
+not HTML:
+
+- **HTML** — Email, In-App, Print (`comms.HTML_CHANNELS`, the same set as
+  `Seminary Announcement.RICH_CHANNELS`), and `Seminary Announcement.message`, a Text Editor field.
+- **Plain text** — SMS, WhatsApp, Telegram, Voice, `short_message` (Small Text), and every
+  `Data` subject. Escaping here is not neutral: it puts `&#39;` where an apostrophe belongs and
+  `&amp;` in the middle of a text message.
+
+So `render_author_text(..., html=<bool>)` follows the sink, and defaults to `False` — a caller that
+has not thought about its destination keeps the previous behaviour rather than silently mangling a
+text message.
+
+**And a context value that is genuinely HTML opts back in** with `| safe_html`, which passes it
+through `content_safety.clean_rich` and marks the result safe. That is the p008 F1 policy applied
+here: repair, never drop. Without it the only choices were escaping everything (breaking a template
+that legitimately interpolates rich text from `doc`) or escaping nothing (the finding). The filter
+is what makes this a scoping change rather than a trade-off.
+
 ## Consequences
 
 Easier: a calamity reaches people by SMS, WhatsApp, Telegram, *and* an automated
