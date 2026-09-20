@@ -8,6 +8,7 @@ import json
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from seminary.seminary import content_safety
 from seminary.seminary.content_safety import clean_code, clean_rich
 from seminary.seminary.editorjs_safety import sanitize_content
 from seminary.seminary.url_policy import is_safe_url, safe_embed_url
@@ -372,3 +373,70 @@ class TestEditorJsSafety(IntegrationTestCase):
         self.assertNotIn("onerror", lesson.content)
         self.assertNotIn("onerror", lesson.instructor_content)
         frappe.clear_messages()
+
+
+class TestP008RichTextHook(IntegrationTestCase):
+    """F6: the wildcard `before_validate` sanitiser.
+
+    Measured before it was wired up (p008 §8): of 137 rich values on potestas,
+    13 changed, every one of them the same p005a probe losing a smuggled
+    `<!---->`. `Program` and `Academic Unit` -- the doctypes that render on the
+    public website -- changed nothing.
+    """
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+
+    def test_a_script_tag_does_not_survive_a_save(self):
+        doc = frappe.get_doc(
+            {
+                "doctype": "Note",
+                "title": f"p008-f6-{frappe.generate_hash(length=6)}",
+                "content": "<p>hello</p><script>alert(1)</script>",
+            }
+        )
+        doc.insert(ignore_permissions=True)
+        self.assertNotIn("<script", doc.content)
+        self.assertIn("hello", doc.content)
+
+    def test_an_event_handler_does_not_survive_a_save(self):
+        doc = frappe.get_doc(
+            {
+                "doctype": "Note",
+                "title": f"p008-f6-{frappe.generate_hash(length=6)}",
+                "content": '<img src="x" onerror="alert(1)">',
+            }
+        )
+        doc.insert(ignore_permissions=True)
+        self.assertNotIn("onerror", doc.content)
+
+    def test_prose_with_a_bare_angle_bracket_is_left_alone(self):
+        """The dry run caught this: `has_markup` fired on any `<` or `>`, so
+        'fixed deposits >3 months' was escaped to '&gt;3', and because the
+        escape is itself markup-free the damage compounded on every save."""
+        for text in ("fixed deposits >3 months", "a < b and b > c", "5 > 4"):
+            with self.subTest(text=text):
+                self.assertFalse(content_safety.has_markup(text))
+
+    def test_json_in_a_text_field_is_not_sanitised(self):
+        r"""`Workspace.content` and `Course Lesson.content` are EditorJS JSON.
+        Sanitising them turned `class=\"h4\"` into `class="\&quot;h4\&quot;"`
+        on twenty Desk workspaces."""
+        # Raw string: the stored value really does contain backslash-quote, and
+        # without `r` Python collapses it to a bare quote -- which is not valid
+        # JSON, so the guard was being tested against the wrong input.
+        payload = r'[{"type":"header","data":{"text":"<span class=\"h4\">Hi</span>"}}]'
+        self.assertTrue(content_safety._is_json_payload(payload))
+        self.assertFalse(content_safety._is_json_payload("<p>not json</p>"))
+
+    def test_the_hook_is_registered_on_the_wildcard(self):
+        hooks = frappe.get_hooks("doc_events") or {}
+        wildcard = hooks.get("*", {})
+        before = wildcard.get("before_validate") or []
+        if isinstance(before, str):
+            before = [before]
+        self.assertIn(
+            "seminary.seminary.content_safety.sanitize_rich_text",
+            before,
+            "F6 must stay on the wildcard: a new doctype is covered without opting in",
+        )

@@ -542,7 +542,19 @@ doc_events = {
         # written, never re-derived afterwards. Hung off the wildcard rather
         # than five controllers so that declaring a new snapshot needs no
         # controller edit; it is an O(1) dict miss for every other doctype.
-        "before_validate": "seminary.seminary.person_fields.capture_snapshots",
+        "before_validate": [
+            "seminary.seminary.person_fields.capture_snapshots",
+            # Every rich-text field on every doctype (p008 F6, p005 A05-1b).
+            # Frappe's own save-time sanitiser is bypassed for most content --
+            # `_sanitize_content` omits `always_sanitize`, and `sanitize_html`
+            # returns the value unchanged when BeautifulSoup finds no element --
+            # so staff-authored HTML reached the database raw, including
+            # `Program.program_description`, which renders on the public site.
+            # Measured before it was wired up: of 137 rich values on potestas,
+            # 13 change, all of them the same p005a XSS probe losing its
+            # smuggled `<!---->`. JSON-in-a-Text-field is skipped by shape.
+            "seminary.seminary.content_safety.sanitize_rich_text",
+        ],
         "on_update": [
             "seminary.seminary.communication_triggers.process",
             # File privacy (p007 §8.2): keeps registered web images in step
