@@ -60,8 +60,21 @@ Two principals can still reach it, and only one matters:
   nginx's body cap — that escape is the whole point of the path, so it must not be bounded by
   `global_max_bytes()`.
 
-The second case is legitimate but was invisible. Seminary Settings now warns on save when object
-storage is configured and no policy is, naming the constant and pointing at **Default Max Upload**.
+The second case is legitimate but was invisible, and the warning alone does not reach it: a fresh
+install that never opens Seminary Settings never sees one. So **Default Max Upload now ships a
+default of 25 MB**. `after_install` already saves Seminary Settings (`seed_portal_messaging_rules`),
+and a Single persists its field defaults on save, so a new site is bounded from the first minute.
+Existing sites are untouched — their stored value wins over the field default, verified on potestas
+(kept 10) and testable (kept 25) across a migrate.
+
+25 MB rather than something derived from `global_max_bytes()`: that resolves per site and is not a
+stable basis for a shipped default — it read 80 MB on potestas and 512000 MB on testable, the latter
+because System Settings' value is interpreted as megabytes here.
+
+Seminary Settings also warns on save when object storage is configured and no policy is, naming the
+constant and pointing at **Default Max Upload**. And the field's own description used to say that at
+0 "only System Settings → Max File Size" applies, which is false for the direct path and was exactly
+the misreading behind this row; it now says what 0 really means.
 Enforcement is unchanged: narrowing an unconfigured site to the global cap would break the direct
 path for anyone deliberately relying on it, which this ADR's "one knob, surfaced everywhere" rule
 does not license.

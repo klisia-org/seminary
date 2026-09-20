@@ -607,6 +607,23 @@ class TestP007DocPerms(IntegrationTestCase):
             )
             limits.clear_cache()
 
+    def test_upload_default_ships_so_a_fresh_install_is_bounded(self):
+        """A10-6's real residual: an install with object storage and no policy.
+
+        `after_install` saves Seminary Settings (seed_portal_messaging_rules),
+        and a Single persists its field defaults on save -- so shipping a
+        default here is what bounds a brand-new site's direct upload path.
+        Without it the only ceiling is DEFAULT_MAX_DIRECT_BYTES."""
+        from seminary.storage import limits
+
+        field = frappe.get_meta("Seminary Settings").get_field("default_max_upload_mb")
+        self.assertTrue(
+            field.default and int(field.default) > 0,
+            "default_max_upload_mb must ship a default, or a fresh install's "
+            "direct uploads answer only to the built-in ceiling",
+        )
+        self.assertLess(int(field.default) * limits.MB, limits.DEFAULT_MAX_DIRECT_BYTES)
+
     def test_direct_limit_reaches_the_constant_only_when_unconfigured(self):
         from seminary.storage import limits
 

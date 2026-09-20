@@ -349,7 +349,8 @@
    "label": "Upload Limits"
   },
   {
-   "description": "Catch-all cap for everyone without a role row below. Leave at 0 to apply no seminary limit and use only System Settings \u2192 Max File Size.",
+   "default": "25",
+   "description": "Catch-all cap for everyone without a role row below. At 0 the normal upload path falls back to System Settings \u2192 Max File Size \u2014 but direct-to-object-storage uploads bypass that setting by design, so at 0 they are bounded only by a built-in 2048 MB ceiling. Set a value here to govern both.",
    "fieldname": "default_max_upload_mb",
    "fieldtype": "Int",
    "label": "Default Max Upload (MB)",
