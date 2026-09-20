@@ -124,6 +124,7 @@
    "fieldtype": "Float",
    "label": "Final Score",
    "non_negative": 1,
+   "permlevel": 1,
    "precision": "2",
    "read_only": 1
   },
@@ -135,12 +136,14 @@
    "fieldname": "fgrade",
    "fieldtype": "Data",
    "label": "Final Grade",
+   "permlevel": 1,
    "read_only": 1
   },
   {
    "fieldname": "fgradepass",
    "fieldtype": "Data",
-   "label": "Pass / Fail"
+   "label": "Pass / Fail",
+   "permlevel": 1
   },
   {
    "fieldname": "course_progress_section",
@@ -232,6 +235,50 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -296,7 +343,7 @@
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 0
   }
  ],
  "read_only": 1,

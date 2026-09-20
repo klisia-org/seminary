@@ -267,6 +267,10 @@ notification_config = "seminary.notifications.get_notification_config"
 # Permissions evaluated in scripted ways
 
 permission_query_conditions = {
+    # Pairs with the `has_permission` below. It was the only unpaired
+    # registration of the 41: the second gate applied to opening a plagiarism
+    # result and not to listing them (p010 H16, p005a A06-5).
+    "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.get_permission_query_conditions",
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
     # p008a G8: the list must not show a folder a per-document read would deny.
     "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.get_permission_query_conditions",

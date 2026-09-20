@@ -356,7 +356,7 @@
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 0
   }
  ],
  "row_format": "Dynamic",

@@ -37,6 +37,7 @@ import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
+from seminary.seminary import guards
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
     SCHOOL_ROLES,
@@ -47,6 +48,7 @@ from seminary.seminary.guards import (
     require_grader,
     require_outline_editor,
     require_own_enrollment,
+    require_own_student,
     require_registrar,
 )
 
@@ -3264,9 +3266,17 @@ def get_scholarship(student):
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    """The student's invoices for the Fees page (empty on a Frappe-only seminary)."""
+    """The student's invoices for the Fees page (empty on a Frappe-only seminary).
+
+    Gated on the target (p010 H15, p005a A01-17). Harmless on a Frappe-only
+    bench, where `NullFinancialBackend` returns `[]` for anybody -- **which is
+    exactly why this was missed**, here and in five siblings. With the oikonomos
+    bridge installed it is another student's invoice list. The sibling
+    `get_pe_unpaid_invoices` was fixed; these were not.
+    """
     from seminary.seminary.financial.backend import get_financial_backend
 
+    require_own_student(student or guards.current_student())
     return get_financial_backend().student_invoices(student)
 
 
@@ -5519,11 +5529,56 @@ def delete_submission_comment(name):
     frappe.delete_doc("Assignment Submission Comment", name, ignore_permissions=True)
 
 
-@frappe.whitelist()
-def get_invoice_payment_url(invoice_name):
-    """Gateway payment URL for one of the student's invoices."""
+def _require_own_invoices(names):
+    """Refuse an invoice the caller does not already hold (p010 H15, A01-17).
+
+    Seminary cannot resolve an invoice's owner -- invoices are the financial
+    backend's documents and do not exist at all on a Frappe-only bench. But it
+    does not need to: the backend already exposes *the caller's own* invoices,
+    so membership in that list is an ownership check built from the contract
+    that is already there, with no bridge change and no new abstract method.
+
+    It fails closed. With `NullFinancialBackend` the list is empty, so every
+    invoice name is refused -- which is right, because there are no invoices.
+    """
     from seminary.seminary.financial.backend import get_financial_backend
 
+    wanted = [n for n in (names or []) if n]
+    if not wanted:
+        return
+    if guards.is_school_role() or guards.instructor_tier() == "record":
+        return
+
+    mine = set()
+    for row in get_financial_backend().student_invoices() or []:
+        if isinstance(row, str):
+            mine.add(row)
+            continue
+        for key in ("name", "invoice", "invoice_name"):
+            if row.get(key):
+                mine.add(row[key])
+                break
+
+    stray = [n for n in wanted if n not in mine]
+    if stray:
+        guards._deny(
+            _("You can only pay your own invoices."),
+            "require_own_invoices",
+            count=len(stray),
+        )
+
+
+@frappe.whitelist()
+def get_invoice_payment_url(invoice_name):
+    """Gateway payment URL for one of the student's invoices.
+
+    "the student's" was a docstring precondition that nothing enforced: with a
+    bridge installed this minted a gateway payment URL for *another* student's
+    invoice (p010 H15, p005a A01-17).
+    """
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    _require_own_invoices([invoice_name])
     return get_financial_backend().invoice_payment_url(invoice_name)
 
 
@@ -5540,6 +5595,10 @@ def get_student_partial_balance_payment_url(amount=None, invoices=None):
     """Gateway payment URL for a partial balance payment."""
     from seminary.seminary.financial.backend import get_financial_backend
 
+    names = invoices
+    if isinstance(names, str):
+        names = frappe.parse_json(names) or []
+    _require_own_invoices(names)
     return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 

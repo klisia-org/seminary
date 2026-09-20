@@ -22,6 +22,8 @@ and release the capacity counter.
 """
 
 import frappe
+
+from seminary.seminary import guards
 from frappe import _
 
 # routes_to machine keys (must match Faculty Capability.routes_to / seeds).
@@ -218,6 +220,9 @@ def capacity_for(unit: str, route: str, instructor: str) -> dict | None:
 def instructors_in_unit(doctype, txt, searchfield, start, page_len, filters):
     """Link-picker query: instructors who are active members of a unit (transitive
     for an interdepartment). Used to scope CP reader pickers to the project's unit."""
+    # Desk link-picker, reached only from `culminating_project.js`.
+    # Ungated it was a staff directory for anybody signed in (p010 H19).
+    guards.require_grader(include_registrar=True)
     unit = (filters or {}).get("unit")
     units = _resolve_units(unit) if unit else []
     if not units:
@@ -249,6 +254,9 @@ def capability_holders(doctype, txt, searchfield, start, page_len, filters):
     remaining capacity. Wide net across ALL units by default; pass filters.unit to
     narrow to that unit (transitive). Used for the CP advisor picker — the gate is
     'qualified' (holds the capability), optionally narrowed to the unit."""
+    # Desk link-picker, reached only from `culminating_project.js`.
+    # Ungated it was a staff directory for anybody signed in (p010 H19).
+    guards.require_grader(include_registrar=True)
     f = filters or {}
     route = f.get("route")
     if not route:
@@ -571,6 +579,15 @@ def get_unit_roster(unit: str, public: bool = False) -> list:
     member's photo, short bio, and whether they chair the unit — for rich cards.
     """
     public = frappe.parse_json(public) if isinstance(public, str) else public
+    # `public=False` is the *internal* projection, and it ignores
+    # `Person.block_from_web` -- a flag the school set to keep somebody off the
+    # directory. Ungated, any logged-in user could ask for it and get bios and
+    # photos of exactly the people who had been excluded (p010 H19, p005a
+    # A01-23). The internal view is now staff-only; everybody else gets the
+    # website projection whether they ask for it or not, so no caller loses a
+    # page -- they lose the rows that were never meant to be on it.
+    if not (guards.is_school_role() or guards.instructor_tier() == "record"):
+        public = True
     units = _resolve_units(unit)
     if not units:
         return []
