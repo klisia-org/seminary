@@ -18,7 +18,7 @@
         <div class="space-y-4">
 
             <div v-if="CalendarInstructions.data">
-                <p class="text-sm text-ink-gray-6" v-html="CalendarInstructions.data"></p>
+                <SafeHtml class="text-sm text-ink-gray-6" :html="CalendarInstructions.data" as="p" />
             </div>
             <div v-else>
                 <div>

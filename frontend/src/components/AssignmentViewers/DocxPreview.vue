@@ -20,8 +20,8 @@
 				{{ __('Download to review') }}
 			</a>
 		</div>
-		<div v-else class="prose prose-sm max-w-none border rounded-md p-4 bg-surface-white"
-			v-html="html"></div>
+		<SafeHtml v-else class="prose prose-sm max-w-none border rounded-md p-4 bg-surface-white"
+			:html="html" profile="docx" />
 	</div>
 </template>
 

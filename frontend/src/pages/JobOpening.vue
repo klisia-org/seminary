@@ -113,13 +113,13 @@
 		<!-- Description -->
 		<section v-if="opening.data.description" class="mt-6">
 			<h2 class="mb-2 text-base font-semibold text-ink-gray-8">{{ __('Description') }}</h2>
-			<div class="prose-sm max-w-none text-ink-gray-7" v-html="opening.data.description" />
+			<SafeHtml class="prose-sm max-w-none text-ink-gray-7" :html="opening.data.description" />
 		</section>
 
 		<!-- Qualifications -->
 		<section v-if="opening.data.qualifications" class="mt-6">
 			<h2 class="mb-2 text-base font-semibold text-ink-gray-8">{{ __('Qualifications') }}</h2>
-			<div class="prose-sm max-w-none text-ink-gray-7" v-html="opening.data.qualifications" />
+			<SafeHtml class="prose-sm max-w-none text-ink-gray-7" :html="opening.data.qualifications" />
 		</section>
 
 		<!-- Location -->
@@ -161,18 +161,18 @@
 				:alt="org.organization_name"
 				class="mt-3 max-h-16 w-auto rounded"
 			/>
-			<div
+			<SafeHtml
 				v-if="org.about_us"
 				class="prose-sm mt-2 max-w-none text-ink-gray-7"
-				v-html="org.about_us"
+				:html="org.about_us"
 			/>
 			<details v-if="org.doctrinal_statement" class="mt-4">
 				<summary class="cursor-pointer text-sm font-medium text-ink-gray-7">
 					{{ __('Doctrinal statement') }}
 				</summary>
-				<div
+				<SafeHtml
 					class="prose-sm mt-2 max-w-none text-ink-gray-7"
-					v-html="org.doctrinal_statement"
+					:html="org.doctrinal_statement"
 				/>
 			</details>
 		</section>

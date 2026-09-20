@@ -9,7 +9,7 @@
 			:title="item.channel_name"
 			:class="iconClass"
 		>
-			<span v-html="item.svg_icon" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full"></span>
+			<SafeHtml :html="item.svg_icon" as="span" profile="svg" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full" />
 		</a>
 		<!-- In-App — go to the portal inbox compose, pre-targeting the instructor. -->
 		<router-link
@@ -18,7 +18,7 @@
 			:title="__('Send a message')"
 			:class="iconClass"
 		>
-			<span v-html="item.svg_icon" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full"></span>
+			<SafeHtml :html="item.svg_icon" as="span" profile="svg" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full" />
 		</router-link>
 		<!-- Logged comms send over the channel's provider. -->
 		<button
@@ -28,7 +28,7 @@
 			:title="__('Message on {0}').format(item.channel_name)"
 			:class="iconClass"
 		>
-			<span v-html="item.svg_icon" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full"></span>
+			<SafeHtml :html="item.svg_icon" as="span" profile="svg" class="inline-block h-full w-full [&>svg]:h-full [&>svg]:w-full" />
 		</button>
 	</template>
 

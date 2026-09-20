@@ -93,11 +93,11 @@
 												<div>
 													{{ option.label }}
 												</div>
-												<div
+												<SafeHtml
 													v-if="option.description"
 													class="text-xs text-ink-gray-7"
-													v-html="option.description"
-												></div>
+													:html="option.description"
+												/>
 											</div>
 										</slot>
 									</li>

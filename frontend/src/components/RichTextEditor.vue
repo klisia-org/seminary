@@ -5,7 +5,7 @@
         <!-- Before activation: show existing content or placeholder -->
         <div v-if="!active" ref="anchorEl">
             <div v-if="content" class="border rounded-md py-2 px-2 min-h-[7rem]">
-                <div v-html="content" class="prose-sm"></div>
+                <SafeHtml :html="content" class="prose-sm" />
                 <Button variant="subtle" size="sm" class="mt-2" @click="activate">
                     {{ __('Edit') }}
                 </Button>
@@ -21,11 +21,11 @@
             <component v-if="menuComponent && editor" :is="menuComponent"
                 class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
                 :buttons="true"
-            />
+           />
             <component v-if="editorContentComponent && editor" :is="editorContentComponent"
                 :editor="editor"
                 class="prose-sm py-2 px-2 min-h-[7rem]"
-            />
+           />
         </div>
 
         <!-- Teleport mode (deeply nested pages like DiscussionActivity) -->
@@ -38,11 +38,11 @@
                     <component v-if="menuComponent && editor" :is="menuComponent"
                         class="w-full overflow-x-auto rounded-t-md border-b border-outline-gray-modals"
                         :buttons="true"
-                    />
+                   />
                     <component v-if="editorContentComponent && editor" :is="editorContentComponent"
                         :editor="editor"
                         class="prose-sm py-2 px-2 min-h-[7rem]"
-                    />
+                   />
                 </div>
             </Teleport>
         </template>

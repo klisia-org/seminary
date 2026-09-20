@@ -13,10 +13,10 @@
 					</button>
 				</div>
 				<div class="max-h-[60vh] overflow-auto px-4 py-3">
-					<div
+					<SafeHtml
 						v-if="helpData.local_notes"
 						class="seminary-help-notes text-p-sm text-ink-gray-8"
-						v-html="helpData.local_notes"
+						:html="helpData.local_notes"
 					/>
 					<p v-else class="text-p-sm text-ink-gray-5">
 						{{ __('No local notes for this page yet.') }}

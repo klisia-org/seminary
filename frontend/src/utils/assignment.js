@@ -55,11 +55,16 @@ export class Assignment {
 			app.mount(this.wrapper)
 			return
 		}
-		this.wrapper.innerHTML = `<div class='border rounded-md p-10 text-center bg-surface-menu-bar mb-2'>
-            <span class="font-medium">
-                Assignment: ${assignment}
-            </span>
-        </div>`
+		// Built node by node (p008 F3/F13): the docname was interpolated into an
+		// `innerHTML` template, so a record named with markup wrote that markup
+		// into the lesson. `textContent` has no parse step to escape out of.
+		const box = document.createElement('div')
+		box.className = 'border rounded-md p-10 text-center bg-surface-menu-bar mb-2'
+		const label = document.createElement('span')
+		label.className = 'font-medium'
+		label.textContent = `Assignment: ${assignment}`
+		box.appendChild(label)
+		this.wrapper.replaceChildren(box)
 		return
 	}
 

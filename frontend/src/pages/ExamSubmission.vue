@@ -25,7 +25,7 @@
     :student-name="submisisonDetails.doc.member_name"
     :assessment="submisisonDetails.doc.course_assess"
     :assessment-name="ExamTitle.data?.title"
-  />
+ />
   <div class="flex justify-center text-xl font-bold text-ink-gray-9 mt-3">
     {{ ExamTitle.data?.title }}
   </div>
@@ -101,12 +101,12 @@
             <div class="font-semibold text-ink-gray-9">
               {{ __('Question') }} {{ index + 1 }}:
             </div>
-            <div class="leading-5 text-ink-gray-9" v-html="row.question_name"></div>
+            <SafeHtml class="leading-5 text-ink-gray-9" :html="row.question_name" />
           </div>
           <!-- Answer -->
           <div class="leading-5 text-ink-gray-7 space-x-1">
             <span> {{ __('Your Answer') }}: </span>
-            <span v-html="row.answer"></span>
+            <SafeHtml :html="row.answer" as="span" />
           </div>
           <!-- Points and Buttons -->
           <div class="flex items-center justify-end space-x-5">
@@ -181,7 +181,7 @@
                 <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
                 <span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
               </div>
-              <div v-html="c.comment" class="prose-sm"></div>
+              <SafeHtml :html="c.comment" class="prose-sm" />
             </div>
           </div>
           <div v-else class="text-sm text-ink-gray-4 mb-4">
@@ -193,7 +193,7 @@
             ref="gcEditor"
             :placeholder="__('Write a comment...')"
             @change="(val) => newGradingComment = val"
-          />
+         />
           <Button variant="solid" size="sm" class="mt-2" @click="postGradingComment"
             :disabled="!newGradingComment || addGradingCommentResource.loading">
             {{ __('Send') }}

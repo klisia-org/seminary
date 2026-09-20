@@ -242,10 +242,22 @@ export function updateDocumentTitle(meta) {
 	)
 }
 
+/**
+ * Plain text from untrusted HTML (p008 F3).
+ *
+ * The old form built a detached `<div>` and assigned `innerHTML`. Detached is
+ * not inert: the parser still builds the nodes and `<img src=x onerror=...>`
+ * fires, so every "just strip the tags" helper was an execution sink. A
+ * `DOMParser` document is inert -- nothing loads, nothing runs -- and it is the
+ * only correct way to read text out of HTML you did not author.
+ *
+ * `<br>` becomes a newline. The detached-div version dropped it entirely, so
+ * `a<br>b` came back as `ab`; Frappe's `_server_messages` are full of them.
+ */
 export function htmlToText(html) {
-	const div = document.createElement('div')
-	div.innerHTML = html
-	return div.textContent || div.innerText || ''
+	const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
+	doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'))
+	return doc.body.textContent || ''
 }
 
 export const getEditorTools = (course = null, courseName = null) => {

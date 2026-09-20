@@ -15,9 +15,8 @@
 						{{ course.data.short_introduction }}
 					</div>
 
-					<div v-html="course.data.course_description_for_lms"
-						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-					</div>
+					<SafeHtml :html="course.data.course_description_for_lms"
+						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
 					<div class="mt-6 flex flex-wrap items-center gap-2">
 						<Badge v-if="course.data.modality" theme="blue" size="lg">
 							<template #prefix>

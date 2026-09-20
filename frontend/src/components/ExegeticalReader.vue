@@ -28,7 +28,7 @@
 					📖 {{ c.anchor_ref }}
 				</span>
 				<span class="font-medium text-ink-gray-9">{{ c.author_name || c.author }}</span>
-				<span class="prose-sm ml-1 text-ink-gray-8" v-html="c.content"></span>
+				<SafeHtml class="prose-sm ml-1 text-ink-gray-8" :html="c.content" as="span" />
 			</div>
 		</div>
 

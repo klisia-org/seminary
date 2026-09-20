@@ -133,7 +133,7 @@
 import { Badge, Breadcrumbs, FormControl, LoadingIndicator, createResource } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import RadarChart from '@/components/RadarChart.vue'
-import { formatDate } from '@/utils'
+import { formatDate, htmlToText } from '@/utils'
 
 const enrollment = ref(null)
 const comparison = ref('baseline_self')
@@ -287,11 +287,7 @@ function levelLabel(value) {
 const stageLabel = (s) => (s === 'Baseline' ? __('Starting point') : __('Where I am now'))
 
 // Narratives are stored as rich text; the table wants one readable line.
-const stripHtml = (html) => {
-	const el = document.createElement('div')
-	el.innerHTML = html || ''
-	return (el.textContent || '').trim()
-}
+const stripHtml = (html) => htmlToText(html).trim()
 
 const narratives = computed(() =>
 	shownCourses.value.flatMap((c) =>

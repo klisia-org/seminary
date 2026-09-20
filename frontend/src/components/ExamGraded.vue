@@ -41,12 +41,12 @@
             <div class="font-semibold text-ink-gray-9 text-left">
               {{ __('Question') }} {{ index + 1 }}:
             </div>
-            <div class="leading-5 text-ink-gray-9 text-left" v-html="row.question_name"></div>
+            <SafeHtml class="leading-5 text-ink-gray-9 text-left" :html="row.question_name" />
           </div>
           <!-- Answer -->
           <div class="leading-5 text-ink-gray-7 space-x-1 text-left">
             <span> {{ __('Your Answer') }}: </span>
-            <span v-html="row.answer"></span>
+            <SafeHtml :html="row.answer" as="span" profile="inline" />
           </div>
           <!-- Points -->
           <div class="flex justify-end items-center space-x-2">
@@ -57,7 +57,7 @@
           <!-- Comments -->
           <div v-if="row.comments" class="leading-5 text-ink-gray-7 text-xl space-x-1 text-left">
             <span> {{ __('Comments') }}: </span>
-            <span v-html="row.comments"></span>
+            <SafeHtml :html="row.comments" as="span" profile="inline" />
           </div>
         </div>
       </div>

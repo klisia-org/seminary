@@ -96,13 +96,13 @@
 								{{ __('Self-assessed') }}
 							</span>
 						</div>
-						<div v-if="competencyOf(chapter).statement"
-							class="prose-sm mt-1 text-ink-gray-6" v-html="competencyOf(chapter).statement" />
+						<SafeHtml v-if="competencyOf(chapter).statement"
+							class="prose-sm mt-1 text-ink-gray-6" :html="competencyOf(chapter).statement" />
 						<dl v-if="!competencyOf(chapter).locked" class="mt-2 space-y-1">
 							<div v-for="d in competencyOf(chapter).dimensions" :key="d.dimension_code"
 								class="text-xs">
 								<dt class="inline font-medium text-ink-gray-7">{{ d.dimension }}:</dt>
-								<dd class="ml-1 inline text-ink-gray-6" v-html="d.demonstrated_by" />
+								<SafeHtml class="ml-1 inline text-ink-gray-6" :html="d.demonstrated_by" as="dd" />
 							</div>
 						</dl>
 						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">

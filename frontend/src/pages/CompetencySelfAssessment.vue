@@ -70,8 +70,8 @@
 					<Badge :label="stageLabel(stage)" theme="gray" />
 					<Badge v-if="isSubmitted" :label="__('Submitted')" theme="green" />
 				</div>
-				<div v-if="form.data.statement" class="prose-sm mt-2 text-ink-gray-6"
-					v-html="form.data.statement" />
+				<SafeHtml v-if="form.data.statement" class="prose-sm mt-2 text-ink-gray-6"
+					:html="form.data.statement" />
 
 				<div v-if="stages.length > 1" class="mt-4 flex gap-2">
 					<Button v-for="s in stages" :key="s" size="sm"
@@ -87,8 +87,8 @@
 				<section v-for="d in rows" :key="d.dimension_code"
 					class="mt-5 rounded-md border border-outline-gray-2 px-4 py-4">
 					<h2 class="font-semibold text-ink-gray-8">{{ d.dimension }}</h2>
-					<div v-if="d.demonstrated_by" class="prose-sm mt-1 text-ink-gray-6"
-						v-html="d.demonstrated_by" />
+					<SafeHtml v-if="d.demonstrated_by" class="prose-sm mt-1 text-ink-gray-6"
+						:html="d.demonstrated_by" />
 
 					<div class="mt-3 flex flex-wrap gap-2">
 						<button v-for="lv in form.data.levels" :key="lv.grade_code" type="button"

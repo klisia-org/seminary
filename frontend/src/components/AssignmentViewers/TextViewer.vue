@@ -7,8 +7,8 @@
 	     grading page is exactly that). Phase 2's anchored text-selection
 	     comments will swap this for a Teleport-mounted RichTextEditor with a
 	     comment-mark extension — same renderer path used by the comments box. -->
-	<div v-else v-html="answer"
-		class="prose prose-sm max-w-none border rounded-md p-3 bg-surface-white"></div>
+	<SafeHtml v-else :html="answer"
+		class="prose prose-sm max-w-none border rounded-md p-3 bg-surface-white" />
 </template>
 
 <script setup>

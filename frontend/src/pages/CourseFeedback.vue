@@ -60,7 +60,7 @@
 				{{ __('Your answers are reported together with everyone else\'s and are not linked back to you. Your instructor sees them only after grades have been submitted.') }}
 			</div>
 
-			<div v-if="data.intro_text" class="mt-4 text-sm text-ink-gray-7" v-html="data.intro_text" />
+			<SafeHtml v-if="data.intro_text" class="mt-4 text-sm text-ink-gray-7" :html="data.intro_text" />
 
 			<div v-for="block in data.blocks" :key="block.block" class="mt-6">
 				<h3 v-if="block.title" class="mb-3 text-base font-medium text-ink-gray-8">

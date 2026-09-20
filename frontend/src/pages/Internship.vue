@@ -38,15 +38,15 @@
 			<p v-if="info.data.schedule_notes" class="mt-1 text-sm text-ink-gray-6">{{ info.data.schedule_notes }}</p>
 		</section>
 
-		<section v-if="info.data.description" class="prose prose-sm mt-6 max-w-none text-ink-gray-8" v-html="info.data.description" />
+		<SafeHtml v-if="info.data.description" class="prose prose-sm mt-6 max-w-none text-ink-gray-8" :html="info.data.description" as="section" />
 		<section v-if="info.data.qualifications" class="mt-6">
 			<h2 class="mb-1 text-sm font-semibold text-ink-gray-7">{{ __('Qualifications') }}</h2>
-			<div class="prose prose-sm max-w-none text-ink-gray-8" v-html="info.data.qualifications" />
+			<SafeHtml class="prose prose-sm max-w-none text-ink-gray-8" :html="info.data.qualifications" />
 		</section>
 
 		<section v-if="info.data.organization?.about_us" class="mt-6">
 			<h2 class="mb-1 text-sm font-semibold text-ink-gray-7">{{ __('About {0}').format(info.data.organization.organization_name) }}</h2>
-			<div class="prose prose-sm max-w-none text-ink-gray-8" v-html="info.data.organization.about_us" />
+			<SafeHtml class="prose prose-sm max-w-none text-ink-gray-8" :html="info.data.organization.about_us" />
 		</section>
 	</div>
 

@@ -129,12 +129,12 @@
 					{{ __(msg.reference_doctype) }} · {{ msg.reference_name }}
 				</span>
 			</div>
-			<div
+			<SafeHtml
 				v-if="expanded.has(msg.name)"
 				class="prose prose-sm mt-3 max-w-none text-ink-gray-7"
-				v-html="msg.message"
+				:html="msg.message"
 				@click.stop
-			></div>
+			/>
 			<div
 				v-if="expanded.has(msg.name) && canReply(msg)"
 				class="mt-3"

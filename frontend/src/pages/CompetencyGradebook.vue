@@ -248,8 +248,8 @@
 							<header class="flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3">
 								<div class="min-w-0">
 									<h3 class="font-semibold text-ink-gray-8">{{ c.competency_name }}</h3>
-									<div v-if="c.statement" class="prose-sm mt-1 text-ink-gray-6"
-										v-html="c.statement" />
+									<SafeHtml v-if="c.statement" class="prose-sm mt-1 text-ink-gray-6"
+										:html="c.statement" />
 								</div>
 								<Badge v-if="c.result?.final_code" :label="c.result.final_code"
 									:theme="c.result.status === 'Competent' ? 'green' : 'orange'" />
@@ -351,6 +351,7 @@ import {
 	Badge, Breadcrumbs, Button, Dialog, FormControl, LoadingIndicator, Tooltip,
 	createResource, call, toast,
 } from 'frappe-ui'
+import { htmlToText } from '@/utils'
 import { computed, inject, ref, watch } from 'vue'
 import { Send, UserRound } from 'lucide-vue-next'
 import ProgressBar from '@/components/ProgressBar.vue'
@@ -582,8 +583,6 @@ function errorMessage(e, fallback) {
 }
 
 function stripHtml(html) {
-	const el = document.createElement('div')
-	el.innerHTML = html || ''
-	return el.textContent || ''
+	return htmlToText(html)
 }
 </script>

@@ -53,7 +53,7 @@
 			</a>
 		</div>
 
-		<div v-if="org.data.about_us" class="prose-sm mt-6 max-w-none text-ink-gray-7" v-html="org.data.about_us" />
+		<SafeHtml v-if="org.data.about_us" class="prose-sm mt-6 max-w-none text-ink-gray-7" :html="org.data.about_us" />
 
 		<router-link
 			v-if="org.data.open_openings"

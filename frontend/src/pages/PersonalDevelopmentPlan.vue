@@ -63,7 +63,7 @@
 				<section v-if="plan.data.mentor_feedback && !mentorMode"
 					class="mt-5 rounded-md border border-outline-gray-2 px-4 py-4">
 					<h2 class="font-semibold text-ink-gray-8">{{ __('From your mentor') }}</h2>
-					<div class="prose-sm mt-1 text-ink-gray-6" v-html="plan.data.mentor_feedback" />
+					<SafeHtml class="prose-sm mt-1 text-ink-gray-6" :html="plan.data.mentor_feedback" />
 				</section>
 
 				<!-- Mentor sign-off. Separate from the student's fields on purpose:
@@ -100,7 +100,7 @@
 					<div class="mt-2 space-y-2">
 						<div v-for="q in unanswered" :key="q.question_key"
 							class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed border-outline-gray-3 px-4 py-3">
-							<div class="prose-sm min-w-0 text-ink-gray-7" v-html="q.question_text" />
+							<SafeHtml class="prose-sm min-w-0 text-ink-gray-7" :html="q.question_text" />
 							<Button size="sm" variant="subtle" @click="addGoal(q)">
 								{{ __('Answer this') }}
 							</Button>
@@ -124,8 +124,8 @@
 						class="mt-3 rounded-md border border-outline-gray-2 px-4 py-4">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div v-if="g.question_text" class="prose-sm text-ink-gray-7"
-									v-html="g.question_text" />
+								<SafeHtml v-if="g.question_text" class="prose-sm text-ink-gray-7"
+									:html="g.question_text" />
 								<div v-else class="text-sm font-medium text-ink-gray-7">
 									{{ __('My own goal') }}
 								</div>

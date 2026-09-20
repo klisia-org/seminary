@@ -107,7 +107,7 @@
                   :theme="c.result.status === 'Competent' ? 'green' : 'orange'" />
               </div>
             </div>
-            <div v-if="c.statement" class="prose-sm mt-1 text-ink-gray-6" v-html="c.statement" />
+            <SafeHtml v-if="c.statement" class="prose-sm mt-1 text-ink-gray-6" :html="c.statement" />
             <div v-if="c.dimensions?.length" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-gray-5">
               <span v-for="d in c.dimensions" :key="d.dimension_code">{{ d.dimension }}</span>
             </div>

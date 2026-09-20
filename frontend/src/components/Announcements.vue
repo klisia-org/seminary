@@ -14,10 +14,10 @@
 						{{ timeAgo(comm.communication_date) }}
 					</div>
 				</div>
-				<div
+				<SafeHtml
 					class="prose prose-sm bg-surface-menu-bar !min-w-full px-4 py-2 rounded-md"
-					v-html="comm.content"
-				></div>
+					:html="comm.content"
+				/>
 			</div>
 		</div>
 	</div>
