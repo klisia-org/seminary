@@ -219,7 +219,10 @@ def log_denied_response(response=None, request=None, **kwargs):
     if response is None:
         return
     try:
-        if getattr(response, "status_code", 200) not in (401, 403):
+        # 429 as well as 403/401: frappe's `rate_limit` raises
+        # `RateLimitExceededError` directly, so a throttled attacker is
+        # otherwise the one kind of denial this hook would miss (p010 H6).
+        if getattr(response, "status_code", 200) not in (401, 403, 429):
             return
         record_denial(
             "http_%s" % getattr(response, "status_code", "403"),

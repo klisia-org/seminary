@@ -6,6 +6,7 @@ import json
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.email.doctype.email_group.email_group import add_subscribers
 from frappe.desk.reportview import get_filters_cond, get_match_cond
 from frappe.model.mapper import get_mapped_doc
@@ -716,7 +717,13 @@ def get_assignment_dashboard(course_name, assignment_id):
     return {"student_count": student_count}
 
 
+# The heaviest guest response on the site (p005a A06-6), but it returns the
+# whole dict in one call -- so repeating it buys an attacker nothing, and the
+# limit is sized against flooding, not scraping. It has to clear the SPA
+# fetching it on every boot: 120/h looked reasonable and locked out a
+# reload-heavy session within minutes of being tried (p010 H6).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_translations():
     if frappe.session.user != "Guest":
         language = frappe.db.get_value("User", frappe.session.user, "language")
@@ -939,6 +946,7 @@ def remove_virtual_meeting(course_schedule, meeting):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_user_info():
     if frappe.session.user == "Guest":
         return None
@@ -1226,6 +1234,7 @@ def save_instructor_profile(
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_school_abbr_logo():
     abbr = frappe.db.get_single_value("Website Settings", "app_name")
     logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
@@ -4650,6 +4659,7 @@ def course_event(name):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_doctrinal_statement():
     """Return the current admission Doctrinal Statement for the web form.
 
@@ -4674,7 +4684,12 @@ def get_doctrinal_statement():
     return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
 
 
+# p006 F11 made the `access_key` check constant-time with one message for a
+# missing applicant and a wrong key, so there is no oracle. What it never had
+# is an attempt *counter*: keyed on the applicant and not the IP, so guesses
+# cannot be spread across addresses (p010 H6, p005a A09-4).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="applicant_name", limit=20, seconds=3600, ip_based=False)
 def get_application_payment_url(applicant_name, key=None):
     """Payment URL + instructions for an applicant's Application invoice (public
     web form). Delegates to the financial backend; None on a Frappe-only seminary.
@@ -4704,6 +4719,7 @@ def get_application_payment_url(applicant_name, key=None):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_default_phone_country():
     """Return the configured Seminary company's country as a full name
     string (e.g. "United States"). Frappe's Phone control reads
@@ -4720,6 +4736,7 @@ def get_default_phone_country():
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def active_term():
     at = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
     ay = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "academic_year")

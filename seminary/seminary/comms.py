@@ -29,6 +29,7 @@ from urllib.parse import unquote
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, cint, now_datetime
 
 from seminary.seminary import security_log
@@ -2045,7 +2046,12 @@ _STATUS_ALIASES = {
 }
 
 
+# High on purpose: a carrier's delivery receipts are legitimate traffic and a
+# dropped one loses a Communication Log status for good. What this caps is an
+# anonymous flood against an endpoint that does a document read and a
+# constant-time compare per call (p010 H6).
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="account", limit=600, seconds=60, ip_based=False)
 def webhook(account=None, secret=None, **kwargs):
     """Provider webhook endpoint (ADR 043):
     POST /api/method/seminary.seminary.comms.webhook?account=<Channel Provider Account>

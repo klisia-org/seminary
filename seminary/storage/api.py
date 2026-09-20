@@ -32,6 +32,7 @@ import os
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from werkzeug.exceptions import Forbidden, NotFound
 from werkzeug.wrappers import Response
 
@@ -59,7 +60,12 @@ def presign_ttl() -> int:
     return int(frappe.conf.get("storage_presign_ttl") or DEFAULT_PRESIGN_TTL)
 
 
+# Generous on purpose: one lesson page can pull dozens of objects, and a
+# limit that breaks a video scrub is worse than no limit. What this stops is
+# the unauthenticated flood p005a A09-2 describes, not a student watching a
+# lecture (p010 H6).
 @frappe.whitelist(allow_guest=True, methods=["GET", "HEAD"])
+@rate_limit(limit=600, seconds=60, ip_based=True)
 def download_file(key: str, fid: str | None = None, download: int | str = 0):
     """Resolve `key` to a File, check read permission, redirect to a presigned URL."""
     key = key_from_url(url_for_key(key))
@@ -72,7 +78,12 @@ def download_file(key: str, fid: str | None = None, download: int | str = 0):
         # endpoint cannot be used to probe which objects exist.
         raise Forbidden(_("You don't have permission to access this file"))
 
-    if _is_initial_request():
+    # Not for an anonymous actor (p010 H7, p005a A09-2). A *public* offloaded
+    # file -- `Seminary Announcement.voice_audio` is exactly that, and
+    # `should_offload` does not consult `is_private` -- resolves for anybody, so
+    # every unauthenticated GET was a deferred Access Log insert plus a presign.
+    # The row records no identity for a guest, so it is a write with no reader.
+    if frappe.session.user != "Guest" and _is_initial_request():
         from frappe.core.doctype.access_log.access_log import make_access_log
 
         make_access_log(
