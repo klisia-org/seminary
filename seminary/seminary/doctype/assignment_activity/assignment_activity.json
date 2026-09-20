@@ -52,7 +52,8 @@
    "default": "0",
    "fieldname": "show_answer",
    "fieldtype": "Check",
-   "label": "Show Answer"
+   "label": "Show Answer",
+   "permlevel": 1
   },
   {
    "default": "1",
@@ -63,7 +64,8 @@
   {
    "fieldname": "answer",
    "fieldtype": "Text Editor",
-   "label": "Correct Answer for Feedback"
+   "label": "Correct Answer for Feedback",
+   "permlevel": 1
   },
   {
    "fieldname": "course",
@@ -146,6 +148,30 @@
    "report": 1,
    "role": "Seminary Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Instructor",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Program Chair",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "Seminary Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

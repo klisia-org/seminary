@@ -491,24 +491,34 @@ def _publish_embedded_files(message):
         ) or frappe.db.get_value("File", {"file_url": file_url.split("?")[0]}, "name")
         if not name:
             continue
-        # p007 §2.6: only a File the sender may read is made public. System
-        # sends run as Administrator and keep working; a user cannot publish a
-        # private upload they could not open.
-        if frappe.session.user != "Administrator" and not frappe.has_permission(
-            "File", "read", name
-        ):
-            continue
+        # p007 §2.6 required only that the sender may READ the file. Reading is
+        # not grounds for publishing: under p007 §8.2 "may read" means "is
+        # attached to a document I may read", which for a student is every
+        # private file on every section they are enrolled in. A student pasting
+        # a lesson attachment's URL into contact_instructor therefore published
+        # it to the open internet (p005a A02-7, reproduced). Require read AND a
+        # claim on the file: you own it, or you are staff who send mail.
+        if frappe.session.user != "Administrator":
+            if not frappe.has_permission("File", "read", name):
+                continue
+            owner = frappe.db.get_value("File", name, "owner")
+            if owner != frappe.session.user and not _is_messaging_staff():
+                continue
         try:
-            file_doc = frappe.get_doc("File", name)
-            file_doc.is_private = 0
             # p007 §8.2: the recipient's mail client has no session, so this
             # is one of the two server paths allowed to publish a file.
-            frappe.flags.seminary_public_file = True
-            try:
-                file_doc.save(ignore_permissions=True)
-            finally:
-                frappe.flags.seminary_public_file = False
-            message = message.replace(file_url, file_doc.file_url)
+            #
+            # Go through file_policy.set_privacy rather than saving the File
+            # directly: it rewrites the URL in the host document's content and
+            # in the sibling rows adopt() created on other sections. Saving
+            # directly left every one of those pointing at a /private/files/
+            # path that no longer existed — so the publish also broke the
+            # attachment for everyone else in the course (p005a A02-7).
+            from seminary.seminary import file_policy
+
+            new_url = file_policy.set_privacy(base, public=True)
+            if new_url and new_url != file_url:
+                message = message.replace(file_url, new_url)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(), f"Could not publish embedded file {file_url}"

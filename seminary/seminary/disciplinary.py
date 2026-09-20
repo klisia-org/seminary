@@ -29,8 +29,20 @@ PRIVILEGED_ROLES = {
 def suggest_actions(reason, occurrence_number=1):
     """Recommended Disciplinary Action(s) for a reason at a given occurrence.
 
+    Staff or a course instructor only. No student data, but it is the school's
+    sanctions matrix and its only caller is the instructor report modal, so it
+    follows the rest of the module rather than being readable by anyone with a
+    session (p005a A01-23 shape).
+
     A matrix row applies when occurrence_from <= n <= occurrence_to, treating
     occurrence_to in (0, None) as open-ended ("and above")."""
+    _authorize_privileged_or_instructor()
+    return _suggest_actions(reason, occurrence_number)
+
+
+def _suggest_actions(reason, occurrence_number=1):
+    """The matrix lookup itself, with no gate: reached from incident creation
+    and the pending-incident list, both of which are already authorized."""
     try:
         n = int(occurrence_number or 1)
     except (TypeError, ValueError):
@@ -53,7 +65,15 @@ def suggest_actions(reason, occurrence_number=1):
 
 @frappe.whitelist()
 def compute_occurrence_number(student, reason, exclude_name=None):
-    """1-based count of incidents for this student + reason (including this one)."""
+    """1-based count of incidents for this student + reason (including this one).
+
+    Staff or a course instructor only. Ungated this returned a count of another
+    student's disciplinary incidents, one reason at a time -- iterating the
+    Disciplinary Reason list reconstructs their file, and Disciplinary Incident
+    grants Student nothing, so this was the only path to it (p005a A01-16).
+    Every neighbour in this module was already gated; this was an omission.
+    """
+    _authorize_privileged_or_instructor()
     if not student or not reason:
         return 1
     filters = {"student": student, "reason": reason}
@@ -97,10 +117,31 @@ def _authorize_course_instructor(course_schedule):
     )
 
 
+def _authorize_privileged_or_instructor(course_schedule=None):
+    """Staff, or an instructor of ``course_schedule`` when one is in play.
+
+    The module already had :func:`_authorize_course_instructor` for the
+    course-scoped case; this is the same rule for the endpoints that take a
+    student or a reason rather than a section. Note PRIVILEGED_ROLES includes
+    Instructor, so a section argument narrows rather than widens: with one, an
+    instructor must be on *that* section.
+    """
+    if _privileged() or (
+        course_schedule
+        and _user_is_course_instructor(frappe.session.user, course_schedule)
+    ):
+        return
+    frappe.throw(
+        _("Only teaching staff can see disciplinary history."),
+        frappe.PermissionError,
+    )
+
+
 def _recommendation(reason, occurrence_number):
     """suggest_actions enriched with each action's instructor/dismissal flags."""
+
     recommended = []
-    for row in suggest_actions(reason, occurrence_number):
+    for row in _suggest_actions(reason, occurrence_number):
         flags = (
             frappe.db.get_value(
                 "Disciplinary Action",
@@ -139,8 +180,19 @@ def _apply_actions(incident, actions):
 def preview_recommendation(reason, cei=None, student=None):
     """Occurrence number + enriched recommendation for the report modal.
 
+    Gated as :func:`compute_occurrence_number`, which it wraps: ungated it also
+    resolved ``student`` from an arbitrary Course Enrollment Individual docname,
+    confirming the CEI -> Student mapping on the way (p005a A01-16). When a
+    ``cei`` is given the check is scoped to that section's instructors.
+
     Lets the UI show "Occurrence #N — recommended: X" and decide whether an
     instructor may record the action, before the incident is filed."""
+    # Before the CEI -> Student lookup: resolving it was itself a disclosure.
+    _authorize_privileged_or_instructor(
+        frappe.db.get_value("Course Enrollment Individual", cei, "coursesc_ce")
+        if cei
+        else None
+    )
     if not student and cei:
         student = frappe.db.get_value("Course Enrollment Individual", cei, "student_ce")
     occurrence_number = compute_occurrence_number(student, reason) if student else 1
@@ -192,6 +244,11 @@ def report_incident(
     ``course`` (+ ``assessment``) and the CEI is resolved here. Returns the new
     incident, its occurrence number, the recommended action(s), and the
     resulting status."""
+    # Authority first: the checks below disclose configuration (whether portal
+    # reporting is on, whether a reason is portal-eligible) and the CEI lookup
+    # discloses enrolment, so none of them should run for a caller who may not
+    # file an incident at all.
+    _authorize_privileged_or_instructor(course)
     _require_portal_enabled()
     if not frappe.db.get_value("Disciplinary Reason", reason, "instructor_portal"):
         frappe.throw(_("This reason is not available for portal reporting."))
@@ -275,7 +332,14 @@ def report_incident(
 
 @frappe.whitelist()
 def record_incident_action(incident, action):
-    """Record an instructor-authorized action on a pending incident (the To-Do)."""
+    """Record an instructor-authorized action on a pending incident (the To-Do).
+
+    The role check runs before the incident is loaded: ``get_doc`` on a
+    caller-supplied name raises DoesNotExistError for a name that is not there
+    and something else for one that is, which told an ungated caller whether an
+    incident existed.
+    """
+    _authorize_privileged_or_instructor()
     inc = frappe.get_doc("Disciplinary Incident", incident)
     course_schedule = (
         frappe.db.get_value("Course Enrollment Individual", inc.cei, "coursesc_ce")

@@ -15,6 +15,14 @@ def get(
     heatmap_year=None,
     to_timezone=None,
 ):
+    # p008a G6: this is a Desk dashboard chart source, and it was whitelisted
+    # with no check of any kind -- any signed-in session, a Student's included,
+    # got every current section with its active enrolment headcount. Frappe's own
+    # chart route checks the chart's permissions; a source called directly does
+    # not, so the check belongs here.
+    frappe.only_for(
+        ("Program Chair", "Registrar", "Seminary Manager", "System Manager")
+    )
     rows = frappe.db.sql(
         """
         SELECT cs.title AS label,

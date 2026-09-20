@@ -34,6 +34,7 @@
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/typography": "^0.5.18",
     "dayjs": "^1.11.13",
+    "dompurify": "^3.4.11",
     "feather-icons": "^4.29.2",
     "frappe-ui": "0.1.261",
     "highlight.js": "^11.11.1",

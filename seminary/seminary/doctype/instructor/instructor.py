@@ -163,6 +163,22 @@ class Instructor(Document):
 
         Used for Volunteer / honorarium billing via Purchase Invoice.
         """
+        # A whitelisted document method is reached through run_doc_method, which
+        # checks only READ on the document. Everything past that is this
+        # method's own job (p008a G10 inventory).
+        # Students read instructor profiles, and this inserts a Supplier with
+        # ignore_permissions -- accounting master data. Write on the Instructor is
+        # not the bar either: an instructor holds if_owner write on their own
+        # record, and creating one's own payee is not a self-service action.
+        frappe.only_for(
+            (
+                "Seminary Manager",
+                "Program Chair",
+                "System Manager",
+                "Accounts Manager",
+                "Accounts User",
+            )
+        )
         if self.supplier:
             frappe.msgprint(
                 _("Supplier {0} is already linked to this Instructor.").format(
@@ -266,8 +282,23 @@ def get_timeline_data(doctype, name):
 
 @frappe.whitelist()
 def update_instructorlog(doc):
-    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster."""
+    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster.
 
+    A Desk form button. It had no check at all: the child-row ``save`` resolves
+    against the Instructor record, which is ``if_owner`` for the Instructor role,
+    so another instructor's log was not writable -- but the refusal came after
+    two unfiltered queries across every section and roster, and the loop commits
+    as it goes, so a later failure does not roll the earlier rows back (p008a
+    G6). Say who this is for, up front."""
+    frappe.only_for(
+        (
+            "Instructor",
+            "Program Chair",
+            "Registrar",
+            "Seminary Manager",
+            "System Manager",
+        )
+    )
     inst = frappe.get_doc("Instructor", doc)
     instructor = inst.name
 

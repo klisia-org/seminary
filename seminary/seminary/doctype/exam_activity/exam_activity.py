@@ -91,7 +91,11 @@ def set_total_points(questions):
     return points
 
 
-@frappe.whitelist()
+# p008a G6: not whitelisted. No caller in the SPA, the doctype JS or any Client
+# Script -- the live path is exam_submission.save_exam_draft / submit_exam. It had
+# no gate of any kind and wrote an Exam Submission (and File rows, from data: URLs
+# in the answers) with ignore_permissions, for any exam and any section. p007 2.7:
+# an endpoint with no caller is not an endpoint.
 def exam_summary(exam, course, time_taken, results):
     print("Time Taken", time_taken)
     print("Results", results)
@@ -204,7 +208,8 @@ def get_corrupted_image_msg():
     return _("Image: Corrupted Data Stream")
 
 
-@frappe.whitelist()
+# Not whitelisted: no caller in frontend/src, public/js or any doctype .js
+# (p007 §2.7, applied by p008a G8).
 def get_question_details(question):
     if frappe.db.exists("Exam Question", question):
         fields = ["name", "question", "question_detail", "points"]

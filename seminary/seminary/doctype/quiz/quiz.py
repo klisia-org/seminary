@@ -184,18 +184,13 @@ def quiz_summary(
             result["points"] = points
             score += points
 
-        elif question_details.type != "Open Ended":
-            correct = result["is_correct"][0]
-            for point in result["is_correct"]:
-                correct = correct and point
-            result["is_correct"] = correct
-
-            points = question_details.points if correct else 0
-            result["points"] = points
-            score += points
-
         else:
+            # Every Question.type is graded on the server above. This branch
+            # used to fold the CLIENT-sent is_correct into the score for any
+            # type it did not recognise; an unknown type now scores nothing
+            # until it gets a server-side grader of its own.
             result["is_correct"] = 0
+            result["points"] = 0
 
         percentage = (score / score_out_of) * 100
         result["answer"] = re.sub(
@@ -435,20 +430,6 @@ def get_corrupted_image_msg():
     return _("Image: Corrupted Data Stream")
 
 
-@frappe.whitelist()
-def get_question_details(question):
-    if frappe.db.exists("Quiz Question", question):
-        fields = ["name", "question", "type"]
-        for num in range(1, 5):
-            fields.append(f"option_{cstr(num)}")
-            fields.append(f"is_correct_{cstr(num)}")
-            fields.append(f"explanation_{cstr(num)}")
-            fields.append(f"possibility_{cstr(num)}")
-
-        return frappe.db.get_value("Quiz Question", question, fields, as_dict=1)
-    return
-
-
 def get_all_question_results(questions):
     """Answer keys. No browser caller; not an endpoint (p007 §2.7)."""
     if isinstance(questions, str):
@@ -468,9 +449,28 @@ def get_all_question_results(questions):
 
 
 @frappe.whitelist()
-def check_answer(question, type, answers):
+def check_answer(question, type, answers, quiz=None):
+    """Immediate per-question feedback, for quizzes that asked for it.
+
+    p005a A01-15 / p008a G8: this took an arbitrary ``question`` with no quiz or
+    enrolment context and answered correct/incorrect without limit -- at most 15
+    calls recover a multiple-choice key -- and the SPA calls it at submit for
+    EVERY quiz, so a ``show_answers = 0``, ``max_attempts = 1`` quiz could be
+    probed freely before the one attempt was spent. The client never needed the
+    verdict: ``quiz_summary`` grades everything on the server.
+
+    A verdict now needs a quiz that contains the question, that the caller may
+    take, and whose instructor turned on ``show_answers``. A caller who may take
+    the quiz but has no such context gets ``None`` rather than an error, so the
+    submit path (and an SPA bundle that predates the ``quiz`` argument) degrades
+    to "no feedback", not a failure. A caller with no claim on the question at
+    all gets PermissionError.
+    """
+    from seminary.seminary.utils import quiz_question_access
+
+    if not quiz_question_access(question, quiz):
+        return None
     answers = json.loads(answers)
-    print("Answers", answers)
     if type == "Choices":
         return check_choice_answers(question, answers)
     elif type == "Reading Report":

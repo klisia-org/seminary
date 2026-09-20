@@ -10,7 +10,10 @@ whether a role may touch the doctype at all; these hooks decide *which rows*:
   instructor of record, own sections for a grader or assistant), write only on
   sections they are listed on;
 * a Student: rows keyed to their own Student record or User;
-* someone who is both: the union.
+* someone who is both: the union;
+* **any other role the DocPerm grants**: left to the DocPerm. This factory
+  scopes the two roles it knows how to scope -- Instructor and Student -- and
+  has no opinion about anyone else (p005a A06-4, below).
 
 Hooks can only restrict what a DocPerm grants, so a role with no row on the
 doctype is unaffected by anything here.
@@ -20,6 +23,7 @@ import frappe
 
 from seminary.seminary.guards import (
     COURSE_FIELD,
+    _memo,
     _roles,
     course_of,
     current_student,
@@ -60,6 +64,49 @@ CONFIG = {
 
 def _esc(values):
     return ", ".join(frappe.db.escape(v) for v in values)
+
+
+# ------------------------------------------------------- roles outside the factory
+#
+# p005a A06-4. Both hooks used to end in a flat refusal -- ``return False`` /
+# ``"1=0"`` -- for anyone who was not a school role, an Instructor or a Student.
+# A has_permission hook is deny-only and runs BEFORE the role permissions, so
+# that refusal silently overrode the DocPerm for every other role on every
+# registered doctype: Withdrawal Request grants Accounts User and Accounts Manager
+# read and write at both permlevels, and the hook denied both (p007 §7.1 recorded
+# the Accounts exemption in the controller and never mirrored it here). Granting
+# a role from the Role Permission Manager appeared to work and did nothing.
+#
+# The scoped set is what this module is *for*; everything else is the DocPerm's
+# business. It is read through get_valid_perms, which honours Custom DocPerm, so
+# a grant made on a site is respected without a code change -- the two cannot
+# drift. Automatic roles are excluded on purpose: an "All" row is not a
+# deliberate grant to a distinct role, and must never switch row scoping off for
+# every student at once.
+
+SCOPED_ROLES = {"Instructor", "Student"}
+_AUTOMATIC_ROLES = {"Guest", "All", "Desk User", "Administrator"}
+
+
+def _granted_by_another_role(doctype, ptype, user):
+    """True when a role outside the factory's scope grants ``ptype`` on the
+    doctype to this user at permlevel 0 (if_owner rows are not a blanket grant
+    and are left to the DocPerm evaluation that follows)."""
+    ptype = ptype or "read"
+
+    def _compute():
+        from frappe.permissions import get_valid_perms
+
+        for perm in get_valid_perms(doctype, user):
+            if perm.role in SCOPED_ROLES or perm.role in _AUTOMATIC_ROLES:
+                continue
+            if perm.get("permlevel") or perm.get("if_owner"):
+                continue
+            if perm.get(ptype):
+                return True
+        return False
+
+    return _memo(("other_role", doctype, ptype, user), _compute)
 
 
 # ------------------------------------------------------------------ has_permission
@@ -125,6 +172,8 @@ def has_for(doctype):
     def has_permission(doc, ptype=None, user=None):
         user = user or frappe.session.user
         if is_school_role(user):
+            return True
+        if _granted_by_another_role(doctype, ptype, user):
             return True
         roles = _roles(user)
         if "Instructor" in roles and instructor_rule:
@@ -198,6 +247,8 @@ def query_for(doctype):
     def get_permission_query_conditions(user=None):
         user = user or frappe.session.user
         if is_school_role(user):
+            return ""
+        if _granted_by_another_role(doctype, "read", user):
             return ""
         parts = []
         roles = _roles(user)

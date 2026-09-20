@@ -247,7 +247,8 @@ def refresh_scripture_text(name):
     return {"name": doc.name, "type": doc.type}
 
 
-@frappe.whitelist()
+# Not whitelisted: no caller in frontend/src, public/js or any doctype .js
+# (p007 §2.7, applied by p008a G8).
 def get_question_details(question):
     if not has_course_instructor_role() or not has_course_moderator_role():
         return

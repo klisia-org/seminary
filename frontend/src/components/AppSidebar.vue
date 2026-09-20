@@ -9,7 +9,8 @@
 			<nav class="flex flex-col gap-1 overflow-y-auto px-3 pb-6">
 				<SidebarLink v-for="link in links" :key="link.to" :label="link.label" :to="link.to"
 					:isCollapsed="isSidebarCollapsed" :icon="link.icon" :badge="link.badge || 0" />
-				<template v-if="userResource?.data?.is_moderator || userResource?.data?.is_system_manager">
+				<template
+					v-if="userResource?.data?.is_moderator || userResource?.data?.is_system_manager || userResource?.data?.is_registrar">
 					<SidebarLink :label="__('Desk')" :to="'/desk/seminary'" :icon="MonitorCog"
 						:isCollapsed="isSidebarCollapsed" />
 				</template>
@@ -19,21 +20,16 @@
 			<div v-if="!isSidebarCollapsed" class="px-1 pb-1">
 				<PortalSwitcher :portals="visiblePortals" />
 			</div>
-			<button
-				type="button"
-				@click="toggleTheme"
+			<button type="button" @click="toggleTheme"
 				:title="theme === 'dark' ? __('Switch to light mode') : __('Switch to dark mode')"
 				class="group flex w-full min-h-[44px] cursor-pointer items-center rounded-lg text-ink-gray-8 transition-colors duration-200 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
-				:class="isSidebarCollapsed ? 'justify-center px-0 py-2' : 'justify-start px-3 py-2'"
-			>
+				:class="isSidebarCollapsed ? 'justify-center px-0 py-2' : 'justify-start px-3 py-2'">
 				<span class="grid h-5 w-6 flex-shrink-0 place-items-center">
 					<Sun v-if="theme === 'dark'" class="h-4.5 w-4.5 text-ink-gray-7" />
 					<Moon v-else class="h-4.5 w-4.5 text-ink-gray-7" />
 				</span>
-				<span
-					class="flex-shrink-0 text-base transition-all duration-200"
-					:class="isSidebarCollapsed ? 'ml-0 w-0 overflow-hidden opacity-0' : 'ml-3 w-auto opacity-100'"
-				>
+				<span class="flex-shrink-0 text-base transition-all duration-200"
+					:class="isSidebarCollapsed ? 'ml-0 w-0 overflow-hidden opacity-0' : 'ml-3 w-auto opacity-100'">
 					{{ theme === 'dark' ? __('Light mode') : __('Dark mode') }}
 				</span>
 			</button>
@@ -82,7 +78,7 @@ const { userResource } = usersStore();
 // data fetches below that would otherwise 403 in the console.
 const isMember = computed(() => {
 	const u = userResource?.data || {}
-	return !!(u.is_student || u.is_instructor || u.is_moderator || u.is_system_manager)
+	return !!(u.is_student || u.is_instructor || u.is_moderator || u.is_system_manager || u.is_registrar)
 });
 
 const unreadCount = createResource({

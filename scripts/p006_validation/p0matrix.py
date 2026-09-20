@@ -956,9 +956,28 @@ check(
     {"submission_name": FX["DS_B"], "grade": 90},
     403,
 )
+# p008a G2 (p005a A01-12): the grade writers are section-scoped as well as
+# role-gated. ES_B / AS_B live in section P0B, where instr3 is NOT staff (they
+# are of record on section A only) -- so these two rows used to assert the
+# vulnerability itself: an Instructor grading a section they have no stake in.
+# They now expect the refusal; instr2, of record on P0B, is the positive case.
 check(
-    "4.7 instr3 save_exam_grade",
+    "4.7 instr3 (not on P0B) save_exam_grade is refused (p008a G2)",
     "instr3",
+    "seminary.seminary.doctype.exam_submission.exam_submission.save_exam_grade",
+    {
+        "submission_name": FX["ES_B"],
+        "status": "Graded",
+        "score": 1,
+        "percentage": 100,
+        "fudge_points": 0,
+        "result": [],
+    },
+    403,
+)
+check(
+    "4.7 instr2 (of record on P0B) save_exam_grade",
+    "instr2",
     "seminary.seminary.doctype.exam_submission.exam_submission.save_exam_grade",
     {
         "submission_name": FX["ES_B"],
@@ -971,8 +990,15 @@ check(
     not_403,
 )
 check(
-    "4.7 instr3 grade_assignment",
+    "4.7 instr3 (not on P0B) grade_assignment is refused (p008a G2)",
     "instr3",
+    "seminary.seminary.doctype.assignment_submission.assignment_submission.grade_assignment",
+    {"name": FX["AS_B"], "result": "Graded", "comments": "x"},
+    403,
+)
+check(
+    "4.7 instr2 (of record on P0B) grade_assignment",
+    "instr2",
     "seminary.seminary.doctype.assignment_submission.assignment_submission.grade_assignment",
     {
         "name": FX["AS_B"],

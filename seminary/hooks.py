@@ -268,6 +268,8 @@ notification_config = "seminary.notifications.get_notification_config"
 
 permission_query_conditions = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
+    # p008a G8: the list must not show a folder a per-document read would deny.
+    "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.get_permission_query_conditions",
     # Competency assessments and results carry a student's own account of their
     # formation; the list view must not become a way to read a classmate's.
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
@@ -316,6 +318,7 @@ permission_query_conditions = {
 # Students can only see their own Diplomas
 has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
+    "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.has_permission",
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.has_permission",
@@ -599,6 +602,10 @@ scheduler_events = {
         # Generated Course Packs are reproducible artifacts, so they expire rather
         # than accumulate one stored copy per export (privatedocs/p004).
         "seminary.seminary.course_pack.export.cleanup_old_packs",
+        # Course folder download archives are reproducible artifacts keyed by a
+        # hash of the folder's contents; superseded ones are retired at build
+        # time, and this expires the rest (p008 F17a).
+        "seminary.api.folder_archive.cleanup_stale_archives",
         # A direct upload the user abandoned leaves an object no File row will ever
         # reference, and nothing in the database to notice it (privatedocs/p004).
         "seminary.storage.direct.sweep_pending_uploads",

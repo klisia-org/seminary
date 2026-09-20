@@ -56,6 +56,8 @@ from seminary.seminary.guards import (
     SCHOOL_ROLES,
     is_course_staff,
     is_enrolled,
+    is_grader,
+    may_read_course_schedule,
     own_or_staff,
     require_course_staff,
     require_enrolled,
@@ -1396,9 +1398,17 @@ def get_lesson_due_date(lesson):
 
 
 def render_html(lesson):
-    youtube = lesson.youtube
-    quiz_id = lesson.quiz_id
-    body = lesson.body
+    """The legacy ``body`` of a lesson, with the legacy youtube/quiz/assignment
+    macros around it.
+
+    ``body`` is empty on every lesson written in the block editor -- its content
+    is EditorJS JSON in ``content`` -- and concatenating that None raised a
+    TypeError, so ``get_lesson`` returned a 500 for such a lesson and the whole
+    page failed to open (found on the p008 browser pass). Nothing here is
+    required to be set."""
+    youtube = lesson.youtube or ""
+    quiz_id = lesson.quiz_id or ""
+    body = lesson.body or ""
 
     if youtube and "/" in youtube:
         youtube = youtube.split("/")[-1]
@@ -1409,7 +1419,11 @@ def render_html(lesson):
 
     if lesson.question:
         assignment = (
-            "{{ Assignment('" + lesson.question + "-" + lesson.file_type + "') }}"
+            "{{ Assignment('"
+            + lesson.question
+            + "-"
+            + (lesson.file_type or "")
+            + "') }}"
         )
         text = text + assignment
 
@@ -1562,8 +1576,70 @@ def get_lesson_creation_details(course, chapter, lesson):
     }
 
 
+# --- who may see a quiz question, and when its explanations may travel ---------
+#
+# p005a A01-15 / p008a G8. These endpoints had no gate, and returned
+# explanation_1..4 BEFORE the student answered. Only correct options carry an
+# explanation (see the note in frontend Modals/Question.vue), so the presence of
+# one marks the right answer: the key was in the pre-answer payload, readable in
+# devtools by anyone taking the quiz and -- ungated -- by any session at all.
+#
+# The anchor is the QUIZ, not the Question: Question.course is optional and
+# mostly blank, while a Quiz names the catalogue Course it belongs to, which is
+# exactly what user_is_enrolled_in_course() takes.
+
+
+def _quizzes_containing(question):
+    return frappe.get_all(
+        "Quiz Question",
+        filters={"question": question, "parenttype": "Quiz"},
+        pluck="parent",
+        distinct=True,
+    )
+
+
+def _may_take_quiz(quiz):
+    """A grader, or a student enrolled in a section of the quiz's Course. A quiz
+    with no Course recorded (standalone) stays open to any Student, as before."""
+    if is_grader():
+        return True
+    course = frappe.db.get_value("Quiz", quiz, "course")
+    if not course:
+        return "Student" in frappe.get_roles()
+    return user_is_enrolled_in_course(course)
+
+
+def quiz_question_access(question, quiz=None):
+    """Gate a quiz question read. Returns True when explanations may be included.
+
+    With ``quiz``: the question must belong to it and the caller must be able to
+    take it. Without: the caller must be able to take at least one quiz that
+    contains the question. Explanations travel only to graders, or when a quiz
+    context is given and the instructor opted into immediate feedback
+    (``show_answers``) -- at which point the key is obtainable by design.
+    """
+    if is_grader():
+        return True
+    denied = _("You are not enrolled in a course that uses this question.")
+    containing = _quizzes_containing(question)
+    if quiz:
+        if quiz not in containing or not _may_take_quiz(quiz):
+            frappe.throw(denied, frappe.PermissionError)
+        return bool(cint(frappe.db.get_value("Quiz", quiz, "show_answers")))
+    if not any(_may_take_quiz(q) for q in containing):
+        frappe.throw(denied, frappe.PermissionError)
+    return False
+
+
+def _strip_explanations(row):
+    for i in range(1, 5):
+        row.pop(f"explanation_{i}", None)
+    return row
+
+
 @frappe.whitelist()
-def get_question_details(question):
+def get_question_details(question, quiz=None):
+    with_explanations = quiz_question_access(question, quiz)
     fields = [
         "question",
         "type",
@@ -1590,14 +1666,40 @@ def get_question_details(question):
             fields=["reference", "resolved_ref", "fetched_text"],
             order_by="idx",
         )
+    if not with_explanations:
+        _strip_explanations(question_details)
     return question_details
 
 
 @frappe.whitelist()
 def get_all_questions_details(questions):
+    """``questions`` are Quiz Question row names, so the quiz is derived from the
+    rows themselves (``qq.parent``) and the caller cannot name a friendlier one."""
     if isinstance(questions, str):
         questions = frappe.parse_json(questions)
     questions = [q for q in (questions or []) if q]
+    if not questions:
+        return []
+
+    grader = is_grader()
+    parents = frappe.get_all(
+        "Quiz Question",
+        filters={"name": ["in", questions], "parenttype": "Quiz"},
+        fields=["name", "parent"],
+    )
+    show_answers = {}
+    for quiz in {r.parent for r in parents}:
+        if not grader and not _may_take_quiz(quiz):
+            frappe.throw(
+                _("You are not enrolled in a course that uses this quiz."),
+                frappe.PermissionError,
+            )
+        show_answers[quiz] = bool(
+            cint(frappe.db.get_value("Quiz", quiz, "show_answers"))
+        )
+    reveal = {r.name: grader or show_answers.get(r.parent, False) for r in parents}
+    # rows that are not Quiz Question rows of any quiz are not served at all
+    questions = [q for q in questions if q in reveal]
     if not questions:
         return []
 
@@ -1640,6 +1742,9 @@ where q.name = qq.question and qq.name in ({placeholders})""",
             if row.get("type") == "Scripture Matching":
                 row["matching_items"] = items_by_parent.get(row["question"], [])
 
+    for row in all_question_details:
+        if not reveal.get(row["name"]):
+            _strip_explanations(row)
     return all_question_details
 
 
@@ -2312,7 +2417,12 @@ def _create_single_topic(doctype, docname):
             "reference_docname": docname,
         }
     )
-    doc.insert()
+    # The container, not the content: one topic per lesson, created by the
+    # system the first time anyone opens the thread. Students hold no create on
+    # Discussion Topic (nor should they), and the sibling create_discussion_topic
+    # has always inserted this way. The reply -- what a person actually writes --
+    # is gated by _require_reference_read above.
+    doc.insert(ignore_permissions=True)
     return doc
 
 
@@ -2464,12 +2574,23 @@ def delete_discussion_reply(name):
 
 
 def _require_reference_read(doctype, docname):
-    """A lesson discussion is readable by whoever may read the lesson (p007 §2.5)."""
-    if (
-        not doctype
-        or not docname
-        or not frappe.has_permission(doctype, "read", docname)
-    ):
+    """A lesson discussion is readable by whoever may read the lesson (p007 §2.5).
+
+    For a Course Lesson that is NOT the Course Lesson DocPerm. p007 F1 took
+    Student read off the doctype on purpose -- a student reads a lesson through
+    the enrolment-checked ``get_lesson``, never through ``frappe.client`` -- so
+    asking ``has_permission`` here refused every student, and lesson discussions
+    stopped working for students the day that landed (found by the p008
+    student-path sweep, the same shape as ``save_progress``). Ask the section,
+    which is the rule ``get_lesson`` itself applies."""
+    if not doctype or not docname:
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if doctype == "Course Lesson":
+        course_schedule = frappe.db.get_value("Course Lesson", docname, "course_sc")
+        if course_schedule and may_read_course_schedule(course_schedule):
+            return
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    if not frappe.has_permission(doctype, "read", docname):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 

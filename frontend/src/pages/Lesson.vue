@@ -462,7 +462,14 @@ const isValidJSON = (str) => {
 	max-width: unset;
 }
 
-.codex-editor__redactor {
+/* Read-only viewer: editorjs reserves a 300px "click here to append a block"
+   zone below the last block, which is dead space in a lesson nobody can edit.
+   Scope it to this page's two holders -- this <style> is NOT scoped, so the
+   bare rule also landed on the lesson FORM's editor, where that zone is the
+   only way to get a caret after a block with no contenteditable of its own
+   (an embed, a PDF, a table, an activity). */
+#editor .codex-editor__redactor,
+#instructor-content .codex-editor__redactor {
 	padding-bottom: 0px !important;
 }
 

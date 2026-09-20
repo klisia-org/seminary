@@ -287,6 +287,107 @@ def user_may_read(folder, user: str | None = None) -> bool:
     return _on_active_roster(student, sections)
 
 
+# --- row-level hooks (registered in hooks.py) --------------------------------
+#
+# p008a G8 / p005a A01-15. The controller's has_permission override below makes
+# a per-document read follow `user_may_read`, but a LIST is not a per-document
+# read: frappe.client.get_list applied the DocPerm alone, so a student could list
+# every Course Folder in the school -- name, scope, owning instructor, File
+# reference -- including personal Instructor-scope folders that the same student
+# gets 403 on when opening. The register called this "half-wired"; this is the
+# other half. The condition mirrors `user_may_read` clause by clause, so the
+# list shows exactly the folders a per-document read would allow
+# (test_p008a_course_folder_list asserts the two agree).
+
+_READ_LIKE = {"read", "select", "print", "email", "report", "export"}
+
+
+def has_permission(doc, ptype=None, user=None):
+    """Module-level twin of the controller override, for callers that go through
+    ``frappe.has_permission(..., doc=)`` instead of ``doc.has_permission`` -- a
+    File read that resolves through its host folder, for one. Deny-only: True
+    defers to the DocPerm."""
+    user = user or frappe.session.user
+    ptype = ptype or "read"
+    if ptype in _READ_LIKE:
+        return user_may_read(doc, user)
+    if ptype == "write":
+        return user_may_write(doc, user)
+    return True
+
+
+def _in(values) -> str:
+    return ", ".join(frappe.db.escape(v) for v in values)
+
+
+def get_permission_query_conditions(user=None):
+    from seminary.seminary.guards import instructor_tier, own_course_schedules
+
+    user = user or frappe.session.user
+    if not user or user == "Guest":
+        return "1=0"
+    if user == "Administrator":
+        return ""
+    roles = _roles(user)
+    if roles & CHAIR_ROLES or instructor_tier(user) == "record":
+        return ""
+
+    cf = "`tabCourse Folder`"
+    parts = []
+    if roles & SCHOOL_READER_ROLES:
+        parts.append(f"{cf}.scope = 'School'")
+
+    # The sections this user reaches: listed on them as an instructor, or on
+    # their active roster as a student -- the same two legs as user_may_read.
+    sections = set()
+    if "Instructor" in roles:
+        sections |= set(own_course_schedules(user) or [])
+    student = _student_for(user)
+    if student:
+        sections |= set(
+            frappe.get_all(
+                "Scheduled Course Roster",
+                filters={"student": student, "active": 1},
+                pluck="course_sc",
+            )
+        )
+    sections = {s for s in sections if s}
+    if sections:
+        sec = _in(sorted(sections))
+        courses = {
+            c
+            for c in frappe.get_all(
+                "Course Schedule",
+                filters={"name": ["in", list(sections)]},
+                pluck="course",
+            )
+            if c
+        }
+        parts.append(f"({cf}.scope = 'Section' and {cf}.course_schedule in ({sec}))")
+        if courses:
+            crs = _in(sorted(courses))
+            parts.append(
+                f"({cf}.scope = 'Course' and ({cf}.course in ({crs}) or exists ("
+                f"select 1 from `tabCourse Folder Share` sh where sh.parent = {cf}.name "
+                f"and sh.parenttype = 'Course Folder' and sh.course in ({crs}))))"
+            )
+        # Instructor scope: the folder's instructor (or one it is shared with)
+        # teaches one of MY sections of the folder's own course.
+        parts.append(
+            f"({cf}.scope = 'Instructor' and exists ("
+            f"select 1 from `tabCourse Schedule Instructors` csi "
+            f"join `tabCourse Schedule` cs on cs.name = csi.parent "
+            f"where csi.parenttype = 'Course Schedule' and csi.parent in ({sec}) "
+            f"and cs.course = {cf}.course "
+            f"and (csi.instructor = {cf}.instructor or csi.instructor in ("
+            f"select ish.instructor from `tabCourse Folder Instructor Share` ish "
+            f"where ish.parent = {cf}.name and ish.parenttype = 'Course Folder'))))"
+        )
+    if not parts:
+        return "1=0"
+    return "(" + " or ".join(parts) + ")"
+
+
 def user_may_write(folder, user: str | None = None) -> bool:
     """The write rule of ADR §2.2a: doctype write roles, narrowed by scope."""
     user = user or frappe.session.user

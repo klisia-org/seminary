@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import validate_url, validate_email_address, sanitize_html
 from frappe.email.doctype.email_template.email_template import get_email_template
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
-from seminary.seminary.guards import is_grader, require_grader
+from seminary.seminary.guards import is_grader, require_course_staff, require_grader
 
 
 class AssignmentSubmission(Document):
@@ -199,7 +199,9 @@ def upload_assignment(
             "answer": answer,
         }
     )
-    doc.save(ignore_permissions=True)
+    # ignore_permissions stays OFF: `status` and `comments` are permlevel 1
+    # (p007 F3) and the grading roles hold that write row.
+    doc.save()
     return doc.name
 
 
@@ -219,8 +221,15 @@ def get_assignment(lesson):
 
 @frappe.whitelist()
 def grade_assignment(name, result, comments):
+    """Save a grade on an Assignment Submission.
+
+    Section-scoped as well as role-gated: ``require_grader()`` alone would let a
+    grader on one section grade every submission in the school, because the
+    Instructor role includes the section tier (p005a A01-12).
+    """
     require_grader()
     doc = frappe.get_doc("Assignment Submission", name)
+    require_course_staff(doc.course)
     doc.status = result
     doc.comments = (
         sanitize_html(comments, always_sanitize=True) if comments else comments

@@ -27,10 +27,9 @@ IMPORT_ROLES = ("Program Chair", "Seminary Manager", "Registrar")
 CHAPTER_FIELDS = (
     "chapter_title",
     "is_scorm_package",
-    "scorm_package_path",
-    "manifest_file",
-    "launch_file",
-)  # scorm_package (Link -> File) handled via the media map
+)  # scorm_package (Link -> File) handled via the media map. The three extracted-
+# path fields are gone with the extraction itself (p008 F8): a path is not
+# portable between sites, and one taken from a manifest is not to be trusted.
 
 LESSON_FIELDS = (
     "lesson_title",
@@ -207,3 +206,45 @@ ACTIVITY_BLOCKS = {
     # reference carry `folder` alone — see editorjs.scan_folder_refs.
     "folder": ("folder_ref", "Course Folder"),
 }
+
+
+# ---------------------------------------------------------------------------
+# Import-side trust (privatedocs p008 F9; ADR 041 "Import-side trust").
+#
+# A pack is UNTRUSTED INPUT -- it is a zip file from another school. The tuples
+# above have governed what the exporter writes since day one; the importer used
+# to ignore them, instantiating whatever `doctype` the manifest named and
+# update()-ing it with whatever fields it carried, under ignore_permissions
+# (p005 A01-7, Critical: a pack containing a User with System Manager, or a
+# Client Script). These maps make the same allow-lists govern the import.
+#
+# An unknown FIELD is dropped silently -- that is version skew between sites. An
+# unknown DOCTYPE throws -- that is not skew, it is the attack.
+# ---------------------------------------------------------------------------
+
+IMPORTABLE_DOCTYPES = {
+    "questions": {
+        "Question": QUESTION_FIELDS,
+        "Open Question": OPEN_QUESTION_FIELDS,
+    },
+    "activities": {
+        "Quiz": QUIZ_FIELDS,
+        "Exam Activity": EXAM_FIELDS,
+        "Assignment Activity": ASSIGNMENT_FIELDS,
+        "Discussion Activity": DISCUSSION_FIELDS,
+    },
+}
+
+# Decompression and size caps; each can be raised in site_config.json.
+MAX_PACK_BYTES = 2 * 1024**3  # course_pack_max_bytes: the zip itself
+MAX_PACK_UNCOMPRESSED_BYTES = 4 * 1024**3  # course_pack_max_uncompressed_bytes
+MAX_PACK_ENTRIES = 20000  # course_pack_max_entries
+# Per member, because the total above is a *sum*: a conforming pack carrying one
+# 4 GB entry passed every other check, and `zf.read` plus the File insert then
+# held two copies of it in the worker (p008 F17b).
+MAX_PACK_MEMBER_BYTES = 1024**3  # course_pack_max_member_bytes
+MAX_PACK_MANIFEST_BYTES = 8 * 1024**2  # course_pack_max_manifest_bytes
+# A ratio check only means something on a payload big enough to hurt: a small
+# pack that is mostly JSON compresses very well and is no bomb.
+PACK_RATIO_FLOOR_BYTES = 100 * 1024**2
+MAX_PACK_RATIO = 200

@@ -24,10 +24,54 @@ from frappe.utils import formatdate, nowdate, now
 
 from . import editorjs
 from .constants import (
+    ASSESSMENT_DIMENSION_WEIGHT_FIELDS,
+    CHAPTER_FIELDS,
+    COURSE_COMPETENCY_DIMENSION_FIELDS,
+    COURSE_COMPETENCY_FIELDS,
+    EXAM_QUESTION_FIELDS,
+    GRADING_SCALE_DIMENSION_FIELDS,
+    GRADING_SCALE_FIELDS,
+    GRADING_SCALE_INTERVAL_FIELDS,
     IMPORT_ROLES,
+    IMPORTABLE_DOCTYPES,
+    LESSON_FIELDS,
     LESSON_SCAC_LINK_FIELDS,
+    MAX_PACK_BYTES,
+    MAX_PACK_ENTRIES,
+    MAX_PACK_MEMBER_BYTES,
+    MAX_PACK_MANIFEST_BYTES,
+    MAX_PACK_RATIO,
+    MAX_PACK_UNCOMPRESSED_BYTES,
     PACK_FORMAT_VERSION,
+    PACK_RATIO_FLOOR_BYTES,
+    QUIZ_QUESTION_FIELDS,
+    SCAC_FIELDS,
+    SCRIPTURE_MATCHING_ITEM_FIELDS,
 )
+
+
+def _only(fields, allowed):
+    """The manifest's field dict, reduced to the pack allow-list (p008 F9). What
+    the exporter never writes, the importer never reads -- so `owner`,
+    `docstatus`, `name`, `doctype`, `parent` and the like cannot ride in."""
+    if not isinstance(fields, dict):
+        return {}
+    return {k: v for k, v in fields.items() if k in allowed}
+
+
+def _importable(section, doctype):
+    """The field allow-list for a record of ``doctype`` in manifest ``section``,
+    or a refusal: a doctype the pack format does not define is not version skew."""
+    allowed = IMPORTABLE_DOCTYPES[section].get(doctype)
+    if allowed is None:
+        frappe.throw(
+            _(
+                "This Course Pack contains a record type this site will not import: {0}."
+            ).format(frappe.utils.escape_html(str(doctype))),
+            frappe.ValidationError,
+        )
+    return allowed
+
 
 _SCAC_ACTIVITY_FIELDS = ("quiz", "assignment", "exam", "discussion")
 
@@ -118,12 +162,14 @@ class _Importer:
                 )
             return name
         gs = frappe.new_doc("Grading Scale")
-        gs.update(dep["record"])
+        gs.update(_only(dep.get("record"), GRADING_SCALE_FIELDS))
         gs.grading_scale_name = name
         for iv in dep.get("intervals") or []:
-            gs.append("intervals", iv)
+            gs.append("intervals", _only(iv, GRADING_SCALE_INTERVAL_FIELDS))
         for dim in dep.get("dimensions") or []:
-            gs.append("gradingscaledimensions", dim)
+            gs.append(
+                "gradingscaledimensions", _only(dim, GRADING_SCALE_DIMENSION_FIELDS)
+            )
         gs.flags.ignore_permissions = True
         gs.insert(ignore_mandatory=True)
         return gs.name
@@ -146,10 +192,10 @@ class _Importer:
                 self.competency_map[code] = existing
                 continue
             doc = frappe.new_doc("Course Competency")
-            doc.update(rec["fields"])
+            doc.update(_only(rec.get("fields"), COURSE_COMPETENCY_FIELDS))
             doc.course = course
             for dim in rec.get("dimensions") or []:
-                doc.append("dimensions", dim)
+                doc.append("dimensions", _only(dim, COURSE_COMPETENCY_DIMENSION_FIELDS))
             doc.flags.ignore_permissions = True
             doc.insert(ignore_mandatory=True)
             self.competency_map[code] = doc.name
@@ -188,6 +234,13 @@ class _Importer:
             n += 1
         course = frappe.new_doc("Course")
         course.course_name = final
+        # coursecode is mandatory and unique on Course, and it was never set
+        # here (insert runs with ignore_mandatory). Course Competency names
+        # itself "{coursecode}-{competency_code}", so every competency of every
+        # imported course was named "-<code>" -- and the second import of any
+        # pack collided with the first (p006 §7.3, p008 F10). The manifest has
+        # carried the source's code all along.
+        course.coursecode = self._unique_coursecode(final)
         course.default_grading_scale = self.grading_scale
         course.flags.ignore_permissions = True
         course.insert(ignore_mandatory=True)
@@ -198,6 +251,18 @@ class _Importer:
                 )
             )
         return course.name
+
+    def _unique_coursecode(self, course_name):
+        source = self.m.get("source") if isinstance(self.m.get("source"), dict) else {}
+        base = str(source.get("course_code") or "").strip()
+        # a code is an identifier: no markup, no path, bounded
+        base = "".join(c for c in base if c.isalnum() or c in "-_ .")[:60].strip()
+        base = base or frappe.scrub(course_name).upper()[:60]
+        code, n = base, 2
+        while frappe.db.exists("Course", {"coursecode": code}):
+            code = f"{base}-{n}"
+            n += 1
+        return code
 
     # --- media ------------------------------------------------------------
     def import_media(self):
@@ -224,7 +289,10 @@ class _Importer:
                     "doctype": "File",
                     "file_name": fname,
                     "content": blob,
-                    "is_private": meta.get("is_private", 0),
+                    # Always private, whatever the manifest says -- as the folder
+                    # files below already are. file_policy adopts it onto the new
+                    # section when the lesson that embeds it is saved.
+                    "is_private": 1,
                 }
             ).insert(ignore_permissions=True)
             self.url_map[orig_url] = f.file_url
@@ -367,34 +435,44 @@ class _Importer:
     # --- questions / activities ------------------------------------------
     def import_questions(self):
         for src, rec in (self.m.get("questions") or {}).items():
+            allowed = _importable("questions", rec.get("doctype"))
             d = frappe.new_doc(rec["doctype"])
-            d.update(self._rw(rec["fields"]))
+            d.update(self._rw(_only(rec.get("fields"), allowed)))
             if rec["doctype"] == "Question":
                 d.course = self.course
                 for it in rec.get("matching_items") or []:
-                    d.append("matching_items", it)
+                    d.append(
+                        "matching_items", _only(it, SCRIPTURE_MATCHING_ITEM_FIELDS)
+                    )
             d.flags.ignore_permissions = True
             d.insert(ignore_mandatory=True)
             self.q_map[src] = d.name
 
     def import_activities(self):
         for src, rec in (self.m.get("activities") or {}).items():
-            dt = rec["doctype"]
+            dt = rec.get("doctype")
+            allowed = _importable("activities", dt)
             d = frappe.new_doc(dt)
-            d.update(self._rw(rec.get("fields") or {}))
+            d.update(self._rw(_only(rec.get("fields"), allowed)))
             if self._has_field(dt, "course"):
                 d.course = self.course
             if dt == "Quiz":
                 for qq in rec.get("questions") or []:
                     d.append(
                         "questions",
-                        {"question": self.q_map.get(qq["question"]), **qq["fields"]},
+                        {
+                            **_only(qq.get("fields"), QUIZ_QUESTION_FIELDS),
+                            "question": self.q_map.get(qq.get("question")),
+                        },
                     )
             elif dt == "Exam Activity":
                 for eq in rec.get("questions") or []:
                     d.append(
                         "questions",
-                        {"question": self.q_map.get(eq["question"]), **eq["fields"]},
+                        {
+                            **_only(eq.get("fields"), EXAM_QUESTION_FIELDS),
+                            "question": self.q_map.get(eq.get("question")),
+                        },
                     )
             self._dedupe_unique(d)
             d.flags.ignore_permissions = True
@@ -445,6 +523,11 @@ class _Importer:
         for idx, rec in enumerate(self.m.get("scac") or [], start=1):
             row = frappe.get_doc(
                 {
+                    # The pack's fields go FIRST and filtered: spread last and
+                    # unfiltered, as they were, a manifest could override
+                    # `doctype` and `parent` here -- a second way to instantiate
+                    # any doctype, which p005 A01-7 did not list.
+                    **_only(rec.get("fields"), SCAC_FIELDS),
                     "doctype": "Scheduled Course Assess Criteria",
                     "parent": cs.name,
                     "parenttype": "Course Schedule",
@@ -458,7 +541,6 @@ class _Importer:
                     "course_competency": self.competency_map.get(
                         rec.get("competency_code")
                     ),
-                    **rec["fields"],
                 }
             )
             row.flags.ignore_permissions = True
@@ -466,7 +548,7 @@ class _Importer:
             self.scac_map[rec["src_name"]] = row.name
             for w in rec.get("dimension_weights") or []:
                 weight = frappe.new_doc("Assessment Dimension Weight")
-                weight.update(w)
+                weight.update(_only(w, ASSESSMENT_DIMENSION_WEIGHT_FIELDS))
                 weight.assess_criteria = row.name
                 weight.flags.ignore_permissions = True
                 weight.insert(ignore_mandatory=True)
@@ -477,7 +559,7 @@ class _Importer:
         for cidx, chrec in enumerate(self.m.get("chapters") or [], start=1):
             ch = frappe.new_doc("Course Schedule Chapter")
             ch.coursesc = cs.name
-            ch.update(self._rw(chrec["fields"]))
+            ch.update(self._rw(_only(chrec.get("fields"), CHAPTER_FIELDS)))
             ch.course_competency = self.competency_map.get(chrec.get("competency_code"))
             if chrec.get("scorm_media") and chrec["scorm_media"] in self.url_map:
                 ch.scorm_package = frappe.db.get_value(
@@ -492,7 +574,11 @@ class _Importer:
                 lrec = self.m["lessons"][lsrc]
                 les = frappe.new_doc("Course Lesson")
                 les.chapter = ch.name
-                les.update(self._rewrite_lesson_fields(lrec["fields"]))
+                les.update(
+                    self._rewrite_lesson_fields(
+                        _only(lrec.get("fields"), LESSON_FIELDS)
+                    )
+                )
                 les.flags.ignore_permissions = True
                 les.insert(ignore_mandatory=True)
                 self.l_map[lsrc] = les.name
@@ -536,28 +622,22 @@ class _Importer:
         return out
 
     def _reextract_scorm(self, ch):
+        """Kept under its old name for the call site; it no longer extracts.
+
+        This used to unpack the package into public/scorm/<course>/<title>/ with
+        the title taken from the PACK'S MANIFEST -- a remote file write for
+        anyone who could get a pack imported (p005a A05-8). Packages are stored,
+        not unpacked (p008 F8): pin the File to its new chapter and clear the
+        three path fields a manifest may have carried."""
         if not (ch.get("is_scorm_package") and ch.get("scorm_package")):
             return
-        from seminary.seminary.api import (
-            extract_package,
-            get_launch_file,
-            get_manifest_file,
-        )
+        from seminary.seminary.api import pin_scorm_package
 
-        pkg = frappe._dict({"name": ch.scorm_package})
-        extract_path = extract_package(self.course, ch.chapter_title, pkg)
-        manifest_file = get_manifest_file(extract_path)
-        launch_file = get_launch_file(extract_path)
+        pin_scorm_package(ch.name, ch.scorm_package)
         frappe.db.set_value(
             "Course Schedule Chapter",
             ch.name,
-            {
-                "scorm_package_path": extract_path.split("public")[1],
-                "manifest_file": (
-                    manifest_file.split("public")[1] if manifest_file else None
-                ),
-                "launch_file": launch_file.split("public")[1] if launch_file else None,
-            },
+            {"scorm_package_path": None, "manifest_file": None, "launch_file": None},
         )
 
     def remap_lesson_scac_links(self):
@@ -639,17 +719,11 @@ class _Importer:
             )
 
 
-def _read_pack_bytes(file_url):
-    name = frappe.db.get_value("File", {"file_url": file_url}, "name")
-    if not name:
-        frappe.throw(_("Uploaded Course Pack file not found."))
-    content = frappe.get_doc("File", name).get_content(encodings=[])
-    if isinstance(content, str):
-        content = content.encode("utf-8")
-    return content
+def _cap(key, default):
+    return int(frappe.conf.get(key) or default)
 
 
-def _validate_pack(manifest):
+def _require_import_role():
     roles = set(frappe.get_roles(frappe.session.user))
     if not roles.intersection(IMPORT_ROLES):
         frappe.throw(
@@ -658,6 +732,65 @@ def _validate_pack(manifest):
             ),
             frappe.PermissionError,
         )
+
+
+def _read_pack_bytes(file_url):
+    """The pack's bytes, from a File the caller may read.
+
+    p005a A08-6: this used to resolve ANY File by URL with no permission check,
+    and it ran before the role check -- so any logged-in user could have the
+    importer read any file on the site in full into worker memory (and, with
+    object storage, stream a multi-gigabyte object back to do it). The size is
+    checked from the File row before a byte is read."""
+    name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+    if not name:
+        frappe.throw(_("Uploaded Course Pack file not found."))
+    doc = frappe.get_doc("File", name)
+    doc.check_permission("read")
+    if doc.is_folder or not (doc.file_name or "").lower().endswith(".zip"):
+        frappe.throw(_("A Course Pack is a .zip file."))
+    limit = _cap("course_pack_max_bytes", MAX_PACK_BYTES)
+    if (doc.file_size or 0) > limit:
+        frappe.throw(_("This Course Pack is larger than this site accepts."))
+    content = doc.get_content(encodings=[])
+    if isinstance(content, str):
+        content = content.encode("utf-8")
+    return content
+
+
+def _check_zip_bounds(zf, compressed_size):
+    """Refuse a decompression bomb BEFORE anything in the archive is read
+    (p005 A10-3). Sizes come from the central directory, so this costs nothing."""
+    infos = zf.infolist()
+    if len(infos) > _cap("course_pack_max_entries", MAX_PACK_ENTRIES):
+        frappe.throw(_("This Course Pack has too many files."))
+    total = sum(i.file_size for i in infos)
+    if total > _cap("course_pack_max_uncompressed_bytes", MAX_PACK_UNCOMPRESSED_BYTES):
+        frappe.throw(_("This Course Pack is too large once unpacked."))
+    # The total above is a sum, so one enormous member passed it (p008 F17b).
+    # Every member is read whole -- `zf.read` into a bytes, then a File document
+    # holding the same bytes -- so a single entry is what actually sizes the
+    # worker, not the archive.
+    member_cap = _cap("course_pack_max_member_bytes", MAX_PACK_MEMBER_BYTES)
+    if any(i.file_size > member_cap for i in infos):
+        frappe.throw(_("This Course Pack contains a file that is too large."))
+    if total > PACK_RATIO_FLOOR_BYTES and compressed_size:
+        if total / compressed_size > MAX_PACK_RATIO:
+            frappe.throw(_("This Course Pack does not look like a course pack."))
+    try:
+        manifest = zf.getinfo("manifest.json")
+    except KeyError:
+        frappe.throw(_("This file is not a Course Pack (no manifest)."))
+    if manifest.file_size > _cap(
+        "course_pack_max_manifest_bytes", MAX_PACK_MANIFEST_BYTES
+    ):
+        frappe.throw(_("This Course Pack's manifest is too large."))
+
+
+def _validate_pack(manifest):
+    _require_import_role()
+    if not isinstance(manifest, dict):
+        frappe.throw(_("This Course Pack's manifest is not valid."))
     version = manifest.get("pack_format_version")
     if version is None or version > PACK_FORMAT_VERSION:
         frappe.throw(
@@ -677,8 +810,18 @@ def import_pack_from_bytes(
     section=None,
     instructor=None,
 ):
-    """Core import from raw zip bytes — reusable in tests."""
-    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+    """Core import from raw zip bytes — reusable in tests.
+
+    Order matters (p005 A10-3): the role, then the archive's bounds, and only
+    then is anything inside it read or parsed. The role is checked here as well
+    as in the whitelisted wrapper so the console path is not a way round it."""
+    _require_import_role()
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(content))
+    except zipfile.BadZipFile:
+        frappe.throw(_("This file is not a Course Pack (not a zip archive)."))
+    with archive as zf:
+        _check_zip_bounds(zf, len(content))
         manifest = json.loads(zf.read("manifest.json"))
         _validate_pack(manifest)
         return _Importer(
@@ -707,6 +850,7 @@ def import_course_pack(
     result. `target_mode` is 'new' or 'existing'. `instructor` is the destination
     Instructor: the pack's Instructor- and Section-scope folders become that
     professor's Instructor folders (Course folders when it is left empty)."""
+    _require_import_role()  # before any I/O (p005 A10-3, p005a A08-6)
     content = _read_pack_bytes(file_url)
     return import_pack_from_bytes(
         content,
