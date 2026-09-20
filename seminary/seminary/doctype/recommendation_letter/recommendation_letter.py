@@ -3,6 +3,8 @@
 
 import secrets
 
+import hashlib
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -66,7 +68,17 @@ class RecommendationLetter(Document):
         )
         dedupe_key = f"recommendation-request::{self.name}"
         if resend:
-            dedupe_key += f"::{self.request_token}"
+            # A *hash* of the token, never the token (p010 H10, p005a A04-4).
+            # `comms._insert_log` persists this into
+            # `Communication Log.idempotency_key`, a plain Data field that
+            # `communication_log_permissions.STAFF_BYPASS` lets four staff roles
+            # read unrestricted -- so the live 256-bit recommender token was
+            # sitting in cleartext in a second, more widely readable column,
+            # readable by the same roles A06-1 names as the forgery threat.
+            # The dedupe property is preserved exactly: a new token still gives
+            # a new key.
+            digest = hashlib.sha256(str(self.request_token).encode()).hexdigest()
+            dedupe_key += f"::{digest[:16]}"
         log = comms.send(
             find_person(email=self.recommender_email),
             "recommendation-request",
