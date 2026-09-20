@@ -3,6 +3,7 @@
 
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 #: Site defaults published from this doctype on save: {default key: fieldname}.
@@ -35,6 +36,47 @@ seminary_keydict = {}
 
 
 class SeminarySettings(Document):
+    def validate(self):
+        self._warn_if_unit_scope_restricts_nothing()
+
+    def _warn_if_unit_scope_restricts_nothing(self):
+        """Say so when ``Academic Unit`` scope is on but reaches everything.
+
+        p005a A01-20: the scope has two fallbacks to School, and with both left
+        open on a school that has not populated memberships the setting
+        restricts nothing while the form shows it enabled. The fallbacks are
+        deliberate (ADR 059 §2.1) and stay the default — but the admin should
+        not have to read the source to find out they are in that state."""
+        if self.faculty_read_scope != "Academic Unit":
+            return
+
+        notes = []
+        if self.unit_scope_no_membership != "Own sections only":
+            if not frappe.db.count("Academic Unit Membership", {"is_active": 1}):
+                notes.append(
+                    _(
+                        "No active Academic Unit Membership exists, so every "
+                        "instructor of record still reads school-wide."
+                    )
+                )
+        if self.unit_scope_unassigned_course != "Exclude":
+            unassigned = frappe.db.count(
+                "Course", {"academic_unit": ["in", [None, ""]]}
+            )
+            if unassigned:
+                notes.append(
+                    _(
+                        "{0} course(s) have no academic unit, so their sections "
+                        "read school-wide."
+                    ).format(unassigned)
+                )
+        if notes:
+            frappe.msgprint(
+                "<br>".join(notes),
+                title=_("Academic Unit scope is not restricting much"),
+                indicator="orange",
+            )
+
     def on_update(self):
         for key, fieldname in seminary_keydict.items():
             frappe.db.set_default(key, self.get(fieldname))

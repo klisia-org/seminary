@@ -235,10 +235,27 @@ def _unit_closure(units) -> set:
     return out
 
 
+def unit_scope_option(fieldname: str) -> str:
+    """One of the two Academic-Unit fallback switches (ADR 059 §2.1).
+
+    Both default to ``"School"`` — the behaviour that existed before the
+    switches did — so an existing site sees no change until someone tightens
+    one deliberately."""
+    return frappe.db.get_single_value("Seminary Settings", fieldname) or "School"
+
+
 def _unit_sections(user) -> list | None:
-    """Sections a record-tier instructor may read under the Academic Unit
-    scope: courses owned by a unit in their closure, plus courses with no unit
-    (which read as School). None means no restriction."""
+    """Sections a record-tier instructor may read under the Academic Unit scope:
+    courses owned by a unit in their closure, plus — unless the school says
+    otherwise — courses with no unit at all. ``None`` means no restriction.
+
+    Two fallbacks reach School, and each is now a setting rather than a fixed
+    rule (ADR 059 §2.1), because leaving both open means the scope can restrict
+    nothing while appearing to be on (p005a A01-20):
+
+    - no active membership → ``unit_scope_no_membership``
+    - a Course with no ``academic_unit`` → ``unit_scope_unassigned_course``
+    """
     inst = current_instructor(user)
     person = frappe.db.get_value("Instructor", inst, "person") if inst else None
     units = (
@@ -251,18 +268,23 @@ def _unit_sections(user) -> list | None:
         else []
     )
     if not units:
-        return None  # no membership: reads as School (p007 §2.8)
+        # p007 §2.8 read as School unconditionally; that is still the default.
+        if unit_scope_option("unit_scope_no_membership") == "School":
+            return None
+        return sorted(set(own_course_schedules(user)))
     closure = _unit_closure(units)
-    courses = frappe.get_all(
-        "Course",
-        or_filters=[
-            ["academic_unit", "in", list(closure)],
-            ["academic_unit", "is", "not set"],
-        ],
-        pluck="name",
-    )
-    sections = frappe.get_all(
-        "Course Schedule", filters={"course": ["in", courses]}, pluck="name"
+    or_filters = [["academic_unit", "in", list(closure)]]
+    if unit_scope_option("unit_scope_unassigned_course") == "School":
+        or_filters.append(["academic_unit", "is", "not set"])
+    courses = frappe.get_all("Course", or_filters=or_filters, pluck="name")
+    # Under "Exclude" the closure can match nothing; an empty ``in`` list is
+    # not a filter worth sending, and the union below is still correct.
+    sections = (
+        frappe.get_all(
+            "Course Schedule", filters={"course": ["in", courses]}, pluck="name"
+        )
+        if courses
+        else []
     )
     return sorted(set(sections) | set(own_course_schedules(user)))
 

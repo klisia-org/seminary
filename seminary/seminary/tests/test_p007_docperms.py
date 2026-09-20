@@ -475,3 +475,123 @@ class TestP007DocPerms(IntegrationTestCase):
             )
             frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
             frappe.db.set_value("Course", self.cs2.course, "academic_unit", None)
+
+    # --------------------------------- p010 Block F / p005a A01-20: the two
+    # Academic-Unit fallbacks to School are settings, not fixed rules.
+
+    def _scope(self, **kw):
+        frappe.db.set_single_value(
+            "Seminary Settings", "faculty_read_scope", "Academic Unit"
+        )
+        for k, v in kw.items():
+            frappe.db.set_single_value("Seminary Settings", k, v)
+        frappe.local.p007_cache = {}
+
+    def _scope_reset(self):
+        frappe.set_user("Administrator")
+        for k, v in (
+            ("faculty_read_scope", "School"),
+            ("unit_scope_no_membership", "School"),
+            ("unit_scope_unassigned_course", "School"),
+        ):
+            frappe.db.set_single_value("Seminary Settings", k, v)
+        frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+        frappe.db.set_value("Course", self.cs2.course, "academic_unit", None)
+        frappe.local.p007_cache = {}
+
+    def _unit(self, name):
+        if not frappe.db.exists("Academic Unit", name):
+            frappe.get_doc(
+                {
+                    "doctype": "Academic Unit",
+                    "unit_name": name,
+                    "unit_type": "Academic Department",
+                }
+            ).insert(ignore_permissions=True)
+        return name
+
+    def test_no_membership_reads_as_school_by_default(self):
+        """The p007 §2.8 behaviour, now explicit: unchanged unless asked."""
+        try:
+            self._scope()
+            self._as(self.prof_user)
+            self.assertIsNone(guards.readable_course_schedules(self.prof_user))
+        finally:
+            self._scope_reset()
+
+    def test_no_membership_can_be_narrowed_to_own_sections(self):
+        try:
+            self._scope(unit_scope_no_membership="Own sections only")
+            self._as(self.prof_user)
+            readable = guards.readable_course_schedules(self.prof_user)
+            self.assertIsNotNone(readable, "the switch must stop reading as School")
+            self.assertIn(self.cs.name, readable)
+            self.assertNotIn(self.cs2.name, readable)
+        finally:
+            self._scope_reset()
+
+    def test_unassigned_course_reads_as_school_by_default(self):
+        unit = self._unit("P010 Unit")
+        person = frappe.db.get_value("Instructor", self.other, "person")
+        if not frappe.db.exists(
+            "Academic Unit Membership", {"person": person, "unit": unit}
+        ):
+            frappe.get_doc(
+                {"doctype": "Academic Unit Membership", "unit": unit, "person": person}
+            ).insert(ignore_permissions=True)
+        try:
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", unit)
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+            self._scope()
+            self._as(self.other_user)
+            readable = guards.readable_course_schedules(self.other_user)
+            self.assertIsNotNone(readable)
+            # cs has no unit at all, and still reads as School.
+            self.assertIn(self.cs.name, readable)
+            self.assertIn(self.cs2.name, readable)
+        finally:
+            self._scope_reset()
+
+    def test_unassigned_course_can_be_excluded(self):
+        unit = self._unit("P010 Unit")
+        person = frappe.db.get_value("Instructor", self.other, "person")
+        if not frappe.db.exists(
+            "Academic Unit Membership", {"person": person, "unit": unit}
+        ):
+            frappe.get_doc(
+                {"doctype": "Academic Unit Membership", "unit": unit, "person": person}
+            ).insert(ignore_permissions=True)
+        try:
+            frappe.db.set_value("Course", self.cs2.course, "academic_unit", unit)
+            frappe.db.set_value("Course", self.cs.course, "academic_unit", None)
+            self._scope(unit_scope_unassigned_course="Exclude")
+            self._as(self.other_user)
+            readable = guards.readable_course_schedules(self.other_user)
+            self.assertIsNotNone(readable)
+            self.assertIn(self.cs2.name, readable)
+            self.assertNotIn(
+                self.cs.name, readable, "an unassigned course must not leak in"
+            )
+            self.assertFalse(
+                frappe.has_permission("Course Schedule", "read", self.cs.name)
+            )
+        finally:
+            self._scope_reset()
+
+    def test_settings_warns_when_unit_scope_restricts_nothing(self):
+        """The control must not look enabled while reaching everything."""
+        doc = frappe.get_single("Seminary Settings")
+        doc.faculty_read_scope = "Academic Unit"
+        doc.unit_scope_no_membership = "School"
+        doc.unit_scope_unassigned_course = "School"
+        frappe.clear_messages()
+        doc._warn_if_unit_scope_restricts_nothing()
+        messages = " ".join(str(m) for m in frappe.get_message_log())
+        self.assertIn("school-wide", messages)
+
+        # Tightened on both axes: nothing to warn about.
+        doc.unit_scope_no_membership = "Own sections only"
+        doc.unit_scope_unassigned_course = "Exclude"
+        frappe.clear_messages()
+        doc._warn_if_unit_scope_restricts_nothing()
+        self.assertEqual(frappe.get_message_log(), [])

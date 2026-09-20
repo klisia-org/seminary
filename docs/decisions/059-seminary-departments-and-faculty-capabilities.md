@@ -87,6 +87,43 @@ doctype can own a child table.
   Advisor, Placement Examiner, Manual-Verification Verifier) require the linked `person` to have an
   Instructor record; only **Committee/Board Member** is valid for a person without one.
 
+### 2.1 What the *absence* of a membership means for read reach
+
+`Seminary Settings.faculty_read_scope = Academic Unit` narrows an instructor of record to the
+sections of courses owned by a unit in their closure. Two cases fall outside that rule, and
+p007 §2.8 sent both to School unconditionally:
+
+1. the instructor holds **no active membership** — there is no closure to compute;
+2. a **Course has no `academic_unit`** — it is owned by no department.
+
+p005a **A01-20** filed this as "fails open". It is not a silent failure — the field description
+says so — but the objection stands in a sharper form: with both cases sent to School, a setting
+labelled a restriction can restrict *nothing*, and nothing on the form says which state you are
+in. Measured on the dev site, the second case was the larger by far: 5 of 9 courses carried no
+unit, and a record-tier instructor's reach fell from **19 sections to 7** once they were
+excluded.
+
+**Decision.** Each case becomes its own setting, and **both default to School** — the behaviour
+that already existed — so no deployed site changes until someone tightens one deliberately:
+
+- `unit_scope_no_membership`: *School* | *Own sections only*
+- `unit_scope_unassigned_course`: *School* | *Exclude*
+
+A school populates memberships and unit ownership over time, and the two axes mature at
+different rates; one switch could not express "memberships are complete, course ownership is
+not". Failing closed on both would have been the strict reading of the label, but on incomplete
+data it silently hides courses from the faculty who teach alongside them — a functionality loss
+the school never asked for.
+
+**And the control must not lie.** Saving Seminary Settings with `Academic Unit` selected now
+warns when the scope reaches everything anyway: when no active `Academic Unit Membership` exists,
+or when courses carry no unit and unassigned courses still read as School. It is a warning, not a
+validation error — the state is legitimate, it just must not be invisible.
+
+`guards._unit_sections` is the single implementation point; `readable_course_schedules` keeps its
+contract that `None` means *no restriction* and `[]` means *nothing readable*, which every
+consumer already distinguishes.
+
 ### 3. `Faculty Capability` catalog — a *new* list, not `Instructor Category`
 
 `Instructor Category` (Instructor of Record / GTA / Grader) is a **pay- and accreditation-bearing
