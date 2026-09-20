@@ -28,6 +28,8 @@ def execute():
             )
         # Null stale HR Department values — the Link now points at Academic Unit.
         if "academic_unit" in frappe.db.get_table_columns(doctype):
-            frappe.db.sql(f"UPDATE `{table}` SET `academic_unit` = NULL")
+            frappe.db.sql(
+                f"UPDATE `{table}` SET `academic_unit` = NULL"  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
+            )
 
     frappe.db.commit()

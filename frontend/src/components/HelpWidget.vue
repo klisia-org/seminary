@@ -13,17 +13,17 @@
 					</button>
 				</div>
 				<div class="max-h-[60vh] overflow-auto px-4 py-3">
-					<div
+					<SafeHtml
 						v-if="helpData.local_notes"
 						class="seminary-help-notes text-p-sm text-ink-gray-8"
-						v-html="helpData.local_notes"
+						:html="helpData.local_notes"
 					/>
 					<p v-else class="text-p-sm text-ink-gray-5">
 						{{ __('No local notes for this page yet.') }}
 					</p>
 					<a
 						v-if="helpData.mkdocs_url"
-						:href="helpData.mkdocs_url"
+						:href="safeUrl(helpData.mkdocs_url)"
 						target="_blank"
 						class="mt-3 inline-flex items-center gap-1.5 text-p-sm text-ink-blue-link hover:underline"
 					>
@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { ref } from 'vue'
 import { HelpCircle, BookOpen, X } from 'lucide-vue-next'
 import { useHelp } from '@/utils/useHelp'

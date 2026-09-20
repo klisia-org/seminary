@@ -175,7 +175,7 @@
 					</header>
 
 					<h2 v-if="post.title" class="mb-1 font-semibold text-ink-gray-9">{{ post.title }}</h2>
-					<div class="prose-sm max-w-none text-ink-gray-8" v-html="post.content"></div>
+					<SafeHtml class="prose-sm max-w-none text-ink-gray-8" :html="post.content" />
 
 					<!-- prayer testimony -->
 					<div v-if="post.prayer_answered && post.prayer_answer_note"
@@ -265,7 +265,7 @@
 									<span v-if="c.is_private" class="ml-1 inline-flex items-center gap-0.5 rounded bg-surface-gray-2 px-1.5 text-xs text-ink-gray-6"><Lock class="h-3 w-3" />{{ __('private') }}</span>
 									<span class="text-ink-gray-5">· {{ timeAgo(c.creation) }}</span>
 								</div>
-								<div class="prose-sm max-w-none text-ink-gray-8" v-html="c.content"></div>
+								<SafeHtml class="prose-sm max-w-none text-ink-gray-8" :html="c.content" />
 								<button class="text-xs text-ink-gray-5" @click="replyTo = c">{{ __('Reply') }}</button>
 							</div>
 

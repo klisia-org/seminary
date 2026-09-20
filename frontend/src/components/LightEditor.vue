@@ -2,7 +2,7 @@
 <template>
     <div>
         <!-- Read-only: just render HTML -->
-        <div v-if="!editable" v-html="content" class="prose-sm py-2 px-2 min-h-[7rem]"></div>
+        <SafeHtml v-if="!editable" :html="content" class="prose-sm py-2 px-2 min-h-[7rem]" />
         <!-- Lazy placeholder until user clicks -->
         <div v-else-if="lazy && !activated" @click="activate"
             class="border rounded-md py-2 px-2 min-h-[7rem] text-sm text-ink-gray-4 cursor-text">
@@ -40,6 +40,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { sanitize } from '@/utils/sanitize'
 
 const props = defineProps({
     content: { type: String, default: '' },
@@ -91,7 +92,11 @@ function emitChange() {
 function setContent(html) {
     if (!editorEl.value) return
     settingContent = true
-    editorEl.value.innerHTML = html || ''
+    // Editing is not a reason to skip the sanitiser (p008 F13). What lands here
+    // is stored rich text, often written by somebody else -- a prof opening a
+    // student's draft, a grader opening a submission -- and a contenteditable
+    // runs `onerror` exactly like any other element.
+    editorEl.value.innerHTML = sanitize(html)
     settingContent = false
 }
 

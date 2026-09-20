@@ -102,8 +102,8 @@
 							<ListRow :row="row" v-slot="{ idx, column, item }" v-for="row in exam.questions"
 								@click="openOpenQuestionModal(row)" class="cursor-pointer">
 								<ListRowItem :item="item">
-									<div v-if="column.key == 'question_detail'" class="text-xs truncate h-4"
-										v-html="item"></div>
+									<SafeHtml v-if="column.key == 'question_detail'" class="text-xs truncate h-4"
+										:html="item" />
 									<div v-else class="text-xs">
 										{{ item }}
 									</div>

@@ -323,7 +323,7 @@ def get_overlap_for(doc, doctype, fieldname, value=None):
 			(to_time > %(from_time)s and to_time < %(to_time)s) or
 			(%(from_time)s > from_time and %(from_time)s < to_time) or
 			(%(from_time)s = from_time and %(to_time)s = to_time))
-		and name!=%(name)s and docstatus!=2""".format(
+		and name!=%(name)s and docstatus!=2""".format(  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
             doctype, fieldname
         ),
         {
@@ -1111,14 +1111,12 @@ def get_lesson(course, chapter, lesson):
         {"parent": course, "idx": chapter},
         "chapter",
     )
-    print(f"Chapter Name: {chapter_name}")  # Debug print
 
     lesson_name = frappe.db.get_value(
         "Course Schedule Lesson Reference",
         {"parent": chapter_name, "idx": lesson},
         "lesson",
     )
-    print(f"Lesson Name: {lesson_name}")  # Debug print
 
     if not lesson_name:
         return {}
@@ -1293,7 +1291,9 @@ def get_lesson_icon(body, content):
         try:
             content = json.loads(content)
         except json.JSONDecodeError:
-            print("Invalid JSON content")
+            # Malformed stored lesson content is a real anomaly, so it keeps a
+            # line -- in the site log, not on the worker's stdout (p010 H2).
+            frappe.logger("seminary").debug("lesson content is not valid JSON")
             return "icon-list"
 
         for block in content.get("blocks"):
@@ -1711,7 +1711,7 @@ q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
 q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
 q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
-where q.name = qq.question and qq.name in ({placeholders})""",
+where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- interpolates %s placeholders; the values are bound
         questions,
         as_dict=1,
     )
@@ -1764,10 +1764,9 @@ def get_all_open_questions_details(questions):
     all_question_details = frappe.db.sql(
         f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question_name, q.explanation
 from `tabOpen Question` q, `tabExam Question` qq
-where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q in questions)})""",
+where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q in questions)})""",  # nosec B608 -- the value is escaped before it reaches the string
         as_dict=1,
     )
-    print("All questions details: " + str(all_question_details))
     return all_question_details
 
 
@@ -1930,6 +1929,10 @@ def backfill_submission_course_if_missing(submission):
 
     activity = submission.get(activity_field)
     member = submission.get("member")
+    # These three logs diagnose an app bug, and Error Log is readable by roles
+    # that may not read the submission. Name the row, not the student (p010 H3):
+    # the docname resolves to the person for anybody entitled to resolve it.
+    row = submission.name or "<unsaved>"
     if not activity or not member:
         # Other validators will surface this; nothing for us to backfill from.
         return
@@ -1944,7 +1947,7 @@ def backfill_submission_course_if_missing(submission):
         frappe.log_error(
             title=f"{submission.doctype} missing {course_field} (no SCAC)",
             message=(
-                f"Submission for activity {activity!r} by {member!r} has "
+                f"Submission {row} for activity {activity!r} has "
                 f"no {course_field} and no Scheduled Course Assess Criteria "
                 f"references this {scac_type}. Cannot backfill."
             ),
@@ -1966,7 +1969,7 @@ def backfill_submission_course_if_missing(submission):
         frappe.log_error(
             title=f"{submission.doctype} {course_field} backfilled",
             message=(
-                f"Submission for activity {activity!r} by {member!r} was "
+                f"Submission {row} for activity {activity!r} was "
                 f"saved without {course_field}; backfilled to {inferred!r} "
                 f"based on the student's roster and the SCAC for this "
                 f"{scac_type}. Investigate the create path that produced "
@@ -1977,7 +1980,7 @@ def backfill_submission_course_if_missing(submission):
         frappe.log_error(
             title=f"{submission.doctype} {course_field} backfill ambiguous",
             message=(
-                f"Submission for activity {activity!r} by {member!r} has "
+                f"Submission {row} for activity {activity!r} has "
                 f"no {course_field}. Found {len(set(candidate_schedules))} "
                 f"candidate Course Schedule(s) for this {scac_type}; "
                 f"student is enrolled in {sorted(set(enrolled))!r}. "
@@ -2138,7 +2141,6 @@ def get_gradebook(course):
             as_dict=1,
         )
 
-    print(students)
     return students
 
 
@@ -2224,7 +2226,7 @@ def get_student_course_status(course):
         roster_placeholders = ", ".join(["%s"] * len(all_rosters))
         all_scores = frappe.db.sql(
             f"""select rawscore_card from `tabCourse Assess Results Detail`
-            where assessment_criteria = %s and parent in ({roster_placeholders}) and rawscore_card > 0""",
+            where assessment_criteria = %s and parent in ({roster_placeholders}) and rawscore_card > 0""",  # nosec B608 -- interpolates %s placeholders; the values are bound
             [assessment.assessment_criteria] + all_rosters,
             as_list=1,
         )
@@ -2450,7 +2452,6 @@ def get_discussion_replies(topic):
         reply.user = frappe.db.get_value(
             "User", reply.owner, ["full_name", "user_image"], as_dict=True
         )
-    print("Replies: ", replies)
 
     return replies
 
@@ -2466,7 +2467,6 @@ def ensure_single_topic(doctype, docname, title):
     )
 
     if existing_topic:
-        print("Existing topic found:", existing_topic)
         return existing_topic[0]
 
     # Create a new topic if none exists
@@ -2478,7 +2478,6 @@ def ensure_single_topic(doctype, docname, title):
             "title": title,
         }
     )
-    print("Creating new topic:", new_topic)
     new_topic.insert(ignore_permissions=True)
     return new_topic
 
@@ -2749,7 +2748,6 @@ def get_missingassessments(course, member=None):
         {"student_email": student_email, "course_name": course_name},
         as_dict=True,
     )
-    print("Missing assessments: ", result)  # Debugging log
     return result
 
 
@@ -2771,15 +2769,12 @@ def get_assessments_tograde(course):
         {"course": course},
         as_dict=True,
     )
-    print("Assessments to grade: ", result)
     # Debugging log
     return result
 
 
 # debugging frappe.client.insert dict error
 def insert_discussion_reply(reply, topic):
-    print("Inserting reply:", reply)
-    print("Topic:", topic)
     doc = frappe.new_doc("Discussion Reply")
     doc.update(
         {

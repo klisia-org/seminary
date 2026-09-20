@@ -23,6 +23,9 @@ and the rest of the style vocabulary all survive -- minus the two short
 deny-lists below.
 """
 
+import json
+import re
+
 import nh3
 from bleach_allowlist import bleach_allowlist
 
@@ -85,8 +88,15 @@ _CODE_TAGS = {"span", "br", "div"}
 _CODE_ATTRIBUTES = {"span": {"class"}, "div": {"class"}}
 
 
+#: A `<` that actually opens a tag, a comment or a processing instruction. A bare
+#: `<` or `>` in prose is not markup: "fixed deposits >3 months" and "a < b" were
+#: being escaped to `&gt;3` and `a &lt; b`, and because the escape is itself
+#: markup-free the damage compounded on every later save (p008 F6 dry run).
+_TAGGISH = re.compile(r"<[A-Za-z/!?]")
+
+
 def has_markup(value) -> bool:
-    return isinstance(value, str) and ("<" in value or ">" in value)
+    return isinstance(value, str) and bool(_TAGGISH.search(value))
 
 
 def clean_rich(value):
@@ -118,3 +128,82 @@ def clean_code(value):
         strip_comments=True,
         url_schemes=set(),
     )
+
+
+#: Fieldtypes that may carry author-written markup. `Code` is deliberately out:
+#: that is how `Communication Channel.svg_icon` stays hand-written SVG, and F1's
+#: `svg` render profile closes the XSS at the sink instead.
+RICH_FIELDTYPES = ("Text Editor", "HTML Editor", "Long Text", "Small Text", "Text")
+
+#: Fields whose whole purpose is raw HTML. Sanitising these would break the
+#: feature, so they are named here rather than silently mangled. Anything added
+#: must be staff-only to write AND never rendered into another user's session.
+RAW_HTML_FIELDS = {
+    ("Letter Head", "content"),
+    ("Letter Head", "footer"),
+    ("Print Format", "html"),
+    ("Web Page", "main_section"),
+    ("Web Template", "template"),
+    # EditorJS JSON, cleaned block by block in `editorjs_safety` (p008 F4);
+    # running a tag sanitiser over the JSON string would corrupt it.
+    ("Course Lesson", "content"),
+    ("Course Lesson", "instructor_content"),
+}
+
+
+def _is_json_payload(value) -> bool:
+    """True for a Text field holding JSON rather than prose.
+
+    Frappe stores structured data in Text fields all over the place --
+    `Workspace.content` and `Course Lesson.content` are both EditorJS block
+    JSON -- and running a tag sanitiser over it corrupts the document: the dry
+    run turned `class=\\"h4\\"` into `class="\\&quot;h4\\&quot;"` on twenty Desk
+    workspaces. Detecting the shape beats naming every such field, because the
+    next one will not be in any list we write today.
+    """
+    stripped = value.lstrip()
+    if not stripped[:1] in ("{", "["):
+        return False
+    try:
+        json.loads(value)
+    except (ValueError, TypeError):
+        return False
+    return True
+
+
+def sanitize_rich_text(doc, method=None):
+    """Clean every rich-text field on every doctype (p008 F6, p005 A05-1b).
+
+    Frappe's own save-time sanitiser is bypassed for most content:
+    `BaseDocument._sanitize_content` calls `sanitize_html` without
+    `always_sanitize`, and `html_utils.sanitize_html` returns the input
+    **unchanged** when BeautifulSoup finds no tag -- which is the case for any
+    value whose markup the parser does not recognise as an element. p006 F13
+    closed seven named low-privilege fields; everything staff-authored still
+    rode the bypassed path, including `Program.program_description`, which
+    renders on the public website.
+
+    Hung off the wildcard `before_validate` rather than per-controller, the
+    pattern `person_fields.capture_snapshots` already uses: a new doctype is
+    covered without anyone remembering to opt in, and it is a cheap loop over
+    the meta for everything else.
+
+    Repairs, never rejects -- the p008 rule throughout. A document written in
+    2024 must still save.
+    """
+    if getattr(doc, "flags", None) and doc.flags.get("ignore_content_safety"):
+        return
+    doctype = doc.doctype
+    for df in doc.meta.fields:
+        if df.fieldtype not in RICH_FIELDTYPES:
+            continue
+        if df.get("ignore_xss_filter"):
+            continue
+        if (doctype, df.fieldname) in RAW_HTML_FIELDS:
+            continue
+        value = doc.get(df.fieldname)
+        if not has_markup(value) or _is_json_payload(value):
+            continue
+        cleaned = clean_rich(value)
+        if cleaned != value:
+            doc.set(df.fieldname, cleaned)

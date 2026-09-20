@@ -52,11 +52,11 @@
 				<!-- <span>
 					{{ index + 1 }}.
 				</span> -->
-				<span class="leading-5" v-html="row.question"> </span>
+				<SafeHtml class="leading-5" :html="row.question" as="span" />
 			</div>
 			<div class="leading-5 text-ink-gray-7 space-x-1">
 				<span> {{ __('Answer') }}: </span>
-				<span v-html="row.answer"></span>
+				<SafeHtml :html="row.answer" as="span" />
 			</div>
 			<!-- Points still say which answers were right, but on a competency
 			     section they no longer become the grade, so they are shown

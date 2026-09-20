@@ -106,8 +106,8 @@
 					<div class="mb-1 text-xs font-medium uppercase tracking-wide text-ink-gray-5">
 						{{ __("The organization's doctrinal statement") }}
 					</div>
-					<div class="prose-sm max-h-64 max-w-none overflow-y-auto text-ink-gray-7"
-						v-html="opening.doctrinal_statement" />
+					<SafeHtml class="prose-sm max-h-64 max-w-none overflow-y-auto text-ink-gray-7"
+						:html="opening.doctrinal_statement" />
 				</div>
 				<FormControl class="mt-2" type="select" :label="__('Your response')" v-model="doctrinalAlignment"
 					:options="alignmentOptions" />

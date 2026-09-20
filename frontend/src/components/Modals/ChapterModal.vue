@@ -21,10 +21,10 @@
 					<p class="mt-1 text-sm text-ink-gray-5">
 						{{ competencyHint }}
 					</p>
-					<div
+					<SafeHtml
 						v-if="chapter.course_competency && selectedCompetency?.statement"
 						class="prose-sm mt-2 rounded-md bg-surface-gray-1 p-2 text-ink-gray-6"
-						v-html="selectedCompetency.statement"
+						:html="selectedCompetency.statement"
 					/>
 				</div>
 

@@ -30,7 +30,7 @@ from urllib.parse import quote
 import frappe
 import requests
 from frappe import _
-from frappe.utils import strip_html
+from frappe.utils import add_to_date, now_datetime, strip_html
 from frappe.utils.password import get_encryption_key
 
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -114,26 +114,71 @@ class TelegramAdapter:
 # ------------------------------------------------------- connect onboarding
 
 
+#: A connect link is used within minutes of being generated. A week is already
+#: generous, and it is the whole point: before this the token never expired.
+CONNECT_TOKEN_TTL_DAYS = 7
+
+
+def _connect_signature(payload: str) -> str:
+    return hmac.new(
+        get_encryption_key().encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()[:32]
+
+
 def make_connect_token(person):
-    """Deep-link payload binding a /start update to a Person. Signed with the
-    site encryption key so chat ids can't be attached to arbitrary Persons.
-    Telegram start payloads allow [A-Za-z0-9_-], which PERS ids satisfy."""
-    sig = hmac.new(
-        get_encryption_key().encode(), person.encode(), hashlib.sha256
-    ).hexdigest()[:12]
-    return f"{person}_{sig}"
+    """Deep-link payload binding a /start update to a Person, for a week.
+
+    Signed with the site encryption key so chat ids can't be attached to
+    arbitrary Persons. Telegram start payloads allow `[A-Za-z0-9_-]` and at
+    most 64 characters, which is why this is `person_expiry_signature` rather
+    than the base64 `payload.signature` shape `address_verification` uses --
+    `.` is not in Telegram's alphabet. PERS ids contain no underscore, so the
+    three parts are unambiguous, and the whole token is ~51 characters.
+
+    p005a A04-1: this was `hexdigest()[:12]`, **deterministic per Person, with
+    no expiry and no revocation** -- a connect link in a forwarded message or a
+    screenshot bound that stranger's chat to the Person for ever.
+    `address_verification` was written later, explicitly modelled on this
+    function, and does it right; this is the port that was never made (p010 H9).
+
+    The signature covers the expiry as well as the Person, so the deadline
+    cannot be edited, and it is 128 bits rather than 48.
+    """
+    expires = int(add_to_date(now_datetime(), days=CONNECT_TOKEN_TTL_DAYS).timestamp())
+    stamp = _b36(expires)
+    return f"{person}_{stamp}_{_connect_signature(f'{person}|{expires}')}"
+
+
+def _b36(number: int) -> str:
+    """Base36, to keep the expiry inside Telegram's 64-character budget."""
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    if number <= 0:
+        return "0"
+    out = ""
+    while number:
+        number, rem = divmod(number, 36)
+        out = digits[rem] + out
+    return out
 
 
 def verify_connect_token(payload):
-    if not payload or "_" not in payload:
+    """The Person a token names, or None for anything forged, malformed or
+    expired. An old two-part token is refused: it is exactly the never-expiring
+    kind this replaced."""
+    if not payload or payload.count("_") != 2:
         return None
-    person, sig = payload.rsplit("_", 1)
+    person, stamp, sig = payload.split("_")
     if not frappe.db.exists("Person", person):
         return None
-    expected = hmac.new(
-        get_encryption_key().encode(), person.encode(), hashlib.sha256
-    ).hexdigest()[:12]
-    return person if hmac.compare_digest(sig, expected) else None
+    try:
+        expires = int(stamp, 36)
+    except ValueError:
+        return None
+    if not hmac.compare_digest(sig, _connect_signature(f"{person}|{expires}")):
+        return None
+    if expires < int(now_datetime().timestamp()):
+        return None
+    return person
 
 
 def _handle_start(account, chat_id, text):

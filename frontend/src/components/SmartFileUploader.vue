@@ -40,6 +40,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { htmlToText } from '@/utils'
 import { ErrorMessage } from 'frappe-ui'
 import { uploadDirect } from '@/utils/directUpload'
 
@@ -110,9 +111,7 @@ function serverMessage(payload, status) {
 			const text = JSON.parse(messages[0]).message
 			if (text) {
 				// Frappe's messages carry markup (<br>, <b>); flatten it to text.
-				const el = document.createElement('div')
-				el.innerHTML = text
-				return (el.textContent || '').trim()
+				return htmlToText(text).trim()
 			}
 		}
 	} catch (e) {

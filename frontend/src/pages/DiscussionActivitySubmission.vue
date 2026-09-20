@@ -19,7 +19,7 @@
     :student-name="currentRow.student_name"
     :assessment="currentRow.course_assess"
     :assessment-name="title.data?.discussion_name"
-  />
+ />
   <div class="px-5 py-5 h-[calc(100vh-3.2rem)] overflow-y-auto">
     <!-- Navigation bar -->
     <div class="flex items-center justify-between mb-5">
@@ -55,7 +55,7 @@
             {{ __('Original Post(s) by') }} {{ studentName }}
           </h2>
           <div v-for="post in originalPosts" :key="post.name" class="border rounded-md p-4 mb-3 last:mb-0">
-            <div class="prose-sm" v-html="post.original_post"></div>
+            <SafeHtml class="prose-sm" :html="post.original_post" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(post.creation) }}</div>
             <a v-if="post.original_attachment" :href="post.original_attachment" target="_blank"
               class="text-blue-500 underline text-sm mt-1 inline-block">
@@ -74,9 +74,9 @@
           <div v-for="reply in studentReplies" :key="reply.creation" class="border rounded-md p-4 mb-3 last:mb-0">
             <div class="text-xs text-ink-gray-5 mb-2">
               {{ __('Reply to') }}: {{ reply.student_name }}
-              <div class="prose-sm text-ink-gray-4 mt-1" v-html="reply.original_post"></div>
+              <SafeHtml class="prose-sm text-ink-gray-4 mt-1" :html="reply.original_post" />
             </div>
-            <div class="prose-sm mt-2" v-html="reply.reply"></div>
+            <SafeHtml class="prose-sm mt-2" :html="reply.reply" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(reply.reply_dt) }}</div>
             <a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
               class="text-blue-500 underline text-sm mt-1 inline-block">
@@ -122,7 +122,7 @@
                 <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
                 <span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
               </div>
-              <div v-html="c.comment" class="prose-sm"></div>
+              <SafeHtml :html="c.comment" class="prose-sm" />
             </div>
           </div>
           <div v-else class="text-sm text-ink-gray-4 mb-4">
@@ -136,7 +136,7 @@
             ref="commentEditor"
             :placeholder="__('Write feedback...')"
             @change="(val) => newComment = val"
-          />
+         />
           <div v-if="newComment && gradeEmpty" class="mt-2 text-sm text-ink-red-3">
             {{ __('Grade cannot be empty to provide grading feedback.') }}
           </div>

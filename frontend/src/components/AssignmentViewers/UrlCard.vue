@@ -4,7 +4,7 @@
 	</div>
 	<a
 		v-else
-		:href="url"
+		:href="safeUrl(url)"
 		target="_blank"
 		rel="noopener"
 		class="block border rounded-lg p-4 bg-surface-white hover:bg-surface-gray-2 transition-colors"
@@ -17,6 +17,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 defineProps({
 	url: { type: String, default: '' },
 	comments: { type: Array, default: () => [] },

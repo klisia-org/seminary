@@ -9,6 +9,10 @@ import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
 import Paragraph from '@editorjs/paragraph'
 import { CodeBox } from '@/utils/code'
+// The highlight.js theme, bundled from the package the app already
+// depends on rather than fetched from a mutable jsDelivr tag ref on
+// every lesson view (p010 H12, p005a A03-3).
+import 'highlight.js/styles/atom-one-dark.css'
 import NestedList from '@editorjs/nested-list'
 import InlineCode from '@editorjs/inline-code'
 import { watch } from 'vue'
@@ -242,10 +246,22 @@ export function updateDocumentTitle(meta) {
 	)
 }
 
+/**
+ * Plain text from untrusted HTML (p008 F3).
+ *
+ * The old form built a detached `<div>` and assigned `innerHTML`. Detached is
+ * not inert: the parser still builds the nodes and `<img src=x onerror=...>`
+ * fires, so every "just strip the tags" helper was an execution sink. A
+ * `DOMParser` document is inert -- nothing loads, nothing runs -- and it is the
+ * only correct way to read text out of HTML you did not author.
+ *
+ * `<br>` becomes a newline. The detached-div version dropped it entirely, so
+ * `a<br>b` came back as `ab`; Frappe's `_server_messages` are full of them.
+ */
 export function htmlToText(html) {
-	const div = document.createElement('div')
-	div.innerHTML = html
-	return div.textContent || div.innerText || ''
+	const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
+	doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'))
+	return doc.body.textContent || ''
 }
 
 export const getEditorTools = (course = null, courseName = null) => {
@@ -280,9 +296,9 @@ export const getEditorTools = (course = null, courseName = null) => {
 		},
 		codeBox: {
 			class: CodeBox,
+			// No themeURL: the stylesheet is imported above, so vite bundles it
+			// and it is served from this origin (p010 H12, p005a A03-3).
 			config: {
-				themeURL:
-					'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/atom-one-dark.min.css',
 				themeName: 'atom-one-dark',
 				useDefaultTheme: 'dark',
 			},

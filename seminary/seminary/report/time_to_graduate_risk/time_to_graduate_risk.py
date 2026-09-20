@@ -119,7 +119,7 @@ def get_data(filters):
            FROM `tabProgram Enrollment` pe
            INNER JOIN `tabProgram` pgm ON pgm.name = pe.program
            WHERE {where}
-             AND COALESCE(pgm.is_ongoing, 0) = 0""",
+             AND COALESCE(pgm.is_ongoing, 0) = 0""",  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

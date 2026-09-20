@@ -143,7 +143,7 @@ def _counts(student, course_schedule):
             ON sla.name = sa.leave_application
         WHERE sa.student = %s AND sa.course_schedule = %s AND sa.docstatus < 2
         {online_clause}
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         (student, course_schedule),
         as_dict=True,
     )

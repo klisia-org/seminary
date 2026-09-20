@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 import re
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from ics import Calendar, Event
 import pytz
 
@@ -37,7 +38,11 @@ def convert_to_ics_datetime(dt):
     return dt_utc.strftime("%Y%m%dT%H%M%SZ")
 
 
+# A calendar client polls; it does not poll 120 times an hour. Keyed on the
+# section as well as the IP so a token guess cannot be spread across addresses
+# -- this endpoint builds a whole schedule per hit (p010 H6, p005a A09-4).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="course_schedule", limit=120, seconds=3600, ip_based=True)
 def course_ics(course_schedule=None, token=None):
     """Generate ICS calendar data for a given course schedule."""
     if not course_schedule or not token:
@@ -93,7 +98,6 @@ def course_ics(course_schedule=None, token=None):
         # Parse Frappe creation field and convert to UTC for DTSTAMP
         creation_datetime = frappe.utils.get_datetime(meeting.creation)
         event.created = datetime.astimezone(creation_datetime, pytz.UTC)
-        print("Event created timestamp: ", event.created)
         calendar.events.add(event)
     for assignment in assignments:
         event = Event()
@@ -134,5 +138,4 @@ def get_calendar_instructions():
     instructions = frappe.db.get_single_value(
         "Seminary Settings", "calendar_instructions"
     )
-    print("Fetched calendar instructions: ", instructions)
     return instructions

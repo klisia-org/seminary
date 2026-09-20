@@ -515,7 +515,8 @@
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
-   "label": "Published"
+   "label": "Published",
+   "permlevel": 1
   },
   {
    "fetch_from": "course.description",
@@ -618,7 +619,8 @@
   {
    "fieldname": "web_meeting",
    "fieldtype": "Data",
-   "label": "Web Meeting Link"
+   "label": "Web Meeting Link",
+   "permlevel": 1
   },
   {
    "default": "0",
@@ -761,7 +763,7 @@
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 0
   }
  ],
  "row_format": "Dynamic",

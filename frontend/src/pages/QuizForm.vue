@@ -160,11 +160,11 @@
 								class="cursor-pointer"
 							>
 								<ListRowItem :item="item">
-									<div
+									<SafeHtml
 										v-if="column.key == 'question_detail'"
 										class="text-xs truncate h-4"
-										v-html="item"
-									></div>
+										:html="item"
+									/>
 									<div v-else class="text-xs">
 										{{ item }}
 									</div>

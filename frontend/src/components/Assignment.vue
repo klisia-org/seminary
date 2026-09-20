@@ -8,9 +8,8 @@
 					<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">
 						{{ __('Assignment') }}:
 					</h3>
-					<div v-html="assignment.data.question"
-						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-					</div>
+					<SafeHtml :html="assignment.data.question"
+						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
 				<h3 class="text-lg font-semibold mb-4 text-ink-gray-9">{{ __('Assignment Dashboard') }}</h3>
 				<div v-if="assignmentDashboard.student_count > 0">
 					<div class="border rounded-lg p-4 text-center">
@@ -62,9 +61,8 @@
 					<summary class="cursor-pointer text-sm text-ink-gray-7 font-medium select-none">
 						{{ __('Assignment Question') }}
 					</summary>
-					<div v-html="assignment.data.question"
-						class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal">
-					</div>
+					<SafeHtml :html="assignment.data.question"
+						class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal" />
 				</details>
 				<SubmissionViewer
 					:submission="submissionResource.doc"
@@ -300,7 +298,7 @@
 				<div class="text-sm text-ink-gray-5 font-medium mb-2">
 					{{ __('Feedback from') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
 				</div>
-				<div class="leading-5 prose prose-sm max-w-none" v-html="submissionResource.doc.comments"></div>
+				<SafeHtml class="leading-5 prose prose-sm max-w-none" :html="submissionResource.doc.comments" />
 			</div>
 			<!-- Prof's attached feedback file (e.g. marked-up .docx with track changes). -->
 			<a
@@ -325,9 +323,8 @@
 				<summary class="cursor-pointer text-sm text-ink-gray-7 font-medium select-none">
 					{{ __('Assignment Question') }}
 				</summary>
-				<div v-html="assignment.data.question"
-					class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal">
-				</div>
+				<SafeHtml :html="assignment.data.question"
+					class="ProseMirror prose prose-sm max-w-none mt-2 prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 !whitespace-normal" />
 			</details>
 			<SubmissionViewer
 				:submission="submissionResource.doc"
@@ -346,9 +343,8 @@
 				<div class="text-sm text-ink-gray-7 font-medium mb-2">
 					{{ __('Assignment') }}:
 				</div>
-				<div v-html="assignment.data.question"
-					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-				</div>
+				<SafeHtml :html="assignment.data.question"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
 			</div>
 
 			<div class="flex flex-col">
@@ -451,7 +447,7 @@
 							{{ __('Comments by') }}: {{ submissionResource.doc?.evaluator || __('Evaluator') }}
 						</div>
 						<div class="leading-5">
-							<div v-html="submissionResource.doc.comments"></div>
+							<SafeHtml :html="submissionResource.doc.comments" />
 						</div>
 					</div>
 				</div>

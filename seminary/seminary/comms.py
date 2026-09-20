@@ -29,8 +29,10 @@ from urllib.parse import unquote
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, cint, now_datetime
 
+from seminary.seminary import security_log
 from seminary.seminary.author_templates import render_author_text
 
 ADAPTER_HOOK = "communication_channel_providers"
@@ -2044,7 +2046,12 @@ _STATUS_ALIASES = {
 }
 
 
+# High on purpose: a carrier's delivery receipts are legitimate traffic and a
+# dropped one loses a Communication Log status for good. What this caps is an
+# anonymous flood against an endpoint that does a document read and a
+# constant-time compare per call (p010 H6).
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="account", limit=600, seconds=60, ip_based=False)
 def webhook(account=None, secret=None, **kwargs):
     """Provider webhook endpoint (ADR 043):
     POST /api/method/seminary.seminary.comms.webhook?account=<Channel Provider Account>
@@ -2057,18 +2064,30 @@ def webhook(account=None, secret=None, **kwargs):
       {"kind": "status", "provider_message_id": "...", "status": "delivered"}
       {"kind": "inbound", "from_address": "...", "body": "...", "subject": "..."}
     """
+
+    # One message for all three failures (p010 H5, p005a A10-2/A06-6). This is
+    # an `allow_guest` endpoint, and distinguishing "Unknown account." from
+    # "Account disabled." from a verify failure let an anonymous caller
+    # enumerate `Channel Provider Account` names *and* their enabled state --
+    # the last of the three error-text oracles p005 found. Which of the three
+    # it was goes to the security log, where an operator can read it and a
+    # prober cannot. Same shape as p008 F11 and p008a's folder API.
+    def _refuse(reason):
+        security_log.record_denial("webhook", reason=reason, account=account)
+        frappe.throw(_("Webhook rejected."), frappe.PermissionError)
+
     if not account or not frappe.db.exists("Channel Provider Account", account):
-        frappe.throw(_("Unknown account."), frappe.PermissionError)
+        _refuse("unknown-account")
     acc = frappe.get_doc("Channel Provider Account", account)
     if not acc.enabled:
-        frappe.throw(_("Account disabled."), frappe.PermissionError)
+        _refuse("account-disabled")
     settings = account_settings(acc)
     adapter = get_adapter(acc.provider)
 
     payload = _webhook_payload(kwargs)
     verify = getattr(adapter, "verify_webhook", None) or _verify_webhook_secret
     if not verify(acc, settings, secret or payload.get("secret")):
-        frappe.throw(_("Webhook verification failed."), frappe.PermissionError)
+        _refuse("verification-failed")
 
     parse = getattr(adapter, "handle_webhook", None) or _parse_generic_webhook
     event = parse(payload, acc)

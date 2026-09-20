@@ -15,9 +15,8 @@
 						{{ course.data.short_introduction }}
 					</div>
 
-					<div v-html="course.data.course_description_for_lms"
-						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-					</div>
+					<SafeHtml :html="course.data.course_description_for_lms"
+						class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
 					<div class="mt-6 flex flex-wrap items-center gap-2">
 						<Badge v-if="course.data.modality" theme="blue" size="lg">
 							<template #prefix>
@@ -47,7 +46,7 @@
 							</template>
 							{{ timeLabel }}
 						</Badge>
-						<a v-if="course.data.web_meeting" :href="course.data.web_meeting" target="_blank"
+						<a v-if="course.data.web_meeting" :href="safeUrl(course.data.web_meeting)" target="_blank"
 							rel="noopener noreferrer" class="no-underline">
 							<Badge theme="green" size="lg" class="cursor-pointer hover:opacity-80 transition-opacity">
 								<template #prefix>
@@ -134,6 +133,7 @@
 	</div>
 </template>
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'

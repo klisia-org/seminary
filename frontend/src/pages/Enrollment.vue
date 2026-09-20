@@ -105,9 +105,9 @@
                 <Tooltip v-if="course.description" :hover-delay="0.2">
                   <HelpCircle class="w-4 h-4 text-ink-gray-5 cursor-help" />
                   <template #body>
-                    <div
+                    <SafeHtml
                       class="max-w-xs rounded bg-surface-gray-7 px-3 py-2 text-xs text-ink-white shadow-xl prose-sm"
-                      v-html="course.description" />
+                      :html="course.description" />
                   </template>
                 </Tooltip>
               </h3>

@@ -24,11 +24,15 @@ Either way the instructor still reviews and finalizes the roster via
 
 from datetime import datetime, timedelta
 
+import hmac
+
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, get_time, getdate, now_datetime, today
 
 from seminary.seminary.api import make_attendance_records
+from seminary.seminary import security_log
 from seminary.seminary.utils import generate_checkin_code, get_current_student
 
 # Auditors (audit_bool=1) are excluded — matches the instructor attendance roster.
@@ -69,11 +73,28 @@ def _is_open_now(start_dt, end_dt, settings, now=None):
 
 
 def _validate_code(meeting_row, settings, code):
+    """Constant-time, and counted (p010 H8, p005a A04-5).
+
+    The code is ~24.9 bits (5 characters over a 32-character alphabet) and the
+    endpoint had no rate limit, so within the attendance window an enrolled
+    student could enumerate the code for a session they were not attending in a
+    few thousand requests. **The code is deliberately not lengthened**: it is
+    read aloud or put on a slide, and a longer one is a functionality loss at
+    the door of a classroom. The attempt limit on the endpoint is what makes
+    the short code safe; this compare is constant-time so the limit is the only
+    thing an attacker can work against.
+    """
     if not settings.require_course_checkin_code:
         return
     expected = (meeting_row.get("checkin_code") or "").strip().upper()
     given = (code or "").strip().upper()
-    if not expected or given != expected:
+    # Bytes, not str: `compare_digest` raises TypeError on a non-ASCII str, so
+    # a student typing an accented character would get a 500 instead of
+    # "incorrect code".
+    if not expected or not hmac.compare_digest(
+        given.encode("utf-8", "ignore"), expected.encode("utf-8", "ignore")
+    ):
+        security_log.record_denial("checkin_code", kind_of="course")
         frappe.throw(_("Incorrect or missing check-in code."))
 
 
@@ -224,7 +245,12 @@ def get_course_checkin_context(course_schedule):
 # ---------------------------------------------------------------------------
 
 
+# The attempt counter that makes a 5-character code safe (p010 H8). Keyed on
+# the section so guesses cannot be spread across addresses; 20 an hour clears
+# any real student fumbling the code and leaves ~33 million tries' worth of
+# keyspace untouched.
 @frappe.whitelist()
+@rate_limit(key="course_schedule", limit=20, seconds=3600, ip_based=False)
 def course_check_in(course_schedule, meeting_date, code=None, meeting=None):
     """Student self check-in for a class meeting. Validates enrollment, then —
     when the time window is enforced — the window and code, recording Present or

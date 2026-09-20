@@ -133,7 +133,7 @@
    "delete": 1,
    "read": 1,
    "role": "Student",
-   "share": 1,
+   "share": 0,
    "write": 1
   }
  ],

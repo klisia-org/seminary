@@ -26,7 +26,7 @@
 			<iframe width="100%" height="400" :src="getId(block)" frameborder="0" allowfullscreen>
 			</iframe>
 		</div>
-		<div v-else v-html="markdown.render(block)"></div>
+		<SafeHtml v-else :html="markdown.render(block)" />
 	</div>
 	<div v-if="quizId">
 		<Quiz :quiz="quizId" />
@@ -49,8 +49,13 @@ import Folder from '@/components/FolderBlock.vue'
 
 import MarkdownIt from 'markdown-it'
 
+// `html: false` (p008 F5). This renders `Course Lesson.body` / `instructor_notes`
+// in every enrolled student's session, and markdown-it's own normaliser is not a
+// security boundary -- with `html: true` any raw tag in a lesson body reached the
+// DOM verbatim. The output still goes through <SafeHtml>; the two are belt and
+// braces, not alternatives. `linkify` is unaffected and stays on.
 const markdown = new MarkdownIt({
-	html: true,
+	html: false,
 	linkify: true,
 })
 

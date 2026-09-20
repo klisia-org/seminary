@@ -39,7 +39,7 @@
 		<!-- Cover letter -->
 		<section v-if="app.data.cover_letter" class="mt-6">
 			<h2 class="mb-2 text-base font-semibold text-ink-gray-8">{{ __('Cover Letter') }}</h2>
-			<div class="prose-sm max-w-none text-ink-gray-7" v-html="app.data.cover_letter" />
+			<SafeHtml class="prose-sm max-w-none text-ink-gray-7" :html="app.data.cover_letter" />
 		</section>
 
 		<!-- Doctrine -->

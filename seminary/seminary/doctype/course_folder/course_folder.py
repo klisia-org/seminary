@@ -369,7 +369,7 @@ def get_permission_query_conditions(user=None):
             parts.append(
                 f"({cf}.scope = 'Course' and ({cf}.course in ({crs}) or exists ("
                 f"select 1 from `tabCourse Folder Share` sh where sh.parent = {cf}.name "
-                f"and sh.parenttype = 'Course Folder' and sh.course in ({crs}))))"
+                f"and sh.parenttype = 'Course Folder' and sh.course in ({crs}))))"  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
             )
         # Instructor scope: the folder's instructor (or one it is shared with)
         # teaches one of MY sections of the folder's own course.
@@ -381,7 +381,7 @@ def get_permission_query_conditions(user=None):
             f"and cs.course = {cf}.course "
             f"and (csi.instructor = {cf}.instructor or csi.instructor in ("
             f"select ish.instructor from `tabCourse Folder Instructor Share` ish "
-            f"where ish.parent = {cf}.name and ish.parenttype = 'Course Folder'))))"
+            f"where ish.parent = {cf}.name and ish.parenttype = 'Course Folder'))))"  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         )
     if not parts:
         return "1=0"

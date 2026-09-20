@@ -14,9 +14,8 @@
 					<MessagesSquare class="h-5 w-5 shrink-0" />
 					{{ __('Discussion Prompt') }}
 				</div>
-				<div v-html="discussion.doc.prompt"
-					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal text-ink-gray-8">
-				</div>
+				<SafeHtml :html="discussion.doc.prompt"
+					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal text-ink-gray-8" />
 			</div>
 			<div v-if="isStudent && minRepliesRequired > 0"
 				class="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm"
@@ -51,7 +50,7 @@
 					class="mb-6 border-round border-outline-gray-2 p-4 bg-surface-white shadow-sm">
 					<div class="original-post mb-4">
 						<div class="font-semibold">{{ discussion.student_name }}</div>
-						<div v-html="discussion.original_post" class="text-sm"></div>
+						<SafeHtml :html="discussion.original_post" class="text-sm" />
 						<div class="text-sm text-ink-gray-5 mt-1 mb-2">
 							{{ formatDate(discussion.creation) }}
 						</div>
@@ -66,7 +65,7 @@
 							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
 								{{ formatDate(reply.reply_dt) }}
 							</div>
-							<div v-html="reply.reply" class="text-sm"></div>
+							<SafeHtml :html="reply.reply" class="text-sm" />
 							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
 								class="text-blue-500 underline">
 								{{ __('View Attachment') }}
@@ -191,7 +190,7 @@
 							<span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
 							<span class="text-xs text-ink-gray-4">{{ formatDate(c.comment_dt) }}</span>
 						</div>
-						<div v-html="c.comment" class="prose-sm"></div>
+						<SafeHtml :html="c.comment" class="prose-sm" />
 					</div>
 				</div>
 				<div v-else class="text-sm text-ink-gray-4 mb-4">
@@ -282,7 +281,7 @@
 						<br>
 						{{ __('Your Original Post') }}:
 					</div>
-					<div v-html="submission.original_post" class="text-sm"></div>
+					<SafeHtml :html="submission.original_post" class="text-sm" />
 
 					<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
 						class="text-blue-500 underline">
@@ -294,7 +293,7 @@
 							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
 								{{ formatDate(reply.reply_dt) }}
 							</div>
-							<div v-html="reply.reply" class="text-sm"></div>
+							<SafeHtml :html="reply.reply" class="text-sm" />
 							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
 								class="text-blue-500 underline">
 								{{ __('View Attachment') }}

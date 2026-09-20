@@ -123,8 +123,7 @@
 							{{ question.points == 1 ? __('Point') : __('Points') }}
 						</div>
 					</div>
-					<div class="text-ink-gray-9 font-semibold mt-2 leading-5" v-html="questionDetails.data.question">
-					</div>
+					<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="questionDetails.data.question" />
 					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
 						<label v-if="questionDetails.data[`option_${index}`]"
 							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600">
@@ -145,8 +144,7 @@
 									<MinusCircle v-else class="w-4 h-4" />
 								</div>
 							</div>
-							<span class="ml-2" v-html="questionDetails.data[`option_${index}`]">
-							</span>
+							<SafeHtml class="ml-2" :html="questionDetails.data[`option_${index}`]" as="span" />
 						</label>
 						<div v-if="questionDetails.data[`explanation_${index}`]" class="mt-2 text-xs"
 							v-show="showAnswers.length">
@@ -257,7 +255,7 @@
 						{{ question.points || 0 }} {{ question.points == 1 ? __('Point') : __('Points') }}
 					</div>
 				</div>
-				<div class="text-ink-gray-9 font-semibold mt-2 leading-5" v-html="question.question_detail"></div>
+				<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="question.question_detail" />
 				<!-- Answer Options -->
 				<div v-if="question.type == 'Choices'" v-for="index in 4">
 					<label v-if="question[`option_${index}`]"
@@ -268,7 +266,7 @@
 						<input v-else-if="question.multiple" type="checkbox" :name="`question_${qtidx}`"
 							class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
 							@change="toggleAnswer(qtidx, question[`option_${index}`])" />
-						<span class="ml-2" v-html="question[`option_${index}`]"></span>
+						<SafeHtml class="ml-2" :html="question[`option_${index}`]" as="span" />
 					</label>
 				</div>
 				<!-- User Input Option -->
@@ -328,7 +326,7 @@
 					<div class="flex justify-between items-start gap-4">
 						<div class="text-lg text-ink-gray-5">
 							<span class="mr-2">{{ __('Question') }} {{ qtidx + 1 }}:</span>
-							<span v-html="question.question_detail"></span>
+							<SafeHtml :html="question.question_detail" as="span" />
 						</div>
 						<div v-if="question.points_out_of != null"
 							class="text-sm font-semibold text-ink-gray-7 whitespace-nowrap shrink-0">

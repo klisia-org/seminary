@@ -1,2 +1,1 @@
 import{Nn as e,gn as t,lr as n,pn as r}from"./frappe-ui-BLvl-W9T.js";var i={class:`flex items-center justify-center h-[250px]`},a={class:`text-ink-gray-5`},o={__name:`MissingData`,props:{message:{type:String,default:__(`No data found`)}},setup(o){return(s,c)=>(e(),t(`div`,i,[r(`p`,a,n(o.message),1)]))}};export{o as t};
-//# sourceMappingURL=MissingData-dOXMDAik.js.map

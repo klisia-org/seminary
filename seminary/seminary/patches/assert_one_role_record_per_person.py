@@ -43,7 +43,7 @@ def execute():
             from `tab{doctype}`
             where person is not null and person != ''
             group by person having n > 1
-            """.format(
+            """.format(  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
                 doctype=doctype
             ),
             as_dict=True,

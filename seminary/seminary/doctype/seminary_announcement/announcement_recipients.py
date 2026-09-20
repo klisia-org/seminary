@@ -86,7 +86,7 @@ def _students_for_term(term, program_names, course_schedules, seen):
         JOIN `tabStudent` s ON cei.student_ce = s.name
         JOIN `tabProgram Enrollment` pe ON cei.program_ce = pe.name
         WHERE {' AND '.join(where)}
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )
@@ -135,7 +135,7 @@ def _instructors_for_term(term, course_schedules, seen):
         JOIN `tabCourse Schedule` cs ON csi.parent = cs.name
         JOIN `tabInstructor` i ON csi.instructor = i.name
         WHERE {' AND '.join(where)}
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

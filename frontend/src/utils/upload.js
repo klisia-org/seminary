@@ -80,9 +80,16 @@ export class Upload {
 			this.wrapper.replaceChildren(frame, link)
 			return
 		} else {
-			this.wrapper.innerHTML = `<img class="mb-4" src=${encodeURI(
-				file.file_url
-			)} width='100%'>`
+			// Built node by node, like the PDF branch above (p008 F3). This was an
+			// `innerHTML` template with an UNQUOTED `src=${encodeURI(...)}`, and
+			// `encodeURI` leaves `'` and `<` alone -- so a crafted file_url could
+			// close the attribute and add its own. `setAttribute` has no parse step
+			// to escape out of.
+			const image = document.createElement('img')
+			image.className = 'mb-4'
+			image.setAttribute('src', file.file_url)
+			image.setAttribute('width', '100%')
+			this.wrapper.replaceChildren(image)
 			return
 		}
 	}

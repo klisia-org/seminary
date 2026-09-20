@@ -165,7 +165,7 @@ import { createResource, Button, Tooltip, FormControl } from 'frappe-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import Link from '@/components/Controls/Link.vue';
 import { FolderTool } from '@/utils/foldertool'; // Corrected to named import
-import { uploadLimits, validateFileSize } from '@/utils';
+import { uploadLimits, validateFileSize, htmlToText } from '@/utils';
 import { useRoute } from 'vue-router';
 import { Trash2 } from 'lucide-vue-next';
 
@@ -654,9 +654,7 @@ const frappeErrorMessage = (responseText, fallback) => {
       const text = JSON.parse(messages[0]).message;
       if (text) {
         // Frappe's messages carry markup; flatten it to plain text.
-        const el = document.createElement('div');
-        el.innerHTML = text;
-        return (el.textContent || '').trim();
+        return htmlToText(text).trim();
       }
     }
   } catch (e) {

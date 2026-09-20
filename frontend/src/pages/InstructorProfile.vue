@@ -26,9 +26,8 @@
             <div class="text-3xl font-semibold text-ink-gray-9">
                 {{ __('Know your Professor') }}
             </div>
-            <div v-html="instructor.data.bio"
-                class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal">
-            </div>
+            <SafeHtml :html="instructor.data.bio"
+                class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
 
         </div>
 
@@ -44,7 +43,7 @@ import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 
 import { useRoute, useRouter } from 'vue-router'
 
-import { convertToTitleCase, updateDocumentTitle } from '@/utils'
+import { convertToTitleCase, updateDocumentTitle, htmlToText } from '@/utils'
 
 const props = defineProps({
     instructorName: {
@@ -70,9 +69,7 @@ const instructor = createResource({
 
 // Function to strip HTML tags from a string
 function stripHtmlTags(str) {
-    const div = document.createElement('div')
-    div.innerHTML = str
-    return div.textContent || div.innerText || ''
+    return htmlToText(str)
 }
 
 const pageMeta = computed(() => {

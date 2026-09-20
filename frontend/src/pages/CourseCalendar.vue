@@ -18,7 +18,7 @@
         <div class="space-y-4">
 
             <div v-if="CalendarInstructions.data">
-                <p class="text-sm text-ink-gray-6" v-html="CalendarInstructions.data"></p>
+                <SafeHtml class="text-sm text-ink-gray-6" :html="CalendarInstructions.data" as="p" />
             </div>
             <div v-else>
                 <div>
@@ -77,7 +77,7 @@
                                 </template>
                                 <span v-if="meeting.online" class="text-ink-gray-5">· {{ __('Online') }}</span>
                                 <span v-else-if="meeting.room_label" class="text-ink-gray-5">· {{ meeting.room_label }}</span>
-                                <a v-if="meeting.web_meeting" :href="meeting.web_meeting" target="_blank"
+                                <a v-if="meeting.web_meeting" :href="safeUrl(meeting.web_meeting)" target="_blank"
                                     rel="noopener noreferrer" class="text-ink-blue-3 hover:underline">
                                     · {{ __('Join Online') }}
                                 </a>
@@ -91,6 +91,7 @@
     </div>
 </template>
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

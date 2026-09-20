@@ -55,7 +55,7 @@ def _report_dangling_genders():
     for doctype in ("Student Applicant", "Person"):
         values = frappe.db.sql_list(
             "select distinct gender from `tab%s` where ifnull(gender, '') != ''"
-            % doctype
+            % doctype  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         )
         missing = [v for v in values if v not in known]
         if missing:

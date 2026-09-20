@@ -20,7 +20,7 @@
 	<div v-else-if="data?.is_cbe" class="space-y-4 rounded-md border border-outline-gray-2 p-5">
 		<div>
 			<h3 class="font-semibold text-ink-gray-9">{{ data.competency_name }}</h3>
-			<div v-if="data.statement" class="prose-sm mt-1 text-ink-gray-6" v-html="data.statement" />
+			<SafeHtml v-if="data.statement" class="prose-sm mt-1 text-ink-gray-6" :html="data.statement" />
 			<p class="mt-1 text-xs text-ink-gray-5">
 				{{ __('Graded in levels, not points.') }}
 				<span v-if="data.read_only">{{ __('Grades for this student have been sent; this is read-only.') }}</span>
@@ -45,8 +45,8 @@
 				<!-- The competency's own words for what this dimension looks like:
 				     an evaluator picking a level should be reading the descriptor,
 				     not remembering it. -->
-				<div v-if="cell.demonstrated_by" class="prose-sm mt-0.5 text-xs text-ink-gray-5"
-					v-html="cell.demonstrated_by" />
+				<SafeHtml v-if="cell.demonstrated_by" class="prose-sm mt-0.5 text-xs text-ink-gray-5"
+					:html="cell.demonstrated_by" />
 				<div class="mt-1 flex flex-wrap gap-1">
 					<button v-for="lv in data.levels" :key="lv.grade_code" type="button"
 						class="rounded border px-2 py-0.5 text-xs"

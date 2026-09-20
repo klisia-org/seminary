@@ -115,7 +115,7 @@
               {{ question.points }} {{ question.points === 1 ? __('Point') : __('Points') }}
             </div>
             <div class="text-ink-gray-9 text-left font-semibold mt-2 leading-5">
-              <div v-html="question.question_detail || __('No question detail provided.')"></div>
+              <SafeHtml :html="question.question_detail || __('No question detail provided.')" />
             </div>
             <div class="mt-4">
               <LightEditor v-if="answers && answers[question.name] !== undefined" :content="answers[question.name]"
@@ -145,7 +145,7 @@
             <span class="font-medium text-ink-gray-7">{{ c.author_name }}</span>
             <span class="text-xs text-ink-gray-4">{{ timeAgo(c.comment_dt) }}</span>
           </div>
-          <div v-html="c.comment" class="prose-sm"></div>
+          <SafeHtml :html="c.comment" class="prose-sm" />
         </div>
       </div>
       <div v-else class="text-sm text-ink-gray-4 mb-4">
@@ -157,7 +157,7 @@
         ref="commentEditor"
         :placeholder="__('Write a comment...')"
         @change="(val) => newComment = val"
-      />
+     />
       <Button variant="solid" size="sm" class="mt-2" @click="postExamComment"
         :disabled="!newComment || addExamCommentResource.loading">
         {{ __('Send') }}

@@ -27,8 +27,8 @@
 						<Badge :theme="reqTheme(req.status)" variant="subtle">{{ __(req.status) }}</Badge>
 					</div>
 					<div v-if="req.due_date" class="text-xs text-ink-gray-5">{{ __('Due {0}').format(req.due_date) }}</div>
-					<div v-if="req.student_instructions" class="prose prose-sm mt-1 max-w-none text-ink-gray-7" v-html="req.student_instructions" />
-					<a v-if="req.submit_template" :href="req.submit_template" target="_blank" class="mt-1 inline-block text-sm text-ink-blue-6 hover:underline">{{ __('Download form') }}</a>
+					<SafeHtml v-if="req.student_instructions" class="prose prose-sm mt-1 max-w-none text-ink-gray-7" :html="req.student_instructions" />
+					<a v-if="req.submit_template" :href="safeUrl(req.submit_template)" target="_blank" class="mt-1 inline-block text-sm text-ink-blue-6 hover:underline">{{ __('Download form') }}</a>
 
 					<div v-if="!['Completed', 'Waived'].includes(req.status)" class="mt-2">
 						<FormControl v-if="req.student_submission_type === 'Text'" type="textarea" :label="req.student_label" v-model="req.student_submission_value" />
@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { ref } from 'vue'
 import { createResource, Badge, Button, FormControl, FileUploader, toast } from 'frappe-ui'
 import { ArrowLeft } from 'lucide-vue-next'

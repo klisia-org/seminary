@@ -19,8 +19,9 @@ through to the read permission of the document the File is attached to. So:
 
 One line in `PUBLIC_FILE_FIELDS`: `("Course", "hero_image"): None,`. The value is
 `None` for "always may be public", or a predicate of the host document's name.
-`"*"` as the fieldname covers every Attach field of the doctype. A rich-text
-field (Text Editor and kin) can be listed too: the images pasted into it are
+Name the field: there is deliberately no `"*"` form, because combined with a
+client-supplied `attached_to_field` it meant "any field anybody names on this
+doctype" (p008 F15). A rich-text field (Text Editor and kin) can be listed too: the images pasted into it are
 published with the host and the stored HTML is rewritten to their new URL. Nothing else has
 to change: the wildcard `on_update` hook keeps the File in step with its host.
 """
@@ -36,7 +37,12 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 
-from seminary.storage.backend import FILE_URL_RE, URL_PREFIX, normalize_file_url
+from seminary.storage.backend import (
+    FILE_URL_RE,
+    URL_PREFIX,
+    is_offloaded,
+    normalize_file_url,
+)
 
 PUBLISHER_ROLES = {"System Manager", "Website Manager"}
 
@@ -78,9 +84,25 @@ def _instructor_photo_is_public(instructor) -> bool:
 
 #: (doctype, fieldname) -> None | predicate(host docname). See the module docstring.
 PUBLIC_FILE_FIELDS = {
-    ("Website Branding", "*"): None,
-    ("Seminary Settings", "*"): None,
-    ("Letter Head", "*"): None,
+    # Named, never `(doctype, "*")` -- p008 F15 / p005a A02-6. A wildcard row
+    # combined with `_attached_field`'s fallback to the *client-supplied*
+    # `attached_to_field` made these a publish primitive: `upload_file` with
+    # `is_private=0, doctype=Seminary Settings, fieldname=anything` matched the
+    # wildcard and landed world-readable in /files/. nginx forces an attachment
+    # for .html and .svg, so the sharp edge was .xhtml, .svgz and .mhtml, which
+    # it does not cover.
+    ("Website Branding", "website_logo"): None,
+    ("Website Branding", "favicon"): None,
+    ("Website Branding", "hero_image"): None,
+    ("Seminary Settings", "logo_portal"): None,
+    ("Seminary Settings", "logo_dark"): None,
+    ("Seminary Settings", "website_logo"): None,
+    ("Seminary Settings", "alternative_payment_instructions"): None,
+    ("Seminary Settings", "calendar_instructions"): None,
+    ("Letter Head", "image"): None,
+    ("Letter Head", "footer_image"): None,
+    ("Letter Head", "content"): None,
+    ("Letter Head", "footer"): None,
     ("Partner Organization", "image"): None,
     ("Program", "hero_image"): _program_published,
     ("Program", "image_blurb"): _program_published,
@@ -189,10 +211,17 @@ def _host_doctypes() -> set:
 
 
 def _registered(doctype, fieldname):
-    """(found, predicate) for a File attached to doctype.fieldname."""
-    for key in ((doctype, fieldname), (doctype, "*")):
-        if key in PUBLIC_FILE_FIELDS:
-            return True, PUBLIC_FILE_FIELDS[key]
+    """(found, predicate) for a File attached to doctype.fieldname.
+
+    Exact fieldnames only. The `(doctype, "*")` form is gone (p008 F15): with
+    `_attached_field` falling back to a client-supplied value, a wildcard row
+    meant "any field anybody names on this doctype", which is not a policy.
+    """
+    if not fieldname:
+        return False, None
+    key = (doctype, fieldname)
+    if key in PUBLIC_FILE_FIELDS:
+        return True, PUBLIC_FILE_FIELDS[key]
     return False, None
 
 
@@ -208,21 +237,48 @@ def _is_seminary_doctype(doctype) -> bool:
 
 
 def _attached_field(file_doc):
-    """The host field a File sits on, looked up by URL when the row does not
-    say (Frappe only fills `attached_to_field` on some paths)."""
-    if file_doc.attached_to_field:
-        return file_doc.attached_to_field
+    """The host field a File sits on, **confirmed against the host document**.
+
+    `attached_to_field` is supplied by the uploader and is never checked by
+    Frappe against what the host field actually holds, so it cannot be trusted
+    on its own (p008 F15). It is accepted only when it is a field this registry
+    knows AND the host really does hold this URL there; otherwise the field is
+    resolved by looking for the URL among the registered fields, and a File that
+    matches none of them has no registered field at all.
+
+    At `before_insert` the host provably cannot hold the URL yet -- the File row
+    is what produces it -- so the claim is unverifiable at that moment and
+    `may_be_public` refuses. `sync_public_state` runs on the host's `on_update`,
+    after the field holds the value, and publishes it then.
+    """
     dt, dn = file_doc.attached_to_doctype, file_doc.attached_to_name
     if not (dt and dn and file_doc.file_url):
         return None
-    candidates = [f for d, f in PUBLIC_FILE_FIELDS if d == dt and f != "*"]
-    for field in candidates:
+    claimed = file_doc.attached_to_field
+    if claimed and (dt, claimed) in PUBLIC_FILE_FIELDS:
         try:
-            if frappe.db.get_value(dt, dn, field) == file_doc.file_url:
+            if _field_holds_url(dt, dn, claimed, file_doc.file_url):
+                return claimed
+        except Exception:
+            frappe.clear_last_message()
+    for field in [f for d, f in PUBLIC_FILE_FIELDS if d == dt]:
+        try:
+            if _field_holds_url(dt, dn, field, file_doc.file_url):
                 return field
         except Exception:
             frappe.clear_last_message()
     return None
+
+
+def _field_holds_url(doctype, docname, fieldname, url) -> bool:
+    """True when the host field really carries this URL -- as the whole value
+    (an Attach field) or embedded in it (rich text with a pasted image)."""
+    value = frappe.db.get_value(doctype, docname, fieldname)
+    if not value:
+        return False
+    if value == url:
+        return True
+    return isinstance(value, str) and url in value
 
 
 def may_be_public(file_doc) -> bool:
@@ -233,7 +289,13 @@ def may_be_public(file_doc) -> bool:
         found, predicate = _registered(dt, _attached_field(file_doc))
         if found:
             return predicate is None or bool(predicate(dn))
-        if _is_seminary_doctype(dt):
+        # A host this registry knows, but a field it could not confirm: refuse.
+        # `Letter Head` is a Frappe doctype, so without this it fell through to
+        # the uploader's role and the claimed fieldname was enough (p008 F15).
+        # At `before_insert` nothing is confirmable -- the host cannot hold a URL
+        # the File row has not produced yet -- so the upload lands private and
+        # `sync_public_state` publishes it on the host's next save.
+        if dt in _host_doctypes() or _is_seminary_doctype(dt):
             return False
     return bool(PUBLISHER_ROLES & set(frappe.get_roles()))
 
@@ -449,17 +511,7 @@ def sync_public_state(doctype, name):
     for (dt, field), predicate in PUBLIC_FILE_FIELDS.items():
         if dt != doctype:
             continue
-        fields = (
-            [
-                df.fieldname
-                for df in meta.get(
-                    "fields", {"fieldtype": ["in", ["Attach", "Attach Image"]]}
-                )
-            ]
-            if field == "*"
-            else [field]
-        )
-        for f in fields:
+        for f in [field]:
             if not meta.has_field(f):
                 continue
             value = (
@@ -661,7 +713,7 @@ def _refresh_registered_fields(doc):
     Desk form shows next, and what it would save back."""
     meta = doc.meta
     for dt, field in PUBLIC_FILE_FIELDS:
-        if dt != doc.doctype or field == "*" or not meta.has_field(field):
+        if dt != doc.doctype or not meta.has_field(field):
             continue
         stored = (
             frappe.db.get_single_value(dt, field)
@@ -687,6 +739,7 @@ def on_host_update(doc, method=None):
     if doctype in _host_doctypes():
         sync_public_state(doctype, doc.name)
         _refresh_registered_fields(doc)
+    attach_offloaded_files(doc)
     targets = DEPENDENTS.get(doctype)
     if targets:
         for dt, dn in targets(doc):
@@ -698,3 +751,84 @@ def on_membership_gone(doc, method=None):
     their last published unit."""
     for dt, dn in _membership_targets(doc):
         sync_public_state(dt, dn)
+
+
+ATTACH_FIELDTYPES = ("Attach", "Attach Image")
+
+
+def _attach_fields(doc):
+    return doc.meta.get("fields", {"fieldtype": ["in", list(ATTACH_FIELDTYPES)]})
+
+
+def guard_attach_fields(doc, method=None):
+    """Refuse an Attach value naming a file the saver cannot read (p008 F16).
+
+    p007 §8.3 left Attach fields to Frappe's `attach_files_to_document`
+    (`frappe/core/doctype/file/utils.py:312`), which has no `_may_adopt`
+    equivalent: it finds an **unattached** File matching the URL and attaches it
+    to the caller's document with a bare `frappe.db.set_value`. Since p007 made
+    loose private uploads the norm, the pool of such files is large -- so a
+    student calling `upload_assignment(assignment_attachment="/private/files/<guessed>")`
+    attached somebody else's file to their own submission and thereby gained
+    read on it, because the file policy reads through the host.
+
+    Stopped at `validate`, before Frappe's `on_update` step runs, because that is
+    the only place the association can be refused rather than undone. The rule is
+    the one `adopt` already uses: you may name a file you can already read.
+
+    Only changed values on an existing document, for the same reason as
+    `url_policy.validate_urls` -- a value stored before this rule cannot be
+    allowed to make an unrelated edit impossible.
+    """
+    if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
+        return
+    if frappe.session.user == "Administrator":
+        return
+    is_new = doc.is_new()
+    for df in _attach_fields(doc):
+        value = doc.get(df.fieldname)
+        if not _is_file_url(value):
+            continue
+        if not is_new and not doc.has_value_changed(df.fieldname):
+            continue
+        rows = _rows_for(normalize_file_url(value))
+        if not rows:
+            continue  # nothing to hijack; Frappe will create the row
+        if _may_adopt(rows, None):
+            continue
+        frappe.throw(
+            _("You cannot attach a file you do not have access to."),
+            frappe.PermissionError,
+        )
+
+
+def attach_offloaded_files(doc, method=None):
+    """Attach Attach-field files that Frappe's own step skips (p008 F16).
+
+    `attach_files_to_document` only considers values starting `/files` or
+    `/private/files`. An offloaded file's URL is
+    `/api/method/seminary.storage.api.download_file?key=...`, so on a site with
+    object storage configured **every Attach field holding an offloaded file was
+    never attached at all** -- the File stayed owner-only and the grader opening
+    the submission got a 403.
+
+    `adopt` applies `_may_adopt` itself, so this cannot be used to reach a file
+    the saver could not already read.
+    """
+    for df in _attach_fields(doc):
+        value = doc.get(df.fieldname)
+        if not value or not is_offloaded(value):
+            continue
+        rows = _rows_for(value)
+        if any(
+            (r.attached_to_doctype, r.attached_to_name) == (doc.doctype, doc.name)
+            for r in rows
+        ):
+            continue
+        try:
+            adopt(value, (doc.doctype, doc.name))
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"file_policy: could not attach {doc.doctype} {doc.name}.{df.fieldname}",
+            )

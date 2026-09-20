@@ -293,7 +293,7 @@
    "read": 1,
    "report": 1,
    "role": "Student",
-   "share": 1
+   "share": 0
   },
   {
    "email": 1,
@@ -303,7 +303,7 @@
    "print": 1,
    "report": 1,
    "role": "Student",
-   "share": 1,
+   "share": 0,
    "write": 1
   },
   {

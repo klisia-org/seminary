@@ -19,12 +19,12 @@
                 type="checkbox"
                 :value="clo.name"
                 class="mt-1 h-4 w-4 rounded border-outline-gray-2 text-ink-blue-2 focus:ring-outline-blue-1 focus:ring-offset-1"
-              />
+             />
               <label :for="`clo-${clo.name}`" class="cursor-pointer">
                 <span class="text-sm font-medium text-ink-gray-8">
                   {{ clo.outcome_code }}<template v-if="clo.shorthand"> — {{ clo.shorthand }}</template>
                 </span>
-                <span class="clo-statement block text-sm text-ink-gray-6" v-html="clo.statement"></span>
+                <SafeHtml class="clo-statement block text-sm text-ink-gray-6" :html="clo.statement" as="span" />
               </label>
             </div>
 
@@ -56,7 +56,7 @@
                         type="checkbox"
                         :value="q.id"
                         class="mt-0.5 h-3.5 w-3.5 rounded border-outline-gray-2 text-ink-blue-2"
-                      />
+                     />
                       <label :for="`q-${clo.name}-${q.id}`" class="cursor-pointer text-xs text-ink-gray-7">
                         {{ q.label }}
                         <span v-if="q.points" class="text-ink-gray-5">({{ q.points }} {{ __('pts') }})</span>

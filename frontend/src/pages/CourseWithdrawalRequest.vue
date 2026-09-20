@@ -39,10 +39,9 @@
         <label class="block text-sm font-medium text-ink-gray-7">{{ __('Reason for Withdrawal') }} *</label>
         <FormControl type="select" v-model="form.withdrawal_reason" :options="reasonOptions"
           :placeholder="__('Select a reason...')" />
-        <div v-if="selectedReasonDetails?.student_instructions"
+        <SafeHtml v-if="selectedReasonDetails?.student_instructions"
           class="text-sm text-ink-blue-2 bg-surface-blue-1 rounded-lg p-3 border border-outline-blue-1"
-          v-html="selectedReasonDetails.student_instructions">
-        </div>
+          :html="selectedReasonDetails.student_instructions" />
       </div>
 
       <!-- Documentation Upload -->

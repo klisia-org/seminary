@@ -144,7 +144,7 @@
 
 				<a
 					v-if="alum.linkedin_url"
-					:href="alum.linkedin_url"
+					:href="safeUrl(alum.linkedin_url)"
 					target="_blank"
 					rel="noopener"
 					class="shrink-0 text-xs text-ink-blue-6 hover:underline"
@@ -170,6 +170,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { ref, computed, watch } from 'vue'
 import { Button, createResource, debounce } from 'frappe-ui'
 import { Search, Users } from 'lucide-vue-next'

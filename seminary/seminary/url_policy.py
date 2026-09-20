@@ -63,3 +63,43 @@ def safe_embed_url(value) -> str:
     if host in {site, request_host} - {""}:
         return ""
     return v
+
+
+#: URLs not typed as `Data(options="URL")`, so `_validate_data_fields` never sees
+#: them. Frappe walks the typed ones itself and hands them to the scheme-blind
+#: `validate_url`; these need naming.
+URL_FIELDS = {
+    ("Course Schedule", "web_meeting"),
+    ("Course Schedule Meeting", "cs_web_meeting"),
+    ("Website Branding", "hero_cta_link"),
+    ("Website Social Link", "url"),
+    ("Seminary Help Entry", "mkdocs_url"),
+    ("Channel Provider Account", "public_url"),
+    ("Communication Log", "media_url"),
+}
+
+
+def validate_urls(doc, method=None):
+    """Refuse a dangerous scheme in any URL field (p008 F7, p005 A05-2 rows 9-10).
+
+    Two passes: every `Data` field with `options: "URL"` -- the exact set
+    `BaseDocument._validate_data_fields` already walks and hands to the
+    scheme-blind `frappe.utils.validate_url`, so new fields are covered without
+    being listed -- plus the named `URL_FIELDS` for URLs stored in plain fields.
+
+    **Only changed values on an existing document.** A `mailto:` or `//host`
+    value stored before this existed must not make an unrelated edit to the same
+    record impossible; it is refused when someone next touches *that* field.
+    On insert everything is checked.
+    """
+    is_new = doc.is_new()
+    for df in doc.meta.fields:
+        typed = df.fieldtype == "Data" and (df.options or "").upper() == "URL"
+        if not typed and (doc.doctype, df.fieldname) not in URL_FIELDS:
+            continue
+        value = doc.get(df.fieldname)
+        if not value:
+            continue
+        if not is_new and not doc.has_value_changed(df.fieldname):
+            continue
+        require_safe_url(value, _(df.label or df.fieldname))

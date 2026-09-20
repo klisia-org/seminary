@@ -44,6 +44,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { htmlToText } from '@/utils'
 
 const props = defineProps({
 	url: { type: String, default: '' },
@@ -98,9 +99,7 @@ function jumpTo(comment) {
 }
 
 function textPreview(html) {
-	const tmp = document.createElement('div')
-	tmp.innerHTML = html || ''
-	return (tmp.textContent || '').slice(0, 120)
+	return htmlToText(html).slice(0, 120)
 }
 
 defineExpose({ jumpTo })

@@ -96,13 +96,13 @@
 								{{ __('Self-assessed') }}
 							</span>
 						</div>
-						<div v-if="competencyOf(chapter).statement"
-							class="prose-sm mt-1 text-ink-gray-6" v-html="competencyOf(chapter).statement" />
+						<SafeHtml v-if="competencyOf(chapter).statement"
+							class="prose-sm mt-1 text-ink-gray-6" :html="competencyOf(chapter).statement" />
 						<dl v-if="!competencyOf(chapter).locked" class="mt-2 space-y-1">
 							<div v-for="d in competencyOf(chapter).dimensions" :key="d.dimension_code"
 								class="text-xs">
 								<dt class="inline font-medium text-ink-gray-7">{{ d.dimension }}:</dt>
-								<dd class="ml-1 inline text-ink-gray-6" v-html="d.demonstrated_by" />
+								<SafeHtml class="ml-1 inline text-ink-gray-6" :html="d.demonstrated_by" as="dd" />
 							</div>
 						</dl>
 						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">
@@ -474,13 +474,15 @@ const redirectToChapter = (chapter) => {
 		return
 	}
 
-	router.push({
-		name: 'SCORMChapter',
-		params: {
-			courseName: props.courseName,
-			chapterName: chapter.name,
-		},
-	})
+	// p008 F8 removed SCORM extraction: a package is stored, never unpacked, and
+	// there has never been a route or a player to send anyone to -- `SCORMChapter`
+	// is not in the router, so this push threw and the click did nothing with no
+	// explanation. Say so until p009 builds the viewer (its own ADR: a separate
+	// origin, an iframe, a postMessage runtime).
+	toast.warning(
+		__('Not yet playable'),
+		__('This chapter is a SCORM package. Playing SCORM content is not available yet — ask your instructor for the material in another form.')
+	)
 }
 
 const isActiveLesson = (lessonNumber) => {

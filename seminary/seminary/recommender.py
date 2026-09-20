@@ -12,10 +12,16 @@ import hmac
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import getdate, now_datetime, today
 
 
+# Keyed on the letter, not the IP: this is the token *attempt counter*
+# p005a A06-6 says the recommender path never had. 60 an hour is far more than
+# a real recommender needs and meaningless against a 256-bit token, and capping
+# per letter means rotating addresses does not buy more guesses (p010 H6).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="name", limit=60, seconds=3600, ip_based=False)
 def get_request(name, token):
     """Return the public-facing details of a Recommendation Letter request."""
     doc = _validate_token(name, token)
@@ -38,7 +44,11 @@ def get_request(name, token):
     }
 
 
+# This one reads the *entire request body* and inserts a File. Token-gated,
+# but with no per-token quota it was the cheapest way to fill a disk from
+# outside the session (p005a A09-4).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="name", limit=20, seconds=3600, ip_based=False)
 def upload_attachment(name, token):
     """Token-gated file upload for the recommender portal.
 
@@ -82,6 +92,7 @@ def upload_attachment(name, token):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="name", limit=20, seconds=3600, ip_based=False)
 def submit_letter(name, token, body, attachment_url=None):
     """Persist the recommender's letter and advance the workflow to Submitted."""
     doc = _validate_token(name, token)

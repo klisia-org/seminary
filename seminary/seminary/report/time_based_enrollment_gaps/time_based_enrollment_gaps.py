@@ -82,7 +82,7 @@ def get_data(filters):
         f"""SELECT pe.name, pe.student, pe.program, pe.current_std_term
             FROM `tabProgram Enrollment` pe
             INNER JOIN `tabProgram` p ON p.name = pe.program
-            WHERE {pe_conditions}""",
+            WHERE {pe_conditions}""",  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

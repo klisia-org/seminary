@@ -43,7 +43,7 @@
 					{{ __('No answers to the school’s standard questions yet.') }}
 				</p>
 				<section v-for="q in arc.data.by_question" :key="q.question_key">
-					<div class="prose-sm font-semibold text-ink-gray-8" v-html="q.question_text" />
+					<SafeHtml class="prose-sm font-semibold text-ink-gray-8" :html="q.question_text" />
 					<ol class="mt-2 space-y-3 border-l border-outline-gray-2 pl-4">
 						<li v-for="(a, i) in q.answers" :key="i">
 							<div class="text-xs text-ink-gray-5">
@@ -51,7 +51,7 @@
 								<span v-if="a.start_date"> · {{ formatDate(a.start_date) }}</span>
 								<Badge class="ml-1" :label="a.status" :theme="goalTheme(a.status)" />
 							</div>
-							<div class="prose-sm mt-1 text-ink-gray-7" v-html="a.goal" />
+							<SafeHtml class="prose-sm mt-1 text-ink-gray-7" :html="a.goal" />
 						</li>
 					</ol>
 				</section>
@@ -73,7 +73,7 @@
 								{{ g.course_name }}
 								<Badge class="ml-1" :label="g.status" :theme="goalTheme(g.status)" />
 							</div>
-							<div class="prose-sm mt-1 text-ink-gray-7" v-html="g.goal" />
+							<SafeHtml class="prose-sm mt-1 text-ink-gray-7" :html="g.goal" />
 						</li>
 					</ol>
 				</section>
@@ -90,11 +90,11 @@
 						<h2 class="font-semibold text-ink-gray-8">{{ p.course_name }}</h2>
 						<Badge :label="p.status" :theme="planTheme(p.status)" />
 					</div>
-					<div v-if="p.reflection" class="prose-sm mt-2 text-ink-gray-6"
-						v-html="p.reflection" />
+					<SafeHtml v-if="p.reflection" class="prose-sm mt-2 text-ink-gray-6"
+						:html="p.reflection" />
 					<ul class="mt-3 space-y-2">
 						<li v-for="(g, i) in p.goals" :key="i" class="text-sm">
-							<div class="prose-sm text-ink-gray-7" v-html="g.goal" />
+							<SafeHtml class="prose-sm text-ink-gray-7" :html="g.goal" />
 							<div class="mt-0.5 text-xs text-ink-gray-5">
 								<span v-if="g.question_text" class="mr-2">{{ stripHtml(g.question_text) }}</span>
 								<Badge :label="g.status" :theme="goalTheme(g.status)" />
@@ -104,7 +104,7 @@
 					<div v-if="p.mentor_feedback"
 						class="mt-3 rounded-md bg-surface-gray-1 px-3 py-2">
 						<div class="text-xs font-medium text-ink-gray-6">{{ __('Mentor') }}</div>
-						<div class="prose-sm text-ink-gray-6" v-html="p.mentor_feedback" />
+						<SafeHtml class="prose-sm text-ink-gray-6" :html="p.mentor_feedback" />
 					</div>
 				</section>
 			</div>
@@ -150,7 +150,7 @@
 								{{ __('Delete') }}
 							</Button>
 						</div>
-						<div class="prose-sm mt-1 text-ink-gray-7" v-html="n.note" />
+						<SafeHtml class="prose-sm mt-1 text-ink-gray-7" :html="n.note" />
 					</li>
 				</ol>
 			</div>
@@ -163,7 +163,7 @@ import {
 	Badge, Breadcrumbs, Button, FormControl, LoadingIndicator, call, createResource, toast,
 } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
-import { formatDate } from '@/utils'
+import { formatDate, htmlToText } from '@/utils'
 
 const props = defineProps({
 	student: { type: String, default: null },
@@ -237,11 +237,7 @@ const planTheme = (s) =>
 	({ Draft: 'gray', Submitted: 'blue', Reviewed: 'orange', Accepted: 'green' }[s]
 		|| 'gray')
 
-const stripHtml = (html) => {
-	const el = document.createElement('div')
-	el.innerHTML = html || ''
-	return (el.textContent || '').trim()
-}
+const stripHtml = (html) => htmlToText(html).trim()
 
 const errorText = (e) =>
 	Array.isArray(e?.messages) && e.messages.length

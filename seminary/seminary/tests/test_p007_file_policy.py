@@ -135,7 +135,28 @@ class TestP007FilePolicy(IntegrationTestCase):
             )
             self.assertEqual(doc.is_private, 1)
             frappe.db.set_value("Program", program, "published", 1)
-            self.assertTrue(file_policy.may_be_public(doc))
+
+            # p008 F15: claiming `attached_to_field` is no longer enough. The
+            # claim is client-supplied and Frappe never checks it against the
+            # host, so a File whose host does not actually carry the URL has no
+            # registered field and cannot be public. This assertion used to be
+            # `assertTrue` on the strength of the claim alone -- which was the
+            # publish primitive.
+            self.assertFalse(
+                file_policy.may_be_public(doc),
+                "an unconfirmed attached_to_field must not publish",
+            )
+
+            # Once the host really holds the URL, the predicate decides.
+            hero_was = frappe.db.get_value("Program", program, "hero_image")
+            frappe.db.set_value("Program", program, "hero_image", doc.file_url)
+            try:
+                self.assertTrue(file_policy.may_be_public(doc))
+                frappe.db.set_value("Program", program, "published", 0)
+                self.assertFalse(file_policy.may_be_public(doc))
+                frappe.db.set_value("Program", program, "published", 1)
+            finally:
+                frappe.db.set_value("Program", program, "hero_image", hero_was)
 
             key = ("Course", "hero_image")
             self.assertFalse(file_policy._registered(*key)[0])
@@ -146,6 +167,128 @@ class TestP007FilePolicy(IntegrationTestCase):
                 file_policy.PUBLIC_FILE_FIELDS.pop(key)
         finally:
             frappe.db.set_value("Program", program, "published", was)
+
+    def test_a_named_fieldname_on_a_wildcard_host_cannot_publish(self):
+        """p008 F15 / p005a A02-6.
+
+        `PUBLIC_FILE_FIELDS` used to carry `(doctype, "*")` rows for Website
+        Branding, Seminary Settings and Letter Head. Combined with
+        `_attached_field` trusting the uploader's `attached_to_field`, that made
+        `upload_file(is_private=0, doctype="Seminary Settings", fieldname=<anything>)`
+        a publish primitive: the wildcard matched and the file landed
+        world-readable in /files/. nginx forces an attachment for .html and .svg,
+        so the sharp edge was .xhtml, .svgz and .mhtml.
+        """
+        for doctype in ("Seminary Settings", "Website Branding", "Letter Head"):
+            with self.subTest(doctype=doctype):
+                self.assertFalse(
+                    file_policy._registered(doctype, "anything_i_name")[0],
+                    "a fieldname nobody registered must not match",
+                )
+        self.assertEqual(
+            [k for k in file_policy.PUBLIC_FILE_FIELDS if k[1] == "*"],
+            [],
+            "no wildcard rows may remain in the registry",
+        )
+
+    def test_a_registered_field_still_publishes_once_the_host_holds_it(self):
+        """The other half: F15 must not cost the feature. A logo really set on
+        Seminary Settings is still public."""
+        self.assertTrue(file_policy._registered("Seminary Settings", "logo_portal")[0])
+        self.assertTrue(file_policy._registered("Website Branding", "favicon")[0])
+        self.assertTrue(file_policy._registered("Letter Head", "image")[0])
+
+    def test_naming_someone_elses_private_file_in_an_attach_field_is_refused(self):
+        """p008 F16 / p005a A02-8.
+
+        Frappe's `attach_files_to_document` binds any *unattached* File matching
+        the URL to the caller's document with no permission check. Since p007
+        made loose private uploads the norm, guessing one and putting it in an
+        Attach field was a way to gain read on it -- the file policy reads
+        through the host, so attaching it to your own submission is enough.
+        """
+        from seminary.seminary import file_policy as fp
+
+        owner, stranger = self.web_user, self.other_user
+
+        theirs = _file(owner, is_private=1)  # loose: attached to nothing
+        self.assertFalse(theirs.attached_to_doctype)
+
+        frappe.set_user(stranger)
+        try:
+            rows = fp._rows_for(theirs.file_url)
+            self.assertTrue(rows)
+            self.assertFalse(
+                fp._may_adopt(rows, None),
+                "a stranger must not be allowed to adopt a loose private file",
+            )
+        finally:
+            frappe.set_user("Administrator")
+
+        # ...and the owner still may.
+        frappe.set_user(owner)
+        try:
+            self.assertTrue(fp._may_adopt(fp._rows_for(theirs.file_url), None))
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_actually_throws(self):
+        """Not just that the rule says no -- that the hook refuses the save."""
+        from seminary.seminary import file_policy as fp
+
+        owner, stranger = self.web_user, self.other_user
+        theirs = _file(owner, is_private=1)
+
+        doc = frappe.new_doc("Withdrawal Request")
+        doc.student_documentation = theirs.file_url
+
+        frappe.set_user(stranger)
+        try:
+            with self.assertRaises(frappe.PermissionError):
+                fp.guard_attach_fields(doc)
+        finally:
+            frappe.set_user("Administrator")
+
+        # The owner of the file is not obstructed.
+        frappe.set_user(owner)
+        try:
+            fp.guard_attach_fields(doc)  # must not raise
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_ignores_a_value_that_names_no_file(self):
+        """A URL with no File row is left to Frappe, which creates one."""
+        from seminary.seminary import file_policy as fp
+
+        doc = frappe.new_doc("Withdrawal Request")
+        doc.student_documentation = "/private/files/zzz-no-such-file-f16.pdf"
+        frappe.set_user(self.other_user)
+        try:
+            fp.guard_attach_fields(doc)  # must not raise
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_is_registered_before_frappes_attach_step(self):
+        hooks = frappe.get_hooks("doc_events") or {}
+        validate = (hooks.get("*", {}) or {}).get("validate") or []
+        if isinstance(validate, str):
+            validate = [validate]
+        self.assertIn(
+            "seminary.seminary.file_policy.guard_attach_fields",
+            validate,
+            "must run at validate: on_update is too late to refuse the binding",
+        )
+
+    def test_an_offloaded_attach_value_is_recognised_as_a_file_url(self):
+        """Frappe's attach step tests `startswith(('/files', '/private/files'))`,
+        so an offloaded URL never matched and the file was never attached --
+        owner-only, and the grader got a 403."""
+        from seminary.seminary import file_policy as fp
+        from seminary.storage.backend import url_for_key, object_key
+
+        url = url_for_key(object_key("a" * 32))
+        self.assertTrue(fp._is_file_url(url))
+        self.assertFalse(url.startswith(("/files", "/private/files")))
 
     def test_sync_follows_the_host(self):
         program = frappe.get_all("Program", pluck="name", limit=1)

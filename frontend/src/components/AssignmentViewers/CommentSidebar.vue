@@ -59,11 +59,11 @@
 				<div v-if="c.anchor_type !== 'General'" class="text-xs text-ink-blue-2 mb-1">
 					📍 {{ anchorLabel(c) }}
 				</div>
-				<div
+				<SafeHtml
 					v-if="editingId !== c.name"
 					class="text-ink-gray-8 whitespace-pre-line"
-					v-html="c.comment"
-				></div>
+					:html="c.comment"
+				/>
 				<div v-else @click.stop>
 					<textarea
 						v-model="editText"
@@ -94,7 +94,7 @@
 <script setup>
 import { ref, computed, inject, watch, nextTick } from 'vue'
 import { Button, call, toast } from 'frappe-ui'
-import { timeAgo } from '@/utils'
+import { timeAgo, htmlToText } from '@/utils'
 
 const props = defineProps({
 	submissionName: { type: String, default: '' },
@@ -158,9 +158,7 @@ async function addComment() {
 function startEdit(c) {
 	editingId.value = c.name
 	// Strip HTML to plain text for the textarea
-	const tmp = document.createElement('div')
-	tmp.innerHTML = c.comment || ''
-	editText.value = tmp.textContent || ''
+	editText.value = htmlToText(c.comment)
 }
 
 function cancelEdit() {

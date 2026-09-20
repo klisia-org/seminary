@@ -97,8 +97,6 @@ def set_total_points(questions):
 # in the answers) with ignore_permissions, for any exam and any section. p007 2.7:
 # an endpoint with no caller is not an endpoint.
 def exam_summary(exam, course, time_taken, results):
-    print("Time Taken", time_taken)
-    print("Results", results)
     score = 0
     results = results and json.loads(results)
     percentage = 0

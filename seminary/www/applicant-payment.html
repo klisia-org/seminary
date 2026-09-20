@@ -22,6 +22,15 @@
 	</div>
 	{% endif %}
 
+	{# One message for "no such applicant" and "wrong key" alike: telling the two
+	   apart would make this page an applicant-enumeration oracle (p005 A10-2). #}
+	{% if invalid_link %}
+	<div class="sem-panel">
+		<h2>{{ _("We could not open your payment link") }}</h2>
+		<p>{{ _("This link may have expired or been copied incompletely. Your application was received either way — please use the link in your confirmation email, or reply to it and we will send a new one.") }}</p>
+	</div>
+	{% endif %}
+
 	{% if payment_data and payment_data.alternative_instructions %}
 	<div class="sem-panel">
 		<h3>{{ _("Other ways to pay") }}</h3>

@@ -38,14 +38,15 @@ def execute():
         """
     )
 
-    frappe.db.sql(
-        f"""
+    # STASH is a module constant, not a request value.
+    insert = f"""
         INSERT INTO `{STASH}` (pfc, pf_pe, scholarship)
         SELECT name, pf_pe, scholarship
         FROM `tabPayers Fee Category PE`
         WHERE scholarship IS NOT NULL AND scholarship != ''
-        """
-    )
-    count = frappe.db.sql(f"SELECT COUNT(*) FROM `{STASH}`")[0][0]
+        """  # nosec B608
+    frappe.db.sql(insert)
+    counted = f"SELECT COUNT(*) FROM `{STASH}`"  # nosec B608
+    count = frappe.db.sql(counted)[0][0]
     frappe.db.commit()
     print(f"Stashed {count} scholarship link(s) for award migration.")

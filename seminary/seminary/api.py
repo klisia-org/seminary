@@ -6,6 +6,7 @@ import json
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.email.doctype.email_group.email_group import add_subscribers
 from frappe.desk.reportview import get_filters_cond, get_match_cond
 from frappe.model.mapper import get_mapped_doc
@@ -36,6 +37,7 @@ import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
+from seminary.seminary import guards
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
     SCHOOL_ROLES,
@@ -46,6 +48,7 @@ from seminary.seminary.guards import (
     require_grader,
     require_outline_editor,
     require_own_enrollment,
+    require_own_student,
     require_registrar,
 )
 
@@ -129,7 +132,6 @@ def get_student_group(course_name: str | None = None, user: str | None = None):
         (course_name, user),
         as_dict=1,
     )
-    print("Group fetched: ", group)
     return group[0] if group else {}
 
 
@@ -583,7 +585,7 @@ def get_discussion_dashboard(course_name: str, discussion_id: str):
             JOIN `tabDiscussion Submission` s ON s.name = r.parent
             WHERE s.coursesc = %s AND s.disc_activity = %s
             AND r.member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
                 [course_name, discussion_id] + roster_emails,
             )[0][0]
             or 0
@@ -626,7 +628,7 @@ def get_quiz_dashboard(course_name: str, quiz_id: str):
         FROM `tabQuiz Submission`
         WHERE quiz = %s AND course = %s AND member IN ({placeholders})
         GROUP BY member
-        """,
+        """,  # nosec B608 -- interpolates %s placeholders; the values are bound
         [quiz_id, course_name] + roster_emails,
         as_dict=True,
     )
@@ -669,7 +671,7 @@ def get_exam_dashboard(course_name, exam_id):
             WHERE exam = %s AND course = %s
             AND status != 'Not Submitted'
             AND member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
             [exam_id, course_name] + roster_emails,
         )[0][0]
         or 0
@@ -709,7 +711,7 @@ def get_assignment_dashboard(course_name, assignment_id):
             WHERE assignment = %s
               AND (course = %s OR course IS NULL)
               AND member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
             [assignment_id, course_name] + roster_emails,
         )[0][0]
         or 0
@@ -717,7 +719,13 @@ def get_assignment_dashboard(course_name, assignment_id):
     return {"student_count": student_count}
 
 
+# The heaviest guest response on the site (p005a A06-6), but it returns the
+# whole dict in one call -- so repeating it buys an attacker nothing, and the
+# limit is sized against flooding, not scraping. It has to clear the SPA
+# fetching it on every boot: 120/h looked reasonable and locked out a
+# reload-heavy session within minutes of being tried (p010 H6).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_translations():
     if frappe.session.user != "Guest":
         language = frappe.db.get_value("User", frappe.session.user, "language")
@@ -940,6 +948,7 @@ def remove_virtual_meeting(course_schedule, meeting):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_user_info():
     if frappe.session.user == "Guest":
         return None
@@ -1227,6 +1236,7 @@ def save_instructor_profile(
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=600, seconds=3600, ip_based=True)
 def get_school_abbr_logo():
     abbr = frappe.db.get_single_value("Website Settings", "app_name")
     logo = frappe.db.get_single_value("Seminary Settings", "logo_portal")
@@ -3052,7 +3062,7 @@ def get_course_schedule_events(start, end, filters=None):
 		from `tabScheduled Course Assess Criteria` scac, `tabCourse Schedule` cs
 		where
 		cs.name = scac.parent
-		and (scac.due_date between %(start)s and %(end)s )""".format(
+		and (scac.due_date between %(start)s and %(end)s )""".format(  # nosec B608 -- interpolates a clause built from constants in this function
             conditions=conditions
         ),
         {"start": start, "end": end},
@@ -3175,9 +3185,6 @@ def save_course_assessment(course, assessment_data):
     require_course_staff(course)
     import json
 
-    print("Assessment Data:", assessment_data)
-    print("Course:", course)
-
     # If assessment_data is a string, convert it to a dictionary/list
     if isinstance(assessment_data, str):
         assessment_data = json.loads(assessment_data)
@@ -3187,7 +3194,6 @@ def save_course_assessment(course, assessment_data):
         "Scheduled Course Assess Criteria", filters={"parent": course}, fields=["name"]
     )
     existing_doc_names = {doc["name"] for doc in existing_docs}
-    print("Existing docs:", existing_doc_names)
 
     for data in assessment_data:
         # Check if the record exists by verifying if "name" is provided and is in existing_docs.
@@ -3217,7 +3223,6 @@ def save_course_assessment(course, assessment_data):
             doc.parentfield = "courseassescrit_sc"
             doc.parenttype = "Course Schedule"
             doc.save(ignore_permissions=True)
-            print("Updated doc:", doc.name)
         else:
             # Create a new record if no matching "name" is found.
             doc = frappe.get_doc(
@@ -3240,9 +3245,7 @@ def save_course_assessment(course, assessment_data):
                     "grading_mode_override": data.get("grading_mode_override") or None,
                 }
             )
-            print("Creating new doc with data:", doc.as_dict())
             doc.insert(ignore_permissions=True)
-            print("Created new doc:", doc.name)
 
     # Save the parent once at the end: the weight total and the
     # chapter -> lesson -> assessment competency check live on the Course
@@ -3263,9 +3266,17 @@ def get_scholarship(student):
 
 @frappe.whitelist()
 def get_student_invoices(student=None):
-    """The student's invoices for the Fees page (empty on a Frappe-only seminary)."""
+    """The student's invoices for the Fees page (empty on a Frappe-only seminary).
+
+    Gated on the target (p010 H15, p005a A01-17). Harmless on a Frappe-only
+    bench, where `NullFinancialBackend` returns `[]` for anybody -- **which is
+    exactly why this was missed**, here and in five siblings. With the oikonomos
+    bridge installed it is another student's invoice list. The sibling
+    `get_pe_unpaid_invoices` was fixed; these were not.
+    """
     from seminary.seminary.financial.backend import get_financial_backend
 
+    require_own_student(student or guards.current_student())
     return get_financial_backend().student_invoices(student)
 
 
@@ -3512,8 +3523,13 @@ def insert_cs_assessment(criteria):
         criteria = json.loads(criteria)
     require_course_staff(criteria.get("parent"))
 
-    # Now, criteria is a dict and you can work with it:
-    frappe.logger().info(f"Received criteria: {criteria}")
+    # The section and the title, not the caller's whole payload (p010 H4):
+    # this wrote an arbitrary caller-supplied dict into the shared worker log
+    # at INFO from a whitelisted endpoint.
+    frappe.logger("seminary").debug(
+        "insert_cs_assessment for %s (%s)"
+        % (criteria.get("parent"), criteria.get("type"))
+    )
 
     # Insert your logic to save the assessment, for example:
     doc = frappe.get_doc(
@@ -3577,7 +3593,6 @@ def get_course_rosters(name):
         ],
     )
     if not course_rosters:
-        print("No course rosters found")
         return []
     else:
         return course_rosters
@@ -3668,7 +3683,6 @@ def _require_send_scope(course_schedule):
 
 
 def _fgrade_this_std(name):
-    print("fgrade_this_std called")
     csr = frappe.get_doc("Scheduled Course Roster", name)
     cs = csr.course_sc
     course = frappe.get_doc("Course Schedule", cs)
@@ -3950,7 +3964,7 @@ def _ungraded_roster_count(course_schedule, rosters=None):
           AND COALESCE(cei.course_cancelled, 0) = 0
           AND COALESCE(card.graded_card, 0) = 0
         """
-        + scope,
+        + scope,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         params,
     )
     return rows[0][0] if rows else 0
@@ -4347,7 +4361,6 @@ def send_grades(doc=None, **kwargs):
     for record in records:
         # Process each record here
         named = record.name
-        print(named)
         course_sc = record.course_sc
         student = record.student
         program = record.program_std_scr
@@ -4381,7 +4394,6 @@ def send_grades(doc=None, **kwargs):
             newcredits = (int(totalcredits) if totalcredits else 0) + (
                 int(credits) if credits is not None else 0
             )
-            print(newcredits)
             frappe.db.set_value(
                 "Program Enrollment Course",
                 pec,
@@ -4581,7 +4593,6 @@ def course_event(name):
     datetimest = datetime.strptime(
         datetimest, "%Y-%m-%d %H:%M:%S"
     )  # Convert datetimest to a datetime object
-    print(datetimest)
     datef = str(course.c_dateend)  # Convert datef to a string
     timef = str(course.to_time)  # Convert timef to a string
     datetimef = datef + " " + timef
@@ -4589,7 +4600,6 @@ def course_event(name):
     datetimef2 = datest + " " + timef
     datetimef2 = datetime.strptime(datetimef2, "%Y-%m-%d %H:%M:%S")
     dateend = course.c_dateend
-    print(datetimef)
     participants = []
     participants = frappe.get_all(
         "Scheduled Course Roster", filters={"course_sc": name}
@@ -4654,12 +4664,12 @@ def course_event(name):
             }
         )
     event.insert()
-    print(event)
 
     return "event created"
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_doctrinal_statement():
     """Return the current admission Doctrinal Statement for the web form.
 
@@ -4684,7 +4694,12 @@ def get_doctrinal_statement():
     return {"name": row.name, "title": row.ds_title, "body": row.doctrinal_statement}
 
 
+# p006 F11 made the `access_key` check constant-time with one message for a
+# missing applicant and a wrong key, so there is no oracle. What it never had
+# is an attempt *counter*: keyed on the applicant and not the IP, so guesses
+# cannot be spread across addresses (p010 H6, p005a A09-4).
 @frappe.whitelist(allow_guest=True)
+@rate_limit(key="applicant_name", limit=20, seconds=3600, ip_based=False)
 def get_application_payment_url(applicant_name, key=None):
     """Payment URL + instructions for an applicant's Application invoice (public
     web form). Delegates to the financial backend; None on a Frappe-only seminary.
@@ -4714,6 +4729,7 @@ def get_application_payment_url(applicant_name, key=None):
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def get_default_phone_country():
     """Return the configured Seminary company's country as a full name
     string (e.g. "United States"). Frappe's Phone control reads
@@ -4730,6 +4746,7 @@ def get_default_phone_country():
 
 
 @frappe.whitelist(allow_guest=True)
+@rate_limit(limit=300, seconds=3600, ip_based=True)
 def active_term():
     at = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
     ay = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "academic_year")
@@ -5512,11 +5529,56 @@ def delete_submission_comment(name):
     frappe.delete_doc("Assignment Submission Comment", name, ignore_permissions=True)
 
 
-@frappe.whitelist()
-def get_invoice_payment_url(invoice_name):
-    """Gateway payment URL for one of the student's invoices."""
+def _require_own_invoices(names):
+    """Refuse an invoice the caller does not already hold (p010 H15, A01-17).
+
+    Seminary cannot resolve an invoice's owner -- invoices are the financial
+    backend's documents and do not exist at all on a Frappe-only bench. But it
+    does not need to: the backend already exposes *the caller's own* invoices,
+    so membership in that list is an ownership check built from the contract
+    that is already there, with no bridge change and no new abstract method.
+
+    It fails closed. With `NullFinancialBackend` the list is empty, so every
+    invoice name is refused -- which is right, because there are no invoices.
+    """
     from seminary.seminary.financial.backend import get_financial_backend
 
+    wanted = [n for n in (names or []) if n]
+    if not wanted:
+        return
+    if guards.is_school_role() or guards.instructor_tier() == "record":
+        return
+
+    mine = set()
+    for row in get_financial_backend().student_invoices() or []:
+        if isinstance(row, str):
+            mine.add(row)
+            continue
+        for key in ("name", "invoice", "invoice_name"):
+            if row.get(key):
+                mine.add(row[key])
+                break
+
+    stray = [n for n in wanted if n not in mine]
+    if stray:
+        guards._deny(
+            _("You can only pay your own invoices."),
+            "require_own_invoices",
+            count=len(stray),
+        )
+
+
+@frappe.whitelist()
+def get_invoice_payment_url(invoice_name):
+    """Gateway payment URL for one of the student's invoices.
+
+    "the student's" was a docstring precondition that nothing enforced: with a
+    bridge installed this minted a gateway payment URL for *another* student's
+    invoice (p010 H15, p005a A01-17).
+    """
+    from seminary.seminary.financial.backend import get_financial_backend
+
+    _require_own_invoices([invoice_name])
     return get_financial_backend().invoice_payment_url(invoice_name)
 
 
@@ -5533,6 +5595,10 @@ def get_student_partial_balance_payment_url(amount=None, invoices=None):
     """Gateway payment URL for a partial balance payment."""
     from seminary.seminary.financial.backend import get_financial_backend
 
+    names = invoices
+    if isinstance(names, str):
+        names = frappe.parse_json(names) or []
+    _require_own_invoices(names)
     return get_financial_backend().student_partial_balance_payment_url(amount, invoices)
 
 

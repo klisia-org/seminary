@@ -13,7 +13,7 @@
     <p v-if="submission.student_note" class="text-xs text-ink-gray-5 mt-1">{{ submission.student_note }}</p>
     <p v-if="submission.reviewer_comment || submission.reviewer_attachment" class="text-xs text-ink-gray-6 mt-1">
       <span class="font-medium">{{ submission.reviewer_name || submission.reviewer }}:</span>
-      <span v-if="submission.reviewer_comment" v-html="submission.reviewer_comment"></span>
+      <SafeHtml v-if="submission.reviewer_comment" :html="submission.reviewer_comment" as="span" />
       <a v-if="submission.reviewer_attachment" :href="submission.reviewer_attachment" target="_blank"
         class="text-ink-blue-3 ml-1 underline">{{ fileName(submission.reviewer_attachment) }}</a>
     </p>

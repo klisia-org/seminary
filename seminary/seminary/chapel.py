@@ -11,10 +11,14 @@ running count is reflected onto the student's Chapel Attendance Student
 Graduation Requirement (SGR) rows. Kept separate from events.py on purpose.
 """
 
+import hmac
+
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, get_datetime, now_datetime, today
 
+from seminary.seminary import security_log
 from seminary.seminary.utils import get_current_student
 
 SGR_DOCTYPE = "Student Graduation Requirement"
@@ -56,7 +60,14 @@ def _validate_code(chapel_doc, settings, code):
         return
     expected = (chapel_doc.checkin_code or "").strip().upper()
     given = (code or "").strip().upper()
-    if not expected or given != expected:
+    # See `course_checkin._validate_code` for why the code stays short.
+    # Bytes, not str: `compare_digest` raises TypeError on a non-ASCII str, so
+    # a student typing an accented character would get a 500 instead of
+    # "incorrect code".
+    if not expected or not hmac.compare_digest(
+        given.encode("utf-8", "ignore"), expected.encode("utf-8", "ignore")
+    ):
+        security_log.record_denial("checkin_code", kind_of="chapel")
         frappe.throw(_("Incorrect or missing check-in code."))
 
 
@@ -90,6 +101,7 @@ def _active_enrollment(student):
 
 
 @frappe.whitelist()
+@rate_limit(key="chapel", limit=20, seconds=3600, ip_based=False)
 def check_in(chapel, code=None):
     """Student self check-in to a chapel. Validates the chapel is confirmed,
     the check-in window (unless disabled), and the code (if required); rejects

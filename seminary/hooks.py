@@ -240,7 +240,7 @@ seminary_markdown_macro_renderers = {
     "YouTubeVideo": "seminary.plugins.youtube_video_renderer",
     "Video": "seminary.plugins.video_renderer",
     "Embed": "seminary.plugins.embed_renderer",
-    "Audio": "reminary.plugins.audio_renderer",
+    "Audio": "seminary.plugins.audio_renderer",
     "PDF": "seminary.plugins.pdf_renderer",
 }
 
@@ -267,6 +267,10 @@ notification_config = "seminary.notifications.get_notification_config"
 # Permissions evaluated in scripted ways
 
 permission_query_conditions = {
+    # Pairs with the `has_permission` below. It was the only unpaired
+    # registration of the 41: the second gate applied to opening a plagiarism
+    # result and not to listing them (p010 H16, p005a A06-5).
+    "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.get_permission_query_conditions",
     "Instructor": "seminary.seminary.doctype.instructor.instructor.get_permission_query_conditions",
     # p008a G8: the list must not show a folder a per-document read would deny.
     "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.get_permission_query_conditions",
@@ -542,7 +546,37 @@ doc_events = {
         # written, never re-derived afterwards. Hung off the wildcard rather
         # than five controllers so that declaring a new snapshot needs no
         # controller edit; it is an O(1) dict miss for every other doctype.
-        "before_validate": "seminary.seminary.person_fields.capture_snapshots",
+        "before_validate": [
+            "seminary.seminary.person_fields.capture_snapshots",
+            # Every rich-text field on every doctype (p008 F6, p005 A05-1b).
+            # Frappe's own save-time sanitiser is bypassed for most content --
+            # `_sanitize_content` omits `always_sanitize`, and `sanitize_html`
+            # returns the value unchanged when BeautifulSoup finds no element --
+            # so staff-authored HTML reached the database raw, including
+            # `Program.program_description`, which renders on the public site.
+            # Measured before it was wired up: of 137 rich values on potestas,
+            # 13 change, all of them the same p005a XSS probe losing its
+            # smuggled `<!---->`. JSON-in-a-Text-field is skipped by shape.
+            "seminary.seminary.content_safety.sanitize_rich_text",
+        ],
+        # URL scheme allow-list (p008 F7, p005 A05-2 rows 9-10).
+        # `frappe.utils.validate_url` accepts `javascript:` unless it is told
+        # which schemes are valid, and no caller in this app told it. Typed
+        # `Data(options="URL")` fields are picked up automatically; the rest are
+        # named in `url_policy.URL_FIELDS`. Only changed values are checked on an
+        # existing document, so a value stored before this cannot block an
+        # unrelated edit. Measured on potestas first: 0 of 4 stored values
+        # would be refused.
+        "validate": [
+            "seminary.seminary.url_policy.validate_urls",
+            # Attach fields (p008 F16, p005a A02-8). Frappe's own attach step
+            # takes any *unattached* File matching the URL and binds it to the
+            # caller's document with no permission check, so naming a guessed
+            # `/private/files/...` was a way to gain read on it through your own
+            # record. Refused here, at validate, because that is the only point
+            # the association can be refused rather than undone.
+            "seminary.seminary.file_policy.guard_attach_fields",
+        ],
         "on_update": [
             "seminary.seminary.communication_triggers.process",
             # File privacy (p007 §8.2): keeps registered web images in step
@@ -580,6 +614,20 @@ plagiarism_providers = {
 
 # Scheduled Tasks
 # ---------------
+
+# Security response headers (p008 F14, p005a A02-9). The app shipped none; what
+# protected the site was the bench-generated nginx.conf, which is outside this
+# repo, absent under `bench serve` or any other proxy, drops the whole header set
+# inside `location` blocks that declare their own, and skips non-2xx/3xx -- so
+# every error page was bare. CSP ships **report-only**: set `seminary_csp_enforce`
+# in site_config to enforce, once the reports are clean.
+after_request = [
+    "seminary.seminary.http_headers.apply_security_headers",
+    # Every 403/401 that never passed through `guards` -- frappe's own
+    # has_permission, a query-condition refusal, a whitelist miss. Before
+    # this a successful escalation attempt left no record at all (p010 H1).
+    "seminary.seminary.security_log.log_denied_response",
+]
 
 scheduler_events = {
     # 	"all": [

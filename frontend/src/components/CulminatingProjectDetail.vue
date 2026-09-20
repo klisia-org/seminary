@@ -20,7 +20,7 @@
         <div class="mt-2 flex items-center gap-2 flex-wrap">
           <details v-if="cp.data.abstract">
             <summary class="text-xs text-ink-blue-3 cursor-pointer">{{ __('Abstract') }}</summary>
-            <div class="prose prose-sm max-w-none mt-2 text-ink-gray-7" v-html="cp.data.abstract"></div>
+            <SafeHtml class="prose prose-sm max-w-none mt-2 text-ink-gray-7" :html="cp.data.abstract" />
           </details>
           <span v-else-if="!canEditAbstract" class="text-xs text-ink-gray-4">{{ __('No abstract yet.') }}</span>
           <Button v-if="canEditAbstract" size="sm" variant="ghost" @click="openAbstract">
@@ -280,7 +280,7 @@
     <!-- Milestone instructions (rich text) -->
     <Dialog v-model="infoDialog" :options="{ title: infoTitle, size: '2xl' }">
       <template #body-content>
-        <div class="prose prose-sm max-w-none text-ink-gray-7" v-html="infoContent"></div>
+        <SafeHtml class="prose prose-sm max-w-none text-ink-gray-7" :html="infoContent" />
       </template>
     </Dialog>
   </div>

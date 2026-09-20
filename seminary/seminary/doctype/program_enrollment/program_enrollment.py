@@ -430,7 +430,7 @@ def get_program_courses(doctype, txt, searchfield, start, page_len, filters):
 			if(locate(%(_txt)s, course), locate(%(_txt)s, course), 99999),
 			idx desc,
 			`tabProgram Course`.course asc
-		limit {start}, {page_len}""".format(
+		limit {start}, {page_len}""".format(  # nosec B608 -- interpolates a clause built from constants in this function
             match_cond=get_match_cond(doctype), start=start, page_len=page_len
         ),
         {

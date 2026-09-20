@@ -17,6 +17,7 @@ be loaded in a webpage.
 import frappe
 from urllib.parse import quote
 from frappe import _
+from frappe.utils import escape_html
 
 
 class PageExtension:
@@ -96,16 +97,35 @@ class LiveCodeExtension(PageExtension):
 
 
 def youtube_video_renderer(video_id):
+    # `class="youtube-video` was never closed, so the attribute swallowed
+    # everything up to the next quote and `allow`/`allowfullscreen` were silently
+    # part of the class name. The id is escaped because it comes from a lesson
+    # macro, and it is a path segment, not a whole URL (p008 F5).
+    video_id = quote(escape_html(video_id), safe="")
     return f"""
     <iframe width="100%" height="400"
         src="https://www.youtube.com/embed/{video_id}"
         title="YouTube video player"
         frameborder="0"
-        class="youtube-video
+        class="youtube-video"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen>
     </iframe>
     """
+
+
+def _media_src(src):
+    """A quoted, scheme-checked `src` for the media renderers (p008 F5).
+
+    These interpolated `src={quote(src)}` **unquoted**: `quote` leaves `/` and
+    `:` alone, so a `javascript:` argument survived it intact, and any character
+    it does not escape ended the attribute.
+    """
+    from seminary.seminary.url_policy import is_safe_url
+
+    if not is_safe_url(src, schemes=("http", "https"), allow_relative=True):
+        return ""
+    return escape_html(src)
 
 
 def embed_renderer(details):
@@ -118,9 +138,22 @@ def embed_renderer(details):
         width = "75%"
         height = "600"
 
+    # Every attribute quoted, and the src checked rather than interpolated
+    # (p008 F5/F7). `src={src}` unquoted ended the attribute at the first space,
+    # so a macro argument could add attributes of its own -- `onload=` among
+    # them.
+    #
+    # Scheme check only, NOT `safe_embed_url`: that helper refuses a URL on this
+    # site, which is right for an author-pasted external embed but wrong here --
+    # the `type == "pdf"` branch above exists precisely to frame a PDF uploaded
+    # to this site, and a same-origin refusal would blank every one of them.
+    src = _media_src(src)
+    if not src:
+        return ""
+
     return f"""
-	<iframe width={width} height={height}
-		src={src}
+	<iframe width="{width}" height="{height}"
+		src="{src}"
 		title="Embedded Content"
 		frameborder="0"
 		style="border-radius: var(--border-radius-lg)"
@@ -131,11 +164,23 @@ def embed_renderer(details):
 
 
 def video_renderer(src):
-    return f"<video controls width='100%' controls controlsList='nodownload'><source src={quote(src)} type='video/mp4'></video>"
+    src = _media_src(src)
+    if not src:
+        return ""
+    return (
+        f"<video controls width='100%' controlsList='nodownload'>"
+        f'<source src="{src}" type="video/mp4"></video>'
+    )
 
 
 def audio_renderer(src):
-    return f"<audio width='100%' controls controlsList='nodownload'><source src={quote(src)} type='audio/mp3'></audio>"
+    src = _media_src(src)
+    if not src:
+        return ""
+    return (
+        f"<audio width='100%' controls controlsList='nodownload'>"
+        f'<source src="{src}" type="audio/mp3"></audio>'
+    )
 
 
 def pdf_renderer(src):

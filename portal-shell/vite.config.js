@@ -19,7 +19,7 @@ export default defineConfig({
           asset.name === 'style.css' ? 'portal-shell.css' : asset.name,
       },
     },
-    sourcemap: true,
+    sourcemap: false,  // see frontend/vite.config.js (p010 H14)
     emptyOutDir: true,
   },
 })
