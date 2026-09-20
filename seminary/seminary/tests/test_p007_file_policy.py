@@ -135,7 +135,28 @@ class TestP007FilePolicy(IntegrationTestCase):
             )
             self.assertEqual(doc.is_private, 1)
             frappe.db.set_value("Program", program, "published", 1)
-            self.assertTrue(file_policy.may_be_public(doc))
+
+            # p008 F15: claiming `attached_to_field` is no longer enough. The
+            # claim is client-supplied and Frappe never checks it against the
+            # host, so a File whose host does not actually carry the URL has no
+            # registered field and cannot be public. This assertion used to be
+            # `assertTrue` on the strength of the claim alone -- which was the
+            # publish primitive.
+            self.assertFalse(
+                file_policy.may_be_public(doc),
+                "an unconfirmed attached_to_field must not publish",
+            )
+
+            # Once the host really holds the URL, the predicate decides.
+            hero_was = frappe.db.get_value("Program", program, "hero_image")
+            frappe.db.set_value("Program", program, "hero_image", doc.file_url)
+            try:
+                self.assertTrue(file_policy.may_be_public(doc))
+                frappe.db.set_value("Program", program, "published", 0)
+                self.assertFalse(file_policy.may_be_public(doc))
+                frappe.db.set_value("Program", program, "published", 1)
+            finally:
+                frappe.db.set_value("Program", program, "hero_image", hero_was)
 
             key = ("Course", "hero_image")
             self.assertFalse(file_policy._registered(*key)[0])
@@ -146,6 +167,36 @@ class TestP007FilePolicy(IntegrationTestCase):
                 file_policy.PUBLIC_FILE_FIELDS.pop(key)
         finally:
             frappe.db.set_value("Program", program, "published", was)
+
+    def test_a_named_fieldname_on_a_wildcard_host_cannot_publish(self):
+        """p008 F15 / p005a A02-6.
+
+        `PUBLIC_FILE_FIELDS` used to carry `(doctype, "*")` rows for Website
+        Branding, Seminary Settings and Letter Head. Combined with
+        `_attached_field` trusting the uploader's `attached_to_field`, that made
+        `upload_file(is_private=0, doctype="Seminary Settings", fieldname=<anything>)`
+        a publish primitive: the wildcard matched and the file landed
+        world-readable in /files/. nginx forces an attachment for .html and .svg,
+        so the sharp edge was .xhtml, .svgz and .mhtml.
+        """
+        for doctype in ("Seminary Settings", "Website Branding", "Letter Head"):
+            with self.subTest(doctype=doctype):
+                self.assertFalse(
+                    file_policy._registered(doctype, "anything_i_name")[0],
+                    "a fieldname nobody registered must not match",
+                )
+        self.assertEqual(
+            [k for k in file_policy.PUBLIC_FILE_FIELDS if k[1] == "*"],
+            [],
+            "no wildcard rows may remain in the registry",
+        )
+
+    def test_a_registered_field_still_publishes_once_the_host_holds_it(self):
+        """The other half: F15 must not cost the feature. A logo really set on
+        Seminary Settings is still public."""
+        self.assertTrue(file_policy._registered("Seminary Settings", "logo_portal")[0])
+        self.assertTrue(file_policy._registered("Website Branding", "favicon")[0])
+        self.assertTrue(file_policy._registered("Letter Head", "image")[0])
 
     def test_sync_follows_the_host(self):
         program = frappe.get_all("Program", pluck="name", limit=1)
