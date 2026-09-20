@@ -144,7 +144,10 @@ async function renderPdf() {
 			if (!canvas) continue
 			canvas.width = viewport.width
 			canvas.height = viewport.height
-			await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+			// pdf.js 6 takes the canvas itself; `canvasContext` still works but is
+			// kept only for backwards compatibility, and `canvas` is the
+			// documented parameter (p010: pdfjs-dist 5 -> 6 for GHSA advisories).
+			await page.render({ canvas, viewport }).promise
 		}
 	} catch (err) {
 		console.error('PDF render failed:', err)
