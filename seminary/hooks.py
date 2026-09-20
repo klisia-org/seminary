@@ -611,6 +611,14 @@ plagiarism_providers = {
 # Scheduled Tasks
 # ---------------
 
+# Security response headers (p008 F14, p005a A02-9). The app shipped none; what
+# protected the site was the bench-generated nginx.conf, which is outside this
+# repo, absent under `bench serve` or any other proxy, drops the whole header set
+# inside `location` blocks that declare their own, and skips non-2xx/3xx -- so
+# every error page was bare. CSP ships **report-only**: set `seminary_csp_enforce`
+# in site_config to enforce, once the reports are clean.
+after_request = ["seminary.seminary.http_headers.apply_security_headers"]
+
 scheduler_events = {
     # 	"all": [
     # 		"seminary.tasks.all"

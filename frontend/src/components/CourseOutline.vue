@@ -474,13 +474,15 @@ const redirectToChapter = (chapter) => {
 		return
 	}
 
-	router.push({
-		name: 'SCORMChapter',
-		params: {
-			courseName: props.courseName,
-			chapterName: chapter.name,
-		},
-	})
+	// p008 F8 removed SCORM extraction: a package is stored, never unpacked, and
+	// there has never been a route or a player to send anyone to -- `SCORMChapter`
+	// is not in the router, so this push threw and the click did nothing with no
+	// explanation. Say so until p009 builds the viewer (its own ADR: a separate
+	// origin, an iframe, a postMessage runtime).
+	toast.warning(
+		__('Not yet playable'),
+		__('This chapter is a SCORM package. Playing SCORM content is not available yet — ask your instructor for the material in another form.')
+	)
 }
 
 const isActiveLesson = (lessonNumber) => {

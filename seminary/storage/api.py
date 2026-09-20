@@ -104,6 +104,11 @@ def download_file(key: str, fid: str | None = None, download: int | str = 0):
         f"private, max-age={max(ttl - _CACHE_SAFETY_MARGIN, 0)}"
     )
     response.headers["Vary"] = "Cookie"
+    # The redirect hands the browser attacker-uploadable content (p008 F14).
+    # Set here as well as in the `after_request` hook because this response is
+    # built and returned directly, and because the object store serves the bytes
+    # -- the header on the redirect is what the browser applies to the hop.
+    response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
 

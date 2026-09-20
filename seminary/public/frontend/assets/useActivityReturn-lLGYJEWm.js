@@ -1,2 +1,0 @@
-import{$t as e,fn as t}from"./frappe-ui-BLvl-W9T.js";import{j as n}from"./index-CB3SWC3F.js";function r(r){let i=e(),a=t(()=>n.returnContext),o=t(()=>!!a.value);function s(){let e=a.value;if(!e)return;let t=r==null?void 0:r();t&&n.setPendingInsert({type:e.insertType,id:t}),n.clearReturnContext(),i.push(e.route)}return{showBackToLesson:o,backToLesson:s}}export{r as t};
-//# sourceMappingURL=useActivityReturn-lLGYJEWm.js.map
