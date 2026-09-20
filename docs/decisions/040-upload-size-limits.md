@@ -42,3 +42,29 @@ upload, with a "Max N MB" hint on the prominent ones.
 - No new infra. If video grows, Cloudflare R2 + CDN slots in underneath without
   touching the recorder; private-file streaming through workers remains the
   scaling caveat.
+
+## Addendum (2026-09-20) — what bounds the *direct* path when nothing is configured
+
+p005a A10-6 read `direct_limit_for_user` as falling back to a hard 2 GiB. It does not wherever a
+policy exists: `limit_for_user` resolves the per-role exceptions, then **Default Max Upload**, and
+`DEFAULT_MAX_DIRECT_BYTES` is reached only when *neither* is set. Measured across potestas
+(10/40/100 MB), testable (25/400 MB) and tlink (30/75/100 MB), the constant bound nobody.
+
+Two principals can still reach it, and only one matters:
+
+- **`Administrator`** — uncapped by design (`limit_for_user` returns `None` first). Schools are not
+  given this account; they are given **System Manager**, which holds no special case and resolves to
+  the default like any other role. Verified: 10 MB on potestas, 25 MB on testable, 30 MB on tlink.
+- **A site with object storage configured and no upload policy at all.** Here the constant really is
+  the only ceiling, because the direct path deliberately escapes Frappe's `max_file_size` and
+  nginx's body cap — that escape is the whole point of the path, so it must not be bounded by
+  `global_max_bytes()`.
+
+The second case is legitimate but was invisible. Seminary Settings now warns on save when object
+storage is configured and no policy is, naming the constant and pointing at **Default Max Upload**.
+Enforcement is unchanged: narrowing an unconfigured site to the global cap would break the direct
+path for anyone deliberately relying on it, which this ADR's "one knob, surfaced everywhere" rule
+does not license.
+
+**Still not built:** an aggregate quota (bytes per user per window). A10-6 asked for one; it needs
+two numbers nobody has set and a counter, so it stays recorded rather than guessed.

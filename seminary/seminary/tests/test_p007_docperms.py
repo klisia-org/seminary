@@ -578,6 +578,63 @@ class TestP007DocPerms(IntegrationTestCase):
         finally:
             self._scope_reset()
 
+    # --------------------------------- p010 Block F / p005a A10-6: the direct
+    # upload ceiling already follows the configured policy; only the wholly
+    # unconfigured state reaches the built-in constant.
+
+    def test_direct_limit_follows_configured_policy(self):
+        """A10-6 as filed said this fell back to 2 GiB. It does not."""
+        from seminary.storage import limits
+
+        was = frappe.db.get_single_value("Seminary Settings", "default_max_upload_mb")
+        try:
+            frappe.db.set_single_value("Seminary Settings", "default_max_upload_mb", 7)
+            limits.clear_cache()
+            # A student holds no exception row, so the default governs. (An
+            # exception row overrides the default outright -- see the
+            # storage.limits module docstring -- so an Instructor here would
+            # resolve to their row, not to this 7.)
+            self.assertEqual(
+                limits.direct_limit_for_user(self.stu_a_user), 7 * limits.MB
+            )
+            self.assertLess(
+                limits.direct_limit_for_user(self.stu_a_user),
+                limits.DEFAULT_MAX_DIRECT_BYTES,
+            )
+        finally:
+            frappe.db.set_single_value(
+                "Seminary Settings", "default_max_upload_mb", was
+            )
+            limits.clear_cache()
+
+    def test_direct_limit_reaches_the_constant_only_when_unconfigured(self):
+        from seminary.storage import limits
+
+        was = frappe.db.get_single_value("Seminary Settings", "default_max_upload_mb")
+        rows = frappe.get_all(
+            "Upload Limit",
+            filters={"parenttype": "Seminary Settings"},
+            fields=["name", "role", "max_file_size_mb"],
+        )
+        try:
+            frappe.db.set_single_value("Seminary Settings", "default_max_upload_mb", 0)
+            for r in rows:
+                frappe.db.set_value("Upload Limit", r.name, "max_file_size_mb", 0)
+            limits.clear_cache()
+            self.assertEqual(
+                limits.direct_limit_for_user(self.prof_user),
+                limits.DEFAULT_MAX_DIRECT_BYTES,
+            )
+        finally:
+            frappe.db.set_single_value(
+                "Seminary Settings", "default_max_upload_mb", was
+            )
+            for r in rows:
+                frappe.db.set_value(
+                    "Upload Limit", r.name, "max_file_size_mb", r.max_file_size_mb
+                )
+            limits.clear_cache()
+
     def test_settings_warns_when_unit_scope_restricts_nothing(self):
         """The control must not look enabled while reaching everything."""
         doc = frappe.get_single("Seminary Settings")
