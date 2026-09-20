@@ -136,7 +136,7 @@ class SeminaryAnnouncement(Document):
                 continue
             label = _(self.meta.get_label(field))
             try:
-                render_author_text(val, sample)
+                render_author_text(val, sample, html=field == "message")
             except Exception as e:
                 frappe.throw(
                     _(
@@ -414,7 +414,7 @@ def _wrap_letterhead(letter_head, message):
     return f"{head}{message}{foot}"
 
 
-def _render(template, ctx):
+def _render(template, ctx, html=False):
     """Render an author-written Jinja snippet against the recipient context.
     No Jinja markers → returned as-is; a render error falls back to the raw
     text (submit-time validation surfaces real syntax errors to the author).
@@ -424,7 +424,7 @@ def _render(template, ctx):
     if not has_markers(template):
         return template
     try:
-        return render_author_text(template, ctx)
+        return render_author_text(template, ctx, html=html)
     except Exception:
         return template
 
@@ -481,7 +481,11 @@ def _rendered_bodies(doc, child, person, letter_head):
     short text (SMS/WhatsApp/Telegram/Voice), and the letterhead-wrapped print
     body. Personalization tokens like {{ recipient.first_name }} resolve here."""
     ctx = _render_context(child, person)
-    message = _render(doc.message or "", ctx)
+    # `message` is the Text Editor body and goes to Email/In-App/Print, so the
+    # recipient tokens interpolated into it are escaped. `subject` (Data) and
+    # `short_message` (Small Text) are plain-text sinks and must not be
+    # escaped, or an apostrophe in a name reaches an SMS as `&#39;` (A05-7).
+    message = _render(doc.message or "", ctx, html=True)
     subject = _render(doc.subject or "", ctx)
     short = (
         _render(doc.short_message, ctx) if doc.short_message else strip_html(message)

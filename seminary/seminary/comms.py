@@ -46,6 +46,12 @@ TELEGRAM_CHANNEL = "Telegram"
 # Channels that don't deliver to an address — landing in the ledger (or, for
 # Print, the generated document) is the delivery, so no address is resolved.
 ADDRESSLESS_CHANNELS = {IN_APP_CHANNEL, PRINT_CHANNEL}
+
+# Channels whose body is HTML. Author text bound for these is rendered with
+# autoescaping on (p005a A05-7); everything else is plain text, where escaping
+# would put `&amp;` in a text message. `Seminary Announcement.RICH_CHANNELS` is
+# the same set for the same reason.
+HTML_CHANNELS = {EMAIL_CHANNEL, IN_APP_CHANNEL, PRINT_CHANNEL}
 MAX_RETRIES = 3
 DISPATCH_BATCH = 500
 
@@ -248,8 +254,10 @@ def send(
     # with the context and Jinja filters, no Frappe globals.
     return send_message(
         channel=channel,
+        # The subject is a `Data` field on every channel -- never HTML -- so it
+        # is rendered plain. The body follows the channel (p005a A05-7).
         subject=render_author_text(version.subject, ctx) if version.subject else None,
-        message=render_author_text(version.body, ctx),
+        message=render_author_text(version.body, ctx, html=channel in HTML_CHANNELS),
         person=person_doc,
         to_address=to_address,
         category=category,
