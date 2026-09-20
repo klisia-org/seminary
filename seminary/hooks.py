@@ -617,7 +617,13 @@ plagiarism_providers = {
 # inside `location` blocks that declare their own, and skips non-2xx/3xx -- so
 # every error page was bare. CSP ships **report-only**: set `seminary_csp_enforce`
 # in site_config to enforce, once the reports are clean.
-after_request = ["seminary.seminary.http_headers.apply_security_headers"]
+after_request = [
+    "seminary.seminary.http_headers.apply_security_headers",
+    # Every 403/401 that never passed through `guards` -- frappe's own
+    # has_permission, a query-condition refusal, a whitelist miss. Before
+    # this a successful escalation attempt left no record at all (p010 H1).
+    "seminary.seminary.security_log.log_denied_response",
+]
 
 scheduler_events = {
     # 	"all": [

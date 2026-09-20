@@ -299,14 +299,12 @@ class CourseEnrollmentIndividual(Document):
         if audit == 1:
             credits = 0
         else:
-            print("Audit is not 1")
             credits = frappe.db.sql(
                 """select pgmcourse_credits from `tabProgram Course` where parent = %s and course = %s""",
                 (pe, ce),
             )
             if credits:
                 credits = credits[0][0]
-                print(credits)
             else:
                 credits = 0
 
@@ -320,13 +318,11 @@ class CourseEnrollmentIndividual(Document):
         if audit == 1:
             credits = 0
         else:
-            print("Audit is not 1")
             credits = frappe.db.sql(
                 """select pgmcourse_credits from `tabProgram Course` where parent = %s and course = %s""",
                 (pe, ce),
             )
             credits = credits[0][0] if credits else 0
-            print(credits)
             doc = frappe.get_doc("Course Enrollment Individual", self.name)
             doc.credits = credits
         return credits

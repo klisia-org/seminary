@@ -213,7 +213,6 @@ def quiz_summary(
         dedup_filter["document_distribution_registry"] = document_distribution_registry
     existing_submission = frappe.get_value("Quiz Submission", dedup_filter, "name")
     if existing_submission:
-        print("Submission already exists, skipping")
         # Fetch the existing submission details
         submission = frappe.get_doc("Quiz Submission", existing_submission)
         return {
@@ -246,7 +245,6 @@ def quiz_summary(
         data["document_distribution_registry"] = document_distribution_registry
     submission.update(data)
     submission.save(ignore_permissions=True)
-    print("Submission ", submission.name, " saved at ", submission.creation)
 
     # Lesson progress is recorded by the frontend via api.mark_lesson_progress,
     # which has the course/chapter/lesson route context. The Quiz doctype has

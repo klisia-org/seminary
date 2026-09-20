@@ -26,6 +26,21 @@ def _roles(user=None):
     return set(frappe.get_roles(user or frappe.session.user))
 
 
+def _deny(message, gate, **context):
+    """Log the denial, then throw it (p010 H1).
+
+    Every gate in this module is a *deliberate* refusal -- the app decided this
+    actor may not do this -- which makes these the denials most worth counting.
+    Frappe's own `PermissionError` path is caught separately by
+    `security_log.log_denied_response`; the request-local flag in that module
+    keeps a denial that passes through both from being counted twice.
+    """
+    from seminary.seminary import security_log
+
+    security_log.record_denial("permission", gate=gate, **context)
+    frappe.throw(message, frappe.PermissionError)
+
+
 def registrar_has_academic_records() -> bool:
     """Seminary Settings switch: may the Registrar record attendance and open
     gradebooks? On by default; a school where a student acts as registrar turns
@@ -49,22 +64,22 @@ def is_grader(user=None, include_registrar=False) -> bool:
 
 def require_grader(include_registrar=False):
     if not is_grader(include_registrar=include_registrar):
-        frappe.throw(_("Only teaching staff can do this."), frappe.PermissionError)
+        _deny(_("Only teaching staff can do this."), "require_grader")
 
 
 def require_outline_editor():
     if not _roles() & OUTLINE_EDIT_ROLES:
-        frappe.throw(
+        _deny(
             _("Only teaching staff can edit the course outline."),
-            frappe.PermissionError,
+            "require_outline_editor",
         )
 
 
 def require_registrar():
     if not _roles() & REGISTRAR_ROLES:
-        frappe.throw(
+        _deny(
             _("Only the registrar or academic administration can do this."),
-            frappe.PermissionError,
+            "require_registrar",
         )
 
 
@@ -345,9 +360,10 @@ def require_course_staff(course_schedule, include_registrar=False):
     missing record fails later on its own terms); an Instructor needs a
     section they are listed on."""
     if not is_course_staff(course_schedule, include_registrar=include_registrar):
-        frappe.throw(
+        _deny(
             _("You are not on the teaching staff of this section."),
-            frappe.PermissionError,
+            "require_course_staff",
+            course_schedule=course_schedule,
         )
 
 
@@ -373,7 +389,11 @@ def is_enrolled(course_schedule, user=None) -> bool:
 
 def require_enrolled(course_schedule):
     if not is_enrolled(course_schedule):
-        frappe.throw(_("You are not enrolled in this section."), frappe.PermissionError)
+        _deny(
+            _("You are not enrolled in this section."),
+            "require_enrolled",
+            course_schedule=course_schedule,
+        )
 
 
 def is_published(course_schedule) -> bool:
@@ -388,7 +408,11 @@ def require_own_student(student):
     if is_school_role() or instructor_tier() == "record":
         return
     if not student or student != current_student():
-        frappe.throw(_("You can only view your own record."), frappe.PermissionError)
+        _deny(
+            _("You can only view your own record."),
+            "require_own_student",
+            target=student,
+        )
 
 
 def require_own_enrollment(program_enrollment):
@@ -397,8 +421,10 @@ def require_own_enrollment(program_enrollment):
     owner = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
     student = current_student()
     if not (owner and student and owner == student):
-        frappe.throw(
-            _("You can only view your own enrollment."), frappe.PermissionError
+        _deny(
+            _("You can only view your own enrollment."),
+            "require_own_enrollment",
+            target=program_enrollment,
         )
 
 

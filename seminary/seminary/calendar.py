@@ -93,7 +93,6 @@ def course_ics(course_schedule=None, token=None):
         # Parse Frappe creation field and convert to UTC for DTSTAMP
         creation_datetime = frappe.utils.get_datetime(meeting.creation)
         event.created = datetime.astimezone(creation_datetime, pytz.UTC)
-        print("Event created timestamp: ", event.created)
         calendar.events.add(event)
     for assignment in assignments:
         event = Event()
@@ -134,5 +133,4 @@ def get_calendar_instructions():
     instructions = frappe.db.get_single_value(
         "Seminary Settings", "calendar_instructions"
     )
-    print("Fetched calendar instructions: ", instructions)
     return instructions

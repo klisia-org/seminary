@@ -275,8 +275,12 @@ def send_announcement(announcement: str):
                 {"delivery_status": "Failed", "error": str(e)[:500]},
                 update_modified=False,
             )
+            # The recipient row, not the recipient's address (p010 H3): Error
+            # Log is readable by roles that may not read the announcement, and
+            # the row name resolves to the address for anyone who may.
             frappe.log_error(
-                f"Seminary Announcement {doc.name} failed to queue for {child.email}: {e}",
+                f"Seminary Announcement {doc.name} failed to queue for "
+                f"recipient row {child.name}: {e}",
                 "Seminary Announcement Send",
             )
 
