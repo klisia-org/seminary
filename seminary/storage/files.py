@@ -9,8 +9,11 @@ so existing callers keep working untouched.
 These helpers exist for the two cases `get_content()` cannot serve:
 
 - **`materialize`** — a caller that needs a real filesystem *path*, not bytes.
-  `zipfile.ZipFile(path).extractall()` on a SCORM package is the live example;
-  an offloaded file has no path, so one is produced temporarily.
+  Validating an uploaded SCORM package (`seminary.seminary.api._check_scorm_archive`)
+  is the live example; an offloaded file has no path, so one is produced
+  temporarily. Note what it is *not*: p008 F8 removed SCORM extraction, and
+  nothing in this app extracts an archive to disk. A future caller that wants to
+  must bound the archive first -- see p008 F17.
 - **`open_stream`** — a caller copying a large file somewhere else, which should
   not hold hundreds of megabytes of lecture video in worker memory just to hand
   it onward.

@@ -47,7 +47,11 @@ class TestP008CoursePack(IntegrationTestCase):
 
     def tearDown(self):
         frappe.set_user("Administrator")
-        for key in ("course_pack_max_entries", "course_pack_max_manifest_bytes"):
+        for key in (
+            "course_pack_max_entries",
+            "course_pack_max_manifest_bytes",
+            "course_pack_max_member_bytes",
+        ):
             frappe.conf.pop(key, None)
 
     # ------------------------------------------------------------ allow-lists
@@ -196,6 +200,18 @@ class TestP008CoursePack(IntegrationTestCase):
         frappe.set_user(self.chair)
         with self.assertRaises(frappe.ValidationError):
             imp.import_pack_from_bytes(bomb, "new")
+
+    def test_one_enormous_member_is_refused(self):
+        """The uncompressed total is a *sum*: before F17b a single 4 GB member
+        passed every check, and the worker then held two copies of it."""
+        frappe.set_user(self.chair)
+        pack = _zip({"manifest.json": "{}", "media/big": b"x" * 4096})
+        frappe.conf["course_pack_max_member_bytes"] = 1024
+        try:
+            with self.assertRaises(frappe.ValidationError):
+                imp.import_pack_from_bytes(pack, "new")
+        finally:
+            frappe.conf.pop("course_pack_max_member_bytes", None)
 
     def test_a_manifest_that_is_not_an_object_is_refused(self):
         frappe.set_user(self.chair)

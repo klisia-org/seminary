@@ -32,6 +32,9 @@
         {{ isDownloading ? __('Preparing…') : __('Download all') }}
       </button>
     </div>
+    <div v-if="downloadNotice" class="rounded border border-outline-gray-2 bg-surface-gray-1 px-3 py-2 text-sm text-ink-gray-7">
+      {{ downloadNotice }}
+    </div>
     <div v-if="downloadError" class="rounded border border-outline-red-1 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-3">
       {{ downloadError }}
     </div>
@@ -136,6 +139,7 @@ const folderName = computed(() => {
 const isLoading = ref(false)
 const errorMessage = ref('')
 const downloadError = ref('')
+const downloadNotice = ref('')
 const isDownloading = ref(false)
 const files = ref([])
 const subfolders = ref([])
@@ -244,44 +248,78 @@ const navigateToBreadcrumb = async (index) => {
   }
 }
 
-const downloadAll = async () => {
-  if (isDownloading.value || !canDownload.value) {
-    return
-  }
+// How long to keep asking while the server builds the archive, and how often.
+// A big folder of lecture video takes a while; the poll is cheap (one hash walk
+// server-side, no bytes read) so patience costs little.
+const ARCHIVE_POLL_MS = 3000
+const ARCHIVE_POLL_ATTEMPTS = 60
+
+const requestArchive = async () => {
   const params = new URLSearchParams()
   if (currentFolderId.value) {
     params.set('folder_id', currentFolderId.value)
   } else if (folderRef.value) {
     params.set('course_folder', folderRef.value)
   } else {
+    return null
+  }
+  const response = await fetch(
+    `/api/method/seminary.api.folder_upload.download_folder?${params.toString()}`,
+    { credentials: 'include' },
+  )
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.message || __('Unable to download folder.'))
+  }
+  return payload?.message || null
+}
+
+/**
+ * The archive is a cached artifact, not something this request builds (p008
+ * F17a). The server either hands back its URL or says it is being prepared.
+ *
+ * The download is a plain navigation, deliberately: fetching the zip and
+ * wrapping it in an object URL put the entire archive in *browser* memory, the
+ * mirror of the worker-memory problem F17a removed on the server. Navigating
+ * lets the browser stream it to disk, and the URL is permission-checked on the
+ * way in whether it points at object storage or a private file.
+ */
+const downloadAll = async () => {
+  if (isDownloading.value || !canDownload.value) {
     return
   }
 
   isDownloading.value = true
   downloadError.value = ''
+  downloadNotice.value = ''
   try {
-    const response = await fetch(
-      `/api/method/seminary.api.folder_upload.download_folder?${params.toString()}`,
-      { credentials: 'include' },
-    )
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}))
-      throw new Error(error?.message || __('Unable to download folder.'))
+    for (let attempt = 0; attempt < ARCHIVE_POLL_ATTEMPTS; attempt++) {
+      const result = await requestArchive()
+      if (!result) {
+        return
+      }
+      if (result.status === 'ready' && result.url) {
+        downloadNotice.value = ''
+        window.location.assign(result.url)
+        return
+      }
+      if (result.detail === 'rate-limited') {
+        throw new Error(
+          __('A download is already being prepared. Please try again shortly.'),
+        )
+      }
+      downloadNotice.value = __('Preparing your download…')
+      await new Promise((resolve) => setTimeout(resolve, ARCHIVE_POLL_MS))
     }
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${currentFolderName.value || folderName.value || 'folder'}.zip`
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
+    throw new Error(
+      __('This folder is still being packaged. Please try again in a few minutes.'),
+    )
   } catch (error) {
     console.error('Error downloading folder:', error)
     downloadError.value = error?.message || __('Unable to download folder.')
   } finally {
     isDownloading.value = false
+    downloadNotice.value = ''
   }
 }
 

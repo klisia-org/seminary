@@ -32,6 +32,7 @@ from datetime import datetime
 import os
 import re
 import shutil
+import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
@@ -4820,15 +4821,80 @@ def upsert_chapter(
 # iframe viewer, a postMessage runtime).
 
 
+#: Bounds for a SCORM package, each raisable in site_config.json. Deliberately
+#: the same shape as the Course Pack caps (course_pack/constants.py): the archive
+#: is a different artifact but the attack is identical.
+MAX_SCORM_ENTRIES = 20000  # scorm_max_entries
+MAX_SCORM_UNCOMPRESSED_BYTES = 4 * 1024**3  # scorm_max_uncompressed_bytes
+MAX_SCORM_MEMBER_BYTES = 1024**3  # scorm_max_member_bytes
+SCORM_RATIO_FLOOR_BYTES = 100 * 1024**2
+MAX_SCORM_RATIO = 200
+
+
+def _scorm_cap(key, default):
+    return int(frappe.conf.get(key) or default)
+
+
+def _check_scorm_archive(f):
+    """Open the package and bound it before anything accepts it (p008 F17e).
+
+    Until now this checked that the name ended `.zip` and nothing else -- no
+    magic bytes, no archive validity, no bounds. That was harmless only because
+    F8 stopped anything from opening a package; **p009 is the thing that will
+    open it**, and would have inherited an unchecked artifact with a chapter
+    already pointing at it. So the check belongs here, at the one moment a
+    package is accepted, not in the player.
+
+    Everything is read from the central directory, so it costs no decompression;
+    a member that lies about its size cannot exceed the budget anyway (`zf.read`
+    stops at the declared size and then fails CRC -- verified, p008 F17).
+    """
+    from seminary.storage.files import materialize
+
+    try:
+        with materialize(f) as path:
+            with zipfile.ZipFile(path) as zf:
+                infos = zf.infolist()
+                names = zf.namelist()
+    except zipfile.BadZipFile:
+        frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
+    except FileNotFoundError:
+        frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
+
+    if len(infos) > _scorm_cap("scorm_max_entries", MAX_SCORM_ENTRIES):
+        frappe.throw(_("This SCORM package has too many files."))
+
+    total = sum(i.file_size for i in infos)
+    if total > _scorm_cap("scorm_max_uncompressed_bytes", MAX_SCORM_UNCOMPRESSED_BYTES):
+        frappe.throw(_("This SCORM package is too large once unpacked."))
+
+    member_cap = _scorm_cap("scorm_max_member_bytes", MAX_SCORM_MEMBER_BYTES)
+    if any(i.file_size > member_cap for i in infos):
+        frappe.throw(_("This SCORM package contains a file that is too large."))
+
+    compressed = f.file_size or 0
+    if total > SCORM_RATIO_FLOOR_BYTES and compressed:
+        if total / compressed > MAX_SCORM_RATIO:
+            frappe.throw(_("This file does not look like a SCORM package."))
+
+    # SCORM requires `imsmanifest.xml`; the spec puts it at the root, but zipping
+    # the containing folder is a common enough mistake that a nested one is
+    # accepted. Without it there is nothing to play, and refusing here gives the
+    # instructor a message now instead of a broken chapter later.
+    if not any(n.rsplit("/", 1)[-1].lower() == "imsmanifest.xml" for n in names):
+        frappe.throw(_("This SCORM package has no imsmanifest.xml."))
+
+
 def _check_scorm_package(file_name):
-    """The caller may read the File, and it is a zip. Runs BEFORE the chapter is
-    saved, so a refusal leaves nothing behind."""
+    """The caller may read the File, and it is a real, bounded SCORM zip. Runs
+    BEFORE the chapter is saved, so a refusal leaves nothing behind."""
     if not file_name or not frappe.db.exists("File", file_name):
         frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
     f = frappe.get_doc("File", file_name)
     f.check_permission("read")
     if f.is_folder or not (f.file_name or "").lower().endswith(".zip"):
         frappe.throw(_("A SCORM package must be a .zip file."))
+    _check_scorm_archive(f)
     return f
 
 

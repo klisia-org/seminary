@@ -179,8 +179,11 @@ class StorageBackend(ABC):
         """Context manager yielding a real filesystem path for `key`.
 
         For the handful of consumers that need a path rather than bytes —
-        `zipfile.extractall` on a SCORM package being the live one. The file is
-        removed on exit.
+        reading the central directory of an uploaded SCORM package
+        (`seminary.seminary.api._check_scorm_archive`) being the live one. The
+        file is removed on exit. Nothing in this app *extracts* an archive: p008
+        F8 removed the one caller that did, and p008 F17 records what a future
+        one would have to bound first.
 
         `suffix` is the original file extension, supplied by the caller because
         the key does not carry one (see `object_key`). Some readers sniff it.

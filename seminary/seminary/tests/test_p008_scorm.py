@@ -76,6 +76,60 @@ class TestP008Scorm(IntegrationTestCase):
         with self.assertRaises(frappe.DoesNotExistError):
             api._check_scorm_package("ZZT-no-such-file")
 
+    # ------------------------------------------------- F17e: the archive itself
+    def test_a_package_that_is_not_really_a_zip_is_refused(self):
+        """The name ending `.zip` was the whole of the old check."""
+        name = _file("f17-fake.zip", b"MZ not a zip at all")
+        with self.assertRaises(frappe.ValidationError):
+            api._check_scorm_package(name)
+
+    def test_a_zip_without_imsmanifest_is_not_a_scorm_package(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("index.html", "hi")
+        name = _file("f17-nomanifest.zip", buf.getvalue())
+        with self.assertRaises(frappe.ValidationError):
+            api._check_scorm_package(name)
+
+    def test_a_manifest_below_the_root_is_still_accepted(self):
+        """Zipping the containing folder is a common enough mistake."""
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("package/imsmanifest.xml", "<manifest/>")
+            zf.writestr("package/index.html", "hi")
+        name = _file("f17-nested.zip", buf.getvalue())
+        self.assertEqual(api._check_scorm_package(name).name, name)
+
+    def test_the_package_is_bounded(self):
+        name = _file("f17-bounds.zip", _zip_bytes())
+        frappe.conf["scorm_max_entries"] = 1
+        try:
+            with self.assertRaises(frappe.ValidationError):
+                api._check_scorm_package(name)
+        finally:
+            frappe.conf.pop("scorm_max_entries", None)
+
+        frappe.conf["scorm_max_member_bytes"] = 1
+        try:
+            with self.assertRaises(frappe.ValidationError):
+                api._check_scorm_package(name)
+        finally:
+            frappe.conf.pop("scorm_max_member_bytes", None)
+
+        # ...and passes once neither cap bites.
+        self.assertEqual(api._check_scorm_package(name).name, name)
+
+    def test_a_bomb_trips_the_ratio(self):
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("imsmanifest.xml", "<manifest/>")
+            zf.writestr("zeros", b"\0" * (api.SCORM_RATIO_FLOOR_BYTES + 1024))
+        payload = buf.getvalue()
+        self.assertLess(len(payload), 2 * 1024 * 1024)
+        name = _file("f17-bomb.zip", payload)
+        with self.assertRaises(frappe.ValidationError):
+            api._check_scorm_package(name)
+
     def test_pin_attaches_an_unattached_package_and_keeps_it_private(self):
         name = _file("f8-pin.zip", _zip_bytes())
         api.pin_scorm_package("ZZT-f8-chapter", name)

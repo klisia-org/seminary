@@ -239,6 +239,10 @@ IMPORTABLE_DOCTYPES = {
 MAX_PACK_BYTES = 2 * 1024**3  # course_pack_max_bytes: the zip itself
 MAX_PACK_UNCOMPRESSED_BYTES = 4 * 1024**3  # course_pack_max_uncompressed_bytes
 MAX_PACK_ENTRIES = 20000  # course_pack_max_entries
+# Per member, because the total above is a *sum*: a conforming pack carrying one
+# 4 GB entry passed every other check, and `zf.read` plus the File insert then
+# held two copies of it in the worker (p008 F17b).
+MAX_PACK_MEMBER_BYTES = 1024**3  # course_pack_max_member_bytes
 MAX_PACK_MANIFEST_BYTES = 8 * 1024**2  # course_pack_max_manifest_bytes
 # A ratio check only means something on a payload big enough to hurt: a small
 # pack that is mostly JSON compresses very well and is no bomb.

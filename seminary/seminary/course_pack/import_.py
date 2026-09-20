@@ -38,6 +38,7 @@ from .constants import (
     LESSON_SCAC_LINK_FIELDS,
     MAX_PACK_BYTES,
     MAX_PACK_ENTRIES,
+    MAX_PACK_MEMBER_BYTES,
     MAX_PACK_MANIFEST_BYTES,
     MAX_PACK_RATIO,
     MAX_PACK_UNCOMPRESSED_BYTES,
@@ -766,6 +767,13 @@ def _check_zip_bounds(zf, compressed_size):
     total = sum(i.file_size for i in infos)
     if total > _cap("course_pack_max_uncompressed_bytes", MAX_PACK_UNCOMPRESSED_BYTES):
         frappe.throw(_("This Course Pack is too large once unpacked."))
+    # The total above is a sum, so one enormous member passed it (p008 F17b).
+    # Every member is read whole -- `zf.read` into a bytes, then a File document
+    # holding the same bytes -- so a single entry is what actually sizes the
+    # worker, not the archive.
+    member_cap = _cap("course_pack_max_member_bytes", MAX_PACK_MEMBER_BYTES)
+    if any(i.file_size > member_cap for i in infos):
+        frappe.throw(_("This Course Pack contains a file that is too large."))
     if total > PACK_RATIO_FLOOR_BYTES and compressed_size:
         if total / compressed_size > MAX_PACK_RATIO:
             frappe.throw(_("This Course Pack does not look like a course pack."))
