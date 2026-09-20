@@ -64,8 +64,12 @@ def _directives() -> list[str]:
         # tool checks the URL before it is ever stored (p008 F4).
         "frame-src 'self' https:",
         "connect-src 'self' https: wss: ws:",
-        # Nothing on this site should be framed, and nothing needs a plugin.
-        "frame-ancestors 'none'",
+        # 'self', not 'none': the app frames its own pages. `embed_renderer`'s
+        # `type == "pdf"` branch exists precisely to iframe a site-hosted PDF
+        # (p008 F5), and 'none' forbids *all* framing, same-origin included --
+        # it broke PDF rendering in the owner's browser pass. Cross-origin
+        # framing is still refused, which is the clickjacking control.
+        "frame-ancestors 'self'",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
@@ -97,9 +101,10 @@ def apply_security_headers(response=None, request=None, **kwargs):
         )
         headers.setdefault(header, policy())
         headers.setdefault("X-Content-Type-Options", "nosniff")
-        # Belt and braces with `frame-ancestors` for browsers that honour only
-        # one of the two.
-        headers.setdefault("X-Frame-Options", "DENY")
+        # Must track `frame-ancestors` above: DENY blocks same-origin framing
+        # too, and browsers that honour both apply the stricter one, so a DENY
+        # here would silently undo the 'self' in the CSP.
+        headers.setdefault("X-Frame-Options", "SAMEORIGIN")
         headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         headers.setdefault("Permissions-Policy", "geolocation=(), payment=(), usb=()")
     except Exception:

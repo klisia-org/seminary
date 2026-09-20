@@ -45,7 +45,11 @@ class TestP008SecurityHeaders(IntegrationTestCase):
 
     def test_the_framing_and_plugin_directives_are_closed(self):
         policy = http_headers.policy()
-        self.assertIn("frame-ancestors 'none'", policy)
+        # 'self', not 'none'. The app frames its own PDFs (`embed_renderer`'s
+        # pdf branch), and 'none' broke that in the owner's browser pass --
+        # cross-origin framing is what the directive is here to refuse.
+        self.assertIn("frame-ancestors 'self'", policy)
+        self.assertNotIn("frame-ancestors 'none'", policy)
         self.assertIn("object-src 'none'", policy)
         self.assertIn("base-uri 'self'", policy)
         self.assertIn("form-action 'self'", policy)
@@ -60,15 +64,19 @@ class TestP008SecurityHeaders(IntegrationTestCase):
     def test_the_other_headers_are_set(self):
         headers = self._headers()
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
-        self.assertEqual(headers["X-Frame-Options"], "DENY")
+        # SAMEORIGIN, tracking `frame-ancestors 'self'`: a browser honouring
+        # both applies the stricter, so DENY here would undo the CSP.
+        self.assertEqual(headers["X-Frame-Options"], "SAMEORIGIN")
         self.assertEqual(headers["Referrer-Policy"], "strict-origin-when-cross-origin")
 
     def test_an_existing_header_is_not_overwritten(self):
         """A page that sets its own policy (a web form, an embed view) wins."""
         response = Response("ok")
-        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        # Deliberately not the default value, or the test cannot distinguish
+        # "kept the page's header" from "wrote its own".
+        response.headers["X-Frame-Options"] = "DENY"
         http_headers.apply_security_headers(response=response)
-        self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
 
     def test_a_header_failure_never_costs_the_response(self):
         """`after_request` runs on the way out; raising there would turn a good
