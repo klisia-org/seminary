@@ -16,15 +16,9 @@
  * simpler). Callers fall back to `FileUploader` in that case rather than failing.
  */
 
-const getCsrfToken = () => {
-	if (typeof window === 'undefined') return null
-	return (
-		window.csrf_token ||
-		window.frappe?.csrf_token ||
-		document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-		null
-	)
-}
+import { getCsrfToken } from './csrf'
+
+
 
 async function callMethod(method, body) {
 	const headers = { 'Content-Type': 'application/json' }

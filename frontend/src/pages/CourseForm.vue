@@ -283,6 +283,7 @@ import MultiSelect from '@/components/Controls/MultiSelect.vue'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { createDialog } from '@/utils/dialogs.js'
+import { getCsrfToken } from '../utils/csrf'
 
 const user = inject('$user')
 const newTag = ref('')
@@ -507,11 +508,7 @@ const imageResource = createResource({
 	}
 })
 
-const getCsrfToken = () =>
-	window.csrf_token ||
-	window.frappe?.csrf_token ||
-	document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-	''
+
 
 const submitCourse = async () => {
 	if (!courseResource.data) return;

@@ -94,6 +94,7 @@ import { computed, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import { examStore } from '@/stores/exam'
+import { getCsrfToken } from '../../utils/csrf'
 
 const show = defineModel()
 const modalcriteria = defineModel('modalcriteria')
@@ -251,11 +252,7 @@ const toggleExtraCredit = (checked) => {
   }
 }
 
-const getCsrfToken = () =>
-  window.csrf_token ||
-  window.frappe?.csrf_token ||
-  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-  ''
+
 
 const insertCriteria = async (close) => {
   try {
