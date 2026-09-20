@@ -198,6 +198,98 @@ class TestP007FilePolicy(IntegrationTestCase):
         self.assertTrue(file_policy._registered("Website Branding", "favicon")[0])
         self.assertTrue(file_policy._registered("Letter Head", "image")[0])
 
+    def test_naming_someone_elses_private_file_in_an_attach_field_is_refused(self):
+        """p008 F16 / p005a A02-8.
+
+        Frappe's `attach_files_to_document` binds any *unattached* File matching
+        the URL to the caller's document with no permission check. Since p007
+        made loose private uploads the norm, guessing one and putting it in an
+        Attach field was a way to gain read on it -- the file policy reads
+        through the host, so attaching it to your own submission is enough.
+        """
+        from seminary.seminary import file_policy as fp
+
+        owner, stranger = self.web_user, self.other_user
+
+        theirs = _file(owner, is_private=1)  # loose: attached to nothing
+        self.assertFalse(theirs.attached_to_doctype)
+
+        frappe.set_user(stranger)
+        try:
+            rows = fp._rows_for(theirs.file_url)
+            self.assertTrue(rows)
+            self.assertFalse(
+                fp._may_adopt(rows, None),
+                "a stranger must not be allowed to adopt a loose private file",
+            )
+        finally:
+            frappe.set_user("Administrator")
+
+        # ...and the owner still may.
+        frappe.set_user(owner)
+        try:
+            self.assertTrue(fp._may_adopt(fp._rows_for(theirs.file_url), None))
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_actually_throws(self):
+        """Not just that the rule says no -- that the hook refuses the save."""
+        from seminary.seminary import file_policy as fp
+
+        owner, stranger = self.web_user, self.other_user
+        theirs = _file(owner, is_private=1)
+
+        doc = frappe.new_doc("Withdrawal Request")
+        doc.student_documentation = theirs.file_url
+
+        frappe.set_user(stranger)
+        try:
+            with self.assertRaises(frappe.PermissionError):
+                fp.guard_attach_fields(doc)
+        finally:
+            frappe.set_user("Administrator")
+
+        # The owner of the file is not obstructed.
+        frappe.set_user(owner)
+        try:
+            fp.guard_attach_fields(doc)  # must not raise
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_ignores_a_value_that_names_no_file(self):
+        """A URL with no File row is left to Frappe, which creates one."""
+        from seminary.seminary import file_policy as fp
+
+        doc = frappe.new_doc("Withdrawal Request")
+        doc.student_documentation = "/private/files/zzz-no-such-file-f16.pdf"
+        frappe.set_user(self.other_user)
+        try:
+            fp.guard_attach_fields(doc)  # must not raise
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_the_attach_guard_is_registered_before_frappes_attach_step(self):
+        hooks = frappe.get_hooks("doc_events") or {}
+        validate = (hooks.get("*", {}) or {}).get("validate") or []
+        if isinstance(validate, str):
+            validate = [validate]
+        self.assertIn(
+            "seminary.seminary.file_policy.guard_attach_fields",
+            validate,
+            "must run at validate: on_update is too late to refuse the binding",
+        )
+
+    def test_an_offloaded_attach_value_is_recognised_as_a_file_url(self):
+        """Frappe's attach step tests `startswith(('/files', '/private/files'))`,
+        so an offloaded URL never matched and the file was never attached --
+        owner-only, and the grader got a 403."""
+        from seminary.seminary import file_policy as fp
+        from seminary.storage.backend import url_for_key, object_key
+
+        url = url_for_key(object_key("a" * 32))
+        self.assertTrue(fp._is_file_url(url))
+        self.assertFalse(url.startswith(("/files", "/private/files")))
+
     def test_sync_follows_the_host(self):
         program = frappe.get_all("Program", pluck="name", limit=1)
         if not program:

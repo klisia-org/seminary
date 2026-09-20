@@ -37,7 +37,12 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 
-from seminary.storage.backend import FILE_URL_RE, URL_PREFIX, normalize_file_url
+from seminary.storage.backend import (
+    FILE_URL_RE,
+    URL_PREFIX,
+    is_offloaded,
+    normalize_file_url,
+)
 
 PUBLISHER_ROLES = {"System Manager", "Website Manager"}
 
@@ -734,6 +739,7 @@ def on_host_update(doc, method=None):
     if doctype in _host_doctypes():
         sync_public_state(doctype, doc.name)
         _refresh_registered_fields(doc)
+    attach_offloaded_files(doc)
     targets = DEPENDENTS.get(doctype)
     if targets:
         for dt, dn in targets(doc):
@@ -745,3 +751,84 @@ def on_membership_gone(doc, method=None):
     their last published unit."""
     for dt, dn in _membership_targets(doc):
         sync_public_state(dt, dn)
+
+
+ATTACH_FIELDTYPES = ("Attach", "Attach Image")
+
+
+def _attach_fields(doc):
+    return doc.meta.get("fields", {"fieldtype": ["in", list(ATTACH_FIELDTYPES)]})
+
+
+def guard_attach_fields(doc, method=None):
+    """Refuse an Attach value naming a file the saver cannot read (p008 F16).
+
+    p007 §8.3 left Attach fields to Frappe's `attach_files_to_document`
+    (`frappe/core/doctype/file/utils.py:312`), which has no `_may_adopt`
+    equivalent: it finds an **unattached** File matching the URL and attaches it
+    to the caller's document with a bare `frappe.db.set_value`. Since p007 made
+    loose private uploads the norm, the pool of such files is large -- so a
+    student calling `upload_assignment(assignment_attachment="/private/files/<guessed>")`
+    attached somebody else's file to their own submission and thereby gained
+    read on it, because the file policy reads through the host.
+
+    Stopped at `validate`, before Frappe's `on_update` step runs, because that is
+    the only place the association can be refused rather than undone. The rule is
+    the one `adopt` already uses: you may name a file you can already read.
+
+    Only changed values on an existing document, for the same reason as
+    `url_policy.validate_urls` -- a value stored before this rule cannot be
+    allowed to make an unrelated edit impossible.
+    """
+    if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
+        return
+    if frappe.session.user == "Administrator":
+        return
+    is_new = doc.is_new()
+    for df in _attach_fields(doc):
+        value = doc.get(df.fieldname)
+        if not _is_file_url(value):
+            continue
+        if not is_new and not doc.has_value_changed(df.fieldname):
+            continue
+        rows = _rows_for(normalize_file_url(value))
+        if not rows:
+            continue  # nothing to hijack; Frappe will create the row
+        if _may_adopt(rows, None):
+            continue
+        frappe.throw(
+            _("You cannot attach a file you do not have access to."),
+            frappe.PermissionError,
+        )
+
+
+def attach_offloaded_files(doc, method=None):
+    """Attach Attach-field files that Frappe's own step skips (p008 F16).
+
+    `attach_files_to_document` only considers values starting `/files` or
+    `/private/files`. An offloaded file's URL is
+    `/api/method/seminary.storage.api.download_file?key=...`, so on a site with
+    object storage configured **every Attach field holding an offloaded file was
+    never attached at all** -- the File stayed owner-only and the grader opening
+    the submission got a 403.
+
+    `adopt` applies `_may_adopt` itself, so this cannot be used to reach a file
+    the saver could not already read.
+    """
+    for df in _attach_fields(doc):
+        value = doc.get(df.fieldname)
+        if not value or not is_offloaded(value):
+            continue
+        rows = _rows_for(value)
+        if any(
+            (r.attached_to_doctype, r.attached_to_name) == (doc.doctype, doc.name)
+            for r in rows
+        ):
+            continue
+        try:
+            adopt(value, (doc.doctype, doc.name))
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"file_policy: could not attach {doc.doctype} {doc.name}.{df.fieldname}",
+            )

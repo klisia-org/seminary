@@ -563,7 +563,16 @@ doc_events = {
         # existing document, so a value stored before this cannot block an
         # unrelated edit. Measured on potestas first: 0 of 4 stored values
         # would be refused.
-        "validate": "seminary.seminary.url_policy.validate_urls",
+        "validate": [
+            "seminary.seminary.url_policy.validate_urls",
+            # Attach fields (p008 F16, p005a A02-8). Frappe's own attach step
+            # takes any *unattached* File matching the URL and binds it to the
+            # caller's document with no permission check, so naming a guessed
+            # `/private/files/...` was a way to gain read on it through your own
+            # record. Refused here, at validate, because that is the only point
+            # the association can be refused rather than undone.
+            "seminary.seminary.file_policy.guard_attach_fields",
+        ],
         "on_update": [
             "seminary.seminary.communication_triggers.process",
             # File privacy (p007 §8.2): keeps registered web images in step
