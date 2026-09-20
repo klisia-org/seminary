@@ -3,7 +3,7 @@
 		<!-- Public deep-link (e.g. WhatsApp wa.me) — opens the external app. -->
 		<a
 			v-if="item.mode === 'weblink'"
-			:href="item.url"
+			:href="safeUrl(item.url)"
 			target="_blank"
 			rel="noopener"
 			:title="item.channel_name"
@@ -48,6 +48,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { computed, ref } from 'vue'
 import { Dialog, FormControl, createResource } from 'frappe-ui'
 import { createToast } from '@/utils'

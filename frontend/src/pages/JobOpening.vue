@@ -148,7 +148,7 @@
 			</h2>
 			<a
 				v-if="org.website"
-				:href="org.website"
+				:href="safeUrl(org.website)"
 				target="_blank"
 				rel="noopener"
 				class="text-sm text-ink-blue-6 hover:underline"
@@ -180,6 +180,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { createResource, Button, Badge } from 'frappe-ui'

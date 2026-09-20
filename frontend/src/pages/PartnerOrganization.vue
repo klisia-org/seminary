@@ -37,7 +37,7 @@
 		<div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
 			<a
 				v-if="org.data.website"
-				:href="org.data.website"
+				:href="safeUrl(org.data.website)"
 				target="_blank"
 				rel="noopener"
 				class="flex items-center gap-1 text-ink-blue-6 hover:underline"
@@ -67,6 +67,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Badge } from 'frappe-ui'
 import { ArrowLeft, MapPin, Globe, Mail, Briefcase } from 'lucide-vue-next'
 

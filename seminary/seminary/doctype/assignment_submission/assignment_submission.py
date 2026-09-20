@@ -4,7 +4,9 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_url, validate_email_address, sanitize_html
+from frappe.utils import validate_email_address, sanitize_html
+
+from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
 from frappe.email.doctype.email_template.email_template import get_email_template
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 from seminary.seminary.guards import is_grader, require_course_staff, require_grader
@@ -66,8 +68,14 @@ class AssignmentSubmission(Document):
             )
 
     def validate_url(self):
-        if self.type == "URL" and not validate_url(self.answer):
-            frappe.throw(_("Please enter a valid URL."))
+        # `frappe.utils.validate_url` accepts `javascript:` unless it is told
+        # which schemes are valid, and no caller here told it (p008 F7, p005a
+        # A05-11). A student submits this and a *grader* clicks it, rendered as
+        # a link by AssignmentViewers/UrlCard.vue.
+        if self.type == "URL" and not is_safe_url(
+            self.answer, schemes=WEB_SCHEMES, allow_relative=False
+        ):
+            frappe.throw(_("Please enter a valid URL (https://…)."))
 
     def populate(self):
         self.student = frappe.db.get_value("Student", {"user": self.member})
@@ -181,8 +189,10 @@ def upload_assignment(
     if assignment_type == "File" and not assignment_attachment:
         frappe.throw(_("Please upload the assignment file."))
 
-    if assignment_type == "URL" and not validate_url(answer):
-        frappe.throw(_("Please enter a valid URL."))
+    if assignment_type == "URL" and not is_safe_url(
+        answer, schemes=WEB_SCHEMES, allow_relative=False
+    ):
+        frappe.throw(_("Please enter a valid URL (https://…)."))
 
     if doc.is_new():
         doc.type = assignment_type

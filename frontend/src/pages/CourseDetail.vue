@@ -46,7 +46,7 @@
 							</template>
 							{{ timeLabel }}
 						</Badge>
-						<a v-if="course.data.web_meeting" :href="course.data.web_meeting" target="_blank"
+						<a v-if="course.data.web_meeting" :href="safeUrl(course.data.web_meeting)" target="_blank"
 							rel="noopener noreferrer" class="no-underline">
 							<Badge theme="green" size="lg" class="cursor-pointer hover:opacity-80 transition-opacity">
 								<template #prefix>
@@ -133,6 +133,7 @@
 	</div>
 </template>
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'

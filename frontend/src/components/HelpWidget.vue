@@ -23,7 +23,7 @@
 					</p>
 					<a
 						v-if="helpData.mkdocs_url"
-						:href="helpData.mkdocs_url"
+						:href="safeUrl(helpData.mkdocs_url)"
 						target="_blank"
 						class="mt-3 inline-flex items-center gap-1.5 text-p-sm text-ink-blue-link hover:underline"
 					>
@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { safeUrl } from '@/utils/urlPolicy'
 import { ref } from 'vue'
 import { HelpCircle, BookOpen, X } from 'lucide-vue-next'
 import { useHelp } from '@/utils/useHelp'

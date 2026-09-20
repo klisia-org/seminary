@@ -109,6 +109,30 @@ class TestP008FrontendSinks(unittest.TestCase):
         text = (SRC / "components" / "LessonContent.vue").read_text()
         self.assertRegex(text, r"html:\s*false", "MarkdownIt must not pass raw HTML")
 
+    def test_user_authored_urls_go_through_safeurl(self):
+        """F7's client half. `javascript:` in an `href` is a click away from
+        running as the viewer -- and for an assignment URL the viewer is the
+        grader, not the author."""
+        required = {
+            "pages/AlumniDirectory.vue": "alum.linkedin_url",
+            "pages/PartnerOrganization.vue": "org.data.website",
+            "pages/JobOpening.vue": "org.website",
+            "pages/CourseDetail.vue": "course.data.web_meeting",
+            "pages/CourseCalendar.vue": "meeting.web_meeting",
+            "components/ContactChannelIcons.vue": "item.url",
+            "components/HelpWidget.vue": "helpData.mkdocs_url",
+            "components/AssignmentViewers/UrlCard.vue": "url",
+            "pages/MyInternship.vue": "req.submit_template",
+        }
+        unwrapped = []
+        for rel, expr in required.items():
+            body = (SRC / rel).read_text()
+            if f':href="safeUrl({expr})"' not in body:
+                unwrapped.append(f"{rel} ({expr})")
+        self.assertEqual(
+            unwrapped, [], "user-authored URL bound to href without safeUrl()"
+        )
+
     def test_the_allow_lists_have_no_stale_entries(self):
         """A removed exception must not linger and quietly re-permit a sink."""
         for rel in VHTML_ALLOWED:

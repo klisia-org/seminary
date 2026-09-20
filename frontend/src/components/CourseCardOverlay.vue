@@ -379,10 +379,13 @@ async function submitCheckin() {
 }
 
 const video_link = computed(() => {
-	if (props.course.data.video_link) {
-		return 'https://www.youtube.com/embed/' + props.course.data.video_link
-	}
-	return null
+	// The id is a path segment, not a URL: encoded so a value containing `/`,
+	// `?` or `#` cannot steer the iframe somewhere else on youtube.com (p008 F7).
+	// The scheme and host are fixed here, and Vue escapes the `:src` binding, so
+	// there is no attribute-injection surface -- only path steering.
+	const id = props.course.data.video_link
+	if (!id) return null
+	return 'https://www.youtube.com/embed/' + encodeURIComponent(String(id))
 })
 
 function enrollStudent() {

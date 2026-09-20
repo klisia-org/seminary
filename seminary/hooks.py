@@ -555,6 +555,15 @@ doc_events = {
             # smuggled `<!---->`. JSON-in-a-Text-field is skipped by shape.
             "seminary.seminary.content_safety.sanitize_rich_text",
         ],
+        # URL scheme allow-list (p008 F7, p005 A05-2 rows 9-10).
+        # `frappe.utils.validate_url` accepts `javascript:` unless it is told
+        # which schemes are valid, and no caller in this app told it. Typed
+        # `Data(options="URL")` fields are picked up automatically; the rest are
+        # named in `url_policy.URL_FIELDS`. Only changed values are checked on an
+        # existing document, so a value stored before this cannot block an
+        # unrelated edit. Measured on potestas first: 0 of 4 stored values
+        # would be refused.
+        "validate": "seminary.seminary.url_policy.validate_urls",
         "on_update": [
             "seminary.seminary.communication_triggers.process",
             # File privacy (p007 §8.2): keeps registered web images in step

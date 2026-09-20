@@ -440,3 +440,78 @@ class TestP008RichTextHook(IntegrationTestCase):
             before,
             "F6 must stay on the wildcard: a new doctype is covered without opting in",
         )
+
+
+class TestP008UrlHook(IntegrationTestCase):
+    """F7: the wildcard URL validator."""
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+
+    def test_a_javascript_url_is_refused_on_a_named_field(self):
+        cs = frappe.get_all("Course Schedule", pluck="name", limit=1)
+        if not cs:
+            self.skipTest("no Course Schedule on this site")
+        doc = frappe.get_doc("Course Schedule", cs[0])
+        doc.web_meeting = "javascript:alert(1)"
+        with self.assertRaises(frappe.ValidationError):
+            doc.save(ignore_permissions=True)
+
+    def test_an_https_url_is_accepted(self):
+        cs = frappe.get_all("Course Schedule", pluck="name", limit=1)
+        if not cs:
+            self.skipTest("no Course Schedule on this site")
+        doc = frappe.get_doc("Course Schedule", cs[0])
+        doc.web_meeting = "https://meet.example.org/abc"
+        doc.save(ignore_permissions=True)
+        self.assertEqual(doc.web_meeting, "https://meet.example.org/abc")
+
+    def test_the_hook_is_registered(self):
+        hooks = frappe.get_hooks("doc_events") or {}
+        validate = (hooks.get("*", {}) or {}).get("validate") or []
+        if isinstance(validate, str):
+            validate = [validate]
+        self.assertIn("seminary.seminary.url_policy.validate_urls", validate)
+
+    def test_an_unchanged_legacy_value_does_not_block_an_unrelated_edit(self):
+        """A value stored before this rule existed must not make the record
+        unsaveable -- it is refused when someone next touches *that* field.
+
+        Exercised through a real `save()` deliberately: `has_value_changed`
+        answers against `_doc_before_save`, which only a save populates, so
+        calling the hook directly would report everything as changed and prove
+        nothing about the path that actually runs.
+        """
+        cs = frappe.get_all("Course Schedule", pluck="name", limit=1)
+        if not cs:
+            self.skipTest("no Course Schedule on this site")
+        frappe.db.set_value(
+            "Course Schedule",
+            cs[0],
+            "web_meeting",
+            "javascript:legacy",
+            update_modified=False,
+        )
+        doc = frappe.get_doc("Course Schedule", cs[0])
+        # touch something else entirely
+        doc.run_method("set_title") if hasattr(doc, "set_title") else None
+        doc.flags.ignore_mandatory = True
+        doc.save(ignore_permissions=True)  # must not raise
+        self.assertEqual(
+            frappe.db.get_value("Course Schedule", cs[0], "web_meeting"),
+            "javascript:legacy",
+            "the legacy value is left as it was until someone edits that field",
+        )
+
+    def test_touching_the_field_does_refuse_the_legacy_value(self):
+        """The other half: the rule bites when that field is actually edited."""
+        cs = frappe.get_all("Course Schedule", pluck="name", limit=1)
+        if not cs:
+            self.skipTest("no Course Schedule on this site")
+        frappe.db.set_value(
+            "Course Schedule", cs[0], "web_meeting", "", update_modified=False
+        )
+        doc = frappe.get_doc("Course Schedule", cs[0])
+        doc.web_meeting = "javascript:alert(1)"
+        with self.assertRaises(frappe.ValidationError):
+            doc.save(ignore_permissions=True)
