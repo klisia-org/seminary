@@ -281,7 +281,7 @@ def capability_holders(doctype, txt, searchfield, start, page_len, filters):
           AND (m.instructor LIKE %(txt)s OR i.instructor_name LIKE %(txt)s)
         ORDER BY i.instructor_name
         LIMIT %(start)s, %(page_len)s
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
     )
 
@@ -307,7 +307,7 @@ def holds_capability(instructor: str, route: str, unit: str | None = None) -> bo
             WHERE m.instructor = %(instructor)s AND m.is_active = 1
               AND fc.routes_to = %(route)s AND fc.is_active = 1 {unit_clause}
             LIMIT 1
-            """,
+            """,  # nosec B608 -- interpolates a clause built from constants in this function
             params,
         )
     )
@@ -426,7 +426,7 @@ def holds_unit_capacity(person: str, route: str, unit: str | None = None) -> boo
             WHERE m.person = %(person)s AND m.is_active = 1
               AND fc.routes_to = %(route)s AND fc.is_active = 1 {unit_clause}
             LIMIT 1
-            """,
+            """,  # nosec B608 -- interpolates a clause built from constants in this function
             params,
         )
     )

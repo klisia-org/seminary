@@ -26,7 +26,7 @@ def execute():
 
     rows = frappe.db.sql(
         "select name, {cols} from `tabAlumni Profile` "
-        "where program_completed is not null and program_completed != ''".format(
+        "where program_completed is not null and program_completed != ''".format(  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
             cols=", ".join("`%s`" % c for c in present)
         ),
         as_dict=True,

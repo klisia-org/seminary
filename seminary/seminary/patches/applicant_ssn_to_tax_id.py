@@ -37,7 +37,8 @@ def execute():
         frappe.db.sql(
             "update `%s` set tax_id = social_security_number "
             "where (tax_id is null or tax_id = '') "
-            "and social_security_number is not null" % TABLE
+            "and social_security_number is not null"
+            % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         )
         print("  copied Student Applicant.social_security_number into tax_id")
         return

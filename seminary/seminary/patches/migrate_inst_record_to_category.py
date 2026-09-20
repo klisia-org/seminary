@@ -38,7 +38,7 @@ def execute():
             update `tab{table}`
             set instructor_category = %s
             where inst_record = 1 and (instructor_category is null or instructor_category = '')
-            """,
+            """,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
             IOR_NAME,
         )
 

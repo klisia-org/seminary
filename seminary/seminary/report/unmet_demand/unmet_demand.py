@@ -72,7 +72,7 @@ def get_data(filters):
         WHERE {' AND '.join(conditions)}
         GROUP BY cs.name, cs.course, cs.academic_term, cs.room, cs.max_enrollment
         ORDER BY unseated DESC, cs.name
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

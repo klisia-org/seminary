@@ -15,6 +15,13 @@ export default defineConfig({
 			},
 			buildConfig: {
 				indexHtmlPath: '../seminary/www/seminary.html',
+				// frappe-ui's buildConfig defaults this to `true`
+				// (`frappe-ui/vite/buildConfig.js`), and the maps were served
+				// to **anonymous** callers: 672 KB carrying 70 original source
+				// files with their comments intact, verified on the canary.
+				// That is the whole SPA source, including the comments that
+				// describe each security control (p010 H14, p005a A02-5).
+				sourcemap: false,
 			},
 		}),
     vue()],

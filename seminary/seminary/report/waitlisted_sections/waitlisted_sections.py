@@ -82,7 +82,7 @@ def get_data(filters):
         FROM `tabCourse Schedule` cs
         WHERE {' AND '.join(conditions)}
         ORDER BY cs.waitlist_count DESC, cs.name
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

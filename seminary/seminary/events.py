@@ -238,7 +238,7 @@ def get_cohort_candidates(
         LEFT JOIN `tabStudent` st ON st.name = pe.student
         WHERE {conditions}
         ORDER BY pe.student_name
-        """.format(
+        """.format(  # nosec B608 -- interpolates a clause built from constants in this function
             conditions=" AND ".join(conditions)
         ),
         params,

@@ -193,7 +193,7 @@ def _conflicting_pairs(academic_term):
           AND COALESCE(cei_a.workflow_state, '') NOT IN %(inactive)s
           {conditions}
         ORDER BY ma.cs_meetdate
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

@@ -183,6 +183,10 @@ export class CodeBox {
 	_injectHighlightJSCSSElement() {
 		const highlightJSCSSElement = document.querySelector(`#${this.highlightCSSID}`);
 		let highlightJSCSSURL = this._getThemeURLFromConfig();
+		// No URL means the theme is bundled with the app (the default since
+		// p010 H12). Injecting a <link href="null"> would fetch the SPA's own
+		// index.html as a stylesheet.
+		if (!highlightJSCSSURL) return;
 		if (!highlightJSCSSElement) {
 			const link = document.createElement('link');
 			const head = document.querySelector('head');
@@ -196,12 +200,20 @@ export class CodeBox {
 	}
 
 	_getThemeURLFromConfig() {
-		let themeURL = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/atom-one-${this.config.useDefaultTheme}.min.css`;
-
-		if (this.config.themeName) themeURL = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/${this.config.themeName}.min.css`;
-		if (this.config.themeURL) themeURL = this.config.themeURL;
-
-		return themeURL;
+		// Only an explicitly configured URL. The two jsDelivr fallbacks that
+		// used to live here loaded a stylesheet from a **mutable GitHub tag
+		// ref** (`cdn-release@9.18.1`), with no SRI, on every student lesson
+		// view -- `getEditorTools` is called from the viewer, not just the
+		// editor (p005a A03-3, verified still true in the deployed bundle on
+		// the canary). CSS injection in an authenticated session needs no
+		// script execution to do damage.
+		//
+		// They also pinned **9.18.1** while the app imports `highlight.js`
+		// 11.11.x, so the markup being highlighted and the theme colouring it
+		// were two major versions apart. `utils/index.js` now imports the
+		// theme from that same package, so vite bundles it and the versions
+		// cannot drift again (p010 H12).
+		return this.config.themeURL || null;
 	}
 }
 

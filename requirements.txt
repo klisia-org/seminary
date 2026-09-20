@@ -1,9 +1,19 @@
 # frappe -- https://github.com/frappe/frappe is installed via 'bench init'
-markdown
-fuzzywuzzy
-ics
-defusedxml
-bleach>=6.0
-pypdf
-python-docx
-holidays
+#
+# Upper bounds, not pins (p010 H11, p005a A03-2). Before this only `bleach`
+# carried any constraint at all, so a `bench update` could pull a new major of
+# anything here without notice. The floor is what is installed and tested; the
+# ceiling is the next major, which is where a breaking change is allowed to
+# live. CI runs `pip-audit` against this file.
+markdown>=3.7,<4
+fuzzywuzzy>=0.18,<0.19
+ics>=0.7.2,<0.8
+defusedxml>=0.7.1,<0.8
+bleach>=6.0,<7
+pypdf>=5.1,<7
+python-docx>=1.1,<2
+holidays>=0.60,<1
+# Imported directly by `seminary/content_safety.py`. It was never declared and
+# resolved only because frappe happens to require `nh3~=0.3.2` -- so the
+# sanitiser would have broken at import the day frappe dropped it (p010 H11).
+nh3>=0.2.18,<0.4

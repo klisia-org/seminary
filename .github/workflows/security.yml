@@ -1,0 +1,97 @@
+# Static analysis and dependency auditing (p010 H11; p005a A03-2, A03-5, A05-12).
+#
+# Before this, `bandit` and `detect-secrets` ran **only** through
+# `.pre-commit-config.yaml`: opt-in per clone (`pre-commit install` is enforced
+# nowhere) and bypassed by `--no-verify`. `yarn audit:check` existed and was
+# wired into nothing. So the whole static-analysis posture was advisory, and
+# bandit was additionally blinded to B608 -- the one detector for the class
+# that produced A05-3.
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Dependency advisories appear without anyone pushing. Weekly, Monday 06:00 UTC.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: bandit + pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tools
+        run: pip install bandit==1.9.3 pip-audit
+
+      # B608 is not skipped (see bandit.yaml). Every legitimate dynamic-SQL
+      # site carries a `# nosec B608` naming what it interpolates, so a new
+      # value interpolation fails here.
+      - name: bandit
+        run: bandit -c bandit.yaml -r seminary
+
+      # Advisories against the declared runtime dependencies. Non-blocking for
+      # now: an advisory can land in a transitive package we cannot fix in this
+      # repo, and a red build nobody can turn green gets ignored. Revisit once
+      # the noise level is known.
+      - name: pip-audit
+        continue-on-error: true
+        run: pip-audit -r requirements.txt --strict
+
+  secrets:
+    name: detect-secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install detect-secrets==1.5.0
+      # Same exclusions as `.pre-commit-config.yaml`, and no baseline file:
+      # a baseline is a second thing to keep honest, and there is nothing to
+      # baseline -- this scan is clean today. Fails if that stops being true.
+      - name: detect-secrets
+        run: |
+          detect-secrets scan \
+            --exclude-files 'README\.md' \
+            --exclude-files 'seminary/public/frontend/assets/.*' \
+            --exclude-files 'seminary/public/dist/.*' \
+            --exclude-files '(^|.*/)\.history/.*' \
+            --exclude-files '(^|.*/)node_modules/.*' \
+            > secrets.json
+          python -c "import json,sys; r=json.load(open('secrets.json'))['results']; sys.exit('detect-secrets found: %s' % list(r)) if r else print('clean')"
+
+  frontend:
+    name: yarn advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # The repo's own auditor: Yarn 1.x is EOL and its `yarn audit` can no
+      # longer parse npm's advisory response, and `npm audit` chokes on the
+      # Yarn-only `link:` dependency. `scripts/audit-lock.mjs` queries npm's
+      # bulk endpoint directly. It existed and ran nowhere.
+      #
+      # **Non-blocking, deliberately.** Run against the tree as it stands today
+      # it exits 1 on **38 advisories: 1 critical, 26 high** (tar, nanoid,
+      # postcss, pdfjs-dist, brace-expansion, @xmldom/xmldom, ...). Wiring that
+      # as a gate would paint the build red on its first run and keep it red,
+      # and a red build nobody can turn green is a build nobody reads. Making
+      # it blocking is the *outcome* of the triage pass, not a substitute for
+      # one -- the point of landing it now is that the numbers become visible
+      # and the weekly schedule keeps them current (p010 H11).
+      - name: audit yarn.lock
+        continue-on-error: true
+        working-directory: frontend
+        run: node scripts/audit-lock.mjs

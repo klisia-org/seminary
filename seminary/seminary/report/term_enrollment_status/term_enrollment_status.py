@@ -96,7 +96,7 @@ def get_data(filters):
 		JOIN `tabCourse` c ON c.name = cs.course
 		WHERE {' AND '.join(conditions)}
 		ORDER BY cs.academic_term DESC, cs.name
-		""",
+		""",  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

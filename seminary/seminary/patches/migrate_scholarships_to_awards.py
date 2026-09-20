@@ -59,7 +59,9 @@ def _stash_rows():
     )
     if not exists:
         return []
-    return frappe.db.sql(f"SELECT pfc, pf_pe, scholarship FROM `{STASH}`", as_dict=True)
+    # STASH is a module constant, not a request value.
+    query = f"SELECT pfc, pf_pe, scholarship FROM `{STASH}`"  # nosec B608
+    return frappe.db.sql(query, as_dict=True)
 
 
 def _create_awards_from_stash():

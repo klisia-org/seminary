@@ -22,6 +22,6 @@ def execute():
             UPDATE `tabCulminating Project`
             SET `{type_field}` = 'Instructor'
             WHERE IFNULL(`{field}`, '') != '' AND IFNULL(`{type_field}`, '') = ''
-            """
+            """  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         )
     frappe.db.commit()

@@ -212,7 +212,7 @@ def _instructor_condition(doctype, user, rule):
     if rule == "students":
         return (
             f"`tabStudent`.name in (select student from `tabScheduled Course Roster` "
-            f"where course_sc in ({_esc(readable)}))"
+            f"where course_sc in ({_esc(readable)}))"  # nosec B608 -- the value is escaped before it reaches the string
         )
     field = COURSE_FIELD[doctype]
     return f"`tab{doctype}`.`{field}` in ({_esc(readable)})"

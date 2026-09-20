@@ -1,2 +1,10 @@
+# B608 (hardcoded_sql_expressions) is deliberately NOT skipped (p010 H11).
+#
+# It was skipped from the start, which blinded the one detector for the class
+# that produced A05-3 (p005 / p005a A05-12). p005a's scheduling argument is why
+# it is un-skipped now rather than later: A05-3 is closed, so every remaining
+# dynamic-SQL site could be reviewed and annotated once -- 41 of them, each
+# carrying a `# nosec B608` that says what it interpolates. From here a *new*
+# value interpolation is a CI failure, which is the whole point of the detector.
 exclude_dirs: ['.history','scripts']
-skips: ['B608']
+skips: []

@@ -93,7 +93,7 @@ def get_data(filters):
           AND COALESCE(cs.workflow_state, '') != 'Cancelled'
           AND cs.room IS NOT NULL AND cs.room != ''
         ORDER BY cs.room, cs.from_time
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         params,
         as_dict=True,
     )

@@ -9,6 +9,10 @@ import { Markdown } from '@/utils/markdownParser'
 import Header from '@editorjs/header'
 import Paragraph from '@editorjs/paragraph'
 import { CodeBox } from '@/utils/code'
+// The highlight.js theme, bundled from the package the app already
+// depends on rather than fetched from a mutable jsDelivr tag ref on
+// every lesson view (p010 H12, p005a A03-3).
+import 'highlight.js/styles/atom-one-dark.css'
 import NestedList from '@editorjs/nested-list'
 import InlineCode from '@editorjs/inline-code'
 import { watch } from 'vue'
@@ -292,9 +296,9 @@ export const getEditorTools = (course = null, courseName = null) => {
 		},
 		codeBox: {
 			class: CodeBox,
+			// No themeURL: the stylesheet is imported above, so vite bundles it
+			// and it is served from this origin (p010 H12, p005a A03-3).
 			config: {
-				themeURL:
-					'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/atom-one-dark.min.css',
 				themeName: 'atom-one-dark',
 				useDefaultTheme: 'dark',
 			},

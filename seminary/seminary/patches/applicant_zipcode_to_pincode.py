@@ -32,7 +32,8 @@ def execute():
         # patch is the thing that just failed.
         frappe.db.sql(
             "update `%s` set pincode = zipcode "
-            "where (pincode is null or pincode = '') and zipcode is not null" % TABLE
+            "where (pincode is null or pincode = '') and zipcode is not null"
+            % TABLE  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         )
         return
     frappe.db.sql_ddl(

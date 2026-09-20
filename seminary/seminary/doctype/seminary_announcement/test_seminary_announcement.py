@@ -47,7 +47,8 @@ class TestAuthorTextRendering(FrappeTestCase):
         marker = "p006-f10-marker"
         tpl = (
             '{{ frappe.db.sql("update `tabUser` set middle_name=%r '
-            "where name='Administrator'\") }}" % marker
+            "where name='Administrator'\") }}"
+            % marker  # nosec B608 -- interpolates a clause built from constants in this function
         )
         with self.assertRaises(UndefinedError):
             render_author_text(tpl, {})

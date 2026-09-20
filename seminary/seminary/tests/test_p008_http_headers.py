@@ -61,6 +61,21 @@ class TestP008SecurityHeaders(IntegrationTestCase):
         # Anything not named cannot execute.
         self.assertNotIn("script-src *", policy)
 
+    def test_no_third_party_origin_may_execute_or_style(self):
+        """`SCRIPT_ORIGINS` is empty, so the loop above passes vacuously; this
+        is the assertion that has teeth (p010 H12).
+
+        F14 named `kit.fontawesome.com` on p005a's word. The file it came from
+        was never included and was not even JavaScript, and the jsDelivr theme
+        is vendored, so no third party can run code or inject CSS in an
+        authenticated session. Adding one back should have to be deliberate."""
+        policy = http_headers.policy()
+        for directive in ("script-src", "style-src", "font-src"):
+            clause = [d for d in policy.split("; ") if d.startswith(directive)][0]
+            self.assertNotIn("jsdelivr", clause, clause)
+            self.assertNotIn("fontawesome", clause, clause)
+        self.assertEqual(http_headers.SCRIPT_ORIGINS, ())
+
     def test_the_other_headers_are_set(self):
         headers = self._headers()
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")

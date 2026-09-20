@@ -34,12 +34,22 @@ import frappe
 
 #: Origins that actually execute script in an authenticated session. Keep this
 #: list honest: every entry is a party that can run code as the user.
-#:   kit.fontawesome.com -- Desk icons
-#:   cdn.jsdelivr.net    -- the lesson-view theme (A03-3 vendors it in Phase 3)
-SCRIPT_ORIGINS = ("https://kit.fontawesome.com", "https://cdn.jsdelivr.net")
+#:
+#: **Empty, and that is the finding.** F14 named `kit.fontawesome.com` because
+#: p005a A03-1 said the Desk loaded a Font Awesome kit. It never did:
+#: `public/js/seminary.bundle.js` was 74 bytes of *HTML attribute fragment*
+#: (`src="..." , crossorigin="anonymous"`) pasted into a `.js` file, it was not
+#: in `app_include_js`, and a deployed page on the canary carried zero
+#: references to fontawesome. Nothing loaded it, so the origin is gone with the
+#: file (p010 H12).
+SCRIPT_ORIGINS = ()
 
-STYLE_ORIGINS = ("https://fonts.googleapis.com", "https://cdn.jsdelivr.net")
-FONT_ORIGINS = ("https://fonts.gstatic.com", "https://cdn.jsdelivr.net")
+#: cdn.jsdelivr.net is *not* here: A03-3 was real -- the highlight.js theme is
+#: in the deployed `index-*.js` and loads on every lesson view -- and p010 H12
+#: vendors it from the `highlight.js` package we already depend on, rather than
+#: keeping a CDN in the policy.
+STYLE_ORIGINS = ("https://fonts.googleapis.com",)
+FONT_ORIGINS = ("https://fonts.gstatic.com",)
 
 #: Frappe's Desk and the SPA both inline scripts and styles (boot data, Vue's
 #: injected styles), so 'unsafe-inline' cannot come out without vendoring both.

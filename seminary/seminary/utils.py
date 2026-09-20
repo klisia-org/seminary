@@ -323,7 +323,7 @@ def get_overlap_for(doc, doctype, fieldname, value=None):
 			(to_time > %(from_time)s and to_time < %(to_time)s) or
 			(%(from_time)s > from_time and %(from_time)s < to_time) or
 			(%(from_time)s = from_time and %(to_time)s = to_time))
-		and name!=%(name)s and docstatus!=2""".format(
+		and name!=%(name)s and docstatus!=2""".format(  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
             doctype, fieldname
         ),
         {
@@ -1711,7 +1711,7 @@ q.explanation_1, q.explanation_2, q.explanation_3, q.explanation_4,
 q.scripture_bible_id, q.memorization_ref, q.memorization_resolved_ref,
 q.memorization_text, q.hide_word_count, q.min_word_length
 from `tabQuestion` q, `tabQuiz Question` qq
-where q.name = qq.question and qq.name in ({placeholders})""",
+where q.name = qq.question and qq.name in ({placeholders})""",  # nosec B608 -- interpolates %s placeholders; the values are bound
         questions,
         as_dict=1,
     )
@@ -1764,7 +1764,7 @@ def get_all_open_questions_details(questions):
     all_question_details = frappe.db.sql(
         f"""select distinct qq.name, qq.points, qq.question_detail, q.name as question_name, q.explanation
 from `tabOpen Question` q, `tabExam Question` qq
-where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q in questions)})""",
+where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q in questions)})""",  # nosec B608 -- the value is escaped before it reaches the string
         as_dict=1,
     )
     return all_question_details
@@ -2226,7 +2226,7 @@ def get_student_course_status(course):
         roster_placeholders = ", ".join(["%s"] * len(all_rosters))
         all_scores = frappe.db.sql(
             f"""select rawscore_card from `tabCourse Assess Results Detail`
-            where assessment_criteria = %s and parent in ({roster_placeholders}) and rawscore_card > 0""",
+            where assessment_criteria = %s and parent in ({roster_placeholders}) and rawscore_card > 0""",  # nosec B608 -- interpolates %s placeholders; the values are bound
             [assessment.assessment_criteria] + all_rosters,
             as_list=1,
         )

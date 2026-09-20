@@ -585,7 +585,7 @@ def get_discussion_dashboard(course_name: str, discussion_id: str):
             JOIN `tabDiscussion Submission` s ON s.name = r.parent
             WHERE s.coursesc = %s AND s.disc_activity = %s
             AND r.member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
                 [course_name, discussion_id] + roster_emails,
             )[0][0]
             or 0
@@ -628,7 +628,7 @@ def get_quiz_dashboard(course_name: str, quiz_id: str):
         FROM `tabQuiz Submission`
         WHERE quiz = %s AND course = %s AND member IN ({placeholders})
         GROUP BY member
-        """,
+        """,  # nosec B608 -- interpolates %s placeholders; the values are bound
         [quiz_id, course_name] + roster_emails,
         as_dict=True,
     )
@@ -671,7 +671,7 @@ def get_exam_dashboard(course_name, exam_id):
             WHERE exam = %s AND course = %s
             AND status != 'Not Submitted'
             AND member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
             [exam_id, course_name] + roster_emails,
         )[0][0]
         or 0
@@ -711,7 +711,7 @@ def get_assignment_dashboard(course_name, assignment_id):
             WHERE assignment = %s
               AND (course = %s OR course IS NULL)
               AND member IN ({placeholders})
-            """,
+            """,  # nosec B608 -- interpolates %s placeholders; the values are bound
             [assignment_id, course_name] + roster_emails,
         )[0][0]
         or 0
@@ -3062,7 +3062,7 @@ def get_course_schedule_events(start, end, filters=None):
 		from `tabScheduled Course Assess Criteria` scac, `tabCourse Schedule` cs
 		where
 		cs.name = scac.parent
-		and (scac.due_date between %(start)s and %(end)s )""".format(
+		and (scac.due_date between %(start)s and %(end)s )""".format(  # nosec B608 -- interpolates a clause built from constants in this function
             conditions=conditions
         ),
         {"start": start, "end": end},
@@ -3964,7 +3964,7 @@ def _ungraded_roster_count(course_schedule, rosters=None):
           AND COALESCE(cei.course_cancelled, 0) = 0
           AND COALESCE(card.graded_card, 0) = 0
         """
-        + scope,
+        + scope,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         params,
     )
     return rows[0][0] if rows else 0

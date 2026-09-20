@@ -122,7 +122,7 @@ def get_data(filters):
         LEFT JOIN `tabPerson` sup ON sup.name = pl.site_supervisor
         {where}
         ORDER BY pl.placement_status, org.organization_name, stu.student_name
-        """,
+        """,  # nosec B608 -- interpolates a clause built from constants in this function
         values,
         as_dict=True,
     )
