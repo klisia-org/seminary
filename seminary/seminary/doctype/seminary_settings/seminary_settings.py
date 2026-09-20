@@ -45,6 +45,15 @@ class SeminarySettings(Document):
 
 @frappe.whitelist()
 def check_payments_app():
+    """Settings-form helper: is the payments app installed, and is the gateway
+    field wired up as a Link to it?
+
+    p008a G6: it had no check, and its second half CREATES two Property Setters
+    -- a schema change. The ``save`` is permission-checked, so a caller without
+    Property Setter write was refused there; but this is a System Manager's
+    settings form, and an endpoint that alters the schema should say so before
+    it starts rather than after."""
+    frappe.only_for("System Manager")
     installed_apps = frappe.get_installed_apps()
     if "payments" not in installed_apps:
         return False

@@ -72,3 +72,5 @@ seminary.seminary.patches.normalize_tax_ids
 
 seminary.seminary.patches.course_folder_scopes
 seminary.seminary.patches.p007_private_files
+seminary.seminary.patches.p008_scorm_teardown
+seminary.seminary.patches.p008_course_pack_coursecode

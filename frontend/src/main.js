@@ -16,6 +16,7 @@ import { initSocket } from './socket'
 import { FrappeUI, setConfig, frappeRequest, pageMetaPlugin } from 'frappe-ui'
 import { configurePortals } from '@seminary/portal-shell'
 import { uploadLimits } from '@/utils'
+import SafeHtml from '@/components/SafeHtml.vue'
 
 // Fetch system date format early so formatDate() works everywhere
 frappeRequest({ url: '/api/method/seminary.seminary.api.get_school_abbr_logo' }).then(data => {
@@ -26,6 +27,10 @@ let pinia = createPinia()
 let app = createApp(App)
 setConfig('resourceFetcher', frappeRequest)
 uploadLimits.fetch()
+
+// The only component allowed to render author HTML (p008 F1). Registered
+// globally so migrating a v-html site is a tag swap, not an import per file.
+app.component('SafeHtml', SafeHtml)
 
 app.use(FrappeUI)
 app.use(pinia)

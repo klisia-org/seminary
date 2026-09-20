@@ -16,6 +16,18 @@ from seminary.seminary.utils import assert_url_safe_code
 
 
 class CourseCompetency(Document):
+    def autoname(self):
+        """ "{coursecode}-{competency_code}", as the DocType's format rule says --
+        but never with an empty prefix. coursecode is fetched from the Course,
+        and a Course imported from a pack before p008 F10 has none, so every one
+        of its competencies was named "-<code>" and the next course's collided.
+        set_new_name runs this before the format rule, so it takes over."""
+        prefix = self.coursecode or frappe.db.get_value(
+            "Course", self.course, "coursecode"
+        )
+        prefix = prefix or frappe.scrub(self.course or "course").upper()
+        self.name = f"{prefix}-{self.competency_code}"
+
     def validate(self):
         self.validate_code()
         self.validate_dimensions()

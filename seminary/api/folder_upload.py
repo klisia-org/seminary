@@ -26,8 +26,6 @@ term-to-term record of what changed in a folder.
 
 from __future__ import annotations
 
-import io
-import zipfile
 from typing import Optional, Set
 
 import frappe
@@ -39,8 +37,8 @@ from seminary.seminary.doctype.course_folder.course_folder import (
     user_may_read,
     user_may_write,
 )
+from seminary.api import folder_archive
 from seminary.storage.backend import normalize_file_url
-from seminary.storage.files import copy_into_zip
 
 NOT_AVAILABLE = "Folder not available"
 
@@ -159,6 +157,27 @@ def _ensure_folder_permission(folder_id: str, perm: str = "read") -> Optional[di
     _not_available()
 
 
+def _refresh_archives(context: Optional[dict], folder_id: str | None):
+    """Pre-warm the download archive after a change to a folder's contents.
+
+    This is an optimisation, not a correctness measure: `download_folder` looks
+    an archive up by the folder's *current* manifest hash, so a stale one is
+    simply never found. Skipping a refresh costs a student one "preparing"
+    round-trip; it cannot serve them yesterday's files.
+
+    Two folders are warmed -- the one that changed, and the Course Folder root,
+    which is what the folder block opens on. An intermediate subfolder's archive
+    is left to age out.
+    """
+    if not context:
+        return
+    course_folder = context.get("course_folder")
+    folder_archive.refresh(folder_id, course_folder)
+    root = frappe.db.get_value("Course Folder", course_folder, "file_reference")
+    if root and root != folder_id:
+        folder_archive.refresh(root, course_folder)
+
+
 def _log(context: Optional[dict], action: str, file_name: str | None, section):
     if not context:
         return
@@ -249,6 +268,7 @@ def upload_to_folder(**kwargs):
 
     stored = _store_file(folder, file_name, content, context)
     _log(context, "added", stored["file_name"], frappe.form_dict.get("course_schedule"))
+    _refresh_archives(context, folder)
 
     return {
         "folder_id": folder,
@@ -283,6 +303,8 @@ def upload_folder(**kwargs):
         stored = _store_file(folder, file.filename, file.stream.read(), context)
         _log(context, "added", stored["file_name"], section)
         saved.append(stored)
+
+    _refresh_archives(context, folder)
 
     return {
         "folder_id": folder,
@@ -403,6 +425,7 @@ def delete_file(
     context = _ensure_folder_permission(doc.folder, perm="write")
     frappe.delete_doc("File", name)
     _log(context, "removed", doc.file_name, course_schedule)
+    _refresh_archives(context, doc.folder)
 
     return {"name": name, "folder_id": doc.folder}
 
@@ -429,6 +452,7 @@ def rename_file(
     if old_name != new_name:
         frappe.db.set_value("File", name, "file_name", new_name)
         _log(context, "renamed", f"{old_name} -> {new_name}", course_schedule)
+        _refresh_archives(context, doc.folder)
 
     return {"name": name, "file_name": new_name, "folder_id": doc.folder}
 
@@ -464,63 +488,60 @@ def move_file(
             f"{doc.file_name} ({source_label} -> {target_label})",
             course_schedule,
         )
+        _refresh_archives(context, doc.folder)
+        _refresh_archives(target_context, target)
 
     return {"name": name, "folder_id": target}
-
-
-def _add_folder_to_zip(
-    archive: zipfile.ZipFile,
-    folder_id: str,
-    base_path: str,
-    visited: Set[str],
-) -> None:
-    """Recursively write the contents of a folder into the zip archive."""
-    if folder_id in visited:
-        return
-    visited.add(folder_id)
-
-    entries = frappe.get_all(
-        "File",
-        filters={"folder": folder_id},
-        fields=["name", "file_name", "is_folder"],
-        order_by="is_folder desc, file_name asc",
-        ignore_permissions=True,
-    )
-
-    if not entries and base_path:
-        # Preserve empty folders in the archive.
-        archive.writestr(f"{base_path}/", b"")
-        return
-
-    for entry in entries:
-        entry_path = f"{base_path}/{entry.file_name}" if base_path else entry.file_name
-        if entry.is_folder:
-            _add_folder_to_zip(archive, entry.name, entry_path, visited)
-            continue
-        # Streamed rather than read whole: a course folder of lecture video would
-        # otherwise sit in worker memory in its entirety. Works the same whether
-        # the file is on disk or offloaded to object storage (privatedocs/p004).
-        copy_into_zip(archive, entry.name, entry_path)
 
 
 @frappe.whitelist()
 def download_folder(
     course_folder: str | None = None, folder_id: str | None = None, **kwargs
 ):
-    """Stream a zip archive of the folder, including its sub-folders and files."""
+    """Hand back the folder's archive, or say it is being prepared (p008 F17a).
+
+    **No zip is ever assembled in this request.** It used to be, in worker
+    memory, by anyone who could read the folder -- a student included. Now the
+    archive is a cached artifact keyed by a hash of the folder's contents: this
+    looks the hash up, and either returns the artifact's URL or queues a build.
+
+    The URL is the artifact File's own `file_url`, so the bytes are served by the
+    same permission-checked path as any other file -- an offloaded one through
+    `storage.api.download_file`, a local one through Frappe's private-file route.
+    The permission check here is not the only one standing between a caller and
+    the archive; it is the first.
+    """
     folder = _resolve_folder(course_folder=course_folder, folder_id=folder_id)
-    _ensure_folder_permission(folder, perm="read")
+    context = _ensure_folder_permission(folder, perm="read")
 
-    root_name = frappe.db.get_value("File", folder, "file_name") or "folder"
+    if not context:
+        # Outside a Course Folder there is nothing to attach an artifact to, and
+        # therefore no rule to read it back by. Those folders are owner/System
+        # Manager only and are not reachable from the folder block.
+        frappe.throw(_("This folder cannot be downloaded as an archive."))
 
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        _add_folder_to_zip(archive, folder, root_name, visited=set())
+    owner_folder = context["course_folder"]
+    manifest_hash, entries = folder_archive.folder_manifest(folder)
+    if not folder_archive.has_files(entries):
+        frappe.throw(_("This folder is empty."))
 
-    frappe.local.response.filename = f"{root_name}.zip"
-    frappe.local.response.filecontent = buffer.getvalue()
-    frappe.local.response.type = "download"
-    frappe.local.response.display_content_as = "attachment"
+    file_name = folder_archive.archive_file_name(
+        folder_archive.root_name_of(folder), folder, manifest_hash
+    )
+    existing = folder_archive.find_archive(owner_folder, file_name)
+    if existing:
+        return {
+            "status": "ready",
+            "file_name": file_name,
+            "url": frappe.db.get_value("File", existing, "file_url"),
+        }
+
+    return {
+        "status": "preparing",
+        "detail": folder_archive.enqueue_archive_build(
+            folder, owner_folder, reader_triggered=True
+        ),
+    }
 
 
 @frappe.whitelist()
@@ -573,6 +594,7 @@ def create_subfolder(
     if context:
         _link_file_to_course_folder(folder_doc.name, context["course_folder"])
     _log(context, "added", f"{subfoldername}/", course_schedule)
+    _refresh_archives(context, parent_folder)
 
     return {
         "name": folder_doc.name,

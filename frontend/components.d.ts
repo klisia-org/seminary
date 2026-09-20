@@ -73,6 +73,7 @@ declare module 'vue' {
     RichTextEditor: typeof import('./src/components/RichTextEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SafeHtml: typeof import('./src/components/SafeHtml.vue')['default']
     ScriptureMatching: typeof import('./src/components/QuestionTypes/ScriptureMatching.vue')['default']
     ScriptureMatchingResult: typeof import('./src/components/QuestionTypes/ScriptureMatchingResult.vue')['default']
     ScriptureMemorization: typeof import('./src/components/QuestionTypes/ScriptureMemorization.vue')['default']

@@ -11,7 +11,30 @@ import json
 
 
 class CourseLesson(Document):
+    def sanitize_editor_content(self):
+        """Clean the EditorJS blocks before anything else looks at them (p008 F4).
+
+        Frappe's own save-time sanitiser returns JSON unchanged, so without this
+        nothing on the server ever looks inside a lesson, and the lesson view
+        renders several block types as HTML. Repairs and says so; never blocks
+        the save -- see seminary.seminary.editorjs_safety."""
+        from seminary.seminary.editorjs_safety import sanitize_content
+
+        notes = []
+        for fieldname in ("content", "instructor_content"):
+            cleaned, found = sanitize_content(self.get(fieldname))
+            if found:
+                self.set(fieldname, cleaned)
+                notes.extend(found)
+        if notes:
+            frappe.msgprint(
+                "<br>".join(frappe.utils.escape_html(n) for n in notes),
+                title=frappe._("Some lesson content was cleaned on save"),
+                indicator="orange",
+            )
+
     def validate(self):
+        self.sanitize_editor_content()
         # self.check_and_create_folder()
         self.validate_quiz_id()
         self.updates_lessons()
@@ -177,11 +200,20 @@ def save_progress(lesson, chapter, course):
     progress = get_course_progress(course)
     # capture_progress_for_analytics(progress, course)
 
-    # Had to get doc, as on_change doesn't trigger when you use set_value. The trigger is necesary for badge to get assigned.
+    # One derived field on the caller's OWN roster row. The row was looked up by
+    # `stuemail_rc = frappe.session.user` above, and `progress` is counted from
+    # Course Schedule Progress here -- the caller supplies neither.
+    #
+    # This used to be a full `enrollment.save()`, which a Student cannot do:
+    # p007 F1 took Student write off Scheduled Course Roster, so reading any
+    # lesson raised PermissionError and no student's progress had been recorded
+    # since (found on the p008 browser pass). `db_set` writes the single field
+    # and runs `on_change` for the badge -- which is why the doc is loaded at
+    # all -- without opening the rest of the row (grade, active, program) to a
+    # writer that must not have it. `ignore_permissions=True` on the save would
+    # have done exactly that.
     enrollment = frappe.get_doc("Scheduled Course Roster", membership)
-    enrollment.progress = progress
-    enrollment.save()
-    enrollment.run_method("on_change")
+    enrollment.db_set("progress", progress)
 
     return progress
 

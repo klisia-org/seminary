@@ -1,4 +1,5 @@
 import { CodeXml } from 'lucide-vue-next'
+import { sanitize } from './sanitize.js'
 import { createApp, h } from 'vue'
 
 export class Markdown {
@@ -46,7 +47,8 @@ export class Markdown {
 			if (!this.wrapper) {
 				return
 			}
-			this.wrapper.innerHTML = this.data.text || ''
+			// pasted HTML never reached the server: clean it at the sink (p008 F4)
+			this.wrapper.innerHTML = sanitize(this.data.text || '')
 		})
 	}
 
@@ -59,11 +61,17 @@ export class Markdown {
 	render() {
 		this.wrapper = document.createElement('div')
 		this.wrapper.classList.add('cdx-block', 'ce-paragraph')
-		this.wrapper.innerHTML = this.text
+		// Lesson content is EditorJS JSON, which the server sanitiser skips, and
+		// this block renders in the read-only lesson view too (p005a A05-10).
+		this.wrapper.innerHTML = sanitize(this.text)
 
 		if (!this.readOnly) {
 			this.wrapper.contentEditable = true
-			this.wrapper.innerHTML = this.text
+			// editorjs renders this as the block's placeholder while the block
+			// is empty (its own CSS, on `:empty` / `[data-empty=true]`), which
+			// is where the caret is parked when the form opens. Without it an
+			// empty lesson is a blank rectangle with no hint of what to do.
+			this.wrapper.dataset.placeholderActive = this.placeholder
 
 			this.wrapper.addEventListener('input', (event) => {
 				let value = event.target.textContent
@@ -84,22 +92,6 @@ export class Markdown {
 		}
 
 		return this.wrapper
-	}
-
-	_togglePlaceholder() {
-		const blocks = document.querySelectorAll(
-			'.cdx-block.ce-paragraph[data-placeholder]'
-		)
-		blocks.forEach((block) => {
-			if (block !== this.wrapper) {
-				delete block.dataset.placeholder
-			}
-		})
-		if (this.wrapper.innerHTML.trim() === '') {
-			this.wrapper.dataset.placeholder = this.placeholder
-		} else {
-			delete this.wrapper.dataset.placeholder
-		}
 	}
 
 	convertToHeader(event, value) {

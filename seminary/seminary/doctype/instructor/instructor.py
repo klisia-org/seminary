@@ -282,8 +282,23 @@ def get_timeline_data(doctype, name):
 
 @frappe.whitelist()
 def update_instructorlog(doc):
-    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster."""
+    """Update Instructor Log from Course Schedule Instructors + Scheduled Course Roster.
 
+    A Desk form button. It had no check at all: the child-row ``save`` resolves
+    against the Instructor record, which is ``if_owner`` for the Instructor role,
+    so another instructor's log was not writable -- but the refusal came after
+    two unfiltered queries across every section and roster, and the loop commits
+    as it goes, so a later failure does not roll the earlier rows back (p008a
+    G6). Say who this is for, up front."""
+    frappe.only_for(
+        (
+            "Instructor",
+            "Program Chair",
+            "Registrar",
+            "Seminary Manager",
+            "System Manager",
+        )
+    )
     inst = frappe.get_doc("Instructor", doc)
     instructor = inst.name
 
