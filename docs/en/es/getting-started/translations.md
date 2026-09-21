@@ -2,7 +2,9 @@
 
 SeminaryERP es multilingüe y hasta ahora se ha traducido al portugués y al español.
 
-Las traducciones se alojan y gestionan en nuestro [proyecto en Crowdin](https://crowdin.com/project/seminary-erp).
+Las traducciones se alojan y gestionan en nuestro [servidor de Weblate](https://translate.seminaryerp.org/projects/klisia/).
+
+El servidor no acepta registro automático. [Abra una incidencia](https://github.com/klisia-org/seminary/issues) para solicitar una cuenta de traductor o un nuevo idioma.
 
 A medida que utilice el sistema, no dude en contribuir y mejorar nuestras traducciones, así como solicitar una plantilla para otros idiomas. Nuestro corazón es servir a la iglesia global.
 
