@@ -47,6 +47,11 @@ class FakeBackend:
     def delete(self, key):
         self.objects.pop(key, None)
 
+    def read(self, key):
+        # `reparse` reads the manifest back out of the store rather than
+        # re-uploading anything, so the fake needs this too.
+        return self.objects[key][0]
+
     def stream(self, key, chunk_size=1024 * 1024):
         blob = self.objects[key][0]
         for i in range(0, len(blob), chunk_size):
