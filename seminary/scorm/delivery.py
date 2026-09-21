@@ -112,6 +112,27 @@ def guard_delivery_host():
     raise frappe.DoesNotExistError
 
 
+def _member_path(segments: list[str]) -> str:
+    """The member the client asked for, with empty and `.` segments dropped.
+
+    Real courseware builds URLs by concatenation, so a base that already ends in
+    `/` meets a path that starts with one and the request arrives as
+    `.../<package>//questions.js`. Every browser and every filesystem reads that
+    as one separator; a naive `"/".join` does not, and the inventory lookup
+    misses by a leading empty segment. Measured against the ADL Golf sample's
+    assessment template, which does exactly this.
+
+    **This is not path resolution, and `..` is deliberately left alone.** An
+    empty or `.` segment carries no meaning to collapse -- the result addresses
+    the same member either way -- whereas resolving `..` would be computing a
+    path, which is the one thing this endpoint must never do (§2.4). A `..` that
+    survives simply fails the inventory lookup, like any other name the package
+    never shipped. Browsers resolve their own `..` before sending, so the only
+    way one arrives here is a client that built it by hand.
+    """
+    return "/".join(part for part in segments if part not in ("", "."))
+
+
 def _rate_limited() -> bool:
     """One counter per address per minute, in redis.
 
@@ -183,7 +204,8 @@ class SCORMDelivery:
         if len(parts) < 3:
             return self._missing()
 
-        token, package_id, member_path = parts[1], parts[2], "/".join(parts[3:])
+        token, package_id = parts[1], parts[2]
+        member_path = _member_path(parts[3:])
 
         if not self._app_origin():
             # Misconfiguration, not a miss: serving with the wrong

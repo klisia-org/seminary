@@ -269,6 +269,24 @@ class TestP009Delivery(_ScormCase):
         http_headers.apply_security_headers(response=response)
         self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
 
+    def test_a_doubled_slash_still_finds_the_member(self):
+        """Real courseware concatenates a base ending in `/` with a path
+        starting with one, so the request arrives as `.../<package>//x.js`.
+        Every browser and filesystem reads that as one separator. Measured
+        against the ADL Golf assessment template, which does exactly this."""
+        # `_get` joins with a slash, so a leading one produces `.../<pkg>//a/...`
+        self.assertEqual(self._get("/a/style.css").status_code, 200)
+
+    def test_a_dot_segment_still_finds_the_member(self):
+        self.assertEqual(self._get("./index.html").status_code, 200)
+
+    def test_a_dotdot_segment_is_not_resolved(self):
+        """`..` is left alone deliberately: collapsing an empty or `.` segment
+        addresses the same member, resolving `..` would be *computing* a path,
+        which is the one thing this endpoint must never do. It simply misses the
+        inventory."""
+        self.assertEqual(self._get("a/../index.html").status_code, 404)
+
     def test_the_media_origin_is_allowed_for_images_fonts_and_video(self):
         """§2.6 redirects every binary member to the object store's own
         hostname, so a `default-src 'self'` policy forbids the package's own
