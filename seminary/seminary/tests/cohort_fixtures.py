@@ -20,8 +20,21 @@ _seq = [0]
 
 
 def uid(label=""):
+    """A name unique across runs, not merely within one.
+
+    The counter restarts at zero every process, so a row that escapes a
+    rollback — and `setUpClass` fixtures do escape, Frappe commits at the end of
+    it — collides with the next run's "ZZT Type 25" and takes out every test
+    that builds one. The random suffix is the same answer `make_person` and
+    `make_user` already give for the same reason.
+    """
     _seq[0] += 1
-    return "%s %s%d" % (PREFIX, (label + " ") if label else "", _seq[0])
+    return "%s %s%d-%s" % (
+        PREFIX,
+        (label + " ") if label else "",
+        _seq[0],
+        frappe.generate_hash(length=4),
+    )
 
 
 # ------------------------------------------------------------------- identity
@@ -204,7 +217,9 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
         {
             "doctype": "Program",
             "program_name": name,
-            "program_abbreviation": "Z%d" % _seq[0],
+            # Unique-indexed, so it needs the same across-runs uniqueness the
+            # name gets from `uid` — a bare counter collides with the last run.
+            "program_abbreviation": "Z%d%s" % (_seq[0], frappe.generate_hash(length=4)),
             "program_type": program_type,
             "program_level": program_level,
             "competency_framework": framework,

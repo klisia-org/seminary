@@ -14,7 +14,12 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from seminary.scorm import grades
+from seminary.seminary.tests.identity_cleanup import module_hooks
 from seminary.seminary.tests.test_p009_runtime import _CommitCase
+
+# `_PassbackCase` extends the shared `_CommitCase`, so the fixtures belong to
+# the module rather than to any one class.
+setUpModule, tearDownModule = module_hooks()
 
 
 class TestP009Percentage(IntegrationTestCase):

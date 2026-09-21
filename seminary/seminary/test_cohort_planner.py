@@ -15,6 +15,8 @@ over.
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from seminary.seminary.tests.identity_cleanup import module_hooks
+
 from seminary.seminary import faculty
 from seminary.seminary.discipleship import criteria as rules
 from seminary.seminary.discipleship import planner
@@ -43,6 +45,9 @@ def _gender(person, value):
             ignore_permissions=True
         )
     frappe.db.set_value("Person", person, "gender", value, update_modified=False)
+
+
+setUpModule, tearDownModule = module_hooks()
 
 
 class PlannerCase(IntegrationTestCase):

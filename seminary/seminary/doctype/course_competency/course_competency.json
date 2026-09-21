@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{coursecode}-{competency_code}",
- "creation": "2026-08-28 21:00:00.000000",
+ "creation": "2026-08-28 21:00:00",
  "description": "A competency a course develops, with a description of how it is demonstrated in each dimension. In competency-based education a course states one outcome and the competencies inside it are what students demonstrate.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/competency-based-education.html#course-competencies",
@@ -84,7 +84,7 @@
    "fieldname": "statement",
    "fieldtype": "Text Editor",
    "label": "Statement",
-    "reqd": 1
+   "reqd": 1
   },
   {
    "description": "One row per dimension, describing how this competency is demonstrated there.",
@@ -100,11 +100,11 @@
   }
  ],
  "links": [],
- "modified": "2026-08-28 21:00:00.000000",
- "modified_by": "Administrator",
+ "modified": "2026-09-22 00:41:05.799503",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Course Competency",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

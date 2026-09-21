@@ -7,6 +7,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from seminary.seminary import file_policy
+from seminary.seminary.tests.identity_cleanup import IdentityCleanup
 from seminary.seminary.tests.test_p006_api import _make_user
 from seminary.seminary.tests.test_p007_docperms import (
     _any_course_schedule,
@@ -34,7 +35,7 @@ def _file(user="Administrator", **fields):
     return doc
 
 
-class TestP007FilePolicy(IntegrationTestCase):
+class TestP007FilePolicy(IdentityCleanup, IntegrationTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

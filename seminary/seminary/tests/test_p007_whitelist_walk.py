@@ -30,6 +30,7 @@ import inspect
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from seminary.seminary.tests.identity_cleanup import IdentityCleanup
 from seminary.seminary.tests.test_p006_api import _make_user
 
 # Modules whose endpoints have been triaged. Everything discovered outside these
@@ -898,7 +899,7 @@ def _dummy_kwargs(fn, dotted):
     return kwargs
 
 
-class TestP007WhitelistWalk(IntegrationTestCase):
+class TestP007WhitelistWalk(IdentityCleanup, IntegrationTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

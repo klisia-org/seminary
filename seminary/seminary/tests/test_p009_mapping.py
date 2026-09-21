@@ -13,7 +13,12 @@ scoping it at all.
 import frappe
 
 from seminary.scorm import grades
+from seminary.seminary.tests.identity_cleanup import module_hooks
 from seminary.seminary.tests.test_p009_grades import _PassbackCase
+
+# `_PassbackCase` is shared with test_p009_grades, so this module owns whatever
+# it builds through it.
+setUpModule, tearDownModule = module_hooks()
 
 
 class TestP009Mapping(_PassbackCase):

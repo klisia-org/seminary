@@ -14,6 +14,7 @@ import frappe
 from frappe.tests import IntegrationTestCase as FrappeTestCase
 
 from seminary.seminary import api, utils
+from seminary.seminary.tests.identity_cleanup import IdentityCleanup
 
 PREFIX = "zzt.p006"
 
@@ -39,7 +40,7 @@ def _make_user(role, tag):
     return doc.name
 
 
-class TestP006ApiGates(FrappeTestCase):
+class TestP006ApiGates(IdentityCleanup, FrappeTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -15,9 +15,14 @@ from frappe.tests import IntegrationTestCase
 
 from seminary.scorm import cmi, launch as launch_module, runtime, tokens
 from seminary.seminary.tests.test_p009_lifecycle import _ScormCase, _zip
+from seminary.seminary.tests.identity_cleanup import module_hooks
 from seminary.seminary.tests.test_p006_api import _make_user
 
 DELIVERY_HOST = "scorm.test.invalid"
+
+# Module-level rather than per-class: `_ScormCase` / `_CommitCase` are shared
+# bases, so Frappe builds their fixtures once and every subclass reuses them.
+setUpModule, tearDownModule = module_hooks()
 
 
 class TestP009CMI(IntegrationTestCase):
