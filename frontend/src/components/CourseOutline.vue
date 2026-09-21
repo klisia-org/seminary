@@ -79,7 +79,13 @@
 							aria-hidden="true" />
 					</div>
 				</DisclosureButton>
-				<DisclosurePanel v-if="!chapter.is_scorm_package">
+				<!-- p009 §2.10: a SCO *is* a lesson, so a SCORM chapter expands
+				     like any other. This panel used to be suppressed for one,
+				     because before p009 such a chapter genuinely had nothing
+				     inside it. S8 un-hid the chevron above and left this
+				     condition behind, so the chevron turned and revealed an
+				     empty space -- the chapter title and nothing else. -->
+				<DisclosurePanel>
 					<!-- Competency guidance and lock state (ADR 065). The student
 					     reads what they are being formed into in the same place
 					     they do the work, and a lock always says why. -->
@@ -139,15 +145,22 @@
 
 					<template v-else>
 					<div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson.name" class="lesson-wrapper">
-						<div v-if="props.allowEdit"
+						<!-- Not on a SCORM chapter: the manifest owns which SCOs
+						     exist and in what order, and `lessons.reconcile`
+						     rewrites both on every re-upload. A lesson dragged
+						     out of one would keep a `scorm_sco_identifier` its
+						     new chapter has no package for, and nothing would
+						     play it. -->
+						<div v-if="props.allowEdit && !chapter.is_scorm_package"
 							class="ml-8 mr-4 h-3 rounded border border-dashed border-outline-gray-3 transition hover:border-outline-gray-4"
 							@dragover.prevent="onDragOver($event)" @drop.prevent="onDrop($event, chapter, lessonIndex)">
 						</div>
 						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3"
 							:class="{
 								'bg-surface-selected': isActiveLesson(lesson.number),
-								'cursor-grab': props.allowEdit,
-							}" :draggable="props.allowEdit" @dragstart="onDragStart($event, chapter, lesson, lessonIndex)"
+								'cursor-grab': props.allowEdit && !chapter.is_scorm_package,
+							}" :draggable="props.allowEdit && !chapter.is_scorm_package"
+							@dragstart="onDragStart($event, chapter, lesson, lessonIndex)"
 							@dragend="onDragFinish">
 							<div class="flex items-start gap-3">
 								<div v-if="props.allowEdit">
@@ -217,7 +230,7 @@
 						</div>
 					</div>
 					</template>
-					<div v-if="props.allowEdit"
+					<div v-if="props.allowEdit && !chapter.is_scorm_package"
 						class="ml-8 mr-4 mt-2 rounded-md border border-dashed border-outline-gray-3 p-3 text-sm text-ink-gray-5 transition hover:border-outline-gray-4 hover:text-ink-gray-7"
 						@dragover.prevent="onDragOver($event)"
 						@drop.prevent="onDrop($event, chapter, chapter.lessons?.length || 0)">

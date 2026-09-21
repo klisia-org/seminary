@@ -28,19 +28,23 @@ Four arms, in order of how much they cost to check:
    prefix rather than `media/` -- the same object store, but the path SCORM
    actually uses, so a bucket policy scoped by prefix is exercised too.
 
-4. **The live origin.** Three HTTP requests to the delivery host, over TLS,
+4. **The live origin.** Four HTTP requests to the delivery host, over TLS,
    from this server. This is the arm the other three cannot substitute for: it
    is the only one that touches DNS, the certificate, the proxy's `Host`
-   routing, and the `before_request` guard *as deployed*.
+   routing, the `before_request` guard *as deployed*, and **the web server's
+   own rewrites** -- which no local test can see, because `bench serve` puts no
+   nginx in front of anything. See `PROBE_HTML`; that one is not hypothetical,
+   it was found on tlink the day this arm was written.
 
 ## What arm 4 proves, and what it does not
 
 It proves that something is answering on the delivery host over a valid
-certificate, that it refuses `/app` and `/api`, and that `/scorm/...` reaches a
-renderer rather than the website router. Those are exactly the failures worth
-catching: a delivery host that serves Desk is the origin split undone, and a
-delivery host that 404s `/scorm/` through the *website* router means the
-renderer is not registered.
+certificate, that it refuses `/app` and `/api`, that `/scorm/...` reaches a
+renderer rather than the website router, and that a `.html` member path arrives
+intact. Those are exactly the failures worth catching: a delivery host that
+serves Desk is the origin split undone, a delivery host that 404s `/scorm/`
+through the *website* router means the renderer is not registered, and a
+delivery host that rewrites `.html` cannot serve a SCORM package at all.
 
 It does **not** prove that the host resolves to this site. Nothing reachable on
 the delivery origin identifies the site behind it without a launch token, and
@@ -74,6 +78,28 @@ HTTP_TIMEOUT = 10
 PROBE_DESK = "/app"
 PROBE_API = "/api/method/frappe.auth.get_logged_user"
 PROBE_SCORM = "/scorm/"
+
+#: The one deployment defect that no local test can see, because `bench serve`
+#: has no nginx. Frappe's standard nginx template carries three permanent
+#: rewrites inside `location /`::
+#:
+#:     rewrite ^(.+)/$ $1 permanent;
+#:     rewrite ^(.+)/index\.html$ $1 permanent;
+#:     rewrite ^(.+)\.html$ $1 permanent;
+#:
+#: They exist so a website page answers at `/about` as well as `/about.html`,
+#: and they are applied to every path on the server -- including a SCORM member
+#: path. A package addresses itself by real filenames, so this is fatal:
+#: `.../<pkg>/page.html` is 301'd to `.../<pkg>/page`, which is not a key of the
+#: inventory. Worse, `.../<pkg>/index.html` is 301'd to `.../<pkg>` -- a whole
+#: path segment shorter -- which is the launcher's own URL, so the launcher
+#: frames itself until the browser's nesting limit.
+#:
+#: The renderer cannot defend against it: the redirect is issued by nginx before
+#: the request reaches Python, and the browser then asks for the rewritten URL.
+#: `_url_path` reading `request.path` fixes the *frappe* layer (`resolve_path`
+#: strips `.html` internally); it cannot fix this one.
+PROBE_HTML = "/scorm/_selftest_probe.html"
 
 
 @frappe.whitelist()
@@ -270,7 +296,10 @@ def _origin() -> dict:
     from seminary.scorm import delivery
 
     host = delivery.delivery_host()
-    probes = {path: _fetch(host, path) for path in (PROBE_DESK, PROBE_API, PROBE_SCORM)}
+    probes = {
+        path: _fetch(host, path)
+        for path in (PROBE_DESK, PROBE_API, PROBE_SCORM, PROBE_HTML)
+    }
 
     failures = []
 
@@ -311,6 +340,17 @@ def _origin() -> dict:
             f"({scorm['content_type'] or 'no content-type'}, {scorm['length']} bytes) "
             "rather than through SCORMDelivery. The renderer is registered but not "
             "reached -- check that the request arrives with the delivery `Host`."
+        )
+
+    html = probes[PROBE_HTML]
+    if 300 <= html["status"] < 400:
+        failures.append(
+            f"`{PROBE_HTML}` was redirected ({html['status']}) instead of reaching "
+            "the renderer. nginx is rewriting `.html` away before the request "
+            "reaches Python, so every HTML member of every package 404s and a "
+            "package whose entry is `index.html` makes the launcher frame "
+            "itself. See PROBE_HTML in this module for the three rewrite lines "
+            "and the `location ^~ /scorm/` block that has to precede them."
         )
 
     if failures:
