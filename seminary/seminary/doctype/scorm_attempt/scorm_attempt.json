@@ -35,7 +35,9 @@
   "total_time",
   "column_break_timing",
   "started_on",
-  "last_commit_on"
+  "last_commit_on",
+  "pushed_score",
+  "has_score"
  ],
  "fields": [
   {
@@ -227,6 +229,21 @@
    "fieldname": "last_commit_on",
    "fieldtype": "Datetime",
    "label": "Last Commit On",
+   "read_only": 1
+  },
+  {
+   "description": "The percentage this attempt last reported to the gradebook, or empty if it never has. Compared against the cell before overwriting it.",
+   "fieldname": "pushed_score",
+   "fieldtype": "Float",
+   "label": "Reported To Gradebook",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "This attempt actually reported a score. The score columns are Floats and therefore NOT NULL, so a stored 0 is indistinguishable from 'never set' -- the same reason Course Assess Results Detail carries graded_card beside its raw score.",
+   "fieldname": "has_score",
+   "fieldtype": "Check",
+   "label": "Reported A Score",
    "read_only": 1
   }
  ],

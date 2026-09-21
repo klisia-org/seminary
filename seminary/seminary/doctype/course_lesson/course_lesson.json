@@ -32,7 +32,8 @@
   "assessment_criteria_exam",
   "assessment_criteria_discussion",
   "scorm_sco_identifier",
-  "scorm_orphaned"
+  "scorm_orphaned",
+  "scorm_assessment_criteria"
  ],
  "fields": [
   {
@@ -195,6 +196,14 @@
    "fieldtype": "Check",
    "label": "SCORM SCO Removed From Package",
    "read_only": 1
+  },
+  {
+   "depends_on": "scorm_sco_identifier",
+   "description": "Optional. When set, a passing SCORM attempt at this SCO reports its score to this assessment criterion. Leave empty -- the default -- and the package records completion only. A SCORM score is a claim from code the student can reach, so nothing reaches the gradebook without this link (p009 section 2.12).",
+   "fieldname": "scorm_assessment_criteria",
+   "fieldtype": "Link",
+   "label": "SCORM Reports To",
+   "options": "Scheduled Course Assess Criteria"
   }
  ],
  "index_web_pages_for_search": 1,

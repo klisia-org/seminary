@@ -28,7 +28,7 @@ import frappe
 from frappe import _
 from frappe.rate_limiter import rate_limit
 
-from seminary.scorm import cmi, lessons, tokens
+from seminary.scorm import cmi, grades, lessons, tokens
 from seminary.scorm.launch import MODE_NORMAL
 
 
@@ -83,6 +83,10 @@ def commit(token: str, sco: str, data=None) -> dict:
 
     for field, value in values.items():
         attempt.set(field, value)
+    if values.keys() & {"score_raw", "score_min", "score_max", "score_scaled"}:
+        # Only this call knows which elements actually arrived; the columns
+        # themselves cannot say (see `grades.percentage_for`).
+        attempt.has_score = 1
     attempt.last_commit_on = frappe.utils.now_datetime()
 
     try:
@@ -92,18 +96,25 @@ def commit(token: str, sco: str, data=None) -> dict:
     except frappe.ValidationError as e:
         return {"ok": False, "error": cmi.ERR_GENERAL, "reason": str(e)}
 
+    lesson = _lesson_for(chapter, sco)
     lessons.record_progress(
-        _lesson_for(chapter, sco),
+        lesson,
         chapter,
         attempt.course,
         lessons.status_for(attempt.completion_status, attempt.success_status),
     )
+
+    # A score reaches the gradebook only through a link an instructor set, and
+    # never at the cost of the commit: a refusal there is a result, not a raise
+    # (§2.12). The package has still recorded its completion either way.
+    reported = grades.push_from_attempt(attempt, lesson)
 
     return {
         "ok": True,
         "stored": True,
         "completion_status": attempt.completion_status,
         "success_status": attempt.success_status,
+        "reported": reported.get("reported", False),
     }
 
 

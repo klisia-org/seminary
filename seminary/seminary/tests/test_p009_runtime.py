@@ -138,7 +138,13 @@ class TestP009Launch(_ScormCase):
         self.assertFalse(launch_module.heartbeat(token)["ok"])
 
 
-class TestP009Commit(_ScormCase):
+class _CommitCase(_ScormCase):
+    """A student, a section, an unpacked package and a launch token.
+
+    Not a `Test*` class: `test_p009_grades` builds on this setup, and
+    subclassing a class that holds tests would re-run every one of them there.
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -176,6 +182,8 @@ class TestP009Commit(_ScormCase):
             },
         )
 
+
+class TestP009Commit(_CommitCase):
     # ------------------------------------------------------------- identity
 
     def test_a_commit_against_someone_elses_launch_writes_nothing(self):
