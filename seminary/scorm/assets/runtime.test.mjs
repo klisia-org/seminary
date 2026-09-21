@@ -248,3 +248,67 @@ test("every message names its SCO", () => {
   assert.ok(h.sent.length > 0);
   for (const message of h.sent) assert.equal(message.sco, "SCO-7");
 });
+
+/* The surface a real package actually uses. Taken from the ADL Golf sample
+ * (SCORM 2004 3rd Edition, `shared/scormfunctions.js`), which discovers us with
+ *
+ *     while ((win.API_1484_11 == null) && (win.parent != null) && (win.parent != win))
+ *
+ * starting at the SCO's parent -- the launcher -- so the walk terminates on the
+ * first hop and never reaches the cross-origin player, where reading a property
+ * would throw rather than return null. */
+test("the 2004 surface is exactly what a real package calls", () => {
+  const win = {};
+  harness({ version: "2004" }).runtime.install(win);
+  for (const method of [
+    "Initialize",
+    "Terminate",
+    "GetValue",
+    "SetValue",
+    "Commit",
+    "GetLastError",
+    "GetErrorString",
+    "GetDiagnostic",
+  ]) {
+    assert.equal(typeof win.API_1484_11[method], "function", method);
+  }
+});
+
+test("the 1.2 surface is exactly what a real package calls", () => {
+  const win = {};
+  harness({ version: "1.2" }).runtime.install(win);
+  for (const method of [
+    "LMSInitialize",
+    "LMSFinish",
+    "LMSGetValue",
+    "LMSSetValue",
+    "LMSCommit",
+    "LMSGetLastError",
+    "LMSGetErrorString",
+    "LMSGetDiagnostic",
+  ]) {
+    assert.equal(typeof win.API[method], "function", method);
+  }
+});
+
+test("a discovery walk finds the API on its first hop", () => {
+  // The launcher IS the SCO's parent, so the loop condition is false
+  // immediately. If it were not, the next hop is the player on another origin,
+  // where reading `win.API_1484_11` throws instead of returning null.
+  const launcher = {};
+  harness({ version: "2004" }).runtime.install(launcher);
+  const crossOrigin = new Proxy({}, {
+    get() { throw new Error("SecurityError: cross-origin property read"); },
+  });
+  launcher.parent = crossOrigin;
+  const sco = { parent: launcher };
+
+  let win = sco.parent;
+  let tries = 0;
+  while (win.API_1484_11 == null && win.parent != null && win.parent !== win) {
+    if (++tries > 10) break;
+    win = win.parent;
+  }
+  assert.ok(win.API_1484_11, "the walk did not find the API");
+  assert.equal(tries, 0, "the walk stepped past the launcher");
+});

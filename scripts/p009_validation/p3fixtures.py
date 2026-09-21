@@ -13,6 +13,7 @@ objects. `teardown()` removes all of them, objects included.
 """
 
 import io
+import pathlib
 import zipfile
 
 import frappe
@@ -65,19 +66,25 @@ def _zip_bytes():
     return buf.getvalue()
 
 
-def main():
+def main(zip_path=None, title=None):
+    """Unpack the built-in smoke package, or a real one from `zip_path`.
+
+    A synthetic package is structurally honest and nothing like what an
+    authoring tool emits. Pass a real export to find out what the difference
+    costs -- that is what this argument is for.
+    """
     from seminary.scorm import explode, tokens
 
     teardown(quiet=True)
 
     chapter = frappe.new_doc("Course Schedule Chapter")
-    chapter.chapter_title = CHAPTER_TITLE
+    chapter.chapter_title = title or CHAPTER_TITLE
     chapter.is_scorm_package = 1
     chapter.flags.ignore_mandatory = True
     chapter.flags.ignore_permissions = True
     chapter.insert()
 
-    payload = _zip_bytes()
+    payload = pathlib.Path(zip_path).read_bytes() if zip_path else _zip_bytes()
     f = frappe.get_doc(
         {
             "doctype": "File",
@@ -135,7 +142,7 @@ def teardown(quiet=False):
 
     for name in frappe.get_all(
         "Course Schedule Chapter",
-        filters={"chapter_title": CHAPTER_TITLE},
+        filters={"chapter_title": ["like", "ZZT p009%"]},
         pluck="name",
     ):
         ref = frappe.db.get_value("Course Schedule Chapter", name, "scorm_package_ref")
