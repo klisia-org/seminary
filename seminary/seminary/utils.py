@@ -791,7 +791,10 @@ def get_course_outline(course, progress=False):
                 "name",
                 "chapter_title",
                 "is_scorm_package",
-                "launch_file",
+                # p009: `launch_file` was a path this stopped writing at p008 F8
+                # and nothing ever read. The ref is what says whether the package
+                # has been unpacked and is therefore playable.
+                "scorm_package_ref",
                 "scorm_package",
                 # The competency this chapter delivers (ADR 065). Carried so the
                 # editor can show the current mapping without a second call.

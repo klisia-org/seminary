@@ -50,6 +50,9 @@ CONFIG = {
     "Discussion Submission": (("member", "user"), "course"),
     "Quiz Submission": (("member", "user"), "course"),
     "Course Schedule Progress": (("member", "user"), "course"),
+    # Same shape as the progress row it sits beside: a student sees their own
+    # attempts, an instructor their sections' (p009 §2.11).
+    "SCORM Attempt": (("member", "user"), "course"),
     "Withdrawal Request": (("student", "student"), None),
     "Graduation Request": (("student", "student"), None),
     "Recommendation Letter": (("student", "student"), None),

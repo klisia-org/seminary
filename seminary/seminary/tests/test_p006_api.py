@@ -86,31 +86,26 @@ class TestP006ApiGates(FrappeTestCase):
             api.update_lesson_index, "ZZT-no-such-lesson", "ZZT-a", "ZZT-b", 1
         )
 
-    def test_delete_scorm_package_refuses_path_outside_root(self):
-        # A chapter title that would climb out of public/scorm must be refused
-        # without touching the filesystem. rmtree is patched to prove it.
-        import shutil
-
-        calls = []
-        orig = shutil.rmtree
-        shutil.rmtree = lambda *a, **k: calls.append(a)
-        try:
-            api.delete_scorm_package(
-                frappe._dict(
-                    name="ZZT-chapter",
-                    coursesc="..",
-                    chapter_title="..",
-                    scorm_package_path="/scorm/../..",
-                )
-            )
-        finally:
-            shutil.rmtree = orig
-        self.assertEqual(calls, [])
+    def test_the_disk_cleanup_path_is_gone(self):
+        # F1 hardened `delete_scorm_package`'s containment check against a
+        # chapter title that climbed out of public/scorm. p008 F8 removed the
+        # extraction that created such trees, its teardown patch deleted the
+        # trees themselves, and p009 S1 removed the cleanup and the three path
+        # fields it cross-checked against. Nothing builds a filesystem path from
+        # a chapter any more, which is the state F1 was defending.
+        self.assertFalse(hasattr(api, "delete_scorm_package"))
+        self.assertFalse(hasattr(api, "extract_package"))
 
     def test_scorm_fields_are_read_only(self):
         meta = frappe.get_meta("Course Schedule Chapter")
-        self.assertEqual(meta.get_field("scorm_package_path").read_only, 1)
         self.assertEqual(meta.get_field("is_scorm_package").read_only, 1)
+        # The ref is written by the explode job, never by a request (p009 §2.3).
+        self.assertEqual(meta.get_field("scorm_package_ref").read_only, 1)
+
+    def test_the_dead_path_fields_are_gone(self):
+        meta = frappe.get_meta("Course Schedule Chapter")
+        for field in ("scorm_package_path", "manifest_file", "launch_file"):
+            self.assertIsNone(meta.get_field(field), field)
 
     # ------------------------------------------------------------ F3 §2.3
 

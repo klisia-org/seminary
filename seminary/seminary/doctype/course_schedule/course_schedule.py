@@ -1207,12 +1207,14 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 # Course Schedule Chapter fields copied verbatim (besides chapter_title and
 # the back-reference coursesc which are set explicitly). SCORM file references
 # are shared between CSes — the underlying File doc is independent of any CS.
+#
+# `scorm_package_ref` is deliberately NOT copied: the copy re-derives it from
+# the shared File, which dedups onto the same SCORM Package by content hash
+# (p009 §2.13). Copying the ref verbatim would give the new chapter a package
+# reference nothing had counted.
 _CHAPTER_COPYABLE_FIELDS = (
     "is_scorm_package",
     "scorm_package",
-    "scorm_package_path",
-    "manifest_file",
-    "launch_file",
 )
 
 # Course Lesson content fields copied verbatim. assessment_criteria_* fields

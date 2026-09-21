@@ -30,9 +30,7 @@ import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 from datetime import datetime
-import os
 import re
-import shutil
 import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
@@ -4792,14 +4790,9 @@ def upsert_chapter(
         # The package is STORED, never unpacked (p008 F8). See pin_scorm_package.
         # a dict from the SPA's JSON body, or a JSON string from a form post
         package_file = frappe._dict(frappe.parse_json(scorm_package) or {}).name
-        values.update(
-            {
-                "scorm_package": package_file,
-                "scorm_package_path": None,
-                "manifest_file": None,
-                "launch_file": None,
-            }
-        )
+        # Only the File. The three extracted-path fields went with p009 S1;
+        # `scorm_package_ref` is written by the explode job, not by the request.
+        values["scorm_package"] = package_file
 
     if name:
         chapter = frappe.get_doc("Course Schedule Chapter", name)
@@ -4980,15 +4973,17 @@ def delete_chapter(chapter):
     chapterInfo = frappe.db.get_value(
         "Course Schedule Chapter",
         chapter,
-        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_path"],
+        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_ref"],
         as_dict=True,
     )
     if not chapterInfo:
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
     require_course_staff(chapterInfo.coursesc)
 
-    if chapterInfo.is_scorm_package:
-        delete_scorm_package(chapterInfo)
+    # An unpacked package's objects are removed when the LAST chapter pointing at
+    # it goes (p009 §2.13, S9). Nothing is removed here, and nothing is left on
+    # local disk to remove: p008 F8 stopped extracting and its teardown patch
+    # deleted the trees `delete_scorm_package` used to walk.
 
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
@@ -4996,57 +4991,13 @@ def delete_chapter(chapter):
     frappe.db.delete("Course Schedule Chapter", chapter)
 
 
-def delete_scorm_package(chapter):
-    """Remove the extracted SCORM directory for ``chapter`` (a Course Schedule
-    Chapter row with name, coursesc, chapter_title, scorm_package_path).
-
-    The operand is rebuilt from the chapter exactly as ``extract_package``
-    builds it -- ``public/scorm/<course schedule>/<chapter title>`` -- and must
-    resolve under the scorm root; the stored ``scorm_package_path`` is only a
-    cross-check, never the path that is deleted (p006 §2.1). "Import Course
-    Template" copies ``scorm_package_path`` verbatim, so the directory is left
-    alone while any other chapter still points at it.
-    """
-    if not (chapter and chapter.coursesc and chapter.chapter_title):
-        return
-
-    scorm_root = os.path.realpath(frappe.get_site_path("public", "scorm"))
-    expected = os.path.realpath(
-        frappe.get_site_path("public", "scorm", chapter.coursesc, chapter.chapter_title)
-    )
-    if (
-        expected == scorm_root
-        or os.path.commonpath([expected, scorm_root]) != scorm_root
-    ):
-        frappe.log_error(
-            f"delete_scorm_package: refused path outside scorm root for chapter {chapter.name}: {expected}",
-            "SCORM delete refused",
-        )
-        return
-
-    # Cross-check: the stored path should be the same directory. If it is not,
-    # the row was edited by hand; refuse rather than guess.
-    stored = (chapter.scorm_package_path or "").lstrip("/")
-    if stored and os.path.realpath(frappe.get_site_path("public", stored)) != expected:
-        frappe.log_error(
-            f"delete_scorm_package: stored path does not match rebuilt path for chapter {chapter.name}",
-            "SCORM delete refused",
-        )
-        return
-
-    # Reference count: another chapter (template-derived or source) sharing the
-    # same extracted directory keeps the files.
-    if chapter.scorm_package_path and frappe.db.exists(
-        "Course Schedule Chapter",
-        {
-            "scorm_package_path": chapter.scorm_package_path,
-            "name": ["!=", chapter.name],
-        },
-    ):
-        return
-
-    if os.path.isdir(expected) and not os.path.islink(expected):
-        shutil.rmtree(expected)
+# `delete_scorm_package` lived here until p009 S1. It walked
+# `public/scorm/<course>/<chapter title>` with a `commonpath` containment check
+# and a `scorm_package_path` cross-check -- careful code (p006 F1) for a tree
+# that, since p008 F8 and its teardown patch, no site has and no code writes.
+# It went with the three chapter fields it cross-checked against. Package
+# objects now live in object storage under `scorm/<package id>/` and are removed
+# by refcount on chapter references (p009 §2.13).
 
 
 @frappe.whitelist()

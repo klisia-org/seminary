@@ -30,7 +30,9 @@
   "assessment_criteria_quiz",
   "assessment_criteria_assignment",
   "assessment_criteria_exam",
-  "assessment_criteria_discussion"
+  "assessment_criteria_discussion",
+  "scorm_sco_identifier",
+  "scorm_orphaned"
  ],
  "fields": [
   {
@@ -177,6 +179,22 @@
    "fieldtype": "Link",
    "label": "Assessment Criteria Discussion",
    "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "description": "For a lesson that plays a SCO: the manifest <item> identifier. A re-uploaded package is matched to existing lessons by this, which is what keeps a cohort's recorded progress when a package is replaced.",
+   "fieldname": "scorm_sco_identifier",
+   "fieldtype": "Data",
+   "label": "SCORM SCO Identifier",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Set when a re-uploaded package no longer declares this SCO. The lesson is kept, not deleted -- deleting it would take its Course Schedule Progress rows with it -- and staff remove it deliberately.",
+   "fieldname": "scorm_orphaned",
+   "fieldtype": "Check",
+   "label": "SCORM SCO Removed From Package",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
