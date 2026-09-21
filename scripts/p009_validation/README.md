@@ -50,3 +50,11 @@ had:
 **Not a SCORM package:** an Articulate `.story` file zipped up is the authoring
 *source*, not a published export, and is refused with "This SCORM package has no
 imsmanifest.xml." The export comes from *Publish → LMS → SCORM 1.2 / 2004*.
+
+**ADL `SequencingRandomTest`, SCORM 2004 3rd Edition**, run 2026-09-20 — 69 members, **eight**
+SCOs became eight lessons (four content modules plus `test_1`..`test_4`). It is the package that
+shows what "sequencing is out of scope" costs: it asks for `randomizationControls
+randomizationTiming="onEachNewAttempt" reorderChildren="true"` over the four test items and
+carries rollup rules across children, and under p009 those four appear in manifest order, the
+same order every time, with chapter completion counted as "all eight lessons complete". Every
+byte plays; the assessment design does not. See p009 §2.5.
