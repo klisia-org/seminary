@@ -10,6 +10,7 @@ import zipfile
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from seminary.scorm import archive
 from seminary.seminary import api
 from seminary.seminary.tests.test_p006_api import _make_user
 
@@ -123,7 +124,7 @@ class TestP008Scorm(IntegrationTestCase):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr("imsmanifest.xml", "<manifest/>")
-            zf.writestr("zeros", b"\0" * (api.SCORM_RATIO_FLOOR_BYTES + 1024))
+            zf.writestr("zeros", b"\0" * (archive.RATIO_FLOOR_BYTES + 1024))
         payload = buf.getvalue()
         self.assertLess(len(payload), 2 * 1024 * 1024)
         name = _file("f17-bomb.zip", payload)

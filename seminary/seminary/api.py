@@ -4805,6 +4805,7 @@ def upsert_chapter(
     chapter.save()
     if package_file:
         pin_scorm_package(chapter.name, package_file)
+        queue_scorm_unpack(chapter.name, package_file)
 
     if is_scorm_package and not len(chapter.lessons):
         add_lesson(chapter_title, chapter.name, course)
@@ -4831,68 +4832,33 @@ def upsert_chapter(
 # iframe viewer, a postMessage runtime).
 
 
-#: Bounds for a SCORM package, each raisable in site_config.json. Deliberately
-#: the same shape as the Course Pack caps (course_pack/constants.py): the archive
-#: is a different artifact but the attack is identical.
-MAX_SCORM_ENTRIES = 20000  # scorm_max_entries
-MAX_SCORM_UNCOMPRESSED_BYTES = 4 * 1024**3  # scorm_max_uncompressed_bytes
-MAX_SCORM_MEMBER_BYTES = 1024**3  # scorm_max_member_bytes
-SCORM_RATIO_FLOOR_BYTES = 100 * 1024**2
-MAX_SCORM_RATIO = 200
-
-
-def _scorm_cap(key, default):
-    return int(frappe.conf.get(key) or default)
-
-
 def _check_scorm_archive(f):
-    """Open the package and bound it before anything accepts it (p008 F17e).
+    """Open the package and bound it before anything accepts it.
 
-    Until now this checked that the name ended `.zip` and nothing else -- no
-    magic bytes, no archive validity, no bounds. That was harmless only because
-    F8 stopped anything from opening a package; **p009 is the thing that will
-    open it**, and would have inherited an unchecked artifact with a chapter
-    already pointing at it. So the check belongs here, at the one moment a
-    package is accepted, not in the player.
+    The rules live in `seminary.scorm.archive` because **two** things look at a
+    package now: this, which refuses a bad zip at the moment a chapter accepts
+    it, and the explode job, which re-runs the same checks before it writes a
+    byte (p009 §2.4). p008 F17e put them here when nothing opened a package.
+    Two copies of a bounds check are two copies that drift.
 
-    Everything is read from the central directory, so it costs no decompression;
-    a member that lies about its size cannot exceed the budget anyway (`zf.read`
-    stops at the declared size and then fails CRC -- verified, p008 F17).
+    Everything is read from the central directory, so it costs no
+    decompression; a member that lies about its size cannot exceed the budget
+    anyway (`zf.read` stops at the declared size and then fails CRC -- verified,
+    p008 F17 -- and the explode job counts the bytes as well).
     """
+    from seminary.scorm import archive
     from seminary.storage.files import materialize
 
     try:
         with materialize(f) as path:
             with zipfile.ZipFile(path) as zf:
-                infos = zf.infolist()
-                names = zf.namelist()
+                archive.check_bounds(zf, f.file_size or 0)
     except zipfile.BadZipFile:
         frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
     except FileNotFoundError:
         frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
-
-    if len(infos) > _scorm_cap("scorm_max_entries", MAX_SCORM_ENTRIES):
-        frappe.throw(_("This SCORM package has too many files."))
-
-    total = sum(i.file_size for i in infos)
-    if total > _scorm_cap("scorm_max_uncompressed_bytes", MAX_SCORM_UNCOMPRESSED_BYTES):
-        frappe.throw(_("This SCORM package is too large once unpacked."))
-
-    member_cap = _scorm_cap("scorm_max_member_bytes", MAX_SCORM_MEMBER_BYTES)
-    if any(i.file_size > member_cap for i in infos):
-        frappe.throw(_("This SCORM package contains a file that is too large."))
-
-    compressed = f.file_size or 0
-    if total > SCORM_RATIO_FLOOR_BYTES and compressed:
-        if total / compressed > MAX_SCORM_RATIO:
-            frappe.throw(_("This file does not look like a SCORM package."))
-
-    # SCORM requires `imsmanifest.xml`; the spec puts it at the root, but zipping
-    # the containing folder is a common enough mistake that a nested one is
-    # accepted. Without it there is nothing to play, and refusing here gives the
-    # instructor a message now instead of a broken chapter later.
-    if not any(n.rsplit("/", 1)[-1].lower() == "imsmanifest.xml" for n in names):
-        frappe.throw(_("This SCORM package has no imsmanifest.xml."))
+    except archive.PackageError as e:
+        frappe.throw(str(e))
 
 
 def _check_scorm_package(file_name):
@@ -4938,6 +4904,43 @@ def pin_scorm_package(chapter_name, file_name):
                 "attached_to_field": "scorm_package",
             },
         )
+
+
+def queue_scorm_unpack(chapter_name, file_name):
+    """Record a SCORM Package for this chapter and queue the unpack (p009 §2.4).
+
+    The row is created here, synchronously, so the chapter has something whose
+    status the player can read -- `Pending` until a worker picks it up, then
+    `Exploding`, then `Ready` or `Failed`. Nothing is unpacked in the request:
+    a package is measured in gigabytes and the zip has to be streamed twice.
+
+    Dedup happens in the job rather than here, because it keys on a SHA-256 that
+    is only known once the zip has been read -- and reading it synchronously is
+    exactly what the job exists to avoid.
+    """
+    from seminary.scorm import explode
+
+    existing = frappe.db.get_value(
+        "Course Schedule Chapter", chapter_name, "scorm_package_ref"
+    )
+    if existing and frappe.db.get_value("SCORM Package", existing, "source_file") == (
+        file_name
+    ):
+        return existing
+
+    package = frappe.get_doc(
+        {
+            "doctype": "SCORM Package",
+            "source_file": file_name,
+            "status": "Pending",
+        }
+    )
+    package.insert(ignore_permissions=True)
+    frappe.db.set_value(
+        "Course Schedule Chapter", chapter_name, "scorm_package_ref", package.name
+    )
+    explode.enqueue(chapter_name, package.name)
+    return package.name
 
 
 def add_lesson(lesson_title, chapter, course_sc):
