@@ -46,7 +46,7 @@ with open(f, "w") as o:
 
 New docs pages live under `docs/en/` and must be registered in the English
 (`root`) sidebar in `docs/.vitepress/config.mjs` (the `pt`/`es` mirrors are
-filled by Crowdin). To find the right anchor, slugify the heading the VitePress
+filled by Weblate). To find the right anchor, slugify the heading the VitePress
 way: lowercase, strip punctuation, spaces -> `-`, and a leading digit gets a `_`
 prefix (so `## 12. Course Schedule Lifecycle` -> `#_12-course-schedule-lifecycle`).
 

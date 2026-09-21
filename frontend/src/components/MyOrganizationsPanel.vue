@@ -118,7 +118,7 @@ const visible = computed(() => {
 })
 
 // Singular when the alumnus belongs to one org, plural otherwise — both strings
-// reach Crowdin for translation.
+// reach Weblate for translation.
 const title = computed(() =>
 	organizations.value.length === 1 ? __('My Organization') : __('My Organizations')
 )
