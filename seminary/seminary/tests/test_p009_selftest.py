@@ -132,6 +132,11 @@ class TestP009SelftestOrigin(IntegrationTestCase):
             "content_type": "text/plain",
             "length": 0,
         },
+        selftest.PROBE_HTML: {
+            "status": 404,
+            "content_type": "text/plain",
+            "length": 0,
+        },
     }
 
     def _run(self, probes):
@@ -177,7 +182,29 @@ class TestP009SelftestOrigin(IntegrationTestCase):
         self.assertFalse(arm["ok"])
         self.assertIn("website router", " ".join(arm["failures"]))
 
-    def test_an_unreachable_host_says_so_once_rather_than_three_times(self):
+    def test_an_html_member_path_that_gets_rewritten_fails(self):
+        """Frappe's nginx template rewrites `.html` away with a 301, before the
+        request reaches Python. Measured on tlink 2026-09-21: every HTML member
+        of every package 404s, and `index.html` redirects to the launcher's own
+        URL, so the launcher frames itself. No local test can see it -- `bench
+        serve` has no nginx."""
+        probes = dict(self.OK)
+        probes[selftest.PROBE_HTML] = {
+            "status": 301,
+            "content_type": "text/html",
+            "length": 162,
+        }
+        arm = self._run(probes)
+        self.assertFalse(arm["ok"])
+        self.assertIn("rewriting `.html` away", " ".join(arm["failures"]))
+
+    def test_an_html_member_path_that_reaches_the_renderer_passes(self):
+        """A 404 from our own renderer is the *correct* answer here: the probe
+        names no real member. What is being asserted is that it arrived."""
+        arm = self._run(self.OK)
+        self.assertTrue(arm["ok"], arm.get("failures"))
+
+    def test_an_unreachable_host_says_so_once_rather_than_four_times(self):
         probes = dict.fromkeys(self.OK, {"error": "NXDOMAIN"})
         arm = self._run(probes)
         self.assertFalse(arm["ok"])
