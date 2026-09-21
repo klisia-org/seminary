@@ -37,6 +37,7 @@ an alert nobody will notice is broken.
 | `scorm_member_miss` | `delivery.SCORMDelivery` | A path that is not a key of the inventory. The deny-by-default lookup doing its job; also what traversal and bucket probing look like from here. |
 | `scorm_commit_identity` | `runtime.commit` | A token was presented by a session other than the one it was issued to, to **write**. The most serious of these. |
 | `scorm_state_identity` | `runtime.state` | The same, to read. |
+| `scorm_rate_limit` | `limits.enforce` | An actor spent a bucket's allowance in one window. Per signed-in user, not per address (`limits`). |
 
 A `permission` denial from `guards` covers the launch itself: `launch` runs
 `require_enrolled`, which logs through the shared factory like every other
