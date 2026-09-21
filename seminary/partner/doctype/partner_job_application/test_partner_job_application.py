@@ -41,66 +41,59 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "partner_org": self.org.name,
                 "job_title": "Associate Pastor",
                 "planned_vacancies": 1,
+                # reqd on Partner Job Opening; the fixture predates it.
+                "description": "Test opening.",
                 "status": "Open",
                 **kwargs,
             }
         ).insert(ignore_permissions=True)
         return opening
 
-    def test_resume_defaults_from_person(self):
-        opening = self._make_opening()
-        app = frappe.get_doc(
+    def _make_application(self, opening, **kwargs):
+        """A submittable application.
+
+        `_validate_submission` requires a cover letter on anything past Draft,
+        and these fixtures never set one — so four of these tests failed on the
+        cover letter, and the fifth (students-only) passed for the wrong reason:
+        it expected a ValidationError and got the cover-letter one rather than
+        the rule it names.
+        """
+        return frappe.get_doc(
             {
                 "doctype": "Partner Job Application",
                 "job_opening": opening.name,
                 "applicant": self.person.name,
+                "cover_letter": "<p>I would like to be considered.</p>",
+                **kwargs,
             }
         ).insert(ignore_permissions=True)
+
+    def test_resume_defaults_from_person(self):
+        opening = self._make_opening()
+        app = self._make_application(opening)
         self.assertEqual(app.resume, "/private/files/pja-resume.pdf")
         self.assertEqual(app.full_name, self.person.full_name)
 
     def test_duplicate_application_rejected(self):
         opening = self._make_opening()
-        frappe.get_doc(
-            {
-                "doctype": "Partner Job Application",
-                "job_opening": opening.name,
-                "applicant": self.person.name,
-            }
-        ).insert(ignore_permissions=True)
+        self._make_application(opening)
         with self.assertRaises(frappe.ValidationError):
-            frappe.get_doc(
-                {
-                    "doctype": "Partner Job Application",
-                    "job_opening": opening.name,
-                    "applicant": self.person.name,
-                }
-            ).insert(ignore_permissions=True)
+            self._make_application(opening)
 
     def test_average_rating_computed(self):
         opening = self._make_opening()
-        app = frappe.get_doc(
-            {
-                "doctype": "Partner Job Application",
-                "job_opening": opening.name,
-                "applicant": self.person.name,
-                "reviews": [
-                    {"reviewer": self.person.name, "rating": 1.0},
-                    {"reviewer": self.person.name, "rating": 0.6},
-                ],
-            }
-        ).insert(ignore_permissions=True)
+        app = self._make_application(
+            opening,
+            reviews=[
+                {"reviewer": self.person.name, "rating": 1.0},
+                {"reviewer": self.person.name, "rating": 0.6},
+            ],
+        )
         self.assertAlmostEqual(app.average_rating, 0.8)
 
     def test_accept_decrements_vacancies_and_closes(self):
         opening = self._make_opening(planned_vacancies=1)
-        app = frappe.get_doc(
-            {
-                "doctype": "Partner Job Application",
-                "job_opening": opening.name,
-                "applicant": self.person.name,
-            }
-        ).insert(ignore_permissions=True)
+        app = self._make_application(opening)
         app.status = "Accepted"
         app.save(ignore_permissions=True)
         opening.reload()
@@ -111,10 +104,4 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
         opening = self._make_opening(open_students=1)
         # self.person is not a Student, so the students-only opening rejects them.
         with self.assertRaises(frappe.ValidationError):
-            frappe.get_doc(
-                {
-                    "doctype": "Partner Job Application",
-                    "job_opening": opening.name,
-                    "applicant": self.person.name,
-                }
-            ).insert(ignore_permissions=True)
+            self._make_application(opening)

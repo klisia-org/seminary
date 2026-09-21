@@ -13,7 +13,7 @@ than mistaken for a school's data.
 """
 
 import frappe
-from frappe.utils import today
+from frappe.utils import add_months, getdate, today
 
 PREFIX = "ZZT"
 _seq = [0]
@@ -144,10 +144,58 @@ def make_alumni_profile(person, program_completed=None, enabled=1):
 
 
 def current_term():
-    """The app's own answer — one definition, read the same way everywhere."""
+    """The app's own answer — one definition, read the same way everywhere.
+
+    With a fallback that builds one. `current_academic_term` returns None on a
+    site whose only Academic Terms are the stock 2014-2018 ERPNext records, and
+    `Program Enrollment.academic_term` is reqd — so every fixture enrollment
+    died with a mandatory-field error naming the enrollment rather than the
+    missing term. A fixture that needs a term should make one, not require that
+    somebody set the site up first.
+    """
     from seminary.seminary.api import current_academic_term
 
-    return current_academic_term()
+    return current_academic_term() or _ensure_current_term()
+
+
+def _ensure_current_term():
+    """An Academic Year and Term spanning today.
+
+    Created inside the test transaction like every other fixture, so it rolls
+    back with the test rather than accumulating on the site.
+    """
+    now = getdate()
+    containing = frappe.db.get_value(
+        "Academic Term",
+        {"term_start_date": ["<=", now], "term_end_date": [">=", now]},
+        "name",
+    )
+    if containing:
+        return containing
+
+    start, end = getdate(add_months(now, -3)), getdate(add_months(now, 3))
+    year_name = "%s %d-%d" % (PREFIX, start.year, end.year)
+    if not frappe.db.exists("Academic Year", year_name):
+        frappe.get_doc(
+            {
+                "doctype": "Academic Year",
+                "academic_year_name": year_name,
+                "year_start_date": start,
+                "year_end_date": end,
+            }
+        ).insert(ignore_permissions=True)
+
+    term = frappe.get_doc(
+        {
+            "doctype": "Academic Term",
+            "academic_year": year_name,
+            "term_name": "%s Current" % PREFIX,
+            "term_start_date": start,
+            "term_end_date": end,
+        }
+    )
+    term.insert(ignore_permissions=True)
+    return term.name
 
 
 def make_program(program_type="Time-based", program_level=None, framework=None):

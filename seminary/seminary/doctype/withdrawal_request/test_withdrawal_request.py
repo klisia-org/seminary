@@ -54,12 +54,21 @@ class TestWithdrawalDispatch(UnitTestCase):
     """
 
     def _dispatch(self, prev, cur, is_parent=0):
+        # The financial arm is no longer a function on this module: the ERPNext
+        # decoupling moved refunds behind the FinancialBackend seam (ADR 063),
+        # so the edge to assert is the backend call the dispatcher makes. The
+        # old `withdrawal.process_financial_approval` name stayed here after the
+        # move, and patch.object raises on a missing attribute — which took out
+        # all eight of these cases rather than the one that changed.
         with (
             patch.object(withdrawal, "process_academic_approval") as acad,
-            patch.object(withdrawal, "process_financial_approval") as fin,
+            patch(
+                "seminary.seminary.financial.backend.get_financial_backend"
+            ) as backend,
             patch.object(withdrawal, "process_completion") as comp,
         ):
             withdrawal.dispatch_withdrawal_effects(_FakeDoc(prev, cur, is_parent))
+        fin = backend.return_value.process_withdrawal_refunds
         return acad.called, fin.called, comp.called
 
     # --- single-course (non-parent) edges ---------------------------------

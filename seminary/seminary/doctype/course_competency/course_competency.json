@@ -83,7 +83,8 @@
    "description": "General description of the competency, shown to students in the course outline.",
    "fieldname": "statement",
    "fieldtype": "Text Editor",
-   "label": "Statement"
+   "label": "Statement",
+    "reqd": 1
   },
   {
    "description": "One row per dimension, describing how this competency is demonstrated there.",

@@ -109,6 +109,12 @@ def push_from_attempt(attempt, lesson: str | None) -> dict:
         # here would be read back as the other.
         return {"reported": False, "reason": "competency section"}
 
+    from seminary.seminary.api import narrative_section
+
+    if narrative_section(attempt.course):
+        # A Descriptive cell holds a level too (ADR 072).
+        return {"reported": False, "reason": "narrative section"}
+
     student = (
         frappe.db.get_value("Scheduled Course Roster", attempt.student, "student")
         if attempt.student
