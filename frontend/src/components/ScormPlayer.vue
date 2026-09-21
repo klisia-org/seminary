@@ -20,6 +20,12 @@
   nothing against this origin, because the framed document is not same-origin
   with us. That pairing is only self-defeating when the framed content shares the
   framer's origin, which §2.2 makes impossible.
+
+  `allow-modals` is there for the same reason the delivery CSP allows
+  `unsafe-eval`: real courseware calls `alert()` and `confirm()` -- the ADL Golf
+  assessment does, and without it the browser logs "Ignored call to alert()" and
+  the package's own flow control silently stops working. What it grants is the
+  ability to be annoying inside its own frame, on an origin with no session.
 -->
 <template>
 	<div class="scorm-player">
@@ -33,7 +39,7 @@
 				:src="launcherUrl"
 				:title="__('Course content')"
 				class="scorm-frame"
-				sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads"
+				sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads"
 				allow="autoplay; fullscreen; encrypted-media"
 			/>
 			<div v-if="reviewMode" class="scorm-badge">
