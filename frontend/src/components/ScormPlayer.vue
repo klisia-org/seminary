@@ -183,10 +183,6 @@ const renew = createResource({
 	url: 'seminary.scorm.launch.heartbeat',
 })
 
-const finish = createResource({
-	url: 'seminary.scorm.launch.end',
-})
-
 function startHeartbeat(data) {
 	// Half the TTL, so one missed beat is not a dead launch mid-lecture.
 	const ttl = Math.max(60, (data.token_ttl || 28800) / 2)
@@ -202,10 +198,19 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	window.removeEventListener('message', onMessage)
 	if (heartbeat) window.clearInterval(heartbeat)
-	if (payload.value?.token) {
-		// Best effort; the TTL is the real bound.
-		finish.submit({ token: payload.value.token }).catch(() => {})
-	}
+	// **The token is deliberately NOT revoked here.** `tokens.mint` reuses a
+	// live token for the same (user, package) on purpose -- it is a path
+	// segment, so a fresh one per launch gives every asset a new URL and
+	// defeats the browser cache. That means the token this component holds is
+	// very likely the same one the *next* component is already using: moving
+	// between two SCOs of one package mounts the new player before unmounting
+	// the old, and revoking here killed the capability the new player had just
+	// been handed. The iframe then got a bare 404, which carries no CSP, so the
+	// browser applied nginx's X-Frame-Options and refused to display it.
+	//
+	// The TTL is the bound, as `end`'s own docstring always said -- and
+	// unmount was never much of a revocation anyway: it does not fire when a
+	// tab is closed, which is how a student actually leaves.
 })
 </script>
 

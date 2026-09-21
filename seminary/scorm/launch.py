@@ -213,7 +213,20 @@ def heartbeat(token: str) -> dict:
 
 @frappe.whitelist()
 def end(token: str) -> dict:
-    """Revoke on unmount. Best effort -- the TTL is the real bound.
+    """Revoke a launch. The TTL is the real bound; this is the early exit.
+
+    **Not called on player unmount, deliberately.** `tokens.mint` reuses a live
+    token for the same (user, package), so the token one player holds is very
+    often the one the next player is already using -- moving between two SCOs
+    of a package mounts the new player before unmounting the old. Revoking on
+    unmount therefore killed the capability the new player had just been
+    handed, and its iframe got a bare 404 with no CSP, so the browser applied
+    nginx's `X-Frame-Options` and refused to display it. Found on the first
+    browser pass. Unmount was never much of a revocation in any case: it does
+    not fire when a tab is closed, which is how a student actually leaves.
+
+    Kept as the revocation primitive, for an explicit end-of-attempt action and
+    for staff revoking a launch they have reason to.
 
     Revocation is the cheap half of the token lifecycle and the half an attacker
     has no use for, but the endpoint still resolves a caller-supplied token, so

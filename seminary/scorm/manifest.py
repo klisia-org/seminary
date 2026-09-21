@@ -256,6 +256,63 @@ def _organization(root) -> tuple[str, object]:
     return _attr(first, "identifier"), first
 
 
+#: An `<item parameters>` value is attacker-supplied and ends up in a URL the
+#: launcher frames, so it is bounded. `SCORM Package Item.href` is a Data field
+#: (1000 chars) and the path has already spent some of that; a query longer than
+#: this is not a launch parameter, it is a payload.
+MAX_PARAMETERS = 400
+
+
+def _split_suffix(text: str) -> tuple[str, str]:
+    """`"?a=b#c"` -> `("a=b", "c")`. Either half may be empty."""
+    text = text or ""
+    fragment = ""
+    if "#" in text:
+        text, fragment = text.split("#", 1)
+    if text.startswith("?"):
+        text = text[1:]
+    return text, fragment
+
+
+def _merge_parameters(suffix: str, parameters: str) -> str:
+    """Combine the resource's own `?query#fragment` with the item's `parameters`.
+
+    **This is how one resource serves several SCOs.** SCORM puts `parameters`
+    on the `<item>` and `href` on the `<resource>`, and requires the LMS to
+    append the former to the latter at launch. The ADL Golf sample's four tests
+    share `shared/launchpage.html` and differ *only* by
+    `parameters="?content=assessmentN"` -- so ignoring it launches the same
+    page four times, and the package's own script cannot tell which test it is
+    meant to show. It fails with `pageArray` undefined, which is what the first
+    browser pass found.
+
+    Both halves may carry a query, so they are joined with `&` rather than
+    concatenated into a second `?`. The item's fragment wins over the
+    resource's, because the item is the more specific statement.
+    """
+    parameters = (parameters or "").strip()
+    if not parameters:
+        return suffix
+    if len(parameters) > MAX_PARAMETERS:
+        raise ManifestError(
+            "This SCORM package declares an item with an over-long "
+            "`parameters` value."
+        )
+
+    base_query, base_fragment = _split_suffix(suffix)
+    item_query, item_fragment = _split_suffix(parameters)
+
+    query = "&".join(part for part in (base_query, item_query) if part)
+    fragment = item_fragment or base_fragment
+
+    merged = ""
+    if query:
+        merged += "?" + query
+    if fragment:
+        merged += "#" + fragment
+    return merged
+
+
 def _walk_items(element, resources, inventory, max_scos, depth=0):
     if depth > MAX_ITEM_DEPTH:
         raise ManifestError("This SCORM package's organization is nested too deeply.")
@@ -266,6 +323,9 @@ def _walk_items(element, resources, inventory, max_scos, depth=0):
         resource = resources.get(ref) if ref else None
         if resource and _is_sco(resource):
             href, suffix = _resolve(resource["base"], resource["href"], inventory)
+            # The item's own `parameters`, which is what distinguishes several
+            # SCOs sharing one resource. See `_merge_parameters`.
+            suffix = _merge_parameters(suffix, _attr(item, "parameters"))
             identifier = _attr(item, "identifier") or ref
             found.append(
                 SCO(
