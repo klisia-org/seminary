@@ -333,3 +333,81 @@ class TestP009MemberPaths(IntegrationTestCase):
         keep lecture video off the worker pool, not these."""
         for font in ("a.woff", "a.woff2", "a.ttf", "a.otf", "a.eot"):
             self.assertTrue(archive.is_proxied(font), font)
+
+
+#: One resource, three items, differing only by `parameters`. This is the ADL
+#: Golf sample's shape for its four tests, and the shape that broke on the first
+#: browser pass.
+SHARED_RESOURCE_MANIFEST = """<?xml version="1.0"?>
+<manifest identifier="M" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata><schemaversion>1.2</schemaversion></metadata>
+  <organizations default="O"><organization identifier="O">
+    <title>Course</title>
+    <item identifier="plain" identifierref="R1"><title>Plain</title></item>
+    <item identifier="t1" identifierref="R1" parameters="?content=one">
+      <title>Test One</title></item>
+    <item identifier="t2" identifierref="R1" parameters="?content=two">
+      <title>Test Two</title></item>
+    <item identifier="frag" identifierref="R2" parameters="#section3">
+      <title>Fragment</title></item>
+    <item identifier="both" identifierref="R2" parameters="?b=2">
+      <title>Both queries</title></item>
+  </organization></organizations>
+  <resources>
+    <resource identifier="R1" adlcp:scormtype="sco" href="shared/page.html"/>
+    <resource identifier="R2" adlcp:scormtype="sco" href="shared/page.html?a=1"/>
+  </resources>
+</manifest>"""
+
+
+class TestP009ItemParameters(IntegrationTestCase):
+    """`<item parameters>` is how one resource serves several SCOs.
+
+    SCORM puts `href` on the `<resource>` and `parameters` on the `<item>`, and
+    requires the LMS to append the second to the first. Ignoring it launches
+    one page for every test in the ADL Golf sample, and the package's own
+    script then cannot tell which test it is showing -- it throws on an
+    undefined `pageArray`. Found in a browser, because a manifest that parses
+    cleanly and a package that cannot run look identical from the server.
+    """
+
+    def _scos(self, manifest=SHARED_RESOURCE_MANIFEST):
+        from seminary.scorm import manifest as manifest_module
+
+        inventory = {"shared/page.html": {}, "imsmanifest.xml": {}}
+        parsed = manifest_module.parse(manifest.encode(), inventory, max_scos=50)
+        return {sco.identifier: sco for sco in parsed.scos}
+
+    def test_items_sharing_a_resource_get_distinct_launch_urls(self):
+        scos = self._scos()
+        self.assertEqual(scos["t1"].href, "shared/page.html")
+        self.assertEqual(scos["t2"].href, "shared/page.html")
+        self.assertNotEqual(scos["t1"].suffix, scos["t2"].suffix)
+        self.assertEqual(scos["t1"].suffix, "?content=one")
+        self.assertEqual(scos["t2"].suffix, "?content=two")
+
+    def test_an_item_without_parameters_is_unchanged(self):
+        self.assertEqual(self._scos()["plain"].suffix, "")
+
+    def test_the_inventory_path_never_carries_the_parameters(self):
+        """The suffix is for the launch URL only. If it reached the inventory
+        lookup, a package could address a member that does not exist."""
+        for sco in self._scos().values():
+            self.assertNotIn("?", sco.href)
+            self.assertNotIn("#", sco.href)
+
+    def test_two_queries_are_joined_with_an_ampersand(self):
+        # The resource already has `?a=1`; a second `?` would be a broken URL.
+        self.assertEqual(self._scos()["both"].suffix, "?a=1&b=2")
+
+    def test_a_fragment_parameter_keeps_the_resource_query(self):
+        self.assertEqual(self._scos()["frag"].suffix, "?a=1#section3")
+
+    def test_an_over_long_parameters_value_is_refused(self):
+        from seminary.scorm.manifest import ManifestError
+
+        manifest = SHARED_RESOURCE_MANIFEST.replace(
+            'parameters="?content=one"', 'parameters="?%s"' % ("x" * 500)
+        )
+        with self.assertRaises(ManifestError):
+            self._scos(manifest)
