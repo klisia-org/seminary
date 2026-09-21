@@ -76,8 +76,11 @@ def launch(chapter: str) -> dict:
         if is_course_staff(row.coursesc, include_registrar=True)
         else MODE_NORMAL
     )
+    from seminary.scorm.delivery import delivery_origin
+
+    origin = delivery_origin()
     token = tokens.mint(frappe.session.user, package.name, chapter)
-    base = f"https://{host}/scorm/{token}/{package.package_id}/"
+    base = f"{origin}/scorm/{token}/{package.package_id}/"
 
     return {
         "status": "Ready",
@@ -88,7 +91,7 @@ def launch(chapter: str) -> dict:
         "mode": mode,
         "token": token,
         "token_ttl": tokens.ttl(),
-        "delivery_origin": f"https://{host}",
+        "delivery_origin": origin,
         "launcher": base,
         "scos": _scos(package, row, mode),
     }

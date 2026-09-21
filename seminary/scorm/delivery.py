@@ -72,6 +72,36 @@ def delivery_host() -> str | None:
     return frappe.conf.get("scorm_delivery_host") or None
 
 
+def delivery_origin() -> str:
+    """The origin the browser fetches package bytes from.
+
+    `https://<scorm_delivery_host>` unless `scorm_delivery_origin` names it
+    outright. That override exists so the **two-origin pass can be run
+    locally**, where there is no TLS and the port is not 443 -- and running it
+    locally matters more than it sounds, because every bug p009 has had in a
+    browser was a contradiction between two things we send that only a browser
+    holds at once. It is exactly symmetric with `scorm_app_origin`, which has
+    been verbatim from the start for the same reason.
+
+    `selftest` refuses a plaintext origin on anything but a loopback name, so
+    this cannot quietly ship to production.
+    """
+    configured = frappe.conf.get("scorm_delivery_origin")
+    if configured:
+        return str(configured).rstrip("/")
+    host = delivery_host()
+    return f"https://{host}" if host else ""
+
+
+#: Hostnames a plaintext delivery origin is permitted on -- a developer bench
+#: and nothing else.
+def is_loopback_host(host: str) -> bool:
+    host = (host or "").split(":")[0].lower()
+    return host in ("localhost", "127.0.0.1", "::1", "[::1]") or host.endswith(
+        ".localhost"
+    )
+
+
 def is_delivery_request() -> bool:
     """True when this request arrived on the delivery host.
 

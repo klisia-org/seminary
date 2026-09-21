@@ -88,6 +88,37 @@ class TestP009SelftestConfig(IntegrationTestCase):
             arm = selftest._config()
         self.assertTrue(arm["ok"], arm.get("detail"))
 
+    def test_a_plaintext_delivery_origin_is_allowed_on_loopback(self):
+        """The local two-origin pass runs over http on `*.localhost`, and that
+        has to be permitted or the pass cannot be run at all -- which is how
+        every browser-only bug in p009 came to be found one deploy at a time."""
+        with patch.dict(
+            frappe.conf,
+            {
+                "scorm_delivery_host": "scormdev.localhost",
+                "scorm_delivery_origin": "http://scormdev.localhost:8006",
+                "scorm_app_origin": "http://potestas.localhost:8006",
+            },
+        ):
+            arm = selftest._config()
+        self.assertTrue(arm["ok"], arm.get("detail"))
+        self.assertEqual(arm["delivery_origin"], "http://scormdev.localhost:8006")
+
+    def test_a_plaintext_delivery_origin_is_refused_anywhere_else(self):
+        """Otherwise the developer override ships, and every launch token goes
+        to the network in clear."""
+        with patch.dict(
+            frappe.conf,
+            {
+                "scorm_delivery_host": "tlink.aretenic.org",
+                "scorm_delivery_origin": "http://tlink.aretenic.org",
+                "scorm_app_origin": "https://tlink.aretenic.net",
+            },
+        ):
+            arm = selftest._config()
+        self.assertFalse(arm["ok"])
+        self.assertIn("plaintext", arm["detail"])
+
     def test_a_bare_app_host_is_compared_without_its_scheme_or_port(self):
         with patch.dict(
             frappe.conf,
@@ -141,7 +172,9 @@ class TestP009SelftestOrigin(IntegrationTestCase):
 
     def _run(self, probes):
         with patch.dict(frappe.conf, self.HOST):
-            with patch.object(selftest, "_fetch", side_effect=lambda h, p: probes[p]):
+            with patch.object(
+                selftest, "_fetch", side_effect=lambda origin, p: probes[p]
+            ):
                 return selftest._origin()
 
     def test_a_correctly_isolated_host_passes(self):
