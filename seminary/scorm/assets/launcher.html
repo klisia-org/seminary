@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; }
+  iframe { border: 0; width: 100%; height: 100%; display: block; }
+  .note { font: 14px/1.5 system-ui, sans-serif; color: #444; padding: 1.5rem; }
+</style>
+</head>
+<body>
+<script>__RUNTIME__</script>
+<script>
+(function () {
+  "use strict";
+  var CONFIG = __CONFIG__;
+
+  /* The parent is the player page on the APP origin. Every message names it
+   * exactly -- never "*" -- so a package that manages to reach this window
+   * still cannot make us post its contents to an origin of its choosing. */
+  var appOrigin = CONFIG.appOrigin;
+
+  var pending = {};
+  var nextId = 1;
+
+  var transport = {
+    send: function (message) {
+      if (message.type === "scorm:commit") {
+        message.id = nextId++;
+        pending[message.id] = true;
+      }
+      try {
+        window.parent.postMessage(message, appOrigin);
+      } catch (e) {
+        /* No player listening (a direct visit, or the page went away). The
+         * local model still holds the value; SCORM is best-effort about this
+         * and a thrown error here would break the package. */
+      }
+    },
+    now: function () { return Date.now(); },
+    setTimeout: function (fn, ms) { return window.setTimeout(fn, ms); },
+    clearTimeout: function (id) { window.clearTimeout(id); },
+    flushDelay: CONFIG.flushDelay || 3000
+  };
+
+  var sco = CONFIG.scos && CONFIG.scos[CONFIG.index || 0];
+  if (!sco) {
+    document.body.innerHTML =
+      '<p class="note">This package declares nothing playable.</p>';
+    return;
+  }
+
+  var runtime = SeminaryScormRuntime.createRuntime(
+    {
+      version: CONFIG.version,
+      sco: sco.id,
+      appOrigin: appOrigin,
+      cmi: sco.cmi || {}
+    },
+    transport
+  );
+
+  /* Installed on THIS window, before the SCO frame exists. The package's own
+   * discovery walk (`while (win.parent) { if (win.API) ... }`) finds it because
+   * the frame below is same-origin with this document -- which is the whole
+   * reason this document exists (p009 §2.8). */
+  runtime.install(window);
+
+  window.addEventListener("message", function (event) {
+    /* Both halves: the origin AND that it really is our parent. Either alone
+     * is bypassable by a nested frame. */
+    if (event.origin !== appOrigin || event.source !== window.parent) return;
+    var data = event.data || {};
+    if (data.type === "scorm:commit:result" && data.id) {
+      delete pending[data.id];
+    }
+  });
+
+  /* A tab closing is the common way a session ends; `unload` is unreliable on
+   * mobile and `pagehide` is what fires. Flush rather than terminate: the
+   * package may be coming back from the bfcache. */
+  window.addEventListener("pagehide", function () { runtime.flush("pagehide"); });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") runtime.flush("hidden");
+  });
+
+  var frame = document.createElement("iframe");
+  frame.setAttribute("title", sco.title || "SCORM content");
+  frame.setAttribute("allow", "autoplay; fullscreen; encrypted-media");
+  /* Relative to this document's URL, which is `.../<package id>/`, so the
+   * package addresses itself exactly as it does inside the zip. */
+  frame.setAttribute("src", sco.href);
+  document.body.appendChild(frame);
+
+  transport.send({ type: "scorm:launched", sco: sco.id });
+})();
+</script>
+</body>
+</html>

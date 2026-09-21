@@ -164,6 +164,28 @@ class TestP009Delivery(_ScormCase):
         self.assertIn("index.html", body)
         self.assertIn(APP_HOST, body)
 
+    def test_the_launcher_carries_the_runtime_inline(self):
+        # Inlined rather than served as a second file: any URL under the
+        # package prefix is a member path, so a separate asset could be
+        # shadowed by a package containing a file of that name.
+        body = self._get("").get_data(as_text=True)
+        self.assertIn("SeminaryScormRuntime", body)
+        self.assertIn("LMSInitialize", body)
+        self.assertNotIn("__RUNTIME__", body)
+        self.assertNotIn("__CONFIG__", body)
+
+    def test_the_launcher_posts_only_to_the_app_origin(self):
+        body = self._get("").get_data(as_text=True)
+        self.assertIn(f'"appOrigin": "https://{APP_HOST}"', body)
+        self.assertNotIn('postMessage(message, "*")', body)
+
+    def test_the_launcher_seeds_the_package_state(self):
+        body = self._get("").get_data(as_text=True)
+        self.assertIn('"scos"', body)
+        self.assertIn('"learner_id"', body)
+        # Never the email, never the docname (§2.9).
+        self.assertNotIn(frappe.session.user, body)
+
     def test_the_launcher_cannot_be_shadowed_by_a_member(self):
         # A member path can never be empty (the unpack job refuses it), so the
         # root is ours by construction rather than by a reserved name.

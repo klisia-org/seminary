@@ -324,16 +324,36 @@ class SCORMDelivery:
 
         That sameness is the whole trick of §2.8: the SCO's standard
         `while (win.parent) { if (win.API) ... }` walk finds the runtime here
-        with **zero bytes of the package rewritten**. The runtime arrives with
-        S7; for now this proves the origin, the frame and the relative-path
-        resolution end to end.
+        with **zero bytes of the package rewritten**.
+
+        The runtime is inlined rather than served as a second file. A separate
+        asset would need a URL under this package's prefix, and every such URL
+        is a member path -- so it could be shadowed by a package that happens to
+        contain a file of that name. One document has nothing to collide with.
         """
-        items = [
-            {"id": i.sco_identifier, "title": i.title, "href": i.href}
-            for i in sorted(package.items, key=lambda i: i.idx)
-        ]
-        html = _LAUNCHER_HTML.replace("__SCOS__", json.dumps(items)).replace(
-            "__APP_ORIGIN__", json.dumps(self._app_origin())
+        launch = tokens.resolve(token) or {}
+        config = {
+            "version": package.scorm_version or "1.2",
+            "appOrigin": self._app_origin(),
+            "package": package.package_id,
+            "index": 0,
+            "scos": [
+                {
+                    "id": i.sco_identifier,
+                    "title": i.title,
+                    "href": i.href,
+                    # Seeded from the launch so the package resumes where the
+                    # student left it without a round trip on startup.
+                    "cmi": _cmi_for(launch.get("user"), package.name, i.sco_identifier),
+                }
+                for i in sorted(package.items, key=lambda i: i.idx)
+            ],
+        }
+        html = (
+            _launcher_template()
+            .replace("__TITLE__", "SCORM")
+            .replace("__RUNTIME__", _runtime_source())
+            .replace("__CONFIG__", json.dumps(config))
         )
         return Response(
             html.encode(),
@@ -342,29 +362,57 @@ class SCORMDelivery:
         )
 
 
-_LAUNCHER_HTML = """<!doctype html>
-<html><head><meta charset="utf-8"><title>SCORM</title>
-<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}
-p{font:14px system-ui;padding:1rem;color:#444}</style></head>
-<body>
-<script>
-// p009 S4. The runtime (window.API / window.API_1484_11 and the postMessage
-// bridge to __APP_ORIGIN__) arrives with S7. This document exists now because
-// it is what makes the SCO same-origin with a page we control -- which is what
-// lets the standard API discovery walk work without touching the package.
-var SCOS = __SCOS__;
-var APP_ORIGIN = __APP_ORIGIN__;
-var first = SCOS[0];
-if (first) {
-  var frame = document.createElement('iframe');
-  // Relative to this document's URL, which is `.../<package id>/` -- so the
-  // package addresses itself exactly as it does inside the zip.
-  frame.setAttribute('src', first.href);
-  frame.setAttribute('title', first.title || 'SCORM content');
-  document.body.appendChild(frame);
-} else {
-  document.body.innerHTML = '<p>This package declares nothing playable.</p>';
-}
-</script>
-</body></html>
-"""
+def _asset(name: str) -> str:
+    """Read one of our own files from the app, cached for the worker's life.
+
+    Never from the package inventory: these are ours, and a package must not be
+    able to influence what the launcher runs.
+    """
+    import os
+
+    cache = getattr(frappe.local, "_scorm_assets", None)
+    if cache is None:
+        cache = {}
+        frappe.local._scorm_assets = cache
+    if name not in cache:
+        path = os.path.join(frappe.get_app_path("seminary"), "scorm", "assets", name)
+        with open(path, encoding="utf-8") as handle:
+            cache[name] = handle.read()
+    return cache[name]
+
+
+def _launcher_template() -> str:
+    return _asset("launcher.html")
+
+
+def _runtime_source() -> str:
+    return _asset("runtime.js")
+
+
+def _cmi_for(user: str | None, package: str, sco: str) -> dict:
+    """The stored state for one SCO, in the shape the runtime seeds from."""
+    from seminary.scorm.launch import opaque_learner_id
+
+    snapshot = {"learner_id": opaque_learner_id(user or "", package, sco)}
+    if not user:
+        return snapshot
+
+    row = frappe.db.get_value(
+        "SCORM Attempt",
+        {"package": package, "sco_identifier": sco, "member": user},
+        [
+            "completion_status",
+            "success_status",
+            "score_raw",
+            "score_min",
+            "score_max",
+            "score_scaled",
+            "location",
+            "suspend_data",
+            "total_time",
+        ],
+        as_dict=True,
+    )
+    if row:
+        snapshot.update({k: v for k, v in row.items() if v is not None})
+    return snapshot
