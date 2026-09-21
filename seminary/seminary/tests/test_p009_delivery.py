@@ -269,6 +269,38 @@ class TestP009Delivery(_ScormCase):
         http_headers.apply_security_headers(response=response)
         self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
 
+    def test_the_media_origin_is_allowed_for_images_fonts_and_video(self):
+        """§2.6 redirects every binary member to the object store's own
+        hostname, so a `default-src 'self'` policy forbids the package's own
+        pictures. The two halves of the design contradicted each other and the
+        browser was right to refuse. Only a browser holds a header and a
+        redirect at once, so this is asserted here instead."""
+        policy = self._get("index.html").headers["Content-Security-Policy"]
+        directives = {
+            part.strip().split()[0]: part.strip().split()[1:]
+            for part in policy.split(";")
+            if part.strip()
+        }
+        origin = delivery.SCORMDelivery._media_origins()
+        self.assertTrue(origin, "the fake backend should present an origin")
+
+        for name in ("img-src", "media-src", "font-src", "connect-src"):
+            self.assertIn(name, directives, policy)
+            for source in origin:
+                self.assertIn(source, directives[name], name)
+
+        # Not granted wholesale: scripts and styles stay same-origin, because
+        # those are proxied through this host and have no business elsewhere.
+        self.assertNotIn("script-src", directives)
+        for source in origin:
+            self.assertNotIn(source, directives["default-src"], policy)
+
+    def test_the_media_origin_can_be_overridden_for_a_cdn(self):
+        with patch.dict(frappe.conf, {"scorm_media_origins": "https://cdn.invalid"}):
+            self.assertEqual(
+                delivery.SCORMDelivery._media_origins(), ["https://cdn.invalid"]
+            )
+
     def test_frame_ancestors_names_both_origins_and_only_those(self):
         """`'self'` **and** the app origin, and both are load-bearing.
 
