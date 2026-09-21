@@ -83,10 +83,43 @@ class _ScormCase(IntegrationTestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    #: Set by `_with_section()` for the tests that need the guards and the
+    #: progress rollup to have something real to act on. The lifecycle tests do
+    #: not: a package's refcount has nothing to do with a section.
+    course = None
+
+    def _with_section(self):
+        """A published section with this user on its roster.
+
+        `require_enrolled` refuses a chapter with no section -- correctly, and
+        `save_progress` returns early without a roster row, so a launch or a
+        commit test without both passes or fails for the wrong reason.
+        """
+        from seminary.seminary.tests.test_p007_docperms import (
+            _any_course_schedule,
+            _roster,
+            _student_for,
+        )
+
+        cs, _other = _any_course_schedule()
+        frappe.db.set_value("Course Schedule", cs.name, "published", 1)
+        self.course = cs.name
+        return cs.name, _student_for, _roster
+
+    def _enrol(self, user, tag):
+        from seminary.seminary.tests.test_p007_docperms import _roster, _student_for
+
+        student = _student_for(user, tag)
+        _roster(self.course, student, user)
+        frappe.local.p007_cache = {}
+        return student
+
     def _chapter(self, title="SCORM chapter"):
         chapter = frappe.new_doc("Course Schedule Chapter")
         chapter.chapter_title = title
         chapter.is_scorm_package = 1
+        if self.course:
+            chapter.coursesc = self.course
         chapter.flags.ignore_mandatory = True
         chapter.flags.ignore_permissions = True
         chapter.insert()

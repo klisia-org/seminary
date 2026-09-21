@@ -137,6 +137,17 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # SCORM (p009). All five are the student's own player talking about the
+    # student's own launch. `launch` runs `require_enrolled` on the section --
+    # the same gate every other course read uses -- and the other four take a
+    # launch token that is bound to `(user, package, chapter)` and is checked
+    # against `frappe.session.user` before anything is read or written, so a
+    # caller cannot name someone else's attempt with them.
+    "seminary.scorm.launch.launch",
+    "seminary.scorm.launch.heartbeat",
+    "seminary.scorm.launch.end",
+    "seminary.scorm.runtime.commit",
+    "seminary.scorm.runtime.state",
     # lesson discussions: whoever reads the lesson posts; own-reply rules inside
     "seminary.seminary.api.reply_to_discussion_submission",
     "seminary.seminary.utils.create_discussion_topic",

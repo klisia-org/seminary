@@ -155,3 +155,79 @@ def _reorder(chapter_name: str, ordered: list[str], existing) -> None:
         )
         reference.flags.ignore_permissions = True
         reference.insert()
+
+
+# --------------------------------------------------------------- progress
+
+
+#: What a SCO's reported state means for the lesson that carries it (§2.10).
+#: `failed` is *progress*, not completion: the student did the work.
+def status_for(completion: str | None, success: str | None) -> str | None:
+    completion = (completion or "unknown").lower()
+    success = (success or "unknown").lower()
+
+    if completion == "completed" or success == "passed":
+        return "Complete"
+    if success == "failed" or completion == "incomplete":
+        return "Partially Complete"
+    return None
+
+
+def record_progress(lesson: str, chapter: str, course: str, status: str | None) -> None:
+    """Write a SCO's state onto its lesson, through the app's own writer.
+
+    Completion goes through `save_progress` rather than around it: that function
+    already owns the roster `db_set` p008 fixed (a Student may not `save()` a
+    roster row), already refreshes the course percentage, and is the one place
+    that decides a lesson is done. One completion writer, not two.
+
+    A partial state has no path through it -- `save_progress` only ever writes
+    `Complete` -- so it is upserted here, and **never downgrades an existing
+    completion**. A student who finished, reopened the package and had it report
+    `incomplete` on the way in must not lose what they had.
+    """
+    if not status or not (lesson and chapter and course):
+        return
+
+    from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
+
+    if status == "Complete":
+        save_progress(lesson, chapter, course)
+        return
+
+    existing = frappe.db.get_value(
+        "Course Schedule Progress",
+        {"lesson": lesson, "member": frappe.session.user},
+        ["name", "status"],
+        as_dict=True,
+    )
+    if existing and existing.status == "Complete":
+        return
+
+    if existing:
+        if existing.status != status:
+            frappe.db.set_value(
+                "Course Schedule Progress", existing.name, "status", status
+            )
+    else:
+        frappe.get_doc(
+            {
+                "doctype": "Course Schedule Progress",
+                "lesson": lesson,
+                "chapter": chapter,
+                "course": course,
+                "status": status,
+                "member": frappe.session.user,
+            }
+        ).save(ignore_permissions=True)
+
+    # The bookmark half of `save_progress`, which a partial state wants just as
+    # much: "where was I" is exactly what an unfinished SCO is recording.
+    membership = frappe.db.exists(
+        "Scheduled Course Roster",
+        {"course_sc": course, "stuemail_rc": frappe.session.user},
+    )
+    if membership:
+        frappe.db.set_value(
+            "Scheduled Course Roster", membership, "current_lesson", lesson
+        )
