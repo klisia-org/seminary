@@ -17,9 +17,8 @@ import hashlib
 
 import frappe
 from frappe import _
-from frappe.rate_limiter import rate_limit
 
-from seminary.scorm import tokens
+from seminary.scorm import limits, tokens
 from seminary.seminary.guards import is_course_staff, require_enrolled
 
 #: A staff launch is a **preview**: no attempt is created and no commit is
@@ -30,9 +29,9 @@ MODE_REVIEW = "review"
 
 
 @frappe.whitelist()
-@rate_limit(key="scorm_launch", limit=120, seconds=3600, ip_based=False)
 def launch(chapter: str) -> dict:
     """Everything needed to play `chapter`, or a refusal."""
+    limits.enforce("launch", 120, 3600)
     row = frappe.db.get_value(
         "Course Schedule Chapter",
         chapter,
@@ -199,26 +198,28 @@ def opaque_learner_id(user: str, package: str, sco: str) -> str:
 
 
 @frappe.whitelist()
-@rate_limit(key="scorm_heartbeat", limit=600, seconds=3600, ip_based=False)
 def heartbeat(token: str) -> dict:
     """Push the launch's expiry out while the player is open.
 
     Only for the user it was issued to: a token is a bearer capability, and the
     one thing that must not be bearer-only is extending its life.
     """
+    limits.enforce("heartbeat", 600, 3600)
     payload = tokens.resolve(token)
     if not payload or payload.get("user") != frappe.session.user:
         return {"ok": False}
     return {"ok": tokens.renew(token)}
 
 
-# Revocation is the cheap half of the token lifecycle and the half an attacker
-# has no use for, but the endpoint still resolves a caller-supplied token, so it
-# gets the same ceiling as the rest (p010 H6). A player calls it once.
 @frappe.whitelist()
-@rate_limit(key="scorm_end", limit=600, seconds=3600, ip_based=False)
 def end(token: str) -> dict:
-    """Revoke on unmount. Best effort -- the TTL is the real bound."""
+    """Revoke on unmount. Best effort -- the TTL is the real bound.
+
+    Revocation is the cheap half of the token lifecycle and the half an attacker
+    has no use for, but the endpoint still resolves a caller-supplied token, so
+    it gets the same ceiling as the rest (p010 H6). A player calls it once.
+    """
+    limits.enforce("end", 600, 3600)
     payload = tokens.resolve(token)
     if payload and payload.get("user") == frappe.session.user:
         tokens.revoke(token)

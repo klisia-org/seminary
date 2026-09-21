@@ -44,6 +44,9 @@
 		<div v-else class="scorm-note">
 			<p class="font-medium text-ink-gray-7">{{ stateTitle }}</p>
 			<p class="mt-1">{{ stateDetail }}</p>
+			<p v-if="errorDetail" class="mt-2 text-sm text-ink-gray-7">
+				{{ errorDetail }}
+			</p>
 			<p v-if="failureReason" class="mt-3 font-mono text-xs text-ink-gray-5">
 				{{ failureReason }}
 			</p>
@@ -63,6 +66,8 @@ const props = defineProps({
 const user = inject('$user')
 const frame = ref(null)
 const payload = ref(null)
+// Declared before the resource below, which closes over it in onSuccess/onError.
+const launchError = ref(null)
 let heartbeat = null
 
 const launch = createResource({
@@ -72,10 +77,19 @@ const launch = createResource({
 	},
 	auto: true,
 	onSuccess(data) {
+		launchError.value = null
 		payload.value = data
 		if (data?.status === 'Ready') {
 			startHeartbeat(data)
 		}
+	},
+	onError(err) {
+		// Without this every failure -- a refused permission, a rate limit, a
+		// misconfigured site -- rendered the same "not available on this site",
+		// which sent a real diagnosis down the wrong path for an afternoon.
+		// The server's own message is a translated sentence meant for a reader.
+		launchError.value =
+			err?.messages?.[0] || err?.message || __('The server refused this launch.')
 	},
 })
 
@@ -101,6 +115,10 @@ const stateTitle = computed(() => {
 	return __('This chapter cannot be played')
 })
 
+// Shown verbatim under the title when the call itself failed, so the reason is
+// on the page rather than only in a gunicorn access log.
+const errorDetail = computed(() => launchError.value)
+
 const stateDetail = computed(() => {
 	if (status.value === 'Failed') {
 		// The reason names files inside the instructor's package; the server
@@ -111,6 +129,7 @@ const stateDetail = computed(() => {
 	}
 	if (status.value === 'Pending' || status.value === 'Exploding')
 		return __('This takes a moment for a large package. Reload shortly.')
+	if (launchError.value) return __('The server refused this launch:')
 	return __('Playing SCORM content is not available on this site.')
 })
 

@@ -26,17 +26,17 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.rate_limiter import rate_limit
 
-from seminary.scorm import cmi, grades, lessons, tokens
+from seminary.scorm import cmi, grades, lessons, limits, tokens
 from seminary.scorm.launch import MODE_NORMAL
 
 
 @frappe.whitelist()
-@rate_limit(key="scorm_commit", limit=1200, seconds=3600, ip_based=False)
 def commit(token: str, sco: str, data=None) -> dict:
     """Persist what a SCO reported. Returns a result the runtime can read."""
     from seminary.seminary import security_log
+
+    limits.enforce("commit", 1200, 3600)
 
     launch = tokens.resolve(token)
     if not launch:
@@ -170,18 +170,20 @@ def _lesson_for(chapter: str, sco: str) -> str | None:
     )
 
 
-# Read-only and cheap, but it takes a token and answers per SCO, so an
-# unlimited version is a way to walk a stolen token across a package's SCOs at
-# whatever rate the worker pool allows (p010 H6). Well above what a reconnecting
-# player needs; well below a useful enumeration.
 @frappe.whitelist()
-@rate_limit(key="scorm_state", limit=600, seconds=3600, ip_based=False)
 def state(token: str, sco: str) -> dict:
     """The stored state for one SCO, for a player that reconnects.
 
     Same identity rule as `commit`: the launch must be this session's.
+
+    Read-only and cheap, but it takes a token and answers per SCO, so an
+    unlimited version is a way to walk a stolen token across a package's SCOs at
+    whatever rate the worker pool allows (p010 H6). Well above what a
+    reconnecting player needs; well below a useful enumeration.
     """
     from seminary.seminary import security_log
+
+    limits.enforce("state", 600, 3600)
 
     launch = tokens.resolve(token)
     if not launch or launch.get("user") != frappe.session.user:
