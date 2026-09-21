@@ -80,11 +80,22 @@ class TestP009Delivery(_ScormCase):
             self.assertIsNone(self._get("index.html"))
 
     def test_the_app_is_a_404_on_the_delivery_host(self):
+        """Everything that reaches frappe, that is.
+
+        `/assets/**` and `/files/**` are served by nginx (or the static
+        middleware under `bench serve`) *before* the framework runs, so this
+        hook never sees them and they do answer on the delivery host. That
+        residual is public build output on a second public hostname -- no
+        session, no escalation -- and is recorded in §2.2 rather than pretended
+        away.
+        """
         for path in (
             "/app/user",
             "/api/method/frappe.auth.get_logged_user",
             "/",
             "/seminary",
+            "/login",
+            "/private/files/anything.pdf",
         ):
             with self.subTest(path=path):
                 self._request(path)
@@ -178,6 +189,35 @@ class TestP009Delivery(_ScormCase):
         body = self._get("").get_data(as_text=True)
         self.assertIn(f'"appOrigin": "https://{APP_HOST}"', body)
         self.assertNotIn('postMessage(message, "*")', body)
+
+    def test_the_launcher_opens_the_sco_the_player_named(self):
+        # A query string is right here and wrong for an asset: this is the
+        # launcher, and nothing resolves relative to it.
+        builder = EnvironBuilder(path="/scorm/x/y/", query_string="sco=B")
+        builder.host = DELIVERY_HOST
+        frappe.local.request = Request(builder.get_environ())
+
+        two = frappe.get_doc("SCORM Package", self.package_name)
+        two.append(
+            "items", {"sco_identifier": "B", "title": "Second", "href": "a/style.css"}
+        )
+        two.save(ignore_permissions=True)
+
+        path = f"scorm/{self.token}/{self.package.package_id}/"
+        builder = EnvironBuilder(path="/" + path, query_string="sco=B")
+        builder.host = DELIVERY_HOST
+        frappe.local.request = Request(builder.get_environ())
+        body = delivery.SCORMDelivery(path).render().get_data(as_text=True)
+        self.assertIn('"index": 1', body)
+
+    def test_an_unknown_sco_falls_back_to_the_first(self):
+        path = f"scorm/{self.token}/{self.package.package_id}/"
+        builder = EnvironBuilder(path="/" + path, query_string="sco=../../etc/passwd")
+        builder.host = DELIVERY_HOST
+        frappe.local.request = Request(builder.get_environ())
+        body = delivery.SCORMDelivery(path).render().get_data(as_text=True)
+        # Matched against the package's own items, never used as an index.
+        self.assertIn('"index": 0', body)
 
     def test_the_launcher_seeds_the_package_state(self):
         body = self._get("").get_data(as_text=True)

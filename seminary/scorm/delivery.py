@@ -332,11 +332,24 @@ class SCORMDelivery:
         contain a file of that name. One document has nothing to collide with.
         """
         launch = tokens.resolve(token) or {}
+        items = sorted(package.items, key=lambda i: i.idx)
+
+        # Which SCO to open. Named by the player in `?sco=`, and **matched
+        # against the package's own items** rather than used as an index -- an
+        # unrecognised value falls back to the first SCO rather than reaching
+        # anything. A query string is right here where it would be wrong for an
+        # asset: this is the launcher, and nothing resolves relative to it.
+        wanted = None
+        request = getattr(frappe.local, "request", None)
+        if request is not None:
+            wanted = request.args.get("sco")
+        index = next((n for n, i in enumerate(items) if i.sco_identifier == wanted), 0)
+
         config = {
             "version": package.scorm_version or "1.2",
             "appOrigin": self._app_origin(),
             "package": package.package_id,
-            "index": 0,
+            "index": index,
             "scos": [
                 {
                     "id": i.sco_identifier,
@@ -346,7 +359,7 @@ class SCORMDelivery:
                     # student left it without a round trip on startup.
                     "cmi": _cmi_for(launch.get("user"), package.name, i.sco_identifier),
                 }
-                for i in sorted(package.items, key=lambda i: i.idx)
+                for i in items
             ],
         }
         html = (

@@ -1190,8 +1190,19 @@ def get_lesson(course, chapter, lesson):
             "content",
             "instructor_content",
             "instructor_notes",
+            # p009: a SCORM lesson renders a player instead of a body. The SPA
+            # needs the chapter to launch against and the SCO to open.
+            "chapter",
+            "scorm_sco_identifier",
+            "scorm_orphaned",
         ],
         as_dict=True,
+    )
+    lesson_details["is_scorm_package"] = bool(
+        lesson_details.chapter
+        and frappe.db.get_value(
+            "Course Schedule Chapter", lesson_details.chapter, "is_scorm_package"
+        )
     )
 
     if frappe.session.user == "Guest":

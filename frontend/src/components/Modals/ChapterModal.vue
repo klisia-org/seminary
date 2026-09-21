@@ -39,7 +39,15 @@
 					v-model="chapter.is_scorm_package"
 				/>
 				<div v-if="chapter.is_scorm_package">
-					<FileUploader
+					<!-- SmartFileUploader, not FileUploader (p009 §2.11). A real
+					     SCORM export is routinely larger than the worker upload
+					     ceiling, so the plain uploader simply fails on exactly
+					     the packages this feature exists to play. This one sends
+					     them straight to object storage and falls back to
+					     /api/method/upload_file when the server says a direct
+					     upload does not apply -- same slot contract, same
+					     @success payload. -->
+					<SmartFileUploader
 						v-if="!chapter.scorm_package"
 						:fileTypes="['.zip']"
 						:validateFile="validateFile"
@@ -57,7 +65,7 @@
 								</span>
 							</div>
 						</template>
-					</FileUploader>
+					</SmartFileUploader>
 					<div v-else class="">
 						<div class="flex items-center">
 							<div class="border rounded-md p-2 mr-2">
@@ -69,6 +77,12 @@
 								</span>
 								<span class="text-sm text-ink-gray-4 mt-1">
 									{{ getFileSize(chapter.scorm_package.file_size) }}
+								</span>
+								<!-- Acceptance is asynchronous now: the chapter
+								     saves, then a job unpacks the package and
+								     builds one lesson per SCO. -->
+								<span class="text-xs text-ink-gray-5 mt-1">
+									{{ __('Unpacked after you save; its lessons appear when that finishes.') }}
 								</span>
 							</div>
 							<X
@@ -87,7 +101,6 @@ import {
 	Button,
 	createResource,
 	Dialog,
-	FileUploader,
 	FormControl,
 	Switch,
 	toast
@@ -96,6 +109,7 @@ import { computed, reactive, watch } from 'vue'
 import { getFileSize, uploadLimits, validateFileSize } from '@/utils/'
 import { capture } from '@/telemetry'
 import { FileText, X } from 'lucide-vue-next'
+import SmartFileUploader from '@/components/SmartFileUploader.vue'
 import { useSettings } from '@/stores/settings'
 import {createDialog} from '@/utils/dialogs'
 
