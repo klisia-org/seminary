@@ -241,7 +241,7 @@ class TestP009Delivery(_ScormCase):
         self.assertEqual(response.headers["Referrer-Policy"], "no-referrer")
         self.assertEqual(response.headers["Origin-Agent-Cluster"], "?1")
         self.assertIn(
-            f"frame-ancestors https://{APP_HOST}",
+            f"frame-ancestors 'self' https://{APP_HOST}",
             response.headers["Content-Security-Policy"],
         )
         # Read the iterable, not `get_data`: the response is in direct
@@ -269,10 +269,35 @@ class TestP009Delivery(_ScormCase):
         http_headers.apply_security_headers(response=response)
         self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
 
-    def test_frame_ancestors_names_the_app_origin_not_self(self):
+    def test_frame_ancestors_names_both_origins_and_only_those(self):
+        """`'self'` **and** the app origin, and both are load-bearing.
+
+        The app frames the launcher, so the app origin must be named. The
+        launcher then frames the SCO, and the launcher is on the *delivery*
+        origin -- so without `'self'` the inner frame's ancestor chain is
+        [launcher@delivery, player@app], the delivery origin is not in the list,
+        and the browser refuses it. The outer frame loads, the inner one does
+        not, and the player is a grey box.
+
+        This test asserted the opposite until the first real browser pass, which
+        is the only place the ancestor chain exists: a server-side test renders
+        one response and never stacks two documents inside each other.
+        """
         policy = self._get("index.html").headers["Content-Security-Policy"]
-        self.assertIn(f"frame-ancestors https://{APP_HOST}", policy)
-        self.assertNotIn("frame-ancestors 'self'", policy)
+        directive = [
+            part.strip()
+            for part in policy.split(";")
+            if part.strip().startswith("frame-ancestors")
+        ][0]
+        sources = directive.split()[1:]
+
+        self.assertIn("'self'", sources)
+        self.assertIn(f"https://{APP_HOST}", sources)
+        # Still a closed list -- this origin and the one app origin, nobody
+        # else. A wildcard here would hand any site the ability to frame a
+        # package and drive it.
+        self.assertEqual(len(sources), 2, policy)
+        self.assertNotIn("*", sources)
 
     def test_an_unknown_app_origin_refuses_to_serve(self):
         # A delivery origin that cannot name the origin allowed to frame it is

@@ -235,9 +235,21 @@ class SCORMDelivery:
             # The package is attacker-supplied. None of this protects the app --
             # the origin split does that -- it contains what the package can do
             # to itself and stops anyone else framing this origin.
+            # `'self'` **and** the app origin, and both are load-bearing.
+            # The app frames the launcher, so the app origin must be here --
+            # but the launcher then frames the SCO, and the launcher is on
+            # *this* origin, so without `'self'` the inner frame's ancestor
+            # chain is [launcher@delivery, player@app] and the delivery origin
+            # is not in the list. The outer frame loads, the inner one is
+            # refused, and the player is a grey box with one console line.
+            # Found on the first real browser pass; no server-side test can see
+            # it, because the ancestor chain only exists in a browser.
+            #
+            # This is still a closed list: the delivery origin and the one app
+            # origin. Nobody else may frame a package.
             "Content-Security-Policy": (
                 "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; "
-                f"frame-ancestors {self._app_origin()}"
+                f"frame-ancestors 'self' {self._app_origin()}"
             ),
             "X-Content-Type-Options": "nosniff",
             # Origin-keyed, so `document.domain` cannot be used to reach towards
