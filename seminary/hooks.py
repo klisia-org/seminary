@@ -652,6 +652,11 @@ scheduler_events = {
         # Generated Course Packs are reproducible artifacts, so they expire rather
         # than accumulate one stored copy per export (privatedocs/p004).
         "seminary.seminary.course_pack.export.cleanup_old_packs",
+        # An unpack killed between writing its objects and committing its row
+        # leaves bytes nobody will ever ask for. A lifecycle rule on the prefix
+        # cannot do this one: the prefix is live for packages that ARE claimed,
+        # and age alone does not tell them apart (privatedocs/p009 §2.13).
+        "seminary.scorm.lifecycle.sweep_orphaned_packages",
         # Course folder download archives are reproducible artifacts keyed by a
         # hash of the folder's contents; superseded ones are retired at build
         # time, and this expires the rest (p008 F17a).

@@ -86,8 +86,13 @@ class SCORMPackage(Document):
         self.total_bytes = sum(int(e.get("size") or 0) for e in inventory.values())
 
     def on_trash(self):
-        # Deleting the row must also delete `scorm/<package id>/` from the
-        # object store, refcounted on chapter references. That is p009 S9; until
-        # it lands, deleting a package row leaves its objects behind rather than
-        # deleting bytes some other chapter may still be serving.
-        pass
+        """Take the objects with the row.
+
+        `lifecycle.release` is the refcounted door and normally deletes them
+        first; this covers a row deleted directly -- from Desk, or by a cascade
+        -- which would otherwise strand a whole tree with nothing left pointing
+        at it. Deleting twice is harmless; leaving bytes with no row is not.
+        """
+        from seminary.scorm import lifecycle
+
+        lifecycle.delete_objects(self.name)

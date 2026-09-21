@@ -34,7 +34,7 @@ import zipfile
 
 import frappe
 
-from seminary.scorm import archive
+from seminary.scorm import archive, lessons
 from seminary.scorm.archive import PackageError
 from seminary.scorm.manifest import ManifestError
 
@@ -119,6 +119,7 @@ def _adopt(package, chapter: str, existing: str) -> bool:
     frappe.delete_doc(
         "SCORM Package", package.name, ignore_permissions=True, force=True
     )
+    lessons.reconcile(frappe.get_doc("SCORM Package", existing), chapter)
     frappe.db.commit()
     return True
 
@@ -192,6 +193,8 @@ def _explode(package, chapter: str, written: list[str]) -> None:
             )
 
     _record(package, inventory, parsed)
+    lessons.reconcile(package, chapter)
+    frappe.db.commit()
 
 
 def _upload_members(zf, package, root: str, backend, written: list[str]) -> dict:

@@ -4807,9 +4807,6 @@ def upsert_chapter(
         pin_scorm_package(chapter.name, package_file)
         queue_scorm_unpack(chapter.name, package_file)
 
-    if is_scorm_package and not len(chapter.lessons):
-        add_lesson(chapter_title, chapter.name, course)
-
     return chapter
 
 
@@ -4943,31 +4940,12 @@ def queue_scorm_unpack(chapter_name, file_name):
     return package.name
 
 
-def add_lesson(lesson_title, chapter, course_sc):
-    lesson = frappe.new_doc("Course Lesson")
-    # The fields are `lesson_title` and `course_sc` (fetched from the chapter).
-    # This used to set `title` and `course`, neither of which exists, so the
-    # insert always failed on the mandatory lesson_title -- creating a SCORM
-    # chapter has never completed. Fixed with p008 F8, which keeps ingestion.
-    lesson.update(
-        {
-            "lesson_title": lesson_title,
-            "chapter": chapter,
-            "course_sc": course_sc,
-        }
-    )
-    lesson.insert()
-
-    lesson_reference = frappe.new_doc("Course Schedule Lesson Reference")
-    lesson_reference.update(
-        {
-            "lesson": lesson.name,
-            "parent": chapter,
-            "parenttype": "Course Schedule Chapter",
-            "parentfield": "lessons",
-        }
-    )
-    lesson_reference.insert()
+# `add_lesson` lived here. It existed to give a SCORM chapter one placeholder
+# lesson, and p008 F8 found it had never once succeeded -- it set `title` and
+# `course`, neither of which is a field. p009 §2.10 replaced the placeholder
+# with the real thing: one Course Lesson per SCO, created from the manifest by
+# `seminary.scorm.lessons.reconcile`. It had no other caller and was not
+# whitelisted.
 
 
 @frappe.whitelist()
@@ -4983,15 +4961,21 @@ def delete_chapter(chapter):
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
     require_course_staff(chapterInfo.coursesc)
 
-    # An unpacked package's objects are removed when the LAST chapter pointing at
-    # it goes (p009 §2.13, S9). Nothing is removed here, and nothing is left on
-    # local disk to remove: p008 F8 stopped extracting and its teardown patch
-    # deleted the trees `delete_scorm_package` used to walk.
-
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
     frappe.db.delete("Course Lesson", {"chapter": chapter})
     frappe.db.delete("Course Schedule Chapter", chapter)
+
+    # The package's objects go when the LAST chapter pointing at it does
+    # (p009 §2.13) -- a template import and a Course Pack both share one package
+    # between sections. Nothing is left on local disk to remove: p008 F8 stopped
+    # extracting and its teardown patch deleted the trees `delete_scorm_package`
+    # used to walk. Called after the row is gone, so the refcount sees the truth;
+    # these are raw `db.delete` calls, so no controller hook fires for us.
+    if chapterInfo.scorm_package_ref:
+        from seminary.scorm import lifecycle
+
+        lifecycle.release(chapterInfo.scorm_package_ref)
 
 
 # `delete_scorm_package` lived here until p009 S1. It walked

@@ -638,9 +638,10 @@ class _Importer:
         exactly as a local upload is; that enqueue lands with p009 S9."""
         if not (ch.get("is_scorm_package") and ch.get("scorm_package")):
             return
-        from seminary.seminary.api import pin_scorm_package
+        from seminary.seminary.api import pin_scorm_package, queue_scorm_unpack
 
         pin_scorm_package(ch.name, ch.scorm_package)
+        queue_scorm_unpack(ch.name, ch.scorm_package)
 
     def remap_lesson_scac_links(self):
         for lsrc, new_lesson in self.l_map.items():

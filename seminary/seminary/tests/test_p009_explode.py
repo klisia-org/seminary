@@ -47,6 +47,13 @@ class FakeBackend:
     def delete(self, key):
         self.objects.pop(key, None)
 
+    def list_keys(self, prefix):
+        return [
+            {"key": k, "size": len(v[0]), "last_modified": "2020-01-01 00:00:00"}
+            for k, v in self.objects.items()
+            if k.startswith(prefix)
+        ]
+
 
 def _zip(members, prefix="", manifest=MANIFEST):
     buf = io.BytesIO()
