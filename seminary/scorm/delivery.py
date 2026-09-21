@@ -45,6 +45,7 @@ the first SCO and says so.
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 
 import frappe
 from werkzeug.wrappers import Response
@@ -62,6 +63,9 @@ RATE_WINDOW = 60
 #: browser may cache the redirect itself. Mirrors `storage.api`.
 REDIRECT_TTL = 900
 _CACHE_SAFETY_MARGIN = 120
+
+#: Per-site, for the worker's life. See `SCORMDelivery._media_origins`.
+_MEDIA_ORIGIN_CACHE: dict[str, list[str]] = {}
 
 
 def delivery_host() -> str | None:
@@ -247,10 +251,7 @@ class SCORMDelivery:
             #
             # This is still a closed list: the delivery origin and the one app
             # origin. Nobody else may frame a package.
-            "Content-Security-Policy": (
-                "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; "
-                f"frame-ancestors 'self' {self._app_origin()}"
-            ),
+            "Content-Security-Policy": self._policy(),
             "X-Content-Type-Options": "nosniff",
             # Origin-keyed, so `document.domain` cannot be used to reach towards
             # a sibling delivery host (p009 §2.14).
@@ -264,6 +265,85 @@ class SCORMDelivery:
         if etag:
             headers["ETag"] = f'"{etag}"'
         return headers
+
+    def _policy(self) -> str:
+        """The package's own policy. It restrains the package, not the app.
+
+        The origin split is what protects the application; this contains what a
+        package can do to itself and names who may frame it. `unsafe-inline`
+        and `unsafe-eval` are not an oversight -- real courseware is compiled
+        JavaScript that does both, and refusing them refuses the format.
+
+        The media directives exist because §2.6 redirects binaries to the object
+        store: without them `default-src 'self'` silently forbids every image,
+        font and video the package ships.
+        """
+        media = " ".join(self._media_origins())
+        media = f" {media}" if media else ""
+        return "; ".join(
+            [
+                "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
+                f"img-src 'self' data: blob:{media}",
+                f"media-src 'self' data: blob:{media}",
+                f"font-src 'self' data:{media}",
+                f"connect-src 'self'{media}",
+                f"frame-ancestors 'self' {self._app_origin()}",
+            ]
+        )
+
+    @staticmethod
+    def _media_origins() -> list[str]:
+        """The origins a *redirected* member will actually be fetched from.
+
+        §2.6 sends everything that cannot carry a relative reference -- images,
+        audio, video, fonts -- to a presigned URL on the object store's own
+        hostname. This header said `default-src 'self'`. The two halves of the
+        design contradicted each other, and the browser is right: it refused
+        every image in the package while the HTML and CSS around them loaded.
+        Found on the first browser pass; no server-side test can see it, because
+        the contradiction is between a header we send and a redirect we send,
+        and only a browser ever holds both at once.
+
+        **Derived by signing a throwaway key, not read from a config key.** The
+        backend is a seam (p004) and `r2_endpoint` is one implementation's
+        spelling; whatever the backend signs is by construction where it will
+        send the browser. Signing is a local HMAC with no network call, and the
+        answer is cached for the worker's life.
+
+        `scorm_media_origins` overrides it, for a deployment that fronts the
+        bucket with a CDN on a different hostname.
+        """
+        override = frappe.conf.get("scorm_media_origins")
+        if override:
+            return [override] if isinstance(override, str) else list(override)
+
+        cached = _MEDIA_ORIGIN_CACHE.get(frappe.local.site)
+        if cached is not None:
+            return list(cached)
+
+        origins: list[str] = []
+        try:
+            from seminary.storage.backend import get_storage_backend
+
+            backend = get_storage_backend()
+            if backend.is_configured():
+                probe = backend.presigned_get(
+                    "scorm/_csp_probe", ttl=60, file_name="probe"
+                )
+                parsed = urlparse(probe)
+                if parsed.scheme and parsed.netloc:
+                    origins = [f"{parsed.scheme}://{parsed.netloc}"]
+        except Exception:
+            # A CSP that cannot name the media origin is a package with no
+            # pictures, which is bad; a delivery host that will not serve at
+            # all is worse. Log and carry on with a same-origin policy.
+            frappe.log_error(
+                frappe.get_traceback(),
+                "scorm: could not derive the media origin for the CSP",
+            )
+
+        _MEDIA_ORIGIN_CACHE[frappe.local.site] = origins
+        return list(origins)
 
     @staticmethod
     def _app_origin() -> str:

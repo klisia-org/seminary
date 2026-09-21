@@ -318,8 +318,18 @@ class TestP009MemberPaths(IntegrationTestCase):
             archive.content_type_for("noextension"), "application/octet-stream"
         )
 
-    def test_only_reference_carrying_types_are_proxied(self):
+    def test_reference_carrying_types_are_proxied(self):
         for proxied in ("a.html", "a.css", "a.js", "a.svg", "a.json"):
             self.assertTrue(archive.is_proxied(proxied), proxied)
-        for redirected in ("a.mp4", "a.png", "a.pdf", "a.woff2", "a.bin"):
+        for redirected in ("a.mp4", "a.png", "a.pdf", "a.bin"):
             self.assertFalse(archive.is_proxied(redirected), redirected)
+
+    def test_fonts_are_proxied_even_though_they_reference_nothing(self):
+        """The one entry that is not about relative references. A cross-origin
+        `@font-face` is a CORS-checked fetch and a presigned URL carries no
+        CORS headers, so a redirected font is refused unless the bucket has a
+        policy naming the delivery host -- infrastructure per deployment, which
+        §3 refused to depend on. Fonts are small and few; the redirect exists to
+        keep lecture video off the worker pool, not these."""
+        for font in ("a.woff", "a.woff2", "a.ttf", "a.otf", "a.eot"):
+            self.assertTrue(archive.is_proxied(font), font)

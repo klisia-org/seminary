@@ -274,6 +274,20 @@ DEFAULT_CONTENT_TYPE = "application/octet-stream"
 #: once a document is fetched via a redirect, the browser's base URL moves to the
 #: object store and every relative reference in it resolves there, unsigned
 #: (§2.6). Size is handled separately by MAX_PROXIED_MEMBER_BYTES.
+#: Served *through* the delivery origin rather than redirected to the object
+#: store. Two reasons, and the second was learned the hard way:
+#:
+#: 1. **It can carry a relative reference.** Once a document is fetched via a
+#:    302 to a presigned URL its base URL is the object store, and every
+#:    `assets/main.js` in it resolves there unsigned (p009 §1.2). Anything that
+#:    can address other members has to stay on this origin.
+#: 2. **Fonts need CORS, and a presigned URL has none.** A cross-origin
+#:    `@font-face` is a CORS-checked fetch, so a font redirected to the object
+#:    store is refused unless the bucket carries a CORS policy naming this
+#:    delivery host -- infrastructure per deployment, which is exactly what
+#:    §3 refused to depend on. Fonts are tens of kilobytes and there are a
+#:    handful per package, so proxying them costs nothing the redirect was
+#:    protecting: §2.6 redirects to keep *lecture video* off the worker pool.
 PROXIED_EXTENSIONS = frozenset(
     {
         "html",
@@ -288,6 +302,12 @@ PROXIED_EXTENSIONS = frozenset(
         "txt",
         "vtt",
         "srt",
+        # Fonts: see (2) above. Not because they can reference anything.
+        "woff",
+        "woff2",
+        "ttf",
+        "otf",
+        "eot",
     }
 )
 
