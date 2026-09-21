@@ -324,3 +324,56 @@ class TestP009PackageLifecycle(_ScormCase):
         ]
         lifecycle.sweep_orphaned_packages()
         self.assertIn("scorm/inflight/index.html", self.backend.objects)
+
+
+class TestP009Reparse(_ScormCase):
+    """`reparse` exists because a parser fix cannot reach an unpacked package.
+
+    `SCORM Package Item.href` is written once, at explode time. Re-uploading
+    does not help either: `_adopt` dedups on the archive's SHA-256 and re-points
+    the chapter at the same stale rows. `<item parameters>` was implemented
+    after the ADL Golf package had been exploded, and every quiz in it stayed
+    broken on correct code until this ran.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self._with_section()
+        self.chapter = self._chapter()
+
+    def test_it_picks_up_a_parser_change_without_re_uploading(self):
+        from seminary.scorm import explode
+
+        package_name = self._unpack(
+            self.chapter,
+            _zip(
+                [("A", "One", "shared/page.html")],
+                nonce=frappe.generate_hash(length=6),
+            ),
+        )
+        # Simulate a package exploded by an older parser: the suffix the
+        # manifest asked for was dropped on the floor.
+        item = frappe.get_doc(
+            "SCORM Package Item", {"parent": package_name, "sco_identifier": "A"}
+        )
+        item.db_set("href", "shared/page.html", update_modified=False)
+
+        result = explode.reparse(package_name)
+        self.assertTrue(result["packages"][0]["ok"], result)
+
+        refreshed = frappe.db.get_value(
+            "SCORM Package Item",
+            {"parent": package_name, "sco_identifier": "A"},
+            "href",
+        )
+        self.assertEqual(refreshed, "shared/page.html")
+
+    def test_a_package_that_cannot_be_re_parsed_does_not_stop_the_rest(self):
+        from seminary.scorm import explode
+
+        self._unpack(
+            self.chapter,
+            _zip([("A", "One", "a.html")], nonce=frappe.generate_hash(length=6)),
+        )
+        result = explode.reparse("does-not-exist-" + frappe.generate_hash(8))
+        self.assertFalse(result["packages"][0]["ok"])

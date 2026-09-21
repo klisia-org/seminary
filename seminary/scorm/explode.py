@@ -309,3 +309,93 @@ def _record(package, inventory: dict, parsed) -> None:
     package.failure_reason = None
     package.save(ignore_permissions=True)
     frappe.db.commit()
+
+
+def reparse(package_name: str | None = None) -> dict:
+    """Re-read an unpacked package's manifest and rewrite its SCO list.
+
+        bench --site <site> execute seminary.scorm.explode.reparse
+        bench --site <site> execute seminary.scorm.explode.reparse \
+            --kwargs "{'package_name': 'd5a41i2hth'}"
+
+    **Why this has to exist.** `SCORM Package Item.href` is written once, at
+    explode time, from whatever the manifest parser understood that day. So a
+    parser fix does not reach a package that is already unpacked -- and
+    re-uploading the zip does not either, because `_adopt` dedups on the
+    archive's SHA-256 and simply re-points the chapter at the same stale rows.
+    Without this, the only way to pick up a parser fix is to delete the package
+    and upload a byte-identical file under a different hash, which is absurd for
+    something measured in gigabytes.
+
+    That is not hypothetical: `<item parameters>` (p009 §9.11) was implemented
+    after the ADL Golf package had been exploded, and every quiz in it stayed
+    broken on correct code until this ran.
+
+    Nothing is re-uploaded and no member is touched. The manifest is read back
+    out of object storage, re-parsed against the inventory already recorded, and
+    the SCO rows and their lessons are reconciled. Not whitelisted: it is an
+    operator's command, and it has no business on the HTTP surface.
+    """
+    from seminary.scorm import manifest as manifest_module
+    from seminary.storage.backend import get_storage_backend
+
+    names = (
+        [package_name]
+        if package_name
+        else frappe.get_all("SCORM Package", filters={"status": "Ready"}, pluck="name")
+    )
+
+    backend = get_storage_backend()
+    results = []
+    for name in names:
+        before = {}
+        try:
+            package = frappe.get_doc("SCORM Package", name)
+            before = {item.sco_identifier: item.href for item in package.items}
+            inventory = package.get_inventory()
+            raw = backend.read(package.key_for("imsmanifest.xml"))
+            parsed = manifest_module.parse(
+                raw,
+                inventory,
+                max_scos=archive.cap(
+                    "scorm_max_scos", manifest_module.DEFAULT_MAX_SCOS
+                ),
+            )
+        except Exception as e:  # noqa: BLE001 -- one bad package must not stop the rest
+            frappe.log_error(
+                frappe.get_traceback(), f"scorm: could not re-parse {name}"
+            )
+            results.append({"package": name, "ok": False, "error": str(e)[:200]})
+            continue
+
+        _record(package, inventory, parsed)
+
+        # Every chapter pointing at this package, because a template import or a
+        # Course Pack can share one package across sections (§2.3).
+        chapters = frappe.get_all(
+            "Course Schedule Chapter",
+            filters={"scorm_package_ref": name},
+            pluck="name",
+        )
+        for chapter in chapters:
+            lessons.reconcile(package, chapter)
+        frappe.db.commit()
+
+        after = {item.sco_identifier: item.href for item in package.items}
+        changed = {
+            sco: {"was": before.get(sco), "now": href}
+            for sco, href in after.items()
+            if before.get(sco) != href
+        }
+        results.append(
+            {
+                "package": name,
+                "ok": True,
+                "chapters": chapters,
+                "scos": len(after),
+                "changed": changed,
+            }
+        )
+
+    print(frappe.as_json(results))
+    return {"packages": results}

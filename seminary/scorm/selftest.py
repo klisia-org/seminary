@@ -181,9 +181,24 @@ def _config() -> dict:
             ),
         }
 
+    origin = delivery.delivery_origin()
+    if origin.startswith("http://") and not delivery.is_loopback_host(host):
+        return {
+            "ok": False,
+            "delivery_host": host,
+            "app_origin": app_origin,
+            "detail": (
+                f"`scorm_delivery_origin` is plaintext (`{origin}`) on a host that is "
+                "not loopback. That override exists so the two-origin pass can be run "
+                "on a developer bench; on anything a student can reach it hands every "
+                "launch token to the network in clear."
+            ),
+        }
+
     return {
         "ok": True,
         "delivery_host": host,
+        "delivery_origin": origin,
         "app_origin": app_origin,
         "send_learner_name": bool(
             True
@@ -271,10 +286,10 @@ def _storage() -> dict:
 # --------------------------------------------------------------- arm 4: origin
 
 
-def _fetch(host: str, path: str) -> dict:
+def _fetch(origin: str, path: str) -> dict:
     import requests
 
-    url = f"https://{host}{path}"
+    url = f"{origin}{path}"
     try:
         response = requests.get(
             url,
@@ -296,8 +311,9 @@ def _origin() -> dict:
     from seminary.scorm import delivery
 
     host = delivery.delivery_host()
+    origin = delivery.delivery_origin()
     probes = {
-        path: _fetch(host, path)
+        path: _fetch(origin, path)
         for path in (PROBE_DESK, PROBE_API, PROBE_SCORM, PROBE_HTML)
     }
 
@@ -310,7 +326,7 @@ def _origin() -> dict:
             "host": host,
             "probes": probes,
             "detail": (
-                f"Could not reach https://{host} -- DNS, the certificate, or the "
+                f"Could not reach {origin} -- DNS, the certificate, or the "
                 "proxy. This is the expected result on a development bench, where "
                 "the delivery host does not resolve; it is a real failure anywhere "
                 "a student will open a package."
