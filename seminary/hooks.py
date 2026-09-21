@@ -307,6 +307,7 @@ permission_query_conditions = {
     "Discussion Submission": "seminary.seminary.student_permissions.query_discussion_submission",
     "Quiz Submission": "seminary.seminary.student_permissions.query_quiz_submission",
     "Course Schedule Progress": "seminary.seminary.student_permissions.query_course_schedule_progress",
+    "SCORM Attempt": "seminary.seminary.student_permissions.query_scorm_attempt",
     "Withdrawal Request": "seminary.seminary.student_permissions.query_withdrawal_request",
     "Graduation Request": "seminary.seminary.student_permissions.query_graduation_request",
     "Recommendation Letter": "seminary.seminary.student_permissions.query_recommendation_letter",
@@ -355,6 +356,7 @@ has_permission = {
     "Discussion Submission": "seminary.seminary.student_permissions.has_permission_discussion_submission",
     "Quiz Submission": "seminary.seminary.student_permissions.has_permission_quiz_submission",
     "Course Schedule Progress": "seminary.seminary.student_permissions.has_permission_course_schedule_progress",
+    "SCORM Attempt": "seminary.seminary.student_permissions.has_permission_scorm_attempt",
     "Withdrawal Request": "seminary.seminary.student_permissions.has_permission_withdrawal_request",
     "Graduation Request": "seminary.seminary.student_permissions.has_permission_graduation_request",
     "Recommendation Letter": "seminary.seminary.student_permissions.has_permission_recommendation_letter",
@@ -621,6 +623,17 @@ plagiarism_providers = {
 # inside `location` blocks that declare their own, and skips non-2xx/3xx -- so
 # every error page was bare. CSP ships **report-only**: set `seminary_csp_enforce`
 # in site_config to enforce, once the reports are clean.
+# The SCORM delivery origin (privatedocs/p009 §2.2, §2.6). Registered as a page
+# renderer rather than a whitelisted method because a package's relative
+# references resolve against the DOCUMENT URL, so the URL has to be a real path.
+# It renders only on `scorm_delivery_host`, and only for `/scorm/...`.
+page_renderer = ["seminary.scorm.delivery.SCORMDelivery"]
+
+# The other half of that split, and the half that makes it real: frappe routes
+# on path and ignores `Host`, so without this the whole app would answer on the
+# delivery domain. There, only `/scorm/...` exists.
+before_request = ["seminary.scorm.delivery.guard_delivery_host"]
+
 after_request = [
     "seminary.seminary.http_headers.apply_security_headers",
     # Every 403/401 that never passed through `guards` -- frappe's own
@@ -650,6 +663,11 @@ scheduler_events = {
         # Generated Course Packs are reproducible artifacts, so they expire rather
         # than accumulate one stored copy per export (privatedocs/p004).
         "seminary.seminary.course_pack.export.cleanup_old_packs",
+        # An unpack killed between writing its objects and committing its row
+        # leaves bytes nobody will ever ask for. A lifecycle rule on the prefix
+        # cannot do this one: the prefix is live for packages that ARE claimed,
+        # and age alone does not tell them apart (privatedocs/p009 §2.13).
+        "seminary.scorm.lifecycle.sweep_orphaned_packages",
         # Course folder download archives are reproducible artifacts keyed by a
         # hash of the folder's contents; superseded ones are retired at build
         # time, and this expires the rest (p008 F17a).

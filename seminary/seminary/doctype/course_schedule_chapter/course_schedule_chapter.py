@@ -57,6 +57,19 @@ class CourseScheduleChapter(Document):
     def on_update(self):
         self.recalculate_course_progress()
 
+    def on_trash(self):
+        """Release the SCORM package this chapter was holding (p009 §2.13).
+
+        `api.delete_chapter` does this itself, because it deletes by raw
+        `frappe.db.delete` and no controller hook fires. This covers every other
+        way a chapter goes -- Desk, a cascade, a script -- so the refcount is
+        not a property of one code path.
+        """
+        if self.get("scorm_package_ref"):
+            from seminary.scorm import lifecycle
+
+            lifecycle.release(self.scorm_package_ref, exclude_chapter=self.name)
+
     def recalculate_course_progress(self):
         previous_lessons = (
             self.get_doc_before_save() and self.get_doc_before_save().as_dict().lessons

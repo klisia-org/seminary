@@ -103,6 +103,20 @@ def apply_security_headers(response=None, request=None, **kwargs):
     if response is None:
         return
     try:
+        from seminary.scorm.delivery import is_delivery_request
+
+        if is_delivery_request():
+            # The SCORM delivery origin carries its own complete policy
+            # (p009 §2.6) and it is deliberately a different one: a CSP loose
+            # enough to run real courseware, and `frame-ancestors` naming the
+            # APP origin rather than 'self'.
+            #
+            # The header that actually breaks is `X-Frame-Options: SAMEORIGIN`
+            # below. Set on a delivery response it forbids the app origin from
+            # framing the package -- so the player renders nothing, in every
+            # browser, with no error the app can see. Found on the first live
+            # pass; nothing short of a real cross-origin request shows it.
+            return
         headers = response.headers
         header = (
             "Content-Security-Policy"

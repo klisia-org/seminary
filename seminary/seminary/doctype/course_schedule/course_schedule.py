@@ -1207,19 +1207,27 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 # Course Schedule Chapter fields copied verbatim (besides chapter_title and
 # the back-reference coursesc which are set explicitly). SCORM file references
 # are shared between CSes — the underlying File doc is independent of any CS.
+#
+# `scorm_package_ref` is deliberately NOT copied: the copy re-derives it from
+# the shared File, which dedups onto the same SCORM Package by content hash
+# (p009 §2.13). Copying the ref verbatim would give the new chapter a package
+# reference nothing had counted.
 _CHAPTER_COPYABLE_FIELDS = (
     "is_scorm_package",
     "scorm_package",
-    "scorm_package_path",
-    "manifest_file",
-    "launch_file",
 )
 
+# `scorm_sco_identifier` is copied so the new section's lessons still match the
+# manifest: the copied chapter adopts the same SCORM Package (same zip, same
+# content hash), and reconciliation keys on that identifier. Without it every
+# SCO would be seen as new and the copy would get a second set of lessons.
+#
 # Course Lesson content fields copied verbatim. assessment_criteria_* fields
 # are NOT copied here — they're handled by _remap_lesson_scac_links after the
 # target SCAC rows have names. course_sc, course_code, is_scorm_package
 # auto-fetch from the new chapter.
 _LESSON_COPYABLE_FIELDS = (
+    "scorm_sco_identifier",
     "lesson_title",
     "body",
     "content",
@@ -1278,6 +1286,15 @@ def _copy_chapters_and_lessons(source_cs_name, target_cs_name, folder_report=Non
         new_chapter.flags.ignore_permissions = True
         new_chapter.insert()
         n_chapters += 1
+
+        if new_chapter.is_scorm_package and new_chapter.scorm_package:
+            # Same zip, so the unpack job's content-hash dedup adopts the
+            # package that already exists instead of unpacking it again
+            # (p009 §2.13). The ref is NOT copied above -- it is re-derived
+            # here, so the refcount counts this chapter.
+            from seminary.seminary.api import queue_scorm_unpack
+
+            queue_scorm_unpack(new_chapter.name, new_chapter.scorm_package)
 
         lesson_refs = frappe.get_all(
             "Course Schedule Lesson Reference",

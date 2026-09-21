@@ -1,1 +1,0 @@
-import{er as e}from"./frappe-ui-Cm0Uyc9a.js";import{Jt as t}from"./vendor-BojOlmGo.js";import{n}from"./router-DB2Z3BbH.js";var r=t(`settings`,()=>{let{isLoggedIn:t}=n();return{isSettingsOpen:e(!1),activeTab:e(null)}});export{r as t};

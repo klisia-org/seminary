@@ -83,21 +83,21 @@ r = call(
     {
         "doctype": "Course Schedule Chapter",
         "name": FX["CHAPTER"],
-        "fieldname": "scorm_package_path",
+        "fieldname": "scorm_package_ref",
         "value": "/x",
     },
 )
 check(
-    "4.1 stuA set scorm_package_path (permlevel 1)",
+    "4.1 stuA set scorm_package_ref (permlevel 1)",
     "admin",
     "frappe.client.get_value",
     {
         "doctype": "Course Schedule Chapter",
         "filters": {"name": FX["CHAPTER"]},
-        "fieldname": "scorm_package_path",
+        "fieldname": "scorm_package_ref",
     },
     ok_json(
-        lambda m: (m or {}).get("scorm_package_path") != "/x",
+        lambda m: (m or {}).get("scorm_package_ref") != "/x",
         f"set_value returned {r.status_code}; stored value not /x",
     ),
 )

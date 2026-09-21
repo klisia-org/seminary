@@ -102,7 +102,29 @@
 						Date(lesson.data.due_date)) }}
 
 				</div>
-				<div v-if="lesson.data.content"
+				<!-- p009 §2.10: a SCO *is* a lesson, so everything around it --
+				     title, outline, notes, discussions -- is unchanged. Only the
+				     body is replaced. -->
+				<ScormPlayer
+					v-if="lesson.data.is_scorm_package"
+					class="mt-5"
+					:chapter="lesson.data.chapter"
+					:sco="lesson.data.scorm_sco_identifier"
+				/>
+				<!-- p009 §2.12: a score reaches the gradebook only where staff
+				     have said which criterion it answers. Below the player, so
+				     an instructor previewing the package decides with it in
+				     front of them. -->
+				<ScormGradeMapping
+					v-if="
+						lesson.data.is_scorm_package &&
+						lesson.data.scorm_sco_identifier &&
+						(user?.data?.is_moderator || is_instructor())
+					"
+					class="mt-4"
+					:lesson="lesson.data.name"
+				/>
+				<div v-else-if="lesson.data.content"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal mt-5">
 					<div id="editor"></div>
 				</div>
@@ -149,6 +171,8 @@ import ProgressBar from '@/components/ProgressBar.vue'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import Discussions from '@/components/Discussions.vue'
 import Notes from '@/components/Notes.vue'
+import ScormPlayer from '@/components/ScormPlayer.vue'
+import ScormGradeMapping from '@/components/ScormGradeMapping.vue'
 
 
 const user = inject('$user')

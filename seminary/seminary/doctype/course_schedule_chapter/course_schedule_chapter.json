@@ -18,9 +18,7 @@
   "scorm_section",
   "is_scorm_package",
   "scorm_package",
-  "scorm_package_path",
-  "manifest_file",
-  "launch_file"
+  "scorm_package_ref"
  ],
  "fields": [
   {
@@ -83,24 +81,12 @@
   },
   {
    "depends_on": "is_scorm_package",
-   "fieldname": "scorm_package_path",
-   "fieldtype": "Code",
-   "label": "SCORM Package Path",
+   "description": "The unpacked package this chapter plays. Set by the explode job; a chapter with a package File but no ref has not been unpacked yet.",
+   "fieldname": "scorm_package_ref",
+   "fieldtype": "Link",
+   "label": "Unpacked Package",
+   "options": "SCORM Package",
    "permlevel": 1,
-   "read_only": 1
-  },
-  {
-   "depends_on": "is_scorm_package",
-   "fieldname": "manifest_file",
-   "fieldtype": "Code",
-   "label": "Manifest File",
-   "read_only": 1
-  },
-  {
-   "depends_on": "is_scorm_package",
-   "fieldname": "launch_file",
-   "fieldtype": "Code",
-   "label": "Launch File",
    "read_only": 1
   },
   {

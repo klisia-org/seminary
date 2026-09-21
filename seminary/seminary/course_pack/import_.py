@@ -627,18 +627,21 @@ class _Importer:
         This used to unpack the package into public/scorm/<course>/<title>/ with
         the title taken from the PACK'S MANIFEST -- a remote file write for
         anyone who could get a pack imported (p005a A05-8). Packages are stored,
-        not unpacked (p008 F8): pin the File to its new chapter and clear the
-        three path fields a manifest may have carried."""
+        not unpacked (p008 F8), and the three path fields a manifest may have
+        carried no longer exist (p009 S1): pin the File to its new chapter and
+        stop.
+
+        A pack is the transport channel between two sites already running this
+        software, and what it carries for SCORM is the **zip** -- never an
+        exploded tree, whose keys mean nothing on the receiving site. The
+        arriving zip is re-validated and exploded into this site's own prefix,
+        exactly as a local upload is; that enqueue lands with p009 S9."""
         if not (ch.get("is_scorm_package") and ch.get("scorm_package")):
             return
-        from seminary.seminary.api import pin_scorm_package
+        from seminary.seminary.api import pin_scorm_package, queue_scorm_unpack
 
         pin_scorm_package(ch.name, ch.scorm_package)
-        frappe.db.set_value(
-            "Course Schedule Chapter",
-            ch.name,
-            {"scorm_package_path": None, "manifest_file": None, "launch_file": None},
-        )
+        queue_scorm_unpack(ch.name, ch.scorm_package)
 
     def remap_lesson_scac_links(self):
         for lsrc, new_lesson in self.l_map.items():

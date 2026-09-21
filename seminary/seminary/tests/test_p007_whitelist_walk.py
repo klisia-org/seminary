@@ -137,6 +137,17 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # SCORM (p009). All five are the student's own player talking about the
+    # student's own launch. `launch` runs `require_enrolled` on the section --
+    # the same gate every other course read uses -- and the other four take a
+    # launch token that is bound to `(user, package, chapter)` and is checked
+    # against `frappe.session.user` before anything is read or written, so a
+    # caller cannot name someone else's attempt with them.
+    "seminary.scorm.launch.launch",
+    "seminary.scorm.launch.heartbeat",
+    "seminary.scorm.launch.end",
+    "seminary.scorm.runtime.commit",
+    "seminary.scorm.runtime.state",
     # lesson discussions: whoever reads the lesson posts; own-reply rules inside
     "seminary.seminary.api.reply_to_discussion_submission",
     "seminary.seminary.utils.create_discussion_topic",
@@ -216,6 +227,14 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # --- SCORM (p009 S10/S11). The grade mapping is a write capability into a
+    # section's gradebook, and the selftest reaches object storage and the
+    # network, so both are staff. `_lesson_context` gates before it reports
+    # anything about the lesson, which is why a Student gets PermissionError
+    # here rather than "no such lesson".
+    "seminary.scorm.grades.criteria_for_lesson",
+    "seminary.scorm.grades.set_criteria",
+    "seminary.scorm.selftest.run",
     # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
     # compute_occurrence_number / preview_recommendation / suggest_actions gated
     # here (p005a A01-16); the rest were already gated.
@@ -410,12 +429,35 @@ G6_STAFF_ONLY = {
     "seminary.storage.api.selftest",
 }
 
-# STAFF_ONLY by their gate, but never called by this test: doing so would
-# install or wipe demo data, write to object storage, create submitted
-# equivalences for the whole catalogue, or spend a third-party API call. The
-# gate is read here, not run -- the one place in this contract where that is
+# STAFF_ONLY by their gate, but never called by this test. Two reasons, and
+# each entry says which:
+#
+# 1. **Calling it would do something.** Install or wipe demo data, write to
+#    object storage, create submitted equivalences for the whole catalogue, or
+#    spend a third-party API call.
+# 2. **The probe cannot tell the gate from the answer.** An endpoint that
+#    refuses an unknown target with `PermissionError` -- deliberately, so that
+#    it cannot be used to probe which records exist -- refuses the synthetic
+#    `ZZT-no-such` docname for *everybody*, including the chair. The positive
+#    half of this test is unprovable with a fabricated target, and weakening the
+#    endpoint to make it provable would be the disclosure the endpoint avoids.
+#    Those entries name the suite that exercises the gate against real fixtures.
+#
+# The gate is read here, not run -- the one place in this contract where that is
 # true, and the reason each entry carries the gate it relies on.
 NOT_EXECUTED = {
+    # (1) seminary.scorm.selftest -- `frappe.only_for("System Manager")`; writes
+    # a probe object to the bucket and makes three outbound HTTPS requests.
+    "seminary.scorm.selftest.run",
+    # (2) seminary.scorm.grades -- `require_course_staff` on the lesson's own
+    # section, reached through `_lesson_context`, which refuses an unresolvable
+    # lesson with PermissionError rather than DoesNotExistError so that it
+    # cannot be used to probe which lessons exist. Both halves of the gate are
+    # exercised against a real section, roster and criterion in
+    # `test_p009_mapping` -- including the rule this walk could not reach at
+    # all: a criterion belonging to a *different* section is refused.
+    "seminary.scorm.grades.criteria_for_lesson",
+    "seminary.scorm.grades.set_criteria",
     # seminary.demo
     "seminary.demo.install_demo",
     "seminary.demo.remove_demo",

@@ -30,7 +30,10 @@
   "assessment_criteria_quiz",
   "assessment_criteria_assignment",
   "assessment_criteria_exam",
-  "assessment_criteria_discussion"
+  "assessment_criteria_discussion",
+  "scorm_sco_identifier",
+  "scorm_orphaned",
+  "scorm_assessment_criteria"
  ],
  "fields": [
   {
@@ -176,6 +179,30 @@
    "fieldname": "assessment_criteria_discussion",
    "fieldtype": "Link",
    "label": "Assessment Criteria Discussion",
+   "options": "Scheduled Course Assess Criteria"
+  },
+  {
+   "description": "For a lesson that plays a SCO: the manifest <item> identifier. A re-uploaded package is matched to existing lessons by this, which is what keeps a cohort's recorded progress when a package is replaced.",
+   "fieldname": "scorm_sco_identifier",
+   "fieldtype": "Data",
+   "label": "SCORM SCO Identifier",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Set when a re-uploaded package no longer declares this SCO. The lesson is kept, not deleted -- deleting it would take its Course Schedule Progress rows with it -- and staff remove it deliberately.",
+   "fieldname": "scorm_orphaned",
+   "fieldtype": "Check",
+   "label": "SCORM SCO Removed From Package",
+   "read_only": 1
+  },
+  {
+   "depends_on": "scorm_sco_identifier",
+   "description": "Optional. When set, a passing SCORM attempt at this SCO reports its score to this assessment criterion. Leave empty -- the default -- and the package records completion only. A SCORM score is a claim from code the student can reach, so nothing reaches the gradebook without this link (p009 section 2.12).",
+   "fieldname": "scorm_assessment_criteria",
+   "fieldtype": "Link",
+   "label": "SCORM Reports To",
    "options": "Scheduled Course Assess Criteria"
   }
  ],

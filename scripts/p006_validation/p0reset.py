@@ -99,7 +99,9 @@ for ch in db.get_all(
 db.set_value(
     "Course Schedule Chapter",
     FX["CHAPTER"],
-    "scorm_package_path",
+    # p009 S1 dropped `scorm_package_path`; `scorm_package_ref` is the
+    # permlevel-1 field the 4.1 row probes now.
+    "scorm_package_ref",
     None,
     update_modified=False,
 )

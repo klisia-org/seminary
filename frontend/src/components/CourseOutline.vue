@@ -55,14 +55,15 @@
 					class="flex w-full items-center p-2 group"
 					:class="{ 'cursor-grab': props.allowEdit }" :draggable="props.allowEdit"
 					@dragstart="onChapterDragStart($event, chapter, index)" @dragend="onChapterDragFinish">
+					<!-- The chevron used to be hidden on a SCORM chapter because
+					     such a chapter had nothing to expand. Its SCOs are its
+					     lessons now (p009 §2.10), so it expands like any other. -->
 					<ChevronRight :class="{
 						'rotate-90 transform duration-200': open,
 						'duration-200': !open,
-						hidden: chapter.is_scorm_package,
 						open: index == 1,
 					}" class="h-4 w-4 text-ink-gray-9 stroke-1" />
-					<div class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9"
-						@click="redirectToChapter(chapter)">
+					<div class="ml-2 text-left text-base font-medium leading-5 text-ink-gray-9">
 						{{ chapter.chapter_title }}
 					</div>
 					<div v-if="props.allowEdit" class="ml-auto flex items-center space-x-4">
@@ -462,28 +463,11 @@ const trashChapter = (chapterName) => {
 	})
 }
 
-const redirectToChapter = (chapter) => {
-	if (!chapter.is_scorm_package) return
-	event.preventDefault()
-	if (props.allowEdit) return
-	if (!user.data) {
-		toast.warning(
-			__('You are not enrolled'),
-			__('Please enroll for this course to view this lesson')
-		)
-		return
-	}
-
-	// p008 F8 removed SCORM extraction: a package is stored, never unpacked, and
-	// there has never been a route or a player to send anyone to -- `SCORMChapter`
-	// is not in the router, so this push threw and the click did nothing with no
-	// explanation. Say so until p009 builds the viewer (its own ADR: a separate
-	// origin, an iframe, a postMessage runtime).
-	toast.warning(
-		__('Not yet playable'),
-		__('This chapter is a SCORM package. Playing SCORM content is not available yet — ask your instructor for the material in another form.')
-	)
-}
+// `redirectToChapter` lived here. p008 F8 replaced a push to a `SCORMChapter`
+// route that has never existed with a "not yet playable" toast; p009 §2.11
+// replaces the toast with nothing, which is the correct end state. A SCORM
+// chapter's SCOs *are* its lessons, so it navigates like any other chapter and
+// no route is added.
 
 const isActiveLesson = (lessonNumber) => {
 	return (

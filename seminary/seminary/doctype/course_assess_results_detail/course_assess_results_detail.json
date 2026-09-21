@@ -22,7 +22,8 @@
   "column_break_kpfm",
   "maxextrapoints_card",
   "column_break_fsas",
-  "actualextrapt_card"
+  "actualextrapt_card",
+  "scorm_reported_card"
  ],
  "fields": [
   {
@@ -131,6 +132,14 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Assessment Title"
+  },
+  {
+   "default": "0",
+   "description": "This cell's raw score was reported by a SCORM package rather than entered or auto-graded. It is also how the SCORM path knows the cell is still its own: once a grader changes the number, later attempts stand down.",
+   "fieldname": "scorm_reported_card",
+   "fieldtype": "Check",
+   "label": "Reported by SCORM",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

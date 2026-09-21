@@ -30,9 +30,7 @@ import calendar
 from datetime import timedelta
 from dateutil import relativedelta
 from datetime import datetime
-import os
 import re
-import shutil
 import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
@@ -4792,14 +4790,9 @@ def upsert_chapter(
         # The package is STORED, never unpacked (p008 F8). See pin_scorm_package.
         # a dict from the SPA's JSON body, or a JSON string from a form post
         package_file = frappe._dict(frappe.parse_json(scorm_package) or {}).name
-        values.update(
-            {
-                "scorm_package": package_file,
-                "scorm_package_path": None,
-                "manifest_file": None,
-                "launch_file": None,
-            }
-        )
+        # Only the File. The three extracted-path fields went with p009 S1;
+        # `scorm_package_ref` is written by the explode job, not by the request.
+        values["scorm_package"] = package_file
 
     if name:
         chapter = frappe.get_doc("Course Schedule Chapter", name)
@@ -4812,9 +4805,7 @@ def upsert_chapter(
     chapter.save()
     if package_file:
         pin_scorm_package(chapter.name, package_file)
-
-    if is_scorm_package and not len(chapter.lessons):
-        add_lesson(chapter_title, chapter.name, course)
+        queue_scorm_unpack(chapter.name, package_file)
 
     return chapter
 
@@ -4838,68 +4829,51 @@ def upsert_chapter(
 # iframe viewer, a postMessage runtime).
 
 
-#: Bounds for a SCORM package, each raisable in site_config.json. Deliberately
-#: the same shape as the Course Pack caps (course_pack/constants.py): the archive
-#: is a different artifact but the attack is identical.
-MAX_SCORM_ENTRIES = 20000  # scorm_max_entries
-MAX_SCORM_UNCOMPRESSED_BYTES = 4 * 1024**3  # scorm_max_uncompressed_bytes
-MAX_SCORM_MEMBER_BYTES = 1024**3  # scorm_max_member_bytes
-SCORM_RATIO_FLOOR_BYTES = 100 * 1024**2
-MAX_SCORM_RATIO = 200
-
-
-def _scorm_cap(key, default):
-    return int(frappe.conf.get(key) or default)
-
-
 def _check_scorm_archive(f):
-    """Open the package and bound it before anything accepts it (p008 F17e).
+    """Open the package and bound it before anything accepts it.
 
-    Until now this checked that the name ended `.zip` and nothing else -- no
-    magic bytes, no archive validity, no bounds. That was harmless only because
-    F8 stopped anything from opening a package; **p009 is the thing that will
-    open it**, and would have inherited an unchecked artifact with a chapter
-    already pointing at it. So the check belongs here, at the one moment a
-    package is accepted, not in the player.
+    The rules live in `seminary.scorm.archive` because **two** things look at a
+    package now: this, which refuses a bad zip at the moment a chapter accepts
+    it, and the explode job, which re-runs the same checks before it writes a
+    byte (p009 §2.4). p008 F17e put them here when nothing opened a package.
+    Two copies of a bounds check are two copies that drift.
 
-    Everything is read from the central directory, so it costs no decompression;
-    a member that lies about its size cannot exceed the budget anyway (`zf.read`
-    stops at the declared size and then fails CRC -- verified, p008 F17).
+    Everything is read from the central directory, so it costs no
+    decompression; a member that lies about its size cannot exceed the budget
+    anyway (`zf.read` stops at the declared size and then fails CRC -- verified,
+    p008 F17 -- and the explode job counts the bytes as well).
     """
+    from seminary.scorm import archive
     from seminary.storage.files import materialize
 
     try:
         with materialize(f) as path:
             with zipfile.ZipFile(path) as zf:
-                infos = zf.infolist()
-                names = zf.namelist()
+                archive.check_bounds(zf, f.file_size or 0)
     except zipfile.BadZipFile:
+        _refuse_scorm(f, "not a zip archive")
         frappe.throw(_("This file is not a SCORM package (not a zip archive)."))
     except FileNotFoundError:
         frappe.throw(_("SCORM package not found."), frappe.DoesNotExistError)
+    except archive.PackageError as e:
+        # The upload is refused here, synchronously, before a chapter exists --
+        # so `explode`'s own `scorm_explode_refused` line never gets written and
+        # this rejection would otherwise leave no trace at all. A zip bomb
+        # stopped at the door is exactly the event an operator wants to find.
+        _refuse_scorm(f, str(e))
+        frappe.throw(str(e))
 
-    if len(infos) > _scorm_cap("scorm_max_entries", MAX_SCORM_ENTRIES):
-        frappe.throw(_("This SCORM package has too many files."))
 
-    total = sum(i.file_size for i in infos)
-    if total > _scorm_cap("scorm_max_uncompressed_bytes", MAX_SCORM_UNCOMPRESSED_BYTES):
-        frappe.throw(_("This SCORM package is too large once unpacked."))
+def _refuse_scorm(f, reason: str) -> None:
+    """One line for a package refused at ingest. Never raises, never blocks."""
+    from seminary.seminary import security_log
 
-    member_cap = _scorm_cap("scorm_max_member_bytes", MAX_SCORM_MEMBER_BYTES)
-    if any(i.file_size > member_cap for i in infos):
-        frappe.throw(_("This SCORM package contains a file that is too large."))
-
-    compressed = f.file_size or 0
-    if total > SCORM_RATIO_FLOOR_BYTES and compressed:
-        if total / compressed > MAX_SCORM_RATIO:
-            frappe.throw(_("This file does not look like a SCORM package."))
-
-    # SCORM requires `imsmanifest.xml`; the spec puts it at the root, but zipping
-    # the containing folder is a common enough mistake that a nested one is
-    # accepted. Without it there is nothing to play, and refusing here gives the
-    # instructor a message now instead of a broken chapter later.
-    if not any(n.rsplit("/", 1)[-1].lower() == "imsmanifest.xml" for n in names):
-        frappe.throw(_("This SCORM package has no imsmanifest.xml."))
+    security_log.record_denial(
+        "scorm_ingest_refused",
+        file=f.name,
+        file_size=f.file_size,
+        reason=reason,
+    )
 
 
 def _check_scorm_package(file_name):
@@ -4947,31 +4921,49 @@ def pin_scorm_package(chapter_name, file_name):
         )
 
 
-def add_lesson(lesson_title, chapter, course_sc):
-    lesson = frappe.new_doc("Course Lesson")
-    # The fields are `lesson_title` and `course_sc` (fetched from the chapter).
-    # This used to set `title` and `course`, neither of which exists, so the
-    # insert always failed on the mandatory lesson_title -- creating a SCORM
-    # chapter has never completed. Fixed with p008 F8, which keeps ingestion.
-    lesson.update(
-        {
-            "lesson_title": lesson_title,
-            "chapter": chapter,
-            "course_sc": course_sc,
-        }
-    )
-    lesson.insert()
+def queue_scorm_unpack(chapter_name, file_name):
+    """Record a SCORM Package for this chapter and queue the unpack (p009 §2.4).
 
-    lesson_reference = frappe.new_doc("Course Schedule Lesson Reference")
-    lesson_reference.update(
+    The row is created here, synchronously, so the chapter has something whose
+    status the player can read -- `Pending` until a worker picks it up, then
+    `Exploding`, then `Ready` or `Failed`. Nothing is unpacked in the request:
+    a package is measured in gigabytes and the zip has to be streamed twice.
+
+    Dedup happens in the job rather than here, because it keys on a SHA-256 that
+    is only known once the zip has been read -- and reading it synchronously is
+    exactly what the job exists to avoid.
+    """
+    from seminary.scorm import explode
+
+    existing = frappe.db.get_value(
+        "Course Schedule Chapter", chapter_name, "scorm_package_ref"
+    )
+    if existing and frappe.db.get_value("SCORM Package", existing, "source_file") == (
+        file_name
+    ):
+        return existing
+
+    package = frappe.get_doc(
         {
-            "lesson": lesson.name,
-            "parent": chapter,
-            "parenttype": "Course Schedule Chapter",
-            "parentfield": "lessons",
+            "doctype": "SCORM Package",
+            "source_file": file_name,
+            "status": "Pending",
         }
     )
-    lesson_reference.insert()
+    package.insert(ignore_permissions=True)
+    frappe.db.set_value(
+        "Course Schedule Chapter", chapter_name, "scorm_package_ref", package.name
+    )
+    explode.enqueue(chapter_name, package.name)
+    return package.name
+
+
+# `add_lesson` lived here. It existed to give a SCORM chapter one placeholder
+# lesson, and p008 F8 found it had never once succeeded -- it set `title` and
+# `course`, neither of which is a field. p009 §2.10 replaced the placeholder
+# with the real thing: one Course Lesson per SCO, created from the manifest by
+# `seminary.scorm.lessons.reconcile`. It had no other caller and was not
+# whitelisted.
 
 
 @frappe.whitelist()
@@ -4980,73 +4972,37 @@ def delete_chapter(chapter):
     chapterInfo = frappe.db.get_value(
         "Course Schedule Chapter",
         chapter,
-        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_path"],
+        ["name", "coursesc", "chapter_title", "is_scorm_package", "scorm_package_ref"],
         as_dict=True,
     )
     if not chapterInfo:
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
     require_course_staff(chapterInfo.coursesc)
 
-    if chapterInfo.is_scorm_package:
-        delete_scorm_package(chapterInfo)
-
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
     frappe.db.delete("Course Lesson", {"chapter": chapter})
     frappe.db.delete("Course Schedule Chapter", chapter)
 
+    # The package's objects go when the LAST chapter pointing at it does
+    # (p009 §2.13) -- a template import and a Course Pack both share one package
+    # between sections. Nothing is left on local disk to remove: p008 F8 stopped
+    # extracting and its teardown patch deleted the trees `delete_scorm_package`
+    # used to walk. Called after the row is gone, so the refcount sees the truth;
+    # these are raw `db.delete` calls, so no controller hook fires for us.
+    if chapterInfo.scorm_package_ref:
+        from seminary.scorm import lifecycle
 
-def delete_scorm_package(chapter):
-    """Remove the extracted SCORM directory for ``chapter`` (a Course Schedule
-    Chapter row with name, coursesc, chapter_title, scorm_package_path).
+        lifecycle.release(chapterInfo.scorm_package_ref)
 
-    The operand is rebuilt from the chapter exactly as ``extract_package``
-    builds it -- ``public/scorm/<course schedule>/<chapter title>`` -- and must
-    resolve under the scorm root; the stored ``scorm_package_path`` is only a
-    cross-check, never the path that is deleted (p006 §2.1). "Import Course
-    Template" copies ``scorm_package_path`` verbatim, so the directory is left
-    alone while any other chapter still points at it.
-    """
-    if not (chapter and chapter.coursesc and chapter.chapter_title):
-        return
 
-    scorm_root = os.path.realpath(frappe.get_site_path("public", "scorm"))
-    expected = os.path.realpath(
-        frappe.get_site_path("public", "scorm", chapter.coursesc, chapter.chapter_title)
-    )
-    if (
-        expected == scorm_root
-        or os.path.commonpath([expected, scorm_root]) != scorm_root
-    ):
-        frappe.log_error(
-            f"delete_scorm_package: refused path outside scorm root for chapter {chapter.name}: {expected}",
-            "SCORM delete refused",
-        )
-        return
-
-    # Cross-check: the stored path should be the same directory. If it is not,
-    # the row was edited by hand; refuse rather than guess.
-    stored = (chapter.scorm_package_path or "").lstrip("/")
-    if stored and os.path.realpath(frappe.get_site_path("public", stored)) != expected:
-        frappe.log_error(
-            f"delete_scorm_package: stored path does not match rebuilt path for chapter {chapter.name}",
-            "SCORM delete refused",
-        )
-        return
-
-    # Reference count: another chapter (template-derived or source) sharing the
-    # same extracted directory keeps the files.
-    if chapter.scorm_package_path and frappe.db.exists(
-        "Course Schedule Chapter",
-        {
-            "scorm_package_path": chapter.scorm_package_path,
-            "name": ["!=", chapter.name],
-        },
-    ):
-        return
-
-    if os.path.isdir(expected) and not os.path.islink(expected):
-        shutil.rmtree(expected)
+# `delete_scorm_package` lived here until p009 S1. It walked
+# `public/scorm/<course>/<chapter title>` with a `commonpath` containment check
+# and a `scorm_package_path` cross-check -- careful code (p006 F1) for a tree
+# that, since p008 F8 and its teardown patch, no site has and no code writes.
+# It went with the three chapter fields it cross-checked against. Package
+# objects now live in object storage under `scorm/<package id>/` and are removed
+# by refcount on chapter references (p009 §2.13).
 
 
 @frappe.whitelist()

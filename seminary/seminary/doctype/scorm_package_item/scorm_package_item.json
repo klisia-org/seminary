@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "creation": "2026-09-20 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sco_identifier",
+  "title",
+  "href"
+ ],
+ "fields": [
+  {
+   "description": "The manifest <item> identifier. Lessons are matched to a re-uploaded package by this, so it is what survives a re-upload.",
+   "fieldname": "sco_identifier",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "SCO Identifier",
+   "reqd": 1
+  },
+  {
+   "description": "The item title, sanitised as any author string is.",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "description": "Relative launch path. Checked against the inventory at explode time; a href the archive does not contain is refused. Bounded at 1000 to match the member-path cap.",
+   "fieldname": "href",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Launch href",
+   "length": 1000
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-20 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "SCORM Package Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -26,21 +26,28 @@ def execute():
     from seminary.seminary.api import pin_scorm_package
 
     if frappe.db.exists("DocType", "Course Schedule Chapter"):
+        # p009 S1 dropped these three columns outright. On a site that ran this
+        # patch when they existed nothing changes; on one where p009 has already
+        # migrated there is nothing to clear, and the patch must not crash
+        # trying -- a patch that explodes when invoked is a landmine for
+        # whoever rebuilds a site or runs it by hand.
+        stale = [
+            f
+            for f in ("scorm_package_path", "manifest_file", "launch_file")
+            if frappe.db.has_column("Course Schedule Chapter", f)
+        ]
         for ch in frappe.get_all(
             "Course Schedule Chapter",
             filters={"is_scorm_package": 1},
             fields=["name", "scorm_package"],
         ):
-            frappe.db.set_value(
-                "Course Schedule Chapter",
-                ch.name,
-                {
-                    "scorm_package_path": None,
-                    "manifest_file": None,
-                    "launch_file": None,
-                },
-                update_modified=False,
-            )
+            if stale:
+                frappe.db.set_value(
+                    "Course Schedule Chapter",
+                    ch.name,
+                    dict.fromkeys(stale),
+                    update_modified=False,
+                )
             if ch.scorm_package and frappe.db.exists("File", ch.scorm_package):
                 try:
                     pin_scorm_package(ch.name, ch.scorm_package)

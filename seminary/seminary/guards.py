@@ -472,6 +472,7 @@ COURSE_FIELD = {
     "Discussion Submission": "coursesc",
     "Quiz Submission": "course",
     "Course Schedule Progress": "course",
+    "SCORM Attempt": "course",
     "Course Enrollment Individual": "coursesc_ce",
     "Course Folder": "course_schedule",
 }

@@ -791,7 +791,10 @@ def get_course_outline(course, progress=False):
                 "name",
                 "chapter_title",
                 "is_scorm_package",
-                "launch_file",
+                # p009: `launch_file` was a path this stopped writing at p008 F8
+                # and nothing ever read. The ref is what says whether the package
+                # has been unpacked and is therefore playable.
+                "scorm_package_ref",
                 "scorm_package",
                 # The competency this chapter delivers (ADR 065). Carried so the
                 # editor can show the current mapping without a second call.
@@ -1187,8 +1190,19 @@ def get_lesson(course, chapter, lesson):
             "content",
             "instructor_content",
             "instructor_notes",
+            # p009: a SCORM lesson renders a player instead of a body. The SPA
+            # needs the chapter to launch against and the SCO to open.
+            "chapter",
+            "scorm_sco_identifier",
+            "scorm_orphaned",
         ],
         as_dict=True,
+    )
+    lesson_details["is_scorm_package"] = bool(
+        lesson_details.chapter
+        and frappe.db.get_value(
+            "Course Schedule Chapter", lesson_details.chapter, "is_scorm_package"
+        )
     )
 
     if frappe.session.user == "Guest":
