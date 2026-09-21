@@ -623,6 +623,17 @@ plagiarism_providers = {
 # inside `location` blocks that declare their own, and skips non-2xx/3xx -- so
 # every error page was bare. CSP ships **report-only**: set `seminary_csp_enforce`
 # in site_config to enforce, once the reports are clean.
+# The SCORM delivery origin (privatedocs/p009 §2.2, §2.6). Registered as a page
+# renderer rather than a whitelisted method because a package's relative
+# references resolve against the DOCUMENT URL, so the URL has to be a real path.
+# It renders only on `scorm_delivery_host`, and only for `/scorm/...`.
+page_renderer = ["seminary.scorm.delivery.SCORMDelivery"]
+
+# The other half of that split, and the half that makes it real: frappe routes
+# on path and ignores `Host`, so without this the whole app would answer on the
+# delivery domain. There, only `/scorm/...` exists.
+before_request = ["seminary.scorm.delivery.guard_delivery_host"]
+
 after_request = [
     "seminary.seminary.http_headers.apply_security_headers",
     # Every 403/401 that never passed through `guards` -- frappe's own

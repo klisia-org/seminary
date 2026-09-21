@@ -47,6 +47,16 @@ class FakeBackend:
     def delete(self, key):
         self.objects.pop(key, None)
 
+    def stream(self, key, chunk_size=1024 * 1024):
+        blob = self.objects[key][0]
+        for i in range(0, len(blob), chunk_size):
+            yield blob[i : i + chunk_size]
+
+    def presigned_get(
+        self, key, ttl=None, file_name=None, content_type=None, as_attachment=False
+    ):
+        return f"https://objectstore.invalid/{key}?sig=fake&ttl={ttl}"
+
     def list_keys(self, prefix):
         return [
             {"key": k, "size": len(v[0]), "last_modified": "2020-01-01 00:00:00"}
