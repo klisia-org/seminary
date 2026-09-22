@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-09-17 12:00:00.000000",
- "description": "One line of the folder's change log: who did what to which file, and from which section (p006 F2, ADR 2.2a). A log, not a snapshot.",
+ "description": "One line of the folder's change log: who did what to which file, and from which section. A log, not a snapshot.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

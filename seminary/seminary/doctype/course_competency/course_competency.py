@@ -12,6 +12,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary import cbe
 from seminary.seminary.utils import assert_url_safe_code
 
 
@@ -58,16 +59,7 @@ class CourseCompetency(Document):
         can ever be recorded against.
         """
         scale = frappe.db.get_value("Course", self.course, "default_grading_scale")
-        allowed = {}
-        if scale:
-            allowed = {
-                d.dimension_code: d.dimension
-                for d in frappe.get_all(
-                    "Grading Scale Dimensions",
-                    filters={"parent": scale},
-                    fields=["dimension_code", "dimension"],
-                )
-            }
+        allowed = cbe.scale_dimensions(scale) if scale else {}
 
         if not allowed:
             if self.dimensions:
@@ -82,28 +74,12 @@ class CourseCompetency(Document):
 
         seen = {}
         for row in self.dimensions:
-            if row.dimension_code not in allowed:
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} is not a dimension of grading scale {2}. "
-                        "Available: {3}."
-                    ).format(
-                        row.idx,
-                        row.dimension_code,
-                        scale,
-                        ", ".join(sorted(allowed)),
-                    )
-                )
-            if row.dimension_code in seen:
-                frappe.throw(
-                    _("Dimension {0} appears in rows {1} and {2}.").format(
-                        row.dimension_code, seen[row.dimension_code], row.idx
-                    )
-                )
-            seen[row.dimension_code] = row.idx
             # Denormalised label, refreshed on every save so a renamed dimension
             # does not leave stale text on the competency.
-            row.dimension = allowed[row.dimension_code]
+            row.dimension = cbe.assert_known_dimension(
+                allowed, row.dimension_code, scale=scale, idx=row.idx
+            )
+            cbe.assert_unique_dimension(seen, row.dimension_code, row.idx)
 
 
 @frappe.whitelist()

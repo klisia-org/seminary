@@ -72,14 +72,14 @@
   },
   {
    "default": "0",
-   "description": "Show this address to other members in a people directory. Off unless the person turns it on. The only reader today is the Alumni Directory, which also requires the alumnus's own \"Show in Directory\" and a verified address (ADR 070).",
+   "description": "Show this address to other members in a people directory. Off unless the person turns it on. The only reader today is the Alumni Directory, which also requires the alumnus's own \"Show in Directory\" and a verified address.",
    "fieldname": "share_in_directory",
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Share in Directory"
   },
   {
-   "description": "Who put this row here. Only \"Self-service\" rows may be edited or removed by the person on the portal; everything else — including the blank of a row that predates this field — is the school's and stays locked (ADR 070).",
+   "description": "Who put this row here. Only \"Self-service\" rows may be edited or removed by the person on the portal; everything else — including the blank of a row that predates this field — is the school's and stays locked.",
    "fieldname": "source",
    "fieldtype": "Select",
    "label": "Source",

@@ -92,3 +92,43 @@ are capture-then-promote, **not** a second home for the data, and any new
 onboarding path must call `ensure_person()` at its head. Open: merge tooling
 for duplicates; folding Instructor's `messaging_apps` child into Person Channel
 Address.
+
+## Addendum (2026-09-22) — deleting either side of the Person↔Customer link
+
+The `Person.customer` / `Customer.person` mirror was write-only. `link_customer()`
+fills both halves first-link-wins and nothing ever cleared either one, while both
+Custom Fields carry `read_only: 1` — so neither side could be deleted, and the
+read-only flag left no manual escape. Frappe runs `on_trash` **before**
+`check_if_doc_is_linked` (`frappe/model/delete_doc.py`), which is precisely where a
+soft mirror is meant to drop itself: ADR 048's Donor↔Person link does that in
+`on_donor_trash` and describes itself as mirroring this one. It wasn't mirroring
+it — oikonomos registered no `doc_events` for `Customer` or `Person` at all.
+
+On the Customer side the failure was also mislabeled. Customer has a `disabled`
+field, so Frappe swallows `LinkExistsError` into *"You can disable this Customer
+instead of deleting it"*, naming no link and pointing at the wrong remedy.
+
+**Decision.** oikonomos gains `on_trash` on both `Customer` and `Person`, each
+clearing the opposite half of the mirror. Both clear by *reverse lookup* rather
+than by reading the doc's own link field, because first-link-wins applies to each
+half independently and the two can legitimately disagree: a Person already linked
+to C1 whose Student later gets C2 ends up with `Person.customer = C1` and
+`C2.person = Person` — deleting C1 by its own (empty) `person` field would clear
+nothing and stay blocked. Both fields are `search_index: 1`, so the lookup is
+cheap. `on_update` on Customer additionally clears a stale `Person.customer` when
+a Customer is re-pointed, the same guard `on_donor_update` carries.
+
+**Scope is the mirror only.** `Student.customer` and `Student Applicant.customer`
+are billing identity, not a mirror — a Student whose Customer vanished silently
+would simply mint a fresh one on its next save — so a Customer a Student owns is
+still not deletable. In practice it rarely reaches `Student.customer`: measured on
+charis, ERPNext's own `Customer.on_trash` raises first over the Contact it tears
+down (`Cannot delete … Contact … is linked with Sales Invoice …`). Useful property
+of that ordering: `doc_events` handlers run after the controller's `on_trash`, so a
+delete that fails leaves the mirror intact rather than half-cleared.
+`Student Contacts.contact` is `reqd` on a child row and cannot be nulled at all —
+the row is what gets removed.
+
+Easier: a Person or an unowned Customer now deletes without a bench console.
+Harder: deleting a Student's Customer is still a two-step (detach the Student
+first), and the mirror's repair story stays in `link_customers_to_persons`.
