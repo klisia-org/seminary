@@ -1,9 +1,6 @@
 <template>
   <div v-if="isStudent">
-    <h2
-      class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      {{ __('Program Audit') }}
-    </h2>
+    <PageHeader :title="__('Program Audit')" />
 
     <div class="px-5 py-4">
       <!-- PE Selector -->
@@ -461,6 +458,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Button, Dialog, FileUploader, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { computed, inject, reactive, ref, watch } from 'vue'
 

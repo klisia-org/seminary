@@ -1,4 +1,35 @@
 <template>
+	<PageHeader :title="__('Community')">
+		<template #actions>
+					<select v-if="cohorts.length" v-model="selectedCohort"
+						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
+						<!-- One scope control, not two: "" is every post I may see --
+						     portal-wide from anywhere, plus my own cohorts' -- which
+						     is exactly what an unfiltered feed already returns. -->
+						<option value="">{{ __('All posts') }}</option>
+						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
+					</select>
+					<button v-if="cohorts.length > 1 && selectedCohort"
+						:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
+						@click="setDefaultCohort">
+						<Star class="h-4 w-4"
+							:class="defaultCohort === selectedCohort ? 'fill-current text-yellow-500' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
+					</button>
+					<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
+						<template #prefix><Megaphone class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
+						<template #prefix><UsersRound class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="canModerate" variant="subtle" :title="__('Moderation queue')" @click="openModeration">
+						<template #prefix><Shield class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="cohorts.length" variant="solid" :label="__('New post')" @click="openCompose">
+						<template #prefix><SquarePen class="h-4 w-4" /></template>
+					</Button>
+		</template>
+	</PageHeader>
+
 	<div class="mx-auto flex h-full w-full max-w-5xl gap-4 px-4 py-6">
 		<!-- Bible tree (left) -->
 		<aside v-if="cohorts.length && bibleTree.data?.length"
@@ -42,38 +73,6 @@
 		</aside>
 
 		<div class="flex min-w-0 flex-1 flex-col">
-		<!-- header: title + cohort switcher -->
-		<div class="mb-4 flex items-center justify-between gap-3">
-			<div class="flex items-center gap-2">
-				<MessagesSquare class="h-6 w-6 text-ink-gray-7" />
-				<h1 class="text-xl font-semibold text-ink-gray-9">{{ __('Community') }}</h1>
-			</div>
-			<div class="flex items-center gap-2">
-				<select v-if="cohorts.length" v-model="selectedCohort"
-					class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
-					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
-				</select>
-				<button v-if="cohorts.length > 1 && selectedCohort"
-					:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
-					@click="setDefaultCohort">
-					<Star class="h-4 w-4"
-						:class="defaultCohort === selectedCohort ? 'fill-current text-yellow-500' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
-				</button>
-				<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
-					<template #prefix><Megaphone class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
-					<template #prefix><UsersRound class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="canModerate" variant="subtle" :title="__('Moderation queue')" @click="openModeration">
-					<template #prefix><Shield class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="selectedCohort" variant="solid" :label="__('New post')" @click="openCompose">
-					<template #prefix><SquarePen class="h-4 w-4" /></template>
-				</Button>
-			</div>
-		</div>
-
 		<!-- pending invitations banner -->
 			<div v-if="pendingRes.data?.length" class="mb-4 flex flex-col gap-2">
 				<div v-for="inv in pendingRes.data" :key="inv.membership"
@@ -89,7 +88,8 @@
 				</div>
 			</div>
 
-			<div v-if="!cohorts.length && !pendingRes.data?.length" class="mt-16 text-center text-ink-gray-5">
+			<div v-if="!cohorts.length && !pendingRes.data?.length && !feed.data?.length"
+				class="mt-16 text-center text-ink-gray-5">
 			{{ __('You are not part of any cohort yet.') }}
 		</div>
 
@@ -121,16 +121,8 @@
 				</button>
 			</div>
 
-			<!-- visibility scope -->
 			<div class="mb-3 flex items-center gap-2 text-sm text-ink-gray-6">
-				<span>{{ __('Show') }}</span>
-				<select v-model="scopeFilter" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm text-ink-gray-8"
-					@change="refresh">
-					<option value="">{{ __('All') }}</option>
-					<option value="cohort_only">{{ __('Cohort only') }}</option>
-					<option value="portal_users">{{ __('Whole community') }}</option>
-				</select>
-				<label class="ml-2 flex items-center gap-1">
+				<label class="flex items-center gap-1">
 					<input type="checkbox" v-model="savedOnly" class="rounded" @change="refresh" />
 					<Bookmark class="h-3.5 w-3.5" />{{ __('Saved') }}
 				</label>
@@ -325,6 +317,10 @@
 		<Dialog v-model="showCompose" :options="{ title: __('New post'), size: 'lg' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
+					<select v-if="cohorts.length > 1" v-model="draft.cohort"
+						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
+						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
+					</select>
 					<select v-model="draft.channel"
 						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 						<option value="" disabled>{{ __('Select a channel') }}</option>
@@ -342,8 +338,34 @@
 							class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
+							<!-- ADR 076: shown only to those who may use it, so most
+							     people's composer is unchanged. The server enforces
+							     the same test -- a hidden control is not a permission. -->
+							<option v-if="canBroadcast" value="mentors">{{ __('Mentors in this cohort') }}</option>
+							<option value="direct">{{ __('One person') }}</option>
 							<option value="private">{{ __('Only me') }}</option>
 						</select>
+						<!-- Scoped type-ahead: only people the author already shares a
+						     cohort with, so the picker never promises an unreachable
+						     recipient and lineage size never matters. -->
+						<div v-if="draft.visibility === 'direct'" class="relative">
+							<Input v-model="recipientQuery" type="text"
+								:placeholder="__('Search someone in your cohorts…')"
+								@input="searchRecipients" />
+							<div v-if="draft.direct_recipient" class="mt-1 text-xs text-ink-gray-6">
+								{{ __('To: {0}').format(recipientLabel) }}
+							</div>
+							<ul v-if="recipientResults.length"
+								class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-outline-gray-2 bg-surface-white shadow">
+								<li v-for="r in recipientResults" :key="r.person">
+									<button type="button" class="flex w-full flex-col px-3 py-1.5 text-left text-sm hover:bg-surface-gray-2"
+										@click="pickRecipient(r)">
+										<span class="text-ink-gray-8">{{ r.full_name }}</span>
+										<span class="text-xs text-ink-gray-5">{{ r.cohort_name }}</span>
+									</button>
+								</li>
+							</ul>
+						</div>
 					</div>
 					<Input v-model="draft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
 					<Input v-model="draft.scripture" type="text"
@@ -646,6 +668,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, createResource, debounce } from 'frappe-ui'
@@ -669,9 +692,8 @@ const replyTo = ref(null)
 const replyText = ref('')
 const showCompose = ref(false)
 const composeKey = ref(0)
-const draft = reactive({ channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
 const prayerView = ref('active')
-const scopeFilter = ref('')
 const savedOnly = ref(false)
 const searchQuery = ref('')
 const showPassage = ref(false)
@@ -756,7 +778,6 @@ const feed = createResource({
 	makeParams: () => ({
 		cohort: selectedCohort.value,
 		channel: channelFilter.value || null,
-		visibility: scopeFilter.value || null,
 		saved_only: savedOnly.value ? 1 : 0,
 		answered: isPrayerChannel.value ? (prayerView.value === 'answered' ? 1 : 0) : null,
 	}),
@@ -781,6 +802,8 @@ const markAnswered = createResource({ url: 'seminary.seminary.discipleship.feed_
 const reopenPrayer = createResource({ url: 'seminary.seminary.discipleship.feed_api.reopen_prayer' })
 const linkPost = createResource({ url: 'seminary.seminary.discipleship.feed_api.link_post' })
 const canModerateRes = createResource({ url: 'seminary.seminary.discipleship.moderation.can_moderate', auto: true })
+const canBroadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.can_broadcast', auto: true })
+const searchRecipientsRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.search_recipients' })
 const flagsRes = createResource({ url: 'seminary.seminary.discipleship.moderation.list_flags' })
 const flagContent = createResource({ url: 'seminary.seminary.discipleship.moderation.flag_content' })
 const resolveFlagRes = createResource({ url: 'seminary.seminary.discipleship.moderation.resolve_flag' })
@@ -868,12 +891,14 @@ function reactionFor(post, rtName) {
 function reactionCount(post, rtName) { return reactionFor(post, rtName)?.count || 0 }
 function reactionMine(post, rtName) { return !!reactionFor(post, rtName)?.mine }
 
-const visIconMap = { cohort_only: Users, portal_users: Globe, private: Lock, direct: Mail }
+const visIconMap = { cohort_only: Users, portal_users: Globe, mentors: UsersRound, private: Lock, direct: Mail }
 function visIcon(v) { return visIconMap[v] || Users }
 
 // --- actions ---
 function refresh() {
-	if (!selectedCohort.value) return
+	// No early return on a missing cohort any more: "" is the All-posts view,
+	// not an unready state. list_feed/unread_counts both treat an absent cohort
+	// as "everything I may see".
 	feed.fetch()
 	unreadRes.fetch()
 }
@@ -957,6 +982,28 @@ function submitLink(post) {
 
 // --- moderation ---
 const canModerate = computed(() => !!canModerateRes.data)
+// Same authority as the leader broadcast (ADR 076): staff, or a leader of a
+// cohort. It gates only what the composer *shows*; create_post re-checks.
+const canBroadcast = computed(() => !!canBroadcastRes.data)
+const recipientQuery = ref('')
+const recipientResults = ref([])
+const recipientLabel = ref('')
+let recipientTimer = null
+function searchRecipients() {
+	clearTimeout(recipientTimer)
+	const q = recipientQuery.value.trim()
+	if (q.length < 2) { recipientResults.value = []; return }
+	// Debounced: the picker searches, it never enumerates.
+	recipientTimer = setTimeout(() => {
+		searchRecipientsRes.submit({ query: q }).then((rows) => { recipientResults.value = rows || [] })
+	}, 250)
+}
+function pickRecipient(r) {
+	draft.direct_recipient = r.person
+	recipientLabel.value = r.full_name
+	recipientQuery.value = ''
+	recipientResults.value = []
+}
 const showReport = ref(false)
 const reportTarget = ref(null)
 const reportReason = ref('Inappropriate')
@@ -1173,13 +1220,19 @@ function submitBroadcast() {
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
 }
 function openCompose() {
-	Object.assign(draft, { channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+	// A post always belongs to a cohort (ADR 064 keeps `cohort` for attribution
+	// and lineage), so in the All-posts view the composer has to ask. Default to
+	// the starred cohort, else the first one.
+	Object.assign(draft, { cohort: selectedCohort.value || defaultCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+	recipientQuery.value = ''
+	recipientResults.value = []
+	recipientLabel.value = ''
 	composeKey.value++ // force the editor to remount with empty content
 	showCompose.value = true
 }
 function submitPost() {
-	if (!draft.channel || !draft.content?.trim()) {
-		createToast({ title: __('A channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+	if (!draft.cohort || !draft.channel || !draft.content?.trim()) {
+		createToast({ title: __('A cohort, a channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
 		return
 	}
 	if (composeChannelKind.value === 'video_timestamp' && !draft.video_url?.trim()) {
@@ -1188,7 +1241,7 @@ function submitPost() {
 	}
 	createPost
 		.submit({
-			cohort: selectedCohort.value,
+			cohort: draft.cohort,
 			channel: draft.channel,
 			title: draft.title || null,
 			content: draft.content,

@@ -1,11 +1,9 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "COHORT-FLAG-.#####",
  "creation": "2026-07-22 12:00:00",
  "description": "A report that a post or reply is inappropriate, for a cohort leader or staff to review. Reporting is separate from reacting.",
  "doctype": "DocType",
- "editable_grid": 0,
  "engine": "InnoDB",
  "field_order": [
   "target_doctype",
@@ -25,6 +23,7 @@
   {
    "fieldname": "target_doctype",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Target Type",
    "options": "DocType",
@@ -33,6 +32,7 @@
   {
    "fieldname": "target_name",
    "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
    "label": "Target",
    "options": "target_doctype",
    "reqd": 1,
@@ -62,6 +62,7 @@
   {
    "fieldname": "reason",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Reason",
    "options": "Inappropriate\nOff-topic\nHarmful\nSpam\nOther",
@@ -105,7 +106,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-09-22 22:37:31.160038",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Content Flag",
@@ -145,6 +146,18 @@
   {
    "read": 1,
    "role": "Cohort Participant"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

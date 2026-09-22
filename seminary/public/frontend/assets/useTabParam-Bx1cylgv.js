@@ -1,0 +1,1 @@
+import{$t as e,Qt as t,fn as n,sr as r}from"./frappe-ui-BjRT5H_W.js";import{u as i}from"./editorjs-BbaSkpwg.js";function a(a,o,s=`tab`){let c=t(),l=e();return n({get(){let e=c.query[s];return r(a).includes(e)?e:r(o)},set(e){if(!r(a).includes(e))return;let t=i(i({},c.query),{},{[s]:e});e===r(o)&&delete t[s],l.replace({query:t})}})}export{a as t};

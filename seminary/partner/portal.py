@@ -13,7 +13,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, now_datetime
 
-from seminary.partner.permissions import my_partner_org
+from seminary.partner.permissions import STAFF_BYPASS, my_partner_org
 from seminary.seminary.person import ensure_person
 
 PIPELINE_STATUSES = (
@@ -212,6 +212,7 @@ def update_org(values, org=None) -> dict:
 def get_people(org=None) -> list[dict]:
     org = _require_org(org)
     doc = frappe.get_doc("Partner Organization", org)
+    me = _current_person()
     people = []
     for c in doc.contacts:
         person = (
@@ -233,8 +234,15 @@ def get_people(org=None) -> list[dict]:
                 "role_at_org": c.role_at_org,
                 "is_primary": c.is_primary,
                 "portal_access": c.portal_access,
+                # ADR 077: who currently acts for the org, and whether the
+                # caller is the one who may change that.
+                "relationship_status": c.relationship_status or "Active",
             }
         )
+    is_staff = bool(set(frappe.get_roles(frappe.session.user)) & STAFF_BYPASS)
+    may_manage = is_staff or _is_primary_contact(org, me)
+    for p in people:
+        p["may_manage"] = bool(may_manage and p["person"] != me)
     return people
 
 
@@ -656,3 +664,139 @@ def save_contact_log(
         )
     doc.save(ignore_permissions=True)
     return {"name": doc.name}
+
+
+# --------------------------------------------------------------------------- #
+# Membership lifecycle (ADR 077)
+# --------------------------------------------------------------------------- #
+def _contact_row(org: str, person: str):
+    """The Partner Contact child row for `person` on `org`, or None."""
+    doc = frappe.get_doc("Partner Organization", org)
+    for row in doc.contacts:
+        if row.person == person:
+            return doc, row
+    return doc, None
+
+
+def _is_primary_contact(org: str, person: str) -> bool:
+    _doc, row = _contact_row(org, person)
+    return bool(row and row.is_primary and row.relationship_status == "Active")
+
+
+def _revoke_partner_role_if_orphaned(user: str) -> None:
+    """Drop the `Partner` role once a user holds no portal-enabled contact row.
+
+    `Partner Organization.on_update` grants the role and nothing has ever taken
+    it back, so without this the role outlives every relationship that justified
+    it -- and it is what puts /partner in the sidebar (ADR 074).
+    """
+    if not user:
+        return
+    still = frappe.get_all(
+        "Partner Contact",
+        filters={
+            "portal_user": user,
+            "portal_access": 1,
+            "parenttype": "Partner Organization",
+        },
+        limit=1,
+    )
+    if still:
+        return
+    if "Partner" not in set(frappe.get_roles(user)):
+        return
+    user_doc = frappe.get_doc("User", user)
+    # Mirrors _grant_portal_roles: a portal user cannot write User, and reading
+    # the roles child table back as one yields an empty list -- so check via
+    # frappe.get_roles and save with permissions ignored. Doing it the obvious
+    # way fails *silently*, leaving the role behind.
+    user_doc.flags.ignore_permissions = True
+    user_doc.remove_roles("Partner")
+
+
+@frappe.whitelist(methods=["POST"])
+def update_my_contact(role_at_org=None, org=None) -> dict:
+    """Let a contact correct their own role at an organization (ADR 077).
+
+    `role_at_org` is the *representation* role -- what this person does for the
+    organization as a partner -- and is distinct from the alumni profile's
+    free-text employment, which records where they work and needs no partner
+    relationship at all.
+    """
+    org = _require_org(org)
+    person = _require_person()
+    doc, row = _contact_row(org, person)
+    if not row:
+        frappe.throw(
+            _("You are not a contact of this organization."), frappe.PermissionError
+        )
+    row.role_at_org = (role_at_org or "").strip() or None
+    doc.save(ignore_permissions=True)
+    return {"org": org, "role_at_org": row.role_at_org}
+
+
+@frappe.whitelist(methods=["POST"])
+def leave_organization(org=None) -> dict:
+    """End your own relationship with an organization (ADR 077).
+
+    A status transition, not a deletion: the row stays so the organization keeps
+    a true record of who set it up and acted for it. Portal access is cleared and
+    the `Partner` role revoked once no portal-enabled row remains.
+
+    Leaving is never blocked for being the last contact. An organization with no
+    contacts is staff's to resolve -- see the "no active contact" report -- and
+    refusing the leave would trap someone in a relationship they have ended in
+    real life.
+    """
+    org = _require_org(org)
+    person = _require_person()
+    doc, row = _contact_row(org, person)
+    if not row:
+        frappe.throw(
+            _("You are not a contact of this organization."), frappe.PermissionError
+        )
+    user = row.portal_user
+    row.relationship_status = "Former"
+    row.portal_access = 0
+    row.portal_user = None
+    row.is_primary = 0
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    _revoke_partner_role_if_orphaned(user)
+    return {"org": org, "left": True}
+
+
+@frappe.whitelist(methods=["POST"])
+def set_contact_status(person, status, org=None) -> dict:
+    """The primary contact ends or restores another contact's relationship.
+
+    Who speaks for an organization is the primary contact's call (ADR 077), not
+    staff's and not every contact's. Reactivation is also how a `Former` contact
+    rejoins -- a second row would split one relationship in two.
+    """
+    if status not in ("Active", "Former"):
+        frappe.throw(_("Invalid status."))
+    org = _require_org(org)
+    me = _require_person()
+    is_staff = bool(set(frappe.get_roles(frappe.session.user)) & STAFF_BYPASS)
+    if not (_is_primary_contact(org, me) or is_staff):
+        frappe.throw(
+            _("Only the primary contact can change who acts for this organization."),
+            frappe.PermissionError,
+        )
+    if person == me:
+        frappe.throw(_("Use Leave to end your own relationship."))
+    doc, row = _contact_row(org, person)
+    if not row:
+        frappe.throw(_("That person is not a contact of this organization."))
+    user = row.portal_user
+    row.relationship_status = status
+    if status == "Former":
+        row.portal_access = 0
+        row.portal_user = None
+        row.is_primary = 0
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    if status == "Former":
+        _revoke_partner_role_if_orphaned(user)
+    return {"org": org, "person": person, "status": status}

@@ -1,8 +1,10 @@
 <template>
   <div>
-    <h2 class="text-xl font-bold text-ink-gray-8 sticky top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      {{ __('Faculty Worklist') }}
-    </h2>
+    <PageHeader :title="__('Faculty Worklist')">
+      <template v-if="tabs.length" #tabs>
+        <PageTabs :tabs="tabs" v-model="tab" :label="__('Worklist queues')" />
+      </template>
+    </PageHeader>
 
     <div class="px-3 py-4 sm:px-5 space-y-6">
       <div v-if="worklist.loading" class="flex justify-center py-12">
@@ -11,10 +13,9 @@
 
       <template v-else>
         <!-- Verifications -->
-        <section v-if="showVerifications">
+        <section v-if="tab === 'verifications'">
           <h3 class="font-semibold text-ink-gray-8 mb-2">
             {{ __('Verifications') }}
-            <Badge :label="String(verifications.length)" theme="gray" class="ml-1" />
           </h3>
           <p v-if="!verifications.length" class="text-sm text-ink-gray-5">
             {{ __('No pending manual verifications.') }}
@@ -33,10 +34,9 @@
         </section>
 
         <!-- Placement exams -->
-        <section v-if="showPlacement">
+        <section v-if="tab === 'placement'">
           <h3 class="font-semibold text-ink-gray-8 mb-2">
             {{ __('Placement Exams') }}
-            <Badge :label="String(placements.length)" theme="gray" class="ml-1" />
           </h3>
           <p v-if="!placements.length" class="text-sm text-ink-gray-5">
             {{ __('No placement exams awaiting a score.') }}
@@ -57,10 +57,9 @@
              the Thesis/CP Advisor capability (or already reading for a project),
              exactly like Verifications and Placement Exams — so an advisor with
              nothing pending sees a 0, not a missing section. -->
-        <section v-if="showProjectReviews">
+        <section v-if="tab === 'reviews'">
           <h3 class="font-semibold text-ink-gray-8 mb-2">
             {{ __('Project Reviews') }}
-            <Badge :label="String(projectReviews.length)" theme="gray" class="ml-1" />
           </h3>
           <p v-if="!projectReviews.length" class="text-sm text-ink-gray-5">
             {{ __('No projects are awaiting your review.') }}
@@ -90,12 +89,10 @@
         <!-- Competency assessments (ADR 065). Mentors are never added to a
              section, so this list is where a Personal Mentor finds out they
              have work to do. -->
-        <section v-if="competency.data?.length || mentees.data?.length">
+        <section v-if="tab === 'competency'">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-semibold text-ink-gray-8">
               {{ __('Competency Assessments Due') }}
-              <Badge v-if="competency.data?.length"
-                :label="String(competency.data.length)" theme="gray" class="ml-1" />
             </h3>
             <!-- The caseload the mentor never had to be assigned to; the arc
                  view is where their students' own words live (ADR 065 8a). -->
@@ -135,8 +132,7 @@
           </div>
         </section>
 
-        <p v-if="!showVerifications && !showPlacement && !showProjectReviews && !competency.data?.length && !mentees.data?.length"
-          class="text-sm text-ink-gray-5">
+        <p v-if="!tabs.length" class="text-sm text-ink-gray-5">
           {{ __('You are not wired to any verification, examining, review or mentoring work.') }}
         </p>
       </template>
@@ -196,8 +192,11 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Badge, Button, Dialog, FileUploader, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
+import { Button, Dialog, FileUploader, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { uploadLimits, validateFileSize } from '@/utils'
+import PageHeader from '@/components/PageHeader.vue'
+import PageTabs from '@/components/PageTabs.vue'
+import { useTabParam } from '@/composables/useTabParam'
 
 const uploadArgs = { private: 1, folder: 'Home/Attachments' }
 
@@ -226,6 +225,35 @@ const projectReviews = computed(() => worklist.data?.['Project Reviews'] || [])
 const showVerifications = computed(() => 'Manual-Verification Verifier' in (worklist.data || {}))
 const showPlacement = computed(() => 'Placement Examiner' in (worklist.data || {}))
 const showProjectReviews = computed(() => 'Project Reviews' in (worklist.data || {}))
+
+// One tab per queue the server says is this user's (ADR 075). The count rides on
+// the tab so the whole picture stays visible at a glance -- the overview the
+// stacked sections used to give -- while the panel below is one queue to work.
+const tabs = computed(() => {
+  const out = []
+  if (showVerifications.value)
+    out.push({ key: 'verifications', label: __('Verifications'), count: verifications.value.length })
+  if (showPlacement.value)
+    out.push({ key: 'placement', label: __('Placement Exams'), count: placements.value.length })
+  if (showProjectReviews.value)
+    out.push({ key: 'reviews', label: __('Project Reviews'), count: projectReviews.value.length })
+  // Mentoring has no capability key; a mentee caseload or outstanding work is
+  // what makes it this user's queue (ADR 065).
+  if (competency.data?.length || mentees.data?.length)
+    out.push({ key: 'competency', label: __('Competency Assessments'), count: competency.data?.length || 0 })
+  return out
+})
+
+// Land on work, not on an empty queue: the first tab with something outstanding,
+// else the first tab. `?tab=` still wins when present, so a link into a specific
+// queue survives.
+const defaultTab = computed(
+  () => (tabs.value.find((t) => t.count) || tabs.value[0])?.key || '',
+)
+const tab = useTabParam(
+  computed(() => tabs.value.map((t) => t.key)),
+  defaultTab,
+)
 
 const today = new Date().toISOString().slice(0, 10)
 const overdue = (it) => !!it.due && it.due < today

@@ -1,9 +1,10 @@
 <template>
   <div class="gradebook">
-    <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      <Breadcrumbs class="h-7" :items="breadcrumbs" />
-
-    </header>
+    <PageHeader>
+    	<template #title>
+    		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+    	</template>
+    </PageHeader>
     <h1 class="text-2xl font-bold mt-5 mb-4 ml-5">{{ __('Gradebook for') }} {{ course?.data?.course }}</h1>
     <!-- A competency section has no weighted total, so a students-x-assessments
          grid of numbers says nothing true about it (ADR 065 section 11d). -->
@@ -195,6 +196,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, Button, createResource, Tooltip, call, toast } from 'frappe-ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { Send, Save } from 'lucide-vue-next'

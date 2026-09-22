@@ -37,6 +37,28 @@ def _descendants(roots):
     return seen
 
 
+def mentor_cohorts(user=None):
+    """Cohorts where the user is an active **Mentor**, plus everything beneath
+    them (ADR 076).
+
+    Deliberately distinct from `led_cohorts`: `Cohort Membership.role`
+    (Member/Mentor) is the pastoral function, while `is_leader` is who runs the
+    cohort and drives moderation scope. A leader need not be a mentor, and a
+    mentor need not lead, so the two sets genuinely differ.
+    """
+    if not user:
+        user = frappe.session.user
+    person = find_person(user=user)
+    if not person:
+        return set()
+    roots = frappe.get_all(
+        "Cohort Membership",
+        filters={"person": person, "active": 1, "role": "Mentor"},
+        pluck="cohort",
+    )
+    return _descendants(set(roots)) if roots else set()
+
+
 def visible_cohorts(user=None):
     """The set of Cohort names a (restricted) user may see: cohorts they are an
     active member of, plus the subtree beneath any cohort they actively lead."""
@@ -170,6 +192,19 @@ def _visibility_clause(user, table, author_field, status_field=None, own_field=N
         parts.append(
             f"({t}.`visibility` = 'cohort_only' AND {t}.`cohort` in ({joined}))"
         )
+    # ADR 076: a `mentors` post reaches the mentors of its cohort and everything
+    # beneath it. Resolved from the reader's side -- the cohorts where *I* am an
+    # active Mentor, expanded downward -- so it stays one IN list rather than a
+    # correlated subquery per row. `role` is the pastoral function and is
+    # orthogonal to `is_leader`, which drives moderation.
+    mentor_scope = mentor_cohorts(user)
+    if mentor_scope:
+        joined_m = ", ".join(frappe.db.escape(c) for c in mentor_scope)
+        parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`cohort` in ({joined_m}))")
+    if me:
+        # The author always sees their own mentors post, even if they are not
+        # themselves a mentor (a leader writing to their mentors).
+        parts.append(f"({t}.`visibility` = 'mentors' AND {t}.`{author_field}` = {me})")
     if me:
         parts.append(f"({t}.`visibility` = 'private' AND {t}.`{author_field}` = {me})")
         parts.append(
@@ -200,6 +235,10 @@ def _visibility_has(doc, user, author_field, status_field=None, own_field=None):
         return True
     if vis == "cohort_only":
         return doc.get("cohort") in visible_cohorts(user)
+    if vis == "mentors":
+        if person and doc.get(author_field) == person:
+            return True
+        return doc.get("cohort") in mentor_cohorts(user)
     if vis == "private":
         return bool(person) and doc.get(author_field) == person
     if vis == "direct":

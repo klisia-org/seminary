@@ -1,14 +1,15 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<Breadcrumbs :items="breadcrumbs" />
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 	<div class="md:w-7/12 md:mx-auto mx-4 py-10">
 		<Quiz :quizName="quizID" />
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import Quiz from '@/components/Quiz.vue'
 import { createResource, Breadcrumbs } from 'frappe-ui'
 import { computed, inject, onMounted } from 'vue'

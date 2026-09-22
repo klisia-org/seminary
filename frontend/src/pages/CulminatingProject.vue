@@ -1,8 +1,10 @@
 <template>
   <div>
-    <h2 class="text-xl font-bold text-ink-gray-8 sticky top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      {{ __('Culminating Project') }}
-    </h2>
+    <PageHeader :title="__('Culminating Project')">
+      <template v-if="tabs.length > 1" #tabs>
+        <PageTabs :tabs="tabs" v-model="view" :label="__('Project views')" />
+      </template>
+    </PageHeader>
 
     <div class="px-3 py-4 sm:px-5">
       <div v-if="projects.loading" class="flex justify-center py-12">
@@ -10,16 +12,6 @@
       </div>
 
       <template v-else-if="projects.data">
-        <!-- Role toggle (only when the user is both a student and a reader) -->
-        <div v-if="hasStudent && hasAdvisor" class="flex gap-2 mb-4">
-          <Button :variant="view === 'student' ? 'solid' : 'subtle'" @click="view = 'student'">
-            {{ __('My Project') }}
-          </Button>
-          <Button :variant="view === 'advisor' ? 'solid' : 'subtle'" @click="view = 'advisor'">
-            {{ __('Projects I Advise / Read') }} ({{ advisorProjects.length }})
-          </Button>
-        </div>
-
         <!-- STUDENT VIEW -->
         <div v-if="view === 'student'">
           <p v-if="!studentProjects.length" class="text-sm text-ink-gray-5">
@@ -108,6 +100,9 @@ import { useRoute } from 'vue-router'
 import { Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
 import { statusTheme } from '@/utils/statusTheme'
 import CulminatingProjectDetail from '@/components/CulminatingProjectDetail.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import PageTabs from '@/components/PageTabs.vue'
+import { useTabParam } from '@/composables/useTabParam'
 
 // `?project=` deep-links straight into one project's detail, so the Faculty
 // Worklist's Project Reviews section can hand a reader the thing that needs
@@ -120,14 +115,14 @@ const projects = createResource({
   onSuccess(data) {
     const wanted = route.query.project
     const isMine = wanted && (data?.advisor_projects || []).some((p) => p.name === wanted)
-    if (!view.value) {
-      // A deep link is an explicit choice of the reader view, even for someone
-      // who also has projects of their own as a student.
-      view.value = isMine ? 'advisor' : (data?.student_projects?.length ? 'student' : 'advisor')
+    // A ?project= deep link is an explicit choice of the reader view, even for
+    // someone who also has projects of their own as a student. Only open what
+    // the server actually returned — an unknown or unauthorised id falls through
+    // to the normal list instead of a blank detail.
+    if (isMine) {
+      if (view.value !== 'advisor') view.value = 'advisor'
+      if (!selectedAdvisor.value) selectedAdvisor.value = wanted
     }
-    // Only open what the server actually returned for this user — an unknown or
-    // unauthorised id falls through to the normal list instead of a blank detail.
-    if (isMine && !selectedAdvisor.value) selectedAdvisor.value = wanted
     if (data?.student_projects?.length && !selectedStudent.value) {
       selectedStudent.value = data.student_projects[0].name
     }
@@ -139,7 +134,16 @@ const advisorProjects = computed(() => projects.data?.advisor_projects || [])
 const hasStudent = computed(() => studentProjects.value.length > 0)
 const hasAdvisor = computed(() => advisorProjects.value.length > 0)
 
-const view = ref('')
+// The two roles are areas of the page, not a mode: a reader and a student see
+// different work. Addressable, so a link can point at either (ADR 075).
+const tabs = computed(() => [
+  ...(hasStudent.value ? [{ key: 'student', label: __('My Project') }] : []),
+  ...(hasAdvisor.value
+    ? [{ key: 'advisor', label: __('Projects I Advise / Read'), count: advisorProjects.value.length }]
+    : []),
+])
+const defaultView = computed(() => (hasStudent.value ? 'student' : 'advisor'))
+const view = useTabParam(['student', 'advisor'], defaultView, 'view')
 const selectedStudent = ref(null)
 const selectedAdvisor = ref(null)
 

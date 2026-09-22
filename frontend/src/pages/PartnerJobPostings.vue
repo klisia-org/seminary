@@ -1,8 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Job Postings') }}</h2>
-		<Button variant="solid" @click="$router.push({ name: 'PartnerJobPostingNew' })">{{ __('Add job posting') }}</Button>
-	</header>
+	<PartnerHeader :title="__('Job Postings')">
+		<template #actions>
+			<Button variant="solid" @click="$router.push({ name: 'PartnerJobPostingNew' })">{{ __('Add job posting') }}</Button>
+		</template>
+	</PartnerHeader>
 
 	<div v-if="postings.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="postings.error" class="p-5 text-ink-red-4">{{ postings.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -34,6 +35,7 @@
 </template>
 
 <script setup>
+import PartnerHeader from '@/components/PartnerHeader.vue'
 import { watch } from 'vue'
 import { createResource, Button, Badge } from 'frappe-ui'
 import { Briefcase } from 'lucide-vue-next'

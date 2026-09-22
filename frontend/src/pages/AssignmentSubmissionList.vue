@@ -1,7 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs :items="breadcrumbs" />
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 	<div class="md:w-3/4 md:mx-auto py-5 mx-5">
 		<div class="grid grid-cols-3 gap-5 mb-5">
 			<Link doctype="Assignment Activity" v-model="assignmentID" :placeholder="__('Assignment')" />
@@ -50,6 +52,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Badge,
 	Breadcrumbs,

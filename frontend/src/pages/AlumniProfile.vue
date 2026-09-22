@@ -1,19 +1,16 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<h2 class="text-xl font-bold text-ink-gray-8">
-			{{ __('My Alumni Profile') }}
-		</h2>
-		<button
-			type="button"
-			class="rounded-md bg-surface-gray-7 px-3 py-1.5 text-sm font-medium text-ink-white disabled:opacity-50"
-			:disabled="!dirty || saving"
-			@click="onSave"
-		>
-			{{ saving ? __('Saving...') : __('Save') }}
-		</button>
-	</header>
+	<AlumniHeader :title="__('My Alumni Profile')">
+		<template #actions>
+			<button
+				type="button"
+				class="rounded-md bg-surface-gray-7 px-3 py-1.5 text-sm font-medium text-ink-white disabled:opacity-50"
+				:disabled="!dirty || saving"
+				@click="onSave"
+			>
+				{{ saving ? __('Saving...') : __('Save') }}
+			</button>
+		</template>
+	</AlumniHeader>
 
 	<div v-if="profile.loading" class="p-5 text-ink-gray-5">
 		{{ __('Loading...') }}
@@ -35,7 +32,11 @@
 			<Field :label="__('LinkedIn URL')">
 				<input v-model="form.linkedin_url" type="url" class="field-input" />
 			</Field>
-			<Field :label="__('Current role')">
+			<!-- ADR 077: this is *employment* -- where this person works. It may
+			     have nothing to do with the seminary, and saying so must never
+			     require standing up a Partner Organization. Representing an
+			     organization as a partner is a different fact, shown below. -->
+			<Field :label="__('Current role')" :description="__('Where you work. Classmates can find you by it.')">
 				<input v-model="form.current_role" type="text" class="field-input" />
 			</Field>
 			<Field :label="__('Current organization')">
@@ -54,6 +55,19 @@
 						{{ org.organization_name }}
 					</option>
 				</select>
+			</Field>
+			<!-- Representation, not employment: derived from the Partner Contact
+			     rows, never retyped here. Editing the role or ending the
+			     relationship happens where the relationship lives (ADR 077). -->
+			<Field v-if="myOrgRoles.length" :label="__('You act for')">
+				<ul class="flex flex-col gap-1">
+					<li v-for="o in myOrgRoles" :key="o.name" class="text-sm text-ink-gray-7">
+						{{ o.organization_name }}<span v-if="o.role_at_org"> — {{ o.role_at_org }}</span>
+					</li>
+				</ul>
+				<router-link to="/alumni" class="mt-1 inline-block text-xs text-ink-blue-3 hover:underline">
+					{{ __('Manage these in My Organizations') }}
+				</router-link>
 			</Field>
 			<Field :label="__('City')">
 				<input v-model="form.city" type="text" class="field-input" />
@@ -147,6 +161,7 @@
 </template>
 
 <script setup>
+import AlumniHeader from '@/components/AlumniHeader.vue'
 import { reactive, ref, computed, h } from 'vue'
 import { Button, Dialog, createResource } from 'frappe-ui'
 import { UserX } from 'lucide-vue-next'
@@ -173,6 +188,16 @@ const showExplainer = ref(false)
 // Comes back empty (and the picker stays hidden) when the seminary has the
 // partner directory switched off — the endpoint refuses rather than returning
 // rows, so a failure here is a configuration answer, not an error to show.
+const myOrgsRes = createResource({
+	url: 'seminary.partner.api.get_my_organizations',
+	auto: true,
+	onError() {},
+})
+// Only active representations; a Former contact is history, not a current role.
+const myOrgRoles = computed(() =>
+	(myOrgsRes.data?.organizations || []).filter((o) => o.relationship_status === 'Active'),
+)
+
 const partnerOrgs = createResource({
 	url: 'seminary.partner.api.get_partner_directory',
 	auto: true,

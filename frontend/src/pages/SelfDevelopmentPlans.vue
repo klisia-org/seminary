@@ -1,11 +1,17 @@
 <template>
 	<div class="development-arc">
-		<header
-			class="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<FormControl v-if="mentees.data?.length" type="select" :options="menteeOptions"
-				v-model="selected" class="min-w-[14rem]" />
-		</header>
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+			<template #actions>
+				<FormControl v-if="mentees.data?.length" type="select" :options="menteeOptions"
+					v-model="selected" class="min-w-[14rem]" />
+			</template>
+			<template v-if="arc.data" #tabs>
+				<PageTabs :tabs="tabs" v-model="tab" :label="__('Arc views')" />
+			</template>
+		</PageHeader>
 
 		<div v-if="arc.loading" class="flex justify-center py-16">
 			<LoadingIndicator class="h-8 w-8" />
@@ -29,13 +35,6 @@
 					? __('Every plan you have written, read together. Nothing here is carried between courses — this is the arc, not a ledger.')
 					: __('Their plans and notes across every course. You read here; you respond on the plan itself.') }}
 			</p>
-
-			<div class="mt-5 flex flex-wrap gap-2">
-				<Button v-for="t in tabs" :key="t.value" size="sm"
-					:variant="tab === t.value ? 'solid' : 'subtle'" @click="tab = t.value">
-					{{ t.label }}
-				</Button>
-			</div>
 
 			<!-- By question: the same prompt, answered across the years -->
 			<div v-if="tab === 'question'" class="mt-5 space-y-6">
@@ -159,6 +158,9 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
+import PageTabs from '@/components/PageTabs.vue'
+import { useTabParam } from '@/composables/useTabParam'
 import {
 	Badge, Breadcrumbs, Button, FormControl, LoadingIndicator, call, createResource, toast,
 } from 'frappe-ui'
@@ -169,19 +171,21 @@ const props = defineProps({
 	student: { type: String, default: null },
 })
 
-const tab = ref('question')
 const selected = ref(props.student || '')
 const draft = ref('')
 const anchorCompetency = ref('')
 const anchorCourse = ref('')
 const saving = ref(false)
 
+// Four readings of the same material (ADR 065 8a), so they are areas, not a
+// filter -- and addressable, so a mentor can link a student to one (ADR 075).
 const tabs = [
-	{ label: __('By question'), value: 'question' },
-	{ label: __('By competency'), value: 'competency' },
-	{ label: __('By course'), value: 'course' },
-	{ label: __('Journal'), value: 'journal' },
+	{ key: 'question', label: __('By question') },
+	{ key: 'competency', label: __('By competency') },
+	{ key: 'course', label: __('By course') },
+	{ key: 'journal', label: __('Journal') },
 ]
+const tab = useTabParam(tabs.map((t) => t.key), 'question')
 
 const breadcrumbs = computed(() => [
 	{ label: __('Development Plans') },

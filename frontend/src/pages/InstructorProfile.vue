@@ -1,14 +1,6 @@
 <template>
     <div v-if="instructor.data">
-        <header
-            class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-            :aria-label="`Profile page for ${instructorName}`">
-
-            <div class="text-3xl font-semibold text-ink-gray-9">
-                {{ __('Profile page of') }} {{ instructorName }}
-            </div>
-
-        </header>
+        <PageHeader :title="`${__('Profile page of')} ${instructorName}`" />
         <div v-if="instructor.data.profileimage" class="m-5">
             <img :src="instructor.data.profileimage" alt="Instructor Image" class="rounded-full h-40 w-40" />
         </div>
@@ -36,7 +28,8 @@
 </template>
 
 <script setup>
-import { Breadcrumbs, createResource, Button, TabButtons } from 'frappe-ui'
+import PageHeader from '@/components/PageHeader.vue'
+import { Breadcrumbs, createResource, Button } from 'frappe-ui'
 import { computed, inject, watch, ref, onMounted, watchEffect } from 'vue'
 
 import ContactChannelIcons from '@/components/ContactChannelIcons.vue'

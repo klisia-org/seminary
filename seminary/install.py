@@ -1636,6 +1636,7 @@ def after_migrate():
     ensure_registrar_tools()
     ensure_workspace_sidebars()
     merge_academics_user_into_program_chair()
+    ensure_instructor_community_access()
 
 
 def merge_academics_user_into_program_chair():
@@ -1687,6 +1688,52 @@ def ensure_workspace_sidebars():
         return
 
     auto_generate_icons_and_sidebar()
+
+
+def ensure_instructor_community_access():
+    """Grant `Instructor` read on the discipleship doctypes.
+
+    The Community subsystem shipped with portal read for Student, Alumni and
+    Cohort Participant but not Instructor, while `AppSidebar` shows the Community
+    link to any `is_instructor` user -- so an instructor who led or mentored a
+    cohort followed the link and got "Insufficient Permission for Cohort Post".
+    CBE (ADR 065) makes it load-bearing rather than cosmetic: a Personal Mentor
+    is resolved through `Cohort Membership`, and mentors are usually instructors.
+
+    Read-only, exactly mirroring Student: every write goes through a whitelisted
+    API, and `discipleship/permissions.py` still scopes rows to the cohorts the
+    user can actually see. Instructor is deliberately NOT in `STAFF_BYPASS`, so
+    this grants reach, not oversight.
+
+    The doctype JSONs carry the same rows as the source of truth; this exists so
+    an already-migrated site picks them up without a DocType reload.
+    """
+    doctypes = (
+        "Cohort",
+        "Cohort Membership",
+        "Cohort Channel",
+        "Cohort Post",
+        "Cohort Post Comment",
+        "Cohort Post Reaction",
+        "Cohort Post Save",
+        "Cohort Feed Read State",
+        "Cohort Content Flag",
+    )
+    if not frappe.db.exists("Role", "Instructor"):
+        return
+    added = []
+    for dt in doctypes:
+        if not frappe.db.exists("DocType", dt):
+            continue
+        if frappe.db.exists("DocPerm", {"parent": dt, "role": "Instructor"}):
+            continue
+        doc = frappe.get_doc("DocType", dt)
+        doc.append("permissions", {"role": "Instructor", "read": 1, "permlevel": 0})
+        doc.save(ignore_permissions=True)
+        added.append(dt)
+    if added:
+        frappe.db.commit()
+        print("Granted Instructor read on: %s" % ", ".join(added))
 
 
 def ensure_registrar_tools():

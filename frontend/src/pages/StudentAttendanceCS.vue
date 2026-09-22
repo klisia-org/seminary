@@ -1,10 +1,9 @@
 <template>
-       <header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-
-		</header>
+       <PageHeader>
+       	<template #title>
+       		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+       	</template>
+       </PageHeader>
   <div v-if="!meetingDates.loading && (!meetingDates.data || meetingDates.data.length === 0)" class="px-5 py-10">
     <p class="text-ink-gray-5">{{ __('This course does not have meeting dates set for attendance.') }}</p>
   </div>
@@ -237,6 +236,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Avatar, Button, createResource, Breadcrumbs, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'

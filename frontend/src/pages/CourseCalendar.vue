@@ -1,9 +1,10 @@
 <template>
 
-    <header
-        class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-        <Breadcrumbs class="h-7" :items="breadcrumbs" />
-    </header>
+    <PageHeader>
+    	<template #title>
+    		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+    	</template>
+    </PageHeader>
     <div class="mt-5 mb-10 w-full px-5">
         <h3 class="text-2xl font-bold mb-3">{{ __('Course Calendar') }}</h3>
         <p class="text-ink-gray-7 mb-5">{{ __('Subscribe to this course calendar to stay updated with assignments'
@@ -91,6 +92,7 @@
     </div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Button } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'

@@ -7,10 +7,7 @@
 		because a mailed token would persist in the communication ledger as a durable person-to-token
 		map (decisions/035 §7); the invitation is resolved from the session instead.
 	-->
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<h1 class="text-xl font-semibold text-ink-gray-9">{{ __('Course feedback') }}</h1>
-	</header>
+	<PageHeader :title="__('Course feedback')" />
 
 	<div class="mx-auto max-w-2xl p-5">
 		<div v-if="questionnaire.loading" class="text-ink-gray-5">{{ __('Loading…') }}</div>
@@ -133,6 +130,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, createResource } from 'frappe-ui'

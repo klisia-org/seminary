@@ -1,9 +1,8 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "COHORT-MB-.#####",
  "creation": "2026-07-22 12:00:00",
- "description": "A person's membership in a cohort — one record per person per cohort, tracking their role, invite status, and join/leave history.",
+ "description": "A person's membership in a cohort \u2014 one record per person per cohort, tracking their role, invite status, and join/leave history.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -140,7 +139,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-09-22 22:37:30.379955",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Membership",
@@ -190,6 +189,18 @@
   {
    "read": 1,
    "role": "Alumni"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

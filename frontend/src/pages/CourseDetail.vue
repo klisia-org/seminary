@@ -1,9 +1,10 @@
 <template>
 	<div v-if="course.data">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		</header>
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+		</PageHeader>
 		<div class="m-5">
 			<div class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
 				style="--right-col: clamp(20rem, 24vw, 30rem)">
@@ -133,6 +134,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject, watch } from 'vue'

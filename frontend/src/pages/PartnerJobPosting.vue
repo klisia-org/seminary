@@ -1,19 +1,19 @@
 <template>
-	<header class="sticky top-0 z-10 flex flex-col gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<div class="flex items-center justify-between gap-2">
-			<router-link :to="{ name: 'PartnerJobPostings' }" class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
-				<ArrowLeft class="size-4" />{{ __('Job Postings') }}
-			</router-link>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+		<template #actions>
 			<router-link :to="{ name: 'PartnerJobPostingEdit', params: { name } }" class="text-sm text-ink-blue-6 hover:underline">
 				{{ __('Edit posting') }}
 			</router-link>
-		</div>
-		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-			<h1 class="text-lg font-semibold text-ink-gray-9">{{ apps.data?.job_title || name }}</h1>
-			<span v-if="apps.data" class="text-sm text-ink-gray-5">
-				{{ apps.data.total === 1 ? __('1 application received') : __('{0} applications received').format(apps.data.total) }}
-			</span>
-		</div>
+		</template>
+	</PageHeader>
+
+	<div class="flex flex-col gap-2 border-b bg-surface-white px-3 py-3 sm:px-5">
+		<p v-if="apps.data" class="text-sm text-ink-gray-5">
+		{{ apps.data.total === 1 ? __('1 application received') : __('{0} applications received').format(apps.data.total) }}
+		</p>
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<div class="relative w-full sm:w-64">
 				<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
@@ -30,7 +30,7 @@
 				<option value="yes">{{ __('Evaluated by me') }}</option>
 			</select>
 		</div>
-	</header>
+	</div>
 
 	<div v-if="apps.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="apps.error" class="p-5 text-ink-red-4">{{ apps.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -79,9 +79,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { createResource, debounce, Badge } from 'frappe-ui'
-import { ArrowLeft, Search, Star, ChevronUp, ChevronDown } from 'lucide-vue-next'
+import PageHeader from '@/components/PageHeader.vue'
+import { computed, ref, watch } from 'vue'
+import { Breadcrumbs, createResource, debounce, Badge } from 'frappe-ui'
+import { Search, Star, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { statusTheme } from '@/utils/statusTheme'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
@@ -121,4 +122,9 @@ function formatDate(v) {
 	if (!v) return ''
 	return new Date(v).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
+
+const breadcrumbs = computed(() => [
+	{ label: __('Job Postings'), route: { name: 'PartnerJobPostings' } },
+	{ label: apps.data?.job_title || props.name },
+])
 </script>

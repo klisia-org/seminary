@@ -54,6 +54,30 @@
 						{{ __('Staff are reviewing this. It appears in the directory once approved.') }}
 					</div>
 				</div>
+				<!-- ADR 077: the relationship is editable from here, but the
+				     organization itself is edited in the partner area rather
+				     than re-implemented in this panel. -->
+				<div v-if="org.portal_access && org.relationship_status === 'Active'"
+					class="flex flex-wrap items-center gap-2 border-t border-outline-gray-2 px-3 py-2">
+					<a href="/seminary/partner/profile" class="text-xs text-ink-blue-3 hover:underline">
+						{{ __('Manage organization') }}
+					</a>
+					<span class="text-ink-gray-4">·</span>
+					<button type="button" class="text-xs text-ink-gray-6 hover:text-ink-gray-8" @click="openRole(org)">
+						{{ __('Edit my role') }}
+					</button>
+					<span class="text-ink-gray-4">·</span>
+					<button type="button" class="text-xs text-ink-red-3 hover:underline" @click="openLeave(org)">
+						{{ __('Leave') }}
+					</button>
+					<Badge v-if="org.is_primary" theme="blue" variant="subtle" class="ml-auto">
+						{{ __('Primary contact') }}
+					</Badge>
+				</div>
+				<div v-else-if="org.relationship_status !== 'Active'"
+					class="border-t border-outline-gray-2 px-3 py-2 text-xs text-ink-gray-5">
+					{{ __('You no longer act for this organization.') }}
+				</div>
 			</li>
 		</ul>
 
@@ -85,6 +109,34 @@
 					{{ __('Submit for approval') }}
 				</Button>
 			</div>
+		</template>
+	</Dialog>
+
+	<Dialog v-model="showRole" :options="{ title: __('Edit my role') }">
+		<template #body-content>
+			<p class="mb-3 text-sm text-ink-gray-6">
+				{{ __('What you do for {0} as a partner. This is separate from where you work, which lives on your alumni profile.').format(acting?.organization_name || '') }}
+			</p>
+			<FormControl type="text" :label="__('My role at this organization')" v-model="roleDraft" />
+		</template>
+		<template #actions>
+			<Button variant="solid" :loading="updateContact.loading" @click="saveRole">{{ __('Save') }}</Button>
+		</template>
+	</Dialog>
+
+	<Dialog v-model="showLeave" :options="{ title: __('Leave organization') }">
+		<template #body-content>
+			<p class="text-sm text-ink-gray-6">
+				{{ __('You will stop acting for {0} and lose access to its partner pages. Your past involvement stays on record.').format(acting?.organization_name || '') }}
+			</p>
+			<p v-if="acting?.is_primary" class="mt-2 text-sm text-ink-amber-3">
+				{{ __('You are the primary contact. If nobody else is active, staff will be asked to review the organization.') }}
+			</p>
+		</template>
+		<template #actions>
+			<Button variant="solid" theme="red" :loading="leaveOrg.loading" @click="confirmLeave">
+				{{ __('Leave') }}
+			</Button>
 		</template>
 	</Dialog>
 </template>
@@ -156,6 +208,39 @@ function openAdd() {
 }
 
 const create = createResource({ url: 'seminary.partner.api.create_partner_organization' })
+const updateContact = createResource({ url: 'seminary.partner.portal.update_my_contact' })
+const leaveOrg = createResource({ url: 'seminary.partner.portal.leave_organization' })
+
+const showRole = ref(false)
+const showLeave = ref(false)
+const acting = ref(null)
+const roleDraft = ref('')
+
+function openRole(org) {
+	acting.value = org
+	roleDraft.value = org.role_at_org || ''
+	showRole.value = true
+}
+function saveRole() {
+	updateContact
+		.submit({ role_at_org: roleDraft.value, org: acting.value.name })
+		.then(() => { showRole.value = false; myOrgs.reload() })
+		.catch((e) => toast.error(e.messages?.[0] || __('Could not update your role.')))
+}
+function openLeave(org) {
+	acting.value = org
+	showLeave.value = true
+}
+function confirmLeave() {
+	leaveOrg
+		.submit({ org: acting.value.name })
+		.then(() => {
+			showLeave.value = false
+			toast.success(__('You have left {0}.').format(acting.value.organization_name))
+			myOrgs.reload()
+		})
+		.catch((e) => toast.error(e.messages?.[0] || __('Could not leave.')))
+}
 
 function onCreate() {
 	if (!form.organization_name.trim()) {

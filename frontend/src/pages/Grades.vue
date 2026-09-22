@@ -1,20 +1,18 @@
 <template>
   <div v-if="isStudent">
 
-    <h2
-      class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      {{ __('My Transcripts') }}
+    <PageHeader :title="__('My Transcripts')">
       <!-- Only offered once there is something to see: the profile is empty
            and confusing for a student on a numerically graded programme. -->
-      <span v-if="hasCompetencies" class="flex items-center gap-2">
+      <template v-if="hasCompetencies" #actions>
         <router-link :to="{ name: 'SelfDevelopmentPlans' }">
           <Button variant="subtle" size="sm">{{ __('My Plans') }}</Button>
         </router-link>
         <router-link :to="{ name: 'CompetencyProfile' }">
           <Button variant="subtle" size="sm">{{ __('My Formation') }}</Button>
         </router-link>
-      </span>
-    </h2>
+      </template>
+    </PageHeader>
     <div v-if="Object.keys(groupedData).length > 0" class="px-5 py-4">
       <div v-for="(group, program) in sortedGroupedData" :key="program" class="mb-6">
         <h3 class="text-lg font-bold text-ink-gray-7">{{ program }}</h3>
@@ -97,6 +95,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Button, createResource } from 'frappe-ui';
 import { reactive, ref, computed, inject } from 'vue';
 import MissingData from '@/components/MissingData.vue';

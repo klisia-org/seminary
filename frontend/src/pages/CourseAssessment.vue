@@ -1,25 +1,28 @@
 <template>
 
-  <header
-    class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-    <Breadcrumbs class="h-7" :items="breadcrumbs" />
-    <div v-if="weightsApply && totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
-      <Tooltip :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
-        <Button variant="subtle" class="ml-2">
-          <span>
-            {{ __('Save only allowed when Total Points = 100') }}
-          </span>
-        </Button>
-      </Tooltip>
-    </div>
-    <div v-else class="flex items-center mt-3 md:mt-0">
-      <Button variant="solid" @click="submitCourseAssessment()" class="ml-2">
-        <span>
-          {{ __('Save') }}
-        </span>
-      </Button>
-    </div>
-  </header>
+  <PageHeader>
+  	<template #title>
+  		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+  	</template>
+  	<template #actions>
+  		<div v-if="weightsApply && totalPoints !== 100" class="flex items-center mt-3 md:mt-0">
+  		  <Tooltip :text="__('Save is only allowed when Total Points = 100')" placement="bottom">
+  		    <Button variant="subtle" class="ml-2">
+  		      <span>
+  		        {{ __('Save only allowed when Total Points = 100') }}
+  		      </span>
+  		    </Button>
+  		  </Tooltip>
+  		</div>
+  		<div v-else class="flex items-center mt-3 md:mt-0">
+  		  <Button variant="solid" @click="submitCourseAssessment()" class="ml-2">
+  		    <span>
+  		      {{ __('Save') }}
+  		    </span>
+  		  </Button>
+  		</div>
+  	</template>
+  </PageHeader>
   <div class="mt-5 mb-10 w-full px-5">
     <div class="container max-w-full mb-5 ">
       <div v-if="!course.data" class="text-lg font-semibold mb-4">
@@ -236,6 +239,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { call, createResource, Breadcrumbs, Button, FormControl, Tooltip, toast, DateTimePicker } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

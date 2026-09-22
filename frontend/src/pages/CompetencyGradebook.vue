@@ -1,9 +1,13 @@
 <template>
 	<div class="competency-gradebook">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		</header>
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+			<template v-if="context.data?.is_cbe" #tabs>
+				<PageTabs :tabs="tabs" v-model="tab" :label="__('Gradebook views')" />
+			</template>
+		</PageHeader>
 
 		<div v-if="context.loading" class="flex justify-center py-16">
 			<LoadingIndicator class="h-8 w-8" />
@@ -41,22 +45,6 @@
 						{{ __('This section has no end date, so students can be finalized as they finish. Sending is final for those students.') }}
 					</span>
 				</div>
-			</div>
-
-			<!-- Two ways into the same section: the whole class at a glance, and
-			     one student in full. The matrix is the birds-eye view (ADR 065
-			     11d); the panel beside it is its detail pane. -->
-			<div class="border-b px-3 sm:px-5">
-				<nav class="-mb-px flex gap-4">
-					<button v-for="t in tabs" :key="t.value" type="button"
-						class="border-b-2 px-1 py-2 text-sm"
-						:class="tab === t.value
-							? 'border-outline-gray-4 font-medium text-ink-gray-9'
-							: 'border-transparent text-ink-gray-6 hover:text-ink-gray-8'"
-						@click="tab = t.value">
-						{{ t.label }}
-					</button>
-				</nav>
 			</div>
 
 			<section v-if="tab === 'overview'" class="px-3 py-4 sm:px-5">
@@ -347,6 +335,9 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
+import PageTabs from '@/components/PageTabs.vue'
+import { useTabParam } from '@/composables/useTabParam'
 import {
 	Badge, Breadcrumbs, Button, Dialog, FormControl, LoadingIndicator, Tooltip,
 	createResource, call, toast,
@@ -412,11 +403,13 @@ watch(
 	{ immediate: true }
 )
 
-const tab = ref('overview')
+// Two ways into the same section: the whole class at a glance, and one student
+// in full (ADR 065 11d). Addressable, so a link can open either (ADR 075).
 const tabs = computed(() => [
-	{ value: 'overview', label: __('Overview') },
-	{ value: 'student', label: __('By student') },
+	{ key: 'overview', label: __('Overview') },
+	{ key: 'student', label: __('By student') },
 ])
+const tab = useTabParam(['overview', 'student'], 'overview')
 
 // A competency nothing is assessed under would render as an empty column group
 // with a zero colspan, which browsers collapse into a broken header.
