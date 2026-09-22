@@ -43,15 +43,9 @@ class AssessmentDimensionWeight(Document):
             d.dimension_code: d.dimension
             for d in cbe.dimensions_of(self.course_competency)
         }
-        if self.dimension_code not in allowed:
-            frappe.throw(
-                _("{0} is not a dimension of competency {1}. Available: {2}.").format(
-                    self.dimension_code,
-                    self.course_competency,
-                    ", ".join(sorted(allowed)) or _("(none)"),
-                )
-            )
-        self.dimension = allowed[self.dimension_code]
+        self.dimension = cbe.assert_known_dimension(
+            allowed, self.dimension_code, competency=self.course_competency
+        )
 
     def validate_unique(self):
         # Compared after the fact rather than filtered on `name != self.name`:

@@ -125,7 +125,7 @@
   },
   {
    "default": "1",
-   "description": "When off, other alumni cannot invite this person into a community cohort from the portal. Staff can still seat them (ADR 070).",
+   "description": "When off, other alumni cannot invite this person into a community cohort from the portal. Staff can still seat them.",
    "fieldname": "open_to_cohort_invites",
    "fieldtype": "Check",
    "label": "Open to Cohort Invitations"
@@ -151,7 +151,7 @@
    "label": "Current Organization"
   },
   {
-   "description": "Optional link to a Partner Organization the seminary already knows, when the free text above names one. Shown as a clickable badge in the directory while the partner directory is enabled; the free text is never replaced by it (ADR 053 phase 4, ADR 070).",
+   "description": "Optional link to a Partner Organization the seminary already knows, when the free text above names one. Shown as a clickable badge in the directory while the partner directory is enabled; the free text is never replaced by it.",
    "fieldname": "current_partner_organization",
    "fieldtype": "Link",
    "label": "Current Partner Organization",

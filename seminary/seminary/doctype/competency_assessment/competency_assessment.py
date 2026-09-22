@@ -41,20 +41,13 @@ class CompetencyAssessment(Document):
         }
         seen = {}
         for row in self.ratings or []:
-            if allowed and row.dimension_code not in allowed:
-                frappe.throw(
-                    _("Row {0}: {1} is not a dimension of this competency.").format(
-                        row.idx, row.dimension_code
-                    )
+            # A competency that lists no dimensions yet is graded whole, so an
+            # empty vocabulary is not an error here -- only a wrong code is.
+            if allowed:
+                row.dimension = cbe.assert_known_dimension(
+                    allowed, row.dimension_code, idx=row.idx
                 )
-            if row.dimension_code in seen:
-                frappe.throw(
-                    _("Dimension {0} appears in rows {1} and {2}.").format(
-                        row.dimension_code, seen[row.dimension_code], row.idx
-                    )
-                )
-            seen[row.dimension_code] = row.idx
-            row.dimension = allowed.get(row.dimension_code, row.dimension)
+            cbe.assert_unique_dimension(seen, row.dimension_code, row.idx)
 
             value = cbe.level_value(scale, row.level_code) if scale else None
             if value is None:

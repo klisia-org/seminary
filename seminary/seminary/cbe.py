@@ -339,6 +339,81 @@ def dimensions_of(course_competency):
     return cache[course_competency]
 
 
+def scale_dimensions(grading_scale):
+    """The scale's dimension vocabulary as {dimension_code: label} (ADR 065 section 1).
+
+    The scale is the single source of the dimension list, so every controller
+    that stores a dimension_code reads it from here rather than repeating the
+    query -- and they all fail the same way when a code is not in it.
+
+    Deliberately not cached on `_cache`, unlike its neighbours: its callers use
+    the label to re-stamp their denormalised `dimension` field, so it has to
+    reflect the scale as of this save. A request that renames a dimension and
+    then re-saves a competency would otherwise write back the old label.
+    """
+    return {
+        d.dimension_code: d.dimension
+        for d in frappe.get_all(
+            "Grading Scale Dimensions",
+            filters={"parent": grading_scale},
+            fields=["dimension_code", "dimension"],
+        )
+    }
+
+
+def assert_known_dimension(
+    allowed, dimension_code, *, scale=None, competency=None, idx=None
+):
+    """Check one dimension_code against a vocabulary and return its label.
+
+    `allowed` is {code: label}: the scale's whole vocabulary from
+    `scale_dimensions`, or the narrower set a competency actually describes from
+    `dimensions_of`. Callers stamp the returned label on their denormalised
+    `dimension` field, so a renamed dimension never leaves stale text behind.
+
+    Naming the vocabulary in the message is the point of passing `scale` or
+    `competency`: "not a dimension" is only actionable if the author is told
+    which list they should have picked from.
+    """
+    if dimension_code in allowed:
+        return allowed[dimension_code]
+
+    available = ", ".join(sorted(allowed)) or _("none")
+    if scale:
+        where = _("grading scale {0}").format(scale)
+    elif competency:
+        where = _("competency {0}").format(competency)
+    else:
+        where = _("this competency")
+
+    if idx is None:
+        frappe.throw(
+            _("{0} is not a dimension of {1}. Available: {2}.").format(
+                dimension_code, where, available
+            )
+        )
+    frappe.throw(
+        _("Row {0}: {1} is not a dimension of {2}. Available: {3}.").format(
+            idx, dimension_code, where, available
+        )
+    )
+
+
+def assert_unique_dimension(seen, dimension_code, idx):
+    """Guard a dimension table against describing or grading one twice.
+
+    `seen` is the caller's running {code: idx}, mutated here so the loop that
+    calls this stays a loop over rows rather than over bookkeeping.
+    """
+    if dimension_code in seen:
+        frappe.throw(
+            _("Dimension {0} appears in rows {1} and {2}.").format(
+                dimension_code, seen[dimension_code], idx
+            )
+        )
+    seen[dimension_code] = idx
+
+
 # ---------------------------------------------------------------- aggregation
 
 

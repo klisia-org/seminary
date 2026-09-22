@@ -1,7 +1,7 @@
 {
  "actions": [],
  "creation": "2026-09-17 12:00:00.000000",
- "description": "A catalogue Course whose enrolled students may read the parent Course Folder (p006 F2, ADR 2.2a).",
+ "description": "A catalogue Course whose enrolled students may read the parent Course Folder.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
