@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-09-18 10:36-0609\n"
-"PO-Revision-Date: 2026-09-22 03:01+0000\n"
+"PO-Revision-Date: 2026-09-22 18:20+0000\n"
 "Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
 "Language-Team: Portuguese <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/pt/>\n"
@@ -5018,7 +5018,8 @@ msgstr "Voltar à vaga"
 #. 'Partner Transcript Import Row'
 #: seminary/seminary/doctype/partner_transcript_import_row/partner_transcript_import_row.json
 msgid "Back-pointer to the Program Enrollment that received this row post-commit."
-msgstr "Ponteiro para o programa de matrícula que recebeu esta linha após o commit."
+msgstr ""
+"Ponteiro para a matrícula no programa que recebeu esta linha após o commit."
 
 #: seminary/seminary/doctype/program/program.js:67
 msgid "Backfill Complete"
@@ -8995,7 +8996,7 @@ msgstr "Lista de Curso"
 #: seminary/seminary/workspace/seminary/seminary.json
 #: seminary/workspace_sidebar/academics.json
 msgid "Course Schedule"
-msgstr "Programa do Curso"
+msgstr "Curso Agendado"
 
 #. Name of a DocType
 #: seminary/seminary/doctype/course_schedule_chapter/course_schedule_chapter.json
@@ -24001,7 +24002,7 @@ msgstr "Lote de Importação de Notas de Parceiros"
 #. Name of a DocType
 #: seminary/seminary/doctype/partner_transcript_import_row/partner_transcript_import_row.json
 msgid "Partner Transcript Import Row"
-msgstr "Linha de importação de de Notas de Parceiros"
+msgstr "Linha de importação de Notas de Parceiros"
 
 #. Label of the partner_type (Link) field in DocType 'Partner Organization'
 #. Name of a DocType
@@ -24343,7 +24344,7 @@ msgstr "Nivelamento por estudante / aproveitamento avançado. Aplique um Perfil 
 #: seminary/seminary/doctype/exam_submission/exam_submission.json
 #: seminary/seminary/doctype/quiz_submission/quiz_submission.json
 msgid "Percentage"
-msgstr "Percentagem"
+msgstr "Porcentagem"
 
 #. Description of the 'Weight' (Percent) field in DocType 'Scheduled Course
 #. Assess Criteria'
@@ -33668,7 +33669,7 @@ msgstr "Links do Sistema"
 #: seminary/seminary/doctype/website_branding/website_branding.json
 #: seminary/seminary/doctype/withdrawal_request/withdrawal_request.json
 msgid "System Manager"
-msgstr "Gerente de Sistema"
+msgstr "Gerente do Sistema"
 
 #. Label of the user (Link) field in DocType 'Instructor'
 #: seminary/seminary/doctype/instructor/instructor.json
