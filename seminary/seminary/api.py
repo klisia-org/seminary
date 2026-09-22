@@ -987,7 +987,12 @@ def get_user_info():
     # Whether the Aretenic app is installed at all (distinct from the per-user role above):
     # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
     # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
-    user.has_aretenic = "aretenic" in frappe.get_installed_apps()
+    _installed = frappe.get_installed_apps()
+    user.has_aretenic = "aretenic" in _installed
+    # Same idea for the donor portal (ADR 074). /donate/donorportal is a
+    # website_route_rule owned by frappe_giving, so without the app the route
+    # does not exist and the switcher's Donate tile led to a 404.
+    user.has_giving = "frappe_giving" in _installed
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
@@ -1009,6 +1014,12 @@ def get_user_info():
     _fc = faculty.faculty_context(user.name)
     user.faculty_units = _fc["units"]
     user.faculty_capabilities = _fc["capabilities"]
+    # One flag decides the Faculty Worklist sidebar link (ADR 074). The link used
+    # to hand-check two capabilities while the page rendered more sections than
+    # that, stranding mentors; link and page now ask the same question, on the
+    # server, where the sections' data comes from. Pass the context we already
+    # resolved so the flag costs no extra capability query.
+    user.has_faculty_worklist = faculty.has_faculty_worklist(user.name, _fc)
     # External examiners are NOT instructors (reduced access, ADR 059/060): gate
     # their CP views on this flag, never on is_instructor.
     user.is_external_examiner = "External Examiner" in _roles

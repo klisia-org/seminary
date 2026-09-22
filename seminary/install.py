@@ -1635,6 +1635,38 @@ def after_migrate():
     create_cohort_participant_role()
     ensure_registrar_tools()
     ensure_workspace_sidebars()
+    merge_academics_user_into_program_chair()
+
+
+def merge_academics_user_into_program_chair():
+    """Collapse a resurrected "Academics User" role back into "Program Chair".
+
+    ADR 034 renamed the role and a patch did the migration — but patches run
+    once, and Frappe recreates any role named in a DocPerm that doesn't exist
+    (`doctype.py` :: `update_permissions` / role auto-create, with desk_access=1).
+    Three third-party apps still name it — erpnext's Department, hrms's Interest
+    and frappe_giving's donor_base chart — so on a site with any of them the role
+    reappears on the very next `bench migrate` and the one-shot patch can never
+    fire again. Hence a hook: whatever recreates it, we collapse it each time
+    (ADR 074).
+
+    The resurrected role is worse than clutter — it carries no seminary
+    permissions (those moved to Program Chair) but still reads like the academic
+    authority role it used to be, so granting it looks meaningful and does
+    nothing.
+
+    Merging is safe only while the role is vestigial upstream, which it is:
+    Academics User belongs to Frappe's Education and LMS products, both
+    redundant with seminary. Re-check on major erpnext/hrms upgrades.
+    """
+    if not frappe.db.exists("Role", "Academics User"):
+        return
+    if not frappe.db.exists("Role", "Program Chair"):
+        create_program_chair_role()
+
+    frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
+    frappe.db.commit()
+    print('Merged resurrected role "Academics User" -> "Program Chair".')
 
 
 def ensure_workspace_sidebars():

@@ -53,6 +53,40 @@
           </div>
         </section>
 
+        <!-- Culminating project sign-offs (ADR 074). Present for anyone wired to
+             the Thesis/CP Advisor capability (or already reading for a project),
+             exactly like Verifications and Placement Exams — so an advisor with
+             nothing pending sees a 0, not a missing section. -->
+        <section v-if="showProjectReviews">
+          <h3 class="font-semibold text-ink-gray-8 mb-2">
+            {{ __('Project Reviews') }}
+            <Badge :label="String(projectReviews.length)" theme="gray" class="ml-1" />
+          </h3>
+          <p v-if="!projectReviews.length" class="text-sm text-ink-gray-5">
+            {{ __('No projects are awaiting your review.') }}
+          </p>
+          <div v-else class="border rounded-md divide-y">
+            <div v-for="it in projectReviews" :key="it.name"
+              class="flex items-center justify-between p-3 gap-3">
+              <div class="min-w-0">
+                <div class="font-medium text-ink-gray-8 truncate">
+                  {{ it.project_title || it.name }}
+                </div>
+                <div class="text-xs text-ink-gray-5 truncate">
+                  {{ [it.student_name, it.my_role, it.active_milestone].filter(Boolean).join(' · ') }}
+                </div>
+                <div v-if="it.due" class="text-xs mt-0.5"
+                  :class="overdue(it) ? 'text-ink-red-3' : 'text-ink-gray-5'">
+                  {{ overdue(it) ? __('Due {0} — overdue').format(it.due) : __('Due {0}').format(it.due) }}
+                </div>
+              </div>
+              <router-link :to="{ name: 'CulminatingProject', query: { project: it.name } }">
+                <Button variant="solid" size="sm">{{ __('Review') }}</Button>
+              </router-link>
+            </div>
+          </div>
+        </section>
+
         <!-- Competency assessments (ADR 065). Mentors are never added to a
              section, so this list is where a Personal Mentor finds out they
              have work to do. -->
@@ -101,9 +135,9 @@
           </div>
         </section>
 
-        <p v-if="!showVerifications && !showPlacement && !competency.data?.length && !mentees.data?.length"
+        <p v-if="!showVerifications && !showPlacement && !showProjectReviews && !competency.data?.length && !mentees.data?.length"
           class="text-sm text-ink-gray-5">
-          {{ __('You are not wired to any verification, examining or mentoring work.') }}
+          {{ __('You are not wired to any verification, examining, review or mentoring work.') }}
         </p>
       </template>
     </div>
@@ -188,8 +222,13 @@ const competency = createResource({
 
 const verifications = computed(() => worklist.data?.['Manual-Verification Verifier'] || [])
 const placements = computed(() => worklist.data?.['Placement Examiner'] || [])
+const projectReviews = computed(() => worklist.data?.['Project Reviews'] || [])
 const showVerifications = computed(() => 'Manual-Verification Verifier' in (worklist.data || {}))
 const showPlacement = computed(() => 'Placement Examiner' in (worklist.data || {}))
+const showProjectReviews = computed(() => 'Project Reviews' in (worklist.data || {}))
+
+const today = new Date().toISOString().slice(0, 10)
+const overdue = (it) => !!it.due && it.due < today
 
 const busy = ref(null)
 

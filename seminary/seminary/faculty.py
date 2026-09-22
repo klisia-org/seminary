@@ -31,6 +31,11 @@ PLACEMENT_EXAMINER_ROUTE = "Placement Examiner"
 MANUAL_VERIFICATION_ROUTE = "Manual-Verification Verifier"
 THESIS_CP_ADVISOR_ROUTE = "Thesis/CP Advisor"
 
+# Worklist section key for culminating-project sign-offs (ADR 074). Unlike the
+# two routes above this is NOT a Faculty Capability — membership is the reader
+# slots on the project itself — so it never appears in `faculty_context`.
+PROJECT_REVIEW_KEY = "Project Reviews"
+
 # Roles that see every unit's worklist (mirrors utils.COURSE_FULL_ACCESS_ROLES).
 FACULTY_FULL_ACCESS_ROLES = {
     "Program Chair",
@@ -688,8 +693,10 @@ def faculty_context(user: str | None = None) -> dict:
 @frappe.whitelist()
 def get_my_faculty_worklist(route: str | None = None) -> dict:
     """Open items routed to the caller: pending Manual-Verification SGRs and
-    pending Placement Assessments in the units they are wired to. Full-access
-    roles see all. Pass a route to scope to one."""
+    pending Placement Assessments in the units they are wired to, plus any
+    culminating projects awaiting their sign-off. Full-access roles see all
+    (except project reviews, which are always reader-scoped). Pass a route to
+    scope to one."""
     full = has_full_access()
     inst = current_instructor()
     out = {}
@@ -697,7 +704,102 @@ def get_my_faculty_worklist(route: str | None = None) -> dict:
         out[MANUAL_VERIFICATION_ROUTE] = _manual_verification_worklist(full, inst)
     if route in (None, PLACEMENT_EXAMINER_ROUTE):
         out[PLACEMENT_EXAMINER_ROUTE] = _placement_worklist(full, inst)
+    if route in (None, PROJECT_REVIEW_KEY) and shows_project_reviews(inst):
+        out[PROJECT_REVIEW_KEY] = _project_review_worklist(inst)
     return out
+
+
+def shows_project_reviews(inst: str | None, capabilities: set | None = None) -> bool:
+    """Whether the Project Reviews section belongs on this user's worklist.
+
+    Capability first, mirroring Verifications and Placement Exams: holding
+    `Thesis/CP Advisor` *is* the statement that culminating projects are your
+    work, so an empty list is the useful answer ("nothing awaiting you") rather
+    than a vanished section. Gating on assignment instead hid the section from
+    exactly the people the capability was wired for.
+
+    Reader slots still count on their own, because this module's doctrine is
+    that manual entry wins: an advisor may be set straight on the project
+    without ever holding the capability, and they still have reviews to do.
+    """
+    if not inst:
+        return False
+    if capabilities is None:
+        capabilities = set(faculty_context()["capabilities"])
+    if THESIS_CP_ADVISOR_ROUTE in capabilities:
+        return True
+    return is_project_reader(inst)
+
+
+def is_project_reader(inst: str | None) -> bool:
+    """Whether this instructor occupies a reader slot on any culminating project.
+
+    Deliberately cheap (one indexed existence query): it runs on every portal
+    boot via `has_faculty_worklist`, so it must not walk milestones. It is the
+    fallback behind `shows_project_reviews`, not the primary test — capability
+    is. External Examiners are excluded by construction: they are not
+    Instructors (ADR 059) and keep the Culminating Project page instead.
+    """
+    if not inst:
+        return False
+    return bool(
+        frappe.get_all(
+            "Culminating Project",
+            or_filters={
+                "advisor": inst,
+                "second_reader": inst,
+                "third_reader": inst,
+            },
+            pluck="name",
+            limit=1,
+        )
+    )
+
+
+def _project_review_worklist(inst):
+    """Culminating projects where this reader has something to do right now.
+
+    Reuses `get_my_culminating_projects`, so "needs action" is computed in
+    exactly one place — `culminating_project._needs_action`, which already knows
+    that a milestone awaiting the student's submission is the student's ball and
+    not the reader's. The external-reader rows that call returns carry no
+    `needs_action` key and so drop out here, which is what ADR 074 wants.
+    """
+    from seminary.seminary.doctype.culminating_project.culminating_project import (
+        get_my_culminating_projects,
+    )
+
+    rows = get_my_culminating_projects().get("advisor_projects") or []
+    return [r for r in rows if r.get("needs_action")]
+
+
+def has_faculty_worklist(user: str | None = None, context: dict | None = None) -> bool:
+    """Whether the Faculty Worklist page would render any section for this user.
+
+    The sidebar link and the page must agree (ADR 074); before this existed the
+    link hand-checked two capabilities while the page rendered three sections,
+    so a mentor-only user had no way to reach their own queue.
+
+    Ordered cheapest-first: capabilities are already in memory, the reader check
+    is one indexed query, and only a user with neither pays for the mentee
+    resolution. Competency work needs no separate check — it is reachable only
+    through a section the instructor teaches, and `mentees_of` resolves those
+    same students, so a non-empty mentee list is implied by any competency item.
+    """
+    context = context if context is not None else faculty_context(user)
+    inst = context.get("instructor")
+    if not inst:
+        return False
+    caps = set(context.get("capabilities") or [])
+    if {MANUAL_VERIFICATION_ROUTE, PLACEMENT_EXAMINER_ROUTE} & caps:
+        return True
+    # Same call the page makes, so the link and the section cannot disagree.
+    if shows_project_reviews(inst, caps):
+        return True
+
+    from seminary.seminary import cbe
+
+    return bool(cbe.mentees_of(inst))
 
 
 def _filter_routed(rows, full, inst, route):

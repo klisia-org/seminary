@@ -515,6 +515,17 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
+  // ADR 074 — UX guard, not a security boundary: portal._require_org already
+  // refuses server-side, and that stays the enforcement. Without this an
+  // instructor with no Partner Contact could open New Job Posting, fill the
+  // whole form, and only be told on submit that their account isn't linked to a
+  // partner organization. Scoped narrowly to /partner/* on a flag get_user_info
+  // already returns; routes whose empty state is honest are left alone.
+  if (to.path.startsWith('/partner')) {
+    const u = userResource?.data || {}
+    if (!u.partner_org) return next('/courses')
+  }
+
   // The portal's default path is /courses, which is empty for users who aren't
   // students/instructors (e.g. an external examiner). Send such non-members to
   // their own first stop instead of an odd blank Courses page.

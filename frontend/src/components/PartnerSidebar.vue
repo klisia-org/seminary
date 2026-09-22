@@ -75,7 +75,7 @@ import { useRouter } from 'vue-router'
 import { usersStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
-import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell'
+import { PortalSwitcher, getPortalConfig, visiblePortalsFor } from '@seminary/portal-shell'
 
 const portalConfig = getPortalConfig()
 const { userResource } = usersStore()
@@ -93,13 +93,12 @@ function onSwitchOrg(name) {
 	router.push({ name: 'PartnerProfile' })
 }
 
-const visiblePortals = computed(() => {
-	const roles = userResource?.data?.roles || []
-	return portalConfig.portals.filter((p) => {
-		if (!p.roles || p.roles.length === 0) return true
-		return p.roles.some((r) => roles.includes(r))
-	})
-})
+// ADR 074: the shared filter. This was the third hand-rolled copy of the rule
+// and, like AppSidebar's, it applied roles but dropped `when` — which is why
+// Donate still showed here on a site without frappe_giving installed.
+const visiblePortals = computed(() =>
+	visiblePortalsFor(portalConfig.portals, userResource?.data),
+)
 
 const links = computed(() => [
 	{ label: __('Our Profile'), to: '/partner/profile', icon: Building2 },

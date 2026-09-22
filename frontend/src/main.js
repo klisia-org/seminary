@@ -14,7 +14,7 @@ import translationPlugin from './translation'
 import { usersStore } from './stores/user'
 import { initSocket } from './socket'
 import { FrappeUI, setConfig, frappeRequest, pageMetaPlugin } from 'frappe-ui'
-import { configurePortals } from '@seminary/portal-shell'
+import { configurePortals, SEMINARY_PORTALS } from '@seminary/portal-shell'
 import { uploadLimits } from '@/utils'
 import SafeHtml from '@/components/SafeHtml.vue'
 
@@ -49,15 +49,10 @@ configurePortals({
 		color: '#0D3049',
 		logoUrl: '/assets/seminary/images/klisia_icon.png',
 	},
-	portals: [
-		{ id: 'student', label: 'Academics', description: 'Academic Portal', url: '/seminary', roles: ['Student', 'Academics User', 'Instructor'] },
-		{ id: 'aretenic', label: 'Aretenic', description: 'Quality Management', url: '/aretenic', roles: ['Academics User', 'Instructor', 'Seminary Manager'], when: (s) => !!s?.has_aretenic },
-		{ id: 'examiner', label: 'Project Reviews', url: '/seminary/culminating-project', roles: ['External Examiner'] },
-		{ id: 'alumni', label: 'Alumni', description: 'Alumni Portal',url: '/seminary/alumni', roles: ['Alumni'] },
-		{ id: 'partner', label: 'Partner', description: 'Jobs and Internship Management',url: '/seminary/partner', roles: ['Partner'] },
-		{ id: 'community', label: 'Community', description: 'Discipleship Community', url: '/seminary/community', roles: ['Cohort Participant'] },
-		{ id: 'donor', label: 'Donate', description: 'Donor Portal', url: '/donate/donorportal' },
-	],
+	// ADR 074: one portal per deployed SPA. The examiner/alumni/partner/community
+	// entries that used to live here were all `/seminary/...` routes of this very
+	// app — the sidebar reaches them without a page reload.
+	portals: SEMINARY_PORTALS,
 	sessionFetcher: async () => {
 		await userResource.promise
 		const u = userResource.data
@@ -71,6 +66,9 @@ configurePortals({
 			// Whether the optional Aretenic app is installed (ADR 030); gates the
 			// Aretenic entry in the portal switcher via its `when` predicate.
 			has_aretenic: !!u.has_aretenic,
+			// Likewise frappe_giving (ADR 074): without it /donate/donorportal has
+			// no website route at all and the tile led to a 404.
+			has_giving: !!u.has_giving,
 		}
 	},
 })

@@ -104,15 +104,30 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
 import { statusTheme } from '@/utils/statusTheme'
 import CulminatingProjectDetail from '@/components/CulminatingProjectDetail.vue'
+
+// `?project=` deep-links straight into one project's detail, so the Faculty
+// Worklist's Project Reviews section can hand a reader the thing that needs
+// them rather than dropping them at a table to find it again (ADR 074).
+const route = useRoute()
 
 const projects = createResource({
   url: 'seminary.seminary.doctype.culminating_project.culminating_project.get_my_culminating_projects',
   auto: true,
   onSuccess(data) {
-    if (!view.value) view.value = data?.student_projects?.length ? 'student' : 'advisor'
+    const wanted = route.query.project
+    const isMine = wanted && (data?.advisor_projects || []).some((p) => p.name === wanted)
+    if (!view.value) {
+      // A deep link is an explicit choice of the reader view, even for someone
+      // who also has projects of their own as a student.
+      view.value = isMine ? 'advisor' : (data?.student_projects?.length ? 'student' : 'advisor')
+    }
+    // Only open what the server actually returned for this user — an unknown or
+    // unauthorised id falls through to the normal list instead of a blank detail.
+    if (isMine && !selectedAdvisor.value) selectedAdvisor.value = wanted
     if (data?.student_projects?.length && !selectedStudent.value) {
       selectedStudent.value = data.student_projects[0].name
     }
