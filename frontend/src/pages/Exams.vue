@@ -1,22 +1,26 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs :items="breadcrumbs" />
-		<div class="flex items-center space-x-3">
-			<router-link :to="{
-				name: 'ExamForm',
-				params: {
-					examID: 'new',
-				},
-			}">
-				<Button variant="solid">
-					<template #prefix>
-						<Plus class="w-4 h-4" />
-					</template>
-					{{ __('New Exam') }}
-				</Button>
-			</router-link>
-		</div>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+		<template #actions>
+			<div class="flex items-center space-x-3">
+				<router-link :to="{
+					name: 'ExamForm',
+					params: {
+						examID: 'new',
+					},
+				}">
+					<Button variant="solid">
+						<template #prefix>
+							<Plus class="w-4 h-4" />
+						</template>
+						{{ __('New Exam') }}
+					</Button>
+				</router-link>
+			</div>
+		</template>
+	</PageHeader>
 	<div class="md:w-7/12 md:mx-auto mx-4 py-10">
 		<Autocomplete :value="selectedCourse" :options="courseOptions" :placeholder="__('Filter by Course')"
 			class="w-64" @change="onCourseSelect" />
@@ -61,6 +65,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Autocomplete,
 	Breadcrumbs,

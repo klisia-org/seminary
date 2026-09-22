@@ -1,4 +1,10 @@
-export { configurePortals, getPortalConfig } from './config.js'
+export {
+  configurePortals,
+  getPortalConfig,
+  defaultSessionFetcher,
+  visiblePortalsFor,
+} from './config.js'
+export { SEMINARY_PORTALS } from './portals.js'
 export { useSession } from './composables/useSession.js'
 export { useTheme } from './composables/useTheme.js'
 export { default as PortalHeader } from './components/PortalHeader.vue'

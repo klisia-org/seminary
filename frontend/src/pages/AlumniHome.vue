@@ -1,11 +1,5 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<h2 class="text-xl font-bold text-ink-gray-8">
-			{{ __('Alumni') }}
-		</h2>
-	</header>
+	<AlumniHeader :title="__('Alumni')" />
 
 	<div v-if="profile.loading" class="p-5 text-ink-gray-5">
 		{{ __('Loading...') }}
@@ -143,32 +137,6 @@
 		     does not vanish when creation is switched off. -->
 		<MyOrganizationsPanel hide-when-empty />
 
-		<nav class="grid gap-3 sm:grid-cols-2">
-			<router-link
-				to="/alumni/profile"
-				class="flex items-center gap-3 rounded-lg border border-outline-gray-1 bg-surface-white p-4 hover:border-outline-gray-3"
-			>
-				<UserCog class="size-5 text-ink-gray-6" />
-				<div>
-					<div class="font-medium text-ink-gray-8">{{ __('Edit my profile') }}</div>
-					<div class="text-xs text-ink-gray-5">
-						{{ __('Update your role, organization, bio, and visibility.') }}
-					</div>
-				</div>
-			</router-link>
-			<router-link
-				to="/alumni/directory"
-				class="flex items-center gap-3 rounded-lg border border-outline-gray-1 bg-surface-white p-4 hover:border-outline-gray-3"
-			>
-				<Users class="size-5 text-ink-gray-6" />
-				<div>
-					<div class="font-medium text-ink-gray-8">{{ __('Alumni directory') }}</div>
-					<div class="text-xs text-ink-gray-5">
-						{{ __('Find classmates by name, role, organization or city, and filter by program and graduation years.') }}
-					</div>
-				</div>
-			</router-link>
-		</nav>
 	</div>
 
 	<Dialog v-model="showStart" :options="{ title: __('Start a group') }">
@@ -198,10 +166,11 @@
 </template>
 
 <script setup>
+import AlumniHeader from '@/components/AlumniHeader.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, Dialog, Input, createResource } from 'frappe-ui'
-import { GraduationCap, UserCog, Users } from 'lucide-vue-next'
+import { GraduationCap } from 'lucide-vue-next'
 import MyOrganizationsPanel from '@/components/MyOrganizationsPanel.vue'
 
 const router = useRouter()

@@ -1,8 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Our People') }}</h2>
-		<Button variant="solid" @click="openCreate">{{ __('Create contact') }}</Button>
-	</header>
+	<PartnerHeader :title="__('Our People')">
+		<template #actions>
+			<Button variant="solid" @click="openCreate">{{ __('Create contact') }}</Button>
+		</template>
+	</PartnerHeader>
 
 	<div v-if="people.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="people.error" class="p-5 text-ink-red-4">{{ people.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -17,11 +18,27 @@
 					<span class="font-semibold text-ink-gray-8">{{ p.full_name }}</span>
 					<Badge v-if="p.is_primary" theme="blue" variant="subtle">{{ __('Primary') }}</Badge>
 					<Badge v-if="p.portal_access" theme="green" variant="subtle">{{ __('Portal access') }}</Badge>
+					<Badge v-if="p.relationship_status !== 'Active'" theme="gray" variant="subtle">
+						{{ __(p.relationship_status) }}
+					</Badge>
 				</div>
 				<div v-if="p.role_at_org" class="text-sm text-ink-gray-6">{{ p.role_at_org }}</div>
 				<div class="text-xs text-ink-gray-5">
 					{{ p.email }}<span v-if="p.mobile"> &middot; {{ p.mobile }}</span>
 				</div>
+			</div>
+			<!-- ADR 077: who speaks for this organization is the primary
+			     contact's call. `may_manage` comes from the server and is the
+			     same test set_contact_status enforces. -->
+			<div v-if="p.may_manage" class="shrink-0">
+				<Button v-if="p.relationship_status === 'Active'" variant="subtle" size="sm"
+					:loading="statusBusy === p.person" @click="setStatus(p, 'Former')">
+					{{ __('Remove') }}
+				</Button>
+				<Button v-else variant="subtle" size="sm"
+					:loading="statusBusy === p.person" @click="setStatus(p, 'Active')">
+					{{ __('Reactivate') }}
+				</Button>
 			</div>
 		</li>
 	</ul>
@@ -47,6 +64,7 @@
 </template>
 
 <script setup>
+import PartnerHeader from '@/components/PartnerHeader.vue'
 import { reactive, ref, watch } from 'vue'
 import { createResource, Button, Badge, FormControl, Dialog, toast } from 'frappe-ui'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
@@ -61,6 +79,17 @@ const people = createResource({
 watch(activeOrg, () => people.reload())
 
 const showCreate = ref(false)
+const setStatusRes = createResource({ url: 'seminary.partner.portal.set_contact_status' })
+const statusBusy = ref(null)
+function setStatus(p, status) {
+	statusBusy.value = p.person
+	setStatusRes
+		.submit({ person: p.person, status, org: activeOrg.value })
+		.then(() => people.reload())
+		.catch((e) => toast.error(e.messages?.[0] || __('Could not update this contact.')))
+		.finally(() => (statusBusy.value = null))
+}
+
 const cForm = reactive({ first_name: '', last_name: '', email: '', mobile: '', role_at_org: '', grant: false })
 function openCreate() {
 	Object.assign(cForm, { first_name: '', last_name: '', email: '', mobile: '', role_at_org: '', grant: false })

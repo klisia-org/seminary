@@ -1,24 +1,26 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<Breadcrumbs :items="breadcrumbs" />
-		<router-link
-			:to="{
-				name: 'QuizForm',
-				params: {
-					quizID: 'new',
-				},
-			}"
-		>
-			<Button variant="solid">
-				<template #prefix>
-					<Plus class="w-4 h-4" />
-				</template>
-				{{ __('New Quiz') }}
-			</Button>
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+		<template #actions>
+			<router-link
+				:to="{
+					name: 'QuizForm',
+					params: {
+						quizID: 'new',
+					},
+				}"
+			>
+				<Button variant="solid">
+					<template #prefix>
+						<Plus class="w-4 h-4" />
+					</template>
+					{{ __('New Quiz') }}
+				</Button>
+			</router-link>
+		</template>
+	</PageHeader>
 	<div v-if="quizzes.data?.length" class="md:w-3/4 md:mx-auto py-5 mx-5">
 		<ListView
 			:columns="quizColumns"
@@ -70,6 +72,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Breadcrumbs,
 	Button,

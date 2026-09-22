@@ -1,15 +1,9 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<router-link
-			:to="{ name: 'PartnerOrganizationList' }"
-			class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8"
-		>
-			<ArrowLeft class="size-4" />
-			{{ __('Organizations') }}
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 
 	<div v-if="org.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 
@@ -67,9 +61,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
-import { createResource, Badge } from 'frappe-ui'
-import { ArrowLeft, MapPin, Globe, Mail, Briefcase } from 'lucide-vue-next'
+import { Breadcrumbs, createResource, Badge } from 'frappe-ui'
+import { MapPin, Globe, Mail, Briefcase } from 'lucide-vue-next'
 
 const props = defineProps({ name: { type: String, required: true } })
 
@@ -78,4 +74,9 @@ const org = createResource({
 	makeParams: () => ({ name: props.name }),
 	auto: true,
 })
+
+const breadcrumbs = computed(() => [
+	{ label: __('Organizations'), route: { name: 'PartnerOrganizationList' } },
+	{ label: __('Organization') },
+])
 </script>

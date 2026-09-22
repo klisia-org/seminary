@@ -1,67 +1,67 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex flex-col gap-2 border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-			<h2 class="text-xl font-bold text-ink-gray-8">
-				{{ __('Alumni Directory') }}
-			</h2>
-			<div class="relative w-full sm:w-80">
-				<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
-				<input
-					v-model="query"
-					type="search"
-					class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
-					:placeholder="__('Search')"
-				/>
-			</div>
+	<AlumniHeader :title="__('Alumni Directory')" />
+
+	<!-- ADR 075: filters live in the body, above what they filter. In the sticky
+	     header they competed with the title and forced the flex-col variant. -->
+	<div class="flex flex-col gap-2 border-b bg-surface-white px-3 py-3 sm:px-5">
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+		<div class="relative w-full sm:w-80">
+			<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
+			<input
+				v-model="query"
+				type="search"
+				class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
+				:placeholder="__('Search')"
+			/>
 		</div>
+	</div>
 
-		<!-- The hint used to live in the placeholder, where the input clipped it. -->
-		<p class="text-xs text-ink-gray-5">
-			{{ __('Search by name, role, organization or city. Use the filters for program and graduation years.') }}
-		</p>
+	<!-- The hint used to live in the placeholder, where the input clipped it. -->
+	<p class="text-xs text-ink-gray-5">
+		{{ __('Search by name, role, organization or city. Use the filters for program and graduation years.') }}
+	</p>
 
-		<div class="flex flex-wrap items-end gap-2 pb-0.5">
-			<label class="flex flex-col gap-1">
-				<span class="text-xs text-ink-gray-5">{{ __('Program') }}</span>
-				<select v-model="program" class="filter-select">
-					<option value="">{{ __('Any program') }}</option>
-					<option v-for="p in programs.data || []" :key="p.name" :value="p.name">
-						{{ p.program_name || p.name }}
-					</option>
-				</select>
-			</label>
+	<div class="flex flex-wrap items-end gap-2 pb-0.5">
+		<label class="flex flex-col gap-1">
+			<span class="text-xs text-ink-gray-5">{{ __('Program') }}</span>
+			<select v-model="program" class="filter-select">
+				<option value="">{{ __('Any program') }}</option>
+				<option v-for="p in programs.data || []" :key="p.name" :value="p.name">
+					{{ p.program_name || p.name }}
+				</option>
+			</select>
+		</label>
 
-			<label class="flex flex-col gap-1">
-				<span class="text-xs text-ink-gray-5">{{ __('Class year from') }}</span>
-				<input
-					v-model="classYearFrom"
-					type="number"
-					inputmode="numeric"
-					class="filter-select w-24"
-					:placeholder="__('Any')"
-				/>
-			</label>
-			<label class="flex flex-col gap-1">
-				<span class="text-xs text-ink-gray-5">{{ __('to') }}</span>
-				<input
-					v-model="classYearTo"
-					type="number"
-					inputmode="numeric"
-					class="filter-select w-24"
-					:placeholder="__('Any')"
-				/>
-			</label>
+		<label class="flex flex-col gap-1">
+			<span class="text-xs text-ink-gray-5">{{ __('Class year from') }}</span>
+			<input
+				v-model="classYearFrom"
+				type="number"
+				inputmode="numeric"
+				class="filter-select w-24"
+				:placeholder="__('Any')"
+			/>
+		</label>
+		<label class="flex flex-col gap-1">
+			<span class="text-xs text-ink-gray-5">{{ __('to') }}</span>
+			<input
+				v-model="classYearTo"
+				type="number"
+				inputmode="numeric"
+				class="filter-select w-24"
+				:placeholder="__('Any')"
+			/>
+		</label>
 
-			<label class="flex items-center gap-1.5 pb-1.5 text-sm text-ink-gray-7">
-				<input v-model="openToInvites" type="checkbox" class="rounded border-outline-gray-3" />
-				{{ __('Open to cohort invitations') }}
-			</label>
+		<label class="flex items-center gap-1.5 pb-1.5 text-sm text-ink-gray-7">
+			<input v-model="openToInvites" type="checkbox" class="rounded border-outline-gray-3" />
+			{{ __('Open to cohort invitations') }}
+		</label>
 
-			<Button v-if="anyFilter" variant="subtle" size="sm" :label="__('Clear')" @click="clearFilters" />
-		</div>
-	</header>
+		<Button v-if="anyFilter" variant="subtle" size="sm" :label="__('Clear')" @click="clearFilters" />
+	</div>
+	</div>
+
 
 	<div v-if="results.loading" class="p-5 text-ink-gray-5">
 		{{ __('Searching...') }}
@@ -170,6 +170,7 @@
 </template>
 
 <script setup>
+import AlumniHeader from '@/components/AlumniHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { ref, computed, watch } from 'vue'
 import { Button, createResource, debounce } from 'frappe-ui'

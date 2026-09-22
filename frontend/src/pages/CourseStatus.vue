@@ -1,8 +1,10 @@
 <template>
   <div v-if="isStudent">
-    <header class="sticky top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      <Breadcrumbs :items="breadcrumbs" />
-    </header>
+    <PageHeader>
+    	<template #title>
+    		<Breadcrumbs :items="breadcrumbs" />
+    	</template>
+    </PageHeader>
 
     <div v-if="status.loading" class="flex items-center justify-center py-20">
       <LoadingIndicator class="w-8 h-8" />
@@ -274,6 +276,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem, Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
 import { computed, inject, ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'

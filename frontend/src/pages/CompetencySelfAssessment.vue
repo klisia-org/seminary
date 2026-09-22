@@ -1,9 +1,10 @@
 <template>
 	<div class="self-assessment">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		</header>
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+		</PageHeader>
 
 		<div v-if="context.loading" class="flex justify-center py-16">
 			<LoadingIndicator class="h-8 w-8" />
@@ -129,6 +130,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Badge, Breadcrumbs, Button, FormControl, LoadingIndicator, createResource, call, toast,
 } from 'frappe-ui'

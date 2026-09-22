@@ -2,17 +2,20 @@
 	<div class="">
 		<div class="grid md:grid-cols-[70%,30%] h-full">
 			<div>
-				<header
-					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-					<Breadcrumbs class="h-7" :items="breadcrumbs" />
-					<div class="flex items-center mt-3 md:mt-0">
-						<Button variant="solid" @click="submitCourse()" class="ml-2">
-							<span>
-								{{ __('Save') }}
-							</span>
-						</Button>
-					</div>
-				</header>
+				<PageHeader>
+					<template #title>
+						<Breadcrumbs class="h-7" :items="breadcrumbs" />
+					</template>
+					<template #actions>
+						<div class="flex items-center mt-3 md:mt-0">
+							<Button variant="solid" @click="submitCourse()" class="ml-2">
+								<span>
+									{{ __('Save') }}
+								</span>
+							</Button>
+						</div>
+					</template>
+				</PageHeader>
 				<div class="mt-5 mb-10">
 					<div class="container mb-5">
 						<div class="text-lg font-semibold mb-4">
@@ -253,6 +256,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Breadcrumbs,
 	TextEditor,

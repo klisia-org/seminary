@@ -1,10 +1,7 @@
 <template>
 	<div v-if="isStudent">
 
-		<h2
-			class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			{{ __('My Financial Status') }}
-		</h2>
+		<PageHeader :title="__('My Financial Status')" />
 
 		<!-- Payment success banner -->
 		<div v-if="paymentSuccess"
@@ -195,6 +192,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 
 import { Badge, Button, Dialog, FormControl, createResource } from 'frappe-ui'
 import { computed, onMounted, reactive, ref, inject } from 'vue'

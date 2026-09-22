@@ -1,11 +1,14 @@
 <template>
 	<div class="competency-profile">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-			<FormControl v-if="(profile.data?.enrollments || []).length > 1" type="select"
-				:options="enrollmentOptions" v-model="enrollment" />
-		</header>
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+			<template #actions>
+				<FormControl v-if="(profile.data?.enrollments || []).length > 1" type="select"
+					:options="enrollmentOptions" v-model="enrollment" />
+			</template>
+		</PageHeader>
 
 		<div v-if="profile.loading" class="flex justify-center py-16">
 			<LoadingIndicator class="h-8 w-8" />
@@ -130,6 +133,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Breadcrumbs, FormControl, LoadingIndicator, createResource } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import RadarChart from '@/components/RadarChart.vue'

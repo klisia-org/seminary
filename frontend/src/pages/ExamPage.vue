@@ -1,12 +1,15 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs :items="breadcrumbs" />
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 	<div class="pt-5 pb-10 px-5">
 		<Exam :examName="examID" />
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import Exam from '@/components/Exam.vue'
 import { createResource, Breadcrumbs } from 'frappe-ui'
 import { computed, inject, onMounted } from 'vue'

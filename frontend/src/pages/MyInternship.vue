@@ -1,9 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<router-link :to="{ name: 'MyInternships' }" class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
-			<ArrowLeft class="size-4" />{{ __('My Internships') }}
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 
 	<div v-if="info.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="info.error" class="p-5 text-ink-red-4">{{ info.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -64,10 +64,10 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
-import { ref } from 'vue'
-import { createResource, Badge, Button, FormControl, FileUploader, toast } from 'frappe-ui'
-import { ArrowLeft } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Breadcrumbs, createResource, Badge, Button, FormControl, FileUploader, toast } from 'frappe-ui'
 import StudentPlacementCard from '@/components/StudentPlacementCard.vue'
 
 const props = defineProps({ name: { type: String, required: true } })
@@ -107,4 +107,9 @@ function reqTheme(s) {
 	if (s === 'Submitted' || s === 'In Progress') return 'blue'
 	return 'gray'
 }
+
+const breadcrumbs = computed(() => [
+	{ label: __('My Internships'), route: { name: 'MyInternships' } },
+	{ label: __('Internship') },
+])
 </script>

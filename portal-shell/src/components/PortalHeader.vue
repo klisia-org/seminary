@@ -30,7 +30,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { getPortalConfig } from '../config.js'
+import { getPortalConfig, visiblePortalsFor } from '../config.js'
 import { useSession } from '../composables/useSession.js'
 import PortalSwitcher from './PortalSwitcher.vue'
 import UserMenu from './UserMenu.vue'
@@ -43,17 +43,7 @@ const props = defineProps({
 const config = getPortalConfig()
 const { user, signOut } = useSession()
 
-const visiblePortals = computed(() => {
-	const session = user.value
-	const userRoles = session?.roles || []
-	return config.portals.filter((p) => {
-		// Optional capability gate: a portal may declare `when(session)` to hide
-		// itself unless some feature is present (e.g. an optional app being installed).
-		if (typeof p.when === 'function' && !p.when(session)) return false
-		if (!p.roles || p.roles.length === 0) return true
-		return p.roles.some((r) => userRoles.includes(r))
-	})
-})
+const visiblePortals = computed(() => visiblePortalsFor(config.portals, user.value))
 </script>
 
 <style>

@@ -1,8 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Our Profile') }}</h2>
-		<Button variant="solid" :loading="save.loading" @click="onSave">{{ __('Save changes') }}</Button>
-	</header>
+	<PartnerHeader :title="__('Our Profile')">
+		<template #actions>
+			<Button variant="solid" :loading="save.loading" @click="onSave">{{ __('Save changes') }}</Button>
+		</template>
+	</PartnerHeader>
 
 	<div v-if="org.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="org.error" class="p-5 text-ink-red-4">{{ org.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -82,6 +83,19 @@
 			</ul>
 			<div v-else class="text-sm text-ink-gray-5">{{ __('No locations yet.') }}</div>
 		</div>
+
+		<!-- ADR 077: a partner contact who is not an alumnus has no alumni panel,
+		     and per ADR 075 the Partner area is their only surface — so ending
+		     the relationship has to be reachable from here. -->
+		<div class="mt-10 border-t border-outline-gray-2 pt-4">
+			<div class="text-sm font-medium text-ink-gray-8">{{ __('Leave this organization') }}</div>
+			<p class="mt-1 text-sm text-ink-gray-5">
+				{{ __('You will stop acting for it and lose access to its partner pages. Your past involvement stays on record.') }}
+			</p>
+			<Button class="mt-2" variant="subtle" theme="red" @click="showLeave = true">
+				{{ __('Leave') }}
+			</Button>
+		</div>
 	</div>
 
 	<!-- Location dialog -->
@@ -98,9 +112,26 @@
 			</div>
 		</template>
 	</Dialog>
+
+	<Dialog v-model="showLeave" :options="{ title: __('Leave organization') }">
+		<template #body-content>
+			<p class="text-sm text-ink-gray-6">
+				{{ __('Stop acting for {0}?').format(org.data?.organization_name || '') }}
+			</p>
+			<p class="mt-2 text-sm text-ink-amber-3">
+				{{ __('If you are the only active contact, staff will be asked to review the organization.') }}
+			</p>
+		</template>
+		<template #actions>
+			<Button variant="solid" theme="red" :loading="leaveOrg.loading" @click="confirmLeave">
+				{{ __('Leave') }}
+			</Button>
+		</template>
+	</Dialog>
 </template>
 
 <script setup>
+import PartnerHeader from '@/components/PartnerHeader.vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { createResource, Button, FormControl, TextEditor, FileUploader, Dialog, toast } from 'frappe-ui'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
@@ -113,6 +144,21 @@ const form = reactive(Object.fromEntries(EDITABLE.map((k) => [k, ''])))
 
 const ministryOptions = [{ label: '—', value: '' }, ...['Urban', 'Suburban', 'Rural', 'Campus'].map((v) => ({ label: __(v), value: v }))]
 const sizeOptions = [{ label: '—', value: '' }, ...['Under 50', '50-150', '150-500', 'Over 500'].map((v) => ({ label: v, value: v }))]
+
+const leaveOrg = createResource({ url: 'seminary.partner.portal.leave_organization' })
+const showLeave = ref(false)
+function confirmLeave() {
+	leaveOrg
+		.submit({ org: activeOrg.value })
+		.then(() => {
+			showLeave.value = false
+			// The Partner role and partner_org are gone now, so the cached session
+			// would still show /partner in the sidebar. A full reload re-resolves
+			// it and lets the route guard send them somewhere they can still go.
+			window.location.href = '/seminary/preferences'
+		})
+		.catch((e) => toast.error(e.messages?.[0] || __('Could not leave.')))
+}
 
 const org = createResource({
 	url: 'seminary.partner.portal.get_my_org',

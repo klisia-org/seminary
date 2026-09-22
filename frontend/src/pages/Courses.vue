@@ -1,19 +1,17 @@
 <template>
-  <header class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-    <div class="flex items-center">
-      <h1 class="text-xl font-semibold text-ink-gray-9">{{ headingLabel }}</h1>
-    </div>
+  <PageHeader :title="headingLabel">
     <!-- p007 §2.8: an instructor of record (or a chair/manager) may widen the
-         list beyond their own sections; graders and assistants never see it. -->
-    <div v-if="canListAllCourses" class="flex items-center gap-2 text-sm">
-      <label for="courseScope" class="text-ink-gray-7">{{ __('Show') }}</label>
+         list beyond their own sections; graders and assistants never see it.
+         This is the page's primary scope selector, so ADR 075 keeps it here. -->
+    <template v-if="canListAllCourses" #actions>
+      <label for="courseScope" class="text-sm text-ink-gray-7">{{ __('Show') }}</label>
       <select id="courseScope" v-model="courseScope"
         class="rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm sm:text-sm">
         <option value="mine">{{ __('My Courses') }}</option>
         <option value="all">{{ __('All Courses') }}</option>
       </select>
-    </div>
-  </header>
+    </template>
+  </PageHeader>
 
   <!-- Parent container for filters and course cards -->
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
@@ -109,6 +107,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, onMounted, ref, watch, watchEffect, reactive, toRaw } from 'vue'
 import { BookOpen, Plus, PartyPopper } from 'lucide-vue-next'
 import { createResource, Badge } from 'frappe-ui'

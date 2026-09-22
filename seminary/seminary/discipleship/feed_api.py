@@ -10,7 +10,12 @@ from frappe import _
 from frappe.utils import get_datetime, now
 
 from seminary.seminary.person import find_person
-from seminary.seminary.discipleship.permissions import STAFF_BYPASS, post_has
+from seminary.seminary.discipleship.permissions import (
+    STAFF_BYPASS,
+    led_cohorts,
+    post_has,
+    visible_cohorts,
+)
 
 _ANCHOR_FIELDS = {
     "Timestamp": ("timestamp_s",),
@@ -65,6 +70,25 @@ def create_post(
         visibility = (
             frappe.db.get_value("Cohort", cohort, "visibility") or "cohort_only"
         )
+    # ADR 076: writing to every mentor across a cohort subtree is a leadership
+    # act, so it takes the same authority as the leader broadcast. Enforced here
+    # and not only in the composer -- the Select is hidden for others, but a
+    # hidden control is not a permission.
+    if visibility == "mentors" and not (_is_staff() or cohort in led_cohorts()):
+        frappe.throw(
+            _("Only staff or a leader of this cohort can post to mentors."),
+            frappe.PermissionError,
+        )
+    if visibility == "direct":
+        # The recipient must be someone the author can already reach, so the
+        # picker can never promise a post the permission layer would hide.
+        if not direct_recipient:
+            frappe.throw(_("A direct post needs a recipient."))
+        if not _is_staff() and not _reachable_person(direct_recipient):
+            frappe.throw(
+                _("You can only write to people in your cohorts."),
+                frappe.PermissionError,
+            )
     doc = frappe.get_doc(
         {
             "doctype": "Cohort Post",
@@ -132,6 +156,14 @@ def list_feed(
     saved_only=None,
 ):
     filters = {"status": ["in", ["published", "pinned"]]}
+    # `cohort` omitted means the All-posts view: no cohort filter at all, so
+    # get_list's permission clause alone decides -- portal-wide posts, plus the
+    # cohort_only posts of cohorts I belong to, plus my own private/direct. That
+    # is exactly "all posts I may see", and it needs no query of its own.
+    #
+    # A selected cohort means *that* cohort, nothing widened: with All available,
+    # mixing other cohorts' portal-wide posts into a single-cohort view would
+    # make the two options overlap instead of compose.
     if cohort:
         filters["cohort"] = cohort
     if channel:
@@ -407,21 +439,29 @@ def toggle_reaction(reaction_type, post=None, comment=None):
 # Read-state / unread
 # --------------------------------------------------------------------------- #
 @frappe.whitelist()
-def mark_seen(cohort, channel=None):
-    """Mark a channel (or every channel in the cohort, when channel is omitted)
-    as read up to now — advances the 'new posts' baseline."""
+def mark_seen(cohort=None, channel=None):
+    """Mark a channel (or every channel, when channel is omitted) as read up to
+    now — advances the 'new posts' baseline.
+
+    Without a cohort this is the All-posts view, where the badge summed every
+    cohort: clearing only one would leave a stale count, so it clears them all.
+    """
     person = _my_person()
-    if channel:
-        channels = [channel]
-    else:
-        channels = frappe.get_all(
-            "Cohort Post",
-            filters={"cohort": cohort, "status": ["in", ["published", "pinned"]]},
-            distinct=True,
-            pluck="channel",
-        )
-    for ch in channels:
-        _upsert_seen(person, cohort, ch)
+    if not person:
+        return {"ok": False}
+    cohorts = [cohort] if cohort else sorted(visible_cohorts())
+    for c in cohorts:
+        if channel:
+            channels = [channel]
+        else:
+            channels = frappe.get_all(
+                "Cohort Post",
+                filters={"cohort": c, "status": ["in", ["published", "pinned"]]},
+                distinct=True,
+                pluck="channel",
+            )
+        for ch in channels:
+            _upsert_seen(person, c, ch)
     return True
 
 
@@ -445,34 +485,53 @@ def _upsert_seen(person, cohort, channel):
 
 
 @frappe.whitelist()
-def unread_counts(cohort):
-    """Per-channel unread post count for the caller in one cohort."""
+def unread_counts(cohort=None):
+    """Per-channel unread post count for the caller.
+
+    With a cohort, that cohort alone. Without one — the All-posts view — the
+    counts are summed across every cohort the caller belongs to, because read
+    state is keyed per (person, cohort, channel) and a channel is global: the
+    same "Prayer" chip stands for prayer posts in all of them.
+
+    Channels are site-wide (`Cohort Channel` has no cohort link), which is what
+    makes the sum meaningful rather than a category error.
+    """
     person = _my_person()
-    channels = frappe.get_all(
-        "Cohort Post",
-        filters={"cohort": cohort, "status": ["in", ["published", "pinned"]]},
-        distinct=True,
-        pluck="channel",
-    )
-    seen = {
-        r.channel: r.last_seen
-        for r in frappe.get_all(
-            "Cohort Feed Read State",
-            filters={"person": person, "cohort": cohort},
-            fields=["channel", "last_seen"],
-        )
-    }
+    if not person:
+        return {}
+    cohorts = [cohort] if cohort else sorted(visible_cohorts())
+    if not cohorts:
+        return {}
+
+    seen = {}
+    for r in frappe.get_all(
+        "Cohort Feed Read State",
+        filters={"person": person, "cohort": ["in", cohorts]},
+        fields=["cohort", "channel", "last_seen"],
+    ):
+        seen[(r.cohort, r.channel)] = r.last_seen
+
     out = {}
-    for ch in channels:
-        filters = {
-            "cohort": cohort,
-            "channel": ch,
-            "status": ["in", ["published", "pinned"]],
-            "author": ["!=", person],
-        }
-        if seen.get(ch):
-            filters["creation"] = [">", seen[ch]]
-        out[ch] = len(frappe.get_list("Cohort Post", filters=filters, pluck="name"))
+    for c in cohorts:
+        channels = frappe.get_all(
+            "Cohort Post",
+            filters={"cohort": c, "status": ["in", ["published", "pinned"]]},
+            distinct=True,
+            pluck="channel",
+        )
+        for ch in channels:
+            filters = {
+                "cohort": c,
+                "channel": ch,
+                "status": ["in", ["published", "pinned"]],
+                "author": ["!=", person],
+            }
+            last = seen.get((c, ch))
+            if last:
+                filters["creation"] = [">", last]
+            n = len(frappe.get_list("Cohort Post", filters=filters, pluck="name"))
+            if n:
+                out[ch] = out.get(ch, 0) + n
     return out
 
 
@@ -692,6 +751,67 @@ def my_cohorts_list():
                 }
             )
     return out
+
+
+def _reachable_person(person):
+    """Whether `person` shares a cohort the caller can see (ADR 076)."""
+    cohorts = visible_cohorts()
+    if not cohorts:
+        return False
+    return bool(
+        frappe.get_all(
+            "Cohort Membership",
+            filters={
+                "person": person,
+                "cohort": ["in", list(cohorts)],
+                "active": 1,
+            },
+            limit=1,
+        )
+    )
+
+
+@frappe.whitelist()
+def search_recipients(query, limit=10):
+    """Type-ahead over people the caller may write to directly (ADR 076).
+
+    Scoped to `visible_cohorts` rather than every Person on the site: as cohort
+    lineage grows an unscoped picker is both unusable and wrong, because it
+    offers recipients the permission layer would then refuse. The list is never
+    enumerated, only searched, so lineage size does not matter.
+
+    Returns the cohort name alongside each person, because the same name can
+    appear in several and the author needs to tell them apart.
+    """
+    query = (query or "").strip()
+    if len(query) < 2:
+        return []
+    cohorts = visible_cohorts()
+    if not cohorts:
+        return []
+    me = _my_person()
+    rows = frappe.db.sql(
+        """
+        SELECT DISTINCT m.person, p.full_name, c.cohort_name
+        FROM `tabCohort Membership` m
+        JOIN `tabPerson` p ON p.name = m.person
+        LEFT JOIN `tabCohort` c ON c.name = m.cohort
+        WHERE m.active = 1
+          AND m.cohort IN %(cohorts)s
+          AND p.full_name LIKE %(like)s
+          AND m.person != %(me)s
+        ORDER BY p.full_name ASC
+        LIMIT %(limit)s
+        """,
+        {
+            "cohorts": tuple(cohorts),
+            "like": "%" + query + "%",
+            "me": me or "",
+            "limit": int(limit),
+        },
+        as_dict=True,
+    )
+    return rows
 
 
 @frappe.whitelist()

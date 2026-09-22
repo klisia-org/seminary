@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AlumniDirectoryProfile: typeof import('./src/components/AlumniDirectoryProfile.vue')['default']
+    AlumniHeader: typeof import('./src/components/AlumniHeader.vue')['default']
     AnnouncementModal: typeof import('./src/components/Modals/AnnouncementModal.vue')['default']
     Announcements: typeof import('./src/components/Announcements.vue')['default']
     AppSidebar: typeof import('./src/components/AppSidebar.vue')['default']
@@ -59,8 +60,10 @@ declare module 'vue' {
     Notes: typeof import('./src/components/Notes.vue')['default']
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
     OpenQuestionnairesPanel: typeof import('./src/components/OpenQuestionnairesPanel.vue')['default']
+    PageHeader: typeof import('./src/components/PageHeader.vue')['default']
+    PageTabs: typeof import('./src/components/PageTabs.vue')['default']
+    PartnerHeader: typeof import('./src/components/PartnerHeader.vue')['default']
     PartnerPlacementCard: typeof import('./src/components/PartnerPlacementCard.vue')['default']
-    PartnerSidebar: typeof import('./src/components/PartnerSidebar.vue')['default']
     PdfViewer: typeof import('./src/components/AssignmentViewers/PdfViewer.vue')['default']
     ProfileModal: typeof import('./src/components/ProfileModal.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']

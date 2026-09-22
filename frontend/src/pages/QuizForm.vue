@@ -1,43 +1,45 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<Breadcrumbs :items="breadcrumbs" />
-		<div class="space-x-2">
-			<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
-				{{ __('Back to lesson') }}
-			</Button>
-			<router-link
-				v-if="quizDetails.data?.name"
-				:to="{
-					name: 'QuizPage',
-					params: {
-						quizID: quizDetails.data.name,
-					},
-				}"
-			>
-				<Button>
-					{{ __('Open') }}
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+		<template #actions>
+			<div class="space-x-2">
+				<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
+					{{ __('Back to lesson') }}
 				</Button>
-			</router-link>
-			<router-link
-				v-if="quizDetails.data?.name"
-				:to="{
-					name: 'QuizSubmissionList',
-					params: {
-						quizID: quizDetails.data.name,
-					},
-				}"
-			>
-				<Button>
-					{{ __('Submission List') }}
+				<router-link
+					v-if="quizDetails.data?.name"
+					:to="{
+						name: 'QuizPage',
+						params: {
+							quizID: quizDetails.data.name,
+						},
+					}"
+				>
+					<Button>
+						{{ __('Open') }}
+					</Button>
+				</router-link>
+				<router-link
+					v-if="quizDetails.data?.name"
+					:to="{
+						name: 'QuizSubmissionList',
+						params: {
+							quizID: quizDetails.data.name,
+						},
+					}"
+				>
+					<Button>
+						{{ __('Submission List') }}
+					</Button>
+				</router-link>
+				<Button variant="solid" @click="submitQuiz()">
+					{{ __('Save') }}
 				</Button>
-			</router-link>
-			<Button variant="solid" @click="submitQuiz()">
-				{{ __('Save') }}
-			</Button>
-		</div>
-	</header>
+			</div>
+		</template>
+	</PageHeader>
 	<div class="w-3/4 mx-auto py-5">
 		<!-- Details -->
 		<div class="mb-8">
@@ -200,6 +202,7 @@
 	/>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Breadcrumbs,
 	createResource,
