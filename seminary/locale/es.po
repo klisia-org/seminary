@@ -4,7 +4,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-09-18 10:36-0609\n"
 "PO-Revision-Date: 2026-09-22 03:01+0000\n"
-"Last-Translator: OpenAI <noreply-mt-openai@weblate.org>\n"
+"Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
 "Language-Team: Spanish <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/es/>\n"
 "MIME-Version: 1.0\n"
@@ -3992,7 +3992,7 @@ msgstr "Amén"
 #: seminary/seminary/doctype/term_admission/term_admission.json
 #: seminary/seminary/doctype/withdrawal_request/withdrawal_request.json
 msgid "Amended From"
-msgstr "Desde"
+msgstr "Modificado desde"
 
 #. Label of the amount (Currency) field in DocType 'Instructor Category Rate'
 #: frontend/src/pages/Fees.vue:114
@@ -35927,7 +35927,7 @@ msgstr "Enlaces del sistema"
 #: seminary/seminary/doctype/website_branding/website_branding.json
 #: seminary/seminary/doctype/withdrawal_request/withdrawal_request.json
 msgid "System Manager"
-msgstr "Gestor del sistema"
+msgstr "Administrador del sistema"
 
 #. Label of the user (Link) field in DocType 'Instructor'
 #: seminary/seminary/doctype/instructor/instructor.json
@@ -39445,7 +39445,7 @@ msgstr "Graduado"
 #. Option for the 'Status' (Select) field in DocType 'Internship Application'
 #: seminary/partner/doctype/internship_application/internship_application.json
 msgid "Under Review"
-msgstr ""
+msgstr "En revisión"
 
 #: frontend/src/components/ImprovementActionsPanel.vue:46
 #: seminary/public/frontend/assets/CourseDetail-KhSMMnPd.js:2
