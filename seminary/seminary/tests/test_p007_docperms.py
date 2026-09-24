@@ -252,6 +252,26 @@ class TestP007DocPerms(IntegrationTestCase):
             for n, v in was.items():
                 frappe.db.set_value("Course Schedule", n, "published", v)
 
+    def test_staff_list_their_unpublished_sections(self):
+        """An instructor builds the course before publishing it, so the
+        course list shows staff their unpublished sections; a student on the
+        roster still sees nothing until it is published."""
+        from seminary.seminary.utils import get_courses
+
+        was = frappe.db.get_value("Course Schedule", self.cs.name, "published")
+        try:
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", 0)
+            for user in (self.prof_user, self.gta_user):
+                self._as(user)
+                listed = [c.name for c in get_courses(page_length=1000)]
+                self.assertIn(self.cs.name, listed, user)
+            self._as(self.stu_a_user)
+            listed = [c.name for c in get_courses(page_length=1000)]
+            self.assertNotIn(self.cs.name, listed)
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", was)
+
     # ---------------------------------------------------------------- tiers
 
     def test_instructor_tiers(self):

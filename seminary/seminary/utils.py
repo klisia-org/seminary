@@ -546,11 +546,6 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
         filters = {}
 
     filters.setdefault("workflow_state", ["!=", "Cancelled"])
-    # Only staff may list unpublished sections (p006 §2.11).
-    if has_super_access():
-        filters.setdefault("published", 1)
-    else:
-        filters["published"] = 1
 
     roles = set(frappe.get_roles())
     full_access = bool(roles & COURSE_FULL_ACCESS_ROLES)
@@ -567,8 +562,8 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
                     return []
                 filters["name"] = ["in", readable]
         else:
-            # A grader who is also a student: the sections they work on plus
-            # the published ones they take.
+            # A grader who is also a student: the sections they work on,
+            # published or not, plus the published ones they take.
             from seminary.seminary.guards import student_sections
 
             own = sorted(
@@ -580,13 +575,16 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
             filters["name"] = ["in", own]
     elif not has_super_access():
         # A student lists the published sections they are enrolled in, not the
-        # school's whole published offering (p007 §8.1).
+        # school's whole published offering (p007 §8.1). Only staff see
+        # unpublished sections: that is where an instructor builds the course
+        # (p006 §2.11).
         from seminary.seminary.guards import student_sections
 
         mine = student_sections()
         if not mine:
             return []
         filters["name"] = ["in", mine]
+        filters["published"] = 1
 
     fields = get_course_fields()
 
