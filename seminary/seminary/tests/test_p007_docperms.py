@@ -252,6 +252,67 @@ class TestP007DocPerms(IntegrationTestCase):
             for n, v in was.items():
                 frappe.db.set_value("Course Schedule", n, "published", v)
 
+    def test_staff_list_their_unpublished_sections(self):
+        """An instructor builds the course before publishing it, so the
+        course list shows staff their unpublished sections; a student on the
+        roster still sees nothing until it is published."""
+        from seminary.seminary.utils import get_courses
+
+        was = frappe.db.get_value("Course Schedule", self.cs.name, "published")
+        try:
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", 0)
+            for user in (self.prof_user, self.gta_user):
+                self._as(user)
+                listed = [c.name for c in get_courses(page_length=1000)]
+                self.assertIn(self.cs.name, listed, user)
+            self._as(self.stu_a_user)
+            listed = [c.name for c in get_courses(page_length=1000)]
+            self.assertNotIn(self.cs.name, listed)
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", self.cs.name, "published", was)
+
+    def test_save_course_clamps_image_framing(self):
+        """The tile framing is clamped to range, a null reads as the default,
+        and a request that does not carry it leaves it alone."""
+        from seminary.seminary.api import save_course
+
+        fields = ["image_focus_x", "image_focus_y", "image_zoom"]
+        cs = frappe.get_doc("Course Schedule", self.cs.name)
+        base = {
+            "short_introduction": cs.short_introduction,
+            "course_description_for_lms": cs.course_description_for_lms,
+            "course_image": {"file_url": cs.course_image} if cs.course_image else None,
+            "published": cs.published,
+            "web_meeting": cs.web_meeting,
+        }
+        was = frappe.db.get_value("Course Schedule", cs.name, fields, as_dict=True)
+        try:
+            self._as(self.prof_user)
+            save_course(
+                cs.name,
+                {
+                    **base,
+                    "image_focus_x": 150,
+                    "image_focus_y": None,
+                    "image_zoom": 0.2,
+                },
+            )
+            self.assertEqual(
+                frappe.db.get_value("Course Schedule", cs.name, fields),
+                (100, 50, 1),
+            )
+            save_course(cs.name, {**base, "image_focus_x": 20, "image_zoom": 2.5})
+            save_course(cs.name, base)
+            self.assertEqual(
+                frappe.db.get_value("Course Schedule", cs.name, fields),
+                (20, 50, 2.5),
+            )
+        finally:
+            frappe.set_user("Administrator")
+            frappe.db.set_value("Course Schedule", cs.name, was)
+            frappe.db.commit()
+
     # ---------------------------------------------------------------- tiers
 
     def test_instructor_tiers(self):

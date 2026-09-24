@@ -77,7 +77,8 @@
       <div v-if="filteredCourses.length" class="flex flex-wrap justify-start gap-4">
         <router-link v-for="course in filteredCourses"
           :to="{ name: 'CourseDetail', params: { courseName: course.name } }" :key="course.name" class="course_card">
-          <div class="course-image" :style="{ backgroundImage: `url(${encodeURI(course.course_image)})` }"></div>
+          <CourseImageFrame class="course-image" :src="course.course_image ? encodeURI(course.course_image) : ''"
+            :focusX="course.image_focus_x" :focusY="course.image_focus_y" :zoom="course.image_zoom" />
           <div class="p-4 text-container">
             <Badge
               v-if="course.workflow_state === 'Draft'"
@@ -114,6 +115,7 @@ import { createResource, Badge } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
 import { usersStore } from '../stores/user'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
+import CourseImageFrame from '@/components/CourseImageFrame.vue'
 import OpenQuestionnairesPanel from '@/components/OpenQuestionnairesPanel.vue'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 
@@ -415,12 +417,9 @@ watch(
 }
 
 .course-image {
+  /* 3:2 on every screen, set by CourseImageFrame (ADR 080) */
   width: 100%;
-  height: 66.67%;
-  /* 4:3 aspect ratio */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  flex-shrink: 0;
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
 }
@@ -451,11 +450,6 @@ watch(
   .course_card {
     max-width: 100%;
     height: auto;
-  }
-
-  .course-image {
-    height: auto;
-    aspect-ratio: 4 / 3;
   }
 
   .text-container {

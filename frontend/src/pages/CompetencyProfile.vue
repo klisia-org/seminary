@@ -49,6 +49,10 @@
 						{{ __('Not plotted, because it has not been recorded yet: {0}.')
 							.format(missingSeries.join(', ')) }}
 					</p>
+					<p v-for="p in partialSeries" :key="p.label" class="px-4 pb-2 text-xs text-ink-gray-5">
+						{{ __('{0} is not plotted until every axis has a value; still to come: {1}.')
+							.format(p.label, p.missing.join(', ')) }}
+					</p>
 				</div>
 
 				<!-- The numbers behind the shape -->
@@ -251,8 +255,26 @@ function seriesValues(key) {
 	})
 }
 
+// Only a series with a value on every axis is drawn. echarts closes a radar
+// polygon through the centre where a value is missing, so a competency not yet
+// assessed would read as the lowest level -- a claim nobody made. A partial
+// series is named below the chart instead, and its numbers stay in the table.
 const chartSeries = computed(() =>
-	activeSeries.value.map((s) => ({ name: s.label, values: seriesValues(s.key) }))
+	activeSeries.value
+		.map((s) => ({ name: s.label, values: seriesValues(s.key) }))
+		.filter((s) => s.values.length && s.values.every((v) => v != null))
+)
+
+const partialSeries = computed(() =>
+	activeSeries.value
+		.map((s) => ({ label: s.label, values: seriesValues(s.key) }))
+		.filter((s) => s.values.some((v) => v != null) && s.values.some((v) => v == null))
+		.map((s) => ({
+			label: s.label,
+			missing: s.values
+				.map((v, i) => (v == null ? indicators.value[i]?.name : null))
+				.filter(Boolean),
+		}))
 )
 
 const missingSeries = computed(() =>

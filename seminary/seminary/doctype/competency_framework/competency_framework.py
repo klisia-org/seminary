@@ -28,7 +28,23 @@ class CompetencyFramework(Document):
         self.validate_grading_scale()
         self.validate_evaluators()
         self.validate_development_questions()
+        self.validate_content_release()
         self.set_report_max()
+
+    def validate_content_release(self):
+        """A gated mode waits on the self-assessment at the end of each
+        competency, so it is refused where the framework asks for none --
+        including when Course Self-Evaluation is being turned off under it
+        (ADR 079 decision 7). The message says why and what to do."""
+        from seminary.seminary import cbe
+
+        if self.content_release_mode in cbe.GATED_MODES and not (
+            cbe.end_of_competency_self_eval(self)
+        ):
+            frappe.throw(
+                cbe.release_mode_refusal(self.content_release_mode),
+                title=_("Content release needs a self-assessment"),
+            )
 
     def validate_one_cohort_type(self):
         """One framework, one kind of cohort (ADR 066 section 7.9).

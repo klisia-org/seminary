@@ -83,16 +83,19 @@
       <div v-if="isCbe">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-lg font-semibold text-ink-gray-8">{{ __('Competencies') }}</h3>
-          <div class="flex items-center gap-2">
-            <router-link v-if="selfEvalEnabled"
-              :to="{ name: 'CompetencySelfAssessment', params: { courseName: props.courseName } }">
-              <Button variant="subtle" size="sm">{{ __('My Self-Assessment') }}</Button>
-            </router-link>
-            <router-link v-if="requiresPdp"
-              :to="{ name: 'PersonalDevelopmentPlan', params: { courseName: props.courseName } }">
-              <Button variant="subtle" size="sm">{{ __('My Development Plan') }}</Button>
-            </router-link>
-          </div>
+        </div>
+
+        <!-- Reflections live in the course outline (ADR 079 decision 4); this
+             summary only points at them. -->
+        <div v-if="reflectionLinks.length" class="mb-3 flex flex-wrap gap-2">
+          <router-link v-for="r in reflectionLinks" :key="r.lesson" :to="r.route">
+            <Button variant="subtle" size="sm">
+              <template #prefix>
+                <Check v-if="r.done" class="h-4 w-4 text-ink-green-3" />
+              </template>
+              {{ r.lesson_title }}
+            </Button>
+          </router-link>
         </div>
 
         <div v-if="competencyRows.length" class="space-y-3">
@@ -280,7 +283,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem, Badge, Button, LoadingIndicator, createResource } from 'frappe-ui'
 import { computed, inject, ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, Check } from 'lucide-vue-next'
 import { formatDate } from '@/utils'
 
 const props = defineProps({
@@ -335,18 +338,38 @@ const competencyOverview = createResource({
 })
 
 const isCbe = computed(() => !!competencyContext.data?.is_cbe)
-const selfEvalEnabled = computed(
-  () => !!competencyContext.data?.framework?.course_self_eval
-)
-const requiresPdp = computed(
-  () => !!competencyContext.data?.framework?.require_pdp
-)
 const competencyRows = computed(() => competencyOverview.data || [])
+
+// The reflection lessons, in outline order, as links into the course.
+const outlineCompetencies = createResource({
+  url: 'seminary.seminary.cbe_api.get_outline_competencies',
+  params: { course_schedule: props.courseName },
+  onError: () => { },
+})
+const reflectionLinks = computed(() =>
+  Object.entries(outlineCompetencies.data?.reflections || {})
+    .filter(([, r]) => r.chapter_number && r.lesson_number)
+    .map(([lesson, r]) => ({
+      lesson,
+      ...r,
+      route: {
+        name: 'Lesson',
+        params: {
+          courseName: props.courseName,
+          chapterNumber: r.chapter_number,
+          lessonNumber: r.lesson_number,
+        },
+      },
+    }))
+    .sort((a, b) => a.chapter_number - b.chapter_number || a.lesson_number - b.lesson_number)
+)
 
 const stageLabel = (s) => (s === 'Baseline' ? __('Starting point') : __('Where I am now'))
 
 watch(isCbe, (value) => {
-  if (value) competencyOverview.reload()
+  if (!value) return
+  competencyOverview.reload()
+  outlineCompetencies.reload()
 }, { immediate: true })
 
 const withdrawalRules = computed(() => {

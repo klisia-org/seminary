@@ -28,6 +28,7 @@
   "self_eval_counts_in_final",
   "self_eval_weight",
   "mentor_sees_self_eval",
+  "student_sees_mentor_eval",
   "activity_grading_section",
   "activity_grading_mode",
   "activity_evaluators_required",
@@ -175,6 +176,14 @@
    "options": "Always\nAfter mentor submits\nNever"
   },
   {
+   "default": "After all mentors submit",
+   "description": "When a student can read the mentors' competency assessments. After all mentors submit waits, per competency and stage, until every required mentor has submitted.",
+   "fieldname": "student_sees_mentor_eval",
+   "fieldtype": "Select",
+   "label": "Student Sees Mentor Assessment",
+   "options": "After all mentors submit\nOn submit"
+  },
+  {
    "fieldname": "activity_grading_section",
    "fieldtype": "Section Break",
    "label": "Activity Grading"
@@ -260,11 +269,12 @@
    "label": "Content Release"
   },
   {
-   "default": "Per activity (current rules)",
+   "default": "Ungated",
+   "description": "Gated modes need Course Self-Evaluation with a timing that includes the end of each competency. Chapter 1 is never gated.",
    "fieldname": "content_release_mode",
    "fieldtype": "Select",
    "label": "Content Release Mode",
-   "options": "Per activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed",
+   "options": "Ungated\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed",
    "reqd": 1
   },
   {
@@ -337,7 +347,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-01 11:00:00.000000",
+ "modified": "2026-09-24 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Competency Framework",

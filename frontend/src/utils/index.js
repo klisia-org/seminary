@@ -3,6 +3,7 @@ import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
+import { SelfAssessment, DevelopmentPlan } from '@/utils/reflection'
 import { DiscussionActivity } from '@/utils/discussionactivity'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
@@ -258,14 +259,32 @@ export function updateDocumentTitle(meta) {
  * `<br>` becomes a newline. The detached-div version dropped it entirely, so
  * `a<br>b` came back as `ab`; Frappe's `_server_messages` are full of them.
  */
+/**
+ * Say which assessments a move re-filed on another competency, or null when
+ * none did. The server returns `[{title, from, to}]` (ADR 079 decision 8).
+ */
+export function refiledMessage(refiled) {
+	if (!refiled?.length) return null
+	return refiled
+		.map((r) =>
+			r.from
+				? __('{0} moved from {1} to {2}', [r.title, r.from, r.to])
+				: __('{0} is now filed under {1}', [r.title, r.to])
+		)
+		.join('; ')
+}
+
 export function htmlToText(html) {
 	const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
 	doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'))
 	return doc.body.textContent || ''
 }
 
-export const getEditorTools = (course = null, courseName = null) => {
+export const getEditorTools = (course = null, courseName = null, lesson = null) => {
 	return {
+		// Reflection blocks resolve what they cover from their lesson (ADR 079).
+		selfAssessment: { class: SelfAssessment, config: { lesson } },
+		developmentPlan: { class: DevelopmentPlan, config: { lesson } },
 		header: {
 			class: Header,
 			config: {

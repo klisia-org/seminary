@@ -239,7 +239,7 @@ const lesson = createResource({
 		const courseName = props.courseName 
 
 		if (data.content)
-			editor.value = renderEditor('editor', data.content, course, courseName)
+			editor.value = renderEditor('editor', data.content, course, courseName, data.name)
 		if (
 			data.instructor_content &&
 			JSON.parse(data.instructor_content)?.blocks?.length > 1
@@ -256,13 +256,13 @@ const lesson = createResource({
 	},
 })
 
-const renderEditor = (holder, content, course = null,  courseName = null) => {
+const renderEditor = (holder, content, course = null,  courseName = null, lessonName = null) => {
 	// empty the holder
 	if (document.getElementById(holder))
 		document.getElementById(holder).innerHTML = ''
 	return new EditorJS({
 		holder: holder,
-		tools: getEditorTools(course, courseName),
+		tools: getEditorTools(course, courseName, lessonName),
 		data: JSON.parse(content),
 		readOnly: true,
 		defaultBlock: 'embed', // editor adds an empty block at the top, so to avoid that added default block as embed
@@ -353,8 +353,17 @@ const startTimer = () => {
 	}, 1000)
 }
 
+// A reflection block completes its lesson when submitted (ADR 079 decision 4)
+// and says so here, so the progress shown is not stale.
+const onReflectionProgress = (event) => {
+	lessonProgress.value = event.detail
+	if (lesson.data) lesson.data.progress = true
+}
+window.addEventListener('seminary:lesson-progress', onReflectionProgress)
+
 onBeforeUnmount(() => {
 	clearInterval(timerInterval)
+	window.removeEventListener('seminary:lesson-progress', onReflectionProgress)
 })
 
 

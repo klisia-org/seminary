@@ -125,6 +125,7 @@
               <router-link :to="{
                 name: 'CompetencyGradebook',
                 params: { courseName: it.course_schedule },
+                query: { tab: 'student', roster: it.roster },
               }">
                 <Button variant="solid" size="sm">{{ __('Open') }}</Button>
               </router-link>

@@ -46,10 +46,21 @@ export function useCourseToDo(courseName, user) {
   })
 
 
+  // Competency assessments this mentor owes, due like any grading
+  // (ADR 079 decision 6). Empty outside competency sections.
+  const mentorAssessmentsDue = createResource({
+    url: 'seminary.seminary.cbe_api.get_mentor_assessments_due',
+    cache: ['mentor_assessments_due', courseName],
+    params: { course_schedule: courseName },
+    auto: !!isInstructor,
+    onError: () => {},
+  })
+
   const countToDoItems = computed(() => {
     const countMissing = missingAssessments.data?.length || 0
     const countDueSoon = (assessments.data || []).filter(a => !a.submitted && a.due_date && new Date(a.due_date) >= new Date()).length
-    const countToGrade = assessmentsToGrade.data?.length || 0
+    const countToGrade =
+      (assessmentsToGrade.data?.length || 0) + (mentorAssessmentsDue.data?.length || 0)
     if (isStudent) {
       return countMissing + countDueSoon
     }
@@ -63,6 +74,7 @@ export function useCourseToDo(courseName, user) {
     assessments,
     missingAssessments,
     assessmentsToGrade,
+    mentorAssessmentsDue,
     pendingDisciplinary,
     isStudent,
     isInstructor,

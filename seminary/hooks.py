@@ -421,6 +421,11 @@ doc_events = {
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
+    # A lesson row inserted on its own (the lesson form, the importers) lands
+    # last; a chapter's closing reflection lesson must stay last (ADR 079).
+    "Course Schedule Lesson Reference": {
+        "after_insert": "seminary.seminary.cbe_reflection.on_lesson_reference_insert",
+    },
     # Competency roll-ups (ADR 065). An activity grade feeds the existing
     # gradebook cell, so everything downstream of Course Assess Results Detail
     # keeps working without competency awareness.
@@ -526,7 +531,12 @@ doc_events = {
     # Re-level affected attendance standings when a program's max absence %
     # changes (the Auto per-student limit is derived from it).
     "Program": {
-        "on_update": "seminary.seminary.attendance.recompute_on_program_update",
+        "on_update": [
+            "seminary.seminary.attendance.recompute_on_program_update",
+            # A course bound to a competency programme after its sections were
+            # created: they get their reflection lessons now (ADR 079).
+            "seminary.seminary.cbe_reflection.on_program_update",
+        ],
     },
     # Soft integration with frappe_giving (optional app): mirror the canonical
     # Donor.person link onto the read-only Person.donor field. Fires only when a

@@ -29,7 +29,7 @@ seminary.seminary.patches.seed_disciplinary_actions
 seminary.seminary.patches.rename_academics_user_to_program_chair
 seminary.seminary.patches.backfill_student_leaving_records
 seminary.seminary.patches.seed_room_features
-seminary.seminary.patches.backfill_course_schedule_seat_caches
+seminary.seminary.patches.backfill_course_schedule_seat_caches #2026-09-24 free submits never recounted
 seminary.seminary.patches.backfill_facility_locations
 seminary.seminary.patches.create_person_spine
 seminary.seminary.patches.migrate_channel_provider_settings
@@ -75,3 +75,5 @@ seminary.seminary.patches.p007_private_files
 seminary.seminary.patches.p008_scorm_teardown
 seminary.seminary.patches.p008_course_pack_coursecode
 seminary.seminary.patches.p009_scorm_fields
+seminary.seminary.patches.adr079_release_mode_ungated
+seminary.seminary.patches.adr079_scaffold_reflection_lessons

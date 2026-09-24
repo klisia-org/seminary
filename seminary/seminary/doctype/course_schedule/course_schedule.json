@@ -51,6 +51,9 @@
   "lms_tab",
   "lms_configuration_section",
   "course_image",
+  "image_focus_x",
+  "image_focus_y",
+  "image_zoom",
   "published",
   "short_introduction",
   "course_description_for_lms",
@@ -512,6 +515,30 @@
    "label": "Image for LMS"
   },
   {
+   "default": "50",
+   "fieldname": "image_focus_x",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Image Focus X",
+   "precision": "2"
+  },
+  {
+   "default": "50",
+   "fieldname": "image_focus_y",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Image Focus Y",
+   "precision": "2"
+  },
+  {
+   "default": "1",
+   "fieldname": "image_zoom",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Image Zoom",
+   "precision": "2"
+  },
+  {
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
@@ -536,7 +563,7 @@
    "fieldname": "content_release_override",
    "fieldtype": "Select",
    "label": "Content Release Override",
-   "options": "\nPer activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
+   "options": "\nUngated\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
   },
   {
    "description": "This will appear on the course card and on the very top of the first page on the LMS.",
@@ -635,7 +662,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-09-01 10:00:00.000000",
+ "modified": "2026-09-24 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

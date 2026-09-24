@@ -1027,15 +1027,149 @@ def on_assessment_update(doc, method=None):
         rollup_competency_result(roster, doc.course_competency)
 
 
+# ------------------------------------------------ when a mentor's assessment is due
+
+# Each assessed activity is sat through one submission doctype. A submission
+# names the criteria row it was sat under in `course_assess` -- but not every
+# path fills it in, so it is also found by activity and section, the way
+# `utils.get_missingassessments` finds it: (doctype, activity field, section
+# field).
+_SUBMISSION_FOR = {
+    "quiz": ("Quiz Submission", "quiz", "course"),
+    "exam": ("Exam Submission", "exam", "course"),
+    "assignment": ("Assignment Submission", "assignment", "course"),
+    "discussion": ("Discussion Submission", "disc_activity", "coursesc"),
+}
+
+
+def _submitted(row, field, student, course_schedule):
+    doctype, activity_field, section_field = _SUBMISSION_FOR[field]
+    return frappe.db.exists(
+        doctype, {"course_assess": row.name, "student": student}
+    ) or frappe.db.exists(
+        doctype,
+        {
+            activity_field: row.get(field),
+            section_field: course_schedule,
+            "student": student,
+        },
+    )
+
+
+def final_self_eval_required(framework):
+    """Whether the framework asks students for a Final self-assessment of each
+    competency -- at the end of it or at the end of the course. Tests the parent
+    Check first, for the reason `end_of_competency_self_eval` gives."""
+    points = (framework.course_self_eval_points or "") if framework else ""
+    return bool(
+        framework and cint(framework.course_self_eval) and "end" in points.lower()
+    )
+
+
+def mentor_assessment_due(roster, competency, framework=None):
+    """Whether a mentor's assessment of this student's competency has fallen due.
+
+    Like an assessment to grade (ADR 079 decision 6): due once the student has
+    submitted every assessed activity filed under the competency, and their
+    Final self-assessment of it where the framework asks for one. Offline rows
+    have nothing to submit and never hold it back.
+    """
+    roster_doc = (
+        roster
+        if isinstance(roster, frappe.model.document.Document)
+        else frappe.get_doc("Scheduled Course Roster", roster)
+    )
+    framework = framework or framework_doc(roster_doc.course_sc)
+    if not framework:
+        return False
+
+    if final_self_eval_required(framework) and not _self_assessment_submitted(
+        roster_doc.student, roster_doc.course_sc, competency
+    ):
+        return False
+
+    for row in frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": roster_doc.course_sc, "course_competency": competency},
+        fields=["name", *_SUBMISSION_FOR],
+    ):
+        field = next((f for f in _SUBMISSION_FOR if row.get(f)), None)
+        if not field:
+            continue
+        if not _submitted(row, field, roster_doc.student, roster_doc.course_sc):
+            return False
+    return True
+
+
+# ------------------------------------------------ what a student sees of mentors
+
+
+def mentor_assessments_visible(student, course_schedule, competency, framework=None):
+    """Whether a student may read the mentors' assessments of one competency.
+
+    Per `student_sees_mentor_eval` (ADR 079 decision 5): *On submit* shows each
+    submitted assessment at once; *After all mentors submit*, the default, waits
+    until every evaluator who gives a competency verdict -- the same set the
+    worklist tells to submit one -- has done so, so the student reads the
+    mentors' views together rather than whichever came first. A blank value, as
+    a framework saved before the field existed will hold, takes the default.
+
+    Once the student's grades have been sent the question is closed and the
+    views are shown whoever is missing: the verdict is final by then.
+    """
+    framework = framework or framework_doc(course_schedule)
+    if not framework:
+        return False
+    if framework.student_sees_mentor_eval == "On submit":
+        return True
+
+    roster = frappe.db.get_value(
+        "Scheduled Course Roster",
+        {"student": student, "course_sc": course_schedule},
+        ["name", "active", "audit_bool"],
+        as_dict=True,
+    )
+    if not roster:
+        return False
+    if not roster.active and not roster.audit_bool:
+        return True
+
+    owed = {
+        e["instructor"]
+        for e in evaluators_for(roster.name)
+        if e["gives_competency_verdict"]
+    }
+    if not owed:
+        return True
+    submitted = set(
+        frappe.get_all(
+            "Competency Assessment",
+            filters={
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": competency,
+                "evaluator_kind": "Mentor",
+                "stage": "Final",
+                "status": "Submitted",
+            },
+            pluck="instructor",
+        )
+    )
+    return owed <= submitted
+
+
 # ---------------------------------------------------------------- send_grades support
 
 
 def missing_required_evaluators(roster):
     """Required evaluators who have not finished this student's activities.
 
-    Returned as readable strings rather than a count: an instructor who is told
-    "someone has not graded" has to go looking, which is exactly the delay the
-    per-student mentor resolution was meant to remove.
+    Named rather than counted: an instructor who is told "someone has not
+    graded" has to go looking, which is exactly the delay the per-student
+    mentor resolution was meant to remove. Each entry is a record --
+    ``instructor``, ``instructor_name``, ``assess_criteria``, ``title`` and a
+    readable ``message`` -- so a caller matches on the instructor rather than
+    searching the text (ADR 079 decision 9).
     """
     roster_doc = (
         roster
@@ -1080,6 +1214,15 @@ def missing_required_evaluators(roster):
         )
     ]
 
+    names = {
+        r.name: r.instructor_name
+        for r in frappe.get_all(
+            "Instructor",
+            filters={"name": ("in", [e["instructor"] for e in required])},
+            fields=["name", "instructor_name"],
+        )
+    }
+
     missing = []
     for c in criteria:
         for e in required:
@@ -1092,8 +1235,15 @@ def missing_required_evaluators(roster):
             if not is_cell_graded(c.name, e["instructor_category"], None):
                 continue
             if (c.name, e["instructor"]) not in graded:
+                name = names.get(e["instructor"]) or e["instructor"]
                 missing.append(
-                    _("{0} has not graded {1}").format(e["instructor"], c.title)
+                    frappe._dict(
+                        instructor=e["instructor"],
+                        instructor_name=name,
+                        assess_criteria=c.name,
+                        title=c.title,
+                        message=_("{0} has not graded {1}").format(name, c.title),
+                    )
                 )
     return missing
 
@@ -1129,11 +1279,67 @@ def stamp_override(doc, method=None):
 
 # ---------------------------------------------------------------- content release
 
-PER_ACTIVITY = "Per activity (current rules)"
+UNGATED = "Ungated"
 CHAPTER_GATED = "Chapter unlocks after previous competency self-assessed"
 ACTIVITIES_GATED = (
     "Content open, activities locked until previous competency self-assessed"
 )
+GATED_MODES = (CHAPTER_GATED, ACTIVITIES_GATED)
+
+# The two `course_self_eval_points` options that put a self-assessment at the
+# end of each competency -- the only thing a gated mode can wait on.
+END_OF_COMPETENCY_POINTS = (
+    "End of each competency",
+    "Start of course and end of each competency",
+)
+
+
+def end_of_competency_self_eval(framework):
+    """Whether this framework asks for a self-assessment after each competency.
+
+    Tests `course_self_eval` first: Frappe keeps a dependent Select's stored
+    value after its parent Check is cleared, so the points alone can claim a
+    self-assessment the framework no longer asks for (ADR 079 decision 1).
+    """
+    return bool(
+        framework
+        and cint(framework.course_self_eval)
+        and framework.course_self_eval_points in END_OF_COMPETENCY_POINTS
+    )
+
+
+def release_mode_refusal(mode, on_section=False):
+    """The message that refuses a gated `mode` without an end-of-competency
+    self-assessment to wait on -- the reason, then the way out. A section
+    cannot change its framework's timing, so its way out is different."""
+    reason = _(
+        "{0} unlocks chapters only after a student's self-assessment at the end "
+        "of each competency."
+    ).format(_(mode))
+    if on_section:
+        return (
+            reason
+            + " "
+            + _(
+                "This programme's Competency Framework does not ask for one, so "
+                "leave Content Release Override blank or set it to Ungated."
+            )
+        )
+    return (
+        reason
+        + " "
+        + _(
+            "Turn on Course Self-Evaluation with a timing that includes the end of "
+            "each competency, or set Content Release Mode to Ungated."
+        )
+    )
+
+
+def release_mode_options(framework):
+    """The release modes this framework can actually run."""
+    return (
+        [UNGATED, *GATED_MODES] if end_of_competency_self_eval(framework) else [UNGATED]
+    )
 
 
 def _mapped_chapters(course_schedule):
@@ -1191,13 +1397,18 @@ def content_release_mode(course_schedule, framework=None):
     """
     framework = framework or framework_doc(course_schedule)
     if not framework:
-        return PER_ACTIVITY
-    if not cint(framework.override_contentrelease):
-        return framework.content_release_mode
-    override = frappe.db.get_value(
-        "Course Schedule", course_schedule, "content_release_override"
-    )
-    return override or framework.content_release_mode
+        return UNGATED
+    mode = framework.content_release_mode
+    if cint(framework.override_contentrelease):
+        override = frappe.db.get_value(
+            "Course Schedule", course_schedule, "content_release_override"
+        )
+        mode = override or mode
+    # A gate with no end-of-competency self-assessment would wait on something
+    # that never comes; the controllers refuse that, and this side holds it.
+    if mode not in GATED_MODES or not end_of_competency_self_eval(framework):
+        return UNGATED
+    return mode
 
 
 def visible_outline(roster):
@@ -1232,7 +1443,7 @@ def visible_outline(roster):
             "unlock_competency": None,
         }
 
-    if mode == PER_ACTIVITY or not mapped:
+    if mode not in GATED_MODES or not mapped:
         return result
 
     result["gated"] = True
@@ -1720,115 +1931,3 @@ def _framework_names_type(student, cohort_type):
         if any(r.cohort_type == cohort_type for r in rows):
             return True
     return False
-
-
-# ---------------------------------------------------------------- prompt timing
-
-
-START_OF_COURSE = "Start of course"
-END_OF_COURSE = "End of course"
-END_OF_EACH_COMPETENCY = "End of each competency"
-
-
-def self_assessment_prompts(roster):
-    """When to actually ask this student to assess themselves.
-
-    `course_self_eval_points` has always distinguished start of course, end of
-    course and end of each competency, but the outline offered the prompt on
-    every mapped chapter regardless -- so a school set to "start of course and
-    end of each competency" was greeted at the *beginning* of each competency
-    and never at the start (ADR 065 section 11e).
-
-    Returns {"baseline": bool, "chapters": {chapter: competency}, "final_all":
-    bool}: whether the opening baseline is due, which chapters have finished and
-    so are ready for their competency's final self-assessment, and whether the
-    end-of-course prompt is due.
-    """
-    roster_doc = (
-        roster
-        if isinstance(roster, frappe.model.document.Document)
-        else frappe.get_doc("Scheduled Course Roster", roster)
-    )
-    framework = framework_doc(roster_doc.course_sc)
-    empty = {"baseline": False, "chapters": {}, "final_all": False, "points": None}
-    if not framework or not cint(framework.course_self_eval):
-        return empty
-
-    when = framework.course_self_eval_points or ""
-    out = dict(empty, points=when)
-    # Matched case-insensitively on purpose: the Select reads "Start of course
-    # and end of each competency", so a capitalised constant matches the option
-    # that starts with it and silently misses the one that does not.
-    phrase = when.lower()
-
-    mapped = [c for c in _mapped_chapters(roster_doc.course_sc) if c.course_competency]
-
-    if "start" in phrase:
-        # Due until it is done: the baseline is the first thing asked and the
-        # last thing a student thinks to go back for.
-        out["baseline"] = any(
-            not _self_assessment_submitted(
-                roster_doc.student,
-                roster_doc.course_sc,
-                c.course_competency,
-                "Baseline",
-            )
-            for c in mapped
-        )
-
-    complete = _completed_chapters(roster_doc)
-
-    if END_OF_EACH_COMPETENCY.lower() in phrase:
-        for c in mapped:
-            if c.name in complete and not _self_assessment_submitted(
-                roster_doc.student, roster_doc.course_sc, c.course_competency, "Final"
-            ):
-                out["chapters"][c.name] = c.course_competency
-
-    if END_OF_COURSE.lower() in phrase and END_OF_EACH_COMPETENCY.lower() not in phrase:
-        # The whole outline, not just the mapped part: an intro chapter is still
-        # work the student has to finish before the course is over.
-        chapters = _mapped_chapters(roster_doc.course_sc)
-        out["final_all"] = bool(chapters) and all(c.name in complete for c in chapters)
-
-    return out
-
-
-def _completed_chapters(roster_doc):
-    """Chapters whose lessons this student has all finished.
-
-    Read from the same Course Schedule Progress rows the outline already uses,
-    so "end of a competency" needs no new state to mean something.
-    """
-    chapters = [c.name for c in _mapped_chapters(roster_doc.course_sc)]
-    if not chapters:
-        return set()
-
-    lessons_by_chapter = {}
-    for ref in frappe.get_all(
-        "Course Schedule Lesson Reference",
-        filters={"parenttype": "Course Schedule Chapter", "parent": ("in", chapters)},
-        fields=["parent", "lesson"],
-    ):
-        lessons_by_chapter.setdefault(ref.parent, []).append(ref.lesson)
-
-    done = {
-        p.lesson
-        for p in frappe.get_all(
-            "Course Schedule Progress",
-            filters={
-                "course": roster_doc.course_sc,
-                "member": frappe.db.get_value("Student", roster_doc.student, "user"),
-                "status": "Complete",
-            },
-            fields=["lesson"],
-        )
-    }
-
-    complete = set()
-    for chapter, lessons in lessons_by_chapter.items():
-        # A chapter with no lessons is not "finished" -- there was nothing to do,
-        # so there is nothing to reflect on either.
-        if lessons and all(lesson in done for lesson in lessons):
-            complete.add(chapter)
-    return complete

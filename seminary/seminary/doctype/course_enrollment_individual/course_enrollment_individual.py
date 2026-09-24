@@ -155,6 +155,17 @@ class CourseEnrollmentIndividual(Document):
             self.percent_to_pay = 0
 
     def on_submit(self):
+        self._advance_on_submit()
+
+        # The 0→1 transition fires on_submit, not on_update_after_submit, so
+        # cei_lifecycle.on_workflow_update never refreshes the seat caches for
+        # it — a free enrollment would leave the section's `enrollments` at 0.
+        if self.coursesc_ce:
+            from seminary.seminary.waitlist import recount
+
+            recount(self.coursesc_ce)
+
+    def _advance_on_submit(self):
         # Waitlisted students hold a queue position, not a seat — no invoice is
         # raised until they are promoted (see waitlist._promote_cei, which calls
         # generate_enrollment_invoice at that point).

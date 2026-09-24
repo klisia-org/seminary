@@ -8,36 +8,6 @@
 				{{ __('Add Chapter') }}
 			</Button>
 		</div>
-		<!-- The opening baseline. It belongs above the chapters because that is
-		     when it is asked for, and it had nowhere to live before
-		     (ADR 065 section 11e). -->
-		<div v-if="competencies.data?.baseline_due"
-			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
-			<p class="text-sm font-medium text-ink-gray-8">{{ __('Before you start') }}</p>
-			<p class="mt-1 text-xs text-ink-gray-6">
-				{{ __('Say where you think you are starting on each competency. You will answer again at the end, and comparing the two is the point.') }}
-			</p>
-			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
-				<Button size="sm" variant="subtle" class="mt-2">
-					{{ __('Start my self-assessment') }}
-				</Button>
-			</router-link>
-		</div>
-		<div v-if="competencies.data?.final_all_due"
-			class="mx-2 mb-3 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-3">
-			<p class="text-sm font-medium text-ink-gray-8">
-				{{ __('You have finished the course') }}
-			</p>
-			<p class="mt-1 text-xs text-ink-gray-6">
-				{{ __('Look back over each competency and say where you are now.') }}
-			</p>
-			<router-link :to="{ name: 'CompetencySelfAssessment', params: { courseName } }">
-				<Button size="sm" variant="subtle" class="mt-2">
-					{{ __('Assess my growth') }}
-				</Button>
-			</router-link>
-		</div>
-
 		<div :class="{
 			'border-2 rounded-md py-2 px-2': showOutline && outline.data?.length,
 		}">
@@ -71,7 +41,7 @@
 							<FilePenLine @click.prevent="openChapterModal(chapter)"
 								class="h-4 w-4 text-ink-gray-9 invisible group-hover:visible" />
 						</Tooltip>
-						<Tooltip :text="__('Delete Chapter')" placement="bottom">
+						<Tooltip v-if="!holdsReflection(chapter)" :text="__('Delete Chapter')" placement="bottom">
 							<Trash2 @click.prevent="trashChapter(chapter.name)"
 								class="h-4 w-4 text-red-500 invisible group-hover:visible" />
 						</Tooltip>
@@ -115,26 +85,13 @@
 						<p v-if="competencyOf(chapter).reason" class="mt-2 text-xs text-ink-gray-6">
 							{{ competencyOf(chapter).reason }}
 						</p>
-						<router-link v-if="competencyOf(chapter).unlock_competency" :to="{
-							name: 'CompetencySelfAssessment',
-							params: {
-								courseName: courseName,
-								competency: competencyOf(chapter).unlock_competency,
-							},
-						}">
+						<!-- A lock links to the lesson that lifts it (ADR 079
+						     decision 4); the page is the fallback for a section
+						     whose lesson cannot be found. -->
+						<router-link v-if="competencyOf(chapter).unlock_competency"
+							:to="unlockRoute(competencyOf(chapter))">
 							<Button size="sm" variant="subtle" class="mt-2">
 								{{ __('Open that self-assessment') }}
-							</Button>
-						</router-link>
-						<!-- Offered when the framework's timing says so and the
-						     student has finished the chapter, not on every panel
-						     regardless (ADR 065 section 11e). -->
-						<router-link v-else-if="competencyOf(chapter).final_due" :to="{
-							name: 'CompetencySelfAssessment',
-							params: { courseName: courseName, competency: competencyOf(chapter).competency },
-						}">
-							<Button size="sm" variant="subtle" class="mt-2">
-								{{ __('You have finished this — assess your growth in it') }}
 							</Button>
 						</router-link>
 					</div>
@@ -158,12 +115,20 @@
 						<div class="group ml-8 mr-4 rounded-lg border border-outline-gray-2 bg-surface-white p-4 transition hover:border-outline-gray-3"
 							:class="{
 								'bg-surface-selected': isActiveLesson(lesson.number),
-								'cursor-grab': props.allowEdit && !chapter.is_scorm_package,
-							}" :draggable="props.allowEdit && !chapter.is_scorm_package"
+								'cursor-grab': props.allowEdit && !chapter.is_scorm_package && !reflectionOf(lesson),
+							}" :draggable="props.allowEdit && !chapter.is_scorm_package && !reflectionOf(lesson)"
 							@dragstart="onDragStart($event, chapter, lesson, lessonIndex)"
 							@dragend="onDragFinish">
 							<div class="flex items-start gap-3">
-								<div v-if="props.allowEdit">
+								<div v-if="props.allowEdit && reflectionOf(lesson)">
+									<Tooltip :text="__('Placed by the Competency Framework: it stays in place, but you can edit its title and text.')"
+										placement="bottom">
+										<span class="block rounded-md p-1 text-ink-gray-5">
+											<Lock class="h-4 w-4" />
+										</span>
+									</Tooltip>
+								</div>
+								<div v-else-if="props.allowEdit">
 									<Tooltip :text="__('Delete Lesson')" placement="bottom">
 										<button type="button"
 											class="rounded-md p-1 text-ink-red-3 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-red-1"
@@ -194,6 +159,10 @@
 												class="h-4 w-4 stroke-1" />
 											<FolderOpen v-else-if="lesson.icon === 'icon-folder'"
 												class="h-4 w-4 stroke-1" />
+											<Sprout v-else-if="lesson.icon === 'icon-self-assessment'"
+												class="h-4 w-4 stroke-1" />
+											<Compass v-else-if="lesson.icon === 'icon-development-plan'"
+												class="h-4 w-4 stroke-1" />
 											<FileText v-else class="h-4 w-4 text-ink-gray-7 stroke-1" />
 											<span>{{ lesson.lesson_title }}</span>
 											<span
@@ -211,6 +180,14 @@
 												<Lock class="h-3 w-3" />
 												{{ __('Locked') }}
 											</span>
+											<span v-if="reflectionOf(lesson)?.required"
+												class="rounded bg-surface-amber-1 px-1.5 py-0.5 text-xs font-medium text-ink-amber-3">
+												{{ __('Required') }}
+											</span>
+											<span v-if="reflectionOf(lesson)?.mentor_feedback"
+												class="rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3">
+												{{ __('Mentor feedback') }}
+											</span>
 											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
 												class="h-4 w-4 text-ink-green-3"
 												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />
@@ -223,7 +200,7 @@
 										</div>
 									</div>
 								</router-link>
-								<div v-if="props.allowEdit" class="ml-auto hidden items-center group-hover:flex">
+								<div v-if="props.allowEdit && !reflectionOf(lesson)" class="ml-auto hidden items-center group-hover:flex">
 									<GripVertical class="h-4 w-4 text-ink-gray-5" aria-hidden="true" />
 								</div>
 							</div>
@@ -284,9 +261,11 @@ import {
 	FileUp,
 	GripVertical,
 	Lock,
+	Sprout,
+	Compass,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
-import { formatDate } from '@/utils'
+import { formatDate, refiledMessage } from '@/utils'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
 import { createDialog } from '@/utils/dialogs'
 
@@ -334,6 +313,26 @@ const competencies = createResource({
 
 const competencyOf = (chapter) => competencies.data?.chapters?.[chapter.name]
 
+// Reflection lessons are placed by the Competency Framework (ADR 079): their
+// badges, and what an instructor may not do to them, key off this.
+const reflectionOf = (lesson) => competencies.data?.reflections?.[lesson.name]
+const holdsReflection = (chapter) => (chapter.lessons || []).some((l) => reflectionOf(l))
+
+const unlockRoute = (competency) => {
+	const target = competency.unlock_lesson
+	for (const ch of outline.data || []) {
+		const found = (ch.lessons || []).find((l) => l.name === target)
+		if (found) {
+			const [chapterNumber, lessonNumber] = found.number.split('.')
+			return { name: 'Lesson', params: { courseName: props.courseName, chapterNumber, lessonNumber } }
+		}
+	}
+	return {
+		name: 'CompetencySelfAssessment',
+		params: { courseName: props.courseName, competency: competency.unlock_competency },
+	}
+}
+
 const outline = createResource({
 	url: 'seminary.seminary.utils.get_course_outline',
 	cache: ['course_outline', props.courseName],
@@ -365,6 +364,9 @@ const deleteLesson = createResource({
 		outline.reload()
 		toast.success(__('Lesson deleted successfully'))
 	},
+	onError(err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not delete the lesson'))
+	},
 })
 
 const updateLessonIndex = createResource({
@@ -377,9 +379,15 @@ const updateLessonIndex = createResource({
 			idx: parseInt(values.idx, 10),
 		}
 	},
-	onSuccess() {
+	onSuccess(data) {
 		outline.reload()
 		toast.success(__('Lesson moved successfully'))
+		const refiled = refiledMessage(data?.refiled)
+		if (refiled) toast.info(refiled, { duration: 10 })
+	},
+	onError(err) {
+		outline.reload()
+		toast.error(err.messages?.[0] || err.message || __('Could not move the lesson'))
 	},
 })
 
@@ -450,6 +458,9 @@ const deleteChapter = createResource({
 	onSuccess() {
 		outline.reload()
 		toast.success(__('Chapter deleted successfully'))
+	},
+	onError(err) {
+		toast.error(err.messages?.[0] || err.message || __('Could not delete the chapter'))
 	},
 })
 

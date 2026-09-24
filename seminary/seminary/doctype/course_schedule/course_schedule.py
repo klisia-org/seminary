@@ -73,6 +73,23 @@ class CourseSchedule(Document):
             )
 
         self._handle_capacity_and_waitlist()
+        self._scaffold_if_became_cbe()
+
+    def _scaffold_if_became_cbe(self):
+        """A section whose course or scale changes so that it now resolves to a
+        Competency Framework gets its reflection lessons (ADR 079 decision 2).
+        Creation is handled by after_insert; an importer that brings its own
+        outline sets the flag and scaffolds afterwards."""
+        before = self.get_doc_before_save()
+        if not before or self.flags.skip_reflection_scaffold:
+            return
+        if (before.course, before.gradesc_cs) == (self.course, self.gradesc_cs):
+            return
+        from seminary.seminary import cbe, cbe_reflection
+
+        if cbe.framework_for_course_and_scale(before.course, before.gradesc_cs):
+            return
+        cbe_reflection.scaffold_if_became_cbe(self.name)
 
     def _handle_capacity_and_waitlist(self):
         """React to capacity and lifecycle changes for the waitlist engine.
@@ -362,6 +379,14 @@ class CourseSchedule(Document):
 
         open_new_schedule_if_due(self)
 
+        # A competency section is born with a chapter per competency and the
+        # reflection lessons its framework asks for (ADR 079 decision 2). An
+        # importer that brings its own outline scaffolds after it instead.
+        if not self.flags.skip_reflection_scaffold:
+            from seminary.seminary import cbe_reflection
+
+            cbe_reflection.scaffold(self.name)
+
     def _seed_assessment_criteria_from_course(self):
         """Auto-populate courseassescrit_sc from Course.assessment_criteria.
 
@@ -537,15 +562,62 @@ class CourseSchedule(Document):
         it, so the instructor only has to choose for assessments that sit
         outside the outline -- a course-wide capstone, say.
         """
-        from seminary.seminary.utils import (
-            _build_lesson_index_for_course,
-            _scac_activity_key,
-        )
-
         if self.is_new():
             # The lesson index is built from saved activity links; on a brand
             # new section there is nothing to resolve against yet.
             return
+
+        for row, competency in self._chapter_competencies():
+            if not row.course_competency:
+                row.course_competency = competency
+            elif row.course_competency != competency:
+                frappe.throw(
+                    _(
+                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
+                        "cannot be filed under {3}."
+                    ).format(
+                        row.idx,
+                        row.title or row.assesscriteria_scac,
+                        competency,
+                        row.course_competency,
+                    )
+                )
+
+    def refile_assessment_competencies(self):
+        """Re-file every assessment on the competency its chapter now delivers.
+
+        Called after a write that moves the chapter under an assessment -- a
+        lesson moved between chapters, or a chapter re-mapped -- which the
+        validator above would otherwise report as the instructor's error on
+        their next save (ADR 079 decision 8). Saves only when something moved,
+        and returns ``[(title, old, new)]`` so the caller can say what changed.
+        A row whose chapter has no competency keeps the one it has.
+        """
+        changed = []
+        for row, competency in self._chapter_competencies():
+            if row.course_competency != competency:
+                changed.append(
+                    (
+                        row.title or row.assesscriteria_scac,
+                        row.course_competency,
+                        competency,
+                    )
+                )
+                row.course_competency = competency
+        if changed:
+            # Only competency links on child rows changed; a draft section with
+            # its schedule still unfilled must not fail the move on that.
+            self.flags.ignore_mandatory = True
+            self.save(ignore_permissions=True)
+        return changed
+
+    def _chapter_competencies(self):
+        """Yield ``(row, competency)`` for each assessment whose activity sits
+        in a lesson whose chapter names a competency."""
+        from seminary.seminary.utils import (
+            _build_lesson_index_for_course,
+            _scac_activity_key,
+        )
 
         index = _build_lesson_index_for_course(self.name)
         chapter_competency = {}
@@ -561,23 +633,8 @@ class CourseSchedule(Document):
                 chapter_competency[chapter] = frappe.db.get_value(
                     "Course Schedule Chapter", chapter, "course_competency"
                 )
-            competency = chapter_competency[chapter]
-            if not competency:
-                continue
-            if not row.course_competency:
-                row.course_competency = competency
-            elif row.course_competency != competency:
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
-                        "cannot be filed under {3}."
-                    ).format(
-                        row.idx,
-                        row.title or row.assesscriteria_scac,
-                        competency,
-                        row.course_competency,
-                    )
-                )
+            if chapter_competency[chapter]:
+                yield row, chapter_competency[chapter]
 
     def convert_to_date(self, date):
         if isinstance(date, str):
@@ -628,6 +685,15 @@ class CourseSchedule(Document):
         if name:
             framework = frappe.get_cached_doc("Competency Framework", name)
             if cint(framework.override_contentrelease):
+                if self.content_release_override in cbe.GATED_MODES and not (
+                    cbe.end_of_competency_self_eval(framework)
+                ):
+                    frappe.throw(
+                        cbe.release_mode_refusal(
+                            self.content_release_override, on_section=True
+                        ),
+                        title=_("Content release needs a self-assessment"),
+                    )
                 return
             frappe.throw(
                 _(
@@ -886,6 +952,10 @@ class CourseSchedule(Document):
         # denorm field values (lessons count getting overwritten with the
         # in-memory 0). Source weights are validated up-front, so we don't
         # lose any meaningful save-time check.
+        from seminary.seminary import cbe_reflection
+
+        if self.chapters:
+            cbe_reflection.clear_scaffold(self.name)
         scac_name_map = _replace_scac_rows(source_cs, self.name)
         folder_report = _new_folder_report()
         # Lesson content is copied verbatim, URLs included. Files attached to
@@ -899,6 +969,10 @@ class CourseSchedule(Document):
         finally:
             frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
+        # Fill what the template lacked, stamp the reflections it brought, and
+        # file its assessments on the chapters they now sit in.
+        cbe_reflection.scaffold(self.name)
+        frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
         n_scac = len(scac_name_map)
         lines = [
@@ -979,8 +1053,12 @@ class CourseSchedule(Document):
                 ).format(source_course, self.course)
             )
 
+        from seminary.seminary import cbe_reflection
+
+        # An outline that is only the scaffold gives way to the template and
+        # is rebuilt around it afterwards (ADR 079 decision 8).
         n_chapters = len(self.chapters or [])
-        if n_chapters > 0:
+        if n_chapters > 0 and not cbe_reflection.untouched_scaffold(self.name):
             frappe.throw(
                 _(
                     "Target schedule already has {0} chapter(s). Clear them "
@@ -1215,6 +1293,8 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 _CHAPTER_COPYABLE_FIELDS = (
     "is_scorm_package",
     "scorm_package",
+    # Same course, same competencies: the mapping carries over (ADR 079).
+    "course_competency",
 )
 
 # `scorm_sco_identifier` is copied so the new section's lessons still match the
