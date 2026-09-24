@@ -536,7 +536,7 @@
    "fieldname": "content_release_override",
    "fieldtype": "Select",
    "label": "Content Release Override",
-   "options": "\nPer activity (current rules)\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
+   "options": "\nUngated\nChapter unlocks after previous competency self-assessed\nContent open, activities locked until previous competency self-assessed"
   },
   {
    "description": "This will appear on the course card and on the very top of the first page on the LMS.",
@@ -635,7 +635,7 @@
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-09-01 10:00:00.000000",
+ "modified": "2026-09-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

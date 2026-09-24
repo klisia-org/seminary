@@ -286,7 +286,7 @@ import {
 	Lock,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
-import { formatDate } from '@/utils'
+import { formatDate, refiledMessage } from '@/utils'
 import ChapterModal from '@/components/Modals/ChapterModal.vue'
 import { createDialog } from '@/utils/dialogs'
 
@@ -377,9 +377,11 @@ const updateLessonIndex = createResource({
 			idx: parseInt(values.idx, 10),
 		}
 	},
-	onSuccess() {
+	onSuccess(data) {
 		outline.reload()
 		toast.success(__('Lesson moved successfully'))
+		const refiled = refiledMessage(data?.refiled)
+		if (refiled) toast.info(refiled, { duration: 10 })
 	},
 })
 

@@ -227,7 +227,7 @@
 							class="mb-4 rounded-md bg-surface-amber-1 px-4 py-3 text-sm text-ink-amber-3">
 							<p class="font-medium">{{ __('Still outstanding') }}</p>
 							<ul class="mt-1 list-inside list-disc">
-								<li v-for="(m, i) in detail.data.missing_evaluators" :key="i">{{ m }}</li>
+								<li v-for="m in detail.data.missing_evaluators" :key="`${m.instructor}-${m.assess_criteria}`">{{ m.message }}</li>
 							</ul>
 						</div>
 
@@ -272,9 +272,9 @@
 													{{ __('Nobody grades this here') }}
 												</div>
 												<div v-else class="space-y-2">
-													<div v-for="ev in evaluatorsFor(a, d)" :key="ev.instructor"
+													<div v-for="ev in evaluatorsFor(a, d)" :key="`${ev.instructor}-${ev.instructor_category}`"
 														class="space-y-1">
-														<div class="text-xs text-ink-gray-5">{{ ev.instructor }}</div>
+														<div class="text-xs text-ink-gray-5">{{ ev.instructor_name }}</div>
 														<div class="flex flex-wrap gap-1">
 															<button v-for="lv in levels" :key="lv.grade_code"
 																type="button"

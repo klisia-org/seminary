@@ -258,6 +258,21 @@ export function updateDocumentTitle(meta) {
  * `<br>` becomes a newline. The detached-div version dropped it entirely, so
  * `a<br>b` came back as `ab`; Frappe's `_server_messages` are full of them.
  */
+/**
+ * Say which assessments a move re-filed on another competency, or null when
+ * none did. The server returns `[{title, from, to}]` (ADR 079 decision 8).
+ */
+export function refiledMessage(refiled) {
+	if (!refiled?.length) return null
+	return refiled
+		.map((r) =>
+			r.from
+				? __('{0} moved from {1} to {2}', [r.title, r.from, r.to])
+				: __('{0} is now filed under {1}', [r.title, r.to])
+		)
+		.join('; ')
+}
+
 export function htmlToText(html) {
 	const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
 	doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'))

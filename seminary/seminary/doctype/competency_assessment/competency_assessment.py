@@ -109,7 +109,13 @@ def get_permission_query_conditions(user=None):
     student = frappe.db.get_value("Student", {"user": user}, "name")
     if not student:
         return "1=0"
-    return f"""`tabCompetency Assessment`.student = {frappe.db.escape(student)}"""
+    # A mentor's assessment reaches a student only once the framework says so
+    # (ADR 079 decision 5), which a list condition cannot express; the student
+    # reads those through the endpoints and `has_permission`, which apply it.
+    return (
+        f"""`tabCompetency Assessment`.student = {frappe.db.escape(student)} """
+        """and `tabCompetency Assessment`.evaluator_kind = 'Self'"""
+    )
 
 
 def has_permission(doc, user=None, permission_type=None):
@@ -124,4 +130,12 @@ def has_permission(doc, user=None, permission_type=None):
     }:
         return True
     student = frappe.db.get_value("Student", {"user": user}, "name")
-    return bool(student) and doc.student == student
+    if not student or doc.student != student:
+        return False
+    if doc.evaluator_kind != "Mentor":
+        return True
+    from seminary.seminary import cbe
+
+    return doc.status == "Submitted" and cbe.mentor_assessments_visible(
+        doc.student, doc.course_schedule, doc.course_competency
+    )

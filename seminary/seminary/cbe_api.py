@@ -68,16 +68,6 @@ def _assert_own_roster(roster):
     return student
 
 
-def _select_options(doctype, fieldname):
-    """A Select field's choices, read off the doctype.
-
-    Sent to the portal rather than typed into the page so the two can never
-    disagree about what the modes are.
-    """
-    options = frappe.get_meta(doctype).get_field(fieldname).options or ""
-    return [o for o in options.split("\n") if o]
-
-
 # ---------------------------------------------------------------- context
 
 
@@ -238,9 +228,9 @@ def get_competency_context(course_schedule):
             # reads the flag.
             "content_release_mode": framework.content_release_mode,
             "override_contentrelease": cint(framework.override_contentrelease),
-            "content_release_options": _select_options(
-                "Competency Framework", "content_release_mode"
-            ),
+            # Only the modes this framework can run: a gated mode needs an
+            # end-of-competency self-assessment to wait on (ADR 079 decision 7).
+            "content_release_options": cbe.release_mode_options(framework),
             "require_pdp": cint(framework.require_pdp),
         },
         "viewer": {
@@ -317,6 +307,7 @@ def get_student_competency_detail(roster):
         return {}
 
     evaluators = cbe.evaluators_for(roster_doc)
+    names = _instructor_names({e["instructor"] for e in evaluators})
     course = frappe.db.get_value("Course Schedule", roster_doc.course_sc, "course")
 
     grades = frappe.get_all(
@@ -408,7 +399,10 @@ def get_student_competency_detail(roster):
         "student_name": roster_doc.stuname_roster,
         "active": roster_doc.active,
         "finalized": not roster_doc.active and not roster_doc.audit_bool,
-        "evaluators": evaluators,
+        "evaluators": [
+            {**e, "instructor_name": names.get(e["instructor"]) or e["instructor"]}
+            for e in evaluators
+        ],
         "competencies": competencies,
         "missing_evaluators": cbe.missing_required_evaluators(roster_doc),
     }
@@ -1220,7 +1214,7 @@ def get_competency_worklist():
         if not mine:
             continue
         outstanding = cbe.missing_required_evaluators(r.name)
-        mine_outstanding = [m for m in outstanding if instructor in m]
+        mine_outstanding = [m.title for m in outstanding if m.instructor == instructor]
         pending_verdicts = _pending_verdicts(r, instructor, mine)
         if not mine_outstanding and not pending_verdicts:
             continue
@@ -1406,7 +1400,8 @@ def _instructor_names(instructors):
 def _profile_assessments(student, course_schedule, competency):
     """Every submitted assessment of one competency, split by who gave it.
 
-    Drafts never surface: an unsubmitted rating is a thought in progress, and
+    Mentors' assessments are held back until `cbe.mentor_assessments_visible`
+    allows them. Drafts never surface: an unsubmitted rating is a thought in progress, and
     the whole point of the radar is to compare positions people have taken.
     """
     rows = frappe.get_all(
@@ -1428,6 +1423,11 @@ def _profile_assessments(student, course_schedule, competency):
         ],
         order_by="submitted_on asc",
     )
+    # Mentors' views appear when the framework says (ADR 079 decision 5).
+    if any(r.evaluator_kind == "Mentor" for r in rows) and not (
+        cbe.mentor_assessments_visible(student, course_schedule, competency)
+    ):
+        rows = [r for r in rows if r.evaluator_kind != "Mentor"]
     if not rows:
         return rows, {}
     ratings = {}

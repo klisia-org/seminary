@@ -300,8 +300,12 @@ const weightsApply = computed(() => !isCbe.value)
 const dimensions = computed(() => competencyContext.data?.dimensions || [])
 const gradingCategories = computed(() => competencyContext.data?.grading_categories || [])
 
+// frappe-ui's Select drops an option whose value is empty, so "no competency"
+// needs a real value of its own; it is mapped back to blank on save.
+const NO_COMPETENCY = '__none__'
+
 const competencyOptions = computed(() => [
-  { label: '—', value: '' },
+  { label: __('No competency'), value: NO_COMPETENCY },
   ...(competencyContext.data?.competencies || []).map((c) => ({
     label: c.competency_name,
     value: c.name,
@@ -456,6 +460,20 @@ updateDocumentTitle(pageMeta)
 
 const assessmentCriteria = reactive([]);
 
+// A row whose chapter names a competency takes that competency, whatever is
+// stored: the server refuses any other, and showing a stale stored value in a
+// locked picker leaves the instructor nothing they can correct.
+watch(
+  () => [competencyContext.data, assessmentCriteria.length],
+  () => {
+    for (const criteria of assessmentCriteria) {
+      const fromChapter = chapterCompetency(criteria)
+      if (fromChapter) criteria.course_competency = fromChapter
+    }
+  }
+)
+
+
 const totalPoints = computed(() => {
   return assessmentCriteria.reduce((sum, criteria) => {
     return criteria.extracredit_scac === 0 ? sum + parseFloat(criteria.weight_scac || 0) : sum;
@@ -477,56 +495,38 @@ onMounted(() => {
   assessments.reload();
 })
 
+function toCriteria(item) {
+  return {
+    name: item.name || '',
+    title: item.title || '',
+    assesscriteria_scac: item.assesscriteria_scac || '',
+    type: item.type || '',
+    weight_scac: item.weight_scac || 0,
+    quiz: item.quiz || '',
+    exam: item.exam || '',
+    assignment: item.assignment || '',
+    discussion: item.discussion || '',
+    creator: item.creator || '',
+    extracredit_scac: item.extracredit_scac || 0,
+    fudgepoints_scac: item.fudgepoints_scac || '',
+    parent: item.parent || '',
+    parenttype: item.parenttype || '',
+    parentfield: item.parentfield || '',
+    due_date: item.due_date || '',
+    lesson: item.lesson || '',
+    // Carried so a save writes back what is stored; leaving them out made the
+    // competency picker read "Select option" after every reload.
+    course_competency: item.course_competency || NO_COMPETENCY,
+    grading_mode_override: item.grading_mode_override || '',
+  }
+}
+
 function loadAssessmentCriteria() {
-  assessmentCriteria.length = 0; // Clear the array before populating it
-  if (assessments.data) {
-    if (Array.isArray(assessments.data)) {
-      assessments.data.forEach(item => {
-        assessmentCriteria.push({
-          name: item.name || '',
-          title: item.title || '',
-          assesscriteria_scac: item.assesscriteria_scac || '',
-          type: item.type || '',
-          weight_scac: item.weight_scac || 0,
-          quiz: item.quiz || '',
-          exam: item.exam || '',
-          assignment: item.assignment || '',
-          discussion: item.discussion || '',
-          creator: item.creator || '',
-          extracredit_scac: item.extracredit_scac || 0,
-          fudgepoints_scac: item.fudgepoints_scac || '',
-          name: item.name || '',
-          parent: item.parent || '',
-          parenttype: item.parenttype || '',
-          parentfield: item.parentfield || '',
-          due_date: item.due_date || '',
-          lesson: item.lesson || ''
-        });
-      });
-    } else {
-      assessmentCriteria.push({
-        name: assessments.data.name || '',
-        title: assessments.data.title || '',
-        assesscriteria_scac: assessments.data.assesscriteria_scac || '',
-        type: assessments.data.type || '',
-        weight_scac: assessments.data.weight_scac || 0,
-        quiz: assessments.data.quiz || '',
-        exam: assessments.data.exam || '',
-        assignment: assessments.data.assignment || '',
-        discussion: assessments.data.discussion || '',
-        creator: assessments.data.creator || '',
-        extracredit_scac: assessments.data.extracredit_scac || 0,
-        fudgepoints_scac: assessments.data.fudgepoints_scac || '',
-        name: assessments.data.name || '',
-        parent: assessments.data.parent || '',
-        parenttype: assessments.data.parenttype || '',
-        parentfield: assessments.data.parentfield || '',
-        due_date: assessments.data.due_date || '',
-        lesson: assessments.data.lesson || ''
-      });
-    }
-  } else {
-    console.log('No assessments data found');
+  assessmentCriteria.length = 0
+  const data = assessments.data
+  if (!data) return
+  for (const item of Array.isArray(data) ? data : [data]) {
+    assessmentCriteria.push(toCriteria(item))
   }
 }
 
@@ -547,7 +547,8 @@ function addCriteria() {
     parenttype: 'Course Schedule',
     parentfield: 'courseassescrit_sc',
     due_date: '',
-    lesson: ''
+    lesson: '',
+    course_competency: NO_COMPETENCY,
   });
 
   // Add the new criteria to the reactive array.
@@ -656,7 +657,10 @@ async function submitCourseAssessment() {
       },
       body: JSON.stringify({
         course: props.courseName,
-        assessment_data: assessmentCriteria,
+        assessment_data: assessmentCriteria.map((c) => ({
+          ...c,
+          course_competency: c.course_competency === NO_COMPETENCY ? '' : c.course_competency,
+        })),
       }),
     });
     const payload = await response.json().catch(() => ({}));

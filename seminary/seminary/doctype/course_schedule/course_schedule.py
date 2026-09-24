@@ -537,15 +537,59 @@ class CourseSchedule(Document):
         it, so the instructor only has to choose for assessments that sit
         outside the outline -- a course-wide capstone, say.
         """
-        from seminary.seminary.utils import (
-            _build_lesson_index_for_course,
-            _scac_activity_key,
-        )
-
         if self.is_new():
             # The lesson index is built from saved activity links; on a brand
             # new section there is nothing to resolve against yet.
             return
+
+        for row, competency in self._chapter_competencies():
+            if not row.course_competency:
+                row.course_competency = competency
+            elif row.course_competency != competency:
+                frappe.throw(
+                    _(
+                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
+                        "cannot be filed under {3}."
+                    ).format(
+                        row.idx,
+                        row.title or row.assesscriteria_scac,
+                        competency,
+                        row.course_competency,
+                    )
+                )
+
+    def refile_assessment_competencies(self):
+        """Re-file every assessment on the competency its chapter now delivers.
+
+        Called after a write that moves the chapter under an assessment -- a
+        lesson moved between chapters, or a chapter re-mapped -- which the
+        validator above would otherwise report as the instructor's error on
+        their next save (ADR 079 decision 8). Saves only when something moved,
+        and returns ``[(title, old, new)]`` so the caller can say what changed.
+        A row whose chapter has no competency keeps the one it has.
+        """
+        changed = []
+        for row, competency in self._chapter_competencies():
+            if row.course_competency != competency:
+                changed.append(
+                    (
+                        row.title or row.assesscriteria_scac,
+                        row.course_competency,
+                        competency,
+                    )
+                )
+                row.course_competency = competency
+        if changed:
+            self.save(ignore_permissions=True)
+        return changed
+
+    def _chapter_competencies(self):
+        """Yield ``(row, competency)`` for each assessment whose activity sits
+        in a lesson whose chapter names a competency."""
+        from seminary.seminary.utils import (
+            _build_lesson_index_for_course,
+            _scac_activity_key,
+        )
 
         index = _build_lesson_index_for_course(self.name)
         chapter_competency = {}
@@ -561,23 +605,8 @@ class CourseSchedule(Document):
                 chapter_competency[chapter] = frappe.db.get_value(
                     "Course Schedule Chapter", chapter, "course_competency"
                 )
-            competency = chapter_competency[chapter]
-            if not competency:
-                continue
-            if not row.course_competency:
-                row.course_competency = competency
-            elif row.course_competency != competency:
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
-                        "cannot be filed under {3}."
-                    ).format(
-                        row.idx,
-                        row.title or row.assesscriteria_scac,
-                        competency,
-                        row.course_competency,
-                    )
-                )
+            if chapter_competency[chapter]:
+                yield row, chapter_competency[chapter]
 
     def convert_to_date(self, date):
         if isinstance(date, str):
@@ -628,6 +657,15 @@ class CourseSchedule(Document):
         if name:
             framework = frappe.get_cached_doc("Competency Framework", name)
             if cint(framework.override_contentrelease):
+                if self.content_release_override in cbe.GATED_MODES and not (
+                    cbe.end_of_competency_self_eval(framework)
+                ):
+                    frappe.throw(
+                        cbe.release_mode_refusal(
+                            self.content_release_override, on_section=True
+                        ),
+                        title=_("Content release needs a self-assessment"),
+                    )
                 return
             frappe.throw(
                 _(

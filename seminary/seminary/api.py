@@ -3992,7 +3992,7 @@ def _assert_evaluators_finished(course_schedule, roster_names):
         return
     outstanding = []
     for name in roster_names:
-        outstanding.extend(cbe.missing_required_evaluators(name))
+        outstanding.extend(m.message for m in cbe.missing_required_evaluators(name))
     if outstanding:
         frappe.throw(
             _("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20])
@@ -4812,11 +4812,19 @@ def upsert_chapter(
 
     if package_file:
         _check_scorm_package(package_file)
+    previous_competency = chapter.course_competency
     chapter.update(values)
     chapter.save()
     if package_file:
         pin_scorm_package(chapter.name, package_file)
         queue_scorm_unpack(chapter.name, package_file)
+
+    if (
+        name
+        and chapter.course_competency
+        and chapter.course_competency != previous_competency
+    ):
+        chapter.set_onload("refiled", _refile_competencies(course))
 
     return chapter
 
@@ -5191,13 +5199,37 @@ def update_lesson_index(lesson, source_chapter, target_chapter, idx):
     require_course_staff(source_doc.coursesc)
     require_course_staff(target_doc.coursesc)
 
+    refiled = []
     if source_chapter == target_chapter:
         _reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
     else:
         _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx)
+        if target_doc.course_competency:
+            refiled = _refile_competencies(target_doc.coursesc)
 
     frappe.db.commit()
-    return {"message": _("Lesson index updated successfully.")}
+    return {"message": _("Lesson index updated successfully."), "refiled": refiled}
+
+
+def _refile_competencies(course_schedule):
+    """Re-file a section's assessments on their chapters' competencies and
+    describe what moved, by name, for the caller to show (ADR 079 decision 8)."""
+    changed = frappe.get_doc(
+        "Course Schedule", course_schedule
+    ).refile_assessment_competencies()
+
+    def label(competency):
+        if not competency:
+            return None
+        return (
+            frappe.db.get_value("Course Competency", competency, "competency_name")
+            or competency
+        )
+
+    return [
+        {"title": title, "from": label(old), "to": label(new)}
+        for title, old, new in changed
+    ]
 
 
 def _clone_reference_rows(chapter_doc, exclude_lesson=None):
