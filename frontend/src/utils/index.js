@@ -3,6 +3,7 @@ import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
+import { SelfAssessment, DevelopmentPlan } from '@/utils/reflection'
 import { DiscussionActivity } from '@/utils/discussionactivity'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
@@ -279,8 +280,11 @@ export function htmlToText(html) {
 	return doc.body.textContent || ''
 }
 
-export const getEditorTools = (course = null, courseName = null) => {
+export const getEditorTools = (course = null, courseName = null, lesson = null) => {
 	return {
+		// Reflection blocks resolve what they cover from their lesson (ADR 079).
+		selfAssessment: { class: SelfAssessment, config: { lesson } },
+		developmentPlan: { class: DevelopmentPlan, config: { lesson } },
 		header: {
 			class: Header,
 			config: {

@@ -421,6 +421,11 @@ doc_events = {
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
+    # A lesson row inserted on its own (the lesson form, the importers) lands
+    # last; a chapter's closing reflection lesson must stay last (ADR 079).
+    "Course Schedule Lesson Reference": {
+        "after_insert": "seminary.seminary.cbe_reflection.on_lesson_reference_insert",
+    },
     # Competency roll-ups (ADR 065). An activity grade feeds the existing
     # gradebook cell, so everything downstream of Course Assess Results Detail
     # keeps working without competency awareness.

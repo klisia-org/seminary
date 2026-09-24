@@ -1380,6 +1380,11 @@ def get_lesson_icon(body, content):
                 return "icon-discussion"
             if block.get("type") == "folder":
                 return "icon-folder"
+            # Reflection lessons (ADR 079 decision 4).
+            if block.get("type") == "selfAssessment":
+                return "icon-self-assessment"
+            if block.get("type") == "developmentPlan":
+                return "icon-development-plan"
 
         return "icon-list"
 

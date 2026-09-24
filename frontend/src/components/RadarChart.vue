@@ -115,8 +115,9 @@ const options = () => {
 				emphasis: { focus: 'series' },
 				data: props.series.map((s, i) => ({
 					name: s.name,
-					// echarts draws a gap for null, which is the honest rendering
-					// of "nobody rated this dimension".
+					// echarts does NOT leave a gap for null: it closes the polygon
+					// through the centre, which reads as the lowest level. Callers
+					// pass only complete series (see CompetencyProfile).
 					value: s.values,
 					itemStyle: { color: s.color || colors[i % colors.length] },
 					lineStyle: { width: 2 },

@@ -1,7 +1,13 @@
 # 079 — Competency work lives in the course outline
 
 **Date:** 2026-09-24
-**Status:** Accepted 2026-09-24
+**Status:** Accepted 2026-09-24 — implemented 2026-09-24 (branch `adr079-cbe-outline`; browser pass on potestas, owner validation pending)
+**Implementation notes:**
+- **Decision 3.** Deleting a chapter that holds reflection lessons is refused too.
+- **Decision 5.** Students can list only their own Self rows through the generic list API. The profile radar plots only complete series, because echarts draws a missing value at the centre.
+- **Decision 6.** `save_mentor_assessment` refuses anyone who gives the student no verdict. A submission is found by activity and section when `course_assess` is blank.
+- **Decision 8.** A template import replaces an untouched scaffold, then re-scaffolds.
+- **Decision 2.** Sections that predate this are scaffolded by the `adr079_scaffold_reflection_lessons` patch.
 **Amends:** ADR 065 sections 2 (content release modes), 9 (student entry points), 11b (the chapter chain) and 11e (self-assessment prompts)
 **Relates to:** [ADR 041](041-course-pack-portable-bundle.md) (course packs)
 

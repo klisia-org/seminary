@@ -362,6 +362,14 @@ class CourseSchedule(Document):
 
         open_new_schedule_if_due(self)
 
+        # A competency section is born with a chapter per competency and the
+        # reflection lessons its framework asks for (ADR 079 decision 2). An
+        # importer that brings its own outline scaffolds after it instead.
+        if not self.flags.skip_reflection_scaffold:
+            from seminary.seminary import cbe_reflection
+
+            cbe_reflection.scaffold(self.name)
+
     def _seed_assessment_criteria_from_course(self):
         """Auto-populate courseassescrit_sc from Course.assessment_criteria.
 
@@ -580,6 +588,9 @@ class CourseSchedule(Document):
                 )
                 row.course_competency = competency
         if changed:
+            # Only competency links on child rows changed; a draft section with
+            # its schedule still unfilled must not fail the move on that.
+            self.flags.ignore_mandatory = True
             self.save(ignore_permissions=True)
         return changed
 
@@ -924,6 +935,10 @@ class CourseSchedule(Document):
         # denorm field values (lessons count getting overwritten with the
         # in-memory 0). Source weights are validated up-front, so we don't
         # lose any meaningful save-time check.
+        from seminary.seminary import cbe_reflection
+
+        if self.chapters:
+            cbe_reflection.clear_scaffold(self.name)
         scac_name_map = _replace_scac_rows(source_cs, self.name)
         folder_report = _new_folder_report()
         # Lesson content is copied verbatim, URLs included. Files attached to
@@ -937,6 +952,10 @@ class CourseSchedule(Document):
         finally:
             frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
+        # Fill what the template lacked, stamp the reflections it brought, and
+        # file its assessments on the chapters they now sit in.
+        cbe_reflection.scaffold(self.name)
+        frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
         n_scac = len(scac_name_map)
         lines = [
@@ -1017,8 +1036,12 @@ class CourseSchedule(Document):
                 ).format(source_course, self.course)
             )
 
+        from seminary.seminary import cbe_reflection
+
+        # An outline that is only the scaffold gives way to the template and
+        # is rebuilt around it afterwards (ADR 079 decision 8).
         n_chapters = len(self.chapters or [])
-        if n_chapters > 0:
+        if n_chapters > 0 and not cbe_reflection.untouched_scaffold(self.name):
             frappe.throw(
                 _(
                     "Target schedule already has {0} chapter(s). Clear them "
@@ -1253,6 +1276,8 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 _CHAPTER_COPYABLE_FIELDS = (
     "is_scorm_package",
     "scorm_package",
+    # Same course, same competencies: the mapping carries over (ADR 079).
+    "course_competency",
 )
 
 # `scorm_sco_identifier` is copied so the new section's lessons still match the

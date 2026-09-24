@@ -1029,14 +1029,31 @@ def on_assessment_update(doc, method=None):
 
 # ------------------------------------------------ when a mentor's assessment is due
 
-# Each assessed activity is sat through one submission doctype, found by the
-# criteria row it was sat under.
+# Each assessed activity is sat through one submission doctype. A submission
+# names the criteria row it was sat under in `course_assess` -- but not every
+# path fills it in, so it is also found by activity and section, the way
+# `utils.get_missingassessments` finds it: (doctype, activity field, section
+# field).
 _SUBMISSION_FOR = {
-    "quiz": "Quiz Submission",
-    "exam": "Exam Submission",
-    "assignment": "Assignment Submission",
-    "discussion": "Discussion Submission",
+    "quiz": ("Quiz Submission", "quiz", "course"),
+    "exam": ("Exam Submission", "exam", "course"),
+    "assignment": ("Assignment Submission", "assignment", "course"),
+    "discussion": ("Discussion Submission", "disc_activity", "coursesc"),
 }
+
+
+def _submitted(row, field, student, course_schedule):
+    doctype, activity_field, section_field = _SUBMISSION_FOR[field]
+    return frappe.db.exists(
+        doctype, {"course_assess": row.name, "student": student}
+    ) or frappe.db.exists(
+        doctype,
+        {
+            activity_field: row.get(field),
+            section_field: course_schedule,
+            "student": student,
+        },
+    )
 
 
 def final_self_eval_required(framework):
@@ -1079,10 +1096,7 @@ def mentor_assessment_due(roster, competency, framework=None):
         field = next((f for f in _SUBMISSION_FOR if row.get(f)), None)
         if not field:
             continue
-        if not frappe.db.exists(
-            _SUBMISSION_FOR[field],
-            {"course_assess": row.name, "student": roster_doc.student},
-        ):
+        if not _submitted(row, field, roster_doc.student, roster_doc.course_sc):
             return False
     return True
 
@@ -1917,115 +1931,3 @@ def _framework_names_type(student, cohort_type):
         if any(r.cohort_type == cohort_type for r in rows):
             return True
     return False
-
-
-# ---------------------------------------------------------------- prompt timing
-
-
-START_OF_COURSE = "Start of course"
-END_OF_COURSE = "End of course"
-END_OF_EACH_COMPETENCY = "End of each competency"
-
-
-def self_assessment_prompts(roster):
-    """When to actually ask this student to assess themselves.
-
-    `course_self_eval_points` has always distinguished start of course, end of
-    course and end of each competency, but the outline offered the prompt on
-    every mapped chapter regardless -- so a school set to "start of course and
-    end of each competency" was greeted at the *beginning* of each competency
-    and never at the start (ADR 065 section 11e).
-
-    Returns {"baseline": bool, "chapters": {chapter: competency}, "final_all":
-    bool}: whether the opening baseline is due, which chapters have finished and
-    so are ready for their competency's final self-assessment, and whether the
-    end-of-course prompt is due.
-    """
-    roster_doc = (
-        roster
-        if isinstance(roster, frappe.model.document.Document)
-        else frappe.get_doc("Scheduled Course Roster", roster)
-    )
-    framework = framework_doc(roster_doc.course_sc)
-    empty = {"baseline": False, "chapters": {}, "final_all": False, "points": None}
-    if not framework or not cint(framework.course_self_eval):
-        return empty
-
-    when = framework.course_self_eval_points or ""
-    out = dict(empty, points=when)
-    # Matched case-insensitively on purpose: the Select reads "Start of course
-    # and end of each competency", so a capitalised constant matches the option
-    # that starts with it and silently misses the one that does not.
-    phrase = when.lower()
-
-    mapped = [c for c in _mapped_chapters(roster_doc.course_sc) if c.course_competency]
-
-    if "start" in phrase:
-        # Due until it is done: the baseline is the first thing asked and the
-        # last thing a student thinks to go back for.
-        out["baseline"] = any(
-            not _self_assessment_submitted(
-                roster_doc.student,
-                roster_doc.course_sc,
-                c.course_competency,
-                "Baseline",
-            )
-            for c in mapped
-        )
-
-    complete = _completed_chapters(roster_doc)
-
-    if END_OF_EACH_COMPETENCY.lower() in phrase:
-        for c in mapped:
-            if c.name in complete and not _self_assessment_submitted(
-                roster_doc.student, roster_doc.course_sc, c.course_competency, "Final"
-            ):
-                out["chapters"][c.name] = c.course_competency
-
-    if END_OF_COURSE.lower() in phrase and END_OF_EACH_COMPETENCY.lower() not in phrase:
-        # The whole outline, not just the mapped part: an intro chapter is still
-        # work the student has to finish before the course is over.
-        chapters = _mapped_chapters(roster_doc.course_sc)
-        out["final_all"] = bool(chapters) and all(c.name in complete for c in chapters)
-
-    return out
-
-
-def _completed_chapters(roster_doc):
-    """Chapters whose lessons this student has all finished.
-
-    Read from the same Course Schedule Progress rows the outline already uses,
-    so "end of a competency" needs no new state to mean something.
-    """
-    chapters = [c.name for c in _mapped_chapters(roster_doc.course_sc)]
-    if not chapters:
-        return set()
-
-    lessons_by_chapter = {}
-    for ref in frappe.get_all(
-        "Course Schedule Lesson Reference",
-        filters={"parenttype": "Course Schedule Chapter", "parent": ("in", chapters)},
-        fields=["parent", "lesson"],
-    ):
-        lessons_by_chapter.setdefault(ref.parent, []).append(ref.lesson)
-
-    done = {
-        p.lesson
-        for p in frappe.get_all(
-            "Course Schedule Progress",
-            filters={
-                "course": roster_doc.course_sc,
-                "member": frappe.db.get_value("Student", roster_doc.student, "user"),
-                "status": "Complete",
-            },
-            fields=["lesson"],
-        )
-    }
-
-    complete = set()
-    for chapter, lessons in lessons_by_chapter.items():
-        # A chapter with no lessons is not "finished" -- there was nothing to do,
-        # so there is nothing to reflect on either.
-        if lessons and all(lesson in done for lesson in lessons):
-            complete.add(chapter)
-    return complete

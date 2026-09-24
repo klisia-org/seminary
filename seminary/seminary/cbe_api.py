@@ -18,7 +18,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt
 
-from seminary.seminary import cbe
+from seminary.seminary import cbe, cbe_reflection
 
 STAFF_ROLES = {
     "Instructor",
@@ -1399,15 +1399,10 @@ def get_outline_competencies(course_schedule):
         "gated": False,
         "chapters": {},
     }
-    prompts = {"baseline": False, "chapters": {}, "final_all": False, "points": None}
     if student and not _is_staff():
         roster = _roster_for(course_schedule, student)
         if roster:
             gating = cbe.visible_outline(roster)
-            # When to *ask*, as against what to show: the outline used to offer
-            # the prompt on every mapped chapter regardless of the framework's
-            # timing or the student's progress (ADR 065 section 11e).
-            prompts = cbe.self_assessment_prompts(roster)
 
     out = {}
     for ch in chapters:
@@ -1444,11 +1439,18 @@ def get_outline_competencies(course_schedule):
                 for d in competency.dimensions
             ],
             "self_assessment_submitted": sorted(submitted),
-            "final_due": ch.name in prompts["chapters"],
             "locked": bool(state.get("locked")),
             "activities_locked": bool(state.get("activities_locked")),
             "reason": state.get("reason"),
             "unlock_competency": state.get("unlock_competency"),
+            # A lock links to the lesson that lifts it (ADR 079 decision 4).
+            "unlock_lesson": (
+                cbe_reflection.final_lesson_for(
+                    course_schedule, state["unlock_competency"]
+                )
+                if state.get("unlock_competency")
+                else None
+            ),
         }
 
     return {
@@ -1457,9 +1459,114 @@ def get_outline_competencies(course_schedule):
         "gated": gating.get("gated", False),
         "self_eval_enabled": cint(framework.course_self_eval),
         "self_eval_points": framework.course_self_eval_points,
-        "baseline_due": prompts["baseline"],
-        "final_all_due": prompts["final_all"],
         "chapters": out,
+        "reflections": _outline_reflections(course_schedule, student),
+    }
+
+
+def _outline_reflections(course_schedule, student):
+    """Each reflection lesson's badges for the outline, by lesson name: what
+    it is, whether this student has done it, whether a mentor's view is there
+    to read, and whether the course cannot close without it."""
+    out = {}
+    for lesson in frappe.get_all(
+        "Course Lesson",
+        filters={"course_sc": course_schedule, "autocreated": 1},
+        pluck="name",
+    ):
+        found = cbe_reflection.lesson_reflection(lesson)
+        if not found:
+            continue
+        reflection, _chapter, competency, _cs = found
+        status = cbe_reflection.reflection_status(
+            course_schedule, student, reflection, competency
+        )
+        out[lesson] = {
+            "kind": reflection[0],
+            "scope": reflection[1],
+            "stage": reflection[2],
+            "competency": competency if reflection[1] == "chapter" else None,
+            **_lesson_position(course_schedule, lesson),
+            **status,
+        }
+    return out
+
+
+def _lesson_position(course_schedule, lesson):
+    """A lesson's title and its place in the outline, as the Lesson route
+    addresses it (chapter number, lesson number)."""
+    row = frappe.db.get_value(
+        "Course Schedule Lesson Reference",
+        {"lesson": lesson, "parenttype": "Course Schedule Chapter"},
+        ["parent", "idx"],
+        as_dict=True,
+    )
+    chapter_number = (
+        frappe.db.get_value(
+            "Course Schedule Chapter Reference",
+            {"parent": course_schedule, "chapter": row.parent},
+            "idx",
+        )
+        if row
+        else None
+    )
+    return {
+        "lesson_title": frappe.db.get_value("Course Lesson", lesson, "lesson_title"),
+        "chapter_number": chapter_number,
+        "lesson_number": row.idx if row else None,
+    }
+
+
+@frappe.whitelist()
+def get_reflection_block(lesson):
+    """What a reflection block in a lesson shows (ADR 079 decision 1).
+
+    Read from the stored lesson -- its block, its chapter's competency -- never
+    from what the page says the block is. A student sees their own work; staff
+    of the section see what the student would, with nothing to submit.
+    """
+    found = cbe_reflection.lesson_reflection(lesson)
+    if not found:
+        frappe.throw(_("This lesson holds no reflection."))
+    reflection, chapter, chapter_competency, course_schedule = found
+
+    student = _current_student()
+    if student and _roster_for(course_schedule, student):
+        preview = False
+    else:
+        from seminary.seminary.guards import require_course_staff
+
+        require_course_staff(course_schedule)
+        student, preview = None, True
+
+    competencies = [
+        {
+            "name": c,
+            "competency_name": frappe.db.get_value(
+                "Course Competency", c, "competency_name"
+            ),
+            "submitted": bool(
+                student
+                and cbe._self_assessment_submitted(
+                    student, course_schedule, c, reflection[2]
+                )
+            ),
+        }
+        for c in cbe_reflection._competencies_in_scope(
+            course_schedule, reflection, chapter_competency
+        )
+    ]
+    return {
+        "course_schedule": course_schedule,
+        "chapter": chapter,
+        "kind": reflection[0],
+        "scope": reflection[1],
+        "stage": reflection[2],
+        "competencies": competencies,
+        "preview": preview,
+        **cbe_reflection.reflection_status(
+            course_schedule, student, reflection, chapter_competency
+        ),
     }
 
 

@@ -76,3 +76,4 @@ seminary.seminary.patches.p008_scorm_teardown
 seminary.seminary.patches.p008_course_pack_coursecode
 seminary.seminary.patches.p009_scorm_fields
 seminary.seminary.patches.adr079_release_mode_ungated
+seminary.seminary.patches.adr079_scaffold_reflection_lessons

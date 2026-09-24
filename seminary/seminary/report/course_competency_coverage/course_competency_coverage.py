@@ -91,6 +91,12 @@ def columns():
             "width": 90,
         },
         {
+            "label": _("Sections Off Policy"),
+            "fieldname": "sections_off_policy",
+            "fieldtype": "Int",
+            "width": 130,
+        },
+        {
             "label": _("Retired"),
             "fieldname": "disabled",
             "fieldtype": "Check",
@@ -212,6 +218,10 @@ def rows(filters):
                 course, is_cbe, scale_dimensions, comps, active, incomplete
             ),
         }
+        off_policy = _sections_off_policy(course.name) if is_cbe else {}
+        row["sections_off_policy"] = len(off_policy)
+        if off_policy and not row["issue"]:
+            row["issue"] = _off_policy_issue(off_policy)
         if filters.get("only_issues") and not row["issue"]:
             continue
         out.append(row)
@@ -241,3 +251,32 @@ def _issue(course, is_cbe, scale_dimensions, comps, active, incomplete):
             names = _("{0} and {1} more").format(names, len(incomplete) - 3)
         return _("Missing dimension descriptors: {0}").format(names)
     return ""
+
+
+def _sections_off_policy(course):
+    """Open sections of the course whose outline lacks what their framework
+    asks for (ADR 079): the scaffold is built once and does not follow a policy
+    changed afterwards, so the gap is reported here instead."""
+    from seminary.seminary import cbe_reflection
+
+    out = {}
+    for cs in frappe.get_all(
+        "Course Schedule",
+        filters={
+            "course": course,
+            "workflow_state": ("not in", ("Closed", "Cancelled")),
+        },
+        pluck="name",
+    ):
+        missing = cbe_reflection.missing_reflections(cs)
+        if missing:
+            out[cs] = missing
+    return out
+
+
+def _off_policy_issue(off_policy):
+    cs, missing = next(iter(off_policy.items()))
+    text = _("Section {0} is missing: {1}").format(cs, ", ".join(missing[:3]))
+    if len(off_policy) > 1:
+        text = _("{0} (and {1} more sections)").format(text, len(off_policy) - 1)
+    return text

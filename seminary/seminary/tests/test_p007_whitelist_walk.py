@@ -583,6 +583,7 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.cbe_api.get_development_notes",
     "seminary.seminary.cbe_api.get_development_plan",
     "seminary.seminary.cbe_api.get_outline_competencies",
+    "seminary.seminary.cbe_api.get_reflection_block",
     "seminary.seminary.cbe_api.get_self_assessment",
     "seminary.seminary.cbe_api.get_student_competency_overview",
     "seminary.seminary.cbe_api.save_development_note",

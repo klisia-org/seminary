@@ -34,4 +34,5 @@ frappe.ui.form.on("Competency Framework", {
 	refresh: filter_release_modes,
 	course_self_eval: filter_release_modes,
 	course_self_eval_points: filter_release_modes,
+	content_release_mode: filter_release_modes,
 });

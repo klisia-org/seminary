@@ -4998,6 +4998,10 @@ def delete_chapter(chapter):
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
     require_course_staff(chapterInfo.coursesc)
 
+    from seminary.seminary import cbe_reflection
+
+    cbe_reflection.assert_chapter_deletable(chapter)
+
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
     frappe.db.delete("Course Lesson", {"chapter": chapter})
@@ -5136,6 +5140,9 @@ def delete_lesson(lesson, chapter):
     # Delete Reference
     chapter = frappe.get_doc("Course Schedule Chapter", chapter)
     require_course_staff(chapter.coursesc)
+    from seminary.seminary import cbe_reflection
+
+    cbe_reflection.assert_lesson_deletable(lesson)
     chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
     chapter.save()
 
@@ -5198,6 +5205,9 @@ def update_lesson_index(lesson, source_chapter, target_chapter, idx):
     )
     require_course_staff(source_doc.coursesc)
     require_course_staff(target_doc.coursesc)
+    from seminary.seminary import cbe_reflection
+
+    cbe_reflection.assert_lesson_movable(lesson_doc.name)
 
     refiled = []
     if source_chapter == target_chapter:
