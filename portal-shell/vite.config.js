@@ -12,9 +12,11 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: ['vue'],
+      // vue-router must stay external: `useRoute`/`useRouter` resolve through provide/inject
+      // from the host app's router, and a second bundled copy injects nothing.
+      external: ['vue', 'vue-router', 'frappe-ui'],
       output: {
-        globals: { vue: 'Vue' },
+        globals: { vue: 'Vue', 'vue-router': 'VueRouter', 'frappe-ui': 'FrappeUI' },
         assetFileNames: (asset) =>
           asset.name === 'style.css' ? 'portal-shell.css' : asset.name,
       },

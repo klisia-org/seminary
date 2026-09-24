@@ -32,6 +32,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      // PageHeader/PageTabs/useTabParam moved into portal-shell (ADR 075 applies across the
+      // portals, not just within this one), and a bare import inside its dist resolves from
+      // *its* directory rather than ours. vue-router especially must be one instance:
+      // `useRoute` resolves through provide/inject from this app's router, and a second copy
+      // injects nothing. Same reason as the prosemirror pins below.
+      'vue-router': path.resolve(__dirname, 'node_modules/vue-router'),
+      'frappe-ui': path.resolve(__dirname, 'node_modules/frappe-ui'),
       // Force all prosemirror/tiptap imports (including from frappe-ui source)
       // to resolve to the same module instances
       'prosemirror-commands': path.resolve(__dirname, 'node_modules/prosemirror-commands'),
