@@ -309,6 +309,29 @@
 									</tbody>
 								</table>
 							</div>
+
+							<!-- The mentor's own view of the competency, beside the
+							     student's (ADR 079 decision 6). -->
+							<div v-if="givesVerdict" class="border-t px-4 py-4">
+								<div class="mb-3 flex flex-wrap items-center gap-2">
+									<h4 class="font-semibold text-ink-gray-8">{{ __('Your assessment') }}</h4>
+									<Badge v-if="myAssessment(c)?.status === 'Submitted'"
+										:label="__('Submitted')" theme="green" />
+									<Badge v-else-if="c.mentor_due" :label="__('Due')" theme="orange" />
+									<span v-else class="text-xs text-ink-gray-5">
+										{{ __('Not due yet: the student still has work to submit for this competency.') }}
+									</span>
+								</div>
+								<CompetencyRatingForm :dimensions="mentorDimensions(c)" :levels="levels"
+									:narrative="myAssessment(c)?.narrative || ''"
+									:locked="isFinalized || myAssessment(c)?.status === 'Submitted'"
+									:saving="mentorSaving[c.name] || null"
+									:comparisons="studentView(c)"
+									:comparison-title="__('The student has assessed this competency.')"
+									:dimension-narrative-label="__('What you observed')"
+									:overall-label="__('Overall, for this competency')"
+									@save="(payload) => saveMentor(c, payload)" />
+							</div>
 						</article>
 					</template>
 				</section>
@@ -346,13 +369,17 @@ import { htmlToText } from '@/utils'
 import { computed, inject, ref, watch } from 'vue'
 import { Send, UserRound } from 'lucide-vue-next'
 import ProgressBar from '@/components/ProgressBar.vue'
+import CompetencyRatingForm from '@/components/CompetencyRatingForm.vue'
+import { useRoute } from 'vue-router'
 
 const user = inject('$user')
 const props = defineProps({
 	courseName: { type: String, required: true },
 })
 
-const activeRoster = ref(null)
+const route = useRoute()
+// A To-Do item links straight to one student (ADR 079 decision 6).
+const activeRoster = ref(route.query.roster || null)
 const selected = ref([])
 const sending = ref(false)
 
@@ -375,7 +402,8 @@ const roster = createResource({
 	url: 'seminary.seminary.cbe_api.get_competency_roster',
 	makeParams: () => ({ course_schedule: props.courseName }),
 	onSuccess(data) {
-		if (!activeRoster.value && data?.length) select(data[0].name)
+		if (activeRoster.value) detail.reload()
+		else if (data?.length) select(data[0].name)
 	},
 	// Silent: an ordinary section legitimately returns nothing here.
 	onError: () => {},
@@ -428,6 +456,65 @@ const mentorText = (student) =>
 	student.mentors
 		.map((m) => `${m.instructor_category}: ${m.instructor_name}`)
 		.join('\n')
+
+// --- the mentor's assessment ---------------------------------------------------
+const viewerInstructor = computed(() => context.data?.viewer?.instructor)
+const givesVerdict = computed(() =>
+	(detail.data?.evaluators || []).some(
+		(e) => e.instructor === viewerInstructor.value && e.gives_competency_verdict
+	)
+)
+const myAssessment = (c) =>
+	(c.assessments_by_mentor || []).find(
+		(r) => r.evaluator_kind === 'Mentor' && r.instructor === viewerInstructor.value
+	)
+const byDimension = (ratings) =>
+	Object.fromEntries((ratings || []).map((r) => [r.dimension_code, r]))
+const mentorDimensions = (c) => {
+	const saved = byDimension(myAssessment(c)?.ratings)
+	return (c.dimensions || []).map((d) => ({
+		...d,
+		level_code: saved[d.dimension_code]?.level_code || null,
+		narrative: saved[d.dimension_code]?.narrative || '',
+	}))
+}
+// The student's own Final view, unless the framework withholds it from a
+// mentor who has not yet formed theirs (`mentor_sees_self_eval`).
+const studentView = (c) =>
+	(c.assessments_by_mentor || [])
+		.filter((r) => r.evaluator_kind === 'Self' && r.stage === 'Final' && !r.withheld
+			&& r.status === 'Submitted')
+		.map((r) => ({
+			key: r.name,
+			label: detail.data?.student_name || __('Student'),
+			sublabel: __('Self-assessment'),
+			tone: 'self',
+			narrative: r.narrative,
+			ratings: byDimension(r.ratings),
+		}))
+
+const mentorSaving = ref({})
+const saveMentor = async (c, { submit, ratings, narrative }) => {
+	if (submit && !window.confirm(__('Submit your assessment of {0}? It cannot be changed afterwards.').format(c.competency_name))) {
+		return
+	}
+	mentorSaving.value = { ...mentorSaving.value, [c.name]: submit ? 'submit' : 'draft' }
+	try {
+		await call('seminary.seminary.cbe_api.save_mentor_assessment', {
+			roster: activeRoster.value,
+			course_competency: c.name,
+			ratings: JSON.stringify(ratings),
+			narrative,
+			submit: submit ? 1 : 0,
+		})
+		toast.success(submit ? __('Assessment submitted') : __('Draft saved'))
+		detail.reload()
+	} catch (e) {
+		toast.error(e?.messages?.[0] || e?.message || __('Could not save your assessment.'))
+	} finally {
+		mentorSaving.value = { ...mentorSaving.value, [c.name]: null }
+	}
+}
 
 const openStudent = (name) => {
 	tab.value = 'student'

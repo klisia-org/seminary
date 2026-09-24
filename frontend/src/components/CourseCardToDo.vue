@@ -57,7 +57,20 @@
       </div>
     </div>
 
-    <div v-if="course.data?.course && isInstructor && !assessmentsToGrade.data?.length" class="text-ink-gray-8">
+    <!-- Instructor: competency assessments owed (ADR 079 decision 6) -->
+    <div v-if="course.data?.course && isInstructor && mentorAssessmentsDue.data?.length" class="text-ink-gray-8 mt-4">
+      <router-link v-for="item in mentorAssessmentsDue.data" :key="item.roster"
+        :to="{ name: 'CompetencyGradebook', params: { courseName: props.course }, query: { tab: 'student', roster: item.roster } }"
+        class="mt-2 flex items-start space-x-2 text-ink-gray-8">
+        <Target class="mt-0.5 h-4 w-4 shrink-0 stroke-1.5" />
+        <span>
+          {{ __('Assess {0}').format(item.student_name) }}:
+          {{ item.competencies.map((c) => c.label).join(', ') }}
+        </span>
+      </router-link>
+    </div>
+
+    <div v-if="course.data?.course && isInstructor && !assessmentsToGrade.data?.length && !mentorAssessmentsDue.data?.length" class="text-ink-gray-8">
       <PartyPopper class="size-20 mx-auto stroke-1 text-ink-gray-5 mt-5" />
       <h3 class="text-xl text-center font-semibold text-ink-gray-5 mt-5">
         {{ __('Congrats! No assessments to grade for now.') }}
@@ -100,7 +113,7 @@
 </template>
 
 <script setup>
-import { PartyPopper, BookOpenCheck, FileUp } from 'lucide-vue-next'
+import { PartyPopper, BookOpenCheck, FileUp, Target } from 'lucide-vue-next'
 import { Button } from 'frappe-ui'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
@@ -124,6 +137,7 @@ const {
   assessments,
   missingAssessments,
   assessmentsToGrade,
+  mentorAssessmentsDue,
   pendingDisciplinary,
   isStudent,
   isInstructor,

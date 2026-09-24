@@ -362,6 +362,7 @@ G6_STAFF_ONLY = {
     "seminary.seminary.cbe_api.get_cbe_gradebook",
     "seminary.seminary.cbe_api.get_competency_profile",
     "seminary.seminary.cbe_api.get_competency_roster",
+    "seminary.seminary.cbe_api.get_mentor_assessments_due",
     "seminary.seminary.cbe_api.get_student_competency_detail",
     "seminary.seminary.cbe_api.review_development_plan",
     "seminary.seminary.cbe_api.save_activity_grade",

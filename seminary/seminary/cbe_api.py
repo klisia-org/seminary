@@ -391,6 +391,9 @@ def get_student_competency_detail(roster):
             # applicable, not merely unfilled (ADR 065 section 11b).
             a["graded_cells"] = _graded_cells(a, evaluators, dimension_codes)
         c["assessments_by_mentor"] = _mentor_assessments(roster_doc, c.name, show_self)
+        # Whether a mentor's assessment has fallen due (ADR 079 decision 6);
+        # the form stays open before then, the badge only says when it is owed.
+        c["mentor_due"] = cbe.mentor_assessment_due(roster_doc, c.name, framework)
         competencies.append(c)
 
     return {
@@ -937,6 +940,24 @@ def save_mentor_assessment(
     if not instructor:
         frappe.throw(_("Your user account is not linked to an instructor record."))
     roster_doc = frappe.get_doc("Scheduled Course Roster", roster)
+    # Only someone who gives this student a competency verdict may file one;
+    # being staff is not enough, now that the gradebook offers the form.
+    role = next(
+        (
+            e
+            for e in cbe.evaluators_for(roster_doc)
+            if e["instructor"] == instructor and e["gives_competency_verdict"]
+        ),
+        None,
+    )
+    if not role:
+        frappe.throw(
+            _(
+                "You do not give {0} a competency verdict in this course, so you "
+                "cannot submit a mentor assessment for them."
+            ).format(roster_doc.stuname_roster or roster_doc.student),
+            frappe.PermissionError,
+        )
     return _save_assessment(
         roster_doc,
         course_competency,
@@ -946,6 +967,7 @@ def save_mentor_assessment(
         narrative,
         submit,
         instructor,
+        instructor_category=role["instructor_category"],
     )
 
 
@@ -1029,7 +1051,51 @@ def get_self_assessment(course_schedule, course_competency, stage="Final"):
         "statement": competency.statement,
         "dimensions": dimensions,
         "levels": cbe.levels_for(scale),
+        "mentors": (
+            _mentor_views(student, course_schedule, course_competency)
+            if stage == "Final"
+            else []
+        ),
     }
+
+
+def _mentor_views(student, course_schedule, competency):
+    """The mentors' submitted assessments of one competency, as the student
+    may see them -- empty until `cbe.mentor_assessments_visible` allows it
+    (ADR 079 decision 5). Mentors assess only the Final stage."""
+    if not cbe.mentor_assessments_visible(student, course_schedule, competency):
+        return []
+    rows = frappe.get_all(
+        "Competency Assessment",
+        filters={
+            "student": student,
+            "course_schedule": course_schedule,
+            "course_competency": competency,
+            "evaluator_kind": "Mentor",
+            "stage": "Final",
+            "status": "Submitted",
+        },
+        fields=[
+            "name",
+            "instructor",
+            "instructor_category",
+            "narrative",
+            "submitted_on",
+        ],
+        order_by="submitted_on asc",
+    )
+    names = _instructor_names({r.instructor for r in rows})
+    for r in rows:
+        r["instructor_name"] = names.get(r.instructor) or r.instructor
+        r["ratings"] = {
+            x.dimension_code: {"level_code": x.level_code, "narrative": x.narrative}
+            for x in frappe.get_all(
+                "Competency Assessment Rating",
+                filters={"parent": r.name},
+                fields=["dimension_code", "level_code", "narrative"],
+            )
+        }
+    return rows
 
 
 @frappe.whitelist()
@@ -1054,7 +1120,15 @@ def save_self_assessment(
 
 
 def _save_assessment(
-    roster_doc, course_competency, stage, kind, ratings, narrative, submit, instructor
+    roster_doc,
+    course_competency,
+    stage,
+    kind,
+    ratings,
+    narrative,
+    submit,
+    instructor,
+    instructor_category=None,
 ):
     if isinstance(ratings, str):
         ratings = json.loads(ratings)
@@ -1088,6 +1162,8 @@ def _save_assessment(
             "name",
         )
 
+    if instructor_category:
+        doc.instructor_category = instructor_category
     doc.narrative = narrative
     doc.set("ratings", [])
     for r in ratings or []:
@@ -1231,10 +1307,42 @@ def get_competency_worklist():
     return items
 
 
+@frappe.whitelist()
+def get_mentor_assessments_due(course_schedule):
+    """This section's share of the viewer's worklist, for its course card and
+    pages: students whose competency assessment the viewer owes now (ADR 079
+    decision 6). Empty for anyone who gives no verdict here."""
+    _assert_staff()
+    instructor = _current_instructor()
+    if not instructor or not cbe.framework_for(course_schedule):
+        return []
+    items = []
+    for r in frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course_schedule, "active": 1, "audit_bool": 0},
+        fields=["name", "student", "stuname_roster", "course_sc"],
+        order_by="stuname_roster asc",
+    ):
+        mine = [e for e in cbe.evaluators_for(r.name) if e["instructor"] == instructor]
+        pending = _pending_verdicts(r, instructor, mine) if mine else []
+        if pending:
+            items.append(
+                {
+                    "roster": r.name,
+                    "student_name": r.stuname_roster,
+                    "competencies": pending,
+                }
+            )
+    return items
+
+
 def _pending_verdicts(roster_row, instructor, my_roles):
+    """Competencies whose assessment this mentor owes the student now -- due
+    per `cbe.mentor_assessment_due` and not yet submitted by them."""
     if not any(m["gives_competency_verdict"] for m in my_roles):
         return []
     course = frappe.db.get_value("Course Schedule", roster_row.course_sc, "course")
+    framework = cbe.framework_doc(roster_row.course_sc)
     pending = []
     for c in frappe.get_all(
         "Course Competency",
@@ -1242,6 +1350,8 @@ def _pending_verdicts(roster_row, instructor, my_roles):
         fields=["name", "competency_name"],
         order_by="sequence asc",
     ):
+        if not cbe.mentor_assessment_due(roster_row.name, c.name, framework):
+            continue
         done = frappe.db.exists(
             "Competency Assessment",
             {

@@ -1027,6 +1027,66 @@ def on_assessment_update(doc, method=None):
         rollup_competency_result(roster, doc.course_competency)
 
 
+# ------------------------------------------------ when a mentor's assessment is due
+
+# Each assessed activity is sat through one submission doctype, found by the
+# criteria row it was sat under.
+_SUBMISSION_FOR = {
+    "quiz": "Quiz Submission",
+    "exam": "Exam Submission",
+    "assignment": "Assignment Submission",
+    "discussion": "Discussion Submission",
+}
+
+
+def final_self_eval_required(framework):
+    """Whether the framework asks students for a Final self-assessment of each
+    competency -- at the end of it or at the end of the course. Tests the parent
+    Check first, for the reason `end_of_competency_self_eval` gives."""
+    points = (framework.course_self_eval_points or "") if framework else ""
+    return bool(
+        framework and cint(framework.course_self_eval) and "end" in points.lower()
+    )
+
+
+def mentor_assessment_due(roster, competency, framework=None):
+    """Whether a mentor's assessment of this student's competency has fallen due.
+
+    Like an assessment to grade (ADR 079 decision 6): due once the student has
+    submitted every assessed activity filed under the competency, and their
+    Final self-assessment of it where the framework asks for one. Offline rows
+    have nothing to submit and never hold it back.
+    """
+    roster_doc = (
+        roster
+        if isinstance(roster, frappe.model.document.Document)
+        else frappe.get_doc("Scheduled Course Roster", roster)
+    )
+    framework = framework or framework_doc(roster_doc.course_sc)
+    if not framework:
+        return False
+
+    if final_self_eval_required(framework) and not _self_assessment_submitted(
+        roster_doc.student, roster_doc.course_sc, competency
+    ):
+        return False
+
+    for row in frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": roster_doc.course_sc, "course_competency": competency},
+        fields=["name", *_SUBMISSION_FOR],
+    ):
+        field = next((f for f in _SUBMISSION_FOR if row.get(f)), None)
+        if not field:
+            continue
+        if not frappe.db.exists(
+            _SUBMISSION_FOR[field],
+            {"course_assess": row.name, "student": roster_doc.student},
+        ):
+            return False
+    return True
+
+
 # ------------------------------------------------ what a student sees of mentors
 
 
