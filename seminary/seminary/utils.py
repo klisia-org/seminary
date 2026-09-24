@@ -489,7 +489,8 @@ def get_courses_for_student(student):
         student = frappe.session.user
     courses = frappe.db.sql(
         """select cei.coursesc_ce as name, cei.course_data as course,
-                  cs.course_image, cs.course_description_for_lms,
+                  cs.course_image, cs.image_focus_x, cs.image_focus_y,
+                  cs.image_zoom, cs.course_description_for_lms,
                   cs.short_introduction, cs.academic_term, cs.section
 from `tabCourse Enrollment Individual` cei
 join `tabCourse Schedule` cs on cs.name = cei.coursesc_ce
@@ -863,6 +864,9 @@ def get_course_fields():
         "name",
         "course",
         "course_image",
+        "image_focus_x",
+        "image_focus_y",
+        "image_zoom",
         "short_introduction",
         "course_description_for_lms",
         "published",

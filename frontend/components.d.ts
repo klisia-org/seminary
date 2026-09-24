@@ -30,6 +30,7 @@ declare module 'vue' {
     CourseAssessmentModal: typeof import('./src/components/Modals/CourseAssessmentModal.vue')['default']
     CourseCardOverlay: typeof import('./src/components/CourseCardOverlay.vue')['default']
     CourseCardToDo: typeof import('./src/components/CourseCardToDo.vue')['default']
+    CourseImageFrame: typeof import('./src/components/CourseImageFrame.vue')['default']
     CourseOutline: typeof import('./src/components/CourseOutline.vue')['default']
     CulminatingProjectDetail: typeof import('./src/components/CulminatingProjectDetail.vue')['default']
     CulminatingProjectSubmission: typeof import('./src/components/CulminatingProjectSubmission.vue')['default']

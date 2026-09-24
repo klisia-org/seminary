@@ -816,6 +816,17 @@ def save_course(course, course_data):
         frappe.db.set_value(
             "Course Schedule", course, "published", course_data["published"]
         )
+        # How the tile frames the image (ADR 080). Only when sent, so a client
+        # without the editor cannot reset a framing it never showed.
+        for field, low, high, default in (
+            ("image_focus_x", 0, 100, 50),
+            ("image_focus_y", 0, 100, 50),
+            ("image_zoom", 1, 3, 1),
+        ):
+            if field in course_data:
+                value = course_data[field]
+                value = default if value is None else min(max(flt(value), low), high)
+                frappe.db.set_value("Course Schedule", course, field, value)
         frappe.db.set_value(
             "Course Schedule",
             course,
