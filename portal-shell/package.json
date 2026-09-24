@@ -24,7 +24,9 @@
     "postinstall": "vite build"
   },
   "peerDependencies": {
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "frappe-ui": ">=0.1.260"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",
