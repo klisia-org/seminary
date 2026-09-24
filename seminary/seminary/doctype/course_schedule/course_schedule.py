@@ -73,6 +73,23 @@ class CourseSchedule(Document):
             )
 
         self._handle_capacity_and_waitlist()
+        self._scaffold_if_became_cbe()
+
+    def _scaffold_if_became_cbe(self):
+        """A section whose course or scale changes so that it now resolves to a
+        Competency Framework gets its reflection lessons (ADR 079 decision 2).
+        Creation is handled by after_insert; an importer that brings its own
+        outline sets the flag and scaffolds afterwards."""
+        before = self.get_doc_before_save()
+        if not before or self.flags.skip_reflection_scaffold:
+            return
+        if (before.course, before.gradesc_cs) == (self.course, self.gradesc_cs):
+            return
+        from seminary.seminary import cbe, cbe_reflection
+
+        if cbe.framework_for_course_and_scale(before.course, before.gradesc_cs):
+            return
+        cbe_reflection.scaffold_if_became_cbe(self.name)
 
     def _handle_capacity_and_waitlist(self):
         """React to capacity and lifecycle changes for the waitlist engine.

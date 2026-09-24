@@ -36,7 +36,7 @@ def _insert(doc):
 class World:
     """A competency section and everything it needs, built fresh per test."""
 
-    def __init__(self, **framework):
+    def __init__(self, bind=True, **framework):
         term = frappe.db.get_value("Academic Term", {})
         if not term:
             import unittest
@@ -120,16 +120,16 @@ class World:
         }
         settings.update(framework)
         self.framework = _insert(settings).name
-        _insert(
+        self.program = _insert(
             {
                 "doctype": "Program",
                 "program_name": f"{PREFIX} Programme",
                 "program_abbreviation": "ZZ079",
                 "enrollment_mode": "Timed",
                 "competency_framework": self.framework,
-                "courses": [{"course": self.course}],
+                "courses": [{"course": self.course}] if bind else [],
             }
-        )
+        ).name
         self.cs = self.section()
 
     def section(self, **flags):
@@ -253,6 +253,52 @@ class TestScaffold(ADR079Case):
         self.assertTrue(cbe_reflection.missing_reflections(cs))
         cbe_reflection.scaffold(cs)
         self.assertEqual(cbe_reflection.missing_reflections(cs), [])
+
+    def test_a_section_bound_to_the_programme_later_is_scaffolded_then(self):
+        """Created before its course joined the competency programme, so not
+        competency-based at creation (ADR 079 decision 2, implementation note)."""
+        w = World(bind=False)
+        self.assertEqual(w.chapters(), [])
+
+        program = frappe.get_doc("Program", w.program)
+        program.append("courses", {"course": w.course})
+        program.save(ignore_permissions=True)
+
+        self.assertEqual(len(w.chapters()), 2)
+        self.assertEqual(cbe_reflection.missing_reflections(w.cs), [])
+
+    def test_a_section_switched_to_the_competency_scale_is_scaffolded(self):
+        w = World()
+        points = _insert(
+            {
+                "doctype": "Grading Scale",
+                "grading_scale_name": f"{PREFIX} Points",
+                "grscale_type": "Points",
+                "maxnumgrade": 100,
+                "intervals": [
+                    {
+                        "grade_code": "A",
+                        "threshold": 0,
+                        "grade_pass": "Pass",  # nosec B105
+                    }
+                ],
+            }
+        ).name
+        cs = frappe.get_doc("Course Schedule", w.section(skip_reflection_scaffold=True))
+        frappe.db.set_value("Course Schedule", cs.name, "gradesc_cs", points)
+        cs.reload()
+        self.assertEqual(w.chapters(cs.name), [])
+
+        cs.gradesc_cs = w.scale
+        cs.flags.ignore_mandatory = True
+        cs.save(ignore_permissions=True)
+        self.assertEqual(cbe_reflection.missing_reflections(cs.name), [])
+
+    def test_a_scaffolded_section_does_not_follow_a_later_policy_change(self):
+        w = World()
+        frappe.db.set_value("Competency Framework", w.framework, "require_pdp", 0)
+        frappe.clear_document_cache("Competency Framework", w.framework)
+        self.assertEqual(cbe_reflection.scaffold_if_became_cbe(w.cs), 0)
 
     def test_untouched_scaffold_gives_way_but_one_with_content_does_not(self):
         w = World()

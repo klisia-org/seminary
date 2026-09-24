@@ -183,6 +183,49 @@ def scaffold(course_schedule):
     return created
 
 
+def scaffold_if_became_cbe(course_schedule):
+    """Scaffold a section that has just become competency-based -- its course
+    bound to a competency programme, or its scale switched -- after it was
+    created (ADR 079 decision 2, implementation note).
+
+    Only a section with no reflection lessons yet: one that already has its
+    scaffold keeps it, since a scaffold does not follow later policy changes.
+    Closed and cancelled sections are left alone.
+    """
+    if frappe.db.get_value("Course Schedule", course_schedule, "workflow_state") in (
+        "Closed",
+        "Cancelled",
+    ):
+        return 0
+    # The per-request cache may hold the answer from before the binding.
+    cbe._cache().get("framework_for", {}).pop(course_schedule, None)
+    if not cbe.framework_for(course_schedule):
+        return 0
+    if frappe.db.exists(
+        "Course Lesson", {"course_sc": course_schedule, "autocreated": 1}
+    ):
+        return 0
+    return scaffold(course_schedule)
+
+
+def on_program_update(doc, method=None):
+    """doc_events hook: a course newly bound to a competency programme makes
+    its open sections competency-based, so they get their scaffold now."""
+    if not doc.competency_framework:
+        return
+    enabled = {r.course for r in doc.courses or [] if r.course and not r.disabled}
+    before = doc.get_doc_before_save()
+    if before and before.competency_framework == doc.competency_framework:
+        enabled -= {
+            r.course for r in before.courses or [] if r.course and not r.disabled
+        }
+    for course in enabled:
+        for cs in frappe.get_all(
+            "Course Schedule", filters={"course": course}, pluck="name"
+        ):
+            scaffold_if_became_cbe(cs)
+
+
 def _wanted(course_schedule, framework, competencies):
     """``[(chapter, reflection, competency_name)]``: where the framework puts
     each reflection in this section's outline as it stands."""

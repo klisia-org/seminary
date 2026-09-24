@@ -531,7 +531,12 @@ doc_events = {
     # Re-level affected attendance standings when a program's max absence %
     # changes (the Auto per-student limit is derived from it).
     "Program": {
-        "on_update": "seminary.seminary.attendance.recompute_on_program_update",
+        "on_update": [
+            "seminary.seminary.attendance.recompute_on_program_update",
+            # A course bound to a competency programme after its sections were
+            # created: they get their reflection lessons now (ADR 079).
+            "seminary.seminary.cbe_reflection.on_program_update",
+        ],
     },
     # Soft integration with frappe_giving (optional app): mirror the canonical
     # Donor.person link onto the read-only Person.donor field. Fires only when a
