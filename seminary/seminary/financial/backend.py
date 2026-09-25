@@ -254,13 +254,30 @@ class NullFinancialBackend(FinancialBackend):
         return set()
 
 
-def get_financial_backend() -> FinancialBackend:
-    """Resolve the registered financial backend, or the null fallback.
+def registered_financial_backends() -> dict[str, str]:
+    """{app name: backend class path} for every installed financial app, in
+    hook order. The app name is the first segment of the registered path."""
+    return {
+        path.split(".", 1)[0]: path
+        for path in frappe.get_hooks("seminary_financial_backend")
+    }
 
-    The last registration wins (standard Frappe hook-override semantics), so an
-    app installed later can supersede an earlier one.
+
+def get_financial_backend() -> FinancialBackend:
+    """Resolve the active financial backend, or the null fallback.
+
+    Two financial apps may be installed on one site — a school changing ledgers
+    keeps the old app's history — but only one is active. With more than one
+    registered, `Seminary Settings.financial_backend` names it; when it is unset
+    or names an app no longer installed, the last registration wins (standard
+    Frappe hook-override semantics).
     """
-    paths = frappe.get_hooks("seminary_financial_backend")
-    if not paths:
+    backends = registered_financial_backends()
+    if not backends:
         return NullFinancialBackend()
-    return frappe.get_attr(paths[-1])()
+    path = None
+    if len(backends) > 1:
+        path = backends.get(
+            frappe.db.get_single_value("Seminary Settings", "financial_backend")
+        )
+    return frappe.get_attr(path or list(backends.values())[-1])()

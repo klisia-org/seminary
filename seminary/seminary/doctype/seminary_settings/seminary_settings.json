@@ -117,7 +117,9 @@
   "cohort_planning_section",
   "distance_unit",
   "integrations_section",
-  "has_oikonomos"
+  "has_oikonomos",
+  "financial_backend",
+  "financial_backend_since"
  ],
  "fields": [
   {
@@ -836,11 +838,26 @@
    "hidden": 1,
    "label": "Oikonomos (billing bridge) installed",
    "read_only": 1
+  },
+  {
+   "description": "The billing app that raises charges and answers the student portal. Only asked when more than one billing app is installed; the other stays readable for its history.",
+   "fieldname": "financial_backend",
+   "fieldtype": "Data",
+   "label": "Active Billing App",
+   "hidden": 1
+  },
+  {
+   "description": "The date the active billing app took over. Balances open on this date were carried into it.",
+   "fieldname": "financial_backend_since",
+   "fieldtype": "Date",
+   "label": "Active Since",
+   "hidden": 1,
+   "depends_on": "eval:doc.financial_backend"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-17 11:06:12.650516",
+ "modified": "2026-09-25 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
