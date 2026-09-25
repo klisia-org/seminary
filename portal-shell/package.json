@@ -4,13 +4,11 @@
   "private": true,
   "description": "Shared header, portal switcher, and session/theme utilities used across seminary, frappe_giving, and accreditation SPAs.",
   "type": "module",
-  "main": "./dist/portal-shell.umd.cjs",
+  "main": "./dist/portal-shell.js",
   "module": "./dist/portal-shell.js",
   "exports": {
-    ".": {
-      "import": "./dist/portal-shell.js",
-      "require": "./dist/portal-shell.umd.cjs"
-    },
+    ".": "./dist/portal-shell.js",
+    "./tabs": "./dist/tabs.js",
     "./style.css": "./dist/portal-shell.css",
     "./src/*": "./src/*"
   },
