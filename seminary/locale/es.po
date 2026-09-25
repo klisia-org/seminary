@@ -3,8 +3,9 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-09-18 10:36-0609\n"
-"PO-Revision-Date: 2026-09-22 03:01+0000\n"
-"Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
+"PO-Revision-Date: 2026-09-26 23:21+0000\n"
+"Last-Translator: Automatic translation add-on <noreply-addon-"
+"autotranslate@weblate.org>\n"
 "Language-Team: Spanish <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/es/>\n"
 "MIME-Version: 1.0\n"
@@ -4504,7 +4505,7 @@ msgstr "Solicitado por"
 #. Action'
 #: seminary/seminary/doctype/disciplinary_incident_action/disciplinary_incident_action.json
 msgid "Applied On"
-msgstr ""
+msgstr "Fecha de solicitud"
 
 #. Description of the 'Default Country' (Link) field in DocType 'Person Import
 #. Batch'
