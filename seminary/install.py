@@ -1329,10 +1329,10 @@ def seed_skill_tags():
 
 
 def setup_donor_person_field():
-    """Soft link Donor (frappe_giving) <-> Person. frappe_giving is an optional
+    """Soft link Donor (koinonia) <-> Person. koinonia is an optional
     app, so these fields are created programmatically only when its Donor
     doctype is present -- re-checked on every migrate, so installing
-    frappe_giving later and migrating adds them. Donor.person is the canonical
+    koinonia later and migrating adds them. Donor.person is the canonical
     FK (set by giving admins); Person.donor is a read-only reverse mirror kept
     in sync by seminary.seminary.integrations.giving. Mirrors the
     Customer<->Person pattern in setup_customer_person_field()."""
@@ -1646,7 +1646,7 @@ def merge_academics_user_into_program_chair():
     once, and Frappe recreates any role named in a DocPerm that doesn't exist
     (`doctype.py` :: `update_permissions` / role auto-create, with desk_access=1).
     Three third-party apps still name it — erpnext's Department, hrms's Interest
-    and frappe_giving's donor_base chart — so on a site with any of them the role
+    and koinonia's donor_base chart — so on a site with any of them the role
     reappears on the very next `bench migrate` and the one-shot patch can never
     fire again. Hence a hook: whatever recreates it, we collapse it each time
     (ADR 074).

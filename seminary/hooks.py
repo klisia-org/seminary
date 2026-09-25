@@ -538,9 +538,9 @@ doc_events = {
             "seminary.seminary.cbe_reflection.on_program_update",
         ],
     },
-    # Soft integration with frappe_giving (optional app): mirror the canonical
+    # Soft integration with koinonia (optional app): mirror the canonical
     # Donor.person link onto the read-only Person.donor field. Fires only when a
-    # Donor doc is saved, i.e. only when frappe_giving is installed, so the
+    # Donor doc is saved, i.e. only when koinonia is installed, so the
     # dependency stays one-directional -- giving never imports seminary.
     "Donor": {
         "on_update": "seminary.seminary.integrations.giving.on_donor_update",

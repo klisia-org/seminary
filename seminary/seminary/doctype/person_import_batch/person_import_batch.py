@@ -471,7 +471,7 @@ class PersonImportBatch(Document):
             alumni = _get_or_create_alumni(person, user, email, full, row)
             row.db_set("created_alumni", alumni, update_modified=False)
 
-        # 6. Donor — optional frappe_giving.
+        # 6. Donor — optional koinonia.
         if row.is_donor and frappe.db.exists("DocType", "Donor"):
             donor = _get_or_create_donor(email, full)
             link_donor(person, donor)

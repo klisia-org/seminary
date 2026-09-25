@@ -10,7 +10,7 @@
  *
  * This list is exported from portal-shell (rather than copied into each
  * consumer's `main.js`) because the three hand-maintained copies had drifted:
- * aretenic pointed `partner` at `/seminary/alumni` and frappe_giving labelled
+ * aretenic pointed `partner` at `/seminary/alumni` and koinonia labelled
  * Academics "Courses". ADR 011 accepted the duplication "for three portals" and
  * flagged it as a residual risk; this retires it without the `Portal Shell
  * Settings` doctype ADR 011 proposed, which three static entries don't justify.
@@ -18,7 +18,7 @@
  * Optional apps carry a `when(session)` predicate backed by an installed-apps
  * flag from the consumer's session fetcher. A tile is justified by
  * *reachability*, not by role alone: gating Donate on a role would still have
- * pointed at a 404 on a site without frappe_giving, because an uninstalled app
+ * pointed at a 404 on a site without koinonia, because an uninstalled app
  * is an absent route, not a permissions question.
  */
 export const SEMINARY_PORTALS = [

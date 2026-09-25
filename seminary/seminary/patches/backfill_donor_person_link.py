@@ -1,10 +1,10 @@
 """Backfill the Donor <-> Person link (ADR 048).
 
-Creates the cross-app custom fields if missing, then links each frappe_giving
+Creates the cross-app custom fields if missing, then links each koinonia
 Donor to an *existing* Person by shared Customer first, then by User/email
 (reusing Person's own match heuristic). Only unambiguous matches are linked;
 never creates a Person and never overwrites an existing link (first-link-wins).
-Unmatched Donors are reported for manual resolution. No-op when frappe_giving
+Unmatched Donors are reported for manual resolution. No-op when koinonia
 isn't installed.
 """
 

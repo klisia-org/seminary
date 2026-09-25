@@ -1001,9 +1001,9 @@ def get_user_info():
     _installed = frappe.get_installed_apps()
     user.has_aretenic = "aretenic" in _installed
     # Same idea for the donor portal (ADR 074). /donate/donorportal is a
-    # website_route_rule owned by frappe_giving, so without the app the route
+    # website_route_rule owned by koinonia, so without the app the route
     # does not exist and the switcher's Donate tile led to a 404.
-    user.has_giving = "frappe_giving" in _installed
+    user.has_giving = "koinonia" in _installed
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )

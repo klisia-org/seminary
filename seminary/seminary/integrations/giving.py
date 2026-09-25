@@ -1,15 +1,15 @@
-"""Soft integration with frappe_giving (an optional app).
+"""Soft integration with koinonia (an optional app).
 
-seminary owns the Donor <-> Person link; frappe_giving never references
+seminary owns the Donor <-> Person link; koinonia never references
 seminary. The canonical FK is the Custom Field `Donor.person` (created in
 seminary.install.setup_donor_person_field). `Person.donor` is a read-only
 reverse mirror maintained here.
 
 These handlers are wired via doc_events on "Donor" in hooks.py. A doc_events
 entry for a doctype that doesn't exist simply never fires, so when
-frappe_giving is absent this module is inert -- keeping the dependency soft
+koinonia is absent this module is inert -- keeping the dependency soft
 and one-directional. The has_column guards cover the window between installing
-frappe_giving and running `bench migrate` (which creates the fields).
+koinonia and running `bench migrate` (which creates the fields).
 """
 
 import frappe

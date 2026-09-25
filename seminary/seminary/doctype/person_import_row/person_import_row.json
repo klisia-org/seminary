@@ -199,7 +199,7 @@
   },
   {
    "default": "0",
-   "description": "Requires the frappe_giving app. Skipped with a warning when absent.",
+   "description": "Requires the koinonia app. Skipped with a warning when absent.",
    "fieldname": "is_donor",
    "fieldtype": "Check",
    "label": "Donor"
@@ -312,7 +312,7 @@
    "read_only": 1
   },
   {
-   "description": "Donor name (frappe_giving). Stored as text so the field never depends on the optional app being installed.",
+   "description": "Donor name (koinonia). Stored as text so the field never depends on the optional app being installed.",
    "fieldname": "created_donor",
    "fieldtype": "Data",
    "label": "Created Donor",
