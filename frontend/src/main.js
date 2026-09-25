@@ -66,7 +66,7 @@ configurePortals({
 			// Whether the optional Aretenic app is installed (ADR 030); gates the
 			// Aretenic entry in the portal switcher via its `when` predicate.
 			has_aretenic: !!u.has_aretenic,
-			// Likewise frappe_giving (ADR 074): without it /donate/donorportal has
+			// Likewise koinonia (ADR 074): without it /donate/donorportal has
 			// no website route at all and the tile led to a 404.
 			has_giving: !!u.has_giving,
 		}

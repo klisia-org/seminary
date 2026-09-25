@@ -12516,9 +12516,9 @@ msgstr "Donante"
 #. Description of the 'Created Donor' (Data) field in DocType 'Person Import
 #. Row'
 #: seminary/seminary/doctype/person_import_row/person_import_row.json
-msgid "Donor name (frappe_giving). Stored as text so the field never depends on the optional app being installed."
+msgid "Donor name (koinonia). Stored as text so the field never depends on the optional app being installed."
 msgstr ""
-"Nombre del donante (frappe_giving). Se almacena como texto para que el campo "
+"Nombre del donante (koinonia). Se almacena como texto para que el campo "
 "nunca dependa de que la aplicación opcional esté instalada."
 
 #. Option for the 'Status' (Select) field in DocType 'Partner Organization'
@@ -30182,9 +30182,9 @@ msgstr "Requiere acuerdo doctrinal"
 
 #. Description of the 'Donor' (Check) field in DocType 'Person Import Row'
 #: seminary/seminary/doctype/person_import_row/person_import_row.json
-msgid "Requires the frappe_giving app. Skipped with a warning when absent."
+msgid "Requires the koinonia app. Skipped with a warning when absent."
 msgstr ""
-"Requiere la aplicación frappe_giving. Se omite con una advertencia cuando no "
+"Requiere la aplicación koinonia. Se omite con una advertencia cuando no "
 "está disponible."
 
 #. Description of the 'Portal Access' (Check) field in DocType 'Partner

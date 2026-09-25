@@ -3,7 +3,7 @@
 
   Replaces PartnerSidebar: the five partner areas were a whole swapped-in
   sidebar, which cost a second copy of the portal switcher (it drifted, and kept
-  showing a Donate tile on sites without frappe_giving), a third copy of the nav
+  showing a Donate tile on sites without koinonia), a third copy of the nav
   link rules, and the user's primary navigation for as long as they were in the
   section. They are peer areas of one section, so they are tabs.
 
