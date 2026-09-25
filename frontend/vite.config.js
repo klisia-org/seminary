@@ -32,7 +32,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      // PageHeader/PageTabs/useTabParam moved into portal-shell (ADR 075 applies across the
+      // PageTabs/useTabParam moved into portal-shell/tabs (ADR 075 applies across the
       // portals, not just within this one), and a bare import inside its dist resolves from
       // *its* directory rather than ours. vue-router especially must be one instance:
       // `useRoute` resolves through provide/inject from this app's router, and a second copy

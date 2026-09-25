@@ -3,6 +3,6 @@
   existing import path working.
 -->
 <script>
-import { PageTabs } from '@seminary/portal-shell'
+import { PageTabs } from '@seminary/portal-shell/tabs'
 export default PageTabs
 </script>
