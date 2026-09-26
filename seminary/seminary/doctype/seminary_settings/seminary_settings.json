@@ -118,6 +118,7 @@
   "distance_unit",
   "integrations_section",
   "has_oikonomos",
+  "has_billing",
   "financial_backend",
   "financial_backend_since"
  ],
@@ -224,15 +225,15 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
-   "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
+   "description": "By default, invoices created from enrollments are drafts. If enabled, they are submitted as soon as they are created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
-   "label": "Submit Sales Invoice from Enrollments"
+   "label": "Submit Invoices from Enrollments"
   },
   {
    "default": "1",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
@@ -321,7 +322,7 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "If not checked, the corresponding fee will be the same for all audited courses.",
    "fieldname": "auditcredit",
    "fieldtype": "Check",
@@ -497,7 +498,7 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
    "fieldname": "portal_payment_enable",
    "fieldtype": "Check",
@@ -840,6 +841,15 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "description": "Set by a billing app on install. Shows the billing settings.",
+   "fieldname": "has_billing",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Billing app installed",
+   "read_only": 1
+  },
+  {
    "description": "The billing app that raises charges and answers the student portal. Only asked when more than one billing app is installed; the other stays readable for its history.",
    "fieldname": "financial_backend",
    "fieldtype": "Data",
@@ -857,7 +867,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-25 20:00:00.000000",
+ "modified": "2026-09-25 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
