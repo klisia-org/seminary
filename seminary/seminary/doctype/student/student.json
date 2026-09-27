@@ -18,6 +18,7 @@
   "column_break_4",
   "naming_series",
   "joining_date",
+  "previous_student_id",
   "user",
   "person",
   "student_applicant",
@@ -141,6 +142,15 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Joining Date"
+  },
+  {
+   "fieldname": "previous_student_id",
+   "fieldtype": "Data",
+   "label": "Previous Student ID",
+   "read_only": 1,
+   "no_copy": 1,
+   "search_index": 1,
+   "description": "The number the school used for this student before, kept from the import. It is how the school's older records, and its accounting system, knew them."
   },
   {
    "fetch_from": "person.image",
@@ -302,7 +312,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-06-10 12:00:00.000000",
+ "modified": "2026-09-26 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Student",

@@ -48,6 +48,7 @@ REVIEWED_MODULES = (
     # --- p008a G6: triaged endpoint by endpoint against the probe in
     # scripts/p008a_validation/probe_pending.py
     "seminary.alumni.api",
+    "seminary.api.folder_upload",
     "seminary.demo",
     "seminary.partner.api",
     "seminary.partner.doctype.internship_application.internship_application",
@@ -310,28 +311,48 @@ STAFF_ONLY = {
 # Whitelisted functions in the walked modules that are neither student-facing
 # nor a plain staff gate: they carry their own ownership rule (the culminating
 # project's student/advisor checks) and are covered by their own test module.
-OWN_RULE = {
-    # disciplinary: these two carry their own rule rather than a throw -- an
-    # unauthorized caller gets [] (fail-closed, no leak), so they are not
-    # STAFF_ONLY in this test's "must raise PermissionError" sense.
-    "seminary.seminary.disciplinary.list_course_enrollments",
-    "seminary.seminary.disciplinary.list_pending_incidents",
-} | {
-    "seminary.seminary.doctype.culminating_project.culminating_project." + n
-    for n in (
-        "record_signoff",
-        "add_committee_member",
-        "add_submission",
-        "assign_advisor",
-        "create_milestone_event",
-        "enroll_in_project_course",
-        "get_culminating_project",
-        "get_my_culminating_projects",
-        "remove_committee_member",
-        "review_submission",
-        "save_abstract",
-    )
-}
+OWN_RULE = (
+    {
+        # disciplinary: these two carry their own rule rather than a throw -- an
+        # unauthorized caller gets [] (fail-closed, no leak), so they are not
+        # STAFF_ONLY in this test's "must raise PermissionError" sense.
+        "seminary.seminary.disciplinary.list_course_enrollments",
+        "seminary.seminary.disciplinary.list_pending_incidents",
+    }
+    | {
+        "seminary.seminary.doctype.culminating_project.culminating_project." + n
+        for n in (
+            "record_signoff",
+            "add_committee_member",
+            "add_submission",
+            "assign_advisor",
+            "create_milestone_event",
+            "enroll_in_project_course",
+            "get_culminating_project",
+            "get_my_culminating_projects",
+            "remove_committee_member",
+            "review_submission",
+            "save_abstract",
+        )
+    }
+    | {
+        # Course folder files: `_ensure_folder_permission` applies the course folder
+        # scope rule and refuses an unknown folder with PermissionError for everybody,
+        # so a fabricated target proves nothing. Exercised against real sections in
+        # test_course_folder (test_api_scope_rule, test_api_home_is_closed_to_students).
+        "seminary.api.folder_upload." + n
+        for n in (
+            "create_subfolder",
+            "delete_file",
+            "download_folder",
+            "get_files_in_folder",
+            "move_file",
+            "rename_file",
+            "upload_folder",
+            "upload_to_folder",
+        )
+    }
+)
 
 # ---------------------------------------------------------------------------
 # p008a G6 triage (2026-09-19). The widened walk left 291 endpoints parked in
@@ -402,6 +423,7 @@ G6_STAFF_ONLY = {
     "seminary.seminary.doctype.program.program.apply_required_on_enroll",
     # seminary.seminary.doctype.seminary_settings.seminary_settings
     "seminary.seminary.doctype.seminary_settings.seminary_settings.check_payments_app",
+    "seminary.seminary.doctype.seminary_settings.seminary_settings.financial_backend_choices",
     # seminary.seminary.events
     "seminary.seminary.events.create_cohort_event",
     "seminary.seminary.events.create_requirement_event",
@@ -466,6 +488,7 @@ NOT_EXECUTED = {
     "seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",
     # seminary.seminary.doctype.seminary_settings.seminary_settings
     "seminary.seminary.doctype.seminary_settings.seminary_settings.check_payments_app",
+    "seminary.seminary.doctype.seminary_settings.seminary_settings.financial_backend_choices",
     # seminary.seminary.integrations.bible
     "seminary.seminary.integrations.bible.get_bible_name",
     "seminary.seminary.integrations.bible.list_bibles",
@@ -534,6 +557,7 @@ PORTAL_ONLY = {
     "seminary.partner.portal.get_my_org",
     "seminary.partner.portal.get_people",
     "seminary.partner.portal.get_skill_tags",
+    "seminary.partner.portal.leave_organization",
     "seminary.partner.portal.list_applications",
     "seminary.partner.portal.list_job_postings",
     "seminary.partner.portal.list_locations",
@@ -542,7 +566,9 @@ PORTAL_ONLY = {
     "seminary.partner.portal.save_location",
     "seminary.partner.portal.save_review",
     "seminary.partner.portal.set_application_status",
+    "seminary.partner.portal.set_contact_status",
     "seminary.partner.portal.update_org",
+    "seminary.partner.portal.update_my_contact",
     # seminary.seminary.discipleship.api
     "seminary.seminary.discipleship.api.create_my_cohort",
 }
@@ -645,6 +671,7 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.feed_api.related_posts",
     "seminary.seminary.discipleship.feed_api.reopen_prayer",
     "seminary.seminary.discipleship.feed_api.search_posts",
+    "seminary.seminary.discipleship.feed_api.search_recipients",
     "seminary.seminary.discipleship.feed_api.toggle_reaction",
     "seminary.seminary.discipleship.feed_api.toggle_save",
     "seminary.seminary.discipleship.feed_api.unlink_post",
@@ -836,6 +863,8 @@ KWARG_OVERRIDES = {
         "course_schedule": "ZZT-no-such-cs",
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
+    # An invalid status is refused before the org gate is reached.
+    "seminary.partner.portal.set_contact_status": {"status": "Active"},
     "seminary.seminary.api.save_discussion_submission_grade": {"grade": 1.0},
     "seminary.seminary.api.add_submission_comment": {"comment": "x"},
     "seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment": {

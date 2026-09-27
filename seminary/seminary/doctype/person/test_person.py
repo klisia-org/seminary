@@ -453,7 +453,10 @@ class TestOneRecordPerRolePerPerson(IntegrationTestCase):
 
         person = make_person("OneChair", user=make_user().name)
         intake.make_instructor(person)
-        with self.assertRaisesRegex(frappe.UniqueValidationError, "unique_person"):
+        # The patch names the index `unique_person`; a schema-built one is `person`.
+        with self.assertRaisesRegex(
+            frappe.UniqueValidationError, "for key '(unique_)?person'"
+        ):
             intake.make_instructor(person)
 
     def test_one_person_may_hold_several_different_roles(self):

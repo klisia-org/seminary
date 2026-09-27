@@ -17,11 +17,14 @@ from frappe.utils import today
 
 PREFIX = "ZZT"
 _seq = [0]
+# The counter restarts with every process; a run token keeps a new run's names
+# clear of records an earlier run failed to tear down.
+_RUN = frappe.generate_hash(length=4)
 
 
 def uid(label=""):
     _seq[0] += 1
-    return "%s %s%d" % (PREFIX, (label + " ") if label else "", _seq[0])
+    return "%s %s%s%d" % (PREFIX, (label + " ") if label else "", _RUN, _seq[0])
 
 
 # ------------------------------------------------------------------- identity
