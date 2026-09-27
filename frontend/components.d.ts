@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AbsenceDecisionModal: typeof import('./src/components/Modals/AbsenceDecisionModal.vue')['default']
     AlumniDirectoryProfile: typeof import('./src/components/AlumniDirectoryProfile.vue')['default']
     AlumniHeader: typeof import('./src/components/AlumniHeader.vue')['default']
     AnnouncementModal: typeof import('./src/components/Modals/AnnouncementModal.vue')['default']

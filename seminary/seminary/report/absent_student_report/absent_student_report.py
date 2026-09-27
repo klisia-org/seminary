@@ -27,32 +27,28 @@ def execute(filters=None):
         )
 
     absent_students = get_absent_students(date)
-    leave_applicants = get_leave_applications(date)
-    if absent_students:
-        student_list = [d["student"] for d in absent_students]
 
     data = []
     for student in absent_students:
-        if not student.student in leave_applicants:
-            row = [student.student, student.student_name]
-            stud_details = frappe.db.get_value(
-                "Student",
-                student.student,
-                ["student_email_id", "student_mobile_number"],
-                as_dict=True,
-            )
+        row = [student.student, student.student_name]
+        stud_details = frappe.db.get_value(
+            "Student",
+            student.student,
+            ["student_email_id", "student_mobile_number"],
+            as_dict=True,
+        )
 
-            if stud_details.student_email_id:
-                row += [stud_details.student_email_id]
-            else:
-                row += [""]
+        if stud_details.student_email_id:
+            row += [stud_details.student_email_id]
+        else:
+            row += [""]
 
-            if stud_details.student_mobile_number:
-                row += [stud_details.student_mobile_number]
-            else:
-                row += [""]
+        if stud_details.student_mobile_number:
+            row += [stud_details.student_mobile_number]
+        else:
+            row += [""]
 
-            data.append(row)
+        data.append(row)
 
     return columns, data
 
@@ -81,25 +77,6 @@ def get_absent_students(date):
         as_dict=1,
     )
     return absent_students
-
-
-def get_leave_applications(date):
-    leave_applicants = []
-    leave_applications = frappe.db.sql(
-        """
-		SELECT student
-		FROM
-			`tabStudent Leave Application`
-		WHERE
-			docstatus = 1 and mark_as_present = 1 and
-			from_date <= %s and to_date >= %s
-	""",
-        (date, date),
-    )
-    for student in leave_applications:
-        leave_applicants.append(student[0])
-
-    return leave_applicants
 
 
 # `get_transportation_details` lived here, mapping each absent student to their

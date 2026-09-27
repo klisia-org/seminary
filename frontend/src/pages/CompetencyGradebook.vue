@@ -354,11 +354,13 @@
 				</Button>
 			</template>
 		</Dialog>
+		<AbsenceDecisionModal ref="absenceDecisions" />
 	</div>
 </template>
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
 import PageTabs from '@/components/PageTabs.vue'
 import { useTabParam } from '@/composables/useTabParam'
 import {
@@ -630,6 +632,9 @@ const saveOverride = async () => {
 }
 
 // --- send selected --------------------------------------------------------
+// Students over the absence limit need a decision before grades go (ADR 081).
+const absenceDecisions = ref(null)
+
 const sendSelected = async () => {
 	const names = (roster.data || [])
 		.filter((r) => selected.value.includes(r.name))
@@ -641,6 +646,7 @@ const sendSelected = async () => {
 
 	sending.value = true
 	try {
+		if (!(await absenceDecisions.value.ask(props.courseName, selected.value))) return
 		const res = await call('seminary.seminary.api.send_selected_grades', {
 			course_schedule: props.courseName,
 			rosters: JSON.stringify(selected.value),

@@ -21,12 +21,14 @@ import frappe
 from frappe import _
 from frappe.desk import desktop
 
+from seminary import desk_nav
+
 _CONTENT_TEXT_TYPES = {"header", "paragraph"}
 
 
 @frappe.whitelist()
 def get_desktop_page(page: str):
-    response = desktop.get_desktop_page(page) or {}
+    response = desk_nav.get_desktop_page(page) or {}
     for key in (
         "cards",
         "charts",

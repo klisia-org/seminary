@@ -191,7 +191,7 @@ REGISTRAR_TOOLS = [
             ' seminary_trigger check."),\n'
             "        () => {\n"
             "            frappe.call({\n"
-            "                method: 'oikonomos.financial.invoicing.regenerate_current_term_invoices',\n"
+            "                method: 'seminary.seminary.financial.actions.regenerate_current_term_charges',\n"
             "                freeze: true,\n"
             "                freeze_message: __('Regenerating invoices...'),\n"
             "                callback: (r) => {\n"
@@ -397,8 +397,10 @@ def run():
         ],
     )
 
-    # The Regenerate-Invoices tool drives an oikonomos billing method; only attach
-    # it where a financial backend is installed (a Frappe-only seminary can't bill).
+    # The Regenerate-Invoices tool asks the active billing app to re-raise the
+    # term's charges; only attach it where a billing app is installed (a
+    # Frappe-only seminary can't bill). Desk also hides it at render time when
+    # the active app has no such action (`desk_block_gates` in hooks.py).
     from seminary.seminary.financial.backend import get_financial_backend
 
     tools = REGISTRAR_TOOLS

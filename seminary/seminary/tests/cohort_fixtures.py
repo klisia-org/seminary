@@ -159,7 +159,7 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
         {
             "doctype": "Program",
             "program_name": name,
-            "program_abbreviation": "Z%d" % _seq[0],
+            "program_abbreviation": "Z%s%d" % (_RUN, _seq[0]),
             "program_type": program_type,
             "program_level": program_level,
             "competency_framework": framework,

@@ -236,6 +236,9 @@ STAFF_ONLY = {
     "seminary.scorm.grades.criteria_for_lesson",
     "seminary.scorm.grades.set_criteria",
     "seminary.scorm.selftest.run",
+    # --- Billing actions routed to the active billing app (aretenic decision
+    # 051 §3). `frappe.only_for` Registrar / Seminary Manager before anything.
+    "seminary.seminary.financial.actions.regenerate_current_term_charges",
     # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
     # compute_occurrence_number / preview_recommendation / suggest_actions gated
     # here (p005a A01-16); the rest were already gated.
@@ -306,6 +309,11 @@ STAFF_ONLY = {
     "seminary.seminary.student_standing.lift_hold",
     "seminary.seminary.doctype.student_attendance_tool.student_attendance_tool.get_student_attendance_records",
     "seminary.seminary.doctype.culminating_project.culminating_project.resnapshot_milestones",
+    # --- Absences over the limit at Send Grades (ADR 081). The first two use
+    # the Send Grades gate; the third is the registrar's, as fail_for_absence.
+    "seminary.seminary.absence_decisions.absence_decisions_needed",
+    "seminary.seminary.absence_decisions.record_absence_decisions",
+    "seminary.seminary.absence_decisions.keep_grade_despite_absences",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
@@ -863,6 +871,7 @@ KWARG_OVERRIDES = {
         "course_schedule": "ZZT-no-such-cs",
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
+    "seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
     # An invalid status is refused before the org gate is reached.
     "seminary.partner.portal.set_contact_status": {"status": "Active"},
     "seminary.seminary.api.save_discussion_submission_grade": {"grade": 1.0},
