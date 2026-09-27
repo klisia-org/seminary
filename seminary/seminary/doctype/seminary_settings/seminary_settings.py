@@ -39,6 +39,24 @@ class SeminarySettings(Document):
     def validate(self):
         self._warn_if_unit_scope_restricts_nothing()
         self._warn_if_direct_uploads_are_unbounded()
+        self._validate_financial_backend()
+
+    def _validate_financial_backend(self):
+        """The active billing app must be one that is installed and registered
+        as a financial backend; the resolver silently falls back otherwise."""
+        if not self.financial_backend:
+            return
+        from seminary.seminary.financial.backend import registered_financial_backends
+
+        installed = list(registered_financial_backends())
+        if self.financial_backend not in installed:
+            frappe.throw(
+                _("{0} is not an installed billing app. Choose one of: {1}").format(
+                    frappe.bold(self.financial_backend),
+                    ", ".join(installed) or _("none"),
+                ),
+                title=_("Unknown Billing App"),
+            )
 
     def _warn_if_direct_uploads_are_unbounded(self):
         """Say so when the direct upload path has no policy to answer to.
@@ -123,6 +141,16 @@ class SeminarySettings(Document):
 
         # Settings are read all over the app and cached per site.
         frappe.clear_cache()
+
+
+@frappe.whitelist()
+def financial_backend_choices():
+    """Settings-form helper: the installed billing apps, so the form shows the
+    Active Billing App choice only when there is a choice to make."""
+    frappe.only_for("System Manager")
+    from seminary.seminary.financial.backend import registered_financial_backends
+
+    return list(registered_financial_backends())
 
 
 @frappe.whitelist()

@@ -362,8 +362,12 @@ const formatAbs = (value) => {
 	return Math.abs(parseFloat(value || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// The billing app says where its invoice PDF lives (`print_url`); rows without
+// one come from the ERPNext bridge, whose invoices are Sales Invoices.
 const openInvoicePDF = (row) => {
-	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&print_format=${encodeURIComponent(INVOICE_PRINT_FORMAT)}`
+	let url =
+		row.print_url ||
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&print_format=${encodeURIComponent(INVOICE_PRINT_FORMAT)}`
 	window.open(url, '_blank')
 }
 
