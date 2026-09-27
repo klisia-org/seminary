@@ -9,8 +9,6 @@ from seminary.seminary.doctype.program.test_program import (
     make_program_and_linked_courses,
 )
 
-test_records = frappe.get_test_records("Student")
-
 
 class TestStudent(unittest.TestCase):
     def setUp(self):

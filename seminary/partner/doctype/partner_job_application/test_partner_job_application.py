@@ -40,6 +40,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Opening",
                 "partner_org": self.org.name,
                 "job_title": "Associate Pastor",
+                "description": "Serve alongside the senior pastor.",
                 "planned_vacancies": 1,
                 "status": "Open",
                 **kwargs,
@@ -54,6 +55,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Application",
                 "job_opening": opening.name,
                 "applicant": self.person.name,
+                "cover_letter": "I would be glad to serve.",
             }
         ).insert(ignore_permissions=True)
         self.assertEqual(app.resume, "/private/files/pja-resume.pdf")
@@ -66,6 +68,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Application",
                 "job_opening": opening.name,
                 "applicant": self.person.name,
+                "cover_letter": "I would be glad to serve.",
             }
         ).insert(ignore_permissions=True)
         with self.assertRaises(frappe.ValidationError):
@@ -74,6 +77,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                     "doctype": "Partner Job Application",
                     "job_opening": opening.name,
                     "applicant": self.person.name,
+                    "cover_letter": "I would be glad to serve.",
                 }
             ).insert(ignore_permissions=True)
 
@@ -84,6 +88,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Application",
                 "job_opening": opening.name,
                 "applicant": self.person.name,
+                "cover_letter": "I would be glad to serve.",
                 "reviews": [
                     {"reviewer": self.person.name, "rating": 1.0},
                     {"reviewer": self.person.name, "rating": 0.6},
@@ -99,6 +104,7 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Application",
                 "job_opening": opening.name,
                 "applicant": self.person.name,
+                "cover_letter": "I would be glad to serve.",
             }
         ).insert(ignore_permissions=True)
         app.status = "Accepted"
@@ -116,5 +122,6 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                     "doctype": "Partner Job Application",
                     "job_opening": opening.name,
                     "applicant": self.person.name,
+                    "cover_letter": "I would be glad to serve.",
                 }
             ).insert(ignore_permissions=True)
