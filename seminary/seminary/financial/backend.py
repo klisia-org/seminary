@@ -175,6 +175,19 @@ class FinancialBackend(ABC):
         """Holiday dates from the billing Company's holiday list. Empty with no
         financial app."""
 
+    # -- Optional actions: a backend opts in by overriding both methods --------
+
+    def can_regenerate_current_term_charges(self) -> bool:
+        """True when this backend can raise the current term's charges again on
+        demand. Desk shows the Registrar's button only when it can."""
+        return False
+
+    def regenerate_current_term_charges(self) -> dict:
+        """Clear the current term's billing flag and raise its charges again.
+        Returns {"created", "skipped", "failed"}; charges already raised are
+        skipped."""
+        frappe.throw(frappe._("The active billing app cannot regenerate term charges."))
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -263,8 +276,8 @@ def registered_financial_backends() -> dict[str, str]:
     }
 
 
-def get_financial_backend() -> FinancialBackend:
-    """Resolve the active financial backend, or the null fallback.
+def active_financial_app() -> str | None:
+    """The app whose backend is active, or None with no financial app.
 
     Two financial apps may be installed on one site — a school changing ledgers
     keeps the old app's history — but only one is active. With more than one
@@ -274,10 +287,17 @@ def get_financial_backend() -> FinancialBackend:
     """
     backends = registered_financial_backends()
     if not backends:
-        return NullFinancialBackend()
-    path = None
+        return None
     if len(backends) > 1:
-        path = backends.get(
-            frappe.db.get_single_value("Seminary Settings", "financial_backend")
-        )
-    return frappe.get_attr(path or list(backends.values())[-1])()
+        chosen = frappe.db.get_single_value("Seminary Settings", "financial_backend")
+        if chosen in backends:
+            return chosen
+    return list(backends)[-1]
+
+
+def get_financial_backend() -> FinancialBackend:
+    """Resolve the active financial backend, or the null fallback."""
+    app = active_financial_app()
+    if not app:
+        return NullFinancialBackend()
+    return frappe.get_attr(registered_financial_backends()[app])()

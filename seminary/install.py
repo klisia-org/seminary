@@ -1635,6 +1635,7 @@ def after_migrate():
     create_cohort_participant_role()
     ensure_registrar_tools()
     ensure_workspace_sidebars()
+    sync_billing_entry()
     merge_academics_user_into_program_chair()
     ensure_instructor_community_access()
 
@@ -1688,6 +1689,15 @@ def ensure_workspace_sidebars():
         return
 
     auto_generate_icons_and_sidebar()
+
+
+def sync_billing_entry():
+    """Show only the active billing app's desktop icon (aretenic decision 051 §4).
+    The billing apps call this from their own after_migrate too, since theirs
+    may run after seminary's and create the icons."""
+    from seminary.seminary.financial.desk import sync_billing_entry as sync
+
+    sync()
 
 
 def ensure_instructor_community_access():

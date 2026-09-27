@@ -236,6 +236,9 @@ STAFF_ONLY = {
     "seminary.scorm.grades.criteria_for_lesson",
     "seminary.scorm.grades.set_criteria",
     "seminary.scorm.selftest.run",
+    # --- Billing actions routed to the active billing app (aretenic decision
+    # 051 §3). `frappe.only_for` Registrar / Seminary Manager before anything.
+    "seminary.seminary.financial.actions.regenerate_current_term_charges",
     # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
     # compute_occurrence_number / preview_recommendation / suggest_actions gated
     # here (p005a A01-16); the rest were already gated.

@@ -250,6 +250,20 @@ seminary_markdown_macro_renderers = {
 after_install = "seminary.install.after_install"
 after_migrate = "seminary.install.after_migrate"
 
+# Desk drops workspace blocks whose app is missing or not in use (aretenic
+# decision 051). Every app's boot_session runs, so koinonia's copy is harmless.
+boot_session = [
+    "seminary.desk_nav.boot_session",
+    "seminary.seminary.financial.desk.add_previous_billing_links",
+]
+desk_block_gates = {
+    "Registrar": {
+        "custom_block:Registrar - Regenerate Current-Term Invoices": (
+            "seminary.seminary.financial.actions.can_regenerate_current_term_charges"
+        ),
+    },
+}
+
 # Uninstallation
 # ------------
 
