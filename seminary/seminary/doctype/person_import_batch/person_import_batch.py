@@ -5,9 +5,14 @@
 
 Frappe's built-in Data Import is awkward for people because one human fans out
 into several linked records that must be created in a specific order (Person,
-User, Student -> Customer via the oikonomos bridge, Instructor, Alumni, Donor,
-plus permission roles). This tool absorbs that ordering: staff stage a CSV of
-contact fields + role checkboxes, validate with Dry-Run, then submit to commit.
+User, Student, Instructor, Alumni, Donor, plus permission roles). This tool
+absorbs that ordering: staff stage a CSV of contact fields + role checkboxes,
+validate with Dry-Run, then submit to commit.
+
+Billing records are the active billing app's business, never this tool's
+(aretenic decision 050 §1): oikonomos makes an ERPNext Customer when the
+Student is saved; tamias makes a Billing Party later, when the student is
+billed or the bursar matches the ledger's customers.
 
 Every Person is created through seminary.seminary.person.ensure_person (the one
 mutation point), never frappe.new_doc("Person"). Role records are created in
@@ -19,6 +24,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, getdate, now_datetime, today, validate_email_address
 
+from seminary.seminary.financial.backend import get_financial_backend
 from seminary.seminary.integrations.giving import link_donor
 from seminary.seminary.person import ensure_person, find_person, normalize_email
 
@@ -48,6 +54,9 @@ CSV_COLUMNS = [
     "date_of_birth",
     "program_completed",
     "class_year",
+    # The school's own student number from before Aretenic: kept on the
+    # Student, and how the ledger's older customers are matched (050 §2).
+    "previous_student_id",
     "is_student",
     "is_instructor",
     "is_alumni",
@@ -254,6 +263,8 @@ class PersonImportBatch(Document):
 
         img_map = self.attached_image_map()
         seen_emails = set()
+        seen_previous_ids = set()
+        has_billing = get_financial_backend().has_financials()
         errors_total = 0
         warnings_total = 0
         # Only the details this import form can actually carry: a school may
@@ -294,8 +305,22 @@ class PersonImportBatch(Document):
 
             if row.is_donor and not frappe.db.exists("DocType", "Donor"):
                 warns.append("giving_not_installed")
-            if row.is_student and not frappe.db.exists("DocType", "Customer"):
+            if row.is_student and not has_billing:
                 warns.append("student_academic_only")
+
+            previous_id = (row.previous_student_id or "").strip()
+            if previous_id:
+                if not row.is_student:
+                    warns.append("previous_student_id_needs_student")
+                elif previous_id in seen_previous_ids:
+                    errs.append("duplicate_previous_student_id:%s" % previous_id)
+                else:
+                    seen_previous_ids.add(previous_id)
+                    other = frappe.db.get_value(
+                        "Student", {"previous_student_id": previous_id}, "person"
+                    )
+                    if other and other != find_person(email=email):
+                        errs.append("previous_student_id_taken:%s" % previous_id)
 
             for fld, dt in (
                 ("gender", "Gender"),
@@ -451,7 +476,8 @@ class PersonImportBatch(Document):
             )
             row.db_set("created_student", student, update_modified=False)
             granted.append("Student")
-            if frappe.db.has_column("Student", "customer"):
+            _keep_previous_id(student, row.previous_student_id)
+            if _customer_billing() and frappe.db.has_column("Student", "customer"):
                 customer = frappe.db.get_value("Student", student, "customer")
                 if customer:
                     row.db_set("created_customer", customer, update_modified=False)
@@ -491,6 +517,28 @@ class PersonImportBatch(Document):
 
 
 # -- module-level helpers --------------------------------------------------
+def _keep_previous_id(student, previous_id):
+    """Fill the Student's previous ID; one already recorded is never replaced."""
+    previous_id = (previous_id or "").strip()
+    if previous_id and not frappe.db.get_value(
+        "Student", student, "previous_student_id"
+    ):
+        frappe.db.set_value(
+            "Student",
+            student,
+            "previous_student_id",
+            previous_id,
+            update_modified=False,
+        )
+
+
+def _customer_billing():
+    """True when the active billing app is the one that makes a Customer for
+    each Student on save (oikonomos). tamias makes Billing Parties later."""
+    backend = get_financial_backend()
+    return backend.has_financials() and type(backend).__module__.startswith("oikonomos")
+
+
 def _truthy(value):
     return 1 if str(value or "").strip().lower() in TRUTHY else 0
 
@@ -589,6 +637,7 @@ def _get_or_create_student(person, email, first, mid, last, row, image):
         if val:
             student.set(f, val)
     student.joining_date = today()
+    student.previous_student_id = (row.previous_student_id or "").strip() or None
     student.insert(ignore_permissions=True)
     return student.name
 
