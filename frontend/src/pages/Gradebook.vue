@@ -192,11 +192,13 @@
       </table>
     </div>
     </template>
+    <AbsenceDecisionModal ref="absenceDecisions" />
   </div>
 </template>
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
+import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
 import { Breadcrumbs, Button, createResource, Tooltip, call, toast } from 'frappe-ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { Send, Save } from 'lucide-vue-next'
@@ -254,6 +256,9 @@ const competencyContext = createResource({
 
 const isCbe = computed(() => !!competencyContext.data?.is_cbe)
 
+// Students over the absence limit need a decision before grades go (ADR 081).
+const absenceDecisions = ref(null)
+
 const canSendGrades = computed(() => {
   if (!user?.data) return false;
   const hasRole =
@@ -281,6 +286,7 @@ const sendSelected = async () => {
 
   sendingSelected.value = true;
   try {
+    if (!(await absenceDecisions.value.ask(props.courseName, selectedRosters.value))) return;
     const res = await call('seminary.seminary.api.send_selected_grades', {
       course_schedule: props.courseName,
       rosters: JSON.stringify(selectedRosters.value),
@@ -325,6 +331,7 @@ const sendGrades = async () => {
   if (!confirm(__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone.'))) return;
   sendingGrades.value = true;
   try {
+    if (!(await absenceDecisions.value.ask(props.courseName))) return;
     await call('seminary.seminary.api.send_grades', {
       doc: JSON.stringify({ name: props.courseName }),
     });

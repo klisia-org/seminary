@@ -155,7 +155,6 @@ global_search_doctypes = {
         {"doctype": "Announcement", "index": 11},
         {"doctype": "Student Log", "index": 12},
         {"doctype": "Room", "index": 13},
-        {"doctype": "Student Leave Application", "index": 14},
         {"doctype": "Program Enrollment", "index": 15},
         {"doctype": "Course Enrollment Individual", "index": 16},
         {"doctype": "Quiz", "index": 17},

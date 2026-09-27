@@ -35,7 +35,7 @@ import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
-from seminary.seminary import guards
+from seminary.seminary import absence_decisions, guards
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
     SCHOOL_ROLES,
@@ -2910,12 +2910,16 @@ def mark_attendance(
     course_schedule=None,
     date=None,
     meeting=None,
+    students_excused=None,
 ):
     """Creates Multiple Attendance Records.
 
     :param students_present: Students Present JSON.
     :param students_absent: Students Absent JSON.
     :param students_tardy: Students Tardy JSON (optional).
+    :param students_excused: Students Excused JSON (optional). For a meeting that
+        has not happened yet this is the whole list: an Excused row for anyone
+        left out is removed (ADR 081).
     :param course_schedule: Course Schedule.
     :param date: Date.
     :param meeting: Course Schedule Meeting Dates row (the specific class meeting
@@ -2935,7 +2939,29 @@ def mark_attendance(
         ("Present", _as_list(students_present)),
         ("Absent", _as_list(students_absent)),
         ("Tardy", _as_list(students_tardy)),
+        ("Excused", _as_list(students_excused)),
     )
+
+    meeting_date = (
+        frappe.db.get_value("Course Schedule Meeting Dates", meeting, "cs_meetdate")
+        if meeting
+        else None
+    ) or date
+    if meeting_date and getdate(meeting_date) > getdate():
+        excused = {d["student"] for d in buckets[3][1]}
+        for name, student in frappe.get_all(
+            "Student Attendance",
+            filters={
+                "course_schedule": course_schedule,
+                "meeting": meeting,
+                "status": "Excused",
+                "docstatus": ("!=", 2),
+            },
+            fields=["name", "student"],
+            as_list=True,
+        ):
+            if student not in excused:
+                frappe.delete_doc("Student Attendance", name, ignore_permissions=True)
 
     for status, rows in buckets:
         for d in rows:
@@ -3026,8 +3052,9 @@ def make_attendance_records(
         student_attendance.status = status
         student_attendance.insert(ignore_permissions=True)
 
-    # Flag the specific meeting row as having attendance taken.
-    if meeting:
+    # Flag the specific meeting row as having attendance taken. Excusing a
+    # student ahead of the class is not taking the roll.
+    if meeting and not (status == "Excused" and date and getdate(date) > getdate()):
         frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
 
 
@@ -3825,7 +3852,21 @@ def fail_for_absence(name):
     the FA), forces the roster grade to the Grading Scale's FA code + Fail, and
     propagates Fail to the Program Enrollment Course (transcript), removing the
     course's credits from the enrollment total if it had been counted as passed."""
+    from seminary.seminary.absence_decisions import FAIL, record
+
     _assert_fa_roles()
+    if frappe.db.get_value("Scheduled Course Roster", name, "failed_for_absence"):
+        return {"failed_for_absence": 1}
+    record(name, FAIL)
+    return {
+        "failed_for_absence": 1,
+        "fa_code": frappe.db.get_value("Scheduled Course Roster", name, "fgrade"),
+    }
+
+
+def _fail_for_absence(name):
+    """The FA itself, for the registrar's action and the instructor's decision
+    at Send Grades (ADR 081). Callers gate."""
     roster = frappe.get_doc("Scheduled Course Roster", name)
     if roster.failed_for_absence:
         return {"failed_for_absence": 1}
@@ -3880,14 +3921,18 @@ def fail_for_absence(name):
 
 
 @frappe.whitelist()
-def undo_fail_for_absence(name):
+def undo_fail_for_absence(name, reason=None):
     """Reverse a Fail-for-Absence: clear the flag, recompute the real grade from
     scores, and restore the Program Enrollment Course (and credits, if the course
-    now passes and grades were already finalized)."""
+    now passes and grades were already finalized). Recorded as the registrar
+    keeping the grade (ADR 081)."""
+    from seminary.seminary.absence_decisions import KEEP, record
+
     _assert_fa_roles()
     roster = frappe.get_doc("Scheduled Course Roster", name)
     if not roster.failed_for_absence:
         return {"failed_for_absence": 0}
+    record(name, KEEP, reason)
 
     grades_sent = roster.active == 0
     frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
@@ -4232,6 +4277,7 @@ def send_selected_grades(course_schedule, rosters):
         )
     _assert_evaluators_finished(course_schedule, rosters)
     _assert_pdp_complete(course_schedule, rosters)
+    absence_decisions.assert_decided(course_schedule, rosters)
 
     finalized, students, pes = [], set(), set()
     for roster_name in rosters:
@@ -4288,6 +4334,7 @@ def send_grades(doc=None, **kwargs):
     )
     _assert_evaluators_finished(docname, [r.name for r in records])
     _assert_pdp_complete(docname, [r.name for r in records])
+    absence_decisions.assert_decided(docname)
 
     affected_pes = set()
     for record in records:

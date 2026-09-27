@@ -46,26 +46,77 @@ def execute(filters=None):
             "fieldtype": "Check",
             "width": 60,
         },
+        {
+            "label": "Decision",
+            "fieldname": "absence_decision",
+            "fieldtype": "Data",
+            "width": 150,
+        },
+        {
+            "label": "Decided By",
+            "fieldname": "absence_decided_by",
+            "fieldtype": "Link",
+            "options": "User",
+            "width": 160,
+        },
+        {
+            "label": "Reason",
+            "fieldname": "absence_decision_reason",
+            "fieldtype": "Data",
+            "width": 220,
+        },
     ]
 
+    fields = [
+        "name as roster",
+        "stuname_roster as student_name",
+        "program_std_scr as program",
+        "course_sc as course",
+        "effective_absences",
+        "absence_limit",
+        "attendance_alert_level",
+        "failed_for_absence",
+        "absence_decision",
+        "absence_decided_by",
+        "absence_decision_reason",
+        "active",
+    ]
+    # Students still in class who are at risk, plus every decision made at or
+    # after Send Grades -- those rosters are no longer active (ADR 081).
     rows = frappe.get_all(
         "Scheduled Course Roster",
         filters={"active": 1, "audit_bool": 0, "attendance_alert_level": [">=", 1]},
-        fields=[
-            "name as roster",
-            "stuname_roster as student_name",
-            "program_std_scr as program",
-            "course_sc as course",
-            "effective_absences",
-            "absence_limit",
-            "attendance_alert_level",
-            "failed_for_absence",
-        ],
-        order_by="attendance_alert_level desc, course_sc, stuname_roster",
+        fields=fields,
     )
-    for r in rows:
-        r["status"] = (
-            "Over limit" if (r.attendance_alert_level or 0) >= 2 else "At risk"
+    seen = {r.roster for r in rows}
+    rows += [
+        r
+        for r in frappe.get_all(
+            "Scheduled Course Roster",
+            filters={"absence_decision": ["is", "set"]},
+            fields=fields,
         )
+        if r.roster not in seen
+    ]
+
+    decision = (filters or {}).get("absence_decision")
+    if decision:
+        rows = [r for r in rows if r.absence_decision == decision]
+
+    for r in rows:
+        if not r.active:
+            r["status"] = "Grades sent"
+        else:
+            r["status"] = (
+                "Over limit" if (r.attendance_alert_level or 0) >= 2 else "At risk"
+            )
+    rows.sort(
+        key=lambda r: (
+            r.absence_decision != "No recommendation",
+            -(r.attendance_alert_level or 0),
+            r.course or "",
+            r.student_name or "",
+        )
+    )
 
     return columns, rows

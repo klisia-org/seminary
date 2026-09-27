@@ -34,6 +34,10 @@
   "absence_limit",
   "attendance_alert_level",
   "failed_for_absence",
+  "absence_decision",
+  "absence_decision_reason",
+  "absence_decided_by",
+  "absence_decided_on",
   "grades_section",
   "stdroster_grade"
  ],
@@ -217,12 +221,43 @@
   },
   {
    "default": "0",
-   "description": "Set by the registrar's 'Fail for Absence' action. Forces the final grade to the Grading Scale's FA code (Fail), surviving re-grading.",
+   "description": "Set by Fail for Absence, by the registrar or by the instructor when sending grades. Forces the final grade to the Grading Scale's FA code (Fail), surviving re-grading.",
    "fieldname": "failed_for_absence",
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Failed for Absence",
    "read_only": 1
+  },
+  {
+   "fieldname": "absence_decision",
+   "fieldtype": "Select",
+   "label": "Absence Decision",
+   "options": "\nFail for absence\nKeep the grade\nNo recommendation",
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "description": "What was decided for a student over the absence limit. No recommendation leaves the decision to the registrar."
+  },
+  {
+   "fieldname": "absence_decision_reason",
+   "fieldtype": "Small Text",
+   "label": "Absence Decision Reason",
+   "read_only": 1,
+   "depends_on": "absence_decision"
+  },
+  {
+   "fieldname": "absence_decided_by",
+   "fieldtype": "Link",
+   "label": "Absence Decided By",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "absence_decision"
+  },
+  {
+   "fieldname": "absence_decided_on",
+   "fieldtype": "Datetime",
+   "label": "Absence Decided On",
+   "read_only": 1,
+   "depends_on": "absence_decision"
   }
  ],
  "image_field": "stuimage",
