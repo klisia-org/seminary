@@ -78,6 +78,16 @@ def _attend(cs, student, date, status, meeting=None):
     ).insert(ignore_permissions=True)
 
 
+def _no_commit(fn):
+    """mark_attendance commits; inside a test that would keep every fixture."""
+
+    def call(**kwargs):
+        with patch.object(frappe.db, "commit"):
+            return fn(**kwargs)
+
+    return call
+
+
 class ADR081Case(IntegrationTestCase):
     def setUp(self):
         super().setUp()
@@ -110,7 +120,7 @@ class TestExcused(ADR081Case):
         future = add_days(today(), 7)
         meeting = _meeting(self.cs, future)
         who = [{"student": self.student.name, "stuname_roster": "S"}]
-        mark_attendance(
+        _no_commit(mark_attendance)(
             students_present=[],
             students_absent=[],
             students_excused=who,
@@ -126,7 +136,7 @@ class TestExcused(ADR081Case):
             frappe.db.get_value("Course Schedule Meeting Dates", meeting, "attendance")
         )
 
-        mark_attendance(
+        _no_commit(mark_attendance)(
             students_present=[],
             students_absent=[],
             students_excused=[],
