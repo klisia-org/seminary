@@ -475,6 +475,7 @@ COURSE_FIELD = {
     "SCORM Attempt": "course",
     "Course Enrollment Individual": "coursesc_ce",
     "Course Folder": "course_schedule",
+    "Student Due Date Override": "course_schedule",
 }
 
 

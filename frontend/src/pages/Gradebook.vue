@@ -185,6 +185,17 @@
                   @click="saveCell(student, assessment)">
                   <Save class="h-3.5 w-3.5" />
                 </button>
+                <!-- This student's dates and the late deduction (decisions/082). -->
+                <button
+                  class="shrink-0 rounded p-0.5 text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-colors"
+                  :aria-label="__('Dates and late deduction')" :title="__('Dates and late deduction')"
+                  @click="openDates(student, assessment)">
+                  <Clock class="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div v-if="lateDeduction(student, assessment)" class="mt-0.5 text-center text-xs"
+                :class="cellOf(student, assessment).late_adjusted_card ? 'text-ink-gray-5' : 'text-ink-amber-3'">
+                {{ __('{0} late of {1}').format('−' + lateDeduction(student, assessment), cellOf(student, assessment).late_base_card) }}
               </div>
             </td>
           </tr>
@@ -193,15 +204,17 @@
     </div>
     </template>
     <AbsenceDecisionModal ref="absenceDecisions" />
+    <StudentDatesModal ref="studentDates" @changed="gradebook.reload()" />
   </div>
 </template>
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
+import StudentDatesModal from '@/components/Modals/StudentDatesModal.vue'
 import { Breadcrumbs, Button, createResource, Tooltip, call, toast } from 'frappe-ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
-import { Send, Save } from 'lucide-vue-next'
+import { Send, Save, Clock } from 'lucide-vue-next'
 import { useRoute } from 'vue-router';
 const route = useRoute();
 const user = inject('$user');
@@ -390,6 +403,17 @@ const sortedAssessments = computed(() => {
     return a.title.localeCompare(b.title);
   });
 });
+
+// Dates and late deductions (decisions/082 section 7).
+const studentDates = ref(null)
+const cellOf = (student, assessment) =>
+  student.assessments.find((a) => a.assessment_criteria === assessment.assessment_criteria) || {}
+const lateDeduction = (student, assessment) => {
+  const cell = cellOf(student, assessment)
+  return cell.graded_card && cell.late_deduction_card ? cell.late_deduction_card : 0
+}
+const openDates = (student, assessment) =>
+  studentDates.value.show(props.courseName, student, assessment, cellOf(student, assessment))
 
 // Get cell data for a specific student and assessment
 const getCellData = (student, assessment) => {

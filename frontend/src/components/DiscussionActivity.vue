@@ -225,6 +225,22 @@
 							</div>
 						</div>
 
+						<!-- The student's own dates (decisions/082 sections 2 and 5). -->
+						<div v-if="myDates.data?.due_date || myDates.data?.cutoff_date"
+							class="mb-3 rounded-md bg-surface-gray-2 p-2 text-sm text-ink-gray-7">
+							<div v-if="myDates.data.due_date">
+								{{ myDates.data.replies_due_date
+									? __('Initial post due {0}. Replies due {1}.').format(formatWhen(myDates.data.due_date), formatWhen(myDates.data.replies_due_date))
+									: __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+							</div>
+							<div v-if="myDates.data.closed" class="text-ink-red-3">
+								{{ __('This discussion closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+							</div>
+							<div v-else-if="myDates.data.cutoff_date">
+								{{ __('No posts or replies after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
+							</div>
+						</div>
+
 						<div v-if="!hasSavedSubmission" class="text-md mb-4">
 							{{ __('Write your main post here') }}
 							<RichTextEditor :id="'original-post-' + (user.data?.name || 'anon') + '-' + discussionID" :content="original_post"
@@ -428,6 +444,14 @@ const props = defineProps({
 		required: false,
 	},
 })
+
+const myDates = createResource({
+	url: 'seminary.seminary.deadlines.get_my_dates',
+	makeParams: () => ({ course: props.courseName, activity_type: 'discussion', activity: props.discussionID }),
+	auto: true,
+	onError: () => { },
+})
+const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
 
 // Check if this discussion is linked to a grading criteria
 const gradingCriteriaResource = createResource({

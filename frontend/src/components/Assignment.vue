@@ -349,6 +349,20 @@
 
 			<div class="flex flex-col">
 				<div class="p-5">
+					<!-- The student's own dates (decisions/082). -->
+					<div v-if="myDates.data?.due_date || myDates.data?.cutoff_date"
+						class="mb-3 rounded-md bg-surface-gray-2 p-2 text-sm text-ink-gray-7">
+						<div v-if="myDates.data.due_date">
+							{{ __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+							<span v-if="isLate" class="text-ink-amber-3">{{ __('It is past the due date, so a late deduction may apply.') }}</span>
+						</div>
+						<div v-if="myDates.data.closed" class="text-ink-red-3">
+							{{ __('This assignment closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+						</div>
+						<div v-else-if="myDates.data.cutoff_date">
+							{{ __('No submissions after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
+						</div>
+					</div>
 					<div class="flex items-center justify-between mb-4">
 						<div class="font-semibold text-ink-gray-9">
 							{{ __('Submission') }}
@@ -967,6 +981,7 @@ const hasSubmission = computed(
 )
 
 const canModifyAssignment = computed(() => {
+	if (myDates.data?.closed) return false
 	if (!submissionResource.doc) return true
 	if (submissionResource.doc.owner !== user.data?.name) return false
 	if (submissionResource.doc.status !== 'Not Graded') return false
@@ -1009,6 +1024,15 @@ const isInstructorView = computed(
 	() => user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
 )
 const courseName = computed(() => router.currentRoute.value.params.courseName)
+
+const myDates = createResource({
+	url: 'seminary.seminary.deadlines.get_my_dates',
+	makeParams: () => ({ course: courseName.value, activity_type: 'assignment', activity: props.assignmentID }),
+	auto: !!router.currentRoute.value.params.courseName,
+	onError: () => { },
+})
+const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
+const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
 
 const assignmentDashboard = ref({ student_count: 0 })
 

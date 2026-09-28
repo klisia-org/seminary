@@ -55,6 +55,15 @@ class QuizSubmission(Document):
         # owns its own per-context attempt limiting so seminary stays independent of it.
         filters = {"quiz": self.quiz, "member": frappe.session.user}
         current_user_submission_count = frappe.db.count(self.doctype, filters=filters)
+        if not self.standalone and self.course:
+            # A student's due date override may grant extra attempts (decisions/082).
+            from seminary.seminary import deadlines
+
+            max_attempts += deadlines.extra_attempts(
+                self.course,
+                self.quiz,
+                frappe.db.get_value("Student", {"user": self.member}),
+            )
         if current_user_submission_count >= max_attempts:
             frappe.throw(
                 _(

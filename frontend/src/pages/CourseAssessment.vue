@@ -47,6 +47,27 @@
       </div>
     </div>
   </div>
+  <!-- Late submissions (decisions/082 section 4): one policy per section,
+       only where the scale is points. -->
+  <div v-if="deadlines.data?.policy_available" class="mx-5 mb-6 rounded border border-outline-gray-2 p-4">
+    <div class="flex items-center justify-between">
+      <FormControl type="checkbox" v-model="policy.late_policy_enabled"
+        :label="__('Deduct points for late work')" />
+      <Button size="sm" :loading="savingPolicy" @click="savePolicy">{{ __('Save late policy') }}</Button>
+    </div>
+    <div v-if="policy.late_policy_enabled" class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <FormControl type="number" v-model="policy.late_deduction" :label="__('Deduction per interval (%)')" />
+      <FormControl type="select" v-model="policy.late_interval" :label="__('Interval')"
+        :options="[{ label: __('Day'), value: 'Day' }, { label: __('Hour'), value: 'Hour' }]" />
+      <FormControl type="number" v-model="policy.late_grace_minutes" :label="__('Grace period (minutes)')" />
+      <FormControl type="number" v-model="policy.late_floor" :label="__('Lowest possible score (%)')" />
+      <FormControl type="number" v-model="policy.missing_reply_deduction"
+        :label="__('Deduction per missing reply (%)')" />
+    </div>
+    <p v-if="policy.late_policy_enabled" class="mt-2 text-sm text-ink-gray-6">
+      {{ __('Percentage points of the maximum score, for every started day or hour after the due date. Work within the grace period is not late.') }}
+    </p>
+  </div>
   <table class="min-w-full table-auto border-collapse overflow-auto">
     <thead>
       <tr>
@@ -57,6 +78,7 @@
         <th v-if="weightsApply" class="p-2 border">{{ __('Extra Credit?') }}</th>
         <th v-if="weightsApply" class="p-2 border">{{ __('Points') }}</th>
         <th class="p-2 border">{{ __('Due Date') }}</th>
+        <th class="p-2 border">{{ __('Dates') }}</th>
         <th class="p-2 border">{{ __('In Lesson') }}</th>
         <th v-if="hasAretenic" class="p-2 border">{{ __('CLOs') }}</th>
         <th v-if="isCbe" class="p-2 border">{{ __('Weights') }}</th>
@@ -121,6 +143,17 @@
           <DateTimePicker v-model="criteria.due_date" variant="subtle" :required="false" class="date-column"
             :formatter="formatDate" />
         </td>
+        <td class="p-2 border text-center align-middle">
+          <Tooltip :text="criteria.name ? __('Cut-off, late deduction and student exceptions') : __('Save first')">
+            <Button variant="ghost" size="sm" :disabled="!criteria.name" @click="toggleDates(criteria)">
+              <Clock class="h-4 w-4 stroke-1.5"
+                :class="criteria.cutoff_date || overridesFor(criteria).length ? 'text-ink-blue-3' : ''" />
+            </Button>
+          </Tooltip>
+          <div v-if="overridesFor(criteria).length" class="text-xs text-ink-gray-5">
+            {{ __('{0} exception(s)').format(overridesFor(criteria).length) }}
+          </div>
+        </td>
         <td class="p-2 border text-center">
           <span v-if="criteria.lesson" class="checkmark">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24"
@@ -156,6 +189,99 @@
           <Button variant="ghost" size="sm" theme="red" @click="removeCriteria(index)">
             <Trash2 class="h-4 w-4 stroke-1.5" />
           </Button>
+        </td>
+      </tr>
+      <!-- Dates for one assessment (decisions/082 sections 2, 3 and 5): its
+           cut-off, the discussion replies date, the late opt-out, and the
+           students who have their own dates. -->
+      <tr v-if="openDates === criteria.name">
+        <td :colspan="detailColspan" class="p-4 border bg-surface-gray-1">
+          <div class="grid gap-4 lg:grid-cols-3">
+            <div>
+              <h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Cut-off') }}</h4>
+              <p class="text-sm text-ink-gray-6 mb-2">
+                {{ __('No submissions after this. Leave blank to accept late work at any time.') }}
+              </p>
+              <DateTimePicker v-model="criteria.cutoff_date" variant="subtle" :formatter="formatDate" />
+            </div>
+            <div v-if="twoDatesPossible(criteria)">
+              <h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Replies due') }}</h4>
+              <p class="text-sm text-ink-gray-6 mb-2">
+                {{ __('With this set, the due date is for the initial post and each reply missing by this date loses the per-reply deduction.') }}
+              </p>
+              <DateTimePicker v-model="criteria.replies_due_date" variant="subtle" :formatter="formatDate" />
+            </div>
+            <div v-if="deadlines.data?.policy_available">
+              <h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Late deduction') }}</h4>
+              <FormControl type="checkbox" v-model="criteria.late_policy_exempt"
+                :label="__('No late deduction for this assessment')" />
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-ink-gray-5">{{ __('These are saved with the Save button at the top of the page.') }}</p>
+
+          <h4 class="mt-5 font-semibold text-ink-gray-8 mb-1">{{ __('Students with their own dates') }}</h4>
+          <p class="text-sm text-ink-gray-6 mb-2">
+            {{ __('Anything left blank follows the dates above.') }}
+          </p>
+          <table v-if="overridesFor(criteria).length" class="text-sm mb-3 w-full">
+            <thead>
+              <tr class="text-left text-ink-gray-6">
+                <th class="p-1">{{ __('Student') }}</th>
+                <th class="p-1">{{ __('Due') }}</th>
+                <th class="p-1">{{ __('Cut-off') }}</th>
+                <th v-if="twoDatesPossible(criteria)" class="p-1">{{ __('Replies due') }}</th>
+                <th class="p-1">{{ __('Extra') }}</th>
+                <th class="p-1">{{ __('Reason') }}</th>
+                <th class="p-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ov in overridesFor(criteria)" :key="ov.name" class="border-t border-outline-gray-1">
+                <td class="p-1">{{ ov.student_name }}</td>
+                <td class="p-1">{{ formatDate(ov.due_date) || '—' }}</td>
+                <td class="p-1">{{ formatDate(ov.cutoff_date) || '—' }}</td>
+                <td v-if="twoDatesPossible(criteria)" class="p-1">{{ formatDate(ov.replies_due_date) || '—' }}</td>
+                <td class="p-1">
+                  <span v-if="ov.extra_minutes">{{ __('+{0} min').format(ov.extra_minutes) }} </span>
+                  <span v-if="ov.extra_attempts">{{ __('+{0} attempt(s)').format(ov.extra_attempts) }}</span>
+                </td>
+                <td class="p-1">{{ ov.reason }}</td>
+                <td class="p-1 whitespace-nowrap">
+                  <Button variant="ghost" size="sm" @click="editOverride(ov)">{{ __('Edit') }}</Button>
+                  <Button variant="ghost" size="sm" theme="red" @click="removeOverride(ov)">
+                    <Trash2 class="h-4 w-4 stroke-1.5" />
+                  </Button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded border border-outline-gray-2 bg-surface-white p-3">
+            <FormControl type="select" v-model="ovForm.student" :label="__('Student')"
+              :options="rosterOptions" :disabled="!!ovForm.name" />
+            <div>
+              <label class="text-xs text-ink-gray-5">{{ __('Due date') }}</label>
+              <DateTimePicker v-model="ovForm.due_date" variant="subtle" :formatter="formatDate" />
+            </div>
+            <div>
+              <label class="text-xs text-ink-gray-5">{{ __('Cut-off') }}</label>
+              <DateTimePicker v-model="ovForm.cutoff_date" variant="subtle" :formatter="formatDate" />
+            </div>
+            <div v-if="twoDatesPossible(criteria)">
+              <label class="text-xs text-ink-gray-5">{{ __('Replies due') }}</label>
+              <DateTimePicker v-model="ovForm.replies_due_date" variant="subtle" :formatter="formatDate" />
+            </div>
+            <FormControl v-if="['Quiz', 'Exam'].includes(criteria.type)" type="number"
+              v-model="ovForm.extra_minutes" :label="__('Extra minutes')" />
+            <FormControl v-if="criteria.type === 'Quiz'" type="number"
+              v-model="ovForm.extra_attempts" :label="__('Extra attempts')" />
+            <FormControl class="sm:col-span-2" v-model="ovForm.reason" :label="__('Reason')" />
+            <div class="flex items-end gap-2">
+              <Button variant="solid" size="sm" :loading="savingOverride" @click="saveOverride(criteria)">
+                {{ ovForm.name ? __('Save changes') : __('Add') }}
+              </Button>
+              <Button v-if="ovForm.name" size="sm" @click="resetOverrideForm()">{{ __('Cancel') }}</Button>
+            </div>
+          </div>
         </td>
       </tr>
       <!-- Dimension weights and the grading matrix (ADR 065 section 11b).
@@ -243,7 +369,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import { call, createResource, Breadcrumbs, Button, FormControl, Tooltip, toast, DateTimePicker } from 'frappe-ui'
 import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Trash2, Target, SlidersHorizontal } from 'lucide-vue-next'
+import { Trash2, Target, SlidersHorizontal, Clock } from 'lucide-vue-next'
 import { updateDocumentTitle } from '@/utils'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperModal.vue'
@@ -330,7 +456,7 @@ const detail = reactive({ weights: {}, matrix: [] })
 // Title, type, activity, due date, in lesson, delete — then the conditional
 // pairs: competency + weights, extra credit + points.
 const detailColspan = computed(
-  () => 6 + (isCbe.value ? 2 : 0) + (weightsApply.value ? 2 : 0) + (hasAretenic.value ? 1 : 0)
+  () => 7 + (isCbe.value ? 2 : 0) + (weightsApply.value ? 2 : 0) + (hasAretenic.value ? 1 : 0)
 )
 
 function toggleDetail(criteria) {
@@ -399,6 +525,111 @@ async function saveDetail(criteria) {
     toast.error(msg || __('Could not save.'))
   } finally {
     savingDetail.value = false
+  }
+}
+
+// --- Dates and late deductions (decisions/082) -----------------------------
+const deadlines = createResource({
+  url: 'seminary.seminary.deadlines.get_deadline_settings',
+  makeParams: () => ({ course: props.courseName }),
+  auto: true,
+  onSuccess(data) {
+    Object.assign(policy, data?.policy || {})
+  },
+  onError: () => { },
+})
+
+const policy = reactive({
+  late_policy_enabled: 0,
+  late_deduction: 0,
+  late_interval: 'Day',
+  late_grace_minutes: 0,
+  late_floor: 0,
+  missing_reply_deduction: 0,
+})
+const savingPolicy = ref(false)
+
+function errorText(e, fallback) {
+  const msg = Array.isArray(e?.messages) && e.messages.length
+    ? e.messages.join('\n')
+    : (e?.message || '').replace(/^[\w.]+Error:\s*/i, '').trim()
+  return msg || fallback
+}
+
+async function savePolicy() {
+  savingPolicy.value = true
+  try {
+    await call('seminary.seminary.deadlines.save_late_policy', {
+      course: props.courseName,
+      policy: JSON.stringify({ ...policy, late_policy_enabled: policy.late_policy_enabled ? 1 : 0 }),
+    })
+    toast.success(__('Late policy saved'))
+    deadlines.reload()
+  } catch (e) {
+    toast.error(errorText(e, __('Could not save the late policy.')))
+  } finally {
+    savingPolicy.value = false
+  }
+}
+
+const openDates = ref(null)
+
+function toggleDates(criteria) {
+  openDates.value = openDates.value === criteria.name ? null : criteria.name
+  resetOverrideForm()
+}
+
+const overridesFor = (criteria) =>
+  (deadlines.data?.overrides || []).filter((o) => o.course_assess === criteria.name)
+
+const twoDatesPossible = (criteria) =>
+  !!(deadlines.data?.rows || []).find((r) => r.name === criteria.name)?.two_dates_possible
+
+const rosterOptions = computed(() => [
+  { label: __('Choose a student'), value: '' },
+  ...(deadlines.data?.roster || [])
+    .filter((r) => r.active)
+    .map((r) => ({ label: r.student_name, value: r.student })),
+])
+
+const emptyOverride = () => ({
+  name: '', student: '', due_date: '', cutoff_date: '', replies_due_date: '',
+  extra_minutes: '', extra_attempts: '', reason: '',
+})
+const ovForm = reactive(emptyOverride())
+const savingOverride = ref(false)
+
+function resetOverrideForm() {
+  Object.assign(ovForm, emptyOverride())
+}
+
+function editOverride(ov) {
+  Object.assign(ovForm, emptyOverride(), ov)
+}
+
+async function saveOverride(criteria) {
+  savingOverride.value = true
+  try {
+    await call('seminary.seminary.deadlines.save_override', {
+      data: JSON.stringify({ ...ovForm, course_assess: criteria.name }),
+    })
+    toast.success(__('Saved'))
+    resetOverrideForm()
+    deadlines.reload()
+  } catch (e) {
+    toast.error(errorText(e, __('Could not save.')))
+  } finally {
+    savingOverride.value = false
+  }
+}
+
+async function removeOverride(ov) {
+  if (!confirm(__('Remove the dates for {0}?').format(ov.student_name))) return
+  try {
+    await call('seminary.seminary.deadlines.delete_override', { name: ov.name })
+    deadlines.reload()
+  } catch (e) {
+    toast.error(errorText(e, __('Could not remove.')))
   }
 }
 
@@ -513,6 +744,9 @@ function toCriteria(item) {
     parenttype: item.parenttype || '',
     parentfield: item.parentfield || '',
     due_date: item.due_date || '',
+    cutoff_date: item.cutoff_date || '',
+    replies_due_date: item.replies_due_date || '',
+    late_policy_exempt: item.late_policy_exempt ? 1 : 0,
     lesson: item.lesson || '',
     // Carried so a save writes back what is stored; leaving them out made the
     // competency picker read "Select option" after every reload.
@@ -675,6 +909,7 @@ async function submitCourseAssessment() {
       throw new Error(message);
     }
     toast.success(__('Course updated successfully'));
+    deadlines.reload();
     // New rows only get a name on save, and the dimension editors key off it.
     if (isCbe.value) competencyContext.reload();
   } catch (error) {
