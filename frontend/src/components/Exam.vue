@@ -53,9 +53,20 @@
         <div v-if="exam.data?.duration" class="leading-5">
           {{ __('If you fail to do so, the exam will be automatically submitted when the timer ends.') }}
         </div>
+        <!-- The student's own dates (decisions/082). -->
+        <div v-if="myDates.data?.extra_minutes" class="leading-5">
+          {{ __('You have {0} extra minutes.').format(myDates.data.extra_minutes) }}
+        </div>
+        <div v-if="myDates.data?.due_date" class="leading-5">
+          {{ __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+          <span v-if="isLate">{{ __('It is past the due date, so a late deduction may apply.') }}</span>
+        </div>
+        <div v-if="myDates.data?.cutoff_date" class="leading-5">
+          {{ __('No submissions after {0}. A timed exam ends then at the latest.').format(formatWhen(myDates.data.cutoff_date)) }}
+        </div>
       </div>
 
-      <div v-if="exam.data.duration && !hasSubmittedExam" class="flex flex-col space-x-1 my-4">
+      <div v-if="examLimit && !hasSubmittedExam" class="flex flex-col space-x-1 my-4">
         <div class="mb-2">
           <span>{{ __('Time') }}: </span>
           <span class="font-semibold">{{ formatTimer(timer) }}</span>
@@ -69,7 +80,10 @@
           <div class="font-semibold text-lg">
             {{ exam.data.title }}
           </div>
-          <Button v-if="exam.data.qbyquestion && !hasSubmittedExam" @click="startExam" class="mt-2">
+          <div v-if="myDates.data?.closed && !hasSubmittedExam" class="mt-2 text-ink-gray-6">
+            {{ __('This exam closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+          </div>
+          <Button v-else-if="exam.data.qbyquestion && !hasSubmittedExam" @click="startExam" class="mt-2">
             <span>{{ __('Start') }}</span>
           </Button>
           <Button v-else-if="!hasSubmittedExam" @click="startExam2" class="mt-2">
@@ -348,11 +362,34 @@ const populateQuestions = () => {
   ensureAnswersInitialized(selectedQuestions)
 }
 
+// The student's own dates: extra minutes and the cut-off (decisions/082). A
+// timed attempt ends at the earlier of its time limit and the cut-off.
+const myDates = createResource({
+  url: 'seminary.seminary.deadlines.get_my_dates',
+  makeParams: () => ({ course: courseName.value, activity_type: 'exam', activity: props.examName }),
+  auto: false,
+  onSuccess: () => { examLimit.value = currentLimit() },
+  onError: () => { },
+})
+const examLimit = ref(0)
+const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
+const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
+const currentLimit = () => {
+  const own = exam.data?.duration ? (exam.data.duration + (myDates.data?.extra_minutes || 0)) * 60 : 0
+  if (!myDates.data?.cutoff_date) return own
+  const cutoff = Math.max(0, Math.floor((new Date(myDates.data.cutoff_date) - new Date()) / 1000))
+  return !own || cutoff < own ? cutoff : own
+}
+watch(() => exam.data, (data) => {
+  if (data && courseName.value && !is_instructor()) myDates.reload()
+}, { immediate: true })
+
 // Timer setup
 let timerStartTime = null;
 const startTimer = () => {
-  if (exam.data.duration) {
-    timer.value = exam.data.duration * 60;
+  examLimit.value = currentLimit();
+  if (examLimit.value) {
+    timer.value = examLimit.value;
     timerStartTime = Date.now();
     const endTime = timerStartTime + timer.value * 1000;
 
@@ -361,7 +398,7 @@ const startTimer = () => {
       const remainingTime = Math.max(0, Math.floor((endTime - currentTime) / 1000));
 
       timer.value = remainingTime;
-      elapsedTime.value = exam.data.duration * 60 - remainingTime;
+      elapsedTime.value = examLimit.value - remainingTime;
 
       if (remainingTime === 300) {
         toast.warning(__('5 minutes remaining!'))
@@ -391,7 +428,7 @@ const formatTimer = (seconds) => {
 };
 
 const timerProgress = computed(() => {
-  return (timer.value / (exam.data.duration * 60)) * 100;
+  return examLimit.value ? (timer.value / examLimit.value) * 100 : 0;
 });
 
 const shuffleArray = (array) => {
@@ -454,9 +491,7 @@ const autoSave = async () => {
 
   try {
     const submittedAnswers = get_answers()
-    const timeTaken = exam.data.duration
-      ? exam.data.duration * 60 - (timer.value || 0)
-      : elapsedTime.value || 0
+    const timeTaken = elapsedTime.value || 0
 
     const result = await call(
       'seminary.seminary.doctype.exam_submission.exam_submission.save_exam_draft',

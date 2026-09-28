@@ -23,7 +23,12 @@
   "maxextrapoints_card",
   "column_break_fsas",
   "actualextrapt_card",
-  "scorm_reported_card"
+  "scorm_reported_card",
+  "late_base_card",
+  "late_deduction_card",
+  "late_adjusted_card",
+  "late_adjusted_deduction",
+  "late_adjusted_reason"
  ],
  "fields": [
   {
@@ -140,12 +145,43 @@
    "fieldtype": "Check",
    "label": "Reported by SCORM",
    "read_only": 1
+  },
+  {
+   "fieldname": "late_base_card",
+   "fieldtype": "Float",
+   "label": "Score Before Late Deduction",
+   "read_only": 1
+  },
+  {
+   "fieldname": "late_deduction_card",
+   "fieldtype": "Float",
+   "label": "Late Deduction",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "late_adjusted_card",
+   "fieldtype": "Check",
+   "label": "Late Deduction Changed by Instructor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "late_adjusted_deduction",
+   "fieldtype": "Float",
+   "label": "Deduction Set by Instructor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "late_adjusted_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason for Changing the Deduction",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-03-26 10:00:50.441856",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Assess Results Detail",

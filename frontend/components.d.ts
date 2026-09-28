@@ -93,6 +93,7 @@ declare module 'vue' {
     SermonLabPlayer: typeof import('./src/components/SermonLabPlayer.vue')['default']
     SidebarLink: typeof import('./src/components/SidebarLink.vue')['default']
     SmartFileUploader: typeof import('./src/components/SmartFileUploader.vue')['default']
+    StudentDatesModal: typeof import('./src/components/Modals/StudentDatesModal.vue')['default']
     StudentPlacementCard: typeof import('./src/components/StudentPlacementCard.vue')['default']
     SubmissionViewer: typeof import('./src/components/AssignmentViewers/SubmissionViewer.vue')['default']
     TextViewer: typeof import('./src/components/AssignmentViewers/TextViewer.vue')['default']

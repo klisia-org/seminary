@@ -47,6 +47,14 @@
   "grading_tab",
   "gradesc_cs",
   "maxnumgrade",
+  "late_policy_section",
+  "late_policy_enabled",
+  "late_deduction",
+  "late_interval",
+  "late_policy_column",
+  "late_grace_minutes",
+  "late_floor",
+  "missing_reply_deduction",
   "courseassescrit_sc",
   "lms_tab",
   "lms_configuration_section",
@@ -144,7 +152,7 @@
   },
   {
    "default": "Auto (from program)",
-   "description": "Auto = each student's limit = their Program's max absence % \u00d7 scheduled meetings (auto-disabled for Virtual). Custom = the fixed number below applies to everyone. Disabled = no attendance limit for this course. Editable only by the registrar / Program Chair.",
+   "description": "Auto = each student's limit = their Program's max absence % × scheduled meetings (auto-disabled for Virtual). Custom = the fixed number below applies to everyone. Disabled = no attendance limit for this course. Editable only by the registrar / Program Chair.",
    "fieldname": "attendance_policy",
    "fieldtype": "Select",
    "label": "Attendance Policy",
@@ -447,7 +455,7 @@
    "read_only": 1
   },
   {
-   "description": "Override the Course default minimum enrollment for this schedule. Informational \u2014 used by the Term Enrollment Status report.",
+   "description": "Override the Course default minimum enrollment for this schedule. Informational — used by the Term Enrollment Status report.",
    "fieldname": "minimum_enrollment",
    "fieldtype": "Int",
    "label": "Minimum Enrollment",
@@ -657,12 +665,70 @@
    "fieldtype": "Check",
    "label": "Open Ended",
    "permlevel": 1
+  },
+  {
+   "fieldname": "late_policy_section",
+   "fieldtype": "Section Break",
+   "label": "Late Submissions",
+   "description": "Points taken off work submitted after its due date. Available only with a points grading scale. Each assessment can opt out, and the instructor can change the deduction on one student's work."
+  },
+  {
+   "default": "0",
+   "fieldname": "late_policy_enabled",
+   "fieldtype": "Check",
+   "label": "Deduct Points for Late Work"
+  },
+  {
+   "depends_on": "late_policy_enabled",
+   "fieldname": "late_deduction",
+   "fieldtype": "Float",
+   "non_negative": 1,
+   "label": "Deduction per Interval (%)",
+   "description": "Percentage points of the maximum score taken off for each day or hour late, counted from the due date."
+  },
+  {
+   "default": "Day",
+   "depends_on": "late_policy_enabled",
+   "fieldname": "late_interval",
+   "fieldtype": "Select",
+   "label": "Interval",
+   "options": "Day\nHour"
+  },
+  {
+   "depends_on": "late_policy_enabled",
+   "fieldname": "late_policy_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "late_policy_enabled",
+   "fieldname": "late_grace_minutes",
+   "fieldtype": "Int",
+   "non_negative": 1,
+   "label": "Grace Period (minutes)",
+   "description": "Work submitted within this many minutes after the due date is not late."
+  },
+  {
+   "default": "0",
+   "depends_on": "late_policy_enabled",
+   "fieldname": "late_floor",
+   "fieldtype": "Percent",
+   "label": "Lowest Possible Score (%)",
+   "description": "Late deductions never bring a score below this. A score already below it is left as it is."
+  },
+  {
+   "depends_on": "late_policy_enabled",
+   "fieldname": "missing_reply_deduction",
+   "fieldtype": "Float",
+   "non_negative": 1,
+   "label": "Deduction per Missing Reply (%)",
+   "description": "For discussions with a separate replies due date: percentage points taken off for each required reply not posted by that date."
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-09-24 15:00:00.000000",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

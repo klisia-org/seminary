@@ -225,6 +225,8 @@ STUDENT_ALLOWED = {
     "seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment",
     "seminary.seminary.doctype.assignment_submission.assignment_submission.upload_assignment",
     "seminary.seminary.doctype.assignment_submission.assignment_submission.get_assignment",
+    # The session student's own dates, behind require_enrolled (decisions/082).
+    "seminary.seminary.deadlines.get_my_dates",
 }
 
 STAFF_ONLY = {
@@ -314,6 +316,15 @@ STAFF_ONLY = {
     "seminary.seminary.absence_decisions.absence_decisions_needed",
     "seminary.seminary.absence_decisions.record_absence_decisions",
     "seminary.seminary.absence_decisions.keep_grade_despite_absences",
+    # --- Due dates and late deductions (decisions/082): the gradebook's gate,
+    # course staff with the registrar, checked before any lookup.
+    "seminary.seminary.deadlines.get_deadline_settings",
+    "seminary.seminary.deadlines.save_late_policy",
+    "seminary.seminary.deadlines.save_override",
+    "seminary.seminary.deadlines.delete_override",
+    "seminary.seminary.deadlines.set_late_adjustment",
+    "seminary.seminary.deadlines.get_student_dates",
+    "seminary.seminary.deadlines.excused_due",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
@@ -872,6 +883,9 @@ KWARG_OVERRIDES = {
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
     "seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
+    "seminary.seminary.deadlines.save_override": {"data": "{}"},
+    "seminary.seminary.deadlines.save_late_policy": {"policy": "{}"},
+    "seminary.seminary.deadlines.excused_due": {"students": "[]", "date": "2026-01-01"},
     # An invalid status is refused before the org gate is reached.
     "seminary.partner.portal.set_contact_status": {"status": "Active"},
     "seminary.seminary.api.save_discussion_submission_grade": {"grade": 1.0},

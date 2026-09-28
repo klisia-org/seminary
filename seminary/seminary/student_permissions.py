@@ -62,6 +62,8 @@ CONFIG = {
     "Course Schedule Chapter": ("student_sections_of", "course"),
     "Course Lesson": ("student_sections_of", "course"),
     "Student Attendance": (None, "course"),
+    # A student reads their own extensions; staff their sections' (decisions/082).
+    "Student Due Date Override": (("student", "student"), "course"),
 }
 
 

@@ -9,7 +9,15 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, cint, formatdate, get_time, getdate, now
+from frappe.utils import (
+    add_days,
+    cint,
+    formatdate,
+    get_datetime,
+    get_time,
+    getdate,
+    now,
+)
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
@@ -42,6 +50,7 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
+        self.validate_late_policy()
         self.validate_instructor_categories()
         self.validate_instructor_of_record_rows()
         self.clean_name()
@@ -74,6 +83,11 @@ class CourseSchedule(Document):
 
         self._handle_capacity_and_waitlist()
         self._scaffold_if_became_cbe()
+
+        # A changed late policy re-prices the grades not yet sent (decisions/082).
+        from seminary.seminary import deadlines
+
+        deadlines.on_section_update(self)
 
     def _scaffold_if_became_cbe(self):
         """A section whose course or scale changes so that it now resolves to a
@@ -553,6 +567,40 @@ class CourseSchedule(Document):
         if total_weight_scac != 100:
             frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
 
+    def validate_late_policy(self):
+        """Late deductions are percentage points of a points score, so they
+        exist only on a points scale outside competency-based education
+        (decisions/082 section 4). Refused, not ignored, so the instructor
+        is not left believing a deduction applies."""
+        for row in self.courseassescrit_sc or []:
+            if (
+                row.cutoff_date
+                and row.due_date
+                and get_datetime(row.cutoff_date) < get_datetime(row.due_date)
+            ):
+                frappe.throw(
+                    _(
+                        "Row {0}: {1} closes before it is due. Move the cut-off after the due date."
+                    ).format(row.idx, row.title)
+                )
+        if not self.late_policy_enabled:
+            return
+        from seminary.seminary import cbe, deadlines
+
+        if not deadlines.is_points_scale(self.gradesc_cs) or (
+            cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
+        ):
+            frappe.throw(
+                _(
+                    "Late deductions need a points grading scale, and {0} is not "
+                    "one. Untick Deduct Points for Late Work, or change the "
+                    "grading scale."
+                ).format(self.gradesc_cs),
+                title=_("Late deductions"),
+            )
+        if self.late_floor and not 0 <= self.late_floor <= 100:
+            frappe.throw(_("Lowest Possible Score must be between 0 and 100."))
+
     def validate_assessment_competencies(self):
         """Chapter -> lesson -> assessment must agree on the competency.
 
@@ -938,8 +986,9 @@ class CourseSchedule(Document):
 
         Replaces the target's SCAC rows (so the placeholder satisfying
         ``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
-        already has chapters or any graded data. Roster, grades, and SCAC
-        due_dates are NOT copied.
+        already has chapters or any graded data. Roster, grades, SCAC
+        due_dates and cut-offs, and student due date overrides are NOT
+        copied; the late policy is.
         """
         self._validate_target_for_import(source_cs)
         _validate_source_for_import(source_cs)
@@ -974,6 +1023,7 @@ class CourseSchedule(Document):
         cbe_reflection.scaffold(self.name)
         frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
+        _copy_late_policy(source_cs, self.name)
         n_scac = len(scac_name_map)
         lines = [
             _(
@@ -1243,7 +1293,23 @@ _SCAC_COPYABLE_FIELDS = (
     "discussion",
     "extracredit_scac",
     "fudgepoints_scac",
+    # Whether the section's late deductions apply (decisions/082 section 6).
+    # The cut-off and replies due date are dates, like due_date: not copied.
+    "late_policy_exempt",
 )
+
+
+def _copy_late_policy(source_cs_name, target_cs_name):
+    """The late policy is how the course is taught, not when it runs, so a
+    template carries it (decisions/082 section 6). Written directly for the
+    same reason the rows are: a parent save here races the denorm hooks."""
+    from seminary.seminary.deadlines import POLICY_FIELDS
+
+    values = frappe.db.get_value(
+        "Course Schedule", source_cs_name, list(POLICY_FIELDS), as_dict=True
+    )
+    if values:
+        frappe.db.set_value("Course Schedule", target_cs_name, values)
 
 
 def _replace_scac_rows(source_cs_name, target_cs_name):

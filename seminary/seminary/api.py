@@ -254,6 +254,12 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
     require_enrolled(row.coursesc)
 
+    # The reply counts toward the replier's own grade, so their cut-off
+    # closes it (decisions/082).
+    from seminary.seminary import deadlines
+
+    priced = deadlines.assert_reply_open(row.name)
+
     reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
     if not frappe.utils.strip_html(reply).strip() and not reply_attach:
         frappe.throw(_("Reply cannot be empty"))
@@ -289,6 +295,9 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
         }
     )
     doc.insert(ignore_permissions=True)
+    if priced:
+        # A reply by the replies due date can lift a missing-reply deduction.
+        deadlines.refresh(priced[0], [priced[1]])
     return doc.name
 
 
@@ -3217,6 +3226,11 @@ def quizresult_to_card(doc, method):
     # Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
     # default 0). Cleared if the prof unsets the submission grade.
     card.graded_card = 1 if doc.percentage not in (None, "") else 0
+    # Late deduction (decisions/082): the card holds the score that counts,
+    # the raw percentage and what was taken off sit beside it.
+    from seminary.seminary import deadlines
+
+    deadlines.apply_to_card(card, doc)
     # Save the updated card
     card.save(ignore_permissions=True)
 
@@ -3258,6 +3272,13 @@ def save_course_assessment(course, assessment_data):
             doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
+            # Cut-off, replies due date and the late opt-out (decisions/082),
+            # written only when sent, like the competency fields below.
+            for field in ("cutoff_date", "replies_due_date"):
+                if field in data:
+                    doc.set(field, data.get(field) or None)
+            if "late_policy_exempt" in data:
+                doc.late_policy_exempt = 1 if data.get("late_policy_exempt") else 0
             # Competency wiring (ADR 065 section 11b). Written only when the
             # form sent the key, so a caller that does not show these fields
             # cannot blank a mapping it knows nothing about.
@@ -3290,6 +3311,10 @@ def save_course_assessment(course, assessment_data):
                     "discussion": data.get("discussion", ""),
                     "course_competency": data.get("course_competency") or None,
                     "grading_mode_override": data.get("grading_mode_override") or None,
+                    "due_date": data.get("due_date") or None,
+                    "cutoff_date": data.get("cutoff_date") or None,
+                    "replies_due_date": data.get("replies_due_date") or None,
+                    "late_policy_exempt": 1 if data.get("late_policy_exempt") else 0,
                 }
             )
             doc.insert(ignore_permissions=True)

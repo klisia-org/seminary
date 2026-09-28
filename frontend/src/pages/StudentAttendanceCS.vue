@@ -192,6 +192,30 @@
   </div>
   </div>
 
+  <!-- Excused on a due date: offer each student a later date -->
+  <Dialog v-model="showExcusedDue" :options="{ title: __('Due that day'), size: 'xl' }">
+    <template #body-content>
+      <p class="mb-3 text-sm text-ink-gray-6">
+        {{ __('These students were excused on a day something is due. Give them a later due date? Untick any you do not want to change.') }}
+      </p>
+      <div v-for="row in excusedDue" :key="row.student + row.course_assess"
+        class="mb-2 flex flex-wrap items-center gap-3 rounded border border-outline-gray-2 p-2">
+        <input type="checkbox" v-model="row.keep" :aria-label="row.student_name" />
+        <div class="min-w-[12rem] flex-1 text-sm">
+          <div class="font-medium text-ink-gray-9">{{ row.student_name }}</div>
+          <div class="text-ink-gray-6">{{ row.title }} · {{ __('due {0}').format(dayjs(row.due_date).format('MMM D, HH:mm')) }}</div>
+        </div>
+        <DateTimePicker v-model="row.new_due" variant="subtle" :disabled="!row.keep" />
+      </div>
+    </template>
+    <template #actions>
+      <Button variant="solid" :loading="savingExcusedDue" :disabled="!excusedDue.some((r) => r.keep)"
+        @click="saveExcusedDue">
+        {{ __('Change these due dates') }}
+      </Button>
+    </template>
+  </Dialog>
+
   <!-- Check-in code / QR dialog -->
   <Dialog v-model="showCodeDialog" :options="{ title: __('Self Check-in Code') }">
     <template #body-content>
@@ -264,7 +288,7 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Avatar, Button, createResource, Breadcrumbs, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
+import { Avatar, Button, createResource, Breadcrumbs, DateTimePicker, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'
 import { Check, Printer, QrCode, Send } from 'lucide-vue-next'
 import QRCode from 'qrcode'
@@ -543,6 +567,7 @@ const markAttendance = async () => {
       meetingDates.reload();
       attendanceResource.reload();
       standings.reload();
+      offerDueDateChanges(bucket('Excused').map((s) => s.student));
     }
   } catch (error) {
     console.error('Error:', error);
@@ -551,6 +576,58 @@ const markAttendance = async () => {
 }
 
 
+
+// --- Excused on a due date (decisions/082 section 2) ----------------------
+// Anything due that day is offered a later date for each excused student; an
+// override is created only for the rows the instructor keeps ticked.
+const excusedDue = ref([]);
+const showExcusedDue = ref(false);
+const savingExcusedDue = ref(false);
+
+async function offerDueDateChanges(excused) {
+  if (!excused.length) return;
+  try {
+    const rows = await call('seminary.seminary.deadlines.excused_due', {
+      course: props.courseName,
+      date: selectedDate.value.cs_meetdate,
+      students: JSON.stringify(excused),
+    });
+    if (!rows?.length) return;
+    excusedDue.value = rows.map((r) => ({
+      ...r,
+      keep: true,
+      new_due: dayjs(r.due_date).add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
+    }));
+    showExcusedDue.value = true;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function saveExcusedDue() {
+  savingExcusedDue.value = true;
+  let saved = 0;
+  try {
+    for (const row of excusedDue.value.filter((r) => r.keep)) {
+      await call('seminary.seminary.deadlines.save_override', {
+        data: JSON.stringify({
+          course_assess: row.course_assess,
+          student: row.student,
+          due_date: row.new_due,
+          source: 'Excused absence',
+          reason: __('Excused absence on {0}').format(dayjs(selectedDate.value.cs_meetdate).format('YYYY-MM-DD')),
+        }),
+      });
+      saved++;
+    }
+    toast.success(__('{0} due date(s) changed').format(saved));
+    showExcusedDue.value = false;
+  } catch (e) {
+    toast.error(e?.messages?.join('\n') || e?.message || __('Could not save.'));
+  } finally {
+    savingExcusedDue.value = false;
+  }
+}
 
 // --- Self check-in code / QR ---------------------------------------------
 const showCodeDialog = ref(false);

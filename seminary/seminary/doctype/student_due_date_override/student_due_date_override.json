@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "hash",
+ "creation": "2026-09-28 12:00:00.000000",
+ "description": "Different dates or time for one student on one assessment: a later due date or cut-off, extra minutes on a timed quiz or exam, or extra attempts. Everything left blank follows the assessment's own settings.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_schedule",
+  "course_assess",
+  "assessment_title",
+  "column_break_a",
+  "student",
+  "student_name",
+  "dates_section",
+  "due_date",
+  "cutoff_date",
+  "replies_due_date",
+  "column_break_b",
+  "extra_minutes",
+  "extra_attempts",
+  "reason_section",
+  "reason",
+  "source"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "course_assess",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Scheduled Course Assess Criteria",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "assessment_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assessment Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dates_section",
+   "fieldtype": "Section Break",
+   "label": "For This Student"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Due Date and Time"
+  },
+  {
+   "fieldname": "cutoff_date",
+   "fieldtype": "Datetime",
+   "label": "Cut-off Date and Time"
+  },
+  {
+   "fieldname": "replies_due_date",
+   "fieldtype": "Datetime",
+   "label": "Replies Due Date and Time",
+   "description": "Only for discussions that have a separate replies due date."
+  },
+  {
+   "fieldname": "column_break_b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "extra_minutes",
+   "fieldtype": "Int",
+   "label": "Extra Minutes",
+   "non_negative": 1,
+   "description": "Added to the time limit of a timed quiz or exam."
+  },
+  {
+   "fieldname": "extra_attempts",
+   "fieldtype": "Int",
+   "label": "Extra Attempts",
+   "non_negative": 1,
+   "description": "Added to a quiz's maximum number of attempts."
+  },
+  {
+   "fieldname": "reason_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "default": "Instructor",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Instructor\nExcused absence\nRegistrar",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-28 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Due Date Override",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Program Chair"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Registrar"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Instructor"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

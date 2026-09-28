@@ -54,6 +54,7 @@ from frappe.utils.dateutils import get_period
 from seminary.seminary.md import find_macros, markdown_to_html
 from seminary.seminary.guards import (
     SCHOOL_ROLES,
+    current_student,
     is_course_staff,
     is_enrolled,
     is_grader,
@@ -1447,14 +1448,17 @@ def get_lesson_due_date(lesson):
     if not scac_names:
         return None
 
-    due_date = frappe.db.sql(
-        """SELECT due_date FROM `tabScheduled Course Assess Criteria`
-           WHERE name IN %(names)s AND due_date IS NOT NULL
-           ORDER BY due_date ASC LIMIT 1""",
-        {"names": scac_names},
-        as_dict=True,
-    )
-    return due_date[0].due_date if due_date else None
+    # Each row as the session student sees it: an override moves their date
+    # (decisions/082).
+    from seminary.seminary import deadlines
+
+    student = current_student(frappe.session.user)
+    dates = [
+        d.due_date
+        for d in (deadlines.effective(name, student) for name in scac_names)
+        if d and d.due_date
+    ]
+    return min(dates, key=get_datetime) if dates else None
 
 
 def render_html(lesson):
@@ -1843,10 +1847,20 @@ def get_assessments(course):
 
     activity_to_lesson = _build_lesson_index_for_course(course)
     submitted_index = _build_user_submission_index(course)
+    # The student's own dates where an override gives them (decisions/082).
+    from seminary.seminary import deadlines
+
+    student = current_student(frappe.session.user)
     for a in assessments:
         key = _scac_activity_key(a)
         a["lesson"] = activity_to_lesson.get(key)
         a["submitted"] = bool(key and submitted_index.get(key))
+        dates = deadlines.effective(a.name, student, row=a)
+        a["due_date"] = dates.due_date
+        a["cutoff_date"] = dates.cutoff_date
+        a["replies_due_date"] = dates.replies_due_date
+        a["closed"] = deadlines.is_closed(dates)
+    assessments.sort(key=lambda a: (a.due_date is None, str(a.due_date or "")))
 
     return assessments
 
@@ -2190,11 +2204,12 @@ def get_gradebook(course):
             "stuemail_rc",
             "program_std_scr",
             "progress",
+            "student",
         ],
     )
     for student in students:
         student["assessments"] = frappe.db.sql(
-            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent = %s""",
             (student.name,),

@@ -330,6 +330,7 @@ permission_query_conditions = {
     "Course Schedule Chapter": "seminary.seminary.student_permissions.query_course_schedule_chapter",
     "Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
+    "Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -379,6 +380,7 @@ has_permission = {
     "Course Schedule Chapter": "seminary.seminary.student_permissions.has_permission_course_schedule_chapter",
     "Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
+    "Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
 }
 
 # DocType Class
@@ -461,16 +463,24 @@ doc_events = {
         "after_insert": "seminary.seminary.required_enrollment.on_course_schedule_insert",
     },
     "Scheduled Course Assess Criteria": {
-        "on_update": "seminary.seminary.api.update_card",
+        "on_update": [
+            "seminary.seminary.api.update_card",
+            "seminary.seminary.deadlines.on_row_update",
+        ],
     },
+    # Cut-offs and late timestamps (decisions/082) are checked in validate, so
+    # every path a student can reach -- portal endpoints and frappe.client --
+    # meets them.
     # before_insert on every submission: content gating (ADR 065) has to refuse
     # the submission itself, not only hide the activity in the outline.
     "Quiz Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
@@ -478,10 +488,12 @@ doc_events = {
     },
     "Exam Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "before_insert": [
             "seminary.seminary.cbe.assert_activity_unlocked",
             "seminary.seminary.api.sanitize_submission",
