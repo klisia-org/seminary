@@ -85,7 +85,6 @@ Documentation ✓ links to the live page.
 | Course Folder | ✓ | ✗ | Doc to write: "Course files / materials" subsection (folders, enrolled-student download access) in the courses docs. |
 | Course Gradebook | ✓ | [✓](https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid) |  |
 | Course Lesson | ✓ | ✗ | Doc to write: "Lessons" subsection in course-authoring docs (content, assessments, preview, progress). |
-| Course Result Tool | ✓ | [✓](https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid) |  |
 | Course Schedule | ✓ | [✓](https://docs.seminaryerp.org/getting-started/initial-setup.html#_12-course-schedule-lifecycle) |  |
 | Course Schedule Chapter | ✓ | ✗ | Doc to write: "Chapters" subsection in course-authoring docs (ordering lessons, SCORM). |
 | Course Schedule Progress | ✓ | ✗ | **Won't document (2026-06-13)** -- internal, system-maintained tracking record; surfaced via course progress reports. |
