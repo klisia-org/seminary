@@ -1396,6 +1396,12 @@ def _assert_may_course_enroll(pe_name):
             _("Self-enrollment from the portal is not enabled."),
             frappe.PermissionError,
         )
+    program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+    if frappe.db.get_value("Program", program, "staff_enroll_only"):
+        frappe.throw(
+            _("Your school enrolls you in the courses of this program."),
+            frappe.PermissionError,
+        )
 
 
 @frappe.whitelist()
@@ -3494,6 +3500,11 @@ def get_pgmenrollments(name):
         ],
         order_by="pgmenrol_active desc, enrollment_date desc",
     )
+    for pe in program_enrollments:
+        # The portal says the school enrolls them, instead of offering courses.
+        pe["staff_enrolled"] = cint(
+            frappe.db.get_value("Program", pe.program, "staff_enroll_only")
+        )
     return program_enrollments or []
 
 
@@ -4166,6 +4177,10 @@ def send_selected_grades(course_schedule, rosters):
 
     _conclude_enrollments(course_schedule, students)
     _post_finalization(pes)
+    # A student's last grade of the term decides their next term (decisions/084).
+    from seminary.seminary.progression import after_grades_sent
+
+    after_grades_sent(course_schedule, pes)
 
     return {"finalized": len(finalized), "rosters": finalized}
 
@@ -4236,6 +4251,10 @@ def send_grades(doc=None, **kwargs):
 
     # After grades are sent, recalculate track credits and check auto-grant emphases
     _post_finalization(affected_pes)
+    # A student's last grade of the term decides their next term (decisions/084).
+    from seminary.seminary.progression import after_grades_sent
+
+    after_grades_sent(docname, affected_pes)
 
     # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
     # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued

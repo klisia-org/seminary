@@ -6,7 +6,7 @@ frappe.ui.form.on("Bulk Course Enrollment", {
 		// A Table MultiSelect has no grid: its link filter is set on the field
 		// itself, not as a child-table query.
 		frm.set_query("programs", () => ({
-			filters: { program_type: "Time-based" },
+			filters: { program_type: "Time-based", staff_enroll_only: 1 },
 		}));
 		frm.set_query("course_schedule", "courses", (doc, cdt, cdn) => {
 			const row = locals[cdt][cdn];

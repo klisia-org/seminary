@@ -30,6 +30,7 @@ class Program(WebsiteGenerator):
             self.percent_to_pay = 0
 
         self._hydrate_pacing_mode_default()
+        self._validate_progression_settings()
         self._stamp_course_disabled_on()
         self._validate_course_term_and_credits()
         self._validate_competency_courses()
@@ -101,6 +102,38 @@ class Program(WebsiteGenerator):
         self.pacing_mode = frappe.db.get_value(
             "Competency Framework", self.competency_framework, "default_pacing_mode"
         )
+        if self.program_type == "Time-based" and self.pacing_mode == "Self-paced":
+            # The framework's default can't apply here (decisions/084 §8); say so
+            # rather than fail a save the registrar didn't choose the value for.
+            self.pacing_mode = "Cohort-paced"
+            frappe.msgprint(
+                _(
+                    "Self-paced is available only in Credits-based programs, so this "
+                    "Time-based program uses Cohort-paced."
+                ),
+                alert=True,
+            )
+
+    def _validate_progression_settings(self):
+        """How students advance and who enrolls them (decisions/084)."""
+        if self.program_type == "Time-based" and self.pacing_mode == "Self-paced":
+            frappe.throw(
+                _(
+                    "Self-paced is available only in Credits-based programs. A "
+                    "Time-based program moves students term by term."
+                )
+            )
+        if self.staff_enroll_only:
+            # Nothing for the registrar to verify: students can't enroll themselves.
+            self.registrar_block_cei = 0
+        if not (self.staff_enroll_only and self.program_type == "Time-based"):
+            self.auto_enroll_next_term = 0
+        failure_options = (
+            "Stay in the current cohort",
+            "Remove from the current program cohort",
+        )
+        if self.cohort_failure_policy not in failure_options:
+            self.cohort_failure_policy = failure_options[0]
 
     def _validate_competency_courses(self):
         """A competency-based program's curriculum has to be able to carry

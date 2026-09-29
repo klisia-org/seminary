@@ -69,9 +69,6 @@ app_include_js = [
     # and Partner Organization forms, which differ only in which Link field
     # holds the postal country.
     "geo_location.bundle.js",
-    # Advance Students dialog, opened from the Registrar workspace block
-    # (ADR 083 §4).
-    "advance_students.bundle.js",
     # The tax-ID field's label, mask and shape check, shared by Person, Student
     # Applicant, Partner Organization and the public application form (ADR 071).
     # Country-agnostic: it renders whatever rule `tax_ids.py` hands it, so a new
@@ -462,8 +459,16 @@ doc_events = {
         ],
     },
     "Course Schedule": {
-        "on_update": "seminary.seminary.required_enrollment.on_course_schedule_update",
-        "after_insert": "seminary.seminary.required_enrollment.on_course_schedule_insert",
+        "on_update": [
+            "seminary.seminary.required_enrollment.on_course_schedule_update",
+            # A section opening enrolls students who advanced into its course
+            # (decisions/084 §6).
+            "seminary.seminary.progression.on_course_schedule_update",
+        ],
+        "after_insert": [
+            "seminary.seminary.required_enrollment.on_course_schedule_insert",
+            "seminary.seminary.progression.on_course_schedule_insert",
+        ],
     },
     "Scheduled Course Assess Criteria": {
         "on_update": [

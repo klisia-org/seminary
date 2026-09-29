@@ -87,8 +87,13 @@
         </div>
       </div>
 
+      <!-- Staff enroll students in this program's courses (decisions/084 §5) -->
+      <div v-if="staffEnrolled" class="border rounded-lg p-4 bg-surface-gray-1 text-sm text-ink-gray-7">
+        {{ __('Your school enrolls you in the courses of this program. Your courses appear above once you are enrolled.') }}
+      </div>
+
       <!-- Loading -->
-      <div v-if="courses.loading" class="flex justify-center py-12">
+      <div v-else-if="courses.loading" class="flex justify-center py-12">
         <LoadingIndicator class="w-8 h-8" />
       </div>
 
@@ -243,6 +248,11 @@ const selectedProgram = computed(() => {
   return pe ? pe.program : ''
 })
 
+const staffEnrolled = computed(() => {
+  const pe = (enrollments.data || []).find(p => p.name === selectedPE.value)
+  return !!(pe && pe.staff_enrolled)
+})
+
 const courses = createResource({
   url: 'seminary.seminary.api.get_available_courses_categorized',
   makeParams() {
@@ -285,13 +295,13 @@ const totalCredits = computed(() => {
 
 watch(selectedPE, (val) => {
   if (val) {
-    courses.reload()
+    if (!staffEnrolled.value) courses.reload()
     myEnrollments.reload()
   }
 })
 
 function loadCourses() {
-  if (selectedPE.value) courses.reload()
+  if (selectedPE.value && !staffEnrolled.value) courses.reload()
 }
 
 function badgeTheme(type) {

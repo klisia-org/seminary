@@ -1,13 +1,14 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # See license.txt
-"""decisions/083: Advance Students by program step, Bulk Course Enrollment and
-the enrollment check report."""
+"""decisions/083: Bulk Course Enrollment and the enrollment check report
+(083 §4's Advance Students was superseded by 084)."""
+
+from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, getdate, today
 
-from seminary.seminary import advancement
 from seminary.seminary.doctype.bulk_course_enrollment.bulk_course_enrollment import (
     enroll,
     execute_run,
@@ -113,17 +114,12 @@ def _cei(pe, section):
     ).db_insert()
 
 
-def _steps(term, program):
-    return {
-        (s.from_term, s.status): s
-        for s in advancement.compute_steps(term, program.name)
-    }
-
-
 class ADR083Case(IntegrationTestCase):
+    # IntegrationTestCase rolls back per class, not per test.
     def setUp(self):
         super().setUp()
         frappe.set_user("Administrator")
+        frappe.db.savepoint("adr083_test")
         base = getdate(today())
         self.closing = _term(add_days(base, -120), add_days(base, -5))
         self.next = _term(add_days(base, -4), add_days(base, 110))
@@ -131,109 +127,15 @@ class ADR083Case(IntegrationTestCase):
 
     def tearDown(self):
         frappe.set_user("Administrator")
+        frappe.db.rollback(save_point="adr083_test")
         super().tearDown()
-
-
-class TestAdvanceStudents(ADR083Case):
-    def setUp(self):
-        super().setUp()
-        self.course = _course()
-        self.program = _program([], terms_complete=3)
-
-    def test_step_waits_for_grades_then_advances_once(self):
-        pe = _enrollment(self.program, 1, self.closing)
-        cs = _section(self.course, self.closing, state="Grading")
-        _cei(pe, cs)
-
-        step = _steps(self.closing, self.program)[(1, advancement.BLOCKED)]
-        self.assertEqual(step.sections, [cs])
-        out = advancement.advance(
-            self.closing,
-            [{"program": self.program.name, "from_term": 1}],
-            self.program.name,
-        )
-        self.assertEqual(out["advanced"], [])
-        self.assertIn(cs, out["messages"][0]["message"])
-        self.assertEqual(
-            frappe.db.get_value("Program Enrollment", pe.name, "current_std_term"), 1
-        )
-
-        frappe.db.set_value("Course Schedule", cs, "workflow_state", "Closed")
-        self.assertIn((1, advancement.READY), _steps(self.closing, self.program))
-        advancement.advance(
-            self.closing,
-            [{"program": self.program.name, "from_term": 1}],
-            self.program.name,
-        )
-        row = frappe.db.get_value(
-            "Program Enrollment",
-            pe.name,
-            ["current_std_term", "advanced_from_term"],
-            as_dict=True,
-        )
-        self.assertEqual(
-            (row.current_std_term, row.advanced_from_term), (2, self.closing)
-        )
-
-        # A second click finds the step Done and moves no one.
-        out = advancement.advance(
-            self.closing,
-            [{"program": self.program.name, "from_term": 1}],
-            self.program.name,
-        )
-        self.assertEqual(out["advanced"], [])
-        self.assertEqual(out["messages"][0]["status"], advancement.DONE)
-        self.assertEqual(
-            frappe.db.get_value("Program Enrollment", pe.name, "current_std_term"), 2
-        )
-
-    def test_steps_advance_together_without_double_moving(self):
-        first = _enrollment(self.program, 1, self.closing)
-        second = _enrollment(self.program, 2, self.closing)
-        advancement.advance(
-            self.closing,
-            [
-                {"program": self.program.name, "from_term": 1},
-                {"program": self.program.name, "from_term": 2},
-            ],
-            self.program.name,
-        )
-        self.assertEqual(
-            frappe.db.get_value("Program Enrollment", first.name, "current_std_term"), 2
-        )
-        self.assertEqual(
-            frappe.db.get_value("Program Enrollment", second.name, "current_std_term"),
-            3,
-        )
-
-    def test_only_blocking_sections_of_that_step_count(self):
-        ready = _enrollment(self.program, 2, self.closing)
-        blocked = _enrollment(self.program, 1, self.closing)
-        _cei(blocked, _section(self.course, self.closing, state="Grading"))
-        _cei(ready, _section(self.course, self.closing, state="Cancelled"))
-        _cei(ready, _section(self.course, self.closing, state="Grading", open_ended=1))
-        steps = _steps(self.closing, self.program)
-        self.assertIn((2, advancement.READY), steps)
-        self.assertIn((1, advancement.BLOCKED), steps)
-
-    def test_final_term_and_later_intake_are_not_offered(self):
-        _enrollment(self.program, 3, self.closing)
-        _enrollment(self.program, 1, self.later)
-        steps = _steps(self.closing, self.program)
-        self.assertEqual(set(steps), {(3, advancement.FINAL)})
-
-    def test_students_cannot_open_advancement(self):
-        user = fx.make_user(roles=("Student",))
-        frappe.set_user(user.name)
-        with self.assertRaises(frappe.PermissionError):
-            advancement.get_steps(self.closing)
 
 
 class TestBulkCourseEnrollment(ADR083Case):
     def setUp(self):
         super().setUp()
         self.c1, self.c2 = _course(), _course()
-        self.program = _program([(self.c1, 1), (self.c2, 1)])
+        self.program = _program([(self.c1, 1), (self.c2, 1)], staff_enroll_only=1)
         self.cs1 = _section(self.c1, self.next)
 
     def run_for(self, *pes):
@@ -244,7 +146,10 @@ class TestBulkCourseEnrollment(ADR083Case):
 
     def execute(self, run):
         enroll(run.name)
-        execute_run(run.name)
+        # The job commits after every row so a crash keeps its progress; here
+        # that would write the fixtures into the site.
+        with patch.object(frappe.db, "commit"):
+            execute_run(run.name)
         run.reload()
         return {(r.program_enrollment, r.course): r for r in run.results}
 
@@ -323,14 +228,14 @@ class TestBulkCourseEnrollment(ADR083Case):
         self.assertIn((a.name, self.c1), results)
         self.assertNotIn((b.name, self.c1), results)
 
-    def test_credits_based_program_is_refused(self):
-        other = fx.make_program("Credits-based")
-        run = frappe.new_doc("Bulk Course Enrollment")
-        run.academic_term = self.next
-        run.append("programs", {"program": other.name})
-        run.flags.filled = True
-        with self.assertRaises(frappe.ValidationError):
-            run.insert()
+    def test_only_staff_enrolled_time_based_programs_are_accepted(self):
+        for other in (fx.make_program("Credits-based"), _program([])):
+            run = frappe.new_doc("Bulk Course Enrollment")
+            run.academic_term = self.next
+            run.append("programs", {"program": other.name})
+            run.flags.filled = True
+            with self.assertRaises(frappe.ValidationError):
+                run.insert()
 
 
 class TestEnrollmentCheck(ADR083Case):

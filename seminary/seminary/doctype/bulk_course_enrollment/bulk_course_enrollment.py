@@ -1,7 +1,8 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # For license information, please see license.txt
 
-"""Bulk Course Enrollment: one document is one run (ADR 083 §1-§2).
+"""Bulk Course Enrollment: one document is one run (ADR 083 §1-§2), for
+Time-based programs where staff enroll students (decisions/084 §5).
 
 The registrar picks a term and Time-based programs, gets the students and the
 courses their term expects, picks a section per course, and enrolls. Each
@@ -46,11 +47,23 @@ class BulkCourseEnrollment(Document):
 
     def validate(self):
         for row in self.programs:
+            program = frappe.db.get_value(
+                "Program",
+                row.program,
+                ["program_type", "staff_enroll_only"],
+                as_dict=True,
+            )
             if (
-                frappe.db.get_value("Program", row.program, "program_type")
-                != "Time-based"
+                not program
+                or program.program_type != "Time-based"
+                or not program.staff_enroll_only
             ):
-                frappe.throw(_("{0} is not a Time-based program.").format(row.program))
+                frappe.throw(
+                    _(
+                        "{0} can't be used here: only Time-based programs where staff "
+                        "enroll students in courses can."
+                    ).format(row.program)
+                )
         for row in self.courses:
             if not row.course_schedule:
                 continue
@@ -110,7 +123,7 @@ class BulkCourseEnrollment(Document):
 
     # -- building the run --------------------------------------------------
 
-    def fill_students(self, names=None, advanced_from=None):
+    def fill_students(self, names=None):
         programs = [r.program for r in self.programs]
         if not programs:
             frappe.throw(_("Choose at least one program."))
@@ -121,15 +134,6 @@ class BulkCourseEnrollment(Document):
             intake_term=self.intake_term,
             names=names,
         )
-        if advanced_from:
-            moved = set(
-                frappe.get_all(
-                    "Program Enrollment",
-                    filters={"advanced_from_term": advanced_from},
-                    pluck="name",
-                )
-            )
-            pes = [p for p in pes if p.name in moved]
         self.set("students", [])
         for pe in pes:
             self.append(
@@ -478,12 +482,9 @@ def _enroll_one(result):
 
 
 @frappe.whitelist()
-def new_run(
-    academic_term, programs, enrollments=None, courses=None, advanced_from=None
-):
-    """Create a run already filled in, for Advance Students (the students just
-    advanced) and the enrollment check report (the ticked gaps). Returns its
-    name for the caller to open."""
+def new_run(academic_term, programs, enrollments=None, courses=None):
+    """Create a run already filled in, for the enrollment check report's ticked
+    gaps. Returns its name for the caller to open."""
     frappe.only_for(RUN_ROLES)
     programs = frappe.parse_json(programs) if isinstance(programs, str) else programs
     enrollments = (
@@ -494,7 +495,7 @@ def new_run(
     doc.academic_term = academic_term
     for p in dict.fromkeys(programs or []):
         doc.append("programs", {"program": p})
-    doc.fill_students(names=enrollments, advanced_from=advanced_from)
+    doc.fill_students(names=enrollments)
     doc.fill_courses()
     doc.flags.filled = True
     if courses:

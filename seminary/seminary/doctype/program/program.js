@@ -23,6 +23,7 @@ frappe.ui.form.on('Program', {
 		});
 	},
 	refresh: function(frm) {
+		sync_pacing_options(frm);
 		frm.set_query('program_track', 'pgm_courses_track', function() {
 			return {
 				query: 'seminary.seminary.doctype.program.program.get_program_tracks',
@@ -289,3 +290,32 @@ function check_term_courses(frm) {
 		wide: true
 	});
 }
+
+// Self-paced is for Credits-based programs only (decisions/084 §8): a Time-based
+// program moves students by terms. The picker offers only what the program may
+// hold, so the rule shows while the registrar edits, not after a failed save.
+function sync_pacing_options(frm) {
+	const time_based = frm.doc.program_type === 'Time-based';
+	frm.set_df_property('pacing_mode', 'options', time_based ? ['', 'Cohort-paced'] : ['', 'Cohort-paced', 'Self-paced']);
+	if (time_based && frm.doc.pacing_mode === 'Self-paced') {
+		frm.set_value('pacing_mode', 'Cohort-paced');
+		frappe.show_alert({
+			message: __('Self-paced is available only in Credits-based programs, so Pacing Mode is now Cohort-paced.'),
+			indicator: 'orange'
+		});
+	}
+}
+
+frappe.ui.form.on('Program', {
+	program_type: sync_pacing_options,
+	competency_framework: sync_pacing_options,
+	// Staff enrolling students makes the registrar's verification of
+	// student-made enrollments moot, and auto-enrollment needs staff enrollment.
+	staff_enroll_only: function(frm) {
+		if (frm.doc.staff_enroll_only) {
+			frm.set_value('registrar_block_cei', 0);
+		} else {
+			frm.set_value('auto_enroll_next_term', 0);
+		}
+	}
+});

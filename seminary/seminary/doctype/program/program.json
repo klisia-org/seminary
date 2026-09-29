@@ -21,12 +21,16 @@
   "is_free",
   "require_pay_submit",
   "percent_to_pay",
+  "staff_enroll_only",
+  "auto_enroll_next_term",
   "registrar_block_cei",
   "enrollment_mode",
   "applicant_naming_series",
   "application_web_form",
   "section_break_pgmtype",
   "terms_complete",
+  "progression_rule",
+  "cohort_failure_policy",
   "credits_complete",
   "max_transfer_credits",
   "column_break_voqj",
@@ -44,7 +48,6 @@
   "competency_framework",
   "pacing_mode",
   "column_break_cbe",
-  "cohort_failure_policy",
   "attendance_section_pgm",
   "default_max_absence_percent",
   "section_break_courses",
@@ -117,6 +120,24 @@
    "in_list_view": 1,
    "label": "Terms for completion",
    "mandatory_depends_on": "eval:!doc.is_ongoing && doc.program_type==\"Time-based\""
+  },
+  {
+   "default": "At least one course is passed",
+   "depends_on": "eval:doc.program_type=='Time-based' && !doc.is_ongoing",
+   "description": "Checked when a student's last grade of a term is sent. A student who is not advanced stays in their current term; a registrar can change it on the Program Enrollment.",
+   "fieldname": "progression_rule",
+   "fieldtype": "Select",
+   "label": "Advance to next term when",
+   "options": "At least one course is passed\nEvery course is passed\nThe registrar advances"
+  },
+  {
+   "default": "Stay in the current cohort",
+   "depends_on": "eval:doc.program_type=='Time-based' && !doc.is_ongoing",
+   "description": "For a student who is not advanced. Remove: they leave this program's term cohort, and staff place them by hand or with the Cohort Planner.",
+   "fieldname": "cohort_failure_policy",
+   "fieldtype": "Select",
+   "label": "When a student is held back",
+   "options": "Stay in the current cohort\nRemove from the current program cohort"
   },
   {
    "depends_on": "eval:!doc.is_ongoing",
@@ -374,10 +395,26 @@
   },
   {
    "default": "0",
+   "description": "Students of this program cannot enroll themselves in courses on the portal; staff enroll them, one by one or with Bulk Course Enrollment.",
+   "fieldname": "staff_enroll_only",
+   "fieldtype": "Check",
+   "label": "Staff enroll students in courses (no self-enrollment)"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.staff_enroll_only && doc.program_type=='Time-based'",
+   "description": "When a student advances to the next term, enroll them in that term's courses in the next Academic Term. A course with no open section yet is enrolled when a section opens.",
+   "fieldname": "auto_enroll_next_term",
+   "fieldtype": "Check",
+   "label": "Enroll students in their next term's courses when they advance"
+  },
+  {
+   "default": "0",
    "description": "When checked, students can only create a Draft enrollment for this program; a registrar must apply Submit before the student can pay. When unchecked, the student's enrollment auto-submits to Awaiting Payment.",
    "fieldname": "registrar_block_cei",
    "fieldtype": "Check",
-   "label": "Require Staff Verification of Course Enrollments"
+   "label": "Require Staff Verification of Course Enrollments",
+   "depends_on": "eval:!doc.staff_enroll_only"
   },
   {
    "fieldname": "column_break_voqj",
@@ -507,7 +544,7 @@
   },
   {
    "depends_on": "competency_framework",
-   "description": "Cohort-paced: students move through the program together. Self-paced: each student progresses at their own speed. Defaults from the framework and can be changed here.",
+   "description": "Cohort-paced: students move through the program together. Self-paced: each student progresses at their own speed. Defaults from the framework and can be changed here. Self-paced is available only in Credits-based programs.",
    "fieldname": "pacing_mode",
    "fieldtype": "Select",
    "label": "Pacing Mode",
@@ -516,15 +553,6 @@
   {
    "fieldname": "column_break_cbe",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "Not defined - registrar decides",
-   "depends_on": "eval:doc.competency_framework && doc.pacing_mode=='Cohort-paced'",
-   "description": "What happens to a student who does not reach competency while their cohort moves on. Leave as undecided until your school has a rule.",
-   "fieldname": "cohort_failure_policy",
-   "fieldtype": "Select",
-   "label": "Cohort Failure Policy",
-   "options": "Not defined - registrar decides\nRepeat competency in place\nMove to next intake cohort\nIndividual remediation plan"
   }
  ],
  "has_web_view": 1,
@@ -549,7 +577,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-09-04 22:15:46.100138",
+ "modified": "2026-09-29 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

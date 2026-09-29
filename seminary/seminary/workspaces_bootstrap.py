@@ -141,24 +141,6 @@ def create_workspace(title, icon, roles, shortcuts, cards):
 # container, per the Custom HTML Block JS contract.
 REGISTRAR_TOOLS = [
     {
-        "name": "Registrar - Advance Students",
-        "label": "Advance Students",
-        "roles": ["Registrar", "Seminary Manager"],
-        "html": (
-            '<div class="rg-tool">\n'
-            '  <button class="btn btn-primary btn-sm rg-advance-btn">Advance Students</button>\n'
-            '  <div class="text-muted small" style="margin-top:6px;">Move each program\'s'
-            " students to their next term once the closing term's grades are in.</div>\n"
-            "</div>"
-        ),
-        # The dialog lives in advance_students.bundle.js (ADR 083 §4); the block
-        # only opens it, so a stored copy of this script never goes stale.
-        "script": (
-            "root_element.querySelector('.rg-advance-btn').addEventListener('click', () =>"
-            " seminary.advance_students.open());"
-        ),
-    },
-    {
         "name": "Registrar - Regenerate Current-Term Invoices",
         "label": "Regenerate Current-Term Invoices",
         "roles": ["Registrar", "Seminary Manager"],
