@@ -9,7 +9,7 @@ frappe.ui.form.on("Person Import Batch", {
 				if (!data || data.batch !== frm.doc.name) return;
 				frappe.msgprint({
 					title: __("Import Complete"),
-					indicator: "green",
+					indicator: data.failed ? "orange" : "green",
 					message: data.summary,
 				});
 				frm.reload_doc();

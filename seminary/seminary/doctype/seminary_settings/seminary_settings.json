@@ -32,7 +32,6 @@
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
-  "advancetb",
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
@@ -327,13 +326,6 @@
    "fieldname": "auditcredit",
    "fieldtype": "Check",
    "label": "Should audit be charged per credit hour?"
-  },
-  {
-   "default": "0",
-   "description": "In this version, all students will advance, regardless of their performance. However, a manual submission will be required when these validations will occur.",
-   "fieldname": "advancetb",
-   "fieldtype": "Check",
-   "label": "Auto-advance students in Time-based Programs?"
   },
   {
    "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
@@ -867,7 +859,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-25 22:00:00.000000",
+ "modified": "2026-09-28 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

@@ -175,6 +175,18 @@ class FinancialBackend(ABC):
         """Holiday dates from the billing Company's holiday list. Empty with no
         financial app."""
 
+    # -- Optional reads -------------------------------------------------------
+
+    def preview_enrollment_charges(
+        self, pe_name: str, course_schedule: str, credits: float, audit: bool = False
+    ) -> list:
+        """What enrolling this student in this section would charge, before
+        scholarships, as [{"payer", "fee", "qty", "rate", "amount"}]. `rate` and
+        `amount` are None where a fee has no price. Nothing is raised. Bulk
+        Course Enrollment shows it before the run (ADR 083 §1). Empty with no
+        financial app."""
+        return []
+
     # -- Optional actions: a backend opts in by overriding both methods --------
 
     def can_regenerate_current_term_charges(self) -> bool:

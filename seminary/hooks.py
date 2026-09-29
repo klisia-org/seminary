@@ -459,8 +459,16 @@ doc_events = {
         ],
     },
     "Course Schedule": {
-        "on_update": "seminary.seminary.required_enrollment.on_course_schedule_update",
-        "after_insert": "seminary.seminary.required_enrollment.on_course_schedule_insert",
+        "on_update": [
+            "seminary.seminary.required_enrollment.on_course_schedule_update",
+            # A section opening enrolls students who advanced into its course
+            # (decisions/084 §6).
+            "seminary.seminary.progression.on_course_schedule_update",
+        ],
+        "after_insert": [
+            "seminary.seminary.required_enrollment.on_course_schedule_insert",
+            "seminary.seminary.progression.on_course_schedule_insert",
+        ],
     },
     "Scheduled Course Assess Criteria": {
         "on_update": [

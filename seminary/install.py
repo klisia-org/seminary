@@ -1369,23 +1369,23 @@ def setup_donor_person_field():
 
 
 def create_studentappl_role():
-    if not frappe.db.exists("Role", _("Student Applicant")):
+    if not frappe.db.exists("Role", "Student Applicant"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Student Applicant"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Student Applicant", "desk_access": 0}
         ).save()
 
 
 def create_student_role():
-    if not frappe.db.exists("Role", _("Student")):
+    if not frappe.db.exists("Role", "Student"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Student"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Student", "desk_access": 0}
         ).save()
 
 
 def create_alumni_role():
-    if not frappe.db.exists("Role", _("Alumni")):
+    if not frappe.db.exists("Role", "Alumni"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Alumni"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Alumni", "desk_access": 0}
         ).save()
 
 
@@ -1393,9 +1393,9 @@ def create_partner_role():
     """Portal role for partner-organization staff (the job-board employer side,
     ADR 053). No desk access; record-level scoping in seminary.partner.permissions
     limits each partner user to their own organization."""
-    if not frappe.db.exists("Role", _("Partner")):
+    if not frappe.db.exists("Role", "Partner"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Partner"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Partner", "desk_access": 0}
         ).save()
 
 
@@ -1405,16 +1405,16 @@ def create_partner_role():
 
 
 def create_registrar_role():
-    if not frappe.db.exists("Role", _("Registrar")):
+    if not frappe.db.exists("Role", "Registrar"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Registrar"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Registrar", "desk_access": 1}
         ).save()
 
 
 def create_instructor_role():
-    if not frappe.db.exists("Role", _("Instructor")):
+    if not frappe.db.exists("Role", "Instructor"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Instructor"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Instructor", "desk_access": 1}
         ).save()
 
 
@@ -1530,17 +1530,17 @@ def create_program_chair_role():
     Replaces the ERPNext-inherited "Academics User" role, which Seminary used as
     its de-facto content-owner role but never created itself. See ADR 030.
     """
-    if not frappe.db.exists("Role", _("Program Chair")):
+    if not frappe.db.exists("Role", "Program Chair"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Program Chair"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Program Chair", "desk_access": 1}
         ).save()
 
 
 def create_seminary_manager_role():
     """Module administrator. Previously relied on ERPNext to provide this role."""
-    if not frappe.db.exists("Role", _("Seminary Manager")):
+    if not frappe.db.exists("Role", "Seminary Manager"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Seminary Manager"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}
         ).save()
 
 

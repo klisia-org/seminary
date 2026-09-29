@@ -37,7 +37,6 @@ PREFIX = "ZZT-p008-lesson"
 KNOWN_SWEEP_PAIRS = {
     # The write is behind `doc.flags.ignore_permissions = True` set on another
     # line or in a branch, which the sweep's coarse scan does not follow.
-    ("seminary.seminary.api.course_enroll", "Program Enrollment"),
     ("seminary.seminary.api.save_instructor_profile", "Instructor"),
     # Staff work whose refusal IS the DocPerm on the save -- the endpoint is in
     # OWN_RULE for exactly that reason, and a student failing here is correct.

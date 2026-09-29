@@ -126,6 +126,39 @@ class IntegrationTestPersonImportBatch(IntegrationTestCase):
         self.assertEqual(batch2.rows[0].created_person, person)
         self.assertEqual(frappe.db.count("Person", {"primary_email": email}), 1)
 
+    def test_failed_row_is_recorded_and_the_rest_commit(self):
+        from unittest.mock import patch
+
+        bad, good = "bad.row@example.com", "good.row@example.com"
+        batch = self._new_batch(
+            [
+                {"primary_email": bad, "first_name": "Bad", "last_name": "Row"},
+                {"primary_email": good, "first_name": "Good", "last_name": "Row"},
+            ]
+        )
+        real = pib.ensure_person
+
+        def ensure_person(email, **kw):
+            person = real(email, **kw)  # written, then undone by the savepoint
+            if email == bad:
+                frappe.throw("boom")
+            return person
+
+        with patch.object(pib, "ensure_person", ensure_person):
+            batch._commit_rows()
+
+        failed, ok = batch.rows
+        self.assertEqual(failed.row_status, "Error")
+        self.assertIn("boom", failed.messages)
+        self.assertFalse(failed.created_person)
+        self.assertFalse(frappe.db.exists("Person", {"primary_email": bad}))
+        self.assertEqual(
+            frappe.db.get_value("Person Import Row", failed.name, "row_status"),
+            "Error",
+        )
+        self.assertEqual(ok.row_status, "Committed")
+        self.assertTrue(frappe.db.exists("Person", {"primary_email": good}))
+
     def test_commit_student_creates_user_and_person(self):
         email = "student.import@example.com"
         batch = self._new_batch(

@@ -27,6 +27,8 @@
   "pgmenrol_active",
   "billing_suspended",
   "current_std_term",
+  "advanced_from_term",
+  "advanced_on",
   "totalcredits",
   "current_gpa",
   "current_honor",
@@ -203,6 +205,22 @@
    "in_standard_filter": 1,
    "label": "Current Term (index)",
    "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "description": "The last term this student was advanced out of. A student can be advanced out of a term only once.",
+   "fieldname": "advanced_from_term",
+   "fieldtype": "Link",
+   "label": "Advanced From Term",
+   "no_copy": 1,
+   "options": "Academic Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "advanced_on",
+   "fieldtype": "Date",
+   "label": "Advanced On",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -441,7 +459,7 @@
    "link_fieldname": "program_ce"
   }
  ],
- "modified": "2026-08-28 21:00:00.000000",
+ "modified": "2026-09-28 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment",

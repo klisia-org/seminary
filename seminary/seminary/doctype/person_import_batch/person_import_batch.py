@@ -78,6 +78,18 @@ PERMISSION_ROLE_MAP = {
 
 TRUTHY = {"1", "true", "yes", "y", "x", "on", "checked", "t"}
 
+# What _commit_row records on a row; cleared again when that row fails.
+ROW_RESULT_FIELDS = (
+    "created_user",
+    "created_person",
+    "created_student",
+    "created_customer",
+    "created_instructor",
+    "created_alumni",
+    "created_donor",
+    "assigned_roles",
+)
+
 # Above this row count the commit runs in a background job.
 ENQUEUE_THRESHOLD = 50
 
@@ -124,7 +136,12 @@ class PersonImportBatch(Document):
             self._commit_rows()
             summary = self._store_summary()
             self._mark_committed()
-            frappe.msgprint(summary, title=_("Import Complete"), indicator="green")
+            failed = any(r.row_status != "Committed" for r in self.rows)
+            frappe.msgprint(
+                summary,
+                title=_("Import Complete"),
+                indicator="orange" if failed else "green",
+            )
         else:
             self.db_set("batch_status", "Committing", update_modified=False)
             frappe.msgprint(
@@ -407,12 +424,47 @@ class PersonImportBatch(Document):
         }
 
     # -- commit ------------------------------------------------------------
-    def _commit_rows(self):
+    def _commit_rows(self, commit_each=False):
+        """Commit every pending row. One row's failure is rolled back to its own
+        savepoint and recorded on that row; the rest of the batch carries on.
+
+        commit_each (the background job) makes each row durable as it lands, so
+        a large import never holds one giant transaction and a crash keeps what
+        was already done. The in-request path leaves the commit to the request.
+        """
         img_map = self.attached_image_map()
         for row in self.rows:
             if row.row_status == "Committed":
                 continue  # idempotent re-run safety
-            self._commit_row(row, img_map)
+            messages = list(frappe.local.message_log)
+            frappe.db.savepoint("person_import_row")
+            try:
+                self._commit_row(row, img_map)
+            except Exception as e:
+                frappe.db.rollback(save_point="person_import_row")
+                self._fail_row(row, e)
+            frappe.local.message_log = messages  # drop per-row alerts and errors
+            if commit_each:
+                frappe.db.commit()
+
+    def _fail_row(self, row, exc):
+        log = frappe.log_error(
+            title=_("Person import row {0} failed").format(row.idx),
+            reference_doctype=self.doctype,
+            reference_name=self.name,
+        )
+        detail = frappe.utils.strip_html(str(exc)) or type(exc).__name__
+        note = _("Commit failed: {0} (Error Log {1})").format(detail, log.name)
+        # The savepoint rollback undid the row's own db_set calls; match it in
+        # memory so the summary doesn't count records that no longer exist.
+        for field in ROW_RESULT_FIELDS:
+            row.set(field, None)
+        row.row_status = "Error"
+        row.messages = "; ".join(filter(None, [row.messages, note]))
+        row.db_set(
+            {"row_status": row.row_status, "messages": row.messages},
+            update_modified=False,
+        )
 
     def _commit_row(self, row, img_map):
         email = normalize_email(row.primary_email)
@@ -710,13 +762,17 @@ def _get_or_create_donor(email, donor_name):
 def commit_batch_async(batch_name):
     """Background commit for large batches (see on_submit)."""
     batch = frappe.get_doc("Person Import Batch", batch_name)
-    batch._commit_rows()
+    batch._commit_rows(commit_each=True)
     summary = batch._store_summary()
     batch._mark_committed()
     frappe.db.commit()
     frappe.publish_realtime(
         "person_import_complete",
-        {"batch": batch.name, "summary": summary},
+        {
+            "batch": batch.name,
+            "summary": summary,
+            "failed": sum(1 for r in batch.rows if r.row_status != "Committed"),
+        },
         user=batch.committed_by or batch.owner,
     )
 

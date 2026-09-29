@@ -141,36 +141,6 @@ def create_workspace(title, icon, roles, shortcuts, cards):
 # container, per the Custom HTML Block JS contract.
 REGISTRAR_TOOLS = [
     {
-        "name": "Registrar - Advance Students",
-        "label": "Advance Students",
-        "roles": ["Registrar", "Seminary Manager"],
-        "html": (
-            '<div class="rg-tool">\n'
-            '  <button class="btn btn-primary btn-sm rg-advance-btn">Advance Students</button>\n'
-            '  <div class="text-muted small" style="margin-top:6px;">Advance all active'
-            " students to the next term. Confirm grades for the ending term are"
-            " finalized first.</div>\n"
-            "</div>"
-        ),
-        "script": (
-            "root_element.querySelector('.rg-advance-btn').addEventListener('click', () => {\n"
-            "    frappe.confirm(\n"
-            "        __('Advance all active students to the next term? Confirm that grades"
-            " for the ending term are finalized first.'),\n"
-            "        () => {\n"
-            "            frappe.call({\n"
-            "                method: 'seminary.seminary.api.roll_students',\n"
-            "                freeze: true,\n"
-            "                freeze_message: __('Advancing students...'),\n"
-            "                callback: (r) => frappe.msgprint({ title: __('Advance"
-            " Students'), message: r.message || __('Done'), indicator: 'green' }),\n"
-            "            });\n"
-            "        }\n"
-            "    );\n"
-            "});"
-        ),
-    },
-    {
         "name": "Registrar - Regenerate Current-Term Invoices",
         "label": "Regenerate Current-Term Invoices",
         "roles": ["Registrar", "Seminary Manager"],
