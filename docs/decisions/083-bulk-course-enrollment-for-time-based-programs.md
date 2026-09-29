@@ -1,7 +1,7 @@
 # 083 — Bulk course enrollment for Time-based programs
 
 **Date:** 2026-09-28
-**Status:** Accepted 2026-09-28
+**Status:** Accepted 2026-09-28; partially superseded by 084 (§3–§4; §1 narrowed to staff-enrolled programs)
 
 ## Context
 
