@@ -232,7 +232,17 @@ class PersonImportBatch(Document):
 
         _fname, content = get_file(self.source_file)
         if isinstance(content, bytes):
-            content = content.decode("utf-8-sig", errors="replace")
+            content = _decode_csv(content)
+        if "�" in content:
+            # The replacement character is in the file itself: whatever saved it
+            # already lost the accents, and no decoding can bring them back.
+            frappe.msgprint(
+                _(
+                    "Some characters in this file are already broken (shown as �). "
+                    'Save the spreadsheet again as "CSV UTF-8" and re-attach it.'
+                ),
+                indicator="orange",
+            )
         data = read_csv_content(content)
         if not data:
             frappe.throw(_("The CSV appears to be empty."))
@@ -569,6 +579,17 @@ class PersonImportBatch(Document):
 
 
 # -- module-level helpers --------------------------------------------------
+def _decode_csv(content):
+    """UTF-8 first; otherwise the Windows-1252 that Excel's plain "CSV" and
+    LibreOffice's "Western" save. Frappe's own fallback tries windows-1250
+    first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails."""
+    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return content.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+
+
 def _keep_previous_id(student, previous_id):
     """Fill the Student's previous ID; one already recorded is never replaced."""
     previous_id = (previous_id or "").strip()
