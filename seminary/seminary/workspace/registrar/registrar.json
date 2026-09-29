@@ -208,7 +208,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Records",
-   "link_count": 6,
+   "link_count": 8,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -246,6 +246,26 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Bulk Course Enrollment",
+   "link_count": 0,
+   "link_to": "Bulk Course Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Time-based Enrollment Gaps",
+   "link_count": 0,
+   "link_to": "Time-based Enrollment Gaps",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Academic Term",
    "link_count": 0,
    "link_to": "Academic Term",
@@ -274,7 +294,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-13 12:00:00.000000",
+ "modified": "2026-09-28 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Registrar",

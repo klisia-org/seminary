@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "autoname": "format:BCE-{YY}-{#####}",
+ "creation": "2026-09-28 18:00:00",
+ "description": "Enroll many students in their term's courses at once. Choose the term and programs, get the students and their courses, pick a section for each course, then Enroll.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_term",
+  "run_status",
+  "column_break_top",
+  "programs",
+  "students_section",
+  "student_term",
+  "column_break_filters",
+  "intake_term",
+  "students_table_section",
+  "students",
+  "courses_section",
+  "courses",
+  "results_section",
+  "summary",
+  "column_break_results",
+  "run_by",
+  "run_on",
+  "results_table_section",
+  "results"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term",
+   "options": "Academic Term",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "The term to enroll students in."
+  },
+  {
+   "fieldname": "run_status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nQueued\nRunning\nCompleted\nCompleted with Errors",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "programs",
+   "fieldtype": "Table MultiSelect",
+   "label": "Programs",
+   "options": "Bulk Course Enrollment Program",
+   "reqd": 1,
+   "description": "Time-based programs only."
+  },
+  {
+   "fieldname": "students_section",
+   "fieldtype": "Section Break",
+   "label": "Students"
+  },
+  {
+   "fieldname": "student_term",
+   "fieldtype": "Int",
+   "label": "Student Term",
+   "non_negative": 1,
+   "description": "Only students at this term of their program. Leave blank for all."
+  },
+  {
+   "fieldname": "column_break_filters",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "intake_term",
+   "fieldtype": "Link",
+   "label": "Intake Term",
+   "options": "Academic Term",
+   "description": "Only students who started in this term. Choose the term being enrolled to enroll new students."
+  },
+  {
+   "fieldname": "students_table_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "students",
+   "fieldtype": "Table",
+   "label": "Students",
+   "options": "Bulk Course Enrollment Student",
+   "description": "Get Students fills this list. Untick anyone who should not be enrolled."
+  },
+  {
+   "fieldname": "courses_section",
+   "fieldtype": "Section Break",
+   "label": "Courses"
+  },
+  {
+   "fieldname": "courses",
+   "fieldtype": "Table",
+   "label": "Courses",
+   "options": "Bulk Course Enrollment Course",
+   "description": "Get Courses lists what each included student's term expects. Choose a section for each course, or untick the course."
+  },
+  {
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Results",
+   "depends_on": "eval:doc.results && doc.results.length"
+  },
+  {
+   "fieldname": "summary",
+   "fieldtype": "Small Text",
+   "label": "Summary",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_results",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "run_by",
+   "fieldtype": "Link",
+   "label": "Run By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "run_on",
+   "fieldtype": "Datetime",
+   "label": "Run On",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "results_table_section",
+   "fieldtype": "Section Break",
+   "depends_on": "eval:doc.results && doc.results.length"
+  },
+  {
+   "fieldname": "results",
+   "fieldtype": "Table",
+   "label": "Results",
+   "options": "Bulk Course Enrollment Result",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-28 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Bulk Course Enrollment",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "Registrar",
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "academic_term",
+ "track_changes": 1
+}

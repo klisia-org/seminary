@@ -109,11 +109,11 @@ class TestP006ApiGates(FrappeTestCase):
 
     # ------------------------------------------------------------ F3 §2.3
 
-    def test_roll_pe_and_petb_enroll_not_whitelisted(self):
-        self.assertFalse(getattr(api.roll_pe, "is_whitelisted", False))
-        self.assertFalse(getattr(api.petb_enroll, "is_whitelisted", False))
-        self.assertNotIn(api.roll_pe, frappe.whitelisted)
-        self.assertNotIn(api.petb_enroll, frappe.whitelisted)
+    def test_enroll_in_section_not_whitelisted(self):
+        # Its submit_blocked flag skips the registrar's approval, so it must
+        # never be reachable over the wire (ADR 083 §2).
+        self.assertFalse(getattr(api.enroll_in_section, "is_whitelisted", False))
+        self.assertNotIn(api.enroll_in_section, frappe.whitelisted)
 
     # ------------------------------------------------------------ F4 §2.4
 

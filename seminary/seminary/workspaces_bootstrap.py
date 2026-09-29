@@ -147,27 +147,15 @@ REGISTRAR_TOOLS = [
         "html": (
             '<div class="rg-tool">\n'
             '  <button class="btn btn-primary btn-sm rg-advance-btn">Advance Students</button>\n'
-            '  <div class="text-muted small" style="margin-top:6px;">Advance all active'
-            " students to the next term. Confirm grades for the ending term are"
-            " finalized first.</div>\n"
+            '  <div class="text-muted small" style="margin-top:6px;">Move each program\'s'
+            " students to their next term once the closing term's grades are in.</div>\n"
             "</div>"
         ),
+        # The dialog lives in advance_students.bundle.js (ADR 083 §4); the block
+        # only opens it, so a stored copy of this script never goes stale.
         "script": (
-            "root_element.querySelector('.rg-advance-btn').addEventListener('click', () => {\n"
-            "    frappe.confirm(\n"
-            "        __('Advance all active students to the next term? Confirm that grades"
-            " for the ending term are finalized first.'),\n"
-            "        () => {\n"
-            "            frappe.call({\n"
-            "                method: 'seminary.seminary.api.roll_students',\n"
-            "                freeze: true,\n"
-            "                freeze_message: __('Advancing students...'),\n"
-            "                callback: (r) => frappe.msgprint({ title: __('Advance"
-            " Students'), message: r.message || __('Done'), indicator: 'green' }),\n"
-            "            });\n"
-            "        }\n"
-            "    );\n"
-            "});"
+            "root_element.querySelector('.rg-advance-btn').addEventListener('click', () =>"
+            " seminary.advance_students.open());"
         ),
     },
     {

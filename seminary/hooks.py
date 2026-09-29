@@ -69,6 +69,9 @@ app_include_js = [
     # and Partner Organization forms, which differ only in which Link field
     # holds the postal country.
     "geo_location.bundle.js",
+    # Advance Students dialog, opened from the Registrar workspace block
+    # (ADR 083 §4).
+    "advance_students.bundle.js",
     # The tax-ID field's label, mask and shape check, shared by Person, Student
     # Applicant, Partner Organization and the public application form (ADR 071).
     # Country-agnostic: it renders whatever rule `tax_ids.py` hands it, so a new

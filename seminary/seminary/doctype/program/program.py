@@ -167,7 +167,7 @@ class Program(WebsiteGenerator):
         # Per-type curriculum requirements. mandatory_depends_on on the child
         # fields gives client-side hinting, but it can't read the parent's
         # program_type server-side — enforce authoritatively here. Time-based
-        # progression keys off course_term (see petb_enroll); Credits-based
+        # progression keys off course_term (see term_plan); Credits-based
         # completion keys off pgmcourse_credits.
         if self.is_ongoing:
             return
