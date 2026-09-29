@@ -3,7 +3,9 @@
 
 frappe.ui.form.on("Bulk Course Enrollment", {
 	setup(frm) {
-		frm.set_query("program", "programs", () => ({
+		// A Table MultiSelect has no grid: its link filter is set on the field
+		// itself, not as a child-table query.
+		frm.set_query("programs", () => ({
 			filters: { program_type: "Time-based" },
 		}));
 		frm.set_query("course_schedule", "courses", (doc, cdt, cdn) => {
