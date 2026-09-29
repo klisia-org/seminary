@@ -18,6 +18,12 @@ class TestPersonImportHelpers(unittest.TestCase):
         for v in ("0", "", "no", None, "false", "maybe"):
             self.assertEqual(pib._truthy(v), 0)
 
+    def test_decode_csv_keeps_accents(self):
+        name = "JOÃO AZEVEDO SARAIVA JÚNIOR"
+        self.assertEqual(pib._decode_csv(name.encode("utf-8")), name)
+        self.assertEqual(pib._decode_csv(b"\xef\xbb\xbf" + name.encode("utf-8")), name)
+        self.assertEqual(pib._decode_csv(name.encode("cp1252")), name)
+
     def test_full_name_joins_parts(self):
         row = frappe._dict(first_name="Ada", middle_name=None, last_name="Lovelace")
         self.assertEqual(pib._full_name(row), "Ada Lovelace")
