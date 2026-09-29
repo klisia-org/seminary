@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:grading_scale_name",
  "creation": "2016-08-26 03:06:53.922972",
@@ -144,8 +145,8 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-28 18:49:47.792767",
- "modified_by": "Administrator",
+ "modified": "2026-09-29 23:17:40.353078",
+ "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Grading Scale",
  "naming_rule": "By fieldname",

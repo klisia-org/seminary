@@ -236,7 +236,7 @@ def user_has_only_instructor_role(user):
 
     user_write_roles = set(user_roles) & set(write_roles)
 
-    instructor_role = frappe._("Instructor")
+    instructor_role = "Instructor"
     return user_write_roles == {instructor_role}
 
 
