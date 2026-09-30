@@ -278,6 +278,29 @@ class IntegrationTestTaxIdOnPerson(IntegrationTestCase):
             frappe.db.get_value("Person", person.name, "tax_id"), "11144477735"
         )
 
+    def test_the_payer_is_offered_the_cpf_on_their_person(self):
+        person = make_person()
+        person.nationality = "Brazil"
+        person.tax_id = VALID_CPF
+        person.save(ignore_permissions=True)
+        self.assertEqual(
+            tax_ids.payer_tax_id(payer_email=person.primary_email), "11144477735"
+        )
+        self.assertIsNone(tax_ids.payer_tax_id(payer_email="nobody@example.com"))
+        self.assertIsNone(tax_ids.payer_tax_id(payer_email=None))
+
+    def test_a_tax_id_asaas_would_refuse_is_not_offered(self):
+        person = make_person()
+        person.nationality = "Zimbabwe"
+        person.tax_id = "63-1234567-A-42"
+        person.save(ignore_permissions=True)
+        self.assertIsNone(tax_ids.payer_tax_id(payer_email=person.primary_email))
+
+    def test_the_payments_app_can_find_the_hook(self):
+        self.assertIn(
+            "seminary.seminary.tax_ids.payer_tax_id", frappe.get_hooks("payer_tax_id")
+        )
+
     def test_the_country_field_registry_names_real_fields(self):
         for doctype, fieldnames in tax_ids.COUNTRY_FIELDS.items():
             meta = frappe.get_meta(doctype)

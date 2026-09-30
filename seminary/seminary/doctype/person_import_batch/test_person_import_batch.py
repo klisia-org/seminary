@@ -111,6 +111,42 @@ class IntegrationTestPersonImportBatch(IntegrationTestCase):
         self.assertTrue(result["clean"])
         self.assertEqual(batch.batch_status, "Dry-Run Clean")
 
+    def test_dry_run_refuses_a_mistyped_cpf(self):
+        batch = self._new_batch(
+            [
+                {
+                    "primary_email": "cpf.typo@example.com",
+                    "first_name": "Typo",
+                    "nationality": "Brazil",
+                    "tax_id": "111.444.777-34",
+                    "override_note": "bare person on purpose",
+                }
+            ]
+        )
+        result = batch.dry_run()
+        self.assertFalse(result["clean"])
+        self.assertEqual(batch.rows[0].row_status, "Error")
+        self.assertIn("bad_tax_id:111.444.777-34", batch.rows[0].messages)
+
+    def test_commit_imports_the_cpf(self):
+        batch = self._new_batch(
+            [
+                {
+                    "primary_email": "cpf.import@example.com",
+                    "first_name": "Cpf",
+                    "nationality": "Brazil",
+                    "tax_id": "111.444.777-35",
+                    "override_note": "bare person on purpose",
+                }
+            ]
+        )
+        self.assertTrue(batch.dry_run()["clean"])
+        batch._commit_rows()
+        self.assertEqual(
+            frappe.db.get_value("Person", batch.rows[0].created_person, "tax_id"),
+            "11144477735",
+        )
+
     def test_commit_bare_person_is_idempotent(self):
         email = "bare.person@example.com"
         batch = self._new_batch(
