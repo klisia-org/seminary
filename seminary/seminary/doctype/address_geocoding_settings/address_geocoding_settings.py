@@ -13,6 +13,12 @@ PROBE_ADDRESS = "1600 Pennsylvania Avenue NW, Washington, DC 20500, USA"
 
 
 class AddressGeocodingSettings(Document):
+    def onload(self):
+        # The form hides its own fields while the host's proxy is in charge.
+        from seminary.seminary.integrations import geocoding
+
+        self.set_onload("hosted", bool(geocoding.hosted_config()))
+
     def validate(self):
         self.require_credentials_for_provider()
 
@@ -27,7 +33,7 @@ class AddressGeocodingSettings(Document):
         """
         from seminary.seminary.integrations import geocoding
 
-        if not self.enabled:
+        if not geocoding.effective(self).enabled:
             return {"ok": False, "message": _("Geocoding is not enabled.")}
         try:
             # Through the module's own accessor, so a Test Connection click
@@ -69,7 +75,9 @@ class AddressGeocodingSettings(Document):
         would look exactly like "nobody has an address yet". Refuse the
         configuration instead of letting it fail quietly forever.
         """
-        if not self.enabled:
+        from seminary.seminary.integrations import geocoding
+
+        if geocoding.effective(self) is not self or not self.enabled:
             return
         if not self.base_url:
             frappe.throw(_("Address Geocoding Settings needs a Base URL."))
