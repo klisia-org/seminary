@@ -231,8 +231,7 @@ class PersonImportBatch(Document):
             frappe.throw(_("Attach a Source CSV first."))
 
         _fname, content = get_file(self.source_file)
-        if isinstance(content, bytes):
-            content = _decode_csv(content)
+        content = _decode_csv(content)
         if "�" in content:
             # The replacement character is in the file itself: whatever saved it
             # already lost the accents, and no decoding can bring them back.
@@ -332,8 +331,6 @@ class PersonImportBatch(Document):
 
             if row.is_donor and not frappe.db.exists("DocType", "Donor"):
                 warns.append("giving_not_installed")
-            if row.is_student and not has_billing:
-                warns.append("student_academic_only")
 
             previous_id = (row.previous_student_id or "").strip()
             if previous_id:
@@ -421,6 +418,17 @@ class PersonImportBatch(Document):
         self.flags.in_dry_run = True
         self.save()
 
+        # A fact about the site, not about any row: one notice, nothing to override.
+        academic_only = not has_billing and any(r.is_student for r in self.rows)
+        if academic_only:
+            frappe.msgprint(
+                _(
+                    "No billing app is active, so students are imported without "
+                    "billing records. Nothing to fix; billing can be added later."
+                ),
+                indicator="blue",
+            )
+
         if batch_errors:
             frappe.msgprint(
                 _("Batch-level issue(s): {0}").format(", ".join(batch_errors)),
@@ -431,6 +439,7 @@ class PersonImportBatch(Document):
             "errors": errors_total,
             "warnings": warnings_total,
             "batch_errors": batch_errors,
+            "academic_only": academic_only,
         }
 
     # -- commit ------------------------------------------------------------
@@ -582,7 +591,13 @@ class PersonImportBatch(Document):
 def _decode_csv(content):
     """UTF-8 first; otherwise the Windows-1252 that Excel's plain "CSV" and
     LibreOffice's "Western" save. Frappe's own fallback tries windows-1250
-    first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails."""
+    first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails.
+
+    get_file hands back valid UTF-8 already decoded as plain "utf-8", which
+    keeps the BOM Excel's "CSV UTF-8" writes; left in, it hides the first
+    header (primary_email) and every row fails as missing its email."""
+    if isinstance(content, str):
+        return content.removeprefix("﻿")
     for encoding in ("utf-8-sig", "cp1252", "latin-1"):
         try:
             return content.decode(encoding)
