@@ -84,13 +84,14 @@ class IntegrationTestPreviousStudentId(IntegrationTestCase):
 
         batch = self._new_batch([self._row("billing.app@example.com")])
         with patch.object(pib, "get_financial_backend", return_value=Billing()):
-            batch.dry_run()
-            self.assertNotIn("student_academic_only", batch.rows[0].messages or "")
+            self.assertFalse(batch.dry_run()["academic_only"])
             self.assertFalse(
                 pib._customer_billing(), "only oikonomos makes a Customer per student"
             )
         with patch.object(
             pib, "get_financial_backend", return_value=backend.NullFinancialBackend()
         ):
-            batch.dry_run()
-            self.assertIn("student_academic_only", batch.rows[0].messages or "")
+            result = batch.dry_run()
+            # One batch-level notice, never a per-row warning to override.
+            self.assertTrue(result["academic_only"])
+            self.assertNotIn("academic_only", batch.rows[0].messages or "")

@@ -23,6 +23,7 @@ class TestPersonImportHelpers(unittest.TestCase):
         self.assertEqual(pib._decode_csv(name.encode("utf-8")), name)
         self.assertEqual(pib._decode_csv(b"\xef\xbb\xbf" + name.encode("utf-8")), name)
         self.assertEqual(pib._decode_csv(name.encode("cp1252")), name)
+        self.assertEqual(pib._decode_csv("﻿" + name), name)
 
     def test_full_name_joins_parts(self):
         row = frappe._dict(first_name="Ada", middle_name=None, last_name="Lovelace")
