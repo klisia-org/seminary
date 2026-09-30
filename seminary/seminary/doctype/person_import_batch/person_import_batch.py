@@ -26,6 +26,7 @@ from frappe.utils import cint, getdate, now_datetime, today, validate_email_addr
 
 from seminary.seminary.financial.backend import get_financial_backend
 from seminary.seminary.integrations.giving import link_donor
+from seminary.seminary import tax_ids
 from seminary.seminary.person import ensure_person, find_person, normalize_email
 
 # CSV column contract — also the template header order.
@@ -349,11 +350,19 @@ class PersonImportBatch(Document):
             for fld, dt in (
                 ("gender", "Gender"),
                 ("country", "Country"),
+                ("nationality", "Country"),
                 ("language", "Language"),
             ):
                 val = row.get(fld)
                 if val and not frappe.db.exists(dt, val):
                     warns.append("unknown_%s:%s" % (fld, val))
+
+            # Checked now the way Person.validate checks it at commit (ADR 071),
+            # so a mistyped CPF is a row to fix rather than a failed commit.
+            if row.tax_id and tax_ids.problem_with(
+                row.tax_id, _tax_country(row, email), tax_ids.PERSON
+            ):
+                errs.append("bad_tax_id:%s" % row.tax_id)
 
             for key, role in PERMISSION_ROLE_MAP.items():
                 if row.get(key) and not frappe.db.exists("Role", role):
@@ -618,6 +627,21 @@ def _keep_previous_id(student, previous_id):
             previous_id,
             update_modified=False,
         )
+
+
+def _tax_country(row, email):
+    """The country the tax ID will be checked against once committed.
+    `ensure_person` only fills blanks, so an existing Person's own nationality
+    wins over the row's."""
+    existing = find_person(email=email) if email else None
+    person = (
+        frappe.db.get_value(
+            "Person", existing, ["nationality", "mailing_country"], as_dict=True
+        )
+        if existing
+        else None
+    ) or frappe._dict()
+    return person.nationality or row.nationality or person.mailing_country
 
 
 def _customer_billing():

@@ -255,6 +255,10 @@ boot_session = [
     "seminary.desk_nav.boot_session",
     "seminary.seminary.financial.desk.add_previous_billing_links",
 ]
+# The Asaas checkout asks the payments app for a CPF it already knows, so the
+# payer confirms the one on their Person instead of typing it (ADR 071).
+payer_tax_id = "seminary.seminary.tax_ids.payer_tax_id"
+
 desk_block_gates = {
     "Registrar": {
         "custom_block:Registrar - Regenerate Current-Term Invoices": (
