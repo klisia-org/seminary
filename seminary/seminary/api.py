@@ -1055,6 +1055,11 @@ def get_user_info():
     user.has_culminating_projects = _has_culminating_projects(
         user.student, user.instructor, user.external_examiner
     )
+    # My Formation (privatedocs p012 decision 3): a student in any competency
+    # section. Same question the page asks, so link and page agree.
+    from seminary.seminary.cbe_api import my_cbe_sections
+
+    user.has_formation = bool(user.student and my_cbe_sections(user.student))
     return user
 
 

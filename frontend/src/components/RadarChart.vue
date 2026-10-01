@@ -117,7 +117,7 @@ const options = () => {
 					name: s.name,
 					// echarts does NOT leave a gap for null: it closes the polygon
 					// through the centre, which reads as the lowest level. Callers
-					// pass only complete series (see CompetencyProfile).
+					// pass only complete series (see CompetencyReview).
 					value: s.values,
 					itemStyle: { color: s.color || colors[i % colors.length] },
 					lineStyle: { width: 2 },

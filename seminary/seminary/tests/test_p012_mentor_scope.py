@@ -170,3 +170,126 @@ class TestMentorScope(IntegrationTestCase):
         _reset_request_cache()
         self.assertIsNone(cbe.visible_students(self.w.cs))
         self.assertEqual(guards.section_access(self.w.cs), "instructor")
+
+
+def _assessment(w, i, kind, stage, levels, instructor=None, category=None):
+    """Written directly: saving runs the result recompute, which this world
+    has no programme enrollment for."""
+    doc = frappe.get_doc(
+        {
+            "doctype": "Competency Assessment",
+            "student": w.students[i],
+            "course_schedule": w.cs,
+            "course_competency": w.world.competencies[0],
+            "stage": stage,
+            "status": "Submitted",
+            "submitted_on": frappe.utils.now_datetime(),
+            "evaluator_kind": kind,
+            "instructor": instructor,
+            "instructor_category": category,
+            "narrative": f"<p>{kind} {stage}</p>",
+            "ratings": [
+                {"dimension_code": c, "level_code": str(v), "level_value": v}
+                for c, v in levels.items()
+            ],
+        }
+    )
+    doc.set_new_name()
+    doc.db_insert()
+    for row in doc.ratings:
+        row.parent, row.parenttype, row.parentfield = doc.name, doc.doctype, "ratings"
+        row.set_new_name()
+        row.db_insert()
+    return doc
+
+
+class TestCompetencyReview(IntegrationTestCase):
+    """privatedocs p012 decision 3: every voice apart, gated for the student."""
+
+    def setUp(self):
+        try:
+            self.w = MentorWorld()
+        except Exception:
+            frappe.db.rollback()
+            raise
+        w = self.w
+        _assessment(w, 0, "Self", "Baseline", {"knowledge": 1, "character": 2})
+        _assessment(w, 0, "Self", "Final", {"knowledge": 3, "character": 3})
+        self.mentor_instructor = frappe.db.get_value(
+            "Instructor", {"user": w.mentors[0]}, "name"
+        )
+        framework = frappe.get_doc("Competency Framework", w.world.framework)
+        self.mentor_category = next(
+            e.instructor_category
+            for e in framework.evaluators
+            if e.assignment_source == "Program Cohort"
+        )
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.db.rollback()
+        super().tearDown()
+
+    def kinds(self, review):
+        return [s["kind"] for s in review["competencies"][0]["series"]]
+
+    def test_the_student_sees_their_own_change_and_waits_for_mentors(self):
+        student_user = frappe.db.get_value("Student", self.w.students[0], "user")
+        frappe.set_user(student_user)
+        _reset_request_cache()
+        review = cbe_api.get_competency_review(self.w.cs)
+        self.assertTrue(review["own"])
+        self.assertEqual(self.kinds(review), ["baseline", "self"])
+        self.assertFalse(review["competencies"][0]["mentors_shown"])
+
+        frappe.set_user("Administrator")
+        _assessment(
+            self.w,
+            0,
+            "Mentor",
+            "Final",
+            {"knowledge": 4, "character": 3},
+            instructor=self.mentor_instructor,
+            category=self.mentor_category,
+        )
+        frappe.set_user(student_user)
+        _reset_request_cache()
+        review = cbe_api.get_competency_review(self.w.cs)
+        self.assertEqual(self.kinds(review), ["baseline", "self", "mentor"])
+        mentor = review["competencies"][0]["series"][2]
+        self.assertEqual(mentor["sublabel"], self.mentor_category)
+        self.assertEqual(mentor["values"]["knowledge"], 4)
+
+    def test_a_mentor_reads_their_mentee_and_not_the_other(self):
+        frappe.set_user(self.w.mentors[0])
+        _reset_request_cache()
+        framework = frappe.get_doc("Competency Framework", self.w.world.framework)
+        review = cbe_api.get_competency_review(self.w.cs, student=self.w.students[0])
+        self.assertFalse(review["own"])
+        if framework.mentor_sees_self_eval == "After mentor submits":
+            # The student's view is withheld until the mentor has formed theirs.
+            self.assertEqual(self.kinds(review), [])
+            frappe.set_user("Administrator")
+            _assessment(
+                self.w,
+                0,
+                "Mentor",
+                "Final",
+                {"knowledge": 2, "character": 3},
+                instructor=self.mentor_instructor,
+                category=self.mentor_category,
+            )
+            frappe.set_user(self.w.mentors[0])
+            _reset_request_cache()
+            review = cbe_api.get_competency_review(
+                self.w.cs, student=self.w.students[0]
+            )
+        self.assertIn("self", self.kinds(review))
+        with self.assertRaises(frappe.PermissionError):
+            cbe_api.get_competency_review(self.w.cs, student=self.w.students[1])
+
+    def test_a_classmate_cannot_read_it(self):
+        frappe.set_user(frappe.db.get_value("Student", self.w.students[1], "user"))
+        _reset_request_cache()
+        with self.assertRaises(frappe.PermissionError):
+            cbe_api.get_competency_review(self.w.cs, student=self.w.students[0])

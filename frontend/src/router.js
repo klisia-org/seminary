@@ -146,12 +146,18 @@ const routes = [
     props: true,
   },
   {
-    // The radar and narrative timeline for a competency-based programme
-    // (ADR 065). Renders an explanatory empty state for everyone else, so the
-    // route needs no role guard.
+    // A student's competency reviews, one course at a time (privatedocs p012
+    // decision 3). Renders an empty state for everyone else, so the route
+    // needs no role guard.
+    path: "/my-formation",
+    name: "MyFormation",
+    component: () => import('@/pages/MyFormation.vue'),
+  },
+  {
+    // The profile under Transcripts became My Formation (privatedocs p012).
     path: "/competency-profile",
     name: "CompetencyProfile",
-    component: () => import('@/pages/CompetencyProfile.vue'),
+    redirect: { name: "MyFormation" },
   },
   {
     path: "/courses",
