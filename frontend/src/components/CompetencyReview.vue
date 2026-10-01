@@ -49,12 +49,20 @@
 				class="mb-4 rounded-md border border-outline-gray-2">
 				<header class="flex flex-wrap items-start justify-between gap-2 border-b px-4 py-3">
 					<h3 class="font-semibold text-ink-gray-8">{{ c.competency_name }}</h3>
-					<Badge :label="__(c.status)" :theme="statusTheme(c.status)" />
+					<div class="flex items-center gap-1">
+						<Badge v-if="newOnLoad[c.name]" :label="__('New')" theme="blue" />
+						<Badge :label="__(c.status)" :theme="statusTheme(c.status)" />
+					</div>
 				</header>
 
 				<div class="px-4 py-3">
 					<p v-if="statusLine(c)" class="mb-3 text-sm text-ink-gray-6">{{ statusLine(c) }}</p>
-					<p v-if="!lanes(c).length" class="text-sm text-ink-gray-5">
+					<!-- A student sees a competency's review once it is complete:
+					     their own final view in, and every evaluator's. -->
+					<p v-if="review.data.own && !c.ready" class="text-sm text-ink-gray-5">
+						{{ __('Your review of this competency appears here once you and your evaluators have all completed your assessments.') }}
+					</p>
+					<p v-else-if="!lanes(c).length" class="text-sm text-ink-gray-5">
 						{{ __('Nothing has been submitted for this competency yet.') }}
 					</p>
 
@@ -119,7 +127,7 @@
 					</table>
 
 					<!-- In their words -->
-					<div v-if="narratives(c).length" class="mt-4 space-y-3 border-t pt-3">
+					<div v-if="narratives(c).length && (!review.data.own || c.ready)" class="mt-4 space-y-3 border-t pt-3">
 						<div v-for="s in narratives(c)" :key="s.key">
 							<div class="text-xs font-medium text-ink-gray-6">{{ seriesTitle(s) }}</div>
 							<SafeHtml class="prose-sm text-ink-gray-7" :html="s.narrative" />
@@ -129,19 +137,30 @@
 			</article>
 
 			<!-- The course at a glance -->
-			<section v-if="radarAxes.length >= 3" class="rounded-md border border-outline-gray-2 px-4 py-3">
+			<section v-if="!competency && radarAxes.length >= 3" class="rounded-md border border-outline-gray-2 px-4 py-3">
 				<div class="flex flex-wrap items-center justify-between gap-2">
 					<h3 class="font-semibold text-ink-gray-8">{{ __('Across the course') }}</h3>
-					<div class="flex flex-wrap gap-1">
-						<button v-for="s in radarCandidates" :key="s.id" type="button"
-							class="rounded-full border px-2 py-0.5 text-xs"
-							:class="hidden[s.id] ? 'border-outline-gray-2 text-ink-gray-5' : 'border-outline-gray-4 text-ink-gray-8'"
-							:aria-pressed="!hidden[s.id]" @click="hidden[s.id] = !hidden[s.id]">
-							{{ s.name }}
+					<div class="inline-flex rounded-md border border-outline-gray-2 p-0.5 text-xs" role="group"
+						:aria-label="__('Radar axes')">
+						<button v-for="m in radarModes" :key="m.value" type="button"
+							class="rounded px-2 py-0.5"
+							:class="effectiveMode === m.value ? 'bg-surface-gray-3 font-medium text-ink-gray-9' : 'text-ink-gray-6'"
+							:disabled="m.value === 'competency' && !competencyModeOk"
+							:aria-pressed="effectiveMode === m.value" @click="radarMode = m.value">
+							{{ m.label }}
 						</button>
 					</div>
 				</div>
-				<RadarChart :indicators="radarAxes" :series="radarSeries" :levels="levels" height="340px" />
+				<div class="mt-2 flex flex-wrap gap-1">
+					<button v-for="s in radarCandidates" :key="s.id" type="button"
+						class="rounded-full border px-2 py-0.5 text-xs"
+						:class="hidden[s.id] ? 'border-outline-gray-2 text-ink-gray-5' : 'border-outline-gray-4 text-ink-gray-8'"
+						:aria-pressed="!hidden[s.id]" @click="hidden[s.id] = !hidden[s.id]">
+						{{ s.name }}
+					</button>
+				</div>
+				<RadarChart :indicators="radarAxes" :series="radarSeries" :levels="levels"
+					:height="effectiveMode === 'detail' ? '420px' : '340px'" />
 				<p v-if="radarIncomplete.length" class="mt-1 text-xs text-ink-gray-5">
 					{{ __('Not drawn until every axis has a value: {0}.').format(radarIncomplete.join(', ')) }}
 				</p>
@@ -151,7 +170,7 @@
 </template>
 
 <script setup>
-import { Badge, LoadingIndicator, createResource } from 'frappe-ui'
+import { Badge, LoadingIndicator, call, createResource } from 'frappe-ui'
 import { computed, h, reactive, ref, watch } from 'vue'
 import RadarChart from '@/components/RadarChart.vue'
 import { useTheme } from '@/composables/useTheme'
@@ -160,7 +179,10 @@ const props = defineProps({
 	courseName: { type: String, required: true },
 	// Blank: the viewer's own review. A student's name: staff or their mentor.
 	student: { type: String, default: null },
+	// One competency only (the reflection lesson); blank for the whole course.
+	competency: { type: String, default: null },
 })
+const emit = defineEmits(['seen'])
 
 const { theme } = useTheme()
 const asTable = ref(false)
@@ -171,11 +193,32 @@ const review = createResource({
 	makeParams: () => ({
 		course_schedule: props.courseName,
 		student: props.student || undefined,
+		competency: props.competency || undefined,
 	}),
 	auto: true,
+	onSuccess: markSeen,
 	onError: () => {},
 })
-watch(() => [props.courseName, props.student], () => review.reload())
+watch(() => [props.courseName, props.student, props.competency], () => review.reload())
+
+// What was new when the student opened the page keeps its badge for this
+// visit; the server records the look so the nudges elsewhere stop.
+const newOnLoad = reactive({})
+async function markSeen(data) {
+	if (!data?.own) return
+	const fresh = (data.competencies || []).filter((c) => c.ready && c.new).map((c) => c.name)
+	if (!fresh.length) return
+	fresh.forEach((name) => (newOnLoad[name] = true))
+	try {
+		await call('seminary.seminary.cbe_api.mark_review_seen', {
+			course_schedule: props.courseName,
+			competencies: JSON.stringify(fresh),
+		})
+		emit('seen', fresh)
+	} catch (e) {
+		// Not marking it seen only means the nudge stays; nothing to tell the student.
+	}
+}
 defineExpose({ reload: () => review.reload() })
 
 const levels = computed(() => review.data?.levels || [])
@@ -271,21 +314,50 @@ const overall = (values) => {
 
 const maxLevel = computed(() => Math.max(...levels.value.map((l) => Number(l.threshold)), 1))
 
-// Axes are the course's competencies; a course of one or two competencies has
-// no shape to draw across them, so its dimensions stand in.
-const byCompetency = computed(() => (review.data?.competencies || []).length >= 3)
-const radarAxes = computed(() => {
-	if (!review.data) return []
-	const items = byCompetency.value
-		? review.data.competencies.map((c) => c.competency_code || c.competency_name)
-		: dims.value.map((d) => d.dimension)
-	return items.map((name) => ({ name, max: maxLevel.value }))
-})
+// Two ways round the course: one axis per competency (its dimensions averaged),
+// or one per competency and dimension -- 3 or 9 vertices for three competencies
+// of three dimensions. A student's radar holds only the competencies whose
+// review is complete; fewer than three cannot make a shape, so detail stands in.
+const radarModes = computed(() => [
+	{ value: 'competency', label: __('Competencies') },
+	{ value: 'detail', label: __('Competencies and dimensions') },
+])
+const radarMode = ref('competency')
+const radarCompetencies = computed(() =>
+	(review.data?.competencies || []).filter((c) => !review.data?.own || c.ready)
+)
+const competencyModeOk = computed(() => radarCompetencies.value.length >= 3)
+const effectiveMode = computed(() =>
+	radarMode.value === 'competency' && competencyModeOk.value ? 'competency' : 'detail'
+)
+// Long names wrap onto two lines so the axis labels stay inside the chart.
+const wrap = (text, width = 22) => {
+	const words = String(text || '').split(/\s+/)
+	const lines = ['']
+	for (const w of words) {
+		const cur = lines[lines.length - 1]
+		if (cur && (cur + ' ' + w).length > width) lines.push(w)
+		else lines[lines.length - 1] = cur ? cur + ' ' + w : w
+	}
+	return lines.join('\n')
+}
+const radarKeys = computed(() =>
+	effectiveMode.value === 'competency'
+		? radarCompetencies.value.map((c) => ({ comp: c.name, dim: null, name: wrap(c.competency_name) }))
+		: radarCompetencies.value.flatMap((c) =>
+			dims.value.map((d) => ({
+				comp: c.name,
+				dim: d.dimension_code,
+				name: wrap(`${c.competency_name} · ${d.dimension}`),
+			}))
+		)
+)
+const radarAxes = computed(() => radarKeys.value.map((k) => ({ name: k.name, max: maxLevel.value })))
 
 const radarCandidates = computed(() => {
-	const comps = review.data?.competencies || []
+	const comps = radarCompetencies.value
 	const voices = new Map()
-	comps.forEach((c, ci) => {
+	comps.forEach((c) => {
 		for (const s of c.series) {
 			const id = s.kind === 'baseline' || s.kind === 'self' || s.kind === 'result'
 				? s.kind
@@ -298,24 +370,18 @@ const radarCandidates = computed(() => {
 						: s.kind === 'self' ? __('Final self-assessment')
 						: s.kind === 'result' ? __('Recorded result') : seriesTitle(s),
 					perComp: {},
-					perDim: {},
 				})
 			}
-			const v = voices.get(id)
-			v.perComp[ci] = overall(s.values)
-			for (const [d, x] of Object.entries(s.values || {})) {
-				;(v.perDim[d] ||= []).push(x)
-			}
+			voices.get(id).perComp[c.name] = s.values || {}
 		}
 	})
 	return [...voices.values()].map((v) => ({
 		...v,
-		values: byCompetency.value
-			? comps.map((_, ci) => v.perComp[ci] ?? null)
-			: dims.value.map((d) => {
-				const xs = v.perDim[d.dimension_code]
-				return xs?.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null
-			}),
+		values: radarKeys.value.map((k) => {
+			const vals = v.perComp[k.comp]
+			if (!vals) return null
+			return k.dim ? (vals[k.dim] ?? null) : overall(vals)
+		}),
 	}))
 })
 

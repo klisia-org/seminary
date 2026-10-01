@@ -21,7 +21,8 @@
 							: __('Each student’s before-and-after, with every evaluator apart.') }}
 				</p>
 			</div>
-			<CompetencyReview v-if="access === 'student'" :courseName="props.courseName" />
+			<CompetencyReview v-if="access === 'student'" :courseName="props.courseName"
+				@seen="reviewNews.reload()" />
 			<CompetencyStudentPane v-else :courseName="props.courseName" :context="cbeContext.data"
 				showReview :initialRoster="route.query.roster || null" />
 		</div>
@@ -249,10 +250,23 @@ const cbeContext = createResource({
 const hasReview = computed(
 	() => !!cbeContext.data?.is_cbe && ['instructor', 'mentor', 'student'].includes(access.value)
 )
-const tabs = computed(() => [
-	{ key: 'outline', label: __('Course Outline') },
-	{ key: 'review', label: __('Competency Review') },
-])
+// A student is pointed at completed reviews they have not opened yet.
+const reviewNews = createResource({
+	url: 'seminary.seminary.cbe_api.get_review_news',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	auto: !!user.data?.is_student,
+	onError: () => {},
+})
+const tabs = computed(() => {
+	const fresh = reviewNews.data?.length || 0
+	return [
+		{ key: 'outline', label: __('Course Outline') },
+		{
+			key: 'review',
+			label: fresh ? __('Competency Review ({0} new)').format(fresh) : __('Competency Review'),
+		},
+	]
+})
 const tab = useTabParam(['outline', 'review'], 'outline')
 
 const canEditOutline = computed(() => {

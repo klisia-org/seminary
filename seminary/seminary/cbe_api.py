@@ -16,7 +16,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, get_datetime, now_datetime
 
 from seminary.seminary import cbe, cbe_reflection
 from seminary.seminary.guards import section_access
@@ -560,8 +560,154 @@ def get_my_formation():
 # ---------------------------------------------------------------- the review
 
 
+def review_readiness(student, course_schedule, framework=None, evaluators=None):
+    """Per competency: is the student's review complete, since when, and have
+    they looked at it since (privatedocs p012 decision 3, as amended).
+
+    Complete means the student has done their part -- the Final
+    self-assessment, where the framework asks for one -- and every evaluator
+    who gives a verdict has submitted. A student is shown their review only
+    then, and nudged when it is complete and newer than their last look.
+    """
+    framework = framework or cbe.framework_doc(course_schedule)
+    if not framework:
+        return {}
+    roster = _roster_for(course_schedule, student)
+    if not roster:
+        return {}
+    if evaluators is None:
+        evaluators = cbe.evaluators_for(roster)
+    owed = {e["instructor"] for e in evaluators if e["gives_competency_verdict"]}
+    self_required = cbe.final_self_eval_required(framework)
+    course = frappe.db.get_value("Course Schedule", course_schedule, "course")
+    seen = {
+        r.course_competency: r.student_seen_on
+        for r in frappe.get_all(
+            "Competency Result",
+            filters={"student": student, "course_schedule": course_schedule},
+            fields=["course_competency", "student_seen_on"],
+        )
+    }
+    out = {}
+    for c in frappe.get_all(
+        "Course Competency",
+        filters={"course": course, "is_active": 1},
+        fields=["name", "competency_name"],
+        order_by="sequence asc",
+    ):
+        rows = frappe.get_all(
+            "Competency Assessment",
+            filters={
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": c.name,
+                "stage": "Final",
+                "status": "Submitted",
+            },
+            fields=["evaluator_kind", "instructor", "submitted_on"],
+        )
+        self_done = any(r.evaluator_kind == "Self" for r in rows)
+        given = {r.instructor for r in rows if r.evaluator_kind == "Mentor"}
+        ready = (self_done or not self_required) and owed <= given and bool(rows)
+        ready_on = max((r.submitted_on for r in rows if r.submitted_on), default=None)
+        seen_on = seen.get(c.name)
+        out[c.name] = {
+            "label": c.competency_name,
+            "ready": ready,
+            "ready_on": ready_on,
+            "new": bool(
+                ready
+                and ready_on
+                and (not seen_on or get_datetime(seen_on) < get_datetime(ready_on))
+            ),
+        }
+    return out
+
+
 @frappe.whitelist()
-def get_competency_review(course_schedule, student=None):
+def get_review_news(course_schedule):
+    """The current student's completed reviews they have not opened since they
+    changed: the course card, the tab and the outline point at these."""
+    student = _current_student()
+    if not student or not cbe.framework_for(course_schedule):
+        return []
+    return [
+        {"competency": name, "label": r["label"]}
+        for name, r in review_readiness(student, course_schedule).items()
+        if r["new"]
+    ]
+
+
+@frappe.whitelist()
+def mark_review_seen(course_schedule, competencies):
+    """The student has opened these competencies' reviews."""
+    student = _current_student()
+    if not student or not _roster_for(course_schedule, student):
+        frappe.throw(
+            _("Only a student in this course can do this."), frappe.PermissionError
+        )
+    if isinstance(competencies, str):
+        competencies = json.loads(competencies or "[]")
+    ready = review_readiness(student, course_schedule)
+    now = now_datetime()
+    for competency in competencies or []:
+        if not ready.get(competency, {}).get("ready"):
+            continue
+        name = frappe.db.get_value(
+            "Competency Result",
+            {
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": competency,
+            },
+            "name",
+        )
+        if name:
+            frappe.db.set_value(
+                "Competency Result", name, "student_seen_on", now, update_modified=False
+            )
+    return {"ok": True}
+
+
+def notify_review_ready(roster_doc, competency):
+    """Tell the student once their review of a competency is complete. Called
+    when an evaluator submits; deduplicated per student and competency, so a
+    later resubmission does not send it again."""
+    state = review_readiness(roster_doc.student, roster_doc.course_sc).get(competency)
+    if not state or not state["ready"]:
+        return
+    if cbe.framework_doc(roster_doc.course_sc).student_sees_mentor_eval != "On submit":
+        if not cbe.mentor_assessments_visible(
+            roster_doc.student, roster_doc.course_sc, competency
+        ):
+            return
+    person = frappe.db.get_value("Student", roster_doc.student, "person")
+    if not person:
+        return
+    from seminary.seminary import comms
+
+    course = frappe.db.get_value("Course Schedule", roster_doc.course_sc, "course")
+    try:
+        comms.send_message(
+            channel="In-App",
+            subject=_("Your review of {0} is ready").format(state["label"]),
+            message=_(
+                "Your instructor and mentors have assessed {0} in {1}. Open the "
+                "course's Competency Review to see where you started, where you "
+                "finished, and how they see it."
+            ).format(state["label"], course),
+            person=person,
+            category="Academic",
+            reference_doctype="Course Schedule",
+            reference_name=roster_doc.course_sc,
+            dedupe_key=f"cbe-review-ready-{roster_doc.name}-{competency}",
+        )
+    except Exception:
+        frappe.log_error(title="Competency review: ready notice failed")
+
+
+@frappe.whitelist()
+def get_competency_review(course_schedule, student=None, competency=None):
     """One student's competencies as a before-and-after, every evaluator apart
     (privatedocs p012 decision 3).
 
@@ -609,11 +755,15 @@ def get_competency_review(course_schedule, student=None):
     viewer = _current_instructor()
     show_self = "Always" if own else (framework.mentor_sees_self_eval or "Always")
     course = frappe.db.get_value("Course Schedule", course_schedule, "course")
+    readiness = review_readiness(student, course_schedule, framework, evaluators)
+    comp_filters = {"course": course, "is_active": 1}
+    if competency:
+        comp_filters["name"] = competency
 
     out = []
     for c in frappe.get_all(
         "Course Competency",
-        filters={"course": course, "is_active": 1},
+        filters=comp_filters,
         fields=["name", "competency_name", "competency_code"],
         order_by="sequence asc",
     ):
@@ -756,6 +906,10 @@ def get_competency_review(course_schedule, student=None):
                 "mentors_shown": mentors_shown,
                 "waiting_on": waiting_on,
                 "status": result.status if result else "Not Started",
+                # A student sees a competency's review once it is complete,
+                # and is pointed at it while it is new to them.
+                "ready": readiness.get(c.name, {}).get("ready", False),
+                "new": own and readiness.get(c.name, {}).get("new", False),
                 "series": series,
             }
         )
@@ -1253,7 +1407,7 @@ def save_mentor_assessment(
             ).format(roster_doc.stuname_roster or roster_doc.student),
             frappe.PermissionError,
         )
-    return _save_assessment(
+    saved = _save_assessment(
         roster_doc,
         course_competency,
         "Final",
@@ -1264,6 +1418,9 @@ def save_mentor_assessment(
         instructor,
         instructor_category=role["instructor_category"],
     )
+    if cint(submit):
+        notify_review_ready(roster_doc, course_competency)
+    return saved
 
 
 @frappe.whitelist()
@@ -1766,6 +1923,7 @@ def _outline_reflections(course_schedule, student):
     it is, whether this student has done it, whether a mentor's view is there
     to read, and whether the course cannot close without it."""
     out = {}
+    news = None
     for lesson in frappe.get_all(
         "Course Lesson",
         filters={"course_sc": course_schedule, "autocreated": 1},
@@ -1778,7 +1936,7 @@ def _outline_reflections(course_schedule, student):
         status = cbe_reflection.reflection_status(
             course_schedule, student, reflection, competency
         )
-        out[lesson] = {
+        entry = {
             "kind": reflection[0],
             "scope": reflection[1],
             "stage": reflection[2],
@@ -1786,6 +1944,19 @@ def _outline_reflections(course_schedule, student):
             **_lesson_position(course_schedule, lesson),
             **status,
         }
+        if reflection[0] == "selfAssessment" and reflection[2] == "Final" and student:
+            if news is None:
+                news = {
+                    k
+                    for k, v in review_readiness(student, course_schedule).items()
+                    if v["new"]
+                }
+            # A chapter's Final lesson points at its own competency; a course
+            # Final lesson covers them all.
+            entry["review_new"] = (
+                competency in news if reflection[1] == "chapter" else bool(news)
+            )
+        out[lesson] = entry
     return out
 
 

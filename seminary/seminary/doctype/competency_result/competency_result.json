@@ -28,7 +28,8 @@
   "final_value",
   "final_code",
   "decided_by",
-  "decided_on"
+  "decided_on",
+  "student_seen_on"
  ],
  "fields": [
   {
@@ -166,10 +167,19 @@
    "fieldtype": "Datetime",
    "label": "Decided On",
    "read_only": 1
+  },
+  {
+   "fieldname": "student_seen_on",
+   "fieldtype": "Datetime",
+   "label": "Student Saw Review On",
+   "read_only": 1,
+   "hidden": 1,
+   "no_copy": 1,
+   "description": "When the student last opened their review of this competency. Used to point them to a review that has changed since."
   }
  ],
  "links": [],
- "modified": "2026-08-29 09:00:00.000000",
+ "modified": "2026-10-01 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Competency Result",
