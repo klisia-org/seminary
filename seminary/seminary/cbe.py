@@ -1829,6 +1829,26 @@ def enrollment_mentor_panel(program_enrollment):
     return {"rows": rows, "html": html}
 
 
+def visible_students(course_schedule, user=None):
+    """Which of this section's students the viewer may see in competency
+    work (privatedocs p012 decision 2).
+
+    ``None`` means all of them: course staff and school roles. Otherwise a set,
+    the viewer's mentees here, which is empty for anyone else -- including an
+    instructor of record who reads the section but does not teach it.
+    """
+    from seminary.seminary import guards
+
+    if guards.is_course_staff(course_schedule, include_registrar=True, user=user):
+        return None
+    return set(guards.section_mentees(course_schedule, user))
+
+
+def may_see_student(course_schedule, student, user=None):
+    visible = visible_students(course_schedule, user)
+    return visible is None or student in visible
+
+
 def is_mentor_of(instructor, student):
     if not instructor or not student:
         return False
@@ -1931,3 +1951,59 @@ def _framework_names_type(student, cohort_type):
         if any(r.cohort_type == cohort_type for r in rows):
             return True
     return False
+
+
+# ---------------------------------------------------------------- row scoping
+
+# Roles that read every competency record. Instructor is deliberately absent:
+# an instructor reads the sections they teach and the students they mentor
+# (privatedocs p012 decision 2).
+CBE_SCHOOL_ROLES = {"Seminary Manager", "System Manager", "Program Chair", "Registrar"}
+
+
+def staff_row_condition(doctype, user=None):
+    """List scoping for a competency record keyed by `course_schedule` and
+    `student`: ``""`` for school roles, an SQL condition for an instructor,
+    ``None`` for anyone else (the caller decides what a non-staff user gets)."""
+    from seminary.seminary import guards
+
+    user = user or frappe.session.user
+    roles = set(frappe.get_roles(user))
+    if user == "Administrator" or roles & CBE_SCHOOL_ROLES:
+        return ""
+    if "Instructor" not in roles:
+        return None
+    esc = frappe.db.escape
+    parts = []
+    taught = guards.own_course_schedules(user)
+    if taught:
+        parts.append(
+            f"`tab{doctype}`.course_schedule in ({', '.join(esc(c) for c in taught)})"
+        )
+    for cs in guards.mentored_sections(user):
+        if cs in taught:
+            continue
+        mentees = guards.section_mentees(cs, user)
+        if mentees:
+            parts.append(
+                f"(`tab{doctype}`.course_schedule = {esc(cs)} and "
+                f"`tab{doctype}`.student in ({', '.join(esc(s) for s in mentees)}))"
+            )
+    return "(" + " or ".join(parts) + ")" if parts else "1=0"
+
+
+def staff_may_access(doc, user=None, ptype=None, staff_only_write=False):
+    """`has_permission` counterpart of `staff_row_condition`: True for school
+    roles and for an instructor who sees this student here, ``None`` when the
+    user is not staff at all. With `staff_only_write`, only course staff write."""
+    from seminary.seminary import guards
+
+    user = user or frappe.session.user
+    roles = set(frappe.get_roles(user))
+    if user == "Administrator" or roles & CBE_SCHOOL_ROLES:
+        return True
+    if "Instructor" not in roles:
+        return None
+    if staff_only_write and not guards.is_read_ptype(ptype):
+        return guards.is_course_staff(doc.course_schedule, user=user)
+    return may_see_student(doc.course_schedule, doc.student, user)

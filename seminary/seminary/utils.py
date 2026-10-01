@@ -59,10 +59,14 @@ from seminary.seminary.guards import (
     is_enrolled,
     is_grader,
     may_read_course_schedule,
+    may_view_content,
     own_or_staff,
+    require_content_reader,
     require_course_staff,
     require_enrolled,
     require_grader,
+    section_access,
+    section_mentees,
 )
 
 
@@ -565,12 +569,14 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
                 filters["name"] = ["in", readable]
         else:
             # A grader who is also a student: the sections they work on,
-            # published or not, plus the published ones they take.
-            from seminary.seminary.guards import student_sections
+            # published or not, plus the published ones they take. A mentor
+            # also lists the sections their mentees are in (p012 decision 1).
+            from seminary.seminary.guards import mentored_sections, student_sections
 
             own = sorted(
                 set(get_own_course_schedules(frappe.session.user))
                 | set(student_sections())
+                | set(mentored_sections())
             )
             if not own:
                 return []
@@ -611,7 +617,7 @@ def get_course_card_details(courses):
 
 @frappe.whitelist()
 def get_instructors(course):
-    require_enrolled(course)
+    require_content_reader(course)
     return _instructors(course)
 
 
@@ -830,7 +836,7 @@ def _require_published_or_enrolled(course):
     """Section reads (p007 §8.1): staff and readers through their tier; a
     student only when the section is published **and** they are on its roster.
     The name is historical — the rule used to be a disjunction."""
-    if not is_enrolled(course):
+    if not may_view_content(course):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 
@@ -917,6 +923,9 @@ def get_course_details(course):
     )
 
     course_details.instructors = _instructors(course_details.name)
+    # What the portal offers this viewer here (p012 decision 1); the outline
+    # editor and the staff tabs key off it rather than off roles alone.
+    course_details.access = section_access(course_details.name)
     course_details.location = get_course_location(course_details.room)
     course_details.days_of_week = [
         day.capitalize()
@@ -1031,8 +1040,13 @@ def get_course_location(room):
 def get_roster(course):
     """Returns the course roster, each row enriched with the student's gender
     (used to split community cohorts by gender). A student on the section
-    gets classmates' names and pictures only (p007 §2.5, decision 6)."""
-    require_enrolled(course)
+    gets classmates' names and pictures only (p007 §2.5, decision 6). A
+    mentor who is neither gets their own mentees, in full (p012 decision 1)."""
+    if not is_enrolled(course):
+        mentees = section_mentees(course)
+        if not mentees:
+            require_enrolled(course)
+        return [r for r in _roster(course) if r.student in mentees]
     staff = is_course_staff(course, include_registrar=True) or has_super_access()
     roster = _roster(course)
     if not staff:
@@ -1167,8 +1181,8 @@ def get_lesson(course, chapter, lesson):
         return {}
 
     if not (has_super_access() or has_course_moderator_role() or is_instructor(course)):
-        # Published and on the roster (p007 §8.1).
-        if not is_enrolled(course):
+        # Published and on the roster (p007 §8.1), or one of its mentors.
+        if not may_view_content(course):
             return {}
 
     lesson_details = frappe.db.get_value(
@@ -1836,7 +1850,7 @@ where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q 
 
 @frappe.whitelist()
 def get_assessments(course):
-    require_enrolled(course)
+    require_content_reader(course)
     assessments = frappe.get_all(
         "Scheduled Course Assess Criteria",
         filters={"parent": course},
@@ -1873,7 +1887,7 @@ def get_assessment_due_date(course, activity_type, activity_id):
     Criteria so callers don't need explicit SCAC roles."""
     if not course or not activity_type or not activity_id:
         return None
-    require_enrolled(course)
+    require_content_reader(course)
     field = (activity_type or "").strip().lower()
     if field not in {"quiz", "assignment", "exam", "discussion"}:
         return None

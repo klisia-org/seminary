@@ -40,32 +40,26 @@ class CompetencyResult(Document):
 
 
 def get_permission_query_conditions(user=None):
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    roles = set(frappe.get_roles(user))
-    if roles & {
-        "Seminary Manager",
-        "System Manager",
-        "Program Chair",
-        "Registrar",
-        "Instructor",
-    }:
+    staff = cbe.staff_row_condition("Competency Result", user)
+    if staff == "":
         return ""
     student = frappe.db.get_value("Student", {"user": user}, "name")
     if not student:
-        return "1=0"
-    return f"""`tabCompetency Result`.student = {frappe.db.escape(student)}"""
+        return staff or "1=0"
+    own = f"""`tabCompetency Result`.student = {frappe.db.escape(student)}"""
+    return f"({staff} or {own})" if staff else own
 
 
 def has_permission(doc, user=None, permission_type=None):
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    roles = set(frappe.get_roles(user))
-    if roles & {
-        "Seminary Manager",
-        "System Manager",
-        "Program Chair",
-        "Registrar",
-        "Instructor",
-    }:
+    # The recorded result is the section's: a mentor reads it, course staff
+    # change it (p012 decision 2).
+    if cbe.staff_may_access(doc, user, permission_type, staff_only_write=True):
         return True
     student = frappe.db.get_value("Student", {"user": user}, "name")
     return bool(student) and doc.student == student

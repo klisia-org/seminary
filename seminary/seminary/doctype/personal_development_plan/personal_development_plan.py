@@ -142,18 +142,24 @@ def get_permission_query_conditions(user=None):
     A plan is a student's account of where they most need to grow; the list view
     must not become a way to read a classmate's.
     """
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    if STAFF_ROLES & set(frappe.get_roles(user)):
+    staff = cbe.staff_row_condition("Personal Development Plan", user)
+    if staff == "":
         return ""
     student = frappe.db.get_value("Student", {"user": user}, "name")
     if not student:
-        return "1=0"
-    return "`tabPersonal Development Plan`.student = " f"{frappe.db.escape(student)}"
+        return staff or "1=0"
+    own = "`tabPersonal Development Plan`.student = " f"{frappe.db.escape(student)}"
+    return f"({staff} or {own})" if staff else own
 
 
 def has_permission(doc, user=None, permission_type=None):
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    if STAFF_ROLES & set(frappe.get_roles(user)):
+    if cbe.staff_may_access(doc, user, permission_type):
         return True
     student = frappe.db.get_value("Student", {"user": user}, "name")
     return bool(student) and doc.student == student

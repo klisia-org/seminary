@@ -5115,7 +5115,9 @@ def delete_documents(doctype, documents):
 
 @frappe.whitelist()
 def get_announcements(cs):
-    require_enrolled(cs)
+    from seminary.seminary.guards import require_content_reader
+
+    require_content_reader(cs)
     communications = frappe.get_all(
         "Communication",
         filters={

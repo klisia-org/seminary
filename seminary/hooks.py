@@ -294,6 +294,7 @@ permission_query_conditions = {
     # Competency assessments and results carry a student's own account of their
     # formation; the list view must not become a way to read a classmate's.
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
+    "Activity Competency Grade": "seminary.seminary.doctype.activity_competency_grade.activity_competency_grade.get_permission_query_conditions",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.get_permission_query_conditions",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.get_permission_query_conditions",
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.get_permission_query_conditions",
@@ -343,6 +344,7 @@ has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
     "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.has_permission",
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
+    "Activity Competency Grade": "seminary.seminary.doctype.activity_competency_grade.activity_competency_grade.has_permission",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.has_permission",
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.has_permission",

@@ -49,6 +49,22 @@ def _assert_staff():
         frappe.throw(_("This view is for teaching staff."), frappe.PermissionError)
 
 
+def _assert_sees(course_schedule, student):
+    """Staff by role is not enough: a mentor sees only their own mentees,
+    and only course staff see a whole section (privatedocs p012 decision 2)."""
+    if not cbe.may_see_student(course_schedule, student):
+        frappe.throw(
+            _("You can only see the students you teach or mentor."),
+            frappe.PermissionError,
+        )
+
+
+def _assert_course_staff(course_schedule):
+    from seminary.seminary.guards import require_course_staff
+
+    require_course_staff(course_schedule, include_registrar=True)
+
+
 def _roster_for(course_schedule, student):
     return frappe.db.get_value(
         "Scheduled Course Roster",
@@ -59,8 +75,11 @@ def _roster_for(course_schedule, student):
 
 def _assert_own_roster(roster):
     """A student may only ever act on their own roster row."""
-    student = frappe.db.get_value("Scheduled Course Roster", roster, "student")
+    student, course_schedule = frappe.db.get_value(
+        "Scheduled Course Roster", roster, ["student", "course_sc"]
+    ) or (None, None)
     if _is_staff():
+        _assert_sees(course_schedule, student)
         return student
     mine = _current_student()
     if not mine or mine != student:
@@ -255,6 +274,9 @@ def get_competency_roster(course_schedule):
     _assert_staff()
     if not cbe.framework_for(course_schedule):
         return []
+    visible = cbe.visible_students(course_schedule)
+    if visible is not None and not visible:
+        _assert_sees(course_schedule, None)
 
     rows = frappe.get_all(
         "Scheduled Course Roster",
@@ -271,6 +293,8 @@ def get_competency_roster(course_schedule):
         ],
         order_by="stuname_roster asc",
     )
+    if visible is not None:
+        rows = [r for r in rows if r.student in visible]
 
     competencies = frappe.get_all(
         "Course Competency",
@@ -302,6 +326,7 @@ def get_student_competency_detail(roster):
     """The right pane: one student's competencies, dimensions and evaluators."""
     _assert_staff()
     roster_doc = frappe.get_doc("Scheduled Course Roster", roster)
+    _assert_sees(roster_doc.course_sc, roster_doc.student)
     framework = cbe.framework_doc(roster_doc.course_sc)
     if not framework:
         return {}
@@ -524,6 +549,7 @@ def get_activity_grading_panel(submission_doctype, submission):
     if not sub:
         frappe.throw(_("That submission no longer exists."))
     course_schedule = sub.get(schedule_field)
+    _assert_sees(course_schedule, sub.student)
 
     framework = cbe.framework_doc(course_schedule)
     if not framework:
@@ -688,6 +714,9 @@ def get_cbe_gradebook(course_schedule):
     framework = cbe.framework_doc(course_schedule)
     if not framework:
         return {"is_cbe": False}
+    visible = cbe.visible_students(course_schedule)
+    if visible is not None and not visible:
+        _assert_sees(course_schedule, None)
 
     course = frappe.db.get_value("Course Schedule", course_schedule, "course")
     grading_categories = [
@@ -797,6 +826,8 @@ def get_cbe_gradebook(course_schedule):
         fields=["name", "student", "stuname_roster", "active", "audit_bool"],
         order_by="stuname_roster asc",
     ):
+        if visible is not None and r.student not in visible:
+            continue
         students.append(_gradebook_row(r, course_schedule, shapes))
 
     return {
@@ -900,6 +931,10 @@ def save_activity_grade(
         instructor = me
     if not instructor:
         frappe.throw(_("Your user account is not linked to an instructor record."))
+    student, course_schedule = frappe.db.get_value(
+        "Scheduled Course Roster", roster, ["student", "course_sc"]
+    ) or (None, None)
+    _assert_sees(course_schedule, student)
 
     existing = frappe.db.get_value(
         "Activity Competency Grade",
@@ -976,6 +1011,8 @@ def set_result_override(result, dimension_code, override_value, override_reason)
     """Replace a computed value, on the record, with a reason attached."""
     _assert_staff()
     doc = frappe.get_doc("Competency Result", result)
+    # The recorded result is the section's, not a mentor's: course staff only.
+    _assert_course_staff(doc.course_schedule)
     if dimension_code:
         for row in doc.dimensions:
             if row.dimension_code == dimension_code:
@@ -1577,11 +1614,18 @@ def _assert_own_enrollment(program_enrollment):
     student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
     if not student:
         frappe.throw(_("Enrollment not found."))
-    if not _is_staff():
-        mine = _current_student()
-        if not mine or mine != student:
-            frappe.throw(_("Not permitted."), frappe.PermissionError)
-    return student
+    mine = _current_student()
+    if mine and mine == student:
+        return student
+    from seminary.seminary.guards import instructor_tier, is_school_role
+
+    # School roles and instructors of record read any profile, as they read
+    # any enrollment; a mentor reads their mentees' (p012 decision 2).
+    if is_school_role() or instructor_tier() == "record":
+        return student
+    if cbe.is_mentor_of(_current_instructor(), student):
+        return student
+    frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 
 def _cbe_enrollments(student):
@@ -2479,6 +2523,7 @@ def save_assessment_competency_config(course_schedule, config):
     exist and be named before anything can point at them.
     """
     _assert_staff()
+    _assert_course_staff(course_schedule)
     framework = cbe.framework_doc(course_schedule)
     if not framework:
         frappe.throw(_("This section is not competency-based."))

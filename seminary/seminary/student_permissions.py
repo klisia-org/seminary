@@ -32,8 +32,10 @@ from seminary.seminary.guards import (
     is_course_staff,
     is_read_ptype,
     is_school_role,
+    mentored_sections,
     own_course_schedules,
     readable_course_schedules,
+    section_mentees,
 )
 
 # doctype -> (student rule, instructor rule)
@@ -65,6 +67,91 @@ CONFIG = {
     # A student reads their own extensions; staff their sections' (decisions/082).
     "Student Due Date Override": (("student", "student"), "course"),
 }
+
+
+# Mentor tier (privatedocs p012 decisions 1-2): read-only, and for rows that
+# belong to a student only that student's mentors. Section *content* rows are
+# readable on any section the user mentors in.
+MENTOR_CONTENT = {"Course Schedule", "Course Schedule Chapter", "Course Lesson"}
+# doctype -> (field naming the student, "student" docname | "user" email)
+MENTOR_STUDENT_FIELD = {
+    "Scheduled Course Roster": ("student", "student"),
+    "Course Enrollment Individual": ("student_ce", "student"),
+    "Exam Submission": ("member", "user"),
+    "Assignment Submission": ("member", "user"),
+    "Discussion Submission": ("member", "user"),
+    "Quiz Submission": ("member", "user"),
+    "Course Schedule Progress": ("member", "user"),
+    "SCORM Attempt": ("member", "user"),
+    "Student Attendance": ("student", "student"),
+    "Student Due Date Override": ("student", "student"),
+}
+
+
+def _mentee_keys(course_schedule, user, kind):
+    """The section's mentees as Student names or as their User emails."""
+    students = section_mentees(course_schedule, user)
+    if kind == "student" or not students:
+        return set(students)
+
+    def _users():
+        return set(
+            frappe.get_all(
+                "Student",
+                filters={"name": ["in", list(students)], "user": ["is", "set"]},
+                pluck="user",
+            )
+        )
+
+    return _memo(("mentee_users", course_schedule, user), _users)
+
+
+def _mentor_allows(doctype, doc, ptype, user):
+    if not is_read_ptype(ptype):
+        return False
+    if doctype == "Student":
+        return any(
+            doc.name in section_mentees(cs, user) for cs in mentored_sections(user)
+        )
+    cs = course_of(doc)
+    if not cs or cs not in mentored_sections(user):
+        return False
+    if doctype in MENTOR_CONTENT:
+        return True
+    spec = MENTOR_STUDENT_FIELD.get(doctype)
+    if not spec:
+        return False
+    field, kind = spec
+    return (doc.get(field) or "") in _mentee_keys(cs, user, kind)
+
+
+def _mentor_condition(doctype, user):
+    sections = mentored_sections(user)
+    if not sections:
+        return None
+    if doctype == "Student":
+        mentees = set()
+        for cs in sections:
+            mentees |= section_mentees(cs, user)
+        return f"`tabStudent`.name in ({_esc(mentees)})" if mentees else None
+    cs_field = COURSE_FIELD.get(doctype)
+    if not cs_field:
+        return None
+    if doctype in MENTOR_CONTENT:
+        return f"`tab{doctype}`.`{cs_field}` in ({_esc(sections)})"
+    spec = MENTOR_STUDENT_FIELD.get(doctype)
+    if not spec:
+        return None
+    field, kind = spec
+    parts = []
+    for cs in sections:
+        keys = _mentee_keys(cs, user, kind)
+        if keys:
+            parts.append(
+                f"(`tab{doctype}`.`{cs_field}` = {frappe.db.escape(cs)} and "
+                f"`tab{doctype}`.`{field}` in ({_esc(keys)}))"  # nosec B608 -- every value is escaped
+            )
+    return "(" + " or ".join(parts) + ")" if parts else None
 
 
 def _esc(values):
@@ -184,6 +271,8 @@ def has_for(doctype):
         if "Instructor" in roles and instructor_rule:
             if _instructor_allows(doctype, doc, ptype, user, instructor_rule):
                 return True
+            if _mentor_allows(doctype, doc, ptype, user):
+                return True
             # A grader who is also a student still reads their own rows.
         if student_rule is None or "Student" not in roles:
             # The student branch is for students: an instructor reaches a
@@ -261,6 +350,9 @@ def query_for(doctype):
             cond = _instructor_condition(doctype, user, instructor_rule)
             if cond == "":
                 return ""
+            if cond:
+                parts.append(cond)
+            cond = _mentor_condition(doctype, user)
             if cond:
                 parts.append(cond)
         if "Student" in roles:

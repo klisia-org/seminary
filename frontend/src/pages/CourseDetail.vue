@@ -94,7 +94,7 @@
 					<div class="mt-5">
 						<Announcements :cs="props.courseName" />
 					</div>
-					<div v-if="user.data?.is_moderator || user.data?.is_instructor" class="mt-5 flex justify-center">
+					<div v-if="isTeachingStaff" class="mt-5 flex justify-center">
 						<Button @click="openAnnouncementModal()">
 							<span>
 								{{ __('Make an Announcement') }}
@@ -154,8 +154,14 @@ import FeedbackStatusPanel from '@/components/FeedbackStatusPanel.vue'
 const user = inject('$user')
 const router = useRouter()
 
-// Outcome reporting is teaching-staff work; students never see these surfaces.
-const isTeachingStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
+// What this viewer is on this section, from the server (privatedocs p012):
+// "instructor" teaches or administers it, "mentor" follows some of its
+// students, "student", "reader" (an instructor of record looking in).
+const access = computed(() => course.data?.access || null)
+const roleIsStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
+// Outcome reporting and announcements are teaching-staff work on *this*
+// section: a mentor holds the Instructor role but does not teach the class.
+const isTeachingStaff = computed(() => roleIsStaff.value && access.value === 'instructor')
 const props = defineProps({
 	courseName: {
 		type: String,
@@ -183,7 +189,7 @@ watch(
 		// Only a pure student is bounced from a course they aren't enrolled in. Staff
 		// can also hold the Student role (and often do while testing), and must still
 		// reach any course to build or teach it.
-		if (data && user.data?.is_student && !data.membership && !isTeachingStaff.value && !user.data?.is_system_manager) {
+		if (data && user.data?.is_student && !data.membership && !roleIsStaff.value && !user.data?.is_system_manager) {
 			router.push({ name: 'Courses' })
 		}
 	}
@@ -210,9 +216,8 @@ const openAnnouncementModal = () => {
 const canEditOutline = computed(() => {
 	const roles = user?.data || {}
 	return Boolean(
-		roles.is_moderator ||
-		roles.is_instructor ||
-		roles.is_evaluator
+		access.value === 'instructor' &&
+		(roles.is_moderator || roles.is_instructor || roles.is_evaluator)
 	)
 })
 
