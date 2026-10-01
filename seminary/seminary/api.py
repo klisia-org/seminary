@@ -6088,3 +6088,10 @@ def get_plagiarism_match_detail(result_name, source_row):
         "similarity": row.similarity,
         "passages": passages,
     }
+
+
+def program_audit(program_enrollment):
+    """The program audit for one enrollment, with no access check: for server
+    code and other apps that apply their own gate. Same result as
+    get_program_audit."""
+    return _program_audit(program_enrollment)

@@ -100,6 +100,21 @@ def _evaluate_candidacy(pe_name):
     evaluate_candidacy_safe(pe_name)
 
 
+def grade_points(pec, basis):
+    """Grade points of one transcript row on a GPA basis (e.g. 4.0), the way
+    the GPA computes them, or None when the row carries none.
+
+    For server code and other apps (transcripts, degree audits) that need the
+    points of a single row. A Points scale needs the numeric grade; a
+    Descriptive scale reads the code alone."""
+    if not (basis and pec.pec_finalgradecode):
+        return None
+    scale = _resolve_grading_scale(pec)
+    if not scale or (scale.grscale_type == "Points" and pec.pec_finalgradenum is None):
+        return None
+    return _convert_to_gpa_points(pec, scale, basis)
+
+
 def _resolve_grading_scale(pec):
     """Return the Grading Scale doc to use for converting this PEC's numeric.
 
