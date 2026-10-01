@@ -154,6 +154,13 @@ const routes = [
     component: () => import('@/pages/MyFormation.vue'),
   },
   {
+    // Competency progress across sections (privatedocs p012 decision 5); the
+    // server scopes it, so the route needs no role guard.
+    path: "/cbe-overview",
+    name: "CbeOverview",
+    component: () => import('@/pages/CbeOverview.vue'),
+  },
+  {
     // The profile under Transcripts became My Formation (privatedocs p012).
     path: "/competency-profile",
     name: "CompetencyProfile",

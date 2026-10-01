@@ -293,3 +293,76 @@ class TestCompetencyReview(IntegrationTestCase):
         _reset_request_cache()
         with self.assertRaises(frappe.PermissionError):
             cbe_api.get_competency_review(self.w.cs, student=self.w.students[0])
+
+
+class TestCbeOverview(IntegrationTestCase):
+    """privatedocs p012 decision 5: one query, scoped like everything else."""
+
+    def setUp(self):
+        try:
+            self.w = MentorWorld()
+        except Exception:
+            frappe.db.rollback()
+            raise
+        frappe.db.set_value("Course Schedule", self.w.cs, "workflow_state", "Grading")
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.db.rollback()
+        super().tearDown()
+
+    def overview(self):
+        from seminary.seminary import cbe_overview
+
+        _reset_request_cache()
+        out = cbe_overview.get_cbe_overview(course_schedule=self.w.cs)
+        rows = [r for g in out["sections"] for r in g["rows"]]
+        return out, rows
+
+    def test_school_roles_see_everyone_and_the_mentor_lens(self):
+        out, rows = self.overview()
+        self.assertEqual({r["student"] for r in rows}, set(self.w.students))
+        names = {m["instructor"] for m in out["mentors"]}
+        for user in self.w.mentors:
+            self.assertIn(
+                frappe.db.get_value("Instructor", {"user": user}, "name"), names
+            )
+        # No activities and nothing submitted: the next step is the student's
+        # self-assessment, and nothing is decided or owed by a mentor.
+        self.assertTrue(
+            all(
+                c["state"] in ("not_started", "awaiting_self")
+                for r in rows
+                for c in r["cells"]
+            )
+        )
+
+    def test_a_mentor_sees_only_their_caseload(self):
+        frappe.set_user(self.w.mentors[0])
+        out, rows = self.overview()
+        self.assertEqual([r["student"] for r in rows], [self.w.students[0]])
+        self.assertEqual(out["mentors"], [])
+
+    def test_a_student_is_refused(self):
+        from seminary.seminary import cbe_overview
+
+        frappe.set_user(frappe.db.get_value("Student", self.w.students[0], "user"))
+        _reset_request_cache()
+        with self.assertRaises(frappe.PermissionError):
+            cbe_overview.get_cbe_overview()
+
+    def test_a_stalled_student_is_flagged(self):
+        frappe.db.set_value(
+            "Competency Framework", self.w.world.framework, "stall_escalation_days", 3
+        )
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            self.w.rosters[0],
+            "creation",
+            frappe.utils.add_days(frappe.utils.now_datetime(), -10),
+            update_modified=False,
+        )
+        _out, rows = self.overview()
+        lagging = {r["student"]: [x["reason"] for x in r["lagging"]] for r in rows}
+        self.assertIn("stalled", lagging[self.w.students[0]])
+        self.assertNotIn("stalled", lagging[self.w.students[1]])

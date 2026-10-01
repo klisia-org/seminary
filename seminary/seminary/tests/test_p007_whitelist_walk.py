@@ -61,6 +61,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.calendar",
     "seminary.seminary.cbe",
     "seminary.seminary.cbe_api",
+    "seminary.seminary.cbe_overview",
     "seminary.seminary.chapel",
     "seminary.seminary.comms",
     "seminary.seminary.course_checkin",
@@ -230,6 +231,7 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    "seminary.seminary.cbe_overview.get_cbe_overview",
     # --- SCORM (p009 S10/S11). The grade mapping is a write capability into a
     # section's gradebook, and the selftest reaches object storage and the
     # network, so both are staff. `_lesson_context` gates before it reports

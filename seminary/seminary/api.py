@@ -1060,6 +1060,9 @@ def get_user_info():
     from seminary.seminary.cbe_api import my_cbe_sections
 
     user.has_formation = bool(user.student and my_cbe_sections(user.student))
+    from seminary.seminary.cbe_overview import has_overview
+
+    user.has_cbe_overview = has_overview(user.name)
     return user
 
 

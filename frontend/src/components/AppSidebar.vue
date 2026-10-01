@@ -49,7 +49,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, Sprout } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, Sprout, LayoutGrid } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
@@ -148,6 +148,11 @@ const links = computed(() => {
 				icon: Banknote,
 			},
 		] : []),
+		...(userResource?.data?.has_cbe_overview ? [{
+			label: __('CBE Overview'),
+			to: '/cbe-overview',
+			icon: LayoutGrid,
+		}] : []),
 		...(hasCulminatingProjects ? [{
 			label: __('Culminating Project'),
 			to: '/culminating-project',
