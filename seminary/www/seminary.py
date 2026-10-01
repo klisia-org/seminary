@@ -23,7 +23,8 @@ def get_context(context):
     # template and the mainstream apps (builder, hrms, insights) use.
     context.csrf_token = get_csrf_token()
     context.boot = frappe._dict(get_boot_data())
-    context.title = "Seminary ERP"
+    context.title, context.favicon = portal_brand()
+    context.portal_css = frappe.get_hooks(PORTAL_CSS_HOOK)
     context.history_base = "/seminary/"
 
     if _is_dev_request():
@@ -39,6 +40,21 @@ def get_context(context):
         context.dev_server_url = None
 
     return context
+
+
+DEFAULT_TITLE = "Seminary ERP"
+DEFAULT_FAVICON = "/assets/seminary/images/klisia_icon.png"
+# Stylesheets other apps add to the portal page (a school's theme).
+PORTAL_CSS_HOOK = "seminary_portal_include_css"
+
+
+def portal_brand():
+    """The portal's title and favicon: the school's, from Website Settings
+    (App Name, Favicon), else SeminaryERP's. Frappe ships App Name as
+    "Frappe"; that is not a school's name."""
+    settings = frappe.get_cached_doc("Website Settings")
+    name = settings.app_name if settings.app_name not in (None, "", "Frappe") else DEFAULT_TITLE
+    return (name, settings.favicon or DEFAULT_FAVICON)
 
 
 def get_boot_data():

@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/seminary/images/klisia_icon.png" />
+    <link rel="icon" href="{{ favicon }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Seminary ERP</title>
+    <title>{{ title }}</title>
     <script type="module" crossorigin src="/assets/seminary/frontend/assets/index-BTKb0TL9.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/seminary/frontend/assets/editorjs-BbaSkpwg.js">
     <link rel="modulepreload" crossorigin href="/assets/seminary/frontend/assets/rolldown-runtime-CMxvf4Kt.js">
@@ -18,6 +18,7 @@
     <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/CompetencyReview-Br7z7ynw.css">
     <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/index-BUpiQy83.css">
     <link rel="stylesheet" crossorigin href="/assets/seminary/frontend/assets/highlight-B-oHczHB.css">
+    {% for href in portal_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
   </head>
   <body>
     <div id="app"></div>

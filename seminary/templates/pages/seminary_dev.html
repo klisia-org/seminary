@@ -2,10 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/seminary/images/klisia_icon.png" />
+    <link rel="icon" href="{{ favicon }}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Seminary ERP — Dev</title>
+    <title>{{ title }} — Dev</title>
     <script type="module" src="{{ dev_server_url }}/@vite/client"></script>
+    {% for href in portal_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
   </head>
   <body>
     <div id="app"></div>
