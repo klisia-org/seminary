@@ -156,9 +156,19 @@ def _convert_to_gpa_points(pec, scale, basis):
 
 
 def _points_from_code(pec, scale, basis):
-    """Grade points read off the matching interval's threshold."""
+    """Grade points read off the matching interval's threshold.
+
+    A withdrawal-failing or failure-for-absence code whose scale says it counts
+    in the GPA (wf_gpa / fa_gpa) is worth zero points, like an F. On a
+    Descriptive scale these codes cannot be intervals of their own: the
+    threshold is the point value and must be unique, so F already holds 0."""
     if not pec.pec_finalgradecode:
         return None
+    code = pec.pec_finalgradecode
+    if (code == scale.get("wf_code") and scale.get("wf_gpa")) or (
+        code == scale.get("fa_code") and scale.get("fa_gpa")
+    ):
+        return 0.0
     for interval in scale.intervals or []:
         if interval.grade_code == pec.pec_finalgradecode:
             return _clamp(float(interval.threshold or 0), 0, basis)
