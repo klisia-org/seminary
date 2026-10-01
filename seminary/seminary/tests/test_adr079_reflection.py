@@ -101,7 +101,6 @@ class World:
             "verdict_source": "Final assessments only",
             "aggregation_method": "Average",
             "rounding": "Nearest",
-            "report_basis": "Framework scale",
             "content_release_mode": "Ungated",
             "default_pacing_mode": "Self-paced",
             "course_self_eval": 1,

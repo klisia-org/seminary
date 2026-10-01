@@ -38,8 +38,6 @@
   "include_self_in_verdict",
   "column_break_cv",
   "rounding",
-  "report_basis",
-  "report_max",
   "content_release_section",
   "content_release_mode",
   "stall_escalation_days",
@@ -246,23 +244,6 @@
    "reqd": 1
   },
   {
-   "default": "Framework scale",
-   "description": "Framework scale reports on the same levels the scale defines (for example 1 to 4). Summed reports the total of the contributing ratings (for example 1 to 12).",
-   "fieldname": "report_basis",
-   "fieldtype": "Select",
-   "label": "Report Basis",
-   "options": "Framework scale\nSummed",
-   "reqd": 1
-  },
-  {
-   "description": "Highest value a reported result can reach. Calculated from the scale and the contributing evaluators.",
-   "fieldname": "report_max",
-   "fieldtype": "Float",
-   "label": "Reported Maximum",
-   "precision": "2",
-   "read_only": 1
-  },
-  {
    "description": "How much of a course a student can see before reflecting on what came before.",
    "fieldname": "content_release_section",
    "fieldtype": "Section Break",
@@ -347,7 +328,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-24 12:00:00.000000",
+ "modified": "2026-10-01 10:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Competency Framework",
