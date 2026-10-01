@@ -425,6 +425,9 @@ delete_file_data_content = "seminary.storage.hooks.delete_file_data_content"
 # Hook on document methods and events
 
 doc_events = {
+    # Person.is_staff follows the user's roles and enabled state (decisions/085).
+    "User": {"on_update": "seminary.seminary.staff.on_user_update"},
+    "Person": {"on_update": "seminary.seminary.staff.on_person_update"},
     "Academic Term": {
         "on_update": "seminary.tasks.refresh_term_flags_on_save",
     },
@@ -701,6 +704,7 @@ scheduler_events = {
     },
     "daily": [
         "seminary.tasks.daily",
+        "seminary.seminary.staff.daily",
         "seminary.partner.internship.activate_due_placements",
         # Content gating means a student who stops reflecting locks themselves
         # out; nothing else would surface that (ADR 065).

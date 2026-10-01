@@ -57,6 +57,7 @@
   "consents",
   "links_section",
   "user",
+  "is_staff",
   "column_break_links",
   "career_section",
   "skills",
@@ -252,6 +253,16 @@
    "label": "User",
    "options": "User",
    "unique": 1
+  },
+  {
+   "default": "0",
+   "description": "Worked out from the user: an enabled account holding a staff role. Students, alumni and partners are not staff unless they also hold a staff role.",
+   "fieldname": "is_staff",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Staff",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "fieldname": "column_break_links",
@@ -478,7 +489,7 @@
    "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-09-10 12:00:00.000000",
+ "modified": "2026-10-02 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",

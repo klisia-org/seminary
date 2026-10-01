@@ -81,3 +81,4 @@ seminary.seminary.patches.adr051_route_regenerate_button
 seminary.seminary.patches.adr081_drop_student_leave_application
 seminary.seminary.patches.drop_course_result_tool
 seminary.seminary.patches.adr084_progression_settings
+seminary.seminary.patches.adr085_fill_person_is_staff
