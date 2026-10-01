@@ -16,6 +16,8 @@
   "website_logo",
   "institution_profile_section",
   "seminary_features",
+  "authority_section",
+  "prerequisite_override_roles",
   "section_break_qcbp",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
@@ -869,11 +871,23 @@
    "fieldname": "seminary_features",
    "fieldtype": "Check",
    "label": "This institution is a seminary"
+  },
+  {
+   "fieldname": "authority_section",
+   "fieldtype": "Section Break",
+   "label": "Academic Authority"
+  },
+  {
+   "default": "Registrar, Program Chair, Seminary Manager, System Manager",
+   "description": "Comma-separated roles allowed to enroll a student without the course's mandatory prerequisites (\"Don't check pre-requisites\"). Everyone else is refused. Empty means the built-in list.",
+   "fieldname": "prerequisite_override_roles",
+   "fieldtype": "Small Text",
+   "label": "Roles That May Override Prerequisites"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-30 13:00:00.000000",
+ "modified": "2026-09-30 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

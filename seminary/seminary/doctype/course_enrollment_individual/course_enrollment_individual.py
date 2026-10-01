@@ -7,7 +7,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils.csvutils import getlink
 
-# Roles allowed to bypass the prerequisite gate via the no_prereq flag.
+# Roles allowed to bypass the prerequisite gate via the no_prereq flag, when
+# the school has not named its own in Seminary Settings.
 _PREREQ_OVERRIDE_ROLES = {
     "Registrar",
     "Program Chair",
@@ -16,8 +17,18 @@ _PREREQ_OVERRIDE_ROLES = {
 }
 
 
+def prerequisite_override_roles():
+    configured = frappe.db.get_single_value(
+        "Seminary Settings", "prerequisite_override_roles"
+    )
+    roles = {r.strip() for r in (configured or "").split(",") if r.strip()}
+    return roles or _PREREQ_OVERRIDE_ROLES
+
+
 def _user_can_override_prereqs():
-    return bool(_PREREQ_OVERRIDE_ROLES & set(frappe.get_roles(frappe.session.user)))
+    return bool(
+        prerequisite_override_roles() & set(frappe.get_roles(frappe.session.user))
+    )
 
 
 class CourseEnrollmentIndividual(Document):
