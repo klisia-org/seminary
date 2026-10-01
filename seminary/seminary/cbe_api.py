@@ -237,8 +237,6 @@ def get_competency_context(course_schedule):
             "verdict_source": framework.verdict_source,
             "aggregation_method": framework.aggregation_method,
             "rounding": framework.rounding,
-            "report_basis": framework.report_basis,
-            "report_max": framework.report_max,
             "course_self_eval": cint(framework.course_self_eval),
             "course_self_eval_points": framework.course_self_eval_points,
             "mentor_sees_self_eval": framework.mentor_sees_self_eval,

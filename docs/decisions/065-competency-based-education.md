@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-28
 **Status:** Accepted 2026-08-28 — implementation phased; Phases 1-8 and 10 complete, Phase 9 deferred
+**Amended 10/1/26:** section 3 (`report_basis`, `report_max`) — Removed these fields to simplify reporting x transcript.
 
 ## Context
 
