@@ -7,6 +7,11 @@ def get_context(context):
     """Public "What We Believe" page (ADR 061): renders the Doctrinal Statement
     flagged for the website. If several are flagged, prefer the active one, then
     the most recently updated."""
+    from seminary.seminary.institution import seminary_features_enabled
+
+    if not seminary_features_enabled():
+        raise frappe.PageDoesNotExistError
+
     context.no_cache = 1
     context.title = frappe._("What We Believe")
 

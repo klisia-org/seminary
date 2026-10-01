@@ -267,6 +267,21 @@ desk_block_gates = {
     },
 }
 
+# Features only a seminary uses leave Desk when the school says it is not one
+# (Seminary Settings > This institution is a seminary).
+desk_target_gates = {
+    "DocType": {
+        doctype: "seminary.seminary.institution.seminary_features_enabled"
+        for doctype in (
+            "Bible API Settings",
+            "Chapel",
+            "Chapel Attendance",
+            "Chapel Team",
+            "Doctrinal Statement",
+        )
+    },
+}
+
 # Uninstallation
 # ------------
 

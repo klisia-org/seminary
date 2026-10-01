@@ -14,6 +14,8 @@
   "column_break_icme",
   "logo_dark",
   "website_logo",
+  "institution_profile_section",
+  "seminary_features",
   "section_break_qcbp",
   "auto_submit_sales_invoice",
   "billing_automation_enabled",
@@ -855,11 +857,23 @@
    "label": "Active Since",
    "hidden": 1,
    "depends_on": "eval:doc.financial_backend"
+  },
+  {
+   "fieldname": "institution_profile_section",
+   "fieldtype": "Section Break",
+   "label": "Institution"
+  },
+  {
+   "default": "1",
+   "description": "Turn off for a school that is not a seminary. Chapel, the doctrinal statement and the Bible integration leave Desk navigation and the public site. Nothing is deleted; turning it back on restores them.",
+   "fieldname": "seminary_features",
+   "fieldtype": "Check",
+   "label": "This institution is a seminary"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-28 18:00:00.000000",
+ "modified": "2026-09-30 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

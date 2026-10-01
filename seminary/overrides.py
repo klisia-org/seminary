@@ -81,8 +81,31 @@ def apply_branding(context):
         context["head_html"] = (context.get("head_html") or "") + style
 
 
+# Public routes that only make sense for a seminary (institution.py).
+SEMINARY_ONLY_ROUTES = ("/what-we-believe",)
+
+
+def hide_seminary_only_menu_items(context):
+    """Drop menu items that lead to a seminary-only page when the school is not
+    a seminary. The stored Website Settings are not edited, so the items return
+    with the switch."""
+    from seminary.seminary.institution import seminary_features_enabled
+
+    if seminary_features_enabled():
+        return
+    for key in ("top_bar_items", "footer_items"):
+        items = context.get(key)
+        if items:
+            context[key] = [
+                item
+                for item in items
+                if (item.get("url") or "").rstrip("/") not in SEMINARY_ONLY_ROUTES
+            ]
+
+
 def update_website_context(context):
     apply_branding(context)
+    hide_seminary_only_menu_items(context)
 
     try:
         context.show_student_application = frappe.db.get_single_value(

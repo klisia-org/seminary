@@ -28,6 +28,7 @@
 				<div class="sem-card__cta">{{ _("Our team") }} &rarr;</div>
 			</div>
 		</a>
+		{% if seminary_features %}
 		<a class="sem-card" href="/what-we-believe">
 			<div class="sem-card__body">
 				<div class="sem-card__title">{{ _("What We Believe") }}</div>
@@ -35,6 +36,7 @@
 				<div class="sem-card__cta">{{ _("Read more") }} &rarr;</div>
 			</div>
 		</a>
+		{% endif %}
 	</div>
 </div>
 {% endblock %}

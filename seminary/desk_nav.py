@@ -19,6 +19,13 @@ the `desk_block_gates` hook:
 `kind` is card, shortcut, chart, number_card, quick_list or custom_block; the
 predicate takes no arguments and returns True to show the block.
 
+`desk_target_gates` does the same for a target rather than a block, so a link is
+hidden wherever it appears:
+
+    desk_target_gates = {
+        "<link type>": {"<name>": "dotted.path.to.predicate"},
+    }
+
 koinonia carries a copy of this module because it does not require seminary.
 Keep the two in step: both are wired as `boot_session` hooks (every app's hook
 runs, and pruning twice is harmless), and both back the `get_desktop_page`
@@ -59,7 +66,18 @@ TARGET_DOCTYPES = {
 def target_exists(link_type, name):
     if link_type not in TARGET_DOCTYPES:
         return True
-    return bool(name) and name in _names(link_type)
+    return bool(name) and name in _names(link_type) and target_open(link_type, name)
+
+
+def target_open(link_type, name):
+    """False when a `desk_target_gates` predicate hides this target. Where
+    `desk_block_gates` hides one block on one workspace, this hides a target
+    everywhere it is linked: cards, shortcuts and sidebars alike."""
+    gates = frappe.get_hooks("desk_target_gates") or {}
+    paths = (gates.get(link_type) or {}).get(name) or []
+    if isinstance(paths, str):
+        paths = [paths]
+    return all(frappe.get_attr(path)() for path in paths)
 
 
 def _names(doctype):
