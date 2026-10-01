@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
 
+from seminary.seminary import record_writes
+
 
 def on_withdrawal_workflow_update(doc, method=None):
     """Fire withdrawal side effects for 1->1 workflow transitions.
@@ -148,14 +150,16 @@ def process_academic_approval(doc):
                 },
             )
         if pec:
-            frappe.db.set_value(
-                "Program Enrollment Course",
+            record_writes.write_grade(
                 pec,
                 {
                     "pec_finalgradecode": symbol,
                     "status": "Withdrawn",  # nosec B105
                     "count_in_gpa": 0,
                 },
+                action=record_writes.WITHDRAWN,
+                reason=doc.name,
+                source="withdrawal.dispatch_withdrawal_effects",
             )
         doc.db_set("resulting_grade", symbol, update_modified=False)
         _mark_cei_withdrawn(cei, doc.name)
@@ -199,8 +203,7 @@ def process_academic_approval(doc):
         },
     )
     if pec:
-        frappe.db.set_value(
-            "Program Enrollment Course",
+        record_writes.write_grade(
             pec,
             {
                 "pec_finalgradecode": final_code,
@@ -208,6 +211,9 @@ def process_academic_approval(doc):
                 "status": "Withdrawn",  # nosec B105
                 "count_in_gpa": count_in_gpa,
             },
+            action=record_writes.WITHDRAWN,
+            reason=doc.name,
+            source="withdrawal.dispatch_withdrawal_effects",
         )
     doc.db_set("resulting_grade", final_code, update_modified=False)
     _mark_cei_withdrawn(cei, doc.name)

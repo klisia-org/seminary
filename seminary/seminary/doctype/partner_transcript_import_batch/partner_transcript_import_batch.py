@@ -3,6 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime
 
+from seminary.seminary import record_writes
+
 
 class PartnerTranscriptImportBatch(Document):
     def validate(self):
@@ -337,8 +339,10 @@ def _refresh_totalcredits(pe_name):
             (pe_name, tuple(excluded)),
         )[0][0]
         total = (total or 0) - (lvl or 0)
-    frappe.db.set_value(
-        "Program Enrollment", pe_name, "totalcredits", int(total), update_modified=False
+    record_writes.set_total_credits(
+        pe_name,
+        total,
+        source="partner_transcript_import_batch._refresh_totalcredits",
     )
 
 
@@ -440,7 +444,18 @@ def _upsert_transcript_row(program_enrollment, row, partner, batch):
         # Parent Program Enrollment is already submitted; update the child row directly
         # via db.set_value to bypass validate_update_after_submit. Matches the pattern used
         # in api.py::_send_grades when instructor grades land after PE submission.
-        frappe.db.set_value("Program Enrollment Course", existing_row.name, values)
+        record_writes.write_grade(
+            existing_row.name,
+            values,
+            action=record_writes.TRANSFER,
+            reason=batch.name,
+            source="partner_transcript_import_batch._upsert_transcript_row",
+        )
     else:
-        program_enrollment.append("courses", values)
+        new_row = program_enrollment.append("courses", values)
         program_enrollment.save()
+        record_writes.announce_new_row(
+            new_row.name,
+            reason=batch.name,
+            source="partner_transcript_import_batch._upsert_transcript_row",
+        )

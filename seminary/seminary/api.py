@@ -35,7 +35,7 @@ import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
-from seminary.seminary import absence_decisions, guards
+from seminary.seminary import absence_decisions, guards, record_writes
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
     SCHOOL_ROLES,
@@ -1937,6 +1937,7 @@ def _program_audit(program_enrollment):
     their own terms and call this."""
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
     program = frappe.get_cached_doc("Program", pe.program)
+    curriculum = record_writes.get_curriculum(pe, program)
 
     result = {
         "program": pe.program,
@@ -1944,9 +1945,11 @@ def _program_audit(program_enrollment):
         "student": pe.student,
         "student_name": pe.student_name,
         "program_type": program.program_type,
-        "credits_required": program.credits_complete or 0,
+        "curriculum_frozen": curriculum.frozen,
+        "curriculum_frozen_on": curriculum.frozen_on,
+        "credits_required": curriculum.credits_complete,
         "credits_earned": pe.totalcredits or 0,
-        "terms_required": program.terms_complete or 0,
+        "terms_required": curriculum.terms_complete,
         "current_term": pe.current_std_term or 0,
         "emphasis_overlap_policy": program.emphasis_overlap_policy
         or "Shared Credit Pool",
@@ -1958,12 +1961,11 @@ def _program_audit(program_enrollment):
         pc.course: {
             "course": pc.course,
             "course_name": pc.course_name,
-            "credits": pc.pgmcourse_credits or 0,
+            "credits": pc.credits or 0,
             "course_term": pc.course_term or 0,
             "required": pc.required,
         }
-        for pc in program.courses
-        if not pc.disabled
+        for pc in curriculum.courses
     }
 
     # Get student's completed/in-progress courses
@@ -2121,7 +2123,7 @@ def _program_audit(program_enrollment):
     )
 
     # Calculate effective total required based on overlap policy
-    effective_total = program.credits_complete or 0
+    effective_total = curriculum.credits_complete
     if (
         program.emphasis_overlap_policy == "Additional Credits Required"
         and len(active_emphases) > 1
@@ -2165,7 +2167,7 @@ def _program_audit(program_enrollment):
     graduation_eligible = True
 
     # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
-    min_gpa = float(program.get("min_graduation_gpa") or 0)
+    min_gpa = float(curriculum.min_graduation_gpa or 0)
     if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
         graduation_eligible = False
 
@@ -2173,7 +2175,7 @@ def _program_audit(program_enrollment):
         if (pe.totalcredits or 0) < effective_total:
             graduation_eligible = False
     elif program.program_type == "Time-based":
-        if (pe.current_std_term or 0) < (program.terms_complete or 0):
+        if (pe.current_std_term or 0) < curriculum.terms_complete:
             graduation_eligible = False
 
     # All mandatory program courses passed?
@@ -3786,26 +3788,24 @@ def _fail_for_absence(name):
     pe, pec = _pe_and_pec(roster)
     if pec:
         prev_status = frappe.db.get_value("Program Enrollment Course", pec, "status")
-        frappe.db.set_value(
-            "Program Enrollment Course",
+        new_total = None
+        if roster.active == 0 and prev_status == "Pass":
+            credits = (
+                frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
+            )
+            total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
+            new_total = max(0, int(total) - int(credits))
+        record_writes.write_grade(
             pec,
             {
                 "pec_finalgradecode": fa_code,
                 "status": "Fail",
                 "count_in_gpa": 1 if fa_gpa else 0,
             },
+            action=record_writes.FAILED_FOR_ABSENCE,
+            total_credits=new_total,
+            source="api._fail_for_absence",
         )
-        if roster.active == 0 and prev_status == "Pass":
-            credits = (
-                frappe.db.get_value("Program Enrollment Course", pec, "credits") or 0
-            )
-            total = frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
-            frappe.db.set_value(
-                "Program Enrollment",
-                pe,
-                "totalcredits",
-                max(0, int(total) - int(credits)),
-            )
 
     roster.add_comment(
         "Info",
@@ -3843,11 +3843,7 @@ def undo_fail_for_absence(name, reason=None):
         if grades_sent:
             # Finalized: restore the recomputed grade and re-add credits if it
             # now passes (FA had it as Fail).
-            frappe.db.set_value(
-                "Program Enrollment Course",
-                pec,
-                {"pec_finalgradecode": new.fgrade, "status": new.fgradepass},
-            )
+            new_total = None
             if new.fgradepass == "Pass" and prev_status != "Pass":
                 credits = (
                     frappe.db.get_value("Program Enrollment Course", pec, "credits")
@@ -3856,16 +3852,24 @@ def undo_fail_for_absence(name, reason=None):
                 total = (
                     frappe.db.get_value("Program Enrollment", pe, "totalcredits") or 0
                 )
-                frappe.db.set_value(
-                    "Program Enrollment", pe, "totalcredits", int(total) + int(credits)
-                )
+                new_total = int(total) + int(credits)
+            record_writes.write_grade(
+                pec,
+                {"pec_finalgradecode": new.fgrade, "status": new.fgradepass},
+                action=record_writes.ABSENCE_REVERSED,
+                reason=reason,
+                total_credits=new_total,
+                source="api.undo_fail_for_absence",
+            )
         else:
             # Not yet graded: revert the PEC to its pre-grade default so Send
             # Grades can grade it normally later.
-            frappe.db.set_value(
-                "Program Enrollment Course",
+            record_writes.write_grade(
                 pec,
                 {"pec_finalgradecode": "", "status": "Enrolled"},
+                action=record_writes.ABSENCE_REVERSED,
+                reason=reason,
+                source="api.undo_fail_for_absence",
             )
 
     roster.add_comment(
@@ -4055,8 +4059,9 @@ def finalize_roster(roster_name):
     if gpa_flag is not None:
         values["count_in_gpa"] = gpa_flag
 
-    frappe.db.set_value("Program Enrollment Course", pec, values)
-    frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
+    record_writes.write_grade(
+        pec, values, total_credits=newcredits, source="api.finalize_roster"
+    )
     frappe.db.set_value("Scheduled Course Roster", record.name, "active", 0)
     return pe
 
@@ -4364,16 +4369,16 @@ def send_grades(doc=None, **kwargs):
             newcredits = (int(totalcredits) if totalcredits else 0) + (
                 int(credits) if credits is not None else 0
             )
-            frappe.db.set_value(
-                "Program Enrollment Course",
+            record_writes.write_grade(
                 pec,
                 {
                     "pec_finalgradenum": fscore,
                     "pec_finalgradecode": fgrade,
                     "status": fgradepass,
                 },
+                total_credits=newcredits,
+                source="api.send_grades_legacy",
             )
-            frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
             frappe.db.set_value("Scheduled Course Roster", named, "active", 0)
         else:
             continue

@@ -138,16 +138,20 @@ def _compute(pe) -> bool:
         return False
     trigger = resolve_request_trigger(program)
 
+    from seminary.seminary.record_writes import get_curriculum
+
+    curriculum = get_curriculum(pe, program)
+
     # GPA floor (ADR 057): a minimum cumulative GPA can gate graduation.
     # 0 = no minimum. Ongoing programs already returned above.
-    min_gpa = float(program.get("min_graduation_gpa") or 0)
+    min_gpa = float(curriculum.min_graduation_gpa or 0)
     if min_gpa > 0 and float(pe.current_gpa or 0) < min_gpa:
         return False
 
     completed, in_progress = _course_status_sets(pe.name)
-    mandatory_program = _mandatory_program_courses(program)
+    mandatory_program = _mandatory_program_courses(curriculum)
     mandatory_emphasis = _mandatory_emphasis_courses(pe, program)
-    in_progress_credits = _credit_sum(program, in_progress)
+    in_progress_credits = _credit_sum(curriculum, in_progress)
 
     # Leveling / advanced standing (ADR 058): placed-out courses are satisfied;
     # Required leveling courses must be passed to graduate.
@@ -167,7 +171,7 @@ def _compute(pe) -> bool:
         return False
 
     completed_credits = pe.totalcredits or 0
-    credits_required = program.credits_complete or 0
+    credits_required = curriculum.credits_complete
     if program.program_type == "Credits-based":
         available = completed_credits + (
             in_progress_credits if count_in_progress else 0
@@ -228,8 +232,8 @@ def _course_status_sets(pe_name: str):
     return completed, in_progress
 
 
-def _mandatory_program_courses(program: Document) -> set:
-    return {pc.course for pc in program.courses if pc.required}
+def _mandatory_program_courses(curriculum) -> set:
+    return {pc.course for pc in curriculum.courses if pc.required}
 
 
 def _mandatory_emphasis_courses(pe, program: Document) -> set:
@@ -270,11 +274,11 @@ def _mandatory_emphasis_courses(pe, program: Document) -> set:
     return set(rows)
 
 
-def _credit_sum(program: Document, course_names: set) -> float:
+def _credit_sum(curriculum, course_names: set) -> float:
     if not course_names:
         return 0
     total = 0
-    for pc in program.courses:
+    for pc in curriculum.courses:
         if pc.course in course_names:
-            total += pc.pgmcourse_credits or 0
+            total += pc.credits or 0
     return total
