@@ -96,46 +96,36 @@ def get_permission_query_conditions(user=None):
     These carry a student's own words about their formation; the list view must
     not become a way to read a classmate's.
     """
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    roles = set(frappe.get_roles(user))
-    if roles & {
-        "Seminary Manager",
-        "System Manager",
-        "Program Chair",
-        "Registrar",
-        "Instructor",
-    }:
+    staff = cbe.staff_row_condition("Competency Assessment", user)
+    if staff == "":
         return ""
     student = frappe.db.get_value("Student", {"user": user}, "name")
     if not student:
-        return "1=0"
+        return staff or "1=0"
     # A mentor's assessment reaches a student only once the framework says so
     # (ADR 079 decision 5), which a list condition cannot express; the student
     # reads those through the endpoints and `has_permission`, which apply it.
-    return (
-        f"""`tabCompetency Assessment`.student = {frappe.db.escape(student)} """
-        """and `tabCompetency Assessment`.evaluator_kind = 'Self'"""
+    own = (
+        f"""(`tabCompetency Assessment`.student = {frappe.db.escape(student)} """
+        """and `tabCompetency Assessment`.evaluator_kind = 'Self')"""
     )
+    return f"({staff} or {own})" if staff else own
 
 
 def has_permission(doc, user=None, permission_type=None):
+    from seminary.seminary import cbe
+
     user = user or frappe.session.user
-    roles = set(frappe.get_roles(user))
-    if roles & {
-        "Seminary Manager",
-        "System Manager",
-        "Program Chair",
-        "Registrar",
-        "Instructor",
-    }:
+    if cbe.staff_may_access(doc, user, permission_type):
         return True
     student = frappe.db.get_value("Student", {"user": user}, "name")
     if not student or doc.student != student:
         return False
     if doc.evaluator_kind != "Mentor":
         return True
-    from seminary.seminary import cbe
-
     return doc.status == "Submitted" and cbe.mentor_assessments_visible(
         doc.student, doc.course_schedule, doc.course_competency
     )

@@ -60,7 +60,7 @@
     <!-- Instructor: competency assessments owed (ADR 079 decision 6) -->
     <div v-if="course.data?.course && isInstructor && mentorAssessmentsDue.data?.length" class="text-ink-gray-8 mt-4">
       <router-link v-for="item in mentorAssessmentsDue.data" :key="item.roster"
-        :to="{ name: 'CompetencyGradebook', params: { courseName: props.course }, query: { tab: 'student', roster: item.roster } }"
+        :to="{ name: 'CourseDetail', params: { courseName: props.course }, query: { tab: 'review', roster: item.roster } }"
         class="mt-2 flex items-start space-x-2 text-ink-gray-8">
         <Target class="mt-0.5 h-4 w-4 shrink-0 stroke-1.5" />
         <span>

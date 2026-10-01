@@ -492,3 +492,108 @@ def course_of(doc):
 
 def is_read_ptype(ptype) -> bool:
     return (ptype or "read") in _READ_PTYPES
+
+
+# ---------------------------------------------------------------------------
+# Mentor tier (privatedocs p012 decision 1): a cohort mentor reaches a
+# competency section through the students they evaluate there, never through
+# Course Schedule Instructors.
+# ---------------------------------------------------------------------------
+
+
+def section_mentees(course_schedule, user=None) -> set:
+    """Students on this section whom the user evaluates through a Program
+    Cohort evaluator row. Empty for a non-competency section, for a user with
+    no Instructor record, and for a framework with no cohort-sourced rows."""
+    u = _user(user)
+    if not course_schedule or not u or u == "Guest":
+        return set()
+
+    def _lookup():
+        from seminary.seminary import cbe
+
+        inst = current_instructor(u)
+        if not inst:
+            return set()
+        framework = cbe.framework_doc(course_schedule)
+        rows = cbe.cohort_evaluator_rows(framework) if framework else []
+        if not rows:
+            return set()
+        # Every roster row, not only active ones: `active` drops when grades
+        # are sent, and the mentor still reads the review afterwards.
+        students = set(
+            frappe.get_all(
+                "Scheduled Course Roster",
+                filters={"course_sc": course_schedule, "audit_bool": 0},
+                pluck="student",
+            )
+        )
+        return {
+            s
+            for s in students
+            if s and any(inst in cbe.cohort_mentors(s, r.cohort_type) for r in rows)
+        }
+
+    return _memo(("section_mentees", course_schedule, u), _lookup)
+
+
+def mentored_sections(user=None) -> list:
+    """Sections where the user has at least one mentee (see section_mentees)."""
+    u = _user(user)
+
+    def _lookup():
+        from seminary.seminary import cbe
+
+        inst = current_instructor(u)
+        if not inst:
+            return []
+        mentees = cbe._cohort_mentees(inst)
+        if not mentees:
+            return []
+        candidates = set(
+            frappe.get_all(
+                "Scheduled Course Roster",
+                filters={"student": ["in", list(mentees)], "audit_bool": 0},
+                pluck="course_sc",
+            )
+        )
+        return sorted(cs for cs in candidates if section_mentees(cs, u))
+
+    return _memo(("mentored_sections", u), _lookup)
+
+
+def is_section_mentor(course_schedule, user=None) -> bool:
+    return bool(section_mentees(course_schedule, user))
+
+
+def section_access(course_schedule, user=None):
+    """What the portal offers this user on a section: ``"instructor"`` (course
+    staff, who also edit the outline), ``"mentor"`` (reads content, sees and
+    grades only their mentees), ``"student"``, or ``None``."""
+    u = _user(user)
+    if is_course_staff(course_schedule, include_registrar=True, user=u):
+        return "instructor"
+    if is_section_mentor(course_schedule, u):
+        return "mentor"
+    if is_enrolled(course_schedule, u):
+        # Record-tier readers land here too; they read, they do not edit.
+        return "student" if current_student(u) else "reader"
+    return None
+
+
+def may_view_content(course_schedule, user=None) -> bool:
+    """Section *content* reads -- outline, lessons, assessments, announcements:
+    everyone `is_enrolled` admits, plus the section's mentors. Never use this
+    for anything that lists students: a mentor sees only their own."""
+    return is_enrolled(course_schedule, user) or is_section_mentor(
+        course_schedule, user
+    )
+
+
+def require_content_reader(course_schedule):
+    if not may_view_content(course_schedule):
+        _deny(
+            _("You are not enrolled in this section."),
+            "require_content_reader",
+            course_schedule=course_schedule,
+        )

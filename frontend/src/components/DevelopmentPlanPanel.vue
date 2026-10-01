@@ -77,6 +77,8 @@
 						v-model="reflection" />
 				</section>
 
+				<PartnerReviewQuestions v-if="hasAretenic" :courseName="courseName" :student="student" />
+
 				<!-- The school's own prompts -->
 				<section v-if="unanswered.length && !submitted" class="mt-6">
 					<h2 class="font-semibold text-ink-gray-8">{{ __('Questions to answer') }}</h2>
@@ -171,8 +173,9 @@
 
 <script setup>
 import { Button, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { formatDate } from '@/utils'
+import PartnerReviewQuestions from '@/components/PartnerReviewQuestions.vue'
 
 // The development plan itself -- the student's reflection and goals, the
 // mentor's response -- shared by its page and by the lesson that asks for it
@@ -184,6 +187,8 @@ const props = defineProps({
 	embedded: { type: Boolean, default: false },
 })
 const emit = defineEmits(['loaded', 'submitted'])
+const user = inject('$user', null)
+const hasAretenic = computed(() => !!user?.data?.has_aretenic)
 const goals = ref([])
 const reflection = ref('')
 const feedback = ref('')

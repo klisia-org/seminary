@@ -8,7 +8,7 @@
         <router-link :to="{ name: 'SelfDevelopmentPlans' }">
           <Button variant="subtle" size="sm">{{ __('My Plans') }}</Button>
         </router-link>
-        <router-link :to="{ name: 'CompetencyProfile' }">
+        <router-link :to="{ name: 'MyFormation' }">
           <Button variant="subtle" size="sm">{{ __('My Formation') }}</Button>
         </router-link>
       </template>

@@ -19,6 +19,7 @@ from frappe import _
 from frappe.utils import cint, flt
 
 from seminary.seminary import cbe, cbe_reflection
+from seminary.seminary.guards import section_access
 
 STAFF_ROLES = {
     "Instructor",
@@ -49,6 +50,22 @@ def _assert_staff():
         frappe.throw(_("This view is for teaching staff."), frappe.PermissionError)
 
 
+def _assert_sees(course_schedule, student):
+    """Staff by role is not enough: a mentor sees only their own mentees,
+    and only course staff see a whole section (privatedocs p012 decision 2)."""
+    if not cbe.may_see_student(course_schedule, student):
+        frappe.throw(
+            _("You can only see the students you teach or mentor."),
+            frappe.PermissionError,
+        )
+
+
+def _assert_course_staff(course_schedule):
+    from seminary.seminary.guards import require_course_staff
+
+    require_course_staff(course_schedule, include_registrar=True)
+
+
 def _roster_for(course_schedule, student):
     return frappe.db.get_value(
         "Scheduled Course Roster",
@@ -59,8 +76,11 @@ def _roster_for(course_schedule, student):
 
 def _assert_own_roster(roster):
     """A student may only ever act on their own roster row."""
-    student = frappe.db.get_value("Scheduled Course Roster", roster, "student")
+    student, course_schedule = frappe.db.get_value(
+        "Scheduled Course Roster", roster, ["student", "course_sc"]
+    ) or (None, None)
     if _is_staff():
+        _assert_sees(course_schedule, student)
         return student
     mine = _current_student()
     if not mine or mine != student:
@@ -237,6 +257,8 @@ def get_competency_context(course_schedule):
             "is_staff": _is_staff(),
             "instructor": _current_instructor(),
             "student": _current_student(),
+            # instructor | mentor | student | reader (p012 decision 1).
+            "access": section_access(course_schedule),
         },
     }
 
@@ -255,6 +277,9 @@ def get_competency_roster(course_schedule):
     _assert_staff()
     if not cbe.framework_for(course_schedule):
         return []
+    visible = cbe.visible_students(course_schedule)
+    if visible is not None and not visible:
+        _assert_sees(course_schedule, None)
 
     rows = frappe.get_all(
         "Scheduled Course Roster",
@@ -271,6 +296,8 @@ def get_competency_roster(course_schedule):
         ],
         order_by="stuname_roster asc",
     )
+    if visible is not None:
+        rows = [r for r in rows if r.student in visible]
 
     competencies = frappe.get_all(
         "Course Competency",
@@ -302,6 +329,7 @@ def get_student_competency_detail(roster):
     """The right pane: one student's competencies, dimensions and evaluators."""
     _assert_staff()
     roster_doc = frappe.get_doc("Scheduled Course Roster", roster)
+    _assert_sees(roster_doc.course_sc, roster_doc.student)
     framework = cbe.framework_doc(roster_doc.course_sc)
     if not framework:
         return {}
@@ -488,6 +516,263 @@ def _mentor_assessments(roster_doc, competency, show_self):
     return out
 
 
+def my_cbe_sections(student):
+    """The published competency sections a student is on, newest first."""
+    rows = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"student": student, "audit_bool": 0},
+        fields=["course_sc", "active"],
+    )
+    out = []
+    for r in rows:
+        if not cbe.framework_for(r.course_sc):
+            continue
+        cs = frappe.db.get_value(
+            "Course Schedule",
+            r.course_sc,
+            ["name", "course", "academic_term", "c_datestart", "published"],
+            as_dict=True,
+        )
+        if not cs or not cs.published:
+            continue
+        out.append(
+            {
+                "course_schedule": cs.name,
+                "course": cs.course,
+                "academic_term": cs.academic_term,
+                "start": cs.c_datestart,
+                "finalized": not r.active,
+            }
+        )
+    out.sort(key=lambda x: str(x["start"] or ""), reverse=True)
+    return out
+
+
+@frappe.whitelist()
+def get_my_formation():
+    """My Formation: the student's competency sections, for the course picker."""
+    student = _current_student()
+    if not student:
+        frappe.throw(_("This page is for students."), frappe.PermissionError)
+    return my_cbe_sections(student)
+
+
+# ---------------------------------------------------------------- the review
+
+
+@frappe.whitelist()
+def get_competency_review(course_schedule, student=None):
+    """One student's competencies as a before-and-after, every evaluator apart
+    (privatedocs p012 decision 3).
+
+    Each competency carries one series per voice: the student's Baseline and
+    Final, then every instructor and mentor on their own -- never averaged --
+    and the recorded result. The student reads their mentors' views only when
+    `student_sees_mentor_eval` allows, and the result once grades are sent;
+    staff and mentors read what the gradebook already shows them.
+    """
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False}
+    me = _current_student()
+    own = not student or student == me
+    if own:
+        student = me
+        if not student:
+            frappe.throw(_("This page is for students."), frappe.PermissionError)
+    else:
+        _assert_staff()
+        _assert_sees(course_schedule, student)
+    roster = _roster_for(course_schedule, student)
+    if not roster:
+        return {"is_cbe": True, "enrolled": False}
+    roster_doc = frappe.get_doc("Scheduled Course Roster", roster)
+    finalized = not roster_doc.active and not roster_doc.audit_bool
+
+    scale = cbe.scale_for(course_schedule)
+    levels = frappe.get_all(
+        "Grading Scale Interval",
+        filters={"parent": scale, "parenttype": "Grading Scale"},
+        fields=["grade_code", "threshold", "grade_description"],
+        order_by="threshold asc",
+    )
+    dimensions = frappe.get_all(
+        "Grading Scale Dimensions",
+        filters={"parent": scale},
+        fields=["dimension_code", "dimension"],
+        order_by="sequence asc, idx asc",
+    )
+
+    evaluators = cbe.evaluators_for(roster_doc)
+    source = {(e["instructor"], e["instructor_category"]): e for e in evaluators}
+    names = _instructor_names({e["instructor"] for e in evaluators})
+    viewer = _current_instructor()
+    show_self = "Always" if own else (framework.mentor_sees_self_eval or "Always")
+    course = frappe.db.get_value("Course Schedule", course_schedule, "course")
+
+    out = []
+    for c in frappe.get_all(
+        "Course Competency",
+        filters={"course": course, "is_active": 1},
+        fields=["name", "competency_name", "competency_code"],
+        order_by="sequence asc",
+    ):
+        rows = frappe.get_all(
+            "Competency Assessment",
+            filters={
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": c.name,
+                "status": "Submitted",
+            },
+            fields=[
+                "name",
+                "stage",
+                "evaluator_kind",
+                "instructor",
+                "instructor_category",
+                "narrative",
+                "submitted_on",
+            ],
+            order_by="submitted_on asc",
+        )
+        ratings = {}
+        if rows:
+            for r in frappe.get_all(
+                "Competency Assessment Rating",
+                filters={"parent": ("in", [x.name for x in rows])},
+                fields=["parent", "dimension_code", "level_code", "level_value"],
+            ):
+                ratings.setdefault(r.parent, {})[r.dimension_code] = r
+
+        viewer_done = any(
+            r.evaluator_kind == "Mentor" and r.instructor == viewer for r in rows
+        )
+        self_hidden = show_self == "Never" or (
+            show_self == "After mentor submits" and not viewer_done
+        )
+        mentors_shown = not own or cbe.mentor_assessments_visible(
+            student, course_schedule, c.name, framework
+        )
+
+        series = []
+        for r in rows:
+            if r.evaluator_kind == "Self":
+                if self_hidden:
+                    continue
+                kind = "baseline" if r.stage == "Baseline" else "self"
+                label = (
+                    _("Starting point")
+                    if kind == "baseline"
+                    else _("Final self-assessment")
+                )
+                sublabel = None
+            else:
+                if r.stage != "Final" or not mentors_shown:
+                    continue
+                e = source.get((r.instructor, r.instructor_category))
+                kind = (
+                    "instructor"
+                    if e and e["assignment_source"] == cbe.SECTION_SOURCE
+                    else "mentor"
+                )
+                label = names.get(r.instructor) or frappe.db.get_value(
+                    "Instructor", r.instructor, "instructor_name"
+                )
+                sublabel = r.instructor_category
+            series.append(
+                {
+                    "key": r.name,
+                    "kind": kind,
+                    "label": label,
+                    "sublabel": sublabel,
+                    "narrative": r.narrative,
+                    "submitted_on": r.submitted_on,
+                    "values": {
+                        d: x.level_value for d, x in ratings.get(r.name, {}).items()
+                    },
+                    "codes": {
+                        d: x.level_code for d, x in ratings.get(r.name, {}).items()
+                    },
+                }
+            )
+
+        result = frappe.db.get_value(
+            "Competency Result",
+            {
+                "student": student,
+                "course_schedule": course_schedule,
+                "course_competency": c.name,
+            },
+            ["name", "status", "final_code"],
+            as_dict=True,
+        )
+        if result and (finalized or not own):
+            dims = frappe.get_all(
+                "Competency Result Dimension",
+                filters={"parent": result.name},
+                fields=["dimension_code", "final_value", "final_code"],
+            )
+            if any(d.final_value for d in dims):
+                series.append(
+                    {
+                        "key": result.name,
+                        "kind": "result",
+                        "label": _("Recorded result"),
+                        "sublabel": result.final_code,
+                        "narrative": None,
+                        "values": {
+                            d.dimension_code: d.final_value
+                            for d in dims
+                            if d.final_value
+                        },
+                        "codes": {
+                            d.dimension_code: d.final_code for d in dims if d.final_code
+                        },
+                    }
+                )
+
+        submitted_by = {
+            r.instructor
+            for r in rows
+            if r.evaluator_kind == "Mentor" and r.stage == "Final"
+        }
+        waiting_on = [
+            {
+                "name": names.get(e["instructor"]) or e["instructor"],
+                "category": e["instructor_category"],
+            }
+            for e in evaluators
+            if e["gives_competency_verdict"] and e["instructor"] not in submitted_by
+        ]
+        out.append(
+            {
+                "name": c.name,
+                "competency_name": c.competency_name,
+                "competency_code": c.competency_code,
+                "self_final": any(
+                    r.evaluator_kind == "Self" and r.stage == "Final" for r in rows
+                ),
+                "mentors_shown": mentors_shown,
+                "waiting_on": waiting_on,
+                "status": result.status if result else "Not Started",
+                "series": series,
+            }
+        )
+
+    return {
+        "is_cbe": True,
+        "enrolled": True,
+        "own": own,
+        "student": student,
+        "student_name": roster_doc.stuname_roster,
+        "finalized": finalized,
+        "levels": levels,
+        "dimensions": dimensions,
+        "competencies": out,
+    }
+
+
 # ------------------------------------------------- the submission surfaces (11c)
 
 # Every submission doctype names the criteria row it was graded under and the
@@ -524,6 +809,7 @@ def get_activity_grading_panel(submission_doctype, submission):
     if not sub:
         frappe.throw(_("That submission no longer exists."))
     course_schedule = sub.get(schedule_field)
+    _assert_sees(course_schedule, sub.student)
 
     framework = cbe.framework_doc(course_schedule)
     if not framework:
@@ -688,6 +974,9 @@ def get_cbe_gradebook(course_schedule):
     framework = cbe.framework_doc(course_schedule)
     if not framework:
         return {"is_cbe": False}
+    visible = cbe.visible_students(course_schedule)
+    if visible is not None and not visible:
+        _assert_sees(course_schedule, None)
 
     course = frappe.db.get_value("Course Schedule", course_schedule, "course")
     grading_categories = [
@@ -797,6 +1086,8 @@ def get_cbe_gradebook(course_schedule):
         fields=["name", "student", "stuname_roster", "active", "audit_bool"],
         order_by="stuname_roster asc",
     ):
+        if visible is not None and r.student not in visible:
+            continue
         students.append(_gradebook_row(r, course_schedule, shapes))
 
     return {
@@ -900,6 +1191,10 @@ def save_activity_grade(
         instructor = me
     if not instructor:
         frappe.throw(_("Your user account is not linked to an instructor record."))
+    student, course_schedule = frappe.db.get_value(
+        "Scheduled Course Roster", roster, ["student", "course_sc"]
+    ) or (None, None)
+    _assert_sees(course_schedule, student)
 
     existing = frappe.db.get_value(
         "Activity Competency Grade",
@@ -976,6 +1271,8 @@ def set_result_override(result, dimension_code, override_value, override_reason)
     """Replace a computed value, on the record, with a reason attached."""
     _assert_staff()
     doc = frappe.get_doc("Competency Result", result)
+    # The recorded result is the section's, not a mentor's: course staff only.
+    _assert_course_staff(doc.course_schedule)
     if dimension_code:
         for row in doc.dimensions:
             if row.dimension_code == dimension_code:
@@ -1577,11 +1874,18 @@ def _assert_own_enrollment(program_enrollment):
     student = frappe.db.get_value("Program Enrollment", program_enrollment, "student")
     if not student:
         frappe.throw(_("Enrollment not found."))
-    if not _is_staff():
-        mine = _current_student()
-        if not mine or mine != student:
-            frappe.throw(_("Not permitted."), frappe.PermissionError)
-    return student
+    mine = _current_student()
+    if mine and mine == student:
+        return student
+    from seminary.seminary.guards import instructor_tier, is_school_role
+
+    # School roles and instructors of record read any profile, as they read
+    # any enrollment; a mentor reads their mentees' (p012 decision 2).
+    if is_school_role() or instructor_tier() == "record":
+        return student
+    if cbe.is_mentor_of(_current_instructor(), student):
+        return student
+    frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 
 def _cbe_enrollments(student):
@@ -2479,6 +2783,7 @@ def save_assessment_competency_config(course_schedule, config):
     exist and be named before anything can point at them.
     """
     _assert_staff()
+    _assert_course_staff(course_schedule)
     framework = cbe.framework_doc(course_schedule)
     if not framework:
         frappe.throw(_("This section is not competency-based."))

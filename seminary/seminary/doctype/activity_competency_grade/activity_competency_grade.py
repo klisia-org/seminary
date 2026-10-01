@@ -73,7 +73,16 @@ class ActivityCompetencyGrade(Document):
             if e["grades_activities"]
         }
         if not allowed:
-            return
+            # Nobody resolves: only the section's own staff may grade, never
+            # anyone holding the Instructor role (p012 decision 2).
+            from seminary.seminary.guards import is_course_staff
+
+            cs = frappe.db.get_value(
+                "Scheduled Course Roster", self.roster, "course_sc"
+            )
+            user = frappe.db.get_value("Instructor", self.instructor, "user")
+            if user and is_course_staff(cs, user=user):
+                return
         if self.instructor not in allowed:
             frappe.throw(
                 _(
@@ -107,3 +116,18 @@ class ActivityCompetencyGrade(Document):
                     "{0} has already graded this activity for this student ({1})."
                 ).format(self.instructor, duplicate)
             )
+
+
+def get_permission_query_conditions(user=None):
+    """Instructors read the grades of sections they teach and of the students
+    they mentor; school roles read everything (p012 decision 2)."""
+    from seminary.seminary import cbe
+
+    cond = cbe.staff_row_condition("Activity Competency Grade", user)
+    return "1=0" if cond is None else cond
+
+
+def has_permission(doc, user=None, permission_type=None):
+    from seminary.seminary import cbe
+
+    return bool(cbe.staff_may_access(doc, user, permission_type))
