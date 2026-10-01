@@ -26,8 +26,12 @@
 				:comparison-title="__('Your mentors have assessed this competency.')"
 				@save="save" />
 
-			<!-- The whole before-and-after lives on the course's Competency Review
-			     tab (privatedocs p012 decision 3). -->
+			<!-- This competency's before-and-after, once it is complete; the
+			     whole course's lives on the Competency Review tab (p012). -->
+			<div v-if="isSubmitted && stage === 'Final'" class="mt-6">
+				<h2 class="mb-2 text-lg font-semibold text-ink-gray-9">{{ __('Your review') }}</h2>
+				<CompetencyReview :courseName="props.courseName" :competency="props.competency" />
+			</div>
 			<router-link v-if="isSubmitted"
 				:to="{ name: 'CourseDetail', params: { courseName: props.courseName }, query: { tab: 'review' } }"
 				class="mt-3 inline-block text-sm text-ink-gray-6 underline">
@@ -41,6 +45,7 @@
 import { Badge, LoadingIndicator, createResource, call, toast } from 'frappe-ui'
 import { computed, ref, watch } from 'vue'
 import CompetencyRatingForm from '@/components/CompetencyRatingForm.vue'
+import CompetencyReview from '@/components/CompetencyReview.vue'
 import { formatDate } from '@/utils'
 
 // One competency's self-assessment at one stage: loaded, shown beside the

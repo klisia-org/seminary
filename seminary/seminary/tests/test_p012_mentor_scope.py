@@ -366,3 +366,101 @@ class TestCbeOverview(IntegrationTestCase):
         lagging = {r["student"]: [x["reason"] for x in r["lagging"]] for r in rows}
         self.assertIn("stalled", lagging[self.w.students[0]])
         self.assertNotIn("stalled", lagging[self.w.students[1]])
+
+
+class TestReviewNudges(IntegrationTestCase):
+    """A student sees a competency's review once it is complete, and is pointed
+    at it until they have opened it."""
+
+    def setUp(self):
+        try:
+            self.w = MentorWorld()
+        except Exception:
+            frappe.db.rollback()
+            raise
+        w = self.w
+        self.comp = w.world.competencies[0]
+        self.student_user = frappe.db.get_value("Student", w.students[0], "user")
+        framework = frappe.get_doc("Competency Framework", w.world.framework)
+        self.category = next(
+            e.instructor_category
+            for e in framework.evaluators
+            if e.assignment_source == "Program Cohort"
+        )
+        self.mentor = frappe.db.get_value("Instructor", {"user": w.mentors[0]}, "name")
+        _assessment(w, 0, "Self", "Final", {"knowledge": 3, "character": 3})
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+        frappe.db.rollback()
+        super().tearDown()
+
+    def as_student(self):
+        frappe.set_user(self.student_user)
+        _reset_request_cache()
+
+    def test_not_ready_until_every_evaluator_has_submitted(self):
+        self.as_student()
+        self.assertEqual(cbe_api.get_review_news(self.w.cs), [])
+        review = cbe_api.get_competency_review(self.w.cs, competency=self.comp)
+        self.assertEqual([c["name"] for c in review["competencies"]], [self.comp])
+        self.assertFalse(review["competencies"][0]["ready"])
+
+    def test_a_complete_review_is_new_until_opened(self):
+        frappe.set_user("Administrator")
+        _assessment(
+            self.w,
+            0,
+            "Mentor",
+            "Final",
+            {"knowledge": 4, "character": 3},
+            instructor=self.mentor,
+            category=self.category,
+        )
+        result = frappe.get_doc(
+            {
+                "doctype": "Competency Result",
+                "student": self.w.students[0],
+                "course_schedule": self.w.cs,
+                "course_competency": self.comp,
+                "status": "Competent",
+            }
+        )
+        result.set_new_name()
+        result.db_insert()
+
+        self.as_student()
+        self.assertEqual(
+            [n["competency"] for n in cbe_api.get_review_news(self.w.cs)], [self.comp]
+        )
+        review = cbe_api.get_competency_review(self.w.cs)
+        mine = next(c for c in review["competencies"] if c["name"] == self.comp)
+        self.assertTrue(mine["ready"] and mine["new"])
+        reflections = cbe_api._outline_reflections(self.w.cs, self.w.students[0])
+        self.assertTrue(
+            any(
+                r.get("review_new") and r.get("competency") == self.comp
+                for r in reflections.values()
+            )
+        )
+
+        # The ready notice goes out without error.
+        frappe.set_user("Administrator")
+        before = frappe.db.count("Error Log", {"method": ("like", "%ready notice%")})
+        cbe_api.notify_review_ready(
+            frappe.get_doc("Scheduled Course Roster", self.w.rosters[0]), self.comp
+        )
+        self.assertEqual(
+            frappe.db.count("Error Log", {"method": ("like", "%ready notice%")}), before
+        )
+        self.as_student()
+
+        cbe_api.mark_review_seen(self.w.cs, frappe.as_json([self.comp]))
+        _reset_request_cache()
+        self.assertEqual(cbe_api.get_review_news(self.w.cs), [])
+
+    def test_only_the_student_marks_their_review_seen(self):
+        frappe.set_user(self.w.mentors[0])
+        _reset_request_cache()
+        with self.assertRaises(frappe.PermissionError):
+            cbe_api.mark_review_seen(self.w.cs, "[]")

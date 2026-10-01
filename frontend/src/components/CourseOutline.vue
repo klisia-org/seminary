@@ -184,7 +184,11 @@
 												class="rounded bg-surface-amber-1 px-1.5 py-0.5 text-xs font-medium text-ink-amber-3">
 												{{ __('Required') }}
 											</span>
-											<span v-if="reflectionOf(lesson)?.mentor_feedback"
+											<span v-if="reflectionOf(lesson)?.review_new"
+												class="rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3">
+												{{ __('New review') }}
+											</span>
+											<span v-else-if="reflectionOf(lesson)?.mentor_feedback"
 												class="rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3">
 												{{ __('Mentor feedback') }}
 											</span>

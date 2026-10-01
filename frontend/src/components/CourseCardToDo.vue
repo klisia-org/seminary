@@ -11,6 +11,16 @@
     <div class="px-5 py-4">
     <!-- Student View -->
     <div v-if="course.data?.course && isStudent" class="text-ink-gray-8">
+      <!-- A completed competency review the student has not opened yet
+           (privatedocs p012 decision 3, as amended). -->
+      <section v-if="reviewNews.data?.length" class="mt-4">
+        <router-link v-for="item in reviewNews.data" :key="item.competency"
+          :to="{ name: 'CourseDetail', params: { courseName: props.course }, query: { tab: 'review' } }"
+          class="mt-2 flex items-start space-x-2 text-ink-gray-8">
+          <Sparkles class="mt-0.5 h-4 w-4 shrink-0 stroke-1.5 text-ink-blue-3" />
+          <span>{{ __('Your review of {0} is ready').format(item.label) }}</span>
+        </router-link>
+      </section>
       <section v-if="missingAssessments.data?.length" class="missing-assessments mt-4">
         <h3 class="text-xl mb-3 font-semibold text-ink-gray-9">{{ __("Missing Assessments") }}</h3>
         <ul>
@@ -113,8 +123,8 @@
 </template>
 
 <script setup>
-import { PartyPopper, BookOpenCheck, FileUp, Target } from 'lucide-vue-next'
-import { Button } from 'frappe-ui'
+import { PartyPopper, BookOpenCheck, FileUp, Target, Sparkles } from 'lucide-vue-next'
+import { Button, createResource } from 'frappe-ui'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import dayjs from '@/utils/dayjs'
@@ -142,6 +152,14 @@ const {
   isStudent,
   isInstructor,
 } = useCourseToDo(props.course, user)
+
+const reviewNews = createResource({
+  url: 'seminary.seminary.cbe_api.get_review_news',
+  params: { course_schedule: props.course },
+  auto: !!user?.data?.is_student,
+  cache: ['cbe-review-news', props.course],
+  onError: () => {},
+})
 
 const showRecordModal = ref(false)
 const recordItem = ref(null)
