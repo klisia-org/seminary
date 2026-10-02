@@ -169,11 +169,6 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
     return doc
 
 
-def make_program_level():
-    rows = frappe.get_all("Program Level", limit=1, pluck="name")
-    return rows[0] if rows else None
-
-
 def make_enrollment(student, program, submit=True):
     doc = frappe.get_doc(
         {

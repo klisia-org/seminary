@@ -39,7 +39,7 @@ function describe_archive_rule(frm) {
 frappe.ui.form.on("Cohort Type", {
 	category: describe_archive_rule,
 	program: describe_archive_rule,
-	program_level: describe_archive_rule,
+	program_tier: describe_archive_rule,
 	on_archive: describe_archive_rule,
 
 	refresh(frm) {

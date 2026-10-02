@@ -11,6 +11,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import today
+from seminary.seminary.doctype.program_level.program_level import programs_in_tier
 
 # Leadership is a cohort-scoped capability, not a global role (ADR 064 section 1),
 # so several concurrent rows may carry `is_leader` -- a mentor pair, or a
@@ -115,7 +116,7 @@ class CohortMembership(Document):
         policy = frappe.db.get_value(
             "Cohort Type",
             cohort_type,
-            ["leader_eligibility", "program", "program_level"],
+            ["leader_eligibility", "program", "program_tier"],
             as_dict=True,
         )
         rule = (policy or {}).get("leader_eligibility") or ANYONE
@@ -133,7 +134,7 @@ class CohortMembership(Document):
 
     def _alumnus_of_what(self, policy):
         """What the bound-alumnus rule was asking for, in the type's own terms."""
-        bound = policy.get("program") or policy.get("program_level")
+        bound = policy.get("program") or policy.get("program_tier")
         if bound:
             return _("an enabled Alumni Profile for {0}").format(frappe.bold(bound))
         # The type is refused at save without a binding, so reaching this means
@@ -247,7 +248,7 @@ def alumni_profile(person):
 
 
 def is_alumnus_of_bound(person, policy):
-    """An enabled Alumni Profile, of the bound program or of the level.
+    """An enabled Alumni Profile, of the bound program or of the tier.
 
     An unbound type is refused rather than waved through. It used to return True
     -- the type had named no program, so any alumnus passed -- which read as
@@ -263,12 +264,8 @@ def is_alumnus_of_bound(person, policy):
     # silently withheld leadership of a cohort scoped to the other (ADR 069).
     if policy.get("program"):
         programs = [policy["program"]]
-    elif policy.get("program_level"):
-        programs = frappe.get_all(
-            "Program",
-            filters={"program_level": policy["program_level"]},
-            pluck="name",
-        )
+    elif policy.get("program_tier"):
+        programs = programs_in_tier(policy["program_tier"])
     else:
         return False
     if not programs:
