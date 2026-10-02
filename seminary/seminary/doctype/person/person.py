@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary.ethnic_groups import validate_active
+
 EMAIL_CHANNEL = "Email"
 SMS_CHANNEL = "SMS"
 
@@ -12,6 +14,7 @@ SMS_CHANNEL = "SMS"
 class Person(Document):
     def validate(self):
         self.set_full_name()
+        validate_active(self, "ethnicity")  # ADR 086
         self.normalize_reachability()
         self.validate_tax_id()
         self.assert_reachable()

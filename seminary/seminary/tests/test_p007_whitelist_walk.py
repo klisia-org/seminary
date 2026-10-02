@@ -857,9 +857,6 @@ PENDING_CLASSIFICATION = {
     "seminary.seminary.doctype.course_schedule.course_schedule.regenerate_token",
     "seminary.seminary.doctype.course_schedule.course_schedule.schedule_dates",
     "seminary.seminary.doctype.course_schedule.course_schedule.validate",
-    # seminary.seminary.doctype.instructor.instructor
-    "seminary.seminary.doctype.instructor.instructor.pull_education_from_employee",
-    "seminary.seminary.doctype.instructor.instructor.push_education_to_employee",
     # seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch
     "seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch.dry_run",
     "seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch.get_import_options",

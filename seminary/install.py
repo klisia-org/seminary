@@ -10,6 +10,8 @@ from frappe.desk.doctype.global_search_settings.global_search_settings import (
 from frappe.utils.dashboard import sync_dashboards
 from frappe import _
 
+from seminary.seminary.ethnic_groups import seed_ethnic_groups
+
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
 # TODO: Remove all Items created when Fee Category is created
@@ -44,6 +46,7 @@ def after_install():
     seed_communication_templates()
     seed_portal_messaging_rules()
     seed_partner_types()
+    seed_ethnic_groups()
     seed_skill_tags()
     seed_allowed_graduation_documents()
     seed_internship_types()

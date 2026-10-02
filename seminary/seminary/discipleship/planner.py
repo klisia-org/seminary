@@ -435,13 +435,15 @@ def _planning_settings(cohort_type):
 def require_planner(unit):
     """Staff who may write a Cohort, or the mentoring unit's own chair.
 
-    The chair is named on the unit as an Instructor; the planner is the one
+    The chair is named on the unit as a Person (p014); the planner is the one
     place they act on their own department without needing a site-wide role.
     """
     if faculty.has_full_access():
         return
     chair = frappe.db.get_value("Academic Unit", unit, "chair")
-    if chair and chair == faculty.current_instructor():
+    if chair and chair == frappe.db.get_value(
+        "Person", {"user": frappe.session.user}, "name"
+    ):
         return
     frappe.throw(
         _("Only staff or the mentoring unit's chair may plan cohorts."),

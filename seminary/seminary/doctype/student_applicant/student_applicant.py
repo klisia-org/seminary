@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils import cstr, getdate
 
 from seminary.seminary import person_fields
+from seminary.seminary.ethnic_groups import validate_active
 
 
 class StudentApplicant(Document):
@@ -62,6 +63,7 @@ class StudentApplicant(Document):
 
     def validate(self):
         self.set_title()
+        validate_active(self, "ethnic")  # ADR 086
         self.validate_dates()
         self.validate_tax_id()
         self.validate_term()

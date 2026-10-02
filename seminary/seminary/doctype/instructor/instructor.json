@@ -206,26 +206,31 @@
    "collapsible": 1,
    "fieldname": "education_section",
    "fieldtype": "Section Break",
-   "label": "Education"
+   "label": "Education",
+   "hidden": 1
   },
   {
-   "description": "Formal education history for accreditation. When an Employee is linked, use the Education menu to pull from or push to HRMS.",
+   "description": "Retired: qualifications are kept in the faculty and staff file. Kept until existing rows have been imported there.",
    "fieldname": "education",
    "fieldtype": "Table",
    "label": "Education",
-   "options": "Instructor Education"
+   "options": "Instructor Education",
+   "hidden": 1,
+   "read_only": 1
   },
   {
    "fieldname": "education_last_pulled_on",
    "fieldtype": "Datetime",
    "label": "Education Last Pulled from Employee",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "education_last_pushed_on",
    "fieldtype": "Datetime",
    "label": "Education Last Pushed to Employee",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "log_details",
@@ -241,7 +246,7 @@
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-08-29 03:01:53.753415",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",
