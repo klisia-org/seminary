@@ -438,21 +438,25 @@ const assessmentRows = computed(() => {
   }))
 })
 
-const currentGrade = computed(() => {
-  const assessments = status.data?.assessments
-  const intervals = status.data?.grading_scale_intervals
-  const maxGrade = status.data?.maxnumgrade || 100
-  if (!assessments || !intervals || assessments.length === 0) return null
+// Current and projected grade come from the server (privatedocs p015 §3), so
+// My Status and the instructors' Students tab always agree.
+const fromServer = (g) => g && ({
+  score: g.score,
+  maxGrade: g.max_grade,
+  grade: g.grade,
+  gradePass: g.grade_pass,
+})
+const currentGrade = computed(() => fromServer(status.data?.current_grade))
+const projectedGrade = computed(() => fromServer(status.data?.projected_grade))
 
+// The server's "current" algorithm (seminary/seminary/grade_projection.py),
+// rerun here on edited scores for Simulate Grades. Keep the two in step.
+function gradeFromScores(assessments, scoreOf, intervals, maxGrade) {
   const regular = assessments.filter(a => !a.extracredit_scac)
-  const weightedSum = regular.reduce((sum, a) => {
-    const raw = a.rawscore_card || 0
-    return sum + raw * (a.weight_scac || 0)
-  }, 0)
-
+  const weightedSum = regular.reduce((sum, a) => sum + scoreOf(a) * (a.weight_scac || 0), 0)
   const extraPoints = assessments
     .filter(a => a.extracredit_scac)
-    .reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
+    .reduce((sum, a) => sum + scoreOf(a), 0)
 
   const score = (weightedSum + extraPoints) / maxGrade
 
@@ -468,47 +472,7 @@ const currentGrade = computed(() => {
   }
 
   return { score: Math.round(score * 100) / 100, maxGrade, grade, gradePass }
-})
-
-const projectedGrade = computed(() => {
-  const assessments = status.data?.assessments
-  const intervals = status.data?.grading_scale_intervals
-  const maxGrade = status.data?.maxnumgrade || 100
-  if (!assessments || !intervals || assessments.length === 0) return null
-
-  const regular = assessments.filter(a => !a.extracredit_scac)
-  const graded = regular.filter(a => a.rawscore_card != null && a.rawscore_card > 0)
-  if (graded.length === 0) return null
-
-  // Unweighted average of graded assessments
-  const avgRawScore = graded.reduce((sum, a) => sum + a.rawscore_card, 0) / graded.length
-
-  // Actual score for graded, average for ungraded
-  const weightedSum = regular.reduce((sum, a) => {
-    const hasScore = a.rawscore_card != null && a.rawscore_card > 0
-    const raw = hasScore ? a.rawscore_card : avgRawScore
-    return sum + raw * (a.weight_scac || 0)
-  }, 0)
-
-  const extraPoints = assessments
-    .filter(a => a.extracredit_scac)
-    .reduce((sum, a) => sum + (a.actualextrapt_card || 0), 0)
-
-  const score = (weightedSum + extraPoints) / maxGrade
-
-  const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
-  let grade = ''
-  let gradePass = ''
-  for (const interval of sorted) {
-    if (score >= interval.threshold) {
-      grade = interval.grade_code
-      gradePass = interval.grade_pass
-      break
-    }
-  }
-
-  return { score: Math.round(score * 100) / 100, maxGrade, grade, gradePass }
-})
+}
 
 // ── Simulation ───────────────────────────────────────────────────────────────
 const simAssessments = computed(() => {
@@ -552,35 +516,12 @@ const simulatedGrade = computed(() => {
   const intervals = status.data?.grading_scale_intervals
   const maxGrade = status.data?.maxnumgrade || 100
   if (!assessments || !intervals || assessments.length === 0) return null
-
-  const regular = assessments.filter(a => !a.extracredit_scac)
-  const weightedSum = regular.reduce((sum, a) => {
-    const key = a.grade_name || a.assessment_criteria
-    const raw = Number(simScores[key]) || 0
-    return sum + raw * (a.weight_scac || 0)
-  }, 0)
-
-  const extraPoints = assessments
-    .filter(a => a.extracredit_scac)
-    .reduce((sum, a) => {
-      const key = a.grade_name || a.assessment_criteria
-      return sum + (Number(simScores[key]) || 0)
-    }, 0)
-
-  const score = (weightedSum + extraPoints) / maxGrade
-
-  const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
-  let grade = ''
-  let gradePass = ''
-  for (const interval of sorted) {
-    if (score >= interval.threshold) {
-      grade = interval.grade_code
-      gradePass = interval.grade_pass
-      break
-    }
-  }
-
-  return { score: Math.round(score * 100) / 100, maxGrade, grade, gradePass }
+  return gradeFromScores(
+    assessments,
+    (a) => Number(simScores[a.grade_name || a.assessment_criteria]) || 0,
+    intervals,
+    maxGrade,
+  )
 })
 
 function percentileClass(percentile) {

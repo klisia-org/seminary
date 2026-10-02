@@ -30,6 +30,8 @@
   "fudge_points",
   "extra_credit",
   "status",
+  "evaluator",
+  "graded_on",
   "comments",
   "grading_comments"
  ],
@@ -154,6 +156,23 @@
    "permlevel": 1
   },
   {
+   "fieldname": "evaluator",
+   "fieldtype": "Link",
+   "label": "Evaluated by",
+   "options": "User",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "Who first marked this work Graded. Set automatically."
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "When this work was first marked Graded. Set automatically and never changed afterwards."
+  },
+  {
    "fieldname": "comments",
    "fieldtype": "Text Editor",
    "label": "Comments",
@@ -188,7 +207,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-10 11:22:43.168958",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Discussion Submission",

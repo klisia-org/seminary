@@ -825,16 +825,14 @@ watch(
 
 const submitAssignment = () => {
 	if (props.submissionName != 'new') {
-		let evaluator =
-			submissionResource.doc && submissionResource.doc.owner != user.data?.name
-				? user.data?.name
-				: null
+		// `evaluator` and `graded_on` are stamped by the server the first time
+		// the work is marked Graded (privatedocs p015); never sent from here.
+		const { evaluator, graded_on, ...doc } = submissionResource.doc || {}
 
 		submissionResource.setValue.submit(
 			{
-				...submissionResource.doc,
+				...doc,
 				assignment_attachment: submissionFile.value?.file_url,
-				evaluator: evaluator,
 				comments: comments.value,
 				answer: answer.value,
 

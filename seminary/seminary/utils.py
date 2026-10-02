@@ -49,6 +49,7 @@ from frappe.utils import (
     get_time_str,
     nowtime,
     format_datetime,
+    now_datetime,
 )
 from frappe.utils.dateutils import get_period
 from seminary.seminary.md import find_macros, markdown_to_html
@@ -2000,6 +2001,27 @@ _SUBMISSION_BACKFILL_CONFIG = {
 }
 
 
+def stamp_first_grading(submission):
+    """Record who first graded a submission and when (privatedocs p015 §1).
+
+    ``evaluator`` and ``graded_on`` are server-owned: set when the status first
+    becomes Graded, from the session, and never changed afterwards. Whatever a
+    client sends is replaced by the stored values. A submission that was
+    already Graded before these fields existed keeps them as they are (empty
+    unless the version history filled them): its grading time is unknown."""
+    before = None if submission.is_new() else submission.get_doc_before_save()
+    if before and (before.get("graded_on") or before.get("status") == "Graded"):
+        submission.evaluator = before.get("evaluator")
+        submission.graded_on = before.get("graded_on")
+        return
+    if submission.status == "Graded":
+        submission.evaluator = frappe.session.user
+        submission.graded_on = now_datetime()
+    else:
+        submission.evaluator = before.get("evaluator") if before else None
+        submission.graded_on = None
+
+
 def backfill_submission_course_if_missing(submission):
     """Defensive validate-time guard: if a submission is being saved without
     its Course Schedule field set, infer it from the SCAC that owns the
@@ -2379,6 +2401,18 @@ def get_student_course_status(course):
         )
     else:
         roster["grading_scale_intervals"] = []
+
+    # Current and projected grade come from the one server algorithm the
+    # instructors' Students tab also uses (privatedocs p015 §3).
+    from seminary.seminary.grade_projection import compute
+
+    grades = compute(
+        roster["assessments"],
+        roster["grading_scale_intervals"],
+        roster["maxnumgrade"],
+    )
+    roster["current_grade"] = grades["current"]
+    roster["projected_grade"] = grades["projected"]
 
     # Get term withdrawal rules for the course's academic term
     if cs and cs.academic_term:

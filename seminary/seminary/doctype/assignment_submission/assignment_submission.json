@@ -34,6 +34,7 @@
   "comments",
   "comment_attach",
   "evaluator",
+  "graded_on",
   "comments_thread",
   "plagiarism_text",
   "plagiarism_text_hash"
@@ -98,7 +99,17 @@
    "fieldtype": "Link",
    "label": "Evaluated by",
    "options": "User",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1,
+   "description": "Who first marked this work Graded. Set automatically."
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "When this work was first marked Graded. Set automatically and never changed afterwards."
   },
   {
    "fieldname": "comments_thread",
@@ -239,7 +250,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-28 12:00:00.000000",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",
