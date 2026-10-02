@@ -1932,6 +1932,38 @@ def get_program_audit(program_enrollment):
     return _program_audit(program_enrollment)
 
 
+# A course can have several attempts (one Program Enrollment Course row per
+# section taken). The audit shows one line per course, so it has to pick which
+# attempt speaks for the course. Row order cannot decide it: the rows are
+# inserted directly, without an idx, and their names are not chronological.
+_ATTEMPT_RANK = {"Pass": 3, "Enrolled": 2, "": 2, None: 2}
+
+
+def _best_attempt_per_course(pec_rows):
+    """One attempt per course for the audit: a passed attempt always wins, then
+    one still in progress, then anything else (Fail, Withdrawn). Among attempts
+    of the same rank the later row is kept, as before."""
+    best = {}
+    for pec in pec_rows:
+        rank = _ATTEMPT_RANK.get(pec.status, 1)
+        current = best.get(pec.course_name)
+        if current and current["_rank"] > rank:
+            continue
+        best[pec.course_name] = {
+            "course_schedule": pec.course,
+            "course": pec.course_name,
+            "academic_term": pec.academic_term,
+            "credits": pec.credits or 0,
+            "grade_code": pec.pec_finalgradecode,
+            "grade_num": pec.pec_finalgradenum,
+            "status": pec.status,
+            "_rank": rank,
+        }
+    for attempt in best.values():
+        del attempt["_rank"]
+    return best
+
+
 def _program_audit(program_enrollment):
     """Server callers (alumni portal, the program progress report) gate on
     their own terms and call this."""
@@ -1967,17 +1999,7 @@ def _program_audit(program_enrollment):
     }
 
     # Get student's completed/in-progress courses
-    student_courses = {}
-    for pec in pe.courses:
-        student_courses[pec.course_name] = {
-            "course_schedule": pec.course,
-            "course": pec.course_name,
-            "academic_term": pec.academic_term,
-            "credits": pec.credits or 0,
-            "grade_code": pec.pec_finalgradecode,
-            "grade_num": pec.pec_finalgradenum,
-            "status": pec.status,
-        }
+    student_courses = _best_attempt_per_course(pe.courses)
 
     # Also check in-progress enrollments (Course Enrollment Individual, not yet graded)
     in_progress = frappe.get_all(
