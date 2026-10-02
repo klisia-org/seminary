@@ -83,3 +83,4 @@ seminary.seminary.patches.drop_course_result_tool
 seminary.seminary.patches.adr084_progression_settings
 seminary.seminary.patches.adr085_fill_person_is_staff
 seminary.seminary.patches.adr086_ethnic_groups
+seminary.seminary.patches.p014_unit_chair_person

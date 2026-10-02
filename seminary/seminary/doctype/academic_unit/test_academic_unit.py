@@ -61,3 +61,106 @@ class IntegrationTestAcademicUnit(IntegrationTestCase):
         doc = frappe.get_doc("Academic Unit", "ZZ Cyc A")
         doc.parent_unit = "ZZ Cyc B"  # A -> B -> A
         self.assertRaises(frappe.ValidationError, doc.save)
+
+
+class IntegrationTestGovernanceLock(IntegrationTestCase):
+    """A governing body's chair and members follow Aretenic's seats (p014)."""
+
+    def setUp(self):
+        if "aretenic" not in frappe.get_installed_apps():
+            self.skipTest("the lock applies only with Aretenic installed")
+        self.person = (
+            frappe.get_doc(
+                {"doctype": "Person", "first_name": "ZZ Board", "last_name": "Chair"}
+            )
+            .insert(ignore_permissions=True)
+            .name
+        )
+        self.other = (
+            frappe.get_doc(
+                {"doctype": "Person", "first_name": "ZZ Board", "last_name": "Member"}
+            )
+            .insert(ignore_permissions=True)
+            .name
+        )
+        self.unit = (
+            frappe.get_doc(
+                {
+                    "doctype": "Academic Unit",
+                    "unit_name": "ZZ Board " + frappe.generate_hash(length=6),
+                    "unit_type": "Board",
+                }
+            )
+            .insert(ignore_permissions=True)
+            .name
+        )
+
+    def tearDown(self):
+        frappe.flags.in_governance_sync = False
+
+    def _lock(self):
+        frappe.db.set_value("Academic Unit", self.unit, "kept_by_governance_record", 1)
+
+    def _membership(self, person):
+        return frappe.get_doc(
+            {
+                "doctype": "Academic Unit Membership",
+                "unit": self.unit,
+                "person": person,
+                "is_active": 1,
+            }
+        )
+
+    def test_chair_is_a_person(self):
+        doc = frappe.get_doc("Academic Unit", self.unit)
+        doc.chair = self.person
+        doc.save(ignore_permissions=True)
+        self.assertEqual(doc.chair_name, "ZZ Board Chair")
+
+    def test_unlocked_unit_is_edited_by_hand(self):
+        self._membership(self.other).insert(ignore_permissions=True)
+        doc = frappe.get_doc("Academic Unit", self.unit)
+        doc.chair = self.person
+        doc.save(ignore_permissions=True)
+
+    def test_locked_chair_and_members_reject_direct_edits(self):
+        m = self._membership(self.other).insert(ignore_permissions=True)
+        self._lock()
+        doc = frappe.get_doc("Academic Unit", self.unit)
+        doc.chair = self.person
+        self.assertRaises(frappe.ValidationError, doc.save, ignore_permissions=True)
+        self.assertRaises(
+            frappe.ValidationError,
+            self._membership(self.person).insert,
+            ignore_permissions=True,
+        )
+        m.reload()
+        m.is_active = 0
+        self.assertRaises(frappe.ValidationError, m.save, ignore_permissions=True)
+        self.assertRaises(
+            frappe.ValidationError,
+            frappe.delete_doc,
+            "Academic Unit Membership",
+            m.name,
+            ignore_permissions=True,
+        )
+
+    def test_display_fields_stay_editable_when_locked(self):
+        m = self._membership(self.other).insert(ignore_permissions=True)
+        self._lock()
+        m.reload()
+        m.web_order = 3
+        m.save(ignore_permissions=True)
+        doc = frappe.get_doc("Academic Unit", self.unit)
+        doc.web_order = 2
+        doc.kept_by_governance_record = 0  # only the sync may lift the lock
+        doc.save(ignore_permissions=True)
+        self.assertEqual(doc.kept_by_governance_record, 1)
+
+    def test_the_sync_passes_through(self):
+        self._lock()
+        frappe.flags.in_governance_sync = True
+        self._membership(self.person).insert(ignore_permissions=True)
+        doc = frappe.get_doc("Academic Unit", self.unit)
+        doc.chair = self.person
+        doc.save(ignore_permissions=True)

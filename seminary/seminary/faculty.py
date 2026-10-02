@@ -640,9 +640,7 @@ def get_unit_roster(unit: str, public: bool = False) -> list:
                 "member_order": r.member_order or 0,
                 "photo": r.profileimage or r.person_image,
                 "short_bio": r.web_bio or r.shortbio,
-                "is_chair": bool(
-                    r.instructor and r.instructor == chair_by_unit.get(r.unit)
-                ),
+                "is_chair": bool(r.person and r.person == chair_by_unit.get(r.unit)),
                 "capabilities": [],
             },
         )

@@ -3,6 +3,7 @@
 
 frappe.ui.form.on("Academic Unit", {
 	refresh(frm) {
+		governance_lock(frm);
 		if (frm.is_new()) return;
 		// Read-only view of who is wired to this unit (transitive for an
 		// interdepartment). Displays the roster; it never adds or copies rows.
@@ -50,4 +51,16 @@ function show_member_roster(frm) {
 			});
 		},
 	});
+}
+
+function governance_lock(frm) {
+	// A governing body's chair follows its seats in Aretenic (p014).
+	const locked = frm.doc.kept_by_governance_record && frappe.boot.versions?.aretenic;
+	frm.set_df_property("chair", "read_only", locked ? 1 : 0);
+	if (locked) {
+		frm.set_intro(
+			__("The chair and members of this body follow its seats in the governance record. How the website shows them is kept here."),
+			"blue"
+		);
+	}
 }
