@@ -381,9 +381,9 @@
   },
   {
    "fieldname": "ethnicity",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Ethnic Group",
-   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "options": "Ethnic Group",
    "permlevel": 1
   },
   {
@@ -489,7 +489,7 @@
    "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-10-02 00:00:00.000000",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",

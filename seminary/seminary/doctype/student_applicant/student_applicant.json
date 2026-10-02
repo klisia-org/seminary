@@ -372,9 +372,9 @@
   },
   {
    "fieldname": "ethnic",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Ethnic Group",
-   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "options": "Ethnic Group",
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
@@ -635,7 +635,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-09-10 12:00:00.000000",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",
