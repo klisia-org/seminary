@@ -86,3 +86,4 @@ seminary.seminary.patches.adr086_ethnic_groups
 seminary.seminary.patches.p014_unit_chair_person
 seminary.seminary.patches.p015_fill_graded_by
 seminary.seminary.patches.p015_reply_course_reference
+seminary.seminary.patches.p016_degree_levels

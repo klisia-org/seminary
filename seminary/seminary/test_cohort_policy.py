@@ -52,16 +52,13 @@ class TestCohortTypePolicy(IntegrationTestCase):
             fx.make_cohort_type(category="Throughout Program")
         self.assertIn("enrollment to graduation", str(ctx.exception))
 
-    def test_program_and_level_together_are_refused(self):
-        level = fx.make_program_level()
-        if not level:
-            self.skipTest("site has no Program Level")
+    def test_program_and_tier_together_are_refused(self):
         program = fx.make_program()
         with self.assertRaises(frappe.ValidationError) as ctx:
             fx.make_cohort_type(
                 category="Throughout Program",
                 program=program.name,
-                program_level=level,
+                program_tier="Master's",
             )
         self.assertIn("not to both", str(ctx.exception))
 
@@ -899,13 +896,10 @@ class TestArchivingAndTheSeat(IntegrationTestCase):
         self.assertEqual(standing.invite_status, "Active")
         self.assertFalse(standing.closed_by_archive)
 
-    def test_a_level_bound_type_releases_them(self):
-        """The MACL-then-MACE case: the type spans the level, and a cohort that
+    def test_a_tier_bound_type_releases_them(self):
+        """The MACL-then-MACE case: the type spans the tier, and a cohort that
         ended with the first degree must not block a cohort for the second."""
-        level = fx.make_program_level()
-        if not level:
-            self.skipTest("site has no Program Level")
-        t = fx.make_cohort_type(category="Throughout Program", program_level=level)
+        t = fx.make_cohort_type(category="Throughout Program", program_tier="Master's")
         cohort = fx.make_cohort(t.name, self.leader.name)
         fx.add_member(cohort.name, self.member.name)
 

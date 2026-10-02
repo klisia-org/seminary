@@ -5,7 +5,7 @@ from seminary.seminary.seo import page_metatags
 
 def get_context(context):
     """Public Programs catalogue (ADR 061): published programs grouped by
-    Program Level (levels ordered by their web_order). The page heading uses a
+    their level's tier (p016), ordered by the levels' web_order. The page heading uses a
     singular/plural label based on how many programs are published, or the
     Website Branding override when set."""
     context.no_cache = 1
@@ -27,23 +27,29 @@ def get_context(context):
         order_by="order_pd asc, program_name asc",
     )
 
+    # One section per tier (p016), ordered by the lowest web order among its levels.
     levels = frappe.get_all(
         "Program Level",
-        fields=["name", "pgm_level"],
+        fields=["name", "degree_tier", "web_order"],
         order_by="web_order asc, pgm_level asc",
     )
+    tier_of = {lvl.name: lvl.degree_tier for lvl in levels}
+    tier_order = []
+    for lvl in levels:
+        if lvl.degree_tier and lvl.degree_tier not in tier_order:
+            tier_order.append(lvl.degree_tier)
 
-    by_level = {}
+    by_tier = {}
     for p in programs:
-        by_level.setdefault(p.program_level or "", []).append(p)
+        by_tier.setdefault(tier_of.get(p.program_level) or "", []).append(p)
 
     groups = []
-    for lvl in levels:
-        if lvl.name in by_level:
-            groups.append({"level": lvl.pgm_level, "programs": by_level.pop(lvl.name)})
-    # Programs whose level has no row / no level — append last under their key.
-    for lvl_name, progs in by_level.items():
-        groups.append({"level": lvl_name or frappe._("Programs"), "programs": progs})
+    for tier in tier_order:
+        if tier in by_tier:
+            groups.append({"level": frappe._(tier), "programs": by_tier.pop(tier)})
+    # Programs with no level — append last.
+    for progs in by_tier.values():
+        groups.append({"level": frappe._("Programs"), "programs": progs})
 
     context.groups = groups
     context.program_count = len(programs)

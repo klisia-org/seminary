@@ -11,6 +11,7 @@ from frappe.utils.dashboard import sync_dashboards
 from frappe import _
 
 from seminary.seminary.ethnic_groups import seed_ethnic_groups
+from seminary.seminary.doctype.program_level.program_level import seed_program_levels
 
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
@@ -20,6 +21,7 @@ from seminary.seminary.ethnic_groups import seed_ethnic_groups
 
 def after_install():
     setup_fixtures()
+    seed_program_levels()
     setup_genders()
     create_studentappl_role()
     create_student_role()

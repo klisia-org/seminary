@@ -819,7 +819,9 @@ fixtures = [
     # against Seminary Settings, so a re-import throws once a seminary changes
     # the audit setting or edits a category. Seeded create-only-if-missing by
     # install.seed_fee_categories() instead.
-    "Program Level",
+    # Program Level is NOT fixtured: the system's levels are seeded create-only-if-missing by
+    # program_level.seed_program_levels() and protected there (p016), so a school's policy
+    # edits survive migrate.
     # Instructor Category is NOT fixtured: seeded create-only-if-missing by
     # install.setup_fixtures() so seminary edits to the catalog survive migrate.
     # Assessment Criteria is NOT fixtured: seeded create-only-if-missing by

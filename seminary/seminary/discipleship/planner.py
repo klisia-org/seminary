@@ -20,6 +20,7 @@ arrangement a chair can adjust, and adjusting it is what the page is for.
 
 import frappe
 from frappe import _
+from seminary.seminary.doctype.program_level.program_level import programs_in_tier
 
 from seminary.seminary import faculty
 from seminary.seminary.discipleship import criteria as rules
@@ -94,21 +95,19 @@ def _person_rows(person_names):
 def _bound_programs(cohort_type):
     """The programs whose enrolled students this type is about.
 
-    A type binds to a Program or to a Program Level, never both -- `Cohort
+    A type binds to a Program or to a Program Tier, never both -- `Cohort
     Type.validate_binding` refuses the pair -- so this is one branch, not a
     merge.
     """
     row = frappe.db.get_value(
-        "Cohort Type", cohort_type, ["program", "program_level"], as_dict=True
+        "Cohort Type", cohort_type, ["program", "program_tier"], as_dict=True
     )
     if not row:
         return []
     if row.program:
         return [row.program]
-    if row.program_level:
-        return frappe.get_all(
-            "Program", filters={"program_level": row.program_level}, pluck="name"
-        )
+    if row.program_tier:
+        return programs_in_tier(row.program_tier)
     return []
 
 
@@ -771,7 +770,7 @@ def plannable_types():
     rows = frappe.get_all(
         "Cohort Type",
         filters={"plannable": 1, "is_active": 1},
-        fields=["name", "category", "program", "program_level", "mentor_unit"],
+        fields=["name", "category", "program", "program_tier", "mentor_unit"],
         order_by="name asc",
     )
     return [r for r in rows if r.mentor_unit]
