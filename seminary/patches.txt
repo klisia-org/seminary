@@ -84,3 +84,5 @@ seminary.seminary.patches.adr084_progression_settings
 seminary.seminary.patches.adr085_fill_person_is_staff
 seminary.seminary.patches.adr086_ethnic_groups
 seminary.seminary.patches.p014_unit_chair_person
+seminary.seminary.patches.p015_fill_graded_by
+seminary.seminary.patches.p015_reply_course_reference

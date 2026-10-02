@@ -65,6 +65,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.chapel",
     "seminary.seminary.comms",
     "seminary.seminary.course_checkin",
+    "seminary.seminary.course_students",
     "seminary.seminary.course_pack.export",
     "seminary.seminary.course_pack.import_",
     "seminary.seminary.dashboard_chart_source.students_per_current_courses.students_per_current_courses",
@@ -232,6 +233,8 @@ STUDENT_ALLOWED = {
 
 STAFF_ONLY = {
     "seminary.seminary.cbe_overview.get_cbe_overview",
+    # The Students tab: the section's teaching staff only (privatedocs p015).
+    "seminary.seminary.course_students.get_course_students",
     # --- SCORM (p009 S10/S11). The grade mapping is a write capability into a
     # section's gradebook, and the selftest reaches object storage and the
     # network, so both are staff. `_lesson_context` gates before it reports

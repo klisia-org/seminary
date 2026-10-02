@@ -1926,6 +1926,26 @@ def _attachment_html(attachments):
     return "<hr><p><b>{0}</b></p><ul>{1}</ul>".format(_("Attachments"), items)
 
 
+def _reply_reference(in_reply_to):
+    """The course a reply belongs to: the reference of the message it answers,
+    when that is a Course Schedule (privatedocs p015 §2). Anything else -- no
+    reference, or some other record -- is not copied."""
+    if not in_reply_to:
+        return {}
+    ref = frappe.db.get_value(
+        "Communication Log",
+        in_reply_to,
+        ["reference_doctype", "reference_name"],
+        as_dict=True,
+    )
+    if ref and ref.reference_doctype == "Course Schedule" and ref.reference_name:
+        return {
+            "reference_doctype": "Course Schedule",
+            "reference_name": ref.reference_name,
+        }
+    return {}
+
+
 @frappe.whitelist()
 def reply_portal_message(in_reply_to, message):
     """Portal reply: answer a received In-App message, threaded to it. Replies
@@ -1960,6 +1980,7 @@ def reply_portal_message(in_reply_to, message):
         category="Community",
         triggered_by=frappe.session.user,
         in_reply_to=in_reply_to,
+        **_reply_reference(in_reply_to),
     )
     return {"log": log}
 
@@ -2553,6 +2574,7 @@ def reply_in_conversation(person, message, in_reply_to=None, channel=None):
         category="Community",
         triggered_by=frappe.session.user,
         in_reply_to=in_reply_to,
+        **_reply_reference(in_reply_to),
     )
     if log and frappe.db.get_value("Communication Log", log, "status") == "Queued":
         deliver_now(log)

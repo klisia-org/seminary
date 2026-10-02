@@ -35,6 +35,7 @@ declare module 'vue' {
     CourseCardToDo: typeof import('./src/components/CourseCardToDo.vue')['default']
     CourseImageFrame: typeof import('./src/components/CourseImageFrame.vue')['default']
     CourseOutline: typeof import('./src/components/CourseOutline.vue')['default']
+    CourseStudentsTab: typeof import('./src/components/CourseStudentsTab.vue')['default']
     CulminatingProjectDetail: typeof import('./src/components/CulminatingProjectDetail.vue')['default']
     CulminatingProjectSubmission: typeof import('./src/components/CulminatingProjectSubmission.vue')['default']
     DesktopLayout: typeof import('./src/components/DesktopLayout.vue')['default']

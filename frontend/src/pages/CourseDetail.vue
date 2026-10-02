@@ -5,12 +5,16 @@
 				<Breadcrumbs class="h-7" :items="breadcrumbs" />
 			</template>
 			<!-- Competency sections get a second area, one click from anywhere in
-			     the course (privatedocs p012 decision 3; tabs per ADR 075). -->
-			<template v-if="hasReview" #tabs>
+			     the course (privatedocs p012 decision 3; tabs per ADR 075), and the
+			     section's instructors a Students tab (privatedocs p015). -->
+			<template v-if="tabs.length > 1" #tabs>
 				<PageTabs :tabs="tabs" v-model="tab" :label="__('Course views')" />
 			</template>
 		</PageHeader>
-		<div v-if="hasReview && tab === 'review'" class="m-5">
+		<div v-if="tab === 'students'" class="m-5">
+			<CourseStudentsTab :courseName="props.courseName" />
+		</div>
+		<div v-if="tab === 'review'" class="m-5">
 			<div class="mb-4">
 				<h1 class="text-2xl font-bold text-ink-gray-9">{{ __('Competency Review') }}</h1>
 				<p class="mt-1 text-sm text-ink-gray-6">
@@ -26,7 +30,7 @@
 			<CompetencyStudentPane v-else :courseName="props.courseName" :context="cbeContext.data"
 				showReview :initialRoster="route.query.roster || null" />
 		</div>
-		<div v-show="!hasReview || tab !== 'review'" class="m-5">
+		<div v-show="tab === 'outline'" class="m-5">
 			<div class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
 				style="--right-col: clamp(20rem, 24vw, 30rem)">
 				<div>
@@ -165,6 +169,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PageTabs from '@/components/PageTabs.vue'
 import CompetencyReview from '@/components/CompetencyReview.vue'
 import CompetencyStudentPane from '@/components/CompetencyStudentPane.vue'
+import CourseStudentsTab from '@/components/CourseStudentsTab.vue'
 import { useTabParam } from '@/composables/useTabParam'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
@@ -257,17 +262,22 @@ const reviewNews = createResource({
 	auto: !!user.data?.is_student,
 	onError: () => {},
 })
+// Students tab: the section's instructors only (privatedocs p015 §4); the
+// server checks the same before it answers.
+const hasStudents = computed(() => access.value === 'instructor')
 const tabs = computed(() => {
 	const fresh = reviewNews.data?.length || 0
-	return [
-		{ key: 'outline', label: __('Course Outline') },
-		{
+	const out = [{ key: 'outline', label: __('Course Outline') }]
+	if (hasReview.value) {
+		out.push({
 			key: 'review',
 			label: fresh ? __('Competency Review ({0} new)').format(fresh) : __('Competency Review'),
-		},
-	]
+		})
+	}
+	if (hasStudents.value) out.push({ key: 'students', label: __('Students') })
+	return out
 })
-const tab = useTabParam(['outline', 'review'], 'outline')
+const tab = useTabParam(computed(() => tabs.value.map((t) => t.key)), 'outline')
 
 const canEditOutline = computed(() => {
 	const roles = user?.data || {}
