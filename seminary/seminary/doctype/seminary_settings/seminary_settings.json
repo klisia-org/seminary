@@ -32,6 +32,8 @@
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
+  "prerequisite_override_section",
+  "prerequisite_override_roles",
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
@@ -313,6 +315,18 @@
    "fieldtype": "Check",
    "label": "Allow audits?",
    "mandatory_depends_on": "allow_audit==True"
+  },
+  {
+   "fieldname": "prerequisite_override_section",
+   "fieldtype": "Section Break",
+   "label": "Prerequisite Overrides"
+  },
+  {
+   "description": "Roles that may enroll a student without a course's mandatory prerequisites, by ticking \"Don't check pre-requisites\" on the enrollment. Leave empty to allow Registrar, Program Chair, Seminary Manager and System Manager.",
+   "fieldname": "prerequisite_override_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles That May Override Prerequisites",
+   "options": "Prerequisite Override Role"
   },
   {
    "fieldname": "audit_settings_section",
@@ -859,7 +873,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-28 18:00:00.000000",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",
