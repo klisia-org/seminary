@@ -8,7 +8,7 @@
 				class="seminary-logo-wide w-full object-contain object-left" :class="WIDE_HEIGHT[logoSize]" />
 			<div class="mt-2 flex items-center gap-2">
 				<div class="min-w-0 flex-1">
-					<div v-if="logoPlacement === 'Wide with name'" class="truncate text-sm font-semibold leading-snug">
+					<div v-if="logoPlacement === 'Wide with name'" class="truncate text-sm font-semibold leading-snug text-[color:var(--portal-brand,var(--ink-gray-9))]">
 						{{ seminarySettings?.name || 'Seminary' }}
 					</div>
 					<div class="truncate text-xs text-ink-gray-6 leading-snug">
@@ -31,7 +31,7 @@
 				<Avatar :image="activeLogo" :size="'lg'" class="object-cover" :class="TILE[logoSize]" />
 			</div>
 			<div class="transition-all duration-200" :class="isCollapsed ? 'hidden' : 'min-w-0 flex-1 opacity-100'">
-				<div class="truncate text-sm font-semibold leading-snug">
+				<div class="truncate text-sm font-semibold leading-snug text-[color:var(--portal-brand,var(--ink-gray-9))]">
 					{{ seminarySettings?.name || 'Seminary' }}
 				</div>
 				<div class="truncate text-xs text-ink-gray-6 leading-snug">
