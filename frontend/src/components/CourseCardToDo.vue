@@ -187,9 +187,9 @@ const dueSoonAssessments = computed(() => {
 <style scoped>
 .course-card-todo {
   padding: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--outline-gray-2);
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: var(--surface-gray-1);
 }
 
 section {

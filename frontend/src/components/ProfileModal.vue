@@ -39,26 +39,26 @@
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Mobile Number') }}</label>
 						<input v-model="editMobile" type="text"
-							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 					</div>
 
 					<!-- Editable: Address -->
 					<div class="flex flex-col gap-2">
 						<label class="text-sm text-ink-gray-6">{{ __('Address') }}</label>
 						<input v-model="editAddr.address_line_1" type="text" :placeholder="__('Address Line 1')"
-							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						<input v-model="editAddr.address_line_2" type="text" :placeholder="__('Address Line 2')"
-							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						<div class="grid grid-cols-3 gap-2">
 							<input v-model="editAddr.city" type="text" :placeholder="__('City')"
-								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							<input v-model="editAddr.state" type="text" :placeholder="__('State')"
-								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							<input v-model="editAddr.pincode" type="text" :placeholder="__('Pincode')"
-								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
 						<input v-model="editAddr.country" type="text" :placeholder="__('Country')"
-							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 					</div>
 
 					<!-- Editable: Tax ID. Label, placeholder and mask come from
@@ -67,7 +67,7 @@
 						<label class="text-sm text-ink-gray-6">{{ __(taxId.label.value) }}</label>
 						<input v-model="editTaxId" type="text" :placeholder="taxId.placeholder.value"
 							@input="onTaxIdInput" @blur="taxId.validate(editTaxId)"
-							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+							class="w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						<p v-if="taxId.error.value" class="text-xs text-ink-red-3">
 							{{ taxId.error.value }}
 						</p>
@@ -81,12 +81,12 @@
 						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
 						<div class="mt-1 flex gap-2 px-1">
 							<button type="button" @click="setTheme('light')"
-								:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+								:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 								{{ __('Light') }}
 							</button>
 							<button type="button" @click="setTheme('dark')"
-								:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+								:class="theme === 'dark' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 								{{ __('Dark') }}
 							</button>
@@ -97,7 +97,7 @@
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
 							<select v-model="selectedBible"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
 							</select>
@@ -106,7 +106,7 @@
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 						<select v-model="selectedLanguage"
-							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
 								{{ lang.language_name }}
@@ -174,12 +174,12 @@
 						<div>
 							<label class="text-sm text-ink-gray-6">{{ __('Name') }}</label>
 							<input v-model="editName" type="text"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
 						<div>
 							<label class="text-sm text-ink-gray-6">{{ __('Short Bio') }}</label>
 							<input v-model="editShortbio" type="text"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 						</div>
 						<div>
 							<label class="text-sm text-ink-gray-6 mb-1 block">{{ __('Bio') }}</label>
@@ -195,12 +195,12 @@
 							<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
 							<div class="mt-1 flex gap-2 px-1">
 								<button type="button" @click="setTheme('light')"
-									:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+									:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 									class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 									{{ __('Light') }}
 								</button>
 								<button type="button" @click="setTheme('dark')"
-									:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+									:class="theme === 'dark' ? 'ring-2 ring-outline-blue-1' : ''"
 									class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 									{{ __('Dark') }}
 								</button>
@@ -210,7 +210,7 @@
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
 							<select v-model="selectedBible"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
 							</select>
@@ -219,7 +219,7 @@
 						<div>
 							<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 							<select v-model="selectedLanguage"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
 									{{ lang.language_name }}
@@ -235,17 +235,17 @@
 							<div>
 								<label class="text-sm text-ink-gray-6">{{ __('E-mail for student contact') }}</label>
 								<input v-model="editProfEmail" type="email"
-									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							</div>
 							<div class="mt-2">
 								<label class="text-sm text-ink-gray-6">{{ __('Phone for messaging') }}</label>
 								<input v-model="editPhoneMessage" type="tel"
-									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 							</div>
 							<div class="mt-2">
 								<label class="text-sm text-ink-gray-6">{{ __('WhatsApp number') }}</label>
 								<input v-model="editWhatsapp" type="tel" placeholder="+15551234567"
-									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+									class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1" />
 								<p class="mt-1 text-xs text-ink-gray-4">
 									{{ __('Shown as a WhatsApp contact icon. Other channels (e.g. Telegram) are managed on your Communication Preferences page.') }}
 								</p>
@@ -279,12 +279,12 @@
 						<label class="text-sm text-ink-gray-6">{{ __('Appearance') }}</label>
 						<div class="mt-1 flex gap-2 px-1">
 							<button type="button" @click="setTheme('light')"
-								:class="theme === 'light' ? 'ring-2 ring-blue-500' : ''"
+								:class="theme === 'light' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 								{{ __('Light') }}
 							</button>
 							<button type="button" @click="setTheme('dark')"
-								:class="theme === 'dark' ? 'ring-2 ring-blue-500' : ''"
+								:class="theme === 'dark' ? 'ring-2 ring-outline-blue-1' : ''"
 								class="flex-1 rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9">
 								{{ __('Dark') }}
 							</button>
@@ -294,7 +294,7 @@
 						<div v-if="bibles.length" class="mb-3">
 							<label class="text-sm text-ink-gray-6">{{ __('Preferred Bible') }}</label>
 							<select v-model="selectedBible"
-								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+								class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 								<option value="">{{ __('Default') }}</option>
 								<option v-for="b in bibles" :key="b.bible_id" :value="b.bible_id">{{ b.bible_name }}</option>
 							</select>
@@ -303,7 +303,7 @@
 					<div>
 						<label class="text-sm text-ink-gray-6">{{ __('Language') }}</label>
 						<select v-model="selectedLanguage"
-							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-blue-500">
+							class="mt-1 w-full rounded-md border border-outline-gray-2 px-3 py-2 text-sm bg-surface-white text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-blue-1">
 							<option value="">{{ __('Default') }}</option>
 							<option v-for="lang in languages" :key="lang.language_code" :value="lang.language_code">
 								{{ lang.language_name }}

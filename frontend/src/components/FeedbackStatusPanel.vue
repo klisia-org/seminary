@@ -21,7 +21,7 @@
 				<span class="text-sm text-ink-gray-6">{{ __('have answered') }}</span>
 			</div>
 			<div class="mt-2 h-1.5 w-full overflow-hidden rounded bg-surface-gray-2">
-				<div class="h-full bg-blue-500" :style="{ width: pct + '%' }" />
+				<div class="h-full bg-surface-blue-3" :style="{ width: pct + '%' }" />
 			</div>
 			<p class="mt-2 text-xs text-ink-gray-5">
 				{{ __('Closes {0}. You will see the results once grades are submitted.').format(campaign.closes_on) }}
@@ -80,7 +80,7 @@
 					<div v-if="item.distribution" class="mt-1.5 flex items-end gap-1">
 						<div v-for="(count, point) in parsed(item.distribution)" :key="point"
 							class="flex flex-col items-center">
-							<div class="w-6 rounded-t bg-blue-400"
+							<div class="w-6 rounded-t bg-surface-blue-3"
 								:style="{ height: barHeight(count, item.responded_n) }" />
 							<span class="mt-0.5 text-[10px] text-ink-gray-5">{{ point }}</span>
 						</div>

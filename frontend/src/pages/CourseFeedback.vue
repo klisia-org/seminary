@@ -48,7 +48,7 @@
 			<div v-if="data.notice"
 				class="mt-4 rounded border px-3 py-2.5 text-sm"
 				:class="data.small_cohort
-					? 'border-amber-300 bg-amber-50 text-amber-900'
+					? 'border-outline-amber-1 bg-surface-amber-1 text-ink-amber-3'
 					: 'border-outline-gray-2 bg-surface-gray-1 text-ink-gray-7'">
 				{{ data.notice }}
 			</div>
@@ -67,7 +67,7 @@
 				<div v-for="q in block.questions" :key="q.name" class="mb-5">
 					<label class="block text-sm font-medium text-ink-gray-8">
 						{{ q.prompt }}
-						<span v-if="q.is_required" class="text-red-600">*</span>
+						<span v-if="q.is_required" class="text-ink-red-4">*</span>
 					</label>
 					<p v-if="q.help_text" class="mt-0.5 text-xs text-ink-gray-5">{{ q.help_text }}</p>
 
@@ -115,7 +115,7 @@
 				</div>
 			</div>
 
-			<div v-if="error" class="mt-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+			<div v-if="error" class="mt-4 rounded border border-outline-red-2 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-4">
 				{{ error }}
 			</div>
 

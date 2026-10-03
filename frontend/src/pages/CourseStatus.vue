@@ -66,7 +66,7 @@
         <h3 class="text-lg font-semibold text-ink-gray-8 mb-2">{{ __('Progress') }}</h3>
         <div class="flex items-center gap-4">
           <div class="flex-1 bg-surface-gray-3 rounded-full h-4 overflow-hidden">
-            <div class="bg-blue-500 h-4 rounded-full transition-all duration-300"
+            <div class="bg-surface-blue-3 h-4 rounded-full transition-all duration-300"
               :style="{ width: Math.min(status.data.progress || 0, 100) + '%' }">
             </div>
           </div>

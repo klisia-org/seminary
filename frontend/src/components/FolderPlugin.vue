@@ -65,7 +65,7 @@
         <div class="mt-1 flex flex-wrap items-center gap-1 text-sm text-ink-gray-6">
           <template v-for="(crumb, index) in breadcrumbStack" :key="crumb.id || `${crumb.label}-${index}`">
             <button type="button"
-              class="rounded px-1.5 py-0.5 text-ink-gray-7 transition hover:bg-ink-gray-2 hover:text-ink-gray-9"
+              class="rounded px-1.5 py-0.5 text-ink-gray-7 transition hover:bg-surface-gray-3 hover:text-ink-gray-9"
               @click="navigateToBreadcrumb(index)">
               {{ crumb.label }}
             </button>
@@ -76,7 +76,7 @@
 
       <div class="flex flex-wrap items-center gap-2">
         <input type="text" v-model="newSubfolderName" :placeholder="__('New sub-folder name')"
-          class="flex-1 rounded border border-outline-gray-3 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+          class="flex-1 rounded border border-outline-gray-3 px-3 py-2 text-sm focus:border-outline-blue-1 focus:outline-none" />
         <Button size="sm" @click="createSubfolder">
           {{ __('Create Sub-folder') }}
         </Button>
@@ -110,7 +110,7 @@
               {{ file.file_name }}
             </a>
             <Tooltip :text="__('Delete File')" placement="bottom">
-              <Trash2 @click.prevent="removeFile(file)" class="h-4 w-4 cursor-pointer text-red-500" />
+              <Trash2 @click.prevent="removeFile(file)" class="h-4 w-4 cursor-pointer text-ink-red-3" />
             </Tooltip>
           </li>
         </ul>

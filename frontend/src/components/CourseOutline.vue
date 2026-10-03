@@ -43,7 +43,7 @@
 						</Tooltip>
 						<Tooltip v-if="!holdsReflection(chapter)" :text="__('Delete Chapter')" placement="bottom">
 							<Trash2 @click.prevent="trashChapter(chapter.name)"
-								class="h-4 w-4 text-red-500 invisible group-hover:visible" />
+								class="h-4 w-4 text-ink-red-3 invisible group-hover:visible" />
 						</Tooltip>
 						<GripVertical class="h-4 w-4 text-ink-gray-5 invisible group-hover:visible"
 							aria-hidden="true" />
@@ -62,7 +62,7 @@
 					<div v-if="competencyOf(chapter)" class="ml-8 mr-4 mb-3 rounded-lg border p-3"
 						:class="competencyOf(chapter).locked
 							? 'border-outline-gray-3 bg-surface-gray-1'
-							: 'border-outline-blue-2 bg-surface-blue-1'">
+							: 'border-outline-blue-1 bg-surface-blue-1'">
 						<div class="flex flex-wrap items-center gap-2">
 							<Lock v-if="competencyOf(chapter).locked" class="h-4 w-4 text-ink-gray-6" />
 							<span class="text-sm font-medium text-ink-gray-8">

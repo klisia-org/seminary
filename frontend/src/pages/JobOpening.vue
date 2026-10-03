@@ -145,7 +145,7 @@
 				:href="safeUrl(org.website)"
 				target="_blank"
 				rel="noopener"
-				class="text-sm text-ink-blue-6 hover:underline"
+				class="text-sm text-ink-blue-3 hover:underline"
 			>
 				{{ org.website }}
 			</a>

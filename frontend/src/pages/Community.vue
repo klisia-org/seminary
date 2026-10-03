@@ -13,7 +13,7 @@
 						:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
 						@click="setDefaultCohort">
 						<Star class="h-4 w-4"
-							:class="defaultCohort === selectedCohort ? 'fill-current text-yellow-500' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
+							:class="defaultCohort === selectedCohort ? 'fill-current text-ink-amber-2' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
 					</button>
 					<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
 						<template #prefix><Megaphone class="h-4 w-4" /></template>
@@ -231,7 +231,7 @@
 								@click="moderatePost(post, post.status === 'pinned' ? 'published' : 'pinned')">
 								<Pin class="h-3.5 w-3.5" />
 							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-5" :title="__('Block')"
+							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Block')"
 								@click="moderatePost(post, 'blocked')">
 								<Ban class="h-3.5 w-3.5" />
 							</button>
@@ -240,7 +240,7 @@
 							<button class="text-ink-gray-5 hover:text-ink-gray-9" :title="__('Edit')" @click="openEdit(post)">
 								<Pencil class="h-3.5 w-3.5" />
 							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-5" :title="__('Delete')" @click="confirmDelete(post)">
+							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Delete')" @click="confirmDelete(post)">
 								<Trash2 class="h-3.5 w-3.5" />
 							</button>
 						</template>
@@ -307,7 +307,7 @@
 				</article>
 				<div v-if="i === lastNewIndex && i < posts.length - 1"
 					class="my-1 flex items-center gap-2 text-xs font-medium text-ink-red-4">
-					<div class="h-px flex-1 bg-red-300/60"></div>{{ __('New') }}<div class="h-px flex-1 bg-red-300/60"></div>
+					<div class="h-px flex-1 bg-surface-red-3"></div>{{ __('New') }}<div class="h-px flex-1 bg-surface-red-3"></div>
 				</div>
 				</template>
 			</div>
@@ -604,8 +604,8 @@
 										class="flex items-center justify-end gap-2 text-xs">
 										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="resendInvite(m)">{{ __('Re-send') }}</button>
 										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="copyInvite(m)">{{ __('Copy') }}</button>
-										<a v-if="m.mobile" :href="whatsappUrl(m)" target="_blank" rel="noopener" class="text-green-600 hover:underline">WhatsApp</a>
-										<a :href="telegramUrl(m)" target="_blank" rel="noopener" class="text-blue-500 hover:underline">Telegram</a>
+										<a v-if="m.mobile" :href="whatsappUrl(m)" target="_blank" rel="noopener" class="text-ink-green-3 hover:underline">WhatsApp</a>
+										<a :href="telegramUrl(m)" target="_blank" rel="noopener" class="text-ink-blue-3 hover:underline">Telegram</a>
 									</div>
 									<button v-else-if="membersRes.data?.is_leader && !m.is_leader"
 										class="text-xs text-ink-gray-6 hover:text-ink-gray-9" @click="makeLeader(m)">
@@ -933,7 +933,7 @@ function submitEdit() {
 			video_url: editDraft.channel_kind === 'video_timestamp' ? editDraft.video_url : null,
 		})
 		.then(() => { showEdit.value = false; refresh() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not save.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not save.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function confirmDelete(post) {
 	if (window.confirm(__('Delete this post? This cannot be undone.'))) {
@@ -977,7 +977,7 @@ function submitLink(post) {
 	linkPost
 		.submit({ post: post.name, linked_post: linkTarget.value.trim(), relation_type: 'reflection' })
 		.then(() => { linkTarget.value = ''; thread.fetch() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not link.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not link.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- moderation ---
@@ -1025,7 +1025,7 @@ function submitReport() {
 			detail: reportDetail.value || null,
 		})
 		.then(() => { showReport.value = false; createToast({ title: __('Reported. Thank you.'), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not report.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not report.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function openModeration() {
 	showModeration.value = true
@@ -1070,7 +1070,7 @@ function declineInvite(inv) {
 }
 function inviteMember() {
 	if (!inviteDraft.first_name.trim() || !inviteDraft.email.trim())
-		return createToast({ title: __('First name and email are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('First name and email are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	inviteRes
 		.submit({
 			cohort: selectedCohort.value,
@@ -1084,7 +1084,7 @@ function inviteMember() {
 			membersRes.fetch({ cohort: selectedCohort.value })
 			createToast({ title: __('Invitation sent.'), icon: 'check' })
 		})
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function invitePerson(candidate) {
 	// The person already exists on the spine, so only the id travels — the
@@ -1097,7 +1097,7 @@ function invitePerson(candidate) {
 			membersRes.fetch({ cohort: selectedCohort.value })
 			createToast({ title: __('Invitation sent.'), icon: 'check' })
 		})
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function resendInvite(m) {
 	resendRes.submit({ membership: m.membership }).then(() => createToast({ title: __('Invite re-sent.'), icon: 'check' }))
@@ -1141,11 +1141,11 @@ function moveToOriginal(m) {
 }
 function submitSplit() {
 	if (!splitName.value.trim())
-		return createToast({ title: __('Name the new cohort.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Name the new cohort.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	if (!splitMoving.value.length)
-		return createToast({ title: __('Move at least one member.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Move at least one member.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	if (!splitLeader.value)
-		return createToast({ title: __('Choose a leader for the new cohort.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Choose a leader for the new cohort.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	splitRes
 		.submit({
 			cohort: selectedCohort.value,
@@ -1154,7 +1154,7 @@ function submitSplit() {
 			new_leader: splitLeader.value,
 		})
 		.then(() => { showSplit.value = false; cohortsRes.reload(); refresh(); createToast({ title: __('New cohort created.'), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not split.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not split.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- bible tree ---
@@ -1213,11 +1213,11 @@ function openBroadcast() {
 }
 function submitBroadcast() {
 	if (!broadcastSubject.value.trim() || !broadcastMessage.value.trim())
-		return createToast({ title: __('Subject and message are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Subject and message are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	broadcastRes
 		.submit({ subject: broadcastSubject.value, message: broadcastMessage.value, email: broadcastEmail.value ? 1 : 0 })
 		.then((r) => { showBroadcast.value = false; createToast({ title: __('Sent to {0} leader(s).').format(r.sent), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function openCompose() {
 	// A post always belongs to a cohort (ADR 064 keeps `cohort` for attribution
@@ -1232,11 +1232,11 @@ function openCompose() {
 }
 function submitPost() {
 	if (!draft.cohort || !draft.channel || !draft.content?.trim()) {
-		createToast({ title: __('A cohort, a channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		createToast({ title: __('A cohort, a channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 		return
 	}
 	if (composeChannelKind.value === 'video_timestamp' && !draft.video_url?.trim()) {
-		createToast({ title: __('Sermon Lab posts need a YouTube link.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		createToast({ title: __('Sermon Lab posts need a YouTube link.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 		return
 	}
 	createPost
@@ -1252,7 +1252,7 @@ function submitPost() {
 			video_url: draft.video_url || null,
 		})
 		.then(() => { showCompose.value = false; refresh() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- reactive refetch + realtime ---

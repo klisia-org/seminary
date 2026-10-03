@@ -91,7 +91,7 @@
 							<router-link v-for="instructor in course.data.instructors" :key="instructor.name || instructor.instructor_name"
 								:to="{ name: 'InstructorProfile', params: { instructorName: instructor.name || instructor.instructor_name } }"
 								class="flex flex-col items-center group cursor-pointer no-underline">
-								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-blue-300 rounded-full transition-all" />
+								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-outline-blue-1 rounded-full transition-all" />
 								<div class="text-center text-sm font-medium text-ink-gray-8 group-hover:text-ink-blue-link transition-colors">
 									{{ instructor.instructor_name }}
 								</div>

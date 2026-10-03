@@ -147,7 +147,7 @@
 					:href="safeUrl(alum.linkedin_url)"
 					target="_blank"
 					rel="noopener"
-					class="shrink-0 text-xs text-ink-blue-6 hover:underline"
+					class="shrink-0 text-xs text-ink-blue-3 hover:underline"
 					@click.stop
 				>
 					LinkedIn

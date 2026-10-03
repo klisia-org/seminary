@@ -177,7 +177,7 @@
 									{{ __('Compared against {0} submission(s)').format(plagiarismResult.source_count) }}
 								</div>
 								<div v-if="plagiarismResult.is_stale"
-									class="text-xs text-ink-orange-2 bg-surface-amber-1 rounded p-2 mb-2">
+									class="text-xs text-ink-amber-3 bg-surface-amber-1 rounded p-2 mb-2">
 									{{ __('The submission changed after this check — re-run for current results.') }}
 								</div>
 								<div v-if="plagiarismResult.sources.length" class="space-y-0.5">

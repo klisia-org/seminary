@@ -29,8 +29,8 @@
       <span v-if="meeting.online" class="text-xs text-ink-gray-5">· {{ __('Online') }}</span>
       <span v-else-if="meeting.room_label" class="text-xs text-ink-gray-5">· {{ meeting.room_label }}</span>
     </span>
-    <span v-if="meeting.attendance === 1" class="text-green-500">
-      <Check class="h-5 w-5 text-green-500" />
+    <span v-if="meeting.attendance === 1" class="text-ink-green-2">
+      <Check class="h-5 w-5 text-ink-green-2" />
     </span>
   </button>
 </div>
@@ -171,9 +171,9 @@
           <span class="text-ink-blue-3">{{ excusedCount }}</span> {{ __('Excused') }}
         </p>
         <p v-else class="text-lg font-semibold mt-4">
-          <span class="text-green-500">{{ presentCount }}</span> {{ __('Present') }},
+          <span class="text-ink-green-2">{{ presentCount }}</span> {{ __('Present') }},
           <span class="text-ink-amber-3">{{ tardyCount }}</span> {{ __('Tardy') }},
-          <span class="text-red-500">{{ absentCount }}</span> {{ __('Absent') }},
+          <span class="text-ink-red-3">{{ absentCount }}</span> {{ __('Absent') }},
           <span class="text-ink-blue-3">{{ excusedCount }}</span> {{ __('Excused') }}
         </p>
       </div>
@@ -181,7 +181,7 @@
       <!-- Mark Attendance Button -->
       <div v-if="selectedDate && (isFuture || !attendanceTaken || editing)" class="mt-4">
         <button
-          class="p-2 bg-blue-500 text-white rounded-md"
+          class="p-2 bg-surface-blue-3 text-ink-white rounded-md"
           @click="markAttendance"
 
         >
@@ -323,7 +323,7 @@ const excusedOption = statusOptions[3];
 const statusLabel = (s) =>
   ({ Present: __('Present'), Tardy: __('Tardy'), Excused: __('Excused') }[s] || __('Absent'));
 const statusClass = (s) =>
-  ({ Present: 'text-green-500', Tardy: 'text-ink-amber-3', Excused: 'text-ink-blue-3' }[s] || 'text-red-500');
+  ({ Present: 'text-ink-green-2', Tardy: 'text-ink-amber-3', Excused: 'text-ink-blue-3' }[s] || 'text-ink-red-3');
 
 // A class that has not happened yet only takes Excused (ADR 081).
 const isUpcoming = (meeting) => dayjs(meeting.cs_meetdate).isAfter(dayjs(), 'day');

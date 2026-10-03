@@ -47,7 +47,7 @@
         <div>
           <label for="courseFilter" class="block text-sm font-medium text-ink-gray-7">Course</label>
           <select id="courseFilter" v-model="filters.course"
-            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
             <option value="">All Courses</option>
             <option v-for="course in uniqueCourses" :key="course" :value="course">
               {{ course }}
@@ -58,7 +58,7 @@
           <label for="academicTermFilter" class="block text-sm font-medium text-ink-gray-7">{{ __('Academic Term')
             }}</label>
           <select id="academicTermFilter" v-model="filters.academic_term"
-            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
             <option value="">{{ __('All Terms') }}</option>
             <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
               {{ term }}

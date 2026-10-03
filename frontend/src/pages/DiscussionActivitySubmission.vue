@@ -62,7 +62,7 @@
             <SafeHtml class="prose-sm" :html="post.original_post" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(post.creation) }}</div>
             <a v-if="post.original_attachment" :href="post.original_attachment" target="_blank"
-              class="text-blue-500 underline text-sm mt-1 inline-block">
+              class="text-ink-blue-3 underline text-sm mt-1 inline-block">
               {{ __('View Attachment') }}
             </a>
           </div>
@@ -83,7 +83,7 @@
             <SafeHtml class="prose-sm mt-2" :html="reply.reply" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(reply.reply_dt) }}</div>
             <a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-              class="text-blue-500 underline text-sm mt-1 inline-block">
+              class="text-ink-blue-3 underline text-sm mt-1 inline-block">
               {{ __('View Attachment') }}
             </a>
           </div>
