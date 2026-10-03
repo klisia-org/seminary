@@ -12,6 +12,26 @@ body {
 	background-color: var(--surface-white);
 }
 
+/* The forms reset bundled with frappe-ui paints every native input, textarea and select
+   white with a #999 border, whatever the theme. A control without its own bg- class then
+   shows light text on white in dark mode. Restate the reset with the theme's variables;
+   in the base layer, so utility classes (FormControl's bg-surface-gray-2) still win.
+   color-scheme covers what CSS can't reach: the option list, date pickers, scrollbars. */
+@layer base {
+	input:where(:not([type='range'], [type='color'], [type='file'], [type='submit'], [type='button'], [type='reset'], [type='image'])),
+	textarea,
+	select {
+		background-color: var(--surface-white);
+		border-color: var(--outline-gray-4);
+	}
+	html[data-theme='dark'] {
+		color-scheme: dark;
+	}
+	html[data-theme='light'] {
+		color-scheme: light;
+	}
+}
+
 /* The app shell (DesktopLayout/MobileLayout) is exactly viewport height and
    owns its own scroller (#scrollContainer). Pin #app to the viewport and clip
    any stray in-flow elements rendered as siblings of the layout (e.g. the
