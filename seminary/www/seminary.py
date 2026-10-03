@@ -6,6 +6,8 @@ from typing import Optional
 
 from frappe.sessions import get_csrf_token
 
+from seminary.seminary import portal_theme
+
 DEV_SERVER_ENV_KEY = "SEMINARY_DEV_SERVER_URL"
 DEFAULT_DEV_SERVER_URL = os.environ.get(DEV_SERVER_ENV_KEY, "http://localhost:8080")
 
@@ -22,7 +24,12 @@ def get_context(context):
     # to this function is not guaranteed. This is also the pattern frappe's own desk
     # template and the mainstream apps (builder, hrms, insights) use.
     context.csrf_token = get_csrf_token()
+    theme = portal_theme.get_portal_theme()
     context.boot = frappe._dict(get_boot_data())
+    # Empty unless an installed app supplies a theme (p017).
+    context.portal_theme_head = portal_theme.render_head(theme)
+    if logo := portal_theme.boot_logo(theme):
+        context.boot.portal_logo = logo
     context.title = "Seminary ERP"
     context.history_base = "/seminary/"
 

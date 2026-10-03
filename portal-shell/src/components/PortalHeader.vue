@@ -1,5 +1,5 @@
 <template>
-	<header class="portal-header" :style="{ '--portal-brand': config.brand.color }">
+	<header class="portal-header" :style="{ '--portal-brand-default': config.brand.color }">
 		<div class="portal-header__section portal-header__section--left">
 			<slot name="brand">
 				<a class="portal-header__brand" :href="brandHref">
@@ -88,7 +88,7 @@ const visiblePortals = computed(() => visiblePortalsFor(config.portals, user.val
 }
 
 .portal-header__brand-name {
-	color: var(--portal-brand);
+	color: var(--portal-brand, var(--portal-brand-default));
 	font-weight: 700;
 }
 
