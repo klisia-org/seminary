@@ -1,5 +1,5 @@
 <template>
-	<header class="portal-header" :style="{ '--portal-brand': config.brand.color }">
+	<header class="portal-header" :style="{ '--portal-brand-default': config.brand.color }">
 		<div class="portal-header__section portal-header__section--left">
 			<slot name="brand">
 				<a class="portal-header__brand" :href="brandHref">
@@ -53,9 +53,10 @@ const visiblePortals = computed(() => visiblePortalsFor(config.portals, user.val
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 0.5rem 1rem;
-	background: var(--portal-header-bg, #ffffff);
-	color: var(--portal-header-fg, #1f2937);
-	border-bottom: 1px solid var(--portal-header-border, #e5e7eb);
+	/* The page's colour variables when it has them (dark mode, portal themes); else fixed. */
+	background: var(--portal-header-bg, var(--surface-white, #ffffff));
+	color: var(--portal-header-fg, var(--ink-gray-9, #1f2937));
+	border-bottom: 1px solid var(--portal-header-border, var(--outline-gray-2, #e5e7eb));
 	min-height: 3.25rem;
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	font-size: 0.875rem;
@@ -88,7 +89,7 @@ const visiblePortals = computed(() => visiblePortalsFor(config.portals, user.val
 }
 
 .portal-header__brand-name {
-	color: var(--portal-brand);
+	color: var(--portal-brand, var(--portal-brand-default));
 	font-weight: 700;
 }
 
@@ -103,8 +104,8 @@ const visiblePortals = computed(() => visiblePortalsFor(config.portals, user.val
 
 [data-theme='dark'] .portal-header,
 .dark .portal-header {
-	background: var(--portal-header-bg-dark, #111827);
-	color: var(--portal-header-fg-dark, #f3f4f6);
-	border-bottom-color: var(--portal-header-border-dark, #1f2937);
+	background: var(--portal-header-bg-dark, var(--surface-white, #111827));
+	color: var(--portal-header-fg-dark, var(--ink-gray-9, #f3f4f6));
+	border-bottom-color: var(--portal-header-border-dark, var(--outline-gray-2, #1f2937));
 }
 </style>

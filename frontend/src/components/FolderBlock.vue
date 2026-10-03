@@ -7,7 +7,7 @@
           <template v-for="(crumb, index) in breadcrumbStack" :key="crumb.id || `${crumb.label}-${index}`">
             <button
               type="button"
-              class="rounded px-1.5 py-0.5 transition hover:bg-ink-gray-2 hover:text-ink-gray-9"
+              class="rounded px-1.5 py-0.5 transition hover:bg-surface-gray-3 hover:text-ink-gray-9"
               :class="index === breadcrumbStack.length - 1 ? 'font-medium text-ink-gray-8 cursor-default' : 'text-ink-gray-7'"
               @click="index === breadcrumbStack.length - 1 ? null : navigateToBreadcrumb(index)"
             >
@@ -20,7 +20,7 @@
       <button
         v-if="folderRef"
         type="button"
-        class="shrink-0 inline-flex items-center gap-1.5 rounded border border-outline-gray-2 px-3 py-1.5 text-sm font-medium text-ink-gray-8 transition hover:border-outline-gray-3 hover:bg-ink-gray-2 disabled:cursor-not-allowed disabled:opacity-50"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded border border-outline-gray-2 px-3 py-1.5 text-sm font-medium text-ink-gray-8 transition hover:border-outline-gray-3 hover:bg-surface-gray-3 disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="!canDownload || isDownloading"
         @click="downloadAll"
       >

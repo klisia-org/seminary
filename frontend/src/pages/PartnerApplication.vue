@@ -15,7 +15,7 @@
 				<h1 class="text-2xl font-bold text-ink-gray-9">{{ app.data.full_name }}</h1>
 				<div class="mt-1 text-sm text-ink-gray-6">{{ app.data.job_title }}</div>
 				<div class="mt-1 text-sm text-ink-gray-6">
-					<a :href="`mailto:${app.data.email}`" class="text-ink-blue-6 hover:underline">{{ app.data.email }}</a>
+					<a :href="`mailto:${app.data.email}`" class="text-ink-blue-3 hover:underline">{{ app.data.email }}</a>
 					<span v-if="app.data.mobile"> &middot; {{ app.data.mobile }}</span>
 				</div>
 			</div>
@@ -29,7 +29,7 @@
 		</div>
 
 		<div class="mt-3 flex items-center gap-3 text-sm text-ink-gray-5">
-			<a v-if="app.data.resume" :href="app.data.resume" target="_blank" rel="noopener" class="flex items-center gap-1 text-ink-blue-6 hover:underline">
+			<a v-if="app.data.resume" :href="app.data.resume" target="_blank" rel="noopener" class="flex items-center gap-1 text-ink-blue-3 hover:underline">
 				<FileText class="size-4" />{{ __('Résumé') }}
 			</a>
 			<span>{{ __('Avg rating') }}: {{ stars(app.data.average_rating) }}</span>

@@ -28,7 +28,7 @@
 					</div>
 					<div v-if="req.due_date" class="text-xs text-ink-gray-5">{{ __('Due {0}').format(req.due_date) }}</div>
 					<SafeHtml v-if="req.student_instructions" class="prose prose-sm mt-1 max-w-none text-ink-gray-7" :html="req.student_instructions" />
-					<a v-if="req.submit_template" :href="safeUrl(req.submit_template)" target="_blank" class="mt-1 inline-block text-sm text-ink-blue-6 hover:underline">{{ __('Download form') }}</a>
+					<a v-if="req.submit_template" :href="safeUrl(req.submit_template)" target="_blank" class="mt-1 inline-block text-sm text-ink-blue-3 hover:underline">{{ __('Download form') }}</a>
 
 					<div v-if="!['Completed', 'Waived'].includes(req.status)" class="mt-2">
 						<FormControl v-if="req.student_submission_type === 'Text'" type="textarea" :label="req.student_label" v-model="req.student_submission_value" />
@@ -37,7 +37,7 @@
 							<input type="checkbox" v-model="req.student_acknowledged" :true-value="1" :false-value="0" class="rounded border-outline-gray-3" />{{ req.student_label || __('I acknowledge') }}
 						</label>
 						<div v-else-if="req.student_submission_type === 'Attachment'" class="flex items-center gap-2">
-							<a v-if="req.student_attachment" :href="req.student_attachment" target="_blank" class="text-sm text-ink-blue-6 hover:underline">{{ __('Current file') }}</a>
+							<a v-if="req.student_attachment" :href="req.student_attachment" target="_blank" class="text-sm text-ink-blue-3 hover:underline">{{ __('Current file') }}</a>
 							<FileUploader @success="(file) => onUpload(req, file)">
 								<template #default="{ openFileSelector, uploading }">
 									<Button variant="outline" :loading="uploading" @click="openFileSelector">{{ req.student_attachment ? __('Replace') : __('Upload') }}</Button>

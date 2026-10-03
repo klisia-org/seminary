@@ -34,14 +34,14 @@
 				:href="safeUrl(org.data.website)"
 				target="_blank"
 				rel="noopener"
-				class="flex items-center gap-1 text-ink-blue-6 hover:underline"
+				class="flex items-center gap-1 text-ink-blue-3 hover:underline"
 			>
 				<Globe class="size-4" />{{ __('Website') }}
 			</a>
 			<a
 				v-if="org.data.primary_email"
 				:href="`mailto:${org.data.primary_email}`"
-				class="flex items-center gap-1 text-ink-blue-6 hover:underline"
+				class="flex items-center gap-1 text-ink-blue-3 hover:underline"
 			>
 				<Mail class="size-4" />{{ org.data.primary_email }}
 			</a>

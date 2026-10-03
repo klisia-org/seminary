@@ -26,7 +26,7 @@
 							'A one line introduction to the course that appears on the course card (less than 55 characters)'
 						)
 							" class="mb-2" :required="true" />
-						<div class="text-sm mt-1" :class="remainingCharacters < 0 ? 'text-red-500' : 'text-ink-gray-5'">
+						<div class="text-sm mt-1" :class="remainingCharacters < 0 ? 'text-ink-red-3' : 'text-ink-gray-5'">
 							<span v-if="remainingCharacters >= 0">
 								{{ `${remainingCharacters} characters available` }}
 							</span>

@@ -5,8 +5,8 @@
 
 		<!-- Payment success banner -->
 		<div v-if="paymentSuccess"
-			class="mx-5 mt-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-			<svg class="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+			class="mx-5 mt-4 flex items-center gap-3 rounded-lg border border-outline-green-1 bg-surface-green-1 px-4 py-3 text-sm text-ink-green-3">
+			<svg class="h-5 w-5 shrink-0 text-ink-green-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
 			<span class="font-medium">{{ __('Payment successful! Your balance has been updated.') }}</span>

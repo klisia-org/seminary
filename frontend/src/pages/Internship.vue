@@ -27,7 +27,7 @@
 			<div v-else-if="!info.data.eligible" class="rounded-md bg-surface-amber-1 px-3 py-2 text-sm text-ink-amber-3">
 				{{ __('You are not currently eligible for this internship (it must satisfy an open program requirement).') }}
 			</div>
-			<router-link v-if="info.data.already_applied" :to="{ name: 'MyInternships' }" class="text-sm text-ink-blue-6 hover:underline">{{ __('View in My Internships') }}</router-link>
+			<router-link v-if="info.data.already_applied" :to="{ name: 'MyInternships' }" class="text-sm text-ink-blue-3 hover:underline">{{ __('View in My Internships') }}</router-link>
 		</div>
 
 		<section v-if="hasSchedule" class="mt-6">

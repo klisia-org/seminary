@@ -4,7 +4,7 @@
 	position: relative !important;
 }
 .cm-gutters {
-	@apply !border-0 !bg-transparent !px-1.5 !text-xs !leading-6 !text-gray-500;
+	@apply !border-0 !bg-transparent !px-1.5 !text-xs !leading-6 !text-ink-gray-5;
 }
 .cm-foldGutter span {
 	@apply !hidden !opacity-0;
@@ -16,17 +16,17 @@
 	@apply !bg-transparent;
 }
 .cm-activeLineGutter {
-	@apply !bg-transparent text-gray-600;
+	@apply !bg-transparent text-ink-gray-6;
 }
 .cm-editor {
 	width: 100%;
 	user-select: text;
 }
 .cm-placeholder {
-	@apply !leading-6 !text-gray-500;
+	@apply !leading-6 !text-ink-gray-5;
 }
 .cm-scroller {
-	@apply !font-mono !leading-6 !text-gray-600;
+	@apply !font-mono !leading-6 !text-ink-gray-6;
 }
 .cm-matchingBracket {
 	font-weight: 500 !important;
@@ -44,7 +44,7 @@
 	font-family: 'Inter' !important;
 }
 .cm-tooltip-autocomplete ul li[aria-selected='true'] {
-	@apply !rounded !bg-gray-200/80;
+	@apply !rounded !bg-surface-gray-3;
 	color: #000 !important;
 }
 .cm-completionLabel {

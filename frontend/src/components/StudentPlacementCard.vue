@@ -26,7 +26,7 @@
 						<Badge :theme="h.supervisor_verified ? 'green' : 'gray'" variant="subtle">
 							{{ h.supervisor_verified ? __('Verified') : __('Pending') }}
 						</Badge>
-						<button v-if="!h.supervisor_verified" class="text-xs text-ink-red-5 hover:underline" @click="removeHours(h)">{{ __('Remove') }}</button>
+						<button v-if="!h.supervisor_verified" class="text-xs text-ink-red-4 hover:underline" @click="removeHours(h)">{{ __('Remove') }}</button>
 					</span>
 				</li>
 			</ul>

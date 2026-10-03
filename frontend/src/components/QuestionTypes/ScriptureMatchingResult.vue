@@ -4,7 +4,7 @@
             v-for="(slot, slotIdx) in slots"
             :key="slotIdx"
             class="border rounded-md p-3"
-            :class="slot.correct ? 'bg-surface-green-1 border-ink-green-2' : 'bg-surface-red-1 border-ink-red-2'"
+            :class="slot.correct ? 'bg-surface-green-1 border-outline-green-2' : 'bg-surface-red-1 border-outline-red-2'"
         >
             <div class="text-sm text-ink-gray-9 leading-snug mb-2">
                 {{ slot.text }}

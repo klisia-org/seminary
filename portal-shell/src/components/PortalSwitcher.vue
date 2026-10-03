@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
 
 .portal-switcher__item--current {
 	background: rgba(13, 48, 73, 0.08);
-	color: var(--portal-brand, #0d3049);
+	color: var(--portal-brand, var(--portal-brand-default, #0d3049));
 	font-weight: 600;
 }
 

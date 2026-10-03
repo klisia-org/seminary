@@ -102,7 +102,7 @@ onBeforeUnmount(() => document.removeEventListener('click', close))
 .portal-user-menu__avatar--initials {
 	font-size: 0.75rem;
 	font-weight: 600;
-	color: var(--portal-brand, #0d3049);
+	color: var(--portal-brand, var(--portal-brand-default, #0d3049));
 }
 
 .portal-user-menu__panel {

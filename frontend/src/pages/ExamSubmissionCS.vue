@@ -101,7 +101,7 @@
           <td class="border px-4 py-2">{{ student.stuname_roster }}</td>
           <td class="border px-4 py-2">{{ student.program_std_scr }}</td>
           <td class="border px-4 py-2">
-            <a :href="`mailto:${student.email}`" class="text-blue-500 underline">
+            <a :href="`mailto:${student.email}`" class="text-ink-blue-3 underline">
               {{ student.stuemail_rc }}
             </a>
           </td>

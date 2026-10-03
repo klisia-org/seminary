@@ -1,17 +1,37 @@
 <template>
 	<div class="w-full">
-		<div @click="dropdownOpen = !dropdownOpen"
-			class="flex h-16 w-full items-center rounded-xl text-ink-gray-9 transition-colors duration-200 ease-in-out cursor-pointer"
+		<!-- A portal theme may lay the logo out wide (p017); compact is the default. -->
+		<div v-if="isWide" @click="dropdownOpen = !dropdownOpen"
+			class="w-full rounded-xl px-3 pt-3 pb-2 text-ink-gray-9 transition-colors duration-200 ease-in-out cursor-pointer"
+			:class="dropdownOpen ? 'bg-surface-white shadow-sm ring-1 ring-outline-gray-1' : 'hover:bg-surface-gray-2'">
+			<img :src="activeLogo" :alt="seminarySettings?.name || 'Seminary'"
+				class="seminary-logo-wide w-full object-contain object-left" :class="WIDE_HEIGHT[logoSize]" />
+			<div class="mt-2 flex items-center gap-2">
+				<div class="min-w-0 flex-1">
+					<div v-if="logoPlacement === 'Wide with name'" class="truncate text-sm font-semibold leading-snug text-[color:var(--portal-brand,var(--ink-gray-9))]">
+						{{ seminarySettings?.name || 'Seminary' }}
+					</div>
+					<div class="truncate text-xs text-ink-gray-6 leading-snug">
+						{{ userResource?.data?.full_name || '' }}
+					</div>
+				</div>
+				<FeatherIcon name="chevron-down" class="h-4 w-4 flex-shrink-0 text-ink-gray-6" aria-hidden="true" />
+			</div>
+		</div>
+		<div v-else @click="dropdownOpen = !dropdownOpen"
+			class="flex w-full items-center rounded-xl text-ink-gray-9 transition-colors duration-200 ease-in-out cursor-pointer"
 			:class="[
+				ROW_HEIGHT[logoSize],
 				dropdownOpen ? 'bg-surface-white shadow-sm ring-1 ring-outline-gray-1' : 'hover:bg-surface-gray-2',
 				isCollapsed ? 'justify-center gap-0 px-0' : 'justify-between gap-3 px-3 pr-2'
 			]">
 			<div
-				class="seminary-logo flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-white shadow-sm">
-				<Avatar :image="activeLogo" :size="'lg'" class="h-12 w-12 object-cover" />
+				class="seminary-logo flex flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-white shadow-sm"
+				:class="TILE[logoSize]">
+				<Avatar :image="activeLogo" :size="'lg'" class="object-cover" :class="TILE[logoSize]" />
 			</div>
 			<div class="transition-all duration-200" :class="isCollapsed ? 'hidden' : 'min-w-0 flex-1 opacity-100'">
-				<div class="truncate text-sm font-semibold leading-snug">
+				<div class="truncate text-sm font-semibold leading-snug text-[color:var(--portal-brand,var(--ink-gray-9))]">
 					{{ seminarySettings?.name || 'Seminary' }}
 				</div>
 				<div class="truncate text-xs text-ink-gray-6 leading-snug">
@@ -73,6 +93,18 @@ const props = defineProps({
 	},
 });
 
+// Set by a portal theme through the page's boot data (p017); absent means compact, medium.
+const logoPlacement = window.portal_logo?.placement || 'Compact';
+const logoSize = window.portal_logo?.size || 'Medium';
+const TILE = { Small: 'h-10 w-10', Medium: 'h-12 w-12', Large: 'h-14 w-14' };
+const ROW_HEIGHT = { Small: 'h-14', Medium: 'h-16', Large: 'h-[4.5rem]' };
+const WIDE_HEIGHT = { Small: 'max-h-10', Medium: 'max-h-14', Large: 'max-h-[4.5rem]' };
+
+// Wide needs room and an image: a collapsed sidebar or the fallback icon stays compact.
+const isWide = computed(
+	() => logoPlacement !== 'Compact' && !props.isCollapsed && typeof activeLogo.value === 'string'
+);
+
 const activeLogo = computed(() => {
 	const s = props.seminarySettings;
 	if (!s) return null;
@@ -82,7 +114,8 @@ const activeLogo = computed(() => {
 </script>
 
 <style>
-html[data-theme='dark'] .seminary-logo img {
+html[data-theme='dark'] .seminary-logo img,
+html[data-theme='dark'] img.seminary-logo-wide {
 	filter: none;
 }
 </style>

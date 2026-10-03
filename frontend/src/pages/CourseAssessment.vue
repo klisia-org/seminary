@@ -156,12 +156,12 @@
         </td>
         <td class="p-2 border text-center">
           <span v-if="criteria.lesson" class="checkmark">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-ink-green-2" fill="none" viewBox="0 0 24 24"
               stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </span>
-          <span v-else class="text-red-500">
+          <span v-else class="text-ink-red-3">
             ✘
           </span>
         </td>
@@ -996,7 +996,7 @@ function redirectToForm(type, close) {
 }
 
 .light-blue-bg {
-  background-color: #E6F4FF;
+  background-color: var(--surface-blue-1);
 }
 
 .date-column {
@@ -1008,7 +1008,6 @@ function redirectToForm(type, close) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #46B37E !important;
-  /* Tailwind's green-500 color */
+  color: var(--ink-green-2) !important;
 }
 </style>

@@ -4,7 +4,7 @@
 			<Breadcrumbs class="h-7" :items="breadcrumbs" />
 		</template>
 		<template #actions>
-			<router-link :to="{ name: 'PartnerInternshipPostingEdit', params: { name } }" class="text-sm text-ink-blue-6 hover:underline">
+			<router-link :to="{ name: 'PartnerInternshipPostingEdit', params: { name } }" class="text-sm text-ink-blue-3 hover:underline">
 				{{ __('Edit internship') }}
 			</router-link>
 		</template>

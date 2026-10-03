@@ -13,7 +13,7 @@
 			<span v-if="marksAt(lv.grade_code).length"
 				class="absolute -right-2 -top-2 flex -space-x-1">
 				<Tooltip v-for="m in marksAt(lv.grade_code)" :key="m.key" :text="m.label">
-					<span class="flex size-5 items-center justify-center rounded-full border border-surface-white text-[10px] font-semibold"
+					<span class="flex size-5 items-center justify-center rounded-full border border-outline-white text-[10px] font-semibold"
 						:class="m.tone === 'self'
 							? 'bg-surface-amber-2 text-ink-amber-3'
 							: 'bg-surface-blue-2 text-ink-blue-3'">

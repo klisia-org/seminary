@@ -44,7 +44,7 @@
 						<FormControl type="time" :label="i === 0 ? __('End') : ''" v-model="slot.end_time" />
 						<Button variant="ghost" theme="red" @click="removeSlot(i)">{{ __('Remove') }}</Button>
 					</div>
-					<button type="button" class="self-start text-sm text-ink-blue-6 hover:underline" @click="addSlot">{{ __('+ Add time block') }}</button>
+					<button type="button" class="self-start text-sm text-ink-blue-3 hover:underline" @click="addSlot">{{ __('+ Add time block') }}</button>
 					<FormControl type="textarea" :label="__('Schedule notes')" v-model="form.schedule_notes" />
 				</div>
 			</div>

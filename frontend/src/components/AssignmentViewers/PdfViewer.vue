@@ -34,7 +34,7 @@
 				class="absolute -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-blue-1 border-2 border-outline-blue-1 text-xs font-semibold text-ink-blue-2 shadow flex items-center justify-center hover:scale-110 transition-transform"
 				:class="{
 					'ring-2 ring-outline-amber-2 animate-pulse': pulseId === pin.name,
-					'ring-2 ring-outline-blue-3 scale-110': activeCommentId === pin.name && pulseId !== pin.name,
+					'ring-2 ring-outline-blue-1 scale-110': activeCommentId === pin.name && pulseId !== pin.name,
 					'opacity-50': pin.resolved,
 				}"
 				:style="{ left: pin.x_pct + '%', top: pin.y_pct + '%' }"

@@ -45,7 +45,7 @@
 				class="border-b p-3 text-sm cursor-pointer transition-colors"
 				:class="{
 					'opacity-60': c.resolved,
-					'bg-surface-blue-1 border-l-2 border-l-outline-blue-3': activeCommentId === c.name,
+					'bg-surface-blue-1 border-l-2 border-l-outline-blue-1': activeCommentId === c.name,
 					'hover:bg-surface-gray-2': activeCommentId !== c.name,
 				}"
 				@click="$emit('jump', c)"

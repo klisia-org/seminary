@@ -140,7 +140,7 @@
 					<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="questionDetails.data.question" />
 					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
 						<label v-if="questionDetails.data[`option_${index}`]"
-							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600">
+							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 							<input v-if="!showAnswers.length && !questionDetails.data.multiple" type="radio"
 								:name="encodeURIComponent(questionDetails.data.question)"
 								class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
@@ -273,7 +273,7 @@
 				<!-- Answer Options -->
 				<div v-if="question.type == 'Choices'" v-for="index in 4">
 					<label v-if="question[`option_${index}`]"
-						class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600">
+						class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 						<input v-if="!question.multiple" type="radio" :name="`question_${qtidx}`"
 							class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
 							@change="recordAnswer(qtidx, question[`option_${index}`])" />
