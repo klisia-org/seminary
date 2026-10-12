@@ -47,4 +47,14 @@ export const SEMINARY_PORTALS = [
     // No role gate — anyone may donate.
     when: (s) => !!s?.has_giving,
   },
+  {
+    // koinonia 0007b §1: the relationship manager's workspace. The Seminary
+    // Manager opens it read-only.
+    id: 'advancement',
+    label: 'Advancement',
+    description: 'Donor Relationships',
+    url: '/donate/advancement',
+    roles: ['Advancement Officer', 'Seminary Manager'],
+    when: (s) => !!s?.has_giving,
+  },
 ]
