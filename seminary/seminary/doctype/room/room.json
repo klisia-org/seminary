@@ -15,8 +15,6 @@
   "location_section",
   "building",
   "campus",
-  "column_break_loc1",
-  "location",
   "room_features"
  ],
  "fields": [
@@ -67,19 +65,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_loc1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "ERPNext Location mirrored from this room (for Asset tracking). Maintained automatically.",
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "label": "Location",
-   "no_copy": 1,
-   "options": "Location",
-   "read_only": 1
-  },
-  {
    "fieldname": "room_features",
    "fieldtype": "Table",
    "label": "Room Features",
@@ -87,7 +72,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-12 00:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Room",

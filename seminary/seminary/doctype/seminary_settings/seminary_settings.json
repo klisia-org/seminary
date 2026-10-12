@@ -93,8 +93,6 @@
   "support_user",
   "messaging_section",
   "portal_messaging_rules",
-  "facilities_section",
-  "sync_rooms_to_asset_locations",
   "plagiarism_section",
   "plagiarism_enabled",
   "plagiarism_default_provider",
@@ -124,20 +122,6 @@
   "financial_backend_since"
  ],
  "fields": [
-  {
-   "collapsible": 1,
-   "fieldname": "facilities_section",
-   "fieldtype": "Section Break",
-   "label": "Facilities & Assets"
-  },
-  {
-   "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
-   "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
-   "fieldname": "sync_rooms_to_asset_locations",
-   "fieldtype": "Check",
-   "label": "Sync rooms to Asset Locations"
-  },
   {
    "collapsible": 1,
    "fieldname": "plagiarism_section",
@@ -873,7 +857,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-02 12:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

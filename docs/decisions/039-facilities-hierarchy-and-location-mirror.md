@@ -84,3 +84,11 @@ future decision; the field is present now only so the data model is ready.
 - Course Schedule is **not** wired to the hierarchy in this build — filtering the
   room picker by building/campus is a clean follow-on.
 - The hierarchy is fully optional: single-site and non-asset seminaries see no change.
+
+## Addendum (2026-10-12) — the mirror moved to oikonomos
+
+`Location` is an ERPNext doctype, and seminary no longer requires ERPNext. When
+another app added a custom field to Building, Frappe re-checked the Building
+form, found a link to a doctype the site doesn't have, and the install failed.
+The `location` links, the sync toggle and the mirror code now live in oikonomos,
+next to `root_asset_location`. Seminary keeps Campus → Building → Room.

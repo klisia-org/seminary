@@ -22,9 +22,6 @@
   "open_commitments_html",
   "hr_payroll_section",
   "instructor_type",
-  "employee",
-  "column_break_hr",
-  "supplier",
   "communication_preferences_section",
   "prof_email",
   "column_break_srsj",
@@ -136,25 +133,6 @@
    "options": "Volunteer\nSalaried\nPer-Course"
   },
   {
-   "depends_on": "eval:doc.instructor_type && doc.instructor_type != \"Volunteer\"",
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "label": "Employee",
-   "options": "Employee"
-  },
-  {
-   "fieldname": "column_break_hr",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.instructor_type == \"Volunteer\"",
-   "description": "Used to bill honoraria or love offerings via Purchase Invoice. Click \"Create Supplier\" in the form menu to auto-create.",
-   "fieldname": "supplier",
-   "fieldtype": "Link",
-   "label": "Supplier",
-   "options": "Supplier"
-  },
-  {
    "fieldname": "communication_preferences_section",
    "fieldtype": "Section Break",
    "label": "Communication Preferences"
@@ -246,7 +224,7 @@
  ],
  "image_field": "profileimage",
  "links": [],
- "modified": "2026-10-02 12:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Instructor",

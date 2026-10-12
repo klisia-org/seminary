@@ -5,7 +5,8 @@
 ``run_doc_method`` admits a caller on READ of the document alone. The G10
 inventory (scripts/p008a_validation/inventory.md) found four writers that relied
 on that: three Desk-button document methods, and one registrar action whose
-``db_set`` ran before its permission-checked save."""
+``db_set`` ran before its permission-checked save. Instructor.create_supplier
+moved to oikonomos with the Supplier link, and its tests with it."""
 
 import frappe
 from frappe.tests import IntegrationTestCase
@@ -36,18 +37,6 @@ class TestP008aDocMethods(IntegrationTestCase):
             frappe.set_user(user)
             with self.subTest(user=user), self.assertRaises(frappe.PermissionError):
                 frappe.new_doc("Course Enrollment Individual").get_inv_data_ce()
-
-    def test_create_supplier_is_not_self_service(self):
-        for user in (self.student, self.instructor):
-            frappe.set_user(user)
-            with self.subTest(user=user), self.assertRaises(frappe.PermissionError):
-                frappe.new_doc("Instructor").create_supplier()
-
-    def test_create_supplier_admits_the_chair_past_the_gate(self):
-        frappe.set_user(self.chair)
-        doc = frappe.new_doc("Instructor")
-        doc.supplier = "ZZT-already-linked"  # returns before touching Supplier
-        self.assertEqual(doc.create_supplier(), "ZZT-already-linked")
 
     def test_withdraw_orphan_requirement_is_registrar_only(self):
         from seminary.seminary.graduation import withdraw_orphan_requirement

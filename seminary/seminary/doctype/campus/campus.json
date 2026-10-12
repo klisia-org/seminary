@@ -15,7 +15,6 @@
   "is_active",
   "column_break_cmp1",
   "timezone",
-  "location",
   "address_section",
   "address_html"
  ],
@@ -51,15 +50,6 @@
    "label": "Timezone"
   },
   {
-   "description": "ERPNext Location mirrored from this campus (for Asset tracking). Maintained automatically.",
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "label": "Location",
-   "no_copy": 1,
-   "options": "Location",
-   "read_only": 1
-  },
-  {
    "fieldname": "address_section",
    "fieldtype": "Section Break",
    "label": "Address"
@@ -71,7 +61,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-02 12:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Campus",
