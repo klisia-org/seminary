@@ -12,9 +12,7 @@
  "field_order": [
   "building_name",
   "campus",
-  "accessible",
-  "column_break_bld1",
-  "location"
+  "accessible"
  ],
  "fields": [
   {
@@ -37,23 +35,10 @@
    "fieldname": "accessible",
    "fieldtype": "Check",
    "label": "Accessible"
-  },
-  {
-   "fieldname": "column_break_bld1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "ERPNext Location mirrored from this building (for Asset tracking). Maintained automatically.",
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "label": "Location",
-   "no_copy": 1,
-   "options": "Location",
-   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-06-10 00:00:00",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Building",

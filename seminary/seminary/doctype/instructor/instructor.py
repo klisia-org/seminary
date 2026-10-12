@@ -12,7 +12,6 @@ from frappe.model.document import Document
 class Instructor(Document):
     def validate(self):
         self._resolve_person()
-        self.validate_payroll_link()
         self._warn_on_deactivation()
         self._warn_on_missing_user()
 
@@ -53,71 +52,6 @@ class Instructor(Document):
 
         if self.person:
             person_fields.assert_reachable(frappe.get_doc("Person", self.person))
-
-    def validate_payroll_link(self):
-        if not self.instructor_type:
-            return
-        if self.instructor_type == "Volunteer":
-            return
-        if not self.employee:
-            frappe.throw(
-                _("Instructor Type {0} requires an Employee link for payroll.").format(
-                    self.instructor_type
-                )
-            )
-
-    @frappe.whitelist()
-    def create_supplier(self, supplier_group=None):
-        """Create a Supplier from this Instructor and link it back.
-
-        Used for Volunteer / honorarium billing via Purchase Invoice.
-        """
-        # A whitelisted document method is reached through run_doc_method, which
-        # checks only READ on the document. Everything past that is this
-        # method's own job (p008a G10 inventory).
-        # Students read instructor profiles, and this inserts a Supplier with
-        # ignore_permissions -- accounting master data. Write on the Instructor is
-        # not the bar either: an instructor holds if_owner write on their own
-        # record, and creating one's own payee is not a self-service action.
-        frappe.only_for(
-            (
-                "Seminary Manager",
-                "Program Chair",
-                "System Manager",
-                "Accounts Manager",
-                "Accounts User",
-            )
-        )
-        if self.supplier:
-            frappe.msgprint(
-                _("Supplier {0} is already linked to this Instructor.").format(
-                    self.supplier
-                )
-            )
-            return self.supplier
-
-        group = supplier_group or (
-            "Instructor"
-            if frappe.db.exists("Supplier Group", "Instructor")
-            else frappe.db.get_single_value("Buying Settings", "supplier_group")
-        )
-
-        supplier = frappe.get_doc(
-            {
-                "doctype": "Supplier",
-                "supplier_name": self.instructor_name,
-                "supplier_group": group,
-                "supplier_type": "Individual",
-                "email_id": self.prof_email,
-                "mobile_no": self.phone_message,
-            }
-        ).insert(ignore_permissions=True)
-
-        self.db_set("supplier", supplier.name)
-        frappe.msgprint(
-            _("Supplier {0} created and linked.").format(supplier.name), alert=True
-        )
-        return supplier.name
 
 
 def get_roles_with_write_permission():

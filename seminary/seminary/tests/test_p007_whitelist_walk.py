@@ -445,7 +445,6 @@ G6_STAFF_ONLY = {
     # seminary.seminary.doctype.course_schedule.course_schedule
     "seminary.seminary.doctype.course_schedule.course_schedule.cancel_course",
     # seminary.seminary.doctype.instructor.instructor
-    "seminary.seminary.doctype.instructor.instructor.create_supplier",
     "seminary.seminary.doctype.instructor.instructor.update_instructorlog",
     # seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence
     "seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",

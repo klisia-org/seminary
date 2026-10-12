@@ -51,8 +51,6 @@
   "profile_section",
   "about_us",
   "doctrinal_statement",
-  "links_section",
-  "customer",
   "notes_section",
   "notes"
  ],
@@ -326,18 +324,6 @@
    "label": "Doctrinal Statement"
   },
   {
-   "fieldname": "links_section",
-   "fieldtype": "Section Break",
-   "label": "System Links"
-  },
-  {
-   "description": "Optional. Link a Customer only when this partner is also billed (sponsorship, placement fee). Leave blank for a pure relationship \u2014 we never auto-create a Customer.",
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
-  },
-  {
    "collapsible": 1,
    "fieldname": "notes_section",
    "fieldtype": "Section Break",
@@ -367,7 +353,7 @@
    "link_fieldname": "partner_organization"
   }
  ],
- "modified": "2026-09-10 12:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Partner",
  "name": "Partner Organization",
