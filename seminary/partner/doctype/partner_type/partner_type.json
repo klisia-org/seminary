@@ -10,6 +10,7 @@
  "field_order": [
   "partner_type_name",
   "is_active",
+  "funding_line",
   "description"
  ],
  "fields": [
@@ -30,13 +31,21 @@
    "label": "Is Active"
   },
   {
+   "description": "Where gifts from this type of organisation are reported in Sources of Funding. Empty reports as Other.",
+   "fieldname": "funding_line",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Funding Line",
+   "options": "\nChurches and denominations\nFoundations\nBusinesses\nOther"
+  },
+  {
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
   }
  ],
  "links": [],
- "modified": "2026-06-15 17:49:32.416474",
+ "modified": "2026-10-12 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Partner",
  "name": "Partner Type",

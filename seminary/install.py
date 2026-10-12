@@ -1081,9 +1081,17 @@ def seed_partner_types():
                 "partner_type_name": type_name,
                 "is_active": 1,
                 "description": description,
+                "funding_line": FUNDING_LINE_DEFAULTS.get(type_name),
             }
         ).insert(ignore_permissions=True)
     frappe.db.commit()
+
+
+# Where the starter Partner Types report in Sources of Funding (p020).
+FUNDING_LINE_DEFAULTS = {
+    "Church": "Churches and denominations",
+    "Denomination": "Churches and denominations",
+}
 
 
 def seed_internship_communication():
