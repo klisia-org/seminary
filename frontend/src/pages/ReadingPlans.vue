@@ -70,7 +70,7 @@
 								<span class="ml-auto text-xs text-ink-gray-5">{{ s.date ? formatDate(s.date) : '' }}</span>
 							</div>
 							<div class="mt-1 flex flex-wrap items-center gap-3 pl-0 text-sm sm:pl-20">
-								<button v-if="s.resolved_ref" class="flex items-center gap-1 text-ink-blue-3 hover:underline" @click="openPassage(s)">
+								<button v-if="s.resolved_ref" class="flex items-center gap-1 text-ink-blue-3 hover:underline" @click="openPassage(run, s)">
 									<BookOpen class="h-3.5 w-3.5" />{{ __('Read') }}
 								</button>
 								<a v-if="s.attachment" :href="s.attachment" target="_blank" rel="noopener" class="flex items-center gap-1 text-ink-blue-3 hover:underline">
@@ -125,6 +125,13 @@
 			<p v-else class="max-h-[60vh] overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-ink-gray-8">
 				{{ passageRes.data?.text || __('Passage text unavailable.') }}
 			</p>
+		</template>
+		<template v-if="passageStep && passageStep.run.is_member && passageStep.run.status !== 'Cancelled'" #actions>
+			<Button v-if="!passageStep.step.read" variant="solid" :label="__('Mark as Read')" :loading="markRes.loading"
+				@click="markPassageRead">
+				<template #prefix><Check class="h-4 w-4" /></template>
+			</Button>
+			<span v-else class="flex items-center gap-1 text-sm text-ink-gray-6"><Check class="h-4 w-4 text-ink-green-3" />{{ __('Read') }}</span>
 		</template>
 	</Dialog>
 
@@ -346,6 +353,7 @@ const WEEKDAYS = [
 const tab = ref('runs')
 const openRun = ref(route.query.run || null)
 const showPassage = ref(false)
+const passageStep = ref(null)
 const showProgress = ref(false)
 const showSchedule = ref(false)
 const showEditor = ref(false)
@@ -402,9 +410,16 @@ function fileName(url) {
 	return decodeURIComponent((url || '').split('/').pop().split('?')[0])
 }
 
-function openPassage(step) {
+function openPassage(run, step) {
+	passageStep.value = { run, step }
 	showPassage.value = true
 	passageRes.submit({ resolved_ref: step.resolved_ref }).catch(() => {})
+}
+
+function markPassageRead() {
+	const { run, step } = passageStep.value
+	toggleRead(run, step, true)
+	showPassage.value = false
 }
 
 function toggleRead(run, step, read) {
