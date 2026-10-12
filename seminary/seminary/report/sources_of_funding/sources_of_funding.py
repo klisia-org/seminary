@@ -8,12 +8,15 @@ from frappe import _
 
 from seminary.seminary.financial import funding
 
-FOOTNOTE = _(
-    "Read from the billing and giving records, not the general ledger. Figures can differ from the "
-    "audited statements by timing and by adjustments made only in the books."
-)
+
+def footnote():
+    """Translated per request, not once at import."""
+    return _(
+        "Read from the billing and giving records, not the general ledger. Figures can differ from the "
+        "audited statements by timing and by adjustments made only in the books."
+    )
 
 
 def execute(filters=None):
     columns, data, chart = funding.report(funding.funding, filters, funding.first_date)
-    return columns, data, FOOTNOTE, chart
+    return columns, data, footnote(), chart
