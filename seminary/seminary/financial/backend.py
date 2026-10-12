@@ -23,8 +23,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import date
 
 import frappe
+from frappe.utils import getdate
 
 
 @dataclass
@@ -199,6 +201,19 @@ class FinancialBackend(ABC):
         Returns {"created", "skipped", "failed"}; charges already raised are
         skipped."""
         frappe.throw(frappe._("The active billing app cannot regenerate term charges."))
+
+    def fiscal_year(self, on_date=None) -> tuple[date, date]:
+        """The (start, end) of the fiscal year containing `on_date` (p020).
+        The calendar year unless the billing app keeps its own."""
+        year = getdate(on_date).year
+        return date(year, 1, 1), date(year, 12, 31)
+
+    def tuition_revenue(self, start, end) -> dict:
+        """Tuition and fees posted between `start` and `end` (p020):
+        {"gross", "scholarships", "since"}. `gross` is before institutional
+        scholarships, `scholarships` is what they took off, and `since` is the
+        first date the app has any charge (None when it has none)."""
+        return {"gross": 0.0, "scholarships": 0.0, "since": None}
 
 
 class NullFinancialBackend(FinancialBackend):
