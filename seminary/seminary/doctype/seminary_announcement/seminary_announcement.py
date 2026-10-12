@@ -245,7 +245,14 @@ def send_announcement(announcement: str):
                 if channel not in NO_PERSON_REQUIRED and not person:
                     continue
                 reachable = (
-                    comms.reachability(person, channel, category, email=child.email)
+                    comms.reachability(
+                        person,
+                        channel,
+                        category,
+                        email=child.email,
+                        reference_doctype=doc.doctype,
+                        reference_name=doc.name,
+                    )
                     == "ok"
                 )
                 # Still queue unreachable selected channels: send_message records
@@ -260,7 +267,14 @@ def send_announcement(announcement: str):
                     if channel != EMAIL_CHANNEL and not person:
                         continue
                     if (
-                        comms.reachability(person, channel, category, email=child.email)
+                        comms.reachability(
+                            person,
+                            channel,
+                            category,
+                            email=child.email,
+                            reference_doctype=doc.doctype,
+                            reference_name=doc.name,
+                        )
                         != "ok"
                     ):
                         continue

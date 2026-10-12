@@ -26,7 +26,7 @@ def _match_person(d):
             return matches[0]
         # 0 or >1: fall through to the email/user heuristic.
     person = find_person(email=d.email, user=d.user)
-    if not person and d.alternate_email:
+    if not person and d.get("alternate_email"):
         person = find_person(email=d.alternate_email)
     return person
 
@@ -42,7 +42,13 @@ def execute():
     for d in frappe.get_all(
         "Donor",
         filters={"person": ("is", "not set")},
-        fields=["name", "customer", "user", "email", "alternate_email"],
+        # alternate_email left the Donor in koinonia 0007a (it moved to Person).
+        fields=["name", "customer", "user", "email"]
+        + (
+            ["alternate_email"]
+            if frappe.db.has_column("Donor", "alternate_email")
+            else []
+        ),
     ):
         person = _match_person(d)
         if person:

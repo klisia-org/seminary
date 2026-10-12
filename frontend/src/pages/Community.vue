@@ -148,6 +148,11 @@
 					<header class="mb-2 flex items-center justify-between">
 						<div class="flex items-center gap-2 text-sm">
 							<span class="font-medium text-ink-gray-9">{{ post.author_name || post.author }}</span>
+							<template v-if="post.on_behalf_of">
+								<a v-if="post.on_behalf_of.route" :href="post.on_behalf_of.route"
+									class="text-ink-gray-7 underline-offset-2 hover:underline">· {{ post.on_behalf_of.label }}</a>
+								<span v-else class="text-ink-gray-7">· {{ post.on_behalf_of.label }}</span>
+							</template>
 							<span v-if="post.author_membership === 'outside'"
 								class="rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">{{ __('guest') }}</span>
 							<component :is="visIcon(post.visibility)" class="h-3.5 w-3.5 text-ink-gray-5" />
@@ -692,7 +697,7 @@ const replyTo = ref(null)
 const replyText = ref('')
 const showCompose = ref(false)
 const composeKey = ref(0)
-const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
 const prayerView = ref('active')
 const savedOnly = ref(false)
 const searchQuery = ref('')
@@ -750,6 +755,7 @@ const cohortsRes = createResource({
 			selectedCohort.value = known(asked) ? asked : known(saved) ? saved : data[0].name
 		}
 		if (route.query.members && selectedCohort.value) openMembers()
+		if (route.query.discuss && route.query.step) openDiscussion(route.query.discuss, route.query.step)
 	},
 })
 const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')
@@ -1223,12 +1229,31 @@ function openCompose() {
 	// A post always belongs to a cohort (ADR 064 keeps `cohort` for attribution
 	// and lineage), so in the All-posts view the composer has to ask. Default to
 	// the starred cohort, else the first one.
-	Object.assign(draft, { cohort: selectedCohort.value || defaultCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+	Object.assign(draft, { cohort: selectedCohort.value || defaultCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
 	recipientQuery.value = ''
 	recipientResults.value = []
 	recipientLabel.value = ''
 	composeKey.value++ // force the editor to remount with empty content
 	showCompose.value = true
+}
+// ADR 087: "Discuss" on a reading-plan step opens the composer filled in from
+// the step. Nothing is posted until the member presses Post.
+const discussionDraftRes = createResource({ url: 'seminary.seminary.discipleship.reading_plans.discussion_draft' })
+function openDiscussion(run, step) {
+	discussionDraftRes.submit({ run, step }).then((d) => {
+		openCompose()
+		const passageChannel = d.scripture?.length && channels.value.find((c) => c.channel_kind === 'bible_passage')
+		Object.assign(draft, {
+			cohort: d.cohort,
+			channel: passageChannel?.name || draft.channel,
+			title: d.title,
+			content: d.content,
+			scripture: (d.scripture || []).join('\n'),
+			reference_doctype: d.reference_doctype,
+			reference_name: d.reference_name,
+		})
+		composeKey.value++ // remount the editor with the step's message
+	}).catch((e) => createToast({ title: e.messages?.[0] || __('Could not open the discussion.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function submitPost() {
 	if (!draft.cohort || !draft.channel || !draft.content?.trim()) {
@@ -1250,6 +1275,8 @@ function submitPost() {
 			topics: draft.topics.split(',').map((t) => t.trim()).filter(Boolean),
 			scripture: draft.scripture.split('\n').map((s) => s.trim()).filter(Boolean),
 			video_url: draft.video_url || null,
+			reference_doctype: draft.reference_doctype || null,
+			reference_name: draft.reference_name || null,
 		})
 		.then(() => { showCompose.value = false; refresh() })
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))

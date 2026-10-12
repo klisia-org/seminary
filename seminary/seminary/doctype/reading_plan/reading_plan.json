@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "autoname": "RPLAN-.#####",
+ "creation": "2026-10-12 12:00:00",
+ "description": "A reading plan with no dates of its own. A cohort runs it on the days it chooses.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "plan_type",
+  "author",
+  "column_break_meta",
+  "is_standard",
+  "standard_key",
+  "description",
+  "steps_section",
+  "steps"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "default": "Bible",
+   "fieldname": "plan_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Bible\nOther",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "author",
+   "fieldtype": "Link",
+   "label": "Author",
+   "options": "Person",
+   "read_only": 1,
+   "description": "The person who created the plan. They and staff can edit it."
+  },
+  {
+   "fieldname": "column_break_meta",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_standard",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Standard",
+   "read_only": 1,
+   "description": "Shipped with the app. Duplicate it to change it."
+  },
+  {
+   "fieldname": "standard_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Standard Key",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "steps_section",
+   "fieldtype": "Section Break",
+   "label": "Steps",
+   "description": "Once a cohort has started this plan, only the messages can change."
+  },
+  {
+   "fieldname": "steps",
+   "fieldtype": "Table",
+   "label": "Steps",
+   "options": "Reading Plan Step"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-12 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Reading Plan",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}
