@@ -54,7 +54,7 @@ export const SEMINARY_PORTALS = [
     label: 'Advancement',
     description: 'Donor Relationships',
     url: '/donate/advancement',
-    roles: ['Advancement Officer', 'Seminary Manager'],
+    roles: ['Advancement Officer', 'Seminary Manager', 'Advancement Principal'],
     when: (s) => !!s?.has_giving,
   },
 ]

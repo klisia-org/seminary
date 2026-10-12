@@ -5635,6 +5635,8 @@ def preview_announcement_recipients(name):
     )
 
     channel_counts = {c: 0 for c in channels}
+    # A hold may let one announcement through (p019).
+    reference = {"reference_doctype": doc.doctype, "reference_name": doc.name}
     reachable_count = 0
     fallback_count = 0
     sample = []
@@ -5645,14 +5647,22 @@ def preview_announcement_recipients(name):
 
         ok_selected = False
         for c in channels:
-            if comms.reachability(person, c, category, email=r.get("email")) == "ok":
+            if (
+                comms.reachability(
+                    person, c, category, email=r.get("email"), **reference
+                )
+                == "ok"
+            ):
                 channel_counts[c] += 1
                 ok_selected = True
 
         via_fallback = False
         if not ok_selected and fallback_channels:
             via_fallback = any(
-                comms.reachability(person, c, category, email=r.get("email")) == "ok"
+                comms.reachability(
+                    person, c, category, email=r.get("email"), **reference
+                )
+                == "ok"
                 for c in fallback_channels
             )
 
@@ -5668,7 +5678,7 @@ def preview_announcement_recipients(name):
                 # email is the universal fallback address, so its block reason
                 # is the most useful explanation of an unreachable recipient
                 reason = comms.reachability(
-                    person, "Email", category, email=r.get("email")
+                    person, "Email", category, email=r.get("email"), **reference
                 )
             sample.append(
                 {

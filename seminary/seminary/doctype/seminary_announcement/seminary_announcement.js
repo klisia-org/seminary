@@ -220,7 +220,9 @@ function render_preview(data) {
             ? __("opted out")
             : row.reason === "no_address"
                 ? __("no address")
-                : "";
+                : row.reason === "held"
+                    ? __("on hold")
+                    : "";
         return `<span style="color:#c0392b;" title="${why}">✗ ${why}</span>`;
     };
 

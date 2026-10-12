@@ -13,6 +13,11 @@ throttle), then the Person Channel Address scoped to the category (falling
 back to the primary), then the provider account matching the person's country
 (falling back to the channel's default account).
 
+Other apps can hold a Person from a category for a while through the
+``communication_holds`` hook (p019): koinonia holds appeals from a donor who is
+weighing a large gift. A held message is logged Cancelled with the app's reason,
+like a consent block, and ``reachability`` reports "held".
+
 Adapters are resolved through the ``communication_channel_providers`` hook —
 {provider_key: dotted.path.to.AdapterClass} — so other apps/regions add
 providers with one class and one Channel Provider Account row. An adapter
@@ -147,6 +152,28 @@ def consent_blocks(person_doc, channel, category):
     return status == "Opted Out"
 
 
+HOLD_HOOK = "communication_holds"
+
+
+def hold_reason(
+    person_doc, channel, category, reference_doctype=None, reference_name=None
+):
+    """Why another app holds this Person from this message, or None (p019).
+
+    Each ``communication_holds`` hook is called with (person, channel, category,
+    reference_doctype, reference_name) and returns a reason or None. Emergency is
+    never held. seminary does not know why: the app that holds says so."""
+    if not person_doc or category == "Emergency":
+        return None
+    for path in frappe.get_hooks(HOLD_HOOK) or []:
+        reason = frappe.get_attr(path)(
+            person_doc.name, channel, category, reference_doctype, reference_name
+        )
+        if reason:
+            return reason
+    return None
+
+
 def resolve_address(person_doc, channel, category=None):
     rows = [
         r
@@ -172,15 +199,25 @@ def resolve_address(person_doc, channel, category=None):
     return None
 
 
-def reachability(person_doc, channel, category, *, email=None):
+def reachability(
+    person_doc,
+    channel,
+    category,
+    *,
+    email=None,
+    reference_doctype=None,
+    reference_name=None,
+):
     """Would a queued send on this channel actually deliver, and if not, why?
-    Returns 'ok' | 'opted_out' | 'no_address'. Mirrors the routing checks in
+    Returns 'ok' | 'opted_out' | 'held' | 'no_address'. Mirrors the routing checks in
     send_message so the announcement preview and the email/portal fallback
     agree with what dispatch will do. `email` is the known address for the
     Email channel when the spine has no Person (announcement recipients are
     resolved by email)."""
     if person_doc and consent_blocks(person_doc, channel, category):
         return "opted_out"
+    if hold_reason(person_doc, channel, category, reference_doctype, reference_name):
+        return "held"
     if channel == IN_APP_CHANNEL:
         return "ok" if person_doc else "no_address"
     if channel == PRINT_CHANNEL:
@@ -410,6 +447,11 @@ def send_message(
                 )
             ),
         )
+        return _insert_log(values, dedupe_key)
+
+    held = hold_reason(person_doc, channel, category, reference_doctype, reference_name)
+    if held:
+        values.update(status="Cancelled", error=held)
         return _insert_log(values, dedupe_key)
 
     if not values["to_address"] and person_doc and channel not in ADDRESSLESS_CHANNELS:
