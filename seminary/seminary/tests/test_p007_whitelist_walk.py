@@ -73,6 +73,8 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.feed_api",
     "seminary.seminary.discipleship.moderation",
     "seminary.seminary.discipleship.planner",
+    "seminary.seminary.discipleship.reading_plan_pack",
+    "seminary.seminary.discipleship.reading_plans",
     "seminary.seminary.discipleship.scripture",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
@@ -712,6 +714,26 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.moderation.flag_content",
     "seminary.seminary.discipleship.moderation.resolve_flag",
     "seminary.seminary.discipleship.moderation.set_post_status",
+    # seminary.seminary.discipleship.reading_plan_pack / reading_plans (ADR 087).
+    # A student may lead or join a cohort. Each checks its own rule: authoring
+    # needs a live cohort's leadership (or staff), a run needs leadership of
+    # that cohort, marks need active membership, reads need the cohort to be
+    # visible. test_adr087_reading_plans covers each refusal.
+    "seminary.seminary.discipleship.reading_plan_pack.export_plan",
+    "seminary.seminary.discipleship.reading_plan_pack.import_plan",
+    "seminary.seminary.discipleship.reading_plans.bible_books",
+    "seminary.seminary.discipleship.reading_plans.delete_plan",
+    "seminary.seminary.discipleship.reading_plans.discussion_draft",
+    "seminary.seminary.discipleship.reading_plans.duplicate_plan",
+    "seminary.seminary.discipleship.reading_plans.get_plan",
+    "seminary.seminary.discipleship.reading_plans.get_run",
+    "seminary.seminary.discipleship.reading_plans.list_plans",
+    "seminary.seminary.discipleship.reading_plans.mark_step",
+    "seminary.seminary.discipleship.reading_plans.my_reading_plans",
+    "seminary.seminary.discipleship.reading_plans.run_progress",
+    "seminary.seminary.discipleship.reading_plans.save_plan",
+    "seminary.seminary.discipleship.reading_plans.start_plan",
+    "seminary.seminary.discipleship.reading_plans.update_run",
     # seminary.seminary.discipleship.scripture
     "seminary.seminary.discipleship.scripture.posts_in_range",
     "seminary.seminary.discipleship.scripture.scripture_books",

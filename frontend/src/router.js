@@ -458,6 +458,11 @@ const routes = [
     component: () => import('@/pages/Community.vue'),
   },
   {
+    path: "/reading-plans",
+    name: "ReadingPlans",
+    component: () => import('@/pages/ReadingPlans.vue'),
+  },
+  {
     path: "/preferences",
     name: "CommunicationPreferences",
     component: () => import('@/pages/CommunicationPreferences.vue'),

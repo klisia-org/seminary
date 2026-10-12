@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "creation": "2026-10-12 12:00:00",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "step",
+  "reference",
+  "passage_section",
+  "from_book",
+  "from_chapter",
+  "from_verse",
+  "passage_column",
+  "to_book",
+  "to_chapter",
+  "to_verse",
+  "resolved_ref",
+  "verse_start_ord",
+  "verse_end_ord",
+  "other_section",
+  "reading_text",
+  "attachment",
+  "link_url",
+  "message_section",
+  "message"
+ ],
+ "fields": [
+  {
+   "fieldname": "step",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Step",
+   "read_only": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "reference",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reading",
+   "read_only": 1,
+   "columns": 4,
+   "description": "Set on save from the passage, or from the text, attachment or link."
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "passage_section",
+   "fieldtype": "Section Break",
+   "label": "Passage"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "from_book",
+   "fieldtype": "Select",
+   "label": "From Book",
+   "options": "\nGEN\nEXO\nLEV\nNUM\nDEU\nJOS\nJDG\nRUT\n1SA\n2SA\n1KI\n2KI\n1CH\n2CH\nEZR\nNEH\nEST\nJOB\nPSA\nPRO\nECC\nSNG\nISA\nJER\nLAM\nEZK\nDAN\nHOS\nJOL\nAMO\nOBA\nJON\nMIC\nNAM\nHAB\nZEP\nHAG\nZEC\nMAL\nMAT\nMRK\nLUK\nJHN\nACT\nROM\n1CO\n2CO\nGAL\nEPH\nPHP\nCOL\n1TH\n2TH\n1TI\n2TI\nTIT\nPHM\nHEB\nJAS\n1PE\n2PE\n1JN\n2JN\n3JN\nJUD\nREV"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "from_chapter",
+   "fieldtype": "Int",
+   "label": "From Chapter"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "from_verse",
+   "fieldtype": "Int",
+   "label": "From Verse",
+   "description": "Leave empty to start at the beginning of the chapter."
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "passage_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "to_book",
+   "fieldtype": "Select",
+   "label": "To Book",
+   "options": "\nGEN\nEXO\nLEV\nNUM\nDEU\nJOS\nJDG\nRUT\n1SA\n2SA\n1KI\n2KI\n1CH\n2CH\nEZR\nNEH\nEST\nJOB\nPSA\nPRO\nECC\nSNG\nISA\nJER\nLAM\nEZK\nDAN\nHOS\nJOL\nAMO\nOBA\nJON\nMIC\nNAM\nHAB\nZEP\nHAG\nZEC\nMAL\nMAT\nMRK\nLUK\nJHN\nACT\nROM\n1CO\n2CO\nGAL\nEPH\nPHP\nCOL\n1TH\n2TH\n1TI\n2TI\nTIT\nPHM\nHEB\nJAS\n1PE\n2PE\n1JN\n2JN\n3JN\nJUD\nREV",
+   "description": "Leave empty for the same book."
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "to_chapter",
+   "fieldtype": "Int",
+   "label": "To Chapter",
+   "description": "Leave empty for the same chapter."
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Bible\"",
+   "fieldname": "to_verse",
+   "fieldtype": "Int",
+   "label": "To Verse",
+   "description": "Leave empty to read to the end of the chapter."
+  },
+  {
+   "fieldname": "resolved_ref",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Resolved (OSIS)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verse_start_ord",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Verse Start Ordinal",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verse_end_ord",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Verse End Ordinal",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Other\"",
+   "fieldname": "other_section",
+   "fieldtype": "Section Break",
+   "label": "What to Read"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Other\"",
+   "fieldname": "reading_text",
+   "fieldtype": "Small Text",
+   "label": "Reading",
+   "description": "For example: Chapter 1 of Life Together."
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Other\"",
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "depends_on": "eval:parent.plan_type==\"Other\"",
+   "fieldname": "link_url",
+   "fieldtype": "Data",
+   "label": "Link",
+   "options": "URL"
+  },
+  {
+   "fieldname": "message_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Text Editor",
+   "label": "Message",
+   "description": "Comments or questions for the cohort. You can keep editing this after the plan has started."
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-12 12:00:00",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Reading Plan Step",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

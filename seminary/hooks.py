@@ -315,6 +315,10 @@ permission_query_conditions = {
     "Cohort Post": "seminary.seminary.discipleship.permissions.post_query",
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_query",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_query",
+    # ADR 087: leaders see every plan; members see the plans their cohorts run.
+    "Reading Plan": "seminary.seminary.discipleship.reading_plans.plan_query",
+    "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_query",
+    "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_query",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
     # p007 §2.2 / §2.8: student-keyed rows and instructor tiers, one factory.
     "Student": "seminary.seminary.student_permissions.query_student",
@@ -366,6 +370,9 @@ has_permission = {
     "Cohort Post": "seminary.seminary.discipleship.permissions.post_has",
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_has",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_has",
+    "Reading Plan": "seminary.seminary.discipleship.reading_plans.plan_has",
+    "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_has",
+    "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_has",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
     # p007 §2.2 / §2.8
     "Student": "seminary.seminary.student_permissions.has_permission_student",
@@ -714,6 +721,9 @@ scheduler_events = {
         # Content gating means a student who stops reflecting locks themselves
         # out; nothing else would surface that (ADR 065).
         "seminary.seminary.cbe.notify_stalled_self_assessments",
+        # Reading plans write once to a member on the day they fall behind, and
+        # close a run after its last step (ADR 087 §8).
+        "seminary.seminary.discipleship.reading_plans.daily",
         # A geocode that failed because the provider was down that afternoon
         # would otherwise stay missing until the address happened to change
         # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.

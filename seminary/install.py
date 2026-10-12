@@ -58,6 +58,7 @@ def after_install():
     seed_website_pages()
     seed_cohort_reaction_types()
     seed_cohort_channels()
+    seed_standard_reading_plans()
     setup_user_bible_field()
     ensure_registrar_tools()
 
@@ -1477,6 +1478,102 @@ def seed_cohort_reaction_types():
             ).insert(ignore_permissions=True)
 
 
+def _chapters(book, first, last):
+    return [{"from_book": book, "from_chapter": c} for c in range(first, last + 1)]
+
+
+def _standard_reading_plans():
+    """ADR 087 §4. Book codes are OSIS, so the readings need no translation;
+    titles are translated once, in the language the site is installed in."""
+    romans = [
+        (1, 2),
+        (3, 4),
+        (5, 5),
+        (6, 6),
+        (7, 7),
+        (8, 8),
+        (9, 10),
+        (11, 11),
+        (12, 13),
+        (14, 16),
+    ]
+    sermon = [
+        (5, 1, 5, 16),
+        (5, 17, 5, 48),
+        (6, 1, 6, 18),
+        (6, 19, 6, 34),
+        (7, 1, 7, 12),
+        (7, 13, 7, 29),
+    ]
+    return [
+        (
+            "romans-10",
+            _("Romans in 10 days"),
+            _("Paul's letter to the Romans, one or two chapters a day."),
+            [
+                {"from_book": "ROM", "from_chapter": a, "to_chapter": b}
+                for a, b in romans
+            ],
+        ),
+        (
+            "mark-16",
+            _("Mark in 16 days"),
+            _("The Gospel of Mark, a chapter a day."),
+            _chapters("MRK", 1, 16),
+        ),
+        (
+            "philippians-4",
+            _("Philippians in 4 days"),
+            _("Paul's letter of joy, a chapter a day."),
+            _chapters("PHP", 1, 4),
+        ),
+        (
+            "sermon-on-the-mount-6",
+            _("The Sermon on the Mount in 6 days"),
+            _("Matthew 5 to 7, in six readings."),
+            [
+                {
+                    "from_book": "MAT",
+                    "from_chapter": a,
+                    "from_verse": b,
+                    "to_chapter": c,
+                    "to_verse": d,
+                }
+                for a, b, c, d in sermon
+            ],
+        ),
+        (
+            "psalms-of-ascent-15",
+            _("Psalms of Ascent in 15 days"),
+            _("Psalms 120 to 134, the songs pilgrims sang on the way up to Jerusalem."),
+            _chapters("PSA", 120, 134),
+        ),
+    ]
+
+
+def seed_standard_reading_plans():
+    """Create-only-if-missing, by a stable key, so a plan a school has started
+    is never rewritten under it."""
+    if not frappe.db.exists("DocType", "Reading Plan"):
+        return
+    for key, title, description, steps in _standard_reading_plans():
+        if frappe.db.exists("Reading Plan", {"standard_key": key}):
+            continue
+        doc = frappe.get_doc(
+            {
+                "doctype": "Reading Plan",
+                "title": title,
+                "plan_type": "Bible",
+                "description": description,
+                "is_standard": 1,
+                "standard_key": key,
+                "steps": steps,
+            }
+        )
+        doc.flags.allow_standard_edit = True
+        doc.insert(ignore_permissions=True)
+
+
 def seed_cohort_channels():
     """Seed the starter community channels. Create-only-if-missing; a seminary
     adds, renames, or disables channels from the desk without them reverting."""
@@ -1640,6 +1737,7 @@ def after_migrate():
     seed_website_pages()
     seed_cohort_reaction_types()
     seed_cohort_channels()
+    seed_standard_reading_plans()
     setup_donor_person_field()
     setup_user_bible_field()
     create_cohort_participant_role()
