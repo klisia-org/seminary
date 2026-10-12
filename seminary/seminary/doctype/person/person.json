@@ -25,6 +25,7 @@
   "gender",
   "personal_section",
   "date_of_birth",
+  "deceased_on",
   "nationality",
   "tax_id",
   "column_break_personal",
@@ -346,6 +347,12 @@
    "label": "Date of Birth"
   },
   {
+   "fieldname": "deceased_on",
+   "fieldtype": "Date",
+   "label": "Deceased On",
+   "description": "Set when this person has died. Their login is disabled and no message is sent to them from then on."
+  },
+  {
    "description": "Citizenship. Distinct from Country / Region, which routes messaging.",
    "fieldname": "nationality",
    "fieldtype": "Link",
@@ -489,7 +496,7 @@
    "table_fieldname": "contacts"
   }
  ],
- "modified": "2026-10-02 12:00:00.000000",
+ "modified": "2026-10-12 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Person",

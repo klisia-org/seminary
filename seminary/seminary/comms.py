@@ -129,6 +129,9 @@ def get_adapter(provider_key):
 
 
 def consent_blocks(person_doc, channel, category):
+    # A deceased Person (p018) is sent nothing, on any channel or category.
+    if person_doc.get("deceased_on"):
+        return True
     if not category or category == "Emergency":
         return False
     # Physical mail carries no opt-in requirement — Print is never consent-blocked.
@@ -399,8 +402,12 @@ def send_message(
     if person_doc and consent_blocks(person_doc, channel, category):
         values.update(
             status="Cancelled",
-            error=_("Blocked by consent: {0} / {1} for {2}.").format(
-                channel, category, person_doc.name
+            error=(
+                _("{0} is deceased.").format(person_doc.name)
+                if person_doc.get("deceased_on")
+                else _("Blocked by consent: {0} / {1} for {2}.").format(
+                    channel, category, person_doc.name
+                )
             ),
         )
         return _insert_log(values, dedupe_key)

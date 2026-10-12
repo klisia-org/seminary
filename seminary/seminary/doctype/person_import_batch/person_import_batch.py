@@ -579,7 +579,7 @@ class PersonImportBatch(Document):
 
         # 6. Donor — optional koinonia.
         if row.is_donor and frappe.db.exists("DocType", "Donor"):
-            donor = _get_or_create_donor(email, full)
+            donor = _get_or_create_donor(person, email, full)
             link_donor(person, donor)
             row.db_set("created_donor", donor, update_modified=False)
 
@@ -806,15 +806,23 @@ def _get_or_create_alumni(person, user, email, full_name, row):
     return alumni.name
 
 
-def _get_or_create_donor(email, donor_name):
+def _get_or_create_donor(person, email, donor_name):
+    """The Donor for this Person. koinonia derives the Donor's name, email,
+    type and status from the Person (koinonia 0007a), so only the captured
+    values and the link are set here."""
+    meta = frappe.get_meta("Donor")
+    if person and meta.has_field("person"):
+        existing = frappe.db.get_value("Donor", {"person": person})
+        if existing:
+            return existing
     existing = frappe.db.get_value("Donor", {"email": email}) if email else None
     if existing:
         return existing
     donor = frappe.new_doc("Donor")
     donor.donor_name = donor_name or (email.split("@")[0] if email else "Donor")
     donor.email = email
-    donor.donor_type = "Individual"
-    donor.status = "Active"
+    if person and meta.has_field("person"):
+        donor.person = person
     donor.insert(ignore_permissions=True)
     return donor.name
 

@@ -853,6 +853,8 @@ _FEED_FIELDS = [
     "prayer_answered_on",
     "prayer_answer_note",
     "video_url",
+    "reference_doctype",
+    "reference_name",
 ]
 
 
@@ -985,10 +987,32 @@ def _attach_reactions(rows, target):
         ]
 
 
+def _attach_reference_labels(posts):
+    """`p["on_behalf_of"]` = {label, route} for a post written about a record,
+    from the app that owns the record (hook `cohort_post_reference_label`:
+    a callable taking the post rows of one doctype and returning
+    {post name: {label, route}}). koinonia labels prayer requests posted for
+    a Donor (p018). The route is the app's to decide, so only staff get one."""
+    hooks = frappe.get_hooks("cohort_post_reference_label") or {}
+    by_doctype = {}
+    for p in posts:
+        if p.get("reference_doctype") in hooks and p.get("reference_name"):
+            by_doctype.setdefault(p["reference_doctype"], []).append(p)
+    for doctype, rows in by_doctype.items():
+        path = hooks[doctype]
+        labels = (
+            frappe.get_attr(path[-1] if isinstance(path, list) else path)(rows) or {}
+        )
+        for p in rows:
+            if p["name"] in labels:
+                p["on_behalf_of"] = labels[p["name"]]
+
+
 def _decorate_posts(posts):
     if not posts:
         return
     _attach_names(posts, "author")
+    _attach_reference_labels(posts)
     _attach_reactions(posts, target="post")
     me = find_person(user=frappe.session.user)
     ids = [p["name"] for p in posts]

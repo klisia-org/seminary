@@ -1343,7 +1343,12 @@ def setup_donor_person_field():
     Customer<->Person pattern in setup_customer_person_field()."""
     if not frappe.db.exists("DocType", "Donor"):
         return
-    if not frappe.db.exists("Custom Field", "Donor-person"):
+    # koinonia now ships Donor.person as a standard field (koinonia 0007a), so
+    # the custom field is only for older koinonia releases.
+    standard = frappe.get_meta("Donor").get_field("person")
+    if not (standard and not standard.get("is_custom_field")) and not frappe.db.exists(
+        "Custom Field", "Donor-person"
+    ):
         frappe.get_doc(
             {
                 "doctype": "Custom Field",

@@ -148,6 +148,11 @@
 					<header class="mb-2 flex items-center justify-between">
 						<div class="flex items-center gap-2 text-sm">
 							<span class="font-medium text-ink-gray-9">{{ post.author_name || post.author }}</span>
+							<template v-if="post.on_behalf_of">
+								<a v-if="post.on_behalf_of.route" :href="post.on_behalf_of.route"
+									class="text-ink-gray-7 underline-offset-2 hover:underline">· {{ post.on_behalf_of.label }}</a>
+								<span v-else class="text-ink-gray-7">· {{ post.on_behalf_of.label }}</span>
+							</template>
 							<span v-if="post.author_membership === 'outside'"
 								class="rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">{{ __('guest') }}</span>
 							<component :is="visIcon(post.visibility)" class="h-3.5 w-3.5 text-ink-gray-5" />

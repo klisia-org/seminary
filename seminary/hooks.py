@@ -427,7 +427,12 @@ delete_file_data_content = "seminary.storage.hooks.delete_file_data_content"
 doc_events = {
     # Person.is_staff follows the user's roles and enabled state (decisions/085).
     "User": {"on_update": "seminary.seminary.staff.on_user_update"},
-    "Person": {"on_update": "seminary.seminary.staff.on_person_update"},
+    "Person": {
+        "on_update": [
+            "seminary.seminary.staff.on_person_update",
+            "seminary.seminary.person.on_person_update",
+        ]
+    },
     "Academic Term": {
         "on_update": "seminary.tasks.refresh_term_flags_on_save",
     },
