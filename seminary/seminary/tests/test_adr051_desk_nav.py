@@ -240,50 +240,48 @@ class TestBillingEntry(IntegrationTestCase):
         with mock.patch.object(actions, "get_financial_backend", NullFinancialBackend):
             self.assertFalse(actions.can_regenerate_current_term_charges())
 
-    def test_previous_billing_link_goes_on_the_active_sidebar(self):
+    def _boot(self, active):
         bootinfo = frappe._dict(
-            workspace_sidebar_item={
-                "billing": {"items": []},
-                "student billing": {"items": []},
-            }
+            dock={
+                "seminary": [
+                    {"link_type": "Sidebar", "link_to": "Billing", "hidden": 0}
+                ]
+            },
+            module_sidebars={
+                "Billing": {"items": []},
+                "Student Billing": {"items": []},
+            },
         )
+        sidebars = {"oikonomos": ["Student Billing"], "tamias": ["Billing"]}
+        workspaces = {"oikonomos": ["Student Billing"], "tamias": ["Billing"]}
         with (
+            mock.patch.object(billing_desk, "billing_sidebars", return_value=sidebars),
             mock.patch.object(
-                billing_desk,
-                "billing_workspaces",
-                return_value={"oikonomos": ["Student Billing"], "tamias": ["Billing"]},
+                billing_desk, "billing_workspaces", return_value=workspaces
             ),
             mock.patch.object(
-                billing_desk, "active_financial_app", return_value="tamias"
+                billing_desk, "active_financial_app", return_value=active
             ),
         ):
-            billing_desk.add_previous_billing_links(bootinfo)
+            billing_desk.boot_session(bootinfo)
+        return bootinfo
+
+    def test_previous_billing_link_goes_on_the_active_sidebar(self):
+        bootinfo = self._boot("tamias")
         self.assertEqual(
-            [i["link_to"] for i in bootinfo.workspace_sidebar_item["billing"]["items"]],
+            [i["link_to"] for i in bootinfo.module_sidebars["Billing"]["items"]],
             ["Student Billing"],
         )
-        self.assertEqual(
-            bootinfo.workspace_sidebar_item["student billing"]["items"], []
-        )
+        self.assertEqual(bootinfo.module_sidebars["Student Billing"]["items"], [])
 
-    def test_sync_shows_only_the_active_apps_icon(self):
-        icons = frappe.get_all(
-            "Desktop Icon",
-            filters={"link_type": "Workspace Sidebar"},
-            fields=["name", "link_to"],
-            limit=2,
-        )
-        if len(icons) < 2:
-            self.skipTest("needs two workspace desktop icons")
-        (a, b) = icons
-        with (
-            mock.patch.object(
-                billing_desk,
-                "billing_workspaces",
-                return_value={"one": [a.link_to], "two": [b.link_to]},
-            ),
-            mock.patch.object(billing_desk, "active_financial_app", return_value="one"),
-        ):
-            billing_desk.sync_billing_entry()
-        self.assertEqual(frappe.db.get_value("Desktop Icon", a.name, "hidden"), 0)
-        self.assertEqual(frappe.db.get_value("Desktop Icon", b.name, "hidden"), 1)
+    def test_only_the_active_apps_rail_entry_shows(self):
+        rail = {
+            r["link_to"]: r["hidden"] for r in self._boot("tamias").dock["seminary"]
+        }
+        # The retired entry had no row, so a hidden one is added; the active one is untouched.
+        self.assertEqual(rail, {"Billing": 0, "Student Billing": 1})
+        # An existing row for the retired entry is flagged rather than duplicated.
+        rail = {
+            r["link_to"]: r["hidden"] for r in self._boot("oikonomos").dock["seminary"]
+        }
+        self.assertEqual(rail, {"Billing": 1})

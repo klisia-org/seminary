@@ -1,11 +1,11 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # For license information, please see license.txt
-"""One billing entry on Desk, whichever billing app is active.
+"""One billing entry on the Seminary rail, whichever billing app is active.
 
-Each billing app ships its own workspace and desktop icon. When two are
-installed, only the active app's icon shows; the retired app's workspace stays
-open for its history, reached from a "Previous billing" link in the active
-app's sidebar (aretenic decision 051 §4).
+oikonomos and tamias are companion apps: each ships a Dock mounted on seminary and a Sidebar
+of its own, so both would put a "Billing" entry on the rail. At boot the retired app's entry is
+marked hidden, and a "Previous billing" row pointing at its workspace is added to the active
+app's sidebars, so its history stays reachable. Nothing is stored (decision 088 §6).
 """
 
 import frappe
@@ -16,9 +16,27 @@ from seminary.seminary.financial.backend import (
     registered_financial_backends,
 )
 
+HOST_APP = "seminary"
+
+
+def billing_sidebars() -> dict[str, list[str]]:
+    """{billing app: the Sidebars it ships}, for every installed billing app."""
+    apps = list(registered_financial_backends())
+    if not apps:
+        return {}
+    out = {app: [] for app in apps}
+    for row in frappe.get_all(
+        "Sidebar",
+        filters={"app": ("in", apps)},
+        fields=["name", "app"],
+        order_by="name",
+    ):
+        out[row.app].append(row.name)
+    return out
+
 
 def billing_workspaces() -> dict[str, list[str]]:
-    """{billing app: its public workspaces}, for every installed billing app."""
+    """{billing app: the public workspaces this user may open}, for every billing app."""
     apps = list(registered_financial_backends())
     if not apps:
         return {}
@@ -29,7 +47,7 @@ def billing_workspaces() -> dict[str, list[str]]:
     out = {app: [] for app in apps}
     if not app_of:
         return out
-    for ws in frappe.get_all(
+    for ws in frappe.get_list(
         "Workspace",
         filters={"module": ("in", list(app_of)), "public": 1},
         fields=["name", "module"],
@@ -39,33 +57,43 @@ def billing_workspaces() -> dict[str, list[str]]:
     return out
 
 
-def sync_billing_entry():
-    """Show the active billing app's desktop icons and hide the others'.
-
-    Runs when Seminary Settings is saved and on every migrate, so a new billing
-    app, or a change of active app, settles without anyone touching Desk.
-    """
+def _retired(by_app: dict[str, list[str]]) -> list[str]:
     active = active_financial_app()
-    changed = False
-    for app, workspaces in billing_workspaces().items():
-        if not workspaces:
-            continue
-        hidden = 0 if app == active else 1
-        for icon in frappe.get_all(
-            "Desktop Icon",
-            filters={
-                "link_type": "Workspace Sidebar",
-                "link_to": ("in", workspaces),
-                "hidden": ("!=", hidden),
-            },
-            pluck="name",
-        ):
-            frappe.db.set_value(
-                "Desktop Icon", icon, "hidden", hidden, update_modified=False
+    return [name for app, names in by_app.items() if app != active for name in names]
+
+
+def hide_inactive_billing(bootinfo):
+    """Hide the retired billing apps' entries on the Seminary rail.
+
+    An entry that no layer names is absent from `bootinfo.dock` and the desk keeps it in its
+    app's own order, so a hidden row is added when there is none to flag.
+    """
+    by_app = billing_sidebars()
+    if len(by_app) < 2:
+        return
+    rail = bootinfo.setdefault("dock", {}).setdefault(HOST_APP, [])
+    for name in _retired(by_app):
+        row = next(
+            (
+                r
+                for r in rail
+                if r.get("link_type") == "Sidebar" and r.get("link_to") == name
+            ),
+            None,
+        )
+        if row:
+            row["hidden"] = 1
+        else:
+            rail.append(
+                {
+                    "link_type": "Sidebar",
+                    "link_to": name,
+                    "url": None,
+                    "icon": "archive",
+                    "title": name,
+                    "hidden": 1,
+                }
             )
-            changed = True
-    if changed:
-        frappe.cache.delete_key("desktop_icons")
 
 
 def add_previous_billing_links(bootinfo):
@@ -75,21 +103,33 @@ def add_previous_billing_links(bootinfo):
         return
     active = active_financial_app()
     retired = [ws for app, names in by_app.items() if app != active for ws in names]
-    sidebars = bootinfo.get("workspace_sidebar_item") or {}
-    for ws in by_app.get(active) or []:
-        sidebar = sidebars.get(ws.lower())
+    sidebars = bootinfo.get("module_sidebars") or {}
+    for name in billing_sidebars().get(active) or []:
+        sidebar = sidebars.get(name)
         if not sidebar or not retired:
             continue
-        present = {item.get("link_to") for item in sidebar.get("items") or []}
+        items = sidebar.setdefault("items", [])
+        present = {item.get("link_to") for item in items}
         for target in retired:
             if target in present:
                 continue
-            sidebar.setdefault("items", []).append(
+            items.append(
                 {
+                    "key": f"previous-billing-{target}",
                     "label": _("Previous billing"),
                     "type": "Link",
                     "link_type": "Workspace",
                     "link_to": target,
                     "icon": "archive",
+                    "child": 0,
+                    "collapsible": 1,
+                    "indent": 0,
+                    "keep_closed": 0,
+                    "show_arrow": 0,
                 }
             )
+
+
+def boot_session(bootinfo):
+    hide_inactive_billing(bootinfo)
+    add_previous_billing_links(bootinfo)

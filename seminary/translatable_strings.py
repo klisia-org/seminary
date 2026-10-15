@@ -32,3 +32,18 @@ _("Outstanding Student Balance")
 
 # Dashboard names ("Seminary", etc.) match a Workspace label and are already
 # extracted via Frappe's workspace extractor — no registration needed.
+
+# Dock entries (see seminary/dock/seminary/seminary.json). Frappe's extractors read sidebar
+# files but not docks.
+_("Home")
+_("Registrar")
+_("Getting started")
+_("Admissions")
+_("Students")
+_("Curriculum")
+_("Schedule")
+_("Teaching")
+_("Graduation")
+_("Internships")
+_("Community")
+_("Setup")

@@ -253,13 +253,16 @@ after_migrate = "seminary.install.after_migrate"
 # decision 051). Every app's boot_session runs, so koinonia's copy is harmless.
 boot_session = [
     "seminary.desk_nav.boot_session",
-    "seminary.seminary.financial.desk.add_previous_billing_links",
+    "seminary.seminary.financial.desk.boot_session",
 ]
 # The Asaas checkout asks the payments app for a CPF it already knows, so the
 # payer confirms the one on their Person instead of typing it (ADR 071).
 payer_tax_id = "seminary.seminary.tax_ids.payer_tax_id"
 
 desk_block_gates = {
+    "Getting Started SeminaryERP": {
+        "shortcut:6. Set up billing": "seminary.seminary.financial.actions.has_financial_backend",
+    },
     "Registrar": {
         "custom_block:Registrar - Regenerate Current-Term Invoices": (
             "seminary.seminary.financial.actions.can_regenerate_current_term_charges"

@@ -139,12 +139,8 @@ class SeminarySettings(Document):
         for key, fieldname in seminary_keydict.items():
             frappe.db.set_default(key, self.get(fieldname))
 
-        # A change of active billing app swaps which billing icon Desk shows.
-        from seminary.seminary.financial.desk import sync_billing_entry
-
-        sync_billing_entry()
-
-        # Settings are read all over the app and cached per site.
+        # Settings are read all over the app and cached per site. The cache also holds
+        # the boot payload, which is where a change of billing app swaps the rail entry.
         frappe.clear_cache()
 
 

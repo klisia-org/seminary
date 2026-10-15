@@ -1,0 +1,107 @@
+{
+ "doctype": "Dock",
+ "name": "seminary",
+ "app": "seminary",
+ "user": "",
+ "standard": 1,
+ "mount_on": "",
+ "items": [
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "house",
+   "link_to": "Seminary",
+   "link_type": "Workspace",
+   "title": "Home"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "stamp",
+   "link_to": "Registrar",
+   "link_type": "Workspace",
+   "title": "Registrar"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "rocket",
+   "link_to": "Getting Started SeminaryERP",
+   "link_type": "Workspace",
+   "title": "Getting started"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "user-plus",
+   "link_to": "Seminary Admissions",
+   "link_type": "Sidebar",
+   "title": "Admissions"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "users",
+   "link_to": "Seminary Students",
+   "link_type": "Sidebar",
+   "title": "Students"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "book-open",
+   "link_to": "Seminary Curriculum",
+   "link_type": "Sidebar",
+   "title": "Curriculum"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "calendar-days",
+   "link_to": "Seminary Schedule",
+   "link_type": "Sidebar",
+   "title": "Schedule"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "presentation",
+   "link_to": "Seminary Teaching",
+   "link_type": "Sidebar",
+   "title": "Teaching"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "graduation-cap",
+   "link_to": "Seminary Graduation",
+   "link_type": "Sidebar",
+   "title": "Graduation"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "briefcase",
+   "link_to": "Seminary Internships",
+   "link_type": "Sidebar",
+   "title": "Internships"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "messages-square",
+   "link_to": "Seminary Community",
+   "link_type": "Sidebar",
+   "title": "Community"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "settings",
+   "link_to": "Seminary Setup",
+   "link_type": "Sidebar",
+   "title": "Setup"
+  }
+ ],
+ "modified": "2026-10-15 15:00:00.000000"
+}
