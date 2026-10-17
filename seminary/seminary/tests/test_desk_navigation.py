@@ -85,3 +85,17 @@ class UnitTestDeskNavigation(UnitTestCase):
         self.assertEqual(len(titles), len(set(titles)))
         for title in titles:
             self.assertTrue(title.startswith("Seminary "), title)
+
+    def test_reports_are_permissioned_on_a_parent_doctype(self):
+        # Frappe checks report access on ref_doctype; a child table has no permissions, so the
+        # report opens for Administrator only.
+        import frappe
+
+        for path in PACKAGE.glob("*/report/*/*.json"):
+            report = _load(path)
+            if report.get("doctype") == "Report":
+                ref = report["ref_doctype"]
+                self.assertFalse(
+                    frappe.db.get_value("DocType", ref, "istable"),
+                    f"{report['name']} -> {ref}",
+                )
