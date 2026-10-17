@@ -1750,8 +1750,6 @@ def after_migrate():
     setup_user_bible_field()
     create_cohort_participant_role()
     ensure_registrar_tools()
-    ensure_workspace_sidebars()
-    sync_billing_entry()
     merge_academics_user_into_program_chair()
     ensure_instructor_community_access()
 
@@ -1785,35 +1783,6 @@ def merge_academics_user_into_program_chair():
     frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
     frappe.db.commit()
     print('Merged resurrected role "Academics User" -> "Program Chair".')
-
-
-def ensure_workspace_sidebars():
-    """Build any missing Workspace Sidebars and Desktop Icons.
-
-    Frappe v16 generates them only from its `after_app_install` hook, and only
-    for workspaces that have no sidebar yet. Until the Registrar workspace
-    stopped linking oikonomos's scholarship reports, that generation failed on
-    every install where seminary preceded oikonomos ("Failed To Create
-    Sidebar"), and nothing ever retried it — so those sites were left with no
-    Registrar sidebar or desktop icon for good. Frappe's generator is
-    existence-guarded and safe to re-run, so calling it here heals such sites
-    on their next migrate and is a no-op everywhere else.
-    """
-    try:
-        from frappe.utils.install import auto_generate_icons_and_sidebar
-    except ImportError:  # Frappe without workspace sidebars
-        return
-
-    auto_generate_icons_and_sidebar()
-
-
-def sync_billing_entry():
-    """Show only the active billing app's desktop icon (aretenic decision 051 §4).
-    The billing apps call this from their own after_migrate too, since theirs
-    may run after seminary's and create the icons."""
-    from seminary.seminary.financial.desk import sync_billing_entry as sync
-
-    sync()
 
 
 def ensure_instructor_community_access():

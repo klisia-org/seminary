@@ -32,3 +32,19 @@ _("Outstanding Student Balance")
 
 # Dashboard names ("Seminary", etc.) match a Workspace label and are already
 # extracted via Frappe's workspace extractor — no registration needed.
+
+# Dock entries (see seminary/dock/seminary/seminary.json). Frappe's extractors read sidebar
+# files but not docks.
+_("Setup")
+_("Registrar")
+_("Teaching")
+_("Internships")
+_("Community")
+_("Chapel")
+# The billing apps' entries mounted on the Seminary rail, and the Setup rows they add at boot
+# (decision 088a §4–§5); the labels are rendered here, so they belong to this catalogue.
+_("Scholarships")
+_("Billing")
+_("Fees setup")
+_("Billing Settings")
+_("Previous billing")

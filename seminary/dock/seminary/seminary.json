@@ -1,0 +1,59 @@
+{
+ "doctype": "Dock",
+ "name": "seminary",
+ "app": "seminary",
+ "user": "",
+ "standard": 1,
+ "mount_on": "",
+ "items": [
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "settings",
+   "link_to": "Seminary Setup",
+   "link_type": "Sidebar",
+   "title": "Setup"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "stamp",
+   "link_to": "Seminary Registrar",
+   "link_type": "Sidebar",
+   "title": "Registrar"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "presentation",
+   "link_to": "Seminary Teaching",
+   "link_type": "Sidebar",
+   "title": "Teaching"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "briefcase",
+   "link_to": "Seminary Internships",
+   "link_type": "Sidebar",
+   "title": "Internships"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "users-round",
+   "link_to": "Seminary Community",
+   "link_type": "Sidebar",
+   "title": "Community"
+  },
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "church",
+   "link_to": "Seminary Chapel",
+   "link_type": "Sidebar",
+   "title": "Chapel"
+  }
+ ],
+ "modified": "2026-10-17 18:00:00.000000"
+}

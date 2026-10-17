@@ -49,6 +49,11 @@ class FinancialBackend(ABC):
     """Contract seminary depends on. Implemented by oikonomos (ERPNext-backed);
     falls back to `NullFinancialBackend` when no financial app is installed."""
 
+    def setup_route(self) -> str | None:
+        """Desk route of the first page a school opens to set up billing, or
+        None. Not abstract: a backend with nothing to point at is still valid."""
+        return None
+
     @abstractmethod
     def has_financials(self) -> bool:
         """True when a real billing backend is present. Academic code can use

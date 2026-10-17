@@ -240,50 +240,169 @@ class TestBillingEntry(IntegrationTestCase):
         with mock.patch.object(actions, "get_financial_backend", NullFinancialBackend):
             self.assertFalse(actions.can_regenerate_current_term_charges())
 
-    def test_previous_billing_link_goes_on_the_active_sidebar(self):
+    def _boot(self, active):
         bootinfo = frappe._dict(
-            workspace_sidebar_item={
-                "billing": {"items": []},
-                "student billing": {"items": []},
-            }
+            dock={
+                "seminary": [
+                    {"link_type": "Sidebar", "link_to": "Billing", "hidden": 0}
+                ]
+            },
+            module_sidebars={
+                "Billing": {"items": []},
+                "Student Billing": {"items": []},
+            },
         )
+        sidebars = {"oikonomos": ["Student Billing"], "tamias": ["Billing"]}
+        workspaces = {"oikonomos": ["Student Billing"], "tamias": ["Billing"]}
+        with (
+            mock.patch.object(billing_desk, "billing_sidebars", return_value=sidebars),
+            mock.patch.object(
+                billing_desk, "billing_workspaces", return_value=workspaces
+            ),
+            mock.patch.object(
+                billing_desk, "active_financial_app", return_value=active
+            ),
+        ):
+            billing_desk.boot_session(bootinfo)
+        return bootinfo
+
+    def test_previous_billing_link_goes_on_the_active_sidebar(self):
+        bootinfo = self._boot("tamias")
+        self.assertEqual(
+            [i["link_to"] for i in bootinfo.module_sidebars["Billing"]["items"]],
+            ["Student Billing"],
+        )
+        self.assertEqual(bootinfo.module_sidebars["Student Billing"]["items"], [])
+
+    def test_only_the_active_apps_rail_entry_shows(self):
+        rail = {
+            r["link_to"]: r["hidden"] for r in self._boot("tamias").dock["seminary"]
+        }
+        # The retired entry had no row, so a hidden one is added; the active one is untouched.
+        self.assertEqual(rail, {"Billing": 0, "Student Billing": 1})
+        # An existing row for the retired entry is flagged rather than duplicated.
+        rail = {
+            r["link_to"]: r["hidden"] for r in self._boot("oikonomos").dock["seminary"]
+        }
+        self.assertEqual(rail, {"Billing": 1})
+
+
+class TestSetupSections(IntegrationTestCase):
+    """Companion apps' rows in the Setup sidebar (decision 088a §4)."""
+
+    def _section(self, label, *links):
+        return [{"type": "Section Break", "label": label, "child": 0}] + [
+            {"type": "Link", "label": name, "link_to": name, "child": 1}
+            for name in links
+        ]
+
+    def test_rows_land_in_their_section_or_after_the_named_one(self):
+        items = (
+            self._section("Community setup", "Cohort Type")
+            + self._section("Web and communications", "Website Branding")
+            + self._section("Integrations", "Pexels Settings")
+        )
+        bootinfo = frappe._dict(module_sidebars={"Seminary Setup": {"items": items}})
+        specs = [
+            (
+                "oikonomos",
+                {
+                    "section": "Fees setup",
+                    "after": "Community setup",
+                    "links": [{"label": "Fee Category", "link_to": "Fee Category"}],
+                },
+            ),
+            (
+                "aretenic",
+                {
+                    "section": "Web and communications",
+                    "links": [
+                        {"label": "Portal Theme", "link_to": "Portal Theme"},
+                        {"label": "Website Branding", "link_to": "Website Branding"},
+                    ],
+                },
+            ),
+        ]
+        frappe.set_user("Administrator")
+        with mock.patch.object(billing_desk, "setup_sections", return_value=specs):
+            billing_desk.add_setup_sections(bootinfo)
+        self.assertEqual(
+            [i["label"] for i in bootinfo.module_sidebars["Seminary Setup"]["items"]],
+            [
+                "Community setup",
+                "Cohort Type",
+                "Fees setup",
+                "Fee Category",
+                "Web and communications",
+                "Website Branding",
+                "Portal Theme",
+                "Integrations",
+                "Pexels Settings",
+            ],
+        )
+
+    def test_a_retired_billing_app_adds_nothing(self):
+        hooks = {
+            "oikonomos": [{"section": "Fees setup", "links": []}],
+            "tamias": [{"section": "Fees setup", "links": []}],
+            "aretenic": [{"section": "Web and communications", "links": []}],
+        }
         with (
             mock.patch.object(
                 billing_desk,
-                "billing_workspaces",
-                return_value={"oikonomos": ["Student Billing"], "tamias": ["Billing"]},
+                "registered_financial_backends",
+                return_value={"oikonomos": "", "tamias": ""},
             ),
             mock.patch.object(
                 billing_desk, "active_financial_app", return_value="tamias"
             ),
-        ):
-            billing_desk.add_previous_billing_links(bootinfo)
-        self.assertEqual(
-            [i["link_to"] for i in bootinfo.workspace_sidebar_item["billing"]["items"]],
-            ["Student Billing"],
-        )
-        self.assertEqual(
-            bootinfo.workspace_sidebar_item["student billing"]["items"], []
-        )
-
-    def test_sync_shows_only_the_active_apps_icon(self):
-        icons = frappe.get_all(
-            "Desktop Icon",
-            filters={"link_type": "Workspace Sidebar"},
-            fields=["name", "link_to"],
-            limit=2,
-        )
-        if len(icons) < 2:
-            self.skipTest("needs two workspace desktop icons")
-        (a, b) = icons
-        with (
+            mock.patch.object(frappe, "get_installed_apps", return_value=list(hooks)),
             mock.patch.object(
-                billing_desk,
-                "billing_workspaces",
-                return_value={"one": [a.link_to], "two": [b.link_to]},
+                frappe,
+                "get_hooks",
+                side_effect=lambda name, app_name: hooks[app_name],
             ),
-            mock.patch.object(billing_desk, "active_financial_app", return_value="one"),
         ):
-            billing_desk.sync_billing_entry()
-        self.assertEqual(frappe.db.get_value("Desktop Icon", a.name, "hidden"), 0)
-        self.assertEqual(frappe.db.get_value("Desktop Icon", b.name, "hidden"), 1)
+            self.assertEqual(
+                [app for app, _spec in billing_desk.setup_sections()],
+                ["tamias", "aretenic"],
+            )
+
+
+class TestSidebarWorkspaces(IntegrationTestCase):
+    """A workspace opens in the sidebar that links it, not the first of its module (088a §1)."""
+
+    def test_each_workspace_keeps_only_the_sidebars_that_link_it(self):
+        from seminary.seminary import sidebar_workspaces
+
+        module_ws = ["Seminary", "Academics", "Registrar"]
+
+        def sidebar(*linked):
+            return {
+                "module": "Seminary",
+                "workspaces": list(module_ws),
+                "items": [
+                    {"type": "Link", "link_type": "Workspace", "link_to": ws}
+                    for ws in linked
+                ],
+            }
+
+        bootinfo = frappe._dict(
+            module_sidebars={
+                "Seminary Chapel": sidebar(),
+                "Seminary Registrar": sidebar("Registrar"),
+                "Seminary Setup": sidebar("Seminary"),
+                "Other": {"module": "Other", "workspaces": ["X"], "items": []},
+            }
+        )
+        sidebar_workspaces.boot_session(bootinfo)
+        self.assertEqual(
+            {name: s["workspaces"] for name, s in bootinfo.module_sidebars.items()},
+            {
+                "Seminary Chapel": [],
+                "Seminary Registrar": ["Registrar"],
+                # Academics is linked nowhere, so it stays on the fallback.
+                "Seminary Setup": ["Seminary", "Academics"],
+                "Other": ["X"],
+            },
+        )

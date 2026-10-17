@@ -21,3 +21,17 @@ def can_regenerate_current_term_charges() -> bool:
 def regenerate_current_term_charges() -> dict:
     frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
     return get_financial_backend().regenerate_current_term_charges()
+
+
+def has_financial_backend() -> bool:
+    """`desk_block_gates` predicate for Getting Started's financial step."""
+    return get_financial_backend().setup_route() is not None
+
+
+@frappe.whitelist()
+def open_financial_setup():
+    """Send the browser to the active billing app's first setup page."""
+    frappe.only_for(["Seminary Manager", "System Manager"])
+    route = get_financial_backend().setup_route() or "/desk/seminary-settings"
+    frappe.local.response["type"] = "redirect"
+    frappe.local.response["location"] = route
