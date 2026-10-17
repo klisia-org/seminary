@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # For license information, please see license.txt
-"""One billing entry on the Seminary rail, whichever billing app is active.
+"""One set of billing entries on the Seminary rail, whichever billing app is active.
 
 oikonomos and tamias are companion apps: each ships a Dock mounted on seminary and a Sidebar
 of its own, so both would put a "Billing" entry on the rail. At boot the retired app's entry is
@@ -130,6 +130,115 @@ def add_previous_billing_links(bootinfo):
             )
 
 
+SETUP_SIDEBAR = "Seminary Setup"
+
+
+def setup_sections() -> list[tuple[str, dict]]:
+    """[(app, section spec)] from `seminary_setup_sections`, skipping retired billing apps.
+
+    A spec is {"section": label, "after": label, "icon": name, "links": [{"label",
+    "link_type", "link_to"}]}. It adds rows to the Setup section it names, or a new section
+    placed after `after` (decision 088a §4).
+    """
+    billing = set(registered_financial_backends())
+    active = active_financial_app()
+    return [
+        (app, spec)
+        for app in frappe.get_installed_apps()
+        if app not in billing or app == active
+        for spec in frappe.get_hooks("seminary_setup_sections", app_name=app)
+    ]
+
+
+def _section_end(items, label):
+    """Index just past the section labelled `label`, or None when it is absent."""
+    start = next(
+        (
+            i
+            for i, item in enumerate(items)
+            if item.get("type") == "Section Break" and item.get("label") == label
+        ),
+        None,
+    )
+    if start is None:
+        return None
+    end = start + 1
+    while end < len(items) and items[end].get("child"):
+        end += 1
+    return end
+
+
+def _setup_row(app, link):
+    link_type = link.get("link_type") or "DocType"
+    return {
+        "key": f"setup-{app}-{link_type}-{link['link_to']}",
+        "label": _(link["label"]),
+        "type": "Link",
+        "link_type": link_type,
+        "link_to": link["link_to"],
+        "icon": None,
+        "child": 1,
+        "collapsible": 1,
+        "indent": 0,
+        "keep_closed": 0,
+        "show_arrow": 0,
+    }
+
+
+def add_setup_sections(bootinfo):
+    """Merge companion apps' Setup rows into the Setup sidebar, as this user may see them.
+
+    `boot_session` runs after Frappe has permission-filtered the sidebars, so each row is
+    checked here.
+    """
+    sidebar = (bootinfo.get("module_sidebars") or {}).get(SETUP_SIDEBAR)
+    if not sidebar:
+        return
+    specs = setup_sections()
+    if not specs:
+        return
+
+    from frappe.desk.desk_views import DeskViews
+    from frappe.desk.utils import is_item_allowed
+
+    context = DeskViews()
+    items = sidebar.setdefault("items", [])
+    for app, spec in specs:
+        present = {item.get("link_to") for item in items if item.get("child")}
+        rows = [
+            _setup_row(app, link)
+            for link in spec.get("links") or []
+            if link["link_to"] not in present
+            and is_item_allowed(
+                link["link_to"], link.get("link_type") or "DocType", context
+            )
+        ]
+        if not rows:
+            continue
+        at = _section_end(items, spec["section"])
+        if at is None:
+            after = _section_end(items, spec.get("after"))
+            at = len(items) if after is None else after
+            rows.insert(
+                0,
+                {
+                    "key": f"setup-{app}-{spec['section']}",
+                    "label": _(spec["section"]),
+                    "type": "Section Break",
+                    "link_type": "DocType",
+                    "link_to": None,
+                    "icon": spec.get("icon"),
+                    "child": 0,
+                    "collapsible": 1,
+                    "indent": 1,
+                    "keep_closed": 1,
+                    "show_arrow": 0,
+                },
+            )
+        items[at:at] = rows
+
+
 def boot_session(bootinfo):
     hide_inactive_billing(bootinfo)
     add_previous_billing_links(bootinfo)
+    add_setup_sections(bootinfo)

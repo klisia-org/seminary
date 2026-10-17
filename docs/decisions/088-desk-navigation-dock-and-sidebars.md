@@ -1,7 +1,7 @@
 # 088 — Desk navigation: dock and sidebars
 
 **Date:** 2026-10-15
-**Status:** Accepted 2026-10-15
+**Status:** Accepted 2026-10-15; §1–§3, §5 and §8 amended by [088a](088a-desk-navigation-setup-first.md)
 **Related:** aretenic 069 (the same change in Aretenic, validated first), aretenic 051 (Workspaces stay;
 pruning at render time), 020 (workspace translation)
 

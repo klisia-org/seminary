@@ -9,58 +9,18 @@
   {
    "added": 0,
    "hidden": 0,
-   "icon": "house",
-   "link_to": "Seminary",
-   "link_type": "Workspace",
-   "title": "Home"
+   "icon": "settings",
+   "link_to": "Seminary Setup",
+   "link_type": "Sidebar",
+   "title": "Setup"
   },
   {
    "added": 0,
    "hidden": 0,
    "icon": "stamp",
-   "link_to": "Registrar",
-   "link_type": "Workspace",
+   "link_to": "Seminary Registrar",
+   "link_type": "Sidebar",
    "title": "Registrar"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
-   "icon": "rocket",
-   "link_to": "Getting Started SeminaryERP",
-   "link_type": "Workspace",
-   "title": "Getting started"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
-   "icon": "user-plus",
-   "link_to": "Seminary Admissions",
-   "link_type": "Sidebar",
-   "title": "Admissions"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
-   "icon": "users",
-   "link_to": "Seminary Students",
-   "link_type": "Sidebar",
-   "title": "Students"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
-   "icon": "book-open",
-   "link_to": "Seminary Curriculum",
-   "link_type": "Sidebar",
-   "title": "Curriculum"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
-   "icon": "calendar-days",
-   "link_to": "Seminary Schedule",
-   "link_type": "Sidebar",
-   "title": "Schedule"
   },
   {
    "added": 0,
@@ -73,14 +33,6 @@
   {
    "added": 0,
    "hidden": 0,
-   "icon": "graduation-cap",
-   "link_to": "Seminary Graduation",
-   "link_type": "Sidebar",
-   "title": "Graduation"
-  },
-  {
-   "added": 0,
-   "hidden": 0,
    "icon": "briefcase",
    "link_to": "Seminary Internships",
    "link_type": "Sidebar",
@@ -89,7 +41,7 @@
   {
    "added": 0,
    "hidden": 0,
-   "icon": "messages-square",
+   "icon": "users-round",
    "link_to": "Seminary Community",
    "link_type": "Sidebar",
    "title": "Community"
@@ -97,11 +49,11 @@
   {
    "added": 0,
    "hidden": 0,
-   "icon": "settings",
-   "link_to": "Seminary Setup",
+   "icon": "church",
+   "link_to": "Seminary Chapel",
    "link_type": "Sidebar",
-   "title": "Setup"
+   "title": "Chapel"
   }
  ],
- "modified": "2026-10-15 15:00:00.000000"
+ "modified": "2026-10-17 12:00:00.000000"
 }

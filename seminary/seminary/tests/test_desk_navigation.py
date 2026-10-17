@@ -1,11 +1,12 @@
 # Copyright (c) 2026, Klisia / SeminaryERP and contributors
 # For license information, please see license.txt
 
-"""Desk navigation (decision 088).
+"""Desk navigation (decisions 088, 088a).
 
 The dock and the sidebars are shipped files, so these tests read the files and need no site data.
 What they hold: every dock entry opens a sidebar or workspace we ship, every sidebar link points
-at something Seminary owns, and no top-level doctype or report is left out of every sidebar.
+at something Seminary or Frappe owns, and every top-level doctype and report is in a sidebar or
+named below as portal-only, internal or placed by a companion app.
 """
 
 import json
@@ -18,7 +19,48 @@ MODULE = PACKAGE / "seminary"
 # Per-user bookkeeping rows with no screen of their own.
 INTERNAL = {"Cohort Feed Read State", "Cohort Thread Read State"}
 # Frappe's own doctypes that a sidebar may open, because every site has them.
-FRAMEWORK_DOCTYPES = set()
+FRAMEWORK_DOCTYPES = {"User", "Website Settings"}
+# Records that instructors and students work on in the portal; reachable on Desk by search and
+# links, but listed in no sidebar (088a §6).
+PORTAL_ONLY = {
+    "Activity Competency Grade",
+    "Assessment Dimension Weight",
+    "Assessment Grading Matrix",
+    "Assignment Activity",
+    "Assignment Submission",
+    "Cohort Post",
+    "Cohort Post Comment",
+    "Cohort Post Reaction",
+    "Cohort Post Save",
+    "Competency Assessment",
+    "Competency Result",
+    "Course Activity",
+    "Course Folder",
+    "Course Gradebook",
+    "Course Lesson",
+    "Course Schedule Chapter",
+    "Culminating Project Milestone Signoff",
+    "Discussion Activity",
+    "Discussion Submission",
+    "Exam Activity",
+    "Exam Submission",
+    "Gradebook Course Schedule",
+    "Open Question",
+    "Personal Development Note",
+    "Personal Development Plan",
+    "Plagiarism Check Result",
+    "Question",
+    "Quiz",
+    "Quiz Submission",
+    "SCORM Attempt",
+    "SCORM Package",
+    "Seminary Lesson Note",
+    "Student Due Date Override",
+    "Student Group",
+    "Student Log",
+}
+# Listed in the billing apps' Scholarships sidebars (088a §5).
+COMPANION_PLACED = {"Sources of Funding"}
 
 
 def _load(path):
@@ -77,7 +119,13 @@ class UnitTestDeskNavigation(UnitTestCase):
             if (doc := _load(path)).get("doctype") == "DocType"
             and not doc.get("istable")
         }
-        left_out = (top_level | _names("Report", "report")) - linked - INTERNAL
+        left_out = (
+            (top_level | _names("Report", "report"))
+            - linked
+            - INTERNAL
+            - PORTAL_ONLY
+            - COMPANION_PLACED
+        )
         self.assertEqual(sorted(left_out), [])
 
     def test_sidebar_titles_are_prefixed_and_unique(self):
@@ -99,3 +147,11 @@ class UnitTestDeskNavigation(UnitTestCase):
                     frappe.db.get_value("DocType", ref, "istable"),
                     f"{report['name']} -> {ref}",
                 )
+
+    def test_portal_only_records_are_listed_nowhere(self):
+        linked = {i["link_to"] for s in _sidebars() for i in _links(s)}
+        self.assertEqual(sorted(PORTAL_ONLY & linked), [])
+
+    def test_setup_comes_first(self):
+        dock = _load(PACKAGE / "dock" / "seminary" / "seminary.json")
+        self.assertEqual(dock["items"][0]["link_to"], "Seminary Setup")

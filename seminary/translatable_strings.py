@@ -35,15 +35,16 @@ _("Outstanding Student Balance")
 
 # Dock entries (see seminary/dock/seminary/seminary.json). Frappe's extractors read sidebar
 # files but not docks.
-_("Home")
+_("Setup")
 _("Registrar")
-_("Getting started")
-_("Admissions")
-_("Students")
-_("Curriculum")
-_("Schedule")
 _("Teaching")
-_("Graduation")
 _("Internships")
 _("Community")
-_("Setup")
+_("Chapel")
+# The billing apps' entries mounted on the Seminary rail, and the Setup rows they add at boot
+# (decision 088a §4–§5); the labels are rendered here, so they belong to this catalogue.
+_("Scholarships")
+_("Billing")
+_("Fees setup")
+_("Billing Settings")
+_("Previous billing")

@@ -285,3 +285,85 @@ class TestBillingEntry(IntegrationTestCase):
             r["link_to"]: r["hidden"] for r in self._boot("oikonomos").dock["seminary"]
         }
         self.assertEqual(rail, {"Billing": 1})
+
+
+class TestSetupSections(IntegrationTestCase):
+    """Companion apps' rows in the Setup sidebar (decision 088a §4)."""
+
+    def _section(self, label, *links):
+        return [{"type": "Section Break", "label": label, "child": 0}] + [
+            {"type": "Link", "label": name, "link_to": name, "child": 1}
+            for name in links
+        ]
+
+    def test_rows_land_in_their_section_or_after_the_named_one(self):
+        items = (
+            self._section("Community setup", "Cohort Type")
+            + self._section("Web and communications", "Website Branding")
+            + self._section("Integrations", "Pexels Settings")
+        )
+        bootinfo = frappe._dict(module_sidebars={"Seminary Setup": {"items": items}})
+        specs = [
+            (
+                "oikonomos",
+                {
+                    "section": "Fees setup",
+                    "after": "Community setup",
+                    "links": [{"label": "Fee Category", "link_to": "Fee Category"}],
+                },
+            ),
+            (
+                "aretenic",
+                {
+                    "section": "Web and communications",
+                    "links": [
+                        {"label": "Portal Theme", "link_to": "Portal Theme"},
+                        {"label": "Website Branding", "link_to": "Website Branding"},
+                    ],
+                },
+            ),
+        ]
+        frappe.set_user("Administrator")
+        with mock.patch.object(billing_desk, "setup_sections", return_value=specs):
+            billing_desk.add_setup_sections(bootinfo)
+        self.assertEqual(
+            [i["label"] for i in bootinfo.module_sidebars["Seminary Setup"]["items"]],
+            [
+                "Community setup",
+                "Cohort Type",
+                "Fees setup",
+                "Fee Category",
+                "Web and communications",
+                "Website Branding",
+                "Portal Theme",
+                "Integrations",
+                "Pexels Settings",
+            ],
+        )
+
+    def test_a_retired_billing_app_adds_nothing(self):
+        hooks = {
+            "oikonomos": [{"section": "Fees setup", "links": []}],
+            "tamias": [{"section": "Fees setup", "links": []}],
+            "aretenic": [{"section": "Web and communications", "links": []}],
+        }
+        with (
+            mock.patch.object(
+                billing_desk,
+                "registered_financial_backends",
+                return_value={"oikonomos": "", "tamias": ""},
+            ),
+            mock.patch.object(
+                billing_desk, "active_financial_app", return_value="tamias"
+            ),
+            mock.patch.object(frappe, "get_installed_apps", return_value=list(hooks)),
+            mock.patch.object(
+                frappe,
+                "get_hooks",
+                side_effect=lambda name, app_name: hooks[app_name],
+            ),
+        ):
+            self.assertEqual(
+                [app for app, _spec in billing_desk.setup_sections()],
+                ["tamias", "aretenic"],
+            )
