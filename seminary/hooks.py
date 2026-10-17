@@ -258,6 +258,8 @@ code_only_modules = {"Partner": ["Seminary"], "Alumni": ["Seminary"]}
 boot_session = [
     "seminary.desk_nav.boot_session",
     "seminary.seminary.financial.desk.boot_session",
+    # Last, so it sees the rows the hooks above added.
+    "seminary.seminary.sidebar_workspaces.boot_session",
 ]
 # The Asaas checkout asks the payments app for a CPF it already knows, so the
 # payer confirms the one on their Person instead of typing it (ADR 071).

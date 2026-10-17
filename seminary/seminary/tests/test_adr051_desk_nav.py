@@ -367,3 +367,42 @@ class TestSetupSections(IntegrationTestCase):
                 [app for app, _spec in billing_desk.setup_sections()],
                 ["tamias", "aretenic"],
             )
+
+
+class TestSidebarWorkspaces(IntegrationTestCase):
+    """A workspace opens in the sidebar that links it, not the first of its module (088a §1)."""
+
+    def test_each_workspace_keeps_only_the_sidebars_that_link_it(self):
+        from seminary.seminary import sidebar_workspaces
+
+        module_ws = ["Seminary", "Academics", "Registrar"]
+
+        def sidebar(*linked):
+            return {
+                "module": "Seminary",
+                "workspaces": list(module_ws),
+                "items": [
+                    {"type": "Link", "link_type": "Workspace", "link_to": ws}
+                    for ws in linked
+                ],
+            }
+
+        bootinfo = frappe._dict(
+            module_sidebars={
+                "Seminary Chapel": sidebar(),
+                "Seminary Registrar": sidebar("Registrar"),
+                "Seminary Setup": sidebar("Seminary"),
+                "Other": {"module": "Other", "workspaces": ["X"], "items": []},
+            }
+        )
+        sidebar_workspaces.boot_session(bootinfo)
+        self.assertEqual(
+            {name: s["workspaces"] for name, s in bootinfo.module_sidebars.items()},
+            {
+                "Seminary Chapel": [],
+                "Seminary Registrar": ["Registrar"],
+                # Academics is linked nowhere, so it stays on the fallback.
+                "Seminary Setup": ["Seminary", "Academics"],
+                "Other": ["X"],
+            },
+        )
