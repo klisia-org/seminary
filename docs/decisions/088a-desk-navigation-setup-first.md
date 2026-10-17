@@ -14,8 +14,12 @@ both open with Setup (or Build), so a school configures the system before runnin
 ## Decision
 
 1. **Rail:** Setup, Registrar, Teaching, Internships, Community and Chapel, then the active billing
-   app's Scholarships and Billing (mounted). Workspaces are no longer pinned on the rail; each
-   sidebar opens with its Home.
+   app's Scholarships and Billing (mounted). Workspaces are no longer pinned on the rail. A
+   Workspace is listed in one sidebar only, because its route opens the sidebar that lists it:
+   the Seminary dashboard is Setup's Home (as ERPNext's Home is in its Setup), Registrar opens its
+   Workspace, and the other areas open on their first record. Partner and Alumni are code-only
+   modules, so they get no sidebar of their own, and the sidebars Frappe converted from the old
+   Workspace Sidebars are deleted.
 2. **Setup holds configuration only**, plus Academic Year and Term so they are created before
    anything needs them. It opens with Portal, Home (Seminary) and Seminary Settings, then these
    sections, in setup order: Academic setup, Competency-based education, Community setup, Fees

@@ -87,3 +87,4 @@ seminary.seminary.patches.p015_fill_graded_by
 seminary.seminary.patches.p015_reply_course_reference
 seminary.seminary.patches.p016_degree_levels
 seminary.seminary.patches.p020_funding_lines
+seminary.seminary.patches.adr088a_drop_converted_sidebars

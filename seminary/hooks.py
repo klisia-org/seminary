@@ -251,6 +251,10 @@ after_migrate = "seminary.install.after_migrate"
 
 # Desk drops workspace blocks whose app is missing or not in use (aretenic
 # decision 051). Every app's boot_session runs, so koinonia's copy is harmless.
+# Partner and Alumni hold doctypes but no navigation: their records are listed in Seminary's
+# sidebars, so neither module gets a computed sidebar of its own (decision 088a §1).
+code_only_modules = {"Partner": ["Seminary"], "Alumni": ["Seminary"]}
+
 boot_session = [
     "seminary.desk_nav.boot_session",
     "seminary.seminary.financial.desk.boot_session",

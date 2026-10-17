@@ -155,3 +155,14 @@ class UnitTestDeskNavigation(UnitTestCase):
     def test_setup_comes_first(self):
         dock = _load(PACKAGE / "dock" / "seminary" / "seminary.json")
         self.assertEqual(dock["items"][0]["link_to"], "Seminary Setup")
+
+    def test_each_workspace_has_one_sidebar(self):
+        # A workspace route opens the sidebar that lists it, so a workspace listed twice pulls
+        # the user out of the area they clicked (088a §1).
+        listed = [
+            i["link_to"]
+            for s in _sidebars()
+            for i in _links(s)
+            if i["link_type"] == "Workspace"
+        ]
+        self.assertEqual(sorted({w for w in listed if listed.count(w) > 1}), [])
