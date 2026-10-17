@@ -67,12 +67,12 @@ def get_columns(filters):
 def get_absent_students(date):
     absent_students = frappe.db.sql(
         """
-		SELECT student, student_name
+		SELECT student, stuname_roster AS student_name
 		FROM `tabStudent Attendance`
 		WHERE
 			status='Absent' and docstatus=1 and date = %s
 		ORDER BY
-			student_name""",
+			stuname_roster""",
         date,
         as_dict=1,
     )
