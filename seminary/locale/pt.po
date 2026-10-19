@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-10-19 13:27-0609\n"
-"PO-Revision-Date: 2026-10-19 20:06+0000\n"
-"Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
+"PO-Revision-Date: 2026-10-19 23:53+0000\n"
+"Last-Translator: Anthropic <noreply-mt-anthropic@weblate.org>\n"
 "Language-Team: Portuguese <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/pt/>\n"
 "Language: pt\n"
@@ -143,10 +143,8 @@ msgid "(total_paid / total_invoiced) × 100"
 msgstr "(total_pago / total_faturado) × 100"
 
 #: seminary/seminary/api.py:3960 seminary/seminary/api.py:3996
-#, fuzzy
-#| msgid "title"
 msgid "(untitled)"
-msgstr "título"
+msgstr "(sem título)"
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:373
 msgid "({0} with an unpriced fee)"
