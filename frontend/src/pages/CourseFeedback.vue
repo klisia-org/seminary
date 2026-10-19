@@ -54,7 +54,7 @@
 			</div>
 			<div v-else-if="data.anonymity === 'Anonymous'"
 				class="mt-4 rounded border border-outline-gray-2 bg-surface-gray-1 px-3 py-2.5 text-sm text-ink-gray-7">
-				{{ __('Your answers are reported together with everyone else\'s and are not linked back to you. Your instructor sees them only after grades have been submitted.') }}
+				{{ __("Your answers are reported together with everyone else's and are not linked back to you. Your instructor sees them only after grades have been submitted.") }}
 			</div>
 
 			<SafeHtml v-if="data.intro_text" class="mt-4 text-sm text-ink-gray-7" :html="data.intro_text" />

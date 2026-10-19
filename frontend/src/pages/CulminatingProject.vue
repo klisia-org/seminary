@@ -15,7 +15,7 @@
         <!-- STUDENT VIEW -->
         <div v-if="view === 'student'">
           <p v-if="!studentProjects.length" class="text-sm text-ink-gray-5">
-            {{ __('You don\'t have a culminating project yet.') }}
+            {{ __("You don't have a culminating project yet.") }}
             <router-link to="/program-audit" class="text-ink-blue-3 underline">{{ __('Program Audit') }}</router-link>
           </p>
           <template v-else>

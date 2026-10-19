@@ -106,7 +106,7 @@
 
 				<div v-if="myApps.loading" class="py-6 text-center text-sm text-ink-gray-5">{{ __('Loading...') }}</div>
 				<div v-else-if="!myApps.data?.length" class="py-6 text-center text-sm text-ink-gray-5">
-					{{ myStatus ? __('No {0} applications.').format(__(myStatus).toLowerCase()) : __('You haven\'t applied to any openings yet.') }}
+					{{ myStatus ? __('No {0} applications.').format(__(myStatus).toLowerCase()) : __("You haven't applied to any openings yet.") }}
 				</div>
 				<ul v-else class="space-y-2">
 					<li v-for="a in myApps.data" :key="a.name" class="rounded-md border border-outline-gray-2 transition hover:border-outline-gray-3">
@@ -227,7 +227,7 @@ function editDraft(a) {
 
 function confirmDiscard(a) {
 	dialog.title = __('Discard draft')
-	dialog.message = __('Discard this draft application? This can\'t be undone.')
+	dialog.message = __("Discard this draft application? This can't be undone.")
 	dialog.actions = [
 		{ label: __('Keep draft'), variant: 'outline', onClick: () => (dialog.show = false) },
 		{
@@ -243,7 +243,7 @@ function confirmDiscard(a) {
 
 function confirmWithdraw(a) {
 	dialog.title = __('Withdraw application')
-	dialog.message = __('Are you confident this is God\'s direction?')
+	dialog.message = __("Are you confident this is God's direction?")
 	dialog.actions = [
 		{ label: __('No, let me pray more'), variant: 'outline', onClick: () => (dialog.show = false) },
 		{

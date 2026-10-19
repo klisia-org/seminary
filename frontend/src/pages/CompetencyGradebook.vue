@@ -39,7 +39,7 @@
 						{{ __('Send Grades') }}
 					</Button>
 					<span class="text-sm text-ink-gray-6">
-						{{ __('Writes every student\'s transcript row and closes the course.') }}
+						{{ __("Writes every student's transcript row and closes the course.") }}
 					</span>
 				</div>
 				<!-- Kept on the page: a send blocker can name many students, more than

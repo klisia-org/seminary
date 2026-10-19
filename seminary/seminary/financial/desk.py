@@ -170,9 +170,10 @@ def _section_end(items, label):
 
 def _setup_row(app, link):
     link_type = link.get("link_type") or "DocType"
+    label = link["label"]  # via a variable, or the key "label" lands in the POT
     return {
         "key": f"setup-{app}-{link_type}-{link['link_to']}",
-        "label": _(link["label"]),
+        "label": _(label),
         "type": "Link",
         "link_type": link_type,
         "link_to": link["link_to"],
@@ -215,15 +216,16 @@ def add_setup_sections(bootinfo):
         ]
         if not rows:
             continue
-        at = _section_end(items, spec["section"])
+        section = spec["section"]
+        at = _section_end(items, section)
         if at is None:
             after = _section_end(items, spec.get("after"))
             at = len(items) if after is None else after
             rows.insert(
                 0,
                 {
-                    "key": f"setup-{app}-{spec['section']}",
-                    "label": _(spec["section"]),
+                    "key": f"setup-{app}-{section}",
+                    "label": _(section),
                     "type": "Section Break",
                     "link_type": "DocType",
                     "link_to": None,

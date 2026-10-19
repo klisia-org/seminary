@@ -40,7 +40,7 @@
               <div class="font-semibold text-ink-gray-8">{{ __('Ready to graduate?') }}</div>
               <div class="text-sm text-ink-gray-5 mt-1">
                 <template v-if="audit.data.graduation_eligible">
-                  {{ __('You meet the program\'s graduation request criteria. File a request to begin the approval process.') }}
+                  {{ __("You meet the program's graduation request criteria. File a request to begin the approval process.") }}
                 </template>
                 <template v-else>
                   {{ __('You may file a request to begin the graduation process. You must pass the courses you are currently in for it to be accepted.') }}
