@@ -21,3 +21,7 @@
 ```
 git push origin feature/your-feature-name
 ```
+## Translatable strings
+
+Before adding or changing user-facing strings, read [docs/translations.md](docs/translations.md):
+it covers the rules that keep strings extractable and the steps for adding a language.
