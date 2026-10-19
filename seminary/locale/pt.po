@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: seminary-erp\n"
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-09-18 10:36-0609\n"
-"PO-Revision-Date: 2026-09-22 18:20+0000\n"
+"PO-Revision-Date: 2026-10-19 20:06+0000\n"
 "Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
 "Language-Team: Portuguese <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/pt/>\n"
@@ -21949,7 +21949,7 @@ msgstr "Nota: Os cursos disponíveis na página anterior devem ser TODOS os curs
 #: seminary/seminary/doctype/program_enrollment_status_history/program_enrollment_status_history.json
 #: seminary/seminary/doctype/student_graduation_requirement/student_graduation_requirement.json
 msgid "Notes"
-msgstr "Notas"
+msgstr "Anotação"
 
 #: frontend/src/components/CLOCoveragePanel.vue:38
 #: seminary/public/frontend/assets/CourseAssessment-4OpsOBdH.js:2
