@@ -26,5 +26,5 @@ one submission has no direct way to it: the course To-Do lists owed verdicts, no
 ## Consequences
 
 Grades are paired with submissions by student and assessment, since a grade row does not name its
-submission. A resubmission therefore shares the earlier grades. Assessments not mapped to a
-competency are left out, as on Overview.
+submission. A resubmission therefore shares the earlier grades. An assessment with no competency
+is listed as needing one, since it cannot be graded and still blocks Send Grades.

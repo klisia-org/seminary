@@ -1341,9 +1341,11 @@ def get_assessment_review(course_schedule):
         e.instructor_category for e in framework.evaluators if cint(e.grades_activities)
     ]
 
+    # Unmapped assessments are listed too: they cannot be graded, and their
+    # result card still blocks Send Grades until a competency is chosen.
     criteria = frappe.get_all(
         "Scheduled Course Assess Criteria",
-        filters={"parent": course_schedule, "course_competency": ("is", "set")},
+        filters={"parent": course_schedule},
         fields=["name", "title", "type", "course_competency", "due_date"],
         order_by="idx asc",
     )
@@ -1351,6 +1353,8 @@ def get_assessment_review(course_schedule):
     # it grades, [""] for one overall grade, absent when switched off.
     shapes, expected, dim_labels = {}, {}, {}
     for c in criteria:
+        if not c.course_competency:
+            continue
         shape = cbe.grading_shape(c.name, framework)
         shapes[c.name] = shape
         if c.course_competency not in dim_labels:
@@ -1434,12 +1438,15 @@ def get_assessment_review(course_schedule):
                 "title": c.title,
                 "type": c.type,
                 "due_date": c.due_date,
-                "grading_mode": shapes[c.name],
+                "grading_mode": shapes.get(c.name),
+                "unmapped": not c.course_competency,
                 "submission": submissions.get((r.student, c.name)),
                 "cells": {},
                 "activity_cell": None,
             }
-            if shapes[c.name] == cbe.PER_ACTIVITY_MODE:
+            if row["unmapped"]:
+                complete = False
+            elif shapes[c.name] == cbe.PER_ACTIVITY_MODE:
                 g = given[0] if given else None
                 row["activity_cell"] = {
                     "state": "graded" if g else "not_graded",
@@ -1497,6 +1504,7 @@ def get_assessment_review(course_schedule):
             sub = row["submission"]
             row["overdue"] = bool(
                 turnaround
+                and not row["unmapped"]
                 and sub
                 and not complete
                 and (now - get_datetime(sub["submitted_on"])).days > turnaround

@@ -3935,6 +3935,69 @@ def _ungraded_roster_count(course_schedule, rosters=None):
     return rows[0][0] if rows else 0
 
 
+def _assert_cbe_gradable(course_schedule, rosters=None):
+    """Name what blocks a competency section's send (decisions/090).
+
+    The numeric message ("fill in 0") cannot be followed here: a level is
+    recorded on the activity, and an assessment with no competency cannot be
+    graded at all, so its result card would block the send forever.
+    """
+    from seminary.seminary import cbe
+
+    if not cbe.framework_for(course_schedule):
+        return
+    unmapped = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course_schedule, "course_competency": ("is", "not set")},
+        pluck="title",
+    )
+    if unmapped:
+        frappe.throw(
+            _(
+                "These assessments have no competency, so they cannot be graded: "
+                "{0}. Choose a competency for each in Configure Assessments, or "
+                "remove it."
+            ).format(", ".join(t or _("(untitled)") for t in unmapped))
+        )
+
+    params = [course_schedule]
+    scope = ""
+    if rosters is not None:
+        if not rosters:
+            return
+        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+        params.extend(rosters)
+    ungraded = frappe.db.sql(
+        """
+        SELECT scr.stuname_roster, scac.title
+        FROM `tabCourse Assess Results Detail` card
+        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+        LEFT JOIN `tabScheduled Course Assess Criteria` scac
+            ON scac.name = card.assessment_criteria
+        LEFT JOIN `tabCourse Enrollment Individual` cei
+            ON cei.coursesc_ce = scr.course_sc
+           AND cei.student_ce = scr.student
+           AND cei.docstatus = 1
+        WHERE scr.course_sc = %s
+          AND scr.active = 1
+          AND scr.audit_bool = 0
+          AND COALESCE(cei.course_cancelled, 0) = 0
+          AND COALESCE(card.graded_card, 0) = 0
+        """
+        + scope  # nosec B608 -- placeholders only, never a request value
+        + " ORDER BY scr.stuname_roster, scac.idx",
+        params,
+    )
+    if ungraded:
+        frappe.throw(
+            _("Cannot send grades yet. Not graded:")
+            + "<br>"
+            + "<br>".join(
+                "{0}: {1}".format(s, t or _("(untitled)")) for s, t in ungraded[:20]
+            )
+        )
+
+
 def _assert_evaluators_finished(course_schedule, roster_names):
     """Block a send while a required evaluator still owes a grade (ADR 065).
 
@@ -4166,6 +4229,7 @@ def send_selected_grades(course_schedule, rosters):
             )
         )
 
+    _assert_cbe_gradable(course_schedule, rosters)
     missing_count = _ungraded_roster_count(course_schedule, rosters)
     if missing_count:
         frappe.throw(
@@ -4222,6 +4286,7 @@ def send_grades(doc=None, **kwargs):
             ).format(state or _("(none)"))
         )
 
+    _assert_cbe_gradable(docname)
     missing_count = _ungraded_roster_count(docname)
     if missing_count:
         frappe.throw(

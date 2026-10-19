@@ -42,6 +42,12 @@
 						{{ __('Writes every student\'s transcript row and closes the course.') }}
 					</span>
 				</div>
+				<!-- Kept on the page: a send blocker can name many students, more than
+				     a five-second toast can be read in. -->
+				<div v-if="sendError" class="mt-3 flex items-start gap-2 rounded-md bg-surface-red-1 px-4 py-3 text-sm text-ink-red-4">
+					<div class="flex-1 whitespace-pre-line">{{ sendError }}</div>
+					<Button variant="ghost" size="sm" :label="__('Dismiss')" @click="sendError = ''" />
+				</div>
 
 				<!-- Send Selected appears only for open-ended sections (ADR 065 7a);
 				     everywhere else grades are sent for the whole class at once. -->
@@ -212,6 +218,7 @@ const props = defineProps({
 const route = useRoute()
 const selected = ref([])
 const sending = ref(false)
+const sendError = ref('')
 // The "By student" view (shared with the course page's Competency Review tab).
 const pane = ref(null)
 
@@ -293,6 +300,7 @@ const canSendAll = computed(() => maySend.value && !context.data?.open_ended)
 const sendAll = async () => {
 	if (!window.confirm(__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone.'))) return
 	sending.value = true
+	sendError.value = ''
 	try {
 		if (!(await absenceDecisions.value.ask(props.courseName))) return
 		await call('seminary.seminary.api.send_grades', {
@@ -302,7 +310,8 @@ const sendAll = async () => {
 		context.reload()
 		matrix.reload()
 	} catch (e) {
-		toast.error(errorMessage(e, __('Could not send grades.')))
+		sendError.value = errorMessage(e, __('Could not send grades.'))
+		toast.error(sendError.value)
 	} finally {
 		sending.value = false
 	}
@@ -322,6 +331,7 @@ const sendSelected = async () => {
 	if (!window.confirm(message)) return
 
 	sending.value = true
+	sendError.value = ''
 	try {
 		if (!(await absenceDecisions.value.ask(props.courseName, selected.value))) return
 		const res = await call('seminary.seminary.api.send_selected_grades', {
@@ -332,14 +342,18 @@ const sendSelected = async () => {
 		selected.value = []
 		pane.value?.reload()
 	} catch (e) {
-		toast.error(errorMessage(e, __('Could not send grades.')))
+		sendError.value = errorMessage(e, __('Could not send grades.'))
+		toast.error(sendError.value)
 	} finally {
 		sending.value = false
 	}
 }
 
 function errorMessage(e, fallback) {
-	if (Array.isArray(e?.messages) && e.messages.length) return e.messages.join('\n')
+	// The server separates named students with <br>; the box shows plain text.
+	if (Array.isArray(e?.messages) && e.messages.length) {
+		return e.messages.join('\n').replace(/<br\s*\/?>/gi, '\n')
+	}
 	const m = (e?.message || '').replace(/^[\w.]+Error:\s*/i, '').trim()
 	return m || fallback
 }

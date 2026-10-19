@@ -1134,6 +1134,33 @@ class CourseSchedule(Document):
             )
 
 
+def refile_chapter_competencies(course_schedule):
+    """Write each assessment's chapter competency onto its row, and return
+    the rows that changed.
+
+    The same rule as ``refile_assessment_competencies``, but row by row rather
+    than through a section save: a lesson save must not fail on an unrelated
+    section validation, and the value is derived, never entered.
+    """
+    if not course_schedule or not frappe.db.exists(
+        "Course Schedule Chapter",
+        {"coursesc": course_schedule, "course_competency": ("is", "set")},
+    ):
+        return []
+    changed = []
+    cs = frappe.get_doc("Course Schedule", course_schedule)
+    for row, competency in cs._chapter_competencies():
+        if row.course_competency != competency:
+            frappe.db.set_value(
+                "Scheduled Course Assess Criteria",
+                row.name,
+                "course_competency",
+                competency,
+            )
+            changed.append(row.name)
+    return changed
+
+
 def _cascade_cancel_pec_and_cei(cs_name, reason):
     """Mark CEIs as course-cancelled and hard-delete the auto-populated PECs.
 

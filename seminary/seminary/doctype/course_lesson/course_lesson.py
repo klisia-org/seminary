@@ -69,6 +69,15 @@ class CourseLesson(Document):
         dynamic_documents = ["Exam", "Quiz", "Assignment", "Discussion"]
         for section in dynamic_documents:
             self.update_lesson_assessments(section)
+        # An activity placed in (or moved out of) a lesson takes its chapter's
+        # competency. A move between chapters is left to update_lesson_index,
+        # which refiles and tells the instructor what changed (ADR 079 §8).
+        if self.has_value_changed("content"):
+            from seminary.seminary.doctype.course_schedule.course_schedule import (
+                refile_chapter_competencies,
+            )
+
+            refile_chapter_competencies(self.course_sc)
 
     def update_lesson_assessments(self, section):
         """

@@ -59,8 +59,16 @@
 									</router-link>
 									<span v-else class="text-ink-gray-4">{{ __('Not submitted') }}</span>
 								</td>
+								<!-- Ungradable until it has a competency, and it blocks Send Grades. -->
+								<td v-if="row.unmapped" :colspan="categories.length || 1"
+									class="border border-outline-gray-2 px-3 py-2 text-center">
+									<router-link :to="{ name: 'CourseAssessment', params: { courseName: props.courseName } }"
+										class="font-medium text-ink-red-3 hover:underline">
+										{{ __('No competency: choose one in Configure Assessments') }}
+									</router-link>
+								</td>
 								<!-- One grade for the whole activity has no evaluator axis. -->
-								<td v-if="row.activity_cell" :colspan="categories.length || 1"
+								<td v-else-if="row.activity_cell" :colspan="categories.length || 1"
 									class="border border-outline-gray-2 px-3 py-2 text-center">
 									<Tooltip v-if="row.activity_cell.state === 'graded'" :text="row.activity_cell.instructor">
 										<span class="text-ink-gray-9">{{ row.activity_cell.level_code }}</span>
@@ -128,7 +136,7 @@ const filterButtons = computed(() => [
 ])
 
 const keep = (row) => {
-	if (filter.value === 'waiting') return row.submission && !row.complete
+	if (filter.value === 'waiting') return row.unmapped || (row.submission && !row.complete)
 	if (filter.value === 'missing') return !row.submission
 	if (filter.value === 'overdue') return row.overdue
 	return true

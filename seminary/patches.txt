@@ -89,3 +89,4 @@ seminary.seminary.patches.p016_degree_levels
 seminary.seminary.patches.p020_funding_lines
 seminary.seminary.patches.adr088a_drop_converted_sidebars
 seminary.seminary.patches.drop_student_language
+seminary.seminary.patches.refile_chapter_competencies

@@ -432,6 +432,48 @@ class TestChapterChain(ADR079Case):
             w.competencies[1],
         )
 
+    def test_placing_an_activity_in_a_lesson_files_its_assessment(self):
+        # The assessment exists before its activity is in any lesson -- the
+        # order an instructor usually works in -- so it starts unfiled.
+        w = World()
+        first = next(c.name for c in w.chapters())
+        lesson = w.add_lesson(first, "Exam lesson")
+        exam = frappe.get_doc(
+            {"doctype": "Exam Activity", "title": f"{PREFIX} Exam", "course": w.course}
+        )
+        exam.flags.ignore_permissions = True
+        exam.insert(ignore_mandatory=True)
+        criteria = frappe.get_doc(
+            {
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": w.cs,
+                "parenttype": "Course Schedule",
+                "parentfield": "courseassescrit_sc",
+                "title": "Exam",
+                "type": "Exam",
+                "exam": exam.name,
+            }
+        )
+        criteria.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        lesson_doc = frappe.get_doc("Course Lesson", lesson)
+        lesson_doc.content = json.dumps(
+            {"blocks": [{"type": "exam", "data": {"exam": exam.name}}]}
+        )
+        lesson_doc.save(ignore_permissions=True)
+
+        self.assertEqual(
+            frappe.db.get_value(
+                "Scheduled Course Assess Criteria", criteria.name, "course_competency"
+            ),
+            frappe.db.get_value("Course Schedule Chapter", first, "course_competency"),
+        )
+        self.assertTrue(
+            frappe.db.get_value(
+                "Scheduled Course Assess Criteria", criteria.name, "course_competency"
+            )
+        )
+
 
 class TestMentors(ADR079Case):
     def test_visibility_follows_the_framework(self):
