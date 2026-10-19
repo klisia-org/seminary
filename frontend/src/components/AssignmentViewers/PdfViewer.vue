@@ -112,8 +112,20 @@ function pinNumber(pageNum, indexInPage) {
 async function ensurePdfjs() {
 	if (pdfjsLib) return pdfjsLib
 	const lib = await import('pdfjs-dist')
-	const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
-	lib.GlobalWorkerOptions.workerSrc = workerUrl
+	const asset = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
+	// Resolved against this module, not the page: under `?dev=1` the module is
+	// served by Vite while the page is Frappe's, and the bare dev path would 404.
+	const workerUrl = new URL(asset, import.meta.url)
+	if (workerUrl.origin === window.location.origin) {
+		lib.GlobalWorkerOptions.workerSrc = workerUrl.href
+	} else {
+		// A worker script must be same-origin, so start one from a local stub
+		// that imports the real worker (Vite serves it with CORS).
+		const stub = URL.createObjectURL(
+			new Blob([`import ${JSON.stringify(workerUrl.href)};`], { type: 'text/javascript' })
+		)
+		lib.GlobalWorkerOptions.workerPort = new Worker(stub, { type: 'module' })
+	}
 	pdfjsLib = lib
 	return lib
 }
@@ -129,7 +141,8 @@ async function renderPdf() {
 
 	try {
 		const lib = await ensurePdfjs()
-		pdfDoc = await lib.getDocument(props.url).promise
+		// pdf.js 6 takes only the parameters object; a bare URL string is refused.
+		pdfDoc = await lib.getDocument({ url: props.url }).promise
 		if (token !== renderToken) return
 		pageCount.value = pdfDoc.numPages
 		pageList.value = Array.from({ length: pdfDoc.numPages }, (_, i) => ({ num: i + 1 }))
