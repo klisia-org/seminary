@@ -45,12 +45,12 @@
 		<div class="bg-surface-blue-2 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-2">
 			<div class="leading-5">
 				{{
-					__(`This quiz consists of ${questions.length} questions`)
+					__('This quiz consists of {0} questions').format(questions.length)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
 				{{
-					__(`Please ensure that you complete all the questions in ${quiz.data.duration} minutes.`)
+					__('Please ensure that you complete all the questions in {0} minutes.').format(quiz.data.duration)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
@@ -62,14 +62,14 @@
 			</div>
 			<div v-if="quiz.data.passing_percentage" class="leading-relaxed">
 				{{ __(
-					`You will have to get ${quiz.data.passing_percentage}% correct answers in order to pass the quiz.`
-				) }}
+					'You will have to get {0}% correct answers in order to pass the quiz.'
+				).format(quiz.data.passing_percentage) }}
 			</div>
 			<div v-if="maxAttempts && !attemptsExhausted" class="leading-relaxed">
 				{{
-					__(`You can attempt this quiz ${maxAttempts === 1 ? __('1 time') : `${maxAttempts}
-				times`
-						}.`)
+					maxAttempts === 1
+						? __('You can attempt this quiz once.')
+						: __('You can attempt this quiz {0} times.').format(maxAttempts)
 				}}
 			</div>
 			<!-- The student's own dates (decisions/082). -->
@@ -330,8 +330,11 @@
 		<div v-else-if="quizSubmission.data" class="border rounded-md p-20 text-center space-y-4">
 			<div class="text-lg font-semibold">{{ __('Quiz Summary') }}</div>
 			<div class="text-ink-gray-9">
-				{{ __(`You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of
-				${Math.round(quizSubmission.data.score * 100) / 100} out of ${quizSubmission.data.score_out_of}`) }}
+				{{ __('You got {0}% correct answers with a score of {1} out of {2}').format(
+					Math.ceil(quizSubmission.data.percentage),
+					Math.round(quizSubmission.data.score * 100) / 100,
+					quizSubmission.data.score_out_of
+				) }}
 			</div>
 			<div class="mt-6">
 				<div v-for="(question, qtidx) in detailedQuestions" :key="question.question_name"

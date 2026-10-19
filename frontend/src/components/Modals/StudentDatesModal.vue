@@ -6,7 +6,7 @@
 				<!-- This student's dates on this assessment (decisions/082 section 2). -->
 				<h4 class="font-semibold text-ink-gray-8 mb-1">{{ __('Dates for this student') }}</h4>
 				<p class="mb-2 text-sm text-ink-gray-6">
-					{{ dates.override ? __('This student has their own dates. Blank fields follow the assessment.') : __('This student follows the assessment\'s dates.') }}
+					{{ dates.override ? __('This student has their own dates. Blank fields follow the assessment.') : __("This student follows the assessment's dates.") }}
 				</p>
 				<p class="mb-3 text-xs text-ink-gray-5">
 					{{ __('Assessment: due {0}, cut-off {1}.').format(fmt(assessment?.due_date), fmt(assessment?.cutoff_date)) }}
@@ -35,7 +35,7 @@
 						{{ dates.override ? __('Save dates') : __('Give this student different dates') }}
 					</Button>
 					<Button v-if="dates.override" size="sm" theme="red" @click="removeDates">
-						{{ __('Back to the assessment\'s dates') }}
+						{{ __("Back to the assessment's dates") }}
 					</Button>
 				</div>
 
