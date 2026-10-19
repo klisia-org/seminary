@@ -44,14 +44,11 @@ repos:
       - id: detect-secrets
         exclude: '.history/.*|README.md|seminary/public/frontend/assets/.*'
 
-  # TEMPORARILY DISABLED during the oikonomos / ERPNext-decoupling refactor
-  # (branch refactor/oikonomos) to keep i18n pot/po churn out of the many
-  # refactor commits. RESTORE this block once the refactor lands.
-  # - repo: local
-  #   hooks:
-  #     - id: stabilize-pot
-  #       name: Stabilize POT file (prevent translation churn)
-  #       entry: python scripts/stabilize-pot.py
-  #       language: python
-  #       always_run: true
-  #       pass_filenames: false
+  - repo: local
+    hooks:
+      - id: stabilize-pot
+        name: Stabilize POT file (prevent translation churn)
+        entry: python scripts/stabilize-pot.py
+        language: python
+        always_run: true
+        pass_filenames: false
