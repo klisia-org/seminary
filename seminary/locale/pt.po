@@ -4,7 +4,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-10-19 13:27-0609\n"
 "PO-Revision-Date: 2026-10-19 23:53+0000\n"
-"Last-Translator: Anthropic <noreply-mt-anthropic@weblate.org>\n"
+"Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
 "Language-Team: Portuguese <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/pt/>\n"
 "Language: pt\n"
@@ -148,7 +148,7 @@ msgstr "(sem título)"
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:373
 msgid "({0} with an unpriced fee)"
-msgstr ""
+msgstr "({0} com taxa sem preço definido)"
 
 #: seminary/public/frontend/assets/index-COaCXW1e.js:2
 msgid "):"
@@ -166,17 +166,13 @@ msgstr "+ Adicionar bloco de horário"
 
 #: frontend/src/pages/CourseAssessment.vue:246
 #: seminary/public/frontend/assets/CourseAssessment-CwIjT_tf.js:5
-#, fuzzy
-#| msgid "{0} applicant(s)"
 msgid "+{0} attempt(s)"
-msgstr "{0} candidato(s)"
+msgstr "+{0} tentativa(s)"
 
 #: frontend/src/pages/CourseAssessment.vue:245
 #: seminary/public/frontend/assets/CourseAssessment-CwIjT_tf.js:5
-#, fuzzy
-#| msgid "{0} alumni"
 msgid "+{0} min"
-msgstr "{0} ex-alunos"
+msgstr "+{0} min"
 
 #: seminary/seminary/instructor_load.py:164
 msgid ", co-led"
@@ -232,7 +228,7 @@ msgstr "1. Configure como você avalia (Escala de Notas)"
 #. Option for the 'SCORM Version' (Select) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
 msgid "1.2"
-msgstr ""
+msgstr "1.2"
 
 #: seminary/install.py:683
 msgid "10 per US Letter sheet, 4×2 in"
@@ -283,19 +279,19 @@ msgstr "19. Tipos de Disciplina para lista de recursos"
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "1CH"
-msgstr ""
+msgstr "1CH"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "1CO"
-msgstr ""
+msgstr "1CO"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "1JN"
-msgstr ""
+msgstr "1JO"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -313,7 +309,7 @@ msgstr ""
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "1SA"
-msgstr ""
+msgstr "1SA"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -325,7 +321,7 @@ msgstr ""
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "1TI"
-msgstr ""
+msgstr "1TI"
 
 #. Label of a shortcut in the Getting Started SeminaryERP Workspace
 #: seminary/seminary/workspace/getting_started_seminaryerp/getting_started_seminaryerp.json
