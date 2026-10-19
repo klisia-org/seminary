@@ -2224,6 +2224,19 @@ def _build_lesson_index_for_course(course_sc):
     return index
 
 
+def chapter_competency_for(course_sc, scac_row):
+    """The competency the chapter around an assessment's activity delivers,
+    or None. One row's answer to what Course Schedule's
+    ``_chapter_competencies`` resolves for every row."""
+    lesson = _build_lesson_index_for_course(course_sc).get(_scac_activity_key(scac_row))
+    if not lesson:
+        return None
+    chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
+    if not chapter:
+        return None
+    return frappe.db.get_value("Course Schedule Chapter", chapter, "course_competency")
+
+
 @frappe.whitelist()
 def get_gradebook(course):
     require_grader(include_registrar=True)

@@ -15,9 +15,13 @@ When running the frontend in development mode, you **MUST** access the applicati
 2. Ensure Frappe is running (bench start or similar)
    Frappe runs on port 8000
 
-3. **Access the app at:** `http://your-site:8000/seminary/`
-   - ✅ Correct: `http://ps:8000/seminary/` (or whatever your site name is)
-   - ❌ Wrong: `http://localhost:8080` (this bypasses Frappe authentication)
+3. **Access the app at:** `http://your-site:8000/seminary/?dev=1`
+   - ✅ Correct: `http://ps:8000/seminary/courses?dev=1` (or whatever your site name is)
+   - ❌ Wrong: `http://localhost:8080` (Vite serves the Jinja template unrendered, so there is no boot data)
+   - `?dev=1` is remembered in a `seminary_dev` cookie (developer_mode sites only), so later
+     refreshes stay on the dev server; `?dev=0` goes back to the last `yarn build`.
+   - Vite's port follows the bench: `webserver_port + 80` (8006 → 8086). Set
+     `SEMINARY_DEV_SERVER_URL` in the bench environment to override it.
 
 ### Why?
 - The frontend requires Frappe session cookies for authentication

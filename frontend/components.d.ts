@@ -25,6 +25,7 @@ declare module 'vue' {
     CLOCoveragePanel: typeof import('./src/components/CLOCoveragePanel.vue')['default']
     CommentSidebar: typeof import('./src/components/AssignmentViewers/CommentSidebar.vue')['default']
     CompetencyActivityGrading: typeof import('./src/components/CompetencyActivityGrading.vue')['default']
+    CompetencyAssessmentReview: typeof import('./src/components/CompetencyAssessmentReview.vue')['default']
     CompetencyLevelPicker: typeof import('./src/components/CompetencyLevelPicker.vue')['default']
     CompetencyRatingForm: typeof import('./src/components/CompetencyRatingForm.vue')['default']
     CompetencyReview: typeof import('./src/components/CompetencyReview.vue')['default']

@@ -32,6 +32,23 @@
 					{{ __('Grades for this course have been sent. This view is read-only.') }}
 				</div>
 
+				<!-- A dated section is sent for the whole class at once (decisions/090). -->
+				<div v-if="canSendAll" class="mt-3 flex flex-wrap items-center gap-2">
+					<Button variant="solid" theme="blue" :disabled="sending" :loading="sending" @click="sendAll">
+						<template #prefix><Send class="h-4 w-4" /></template>
+						{{ __('Send Grades') }}
+					</Button>
+					<span class="text-sm text-ink-gray-6">
+						{{ __('Writes every student\'s transcript row and closes the course.') }}
+					</span>
+				</div>
+				<!-- Kept on the page: a send blocker can name many students, more than
+				     a five-second toast can be read in. -->
+				<div v-if="sendError" class="mt-3 flex items-start gap-2 rounded-md bg-surface-red-1 px-4 py-3 text-sm text-ink-red-4">
+					<div class="flex-1 whitespace-pre-line">{{ sendError }}</div>
+					<Button variant="ghost" size="sm" :label="__('Dismiss')" @click="sendError = ''" />
+				</div>
+
 				<!-- Send Selected appears only for open-ended sections (ADR 065 7a);
 				     everywhere else grades are sent for the whole class at once. -->
 				<div v-if="canSendSelected" class="mt-3 flex flex-wrap items-center gap-2">
@@ -164,6 +181,10 @@
 				</template>
 			</section>
 
+			<!-- Mounted only while open, so its rows are fresh after grading elsewhere. -->
+			<CompetencyAssessmentReview v-if="tab === 'review'" :courseName="props.courseName"
+				@open-student="openStudent" />
+
 			<CompetencyStudentPane v-show="tab === 'student'" ref="pane" padded
 				:courseName="props.courseName" :context="context.data"
 				:selectable="canSendSelected" v-model:selected="selected"
@@ -179,6 +200,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
 import PageTabs from '@/components/PageTabs.vue'
 import CompetencyStudentPane from '@/components/CompetencyStudentPane.vue'
+import CompetencyAssessmentReview from '@/components/CompetencyAssessmentReview.vue'
 import { useTabParam } from '@/composables/useTabParam'
 import {
 	Badge, Breadcrumbs, Button, LoadingIndicator, Tooltip,
@@ -196,6 +218,7 @@ const props = defineProps({
 const route = useRoute()
 const selected = ref([])
 const sending = ref(false)
+const sendError = ref('')
 // The "By student" view (shared with the course page's Competency Review tab).
 const pane = ref(null)
 
@@ -228,13 +251,15 @@ watch(
 	{ immediate: true }
 )
 
-// Two ways into the same section: the whole class at a glance, and one student
-// in full (ADR 065 11d). Addressable, so a link can open either (ADR 075).
+// Three ways into the same section: the whole class at a glance, the work still
+// waiting (ADR 089), and one student in full (ADR 065 11d). Addressable, so a
+// link can open any of them (ADR 075).
 const tabs = computed(() => [
 	{ key: 'overview', label: __('Overview') },
+	{ key: 'review', label: __('Assessments review') },
 	{ key: 'student', label: __('By student') },
 ])
-const tab = useTabParam(['overview', 'student'], 'overview')
+const tab = useTabParam(['overview', 'review', 'student'], 'overview')
 
 // A competency nothing is assessed under would render as an empty column group
 // with a zero colspan, which browsers collapse into a broken header.
@@ -263,13 +288,34 @@ const isFinalized = computed(() =>
 	['Closed', 'Cancelled'].includes(context.data?.workflow_state)
 )
 
-const canSendSelected = computed(
+const maySend = computed(
 	() =>
-		context.data?.open_ended &&
 		context.data?.workflow_state === 'Grading' &&
 		context.data?.viewer?.access === 'instructor' &&
 		(user?.data?.is_moderator || user?.data?.is_instructor || user?.data?.is_evaluator)
 )
+const canSendSelected = computed(() => maySend.value && !!context.data?.open_ended)
+const canSendAll = computed(() => maySend.value && !context.data?.open_ended)
+
+const sendAll = async () => {
+	if (!window.confirm(__('Send all grades and close the course? This finalizes grades on the transcript and cannot be undone.'))) return
+	sending.value = true
+	sendError.value = ''
+	try {
+		if (!(await absenceDecisions.value.ask(props.courseName))) return
+		await call('seminary.seminary.api.send_grades', {
+			doc: JSON.stringify({ name: props.courseName }),
+		})
+		toast.success(__('Grades sent successfully'))
+		context.reload()
+		matrix.reload()
+	} catch (e) {
+		sendError.value = errorMessage(e, __('Could not send grades.'))
+		toast.error(sendError.value)
+	} finally {
+		sending.value = false
+	}
+}
 
 // --- send selected --------------------------------------------------------
 // Students over the absence limit need a decision before grades go (ADR 081).
@@ -285,6 +331,7 @@ const sendSelected = async () => {
 	if (!window.confirm(message)) return
 
 	sending.value = true
+	sendError.value = ''
 	try {
 		if (!(await absenceDecisions.value.ask(props.courseName, selected.value))) return
 		const res = await call('seminary.seminary.api.send_selected_grades', {
@@ -295,14 +342,18 @@ const sendSelected = async () => {
 		selected.value = []
 		pane.value?.reload()
 	} catch (e) {
-		toast.error(errorMessage(e, __('Could not send grades.')))
+		sendError.value = errorMessage(e, __('Could not send grades.'))
+		toast.error(sendError.value)
 	} finally {
 		sending.value = false
 	}
 }
 
 function errorMessage(e, fallback) {
-	if (Array.isArray(e?.messages) && e.messages.length) return e.messages.join('\n')
+	// The server separates named students with <br>; the box shows plain text.
+	if (Array.isArray(e?.messages) && e.messages.length) {
+		return e.messages.join('\n').replace(/<br\s*\/?>/gi, '\n')
+	}
 	const m = (e?.message || '').replace(/^[\w.]+Error:\s*/i, '').trim()
 	return m || fallback
 }

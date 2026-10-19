@@ -352,7 +352,7 @@
 
 
     <CourseAssessmentModal v-model="showCourseAssessmentModal" v-model:modalcriteria="modalcriteria"
-      :courseName="props.courseName" @assessment-saved="onAssessmentSaved" />
+      :courseName="props.courseName" :weightsApply="weightsApply" @assessment-saved="onAssessmentSaved" />
 
     <CLOAssessmentMapperModal v-if="hasAretenic" v-model="showCloMapper" :course="course.data?.course"
       :courseSchedule="props.courseName" :scheduledAssessCriteria="activeCriteria?.name"
@@ -863,6 +863,8 @@ function validateCriteria() {
     if (criteria.type === 'Discussion' && !criteria.discussion) {
       return false;
     }
+    // A competency section has no weight or extra-credit columns to fill.
+    if (!weightsApply.value) continue;
     if (!criteria.extracredit_scac && !criteria.weight_scac) {
       return false;
     }
@@ -962,6 +964,8 @@ function formatDate(value) {
 function onAssessmentSaved() {
   // Reload the parent's resource (e.g., assessments)
   assessments.reload()
+  // The new row's chapter competency and dimension editors come from here.
+  if (isCbe.value) competencyContext.reload()
   // Now, close the Modal
   showCourseAssessmentModal.value = false;
 }

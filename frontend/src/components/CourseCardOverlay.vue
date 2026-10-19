@@ -104,7 +104,8 @@
 					</span>
 				</Button>
 			</router-link>
-			<router-link v-if="user?.data?.is_moderator || is_instructor()" :to="{
+			<!-- One gradebook per section: the numeric one, or Competency Assessment below. -->
+			<router-link v-if="(user?.data?.is_moderator || is_instructor()) && showNumericGradebook" :to="{
 				name: 'Gradebook',
 				params: {
 					courseName: course.data.name,
@@ -268,6 +269,11 @@ const competencyContext = createResource({
 })
 
 const isCompetencyBased = computed(() => !!competencyContext.data?.is_cbe)
+// Held back while the check runs, so a competency section never flashes the
+// numeric Gradebook; a failed check leaves the numeric one, the ordinary case.
+const showNumericGradebook = computed(
+	() => !competencyContext.loading && !isCompetencyBased.value
+)
 
 const checkinContext = createResource({
 	url: 'seminary.seminary.course_checkin.get_course_checkin_context',

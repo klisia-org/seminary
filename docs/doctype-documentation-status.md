@@ -141,7 +141,6 @@ Documentation ✓ links to the live page.
 | Student Attendance Tool | ✓ | [✓](https://docs.seminaryerp.org/modules/attendance.html#capturing-attendance) |  |
 | Student Balance | ✓ | [✓](https://docs.seminaryerp.org/modules/enrollment.html#payment-status-section-on-the-cei) |  |
 | Student Group | ✓ | ✗ | Doc to write: "Student Groups" subsection (mentor groups, reuse/active flags, attaching to a Course Schedule). Nearest area: courses/scheduling docs. |
-| Student Language | ✓ | ✗ | Low priority. One-line mention in a setup/lookups reference; trivial single-field lookup. |
 | Student Leave Application | ✓ | ✗ | Doc to write: "Excused absences / leave" subsection in [attendance](https://docs.seminaryerp.org/modules/attendance.html). NOTE: controller attendance logic is currently commented out -- describe as a record-only form until reactivated. |
 | Student Log | ✓ | ✗ | Doc to write: "Student Logs" subsection (note types, where they surface) under the proposed Students records page. |
 | Term Admission | ✓ | [✓](https://docs.seminaryerp.org/modules/program.html#admissions-timed-vs-continuous) |  |
@@ -169,7 +168,6 @@ section, or record here that we deliberately won't. When written, set the
 | Seminary Lesson Note | Doc to write: brief mention in the student-portal / taking-a-course docs (one private note per user per lesson). |
 | Student | Doc to write: a core **Students** records page (creating a student, auto User/Customer, standing & holds, enrollments). No people/records page exists yet. |
 | Student Group | Doc to write: "Student Groups" subsection (mentor groups, reuse/active flags, attaching to a Course Schedule). Nearest area: courses/scheduling docs. |
-| Student Language | Low priority. One-line mention in a setup/lookups reference; trivial single-field lookup. |
 | Student Leave Application | Doc to write: "Excused absences / leave" subsection in [attendance](https://docs.seminaryerp.org/modules/attendance.html). NOTE: controller attendance logic is currently commented out -- describe as a record-only form until reactivated. |
 | Student Log | Doc to write: "Student Logs" subsection (note types, where they surface) under the proposed Students records page. |
 | Trigger Fee Events | **Won't document (2026-06-13)** -- developer-only billing plumbing, not a user-facing record. |
