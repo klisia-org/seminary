@@ -12,6 +12,7 @@ SeminaryERP is dedicated to making education management more efficient and less 
 ## Table of Contents
 
 - [Key Features](#key-features)
+- [Translations](#translations)
 - [License](#license)
 
 ## Key Features
@@ -28,6 +29,12 @@ Here are some of the standout features of SeminaryERP:
 -**Alumni**: Alumni have their space in the Portal, and an optional integration with our Koinonia app to manage donors (https://github.com/Aretenic/koinonia).
 
 
+
+## Translations
+
+[![Translation status](https://translate.seminaryerp.org/widget/klisia/seminary/matrix-auto.svg)](https://translate.seminaryerp.org/projects/klisia/seminary/)
+
+Translations are managed on [Weblate](https://translate.seminaryerp.org/projects/klisia/seminary/). When you add or change user-facing strings, run `bench generate-pot-file --app seminary` and commit `seminary/locale/main.pot`; Weblate picks up the new strings from there.
 
 ## License
 
