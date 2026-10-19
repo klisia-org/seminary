@@ -55,6 +55,7 @@
         <template v-else>
           <p>Offline</p>
         </template>
+        <template v-if="weightsApply">
         <FormControl
           v-model="criteria.weight_scac"
           :label="__('Weight')"
@@ -83,6 +84,7 @@
           :required="true"
           type="number"
         />
+        </template>
       </div>
     </template>
   </Dialog>
@@ -106,6 +108,11 @@ const props = defineProps({
   courseName: {
     type: String,
     required: true,
+  },
+  // False on a competency section, which has no weights or extra credit.
+  weightsApply: {
+    type: Boolean,
+    default: true,
   },
 })
 

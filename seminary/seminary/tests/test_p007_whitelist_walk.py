@@ -410,6 +410,7 @@ G6_STAFF_ONLY = {
     "seminary.seminary.attendance.get_course_attendance_standings",
     # seminary.seminary.cbe_api
     "seminary.seminary.cbe_api.get_activity_grading_panel",
+    "seminary.seminary.cbe_api.get_assessment_review",
     "seminary.seminary.cbe_api.get_cbe_gradebook",
     "seminary.seminary.cbe_api.get_competency_profile",
     "seminary.seminary.cbe_api.get_competency_roster",

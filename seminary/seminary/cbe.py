@@ -1013,6 +1013,14 @@ def on_activity_grade_update(doc, method=None):
     rollup_activity_grades(doc.roster, doc.assess_criteria)
     if doc.course_competency:
         rollup_competency_result(doc.roster, doc.course_competency)
+    # The roll-up writes the card with db.set_value, which the card's own
+    # Grading hook never sees (decisions/090).
+    from seminary.seminary.cs_lifecycle import check_and_advance_to_grading
+
+    check_and_advance_to_grading(
+        doc.course_schedule
+        or frappe.db.get_value("Scheduled Course Roster", doc.roster, "course_sc")
+    )
 
 
 def on_assessment_update(doc, method=None):

@@ -1311,6 +1311,238 @@ def _gradebook_row(roster, course_schedule, shapes):
     }
 
 
+# The submission doctypes a review row links to: (doctype, section field,
+# activity field, submitted-at field). Exam, Quiz and Discussion keep no
+# dedicated timestamp, so creation stands in, as Aretenic's turnaround does.
+REVIEW_SUBMISSIONS = (
+    ("Assignment Submission", "course", "assignment", "submitted_on"),
+    ("Exam Submission", "course", "exam", "creation"),
+    ("Quiz Submission", "course", "quiz", "creation"),
+    ("Discussion Submission", "coursesc", "disc_activity", "creation"),
+)
+
+
+@frappe.whitelist()
+def get_assessment_review(course_schedule):
+    """Students x assessments: submitted, and graded by whom (ADR 089).
+
+    The gradebook's Overview shows the levels; this shows the work still
+    waiting, and links each row to the submission where it is graded.
+    """
+    _assert_staff()
+    framework = cbe.framework_doc(course_schedule)
+    if not framework:
+        return {"is_cbe": False}
+    visible = cbe.visible_students(course_schedule)
+    if visible is not None and not visible:
+        _assert_sees(course_schedule, None)
+
+    categories = [
+        e.instructor_category for e in framework.evaluators if cint(e.grades_activities)
+    ]
+
+    criteria = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course_schedule, "course_competency": ("is", "set")},
+        fields=["name", "title", "type", "course_competency", "due_date"],
+        order_by="idx asc",
+    )
+    # What each category is asked for on each assessment: the dimension codes
+    # it grades, [""] for one overall grade, absent when switched off.
+    shapes, expected, dim_labels = {}, {}, {}
+    for c in criteria:
+        shape = cbe.grading_shape(c.name, framework)
+        shapes[c.name] = shape
+        if c.course_competency not in dim_labels:
+            dim_labels[c.course_competency] = {
+                d.dimension_code: d.dimension
+                for d in cbe.dimensions_of(c.course_competency)
+            }
+        if shape == cbe.PER_ACTIVITY_MODE:
+            continue
+        weighted = [
+            code
+            for code, w in cbe.dimension_weights_for(
+                c.name, c.course_competency
+            ).items()
+            if flt(w) > 0
+        ]
+        asked = {}
+        for cat in categories:
+            if not cbe.is_cell_graded(c.name, cat, None, shape):
+                continue
+            if shape == cbe.PER_DIMENSION_MODE:
+                codes = cbe.graded_dimensions_for(c.name, cat, weighted)
+                if codes:
+                    asked[cat] = codes
+            else:
+                asked[cat] = [""]
+        expected[c.name] = asked
+
+    submissions = _latest_submissions(course_schedule, [c.name for c in criteria])
+
+    turnaround = None
+    if "aretenic" in frappe.get_installed_apps():
+        turnaround = (
+            cint(
+                frappe.db.get_single_value(
+                    "Aretenic Settings", "interaction_turnaround_days"
+                )
+            )
+            or 14
+        )
+    now = now_datetime()
+
+    rows = []
+    for r in frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course_schedule},
+        fields=["name", "student", "stuname_roster"],
+        order_by="stuname_roster asc",
+    ):
+        if visible is not None and r.student not in visible:
+            continue
+        evaluators = cbe.evaluators_for(r.name)
+        category_of = {e["instructor"]: e["instructor_category"] for e in evaluators}
+        staffed = {e["instructor_category"] for e in evaluators}
+
+        grades = {}
+        for g in frappe.get_all(
+            "Activity Competency Grade",
+            filters={"roster": r.name},
+            fields=[
+                "assess_criteria",
+                "instructor",
+                "instructor_category",
+                "dimension_code",
+                "level_code",
+            ],
+        ):
+            grades.setdefault(g.assess_criteria, []).append(g)
+        names = _instructor_names(
+            {g.instructor for gs in grades.values() for g in gs if g.instructor}
+        )
+
+        for c in criteria:
+            given = grades.get(c.name, [])
+            labels = dim_labels.get(c.course_competency, {})
+            row = {
+                "roster": r.name,
+                "student": r.student,
+                "student_name": r.stuname_roster,
+                "assess_criteria": c.name,
+                "title": c.title,
+                "type": c.type,
+                "due_date": c.due_date,
+                "grading_mode": shapes[c.name],
+                "submission": submissions.get((r.student, c.name)),
+                "cells": {},
+                "activity_cell": None,
+            }
+            if shapes[c.name] == cbe.PER_ACTIVITY_MODE:
+                g = given[0] if given else None
+                row["activity_cell"] = {
+                    "state": "graded" if g else "not_graded",
+                    "level_code": g.level_code if g else None,
+                    "instructor": names.get(g.instructor, g.instructor) if g else None,
+                }
+                complete = bool(g)
+            else:
+                complete = True
+                for cat in categories:
+                    codes = expected[c.name].get(cat)
+                    if not codes or cat not in staffed:
+                        row["cells"][cat] = {"state": "na"}
+                        continue
+                    got = {
+                        (g.dimension_code or ""): g
+                        for g in given
+                        if (g.instructor_category or category_of.get(g.instructor))
+                        == cat
+                    }
+                    done = [code for code in codes if code in got]
+                    state = (
+                        "graded"
+                        if len(done) == len(codes)
+                        else ("partial" if done else "not_graded")
+                    )
+                    complete = complete and state == "graded"
+                    row["cells"][cat] = {
+                        "state": state,
+                        "graded": len(done),
+                        "asked": len(codes),
+                        # One overall level shows as itself; dimensions show
+                        # as a count, with each level in the hover.
+                        "level_code": (
+                            got[""].level_code if codes == [""] and done else None
+                        ),
+                        "detail": [
+                            {
+                                "dimension": labels.get(code, code) or _("Overall"),
+                                "level_code": (
+                                    got[code].level_code if code in got else None
+                                ),
+                                "instructor": (
+                                    names.get(
+                                        got[code].instructor, got[code].instructor
+                                    )
+                                    if code in got
+                                    else None
+                                ),
+                            }
+                            for code in codes
+                        ],
+                    }
+            row["complete"] = complete
+            sub = row["submission"]
+            row["overdue"] = bool(
+                turnaround
+                and sub
+                and not complete
+                and (now - get_datetime(sub["submitted_on"])).days > turnaround
+            )
+            rows.append(row)
+
+    return {
+        "is_cbe": True,
+        "categories": categories,
+        "turnaround_days": turnaround,
+        "rows": rows,
+    }
+
+
+def _latest_submissions(course_schedule, criteria_names):
+    """{(student, assess_criteria): submission}, the latest of each, across
+    every submission doctype an assessment can have."""
+    found = {}
+    if not criteria_names:
+        return found
+    for doctype, section_field, activity_field, at_field in REVIEW_SUBMISSIONS:
+        filters = {
+            section_field: course_schedule,
+            "course_assess": ("in", criteria_names),
+        }
+        if doctype == "Exam Submission":
+            filters["status"] = ("!=", "Not Submitted")
+        fields = ["name", "student", "course_assess", activity_field, "creation"]
+        if at_field != "creation":
+            fields.append(at_field)
+        for s in frappe.get_all(doctype, filters=filters, fields=fields):
+            at = s.get(at_field) or s.creation
+            key = (s.student, s.course_assess)
+            if key in found and get_datetime(
+                found[key]["submitted_on"]
+            ) >= get_datetime(at):
+                continue
+            found[key] = {
+                "doctype": doctype,
+                "name": s.name,
+                "activity": s.get(activity_field),
+                "submitted_on": at,
+            }
+    return found
+
+
 # ---------------------------------------------------------------- staff writes
 
 
