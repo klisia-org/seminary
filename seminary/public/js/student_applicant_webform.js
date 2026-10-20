@@ -169,3 +169,74 @@ frappe.ready(() => {
 		if (bind() || ++tries > 40) clearInterval(timer);
 	}, 150);
 });
+
+
+// Documents the chosen program asks for on the application (decisions/091 §10).
+//
+// The `documents` table carries one row per Document Type the program marks
+// "Ask on Application"; the applicant attaches a file to each. The rows follow
+// the program: changing it keeps the files already attached to a type the new
+// program also asks for. On a form without the table this does nothing.
+frappe.ready(function () {
+    if (!window.frappe || !frappe.web_form) return;
+    var wf = frappe.web_form;
+    if (!wf.fields_dict || !wf.fields_dict.documents) return;
+
+    function setRows(program) {
+        if (!program) {
+            apply([]);
+            return;
+        }
+        frappe.call({
+            method: "seminary.seminary.requirements.application_documents",
+            args: { program: program },
+        }).then(function (r) {
+            apply((r && r.message) || []);
+        });
+    }
+
+    function apply(types) {
+        var current = (wf.doc && wf.doc.documents) || [];
+        var byType = {};
+        current.forEach(function (row) {
+            if (row && row.document_type) byType[row.document_type] = row;
+        });
+        var rows = types.map(function (t, i) {
+            var old = byType[t.document_type];
+            return {
+                doctype: "Student Applicant Document",
+                idx: i + 1,
+                document_type: t.document_type,
+                file: old ? old.file : "",
+            };
+        });
+        var help = types
+            .filter(function (t) { return t.description || (t.allowed_extensions || []).length; })
+            .map(function (t) {
+                var exts = (t.allowed_extensions || []).join(", ");
+                return frappe.utils.escape_html(t.document_type) + ": " +
+                    frappe.utils.escape_html(t.description || "") +
+                    (exts ? " (" + frappe.utils.escape_html(exts) + ")" : "");
+            })
+            .join("<br>");
+        wf.doc.documents = rows;
+        try {
+            wf.set_value("documents", rows);
+        } catch (e) {
+            var grid = wf.fields_dict.documents.grid;
+            if (grid) {
+                grid.df.data = rows;
+                grid.refresh();
+            }
+        }
+        wf.set_df_property("documents", "description", help);
+        wf.set_df_property("documents", "hidden", rows.length ? 0 : 1);
+    }
+
+    if (wf.on) {
+        wf.on("program", function (field, value) {
+            setRows(value);
+        });
+    }
+    setRows(wf.doc && wf.doc.program);
+});

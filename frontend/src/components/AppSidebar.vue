@@ -49,7 +49,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, BookMarked, Sprout, LayoutGrid } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, BookMarked, Sprout, LayoutGrid, FilePen } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
@@ -181,6 +181,13 @@ const links = computed(() => {
 			label: __('Internships'),
 			to: '/internships',
 			icon: Handshake,
+		}] : []),
+		// decisions/091 §11: students and instructors, once anything was ever asked of them.
+		...(userResource?.data?.has_requirements ? [{
+			label: __('Requirements'),
+			to: '/requirements',
+			icon: FilePen,
+			badge: userResource?.data?.open_requirements || 0,
 		}] : []),
 		...(isMember.value ? [{
 			label: __('Inbox'),

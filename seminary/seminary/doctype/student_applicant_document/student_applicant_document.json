@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "A document the applicant uploaded with the application.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "file",
+  "person_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "Document Type",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "file",
+   "fieldtype": "Attach",
+   "label": "File",
+   "in_list_view": 1,
+   "columns": 4
+  },
+  {
+   "fieldname": "person_document",
+   "fieldtype": "Link",
+   "label": "Person Document",
+   "options": "Person Document",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 3
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Student Applicant Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

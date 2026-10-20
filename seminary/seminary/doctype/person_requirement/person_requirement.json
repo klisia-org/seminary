@@ -1,0 +1,274 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "Something one person must sign or upload, for one program enrollment or instructor record.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "person",
+  "person_name",
+  "reference_doctype",
+  "reference_name",
+  "column_break_main",
+  "status",
+  "start_date",
+  "due_date",
+  "academic_term",
+  "academic_year",
+  "rule_section",
+  "kind",
+  "agreement_template",
+  "document_type",
+  "column_break_rule",
+  "blocking",
+  "due_days",
+  "renewal",
+  "instructions",
+  "outcome_section",
+  "satisfied_by_doctype",
+  "satisfied_by",
+  "column_break_outcome",
+  "waived_by",
+  "waived_on",
+  "waiver_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "label": "Person Name",
+   "fetch_from": "person.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "For",
+   "options": "DocType",
+   "reqd": 1,
+   "set_only_once": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Record",
+   "options": "reference_doctype",
+   "reqd": 1,
+   "set_only_once": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nSubmitted\nSatisfied\nWaived",
+   "default": "Pending",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "academic_term",
+   "fieldtype": "Link",
+   "label": "Academic Term",
+   "options": "Academic Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rule_section",
+   "fieldtype": "Section Break",
+   "label": "Requirement"
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Agreement\nDocument",
+   "reqd": 1,
+   "in_list_view": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "agreement_template",
+   "fieldtype": "Link",
+   "label": "Agreement Template",
+   "options": "Agreement Template",
+   "depends_on": "eval:doc.kind=='Agreement'",
+   "mandatory_depends_on": "eval:doc.kind=='Agreement'",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "Document Type",
+   "depends_on": "eval:doc.kind=='Document'",
+   "mandatory_depends_on": "eval:doc.kind=='Document'",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "column_break_rule",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "blocking",
+   "fieldtype": "Check",
+   "label": "Blocking"
+  },
+  {
+   "fieldname": "due_days",
+   "fieldtype": "Int",
+   "label": "Due In (Days)",
+   "description": "Sets the due date when the row is created."
+  },
+  {
+   "fieldname": "renewal",
+   "fieldtype": "Select",
+   "label": "Renewal",
+   "options": "Not needed\nEvery Academic Term\nEvery Academic Year",
+   "default": "Not needed",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Small Text",
+   "label": "Instructions"
+  },
+  {
+   "fieldname": "outcome_section",
+   "fieldtype": "Section Break",
+   "label": "Outcome"
+  },
+  {
+   "fieldname": "satisfied_by_doctype",
+   "fieldtype": "Link",
+   "label": "Satisfied By Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "satisfied_by",
+   "fieldtype": "Dynamic Link",
+   "label": "Satisfied By",
+   "options": "satisfied_by_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_outcome",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "waived_by",
+   "fieldtype": "Link",
+   "label": "Waived By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "waived_on",
+   "fieldtype": "Datetime",
+   "label": "Waived On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "waiver_reason",
+   "fieldtype": "Small Text",
+   "label": "Waiver Reason",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Person Requirement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "PREQ-.#####",
+ "track_changes": 1
+}

@@ -319,3 +319,24 @@ frappe.ui.form.on('Program', {
 		}
 	}
 });
+
+// decisions/091 §4: rules are copied when an enrollment is submitted; this adds
+// the ones an active enrollment is still missing.
+frappe.ui.form.on('Program', {
+	add_missing_requirements: function(frm) {
+		if (frm.is_dirty()) {
+			frappe.msgprint(__('Save the program first.'));
+			return;
+		}
+		frappe.call({
+			method: 'seminary.seminary.requirements.add_missing_requirements',
+			args: { program: frm.doc.name },
+			freeze: true,
+		}).then((r) => {
+			frappe.show_alert({
+				message: __('{0} requirement(s) added to active enrollments.', [r.message || 0]),
+				indicator: 'green',
+			});
+		});
+	},
+});
