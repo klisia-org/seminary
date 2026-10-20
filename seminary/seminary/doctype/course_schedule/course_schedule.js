@@ -177,7 +177,8 @@ frappe.ui.form.on("Course Schedule", {
 	const can_import = frappe.user.has_role('Program Chair')
 		|| frappe.user.has_role('Seminary Manager')
 		|| frappe.user.has_role('Registrar');
-	const no_chapters = !frm.doc.chapters || frm.doc.chapters.length === 0;
+	const no_chapters = !frm.doc.chapters || frm.doc.chapters.length === 0
+		|| frm.doc.__onload?.untouched_scaffold;
 	if (!frm.is_new() && importable && can_import && no_chapters) {
 		frm.add_custom_button(__('Import Course Template'), function() {
 			frappe.db.get_value('Course', frm.doc.course, 'default_cs_template').then(r => {
