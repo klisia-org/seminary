@@ -13134,23 +13134,23 @@ msgstr "Dedução Definida pelo Instrutor"
 #. Label of the late_deduction (Float) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 msgid "Deduction per Interval (%)"
-msgstr ""
+msgstr "Dedução por Intervalo (%)"
 
 #. Label of the missing_reply_deduction (Float) field in DocType 'Course
 #. Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
 msgid "Deduction per Missing Reply (%)"
-msgstr ""
+msgstr "Dedução por Resposta Ausente (%)"
 
 #: frontend/src/pages/CourseAssessment.vue:59
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 msgid "Deduction per interval (%)"
-msgstr ""
+msgstr "Dedução por intervalo (%)"
 
 #: frontend/src/pages/CourseAssessment.vue:65
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 msgid "Deduction per missing reply (%)"
-msgstr ""
+msgstr "Dedução por resposta ausente (%)"
 
 #. Label of the weblink_prefix (Data) field in DocType 'Communication Channel'
 #: seminary/seminary/doctype/communication_channel/communication_channel.json
@@ -13273,10 +13273,8 @@ msgstr "Número Padrão Mínimo de Inscritos"
 
 #. Label of the default_organization (Data) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Role at Organization"
 msgid "Default Organization"
-msgstr "Função na Organização"
+msgstr "Organização padrão"
 
 #. Label of the default_pacing_mode (Select) field in DocType 'Competency
 #. Framework'
@@ -13600,10 +13598,8 @@ msgstr "Excluir esta publicação? Isso não pode ser desfeito."
 
 #: frontend/src/pages/ReadingPlans.vue:542
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Select {0}"
 msgid "Delete {0}?"
-msgstr "Selecionar {0}"
+msgstr "Excluir {0}?"
 
 #: frontend/src/components/FolderPlugin.vue:678
 msgid "Delete {0}? This cannot be undone."
@@ -14020,10 +14016,8 @@ msgstr "Planos de Desenvolvimento"
 
 #: frontend/src/components/ReflectionBlock.vue:89
 #: frontend/src/utils/reflection.js:66
-#, fuzzy
-#| msgid "Development Plan"
 msgid "Development plan"
-msgstr "Plano de Desenvolvimento"
+msgstr "Plano de desenvolvimento"
 
 #. Label of the metrics_section (Section Break) field in DocType 'Plagiarism
 #. Check Result'
@@ -14048,6 +14042,10 @@ msgid ""
 "or cut-off, extra minutes on a timed quiz or exam, or extra attempts. "
 "Everything left blank follows the assessment's own settings."
 msgstr ""
+"Datas ou prazos diferentes para um aluno em uma avaliação: uma data de "
+"entrega ou de encerramento posterior, minutos extras em um questionário ou "
+"prova com tempo limitado, ou tentativas adicionais. Tudo o que ficar em "
+"branco segue as configurações da própria avaliação."
 
 #. Label of the dimension (Data) field in DocType 'Assessment Dimension Weight'
 #. Label of the dimension (Data) field in DocType 'Assessment Grading Matrix'
@@ -14112,10 +14110,8 @@ msgid "Dimension Icon"
 msgstr "Ícone da Dimensão"
 
 #: seminary/seminary/doctype/grading_scale/grading_scale.py:69
-#, fuzzy
-#| msgid "Dimension Code"
 msgid "Dimension code in use"
-msgstr "Código da Dimensão"
+msgstr "Código de dimensão em uso"
 
 #: seminary/seminary/doctype/grading_scale/grading_scale.py:57
 msgid ""
@@ -14124,6 +14120,10 @@ msgid ""
 "a link to this row. Add the replacement dimension alongside it, move the "
 "records over, then remove this one."
 msgstr ""
+"O código de dimensão {0} ainda é usado por {1}. Renomeá-lo ou removê-lo "
+"desvincularia esses registros, pois cada um deles armazena o código, e não "
+"um vínculo com esta linha. Adicione a dimensão substituta ao lado dela, mova "
+"os registros para ela e, em seguida, remova esta."
 
 #: frontend/src/pages/CourseAssessment.vue:294
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
@@ -14206,7 +14206,7 @@ msgstr "Supervisor Direto"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.py:96
 msgid "Direct uploads have no configured limit"
-msgstr ""
+msgstr "Os envios diretos não têm limite configurado"
 
 #. Label of the direction (Select) field in DocType 'Communication Log'
 #: seminary/seminary/doctype/communication_log/communication_log.json
@@ -14215,10 +14215,8 @@ msgstr "Direção"
 
 #: frontend/src/components/AlumniHeader.vue:35
 #: seminary/public/frontend/assets/AlumniHeader-CZYSuiXV.js:1
-#, fuzzy
-#| msgid "Direction"
 msgid "Directory"
-msgstr "Direção"
+msgstr "Diretório"
 
 #. Label of the listing_status (Select) field in DocType 'Partner Organization'
 #: seminary/partner/doctype/partner_organization/partner_organization.json
@@ -14231,10 +14229,8 @@ msgid "Directory and messages"
 msgstr "Diretório e mensagens"
 
 #: seminary/scorm/archive.py:154
-#, fuzzy
-#| msgid "Directory Listing"
 msgid "Directory entry"
-msgstr "Listagem no Diretório"
+msgstr "Entrada do diretório"
 
 #. Label of the disabilities_section (Section Break) field in DocType 'Student
 #. Applicant'
@@ -14361,10 +14357,8 @@ msgstr "Disciplinar — Ações Pendentes"
 
 #. Label of a Sidebar Item
 #: seminary/seminary/sidebar/seminary_registrar/seminary_registrar.json
-#, fuzzy
-#| msgid "Disciplinary"
 msgid "Discipline"
-msgstr "Disciplinar"
+msgstr "Disciplina"
 
 #. Label of a Card Break in the Registrar Workspace
 #: seminary/seminary/workspace/registrar/registrar.json
@@ -14378,10 +14372,8 @@ msgstr "Disciplina / Campo"
 
 #: frontend/src/pages/ReadingPlans.vue:83
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Discussion"
 msgid "Discuss"
-msgstr "Discussão"
+msgstr "Discutir"
 
 #. Option for the 'Type' (Select) field in DocType 'Assessment Criteria'
 #. Label of the discussion (Link) field in DocType 'Scheduled Course Assess
@@ -14497,6 +14489,8 @@ msgid ""
 "Discussions that require an initial post and replies only. The due date "
 "above then applies to the initial post."
 msgstr ""
+"Discussões que exigem apenas uma postagem inicial e respostas. A data de "
+"entrega acima se aplica, então, à postagem inicial."
 
 #: frontend/src/pages/Community.vue:664
 #: frontend/src/pages/CompetencyGradebook.vue:49
@@ -14541,10 +14535,8 @@ msgstr "Opções de Exibição"
 
 #. Label of the display_order (Int) field in DocType 'Ethnic Group'
 #: seminary/seminary/doctype/ethnic_group/ethnic_group.json
-#, fuzzy
-#| msgid "Display Options"
 msgid "Display Order"
-msgstr "Opções de Exibição"
+msgstr "Ordem de exibição"
 
 #. Description of the 'Term Name (for Web)' (Data) field in DocType 'Academic
 #. Term'
@@ -14597,8 +14589,6 @@ msgstr "Você deseja atualizar a presença? <br> Presente: {0} <br> Ausente: {1}
 #. Option for the 'Tier' (Select) field in DocType 'Program Level'
 #: seminary/seminary/doctype/cohort_type/cohort_type.json
 #: seminary/seminary/doctype/program_level/program_level.json
-#, fuzzy
-#| msgid "Doctorate"
 msgid "Doctoral"
 msgstr "Doutorado"
 
@@ -14724,10 +14714,8 @@ msgstr ""
 "determinam as opções."
 
 #: portal-shell/src/portals.js:48
-#, fuzzy
-#| msgid "Terminated"
 msgid "Donate"
-msgstr "Encerrado"
+msgstr "Doar"
 
 #: frontend/src/components/ReflectionBlock.vue:18
 #: seminary/seminary/report/orphan_graduation_requirements/orphan_graduation_requirements.js:40
@@ -14743,16 +14731,12 @@ msgid "Donor"
 msgstr "Doador"
 
 #: portal-shell/src/portals.js:49
-#, fuzzy
-#| msgid "Portal"
 msgid "Donor Portal"
-msgstr "Portal"
+msgstr "Portal do Doador"
 
 #: portal-shell/src/portals.js:59
-#, fuzzy
-#| msgid "Relationship"
 msgid "Donor Relationships"
-msgstr "Relacionamento"
+msgstr "Relacionamentos com Doadores"
 
 #. Description of the 'Created Donor' (Data) field in DocType 'Person Import
 #. Row'
@@ -14930,6 +14914,8 @@ msgid ""
 "Drag the image to choose what the course card shows, and zoom in on what "
 "matters. The preview is the card as students see it."
 msgstr ""
+"Arraste a imagem para escolher o que o cartão do curso exibe e amplie o que "
+"for mais importante. A pré-visualização é o cartão como os alunos o veem."
 
 #. Description of the 'Kind' (Select) field in DocType 'Culminating Project
 #. Type Milestone'
@@ -15096,10 +15082,8 @@ msgstr "Regra de Data de Vencimento"
 #. Label of the due_date (Datetime) field in DocType 'Student Due Date
 #. Override'
 #: seminary/seminary/doctype/student_due_date_override/student_due_date_override.json
-#, fuzzy
-#| msgid "Due Date and time"
 msgid "Due Date and Time"
-msgstr "Data e hora de Vencimento"
+msgstr "Data e hora de entrega"
 
 #. Label of the due_date (Datetime) field in DocType 'Scheduled Course Assess
 #. Criteria'
@@ -15116,17 +15100,13 @@ msgstr "Vence em breve"
 #: frontend/src/pages/CourseAssessment.vue:262
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "Due Date"
 msgid "Due date"
-msgstr "Data de Vencimento"
+msgstr "Data de entrega"
 
 #: frontend/src/pages/StudentAttendanceCS.vue:196
 #: seminary/public/frontend/assets/StudentAttendanceCS-CXW3d88W.js:3
-#, fuzzy
-#| msgid "Due Date"
 msgid "Due that day"
-msgstr "Data de Vencimento"
+msgstr "Entrega nesse dia"
 
 #: frontend/src/pages/FacultyWorklist.vue:79
 #: frontend/src/pages/MyInternship.vue:29
@@ -15137,20 +15117,16 @@ msgstr "Vence em {0}"
 
 #: frontend/src/pages/FacultyWorklist.vue:79
 #: seminary/public/frontend/assets/FacultyWorklist-QR0eQScA.js:1
-#, fuzzy
-#| msgid " — overdue"
 msgid "Due {0} — overdue"
-msgstr " — em atraso"
+msgstr "Entrega em {0} — em atraso"
 
 #: frontend/src/components/Assignment.vue:356
 #: frontend/src/components/DiscussionActivity.vue:234
 #: frontend/src/components/Exam.vue:61 frontend/src/components/Quiz.vue:80
 #: seminary/public/frontend/assets/index-DxVrVxU-.js:2
 #: seminary/public/frontend/assets/index-DxVrVxU-.js:3
-#, fuzzy
-#| msgid "Due {0}"
 msgid "Due {0}."
-msgstr "Vence em {0}"
+msgstr "Entrega em {0}."
 
 #: frontend/src/components/CourseOutline.vue:203
 #: frontend/src/pages/Lesson.vue:99
@@ -15161,10 +15137,8 @@ msgstr "Vencimento: "
 
 #: frontend/src/pages/ReadingPlans.vue:113
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Applicant"
 msgid "Duplicate"
-msgstr "Candidato"
+msgstr "Duplicar"
 
 #: seminary/seminary/doctype/question/question.py:47
 msgid "Duplicate options found for this question."
@@ -15312,7 +15286,7 @@ msgstr ""
 
 #: frontend/src/pages/CourseDetail.vue:25
 msgid "Each student’s before-and-after, with every evaluator apart."
-msgstr ""
+msgstr "O antes e depois de cada aluno, com cada avaliador separado."
 
 #: frontend/src/components/AssignmentViewers/CommentSidebar.vue:80
 #: frontend/src/components/CompetencyStudentPane.vue:144
@@ -15425,17 +15399,13 @@ msgstr "Editar localização"
 #: frontend/src/components/MyOrganizationsPanel.vue:67
 #: frontend/src/components/MyOrganizationsPanel.vue:115
 #: seminary/public/frontend/assets/MyOrganizationsPanel-CrHL_k29.js:1
-#, fuzzy
-#| msgid "Edit my profile"
 msgid "Edit my role"
-msgstr "Editar meu perfil"
+msgstr "Editar meu papel"
 
 #: frontend/src/pages/ReadingPlans.vue:213
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Edit location"
 msgid "Edit plan"
-msgstr "Editar localização"
+msgstr "Editar plano"
 
 #: frontend/src/pages/Community.vue:408
 msgid "Edit post"
@@ -15935,23 +15905,23 @@ msgid ""
 "programs, get the students and their courses, pick a section for each "
 "course, then Enroll."
 msgstr ""
+"Matricule vários alunos nas disciplinas do período de uma só vez. Escolha o "
+"período e os programas, obtenha os alunos e suas disciplinas, selecione uma "
+"turma para cada disciplina e, em seguida, clique em Matricular."
 
 #: seminary/seminary/report/time_based_enrollment_gaps/time_based_enrollment_gaps.js:30
-#, fuzzy
-#| msgid "Enrollment"
 msgid "Enroll missing"
-msgstr "Inscrição"
+msgstr "Matricular ausentes"
 
 #. Label of the auto_enroll_next_term (Check) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
 msgid "Enroll students in their next term's courses when they advance"
 msgstr ""
+"Matricular os alunos nas disciplinas do próximo período quando avançarem"
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.js:76
-#, fuzzy
-#| msgid "No students in this course"
 msgid "Enroll {0} students in {1} course sections?"
-msgstr "Não há estudantes neste curso"
+msgstr "Matricular {0} alunos em {1} turmas de disciplinas?"
 
 #. Description of the Onboarding Step 'Enroll a Student in one of your
 #. Programs'
@@ -15967,10 +15937,8 @@ msgstr ""
 #. Option for the 'Status' (Select) field in DocType 'Bulk Course Enrollment
 #. Result'
 #: seminary/seminary/doctype/bulk_course_enrollment_result/bulk_course_enrollment_result.json
-#, fuzzy
-#| msgid "Enroll"
 msgid "Enrolled"
-msgstr "Inscrever"
+msgstr "Matriculado"
 
 #: frontend/src/components/CourseCardOverlay.vue:175
 #: seminary/translatable_strings.py:22
@@ -15984,14 +15952,10 @@ msgid "Enrolled in final courses"
 msgstr "Inscrito em cursos finais"
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.js:50
-#, fuzzy
-#| msgid ""
-#| "Importing {0} rows in the background — you'll get a summary when it "
-#| "finishes."
 msgid "Enrolling in the background. The results appear here when it finishes."
 msgstr ""
-"Importando {0} linhas em segundo plano — você receberá um resumo quando "
-"terminar."
+"Matrícula em andamento em segundo plano. Os resultados aparecerão aqui "
+"quando for concluída."
 
 #: seminary/seminary/doctype/student_applicant/student_applicant.js:49
 msgid "Enrolling student"
@@ -16196,10 +16160,8 @@ msgstr "Registrado em"
 
 #. Label of the entry_count (Int) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Series"
 msgid "Entries"
-msgstr "Séries"
+msgstr "Entradas"
 
 #: seminary/partner/internship_api.py:559
 msgid "Entry not found."
@@ -16406,15 +16368,13 @@ msgstr "Eventos serão criados somente quando isto estiver marcado."
 #. Option for the 'Advance to next term when' (Select) field in DocType
 #. 'Program'
 #: seminary/seminary/doctype/program/program.json
-#, fuzzy
-#| msgid "Course Passed"
 msgid "Every course is passed"
-msgstr "Curso Aprovado"
+msgstr "Todas as disciplinas aprovadas"
 
 #: frontend/src/pages/ReadingPlans.vue:400
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
 msgid "Every day"
-msgstr ""
+msgstr "Todos os dias"
 
 #: seminary/seminary/doctype/course_competency/course_competency.js:64
 msgid "Every dimension is already listed."
@@ -16455,10 +16415,9 @@ msgid "Every proposed cohort is empty, so there is nothing to create."
 msgstr "Toda coorte proposta está vazia, portanto não há nada para criar."
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.py:312
-#, fuzzy
-#| msgid "Please enroll for this course to view this lesson"
 msgid "Every section chosen for this course is full in this run."
-msgstr "Por favor, inscreva-se neste curso para visualizar esta lição"
+msgstr ""
+"Todas as turmas escolhidas para esta disciplina estão lotadas nesta execução."
 
 #: seminary/seminary/doctype/grade_conversion_policy/grade_conversion_policy.py:84
 msgid ""
@@ -16469,7 +16428,7 @@ msgstr ""
 
 #: seminary/seminary/report/sources_of_funding/sources_of_funding.js:12
 msgid "Every year"
-msgstr ""
+msgstr "Todo ano"
 
 #: seminary/seminary/page/cohort_planner/cohort_planner.js:649
 msgid "Everybody has a cohort"
@@ -16627,10 +16586,8 @@ msgid "Exam created successfully"
 msgstr "Exame criado com sucesso"
 
 #: seminary/seminary/doctype/exam_submission/exam_submission.py:109
-#, fuzzy
-#| msgid "Meeting not found."
 msgid "Exam question not found."
-msgstr "Encontro não encontrado."
+msgstr "Questão da prova não encontrada."
 
 #: frontend/src/pages/ExamForm.vue:327
 #: seminary/public/frontend/assets/ExamForm-CCsRkasd.js:1
@@ -16676,7 +16633,7 @@ msgstr "Excelente"
 #. 'Seminary Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Exclude"
-msgstr ""
+msgstr "Excluir"
 
 #. Label of the plagiarism_exclude_same_student (Check) field in DocType
 #. 'Seminary Settings'
@@ -16703,20 +16660,18 @@ msgstr ""
 #: seminary/public/frontend/assets/StudentAttendanceCS-CXW3d88W.js:1
 #: seminary/public/frontend/assets/StudentAttendanceCS-CXW3d88W.js:3
 msgid "Excused"
-msgstr ""
+msgstr "Justificado"
 
 #. Option for the 'Source' (Select) field in DocType 'Student Due Date
 #. Override'
 #: seminary/seminary/doctype/student_due_date_override/student_due_date_override.json
-#, fuzzy
-#| msgid "Failed for absence"
 msgid "Excused absence"
-msgstr "Reprovado por falta"
+msgstr "Falta justificada"
 
 #: frontend/src/pages/StudentAttendanceCS.vue:618
 #: seminary/public/frontend/assets/StudentAttendanceCS-CXW3d88W.js:2
 msgid "Excused absence on {0}"
-msgstr ""
+msgstr "Falta justificada em {0}"
 
 #. Option for the 'Resolution' (Select) field in DocType 'Program Enrollment
 #. Leveling'
@@ -16847,10 +16802,8 @@ msgstr "Explore os programas de grau e certificado que oferecemos."
 
 #: frontend/src/pages/ReadingPlans.vue:114
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "exported"
 msgid "Export"
-msgstr "exportado"
+msgstr "Exportar"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.js:234
 msgid "Export Course Pack"
@@ -16914,18 +16867,14 @@ msgstr "O provedor externo não tem endpoint configurado."
 
 #: frontend/src/pages/CourseAssessment.vue:233
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
-#, fuzzy
-#| msgid "Max Extra: "
 msgid "Extra"
-msgstr "Max Extra: "
+msgstr "Extra"
 
 #. Label of the extra_attempts (Int) field in DocType 'Student Due Date
 #. Override'
 #: seminary/seminary/doctype/student_due_date_override/student_due_date_override.json
-#, fuzzy
-#| msgid "Max Attempts"
 msgid "Extra Attempts"
-msgstr "Máx. Tentativas"
+msgstr "Tentativas Extras"
 
 #. Label of the extracredit_scac (Check) field in DocType 'Scheduled Course
 #. Assess Criteria'
@@ -16941,10 +16890,8 @@ msgstr "Crédito Extra?"
 #. Label of the extra_minutes (Int) field in DocType 'Student Due Date
 #. Override'
 #: seminary/seminary/doctype/student_due_date_override/student_due_date_override.json
-#, fuzzy
-#| msgid "Extra Credit"
 msgid "Extra Minutes"
-msgstr "Crédito Extra"
+msgstr "Minutos Extras"
 
 #. Label of the settings (Code) field in DocType 'Channel Provider Account'
 #. Label of the settings (Code) field in DocType 'Plagiarism Provider Account'
@@ -16961,10 +16908,8 @@ msgstr "As Configurações Extras devem ser JSON válido."
 #: frontend/src/pages/CourseAssessment.vue:276
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "Max Attempts"
 msgid "Extra attempts"
-msgstr "Máx. Tentativas"
+msgstr "Tentativas extras"
 
 #. Label of the extracredit_card (Check) field in DocType 'Course Assess
 #. Results Detail'
@@ -16976,10 +16921,8 @@ msgstr "Crédito extra"
 #: frontend/src/pages/CourseAssessment.vue:274
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "Extra Credit"
 msgid "Extra minutes"
-msgstr "Crédito Extra"
+msgstr "Minutos extras"
 
 #. Option for the 'Platform' (Select) field in DocType 'Website Social Link'
 #: seminary/seminary/doctype/website_social_link/website_social_link.json
@@ -17020,10 +16963,8 @@ msgstr "Capacidade do Docente"
 
 #. Option for the 'Type' (Select) field in DocType 'Academic Unit'
 #: seminary/seminary/doctype/academic_unit/academic_unit.json
-#, fuzzy
-#| msgid "Faculty Capability"
 msgid "Faculty Council"
-msgstr "Capacidade do Docente"
+msgstr "Conselho de Professores"
 
 #: frontend/src/components/AppSidebar.vue:166
 #: frontend/src/pages/FacultyWorklist.vue:3
@@ -17066,10 +17007,8 @@ msgstr "Reprovar por falta"
 #: frontend/src/components/Modals/AbsenceDecisionModal.vue:46
 #: seminary/public/frontend/assets/AbsenceDecisionModal-BNL1gJVn.js:1
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid "Failed for absence"
 msgid "Fail for absence"
-msgstr "Reprovado por falta"
+msgstr "Reprovar por falta"
 
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.js:34
 msgid ""
@@ -17207,10 +17146,8 @@ msgstr "Reprovando..."
 
 #. Label of the failure_reason (Small Text) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Waiver Reason"
 msgid "Failure Reason"
-msgstr "Motivo da dispensa"
+msgstr "Motivo da Reprovação"
 
 #: seminary/seminary/api.py:3896
 msgid "Failure-for-absences cleared by {0}."
@@ -17332,7 +17269,7 @@ msgstr "Taxas"
 
 #: seminary/translatable_strings.py:48
 msgid "Fees setup"
-msgstr ""
+msgstr "Configuração de taxas"
 
 #: seminary/seminary/doctype/bible_api_settings/bible_api_settings.js:61
 msgid "Fetch"
@@ -17526,16 +17463,12 @@ msgstr "A nota final é auto-calculada"
 #: frontend/src/components/CompetencyReview.vue:370
 #: seminary/public/frontend/assets/CompetencyReview-Bt8S31Ro.js:2
 #: seminary/seminary/cbe_api.py:815
-#, fuzzy
-#| msgid "Open that self-assessment"
 msgid "Final self-assessment"
-msgstr "Abrir essa autoavaliação"
+msgstr "Autoavaliação final"
 
 #: frontend/src/components/CourseStudentsTab.vue:29
-#, fuzzy
-#| msgid "Faculty and members of {0}."
 msgid "Final, as of {0}."
-msgstr "Docentes e membros de {0}."
+msgstr "Final, em {0}."
 
 #. Label of the customer_details_tab (Tab Break) field in DocType 'Student'
 #: seminary/seminary/doctype/student/student.json
@@ -17742,10 +17675,8 @@ msgstr "para"
 #. Label of the dates_section (Section Break) field in DocType 'Student Due
 #. Date Override'
 #: seminary/seminary/doctype/student_due_date_override/student_due_date_override.json
-#, fuzzy
-#| msgid "Course Students"
 msgid "For This Student"
-msgstr "Alunos do Curso"
+msgstr "Para Este Aluno"
 
 #. Description of the 'Chosen Option' (Link) field in DocType 'Student
 #. Graduation Requirement'
@@ -17766,6 +17697,10 @@ msgid ""
 "package is matched to existing lessons by this, which is what keeps a "
 "cohort's recorded progress when a package is replaced."
 msgstr ""
+"Para uma aula que executa um SCO: o identificador <item> do manifesto. Um "
+"pacote reenviado é associado às aulas existentes por esse identificador, o "
+"que preserva o progresso registrado de uma turma quando um pacote é "
+"substituído."
 
 #. Description of the 'Chosen From' (Data) field in DocType 'Student Graduation
 #. Requirement'
@@ -17784,6 +17719,8 @@ msgid ""
 "For a student who is not advanced. Remove: they leave this program's term "
 "cohort, and staff place them by hand or with the Cohort Planner."
 msgstr ""
+"Para um aluno que não avançou. Remover: ele sai da turma do período deste "
+"programa, e a equipe o aloca manualmente ou com o Planejador de Turmas."
 
 #. Description of the 'Deduction per Missing Reply (%)' (Float) field in
 #. DocType 'Course Schedule'
@@ -17792,6 +17729,9 @@ msgid ""
 "For discussions with a separate replies due date: percentage points taken "
 "off for each required reply not posted by that date."
 msgstr ""
+"Para discussões com data de entrega separada para respostas: pontos "
+"percentuais descontados por cada resposta obrigatória não postada até essa "
+"data."
 
 #. Description of a Card Break in the Getting Started SeminaryERP Workspace
 #: seminary/seminary/workspace/getting_started_seminaryerp/getting_started_seminaryerp.json
@@ -17811,6 +17751,8 @@ msgid ""
 "For each competency course: where you started, where you finished, and how "
 "your instructor and mentors see it."
 msgstr ""
+"Para cada curso de competência: onde você começou, onde terminou e como seu "
+"instrutor e seus mentores veem esse percurso."
 
 #: frontend/src/pages/CompetencySelfAssessment.vue:31
 #: seminary/public/frontend/assets/CompetencySelfAssessment-DSFsjo39.js:1
@@ -17824,13 +17766,13 @@ msgstr ""
 #: frontend/src/pages/ReadingPlans.vue:282
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
 msgid "For example: Chapter 1 of Life Together"
-msgstr ""
+msgstr "Por exemplo: Capítulo 1 de Vida em Comunhão"
 
 #. Description of the 'Reading' (Small Text) field in DocType 'Reading Plan
 #. Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "For example: Chapter 1 of Life Together."
-msgstr ""
+msgstr "Por exemplo: Capítulo 1 de Vida em Comunhão."
 
 #. Description of the 'Target Academic Term' (Link) field in DocType 'Partner
 #. Transcript Import Batch'
@@ -17898,10 +17840,8 @@ msgstr "Nome do Formato"
 
 #: frontend/src/pages/MyFormation.vue:21
 #: seminary/public/frontend/assets/MyFormation-DIDxLyBb.js:1
-#, fuzzy
-#| msgid "My Formation Journal"
 msgid "Formation Journal"
-msgstr "Meu Diário de Formação"
+msgstr "Diário de Formação"
 
 #. Option for the 'Relationship Status' (Select) field in DocType 'Partner
 #. Contact'
@@ -17910,10 +17850,8 @@ msgid "Former"
 msgstr "Antigo"
 
 #: seminary/partner/report/partner_organizations_without_contacts/partner_organizations_without_contacts.py:54
-#, fuzzy
-#| msgid "Partner Contact"
 msgid "Former Contacts"
-msgstr "Contato do Parceiro"
+msgstr "Ex-contatos"
 
 #. Label of the forms_community_cohort (Check) field in DocType 'Course'
 #: seminary/seminary/doctype/course/course.json
@@ -17922,10 +17860,8 @@ msgstr "Forma Coortes da Comunidade"
 
 #. Option for the 'Funding Line' (Select) field in DocType 'Partner Type'
 #: seminary/partner/doctype/partner_type/partner_type.json
-#, fuzzy
-#| msgid "Conditions"
 msgid "Foundations"
-msgstr "Condições"
+msgstr "Fundamentos"
 
 #. Label of the is_free (Check) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
@@ -17934,10 +17870,8 @@ msgstr "Programa Gratuito"
 
 #: frontend/src/pages/ReadingPlans.vue:348
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "For"
 msgid "Fri"
-msgstr "para"
+msgstr "Sex"
 
 #. Option for the 'Day of Week' (Select) field in DocType 'Internship Position
 #. Schedule'
@@ -17979,17 +17913,13 @@ msgstr "De"
 
 #. Label of the from_book (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "From Room"
 msgid "From Book"
-msgstr "Da Sala"
+msgstr "Do Livro"
 
 #. Label of the from_chapter (Int) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "From Date"
 msgid "From Chapter"
-msgstr "Data Inicial"
+msgstr "Do Capítulo"
 
 #. Label of the from_date (Date) field in DocType 'Program Enrollment Mentor'
 #: seminary/seminary/doctype/program_enrollment_mentor/program_enrollment_mentor.json
@@ -18022,10 +17952,8 @@ msgstr "Hora Inicial não pode ser maior que a Hora Final."
 
 #. Label of the from_verse (Int) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "From Number"
 msgid "From Verse"
-msgstr "Número de Origem"
+msgstr "Do Versículo"
 
 #: seminary/seminary/cbe.py:1829
 msgid "From cohort"
@@ -18211,16 +18139,12 @@ msgid "GPA {0}"
 msgstr "GPA {0}"
 
 #: seminary/seminary/report/time_based_enrollment_gaps/time_based_enrollment_gaps.py:94
-#, fuzzy
-#| msgid "Cap"
 msgid "Gap"
-msgstr "Cap"
+msgstr "Lacuna"
 
 #: seminary/seminary/report/time_based_enrollment_gaps/time_based_enrollment_gaps.js:19
-#, fuzzy
-#| msgid "Unread only"
 msgid "Gaps only"
-msgstr "Apenas não lidas"
+msgstr "Somente lacunas"
 
 #. Description of the 'Content Release Mode' (Select) field in DocType
 #. 'Competency Framework'
@@ -18229,6 +18153,8 @@ msgid ""
 "Gated modes need Course Self-Evaluation with a timing that includes the end "
 "of each competency. Chapter 1 is never gated."
 msgstr ""
+"Os modos com bloqueio exigem Autoavaliação do Curso com uma temporização que "
+"inclua o fim de cada competência. O Capítulo 1 nunca é bloqueado."
 
 #. Label of the gender (Link) field in DocType 'Instructor'
 #. Label of the gender (Link) field in DocType 'Person'
@@ -18353,10 +18279,8 @@ msgid "Geometry (mm)"
 msgstr "Geometria (mm)"
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.js:57
-#, fuzzy
-#| msgid "Courses"
 msgid "Get Courses"
-msgstr "Cursos"
+msgstr "Obter Cursos"
 
 #. Description of the 'Courses' (Table) field in DocType 'Bulk Course
 #. Enrollment'
@@ -18365,18 +18289,19 @@ msgid ""
 "Get Courses lists what each included student's term expects. Choose a "
 "section for each course, or untick the course."
 msgstr ""
+"Obter Cursos lista o que o período de cada aluno incluído prevê. Escolha uma "
+"turma para cada curso ou desmarque o curso."
 
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.js:56
-#, fuzzy
-#| msgid "Grade Student"
 msgid "Get Students"
-msgstr "Aluno de Nota"
+msgstr "Obter Alunos"
 
 #. Description of the 'Students' (Table) field in DocType 'Bulk Course
 #. Enrollment'
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.json
 msgid "Get Students fills this list. Untick anyone who should not be enrolled."
 msgstr ""
+"Obter Alunos preenche esta lista. Desmarque quem não deve ser matriculado."
 
 #. Name of a Workspace
 #: seminary/seminary/workspace/getting_started_seminaryerp/getting_started_seminaryerp.json
@@ -18389,22 +18314,16 @@ msgid "Github ID"
 msgstr "ID do Github"
 
 #: seminary/seminary/deadlines.py:673
-#, fuzzy
-#| msgid "Give a reason for replacing the computed value for this competency."
 msgid "Give a reason for changing the deduction."
-msgstr "Informe um motivo para substituir o valor calculado desta competência."
+msgstr "Informe o motivo da alteração da dedução."
 
 #: seminary/seminary/progression.py:237
-#, fuzzy
-#| msgid "Give a reason for replacing the computed value for this competency."
 msgid "Give a reason for changing the term."
-msgstr "Informe um motivo para substituir o valor calculado desta competência."
+msgstr "Informe o motivo da alteração do período."
 
 #: seminary/seminary/absence_decisions.py:105
-#, fuzzy
-#| msgid "Dimension {0}: give a reason for replacing the computed value."
 msgid "Give a reason for keeping the grade."
-msgstr "Dimensão {0}: forneça um motivo para substituir o valor calculado."
+msgstr "Informe o motivo para manter a nota."
 
 #: seminary/seminary/cbe.py:1281
 msgid "Give a reason for replacing the computed value for this competency."
@@ -18417,10 +18336,8 @@ msgstr "Dê um título à ação"
 
 #: frontend/src/components/Modals/StudentDatesModal.vue:35
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "for this student and reason."
 msgid "Give this student different dates"
-msgstr "para este estudante e motivo."
+msgstr "Atribuir datas diferentes a este aluno"
 
 #: seminary/seminary/discipleship/api.py:703
 msgid "Give your cohort a name."
@@ -18516,17 +18433,13 @@ msgstr "Chave do Google Cloud com a Geocoding API ativada. Restrinja por IP."
 
 #. Label of the late_grace_minutes (Int) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Duration (in minutes)"
 msgid "Grace Period (minutes)"
-msgstr "Duração (em minutos)"
+msgstr "Período de Tolerância (minutos)"
 
 #: frontend/src/pages/CourseAssessment.vue:62
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
-#, fuzzy
-#| msgid "Duration (in minutes)"
 msgid "Grace period (minutes)"
-msgstr "Duração (em minutos)"
+msgstr "Período de tolerância (minutos)"
 
 #. Description of the 'Tardy After (mins)' (Int) field in DocType 'Seminary
 #. Settings'
@@ -18691,27 +18604,23 @@ msgstr ""
 "permissão elevada). Avaliada pós-conversão."
 
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.js:44
-#, fuzzy
-#| msgid "Grade Setup"
 msgid "Grade kept"
-msgstr "Configuração de Nota"
+msgstr "Nota mantida"
 
 #: frontend/src/components/ScormGradeMapping.vue:19
 #: seminary/public/frontend/assets/Lesson-DVaSWDba.js:3
-#, fuzzy
-#| msgid "Gradebook"
 msgid "Grade passback"
-msgstr "Registro de Notas"
+msgstr "Retorno de notas"
 
 #: frontend/src/components/ScormGradeMapping.vue:116
 #: seminary/public/frontend/assets/Lesson-DVaSWDba.js:3
 msgid "Grade passback enabled"
-msgstr ""
+msgstr "Retorno de notas ativado"
 
 #: frontend/src/components/ScormGradeMapping.vue:116
 #: seminary/public/frontend/assets/Lesson-DVaSWDba.js:3
 msgid "Grade passback turned off"
-msgstr ""
+msgstr "Retorno de notas desativado"
 
 #. Description of the 'Resulting Grade' (Data) field in DocType 'Withdrawal
 #. Request'
@@ -18780,10 +18689,8 @@ msgstr ""
 
 #: frontend/src/pages/CompetencyGradebook.vue:8
 #: seminary/public/frontend/assets/CompetencyGradebook-Xu-s-e8z.js:5
-#, fuzzy
-#| msgid "Gradebook"
 msgid "Gradebook views"
-msgstr "Registro de Notas"
+msgstr "Visualizações do livro de notas"
 
 #. Option for the 'Evaluation Model' (Select) field in DocType 'Internship
 #. Type'
@@ -18904,12 +18811,12 @@ msgid "Grades for this student have been sent; this is read-only."
 msgstr "As notas deste aluno foram enviadas; isto é somente leitura."
 
 #: seminary/seminary/deadlines.py:655
-#, fuzzy
-#| msgid "Grades for this student have been sent; this is read-only."
 msgid ""
 "Grades for this student were already sent, so the deduction can no longer "
 "change."
-msgstr "As notas deste aluno foram enviadas; isto é somente leitura."
+msgstr ""
+"As notas deste aluno já foram enviadas, portanto a dedução não pode mais ser "
+"alterada."
 
 #: seminary/install.py:480
 msgid "Grades placement assessments."
@@ -18942,10 +18849,8 @@ msgstr "Notas enviadas."
 
 #: frontend/src/components/Modals/StudentDatesModal.vue:60
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "This internship can no longer be withdrawn."
 msgid "Grades were sent, so this can no longer change."
-msgstr "Este estágio não pode mais ser retirado."
+msgstr "As notas foram enviadas, portanto isso não pode mais ser alterado."
 
 #: frontend/src/components/Assignment.vue:76
 #: frontend/src/pages/DiscussionActivitySubmission.vue:99
@@ -19644,10 +19549,8 @@ msgstr "Anfitrião"
 #: frontend/src/pages/CourseAssessment.vue:61
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Hours"
 msgid "Hour"
-msgstr "Horas"
+msgstr "Hora"
 
 #. Label of the hourly_limit (Int) field in DocType 'Channel Provider Account'
 #: seminary/seminary/doctype/channel_provider_account/channel_provider_account.json
@@ -19761,6 +19664,10 @@ msgid ""
 "before this setting existed, and the default. Exclude: only the staff listed "
 "on the section may read it."
 msgstr ""
+"Como um Curso sem unidade acadêmica é tratado no escopo Unidade Acadêmica. "
+"Escola: todo instrutor responsável pode ler suas turmas — o comportamento "
+"anterior à existência desta configuração e o padrão. Excluir: somente a "
+"equipe listada na turma pode lê-la."
 
 #. Label of the testimony (Long Text) field in DocType 'Student Applicant'
 #. Label of a field in the student-applicant Web Form
@@ -19791,14 +19698,6 @@ msgstr "Como a inscrição neste programa o ajudará a servir a igreja?"
 #. Description of the 'Faculty read scope' (Select) field in DocType 'Seminary
 #. Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
-#, fuzzy
-#| msgid ""
-#| "How far an instructor of record can see beyond the sections they teach. "
-#| "School: every section. Academic Unit: only sections of courses owned by "
-#| "an academic unit they belong to (their department, its parent units, and "
-#| "interdepartments it constitutes). Courses with no academic unit, and "
-#| "instructors with no unit membership, are treated as School. Graders and "
-#| "assistants only ever see their own sections."
 msgid ""
 "How far an instructor of record can see beyond the sections they teach. "
 "School: every section. Academic Unit: only sections of courses owned by an "
@@ -19808,12 +19707,13 @@ msgid ""
 "default to School. Graders and assistants only ever see their own sections."
 msgstr ""
 "Até onde um instrutor responsável pode ver além das turmas que leciona. "
-"Escola: todas as turmas. Unidade Acadêmica: apenas as turmas de cursos "
+"Escola: todas as turmas. Unidade Acadêmica: somente turmas de cursos "
 "pertencentes a uma unidade acadêmica da qual ele faça parte (seu "
-"departamento, suas unidades superiores e os interdepartamentos dos quais "
-"participa). Cursos sem unidade acadêmica, e instrutores sem filiação a "
-"unidade, são tratados como Escola. Avaliadores e assistentes sempre veem "
-"apenas suas próprias turmas."
+"departamento, suas unidades superiores e os interdepartamentos que ele "
+"constitui). As duas configurações abaixo definem o que acontece quando um "
+"instrutor não possui vínculo ou quando um curso não tem unidade — ambas têm "
+"Escola como padrão. Avaliadores e assistentes sempre veem apenas as próprias "
+"turmas."
 
 #: frontend/src/pages/AlumniProfile.vue:132
 #: seminary/public/frontend/assets/AlumniProfile-DEbghW4V.js:1
@@ -19885,10 +19785,8 @@ msgstr "Quantas notas uma atividade coleta."
 #. Description of the 'Students' (Int) field in DocType 'Bulk Course Enrollment
 #. Course'
 #: seminary/seminary/doctype/bulk_course_enrollment_course/bulk_course_enrollment_course.json
-#, fuzzy
-#| msgid "There are no students enrolled in this course."
 msgid "How many included students the plan expects in this course."
-msgstr "Não há estudantes matriculados neste curso."
+msgstr "Quantos alunos incluídos o plano prevê neste curso."
 
 #. Description of the 'Quantity Required' (Int) field in DocType 'Program Grad
 #. Req Items'
@@ -20562,6 +20460,8 @@ msgid ""
 "If you are the only active contact, staff will be asked to review the "
 "organization."
 msgstr ""
+"Se você for o único contato ativo, a equipe será solicitada a revisar a "
+"organização."
 
 #: frontend/src/components/Exam.vue:54
 msgid ""
@@ -20614,17 +20514,13 @@ msgstr "Nome do arquivo da imagem"
 
 #. Label of the image_focus_x (Float) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Image for LMS"
 msgid "Image Focus X"
-msgstr "Imagem para LMS"
+msgstr "Foco da Imagem X"
 
 #. Label of the image_focus_y (Float) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Image for LMS"
 msgid "Image Focus Y"
-msgstr "Imagem para LMS"
+msgstr "Foco da Imagem Y"
 
 #. Label of the image_match_html (HTML) field in DocType 'Person Import Batch'
 #: seminary/seminary/doctype/person_import_batch/person_import_batch.json
@@ -20633,10 +20529,8 @@ msgstr "Correspondência de imagem"
 
 #. Label of the image_zoom (Float) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Image"
 msgid "Image Zoom"
-msgstr "Imagem"
+msgstr "Zoom da Imagem"
 
 #. Label of the image_blurb (Attach Image) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
@@ -20897,7 +20791,7 @@ msgstr "Data do incidente"
 #: seminary/seminary/doctype/bulk_course_enrollment_course/bulk_course_enrollment_course.json
 #: seminary/seminary/doctype/bulk_course_enrollment_student/bulk_course_enrollment_student.json
 msgid "Include"
-msgstr ""
+msgstr "Incluir"
 
 #: seminary/seminary/report/program_enrollments_by_mentor/program_enrollments_by_mentor.js:41
 msgid "Include Closed Mentor Assignments"
@@ -20923,10 +20817,8 @@ msgstr "Incluir autoavaliação no veredito"
 
 #: frontend/src/pages/CbeOverview.vue:34
 #: seminary/public/frontend/assets/CbeOverview-C9YpWauo.js:1
-#, fuzzy
-#| msgid "Include Retired Courses"
 msgid "Include closed courses"
-msgstr "Incluir cursos descontinuados"
+msgstr "Incluir cursos encerrados"
 
 #. Description of the 'Phone for messaging students' (Data) field in DocType
 #. 'Instructor'
@@ -21045,7 +20937,7 @@ msgstr "Configuração Inicial do Seminário"
 
 #: frontend/src/components/DiscussionActivity.vue:233
 msgid "Initial post due {0}. Replies due {1}."
-msgstr ""
+msgstr "Postagem inicial até {0}. Respostas até {1}."
 
 #. Label of the initiative (Select) field in DocType 'Internship Supervisor
 #. Evaluation'
@@ -21374,7 +21266,7 @@ msgstr "Assinatura do instrutor"
 #. Settings'
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.json
 msgid "Instructor without a unit membership"
-msgstr ""
+msgstr "Instrutor sem vínculo com unidade"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.py:461
 msgid ""
@@ -21385,19 +21277,14 @@ msgstr ""
 "Categoria é necessária enquanto o HRMS Payroll está ativado."
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.py:517
-#, fuzzy
-#| msgid ""
-#| "Instructor {0} (row {1}) is a {2} by default. Only a Program Chair or "
-#| "Seminary Manager can list them as {3} on a section; ask them to change "
-#| "the default category on the Instructor record first."
 msgid ""
 "Instructor {0} (row {1}) is {2} by default. Only a Program Chair or Seminary "
 "Manager can list them as {3} on a section; ask them to set the default "
 "category on the Instructor record first."
 msgstr ""
-"O instrutor {0} (linha {1}) é {2} por padrão. Apenas um Coordenador de "
-"Programa ou um Gerente do Seminário pode listá-lo como {3} em uma turma; "
-"peça para alterarem primeiro a categoria padrão no registro do Instrutor."
+"O instrutor {0} (linha {1}) é {2} por padrão. Somente um Coordenador de "
+"Programa ou Gerente do Seminário pode listá-lo como {3} em uma turma; peça "
+"que ele defina primeiro a categoria padrão no registro do Instrutor."
 
 #: seminary/seminary/course_pack/import_.py:666
 msgid "Instructor {0} does not exist."
@@ -21433,7 +21320,7 @@ msgstr "Instrutores criam Incidente Disciplinar"
 #. Label of the intake_term (Link) field in DocType 'Bulk Course Enrollment'
 #: seminary/seminary/doctype/bulk_course_enrollment/bulk_course_enrollment.json
 msgid "Intake Term"
-msgstr ""
+msgstr "Período de Ingresso"
 
 #. Label of the integrations_section (Section Break) field in DocType 'Seminary
 #. Settings'
@@ -21734,10 +21621,8 @@ msgstr "Estágios"
 #: frontend/src/pages/CourseAssessment.vue:60
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Intervals"
 msgid "Interval"
-msgstr "Intervalos"
+msgstr "Intervalo"
 
 #. Label of the intervals (Table) field in DocType 'Grading Scale'
 #: seminary/seminary/doctype/grading_scale/grading_scale.json
@@ -21780,10 +21665,8 @@ msgstr "Status inválido."
 #. Package'
 #. Label of the inventory (Long Text) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Mentor"
 msgid "Inventory"
-msgstr "Mentor"
+msgstr "Inventário"
 
 #. Label of the invite_status (Select) field in DocType 'Chapel Team'
 #: seminary/seminary/doctype/chapel_team/chapel_team.json
@@ -22053,16 +21936,12 @@ msgid "Issues and Code"
 msgstr "Problemas e Código"
 
 #: seminary/seminary/cbe_reflection.py:447
-#, fuzzy
-#| msgid "Title cannot be empty."
 msgid "It cannot be deleted."
-msgstr "O título não pode estar vazio."
+msgstr "Não pode ser excluído."
 
 #: seminary/seminary/cbe_reflection.py:455
-#, fuzzy
-#| msgid "Title cannot be empty."
 msgid "It cannot be moved."
-msgstr "O título não pode estar vazio."
+msgstr "Não pode ser movido."
 
 #: frontend/src/components/Assignment.vue:357
 #: frontend/src/components/Exam.vue:62 frontend/src/components/Quiz.vue:81
@@ -22070,6 +21949,8 @@ msgstr "O título não pode estar vazio."
 #: seminary/public/frontend/assets/index-DxVrVxU-.js:3
 msgid "It is past the due date, so a late deduction may apply."
 msgstr ""
+"O prazo já foi ultrapassado, portanto pode ser aplicado um desconto por "
+"atraso."
 
 #: seminary/www/verify_address.py:48
 msgid ""
@@ -22099,7 +21980,7 @@ msgstr ""
 
 #: seminary/seminary/cbe_reflection.py:490
 msgid "Its reflection block cannot be removed or replaced."
-msgstr ""
+msgstr "Seu bloco de reflexão não pode ser removido nem substituído."
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -22168,6 +22049,9 @@ msgid ""
 "JSON map of member path -> {size, sha256, content_type}. This is the "
 "delivery allow-list; it is written once by the explode job and never edited."
 msgstr ""
+"Mapa JSON de caminho do membro -> {size, sha256, content_type}. Esta é a "
+"lista de permissões de entrega; ela é gravada uma única vez pela tarefa de "
+"descompactação e nunca é editada."
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -22342,30 +22226,24 @@ msgstr "Manter membros nela"
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.js:46
 #: seminary/seminary/report/students_at_attendance_risk/students_at_attendance_risk.js:63
 #: seminary/seminary/report/students_at_attendance_risk/students_at_attendance_risk.js:90
-#, fuzzy
-#| msgid "Projected Grade"
 msgid "Keep the Grade"
-msgstr "Avaliação Projetada"
+msgstr "Manter a Nota"
 
 #. Option for the 'Absence Decision' (Select) field in DocType 'Scheduled
 #. Course Roster'
 #: frontend/src/components/Modals/AbsenceDecisionModal.vue:47
 #: seminary/public/frontend/assets/AbsenceDecisionModal-BNL1gJVn.js:1
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid " to grade"
 msgid "Keep the grade"
-msgstr " para avaliar"
+msgstr "Manter a nota"
 
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.js:45
 msgid "Keep the grade despite absences"
-msgstr ""
+msgstr "Manter a nota apesar das faltas"
 
 #: seminary/seminary/report/students_at_attendance_risk/students_at_attendance_risk.js:89
-#, fuzzy
-#| msgid "Event created for {0} student(s)."
 msgid "Keep the grade for {0} student(s)"
-msgstr "Evento criado para {0} aluno(s)."
+msgstr "Manter a nota de {0} aluno(s)"
 
 #: frontend/src/pages/Fees.vue:59
 msgid "Keep: min GPA"
@@ -22379,7 +22257,7 @@ msgstr "Manter: créditos mínimos/período"
 #. Unit'
 #: seminary/seminary/doctype/academic_unit/academic_unit.json
 msgid "Kept by the Governance Record"
-msgstr ""
+msgstr "Mantido pelo Registro de Governança"
 
 #: frontend/src/pages/CourseStatus.vue:256
 #: seminary/public/frontend/assets/CourseStatus-D6p4olMW.js:1
@@ -22514,7 +22392,7 @@ msgstr ""
 #: frontend/src/pages/CbeOverview.vue:66
 #: seminary/public/frontend/assets/CbeOverview-C9YpWauo.js:1
 msgid "Lagging"
-msgstr ""
+msgstr "Atrasado"
 
 #. Label of the language (Link) field in DocType 'Bible API Language Default'
 #. Label of the language (Link) field in DocType 'Communication Log'
@@ -22567,16 +22445,12 @@ msgstr "Imagem de fundo/destaque grande para a página inicial."
 
 #. Label of the last_commit_on (Datetime) field in DocType 'SCORM Attempt'
 #: seminary/seminary/doctype/scorm_attempt/scorm_attempt.json
-#, fuzzy
-#| msgid "Committed On"
 msgid "Last Commit On"
-msgstr "Comprometido em"
+msgstr "Último commit em"
 
 #: seminary/partner/report/partner_organizations_without_contacts/partner_organizations_without_contacts.py:60
-#, fuzzy
-#| msgid "Contact Log"
 msgid "Last Contact Left"
-msgstr "Registro de Contatos"
+msgstr "Último contato restante"
 
 #. Description of the 'Leveling Profile' (Link) field in DocType 'Program
 #. Enrollment'
@@ -22629,10 +22503,8 @@ msgstr "Último Período Letivo iniciado"
 #: frontend/src/components/CourseStudentsTab.vue:49
 #: frontend/src/pages/CbeOverview.vue:65
 #: seminary/public/frontend/assets/CbeOverview-C9YpWauo.js:1
-#, fuzzy
-#| msgid "Last visit"
 msgid "Last activity"
-msgstr "Última visita"
+msgstr "Última atividade"
 
 #. Description of the 'Last Monthly Invoiced On' (Date) field in DocType
 #. 'Program Enrollment'
@@ -22653,10 +22525,8 @@ msgid "Last day to apply"
 msgstr "Último dia para aplicar"
 
 #: frontend/src/components/CourseStudentsTab.vue:53
-#, fuzzy
-#| msgid "Instructor Education"
 msgid "Last instructor interaction"
-msgstr "Educação do Instrutor"
+msgstr "Última interação do instrutor"
 
 #: frontend/src/pages/Community.vue:578 frontend/src/pages/PartnerPeople.vue:51
 #: seminary/public/frontend/assets/PartnerPeople-DtUCh_D8.js:1
@@ -22686,47 +22556,40 @@ msgstr "Última visita"
 #. Label of the late_deduction_card (Float) field in DocType 'Course Assess
 #. Results Detail'
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
-#, fuzzy
-#| msgid "Grade Description"
 msgid "Late Deduction"
-msgstr "Descrição de Nota"
+msgstr "Dedução por atraso"
 
 #. Label of the late_adjusted_card (Check) field in DocType 'Course Assess
 #. Results Detail'
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
-#, fuzzy
-#| msgid "Create an Instructor"
 msgid "Late Deduction Changed by Instructor"
-msgstr "Criar um Instrutor"
+msgstr "Dedução por atraso alterada pelo instrutor"
 
 #. Label of the late_policy_section (Section Break) field in DocType 'Course
 #. Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Submissions"
 msgid "Late Submissions"
-msgstr "Submissões"
+msgstr "Entregas com atraso"
 
 #: frontend/src/components/Modals/StudentDatesModal.vue:44
 #: frontend/src/pages/CourseAssessment.vue:215
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
 #: seminary/public/frontend/assets/Gradebook-ixXxSGD-.js:2
-#, fuzzy
-#| msgid "Student Education"
 msgid "Late deduction"
-msgstr "Educação do Estudante"
+msgstr "Dedução por atraso"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.py:599
-#, fuzzy
-#| msgid "Waitlisted Sections"
 msgid "Late deductions"
-msgstr "Turmas em lista de espera"
+msgstr "Deduções por atraso"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.py:594
 msgid ""
 "Late deductions need a points grading scale, and {0} is not one. Untick "
 "Deduct Points for Late Work, or change the grading scale."
 msgstr ""
+"As deduções por atraso exigem uma escala de notas em pontos, e {0} não é "
+"uma. Desmarque Deduzir pontos por trabalho atrasado ou altere a escala de "
+"notas."
 
 #. Description of the 'Lowest Possible Score (%)' (Percent) field in DocType
 #. 'Course Schedule'
@@ -22735,13 +22598,13 @@ msgid ""
 "Late deductions never bring a score below this. A score already below it is "
 "left as it is."
 msgstr ""
+"As deduções por atraso nunca reduzem a pontuação abaixo deste valor. Uma "
+"pontuação que já esteja abaixo dele permanece como está."
 
 #: frontend/src/pages/CourseAssessment.vue:566
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:4
-#, fuzzy
-#| msgid "Location saved."
 msgid "Late policy saved"
-msgstr "Localização salva."
+msgstr "Política de atraso salva."
 
 #. Label of the late_grade_nag_sent (Check) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -22781,10 +22644,8 @@ msgstr "Latitude"
 
 #. Label of the href (Data) field in DocType 'SCORM Package Item'
 #: seminary/seminary/doctype/scorm_package_item/scorm_package_item.json
-#, fuzzy
-#| msgid "Launch File"
 msgid "Launch href"
-msgstr "Arquivo de Lançamento"
+msgstr "Launch href"
 
 #. Label of the leader (Link) field in DocType 'Cohort'
 #: frontend/src/pages/StudentGroup.vue:227
@@ -22816,20 +22677,15 @@ msgid "Leaders may split / multiply a cohort of this type."
 msgstr "Líderes podem dividir/multiplicar uma coorte deste tipo."
 
 #: seminary/seminary/doctype/cohort_type/cohort_type.py:215
-#, fuzzy
-#| msgid ""
-#| "Leaders of this type must be alumni of the program or level it is bound "
-#| "to, and it is bound to neither. Name a {0} or a {1} above, or set Leader "
-#| "Eligibility to {2} if any graduate of this school may lead."
 msgid ""
 "Leaders of this type must be alumni of the program or tier it is bound to, "
 "and it is bound to neither. Name a {0} or a {1} above, or set Leader "
 "Eligibility to {2} if any graduate of this school may lead."
 msgstr ""
-"Os líderes deste tipo devem ser ex-alunos do programa ou nível ao qual ele "
-"está vinculado, e ele não está vinculado a nenhum. Indique um {0} ou um {1} "
-"acima, ou defina Elegibilidade do Líder como {2} se qualquer graduado desta "
-"escola puder liderar."
+"Os líderes deste tipo devem ser Alumni do programa ou do nível ao qual ele "
+"está vinculado, e ele não está vinculado a nenhum dos dois. Informe um {0} "
+"ou um {1} acima, ou defina a Elegibilidade de líder como {2} se qualquer "
+"graduado desta escola puder liderar."
 
 #. Label of the policy_section (Section Break) field in DocType 'Cohort Type'
 #: seminary/seminary/doctype/cohort_type/cohort_type.json
@@ -22855,7 +22711,7 @@ msgstr "Pacto de Aprendizagem"
 #: seminary/public/frontend/assets/MyOrganizationsPanel-CrHL_k29.js:1
 #: seminary/public/frontend/assets/PartnerProfile-B_rQ4UmZ.js:1
 msgid "Leave"
-msgstr ""
+msgstr "Sair"
 
 #. Label of the leave_policy_section (Section Break) field in DocType 'Program
 #. Level'
@@ -22895,6 +22751,9 @@ msgid ""
 "students between sections, add another row for the same course with another "
 "section and set this on the first."
 msgstr ""
+"Deixe em branco para colocar todos os alunos restantes nesta turma. Para "
+"dividir os alunos entre turmas, adicione outra linha para o mesmo curso com "
+"outra turma e defina isto na primeira."
 
 #. Description of the 'Send At' (Datetime) field in DocType 'Seminary
 #. Announcement'
@@ -22977,17 +22836,13 @@ msgstr "Deixe em branco para nenhum limite"
 
 #. Description of the 'To Book' (Select) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "Leave empty for no limit"
 msgid "Leave empty for the same book."
-msgstr "Deixe em branco para nenhum limite"
+msgstr "Deixe em branco para o mesmo livro."
 
 #. Description of the 'To Chapter' (Int) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "Leave empty for no limit"
 msgid "Leave empty for the same chapter."
-msgstr "Deixe em branco para nenhum limite"
+msgstr "Deixe em branco para o mesmo capítulo."
 
 #. Description of the 'Applies to Emphasis' (Link) field in DocType 'Program
 #. Grad Req Items'
@@ -23011,15 +22866,13 @@ msgstr ""
 
 #. Description of the 'To Verse' (Int) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
-#, fuzzy
-#| msgid "Drop here to move to the end of this chapter"
 msgid "Leave empty to read to the end of the chapter."
-msgstr "Solte aqui para mover para o final deste capítulo"
+msgstr "Deixe em branco para ler até o final do capítulo."
 
 #. Description of the 'From Verse' (Int) field in DocType 'Reading Plan Step'
 #: seminary/seminary/doctype/reading_plan_step/reading_plan_step.json
 msgid "Leave empty to start at the beginning of the chapter."
-msgstr ""
+msgstr "Deixe em branco para começar no início do capítulo."
 
 #. Option for the 'Status' (Select) field in DocType 'Program Enrollment'
 #. Label of a shortcut in the Registrar Workspace
@@ -23037,17 +22890,13 @@ msgstr "Deixe em “{0}” para seguir seu programa."
 #: frontend/src/pages/PartnerProfile.vue:116
 #: seminary/public/frontend/assets/MyOrganizationsPanel-CrHL_k29.js:1
 #: seminary/public/frontend/assets/PartnerProfile-B_rQ4UmZ.js:1
-#, fuzzy
-#| msgid "The organization"
 msgid "Leave organization"
-msgstr "A organização"
+msgstr "Sair da organização"
 
 #: frontend/src/pages/PartnerProfile.vue:91
 #: seminary/public/frontend/assets/PartnerProfile-B_rQ4UmZ.js:1
-#, fuzzy
-#| msgid "Role at organization"
 msgid "Leave this organization"
-msgstr "Função na organização"
+msgstr "Sair desta organização"
 
 #. Label of the leaving_certificate_number (Data) field in DocType 'Student
 #. Leaving Record'
@@ -23145,7 +22994,7 @@ msgstr "Menor que"
 
 #: seminary/seminary/financial/funding.py:103
 msgid "Less institutional scholarships"
-msgstr ""
+msgstr "Menos bolsas de estudo institucionais"
 
 #. Option for the 'Operator' (Select) field in DocType 'Communication Trigger
 #. Condition'
@@ -23407,10 +23256,8 @@ msgstr "Níveis"
 
 #: frontend/src/pages/ReadingPlans.vue:24
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Library Item"
 msgid "Library"
-msgstr "Item de Biblioteca"
+msgstr "Biblioteca"
 
 #. Label of the grad_requirement_item (Link) field in DocType 'Student
 #. Graduation Requirement'
@@ -23682,10 +23529,8 @@ msgid "Listed"
 msgstr "Listada"
 
 #: seminary/partner/report/partner_organizations_without_contacts/partner_organizations_without_contacts.py:41
-#, fuzzy
-#| msgid "Grading Status"
 msgid "Listing Status"
-msgstr "Status da Avaliação"
+msgstr "Status da Listagem"
 
 #: frontend/src/pages/Assignments.vue:56
 #: frontend/src/pages/DiscussionActivities.vue:75
@@ -24005,16 +23850,14 @@ msgid "Longitude"
 msgstr "Longitude"
 
 #: seminary/seminary/cbe_reflection.py:125
-#, fuzzy
-#| msgid "Start of course and end of each competency"
 msgid "Look back on the whole course: where are you now on each competency?"
-msgstr "Início da disciplina e fim de cada competência"
+msgstr ""
+"Reveja o curso inteiro: em que ponto você está agora em cada competência?"
 
 #: seminary/seminary/cbe_reflection.py:124
-#, fuzzy
-#| msgid "Look back over each competency and say where you are now."
 msgid "Look back on this competency: where are you now, and what shows it?"
-msgstr "Revise cada competência e diga onde você está agora."
+msgstr ""
+"Reveja esta competência: em que ponto você está agora e o que demonstra isso?"
 
 #. Label of the reflection (Text Editor) field in DocType 'Personal Development
 #. Plan'
@@ -24057,21 +23900,17 @@ msgstr "Mais baixo"
 
 #. Label of the late_floor (Percent) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
-#, fuzzy
-#| msgid "Max Possible Score"
 msgid "Lowest Possible Score (%)"
-msgstr "Pontuação Máxima Possível"
+msgstr "Menor Pontuação Possível (%)"
 
 #: seminary/seminary/doctype/course_schedule/course_schedule.py:602
 msgid "Lowest Possible Score must be between 0 and 100."
-msgstr ""
+msgstr "A Menor Pontuação Possível deve estar entre 0 e 100."
 
 #: frontend/src/pages/CourseAssessment.vue:63
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:5
-#, fuzzy
-#| msgid "Max Possible Score"
 msgid "Lowest possible score (%)"
-msgstr "Pontuação Máxima Possível"
+msgstr "Menor pontuação possível (%)"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -24105,10 +23944,8 @@ msgstr "Feito"
 
 #: frontend/src/pages/Inbox.vue:20
 #: seminary/public/frontend/assets/Inbox-Bb2t9e2m.js:1
-#, fuzzy
-#| msgid "Mailing Labels"
 msgid "Mailboxes"
-msgstr "Etiquetas de Correspondência"
+msgstr "Caixas de Correio"
 
 #. Label of the mailing_address_section (Section Break) field in DocType
 #. 'Alumni Profile'
@@ -24199,17 +24036,13 @@ msgstr "Gerenciar Pastas do Curso"
 
 #: frontend/src/components/MyOrganizationsPanel.vue:63
 #: seminary/public/frontend/assets/MyOrganizationsPanel-CrHL_k29.js:1
-#, fuzzy
-#| msgid "The organization"
 msgid "Manage organization"
-msgstr "A organização"
+msgstr "Gerenciar organização"
 
 #: frontend/src/pages/AlumniProfile.vue:69
 #: seminary/public/frontend/assets/AlumniProfile-DEbghW4V.js:1
-#, fuzzy
-#| msgid "My Organizations"
 msgid "Manage these in My Organizations"
-msgstr "Minhas Organizações"
+msgstr "Gerencie-as em Minhas Organizações"
 
 #. Label of the mandatory (Check) field in DocType 'Internship Requirement'
 #. Label of the mandatory (Check) field in DocType 'Internship Requirement
@@ -24300,10 +24133,8 @@ msgstr "Obrigatório?"
 #. Label of the manifest_section (Section Break) field in DocType 'SCORM
 #. Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Manifest File"
 msgid "Manifest"
-msgstr "Arquivo Manifesto"
+msgstr "Manifesto"
 
 #. Option for the 'Delivery Method' (Select) field in DocType 'Recommendation
 #. Letter'
@@ -24420,28 +24251,22 @@ msgstr "Marcar como Alumni"
 
 #: frontend/src/pages/ReadingPlans.vue:130
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Mark all read"
 msgid "Mark as Read"
-msgstr "Marcar tudo como lido"
+msgstr "Marcar como Lido"
 
 #: frontend/src/pages/ReadingPlans.vue:65
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Mark all read"
 msgid "Mark as read"
-msgstr "Marcar tudo como lido"
+msgstr "Marcar como lido"
 
 #: frontend/src/pages/ReadingPlans.vue:65
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Mark all read"
 msgid "Mark as unread"
-msgstr "Marcar tudo como lido"
+msgstr "Marcar como não lido"
 
 #: seminary/install.py:1528
 msgid "Mark in 16 days"
-msgstr ""
+msgstr "Marcar em 16 dias"
 
 #: frontend/src/components/CourseCardOverlay.vue:55
 #: frontend/src/components/CourseCardOverlay.vue:185
@@ -24469,10 +24294,8 @@ msgstr "Marcado como ativo, mas a data de término já passou"
 
 #: frontend/src/components/CompetencyReview.vue:26
 #: seminary/public/frontend/assets/CompetencyReview-Bt8S31Ro.js:2
-#, fuzzy
-#| msgid "Mark Verified"
 msgid "Marker legend"
-msgstr "Marcar como Verificado"
+msgstr "Legenda dos marcadores"
 
 #: seminary/seminary/doctype/student_attendance_tool/student_attendance_tool.js:131
 msgid "Marking attendance"
@@ -24575,8 +24398,6 @@ msgstr ""
 #. Option for the 'Tier' (Select) field in DocType 'Program Level'
 #: seminary/seminary/doctype/cohort_type/cohort_type.json
 #: seminary/seminary/doctype/program_level/program_level.json
-#, fuzzy
-#| msgid "Master"
 msgid "Master's"
 msgstr "Mestrado"
 
@@ -24640,7 +24461,7 @@ msgstr ""
 
 #: seminary/install.py:1541
 msgid "Matthew 5 to 7, in six readings."
-msgstr ""
+msgstr "Mateus 5 a 7, em seis leituras."
 
 #. Label of the max_absences_custom (Int) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -25195,10 +25016,8 @@ msgstr "Unidade Mentora"
 #: frontend/src/components/ReflectionBlock.vue:20
 #: frontend/src/components/SelfAssessmentPanel.vue:14
 #: seminary/public/frontend/assets/CourseOutline-BYJPvCGu.js:1
-#, fuzzy
-#| msgid "Mentor Feedback"
 msgid "Mentor feedback"
-msgstr "Feedback do Mentor"
+msgstr "Feedback do mentor"
 
 #. Option for the 'Type' (Select) field in DocType 'Academic Unit'
 #: seminary/seminary/doctype/academic_unit/academic_unit.json
@@ -25229,10 +25048,8 @@ msgstr ""
 "uma Data Até em vez de excluí-la para manter o histórico."
 
 #: frontend/src/pages/Community.vue:349
-#, fuzzy
-#| msgid "Never in this cohort type"
 msgid "Mentors in this cohort"
-msgstr "Nunca neste tipo de coorte"
+msgstr "Mentores nesta turma"
 
 #. Description of the 'Cohort Type' (Link) field in DocType 'Competency
 #. Framework Evaluator'
