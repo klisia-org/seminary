@@ -367,6 +367,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import {
 	Badge,
 	Button,
@@ -451,7 +452,7 @@ const myDates = createResource({
 	auto: true,
 	onError: () => { },
 })
-const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 
 // Check if this discussion is linked to a grading criteria
 const gradingCriteriaResource = createResource({

@@ -458,6 +458,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Button, Dialog, FileUploader, FormControl, LoadingIndicator, call, createResource, toast } from 'frappe-ui'
 import { computed, inject, reactive, ref, watch } from 'vue'
@@ -541,7 +542,7 @@ const gradReqIsFree = computed(() => !!audit.data?.graduation_request?.is_free)
 
 function formatCurrency(value) {
   const n = Number(value || 0)
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return n.toLocaleString(userLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const creditPercent = computed(() => {

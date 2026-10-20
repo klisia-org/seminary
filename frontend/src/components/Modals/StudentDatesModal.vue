@@ -65,6 +65,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 // The gradebook cell menu: one student's dates on one assessment, and the late
 // deduction on their grade (decisions/082 section 7).
 import { computed, reactive, ref } from 'vue'
@@ -89,7 +90,7 @@ const title = computed(() =>
 	student.value ? `${student.value.stuname_roster} · ${assessment.value?.title || ''}` : ''
 )
 
-const fmt = (value) => (value ? new Date(value).toLocaleString() : __('none'))
+const fmt = (value) => (value ? new Date(value).toLocaleString(userLocale()) : __('none'))
 
 const errorText = (e, fallback) =>
 	(Array.isArray(e?.messages) && e.messages.length ? e.messages.join('\n') : e?.message) || fallback

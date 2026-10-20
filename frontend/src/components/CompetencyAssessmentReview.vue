@@ -103,6 +103,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import { LoadingIndicator, TabButtons, Tooltip, createResource } from 'frappe-ui'
 import { computed, ref } from 'vue'
 
@@ -181,7 +182,7 @@ const submissionRoute = (s) => {
 
 // Frappe sends "YYYY-MM-DD HH:mm:ss", which Safari will not parse without the T.
 const formatDate = (value) =>
-	new Date(String(value).replace(' ', 'T')).toLocaleString(undefined, {
+	new Date(String(value).replace(' ', 'T')).toLocaleString(userLocale(), {
 		month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
 	})
 </script>

@@ -145,6 +145,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -259,7 +260,7 @@ function confirmWithdraw(a) {
 
 function formatDate(value) {
 	if (!value) return ''
-	return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+	return new Date(value).toLocaleDateString(userLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 </script>
 

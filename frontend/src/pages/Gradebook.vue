@@ -209,6 +209,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import AbsenceDecisionModal from '@/components/Modals/AbsenceDecisionModal.vue'
 import StudentDatesModal from '@/components/Modals/StudentDatesModal.vue'
@@ -623,7 +624,7 @@ const formatDueDate = (dateString) => {
   if (isNaN(date)) return ''; // Handle invalid dates
 
   // Format the date to show only day and month
-  return new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' }).format(date);
+  return new Intl.DateTimeFormat(userLocale(), { day: '2-digit', month: 'short' }).format(date);
 };
 
 const breadcrumbs = computed(() => {

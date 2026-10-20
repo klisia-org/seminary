@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.language import language_candidates
+
 
 class CommunicationTemplate(Document):
     def validate(self):
@@ -20,13 +22,14 @@ class CommunicationTemplate(Document):
             seen.add(key)
 
     def get_version(self, channel, language=None):
-        """Fallback chain: (channel, language) -> (channel, blank) -> first
-        version for the channel. Returns the child row or None."""
+        """Fallback chain: (channel, language) -> (channel, parent language,
+        e.g. pt for pt-BR) -> (channel, blank) -> first version for the channel.
+        Returns the child row or None."""
         rows = [r for r in self.versions if r.channel == channel]
-        if language:
-            exact = next((r for r in rows if r.language == language), None)
-            if exact:
-                return exact
+        for lang in language_candidates(language):
+            match = next((r for r in rows if r.language == lang), None)
+            if match:
+                return match
         blank = next((r for r in rows if not r.language), None)
         if blank:
             return blank

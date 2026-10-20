@@ -30,9 +30,9 @@
 						:class="{ 'portal-switcher__item--current': isCurrent(portal) }"
 						@click="close"
 					>
-						<span class="portal-switcher__item-label">{{ portal.label }}</span>
+						<span class="portal-switcher__item-label">{{ __(portal.label) }}</span>
 						<span v-if="portal.description" class="portal-switcher__item-desc">
-							{{ portal.description }}
+							{{ __(portal.description) }}
 						</span>
 					</a>
 				</li>
@@ -43,6 +43,7 @@
 
 <script setup>
 import { ref, reactive, nextTick, onBeforeUnmount } from 'vue'
+import { __ } from '../translation.js'
 
 defineProps({
 	portals: { type: Array, required: true },
@@ -52,7 +53,6 @@ const triggerEl = ref(null)
 const menuEl = ref(null)
 const open = ref(false)
 const menuStyle = reactive({ display: 'none' })
-const __ = (s) => s
 
 const MENU_WIDTH = 240
 const MENU_HEIGHT = 240

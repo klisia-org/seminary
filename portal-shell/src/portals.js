@@ -21,17 +21,21 @@
  * pointed at a 404 on a site without koinonia, because an uninstalled app
  * is an absent route, not a permissions question.
  */
+// Marks labels for extraction into the POT; PortalSwitcher translates them at render,
+// once the catalogue has loaded (aretenic decision 071).
+const __ = (s) => s
+
 export const SEMINARY_PORTALS = [
   {
     id: 'student',
-    label: 'Academics',
-    description: 'Academic Portal',
+    label: __('Academics'),
+    description: __('Academic Portal'),
     url: '/seminary',
   },
   {
     id: 'aretenic',
-    label: 'Aretenic',
-    description: 'Quality Management',
+    label: __('Aretenic'),
+    description: __('Quality Management'),
     url: '/aretenic',
     // Roles per ADR 034's taxonomy. 'Academics User' was renamed to
     // 'Program Chair'; gating on the old name silently hid this tile from every
@@ -41,8 +45,8 @@ export const SEMINARY_PORTALS = [
   },
   {
     id: 'donor',
-    label: 'Donate',
-    description: 'Donor Portal',
+    label: __('Donate'),
+    description: __('Donor Portal'),
     url: '/donate/donorportal',
     // No role gate — anyone may donate.
     when: (s) => !!s?.has_giving,
@@ -51,8 +55,8 @@ export const SEMINARY_PORTALS = [
     // koinonia 0007b §1: the relationship manager's workspace. The Seminary
     // Manager opens it read-only.
     id: 'advancement',
-    label: 'Advancement',
-    description: 'Donor Relationships',
+    label: __('Advancement'),
+    description: __('Donor Relationships'),
     url: '/donate/advancement',
     roles: ['Advancement Officer', 'Seminary Manager', 'Advancement Principal'],
     when: (s) => !!s?.has_giving,

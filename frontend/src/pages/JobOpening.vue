@@ -174,6 +174,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { computed } from 'vue'
@@ -216,7 +217,7 @@ function apply() {
 
 function formatDate(value) {
 	if (!value) return ''
-	return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+	return new Date(value).toLocaleDateString(userLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const breadcrumbs = computed(() => [

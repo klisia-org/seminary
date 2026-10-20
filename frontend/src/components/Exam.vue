@@ -182,6 +182,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import { Button, call, createResource, toast } from 'frappe-ui'
 import { ref, watch, inject, computed, toRaw, onMounted, onBeforeUnmount } from 'vue'
 import { SquarePen } from 'lucide-vue-next'
@@ -373,7 +374,7 @@ const myDates = createResource({
 })
 const examLimit = ref(0)
 const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
-const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 const currentLimit = () => {
   const own = exam.data?.duration ? (exam.data.duration + (myDates.data?.extra_minutes || 0)) * 60 : 0
   if (!myDates.data?.cutoff_date) return own

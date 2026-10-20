@@ -1,5 +1,4 @@
 import { toast, createResource } from 'frappe-ui'
-import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
@@ -24,6 +23,7 @@ import Table from '@editorjs/table'
 import { FolderTool } from '@/utils/foldertool'
 import { IframeEmbed } from '@/utils/iframetool'
 import { VideoRecord } from '@/utils/videorecord'
+import { userLocale } from '@seminary/portal-shell'
 
 export function createToast(options = {}) {
 	// frappe-ui's `toast` is an object (toast.create/success/error/…), not a
@@ -43,8 +43,10 @@ export function createToast(options = {}) {
 	})
 }
 
+// dayjs rather than VueUse's useTimeAgo, whose wording is English-only; dayjs carries the
+// user's locale (decision 071).
 export function timeAgo(date) {
-	return useTimeAgo(date).value
+	return date ? dayjs(date).fromNow() : ''
 }
 
 export function formatTime(timeString) {
@@ -54,18 +56,17 @@ export function formatTime(timeString) {
 	// Create a Date object with dummy values for day, month, and year
 	const dummyDate = new Date(0, 0, 0, hour, minute)
 
-	// Use Intl.DateTimeFormat to format the time in 12-hour format
-	const formattedTime = new Intl.DateTimeFormat('en-US', {
+	// The user's language picks the clock: 12-hour in English, 24-hour in es/pt (decision 071).
+	const formattedTime = new Intl.DateTimeFormat(userLocale(), {
 		hour: 'numeric',
 		minute: 'numeric',
-		hour12: true,
 	}).format(dummyDate)
 
 	return formattedTime
 }
 
 export function formatNumber(number) {
-	return number.toLocaleString('en-IN', {
+	return number.toLocaleString(userLocale(), {
 		maximumFractionDigits: 0,
 	})
 }
@@ -157,7 +158,7 @@ export function validateFileSize(file, { allowDirect = false } = {}) {
 
 export function formatNumberIntoCurrency(number, currency) {
 	if (number) {
-		return number.toLocaleString('en-IN', {
+		return number.toLocaleString(userLocale(), {
 			maximumFractionDigits: 0,
 			style: 'currency',
 			currency: currency,
