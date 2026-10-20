@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "hash",
  "creation": "2026-09-20 10:00:00.000000",
- "description": "One SCORM package that has been unpacked into object storage. Its inventory is the allow-list delivery serves from: a member the package did not declare cannot be requested. See privatedocs/p009.",
+ "description": "One SCORM package that has been unpacked into object storage. Its inventory is the allow-list delivery serves from: a member the package did not declare cannot be requested.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",

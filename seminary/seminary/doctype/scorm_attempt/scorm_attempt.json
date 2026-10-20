@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "hash",
  "creation": "2026-09-20 10:00:00.000000",
- "description": "One student's runtime state for one SCO. Written only by the SCORM commit endpoint, and validated by the controller so no write path can skip the bounds. See privatedocs/p009 section 2.9.",
+ "description": "One student's runtime state for one SCO. Written only by the SCORM commit endpoint, and validated by the controller so no write path can skip the bounds.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
