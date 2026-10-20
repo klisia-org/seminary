@@ -4,7 +4,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: support@seminaryerp.org\n"
 "POT-Creation-Date: 2026-10-19 19:27-0609\n"
 "PO-Revision-Date: 2026-10-20 15:46+0000\n"
-"Last-Translator: Anthropic <noreply-mt-anthropic@weblate.org>\n"
+"Last-Translator: Murilo Melo <murilomelo@gmail.com>\n"
 "Language-Team: Portuguese <https://translate.seminaryerp.org/projects/klisia/"
 "seminary/pt/>\n"
 "Language: pt\n"
@@ -759,10 +759,8 @@ msgstr ""
 "intervalo para definir seus níveis de proficiência."
 
 #: seminary/seminary/course_pack/import_.py:761
-#, fuzzy
-#| msgid "Course Pack (.zip)"
 msgid "A Course Pack is a .zip file."
-msgstr "Pacote do Curso (.zip)"
+msgstr "Um Pacote de Curso é um arquivo .zip."
 
 #: seminary/seminary/course_pack/import_.py:249
 msgid "A Course named '{0}' already existed; imported as '{1}'."
@@ -806,7 +804,7 @@ msgstr ""
 
 #: seminary/seminary/api.py:4803
 msgid "A SCORM package must be a .zip file."
-msgstr ""
+msgstr "Um pacote SCORM deve ser um arquivo .zip."
 
 #: seminary/seminary/doctype/course_enrollment_individual/course_enrollment_individual.py:385
 msgid "A Sales Invoice already exists for this enrollment: {0}"
@@ -853,15 +851,11 @@ msgstr ""
 
 #. Description of a DocType
 #: seminary/seminary/doctype/course_folder_share/course_folder_share.json
-#, fuzzy
-#| msgid ""
-#| "A catalogue Course whose enrolled students may read the parent Course "
-#| "Folder (p006 F2, ADR 2.2a)."
 msgid ""
 "A catalogue Course whose enrolled students may read the parent Course Folder."
 msgstr ""
-"Uma Disciplina de catálogo cujos estudantes matriculados podem ler a Pasta "
-"da Disciplina pai (p006 F2, ADR 2.2a)."
+"Um Curso do catálogo cujos alunos matriculados podem ler a Pasta de Curso "
+"principal."
 
 #. Description of a DocType
 #: seminary/partner/doctype/partner_type/partner_type.json
@@ -876,12 +870,6 @@ msgstr ""
 
 #. Description of a DocType
 #: seminary/seminary/doctype/program_level/program_level.json
-#, fuzzy
-#| msgid ""
-#| "A category that groups programs by type (for example degree, certificate, "
-#| "or continuing education) and sets shared rules such as whether the level "
-#| "is ongoing, leave-of-absence billing suspension, and readmission fees. "
-#| "Pick a level on each program to apply these rules."
 msgid ""
 "A category that groups programs by type (for example a Master of Divinity, a "
 "certificate, or continuing education) and sets shared rules such as whether "
@@ -889,10 +877,12 @@ msgid ""
 "fees. Pick a level on each program to apply these rules. The levels the "
 "system provides cannot be renamed or deleted; a school may add its own."
 msgstr ""
-"Uma categoria que agrupa programas por tipo (por exemplo, graduação, "
-"certificado ou educação continuada) e define regras compartilhadas, como se "
-"o nível é contínuo, suspensão de cobrança por afastamento e taxas de "
-"readmissão. Selecione um nível em cada programa para aplicar essas regras."
+"Uma categoria que agrupa programas por tipo (por exemplo, um Mestrado em "
+"Divindade, um certificado ou educação continuada) e define regras "
+"compartilhadas, como se o nível é contínuo, a suspensão da cobrança durante "
+"a licença e as taxas de readmissão. Escolha um nível em cada programa para "
+"aplicar essas regras. Os níveis fornecidos pelo sistema não podem ser "
+"renomeados nem excluídos; a escola pode adicionar os seus próprios."
 
 #. Description of the 'Daily Lookup Limit' (Int) field in DocType 'Address
 #. Geocoding Settings'
@@ -957,42 +947,40 @@ msgid ""
 "A cohort has started this plan, so its readings are fixed. You can still "
 "edit the messages, or duplicate the plan to change the readings."
 msgstr ""
+"Uma turma iniciou este plano, portanto suas leituras estão fixas. Você ainda "
+"pode editar as mensagens ou duplicar o plano para alterar as leituras."
 
 #: seminary/seminary/discipleship/reading_plans.py:205
 msgid ""
 "A cohort has started this plan, so its readings can no longer change. You "
 "can still edit the messages, or duplicate the plan to change the readings."
 msgstr ""
+"Uma turma iniciou este plano, portanto suas leituras não podem mais ser "
+"alteradas. Você ainda pode editar as mensagens ou duplicar o plano para "
+"alterar as leituras."
 
 #: seminary/seminary/discipleship/reading_plans.py:259
 msgid "A cohort has used this plan, so it cannot be deleted."
-msgstr ""
+msgstr "Uma turma usou este plano, portanto ele não pode ser excluído."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/cohort_reading_plan/cohort_reading_plan.json
 msgid "A cohort reading a plan together on the days it chose."
-msgstr ""
+msgstr "Uma turma lendo um plano em conjunto nos dias que escolheu."
 
 #: seminary/seminary/doctype/cohort_type/cohort_type.py:159
-#, fuzzy
-#| msgid ""
-#| "A cohort type binds to a Program or to a Program Level, not to both -- "
-#| "two bindings is two answers to the question of who belongs here. Clear "
-#| "one."
 msgid ""
 "A cohort type binds to a Program or to a Program Tier, not to both -- two "
 "bindings is two answers to the question of who belongs here. Clear one."
 msgstr ""
-"Um tipo de coorte vincula-se a um Programa ou a um Nível de Programa, não a "
-"ambos — dois vínculos são duas respostas à pergunta sobre quem pertence "
-"aqui. Limpe um deles."
+"Um tipo de coorte se vincula a um Programa ou a um Nível de Programa, não a "
+"ambos -- dois vínculos são duas respostas para a pergunta de quem pertence "
+"aqui. Remova um deles."
 
 #: frontend/src/pages/Community.vue:1260
 #: seminary/public/frontend/assets/Community-Cd8kp7Q3.js:4
-#, fuzzy
-#| msgid "A channel and some content are required."
 msgid "A cohort, a channel and some content are required."
-msgstr "Um canal e algum conteúdo são obrigatórios."
+msgstr "Uma coorte, um canal e algum conteúdo são obrigatórios."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/course_competency/course_competency.json
@@ -1140,7 +1128,7 @@ msgstr ""
 
 #: frontend/src/components/FolderBlock.vue:308
 msgid "A download is already being prepared. Please try again shortly."
-msgstr ""
+msgstr "Um download já está sendo preparado. Tente novamente em breve."
 
 #. Description of a DocType
 #: seminary/partner/doctype/internship_type_advisor_slot/internship_type_advisor_slot.json
@@ -1343,7 +1331,7 @@ msgstr ""
 #. Description of a DocType
 #: seminary/seminary/doctype/reading_plan_progress/reading_plan_progress.json
 msgid "A member marked a step of a cohort's reading plan as read."
-msgstr ""
+msgstr "Um membro marcou uma etapa do plano de leitura de uma coorte como lida."
 
 #: seminary/seminary/page/cohort_planner/cohort_planner.js:325
 msgid ""
@@ -1435,6 +1423,8 @@ msgid ""
 "A passing score from this SCO is written to the criterion below. A grade you "
 "enter by hand replaces it and is never overwritten."
 msgstr ""
+"Uma nota de aprovação deste SCO é gravada no critério abaixo. Uma nota que "
+"você inserir manualmente a substitui e nunca é sobrescrita."
 
 #: seminary/seminary/api.py:1726
 msgid ""
@@ -1446,7 +1436,7 @@ msgstr ""
 
 #: seminary/seminary/report/sources_of_funding/sources_of_funding.js:11
 msgid "A period beside a year earlier"
-msgstr ""
+msgstr "Um período ao lado de um ano antes"
 
 #. Description of a DocType
 #: seminary/seminary/doctype/student/student.json
@@ -1667,11 +1657,11 @@ msgstr ""
 #: seminary/seminary/discipleship/reading_plan_pack.py:153
 #: seminary/seminary/discipleship/reading_plans.py:183
 msgid "A reading plan can have at most {0} steps."
-msgstr ""
+msgstr "Um plano de leitura pode ter no máximo {0} etapas."
 
 #: seminary/seminary/discipleship/reading_plan_pack.py:109
 msgid "A reading plan pack is a .zip file."
-msgstr ""
+msgstr "Um pacote de plano de leitura é um arquivo .zip."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/reading_plan/reading_plan.json
@@ -1679,6 +1669,8 @@ msgid ""
 "A reading plan with no dates of its own. A cohort runs it on the days it "
 "chooses."
 msgstr ""
+"Um plano de leitura sem datas próprias. Uma turma o executa nos dias que "
+"escolher."
 
 #: seminary/seminary/graduation.py:1163
 msgid "A recommendation letter already exists for this slot."
@@ -1998,10 +1990,11 @@ msgstr ""
 #: seminary/seminary/discipleship/reading_plans.py:178
 msgid "A standard reading plan cannot be changed. Duplicate it instead."
 msgstr ""
+"Um plano de leitura padrão não pode ser alterado. Duplique-o em vez disso."
 
 #: seminary/seminary/discipleship/reading_plans.py:257
 msgid "A standard reading plan cannot be deleted."
-msgstr ""
+msgstr "Um plano de leitura padrão não pode ser excluído."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/doctrinal_statement/doctrinal_statement.json
@@ -2224,10 +2217,8 @@ msgstr ""
 
 #: frontend/src/pages/ReadingPlans.vue:520
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Job title is required."
 msgid "A title is required."
-msgstr "Título da vaga é obrigatório."
+msgstr "É necessário informar um título."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/cohort_post_topic/cohort_post_topic.json
@@ -2383,31 +2374,22 @@ msgid "A {0} assessment for this competency already exists ({1})."
 msgstr "Uma avaliação de {0} para esta competência já existe ({1})."
 
 #: seminary/seminary/doctype/cohort_type/cohort_type.py:172
-#, fuzzy
-#| msgid ""
-#| "A {0} cohort advances its members together, so it must name the Program "
-#| "they advance through. Program Level is not enough -- programs at one "
-#| "level keep their own schedules."
 msgid ""
 "A {0} cohort advances its members together, so it must name the Program they "
 "advance through. Program Tier is not enough -- programs of one tier keep "
 "their own schedules."
 msgstr ""
-"Uma coorte de {0} avança seus membros em conjunto, portanto deve indicar o "
-"Programa pelo qual avançam. O Nível de Programa não é suficiente — programas "
+"Uma coorte {0} avança seus membros em conjunto, portanto deve indicar o "
+"Programa pelo qual avançam. O Nível do Programa não é suficiente — programas "
 "em um mesmo nível mantêm seus próprios cronogramas."
 
 #: seminary/seminary/doctype/cohort_type/cohort_type.py:195
-#, fuzzy
-#| msgid ""
-#| "A {0} cohort runs from enrollment to graduation, so it must name the "
-#| "Program or the Program Level it runs alongside."
 msgid ""
 "A {0} cohort runs from enrollment to graduation, so it must name the Program "
 "or the Program Tier it runs alongside."
 msgstr ""
-"Uma coorte de {0} vai da matrícula até a conclusão, portanto deve indicar o "
-"Programa ou o Nível de Programa ao qual corre paralela."
+"Uma coorte {0} vai da matrícula até a conclusão, portanto deve indicar o "
+"Programa ou o Nível do Programa ao qual está associada."
 
 #: seminary/seminary/doctype/course_folder/course_folder.py:684
 msgid "A {0} folder named '{1}' already exists here ({2})."
@@ -2567,34 +2549,26 @@ msgstr "Cerca de {0} minutos."
 #. Label of the absence_decided_by (Link) field in DocType 'Scheduled Course
 #. Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid "Decided By"
 msgid "Absence Decided By"
-msgstr "Decidido por"
+msgstr "Ausência decidida por"
 
 #. Label of the absence_decided_on (Datetime) field in DocType 'Scheduled
 #. Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid "Decided On"
 msgid "Absence Decided On"
-msgstr "Decidido em"
+msgstr "Ausência decidida em"
 
 #. Label of the absence_decision (Select) field in DocType 'Scheduled Course
 #. Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid "Absence Limit"
 msgid "Absence Decision"
-msgstr "Limite de ausências"
+msgstr "Decisão sobre ausência"
 
 #. Label of the absence_decision_reason (Small Text) field in DocType
 #. 'Scheduled Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
-#, fuzzy
-#| msgid "Cancellation Reason"
 msgid "Absence Decision Reason"
-msgstr "Motivo do cancelamento"
+msgstr "Motivo da decisão sobre a ausência"
 
 #. Label of the absence_limit (Int) field in DocType 'Scheduled Course Roster'
 #: seminary/seminary/doctype/scheduled_course_roster/scheduled_course_roster.json
@@ -2619,10 +2593,8 @@ msgstr ""
 "Comparado ao limite de ausências."
 
 #: seminary/seminary/absence_decisions.py:58
-#, fuzzy
-#| msgid "Absence Limit"
 msgid "Absences over the limit"
-msgstr "Limite de ausências"
+msgstr "Ausências acima do limite"
 
 #: frontend/src/pages/CourseStatus.vue:55
 #: seminary/public/frontend/assets/CourseStatus-D6p4olMW.js:1
@@ -2713,10 +2685,8 @@ msgid "Academic Organization"
 msgstr "Organização Acadêmica"
 
 #: portal-shell/src/portals.js:32
-#, fuzzy
-#| msgid "Academic Term"
 msgid "Academic Portal"
-msgstr "Semestre Acadêmico"
+msgstr "Portal Acadêmico"
 
 #. Label of the academic_processed_by (Link) field in DocType 'Withdrawal
 #. Request'
@@ -2877,10 +2847,8 @@ msgid "Academic Unit Membership"
 msgstr "Vínculo à Unidade Acadêmica"
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.py:134
-#, fuzzy
-#| msgid "Academic Unit Constituent"
 msgid "Academic Unit scope is not restricting much"
-msgstr "Integrante da Unidade Acadêmica"
+msgstr "O escopo da Unidade Acadêmica não está restringindo muito"
 
 #. Label of the academic_year (Link) field in DocType 'Alumni Graduation'
 #. Label of the academic_year (Link) field in DocType 'Academic Term'
@@ -2945,10 +2913,8 @@ msgstr ""
 
 #. Label of a Sidebar Item
 #: seminary/seminary/sidebar/seminary_registrar/seminary_registrar.json
-#, fuzzy
-#| msgid "Academic Processed By"
 msgid "Academic progress"
-msgstr "Processado Acadêmico por"
+msgstr "Progresso acadêmico"
 
 #. Description of the 'Requires Instructor' (Check) field in DocType 'Faculty
 #. Capability'
@@ -4294,10 +4260,8 @@ msgstr "Todos os canais"
 
 #: frontend/src/pages/CbeOverview.vue:184
 #: seminary/public/frontend/assets/CbeOverview-C9YpWauo.js:1
-#, fuzzy
-#| msgid "All courses"
 msgid "All cohorts"
-msgstr "Todas as disciplinas"
+msgstr "Todas as coortes"
 
 #: frontend/src/pages/CbeOverview.vue:189
 #: seminary/public/frontend/assets/CbeOverview-C9YpWauo.js:1
@@ -7020,17 +6984,12 @@ msgstr "Erro de faturamento"
 
 #. Description of the 'Program Tier' (Select) field in DocType 'Cohort Type'
 #: seminary/seminary/doctype/cohort_type/cohort_type.json
-#, fuzzy
-#| msgid ""
-#| "Bind to every program at this level instead of to one program -- a "
-#| "formation cohort spanning the master's degrees, say. Mutually exclusive "
-#| "with Program."
 msgid ""
 "Bind to every program of this tier instead of to one program -- a formation "
 "cohort spanning the master's degrees, say. Mutually exclusive with Program."
 msgstr ""
-"Vincule a todos os programas deste nível em vez de a um único programa — uma "
-"coorte de formação abrangendo, por exemplo, os mestrados. Mutuamente "
+"Vincule a todos os programas deste nível em vez de a um único programa, por "
+"exemplo, uma turma de formação que abrange os mestrados. Mutuamente "
 "exclusivo com Programa."
 
 #. Label of the academic_section (Section Break) field in DocType 'Cohort Type'
@@ -7901,10 +7860,8 @@ msgstr "Presidente"
 
 #. Label of the chair_name (Data) field in DocType 'Academic Unit'
 #: seminary/seminary/doctype/academic_unit/academic_unit.json
-#, fuzzy
-#| msgid "Cohort Name"
 msgid "Chair Name"
-msgstr "Nome da Coorte"
+msgstr "Nome do presidente da unidade"
 
 #. Label of the delta (Float) field in DocType 'Competency Result Dimension'
 #: frontend/src/pages/DiscussionActivitySubmissionCS.vue:15
@@ -9097,10 +9054,8 @@ msgstr "Tipo de Reação da Coorte"
 #: seminary/seminary/doctype/cohort_reading_plan/cohort_reading_plan.json
 #: seminary/seminary/doctype/reading_plan_progress/reading_plan_progress.json
 #: seminary/seminary/sidebar/seminary_community/seminary_community.json
-#, fuzzy
-#| msgid "Cohort Reaction Type"
 msgid "Cohort Reading Plan"
-msgstr "Tipo de Reação da Coorte"
+msgstr "Plano de leitura da coorte"
 
 #. Name of a DocType
 #: seminary/seminary/doctype/cohort_thread_read_state/cohort_thread_read_state.json
@@ -9175,19 +9130,15 @@ msgstr "Ritmo de coorte"
 
 #. Description of the 'Pacing Mode' (Select) field in DocType 'Program'
 #: seminary/seminary/doctype/program/program.json
-#, fuzzy
-#| msgid ""
-#| "Cohort-paced: students move through the program together. Self-paced: "
-#| "each student progresses at their own speed. Defaults from the framework "
-#| "and can be changed here."
 msgid ""
 "Cohort-paced: students move through the program together. Self-paced: each "
 "student progresses at their own speed. Defaults from the framework and can "
 "be changed here. Self-paced is available only in Credits-based programs."
 msgstr ""
-"Ritmo de coorte: os estudantes avançam juntos pelo programa. Ritmo "
-"individual: cada estudante progride em seu próprio ritmo. Vem como padrão da "
-"estrutura e pode ser alterado aqui."
+"Ritmo por coorte: os alunos avançam juntos pelo programa. Ritmo individual: "
+"cada aluno progride no próprio ritmo. Os valores padrão vêm da estrutura e "
+"podem ser alterados aqui. O ritmo individual está disponível apenas em "
+"programas baseados em créditos."
 
 #: frontend/src/pages/Community.vue:846
 #: seminary/public/frontend/assets/Community-Cd8kp7Q3.js:1
@@ -9340,10 +9291,8 @@ msgstr "Comentários para esta pergunta"
 
 #: frontend/src/pages/ReadingPlans.vue:309
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "Comments for this question"
 msgid "Comments or questions for the cohort"
-msgstr "Comentários para esta pergunta"
+msgstr "Comentários ou perguntas para a coorte"
 
 #. Description of the 'Message' (Text Editor) field in DocType 'Reading Plan
 #. Step'
@@ -9352,6 +9301,8 @@ msgid ""
 "Comments or questions for the cohort. You can keep editing this after the "
 "plan has started."
 msgstr ""
+"Comentários ou perguntas para a coorte. Você pode continuar editando isto "
+"depois que o plano for iniciado."
 
 #: seminary/seminary/doctype/person_import_batch/person_import_batch.py:485
 msgid "Commit failed: {0} (Error Log {1})"
@@ -13129,7 +13080,7 @@ msgstr "Dedução (%)"
 #. Results Detail'
 #: seminary/seminary/doctype/course_assess_results_detail/course_assess_results_detail.json
 msgid "Deduction Set by Instructor"
-msgstr "Dedução Definida pelo Instrutor"
+msgstr "Dedução definida pelo instrutor"
 
 #. Label of the late_deduction (Float) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -16787,10 +16738,8 @@ msgstr "Explicação:"
 
 #. Option for the 'Status' (Select) field in DocType 'SCORM Package'
 #: seminary/seminary/doctype/scorm_package/scorm_package.json
-#, fuzzy
-#| msgid "Uploading..."
 msgid "Exploding"
-msgstr "Carregando..."
+msgstr "Descompactando"
 
 #: seminary/www/home.html:20
 msgid "Explore our degrees and certificates."
@@ -18103,10 +18052,8 @@ msgstr "Lido totalmente"
 
 #. Label of the funding_line (Select) field in DocType 'Partner Type'
 #: seminary/partner/doctype/partner_type/partner_type.json
-#, fuzzy
-#| msgid "Rounding"
 msgid "Funding Line"
-msgstr "Arredondamento"
+msgstr "Categoria de Financiamento"
 
 #. Option for the 'From Book' (Select) field in DocType 'Reading Plan Step'
 #. Option for the 'To Book' (Select) field in DocType 'Reading Plan Step'
@@ -22604,7 +22551,7 @@ msgstr ""
 #: frontend/src/pages/CourseAssessment.vue:566
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:4
 msgid "Late policy saved"
-msgstr "Política de atraso salva."
+msgstr "Política de atraso salva"
 
 #. Label of the late_grade_nag_sent (Check) field in DocType 'Course Schedule'
 #: seminary/seminary/doctype/course_schedule/course_schedule.json
@@ -25049,7 +24996,7 @@ msgstr ""
 
 #: frontend/src/pages/Community.vue:349
 msgid "Mentors in this cohort"
-msgstr "Mentores nesta turma"
+msgstr "Mentores nesta coorte"
 
 #. Description of the 'Cohort Type' (Link) field in DocType 'Competency
 #. Framework Evaluator'
@@ -25235,7 +25182,7 @@ msgstr "Marco {0} não encontrado neste projeto."
 #: seminary/seminary/doctype/culminating_project/culminating_project.json
 #: seminary/seminary/doctype/culminating_project_type/culminating_project_type.json
 msgid "Milestones"
-msgstr "Etapas"
+msgstr "Etapas Críticas"
 
 #. Label of the milestones_complete (Check) field in DocType 'Culminating
 #. Project'
@@ -25809,10 +25756,8 @@ msgstr "Minha coorte"
 
 #: frontend/src/pages/ReadingPlans.vue:21
 #: seminary/public/frontend/assets/ReadingPlans-B1-m2hLU.js:1
-#, fuzzy
-#| msgid "My cohort"
 msgid "My cohorts"
-msgstr "Minha coorte"
+msgstr "Minhas coortes"
 
 #: frontend/src/pages/AlumniHome.vue:62
 #: seminary/public/frontend/assets/AlumniHome-DQebKziH.js:1
@@ -27529,7 +27474,7 @@ msgstr ""
 #: seminary/seminary/doctype/program_enrollment_status_history/program_enrollment_status_history.json
 #: seminary/seminary/doctype/student_graduation_requirement/student_graduation_requirement.json
 msgid "Notes"
-msgstr "Anotação"
+msgstr "Notas"
 
 #: frontend/src/components/CLOCoveragePanel.vue:38
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:2
@@ -27952,6 +27897,9 @@ msgid ""
 "is the allow-list delivery serves from: a member the package did not declare "
 "cannot be requested. See privatedocs/p009."
 msgstr ""
+"Um pacote SCORM que foi descompactado no armazenamento de objetos. Seu "
+"inventário é a lista de permissões a partir da qual a entrega é servida: um "
+"membro que o pacote não declarou não pode ser solicitado."
 
 #. Description of a DocType
 #: seminary/seminary/doctype/cohort_type_criterion/cohort_type_criterion.json
@@ -28185,6 +28133,9 @@ msgid ""
 "endpoint, and validated by the controller so no write path can skip the "
 "bounds. See privatedocs/p009 section 2.9."
 msgstr ""
+"O estado de execução de um aluno para um SCO. Gravado somente pelo endpoint "
+"de confirmação do SCORM e validado pelo controlador, de modo que nenhum "
+"caminho de gravação possa ignorar os limites."
 
 #: frontend/src/pages/AlumniProfile.vue:156
 #: seminary/public/frontend/assets/AlumniProfile-DEbghW4V.js:1
@@ -29229,6 +29180,11 @@ msgid ""
 "reach, so nothing reaches the gradebook without this link (p009 section "
 "2.12)."
 msgstr ""
+"Opcional. Quando definido, uma tentativa SCORM aprovada neste SCO informa "
+"sua nota a este critério de avaliação. Deixe vazio (o padrão) e o pacote "
+"registra apenas a conclusão. Uma nota SCORM é uma declaração feita por um "
+"código ao qual o aluno tem acesso, portanto nada chega ao diário de notas "
+"sem este vínculo."
 
 #. Description of the 'Backing Course' (Link) field in DocType 'Internship
 #. Type'
@@ -30445,7 +30401,7 @@ msgstr "A carta de alegria de Paulo, um capítulo por dia."
 
 #: seminary/install.py:1520
 msgid "Paul's letter to the Romans, one or two chapters a day."
-msgstr ""
+msgstr "A carta de Paulo aos Romanos, um ou dois capítulos por data."
 
 #: frontend/src/pages/Enrollment.vue:69 frontend/src/pages/Fees.vue:150
 #: frontend/src/pages/Fees.vue:183
@@ -30900,7 +30856,7 @@ msgstr "A integração com o Pexels está desativada nas Configurações do Pexe
 
 #: seminary/install.py:1534
 msgid "Philippians in 4 days"
-msgstr ""
+msgstr "Filipenses em 4 encontros"
 
 #. Option for the 'Contact Type' (Select) field in DocType 'Partner Job
 #. Application Contact'
@@ -31735,10 +31691,8 @@ msgstr ""
 
 #. Label of a Sidebar Item
 #: seminary/seminary/sidebar/seminary_internships/seminary_internships.json
-#, fuzzy
-#| msgid "Position"
 msgid "Positions"
-msgstr "Posição"
+msgstr "Vagas"
 
 #: frontend/src/components/Modals/Question.vue:93
 msgid "Possibility"
@@ -31840,10 +31794,8 @@ msgstr "Publicado em"
 #: frontend/src/pages/PartnerJobPostingForm.vue:139
 #: seminary/public/frontend/assets/PartnerInternshipPostingForm-DonsbRlr.js:1
 #: seminary/public/frontend/assets/PartnerJobPostingForm-CPNWf-LJ.js:1
-#, fuzzy
-#| msgid "Job Postings"
 msgid "Posting"
-msgstr "Anúncios de Emprego"
+msgstr "Anúncios"
 
 #: frontend/src/pages/PartnerJobPostingForm.vue:122
 #: seminary/public/frontend/assets/PartnerJobPostingForm-CPNWf-LJ.js:1
@@ -33714,10 +33666,8 @@ msgstr "Lida em"
 
 #. Label of the read_on (Datetime) field in DocType 'Reading Plan Progress'
 #: seminary/seminary/doctype/reading_plan_progress/reading_plan_progress.json
-#, fuzzy
-#| msgid "Raised On"
 msgid "Read On"
-msgstr "Registrado em"
+msgstr "Lido em"
 
 #: seminary/seminary/report/sources_of_funding/sources_of_funding.py:14
 msgid ""
@@ -34690,7 +34640,7 @@ msgstr "Remover alunos desligados"
 #. 'Program'
 #: seminary/seminary/doctype/program/program.json
 msgid "Remove from the current program cohort"
-msgstr ""
+msgstr "Remover da coorte atual do programa"
 
 #: frontend/src/pages/CourseAssessment.vue:627
 #: seminary/public/frontend/assets/CourseAssessment-C-MCfUtx.js:4
@@ -35019,7 +34969,7 @@ msgstr "Denunciante"
 #: frontend/src/components/ScormGradeMapping.vue:22
 #: seminary/public/frontend/assets/Lesson-DVaSWDba.js:3
 msgid "Reporting"
-msgstr "Relatórios"
+msgstr "Reportando"
 
 #. Label of a Card Break in the Seminary Workspace
 #: seminary/seminary/doctype/student_attendance/student_attendance_dashboard.py:8
@@ -39910,7 +39860,7 @@ msgstr "A equipe matricula os alunos nos cursos (sem automatrícula)"
 #. Label of the stage (Select) field in DocType 'Competency Assessment'
 #: seminary/seminary/doctype/competency_assessment/competency_assessment.json
 msgid "Stage"
-msgstr "Etapa"
+msgstr "Fase"
 
 #. Label of the standalone (Check) field in DocType 'Quiz'
 #: seminary/seminary/doctype/quiz/quiz.json
@@ -44682,6 +44632,9 @@ msgid ""
 "This chapter holds reflection lessons placed by the course's Competency "
 "Framework, so it cannot be deleted. Rename it or add lessons to it instead."
 msgstr ""
+"Este capítulo contém lições de reflexão inseridas pela Estrutura de "
+"Competência do curso e, portanto, não pode ser excluído. Renomeie-o ou "
+"adicione lições a ele."
 
 #: seminary/scorm/launch.py:43
 msgid "This chapter is not a SCORM package."
@@ -49182,21 +49135,14 @@ msgstr ""
 #. Description of the 'Source' (Select) field in DocType 'Person Channel
 #. Address'
 #: seminary/seminary/doctype/person_channel_address/person_channel_address.json
-#, fuzzy
-#| msgid ""
-#| "Who put this row here. Only \"Self-service\" rows may be edited or "
-#| "removed by the person on the portal; everything else — including the "
-#| "blank of a row that predates this field — is the school's and stays "
-#| "locked (ADR 070)."
 msgid ""
 "Who put this row here. Only \"Self-service\" rows may be edited or removed "
 "by the person on the portal; everything else — including the blank of a row "
 "that predates this field — is the school's and stays locked."
 msgstr ""
-"Quem colocou esta linha aqui. Somente linhas \"Autoatendimento\" podem ser "
-"editadas ou removidas pela pessoa no portal; todo o resto — inclusive o em "
-"branco de uma linha anterior a este campo — pertence à escola e permanece "
-"bloqueado (ADR 070)."
+"Quem inseriu esta linha aqui. Somente linhas de \"Autoatendimento\" podem "
+"ser editadas ou removidas pela pessoa no portal; todo o resto pertence à "
+"instituição e permanece bloqueado."
 
 #. Label of the recipients_section (Section Break) field in DocType
 #. 'Communication Trigger'
@@ -52465,7 +52411,7 @@ msgstr ""
 
 #: seminary/seminary/doctype/seminary_settings/seminary_settings.py:54
 msgid "{0} is not an installed billing app. Choose one of: {1}"
-msgstr "{0} não é um aplicativo de cobrança instalado. Escolha um destes: {1}."
+msgstr "{0} não é um aplicativo de cobrança instalado. Escolha um destes: {1}"
 
 #: seminary/seminary/graduation.py:1041
 msgid "{0} is not an option for this requirement."
@@ -52496,7 +52442,7 @@ msgstr "{0} não está aguardando uma decisão sobre ausência nesta turma."
 
 #: frontend/src/utils/index.js:273
 msgid "{0} is now filed under {1}"
-msgstr "{0} agora está arquivado em {1}."
+msgstr "{0} agora está arquivado em {1}"
 
 #: seminary/seminary/doctype/program_level/program_level.py:52
 msgid ""
@@ -52602,7 +52548,7 @@ msgstr "{0} mentores disponíveis, {1} estudantes aguardando"
 
 #: frontend/src/utils/index.js:272
 msgid "{0} moved from {1} to {2}"
-msgstr "{0} movido de {1} para {2}."
+msgstr "{0} movido de {1} para {2}"
 
 #: seminary/seminary/doctype/culminating_project/culminating_project.py:98
 msgid "{0} must be a member of this project's Academic Unit."
