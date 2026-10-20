@@ -57,9 +57,11 @@ async function fetchTranslations() {
 }
 
 export const translationPlugin = {
-  install(app) {
+  // `{ global: false }` leaves `window.__` alone: koinonia's widget mounts on a school's own
+  // website page, where Frappe's `__(message, [args])` already lives and must keep working.
+  install(app, { global = true } = {}) {
     app.config.globalProperties.__ = __
-    window.__ = __
+    if (global) window.__ = __
     loadTranslations()
   },
 }
