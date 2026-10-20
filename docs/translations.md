@@ -97,7 +97,8 @@ translated: Frappe displays the translated label and stores the raw value.
   (the lifecycle diagrams fall back to English without it). Update the language
   list in `docs/en/getting-started/translations.md` and its copies.
 
-**Known gaps** (affect every non-English language, not just a new one)
+**Known gaps** (affect every non-English language, not just a new one; the
+plan is aretenic decision 071)
 
 - The koinonia and aretenic frontends and the shared portal shell have no
   translation plugin: `__` is a pass-through, so their portal UI is English.
