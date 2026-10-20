@@ -75,6 +75,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.planner",
     "seminary.seminary.discipleship.reading_plan_pack",
     "seminary.seminary.discipleship.reading_plans",
+    "seminary.seminary.requirements",
     "seminary.seminary.discipleship.scripture",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
@@ -137,6 +138,9 @@ GUEST_ALLOWED = {
     "seminary.seminary.tax_ids.get_tax_id_rule",
     # @rate_limit 30/60s ip_based; format check only
     "seminary.seminary.tax_ids.check_tax_id",
+    # @rate_limit 300/3600s ip_based; the document types a program's public form
+    # asks for -- configuration, nothing about any person (decisions/091 §10)
+    "seminary.seminary.requirements.application_documents",
     # resolves through a readable File row; content-hash keys are not enumerable (p004)
     "seminary.storage.api.download_file",
 }
@@ -403,6 +407,14 @@ OWN_RULE = (
 # Refuse a Student and admit school staff. Executed by
 # test_staff_only_refuses_student_and_admits_chair, minus NOT_EXECUTED below.
 G6_STAFF_ONLY = {
+    # seminary.seminary.requirements (decisions/091): require_registrar first;
+    # countersign then also needs the template's countersign role.
+    "seminary.seminary.requirements.accept_document",
+    "seminary.seminary.requirements.add_missing_requirements",
+    "seminary.seminary.requirements.countersign",
+    "seminary.seminary.requirements.reject_document",
+    "seminary.seminary.requirements.unwaive_requirement",
+    "seminary.seminary.requirements.waive_requirement",
     # seminary.alumni.api
     "seminary.alumni.api.mark_as_alumni",
     # seminary.demo
@@ -738,6 +750,14 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.reading_plans.save_plan",
     "seminary.seminary.discipleship.reading_plans.start_plan",
     "seminary.seminary.discipleship.reading_plans.update_run",
+    # seminary.seminary.requirements (decisions/091). The caller's own rows only:
+    # each finds the session's Person and refuses a row that is not theirs
+    # (`_own_row`); an upload must be a File the caller uploaded and nobody has
+    # attached. test_adr091_requirements covers each refusal.
+    "seminary.seminary.requirements.agreement_preview",
+    "seminary.seminary.requirements.my_requirements",
+    "seminary.seminary.requirements.sign_agreement",
+    "seminary.seminary.requirements.upload_document",
     # seminary.seminary.discipleship.scripture
     "seminary.seminary.discipleship.scripture.posts_in_range",
     "seminary.seminary.discipleship.scripture.scripture_books",

@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "The text of an agreement people sign, with fields filled in for each signer. Once signed, a change becomes a new version.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "is_active",
+  "column_break_main",
+  "countersign_role",
+  "current_version",
+  "section_break_body",
+  "body",
+  "section_break_versions",
+  "versions"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "default": "1",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "countersign_role",
+   "fieldtype": "Link",
+   "label": "Countersign Role",
+   "options": "Role",
+   "description": "If set, someone with this role countersigns before the agreement is complete."
+  },
+  {
+   "fieldname": "current_version",
+   "fieldtype": "Int",
+   "label": "Current Version",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "section_break_body",
+   "fieldtype": "Section Break",
+   "label": "Text"
+  },
+  {
+   "fieldname": "body",
+   "fieldtype": "Text Editor",
+   "label": "Body",
+   "reqd": 1,
+   "description": "Fields are filled in when the person signs, for example {{ person.full_name }}, {{ person.tax_id }}, {{ program.program_name }}, {{ program_enrollment.enrollment_date }}, {{ instructor.instructor_name }}, {{ school.name }}, {{ doctrinal_statement.body }} {{ today }}, and {{ format_date(program_enrollment.enrollment_date) }} for a date. Put {{ signature }} where the signer signs and {{ countersignature }} where the school countersigns; they show as empty lines while the person reads, and are filled in the signed PDF."
+  },
+  {
+   "fieldname": "section_break_versions",
+   "fieldtype": "Section Break",
+   "label": "Versions",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "versions",
+   "fieldtype": "Table",
+   "label": "Versions",
+   "options": "Agreement Template Version",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Agreement Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:title",
+ "title_field": "title",
+ "allow_rename": 1,
+ "naming_rule": "By fieldname"
+}

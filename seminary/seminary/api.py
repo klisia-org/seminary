@@ -1040,6 +1040,20 @@ def get_user_info():
     # server, where the sections' data comes from. Pass the context we already
     # resolved so the flag costs no extra capability query.
     user.has_faculty_worklist = faculty.has_faculty_worklist(user.name, _fc)
+    # Requirements page link and badge (decisions/091 §11).
+    from seminary.seminary import requirements
+
+    user.open_requirements = requirements.open_count(user.name)
+    user.has_requirements = bool(
+        user.open_requirements
+        or frappe.db.exists(
+            "Person Requirement",
+            {
+                "person": frappe.db.get_value("Person", {"user": user.name}, "name")
+                or ""
+            },
+        )
+    )
     # External examiners are NOT instructors (reduced access, ADR 059/060): gate
     # their CP views on this flag, never on is_instructor.
     user.is_external_examiner = "External Examiner" in _roles
@@ -1410,6 +1424,9 @@ def _assert_may_course_enroll(pe_name):
             _("Your school enrolls you in the courses of this program."),
             frappe.PermissionError,
         )
+    from seminary.seminary.requirements import assert_may_self_enroll
+
+    assert_may_self_enroll(pe_name)
 
 
 @frappe.whitelist()

@@ -69,6 +69,7 @@ declare module 'vue' {
     Notes: typeof import('./src/components/Notes.vue')['default']
     OpenQuestion: typeof import('./src/components/Modals/OpenQuestion.vue')['default']
     OpenQuestionnairesPanel: typeof import('./src/components/OpenQuestionnairesPanel.vue')['default']
+    OpenRequirementsPanel: typeof import('./src/components/OpenRequirementsPanel.vue')['default']
     PageHeader: typeof import('./src/components/PageHeader.vue')['default']
     PageTabs: typeof import('./src/components/PageTabs.vue')['default']
     PartnerHeader: typeof import('./src/components/PartnerHeader.vue')['default']

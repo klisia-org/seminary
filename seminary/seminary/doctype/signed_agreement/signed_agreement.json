@@ -1,0 +1,326 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "An agreement a person signed, with the text exactly as signed and the evidence of signing.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "person_requirement",
+  "person",
+  "person_name",
+  "agreement_template",
+  "template_version",
+  "column_break_main",
+  "status",
+  "reference_doctype",
+  "reference_name",
+  "signature_section",
+  "signed_on",
+  "signed_by",
+  "signer_name",
+  "ip_address",
+  "user_agent",
+  "column_break_signature",
+  "signature",
+  "pdf",
+  "pdf_sha256",
+  "html_sha256",
+  "countersign_section",
+  "countersigned_on",
+  "countersigned_by",
+  "countersigner_name",
+  "countersign_ip",
+  "countersign_user_agent",
+  "countersignature",
+  "column_break_countersign",
+  "final_pdf",
+  "final_pdf_sha256",
+  "text_section",
+  "text_preview",
+  "rendered_html",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "person_requirement",
+   "fieldtype": "Link",
+   "label": "Requirement",
+   "options": "Person Requirement",
+   "reqd": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "label": "Person",
+   "options": "Person",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "label": "Person Name",
+   "fetch_from": "person.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "agreement_template",
+   "fieldtype": "Link",
+   "label": "Agreement Template",
+   "options": "Agreement Template",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "template_version",
+   "fieldtype": "Int",
+   "label": "Template Version",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Awaiting Countersignature\nComplete",
+   "read_only": 1,
+   "allow_on_submit": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "For",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Record",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signature_section",
+   "fieldtype": "Section Break",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "signed_on",
+   "fieldtype": "Datetime",
+   "label": "Signed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signed_by",
+   "fieldtype": "Link",
+   "label": "Signed By (User)",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signer_name",
+   "fieldtype": "Data",
+   "label": "Name Typed by Signer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_agent",
+   "fieldtype": "Small Text",
+   "label": "User Agent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_signature",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "Drawn Signature",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pdf",
+   "fieldtype": "Attach",
+   "label": "Signed PDF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pdf_sha256",
+   "fieldtype": "Data",
+   "label": "PDF SHA-256",
+   "read_only": 1
+  },
+  {
+   "fieldname": "html_sha256",
+   "fieldtype": "Data",
+   "label": "Text SHA-256",
+   "read_only": 1
+  },
+  {
+   "fieldname": "countersign_section",
+   "fieldtype": "Section Break",
+   "label": "Countersignature",
+   "depends_on": "eval:doc.status=='Awaiting Countersignature' || doc.countersigned_by"
+  },
+  {
+   "fieldname": "countersigned_on",
+   "fieldtype": "Datetime",
+   "label": "Countersigned On",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "countersigned_by",
+   "fieldtype": "Link",
+   "label": "Countersigned By",
+   "options": "User",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "countersigner_name",
+   "fieldtype": "Data",
+   "label": "Name Typed by Countersigner",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "countersign_ip",
+   "fieldtype": "Data",
+   "label": "Countersign IP Address",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "countersign_user_agent",
+   "fieldtype": "Small Text",
+   "label": "Countersign User Agent",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "countersignature",
+   "fieldtype": "Signature",
+   "label": "Drawn Countersignature",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "column_break_countersign",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "final_pdf",
+   "fieldtype": "Attach",
+   "label": "Final PDF",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "final_pdf_sha256",
+   "fieldtype": "Data",
+   "label": "Final PDF SHA-256",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "text_section",
+   "fieldtype": "Section Break",
+   "label": "Text as Signed",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "text_preview",
+   "fieldtype": "HTML",
+   "label": "Text as Signed"
+  },
+  {
+   "fieldname": "rendered_html",
+   "fieldtype": "Long Text",
+   "label": "Text as Signed",
+   "read_only": 1,
+   "hidden": 1,
+   "ignore_xss_filter": 1,
+   "description": "Stored exactly as hashed. Built on the server, with the signer's values escaped; shown on the desk in a sandboxed frame."
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Signed Agreement",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Signed Agreement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "cancel": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "cancel": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "AGR-.#####",
+ "is_submittable": 1,
+ "track_changes": 1
+}

@@ -44,6 +44,8 @@
   "term_based_withdrawal_dates",
   "column_break_withdrawal",
   "default_scholarship_withdrawal_procedure",
+  "instructor_requirements_section",
+  "instructor_requirements",
   "hr_payroll_section",
   "hrms_enable",
   "instructor_payment_split",
@@ -505,6 +507,18 @@
    "label": "Alternative Payment Instructions"
   },
   {
+   "fieldname": "instructor_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Instructor Requirements"
+  },
+  {
+   "description": "What every active instructor signs or uploads, such as a yearly agreement with the doctrinal statement.",
+   "fieldname": "instructor_requirements",
+   "fieldtype": "Table",
+   "label": "Instructor Requirements",
+   "options": "Requirement Rule"
+  },
+  {
    "fieldname": "hr_payroll_section",
    "fieldtype": "Section Break",
    "label": "HR / Payroll"
@@ -843,21 +857,21 @@
    "description": "The billing app that raises charges and answers the student portal. Only asked when more than one billing app is installed; the other stays readable for its history.",
    "fieldname": "financial_backend",
    "fieldtype": "Data",
-   "label": "Active Billing App",
-   "hidden": 1
+   "hidden": 1,
+   "label": "Active Billing App"
   },
   {
+   "depends_on": "eval:doc.financial_backend",
    "description": "The date the active billing app took over. Balances open on this date were carried into it.",
    "fieldname": "financial_backend_since",
    "fieldtype": "Date",
-   "label": "Active Since",
    "hidden": 1,
-   "depends_on": "eval:doc.financial_backend"
+   "label": "Active Since"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-12 12:00:00.000000",
+ "modified": "2026-10-20 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

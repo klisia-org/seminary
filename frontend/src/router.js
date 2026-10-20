@@ -463,6 +463,11 @@ const routes = [
     component: () => import('@/pages/ReadingPlans.vue'),
   },
   {
+    path: "/requirements",
+    name: "Requirements",
+    component: () => import('@/pages/Requirements.vue'),
+  },
+  {
     path: "/preferences",
     name: "CommunicationPreferences",
     component: () => import('@/pages/CommunicationPreferences.vue'),

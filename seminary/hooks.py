@@ -309,6 +309,10 @@ permission_query_conditions = {
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
+    # decisions/091: a person reads their own; school roles read all.
+    "Person Document": "seminary.seminary.requirements.person_document_query",
+    "Person Requirement": "seminary.seminary.requirements.person_requirement_query",
+    "Signed Agreement": "seminary.seminary.requirements.signed_agreement_query",
     "Partner Organization": "seminary.partner.permissions.org_query",
     "Partner Organization Location": "seminary.partner.permissions.location_query",
     "Partner Job Opening": "seminary.partner.permissions.opening_query",
@@ -363,6 +367,9 @@ has_permission = {
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
+    "Person Document": "seminary.seminary.requirements.person_document_has",
+    "Person Requirement": "seminary.seminary.requirements.person_requirement_has",
+    "Signed Agreement": "seminary.seminary.requirements.signed_agreement_has",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
     "Partner Organization": "seminary.partner.permissions.org_has",
     "Partner Organization Location": "seminary.partner.permissions.location_has",
@@ -486,9 +493,16 @@ doc_events = {
         # seminary just fulfills required enrollments — no billing.
         "on_submit": [
             "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
+            # The program's agreements and documents (decisions/091 §4).
+            "seminary.seminary.requirements.on_program_enrollment_submit",
         ],
     },
+    "Instructor": {
+        "on_update": "seminary.seminary.requirements.on_instructor_update",
+    },
     "Course Schedule": {
+        # A warning, never a block (decisions/091 §9).
+        "validate": "seminary.seminary.requirements.warn_course_schedule_instructors",
         "on_update": [
             "seminary.seminary.required_enrollment.on_course_schedule_update",
             # A section opening enrolls students who advanced into its course
@@ -687,6 +701,12 @@ plagiarism_providers = {
     "external-http": "seminary.seminary.plagiarism.external.ExternalHTTPPlagiarismAdapter",
 }
 
+# Agreement fields from other apps (decisions/091 §7). Each dotted path is called
+# as fn(context, person_requirement) and adds keys to the context an Agreement
+# Template renders with -- the billing bridges add fees this way. Seminary
+# registers none.
+# agreement_context = ["oikonomos.agreements.add_fees"]
+
 # Scheduled Tasks
 # ---------------
 
@@ -733,6 +753,9 @@ scheduler_events = {
         # Reading plans write once to a member on the day they fall behind, and
         # close a run after its last step (ADR 087 §8).
         "seminary.seminary.discipleship.reading_plans.daily",
+        # Expire documents, renew per term/year, and remind on due dates
+        # (decisions/091 §5, §11).
+        "seminary.seminary.requirements.daily",
         # A geocode that failed because the provider was down that afternoon
         # would otherwise stay missing until the address happened to change
         # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.

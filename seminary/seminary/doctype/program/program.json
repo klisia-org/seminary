@@ -78,6 +78,9 @@
   "duration_unit",
   "order_pd",
   "financial_tab",
+  "requirements_tab",
+  "enrollment_requirements",
+  "add_missing_requirements",
   "connections_tab"
  ],
  "fields": [
@@ -266,6 +269,23 @@
    "label": "Courses of this program (use Term number for guiding the student progress in Time-based programs)"
   },
   {
+   "fieldname": "requirements_tab",
+   "fieldtype": "Tab Break",
+   "label": "Requirements"
+  },
+  {
+   "description": "What a student signs or uploads when enrolled in this program. Copied to each enrollment when it is submitted.",
+   "fieldname": "enrollment_requirements",
+   "fieldtype": "Table",
+   "label": "Enrollment Requirements",
+   "options": "Requirement Rule"
+  },
+  {
+   "fieldname": "add_missing_requirements",
+   "fieldtype": "Button",
+   "label": "Add Missing Requirements to Active Enrollments"
+  },
+  {
    "fieldname": "connections_tab",
    "fieldtype": "Tab Break",
    "label": "Connections",
@@ -410,11 +430,11 @@
   },
   {
    "default": "0",
+   "depends_on": "eval:!doc.staff_enroll_only",
    "description": "When checked, students can only create a Draft enrollment for this program; a registrar must apply Submit before the student can pay. When unchecked, the student's enrollment auto-submits to Awaiting Payment.",
    "fieldname": "registrar_block_cei",
    "fieldtype": "Check",
-   "label": "Require Staff Verification of Course Enrollments",
-   "depends_on": "eval:!doc.staff_enroll_only"
+   "label": "Require Staff Verification of Course Enrollments"
   },
   {
    "fieldname": "column_break_voqj",
@@ -577,7 +597,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-09-29 12:00:00.000000",
+ "modified": "2026-10-20 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program",

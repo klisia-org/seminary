@@ -18,6 +18,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, fmt_money, now_datetime
 
 from seminary.seminary.financial.backend import get_financial_backend
+from seminary.seminary.requirements import overdue_labels
 from seminary.seminary.term_plan import (
     active_holds,
     expected_courses,
@@ -146,6 +147,8 @@ class BulkCourseEnrollment(Document):
                     "program": pe.program,
                     "current_std_term": pe.current_std_term,
                     "holds": ", ".join(active_holds(pe.student)),
+                    # A warning, never a block: the registrar decides (decisions/091 §9).
+                    "requirements": overdue_labels(pe.name),
                 },
             )
 

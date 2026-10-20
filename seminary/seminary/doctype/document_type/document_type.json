@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "A kind of document a school asks people to upload, such as a diploma or an ID. Each school keeps its own list.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "type_name",
+  "is_active",
+  "needs_review",
+  "column_break_main",
+  "allowed_extensions",
+  "valid_months",
+  "section_break_description",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "type_name",
+   "fieldtype": "Data",
+   "label": "Document Type",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active",
+   "default": "1",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "needs_review",
+   "fieldtype": "Check",
+   "label": "Needs Review",
+   "default": "1",
+   "in_list_view": 1,
+   "description": "Staff accept or reject each upload. Without review, an upload counts as soon as it arrives."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allowed_extensions",
+   "fieldtype": "Data",
+   "label": "Allowed Extensions",
+   "description": "Comma-separated, for example: pdf, jpg, png. Empty allows any file."
+  },
+  {
+   "fieldname": "valid_months",
+   "fieldtype": "Int",
+   "label": "Valid For (Months)",
+   "description": "An accepted document expires this many months after it is accepted. Empty: it never expires."
+  },
+  {
+   "fieldname": "section_break_description",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "description": "Shown to the person when they are asked for this document."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Document Type",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1,
+   "write": 1,
+   "delete": 1,
+   "create": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  },
+  {
+   "read": 1,
+   "role": "Student Applicant"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:type_name",
+ "title_field": "type_name",
+ "allow_rename": 1,
+ "naming_rule": "By fieldname",
+ "quick_entry": 1
+}

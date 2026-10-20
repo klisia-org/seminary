@@ -21,6 +21,7 @@
         Optional Aretenic surface (ADR 030). Above the assessment to-dos because a feedback window
         closes and does not reopen, while an assignment can be caught up on (decisions/035 §6).
       -->
+      <OpenRequirementsPanel />
       <OpenQuestionnairesPanel />
 
       <h2 class="text-lg font-semibold text-ink-gray-9">{{ __('To Do') }}</h2>
@@ -117,6 +118,7 @@ import { usersStore } from '../stores/user'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
 import CourseImageFrame from '@/components/CourseImageFrame.vue'
 import OpenQuestionnairesPanel from '@/components/OpenQuestionnairesPanel.vue'
+import OpenRequirementsPanel from '@/components/OpenRequirementsPanel.vue'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 
 const user = inject('$user')
