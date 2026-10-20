@@ -400,6 +400,23 @@ class CourseSchedule(Document):
             from seminary.seminary import cbe_reflection
 
             cbe_reflection.scaffold(self.name)
+            # The scaffold writes its chapters as direct inserts, which moves
+            # `modified`. Reload, or the form gets a copy with no chapters and
+            # a stale timestamp: its next action (Import Course Template among
+            # them) is refused as "modified after you have opened it".
+            if frappe.db.get_value(self.doctype, self.name, "modified") != self.modified:
+                self.reload()
+
+    def onload(self):
+        # A competency section is born with its scaffold, which a template
+        # may still replace (`_validate_target_for_import`); the form offers
+        # Import Course Template on that, not only on an empty outline.
+        if self.chapters:
+            from seminary.seminary import cbe_reflection
+
+            self.set_onload(
+                "untouched_scaffold", cbe_reflection.untouched_scaffold(self.name)
+            )
 
     def _seed_assessment_criteria_from_course(self):
         """Auto-populate courseassescrit_sc from Course.assessment_criteria.
@@ -991,7 +1008,7 @@ class CourseSchedule(Document):
         copied; the late policy is.
         """
         self._validate_target_for_import(source_cs)
-        _validate_source_for_import(source_cs)
+        _validate_source_for_import(source_cs, self)
 
         # All persistence is via direct child-doc inserts. self.save() is
         # avoided on purpose: Course Lesson.updates_lessons (and any other
@@ -1273,7 +1290,7 @@ def bulk_close_enrollment(names):
 # ── Course Template Import helpers ──────────────────────────────────────────
 
 
-def _validate_source_for_import(source_cs):
+def _validate_source_for_import(source_cs, target):
     """Read-only checks on the source side. Throws on any violation."""
     scac_count = frappe.db.count(
         "Scheduled Course Assess Criteria", {"parent": source_cs}
@@ -1285,6 +1302,14 @@ def _validate_source_for_import(source_cs):
                 "nothing structural to import."
             ).format(source_cs)
         )
+
+    # Weights are only checked where they will be read: a competency target
+    # has no weighted grade, so it takes a source's rows as they are, whatever
+    # they add up to -- the rule `validate_assessment_criteria` applies.
+    from seminary.seminary import cbe
+
+    if cbe.framework_for_course_and_scale(target.course, target.gradesc_cs):
+        return
 
     weight_total = (
         frappe.db.sql(

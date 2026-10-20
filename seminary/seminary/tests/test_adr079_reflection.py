@@ -299,6 +299,90 @@ class TestScaffold(ADR079Case):
         frappe.clear_document_cache("Competency Framework", w.framework)
         self.assertEqual(cbe_reflection.scaffold_if_became_cbe(w.cs), 0)
 
+    def test_the_inserted_doc_carries_its_scaffold(self):
+        """What the save hands back to the form is what the database holds,
+        or the form's next action is refused as a timestamp mismatch."""
+        w = World()
+        dates = frappe.db.get_value(
+            "Academic Term", w.term, ["term_start_date", "term_end_date"], as_dict=True
+        )
+        fresh = frappe.get_doc(
+            {
+                "doctype": "Course Schedule",
+                "course": w.course,
+                "academic_term": w.term,
+                "section": f"S{frappe.generate_hash(length=4)}",
+                "gradesc_cs": w.scale,
+                "modality": "Virtual",
+                "c_datestart": dates.term_start_date,
+                "c_dateend": dates.term_end_date,
+            }
+        )
+        fresh.flags.ignore_permissions = True
+        fresh.insert(ignore_mandatory=True)
+        self.assertEqual(
+            [c.chapter for c in fresh.chapters], [c.name for c in w.chapters(fresh.name)]
+        )
+        self.assertTrue(fresh.chapters)
+        self.assertEqual(
+            fresh.modified,
+            frappe.db.get_value("Course Schedule", fresh.name, "modified"),
+        )
+        # What run_doc_method does with the copy the form sends back.
+        sent = frappe.get_doc(fresh.as_dict())
+        sent._original_modified = sent.modified
+        sent.check_if_latest()
+
+    def test_the_form_offers_a_template_on_an_untouched_scaffold(self):
+        w = World()
+        cs = frappe.get_doc("Course Schedule", w.cs)
+        cs.run_method("onload")
+        self.assertTrue(cs.get_onload().get("untouched_scaffold"))
+        w.add_lesson(w.chapters()[0].name)
+        cs = frappe.get_doc("Course Schedule", w.cs)
+        cs.run_method("onload")
+        self.assertFalse(cs.get_onload().get("untouched_scaffold"))
+
+    def test_a_competency_target_takes_a_source_with_no_weights(self):
+        """Weights mean nothing on a competency section, so a template is not
+        refused over them -- unless its target grades on points."""
+        from seminary.seminary.doctype.course_schedule.course_schedule import (
+            _validate_source_for_import,
+        )
+
+        w = World()
+        frappe.db.delete("Scheduled Course Assess Criteria", {"parent": w.cs})
+        _insert(
+            {
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": w.cs,
+                "parenttype": "Course Schedule",
+                "parentfield": "courseassescrit_sc",
+                "title": "Unweighted",
+                "weight_scac": 0,
+            }
+        )
+        target = frappe.get_doc("Course Schedule", w.section())
+        _validate_source_for_import(w.cs, target)
+
+        target.gradesc_cs = _insert(
+            {
+                "doctype": "Grading Scale",
+                "grading_scale_name": f"{PREFIX} Points",
+                "grscale_type": "Points",
+                "maxnumgrade": 100,
+                "intervals": [
+                    {
+                        "grade_code": "A",
+                        "threshold": 0,
+                        "grade_pass": "Pass",  # nosec B105
+                    }
+                ],
+            }
+        ).name
+        with self.assertRaises(frappe.ValidationError):
+            _validate_source_for_import(w.cs, target)
+
     def test_untouched_scaffold_gives_way_but_one_with_content_does_not(self):
         w = World()
         self.assertTrue(cbe_reflection.untouched_scaffold(w.cs))
