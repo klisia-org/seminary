@@ -16,6 +16,7 @@ import re
 import frappe
 from frappe import _
 
+from seminary.language import language_candidates
 from seminary.seminary.integrations import client
 from seminary.seminary.integrations.bible_books import (
     BOOK_ALIASES,
@@ -210,9 +211,9 @@ def _resolve_bible_id(settings, explicit: str | None) -> str:
         if preferred:
             return preferred
     user_lang = frappe.local.lang
-    if user_lang:
+    for lang in language_candidates(user_lang):
         for row in settings.language_defaults or []:
-            if row.language == user_lang:
+            if row.language == lang:
                 return row.bible_id
     if settings.default_bible_id:
         return settings.default_bible_id
@@ -350,10 +351,15 @@ def get_available_bibles_for_user() -> dict:
     language plus the global default, and their current preference. No role gate
     (unlike list_bibles / get_bible_name), and it never exposes the API key."""
     settings = _get_settings()
-    user_lang = frappe.local.lang
+    langs = language_candidates(frappe.local.lang)
     bibles, seen = [], set()
-    for row in settings.language_defaults or []:
-        if row.language == user_lang and row.bible_id and row.bible_id not in seen:
+    # Exact language first, then its parent (pt-BR, then pt).
+    rows = sorted(
+        (r for r in settings.language_defaults or [] if r.language in langs),
+        key=lambda r: langs.index(r.language),
+    )
+    for row in rows:
+        if row.bible_id and row.bible_id not in seen:
             bibles.append(
                 {"bible_id": row.bible_id, "bible_name": row.bible_name or row.bible_id}
             )

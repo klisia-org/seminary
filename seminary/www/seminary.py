@@ -86,6 +86,11 @@ def get_boot_data():
     #
     # If the SPA ever needs a default, add that ONE key here by name.
     #
+    # `lang` is such a key (aretenic decision 071): portal-shell's userLocale() and
+    # dayjsLocale() read it, so dates, numbers and relative times follow the user's
+    # language rather than the browser's.
+    boot["lang"] = frappe.local.lang
+    #
     # The session id is carried by the cookie; the SPA never reads it, so it is
     # not echoed into the page (p006 F8).
     boot["session"] = {"user": frappe.session.user}

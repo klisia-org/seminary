@@ -408,6 +408,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import { Badge, Button, call, createResource, ListView, TextEditor, FormControl, toast } from 'frappe-ui'
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { createToast } from '@/utils/'
@@ -537,7 +538,7 @@ const timeLimit = ref(0)
 
 const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
 
-const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 
 const setupTimer = () => {
 	timeLimit.value = currentLimit()

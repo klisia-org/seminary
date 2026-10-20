@@ -5,6 +5,9 @@ export {
   visiblePortalsFor,
 } from './config.js'
 export { SEMINARY_PORTALS } from './portals.js'
+// Language and translations for every portal (aretenic decision 071).
+export { userLanguage, userLocale, dayjsLocale } from './i18n.js'
+export { __, loadTranslations, translationPlugin } from './translation.js'
 export { useSession } from './composables/useSession.js'
 export { useTheme } from './composables/useTheme.js'
 // The page frame (seminary ADR 075). It lives here rather than in seminary's own frontend

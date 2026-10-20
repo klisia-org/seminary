@@ -499,6 +499,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import {
 	Badge,
 	Button,
@@ -1030,7 +1031,7 @@ const myDates = createResource({
 	onError: () => { },
 })
 const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
-const formatWhen = (value) => (value ? new Date(value).toLocaleString() : '')
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 
 const assignmentDashboard = ref({ student_count: 0 })
 

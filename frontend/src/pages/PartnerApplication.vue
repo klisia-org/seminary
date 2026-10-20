@@ -111,6 +111,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { Breadcrumbs, createResource, Button, FormControl, Dialog, toast } from 'frappe-ui'
@@ -196,7 +197,7 @@ function stars(v) {
 }
 function formatDate(v) {
 	if (!v) return ''
-	return new Date(v).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+	return new Date(v).toLocaleDateString(userLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const breadcrumbs = computed(() => [

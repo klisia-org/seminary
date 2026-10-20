@@ -208,6 +208,7 @@
   </div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 import {
   createDocumentResource,
@@ -499,7 +500,7 @@ const postGradingComment = () => {
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const d = new Date(dateString)
-  return d.toLocaleDateString(undefined, { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(undefined, { timeStyle: 'short' })
+  return d.toLocaleDateString(userLocale(), { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(userLocale(), { timeStyle: 'short' })
 }
 
 const currentSubmission = ref(props.submission);

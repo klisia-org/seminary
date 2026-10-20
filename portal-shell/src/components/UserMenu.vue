@@ -33,6 +33,7 @@
 </template>
 
 <script setup>
+import { __ } from '../translation.js'
 import { ref, computed, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -41,7 +42,6 @@ const props = defineProps({
 })
 
 const open = ref(false)
-const __ = (s) => s
 
 const initials = computed(() => {
 	return (props.user.full_name || props.user.email || '?')

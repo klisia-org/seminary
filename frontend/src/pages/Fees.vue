@@ -192,6 +192,7 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import PageHeader from '@/components/PageHeader.vue'
 
 import { Badge, Button, Dialog, FormControl, createResource } from 'frappe-ui'
@@ -355,11 +356,11 @@ const netPayableAmount = computed(() => {
 })
 
 const formatCurrency = (value) => {
-	return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+	return value.toLocaleString(userLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const formatAbs = (value) => {
-	return Math.abs(parseFloat(value || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+	return Math.abs(parseFloat(value || 0)).toLocaleString(userLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // The billing app says where its invoice PDF lives (`print_url`); rows without
