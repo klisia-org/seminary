@@ -343,6 +343,46 @@ class TestScaffold(ADR079Case):
         cs.run_method("onload")
         self.assertFalse(cs.get_onload().get("untouched_scaffold"))
 
+    def test_a_competency_target_takes_a_source_with_no_weights(self):
+        """Weights mean nothing on a competency section, so a template is not
+        refused over them -- unless its target grades on points."""
+        from seminary.seminary.doctype.course_schedule.course_schedule import (
+            _validate_source_for_import,
+        )
+
+        w = World()
+        frappe.db.delete("Scheduled Course Assess Criteria", {"parent": w.cs})
+        _insert(
+            {
+                "doctype": "Scheduled Course Assess Criteria",
+                "parent": w.cs,
+                "parenttype": "Course Schedule",
+                "parentfield": "courseassescrit_sc",
+                "title": "Unweighted",
+                "weight_scac": 0,
+            }
+        )
+        target = frappe.get_doc("Course Schedule", w.section())
+        _validate_source_for_import(w.cs, target)
+
+        target.gradesc_cs = _insert(
+            {
+                "doctype": "Grading Scale",
+                "grading_scale_name": f"{PREFIX} Points",
+                "grscale_type": "Points",
+                "maxnumgrade": 100,
+                "intervals": [
+                    {
+                        "grade_code": "A",
+                        "threshold": 0,
+                        "grade_pass": "Pass",  # nosec B105
+                    }
+                ],
+            }
+        ).name
+        with self.assertRaises(frappe.ValidationError):
+            _validate_source_for_import(w.cs, target)
+
     def test_untouched_scaffold_gives_way_but_one_with_content_does_not(self):
         w = World()
         self.assertTrue(cbe_reflection.untouched_scaffold(w.cs))
