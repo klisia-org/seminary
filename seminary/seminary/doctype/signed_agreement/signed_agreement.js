@@ -22,10 +22,11 @@ frappe.ui.form.on('Signed Agreement', {
 						  options: `<div class="text-muted small mb-3">${__('Read the signed text below the form before countersigning.')}</div>` },
 						{ fieldname: 'signer_name', fieldtype: 'Data', label: __('Your full name'), reqd: 1,
 						  default: frappe.session.user_fullname },
+						{ fieldname: 'signature', fieldtype: 'Signature', label: __('Draw your signature (optional)') },
 					],
 					(v) => frappe.call({
 						method: 'seminary.seminary.requirements.countersign',
-						args: { signed_agreement: frm.doc.name, signer_name: v.signer_name },
+						args: { signed_agreement: frm.doc.name, signer_name: v.signer_name, signature: v.signature || null },
 						freeze: true,
 					}).then(() => frm.reload_doc()),
 					__('Countersign agreement'),

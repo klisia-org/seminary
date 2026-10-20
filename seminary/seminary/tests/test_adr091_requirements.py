@@ -486,3 +486,77 @@ class TestApplicantDocuments(ADR091Case):
         self.assertEqual(
             (pdoc.person, pdoc.status, pdoc.file), (applicant.person, "Submitted", url)
         )
+
+
+# A 1x1 transparent PNG.
+PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4"
+    "nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg=="
+)
+
+
+class TestSignatureFields(ADR091Case):
+    """ADR 091 §8, amended: {{ signature }} and {{ countersignature }}."""
+
+    def test_lines_are_empty_while_read_and_filled_in_each_pdf(self):
+        t = _template(
+            body="<p>Terms.</p><p>{{ signature }}</p><p>{{ countersignature }}</p>",
+            countersign_role="Registrar",
+        )
+        program = _program([_rule("Agreement", t.name)])
+        student, person = _student()
+        row = _rows(fx.make_enrollment(student, program).name)[0]
+        full_name = frappe.db.get_value("Person", person.name, "full_name")
+
+        frappe.set_user(person.user)
+        preview = req.agreement_preview(row.name)["html"]
+        self.assertIn("<!--slot:signature-->", preview)
+        self.assertIn("<!--slot:countersignature-->", preview)
+        self.assertIn(full_name, preview)
+        with self.assertRaises(frappe.ValidationError):
+            req.sign_agreement(
+                row.name,
+                "Test Signer",
+                consent=1,
+                signature="data:image/png;base64,'><script>",
+            )
+
+        with patch.object(req, "_pdf", wraps=req._pdf) as pdf:
+            sa_name = req.sign_agreement(
+                row.name, "Test Signer", consent=1, signature=PNG
+            )["signed_agreement"]
+            signed_html = pdf.call_args.args[1]
+        self.assertIn(PNG, signed_html)
+        self.assertIn("Test Signer", signed_html)
+        self.assertNotIn("<!--slot:signature-->", signed_html)
+        self.assertIn("<!--slot:countersignature-->", signed_html)  # still to come
+
+        frappe.set_user("Administrator")
+        sa = frappe.get_doc("Signed Agreement", sa_name)
+        # What is stored and hashed is the text as read, lines empty.
+        self.assertEqual(sa.rendered_html, preview)
+        self.assertEqual(sa.html_sha256, hashlib.sha256(preview.encode()).hexdigest())
+
+        frappe.set_user(fx.make_user(roles=("Registrar",)).name)
+        with patch.object(req, "_pdf", wraps=req._pdf) as pdf:
+            req.countersign(sa_name, "School Registrar", signature=PNG)
+            final_html = pdf.call_args.args[1]
+        self.assertNotIn("<!--slot:", final_html)
+        self.assertIn("Test Signer", final_html)
+        self.assertIn("School Registrar", final_html)
+        self.assertEqual(final_html.count(PNG), 2)
+        frappe.set_user("Administrator")
+        self.assertEqual(
+            frappe.db.get_value("Signed Agreement", sa_name, "countersignature"), PNG
+        )
+
+    def test_a_template_without_the_fields_still_signs(self):
+        t = _template(body="<p>No lines here.</p>")
+        program = _program([_rule("Agreement", t.name)])
+        student, person = _student()
+        row = _rows(fx.make_enrollment(student, program).name)[0]
+        frappe.set_user(person.user)
+        self.assertEqual(
+            req.sign_agreement(row.name, "Test Signer", consent=1)["status"],
+            "Satisfied",
+        )

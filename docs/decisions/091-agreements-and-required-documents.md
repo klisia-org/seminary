@@ -2,6 +2,7 @@
 
 **Date:** 2026-10-20
 **Status:** Accepted 2026-10-20
+**Amended 2026-10-20:** §8 — signature fields in the template.
 **Related:** 042 (Person spine), 068 (Person-first identity), 071 (tax identifiers), 083 (bulk enrollment), 084 (staff-enrolled programs)
 
 ## Context
@@ -86,6 +87,12 @@ This ADR sets one set of parts that students and instructors share.
    The portal asks the signer to tick a consent box before signing. When the template has a
    countersign role, someone holding that role countersigns on Desk. The same evidence and a final
    PDF are recorded for them, and the agreement is complete only then.
+
+   *Amended:* a template places `{{ signature }}` and `{{ countersignature }}` where each party
+   signs. While the person reads, they render as empty, labelled lines. That text is what is stored
+   and hashed. Each PDF fills the lines with the drawn signature (if any), the typed name and the
+   time. The countersigner may draw a signature too. The evidence block stays at the end of every
+   PDF, so a template without these fields still records who signed.
 9. **What blocking stops.** A blocking row that is not Satisfied or Waived by its due date:
    - stops a student's course self-enrollment;
    - shows as a warning column in Bulk Course Enrollment (083);

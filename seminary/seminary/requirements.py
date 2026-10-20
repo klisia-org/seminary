@@ -15,6 +15,7 @@ ignore_permissions.
 """
 
 import hashlib
+import re
 
 import frappe
 from frappe import _
@@ -48,6 +49,10 @@ RULE_FIELDS = (
 )
 # A drawn signature is a PNG data URL; anything bigger than this is not a signature.
 MAX_SIGNATURE_BYTES = 300_000
+_PNG_DATA_URL = re.compile(r"^data:image/png;base64,[A-Za-z0-9+/]+={0,2}$")
+# Where `{{ signature }}` / `{{ countersignature }}` landed in the rendered text.
+# The stored text keeps the empty lines the signer read; the PDFs fill them.
+SLOTS = ("signature", "countersignature")
 
 
 # --------------------------------------------------------------------------- #
@@ -572,11 +577,55 @@ def agreement_context(row):
     ctx.doctrinal_statement = _doctrinal_statement(
         row.reference_doctype == "Instructor"
     )
+    # Empty signature lines; the PDFs fill them (ADR 091 §8, amended).
+    ctx.signature = _slot(
+        "signature", frappe.db.get_value("Person", row.person, "full_name") or ""
+    )
+    ctx.countersignature = _slot("countersignature", ctx.school.name, escaped=True)
     # oikonomos / tamias add fees and payment plans here, so seminary never names
     # a billing doctype.
     for path in frappe.get_hooks("agreement_context"):
         frappe.get_attr(path)(ctx, row)
     return ctx
+
+
+def _line(top, caption):
+    return (
+        "<span style='display:inline-block;min-width:260px;margin:12px 24px 0 0;"
+        "vertical-align:bottom'>"
+        f"{top}<span style='display:block;border-top:1px solid #333;padding-top:2px;"
+        f"font-size:9pt'>{caption}</span></span>"
+    )
+
+
+def _slot(name, label, escaped=False):
+    caption = label if escaped else escape_html(label or "")
+    body = _line("<span style='display:block;height:60px'></span>", caption)
+    return f"<!--slot:{name}-->{body}<!--/slot:{name}-->"
+
+
+def _signed_line(name, when, image=None):
+    if image and _PNG_DATA_URL.match(image):
+        top = f"<img src='{image}' style='display:block;height:60px'>"
+    else:
+        top = "<span style='display:block;height:60px'></span>"
+    caption = "{0}<br>{1}".format(
+        escape_html(name or ""),
+        escape_html(_("Signed electronically on {0}").format(format_datetime(when))),
+    )
+    return _line(top, caption)
+
+
+def fill_slots(html, **filled):
+    """Put each signer's line where the template asked for it."""
+    for name, line in filled.items():
+        html = re.sub(
+            rf"<!--slot:{name}-->.*?<!--/slot:{name}-->",
+            lambda _m, line=line: line,
+            html,
+            flags=re.S,
+        )
+    return html
 
 
 def current_version(template):
@@ -709,7 +758,8 @@ def sign(row, signer_name, signature=None):
             (_("Text SHA-256"), sa.html_sha256),
         ),
     )
-    content = _pdf(template.title, html, [evidence])
+    signed = fill_slots(html, signature=_signed_line(signer_name, when, signature))
+    content = _pdf(template.title, signed, [evidence])
     sa.pdf = _save_pdf(content, sa, "pdf", "signed")
     sa.pdf_sha256 = _sha256(content)
     sa.flags.ignore_permissions = True
@@ -717,7 +767,7 @@ def sign(row, signer_name, signature=None):
     return sa
 
 
-def countersign_agreement(sa, signer_name):
+def countersign_agreement(sa, signer_name, signature=None):
     template = frappe.get_doc("Agreement Template", sa.agreement_template)
     ip, agent = _request_evidence()
     when = now_datetime()
@@ -742,7 +792,15 @@ def countersign_agreement(sa, signer_name):
         ip,
         agent,
     )
-    content = _pdf(template.title, sa.rendered_html, [first, second])
+    text = fill_slots(
+        sa.rendered_html,
+        signature=_signed_line(
+            sa.signer_name, get_datetime(sa.signed_on), sa.signature
+        ),
+        countersignature=_signed_line(signer_name, when, signature),
+    )
+    content = _pdf(template.title, text, [first, second])
+    sa.countersignature = signature or None
     sa.countersigned_on = when
     sa.countersigned_by = frappe.session.user
     sa.countersigner_name = signer_name
@@ -757,7 +815,7 @@ def countersign_agreement(sa, signer_name):
 
 
 @frappe.whitelist()
-def countersign(signed_agreement, signer_name):
+def countersign(signed_agreement, signer_name, signature=None):
     require_registrar()
     sa = frappe.get_doc("Signed Agreement", signed_agreement)
     if sa.docstatus != 1 or sa.status != "Awaiting Countersignature":
@@ -773,8 +831,18 @@ def countersign(signed_agreement, signer_name):
             "requirements.countersign",
         )
     signer_name = _clean_name(signer_name)
-    countersign_agreement(sa, signer_name)
+    _check_signature(signature)
+    countersign_agreement(sa, signer_name, signature)
     return sa.status
+
+
+def _check_signature(signature):
+    if signature and (
+        len(signature) > MAX_SIGNATURE_BYTES or not _PNG_DATA_URL.match(signature)
+    ):
+        frappe.throw(
+            _("The drawn signature could not be read. Clear it and draw again.")
+        )
 
 
 def _clean_name(name):
@@ -1139,13 +1207,7 @@ def sign_agreement(requirement, signer_name, consent=0, signature=None):
     if not cint(consent):
         frappe.throw(_("Tick the box to confirm you agree before signing."))
     signer_name = _clean_name(signer_name)
-    if signature and (
-        not str(signature).startswith("data:image/png;base64,")
-        or len(signature) > MAX_SIGNATURE_BYTES
-    ):
-        frappe.throw(
-            _("The drawn signature could not be read. Clear it and draw again.")
-        )
+    _check_signature(signature)
     sa = sign(row, signer_name, signature)
     return {"signed_agreement": sa.name, "status": recompute(row.name)}
 
