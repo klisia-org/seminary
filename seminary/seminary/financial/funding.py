@@ -224,4 +224,6 @@ def _range_label(start, end):
 @frappe.whitelist()
 def current_fiscal_year():
     """The current fiscal year, for a funding report's default dates."""
+    # Who can open Sources of Funding, or koinonia's Giving by Source.
+    frappe.only_for(["Advancement Officer", "Seminary Manager", "System Manager"])
     return fiscal_year()
