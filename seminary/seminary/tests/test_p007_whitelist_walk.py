@@ -248,6 +248,10 @@ STAFF_ONLY = {
     # --- Billing actions routed to the active billing app (aretenic decision
     # 051 §3). `frappe.only_for` Registrar / Seminary Manager before anything.
     "seminary.seminary.financial.actions.regenerate_current_term_charges",
+    "seminary.seminary.financial.actions.open_financial_setup",
+    # Funding report default dates: the roles that open Sources of Funding or
+    # koinonia's Giving by Source.
+    "seminary.seminary.financial.funding.current_fiscal_year",
     # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
     # compute_occurrence_number / preview_recommendation / suggest_actions gated
     # here (p005a A01-16); the rest were already gated.
