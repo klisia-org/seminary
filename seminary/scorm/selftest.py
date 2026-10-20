@@ -177,7 +177,7 @@ def _config() -> dict:
                 f"`{_registrable(host)}`. A sibling subdomain can set a cookie the "
                 "application host will receive, which hands every package uploader "
                 "a session-fixation primitive -- the delivery host must be a "
-                "different registrable domain (p009 §2.2)."
+                "different registrable domain."
             ),
         }
 
@@ -248,7 +248,7 @@ def _storage() -> dict:
             "backend": name,
             "detail": (
                 "No object storage configured. SCORM packages are exploded to "
-                "object storage and have no on-disk path (p009 §2.1), so playback "
+                "object storage and have no on-disk path, so playback "
                 "cannot work without it."
             ),
         }
@@ -338,7 +338,7 @@ def _origin() -> dict:
             failures.append(
                 f"`{path}` answered 200 on the delivery host. The application is "
                 "being served on the delivery origin, which undoes the isolation "
-                "the whole design rests on (p009 §2.2)."
+                "the whole design rests on."
             )
 
     scorm = probes[PROBE_SCORM]

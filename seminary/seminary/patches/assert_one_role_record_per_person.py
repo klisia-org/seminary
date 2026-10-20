@@ -53,7 +53,7 @@ def execute():
     if problems:
         frappe.throw(
             _(
-                "One record per role per person (ADR 068), but these already "
+                "One record per role per person, but these already "
                 "share one:\n\n{0}\n\nDecide which record is the person's and "
                 "either delete or re-point the others, then migrate again."
             ).format("\n".join(problems))
