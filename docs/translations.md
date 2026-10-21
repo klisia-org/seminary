@@ -88,15 +88,17 @@ translated: Frappe displays the translated label and stores the raw value.
 **Code**
 
 - [ ] `seminary/seminary/integrations/bible_books.py`: add the language's book
-  names and abbreviations (today EN and PT only; ES is missing too). Check for
-  clashes after accents are stripped: bare `jo` is left out because PT `Jó`
-  and `Jo` collide.
+  names and abbreviations (today EN, PT and ES), adding only those that differ
+  from an existing alias once accents are stripped. `test_bible_books.py` fails
+  if an alias lands on another book; bare `jo` stays out because PT `Jó` and
+  `Jo` collide.
 - [ ] Docs site: add a locale block to `docs/.vitepress/config.mjs`, the pages
   under `docs/en/<lang>/`, and `docs/en/<lang>/_i18n/diagram-labels.json`
   (the lifecycle diagrams fall back to English without it). Update the language
   list in `docs/en/getting-started/translations.md` and its copies.
 
-**Known gaps** (affect every non-English language, not just a new one)
+**Known gaps** (affect every non-English language, not just a new one; the
+plan is aretenic decision 071)
 
 - The koinonia and aretenic frontends and the shared portal shell have no
   translation plugin: `__` is a pass-through, so their portal UI is English.
