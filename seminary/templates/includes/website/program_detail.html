@@ -1,0 +1,65 @@
+{#- A program's public page without the site shell (p021): the program page and
+    aretenic's website widget both include it. `apply_base`, `apply_extra` and
+    `apply_target` let a host change where the apply links point and open. -#}
+<style>
+.enrollment-windows, .enrollment-cta { margin: 1.5rem 0; padding: 1rem 1.25rem; border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa; }
+.pgm-hero { position: relative; width: 100%; min-height: 320px; background-color: #1f2937; background-size: cover; background-position: center; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem; }
+.pgm-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; }
+.pgm-hero-overlay h1 { color: #fff; margin: 0 0 0.75rem; font-size: 2.25rem; line-height: 1.1; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.pgm-duration-pill { display: inline-block; padding: 0.5rem 1rem; background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; font-weight: 600; max-width: 33%; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.pgm-blurb { font-size: 1.1rem; color: #444; margin: 1.5rem 0; line-height: 1.5; }
+.pgm-section { margin: 1.5rem 0; }
+.pgm-section h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+</style>
+
+<div class="pgm-hero" {% if hero_image %}style="background-image: url('{{ hero_image }}');"{% endif %}>
+    <div class="pgm-hero-overlay">
+        <h1>{{ title }}</h1>
+        {% if not is_ongoing and (program_duration or duration_unit) %}
+        <div class="pgm-duration-pill">
+            {{ program_duration or '' }} {{ _(duration_unit) if duration_unit else '' }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if blurb and blurb | striptags | trim %}
+<div class="pgm-blurb">{{ blurb }}</div>
+{% endif %}
+
+{% include "templates/includes/website/admission_windows.html" %}
+
+{% if enrollment_mode == "Continuous" and display_cta and continuous_term %}
+<section class="enrollment-cta">
+    <h2 style="margin-top: 0;">{{ _("Apply Anytime") }}</h2>
+    <div><strong>{{ continuous_term.term_label }}</strong></div>
+    {% if continuous_term.term_window_display %}
+    <div class="term-meta">{{ _("Term runs") }} {{ continuous_term.term_window_display }}</div>
+    {% endif %}
+    <div class="apply-btn-wrap">
+        <a class="btn btn-primary" href="{{ apply_base or '' }}/{{ apply_route }}/new?program={{ name | urlencode }}&academic_term={{ continuous_term.name | urlencode }}{{ apply_extra or '' }}"{% if apply_target %} target="{{ apply_target }}"{% endif %}>
+            {{ _("Apply to be our student") }}
+        </a>
+    </div>
+</section>
+{% endif %}
+
+{% if program_description and program_description | striptags | trim %}
+<section class="pgm-section">
+    {{ program_description }}
+</section>
+{% endif %}
+
+{% if program_requirements and program_requirements | striptags | trim %}
+<section class="pgm-section">
+    <h2>{{ _("Program Requirements") }}</h2>
+    {{ program_requirements }}
+</section>
+{% endif %}
+
+{% if duration_txt and duration_txt | striptags | trim %}
+<section class="pgm-section">
+    <h2>{{ _("Program Duration") }}</h2>
+    {{ duration_txt }}
+</section>
+{% endif %}

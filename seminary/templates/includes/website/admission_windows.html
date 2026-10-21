@@ -1,0 +1,66 @@
+{#- Open admission windows (p021). On a program page, `open_windows` are that
+    program's and the apply button is for `name`. Elsewhere set `show_all_windows`;
+    each window then lists the programs it admits (`w.programs`). -#}
+{% if open_windows and (show_all_windows or (enrollment_mode == "Timed" and display_enrollment_window)) %}
+<style>
+.enrollment-windows, .enrollment-cta { margin: 1.5rem 0; padding: 1rem 1.25rem; border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa; }
+.enrollment-windows ul { list-style: none; padding: 0; margin: 0; }
+.enrollment-windows li { margin: 0.75rem 0; padding: 0.85rem 1rem; background: #fff; border-radius: 4px; border-left: 4px solid #2563eb; }
+.enrollment-windows li.indicator-green { border-left-color: #16a34a; }
+.enrollment-windows li.indicator-red { border-left-color: #dc2626; }
+.enrollment-windows li.indicator-blue { border-left-color: #2563eb; }
+.enrollment-windows .status-pill { font-weight: 600; }
+.enrollment-windows .term-meta { color: #555; margin-top: 0.25rem; font-size: 0.92rem; }
+.enrollment-windows .apply-btn-wrap { margin-top: 0.75rem; }
+.enrollment-windows .window-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.enrollment-windows .window-left { flex: 1 1 auto; min-width: 0; }
+.enrollment-windows .window-right { flex: 0 0 auto; text-align: right; }
+.enrollment-windows .window-right .term-label { font-weight: 700; }
+.enrollment-windows .window-programs { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+.enrollment-windows .window-programs li { margin: 0.4rem 0; padding: 0; border: 0; background: none; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+</style>
+<section class="enrollment-windows">
+    <h2 style="margin-top: 0;">{{ _("Now Accepting Applications") }}</h2>
+    <ul>
+        {% for w in open_windows %}
+        <li class="indicator-{{ w.indicator }}">
+            <div class="window-row">
+                <div class="window-left">
+                    <div><span class="status-pill">{{ w.status_label }}</span></div>
+                    <div class="term-meta">{{ _("Apply between") }} {{ w.apply_window_display }}</div>
+                    {% if w.introduction %}
+                    <div class="term-meta">{{ w.introduction }}</div>
+                    {% endif %}
+                    {% if show_all_windows %}
+                    <ul class="window-programs">
+                        {% for p in w.programs %}
+                        <li>
+                            <a href="{{ p.href or ('/' ~ p.route) }}">{{ p.program_name }}</a>
+                            {% if p.display_cta %}
+                            <span class="apply-btn-wrap"><a class="btn btn-primary btn-sm" href="{{ apply_base or '' }}/{{ p.apply_route }}/new?program={{ p.name | urlencode }}&academic_term={{ w.academic_term | urlencode }}&term_admission={{ w.name | urlencode }}{{ apply_extra or '' }}"{% if apply_target %} target="{{ apply_target }}"{% endif %}>
+                                {{ _("Apply") }}
+                            </a></span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% elif display_cta %}
+                    <div class="apply-btn-wrap">
+                        <a class="btn btn-primary" href="{{ apply_base or '' }}/{{ apply_route }}/new?program={{ name | urlencode }}&academic_term={{ w.academic_term | urlencode }}&term_admission={{ w.name | urlencode }}{{ apply_extra or '' }}"{% if apply_target %} target="{{ apply_target }}"{% endif %}>
+                            {{ _("Apply to be our student") }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="window-right">
+                    <div class="term-label">{{ w.term_label }}</div>
+                    {% if w.term_window_display %}
+                    <div class="term-meta">{{ _("Term runs") }} {{ w.term_window_display }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
