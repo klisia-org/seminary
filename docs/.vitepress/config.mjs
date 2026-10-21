@@ -13,6 +13,9 @@ export default withMermaid(defineConfig({
   description: 'Documentation for SeminaryERP — a theological seminary management system built on Frappe/ERPNext',
 
   srcDir: 'en',
+  // en/dev/ holds local test pages (e.g. the website widget harness); `vitepress dev` serves them,
+  // the published site never does (DOCS_DEV_PAGES=1 keeps them in a local build).
+  srcExclude: process.argv.includes('build') && !process.env.DOCS_DEV_PAGES ? ['dev/**'] : [],
   outDir: '.vitepress/dist',
 
   head: [
