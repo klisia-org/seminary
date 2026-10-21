@@ -12,6 +12,7 @@ SeminaryERP is dedicated to making education management more efficient and less 
 ## Table of Contents
 
 - [Key Features](#key-features)
+- [Translations](#translations)
 - [License](#license)
 
 ## Key Features
@@ -25,9 +26,15 @@ Here are some of the standout features of SeminaryERP:
 - **Payers**: As a student is enrolled in a program, their customer is associated with all different fee categories for that program. However, the registrar may split (% only) each fee category among different payers. That way, a church/company may pay a percentage of some fess but not of others. 💰
 - **Course Scheduling**: Efficiently schedule courses and manage course calendars. Each course has its calendar subscription. 🗓
 -**Student Portal**: Students and instructors will use only the Portal which serves as the LMS and allows students to see their fulfillment of graduation requirements (Program Audit), Enroll in courses for their programs, Pay their fees (optional, requires Payments), and see their transcripts. 
--**Alumni**: Alumni have their space in the Portal, and an optional integration with our Frappe Giving app to manage donors (https://github.com/klisia-org/frappe_giving).
+-**Alumni**: Alumni have their space in the Portal, and an optional integration with our Koinonia app to manage donors (https://github.com/Aretenic/koinonia).
 
 
+
+## Translations
+
+[![Translation status](https://translate.seminaryerp.org/widget/klisia/seminary/matrix-auto.svg)](https://translate.seminaryerp.org/projects/klisia/seminary/)
+
+Translations are managed on [Weblate](https://translate.seminaryerp.org/projects/klisia/seminary/). When you add or change user-facing strings, run `bench generate-pot-file --app seminary` and commit `seminary/locale/main.pot`; Weblate picks up the new strings from there.
 
 ## License
 

@@ -36,15 +36,14 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { usersStore } from '@/stores/user'
 import { createResource } from 'frappe-ui'
-import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound, Building2, Users, Briefcase } from 'lucide-vue-next'
+import { BookOpen, GraduationCap, ClipboardCheck, ListChecks, Banknote, MonitorCog, UserRound, Building2 } from 'lucide-vue-next'
 import ProfileModal from '@/components/ProfileModal.vue'
 import HelpWidget from '@/components/HelpWidget.vue'
 
 const router = useRouter()
-const route = useRoute()
 const { userResource } = usersStore()
 const showProfile = ref(false)
 
@@ -53,14 +52,12 @@ const seminarySettings = createResource({
 	auto: true,
 })
 
+// ADR 075: no /partner branch here any more. The partner areas are a PageTabs
+// row inside the section, so this bottom bar stays the primary navigation on
+// mobile exactly as it does everywhere else -- and the link rules live in one
+// place instead of being restated per section.
 const links = computed(() => {
-	if (route.path.startsWith('/partner')) {
-		return [
-			{ label: __('Profile'), to: '/partner/profile', icon: Building2, activeFor: ['PartnerProfile'] },
-			{ label: __('People'), to: '/partner/people', icon: Users, activeFor: ['PartnerPeople'] },
-			{ label: __('Jobs'), to: '/partner/jobs', icon: Briefcase, activeFor: ['PartnerJobPostings', 'PartnerJobPosting', 'PartnerApplication'] },
-		]
-	}
+	const isPartner = userResource?.data?.is_partner && userResource?.data?.partner_org
 	const isStudent = userResource?.data?.is_student
 	const isModerator = userResource?.data?.is_moderator
 	const isSystemManager = userResource?.data?.is_system_manager
@@ -75,6 +72,9 @@ const links = computed(() => {
 				{ label: __('Enroll'), to: '/enrollment', icon: ListChecks, activeFor: ['Enrollment'] },
 			] : []),
 			{ label: __('Fees'), to: '/fees', icon: Banknote, activeFor: ['Fees'] },
+		] : []),
+		...(isPartner ? [
+			{ label: __('Partner'), to: '/partner/jobs', icon: Building2, activeFor: ['PartnerProfile', 'PartnerPeople', 'PartnerJobPostings', 'PartnerJobPosting', 'PartnerApplication', 'PartnerInternshipPostings', 'PartnerInternshipPosting', 'PartnerInterns'] },
 		] : []),
 		...((isModerator || isSystemManager) ? [
 			{ label: __('Desk'), to: '/desk/seminary', icon: MonitorCog, activeFor: ['Desk'] },

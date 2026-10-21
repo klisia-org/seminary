@@ -46,7 +46,7 @@ with open(f, "w") as o:
 
 New docs pages live under `docs/en/` and must be registered in the English
 (`root`) sidebar in `docs/.vitepress/config.mjs` (the `pt`/`es` mirrors are
-filled by Crowdin). To find the right anchor, slugify the heading the VitePress
+filled by Weblate). To find the right anchor, slugify the heading the VitePress
 way: lowercase, strip punctuation, spaces -> `-`, and a leading digit gets a `_`
 prefix (so `## 12. Course Schedule Lifecycle` -> `#_12-course-schedule-lifecycle`).
 
@@ -85,7 +85,6 @@ Documentation ✓ links to the live page.
 | Course Folder | ✓ | ✗ | Doc to write: "Course files / materials" subsection (folders, enrolled-student download access) in the courses docs. |
 | Course Gradebook | ✓ | [✓](https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid) |  |
 | Course Lesson | ✓ | ✗ | Doc to write: "Lessons" subsection in course-authoring docs (content, assessments, preview, progress). |
-| Course Result Tool | ✓ | [✓](https://docs.seminaryerp.org/modules/grading.html#the-gradebook-the-whole-grid) |  |
 | Course Schedule | ✓ | [✓](https://docs.seminaryerp.org/getting-started/initial-setup.html#_12-course-schedule-lifecycle) |  |
 | Course Schedule Chapter | ✓ | ✗ | Doc to write: "Chapters" subsection in course-authoring docs (ordering lessons, SCORM). |
 | Course Schedule Progress | ✓ | ✗ | **Won't document (2026-06-13)** -- internal, system-maintained tracking record; surfaced via course progress reports. |
@@ -142,7 +141,6 @@ Documentation ✓ links to the live page.
 | Student Attendance Tool | ✓ | [✓](https://docs.seminaryerp.org/modules/attendance.html#capturing-attendance) |  |
 | Student Balance | ✓ | [✓](https://docs.seminaryerp.org/modules/enrollment.html#payment-status-section-on-the-cei) |  |
 | Student Group | ✓ | ✗ | Doc to write: "Student Groups" subsection (mentor groups, reuse/active flags, attaching to a Course Schedule). Nearest area: courses/scheduling docs. |
-| Student Language | ✓ | ✗ | Low priority. One-line mention in a setup/lookups reference; trivial single-field lookup. |
 | Student Leave Application | ✓ | ✗ | Doc to write: "Excused absences / leave" subsection in [attendance](https://docs.seminaryerp.org/modules/attendance.html). NOTE: controller attendance logic is currently commented out -- describe as a record-only form until reactivated. |
 | Student Log | ✓ | ✗ | Doc to write: "Student Logs" subsection (note types, where they surface) under the proposed Students records page. |
 | Term Admission | ✓ | [✓](https://docs.seminaryerp.org/modules/program.html#admissions-timed-vs-continuous) |  |
@@ -170,7 +168,6 @@ section, or record here that we deliberately won't. When written, set the
 | Seminary Lesson Note | Doc to write: brief mention in the student-portal / taking-a-course docs (one private note per user per lesson). |
 | Student | Doc to write: a core **Students** records page (creating a student, auto User/Customer, standing & holds, enrollments). No people/records page exists yet. |
 | Student Group | Doc to write: "Student Groups" subsection (mentor groups, reuse/active flags, attaching to a Course Schedule). Nearest area: courses/scheduling docs. |
-| Student Language | Low priority. One-line mention in a setup/lookups reference; trivial single-field lookup. |
 | Student Leave Application | Doc to write: "Excused absences / leave" subsection in [attendance](https://docs.seminaryerp.org/modules/attendance.html). NOTE: controller attendance logic is currently commented out -- describe as a record-only form until reactivated. |
 | Student Log | Doc to write: "Student Logs" subsection (note types, where they surface) under the proposed Students records page. |
 | Trigger Fee Events | **Won't document (2026-06-13)** -- developer-only billing plumbing, not a user-facing record. |

@@ -370,6 +370,9 @@ def _unsaved_settings(**overrides):
     doc.base_url = overrides.get("base_url", "https://example.test")
     doc.daily_limit = overrides.get("daily_limit", 0)
     doc.api_key = overrides.get("api_key", "zzt-token")
+    # Own settings unless a test says otherwise, so a site that carries a host
+    # token still tests the values on screen.
+    doc.use_own_settings = overrides.get("use_own_settings", 1)
     return doc
 
 
@@ -694,3 +697,63 @@ class TestSettingsRefuseAHalfConfiguration(GeocodingTestCase):
         settings.api_key = ""
         with self.assertRaisesRegex(frappe.ValidationError, "API key"):
             settings.save(ignore_permissions=True)
+
+
+HOSTED = {
+    "geocoding_base_url": "https://geo.example.test",
+    "geocoding_token": "zzt-host-token",  # nosec B105 - a test stand-in
+}
+
+
+class TestTheHostsProxy(GeocodingTestCase):
+    """A hosted site geocodes from site config (Aretenic ADR 053).
+
+    Press writes the token and endpoint into site config when it installs
+    seminary, so the school holds no key and configures nothing, and can still
+    opt out to its own key or to nothing.
+    """
+
+    def setUp(self):
+        super().setUp()
+        conf = patch.dict(frappe.conf, HOSTED)
+        conf.start()
+        self.addCleanup(conf.stop)
+
+    def test_a_hosted_site_is_enabled_on_the_proxy_without_settings(self):
+        with geocoding.using(_unsaved_settings(enabled=0, use_own_settings=0)):
+            settings = geocoding._settings()
+            self.assertTrue(geocoding.is_enabled())
+        self.assertEqual(settings.provider, "Vendor proxy")
+        self.assertEqual(settings.base_url, "https://geo.example.test")
+        self.assertEqual(settings.daily_limit, 0)
+
+    def test_the_lookup_carries_the_host_token(self):
+        settings = _unsaved_settings(enabled=0, use_own_settings=0)
+        with geocoding.using(settings), patch.object(
+            geocoding.client, "get", return_value=GOOGLE_OK
+        ) as called:
+            geocoding.lookup("Rua da Aurora, Recife")
+        args, kwargs = called.call_args
+        self.assertEqual(args[:2], ("https://geo.example.test", "/geocode"))
+        self.assertEqual(kwargs["auth_value"], "Bearer zzt-host-token")
+
+    def test_opting_out_hands_control_back_to_settings(self):
+        settings = _unsaved_settings(enabled=0, use_own_settings=1)
+        with geocoding.using(settings):
+            self.assertFalse(geocoding.is_enabled())
+            self.assertIs(geocoding._settings(), settings)
+
+    def test_a_hosted_form_needs_no_credentials_of_its_own(self):
+        settings = _unsaved_settings(
+            enabled=0, use_own_settings=0, api_key="", base_url=""
+        )
+        settings.validate()  # would throw for a site configuring itself
+        settings.onload()
+        self.assertTrue(settings.get_onload().get("hosted"))
+
+    def test_test_connection_exercises_the_proxy(self):
+        settings = _unsaved_settings(enabled=0, use_own_settings=0)
+        with patch.object(geocoding.client, "get", return_value=GOOGLE_OK) as called:
+            result = settings.test_connection()
+        self.assertTrue(result["ok"])
+        self.assertEqual(called.call_args.args[0], "https://geo.example.test")

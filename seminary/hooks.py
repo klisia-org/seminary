@@ -155,7 +155,6 @@ global_search_doctypes = {
         {"doctype": "Announcement", "index": 11},
         {"doctype": "Student Log", "index": 12},
         {"doctype": "Room", "index": 13},
-        {"doctype": "Student Leave Application", "index": 14},
         {"doctype": "Program Enrollment", "index": 15},
         {"doctype": "Course Enrollment Individual", "index": 16},
         {"doctype": "Quiz", "index": 17},
@@ -250,6 +249,33 @@ seminary_markdown_macro_renderers = {
 after_install = "seminary.install.after_install"
 after_migrate = "seminary.install.after_migrate"
 
+# Desk drops workspace blocks whose app is missing or not in use (aretenic
+# decision 051). Every app's boot_session runs, so koinonia's copy is harmless.
+# Partner and Alumni hold doctypes but no navigation: their records are listed in Seminary's
+# sidebars, so neither module gets a computed sidebar of its own (decision 088a §1).
+code_only_modules = {"Partner": ["Seminary"], "Alumni": ["Seminary"]}
+
+boot_session = [
+    "seminary.desk_nav.boot_session",
+    "seminary.seminary.financial.desk.boot_session",
+    # Last, so it sees the rows the hooks above added.
+    "seminary.seminary.sidebar_workspaces.boot_session",
+]
+# The Asaas checkout asks the payments app for a CPF it already knows, so the
+# payer confirms the one on their Person instead of typing it (ADR 071).
+payer_tax_id = "seminary.seminary.tax_ids.payer_tax_id"
+
+desk_block_gates = {
+    "Getting Started SeminaryERP": {
+        "shortcut:6. Set up billing": "seminary.seminary.financial.actions.has_financial_backend",
+    },
+    "Registrar": {
+        "custom_block:Registrar - Regenerate Current-Term Invoices": (
+            "seminary.seminary.financial.actions.can_regenerate_current_term_charges"
+        ),
+    },
+}
+
 # Uninstallation
 # ------------
 
@@ -277,11 +303,16 @@ permission_query_conditions = {
     # Competency assessments and results carry a student's own account of their
     # formation; the list view must not become a way to read a classmate's.
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.get_permission_query_conditions",
+    "Activity Competency Grade": "seminary.seminary.doctype.activity_competency_grade.activity_competency_grade.get_permission_query_conditions",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.get_permission_query_conditions",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.get_permission_query_conditions",
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.get_permission_query_conditions",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.get_permission_query_conditions",
     "Communication Log": "seminary.seminary.communication_log_permissions.get_permission_query_conditions",
+    # decisions/091: a person reads their own; school roles read all.
+    "Person Document": "seminary.seminary.requirements.person_document_query",
+    "Person Requirement": "seminary.seminary.requirements.person_requirement_query",
+    "Signed Agreement": "seminary.seminary.requirements.signed_agreement_query",
     "Partner Organization": "seminary.partner.permissions.org_query",
     "Partner Organization Location": "seminary.partner.permissions.location_query",
     "Partner Job Opening": "seminary.partner.permissions.opening_query",
@@ -297,6 +328,10 @@ permission_query_conditions = {
     "Cohort Post": "seminary.seminary.discipleship.permissions.post_query",
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_query",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_query",
+    # ADR 087: leaders see every plan; members see the plans their cohorts run.
+    "Reading Plan": "seminary.seminary.discipleship.reading_plans.plan_query",
+    "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_query",
+    "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_query",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
     # p007 §2.2 / §2.8: student-keyed rows and instructor tiers, one factory.
     "Student": "seminary.seminary.student_permissions.query_student",
@@ -317,6 +352,7 @@ permission_query_conditions = {
     "Course Schedule Chapter": "seminary.seminary.student_permissions.query_course_schedule_chapter",
     "Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
+    "Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -325,11 +361,15 @@ has_permission = {
     "Instructor": "seminary.seminary.doctype.instructor.instructor.has_permission",
     "Course Folder": "seminary.seminary.doctype.course_folder.course_folder.has_permission",
     "Competency Assessment": "seminary.seminary.doctype.competency_assessment.competency_assessment.has_permission",
+    "Activity Competency Grade": "seminary.seminary.doctype.activity_competency_grade.activity_competency_grade.has_permission",
     "Competency Result": "seminary.seminary.doctype.competency_result.competency_result.has_permission",
     "Personal Development Plan": "seminary.seminary.doctype.personal_development_plan.personal_development_plan.has_permission",
     "Personal Development Note": "seminary.seminary.doctype.personal_development_note.personal_development_note.has_permission",
     "Diploma": "seminary.seminary.doctype.diploma.diploma.has_permission",
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
+    "Person Document": "seminary.seminary.requirements.person_document_has",
+    "Person Requirement": "seminary.seminary.requirements.person_requirement_has",
+    "Signed Agreement": "seminary.seminary.requirements.signed_agreement_has",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
     "Partner Organization": "seminary.partner.permissions.org_has",
     "Partner Organization Location": "seminary.partner.permissions.location_has",
@@ -346,6 +386,9 @@ has_permission = {
     "Cohort Post": "seminary.seminary.discipleship.permissions.post_has",
     "Cohort Post Comment": "seminary.seminary.discipleship.permissions.comment_has",
     "Cohort Post Reaction": "seminary.seminary.discipleship.permissions.reaction_has",
+    "Reading Plan": "seminary.seminary.discipleship.reading_plans.plan_has",
+    "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_has",
+    "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_has",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
     # p007 §2.2 / §2.8
     "Student": "seminary.seminary.student_permissions.has_permission_student",
@@ -366,6 +409,7 @@ has_permission = {
     "Course Schedule Chapter": "seminary.seminary.student_permissions.has_permission_course_schedule_chapter",
     "Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
+    "Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
 }
 
 # DocType Class
@@ -404,6 +448,14 @@ delete_file_data_content = "seminary.storage.hooks.delete_file_data_content"
 # Hook on document methods and events
 
 doc_events = {
+    # Person.is_staff follows the user's roles and enabled state (decisions/085).
+    "User": {"on_update": "seminary.seminary.staff.on_user_update"},
+    "Person": {
+        "on_update": [
+            "seminary.seminary.staff.on_person_update",
+            "seminary.seminary.person.on_person_update",
+        ]
+    },
     "Academic Term": {
         "on_update": "seminary.tasks.refresh_term_flags_on_save",
     },
@@ -421,6 +473,11 @@ doc_events = {
     "Course Enrollment Individual": {
         "on_update_after_submit": "seminary.seminary.cei_lifecycle.on_workflow_update",
     },
+    # A lesson row inserted on its own (the lesson form, the importers) lands
+    # last; a chapter's closing reflection lesson must stay last (ADR 079).
+    "Course Schedule Lesson Reference": {
+        "after_insert": "seminary.seminary.cbe_reflection.on_lesson_reference_insert",
+    },
     # Competency roll-ups (ADR 065). An activity grade feeds the existing
     # gradebook cell, so everything downstream of Course Assess Results Detail
     # keeps working without competency awareness.
@@ -436,23 +493,46 @@ doc_events = {
         # seminary just fulfills required enrollments — no billing.
         "on_submit": [
             "seminary.seminary.required_enrollment.fulfill_for_program_enrollment_hook",
+            # The program's agreements and documents (decisions/091 §4).
+            "seminary.seminary.requirements.on_program_enrollment_submit",
         ],
     },
+    "Instructor": {
+        "on_update": "seminary.seminary.requirements.on_instructor_update",
+    },
     "Course Schedule": {
-        "on_update": "seminary.seminary.required_enrollment.on_course_schedule_update",
-        "after_insert": "seminary.seminary.required_enrollment.on_course_schedule_insert",
+        # A warning, never a block (decisions/091 §9).
+        "validate": "seminary.seminary.requirements.warn_course_schedule_instructors",
+        "on_update": [
+            "seminary.seminary.required_enrollment.on_course_schedule_update",
+            # A section opening enrolls students who advanced into its course
+            # (decisions/084 §6).
+            "seminary.seminary.progression.on_course_schedule_update",
+        ],
+        "after_insert": [
+            "seminary.seminary.required_enrollment.on_course_schedule_insert",
+            "seminary.seminary.progression.on_course_schedule_insert",
+        ],
     },
     "Scheduled Course Assess Criteria": {
-        "on_update": "seminary.seminary.api.update_card",
+        "on_update": [
+            "seminary.seminary.api.update_card",
+            "seminary.seminary.deadlines.on_row_update",
+        ],
     },
+    # Cut-offs and late timestamps (decisions/082) are checked in validate, so
+    # every path a student can reach -- portal endpoints and frappe.client --
+    # meets them.
     # before_insert on every submission: content gating (ADR 065) has to refuse
     # the submission itself, not only hide the activity in the outline.
     "Quiz Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Assignment Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
@@ -460,10 +540,12 @@ doc_events = {
     },
     "Exam Submission": {
         "before_insert": "seminary.seminary.cbe.assert_activity_unlocked",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "on_update": "seminary.seminary.api.quizresult_to_card",
     },
     "Discussion Submission": {
         "on_update": "seminary.seminary.api.quizresult_to_card",
+        "validate": "seminary.seminary.deadlines.guard_submission",
         "before_insert": [
             "seminary.seminary.cbe.assert_activity_unlocked",
             "seminary.seminary.api.sanitize_submission",
@@ -526,11 +608,16 @@ doc_events = {
     # Re-level affected attendance standings when a program's max absence %
     # changes (the Auto per-student limit is derived from it).
     "Program": {
-        "on_update": "seminary.seminary.attendance.recompute_on_program_update",
+        "on_update": [
+            "seminary.seminary.attendance.recompute_on_program_update",
+            # A course bound to a competency programme after its sections were
+            # created: they get their reflection lessons now (ADR 079).
+            "seminary.seminary.cbe_reflection.on_program_update",
+        ],
     },
-    # Soft integration with frappe_giving (optional app): mirror the canonical
+    # Soft integration with koinonia (optional app): mirror the canonical
     # Donor.person link onto the read-only Person.donor field. Fires only when a
-    # Donor doc is saved, i.e. only when frappe_giving is installed, so the
+    # Donor doc is saved, i.e. only when koinonia is installed, so the
     # dependency stays one-directional -- giving never imports seminary.
     "Donor": {
         "on_update": "seminary.seminary.integrations.giving.on_donor_update",
@@ -614,6 +701,12 @@ plagiarism_providers = {
     "external-http": "seminary.seminary.plagiarism.external.ExternalHTTPPlagiarismAdapter",
 }
 
+# Agreement fields from other apps (decisions/091 §7). Each dotted path is called
+# as fn(context, person_requirement) and adds keys to the context an Agreement
+# Template renders with -- the billing bridges add fees this way. Seminary
+# registers none.
+# agreement_context = ["oikonomos.agreements.add_fees"]
+
 # Scheduled Tasks
 # ---------------
 
@@ -652,10 +745,17 @@ scheduler_events = {
     },
     "daily": [
         "seminary.tasks.daily",
+        "seminary.seminary.staff.daily",
         "seminary.partner.internship.activate_due_placements",
         # Content gating means a student who stops reflecting locks themselves
         # out; nothing else would surface that (ADR 065).
         "seminary.seminary.cbe.notify_stalled_self_assessments",
+        # Reading plans write once to a member on the day they fall behind, and
+        # close a run after its last step (ADR 087 §8).
+        "seminary.seminary.discipleship.reading_plans.daily",
+        # Expire documents, renew per term/year, and remind on due dates
+        # (decisions/091 §5, §11).
+        "seminary.seminary.requirements.daily",
         # A geocode that failed because the provider was down that afternoon
         # would otherwise stay missing until the address happened to change
         # again (ADR 068 §7). Retries `Failed` only, never `Unresolvable`.
@@ -766,7 +866,9 @@ fixtures = [
     # against Seminary Settings, so a re-import throws once a seminary changes
     # the audit setting or edits a category. Seeded create-only-if-missing by
     # install.seed_fee_categories() instead.
-    "Program Level",
+    # Program Level is NOT fixtured: the system's levels are seeded create-only-if-missing by
+    # program_level.seed_program_levels() and protected there (p016), so a school's policy
+    # edits survive migrate.
     # Instructor Category is NOT fixtured: seeded create-only-if-missing by
     # install.setup_fixtures() so seminary edits to the catalog survive migrate.
     # Assessment Criteria is NOT fixtured: seeded create-only-if-missing by

@@ -1,4 +1,35 @@
 <template>
+	<PageHeader :title="__('Community')">
+		<template #actions>
+					<select v-if="cohorts.length" v-model="selectedCohort"
+						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
+						<!-- One scope control, not two: "" is every post I may see --
+						     portal-wide from anywhere, plus my own cohorts' -- which
+						     is exactly what an unfiltered feed already returns. -->
+						<option value="">{{ __('All posts') }}</option>
+						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
+					</select>
+					<button v-if="cohorts.length > 1 && selectedCohort"
+						:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
+						@click="setDefaultCohort">
+						<Star class="h-4 w-4"
+							:class="defaultCohort === selectedCohort ? 'fill-current text-ink-amber-2' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
+					</button>
+					<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
+						<template #prefix><Megaphone class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
+						<template #prefix><UsersRound class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="canModerate" variant="subtle" :title="__('Moderation queue')" @click="openModeration">
+						<template #prefix><Shield class="h-4 w-4" /></template>
+					</Button>
+					<Button v-if="cohorts.length" variant="solid" :label="__('New post')" @click="openCompose">
+						<template #prefix><SquarePen class="h-4 w-4" /></template>
+					</Button>
+		</template>
+	</PageHeader>
+
 	<div class="mx-auto flex h-full w-full max-w-5xl gap-4 px-4 py-6">
 		<!-- Bible tree (left) -->
 		<aside v-if="cohorts.length && bibleTree.data?.length"
@@ -42,38 +73,6 @@
 		</aside>
 
 		<div class="flex min-w-0 flex-1 flex-col">
-		<!-- header: title + cohort switcher -->
-		<div class="mb-4 flex items-center justify-between gap-3">
-			<div class="flex items-center gap-2">
-				<MessagesSquare class="h-6 w-6 text-ink-gray-7" />
-				<h1 class="text-xl font-semibold text-ink-gray-9">{{ __('Community') }}</h1>
-			</div>
-			<div class="flex items-center gap-2">
-				<select v-if="cohorts.length" v-model="selectedCohort"
-					class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
-					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
-				</select>
-				<button v-if="cohorts.length > 1 && selectedCohort"
-					:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
-					@click="setDefaultCohort">
-					<Star class="h-4 w-4"
-						:class="defaultCohort === selectedCohort ? 'fill-current text-yellow-500' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
-				</button>
-				<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
-					<template #prefix><Megaphone class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
-					<template #prefix><UsersRound class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="canModerate" variant="subtle" :title="__('Moderation queue')" @click="openModeration">
-					<template #prefix><Shield class="h-4 w-4" /></template>
-				</Button>
-				<Button v-if="selectedCohort" variant="solid" :label="__('New post')" @click="openCompose">
-					<template #prefix><SquarePen class="h-4 w-4" /></template>
-				</Button>
-			</div>
-		</div>
-
 		<!-- pending invitations banner -->
 			<div v-if="pendingRes.data?.length" class="mb-4 flex flex-col gap-2">
 				<div v-for="inv in pendingRes.data" :key="inv.membership"
@@ -89,7 +88,8 @@
 				</div>
 			</div>
 
-			<div v-if="!cohorts.length && !pendingRes.data?.length" class="mt-16 text-center text-ink-gray-5">
+			<div v-if="!cohorts.length && !pendingRes.data?.length && !feed.data?.length"
+				class="mt-16 text-center text-ink-gray-5">
 			{{ __('You are not part of any cohort yet.') }}
 		</div>
 
@@ -121,16 +121,8 @@
 				</button>
 			</div>
 
-			<!-- visibility scope -->
 			<div class="mb-3 flex items-center gap-2 text-sm text-ink-gray-6">
-				<span>{{ __('Show') }}</span>
-				<select v-model="scopeFilter" class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1 text-sm text-ink-gray-8"
-					@change="refresh">
-					<option value="">{{ __('All') }}</option>
-					<option value="cohort_only">{{ __('Cohort only') }}</option>
-					<option value="portal_users">{{ __('Whole community') }}</option>
-				</select>
-				<label class="ml-2 flex items-center gap-1">
+				<label class="flex items-center gap-1">
 					<input type="checkbox" v-model="savedOnly" class="rounded" @change="refresh" />
 					<Bookmark class="h-3.5 w-3.5" />{{ __('Saved') }}
 				</label>
@@ -156,6 +148,11 @@
 					<header class="mb-2 flex items-center justify-between">
 						<div class="flex items-center gap-2 text-sm">
 							<span class="font-medium text-ink-gray-9">{{ post.author_name || post.author }}</span>
+							<template v-if="post.on_behalf_of">
+								<a v-if="post.on_behalf_of.route" :href="post.on_behalf_of.route"
+									class="text-ink-gray-7 underline-offset-2 hover:underline">· {{ post.on_behalf_of.label }}</a>
+								<span v-else class="text-ink-gray-7">· {{ post.on_behalf_of.label }}</span>
+							</template>
 							<span v-if="post.author_membership === 'outside'"
 								class="rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">{{ __('guest') }}</span>
 							<component :is="visIcon(post.visibility)" class="h-3.5 w-3.5 text-ink-gray-5" />
@@ -239,7 +236,7 @@
 								@click="moderatePost(post, post.status === 'pinned' ? 'published' : 'pinned')">
 								<Pin class="h-3.5 w-3.5" />
 							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-5" :title="__('Block')"
+							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Block')"
 								@click="moderatePost(post, 'blocked')">
 								<Ban class="h-3.5 w-3.5" />
 							</button>
@@ -248,7 +245,7 @@
 							<button class="text-ink-gray-5 hover:text-ink-gray-9" :title="__('Edit')" @click="openEdit(post)">
 								<Pencil class="h-3.5 w-3.5" />
 							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-5" :title="__('Delete')" @click="confirmDelete(post)">
+							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Delete')" @click="confirmDelete(post)">
 								<Trash2 class="h-3.5 w-3.5" />
 							</button>
 						</template>
@@ -315,7 +312,7 @@
 				</article>
 				<div v-if="i === lastNewIndex && i < posts.length - 1"
 					class="my-1 flex items-center gap-2 text-xs font-medium text-ink-red-4">
-					<div class="h-px flex-1 bg-red-300/60"></div>{{ __('New') }}<div class="h-px flex-1 bg-red-300/60"></div>
+					<div class="h-px flex-1 bg-surface-red-3"></div>{{ __('New') }}<div class="h-px flex-1 bg-surface-red-3"></div>
 				</div>
 				</template>
 			</div>
@@ -325,6 +322,10 @@
 		<Dialog v-model="showCompose" :options="{ title: __('New post'), size: 'lg' }">
 			<template #body-content>
 				<div class="flex flex-col gap-3">
+					<select v-if="cohorts.length > 1" v-model="draft.cohort"
+						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
+						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
+					</select>
 					<select v-model="draft.channel"
 						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 						<option value="" disabled>{{ __('Select a channel') }}</option>
@@ -342,8 +343,34 @@
 							class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
 							<option value="cohort_only">{{ __('Cohort only') }}</option>
 							<option value="portal_users">{{ __('Whole community') }}</option>
+							<!-- ADR 076: shown only to those who may use it, so most
+							     people's composer is unchanged. The server enforces
+							     the same test -- a hidden control is not a permission. -->
+							<option v-if="canBroadcast" value="mentors">{{ __('Mentors in this cohort') }}</option>
+							<option value="direct">{{ __('One person') }}</option>
 							<option value="private">{{ __('Only me') }}</option>
 						</select>
+						<!-- Scoped type-ahead: only people the author already shares a
+						     cohort with, so the picker never promises an unreachable
+						     recipient and lineage size never matters. -->
+						<div v-if="draft.visibility === 'direct'" class="relative">
+							<Input v-model="recipientQuery" type="text"
+								:placeholder="__('Search someone in your cohorts…')"
+								@input="searchRecipients" />
+							<div v-if="draft.direct_recipient" class="mt-1 text-xs text-ink-gray-6">
+								{{ __('To: {0}').format(recipientLabel) }}
+							</div>
+							<ul v-if="recipientResults.length"
+								class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-outline-gray-2 bg-surface-white shadow">
+								<li v-for="r in recipientResults" :key="r.person">
+									<button type="button" class="flex w-full flex-col px-3 py-1.5 text-left text-sm hover:bg-surface-gray-2"
+										@click="pickRecipient(r)">
+										<span class="text-ink-gray-8">{{ r.full_name }}</span>
+										<span class="text-xs text-ink-gray-5">{{ r.cohort_name }}</span>
+									</button>
+								</li>
+							</ul>
+						</div>
 					</div>
 					<Input v-model="draft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
 					<Input v-model="draft.scripture" type="text"
@@ -582,8 +609,8 @@
 										class="flex items-center justify-end gap-2 text-xs">
 										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="resendInvite(m)">{{ __('Re-send') }}</button>
 										<button class="text-ink-gray-6 hover:text-ink-gray-9" @click="copyInvite(m)">{{ __('Copy') }}</button>
-										<a v-if="m.mobile" :href="whatsappUrl(m)" target="_blank" rel="noopener" class="text-green-600 hover:underline">WhatsApp</a>
-										<a :href="telegramUrl(m)" target="_blank" rel="noopener" class="text-blue-500 hover:underline">Telegram</a>
+										<a v-if="m.mobile" :href="whatsappUrl(m)" target="_blank" rel="noopener" class="text-ink-green-3 hover:underline">WhatsApp</a>
+										<a :href="telegramUrl(m)" target="_blank" rel="noopener" class="text-ink-blue-3 hover:underline">Telegram</a>
 									</div>
 									<button v-else-if="membersRes.data?.is_leader && !m.is_leader"
 										class="text-xs text-ink-gray-6 hover:text-ink-gray-9" @click="makeLeader(m)">
@@ -646,6 +673,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Button, Dialog, Input, createResource, debounce } from 'frappe-ui'
@@ -669,9 +697,8 @@ const replyTo = ref(null)
 const replyText = ref('')
 const showCompose = ref(false)
 const composeKey = ref(0)
-const draft = reactive({ channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
 const prayerView = ref('active')
-const scopeFilter = ref('')
 const savedOnly = ref(false)
 const searchQuery = ref('')
 const showPassage = ref(false)
@@ -728,6 +755,7 @@ const cohortsRes = createResource({
 			selectedCohort.value = known(asked) ? asked : known(saved) ? saved : data[0].name
 		}
 		if (route.query.members && selectedCohort.value) openMembers()
+		if (route.query.discuss && route.query.step) openDiscussion(route.query.discuss, route.query.step)
 	},
 })
 const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')
@@ -756,7 +784,6 @@ const feed = createResource({
 	makeParams: () => ({
 		cohort: selectedCohort.value,
 		channel: channelFilter.value || null,
-		visibility: scopeFilter.value || null,
 		saved_only: savedOnly.value ? 1 : 0,
 		answered: isPrayerChannel.value ? (prayerView.value === 'answered' ? 1 : 0) : null,
 	}),
@@ -781,6 +808,8 @@ const markAnswered = createResource({ url: 'seminary.seminary.discipleship.feed_
 const reopenPrayer = createResource({ url: 'seminary.seminary.discipleship.feed_api.reopen_prayer' })
 const linkPost = createResource({ url: 'seminary.seminary.discipleship.feed_api.link_post' })
 const canModerateRes = createResource({ url: 'seminary.seminary.discipleship.moderation.can_moderate', auto: true })
+const canBroadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.can_broadcast', auto: true })
+const searchRecipientsRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.search_recipients' })
 const flagsRes = createResource({ url: 'seminary.seminary.discipleship.moderation.list_flags' })
 const flagContent = createResource({ url: 'seminary.seminary.discipleship.moderation.flag_content' })
 const resolveFlagRes = createResource({ url: 'seminary.seminary.discipleship.moderation.resolve_flag' })
@@ -868,12 +897,14 @@ function reactionFor(post, rtName) {
 function reactionCount(post, rtName) { return reactionFor(post, rtName)?.count || 0 }
 function reactionMine(post, rtName) { return !!reactionFor(post, rtName)?.mine }
 
-const visIconMap = { cohort_only: Users, portal_users: Globe, private: Lock, direct: Mail }
+const visIconMap = { cohort_only: Users, portal_users: Globe, mentors: UsersRound, private: Lock, direct: Mail }
 function visIcon(v) { return visIconMap[v] || Users }
 
 // --- actions ---
 function refresh() {
-	if (!selectedCohort.value) return
+	// No early return on a missing cohort any more: "" is the All-posts view,
+	// not an unready state. list_feed/unread_counts both treat an absent cohort
+	// as "everything I may see".
 	feed.fetch()
 	unreadRes.fetch()
 }
@@ -908,7 +939,7 @@ function submitEdit() {
 			video_url: editDraft.channel_kind === 'video_timestamp' ? editDraft.video_url : null,
 		})
 		.then(() => { showEdit.value = false; refresh() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not save.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not save.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function confirmDelete(post) {
 	if (window.confirm(__('Delete this post? This cannot be undone.'))) {
@@ -952,11 +983,33 @@ function submitLink(post) {
 	linkPost
 		.submit({ post: post.name, linked_post: linkTarget.value.trim(), relation_type: 'reflection' })
 		.then(() => { linkTarget.value = ''; thread.fetch() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not link.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not link.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- moderation ---
 const canModerate = computed(() => !!canModerateRes.data)
+// Same authority as the leader broadcast (ADR 076): staff, or a leader of a
+// cohort. It gates only what the composer *shows*; create_post re-checks.
+const canBroadcast = computed(() => !!canBroadcastRes.data)
+const recipientQuery = ref('')
+const recipientResults = ref([])
+const recipientLabel = ref('')
+let recipientTimer = null
+function searchRecipients() {
+	clearTimeout(recipientTimer)
+	const q = recipientQuery.value.trim()
+	if (q.length < 2) { recipientResults.value = []; return }
+	// Debounced: the picker searches, it never enumerates.
+	recipientTimer = setTimeout(() => {
+		searchRecipientsRes.submit({ query: q }).then((rows) => { recipientResults.value = rows || [] })
+	}, 250)
+}
+function pickRecipient(r) {
+	draft.direct_recipient = r.person
+	recipientLabel.value = r.full_name
+	recipientQuery.value = ''
+	recipientResults.value = []
+}
 const showReport = ref(false)
 const reportTarget = ref(null)
 const reportReason = ref('Inappropriate')
@@ -978,7 +1031,7 @@ function submitReport() {
 			detail: reportDetail.value || null,
 		})
 		.then(() => { showReport.value = false; createToast({ title: __('Reported. Thank you.'), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not report.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not report.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function openModeration() {
 	showModeration.value = true
@@ -1023,7 +1076,7 @@ function declineInvite(inv) {
 }
 function inviteMember() {
 	if (!inviteDraft.first_name.trim() || !inviteDraft.email.trim())
-		return createToast({ title: __('First name and email are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('First name and email are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	inviteRes
 		.submit({
 			cohort: selectedCohort.value,
@@ -1037,7 +1090,7 @@ function inviteMember() {
 			membersRes.fetch({ cohort: selectedCohort.value })
 			createToast({ title: __('Invitation sent.'), icon: 'check' })
 		})
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function invitePerson(candidate) {
 	// The person already exists on the spine, so only the id travels — the
@@ -1050,7 +1103,7 @@ function invitePerson(candidate) {
 			membersRes.fetch({ cohort: selectedCohort.value })
 			createToast({ title: __('Invitation sent.'), icon: 'check' })
 		})
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not invite.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function resendInvite(m) {
 	resendRes.submit({ membership: m.membership }).then(() => createToast({ title: __('Invite re-sent.'), icon: 'check' }))
@@ -1094,11 +1147,11 @@ function moveToOriginal(m) {
 }
 function submitSplit() {
 	if (!splitName.value.trim())
-		return createToast({ title: __('Name the new cohort.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Name the new cohort.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	if (!splitMoving.value.length)
-		return createToast({ title: __('Move at least one member.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Move at least one member.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	if (!splitLeader.value)
-		return createToast({ title: __('Choose a leader for the new cohort.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Choose a leader for the new cohort.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	splitRes
 		.submit({
 			cohort: selectedCohort.value,
@@ -1107,7 +1160,7 @@ function submitSplit() {
 			new_leader: splitLeader.value,
 		})
 		.then(() => { showSplit.value = false; cohortsRes.reload(); refresh(); createToast({ title: __('New cohort created.'), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not split.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not split.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- bible tree ---
@@ -1166,29 +1219,54 @@ function openBroadcast() {
 }
 function submitBroadcast() {
 	if (!broadcastSubject.value.trim() || !broadcastMessage.value.trim())
-		return createToast({ title: __('Subject and message are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		return createToast({ title: __('Subject and message are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 	broadcastRes
 		.submit({ subject: broadcastSubject.value, message: broadcastMessage.value, email: broadcastEmail.value ? 1 : 0 })
 		.then((r) => { showBroadcast.value = false; createToast({ title: __('Sent to {0} leader(s).').format(r.sent), icon: 'check' }) })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not send.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function openCompose() {
-	Object.assign(draft, { channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '' })
+	// A post always belongs to a cohort (ADR 064 keeps `cohort` for attribution
+	// and lineage), so in the All-posts view the composer has to ask. Default to
+	// the starred cohort, else the first one.
+	Object.assign(draft, { cohort: selectedCohort.value || defaultCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
+	recipientQuery.value = ''
+	recipientResults.value = []
+	recipientLabel.value = ''
 	composeKey.value++ // force the editor to remount with empty content
 	showCompose.value = true
 }
+// ADR 087: "Discuss" on a reading-plan step opens the composer filled in from
+// the step. Nothing is posted until the member presses Post.
+const discussionDraftRes = createResource({ url: 'seminary.seminary.discipleship.reading_plans.discussion_draft' })
+function openDiscussion(run, step) {
+	discussionDraftRes.submit({ run, step }).then((d) => {
+		openCompose()
+		const passageChannel = d.scripture?.length && channels.value.find((c) => c.channel_kind === 'bible_passage')
+		Object.assign(draft, {
+			cohort: d.cohort,
+			channel: passageChannel?.name || draft.channel,
+			title: d.title,
+			content: d.content,
+			scripture: (d.scripture || []).join('\n'),
+			reference_doctype: d.reference_doctype,
+			reference_name: d.reference_name,
+		})
+		composeKey.value++ // remount the editor with the step's message
+	}).catch((e) => createToast({ title: e.messages?.[0] || __('Could not open the discussion.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
+}
 function submitPost() {
-	if (!draft.channel || !draft.content?.trim()) {
-		createToast({ title: __('A channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+	if (!draft.cohort || !draft.channel || !draft.content?.trim()) {
+		createToast({ title: __('A cohort, a channel and some content are required.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 		return
 	}
 	if (composeChannelKind.value === 'video_timestamp' && !draft.video_url?.trim()) {
-		createToast({ title: __('Sermon Lab posts need a YouTube link.'), icon: 'alert-circle', iconClasses: 'text-red-500' })
+		createToast({ title: __('Sermon Lab posts need a YouTube link.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' })
 		return
 	}
 	createPost
 		.submit({
-			cohort: selectedCohort.value,
+			cohort: draft.cohort,
 			channel: draft.channel,
 			title: draft.title || null,
 			content: draft.content,
@@ -1197,9 +1275,11 @@ function submitPost() {
 			topics: draft.topics.split(',').map((t) => t.trim()).filter(Boolean),
 			scripture: draft.scripture.split('\n').map((s) => s.trim()).filter(Boolean),
 			video_url: draft.video_url || null,
+			reference_doctype: draft.reference_doctype || null,
+			reference_name: draft.reference_name || null,
 		})
 		.then(() => { showCompose.value = false; refresh() })
-		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-red-500' }))
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- reactive refetch + realtime ---

@@ -1,10 +1,36 @@
 <template>
 	<div v-if="course.data">
-		<header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		</header>
-		<div class="m-5">
+		<PageHeader>
+			<template #title>
+				<Breadcrumbs class="h-7" :items="breadcrumbs" />
+			</template>
+			<!-- Competency sections get a second area, one click from anywhere in
+			     the course (privatedocs p012 decision 3; tabs per ADR 075), and the
+			     section's instructors a Students tab (privatedocs p015). -->
+			<template v-if="tabs.length > 1" #tabs>
+				<PageTabs :tabs="tabs" v-model="tab" :label="__('Course views')" />
+			</template>
+		</PageHeader>
+		<div v-if="tab === 'students'" class="m-5">
+			<CourseStudentsTab :courseName="props.courseName" />
+		</div>
+		<div v-if="tab === 'review'" class="m-5">
+			<div class="mb-4">
+				<h1 class="text-2xl font-bold text-ink-gray-9">{{ __('Competency Review') }}</h1>
+				<p class="mt-1 text-sm text-ink-gray-6">
+					{{ access === 'student'
+						? __('Where you started, where you finished, and how your instructor and mentors see it.')
+						: access === 'mentor'
+							? __('The students you mentor in this course. Grade and give your verdict here.')
+							: __('Each student’s before-and-after, with every evaluator apart.') }}
+				</p>
+			</div>
+			<CompetencyReview v-if="access === 'student'" :courseName="props.courseName"
+				@seen="reviewNews.reload()" />
+			<CompetencyStudentPane v-else :courseName="props.courseName" :context="cbeContext.data"
+				showReview :initialRoster="route.query.roster || null" />
+		</div>
+		<div v-show="tab === 'outline'" class="m-5">
 			<div class="grid md:grid-cols-[1fr,var(--right-col)] gap-5"
 				style="--right-col: clamp(20rem, 24vw, 30rem)">
 				<div>
@@ -65,7 +91,7 @@
 							<router-link v-for="instructor in course.data.instructors" :key="instructor.name || instructor.instructor_name"
 								:to="{ name: 'InstructorProfile', params: { instructorName: instructor.name || instructor.instructor_name } }"
 								class="flex flex-col items-center group cursor-pointer no-underline">
-								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-blue-300 rounded-full transition-all" />
+								<InstructorAvatar :instructor="instructor" size="xl" class="mb-2 w-20 h-20 group-hover:ring-2 group-hover:ring-outline-blue-1 rounded-full transition-all" />
 								<div class="text-center text-sm font-medium text-ink-gray-8 group-hover:text-ink-blue-link transition-colors">
 									{{ instructor.instructor_name }}
 								</div>
@@ -93,7 +119,7 @@
 					<div class="mt-5">
 						<Announcements :cs="props.courseName" />
 					</div>
-					<div v-if="user.data?.is_moderator || user.data?.is_instructor" class="mt-5 flex justify-center">
+					<div v-if="isTeachingStaff" class="mt-5 flex justify-center">
 						<Button @click="openAnnouncementModal()">
 							<span>
 								{{ __('Make an Announcement') }}
@@ -133,12 +159,18 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { safeUrl } from '@/utils/urlPolicy'
 import { createResource, Breadcrumbs, Badge, Tooltip, Button } from 'frappe-ui'
 import { computed, ref, inject, watch } from 'vue'
 import CourseOutline from '@/components/CourseOutline.vue'
 import { updateDocumentTitle, formatTime } from '@/utils'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import PageTabs from '@/components/PageTabs.vue'
+import CompetencyReview from '@/components/CompetencyReview.vue'
+import CompetencyStudentPane from '@/components/CompetencyStudentPane.vue'
+import CourseStudentsTab from '@/components/CourseStudentsTab.vue'
+import { useTabParam } from '@/composables/useTabParam'
 import InstructorAvatar from '@/components/InstructorAvatar.vue'
 import ContactChannelIcons from '@/components/ContactChannelIcons.vue'
 import CourseCardOverlay from '@/components/CourseCardOverlay.vue'
@@ -151,9 +183,16 @@ import FeedbackStatusPanel from '@/components/FeedbackStatusPanel.vue'
 
 const user = inject('$user')
 const router = useRouter()
+const route = useRoute()
 
-// Outcome reporting is teaching-staff work; students never see these surfaces.
-const isTeachingStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
+// What this viewer is on this section, from the server (privatedocs p012):
+// "instructor" teaches or administers it, "mentor" follows some of its
+// students, "student", "reader" (an instructor of record looking in).
+const access = computed(() => course.data?.access || null)
+const roleIsStaff = computed(() => !!(user.data?.is_moderator || user.data?.is_instructor))
+// Outcome reporting and announcements are teaching-staff work on *this*
+// section: a mentor holds the Instructor role but does not teach the class.
+const isTeachingStaff = computed(() => roleIsStaff.value && access.value === 'instructor')
 const props = defineProps({
 	courseName: {
 		type: String,
@@ -181,7 +220,7 @@ watch(
 		// Only a pure student is bounced from a course they aren't enrolled in. Staff
 		// can also hold the Student role (and often do while testing), and must still
 		// reach any course to build or teach it.
-		if (data && user.data?.is_student && !data.membership && !isTeachingStaff.value && !user.data?.is_system_manager) {
+		if (data && user.data?.is_student && !data.membership && !roleIsStaff.value && !user.data?.is_system_manager) {
 			router.push({ name: 'Courses' })
 		}
 	}
@@ -205,12 +244,46 @@ const openAnnouncementModal = () => {
 	showAnnouncementModal.value = true
 }
 
+// Competency Review tab: competency sections only, for anyone who has a
+// relationship with the section (teaches, mentors in it, or takes it).
+const cbeContext = createResource({
+	url: 'seminary.seminary.cbe_api.get_competency_context',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	auto: true,
+	onError: () => {},
+})
+const hasReview = computed(
+	() => !!cbeContext.data?.is_cbe && ['instructor', 'mentor', 'student'].includes(access.value)
+)
+// A student is pointed at completed reviews they have not opened yet.
+const reviewNews = createResource({
+	url: 'seminary.seminary.cbe_api.get_review_news',
+	makeParams: () => ({ course_schedule: props.courseName }),
+	auto: !!user.data?.is_student,
+	onError: () => {},
+})
+// Students tab: the section's instructors only (privatedocs p015 §4); the
+// server checks the same before it answers.
+const hasStudents = computed(() => access.value === 'instructor')
+const tabs = computed(() => {
+	const fresh = reviewNews.data?.length || 0
+	const out = [{ key: 'outline', label: __('Course Outline') }]
+	if (hasReview.value) {
+		out.push({
+			key: 'review',
+			label: fresh ? __('Competency Review ({0} new)').format(fresh) : __('Competency Review'),
+		})
+	}
+	if (hasStudents.value) out.push({ key: 'students', label: __('Students') })
+	return out
+})
+const tab = useTabParam(computed(() => tabs.value.map((t) => t.key)), 'outline')
+
 const canEditOutline = computed(() => {
 	const roles = user?.data || {}
 	return Boolean(
-		roles.is_moderator ||
-		roles.is_instructor ||
-		roles.is_evaluator
+		access.value === 'instructor' &&
+		(roles.is_moderator || roles.is_instructor || roles.is_evaluator)
 	)
 })
 

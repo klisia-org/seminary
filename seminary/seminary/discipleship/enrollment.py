@@ -13,6 +13,10 @@ lives in `discipleship/api.py`.
 
 import frappe
 from frappe.utils import today
+from seminary.seminary.doctype.program_level.program_level import (
+    programs_in_tier,
+    tier_of_program,
+)
 
 
 def course_cohort_binding(course_schedule):
@@ -158,9 +162,9 @@ def release_from_program_cohorts(pe_doc, to_status, effective_date=None):
 
 
 def _types_releasing_on_separation(pe_doc):
-    """Cohort types bound to this program (or its level) that release on exit.
+    """Cohort types bound to this program (or its tier) that release on exit.
 
-    A level-bound type is only released when the student is leaving the level
+    A tier-bound type is only released when the student is leaving the tier
     altogether. Someone withdrawing from one master's degree while active in
     another has not left the cohort of master's students, and pulling them out
     of it would be wrong (ADR 066 section 7.10).
@@ -171,23 +175,19 @@ def _types_releasing_on_separation(pe_doc):
         pluck="name",
     )
 
-    level = frappe.db.get_value("Program", pe_doc.program, "program_level")
-    if not level:
+    tier = tier_of_program(pe_doc.program)
+    if not tier:
         return types
 
-    level_types = frappe.get_all(
+    tier_types = frappe.get_all(
         "Cohort Type",
-        filters={"remove_on_withdrawal": 1, "program_level": level},
+        filters={"remove_on_withdrawal": 1, "program_tier": tier},
         pluck="name",
     )
-    if not level_types:
+    if not tier_types:
         return types
 
-    siblings = frappe.get_all(
-        "Program",
-        filters={"program_level": level, "name": ("!=", pe_doc.program)},
-        pluck="name",
-    )
+    siblings = [p for p in programs_in_tier(tier) if p != pe_doc.program]
     still_here = siblings and frappe.db.exists(
         "Program Enrollment",
         {
@@ -197,7 +197,7 @@ def _types_releasing_on_separation(pe_doc):
             "docstatus": 1,
         },
     )
-    return types if still_here else types + level_types
+    return types if still_here else types + tier_types
 
 
 def live_cei_for_student_course(student, course):

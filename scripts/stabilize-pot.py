@@ -70,8 +70,12 @@ def main():
         # No real string changes — just reformatting noise
         print("⚠️  POT file has no new/removed strings, only formatting changes.")
         print("   Restoring previous version to avoid translation churn.")
-        subprocess.run(["git", "checkout", "--", pot_file])
-        subprocess.run(["git", "reset", "HEAD", pot_file])
+        # Restore both working tree and index from HEAD in one call. The
+        # previous two-step sequence (`git checkout --` then `git reset HEAD`)
+        # restored the working tree from the index *before* the index was
+        # reset, leaving the working tree modified vs HEAD and causing
+        # pre-commit to report "files were modified by this hook".
+        subprocess.run(["git", "checkout", "HEAD", "--", pot_file])
         sys.exit(0)
 
     if added:

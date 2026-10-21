@@ -1,0 +1,64 @@
+/**
+ * The canonical seminary-ecosystem portal registry (ADR 074).
+ *
+ * A portal is a **separately-deployed SPA with its own base path**. Anything
+ * reachable without leaving the current SPA is navigation and belongs in that
+ * app's sidebar, not here — which is why `/seminary/alumni`, `/seminary/partner`,
+ * `/seminary/community` and `/seminary/culminating-project` are absent: they are
+ * routes of the seminary SPA, and listing them here cost a full page reload to
+ * reach a view the sidebar already linked to.
+ *
+ * This list is exported from portal-shell (rather than copied into each
+ * consumer's `main.js`) because the three hand-maintained copies had drifted:
+ * aretenic pointed `partner` at `/seminary/alumni` and koinonia labelled
+ * Academics "Courses". ADR 011 accepted the duplication "for three portals" and
+ * flagged it as a residual risk; this retires it without the `Portal Shell
+ * Settings` doctype ADR 011 proposed, which three static entries don't justify.
+ *
+ * Optional apps carry a `when(session)` predicate backed by an installed-apps
+ * flag from the consumer's session fetcher. A tile is justified by
+ * *reachability*, not by role alone: gating Donate on a role would still have
+ * pointed at a 404 on a site without koinonia, because an uninstalled app
+ * is an absent route, not a permissions question.
+ */
+// Marks labels for extraction into the POT; PortalSwitcher translates them at render,
+// once the catalogue has loaded (aretenic decision 071).
+const __ = (s) => s
+
+export const SEMINARY_PORTALS = [
+  {
+    id: 'student',
+    label: __('Academics'),
+    description: __('Academic Portal'),
+    url: '/seminary',
+  },
+  {
+    id: 'aretenic',
+    label: __('Aretenic'),
+    description: __('Quality Management'),
+    url: '/aretenic',
+    // Roles per ADR 034's taxonomy. 'Academics User' was renamed to
+    // 'Program Chair'; gating on the old name silently hid this tile from every
+    // chair who wasn't also an Instructor.
+    roles: ['Program Chair', 'Instructor', 'Seminary Manager'],
+    when: (s) => !!s?.has_aretenic,
+  },
+  {
+    id: 'donor',
+    label: __('Donate'),
+    description: __('Donor Portal'),
+    url: '/donate/donorportal',
+    // No role gate — anyone may donate.
+    when: (s) => !!s?.has_giving,
+  },
+  {
+    // koinonia 0007b §1: the relationship manager's workspace. The Seminary
+    // Manager opens it read-only.
+    id: 'advancement',
+    label: __('Advancement'),
+    description: __('Donor Relationships'),
+    url: '/donate/advancement',
+    roles: ['Advancement Officer', 'Seminary Manager', 'Advancement Principal'],
+    when: (s) => !!s?.has_giving,
+  },
+]

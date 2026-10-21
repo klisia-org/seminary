@@ -3,8 +3,7 @@
 		<div class="h-full flex-1">
 			<div class="flex h-screen text-base bg-surface-white text-ink-gray-9">
 				<div class="relative h-full">
-					<PartnerSidebar v-if="isPartner" />
-					<AppSidebar v-else />
+					<AppSidebar />
 				</div>
 				<div class="relative flex-1 overflow-auto" id="scrollContainer">
 					<slot />
@@ -15,12 +14,10 @@
 	</div>
 </template>
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+// One shell for every section (ADR 075). This used to swap in a whole
+// PartnerSidebar on a `/partner` path prefix, which took the primary navigation
+// away from partner users and forced the nav rules and the portal switcher to
+// be maintained in a second place. The partner areas are tabs now.
 import AppSidebar from './AppSidebar.vue'
-import PartnerSidebar from './PartnerSidebar.vue'
 import HelpWidget from './HelpWidget.vue'
-
-const route = useRoute()
-const isPartner = computed(() => route.path.startsWith('/partner'))
 </script>

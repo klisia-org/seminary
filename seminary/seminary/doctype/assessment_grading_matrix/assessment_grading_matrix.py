@@ -13,6 +13,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary import cbe
+
 
 class AssessmentGradingMatrix(Document):
     def validate(self):
@@ -40,24 +42,11 @@ class AssessmentGradingMatrix(Document):
         scale = frappe.db.get_value(
             "Course Schedule", self.course_schedule, "gradesc_cs"
         )
-        allowed = {
-            d.dimension_code: d.dimension
-            for d in frappe.get_all(
-                "Grading Scale Dimensions",
-                filters={"parent": scale},
-                fields=["dimension_code", "dimension"],
-            )
-        }
-        if self.dimension_code not in allowed:
-            frappe.throw(
-                _(
-                    "{0} is not a dimension of grading scale {1}. Available: {2}."
-                ).format(
-                    self.dimension_code, scale, ", ".join(sorted(allowed)) or _("none")
-                )
-            )
+        allowed = cbe.scale_dimensions(scale) if scale else {}
         # Refreshed on every save so a renamed dimension leaves no stale label.
-        self.dimension = allowed[self.dimension_code]
+        self.dimension = cbe.assert_known_dimension(
+            allowed, self.dimension_code, scale=scale
+        )
 
     def validate_unique(self):
         """One cell per assessment, evaluator type and dimension.

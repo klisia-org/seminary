@@ -10,7 +10,9 @@
     <Tooltip :text="label" placement="right">
       <span class="grid h-5 w-6 flex-shrink-0 place-items-center">
         <slot name="icon">
-          <component :is="icon" class="h-4.5 w-4.5 text-ink-gray-7" />
+          <!-- A portal theme's brand colour marks the active item; without one it is unchanged (p017). -->
+          <component :is="icon" class="h-4.5 w-4.5"
+            :class="isActive ? 'text-[color:var(--portal-brand,var(--ink-gray-7))]' : 'text-ink-gray-7'" />
         </slot>
       </span>
     </Tooltip>

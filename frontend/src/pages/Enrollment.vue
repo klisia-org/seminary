@@ -1,9 +1,6 @@
 <template>
   <div v-if="isStudent">
-    <h2
-      class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      {{ __('Courses Open for Enrollment') }}
-    </h2>
+    <PageHeader :title="__('Courses Open for Enrollment')" />
 
     <div class="px-5 py-4">
       <!-- PE Selector -->
@@ -90,8 +87,13 @@
         </div>
       </div>
 
+      <!-- Staff enroll students in this program's courses (decisions/084 §5) -->
+      <div v-if="staffEnrolled" class="border rounded-lg p-4 bg-surface-gray-1 text-sm text-ink-gray-7">
+        {{ __('Your school enrolls you in the courses of this program. Your courses appear above once you are enrolled.') }}
+      </div>
+
       <!-- Loading -->
-      <div v-if="courses.loading" class="flex justify-center py-12">
+      <div v-else-if="courses.loading" class="flex justify-center py-12">
         <LoadingIndicator class="w-8 h-8" />
       </div>
 
@@ -205,6 +207,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Badge, Button, Dialog, LoadingIndicator, Tooltip, createResource, toast } from 'frappe-ui'
 import { HelpCircle } from 'lucide-vue-next'
 import { computed, inject, ref, watch } from 'vue'
@@ -243,6 +246,11 @@ const selectedProgram = computed(() => {
   if (!enrollments.data || !selectedPE.value) return ''
   const pe = enrollments.data.find(p => p.name === selectedPE.value)
   return pe ? pe.program : ''
+})
+
+const staffEnrolled = computed(() => {
+  const pe = (enrollments.data || []).find(p => p.name === selectedPE.value)
+  return !!(pe && pe.staff_enrolled)
 })
 
 const courses = createResource({
@@ -287,13 +295,13 @@ const totalCredits = computed(() => {
 
 watch(selectedPE, (val) => {
   if (val) {
-    courses.reload()
+    if (!staffEnrolled.value) courses.reload()
     myEnrollments.reload()
   }
 })
 
 function loadCourses() {
-  if (selectedPE.value) courses.reload()
+  if (selectedPE.value && !staffEnrolled.value) courses.reload()
 }
 
 function badgeTheme(type) {

@@ -15,7 +15,7 @@
   "description",
   "academic_section",
   "program",
-  "program_level",
+  "program_tier",
   "graduates_to",
   "column_break_binding",
   "persists_across_courses",
@@ -82,7 +82,7 @@
   },
   {
    "depends_on": "eval:doc.category != 'Unrestricted' || doc.leader_eligibility == 'Alumnus of the bound program or level'",
-   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope. Also asked for when leaders must be alumni of the bound program — fill this or Program Level, or choose Any alumnus instead.",
+   "description": "The program cohorts of this type belong to. Required by Paced Program, which moves its members together and so cannot be defined at level scope. Also asked for when leaders must be alumni of the bound program \u2014 fill this or Program Tier, or choose Any alumnus instead.",
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
@@ -91,11 +91,11 @@
   },
   {
    "depends_on": "eval:doc.category == 'Throughout Program' || doc.leader_eligibility == 'Alumnus of the bound program or level'",
-   "description": "Bind to every program at this level instead of to one program -- a formation cohort spanning the master's degrees, say. Mutually exclusive with Program.",
-   "fieldname": "program_level",
-   "fieldtype": "Link",
-   "label": "Program Level",
-   "options": "Program Level"
+   "description": "Bind to every program of this tier instead of to one program -- a formation cohort spanning the master's degrees, say. Mutually exclusive with Program.",
+   "fieldname": "program_tier",
+   "fieldtype": "Select",
+   "label": "Program Tier",
+   "options": "\nCertificate\nBachelor's\nMaster's\nDoctoral\nNon-formal\nOther"
   },
   {
    "depends_on": "eval:['Paced Program','Throughout Program'].includes(doc.category)",
@@ -127,7 +127,7 @@
   },
   {
    "default": "Follow the category",
-   "description": "Archiving ends a cohort's life; this says whether it also ends its members' place in it. Following the category keeps them where the cohort is scoped to something that happens once — one Program, or one course offering — because the membership is then the record of having been there, and next term's course seeding reads it to know who is already placed. It releases them everywhere else, so a group that ended years ago does not keep someone out of a level-wide or unrestricted cohort they now need. Released members keep sight of the archived cohort and its history; what they lose is the seat.",
+   "description": "Archiving ends a cohort's life; this says whether it also ends its members' place in it. Following the category keeps them where the cohort is scoped to something that happens once \u2014 one Program, or one course offering \u2014 because the membership is then the record of having been there, and next term's course seeding reads it to know who is already placed. It releases them everywhere else, so a group that ended years ago does not keep someone out of a level-wide or unrestricted cohort they now need. Released members keep sight of the archived cohort and its history; what they lose is the seat.",
    "fieldname": "on_archive",
    "fieldtype": "Select",
    "label": "When a Cohort Is Archived",
@@ -260,7 +260,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-08 02:52:37.204348",
+ "modified": "2026-10-02 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Type",

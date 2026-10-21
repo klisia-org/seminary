@@ -106,7 +106,7 @@ import {
 	toast
 } from 'frappe-ui'
 import { computed, reactive, watch } from 'vue'
-import { getFileSize, uploadLimits, validateFileSize } from '@/utils/'
+import { getFileSize, uploadLimits, validateFileSize, refiledMessage } from '@/utils/'
 import { capture } from '@/telemetry'
 import { FileText, X } from 'lucide-vue-next'
 import SmartFileUploader from '@/components/SmartFileUploader.vue'
@@ -281,11 +281,13 @@ const editChapter = (close) => {
 					return __('Chapter Title is required')
 				}
 			},
-			onSuccess() {
+			onSuccess(data) {
 				show.value = false
 				resetChapter()
 				outline.value.reload()
 				toast.success(__('Chapter updated successfully'))
+				const refiled = refiledMessage(data?.__onload?.refiled)
+				if (refiled) toast.info(refiled, { duration: 10 })
 				close()
 			},
 			onError(err) {

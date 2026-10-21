@@ -8,9 +8,13 @@ from frappe.model.document import Document
 
 class DiscussionSubmission(Document):
     def validate(self):
-        from seminary.seminary.utils import backfill_submission_course_if_missing
+        from seminary.seminary.utils import (
+            backfill_submission_course_if_missing,
+            stamp_first_grading,
+        )
 
         backfill_submission_course_if_missing(self)
+        stamp_first_grading(self)
         self.populate()
         self.sync_percentage_from_grade()
 

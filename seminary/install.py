@@ -10,6 +10,9 @@ from frappe.desk.doctype.global_search_settings.global_search_settings import (
 from frappe.utils.dashboard import sync_dashboards
 from frappe import _
 
+from seminary.seminary.ethnic_groups import seed_ethnic_groups
+from seminary.seminary.doctype.program_level.program_level import seed_program_levels
+
 
 # TODO: create uninstall file and remove all the custom fields, roles, assessment groups, fixtures, etc
 # TODO: Remove all Items created when Fee Category is created
@@ -18,6 +21,7 @@ from frappe import _
 
 def after_install():
     setup_fixtures()
+    seed_program_levels()
     setup_genders()
     create_studentappl_role()
     create_student_role()
@@ -44,6 +48,7 @@ def after_install():
     seed_communication_templates()
     seed_portal_messaging_rules()
     seed_partner_types()
+    seed_ethnic_groups()
     seed_skill_tags()
     seed_allowed_graduation_documents()
     seed_internship_types()
@@ -53,6 +58,7 @@ def after_install():
     seed_website_pages()
     seed_cohort_reaction_types()
     seed_cohort_channels()
+    seed_standard_reading_plans()
     setup_user_bible_field()
     ensure_registrar_tools()
 
@@ -1075,9 +1081,17 @@ def seed_partner_types():
                 "partner_type_name": type_name,
                 "is_active": 1,
                 "description": description,
+                "funding_line": FUNDING_LINE_DEFAULTS.get(type_name),
             }
         ).insert(ignore_permissions=True)
     frappe.db.commit()
+
+
+# Where the starter Partner Types report in Sources of Funding (p020).
+FUNDING_LINE_DEFAULTS = {
+    "Church": "Churches and denominations",
+    "Denomination": "Churches and denominations",
+}
 
 
 def seed_internship_communication():
@@ -1329,16 +1343,21 @@ def seed_skill_tags():
 
 
 def setup_donor_person_field():
-    """Soft link Donor (frappe_giving) <-> Person. frappe_giving is an optional
+    """Soft link Donor (koinonia) <-> Person. koinonia is an optional
     app, so these fields are created programmatically only when its Donor
     doctype is present -- re-checked on every migrate, so installing
-    frappe_giving later and migrating adds them. Donor.person is the canonical
+    koinonia later and migrating adds them. Donor.person is the canonical
     FK (set by giving admins); Person.donor is a read-only reverse mirror kept
     in sync by seminary.seminary.integrations.giving. Mirrors the
     Customer<->Person pattern in setup_customer_person_field()."""
     if not frappe.db.exists("DocType", "Donor"):
         return
-    if not frappe.db.exists("Custom Field", "Donor-person"):
+    # koinonia now ships Donor.person as a standard field (koinonia 0007a), so
+    # the custom field is only for older koinonia releases.
+    standard = frappe.get_meta("Donor").get_field("person")
+    if not (standard and not standard.get("is_custom_field")) and not frappe.db.exists(
+        "Custom Field", "Donor-person"
+    ):
         frappe.get_doc(
             {
                 "doctype": "Custom Field",
@@ -1369,23 +1388,23 @@ def setup_donor_person_field():
 
 
 def create_studentappl_role():
-    if not frappe.db.exists("Role", _("Student Applicant")):
+    if not frappe.db.exists("Role", "Student Applicant"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Student Applicant"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Student Applicant", "desk_access": 0}
         ).save()
 
 
 def create_student_role():
-    if not frappe.db.exists("Role", _("Student")):
+    if not frappe.db.exists("Role", "Student"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Student"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Student", "desk_access": 0}
         ).save()
 
 
 def create_alumni_role():
-    if not frappe.db.exists("Role", _("Alumni")):
+    if not frappe.db.exists("Role", "Alumni"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Alumni"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Alumni", "desk_access": 0}
         ).save()
 
 
@@ -1393,9 +1412,9 @@ def create_partner_role():
     """Portal role for partner-organization staff (the job-board employer side,
     ADR 053). No desk access; record-level scoping in seminary.partner.permissions
     limits each partner user to their own organization."""
-    if not frappe.db.exists("Role", _("Partner")):
+    if not frappe.db.exists("Role", "Partner"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Partner"), "desk_access": 0}
+            {"doctype": "Role", "role_name": "Partner", "desk_access": 0}
         ).save()
 
 
@@ -1405,16 +1424,16 @@ def create_partner_role():
 
 
 def create_registrar_role():
-    if not frappe.db.exists("Role", _("Registrar")):
+    if not frappe.db.exists("Role", "Registrar"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Registrar"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Registrar", "desk_access": 1}
         ).save()
 
 
 def create_instructor_role():
-    if not frappe.db.exists("Role", _("Instructor")):
+    if not frappe.db.exists("Role", "Instructor"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Instructor"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Instructor", "desk_access": 1}
         ).save()
 
 
@@ -1465,6 +1484,102 @@ def seed_cohort_reaction_types():
                     "sort_order": order,
                 }
             ).insert(ignore_permissions=True)
+
+
+def _chapters(book, first, last):
+    return [{"from_book": book, "from_chapter": c} for c in range(first, last + 1)]
+
+
+def _standard_reading_plans():
+    """ADR 087 §4. Book codes are OSIS, so the readings need no translation;
+    titles are translated once, in the language the site is installed in."""
+    romans = [
+        (1, 2),
+        (3, 4),
+        (5, 5),
+        (6, 6),
+        (7, 7),
+        (8, 8),
+        (9, 10),
+        (11, 11),
+        (12, 13),
+        (14, 16),
+    ]
+    sermon = [
+        (5, 1, 5, 16),
+        (5, 17, 5, 48),
+        (6, 1, 6, 18),
+        (6, 19, 6, 34),
+        (7, 1, 7, 12),
+        (7, 13, 7, 29),
+    ]
+    return [
+        (
+            "romans-10",
+            _("Romans in 10 days"),
+            _("Paul's letter to the Romans, one or two chapters a day."),
+            [
+                {"from_book": "ROM", "from_chapter": a, "to_chapter": b}
+                for a, b in romans
+            ],
+        ),
+        (
+            "mark-16",
+            _("Mark in 16 days"),
+            _("The Gospel of Mark, a chapter a day."),
+            _chapters("MRK", 1, 16),
+        ),
+        (
+            "philippians-4",
+            _("Philippians in 4 days"),
+            _("Paul's letter of joy, a chapter a day."),
+            _chapters("PHP", 1, 4),
+        ),
+        (
+            "sermon-on-the-mount-6",
+            _("The Sermon on the Mount in 6 days"),
+            _("Matthew 5 to 7, in six readings."),
+            [
+                {
+                    "from_book": "MAT",
+                    "from_chapter": a,
+                    "from_verse": b,
+                    "to_chapter": c,
+                    "to_verse": d,
+                }
+                for a, b, c, d in sermon
+            ],
+        ),
+        (
+            "psalms-of-ascent-15",
+            _("Psalms of Ascent in 15 days"),
+            _("Psalms 120 to 134, the songs pilgrims sang on the way up to Jerusalem."),
+            _chapters("PSA", 120, 134),
+        ),
+    ]
+
+
+def seed_standard_reading_plans():
+    """Create-only-if-missing, by a stable key, so a plan a school has started
+    is never rewritten under it."""
+    if not frappe.db.exists("DocType", "Reading Plan"):
+        return
+    for key, title, description, steps in _standard_reading_plans():
+        if frappe.db.exists("Reading Plan", {"standard_key": key}):
+            continue
+        doc = frappe.get_doc(
+            {
+                "doctype": "Reading Plan",
+                "title": title,
+                "plan_type": "Bible",
+                "description": description,
+                "is_standard": 1,
+                "standard_key": key,
+                "steps": steps,
+            }
+        )
+        doc.flags.allow_standard_edit = True
+        doc.insert(ignore_permissions=True)
 
 
 def seed_cohort_channels():
@@ -1530,17 +1645,17 @@ def create_program_chair_role():
     Replaces the ERPNext-inherited "Academics User" role, which Seminary used as
     its de-facto content-owner role but never created itself. See ADR 030.
     """
-    if not frappe.db.exists("Role", _("Program Chair")):
+    if not frappe.db.exists("Role", "Program Chair"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Program Chair"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Program Chair", "desk_access": 1}
         ).save()
 
 
 def create_seminary_manager_role():
     """Module administrator. Previously relied on ERPNext to provide this role."""
-    if not frappe.db.exists("Role", _("Seminary Manager")):
+    if not frappe.db.exists("Role", "Seminary Manager"):
         frappe.get_doc(
-            {"doctype": "Role", "role_name": _("Seminary Manager"), "desk_access": 1}
+            {"doctype": "Role", "role_name": "Seminary Manager", "desk_access": 1}
         ).save()
 
 
@@ -1630,31 +1745,90 @@ def after_migrate():
     seed_website_pages()
     seed_cohort_reaction_types()
     seed_cohort_channels()
+    seed_standard_reading_plans()
     setup_donor_person_field()
     setup_user_bible_field()
     create_cohort_participant_role()
     ensure_registrar_tools()
-    ensure_workspace_sidebars()
+    merge_academics_user_into_program_chair()
+    ensure_instructor_community_access()
 
 
-def ensure_workspace_sidebars():
-    """Build any missing Workspace Sidebars and Desktop Icons.
+def merge_academics_user_into_program_chair():
+    """Collapse a resurrected "Academics User" role back into "Program Chair".
 
-    Frappe v16 generates them only from its `after_app_install` hook, and only
-    for workspaces that have no sidebar yet. Until the Registrar workspace
-    stopped linking oikonomos's scholarship reports, that generation failed on
-    every install where seminary preceded oikonomos ("Failed To Create
-    Sidebar"), and nothing ever retried it — so those sites were left with no
-    Registrar sidebar or desktop icon for good. Frappe's generator is
-    existence-guarded and safe to re-run, so calling it here heals such sites
-    on their next migrate and is a no-op everywhere else.
+    ADR 034 renamed the role and a patch did the migration — but patches run
+    once, and Frappe recreates any role named in a DocPerm that doesn't exist
+    (`doctype.py` :: `update_permissions` / role auto-create, with desk_access=1).
+    Three third-party apps still name it — erpnext's Department, hrms's Interest
+    and koinonia's donor_base chart — so on a site with any of them the role
+    reappears on the very next `bench migrate` and the one-shot patch can never
+    fire again. Hence a hook: whatever recreates it, we collapse it each time
+    (ADR 074).
+
+    The resurrected role is worse than clutter — it carries no seminary
+    permissions (those moved to Program Chair) but still reads like the academic
+    authority role it used to be, so granting it looks meaningful and does
+    nothing.
+
+    Merging is safe only while the role is vestigial upstream, which it is:
+    Academics User belongs to Frappe's Education and LMS products, both
+    redundant with seminary. Re-check on major erpnext/hrms upgrades.
     """
-    try:
-        from frappe.utils.install import auto_generate_icons_and_sidebar
-    except ImportError:  # Frappe without workspace sidebars
+    if not frappe.db.exists("Role", "Academics User"):
         return
+    if not frappe.db.exists("Role", "Program Chair"):
+        create_program_chair_role()
 
-    auto_generate_icons_and_sidebar()
+    frappe.rename_doc("Role", "Academics User", "Program Chair", merge=True, force=True)
+    frappe.db.commit()
+    print('Merged resurrected role "Academics User" -> "Program Chair".')
+
+
+def ensure_instructor_community_access():
+    """Grant `Instructor` read on the discipleship doctypes.
+
+    The Community subsystem shipped with portal read for Student, Alumni and
+    Cohort Participant but not Instructor, while `AppSidebar` shows the Community
+    link to any `is_instructor` user -- so an instructor who led or mentored a
+    cohort followed the link and got "Insufficient Permission for Cohort Post".
+    CBE (ADR 065) makes it load-bearing rather than cosmetic: a Personal Mentor
+    is resolved through `Cohort Membership`, and mentors are usually instructors.
+
+    Read-only, exactly mirroring Student: every write goes through a whitelisted
+    API, and `discipleship/permissions.py` still scopes rows to the cohorts the
+    user can actually see. Instructor is deliberately NOT in `STAFF_BYPASS`, so
+    this grants reach, not oversight.
+
+    The doctype JSONs carry the same rows as the source of truth; this exists so
+    an already-migrated site picks them up without a DocType reload.
+    """
+    doctypes = (
+        "Cohort",
+        "Cohort Membership",
+        "Cohort Channel",
+        "Cohort Post",
+        "Cohort Post Comment",
+        "Cohort Post Reaction",
+        "Cohort Post Save",
+        "Cohort Feed Read State",
+        "Cohort Content Flag",
+    )
+    if not frappe.db.exists("Role", "Instructor"):
+        return
+    added = []
+    for dt in doctypes:
+        if not frappe.db.exists("DocType", dt):
+            continue
+        if frappe.db.exists("DocPerm", {"parent": dt, "role": "Instructor"}):
+            continue
+        doc = frappe.get_doc("DocType", dt)
+        doc.append("permissions", {"role": "Instructor", "read": 1, "permlevel": 0})
+        doc.save(ignore_permissions=True)
+        added.append(dt)
+    if added:
+        frappe.db.commit()
+        print("Granted Instructor read on: %s" % ", ".join(added))
 
 
 def ensure_registrar_tools():

@@ -11,7 +11,6 @@ rather than branches in the grading engine.
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
 
 # Evaluator rows resolved from the section carry the same person for everyone in
 # it; rows resolved from the student's enrollment differ per student. The label
@@ -28,7 +27,22 @@ class CompetencyFramework(Document):
         self.validate_grading_scale()
         self.validate_evaluators()
         self.validate_development_questions()
-        self.set_report_max()
+        self.validate_content_release()
+
+    def validate_content_release(self):
+        """A gated mode waits on the self-assessment at the end of each
+        competency, so it is refused where the framework asks for none --
+        including when Course Self-Evaluation is being turned off under it
+        (ADR 079 decision 7). The message says why and what to do."""
+        from seminary.seminary import cbe
+
+        if self.content_release_mode in cbe.GATED_MODES and not (
+            cbe.end_of_competency_self_eval(self)
+        ):
+            frappe.throw(
+                cbe.release_mode_refusal(self.content_release_mode),
+                title=_("Content release needs a self-assessment"),
+            )
 
     def validate_one_cohort_type(self):
         """One framework, one kind of cohort (ADR 066 section 7.9).
@@ -135,30 +149,3 @@ class CompetencyFramework(Document):
                     "record, or choose another aggregation method."
                 )
             )
-
-    def set_report_max(self):
-        """Highest value a reported result can reach, for display and for the
-        portal's scale labels.
-
-        On the framework scale a result is one level, so the maximum is the top
-        level. Summed, it is the top level times the number of ratings actually
-        being added up — which is what makes a 1-4 scale report as 1-12 for three
-        contributors.
-        """
-        top = frappe.get_all(
-            "Grading Scale Interval",
-            filters={"parent": self.grading_scale},
-            fields=["threshold"],
-            order_by="threshold desc",
-            limit=1,
-        )
-        top_level = flt(top[0].threshold) if top else 0
-        if self.report_basis == "Summed":
-            contributors = sum(
-                1 for row in self.evaluators or [] if row.gives_competency_verdict
-            )
-            if self.include_self_in_verdict and self.course_self_eval:
-                contributors += 1
-            self.report_max = flt(top_level) * max(contributors, 1)
-        else:
-            self.report_max = flt(top_level)

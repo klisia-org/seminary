@@ -5,12 +5,40 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary.doctype.academic_unit.academic_unit import (
+    governance_lock_applies,
+)
+
+# Fields the governance record keeps on a governing body's memberships (p014). Roster
+# order and capabilities stay with seminary.
+GOVERNED_FIELDS = ("unit", "person", "is_active")
+
 
 class AcademicUnitMembership(Document):
     def validate(self):
+        self._validate_governance_lock()
         self._sync_instructor_from_person()
         self._validate_unique_membership()
         self._validate_instructor_for_capabilities()
+
+    def on_trash(self):
+        if governance_lock_applies(self.unit):
+            frappe.throw(_governed_message().format(self.unit))
+
+    def _validate_governance_lock(self):
+        """A governing body's members follow its seats (p014): only the sync may add one,
+        move one or change whether it is active."""
+        units = {self.unit}
+        before = None if self.is_new() else self.get_doc_before_save()
+        if before:
+            units.add(before.unit)
+        for unit in units:
+            if not governance_lock_applies(unit):
+                continue
+            if before is None or any(
+                self.get(f) != before.get(f) for f in GOVERNED_FIELDS
+            ):
+                frappe.throw(_governed_message().format(unit))
 
     def _sync_instructor_from_person(self):
         """Instructor is derived, not entered — it reflects the Person's Instructor
@@ -60,3 +88,10 @@ class AcademicUnitMembership(Document):
                         "member."
                     ).format(row.capability)
                 )
+
+
+def _governed_message():
+    return _(
+        "The members of {0} follow its seats in the governance record. "
+        "Add, end or change the seat there."
+    )

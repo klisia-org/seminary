@@ -10,6 +10,15 @@ from seminary.seminary.utils import get_course_progress
 class CourseScheduleChapter(Document):
     def validate(self):
         self.validate_course_competency()
+        self.pin_reflection_lessons()
+
+    def pin_reflection_lessons(self):
+        """Reflection lessons stay where the framework put them, whatever order
+        the rows arrive in (ADR 079 decision 3)."""
+        from seminary.seminary import cbe_reflection
+
+        if self.lessons:
+            self.lessons = cbe_reflection.pin_rows(self.lessons)
 
     def validate_course_competency(self):
         """A chapter may only deliver a competency of its own course (ADR 065).
@@ -58,6 +67,12 @@ class CourseScheduleChapter(Document):
         self.recalculate_course_progress()
 
     def on_trash(self):
+        from seminary.seminary import cbe_reflection
+
+        cbe_reflection.assert_chapter_deletable(self.name)
+        self._release_scorm_package()
+
+    def _release_scorm_package(self):
         """Release the SCORM package this chapter was holding (p009 §2.13).
 
         `api.delete_chapter` does this itself, because it deletes by raw

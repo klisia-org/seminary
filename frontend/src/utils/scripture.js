@@ -3,7 +3,7 @@
 
 // Tokenize a verse on whitespace and decide which tokens are eligible to be
 // hidden for memorization. Eligibility = alphanumeric-stripped length >=
-// minWordLength. Language-agnostic on purpose so Crowdin-added languages
+// minWordLength. Language-agnostic on purpose so Weblate-added languages
 // don't need a stopword list maintained here.
 const STRIP_NON_ALNUM = /[^\p{L}\p{N}]+/gu
 

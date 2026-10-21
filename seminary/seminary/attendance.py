@@ -6,7 +6,8 @@
 Attendance is captured as Student Attendance rows (Present/Tardy/Absent). This
 module turns that into a *standing* on each Scheduled Course Roster row:
 
-* **effective absences** = recorded absences (approved-leave ones excluded) +
+* **effective absences** = recorded absences (none on a leave-of-absence day;
+  Excused is not an absence — ADR 081) +
   ``tardies // tardies_per_absence`` (Seminary Settings; 0 disables conversion).
 * **absence limit** (per student): the course's policy resolved against the
   *student's* program — a course has no single program (a course can serve
@@ -25,6 +26,7 @@ daily backstop. See ADR 037.
 
 import frappe
 from frappe import _
+from frappe.utils import getdate
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
 
 from seminary.seminary.guards import require_course_staff
@@ -121,9 +123,51 @@ def compute_max_absences(cs):
 # ---------------------------------------------------------------------------
 
 
-def _counts(student, course_schedule):
-    """(absences, tardies) for a student in a course. Absences linked to an
-    approved (submitted) Student Leave Application are excluded."""
+def leave_periods(student, program):
+    """Leave-of-absence periods for a student's enrollment in ``program``, read
+    from Program Enrollment Status History (ADR 081). Each is ``(start, end)``
+    with ``end`` exclusive (the return date) or ``None`` while still on leave.
+    Nothing is copied when a leave changes, so extensions and early returns are
+    always reflected."""
+    from seminary.seminary.program_status import LEAVE_STATUS
+
+    if not (student and program):
+        return []
+    pes = frappe.get_all(
+        "Program Enrollment",
+        filters={"student": student, "program": program, "docstatus": 1},
+        pluck="name",
+    )
+    if not pes:
+        return []
+    rows = frappe.get_all(
+        "Program Enrollment Status History",
+        filters={"parent": ["in", pes], "parentfield": "status_history"},
+        fields=["effective_date", "to_status"],
+        order_by="effective_date asc, idx asc",
+    )
+    periods, start = [], None
+    for r in rows:
+        if not r.effective_date:
+            continue
+        if r.to_status == LEAVE_STATUS:
+            start = start or getdate(r.effective_date)
+        elif start:
+            periods.append((start, getdate(r.effective_date)))
+            start = None
+    if start:
+        periods.append((start, None))
+    return periods
+
+
+def on_leave(date, periods):
+    date = getdate(date)
+    return any(s <= date and (e is None or date < e) for s, e in periods)
+
+
+def _counts(student, course_schedule, program=None):
+    """(absences, tardies) for a student in a course. Excused rows count as
+    neither, and an absence on a leave-of-absence day is not counted (ADR 081)."""
     # When online meetings aren't attendance-bearing, ignore any attendance rows
     # tied to an online meeting (e.g. recorded before the policy was turned off).
     online_clause = (
@@ -136,22 +180,20 @@ def _counts(student, course_schedule):
     )
     rows = frappe.db.sql(
         f"""
-        SELECT sa.status, sa.leave_application,
-               COALESCE(sla.docstatus, -1) AS leave_docstatus
+        SELECT sa.status, sa.date
         FROM `tabStudent Attendance` sa
-        LEFT JOIN `tabStudent Leave Application` sla
-            ON sla.name = sa.leave_application
         WHERE sa.student = %s AND sa.course_schedule = %s AND sa.docstatus < 2
         {online_clause}
         """,  # nosec B608 -- interpolates a clause built from constants in this function
         (student, course_schedule),
         as_dict=True,
     )
+    periods = leave_periods(student, program)
     absences = tardies = 0
     for r in rows:
         if r.status == "Absent":
-            if r.leave_application and r.leave_docstatus == 1:
-                continue  # excused
+            if r.date and periods and on_leave(r.date, periods):
+                continue
             absences += 1
         elif r.status == "Tardy":
             tardies += 1
@@ -207,7 +249,7 @@ def recompute_standing(course_schedule, student, cs=None, settings=None, notify=
         new_level = ALERT_NONE
     else:
         limit = _absence_limit(_cs_meta(course_schedule, cs), roster.program_std_scr)
-        absences, tardies = _counts(student, course_schedule)
+        absences, tardies = _counts(student, course_schedule, roster.program_std_scr)
         effective = _effective(absences, tardies, settings)
         new_level = _level(effective, limit, settings.absence_warning_buffer)
 
@@ -274,6 +316,22 @@ def recompute_on_program_update(doc, method=None):
     max absence % changes, so the registrar sees the effect immediately."""
     if doc.has_value_changed("default_max_absence_percent"):
         recompute_for_program(doc.name)
+
+
+def recompute_for_enrollment(program_enrollment):
+    """Re-level a student's active courses in a program, e.g. when a leave of
+    absence starts or ends (ADR 081)."""
+    student, program = frappe.db.get_value(
+        "Program Enrollment", program_enrollment, ["student", "program"]
+    ) or (None, None)
+    if not (student and program):
+        return
+    for cs_name in frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"student": student, "program_std_scr": program, "active": 1},
+        pluck="course_sc",
+    ):
+        recompute_standing(cs_name, student)
 
 
 def recompute_all():
@@ -428,6 +486,13 @@ def get_course_attendance_standings(course_schedule):
             "effective_absences",
             "absence_limit",
             "attendance_alert_level",
+            "program_std_scr",
         ],
     )
+    # Leave periods let the page show "On leave" on the meeting being taken.
+    for r in rows:
+        r["leave_periods"] = [
+            [str(s), str(e) if e else None]
+            for s, e in leave_periods(r.student, r.pop("program_std_scr"))
+        ]
     return {r.student: r for r in rows}

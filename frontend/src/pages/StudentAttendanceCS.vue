@@ -1,10 +1,9 @@
 <template>
-       <header
-			class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-		>
-			<Breadcrumbs class="h-7" :items="breadcrumbs" />
-
-		</header>
+       <PageHeader>
+       	<template #title>
+       		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+       	</template>
+       </PageHeader>
   <div v-if="!meetingDates.loading && (!meetingDates.data || meetingDates.data.length === 0)" class="px-5 py-10">
     <p class="text-ink-gray-5">{{ __('This course does not have meeting dates set for attendance.') }}</p>
   </div>
@@ -16,14 +15,13 @@
   <button
     v-for="meeting in meetingDates.data"
     :key="meeting.name"
-    :disabled="new Date(meeting.cs_meetdate) > today"
     class="p-2 border border-outline-gray-2 rounded-md text-left flex justify-between items-center transition-colors"
     :class="{
-      'bg-surface-gray-3 text-ink-gray-5 cursor-not-allowed': new Date(meeting.cs_meetdate) > today,
+      'text-ink-gray-5': isUpcoming(meeting) && selectedDate?.name !== meeting.name,
       'bg-surface-blue-2 text-ink-blue-2 border-outline-blue-1 font-semibold': selectedDate?.name === meeting.name,
     }"
     @click="selectDate(meeting)"
-    :title="new Date(meeting.cs_meetdate) > today ? __('Cannot set attendance of future dates') : ''"
+    :title="isUpcoming(meeting) ? __('Upcoming: you can excuse students ahead of this class') : ''"
   >
     <span>
       {{ formatDate(meeting.cs_meetdate) }}
@@ -31,8 +29,8 @@
       <span v-if="meeting.online" class="text-xs text-ink-gray-5">· {{ __('Online') }}</span>
       <span v-else-if="meeting.room_label" class="text-xs text-ink-gray-5">· {{ meeting.room_label }}</span>
     </span>
-    <span v-if="meeting.attendance === 1" class="text-green-500">
-      <Check class="h-5 w-5 text-green-500" />
+    <span v-if="meeting.attendance === 1" class="text-ink-green-2">
+      <Check class="h-5 w-5 text-ink-green-2" />
     </span>
   </button>
 </div>
@@ -63,8 +61,12 @@
         </div>
       </div>
 
+      <p v-if="isFuture" class="mb-4 text-sm text-ink-gray-6">
+        {{ __('This class has not happened yet. You can excuse students ahead of it; the roll is taken on the day.') }}
+      </p>
+
       <!-- Edit Attendance Button -->
-      <div v-if="attendanceTaken && !editing" class="mb-4">
+      <div v-if="!isFuture && attendanceTaken && !editing" class="mb-4">
         <button
           class="p-2 bg-surface-amber-2 text-ink-amber-3 border border-outline-amber-1 rounded-md"
           @click="editAttendance"
@@ -99,7 +101,14 @@
               </div>
             </td>
             <td class="p-2 border">
-              <div>{{ student.stuname_roster }}</div>
+              <div>
+                {{ student.stuname_roster }}
+                <span v-if="onLeave(student.student)"
+                  class="ml-2 rounded bg-surface-gray-3 px-1.5 py-0.5 text-xs text-ink-gray-7"
+                  :title="__('On a leave of absence: an absence on this day does not count.')">
+                  {{ __('On leave') }}
+                </span>
+              </div>
               <button
                 v-if="canReportDisc && atRisk(student.student)"
                 class="mt-1 text-xs text-ink-red-3 hover:underline"
@@ -109,7 +118,19 @@
               </button>
             </td>
             <td class="p-2 border text-center">
-              <template v-if="attendanceTaken && !editing">
+              <template v-if="isFuture">
+                <button
+                  type="button"
+                  class="px-3 py-1 text-sm rounded-md border border-outline-gray-2"
+                  :class="attendance[student.student] === 'Excused'
+                    ? excusedOption.activeClass
+                    : 'bg-surface-white text-ink-gray-6 hover:bg-surface-gray-2'"
+                  @click="attendance[student.student] = attendance[student.student] === 'Excused' ? '' : 'Excused'"
+                >
+                  {{ __('Excused') }}
+                </button>
+              </template>
+              <template v-else-if="attendanceTaken && !editing">
                 <span :class="statusClass(attendance[student.student])" class="font-semibold">
                   {{ statusLabel(attendance[student.student]) }}
                 </span>
@@ -146,26 +167,54 @@
 
       <!-- Summary Above the Mark Attendance Button -->
       <div v-if="selectedDate" class="mb-4">
-        <p class="text-lg font-semibold mt-4">
-          <span class="text-green-500">{{ presentCount }}</span> {{ __('Present') }},
+        <p v-if="isFuture" class="text-lg font-semibold mt-4">
+          <span class="text-ink-blue-3">{{ excusedCount }}</span> {{ __('Excused') }}
+        </p>
+        <p v-else class="text-lg font-semibold mt-4">
+          <span class="text-ink-green-2">{{ presentCount }}</span> {{ __('Present') }},
           <span class="text-ink-amber-3">{{ tardyCount }}</span> {{ __('Tardy') }},
-          <span class="text-red-500">{{ absentCount }}</span> {{ __('Absent') }}
+          <span class="text-ink-red-3">{{ absentCount }}</span> {{ __('Absent') }},
+          <span class="text-ink-blue-3">{{ excusedCount }}</span> {{ __('Excused') }}
         </p>
       </div>
 
       <!-- Mark Attendance Button -->
-      <div v-if="selectedDate && (!attendanceTaken || attendanceTaken && editing)" class="mt-4">
+      <div v-if="selectedDate && (isFuture || !attendanceTaken || editing)" class="mt-4">
         <button
-          class="p-2 bg-blue-500 text-white rounded-md"
+          class="p-2 bg-surface-blue-3 text-ink-white rounded-md"
           @click="markAttendance"
 
         >
-          {{ __('Mark Attendance') }}
+          {{ isFuture ? __('Save Excused Students') : __('Mark Attendance') }}
         </button>
       </div>
     </div>
   </div>
   </div>
+
+  <!-- Excused on a due date: offer each student a later date -->
+  <Dialog v-model="showExcusedDue" :options="{ title: __('Due that day'), size: 'xl' }">
+    <template #body-content>
+      <p class="mb-3 text-sm text-ink-gray-6">
+        {{ __('These students were excused on a day something is due. Give them a later due date? Untick any you do not want to change.') }}
+      </p>
+      <div v-for="row in excusedDue" :key="row.student + row.course_assess"
+        class="mb-2 flex flex-wrap items-center gap-3 rounded border border-outline-gray-2 p-2">
+        <input type="checkbox" v-model="row.keep" :aria-label="row.student_name" />
+        <div class="min-w-[12rem] flex-1 text-sm">
+          <div class="font-medium text-ink-gray-9">{{ row.student_name }}</div>
+          <div class="text-ink-gray-6">{{ row.title }} · {{ __('due {0}').format(dayjs(row.due_date).format('MMM D, HH:mm')) }}</div>
+        </div>
+        <DateTimePicker v-model="row.new_due" variant="subtle" :disabled="!row.keep" />
+      </div>
+    </template>
+    <template #actions>
+      <Button variant="solid" :loading="savingExcusedDue" :disabled="!excusedDue.some((r) => r.keep)"
+        @click="saveExcusedDue">
+        {{ __('Change these due dates') }}
+      </Button>
+    </template>
+  </Dialog>
 
   <!-- Check-in code / QR dialog -->
   <Dialog v-model="showCodeDialog" :options="{ title: __('Self Check-in Code') }">
@@ -237,8 +286,9 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Avatar, Button, createResource, Breadcrumbs, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
+import { Avatar, Button, createResource, Breadcrumbs, DateTimePicker, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'
 import { Check, Printer, QrCode, Send } from 'lucide-vue-next'
 import QRCode from 'qrcode'
@@ -257,7 +307,6 @@ const props = defineProps({
   },
 });
 
-const today = new Date();
 const selectedDate = ref(null);
 const attendance = ref({});
 const attendanceTaken = ref(false);
@@ -267,11 +316,18 @@ const statusOptions = [
   { value: 'Present', label: __('Present'), activeClass: 'bg-surface-green-2 text-ink-green-3 font-semibold' },
   { value: 'Tardy', label: __('Tardy'), activeClass: 'bg-surface-amber-2 text-ink-amber-3 font-semibold' },
   { value: 'Absent', label: __('Absent'), activeClass: 'bg-surface-red-2 text-ink-red-3 font-semibold' },
+  { value: 'Excused', label: __('Excused'), activeClass: 'bg-surface-blue-2 text-ink-blue-3 font-semibold' },
 ];
+const excusedOption = statusOptions[3];
 
-const statusLabel = (s) => ({ Present: __('Present'), Tardy: __('Tardy') }[s] || __('Absent'));
+const statusLabel = (s) =>
+  ({ Present: __('Present'), Tardy: __('Tardy'), Excused: __('Excused') }[s] || __('Absent'));
 const statusClass = (s) =>
-  ({ Present: 'text-green-500', Tardy: 'text-ink-amber-3' }[s] || 'text-red-500');
+  ({ Present: 'text-ink-green-2', Tardy: 'text-ink-amber-3', Excused: 'text-ink-blue-3' }[s] || 'text-ink-red-3');
+
+// A class that has not happened yet only takes Excused (ADR 081).
+const isUpcoming = (meeting) => dayjs(meeting.cs_meetdate).isAfter(dayjs(), 'day');
+const isFuture = computed(() => !!selectedDate.value && isUpcoming(selectedDate.value));
 
 // Fetch meeting dates
 const meetingDates = createResource({
@@ -320,6 +376,15 @@ const standings = createResource({
 });
 
 const standingFor = (student) => standings.data?.[student];
+
+// Leave periods come from the Program Enrollment; the end is the return date.
+const onLeave = (student) => {
+  const day = selectedDate.value?.cs_meetdate;
+  if (!day) return false;
+  return (standingFor(student)?.leave_periods || []).some(
+    ([start, end]) => start <= day && (!end || day < end)
+  );
+};
 
 const hasAbsenceLimits = computed(() =>
   Object.values(standings.data || {}).some((s) => s.absence_limit > 0)
@@ -406,16 +471,19 @@ watch(
   (data) => {
     if (!data) return;
     attendance.value = {};
-    // Default everyone to Absent, then overlay recorded statuses.
+    // Default everyone to Absent (nothing, for an upcoming class), then overlay
+    // recorded statuses -- an Excused set ahead of the class included.
     (students.data || []).forEach((s) => {
-      attendance.value[s.student] = 'Absent';
+      attendance.value[s.student] = isFuture.value ? '' : 'Absent';
     });
     data.forEach((record) => {
       if (record.meeting === selectedDate.value?.name) {
         attendance.value[record.student] = record.status || 'Absent';
       }
     });
-    attendanceTaken.value = data.length > 0;
+    // Excusing ahead is not taking the roll, so read the meeting's own flag.
+    const meeting = (meetingDates.data || []).find((m) => m.name === selectedDate.value?.name);
+    attendanceTaken.value = meeting?.attendance === 1;
     editing.value = !attendanceTaken.value;
   }
 );
@@ -448,7 +516,10 @@ const tardyCount = computed(() =>
   Object.values(attendance.value).filter((s) => s === 'Tardy').length
 );
 const absentCount = computed(() =>
-  Object.values(attendance.value).filter((s) => s !== 'Present' && s !== 'Tardy').length
+  Object.values(attendance.value).filter((s) => s === 'Absent').length
+);
+const excusedCount = computed(() =>
+  Object.values(attendance.value).filter((s) => s === 'Excused').length
 );
 
 // Mark attendance
@@ -477,6 +548,7 @@ const markAttendance = async () => {
         students_present: bucket('Present'),
         students_tardy: bucket('Tardy'),
         students_absent: bucket('Absent'),
+        students_excused: bucket('Excused'),
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -495,6 +567,7 @@ const markAttendance = async () => {
       meetingDates.reload();
       attendanceResource.reload();
       standings.reload();
+      offerDueDateChanges(bucket('Excused').map((s) => s.student));
     }
   } catch (error) {
     console.error('Error:', error);
@@ -503,6 +576,58 @@ const markAttendance = async () => {
 }
 
 
+
+// --- Excused on a due date (decisions/082 section 2) ----------------------
+// Anything due that day is offered a later date for each excused student; an
+// override is created only for the rows the instructor keeps ticked.
+const excusedDue = ref([]);
+const showExcusedDue = ref(false);
+const savingExcusedDue = ref(false);
+
+async function offerDueDateChanges(excused) {
+  if (!excused.length) return;
+  try {
+    const rows = await call('seminary.seminary.deadlines.excused_due', {
+      course: props.courseName,
+      date: selectedDate.value.cs_meetdate,
+      students: JSON.stringify(excused),
+    });
+    if (!rows?.length) return;
+    excusedDue.value = rows.map((r) => ({
+      ...r,
+      keep: true,
+      new_due: dayjs(r.due_date).add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
+    }));
+    showExcusedDue.value = true;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function saveExcusedDue() {
+  savingExcusedDue.value = true;
+  let saved = 0;
+  try {
+    for (const row of excusedDue.value.filter((r) => r.keep)) {
+      await call('seminary.seminary.deadlines.save_override', {
+        data: JSON.stringify({
+          course_assess: row.course_assess,
+          student: row.student,
+          due_date: row.new_due,
+          source: 'Excused absence',
+          reason: __('Excused absence on {0}').format(dayjs(selectedDate.value.cs_meetdate).format('YYYY-MM-DD')),
+        }),
+      });
+      saved++;
+    }
+    toast.success(__('{0} due date(s) changed').format(saved));
+    showExcusedDue.value = false;
+  } catch (e) {
+    toast.error(e?.messages?.join('\n') || e?.message || __('Could not save.'));
+  } finally {
+    savingExcusedDue.value = false;
+  }
+}
 
 // --- Self check-in code / QR ---------------------------------------------
 const showCodeDialog = ref(false);

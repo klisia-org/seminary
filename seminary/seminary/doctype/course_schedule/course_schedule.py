@@ -9,7 +9,15 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.workflow import apply_workflow
-from frappe.utils import add_days, cint, formatdate, get_time, getdate, now
+from frappe.utils import (
+    add_days,
+    cint,
+    formatdate,
+    get_datetime,
+    get_time,
+    getdate,
+    now,
+)
 import calendar
 from datetime import timedelta
 from dateutil import relativedelta
@@ -42,6 +50,7 @@ class CourseSchedule(Document):
         self.validate_date()
         self.validate_time()
         self.validate_assessment_criteria()
+        self.validate_late_policy()
         self.validate_instructor_categories()
         self.validate_instructor_of_record_rows()
         self.clean_name()
@@ -73,6 +82,28 @@ class CourseSchedule(Document):
             )
 
         self._handle_capacity_and_waitlist()
+        self._scaffold_if_became_cbe()
+
+        # A changed late policy re-prices the grades not yet sent (decisions/082).
+        from seminary.seminary import deadlines
+
+        deadlines.on_section_update(self)
+
+    def _scaffold_if_became_cbe(self):
+        """A section whose course or scale changes so that it now resolves to a
+        Competency Framework gets its reflection lessons (ADR 079 decision 2).
+        Creation is handled by after_insert; an importer that brings its own
+        outline sets the flag and scaffolds afterwards."""
+        before = self.get_doc_before_save()
+        if not before or self.flags.skip_reflection_scaffold:
+            return
+        if (before.course, before.gradesc_cs) == (self.course, self.gradesc_cs):
+            return
+        from seminary.seminary import cbe, cbe_reflection
+
+        if cbe.framework_for_course_and_scale(before.course, before.gradesc_cs):
+            return
+        cbe_reflection.scaffold_if_became_cbe(self.name)
 
     def _handle_capacity_and_waitlist(self):
         """React to capacity and lifecycle changes for the waitlist engine.
@@ -362,6 +393,31 @@ class CourseSchedule(Document):
 
         open_new_schedule_if_due(self)
 
+        # A competency section is born with a chapter per competency and the
+        # reflection lessons its framework asks for (ADR 079 decision 2). An
+        # importer that brings its own outline scaffolds after it instead.
+        if not self.flags.skip_reflection_scaffold:
+            from seminary.seminary import cbe_reflection
+
+            cbe_reflection.scaffold(self.name)
+            # The scaffold writes its chapters as direct inserts, which moves
+            # `modified`. Reload, or the form gets a copy with no chapters and
+            # a stale timestamp: its next action (Import Course Template among
+            # them) is refused as "modified after you have opened it".
+            if frappe.db.get_value(self.doctype, self.name, "modified") != self.modified:
+                self.reload()
+
+    def onload(self):
+        # A competency section is born with its scaffold, which a template
+        # may still replace (`_validate_target_for_import`); the form offers
+        # Import Course Template on that, not only on an empty outline.
+        if self.chapters:
+            from seminary.seminary import cbe_reflection
+
+            self.set_onload(
+                "untouched_scaffold", cbe_reflection.untouched_scaffold(self.name)
+            )
+
     def _seed_assessment_criteria_from_course(self):
         """Auto-populate courseassescrit_sc from Course.assessment_criteria.
 
@@ -528,6 +584,40 @@ class CourseSchedule(Document):
         if total_weight_scac != 100:
             frappe.throw(_("Total Weight of all Assessment Criteria must total 100%"))
 
+    def validate_late_policy(self):
+        """Late deductions are percentage points of a points score, so they
+        exist only on a points scale outside competency-based education
+        (decisions/082 section 4). Refused, not ignored, so the instructor
+        is not left believing a deduction applies."""
+        for row in self.courseassescrit_sc or []:
+            if (
+                row.cutoff_date
+                and row.due_date
+                and get_datetime(row.cutoff_date) < get_datetime(row.due_date)
+            ):
+                frappe.throw(
+                    _(
+                        "Row {0}: {1} closes before it is due. Move the cut-off after the due date."
+                    ).format(row.idx, row.title)
+                )
+        if not self.late_policy_enabled:
+            return
+        from seminary.seminary import cbe, deadlines
+
+        if not deadlines.is_points_scale(self.gradesc_cs) or (
+            cbe.framework_for_course_and_scale(self.course, self.gradesc_cs)
+        ):
+            frappe.throw(
+                _(
+                    "Late deductions need a points grading scale, and {0} is not "
+                    "one. Untick Deduct Points for Late Work, or change the "
+                    "grading scale."
+                ).format(self.gradesc_cs),
+                title=_("Late deductions"),
+            )
+        if self.late_floor and not 0 <= self.late_floor <= 100:
+            frappe.throw(_("Lowest Possible Score must be between 0 and 100."))
+
     def validate_assessment_competencies(self):
         """Chapter -> lesson -> assessment must agree on the competency.
 
@@ -537,15 +627,62 @@ class CourseSchedule(Document):
         it, so the instructor only has to choose for assessments that sit
         outside the outline -- a course-wide capstone, say.
         """
-        from seminary.seminary.utils import (
-            _build_lesson_index_for_course,
-            _scac_activity_key,
-        )
-
         if self.is_new():
             # The lesson index is built from saved activity links; on a brand
             # new section there is nothing to resolve against yet.
             return
+
+        for row, competency in self._chapter_competencies():
+            if not row.course_competency:
+                row.course_competency = competency
+            elif row.course_competency != competency:
+                frappe.throw(
+                    _(
+                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
+                        "cannot be filed under {3}."
+                    ).format(
+                        row.idx,
+                        row.title or row.assesscriteria_scac,
+                        competency,
+                        row.course_competency,
+                    )
+                )
+
+    def refile_assessment_competencies(self):
+        """Re-file every assessment on the competency its chapter now delivers.
+
+        Called after a write that moves the chapter under an assessment -- a
+        lesson moved between chapters, or a chapter re-mapped -- which the
+        validator above would otherwise report as the instructor's error on
+        their next save (ADR 079 decision 8). Saves only when something moved,
+        and returns ``[(title, old, new)]`` so the caller can say what changed.
+        A row whose chapter has no competency keeps the one it has.
+        """
+        changed = []
+        for row, competency in self._chapter_competencies():
+            if row.course_competency != competency:
+                changed.append(
+                    (
+                        row.title or row.assesscriteria_scac,
+                        row.course_competency,
+                        competency,
+                    )
+                )
+                row.course_competency = competency
+        if changed:
+            # Only competency links on child rows changed; a draft section with
+            # its schedule still unfilled must not fail the move on that.
+            self.flags.ignore_mandatory = True
+            self.save(ignore_permissions=True)
+        return changed
+
+    def _chapter_competencies(self):
+        """Yield ``(row, competency)`` for each assessment whose activity sits
+        in a lesson whose chapter names a competency."""
+        from seminary.seminary.utils import (
+            _build_lesson_index_for_course,
+            _scac_activity_key,
+        )
 
         index = _build_lesson_index_for_course(self.name)
         chapter_competency = {}
@@ -561,23 +698,8 @@ class CourseSchedule(Document):
                 chapter_competency[chapter] = frappe.db.get_value(
                     "Course Schedule Chapter", chapter, "course_competency"
                 )
-            competency = chapter_competency[chapter]
-            if not competency:
-                continue
-            if not row.course_competency:
-                row.course_competency = competency
-            elif row.course_competency != competency:
-                frappe.throw(
-                    _(
-                        "Row {0}: {1} is in a chapter that delivers {2}, so it "
-                        "cannot be filed under {3}."
-                    ).format(
-                        row.idx,
-                        row.title or row.assesscriteria_scac,
-                        competency,
-                        row.course_competency,
-                    )
-                )
+            if chapter_competency[chapter]:
+                yield row, chapter_competency[chapter]
 
     def convert_to_date(self, date):
         if isinstance(date, str):
@@ -628,6 +750,15 @@ class CourseSchedule(Document):
         if name:
             framework = frappe.get_cached_doc("Competency Framework", name)
             if cint(framework.override_contentrelease):
+                if self.content_release_override in cbe.GATED_MODES and not (
+                    cbe.end_of_competency_self_eval(framework)
+                ):
+                    frappe.throw(
+                        cbe.release_mode_refusal(
+                            self.content_release_override, on_section=True
+                        ),
+                        title=_("Content release needs a self-assessment"),
+                    )
                 return
             frappe.throw(
                 _(
@@ -872,11 +1003,12 @@ class CourseSchedule(Document):
 
         Replaces the target's SCAC rows (so the placeholder satisfying
         ``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
-        already has chapters or any graded data. Roster, grades, and SCAC
-        due_dates are NOT copied.
+        already has chapters or any graded data. Roster, grades, SCAC
+        due_dates and cut-offs, and student due date overrides are NOT
+        copied; the late policy is.
         """
         self._validate_target_for_import(source_cs)
-        _validate_source_for_import(source_cs)
+        _validate_source_for_import(source_cs, self)
 
         # All persistence is via direct child-doc inserts. self.save() is
         # avoided on purpose: Course Lesson.updates_lessons (and any other
@@ -886,6 +1018,10 @@ class CourseSchedule(Document):
         # denorm field values (lessons count getting overwritten with the
         # in-memory 0). Source weights are validated up-front, so we don't
         # lose any meaningful save-time check.
+        from seminary.seminary import cbe_reflection
+
+        if self.chapters:
+            cbe_reflection.clear_scaffold(self.name)
         scac_name_map = _replace_scac_rows(source_cs, self.name)
         folder_report = _new_folder_report()
         # Lesson content is copied verbatim, URLs included. Files attached to
@@ -899,7 +1035,12 @@ class CourseSchedule(Document):
         finally:
             frappe.flags.seminary_adopt_from = None
         _remap_lesson_scac_links(lesson_name_map, scac_name_map)
+        # Fill what the template lacked, stamp the reflections it brought, and
+        # file its assessments on the chapters they now sit in.
+        cbe_reflection.scaffold(self.name)
+        frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
+        _copy_late_policy(source_cs, self.name)
         n_scac = len(scac_name_map)
         lines = [
             _(
@@ -979,8 +1120,12 @@ class CourseSchedule(Document):
                 ).format(source_course, self.course)
             )
 
+        from seminary.seminary import cbe_reflection
+
+        # An outline that is only the scaffold gives way to the template and
+        # is rebuilt around it afterwards (ADR 079 decision 8).
         n_chapters = len(self.chapters or [])
-        if n_chapters > 0:
+        if n_chapters > 0 and not cbe_reflection.untouched_scaffold(self.name):
             frappe.throw(
                 _(
                     "Target schedule already has {0} chapter(s). Clear them "
@@ -1004,6 +1149,33 @@ class CourseSchedule(Document):
                     "be overwritten by a template import."
                 )
             )
+
+
+def refile_chapter_competencies(course_schedule):
+    """Write each assessment's chapter competency onto its row, and return
+    the rows that changed.
+
+    The same rule as ``refile_assessment_competencies``, but row by row rather
+    than through a section save: a lesson save must not fail on an unrelated
+    section validation, and the value is derived, never entered.
+    """
+    if not course_schedule or not frappe.db.exists(
+        "Course Schedule Chapter",
+        {"coursesc": course_schedule, "course_competency": ("is", "set")},
+    ):
+        return []
+    changed = []
+    cs = frappe.get_doc("Course Schedule", course_schedule)
+    for row, competency in cs._chapter_competencies():
+        if row.course_competency != competency:
+            frappe.db.set_value(
+                "Scheduled Course Assess Criteria",
+                row.name,
+                "course_competency",
+                competency,
+            )
+            changed.append(row.name)
+    return changed
 
 
 def _cascade_cancel_pec_and_cei(cs_name, reason):
@@ -1118,7 +1290,7 @@ def bulk_close_enrollment(names):
 # ── Course Template Import helpers ──────────────────────────────────────────
 
 
-def _validate_source_for_import(source_cs):
+def _validate_source_for_import(source_cs, target):
     """Read-only checks on the source side. Throws on any violation."""
     scac_count = frappe.db.count(
         "Scheduled Course Assess Criteria", {"parent": source_cs}
@@ -1130,6 +1302,14 @@ def _validate_source_for_import(source_cs):
                 "nothing structural to import."
             ).format(source_cs)
         )
+
+    # Weights are only checked where they will be read: a competency target
+    # has no weighted grade, so it takes a source's rows as they are, whatever
+    # they add up to -- the rule `validate_assessment_criteria` applies.
+    from seminary.seminary import cbe
+
+    if cbe.framework_for_course_and_scale(target.course, target.gradesc_cs):
+        return
 
     weight_total = (
         frappe.db.sql(
@@ -1165,7 +1345,23 @@ _SCAC_COPYABLE_FIELDS = (
     "discussion",
     "extracredit_scac",
     "fudgepoints_scac",
+    # Whether the section's late deductions apply (decisions/082 section 6).
+    # The cut-off and replies due date are dates, like due_date: not copied.
+    "late_policy_exempt",
 )
+
+
+def _copy_late_policy(source_cs_name, target_cs_name):
+    """The late policy is how the course is taught, not when it runs, so a
+    template carries it (decisions/082 section 6). Written directly for the
+    same reason the rows are: a parent save here races the denorm hooks."""
+    from seminary.seminary.deadlines import POLICY_FIELDS
+
+    values = frappe.db.get_value(
+        "Course Schedule", source_cs_name, list(POLICY_FIELDS), as_dict=True
+    )
+    if values:
+        frappe.db.set_value("Course Schedule", target_cs_name, values)
 
 
 def _replace_scac_rows(source_cs_name, target_cs_name):
@@ -1215,6 +1411,8 @@ def _replace_scac_rows(source_cs_name, target_cs_name):
 _CHAPTER_COPYABLE_FIELDS = (
     "is_scorm_package",
     "scorm_package",
+    # Same course, same competencies: the mapping carries over (ADR 079).
+    "course_competency",
 )
 
 # `scorm_sco_identifier` is copied so the new section's lessons still match the

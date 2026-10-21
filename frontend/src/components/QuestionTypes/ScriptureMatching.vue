@@ -18,7 +18,7 @@
                     :key="element.idx"
                     class="ref-card p-3 rounded-md border bg-surface-white cursor-grab select-none"
                     :class="{
-                        'ring-2 ring-blue-500': selectedRefIdx === element.idx,
+                        'ring-2 ring-outline-blue-1': selectedRefIdx === element.idx,
                         'cursor-not-allowed': readOnly,
                     }"
                     @click="onClickRef(element.idx)"

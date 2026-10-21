@@ -1,19 +1,6 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<div class="flex items-center gap-3">
-			<h2 class="text-xl font-bold text-ink-gray-8">
-				{{ __('Inbox') }}
-			</h2>
-			<span
-				v-if="unread > 0"
-				class="rounded-full bg-surface-blue-2 px-2 py-0.5 text-xs font-medium text-ink-blue-3"
-			>
-				{{ unread }} {{ __('unread') }}
-			</span>
-		</div>
-		<div class="flex items-center gap-2">
+	<PageHeader :title="__('Inbox')">
+		<template #actions>
 			<Button
 				v-if="canCompose"
 				variant="solid"
@@ -28,26 +15,14 @@
 				:label="__('Mark all read')"
 				@click="markAllRead"
 			/>
-		</div>
-	</header>
+		</template>
+		<template #tabs>
+			<PageTabs :tabs="tabs" v-model="box" :label="__('Mailboxes')" />
+		</template>
+	</PageHeader>
 
 	<div class="mx-auto w-full max-w-3xl px-5 pt-4">
 		<div class="flex flex-wrap items-center gap-2">
-			<div class="flex rounded-md border border-outline-gray-2 p-0.5">
-				<button
-					v-for="b in ['inbox', 'sent']"
-					:key="b"
-					class="rounded px-3 py-1 text-sm"
-					:class="
-						box === b
-							? 'bg-surface-gray-3 font-medium text-ink-gray-8'
-							: 'text-ink-gray-5'
-					"
-					@click="box = b"
-				>
-					{{ b === 'inbox' ? __('Received') : __('Sent') }}
-				</button>
-			</div>
 			<select
 				v-model="channelFilter"
 				class="rounded-md border-outline-gray-2 bg-surface-white text-sm text-ink-gray-7 focus:ring-0"
@@ -349,6 +324,9 @@ import {
 } from 'lucide-vue-next'
 import { createToast, timeAgo, validateFileSize } from '@/utils'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import PageHeader from '@/components/PageHeader.vue'
+import PageTabs from '@/components/PageTabs.vue'
+import { useTabParam } from '@/composables/useTabParam'
 import { useFileUpload } from '../../node_modules/frappe-ui/src/utils/useFileUpload'
 
 // Inline images in a portal message must upload PRIVATE (they're attached to the
@@ -359,7 +337,14 @@ function privateImageUpload(file) {
 
 const user = inject('$user')
 
-const box = ref('inbox')
+// Received/Sent are two collections, not a mode -- "look at what I sent you" is
+// a link worth having -- so they are addressable tabs (ADR 075). The unread
+// count rides on the tab it belongs to.
+const tabs = computed(() => [
+	{ key: 'inbox', label: __('Received'), count: unread.value || undefined },
+	{ key: 'sent', label: __('Sent') },
+])
+const box = useTabParam(['inbox', 'sent'], 'inbox')
 const channelFilter = ref('')
 const categoryFilter = ref('')
 const unreadOnly = ref(false)

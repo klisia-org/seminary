@@ -1,9 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<router-link :to="{ name: 'PartnerJobPosting', params: { name } }" class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
-			<ArrowLeft class="size-4" />{{ __('Applicants') }}
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 
 	<div v-if="app.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="app.error" class="p-5 text-ink-red-4">{{ app.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -15,7 +15,7 @@
 				<h1 class="text-2xl font-bold text-ink-gray-9">{{ app.data.full_name }}</h1>
 				<div class="mt-1 text-sm text-ink-gray-6">{{ app.data.job_title }}</div>
 				<div class="mt-1 text-sm text-ink-gray-6">
-					<a :href="`mailto:${app.data.email}`" class="text-ink-blue-6 hover:underline">{{ app.data.email }}</a>
+					<a :href="`mailto:${app.data.email}`" class="text-ink-blue-3 hover:underline">{{ app.data.email }}</a>
 					<span v-if="app.data.mobile"> &middot; {{ app.data.mobile }}</span>
 				</div>
 			</div>
@@ -29,7 +29,7 @@
 		</div>
 
 		<div class="mt-3 flex items-center gap-3 text-sm text-ink-gray-5">
-			<a v-if="app.data.resume" :href="app.data.resume" target="_blank" rel="noopener" class="flex items-center gap-1 text-ink-blue-6 hover:underline">
+			<a v-if="app.data.resume" :href="app.data.resume" target="_blank" rel="noopener" class="flex items-center gap-1 text-ink-blue-3 hover:underline">
 				<FileText class="size-4" />{{ __('Résumé') }}
 			</a>
 			<span>{{ __('Avg rating') }}: {{ stars(app.data.average_rating) }}</span>
@@ -111,9 +111,11 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
-import { createResource, Button, FormControl, Dialog, toast } from 'frappe-ui'
-import { ArrowLeft, Star, FileText } from 'lucide-vue-next'
+import { userLocale } from '@seminary/portal-shell'
+import PageHeader from '@/components/PageHeader.vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { Breadcrumbs, createResource, Button, FormControl, Dialog, toast } from 'frappe-ui'
+import { Star, FileText } from 'lucide-vue-next'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
 
 const props = defineProps({ name: { type: String, required: true }, appName: { type: String, required: true } })
@@ -195,6 +197,12 @@ function stars(v) {
 }
 function formatDate(v) {
 	if (!v) return ''
-	return new Date(v).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+	return new Date(v).toLocaleDateString(userLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
+
+const breadcrumbs = computed(() => [
+	{ label: __('Job Postings'), route: { name: 'PartnerJobPostings' } },
+	{ label: __('Applicants'), route: { name: 'PartnerJobPosting', params: { name: props.name } } },
+	{ label: __('Applicant') },
+])
 </script>

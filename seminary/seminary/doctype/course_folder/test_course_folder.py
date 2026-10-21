@@ -457,8 +457,9 @@ class TestCourseFolderScopes(FrappeTestCase):
         listing = api.get_files_in_folder(course_folder=self.course_folder.name)
         self.assertEqual(listing["folder_id"], self.course_folder.file_reference)
         self.assertEqual([e.file_name for e in listing["entries"]], ["note.txt"])
-        api.download_folder(course_folder=self.course_folder.name)
-        self.assertEqual(frappe.local.response.type, "download")
+        # The archive is a cached artifact: ready, or queued for a build (p008 F17).
+        result = api.download_folder(course_folder=self.course_folder.name)
+        self.assertIn(result["status"], ("ready", "preparing"))
         # A subfolder File docname works as `folder_id`; a wrong section does not.
         api.get_files_in_folder(folder_id=self.section_folder.file_reference)
         frappe.set_user(self.user_stu_b)

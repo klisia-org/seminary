@@ -1,8 +1,10 @@
 <template>
   <div>
-    <header class="sticky top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      <Breadcrumbs :items="breadcrumbs" />
-    </header>
+    <PageHeader>
+    	<template #title>
+    		<Breadcrumbs :items="breadcrumbs" />
+    	</template>
+    </PageHeader>
 
     <div v-if="!allowWithdrawal" class="px-5 py-10">
       <p class="text-ink-gray-5">{{ __('Course withdrawal requests are not available on the Portal. Please contact the registrar.') }}</p>
@@ -85,6 +87,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, Button, FormControl, createResource } from 'frappe-ui'
 import { ref, computed, inject, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

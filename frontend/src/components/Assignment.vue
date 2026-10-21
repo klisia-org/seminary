@@ -177,7 +177,7 @@
 									{{ __('Compared against {0} submission(s)').format(plagiarismResult.source_count) }}
 								</div>
 								<div v-if="plagiarismResult.is_stale"
-									class="text-xs text-ink-orange-2 bg-surface-amber-1 rounded p-2 mb-2">
+									class="text-xs text-ink-amber-3 bg-surface-amber-1 rounded p-2 mb-2">
 									{{ __('The submission changed after this check — re-run for current results.') }}
 								</div>
 								<div v-if="plagiarismResult.sources.length" class="space-y-0.5">
@@ -349,6 +349,20 @@
 
 			<div class="flex flex-col">
 				<div class="p-5">
+					<!-- The student's own dates (decisions/082). -->
+					<div v-if="myDates.data?.due_date || myDates.data?.cutoff_date"
+						class="mb-3 rounded-md bg-surface-gray-2 p-2 text-sm text-ink-gray-7">
+						<div v-if="myDates.data.due_date">
+							{{ __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+							<span v-if="isLate" class="text-ink-amber-3">{{ __('It is past the due date, so a late deduction may apply.') }}</span>
+						</div>
+						<div v-if="myDates.data.closed" class="text-ink-red-3">
+							{{ __('This assignment closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+						</div>
+						<div v-else-if="myDates.data.cutoff_date">
+							{{ __('No submissions after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
+						</div>
+					</div>
 					<div class="flex items-center justify-between mb-4">
 						<div class="font-semibold text-ink-gray-9">
 							{{ __('Submission') }}
@@ -485,6 +499,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import {
 	Badge,
 	Button,
@@ -811,16 +826,14 @@ watch(
 
 const submitAssignment = () => {
 	if (props.submissionName != 'new') {
-		let evaluator =
-			submissionResource.doc && submissionResource.doc.owner != user.data?.name
-				? user.data?.name
-				: null
+		// `evaluator` and `graded_on` are stamped by the server the first time
+		// the work is marked Graded (privatedocs p015); never sent from here.
+		const { evaluator, graded_on, ...doc } = submissionResource.doc || {}
 
 		submissionResource.setValue.submit(
 			{
-				...submissionResource.doc,
+				...doc,
 				assignment_attachment: submissionFile.value?.file_url,
-				evaluator: evaluator,
 				comments: comments.value,
 				answer: answer.value,
 
@@ -967,6 +980,7 @@ const hasSubmission = computed(
 )
 
 const canModifyAssignment = computed(() => {
+	if (myDates.data?.closed) return false
 	if (!submissionResource.doc) return true
 	if (submissionResource.doc.owner !== user.data?.name) return false
 	if (submissionResource.doc.status !== 'Not Graded') return false
@@ -1009,6 +1023,15 @@ const isInstructorView = computed(
 	() => user.data?.is_moderator || user.data?.is_evaluator || user.data?.is_instructor
 )
 const courseName = computed(() => router.currentRoute.value.params.courseName)
+
+const myDates = createResource({
+	url: 'seminary.seminary.deadlines.get_my_dates',
+	makeParams: () => ({ course: courseName.value, activity_type: 'assignment', activity: props.assignmentID }),
+	auto: !!router.currentRoute.value.params.courseName,
+	onError: () => { },
+})
+const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 
 const assignmentDashboard = ref({ student_count: 0 })
 

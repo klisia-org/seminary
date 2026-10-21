@@ -52,7 +52,7 @@
 
         <button @click="submit"
           :disabled="submitting || (!body.trim() && !attachmentUrl)"
-          class="bg-surface-blue-3 hover:bg-surface-blue-4 text-ink-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50">
+          class="bg-surface-blue-3 hover:opacity-90 text-ink-white px-4 py-2 rounded text-sm font-medium disabled:opacity-50">
           {{ submitting ? __('Submitting...') : __('Submit Recommendation') }}
         </button>
       </div>

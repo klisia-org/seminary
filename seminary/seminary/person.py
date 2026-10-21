@@ -308,3 +308,14 @@ def set_channel_address(person_name, channel, value):
         return None
     person.save(ignore_permissions=True)
     return value
+
+
+def on_person_update(doc, method=None):
+    """A Person marked deceased (p018) can no longer sign in. comms already
+    refuses to send to them (consent_blocks)."""
+    if not (doc.deceased_on and doc.has_value_changed("deceased_on")):
+        return
+    if doc.user and frappe.db.get_value("User", doc.user, "enabled"):
+        user = frappe.get_doc("User", doc.user)
+        user.enabled = 0
+        user.save(ignore_permissions=True)

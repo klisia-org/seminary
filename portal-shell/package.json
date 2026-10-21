@@ -2,15 +2,13 @@
   "name": "@seminary/portal-shell",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared header, portal switcher, and session/theme utilities used across seminary, frappe_giving, and accreditation SPAs.",
+  "description": "Shared header, portal switcher, and session/theme utilities used across seminary, koinonia, and accreditation SPAs.",
   "type": "module",
-  "main": "./dist/portal-shell.umd.cjs",
+  "main": "./dist/portal-shell.js",
   "module": "./dist/portal-shell.js",
   "exports": {
-    ".": {
-      "import": "./dist/portal-shell.js",
-      "require": "./dist/portal-shell.umd.cjs"
-    },
+    ".": "./dist/portal-shell.js",
+    "./tabs": "./dist/tabs.js",
     "./style.css": "./dist/portal-shell.css",
     "./src/*": "./src/*"
   },
@@ -24,7 +22,9 @@
     "postinstall": "vite build"
   },
   "peerDependencies": {
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "vue-router": "^4.4.0",
+    "frappe-ui": ">=0.1.260"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",

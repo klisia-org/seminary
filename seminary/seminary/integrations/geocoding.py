@@ -131,7 +131,47 @@ def _settings():
     lookup).
     """
     override = getattr(frappe.local, "_geocoding_settings", None)
-    return override or frappe.get_single(SETTINGS)
+    return effective(override or frappe.get_single(SETTINGS))
+
+
+class HostedSettings:
+    """The host's proxy, as configured in site config rather than Settings.
+
+    Press writes `geocoding_token` and `geocoding_base_url` when it installs
+    seminary on a site (Aretenic ADR 053), so a hosted school is geocoding
+    from its first day without holding a key or seeing one. The quota is the
+    host's to enforce, so there is no local ceiling.
+    """
+
+    enabled = 1
+    provider = "Vendor proxy"
+    daily_limit = 0
+
+    def __init__(self, base_url: str, token: str):
+        self.base_url = base_url
+        self._token = token
+
+    def get_password(self, fieldname, raise_exception=True):
+        return self._token if fieldname == "api_key" else None
+
+
+def hosted_config() -> tuple[str, str] | None:
+    """The host's (base_url, token) from site config, or None."""
+    base_url = frappe.conf.get("geocoding_base_url")
+    token = frappe.conf.get("geocoding_token")
+    return (base_url, token) if base_url and token else None
+
+
+def effective(settings):
+    """What a lookup should use: the host's proxy unless the school opted out.
+
+    A stand-in without `use_own_settings` counts as the school's own, so tests
+    keep their configuration on a site that happens to carry a host token.
+    """
+    hosted = hosted_config()
+    if hosted and not getattr(settings, "use_own_settings", 1):
+        return HostedSettings(*hosted)
+    return settings
 
 
 @contextmanager

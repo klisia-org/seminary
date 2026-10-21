@@ -49,24 +49,25 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import SidebarLink from '@/components/SidebarLink.vue'
-import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare } from 'lucide-vue-next';
+import { GraduationCap, Banknote, ArrowLeftToLine, ArrowRightToLine, BookOpen, MonitorCog, ClipboardCheck, ListChecks, Sun, Moon, Inbox, SlidersHorizontal, Users, ScrollText, Briefcase, Handshake, Building2, MessagesSquare, BookMarked, Sprout, LayoutGrid, FilePen } from 'lucide-vue-next';
 import UserDropdown from './UserDropdown.vue';
 import { createResource } from 'frappe-ui';
 import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { usersStore } from '@/stores/user';
 import { useTheme } from '@/composables/useTheme';
-import { PortalSwitcher, getPortalConfig } from '@seminary/portal-shell';
+import { PortalSwitcher, getPortalConfig, visiblePortalsFor } from '@seminary/portal-shell';
 
 const portalConfig = getPortalConfig();
 
-const visiblePortals = computed(() => {
-	const roles = userResource?.data?.roles || [];
-	return portalConfig.portals.filter((p) => {
-		if (!p.roles || p.roles.length === 0) return true;
-		return p.roles.some((r) => roles.includes(r));
-	});
-});
+// ADR 074: one implementation of "which portals may this session see". This had
+// its own copy that applied the role filter but dropped `when`, so capability
+// gates (has_aretenic, has_giving) were ignored here — and this sidebar is where
+// most users meet the switcher. `userResource.data` already carries `roles` plus
+// those flags, so it serves directly as the session.
+const visiblePortals = computed(() =>
+	visiblePortalsFor(portalConfig.portals, userResource?.data),
+);
 
 const { theme, toggleTheme } = useTheme();
 
@@ -101,10 +102,13 @@ const links = computed(() => {
 	const isParticipant = (userResource?.data?.roles || []).includes('Cohort Participant')
 	const isEvaluator = userResource?.data?.is_evaluator
 	const hasCulminatingProjects = userResource?.data?.has_culminating_projects
-	const facultyCaps = userResource?.data?.faculty_capabilities || []
-	const hasFacultyWorklist =
-		facultyCaps.includes('Manual-Verification Verifier') ||
-		facultyCaps.includes('Placement Examiner')
+	// ADR 074: one server-side flag, so the link and the page agree. Hand-checking
+	// capabilities here left mentors with no way to reach their own queue.
+	const hasFacultyWorklist = userResource?.data?.has_faculty_worklist
+	// Partner users are not `isMember`, so without this they'd see a sidebar
+	// containing only Preferences — the portal-switcher tile ADR 074 removed was
+	// previously their sole route into the partner area.
+	const isPartner = userResource?.data?.is_partner && userResource?.data?.partner_org
 	const allowEnroll = seminarySettings.data?.allow_portal_enroll
 	return [
 		...(isMember.value ? [{
@@ -116,6 +120,10 @@ const links = computed(() => {
 			label: __('Community'),
 			to: '/community',
 			icon: MessagesSquare,
+		}, {
+			label: __('Reading Plans'),
+			to: '/reading-plans',
+			icon: BookMarked,
 		}] : []),
 		...(isStudent ? [
 			{
@@ -123,6 +131,11 @@ const links = computed(() => {
 				to: '/grades',
 				icon: GraduationCap,
 			},
+			...(userResource?.data?.has_formation ? [{
+				label: __('My Formation'),
+				to: '/my-formation',
+				icon: Sprout,
+			}] : []),
 			{
 				label: __('Program Audit'),
 				to: '/program-audit',
@@ -139,6 +152,11 @@ const links = computed(() => {
 				icon: Banknote,
 			},
 		] : []),
+		...(userResource?.data?.has_cbe_overview ? [{
+			label: __('CBE Overview'),
+			to: '/cbe-overview',
+			icon: LayoutGrid,
+		}] : []),
 		...(hasCulminatingProjects ? [{
 			label: __('Culminating Project'),
 			to: '/culminating-project',
@@ -149,6 +167,11 @@ const links = computed(() => {
 			to: '/faculty-worklist',
 			icon: ClipboardCheck,
 		}] : []),
+		...(isPartner ? [{
+			label: __('Partner'),
+			to: '/partner/jobs',
+			icon: Building2,
+		}] : []),
 		...((isStudent || isAlumni) ? [{
 			label: __('Jobs'),
 			to: '/jobs',
@@ -158,6 +181,13 @@ const links = computed(() => {
 			label: __('Internships'),
 			to: '/internships',
 			icon: Handshake,
+		}] : []),
+		// decisions/091 §11: students and instructors, once anything was ever asked of them.
+		...(userResource?.data?.has_requirements ? [{
+			label: __('Requirements'),
+			to: '/requirements',
+			icon: FilePen,
+			badge: userResource?.data?.open_requirements || 0,
 		}] : []),
 		...(isMember.value ? [{
 			label: __('Inbox'),

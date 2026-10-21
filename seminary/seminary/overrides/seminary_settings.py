@@ -18,27 +18,14 @@ def validate(doc, method=None):
 
 
 def on_update(doc, method=None):
-    """Backfill Asset Locations when room sync is switched on (ERPNext only).
-
-    Room→Asset Location sync and the root_asset_location field require ERPNext's
-    Location doctype, so the backfill is guarded: it never runs on a Frappe-only
-    install. Instructor-payroll provisioning is owned by the oikonomos bridge
-    (it subscribes to Seminary Settings on_update separately)."""
+    """Asset Location sync and instructor-payroll provisioning are owned by the
+    oikonomos bridge, which subscribes to Seminary Settings on_update itself."""
     # Per-role upload caps are cached (they are read on every upload), so the
     # table has to be invalidated here or a changed limit would not take effect
     # until the cache expired. privatedocs/p004.
     from seminary.storage import limits
 
     limits.clear_cache()
-
-    if (
-        doc.has_value_changed("sync_rooms_to_asset_locations")
-        and doc.sync_rooms_to_asset_locations
-        and frappe.db.exists("DocType", "Location")
-    ):
-        from seminary.seminary import locations
-
-        frappe.enqueue(locations.backfill, queue="long")
 
     # Instructor-payroll provisioning (Salary Slip custom fields + Instructor Pay
     # component) is owned by the oikonomos bridge, which subscribes to Seminary

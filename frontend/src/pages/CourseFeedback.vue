@@ -7,10 +7,7 @@
 		because a mailed token would persist in the communication ledger as a durable person-to-token
 		map (decisions/035 §7); the invitation is resolved from the session instead.
 	-->
-	<header
-		class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<h1 class="text-xl font-semibold text-ink-gray-9">{{ __('Course feedback') }}</h1>
-	</header>
+	<PageHeader :title="__('Course feedback')" />
 
 	<div class="mx-auto max-w-2xl p-5">
 		<div v-if="questionnaire.loading" class="text-ink-gray-5">{{ __('Loading…') }}</div>
@@ -51,13 +48,13 @@
 			<div v-if="data.notice"
 				class="mt-4 rounded border px-3 py-2.5 text-sm"
 				:class="data.small_cohort
-					? 'border-amber-300 bg-amber-50 text-amber-900'
+					? 'border-outline-amber-1 bg-surface-amber-1 text-ink-amber-3'
 					: 'border-outline-gray-2 bg-surface-gray-1 text-ink-gray-7'">
 				{{ data.notice }}
 			</div>
 			<div v-else-if="data.anonymity === 'Anonymous'"
 				class="mt-4 rounded border border-outline-gray-2 bg-surface-gray-1 px-3 py-2.5 text-sm text-ink-gray-7">
-				{{ __('Your answers are reported together with everyone else\'s and are not linked back to you. Your instructor sees them only after grades have been submitted.') }}
+				{{ __("Your answers are reported together with everyone else's and are not linked back to you. Your instructor sees them only after grades have been submitted.") }}
 			</div>
 
 			<SafeHtml v-if="data.intro_text" class="mt-4 text-sm text-ink-gray-7" :html="data.intro_text" />
@@ -70,7 +67,7 @@
 				<div v-for="q in block.questions" :key="q.name" class="mb-5">
 					<label class="block text-sm font-medium text-ink-gray-8">
 						{{ q.prompt }}
-						<span v-if="q.is_required" class="text-red-600">*</span>
+						<span v-if="q.is_required" class="text-ink-red-4">*</span>
 					</label>
 					<p v-if="q.help_text" class="mt-0.5 text-xs text-ink-gray-5">{{ q.help_text }}</p>
 
@@ -118,7 +115,7 @@
 				</div>
 			</div>
 
-			<div v-if="error" class="mt-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+			<div v-if="error" class="mt-4 rounded border border-outline-red-2 bg-surface-red-1 px-3 py-2 text-sm text-ink-red-4">
 				{{ error }}
 			</div>
 
@@ -133,6 +130,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, createResource } from 'frappe-ui'

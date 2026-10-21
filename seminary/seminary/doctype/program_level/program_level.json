@@ -3,12 +3,13 @@
  "allow_rename": 1,
  "autoname": "format:{pgm_level}",
  "creation": "2026-06-02 03:08:39.105531",
- "description": "A category that groups programs by type (for example degree, certificate, or continuing education) and sets shared rules such as whether the level is ongoing, leave-of-absence billing suspension, and readmission fees. Pick a level on each program to apply these rules.",
+ "description": "A category that groups programs by type (for example a Master of Divinity, a certificate, or continuing education) and sets shared rules such as whether the level is ongoing, leave-of-absence billing suspension, and readmission fees. Pick a level on each program to apply these rules. The levels the system provides cannot be renamed or deleted; a school may add its own.",
  "doctype": "DocType",
  "documentation": "https://docs.seminaryerp.org/modules/program.html#program-level-and-ongoing",
  "engine": "InnoDB",
  "field_order": [
   "pgm_level",
+  "degree_tier",
   "ongoing",
   "description",
   "web_order",
@@ -35,6 +36,17 @@
    "reqd": 1,
    "translatable": 1,
    "unique": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "The kind of degree or study this level is. The public Programs page groups programs by tier, a cohort type can bind to every program of a tier, and accreditation reads it. Fixed on the levels the system provides.",
+   "fieldname": "degree_tier",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Tier",
+   "options": "Certificate\nBachelor's\nMaster's\nDoctoral\nNon-formal\nOther",
+   "reqd": 1
   },
   {
    "fieldname": "description",
@@ -146,7 +158,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-19 17:00:00.000000",
+ "modified": "2026-10-02 20:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Program Level",

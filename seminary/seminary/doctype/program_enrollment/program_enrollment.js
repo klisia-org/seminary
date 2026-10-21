@@ -111,6 +111,14 @@ frappe.ui.form.on('Program Enrollment', {
 					place_on_leave(frm);
 				}, __('Status'));
 			}
+			// Send Grades moves the term; this is the registrar's exception
+			// (decisions/084 §4).
+			if (!TERMINAL.includes(status)
+				&& frappe.user.has_role(['Registrar', 'Seminary Manager', 'System Manager'])) {
+				frm.add_custom_button(__('Change Term'), function() {
+					change_term(frm);
+				}, __('Status'));
+			}
 			if (status === 'Leave of Absence') {
 				frm.add_custom_button(__('Return from Leave'), function() {
 					frappe.call({
@@ -685,4 +693,32 @@ function render_cohort_mentors(frm) {
 			frm.toggle_display('cohort_mentors_html', !!html);
 		},
 	});
+}
+
+function change_term(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __('Change Term'),
+		fields: [
+			{
+				fieldtype: 'HTML',
+				options: `<p class="text-muted small">${__(
+					'Students move to the next term when their grades are sent. Change it here for exceptions, such as a student held back whom the school lets continue, or advanced standing.'
+				)}</p>`,
+			},
+			{ fieldname: 'term', fieldtype: 'Int', label: __('Term'), reqd: 1, default: frm.doc.current_std_term },
+			{ fieldname: 'reason', fieldtype: 'Small Text', label: __('Reason'), reqd: 1 },
+		],
+		primary_action_label: __('Change Term'),
+		primary_action(values) {
+			frappe.call({
+				method: 'seminary.seminary.progression.change_term',
+				args: { program_enrollment: frm.doc.name, term: values.term, reason: values.reason },
+				freeze: true,
+			}).then(() => {
+				d.hide();
+				frm.reload_doc();
+			});
+		},
+	});
+	d.show();
 }

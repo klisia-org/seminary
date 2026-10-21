@@ -146,12 +146,25 @@ const routes = [
     props: true,
   },
   {
-    // The radar and narrative timeline for a competency-based programme
-    // (ADR 065). Renders an explanatory empty state for everyone else, so the
-    // route needs no role guard.
+    // A student's competency reviews, one course at a time (privatedocs p012
+    // decision 3). Renders an empty state for everyone else, so the route
+    // needs no role guard.
+    path: "/my-formation",
+    name: "MyFormation",
+    component: () => import('@/pages/MyFormation.vue'),
+  },
+  {
+    // Competency progress across sections (privatedocs p012 decision 5); the
+    // server scopes it, so the route needs no role guard.
+    path: "/cbe-overview",
+    name: "CbeOverview",
+    component: () => import('@/pages/CbeOverview.vue'),
+  },
+  {
+    // The profile under Transcripts became My Formation (privatedocs p012).
     path: "/competency-profile",
     name: "CompetencyProfile",
-    component: () => import('@/pages/CompetencyProfile.vue'),
+    redirect: { name: "MyFormation" },
   },
   {
     path: "/courses",
@@ -445,6 +458,16 @@ const routes = [
     component: () => import('@/pages/Community.vue'),
   },
   {
+    path: "/reading-plans",
+    name: "ReadingPlans",
+    component: () => import('@/pages/ReadingPlans.vue'),
+  },
+  {
+    path: "/requirements",
+    name: "Requirements",
+    component: () => import('@/pages/Requirements.vue'),
+  },
+  {
     path: "/preferences",
     name: "CommunicationPreferences",
     component: () => import('@/pages/CommunicationPreferences.vue'),
@@ -513,6 +536,17 @@ router.beforeEach(async (to, from, next) => {
   if (!isLoggedIn) {
     window.location.href = '/login'
     return
+  }
+
+  // ADR 074 — UX guard, not a security boundary: portal._require_org already
+  // refuses server-side, and that stays the enforcement. Without this an
+  // instructor with no Partner Contact could open New Job Posting, fill the
+  // whole form, and only be told on submit that their account isn't linked to a
+  // partner organization. Scoped narrowly to /partner/* on a flag get_user_info
+  // already returns; routes whose empty state is honest are left alone.
+  if (to.path.startsWith('/partner')) {
+    const u = userResource?.data || {}
+    if (!u.partner_org) return next('/courses')
   }
 
   // The portal's default path is /courses, which is empty for users who aren't

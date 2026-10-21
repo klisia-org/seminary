@@ -1,7 +1,5 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Our Interns') }}</h2>
-	</header>
+	<PartnerHeader :title="__('Our Interns')" />
 
 	<div v-if="placements.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="placements.error" class="p-5 text-ink-red-4">{{ placements.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -36,6 +34,7 @@
 </template>
 
 <script setup>
+import PartnerHeader from '@/components/PartnerHeader.vue'
 import { ref, computed, watch } from 'vue'
 import { createResource, Badge } from 'frappe-ui'
 import { UserCheck } from 'lucide-vue-next'

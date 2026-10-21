@@ -56,7 +56,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "The cohort's leader — a Person with special, membership-derived access.",
+   "description": "The cohort's leader \u2014 a Person with special, membership-derived access.",
    "fieldname": "leader",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -97,7 +97,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Denormalized root of this cohort's family — set once on creation, never changes. Makes 'show me this whole cohort family' a single filtered query.",
+   "description": "Denormalized root of this cohort's family \u2014 set once on creation, never changes. Makes 'show me this whole cohort family' a single filtered query.",
    "fieldname": "lineage_root",
    "fieldtype": "Link",
    "label": "Lineage Root",
@@ -120,7 +120,7 @@
    "label": "Origin"
   },
   {
-   "description": "The course offering this cohort was created from. The cohort is independently managed thereafter — student-group changes don't sync back.",
+   "description": "The course offering this cohort was created from. The cohort is independently managed thereafter \u2014 student-group changes don't sync back.",
    "fieldname": "source_course_schedule",
    "fieldtype": "Link",
    "label": "Source Course Schedule",
@@ -143,7 +143,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-09-22 22:37:30.187310",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort",
@@ -193,6 +193,18 @@
   {
    "read": 1,
    "role": "Alumni"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

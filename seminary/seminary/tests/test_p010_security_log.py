@@ -168,6 +168,8 @@ class TestP010LogHygiene(IntegrationTestCase):
         "/demo/",
         "/tests/",
         "workspaces_bootstrap.py",
+        # after_install / after_migrate only; never a request path.
+        "/seminary/install.py",
         "test_course_pack.py",
         # Documented `bench execute` entry point; prints the registered URL.
         "telegram_adapter.py",

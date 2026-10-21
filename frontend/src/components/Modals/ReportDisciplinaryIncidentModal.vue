@@ -75,7 +75,7 @@
                 {{ __('Recommended action(s)') }}:
                 <span class="font-medium">{{ recommendedLabels }}</span>
               </p>
-              <p v-if="recommended.length && !canRecord" class="mt-1 text-ink-amber-600">
+              <p v-if="recommended.length && !canRecord" class="mt-1 text-ink-amber-3">
                 {{ __('This action requires review and will be forwarded for adjudication.') }}
               </p>
               <p v-else-if="!recommended.length" class="mt-1 text-ink-gray-5">

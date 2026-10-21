@@ -30,9 +30,11 @@
   "percentage",
   "status",
   "late",
+  "submitted_on",
   "comments",
   "comment_attach",
   "evaluator",
+  "graded_on",
   "comments_thread",
   "plagiarism_text",
   "plagiarism_text_hash"
@@ -97,7 +99,17 @@
    "fieldtype": "Link",
    "label": "Evaluated by",
    "options": "User",
-   "permlevel": 1
+   "permlevel": 1,
+   "read_only": 1,
+   "description": "Who first marked this work Graded. Set automatically."
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1,
+   "permlevel": 1,
+   "description": "When this work was first marked Graded. Set automatically and never changed afterwards."
   },
   {
    "fieldname": "comments_thread",
@@ -227,11 +239,18 @@
    "no_copy": 1,
    "permlevel": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted On",
+   "read_only": 1,
+   "description": "When the student last turned in or changed this work."
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-12 11:57:14.634309",
+ "modified": "2026-10-02 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

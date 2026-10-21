@@ -13,6 +13,9 @@
   "column_break_etid",
   "weight_scac",
   "due_date",
+  "cutoff_date",
+  "replies_due_date",
+  "late_policy_exempt",
   "lesson",
   "competency_section",
   "course_competency",
@@ -164,12 +167,31 @@
    "fieldtype": "Select",
    "label": "Grading Mode Override",
    "options": "\nOne grade per activity\nOne grade per evaluator\nOne grade per evaluator per dimension"
+  },
+  {
+   "fieldname": "cutoff_date",
+   "fieldtype": "Datetime",
+   "label": "Cut-off Date and Time",
+   "description": "No submissions are accepted after this. Leave blank to accept late work at any time."
+  },
+  {
+   "fieldname": "replies_due_date",
+   "fieldtype": "Datetime",
+   "label": "Replies Due Date and Time",
+   "description": "Discussions that require an initial post and replies only. The due date above then applies to the initial post."
+  },
+  {
+   "default": "0",
+   "fieldname": "late_policy_exempt",
+   "fieldtype": "Check",
+   "label": "No Late Deduction",
+   "description": "The section's late deductions do not apply to this assessment."
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-08-29 11:00:00.000000",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Scheduled Course Assess Criteria",

@@ -1,16 +1,19 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs class="h-7" :items="breadcrumbs" />
-		<div v-if="report.data?.editable" class="flex items-center gap-2 mt-3 md:mt-0">
-			<Button variant="subtle" :loading="saving" @click="save()">
-				{{ __('Save') }}
-			</Button>
-			<Button variant="solid" :loading="submitting" @click="submit()">
-				{{ __('Submit') }}
-			</Button>
-		</div>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+		<template #actions>
+			<div v-if="report.data?.editable" class="flex items-center gap-2 mt-3 md:mt-0">
+				<Button variant="subtle" :loading="saving" @click="save()">
+					{{ __('Save') }}
+				</Button>
+				<Button variant="solid" :loading="submitting" @click="submit()">
+					{{ __('Submit') }}
+				</Button>
+			</div>
+		</template>
+	</PageHeader>
 
 	<div v-if="report.loading" class="px-5 py-8 text-ink-gray-6">{{ __('Loading…') }}</div>
 
@@ -184,6 +187,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, ref, reactive, watch } from 'vue'
 import { createResource, Breadcrumbs, Badge, Button, FormControl, Dialog, toast } from 'frappe-ui'
 import { updateDocumentTitle } from '@/utils'

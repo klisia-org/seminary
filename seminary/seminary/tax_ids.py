@@ -365,6 +365,27 @@ def assert_on(doc, fieldname="tax_id"):
     frappe.msgprint(problem, indicator="orange", alert=True)
 
 
+def payer_tax_id(payer_email=None, **_reference):
+    """The payments app's `payer_tax_id` hook: the Brazilian CPF/CNPJ on the
+    paying Person, or None.
+
+    Keyed on the payer, not the student behind the charge — a parent paying
+    tuition is the Asaas customer, and the student's CPF would bill the wrong
+    person. Only a value that passes the Brazilian rule is offered, so a legacy
+    junk value is typed afresh rather than refused by Asaas mid-checkout.
+    """
+    from seminary.seminary.person import find_person
+
+    if not payer_email:
+        return None
+    person = find_person(email=payer_email, user=payer_email)
+    value = person and frappe.db.get_value("Person", person, "tax_id")
+    _rule, form, cleaned = match(value, "BR")
+    if form and not problem_with(value, "BR"):
+        return cleaned
+    return None
+
+
 # ---------------------------------------------------- the browser's contract
 
 

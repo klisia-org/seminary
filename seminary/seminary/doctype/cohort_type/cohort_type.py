@@ -142,22 +142,22 @@ class CohortType(Document):
         if self.category not in PROGRAM_CATEGORIES:
             self.graduates_to = None
         if self.category != THROUGHOUT and not self.leaders_read_the_binding():
-            # Only a program-long cohort can span a whole level; everything else
+            # Only a program-long cohort can span a whole tier; everything else
             # is bound to one program or to none.
-            self.program_level = None
+            self.program_tier = None
         if self.category == UNRESTRICTED and not self.leaders_read_the_binding():
             self.program = None
 
     def leaders_read_the_binding(self):
-        """Does the leadership rule need a program or a level to check against?"""
+        """Does the leadership rule need a program or a tier to check against?"""
         return self.leader_eligibility == BOUND_ALUMNUS
 
     def validate_binding(self):
         """What the cohort is bound to, per category."""
-        if self.program and self.program_level:
+        if self.program and self.program_tier:
             frappe.throw(
                 _(
-                    "A cohort type binds to a Program or to a Program Level, not "
+                    "A cohort type binds to a Program or to a Program Tier, not "
                     "to both -- two bindings is two answers to the question of "
                     "who belongs here. Clear one."
                 )
@@ -165,14 +165,14 @@ class CohortType(Document):
 
         if self.category == PACED:
             # A paced cohort moves its members together, which is only definable
-            # over one program: two programs at the same level advance on their
+            # over one program: two programs of the same tier advance on their
             # own schedules, so "the whole cohort moves up" has no meaning there.
             if not self.program:
                 frappe.throw(
                     _(
                         "A {0} cohort advances its members together, so it must "
-                        "name the Program they advance through. Program Level is "
-                        "not enough -- programs at one level keep their own "
+                        "name the Program they advance through. Program Tier is "
+                        "not enough -- programs of one tier keep their own "
                         "schedules."
                     ).format(frappe.bold(PACED))
                 )
@@ -190,11 +190,11 @@ class CohortType(Document):
                     )
                 )
 
-        if self.category == THROUGHOUT and not (self.program or self.program_level):
+        if self.category == THROUGHOUT and not (self.program or self.program_tier):
             frappe.throw(
                 _(
                     "A {0} cohort runs from enrollment to graduation, so it must "
-                    "name the Program or the Program Level it runs alongside."
+                    "name the Program or the Program Tier it runs alongside."
                 ).format(frappe.bold(THROUGHOUT))
             )
 
@@ -209,15 +209,15 @@ class CohortType(Document):
         """
         if not self.leaders_read_the_binding():
             return
-        if self.program or self.program_level:
+        if self.program or self.program_tier:
             return
         frappe.throw(
             _(
-                "Leaders of this type must be alumni of the program or level it "
+                "Leaders of this type must be alumni of the program or tier it "
                 "is bound to, and it is bound to neither. Name a {0} or a {1} "
                 "above, or set Leader Eligibility to {2} if any graduate of this "
                 "school may lead."
-            ).format(_("Program"), _("Program Level"), frappe.bold(ANY_ALUMNUS))
+            ).format(_("Program"), _("Program Tier"), frappe.bold(ANY_ALUMNUS))
         )
 
     def validate_alumni_self_service(self):

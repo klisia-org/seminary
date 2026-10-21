@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "COHORT-RXN-.#####",
  "creation": "2026-07-22 12:00:00",
  "description": "A reaction left by a person on a post or one of its replies.",
@@ -99,7 +98,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-09-22 22:37:30.876955",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Post Reaction",
@@ -129,11 +128,22 @@
   {
    "read": 1,
    "role": "Alumni"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 0
+ "states": []
 }

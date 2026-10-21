@@ -5,14 +5,42 @@ import frappe
 from frappe import _
 from frappe.website.website_generator import WebsiteGenerator
 
-from seminary.seminary.utils import slugify
+from seminary.seminary.utils import _aretenic_enabled, slugify
+
+
+def governance_lock_applies(unit: str | None) -> bool:
+    """True when Aretenic keeps this unit's chair and memberships from its body's seats
+    (p014). The lock lifts with Aretenic uninstalled, and the sync itself passes through
+    with ``frappe.flags.in_governance_sync``."""
+    if not unit or frappe.flags.in_governance_sync or not _aretenic_enabled():
+        return False
+    return bool(frappe.db.get_value("Academic Unit", unit, "kept_by_governance_record"))
 
 
 class AcademicUnit(WebsiteGenerator):
     def validate(self):
+        self._validate_governance_lock()
         self._validate_member_units()
         self._validate_parent_unit()
         self._set_web_route()
+
+    def _validate_governance_lock(self):
+        """A governing body's chair follows its Chair seat, and only Aretenic sets or
+        clears the lock itself (p014)."""
+        if self.is_new() or frappe.flags.in_governance_sync:
+            return
+        before = self.get_doc_before_save()
+        if not before:
+            return
+        if self.kept_by_governance_record != before.kept_by_governance_record:
+            self.kept_by_governance_record = before.kept_by_governance_record
+        if governance_lock_applies(self.name) and self.chair != before.chair:
+            frappe.throw(
+                _(
+                    "The chair of {0} follows its seats in the governance record. "
+                    "Change the Chair seat there."
+                ).format(self.unit_name)
+            )
 
     def _validate_parent_unit(self):
         """Parent Unit forms the org hierarchy and must not create a cycle (a unit

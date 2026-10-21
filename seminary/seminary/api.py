@@ -35,7 +35,7 @@ import zipfile
 import defusedxml.ElementTree as ET
 from seminary.seminary.doctype.course_lesson.course_lesson import save_progress
 import bleach
-from seminary.seminary import guards
+from seminary.seminary import absence_decisions, guards
 from seminary.seminary.guards import (
     REGISTRAR_ROLES,
     SCHOOL_ROLES,
@@ -254,6 +254,12 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
     require_enrolled(row.coursesc)
 
+    # The reply counts toward the replier's own grade, so their cut-off
+    # closes it (decisions/082).
+    from seminary.seminary import deadlines
+
+    priced = deadlines.assert_reply_open(row.name)
+
     reply = frappe.utils.sanitize_html(reply or "", always_sanitize=True)
     if not frappe.utils.strip_html(reply).strip() and not reply_attach:
         frappe.throw(_("Reply cannot be empty"))
@@ -289,6 +295,9 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
         }
     )
     doc.insert(ignore_permissions=True)
+    if priced:
+        # A reply by the replies due date can lift a missing-reply deduction.
+        deadlines.refresh(priced[0], [priced[1]])
     return doc.name
 
 
@@ -816,6 +825,17 @@ def save_course(course, course_data):
         frappe.db.set_value(
             "Course Schedule", course, "published", course_data["published"]
         )
+        # How the tile frames the image (ADR 080). Only when sent, so a client
+        # without the editor cannot reset a framing it never showed.
+        for field, low, high, default in (
+            ("image_focus_x", 0, 100, 50),
+            ("image_focus_y", 0, 100, 50),
+            ("image_zoom", 1, 3, 1),
+        ):
+            if field in course_data:
+                value = course_data[field]
+                value = default if value is None else min(max(flt(value), low), high)
+                frappe.db.set_value("Course Schedule", course, field, value)
         frappe.db.set_value(
             "Course Schedule",
             course,
@@ -987,7 +1007,12 @@ def get_user_info():
     # Whether the Aretenic app is installed at all (distinct from the per-user role above):
     # gates optional aretenic-aware UI such as the CLO assessment mapper, so seminary runs
     # cleanly when aretenic is absent (ADR 030: seminary never requires aretenic).
-    user.has_aretenic = "aretenic" in frappe.get_installed_apps()
+    _installed = frappe.get_installed_apps()
+    user.has_aretenic = "aretenic" in _installed
+    # Same idea for the donor portal (ADR 074). /donate/donorportal is a
+    # website_route_rule owned by koinonia, so without the app the route
+    # does not exist and the switcher's Donate tile led to a 404.
+    user.has_giving = "koinonia" in _installed
     user.student = frappe.db.get_value(
         "Student", {"user": user.name, "enabled": 1}, "name"
     )
@@ -1009,6 +1034,26 @@ def get_user_info():
     _fc = faculty.faculty_context(user.name)
     user.faculty_units = _fc["units"]
     user.faculty_capabilities = _fc["capabilities"]
+    # One flag decides the Faculty Worklist sidebar link (ADR 074). The link used
+    # to hand-check two capabilities while the page rendered more sections than
+    # that, stranding mentors; link and page now ask the same question, on the
+    # server, where the sections' data comes from. Pass the context we already
+    # resolved so the flag costs no extra capability query.
+    user.has_faculty_worklist = faculty.has_faculty_worklist(user.name, _fc)
+    # Requirements page link and badge (decisions/091 §11).
+    from seminary.seminary import requirements
+
+    user.open_requirements = requirements.open_count(user.name)
+    user.has_requirements = bool(
+        user.open_requirements
+        or frappe.db.exists(
+            "Person Requirement",
+            {
+                "person": frappe.db.get_value("Person", {"user": user.name}, "name")
+                or ""
+            },
+        )
+    )
     # External examiners are NOT instructors (reduced access, ADR 059/060): gate
     # their CP views on this flag, never on is_instructor.
     user.is_external_examiner = "External Examiner" in _roles
@@ -1024,6 +1069,14 @@ def get_user_info():
     user.has_culminating_projects = _has_culminating_projects(
         user.student, user.instructor, user.external_examiner
     )
+    # My Formation (privatedocs p012 decision 3): a student in any competency
+    # section. Same question the page asks, so link and page agree.
+    from seminary.seminary.cbe_api import my_cbe_sections
+
+    user.has_formation = bool(user.student and my_cbe_sections(user.student))
+    from seminary.seminary.cbe_overview import has_overview
+
+    user.has_cbe_overview = has_overview(user.name)
     return user
 
 
@@ -1348,166 +1401,6 @@ def get_student_programs(student):
 # the flag exclusively.
 
 
-@frappe.whitelist()
-def roll_students():
-    """Advance every active student one term, globally.
-
-    Student-advancement only. Invoice generation is owned by the oikonomos
-    bridge (oikonomos.financial.invoicing); seminary never bills.
-
-    Deliberately takes no term: it acts on every active enrollment, not on one
-    term's students. It used to be reachable as a Server Action on Academic
-    Term, which read as term-scoped, silently ignored the term you opened it
-    from, and threw away this summary -- Frappe's generic action handler prints
-    "Complete" and discards the return value. The Registrar workspace button is
-    now the only entry point, and it shows what actually happened.
-    """
-    frappe.only_for(["Registrar", "Seminary Manager", "System Manager"])
-    summary = roll_pe()
-    return _(
-        "Advanced {0} students. Auto-enroll: {1} enrolled, {2} skipped, {3} failed (see ToDos)."
-    ).format(
-        summary["advanced"],
-        summary["tb_enrolled"],
-        summary["tb_skipped"],
-        summary["tb_failed"],
-    )
-
-
-def roll_pe():
-    # Students' academic terms advance. Time-based enrollments additionally
-    # attempt auto-enroll into the new term's courses via petb_enroll. Returns a
-    # summary so the caller (Advance Students action) can report the outcome.
-    tb = frappe.db.get_single_value("Seminary Settings", "advancetb")
-    summary = {
-        "advanced": 0,
-        "tb_enrolled": 0,
-        "tb_skipped": 0,
-        "tb_failed": 0,
-        "failures": [],
-    }
-    pes = frappe.get_all(
-        "Program Enrollment",
-        filters={"pgmenrol_active": 1, "docstatus": 1},
-        fields=["name", "current_std_term"],
-    )
-    for pe in pes:
-        pe_name = pe.name
-        pe_program = frappe.db.get_value("Program Enrollment", pe_name, "program")
-        pe_program_type = frappe.db.get_value("Program", pe_program, "program_type")
-        pe_term = (pe.current_std_term or 0) + 1
-        frappe.db.set_value("Program Enrollment", pe_name, "current_std_term", pe_term)
-        summary["advanced"] += 1
-        if pe_program_type == "Time-based" and tb == 1:
-            r = petb_enroll(pe_name, pe_term)
-            summary["tb_enrolled"] += r["enrolled"]
-            summary["tb_skipped"] += r["skipped"]
-            summary["tb_failed"] += r["failed"]
-            summary["failures"].extend(r["failures"])
-    return summary
-
-
-def petb_enroll(pe_name, pe_term):
-    """Attempt to auto-enroll an active Time-based student into the courses
-    scheduled for their new term (Program Course.course_term == pe_term) that
-    have an open offering this term. Returns a structured summary; failures are
-    logged and surfaced to Registrars as ToDos rather than silently swallowed.
-
-    Note: a student whose current_std_term has advanced past the program's last
-    populated course_term simply matches no Program Course rows here, so they
-    yield an all-zero summary (correct — nothing left to auto-enroll)."""
-    from seminary.seminary.required_enrollment import (
-        _already_covered,
-        _notify_registrar_enroll_failure,
-        _notify_registrar_prereq_block,
-        unmet_prerequisites,
-    )
-
-    summary = {"enrolled": 0, "skipped": 0, "failed": 0, "failures": []}
-
-    current_term = frappe.db.get_value("Academic Term", {"iscurrent_acterm": 1}, "name")
-    if not current_term:
-        # No current term flagged — nothing to enroll into. The caller already
-        # advanced the term counter; enrollment is simply deferred.
-        return summary
-
-    program, student = frappe.db.get_value(
-        "Program Enrollment", pe_name, ["program", "student"]
-    )
-
-    pecs = frappe.get_all(
-        "Program Course",
-        filters={"parent": program, "course_term": pe_term, "disabled": 0},
-        fields=["course"],
-    )
-    # Underlying Courses that have an open offering this term.
-    open_courses = set(
-        frappe.get_all(
-            "Course Schedule",
-            filters={
-                "academic_term": current_term,
-                "workflow_state": "Open for Enrollment",
-            },
-            pluck="course",
-        )
-    )
-
-    pe_ref = frappe._dict(name=pe_name, student=student, program=program)
-
-    def _record_failure(course, reason):
-        summary["failed"] += 1
-        summary["failures"].append(
-            {"pe": pe_name, "student": student, "course": course, "reason": reason}
-        )
-
-    for pec in pecs:
-        course = pec.course
-
-        # 1) Already covered (passing PEC or live CEI) — benign skip. A prior
-        #    Fail is NOT covered, so a failed course with met prereqs and an open
-        #    offering falls through and is re-attempted below.
-        if _already_covered(pe_name, course):
-            summary["skipped"] += 1
-            continue
-
-        # 2) Unmet mandatory prerequisites — auto-enroll would fail; notify.
-        missing = unmet_prerequisites(pe_name, course)
-        if missing:
-            _notify_registrar_prereq_block(pe_ref, course)
-            _record_failure(
-                course, _("Unmet prerequisite: {0}").format(", ".join(missing))
-            )
-            continue
-
-        # 3) No open offering this term — defer (not a failure).
-        if course not in open_courses:
-            summary["skipped"] += 1
-            continue
-
-        # 4) Attempt enroll into the open Course Schedule; surface any error.
-        try:
-            cs_name = frappe.db.get_value(
-                "Course Schedule",
-                {
-                    "course": course,
-                    "academic_term": current_term,
-                    "workflow_state": "Open for Enrollment",
-                },
-                "name",
-            )
-            course_enroll(pe_name, cs_name)
-            summary["enrolled"] += 1
-        except Exception as e:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"petb_enroll: course_enroll failed (pe={pe_name}, course={course})",
-            )
-            _notify_registrar_enroll_failure(pe_ref, course, str(e))
-            _record_failure(course, str(e))
-
-    return summary
-
-
 def _assert_may_course_enroll(pe_name):
     from seminary.seminary.utils import get_current_student, has_super_access
 
@@ -1525,6 +1418,15 @@ def _assert_may_course_enroll(pe_name):
             _("Self-enrollment from the portal is not enabled."),
             frappe.PermissionError,
         )
+    program = frappe.db.get_value("Program Enrollment", pe_name, "program")
+    if frappe.db.get_value("Program", program, "staff_enroll_only"):
+        frappe.throw(
+            _("Your school enrolls you in the courses of this program."),
+            frappe.PermissionError,
+        )
+    from seminary.seminary.requirements import assert_may_self_enroll
+
+    assert_may_self_enroll(pe_name)
 
 
 @frappe.whitelist()
@@ -1534,11 +1436,19 @@ def course_enroll(pe_name, course):
     Over the wire this acts only on the caller's own Program Enrollment, and
     only while Seminary Settings.allow_portal_enroll is on (p006 §2.14). Staff
     (``has_super_access`` or a registrar role) may enrol anyone: that keeps the
-    server callers -- ``petb_enroll`` under the term roll, which
-    ``roll_students`` opens to Registrar, and ``required_enrollment`` under the
-    Program Enrollment / Course Schedule hooks -- working unchanged.
+    server caller ``required_enrollment`` (under the Program Enrollment /
+    Course Schedule hooks) working unchanged.
     """
     _assert_may_course_enroll(pe_name)
+    return enroll_in_section(pe_name, course)
+
+
+def enroll_in_section(pe_name, course, submit_blocked=False):
+    """The enrollment itself, for callers that have already checked who may
+    enroll. ``submit_blocked`` submits the CEI even where the program sets
+    ``registrar_block_cei``: Bulk Course Enrollment is the registrar enrolling,
+    so there is no one left to approve it (ADR 083 §2). Not whitelisted, so a
+    student can never pass it."""
     student = frappe.get_value("Program Enrollment", pe_name, "student")
     if not student:
         frappe.throw(_("Invalid Program Enrollment"))
@@ -1573,7 +1483,7 @@ def course_enroll(pe_name, course):
     # db_set, which skips validate_workflow's role check (the student
     # fails it even with ignore_permissions). Program conditions decide
     # the target state.
-    if not doc.registrar_block_cei:
+    if submit_blocked or not doc.registrar_block_cei:
         from seminary.seminary.waitlist import (
             assign_waitlist_positions,
             is_seat_available,
@@ -1618,6 +1528,9 @@ def course_enroll(pe_name, course):
         "course_data": doc.course_data,
         "academic_term": doc.academic_term,
         "credits": doc.credits,
+        "workflow_state": frappe.db.get_value(
+            "Course Enrollment Individual", doc.name, "workflow_state"
+        ),
     }
 
 
@@ -2036,6 +1949,35 @@ def get_program_audit(program_enrollment):
     return _program_audit(program_enrollment)
 
 
+# A course can have several attempts, one Program Enrollment Course row each.
+# The audit shows one line per course, so the attempt that satisfies the course
+# speaks for it: Pass or Exempt (as graduation.py counts them), then one still
+# in progress, then anything else. Row order cannot decide it: the rows are
+# inserted without an idx and their names are not chronological.
+_ATTEMPT_RANK = {"Pass": 3, "Exempt": 3, "Enrolled": 2, "": 2, None: 2}  # nosec B105
+
+
+def _best_attempt_per_course(pec_rows):
+    """One attempt per course for the audit; among equal ranks the later row
+    is kept."""
+    best, ranks = {}, {}
+    for pec in pec_rows:
+        rank = _ATTEMPT_RANK.get(pec.status, 1)
+        if ranks.get(pec.course_name, 0) > rank:
+            continue
+        ranks[pec.course_name] = rank
+        best[pec.course_name] = {
+            "course_schedule": pec.course,
+            "course": pec.course_name,
+            "academic_term": pec.academic_term,
+            "credits": pec.credits or 0,
+            "grade_code": pec.pec_finalgradecode,
+            "grade_num": pec.pec_finalgradenum,
+            "status": pec.status,
+        }
+    return best
+
+
 def _program_audit(program_enrollment):
     """Server callers (alumni portal, the program progress report) gate on
     their own terms and call this."""
@@ -2071,17 +2013,7 @@ def _program_audit(program_enrollment):
     }
 
     # Get student's completed/in-progress courses
-    student_courses = {}
-    for pec in pe.courses:
-        student_courses[pec.course_name] = {
-            "course_schedule": pec.course,
-            "course": pec.course_name,
-            "academic_term": pec.academic_term,
-            "credits": pec.credits or 0,
-            "grade_code": pec.pec_finalgradecode,
-            "grade_num": pec.pec_finalgradenum,
-            "status": pec.status,
-        }
+    student_courses = _best_attempt_per_course(pe.courses)
 
     # Also check in-progress enrollments (Course Enrollment Individual, not yet graded)
     in_progress = frappe.get_all(
@@ -2888,12 +2820,16 @@ def mark_attendance(
     course_schedule=None,
     date=None,
     meeting=None,
+    students_excused=None,
 ):
     """Creates Multiple Attendance Records.
 
     :param students_present: Students Present JSON.
     :param students_absent: Students Absent JSON.
     :param students_tardy: Students Tardy JSON (optional).
+    :param students_excused: Students Excused JSON (optional). For a meeting that
+        has not happened yet this is the whole list: an Excused row for anyone
+        left out is removed (ADR 081).
     :param course_schedule: Course Schedule.
     :param date: Date.
     :param meeting: Course Schedule Meeting Dates row (the specific class meeting
@@ -2913,7 +2849,29 @@ def mark_attendance(
         ("Present", _as_list(students_present)),
         ("Absent", _as_list(students_absent)),
         ("Tardy", _as_list(students_tardy)),
+        ("Excused", _as_list(students_excused)),
     )
+
+    meeting_date = (
+        frappe.db.get_value("Course Schedule Meeting Dates", meeting, "cs_meetdate")
+        if meeting
+        else None
+    ) or date
+    if meeting_date and getdate(meeting_date) > getdate():
+        excused = {d["student"] for d in buckets[3][1]}
+        for name, student in frappe.get_all(
+            "Student Attendance",
+            filters={
+                "course_schedule": course_schedule,
+                "meeting": meeting,
+                "status": "Excused",
+                "docstatus": ("!=", 2),
+            },
+            fields=["name", "student"],
+            as_list=True,
+        ):
+            if student not in excused:
+                frappe.delete_doc("Student Attendance", name, ignore_permissions=True)
 
     for status, rows in buckets:
         for d in rows:
@@ -3004,8 +2962,9 @@ def make_attendance_records(
         student_attendance.status = status
         student_attendance.insert(ignore_permissions=True)
 
-    # Flag the specific meeting row as having attendance taken.
-    if meeting:
+    # Flag the specific meeting row as having attendance taken. Excusing a
+    # student ahead of the class is not taking the roll.
+    if meeting and not (status == "Excused" and date and getdate(date) > getdate()):
         frappe.db.set_value("Course Schedule Meeting Dates", meeting, "attendance", 1)
 
 
@@ -3186,6 +3145,11 @@ def quizresult_to_card(doc, method):
     # Mark the cell as carrying a real grade (vs. the Float column's NOT NULL
     # default 0). Cleared if the prof unsets the submission grade.
     card.graded_card = 1 if doc.percentage not in (None, "") else 0
+    # Late deduction (decisions/082): the card holds the score that counts,
+    # the raw percentage and what was taken off sit beside it.
+    from seminary.seminary import deadlines
+
+    deadlines.apply_to_card(card, doc)
     # Save the updated card
     card.save(ignore_permissions=True)
 
@@ -3227,6 +3191,13 @@ def save_course_assessment(course, assessment_data):
             doc.discussion = data.get("discussion", "")
             doc.exam = data.get("exam", "")
             doc.due_date = data.get("due_date", None)
+            # Cut-off, replies due date and the late opt-out (decisions/082),
+            # written only when sent, like the competency fields below.
+            for field in ("cutoff_date", "replies_due_date"):
+                if field in data:
+                    doc.set(field, data.get(field) or None)
+            if "late_policy_exempt" in data:
+                doc.late_policy_exempt = 1 if data.get("late_policy_exempt") else 0
             # Competency wiring (ADR 065 section 11b). Written only when the
             # form sent the key, so a caller that does not show these fields
             # cannot blank a mapping it knows nothing about.
@@ -3259,6 +3230,10 @@ def save_course_assessment(course, assessment_data):
                     "discussion": data.get("discussion", ""),
                     "course_competency": data.get("course_competency") or None,
                     "grading_mode_override": data.get("grading_mode_override") or None,
+                    "due_date": data.get("due_date") or None,
+                    "cutoff_date": data.get("cutoff_date") or None,
+                    "replies_due_date": data.get("replies_due_date") or None,
+                    "late_policy_exempt": 1 if data.get("late_policy_exempt") else 0,
                 }
             )
             doc.insert(ignore_permissions=True)
@@ -3566,6 +3541,11 @@ def insert_cs_assessment(criteria):
             "fudgepoints_scac": criteria.get("fudgepoints_scac"),
         }
     )
+    # A bare child insert skips Course Schedule's validate, which is where an
+    # assessment inside a chapter takes that chapter's competency.
+    from seminary.seminary.utils import chapter_competency_for
+
+    doc.course_competency = chapter_competency_for(doc.parent, doc)
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
 
@@ -3587,6 +3567,11 @@ def get_pgmenrollments(name):
         ],
         order_by="pgmenrol_active desc, enrollment_date desc",
     )
+    for pe in program_enrollments:
+        # The portal says the school enrolls them, instead of offering courses.
+        pe["staff_enrolled"] = cint(
+            frappe.db.get_value("Program", pe.program, "staff_enroll_only")
+        )
     return program_enrollments or []
 
 
@@ -3890,7 +3875,21 @@ def fail_for_absence(name):
     the FA), forces the roster grade to the Grading Scale's FA code + Fail, and
     propagates Fail to the Program Enrollment Course (transcript), removing the
     course's credits from the enrollment total if it had been counted as passed."""
+    from seminary.seminary.absence_decisions import FAIL, record
+
     _assert_fa_roles()
+    if frappe.db.get_value("Scheduled Course Roster", name, "failed_for_absence"):
+        return {"failed_for_absence": 1}
+    record(name, FAIL)
+    return {
+        "failed_for_absence": 1,
+        "fa_code": frappe.db.get_value("Scheduled Course Roster", name, "fgrade"),
+    }
+
+
+def _fail_for_absence(name):
+    """The FA itself, for the registrar's action and the instructor's decision
+    at Send Grades (ADR 081). Callers gate."""
     roster = frappe.get_doc("Scheduled Course Roster", name)
     if roster.failed_for_absence:
         return {"failed_for_absence": 1}
@@ -3945,14 +3944,18 @@ def fail_for_absence(name):
 
 
 @frappe.whitelist()
-def undo_fail_for_absence(name):
+def undo_fail_for_absence(name, reason=None):
     """Reverse a Fail-for-Absence: clear the flag, recompute the real grade from
     scores, and restore the Program Enrollment Course (and credits, if the course
-    now passes and grades were already finalized)."""
+    now passes and grades were already finalized). Recorded as the registrar
+    keeping the grade (ADR 081)."""
+    from seminary.seminary.absence_decisions import KEEP, record
+
     _assert_fa_roles()
     roster = frappe.get_doc("Scheduled Course Roster", name)
     if not roster.failed_for_absence:
         return {"failed_for_absence": 0}
+    record(name, KEEP, reason)
 
     grades_sent = roster.active == 0
     frappe.db.set_value("Scheduled Course Roster", name, "failed_for_absence", 0)
@@ -4055,6 +4058,69 @@ def _ungraded_roster_count(course_schedule, rosters=None):
     return rows[0][0] if rows else 0
 
 
+def _assert_cbe_gradable(course_schedule, rosters=None):
+    """Name what blocks a competency section's send (decisions/090).
+
+    The numeric message ("fill in 0") cannot be followed here: a level is
+    recorded on the activity, and an assessment with no competency cannot be
+    graded at all, so its result card would block the send forever.
+    """
+    from seminary.seminary import cbe
+
+    if not cbe.framework_for(course_schedule):
+        return
+    unmapped = frappe.get_all(
+        "Scheduled Course Assess Criteria",
+        filters={"parent": course_schedule, "course_competency": ("is", "not set")},
+        pluck="title",
+    )
+    if unmapped:
+        frappe.throw(
+            _(
+                "These assessments have no competency, so they cannot be graded: "
+                "{0}. Choose a competency for each in Configure Assessments, or "
+                "remove it."
+            ).format(", ".join(t or _("(untitled)") for t in unmapped))
+        )
+
+    params = [course_schedule]
+    scope = ""
+    if rosters is not None:
+        if not rosters:
+            return
+        scope = " AND scr.name IN ({0})".format(", ".join(["%s"] * len(rosters)))
+        params.extend(rosters)
+    ungraded = frappe.db.sql(
+        """
+        SELECT scr.stuname_roster, scac.title
+        FROM `tabCourse Assess Results Detail` card
+        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
+        LEFT JOIN `tabScheduled Course Assess Criteria` scac
+            ON scac.name = card.assessment_criteria
+        LEFT JOIN `tabCourse Enrollment Individual` cei
+            ON cei.coursesc_ce = scr.course_sc
+           AND cei.student_ce = scr.student
+           AND cei.docstatus = 1
+        WHERE scr.course_sc = %s
+          AND scr.active = 1
+          AND scr.audit_bool = 0
+          AND COALESCE(cei.course_cancelled, 0) = 0
+          AND COALESCE(card.graded_card, 0) = 0
+        """
+        + scope  # nosec B608 -- placeholders only, never a request value
+        + " ORDER BY scr.stuname_roster, scac.idx",
+        params,
+    )
+    if ungraded:
+        frappe.throw(
+            _("Cannot send grades yet. Not graded:")
+            + "<br>"
+            + "<br>".join(
+                "{0}: {1}".format(s, t or _("(untitled)")) for s, t in ungraded[:20]
+            )
+        )
+
+
 def _assert_evaluators_finished(course_schedule, roster_names):
     """Block a send while a required evaluator still owes a grade (ADR 065).
 
@@ -4068,7 +4134,7 @@ def _assert_evaluators_finished(course_schedule, roster_names):
         return
     outstanding = []
     for name in roster_names:
-        outstanding.extend(cbe.missing_required_evaluators(name))
+        outstanding.extend(m.message for m in cbe.missing_required_evaluators(name))
     if outstanding:
         frappe.throw(
             _("Cannot send grades yet:") + "<br>" + "<br>".join(outstanding[:20])
@@ -4306,6 +4372,7 @@ def send_selected_grades(course_schedule, rosters):
             )
         )
 
+    _assert_cbe_gradable(course_schedule, rosters)
     missing_count = _ungraded_roster_count(course_schedule, rosters)
     if missing_count:
         frappe.throw(
@@ -4317,6 +4384,7 @@ def send_selected_grades(course_schedule, rosters):
         )
     _assert_evaluators_finished(course_schedule, rosters)
     _assert_pdp_complete(course_schedule, rosters)
+    absence_decisions.assert_decided(course_schedule, rosters)
 
     finalized, students, pes = [], set(), set()
     for roster_name in rosters:
@@ -4329,6 +4397,10 @@ def send_selected_grades(course_schedule, rosters):
 
     _conclude_enrollments(course_schedule, students)
     _post_finalization(pes)
+    # A student's last grade of the term decides their next term (decisions/084).
+    from seminary.seminary.progression import after_grades_sent
+
+    after_grades_sent(course_schedule, pes)
 
     return {"finalized": len(finalized), "rosters": finalized}
 
@@ -4357,6 +4429,7 @@ def send_grades(doc=None, **kwargs):
             ).format(state or _("(none)"))
         )
 
+    _assert_cbe_gradable(docname)
     missing_count = _ungraded_roster_count(docname)
     if missing_count:
         frappe.throw(
@@ -4373,6 +4446,7 @@ def send_grades(doc=None, **kwargs):
     )
     _assert_evaluators_finished(docname, [r.name for r in records])
     _assert_pdp_complete(docname, [r.name for r in records])
+    absence_decisions.assert_decided(docname)
 
     affected_pes = set()
     for record in records:
@@ -4398,6 +4472,10 @@ def send_grades(doc=None, **kwargs):
 
     # After grades are sent, recalculate track credits and check auto-grant emphases
     _post_finalization(affected_pes)
+    # A student's last grade of the term decides their next term (decisions/084).
+    from seminary.seminary.progression import after_grades_sent
+
+    after_grades_sent(docname, affected_pes)
 
     # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
     # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
@@ -4405,160 +4483,6 @@ def send_grades(doc=None, **kwargs):
     # aretenic (ADR 030/032). Partial sends deliberately produce no snapshot: an
     # attainment record for a half-graded offering would be an auditable claim
     # about something unfinished (ADR 065 section 7a).
-    from seminary.seminary.utils import _aretenic_enabled
-
-    if _aretenic_enabled():
-        frappe.enqueue(
-            "aretenic.attainment.snapshot_offering_on_send_grades",
-            queue="long",
-            enqueue_after_commit=True,
-            course_schedule=docname,
-        )
-
-    return "All grades sent"
-    if state != "Grading":
-        frappe.throw(
-            _(
-                "Send Grades is only available while the course is in the "
-                "Grading state. Current state: {0}."
-            ).format(state or _("(none)"))
-        )
-
-    missing = frappe.db.sql(
-        """
-        SELECT COUNT(DISTINCT scr.name)
-        FROM `tabCourse Assess Results Detail` card
-        JOIN `tabScheduled Course Roster` scr ON card.parent = scr.name
-        LEFT JOIN `tabCourse Enrollment Individual` cei
-            ON cei.coursesc_ce = scr.course_sc
-           AND cei.student_ce = scr.student
-           AND cei.docstatus = 1
-        WHERE scr.course_sc = %s
-          AND scr.active = 1
-          AND scr.audit_bool = 0
-          AND COALESCE(cei.course_cancelled, 0) = 0
-          AND COALESCE(card.graded_card, 0) = 0
-        """,
-        (docname,),
-    )
-    missing_count = missing[0][0] if missing else 0
-    if missing_count:
-        frappe.throw(
-            _(
-                "Cannot send grades: {0} student(s) still have ungraded "
-                "assessments. Fill in all grades (or 0 explicitly) before sending."
-            ).format(missing_count)
-        )
-
-    records = frappe.get_all(
-        "Scheduled Course Roster",
-        filters={"course_sc": docname},
-        fields=[
-            "name",
-            "course_sc",
-            "stuname_roster",
-            "student",
-            "program_std_scr",
-            "audit_bool",
-            "active",
-        ],
-    )
-    for record in records:
-        # Process each record here
-        named = record.name
-        course_sc = record.course_sc
-        student = record.student
-        program = record.program_std_scr
-        audit_bool = record.audit_bool
-        active = record.active
-        pe = frappe.db.get_value(
-            "Program Enrollment", {"student": student, "program": program}, "name"
-        )
-        totalcredits = frappe.db.get_value("Program Enrollment", pe, "totalcredits")
-        # Perform further operations with the record
-        if audit_bool == 0 and active == 1:
-            _grade_thisstudent(named)
-            _fgrade_this_std(named)
-            fscore = frappe.db.get_value("Scheduled Course Roster", named, "fscore")
-            fgrade = frappe.db.get_value("Scheduled Course Roster", named, "fgrade")
-            fgradepass = frappe.db.get_value(
-                "Scheduled Course Roster", named, "fgradepass"
-            )
-            _assert_grade_computed(named, fgrade, fgradepass)
-            pec = frappe.db.get_value(
-                "Program Enrollment Course", {"parent": pe, "course": course_sc}, "name"
-            )
-            credits = frappe.db.get_value("Program Enrollment Course", pec, "credits")
-            if fgradepass == "Fail":
-                credits = 0
-            # Leveling / remedial courses (ADR 058) never count toward the degree.
-            elif frappe.db.exists(
-                "Program Enrollment Leveling",
-                {"parent": pe, "course": course_sc, "kind": "Leveling Course"},
-            ):
-                credits = 0
-            newcredits = (int(totalcredits) if totalcredits else 0) + (
-                int(credits) if credits is not None else 0
-            )
-            frappe.db.set_value(
-                "Program Enrollment Course",
-                pec,
-                {
-                    "pec_finalgradenum": fscore,
-                    "pec_finalgradecode": fgrade,
-                    "status": fgradepass,
-                },
-            )
-            frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
-            frappe.db.set_value("Scheduled Course Roster", named, "active", 0)
-        else:
-            continue
-
-    # System-driven transition: bypass the workflow validator (the "Send
-    # Grades" transition is intentionally absent from the workflow fixture
-    # so the Desk Action menu can't bypass the grade computation and PEC
-    # update above). Mirrors the cancel_course pattern.
-    frappe.db.set_value("Course Schedule", docname, "workflow_state", "Closed")
-
-    # Mirror the schedule's terminal "Closed" state onto each student's Course
-    # Enrollment Individual: with grades sent, every active enrollment in this
-    # section is now historical, so Submitted -> Concluded. System-driven like
-    # the schedule transition above (no Desk action, intentionally absent from
-    # the workflow fixture). Audit enrollments also sit in Submitted and are
-    # likewise concluded. Withdrawn / Waitlisted / Awaiting Payment / Unseated
-    # are left untouched — they never became active enrollments here. This is
-    # what makes "currently enrolled" = workflow_state == "Submitted".
-    frappe.db.set_value(
-        "Course Enrollment Individual",
-        {"coursesc_ce": docname, "workflow_state": "Submitted", "docstatus": 1},
-        "workflow_state",
-        "Concluded",
-        update_modified=False,
-    )
-
-    # After grades are sent, recalculate track credits and check auto-grant emphases
-    affected_pes = set()
-    for record in records:
-        if record.audit_bool == 0 and record.active == 1:
-            pe_name = frappe.db.get_value(
-                "Program Enrollment",
-                {"student": record.student, "program": record.program_std_scr},
-                "name",
-            )
-            if pe_name:
-                affected_pes.add(pe_name)
-
-    from seminary.seminary.gpa import recompute_program_enrollment_gpa
-
-    for pe_name in affected_pes:
-        _recalculate_emphasis_credits(pe_name)
-        _check_auto_grant_emphases(pe_name)
-        recompute_program_enrollment_gpa(pe_name)
-
-    # Optional Aretenic accreditation app: once grades are final (offering Closed), cut the
-    # auditable outcome-attainment snapshots for this offering. Gated by has-aretenic and enqueued
-    # after commit so a snapshot failure can never roll back grades. Seminary never requires
-    # aretenic (ADR 030/032).
     from seminary.seminary.utils import _aretenic_enabled
 
     if _aretenic_enabled():
@@ -4909,11 +4833,19 @@ def upsert_chapter(
 
     if package_file:
         _check_scorm_package(package_file)
+    previous_competency = chapter.course_competency
     chapter.update(values)
     chapter.save()
     if package_file:
         pin_scorm_package(chapter.name, package_file)
         queue_scorm_unpack(chapter.name, package_file)
+
+    if (
+        name
+        and chapter.course_competency
+        and chapter.course_competency != previous_competency
+    ):
+        chapter.set_onload("refiled", _refile_competencies(course))
 
     return chapter
 
@@ -5087,6 +5019,10 @@ def delete_chapter(chapter):
         frappe.throw(_("Chapter not found."), frappe.DoesNotExistError)
     require_course_staff(chapterInfo.coursesc)
 
+    from seminary.seminary import cbe_reflection
+
+    cbe_reflection.assert_chapter_deletable(chapter)
+
     frappe.db.delete("Course Schedule Chapter Reference", {"chapter": chapter})
     frappe.db.delete("Course Schedule Lesson Reference", {"parent": chapter})
     frappe.db.delete("Course Lesson", {"chapter": chapter})
@@ -5225,6 +5161,9 @@ def delete_lesson(lesson, chapter):
     # Delete Reference
     chapter = frappe.get_doc("Course Schedule Chapter", chapter)
     require_course_staff(chapter.coursesc)
+    from seminary.seminary import cbe_reflection
+
+    cbe_reflection.assert_lesson_deletable(lesson)
     chapter.lessons = [row for row in chapter.lessons if row.lesson != lesson]
     chapter.save()
 
@@ -5244,7 +5183,9 @@ def delete_documents(doctype, documents):
 
 @frappe.whitelist()
 def get_announcements(cs):
-    require_enrolled(cs)
+    from seminary.seminary.guards import require_content_reader
+
+    require_content_reader(cs)
     communications = frappe.get_all(
         "Communication",
         filters={
@@ -5287,14 +5228,41 @@ def update_lesson_index(lesson, source_chapter, target_chapter, idx):
     )
     require_course_staff(source_doc.coursesc)
     require_course_staff(target_doc.coursesc)
+    from seminary.seminary import cbe_reflection
 
+    cbe_reflection.assert_lesson_movable(lesson_doc.name)
+
+    refiled = []
     if source_chapter == target_chapter:
         _reorder_lessons_within_chapter(target_doc, lesson_doc.name, idx)
     else:
         _move_lesson_between_chapters(lesson_doc, source_doc, target_doc, idx)
+        if target_doc.course_competency:
+            refiled = _refile_competencies(target_doc.coursesc)
 
     frappe.db.commit()
-    return {"message": _("Lesson index updated successfully.")}
+    return {"message": _("Lesson index updated successfully."), "refiled": refiled}
+
+
+def _refile_competencies(course_schedule):
+    """Re-file a section's assessments on their chapters' competencies and
+    describe what moved, by name, for the caller to show (ADR 079 decision 8)."""
+    changed = frappe.get_doc(
+        "Course Schedule", course_schedule
+    ).refile_assessment_competencies()
+
+    def label(competency):
+        if not competency:
+            return None
+        return (
+            frappe.db.get_value("Course Competency", competency, "competency_name")
+            or competency
+        )
+
+    return [
+        {"title": title, "from": label(old), "to": label(new)}
+        for title, old, new in changed
+    ]
 
 
 def _clone_reference_rows(chapter_doc, exclude_lesson=None):
@@ -5727,6 +5695,8 @@ def preview_announcement_recipients(name):
     )
 
     channel_counts = {c: 0 for c in channels}
+    # A hold may let one announcement through (p019).
+    reference = {"reference_doctype": doc.doctype, "reference_name": doc.name}
     reachable_count = 0
     fallback_count = 0
     sample = []
@@ -5737,14 +5707,22 @@ def preview_announcement_recipients(name):
 
         ok_selected = False
         for c in channels:
-            if comms.reachability(person, c, category, email=r.get("email")) == "ok":
+            if (
+                comms.reachability(
+                    person, c, category, email=r.get("email"), **reference
+                )
+                == "ok"
+            ):
                 channel_counts[c] += 1
                 ok_selected = True
 
         via_fallback = False
         if not ok_selected and fallback_channels:
             via_fallback = any(
-                comms.reachability(person, c, category, email=r.get("email")) == "ok"
+                comms.reachability(
+                    person, c, category, email=r.get("email"), **reference
+                )
+                == "ok"
                 for c in fallback_channels
             )
 
@@ -5760,7 +5738,7 @@ def preview_announcement_recipients(name):
                 # email is the universal fallback address, so its block reason
                 # is the most useful explanation of an unreachable recipient
                 reason = comms.reachability(
-                    person, "Email", category, email=r.get("email")
+                    person, "Email", category, email=r.get("email"), **reference
                 )
             sample.append(
                 {

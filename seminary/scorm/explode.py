@@ -397,5 +397,4 @@ def reparse(package_name: str | None = None) -> dict:
             }
         )
 
-    print(frappe.as_json(results))
     return {"packages": results}

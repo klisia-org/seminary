@@ -466,7 +466,6 @@ SNAPSHOTS = (
     # Records of a decision or an event on a date. Renaming the person does not
     # change what the register said when it was written.
     Snapshot("Withdrawal Request", "student_name", "full_name"),
-    Snapshot("Student Leave Application", "student_name", "full_name"),
     Snapshot("Student Log", "student_name", "full_name"),
 )
 

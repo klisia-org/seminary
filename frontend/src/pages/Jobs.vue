@@ -1,9 +1,10 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex flex-col gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5"
-	>
+	<PageHeader :title="__('Jobs')">
+	</PageHeader>
+
+	<!-- ADR 075: filters live in the body, above what they filter. -->
+	<div class="flex flex-col gap-2 border-b bg-surface-white px-3 py-3 sm:px-5">
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-			<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Jobs') }}</h2>
 			<div class="relative w-full sm:w-72">
 				<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
 				<input
@@ -42,7 +43,7 @@
 				{{ __('Requires doctrinal agreement') }}
 			</label>
 		</div>
-	</header>
+	</div>
 
 	<div class="mx-auto flex w-full max-w-6xl flex-col gap-5 p-3 sm:p-5 lg:flex-row lg:items-start">
 		<main class="min-w-0 flex-1">
@@ -105,7 +106,7 @@
 
 				<div v-if="myApps.loading" class="py-6 text-center text-sm text-ink-gray-5">{{ __('Loading...') }}</div>
 				<div v-else-if="!myApps.data?.length" class="py-6 text-center text-sm text-ink-gray-5">
-					{{ myStatus ? __('No {0} applications.').format(__(myStatus).toLowerCase()) : __('You haven\'t applied to any openings yet.') }}
+					{{ myStatus ? __('No {0} applications.').format(__(myStatus).toLowerCase()) : __("You haven't applied to any openings yet.") }}
 				</div>
 				<ul v-else class="space-y-2">
 					<li v-for="a in myApps.data" :key="a.name" class="rounded-md border border-outline-gray-2 transition hover:border-outline-gray-3">
@@ -144,6 +145,8 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
+import PageHeader from '@/components/PageHeader.vue'
 import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { createResource, debounce, Badge, Button, Dialog, toast } from 'frappe-ui'
@@ -225,7 +228,7 @@ function editDraft(a) {
 
 function confirmDiscard(a) {
 	dialog.title = __('Discard draft')
-	dialog.message = __('Discard this draft application? This can\'t be undone.')
+	dialog.message = __("Discard this draft application? This can't be undone.")
 	dialog.actions = [
 		{ label: __('Keep draft'), variant: 'outline', onClick: () => (dialog.show = false) },
 		{
@@ -241,7 +244,7 @@ function confirmDiscard(a) {
 
 function confirmWithdraw(a) {
 	dialog.title = __('Withdraw application')
-	dialog.message = __('Are you confident this is God\'s direction?')
+	dialog.message = __("Are you confident this is God's direction?")
 	dialog.actions = [
 		{ label: __('No, let me pray more'), variant: 'outline', onClick: () => (dialog.show = false) },
 		{
@@ -257,7 +260,7 @@ function confirmWithdraw(a) {
 
 function formatDate(value) {
 	if (!value) return ''
-	return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+	return new Date(value).toLocaleDateString(userLocale(), { year: 'numeric', month: 'short', day: 'numeric' })
 }
 </script>
 

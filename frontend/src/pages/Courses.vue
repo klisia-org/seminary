@@ -1,19 +1,17 @@
 <template>
-  <header class="sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-    <div class="flex items-center">
-      <h1 class="text-xl font-semibold text-ink-gray-9">{{ headingLabel }}</h1>
-    </div>
+  <PageHeader :title="headingLabel">
     <!-- p007 §2.8: an instructor of record (or a chair/manager) may widen the
-         list beyond their own sections; graders and assistants never see it. -->
-    <div v-if="canListAllCourses" class="flex items-center gap-2 text-sm">
-      <label for="courseScope" class="text-ink-gray-7">{{ __('Show') }}</label>
+         list beyond their own sections; graders and assistants never see it.
+         This is the page's primary scope selector, so ADR 075 keeps it here. -->
+    <template v-if="canListAllCourses" #actions>
+      <label for="courseScope" class="text-sm text-ink-gray-7">{{ __('Show') }}</label>
       <select id="courseScope" v-model="courseScope"
         class="rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm sm:text-sm">
         <option value="mine">{{ __('My Courses') }}</option>
         <option value="all">{{ __('All Courses') }}</option>
       </select>
-    </div>
-  </header>
+    </template>
+  </PageHeader>
 
   <!-- Parent container for filters and course cards -->
   <div class="p-5 flex flex-col lg:flex-row gap-4 w-full mx-auto">
@@ -23,6 +21,7 @@
         Optional Aretenic surface (ADR 030). Above the assessment to-dos because a feedback window
         closes and does not reopen, while an assignment can be caught up on (decisions/035 §6).
       -->
+      <OpenRequirementsPanel />
       <OpenQuestionnairesPanel />
 
       <h2 class="text-lg font-semibold text-ink-gray-9">{{ __('To Do') }}</h2>
@@ -49,7 +48,7 @@
         <div>
           <label for="courseFilter" class="block text-sm font-medium text-ink-gray-7">Course</label>
           <select id="courseFilter" v-model="filters.course"
-            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
             <option value="">All Courses</option>
             <option v-for="course in uniqueCourses" :key="course" :value="course">
               {{ course }}
@@ -60,7 +59,7 @@
           <label for="academicTermFilter" class="block text-sm font-medium text-ink-gray-7">{{ __('Academic Term')
             }}</label>
           <select id="academicTermFilter" v-model="filters.academic_term"
-            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            class="mt-1 block w-full rounded-md border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm focus:border-outline-blue-1 focus:ring-outline-blue-1 sm:text-sm">
             <option value="">{{ __('All Terms') }}</option>
             <option v-for="term in uniqueAcademicTerms" :key="term" :value="term">
               {{ term }}
@@ -79,7 +78,8 @@
       <div v-if="filteredCourses.length" class="flex flex-wrap justify-start gap-4">
         <router-link v-for="course in filteredCourses"
           :to="{ name: 'CourseDetail', params: { courseName: course.name } }" :key="course.name" class="course_card">
-          <div class="course-image" :style="{ backgroundImage: `url(${encodeURI(course.course_image)})` }"></div>
+          <CourseImageFrame class="course-image" :src="course.course_image ? encodeURI(course.course_image) : ''"
+            :focusX="course.image_focus_x" :focusY="course.image_focus_y" :zoom="course.image_zoom" />
           <div class="p-4 text-container">
             <Badge
               v-if="course.workflow_state === 'Draft'"
@@ -109,13 +109,16 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, onMounted, ref, watch, watchEffect, reactive, toRaw } from 'vue'
 import { BookOpen, Plus, PartyPopper } from 'lucide-vue-next'
 import { createResource, Badge } from 'frappe-ui'
 import { ListView, ListHeader, ListHeaderItem, ListRow, ListRowItem } from 'frappe-ui'
 import { usersStore } from '../stores/user'
 import CourseCardToDo from '@/components/CourseCardToDo.vue'
+import CourseImageFrame from '@/components/CourseImageFrame.vue'
 import OpenQuestionnairesPanel from '@/components/OpenQuestionnairesPanel.vue'
+import OpenRequirementsPanel from '@/components/OpenRequirementsPanel.vue'
 import { useCourseToDo } from '@/utils/useCourseToDo'
 
 const user = inject('$user')
@@ -416,12 +419,9 @@ watch(
 }
 
 .course-image {
+  /* 3:2 on every screen, set by CourseImageFrame (ADR 080) */
   width: 100%;
-  height: 66.67%;
-  /* 4:3 aspect ratio */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  flex-shrink: 0;
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
 }
@@ -452,11 +452,6 @@ watch(
   .course_card {
     max-width: 100%;
     height: auto;
-  }
-
-  .course-image {
-    height: auto;
-    aspect-ratio: 4 / 3;
   }
 
   .text-container {

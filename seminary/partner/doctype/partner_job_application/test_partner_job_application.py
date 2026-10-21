@@ -40,9 +40,8 @@ class IntegrationTestPartnerJobApplication(IntegrationTestCase):
                 "doctype": "Partner Job Opening",
                 "partner_org": self.org.name,
                 "job_title": "Associate Pastor",
+                "description": "Serve alongside the senior pastor.",
                 "planned_vacancies": 1,
-                # reqd on Partner Job Opening; the fixture predates it.
-                "description": "Test opening.",
                 "status": "Open",
                 **kwargs,
             }

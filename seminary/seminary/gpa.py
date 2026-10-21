@@ -157,11 +157,19 @@ def _convert_to_gpa_points(pec, scale, basis):
 
 def _points_from_code(pec, scale, basis):
     """Grade points read off the matching interval's threshold."""
-    if not pec.pec_finalgradecode:
+    code = pec.pec_finalgradecode
+    if not code:
         return None
     for interval in scale.intervals or []:
-        if interval.grade_code == pec.pec_finalgradecode:
+        if interval.grade_code == code:
             return _clamp(float(interval.threshold or 0), 0, basis)
+    # WF / FA often cannot hold an interval of their own on a Descriptive
+    # scale (thresholds are unique and F already has 0); when the scale counts
+    # them in the GPA they are worth zero.
+    if (code == scale.get("wf_code") and scale.get("wf_gpa")) or (
+        code == scale.get("fa_code") and scale.get("fa_gpa")
+    ):
+        return 0.0
     return None
 
 

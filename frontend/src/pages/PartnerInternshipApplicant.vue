@@ -1,9 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<router-link :to="{ name: 'PartnerInternshipPosting', params: { name } }" class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
-			<ArrowLeft class="size-4" />{{ __('Applicants') }}
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 
 	<div v-if="app.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 	<div v-else-if="app.error" class="p-5 text-ink-red-4">{{ app.error.messages?.[0] || __('Not authorized.') }}</div>
@@ -41,8 +41,9 @@
 </template>
 
 <script setup>
-import { createResource, Button, Badge, toast } from 'frappe-ui'
-import { ArrowLeft } from 'lucide-vue-next'
+import { computed } from 'vue'
+import PageHeader from '@/components/PageHeader.vue'
+import { Breadcrumbs, createResource, Button, Badge, toast } from 'frappe-ui'
 import { usePartnerOrg } from '@/composables/usePartnerOrg'
 import PartnerPlacementCard from '@/components/PartnerPlacementCard.vue'
 
@@ -80,4 +81,10 @@ function statusTheme(s) {
 	if (s === 'Under Review') return 'blue'
 	return 'gray'
 }
+
+const breadcrumbs = computed(() => [
+	{ label: __('Internships'), route: { name: 'PartnerInternshipPostings' } },
+	{ label: __('Applicants'), route: { name: 'PartnerInternshipPosting', params: { name: props.name } } },
+	{ label: __('Applicant') },
+])
 </script>

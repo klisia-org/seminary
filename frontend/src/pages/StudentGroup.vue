@@ -1,8 +1,10 @@
 <template>
   <div v-if="course.data && instructors.data">
-    <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-      <Breadcrumbs class="h-7" :items="breadcrumbs" />
-    </header>
+    <PageHeader>
+    	<template #title>
+    		<Breadcrumbs class="h-7" :items="breadcrumbs" />
+    	</template>
+    </PageHeader>
     <h1 class="text-2xl font-bold mt-4 mb-4 ml-5">
       {{ __('Student Group Management for ' + course.data.course) }}
     </h1>
@@ -268,6 +270,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { ref, computed, inject, watch, reactive } from 'vue'
 import { createResource, Breadcrumbs, ListView, ListHeader, ListHeaderItem, ListRows, ListRow, ListRowItem, FormControl, Button, Dialog, toast } from 'frappe-ui'
 import { useRouter, useRoute } from 'vue-router'

@@ -38,7 +38,6 @@
   "gender",
   "blood_group",
   "tax_id",
-  "document_id",
   "column_break_12",
   "student_mobile_number",
   "nationality",
@@ -50,7 +49,7 @@
   "reading",
   "compliteracy",
   "useemail",
-  "education_docs",
+  "documents",
   "disabilities_section",
   "disablechk",
   "disable_accom",
@@ -372,9 +371,9 @@
   },
   {
    "fieldname": "ethnic",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Ethnic Group",
-   "options": "\nBlack\nHispanic\nWhite, Non Hispanic\nNative American\nPacific Islander\nOther",
+   "options": "Ethnic Group",
    "read_only_depends_on": "eval:doc.application_status==\"Admitted\""
   },
   {
@@ -613,14 +612,10 @@
    "options": "Student Contacts"
   },
   {
-   "fieldname": "document_id",
-   "fieldtype": "Attach",
-   "label": "Document ID"
-  },
-  {
-   "fieldname": "education_docs",
-   "fieldtype": "Attach",
-   "label": "Educational records"
+   "fieldname": "documents",
+   "fieldtype": "Table",
+   "label": "Documents",
+   "options": "Student Applicant Document"
   },
   {
    "description": "Unguessable handle for the public payment page. Not a secret the applicant needs to see; it exists so the page cannot be reached by trying docnames.",
@@ -635,7 +630,7 @@
  ],
  "image_field": "image",
  "links": [],
- "modified": "2026-09-10 12:00:00.000000",
+ "modified": "2026-10-20 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Student Applicant",

@@ -61,12 +61,6 @@ CURATED = {
         "Instructor": "CRW",
         "Registrar": "R",
     },
-    "course_result_tool": {
-        "Seminary Manager": "CRWD",
-        "Program Chair": "CRWD",
-        "Instructor": "CRW",
-        "Registrar": "R",
-    },
     "payers_fee_category_pe": {
         "Seminary Manager": "CRWD",
     },

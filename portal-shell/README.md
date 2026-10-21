@@ -1,7 +1,7 @@
 # @seminary/portal-shell
 
 Shared chrome (header, portal switcher, session/theme composables) used by
-the seminary, frappe_giving, and accreditation Vue 3 SPAs to provide
+the seminary, koinonia, and accreditation Vue 3 SPAs to provide
 consistent post-login UX across portals on the same Frappe site.
 
 Consumed via a `file:` reference. No npm publishing required for the seminary

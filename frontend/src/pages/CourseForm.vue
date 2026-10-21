@@ -2,17 +2,20 @@
 	<div class="">
 		<div class="grid md:grid-cols-[70%,30%] h-full">
 			<div>
-				<header
-					class="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-					<Breadcrumbs class="h-7" :items="breadcrumbs" />
-					<div class="flex items-center mt-3 md:mt-0">
-						<Button variant="solid" @click="submitCourse()" class="ml-2">
-							<span>
-								{{ __('Save') }}
-							</span>
-						</Button>
-					</div>
-				</header>
+				<PageHeader>
+					<template #title>
+						<Breadcrumbs class="h-7" :items="breadcrumbs" />
+					</template>
+					<template #actions>
+						<div class="flex items-center mt-3 md:mt-0">
+							<Button variant="solid" @click="submitCourse()" class="ml-2">
+								<span>
+									{{ __('Save') }}
+								</span>
+							</Button>
+						</div>
+					</template>
+				</PageHeader>
 				<div class="mt-5 mb-10">
 					<div class="container mb-5">
 						<div class="text-lg font-semibold mb-4">
@@ -23,7 +26,7 @@
 							'A one line introduction to the course that appears on the course card (less than 55 characters)'
 						)
 							" class="mb-2" :required="true" />
-						<div class="text-sm mt-1" :class="remainingCharacters < 0 ? 'text-red-500' : 'text-ink-gray-5'">
+						<div class="text-sm mt-1" :class="remainingCharacters < 0 ? 'text-ink-red-3' : 'text-ink-gray-5'">
 							<span v-if="remainingCharacters >= 0">
 								{{ `${remainingCharacters} characters available` }}
 							</span>
@@ -76,14 +79,26 @@
 								</template>
 							</FileUploader>
 							<div v-else class="mb-4">
-								<div class="flex items-center">
-									<img :src="course.course_image.file_url" class="border rounded-md w-40" />
-									<div class="ml-4">
-										<Button @click="removeImage()">
-											{{ __('Remove') }}
-										</Button>
-										<div class="mt-2 text-ink-gray-5 text-sm">
-											{{ __('Appears on the course card in the course list') }}
+								<div class="flex flex-wrap items-start gap-4">
+									<CourseImageFrame editable :src="course.course_image.file_url"
+										v-model:focusX="course.image_focus_x" v-model:focusY="course.image_focus_y"
+										v-model:zoom="course.image_zoom" class="border rounded-md w-full max-w-sm" />
+									<div class="min-w-48">
+										<label class="block text-xs text-ink-gray-5 mb-1" for="courseImageZoom">
+											{{ __('Zoom') }}
+										</label>
+										<input id="courseImageZoom" type="range" min="1" max="3" step="0.01"
+											v-model.number="course.image_zoom" class="w-full accent-current text-ink-gray-7" />
+										<div class="flex items-center gap-2 mt-3">
+											<Button @click="resetFraming()">
+												{{ __('Reset') }}
+											</Button>
+											<Button @click="removeImage()">
+												{{ __('Remove') }}
+											</Button>
+										</div>
+										<div class="mt-2 text-ink-gray-5 text-sm max-w-xs">
+											{{ __('Drag the image to choose what the course card shows, and zoom in on what matters. The preview is the card as students see it.') }}
 										</div>
 									</div>
 								</div>
@@ -253,6 +268,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Breadcrumbs,
 	TextEditor,
@@ -280,6 +296,7 @@ import { Image, Trash2, Video, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import CourseOutline from '@/components/CourseOutline.vue'
 import MultiSelect from '@/components/Controls/MultiSelect.vue'
+import CourseImageFrame from '@/components/CourseImageFrame.vue'
 import { capture } from '@/telemetry'
 import { useSettings } from '@/stores/settings'
 import { createDialog } from '@/utils/dialogs.js'
@@ -305,6 +322,9 @@ const course = reactive({
 	short_introduction: '',
 	course_description_for_lms: '',
 	course_image: null,
+	image_focus_x: 50,
+	image_focus_y: 50,
+	image_zoom: 1,
 	published: false,
 	web_meeting: '',
 	content_release_override: '',
@@ -481,6 +501,10 @@ const courseResource = createResource({
 			let key = checkboxes[idx]
 			course[key] = course[key] ? true : false
 		}
+		// Sections saved before the framing fields existed read as null.
+		course.image_focus_x ??= 50
+		course.image_focus_y ??= 50
+		course.image_zoom ||= 1
 
 		if (data.course_image) imageResource.reload({ image: data.course_image })
 		virtualMeetings.reload()
@@ -560,6 +584,13 @@ const validateFile = (file) => {
 
 const saveImage = (file) => {
 	course.course_image = file
+	resetFraming()
+}
+
+const resetFraming = () => {
+	course.image_focus_x = 50
+	course.image_focus_y = 50
+	course.image_zoom = 1
 }
 
 const removeImage = () => {

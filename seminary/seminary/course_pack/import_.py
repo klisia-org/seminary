@@ -510,6 +510,9 @@ class _Importer:
         cs.c_dateend = (term and term.term_end_date) or nowdate()
         cs.modality = "Virtual"
         cs.flags.ignore_permissions = True
+        # The pack brings its own outline; `run` scaffolds around it afterwards
+        # rather than the section being born with a second one (ADR 079).
+        cs.flags.skip_reflection_scaffold = True
         cs.insert(ignore_mandatory=True)
         # The CS before_insert auto-seeds SCAC from the Course; clear it so we
         # carry the pack's rows exactly (same as import_template's replace).
@@ -675,6 +678,10 @@ class _Importer:
         self.import_scac(cs)
         n_ch, n_les = self.import_chapters_and_lessons(cs)
         self.remap_lesson_scac_links()
+        from seminary.seminary import cbe_reflection
+
+        cbe_reflection.scaffold(cs.name)
+        frappe.get_doc("Course Schedule", cs.name).refile_assessment_competencies()
 
         cs.add_comment(
             "Info",

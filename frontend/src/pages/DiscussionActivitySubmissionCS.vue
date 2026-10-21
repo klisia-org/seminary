@@ -1,7 +1,9 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs :items="breadcrumbs" />
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 	<div class="md:w-3/4 md:mx-auto py-5 mx-5">
 		<!-- Discussion heading -->
 		<div class="mb-5">
@@ -69,7 +71,7 @@
 								</div>
 								<div v-else-if="column.key === 'reply_count'">
 									<span v-if="row.min_replies_required && row.min_replies_required > 0"
-										:class="row.reply_count >= row.min_replies_required ? 'text-ink-green-3' : 'text-ink-yellow-3'">
+										:class="row.reply_count >= row.min_replies_required ? 'text-ink-green-3' : 'text-ink-amber-3'">
 										{{ row.reply_count ?? 0 }} / {{ row.min_replies_required }}
 									</span>
 									<span v-else>{{ row.reply_count ?? 0 }}</span>
@@ -95,6 +97,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Badge, Breadcrumbs, Button,
 	createResource, FormControl,

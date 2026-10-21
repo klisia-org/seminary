@@ -5,9 +5,14 @@
 
 Frappe's built-in Data Import is awkward for people because one human fans out
 into several linked records that must be created in a specific order (Person,
-User, Student -> Customer via the oikonomos bridge, Instructor, Alumni, Donor,
-plus permission roles). This tool absorbs that ordering: staff stage a CSV of
-contact fields + role checkboxes, validate with Dry-Run, then submit to commit.
+User, Student, Instructor, Alumni, Donor, plus permission roles). This tool
+absorbs that ordering: staff stage a CSV of contact fields + role checkboxes,
+validate with Dry-Run, then submit to commit.
+
+Billing records are the active billing app's business, never this tool's
+(aretenic decision 050 §1): oikonomos makes an ERPNext Customer when the
+Student is saved; tamias makes a Billing Party later, when the student is
+billed or the bursar matches the ledger's customers.
 
 Every Person is created through seminary.seminary.person.ensure_person (the one
 mutation point), never frappe.new_doc("Person"). Role records are created in
@@ -19,7 +24,9 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, getdate, now_datetime, today, validate_email_address
 
+from seminary.seminary.financial.backend import get_financial_backend
 from seminary.seminary.integrations.giving import link_donor
+from seminary.seminary import tax_ids
 from seminary.seminary.person import ensure_person, find_person, normalize_email
 
 # CSV column contract — also the template header order.
@@ -48,6 +55,9 @@ CSV_COLUMNS = [
     "date_of_birth",
     "program_completed",
     "class_year",
+    # The school's own student number from before Aretenic: kept on the
+    # Student, and how the ledger's older customers are matched (050 §2).
+    "previous_student_id",
     "is_student",
     "is_instructor",
     "is_alumni",
@@ -68,6 +78,18 @@ PERMISSION_ROLE_MAP = {
 }
 
 TRUTHY = {"1", "true", "yes", "y", "x", "on", "checked", "t"}
+
+# What _commit_row records on a row; cleared again when that row fails.
+ROW_RESULT_FIELDS = (
+    "created_user",
+    "created_person",
+    "created_student",
+    "created_customer",
+    "created_instructor",
+    "created_alumni",
+    "created_donor",
+    "assigned_roles",
+)
 
 # Above this row count the commit runs in a background job.
 ENQUEUE_THRESHOLD = 50
@@ -115,7 +137,12 @@ class PersonImportBatch(Document):
             self._commit_rows()
             summary = self._store_summary()
             self._mark_committed()
-            frappe.msgprint(summary, title=_("Import Complete"), indicator="green")
+            failed = any(r.row_status != "Committed" for r in self.rows)
+            frappe.msgprint(
+                summary,
+                title=_("Import Complete"),
+                indicator="orange" if failed else "green",
+            )
         else:
             self.db_set("batch_status", "Committing", update_modified=False)
             frappe.msgprint(
@@ -205,8 +232,17 @@ class PersonImportBatch(Document):
             frappe.throw(_("Attach a Source CSV first."))
 
         _fname, content = get_file(self.source_file)
-        if isinstance(content, bytes):
-            content = content.decode("utf-8-sig", errors="replace")
+        content = _decode_csv(content)
+        if "�" in content:
+            # The replacement character is in the file itself: whatever saved it
+            # already lost the accents, and no decoding can bring them back.
+            frappe.msgprint(
+                _(
+                    "Some characters in this file are already broken (shown as �). "
+                    'Save the spreadsheet again as "CSV UTF-8" and re-attach it.'
+                ),
+                indicator="orange",
+            )
         data = read_csv_content(content)
         if not data:
             frappe.throw(_("The CSV appears to be empty."))
@@ -254,6 +290,8 @@ class PersonImportBatch(Document):
 
         img_map = self.attached_image_map()
         seen_emails = set()
+        seen_previous_ids = set()
+        has_billing = get_financial_backend().has_financials()
         errors_total = 0
         warnings_total = 0
         # Only the details this import form can actually carry: a school may
@@ -294,17 +332,37 @@ class PersonImportBatch(Document):
 
             if row.is_donor and not frappe.db.exists("DocType", "Donor"):
                 warns.append("giving_not_installed")
-            if row.is_student and not frappe.db.exists("DocType", "Customer"):
-                warns.append("student_academic_only")
+
+            previous_id = (row.previous_student_id or "").strip()
+            if previous_id:
+                if not row.is_student:
+                    warns.append("previous_student_id_needs_student")
+                elif previous_id in seen_previous_ids:
+                    errs.append("duplicate_previous_student_id:%s" % previous_id)
+                else:
+                    seen_previous_ids.add(previous_id)
+                    other = frappe.db.get_value(
+                        "Student", {"previous_student_id": previous_id}, "person"
+                    )
+                    if other and other != find_person(email=email):
+                        errs.append("previous_student_id_taken:%s" % previous_id)
 
             for fld, dt in (
                 ("gender", "Gender"),
                 ("country", "Country"),
+                ("nationality", "Country"),
                 ("language", "Language"),
             ):
                 val = row.get(fld)
                 if val and not frappe.db.exists(dt, val):
                     warns.append("unknown_%s:%s" % (fld, val))
+
+            # Checked now the way Person.validate checks it at commit (ADR 071),
+            # so a mistyped CPF is a row to fix rather than a failed commit.
+            if row.tax_id and tax_ids.problem_with(
+                row.tax_id, _tax_country(row, email), tax_ids.PERSON
+            ):
+                errs.append("bad_tax_id:%s" % row.tax_id)
 
             for key, role in PERMISSION_ROLE_MAP.items():
                 if row.get(key) and not frappe.db.exists("Role", role):
@@ -369,6 +427,17 @@ class PersonImportBatch(Document):
         self.flags.in_dry_run = True
         self.save()
 
+        # A fact about the site, not about any row: one notice, nothing to override.
+        academic_only = not has_billing and any(r.is_student for r in self.rows)
+        if academic_only:
+            frappe.msgprint(
+                _(
+                    "No billing app is active, so students are imported without "
+                    "billing records. Nothing to fix; billing can be added later."
+                ),
+                indicator="blue",
+            )
+
         if batch_errors:
             frappe.msgprint(
                 _("Batch-level issue(s): {0}").format(", ".join(batch_errors)),
@@ -379,15 +448,51 @@ class PersonImportBatch(Document):
             "errors": errors_total,
             "warnings": warnings_total,
             "batch_errors": batch_errors,
+            "academic_only": academic_only,
         }
 
     # -- commit ------------------------------------------------------------
-    def _commit_rows(self):
+    def _commit_rows(self, commit_each=False):
+        """Commit every pending row. One row's failure is rolled back to its own
+        savepoint and recorded on that row; the rest of the batch carries on.
+
+        commit_each (the background job) makes each row durable as it lands, so
+        a large import never holds one giant transaction and a crash keeps what
+        was already done. The in-request path leaves the commit to the request.
+        """
         img_map = self.attached_image_map()
         for row in self.rows:
             if row.row_status == "Committed":
                 continue  # idempotent re-run safety
-            self._commit_row(row, img_map)
+            messages = list(frappe.local.message_log)
+            frappe.db.savepoint("person_import_row")
+            try:
+                self._commit_row(row, img_map)
+            except Exception as e:
+                frappe.db.rollback(save_point="person_import_row")
+                self._fail_row(row, e)
+            frappe.local.message_log = messages  # drop per-row alerts and errors
+            if commit_each:
+                frappe.db.commit()
+
+    def _fail_row(self, row, exc):
+        log = frappe.log_error(
+            title=_("Person import row {0} failed").format(row.idx),
+            reference_doctype=self.doctype,
+            reference_name=self.name,
+        )
+        detail = frappe.utils.strip_html(str(exc)) or type(exc).__name__
+        note = _("Commit failed: {0} (Error Log {1})").format(detail, log.name)
+        # The savepoint rollback undid the row's own db_set calls; match it in
+        # memory so the summary doesn't count records that no longer exist.
+        for field in ROW_RESULT_FIELDS:
+            row.set(field, None)
+        row.row_status = "Error"
+        row.messages = "; ".join(filter(None, [row.messages, note]))
+        row.db_set(
+            {"row_status": row.row_status, "messages": row.messages},
+            update_modified=False,
+        )
 
     def _commit_row(self, row, img_map):
         email = normalize_email(row.primary_email)
@@ -451,7 +556,8 @@ class PersonImportBatch(Document):
             )
             row.db_set("created_student", student, update_modified=False)
             granted.append("Student")
-            if frappe.db.has_column("Student", "customer"):
+            _keep_previous_id(student, row.previous_student_id)
+            if _customer_billing() and frappe.db.has_column("Student", "customer"):
                 customer = frappe.db.get_value("Student", student, "customer")
                 if customer:
                     row.db_set("created_customer", customer, update_modified=False)
@@ -471,9 +577,9 @@ class PersonImportBatch(Document):
             alumni = _get_or_create_alumni(person, user, email, full, row)
             row.db_set("created_alumni", alumni, update_modified=False)
 
-        # 6. Donor — optional frappe_giving.
+        # 6. Donor — optional koinonia.
         if row.is_donor and frappe.db.exists("DocType", "Donor"):
-            donor = _get_or_create_donor(email, full)
+            donor = _get_or_create_donor(person, email, full)
             link_donor(person, donor)
             row.db_set("created_donor", donor, update_modified=False)
 
@@ -491,6 +597,60 @@ class PersonImportBatch(Document):
 
 
 # -- module-level helpers --------------------------------------------------
+def _decode_csv(content):
+    """UTF-8 first; otherwise the Windows-1252 that Excel's plain "CSV" and
+    LibreOffice's "Western" save. Frappe's own fallback tries windows-1250
+    first, which reads Ã as Ă. latin-1 decodes any byte, so it never fails.
+
+    get_file hands back valid UTF-8 already decoded as plain "utf-8", which
+    keeps the BOM Excel's "CSV UTF-8" writes; left in, it hides the first
+    header (primary_email) and every row fails as missing its email."""
+    if isinstance(content, str):
+        return content.removeprefix("﻿")
+    for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return content.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+
+
+def _keep_previous_id(student, previous_id):
+    """Fill the Student's previous ID; one already recorded is never replaced."""
+    previous_id = (previous_id or "").strip()
+    if previous_id and not frappe.db.get_value(
+        "Student", student, "previous_student_id"
+    ):
+        frappe.db.set_value(
+            "Student",
+            student,
+            "previous_student_id",
+            previous_id,
+            update_modified=False,
+        )
+
+
+def _tax_country(row, email):
+    """The country the tax ID will be checked against once committed.
+    `ensure_person` only fills blanks, so an existing Person's own nationality
+    wins over the row's."""
+    existing = find_person(email=email) if email else None
+    person = (
+        frappe.db.get_value(
+            "Person", existing, ["nationality", "mailing_country"], as_dict=True
+        )
+        if existing
+        else None
+    ) or frappe._dict()
+    return person.nationality or row.nationality or person.mailing_country
+
+
+def _customer_billing():
+    """True when the active billing app is the one that makes a Customer for
+    each Student on save (oikonomos). tamias makes Billing Parties later."""
+    backend = get_financial_backend()
+    return backend.has_financials() and type(backend).__module__.startswith("oikonomos")
+
+
 def _truthy(value):
     return 1 if str(value or "").strip().lower() in TRUTHY else 0
 
@@ -589,6 +749,7 @@ def _get_or_create_student(person, email, first, mid, last, row, image):
         if val:
             student.set(f, val)
     student.joining_date = today()
+    student.previous_student_id = (row.previous_student_id or "").strip() or None
     student.insert(ignore_permissions=True)
     return student.name
 
@@ -645,15 +806,23 @@ def _get_or_create_alumni(person, user, email, full_name, row):
     return alumni.name
 
 
-def _get_or_create_donor(email, donor_name):
+def _get_or_create_donor(person, email, donor_name):
+    """The Donor for this Person. koinonia derives the Donor's name, email,
+    type and status from the Person (koinonia 0007a), so only the captured
+    values and the link are set here."""
+    meta = frappe.get_meta("Donor")
+    if person and meta.has_field("person"):
+        existing = frappe.db.get_value("Donor", {"person": person})
+        if existing:
+            return existing
     existing = frappe.db.get_value("Donor", {"email": email}) if email else None
     if existing:
         return existing
     donor = frappe.new_doc("Donor")
     donor.donor_name = donor_name or (email.split("@")[0] if email else "Donor")
     donor.email = email
-    donor.donor_type = "Individual"
-    donor.status = "Active"
+    if person and meta.has_field("person"):
+        donor.person = person
     donor.insert(ignore_permissions=True)
     return donor.name
 
@@ -661,13 +830,17 @@ def _get_or_create_donor(email, donor_name):
 def commit_batch_async(batch_name):
     """Background commit for large batches (see on_submit)."""
     batch = frappe.get_doc("Person Import Batch", batch_name)
-    batch._commit_rows()
+    batch._commit_rows(commit_each=True)
     summary = batch._store_summary()
     batch._mark_committed()
     frappe.db.commit()
     frappe.publish_realtime(
         "person_import_complete",
-        {"batch": batch.name, "summary": summary},
+        {
+            "batch": batch.name,
+            "summary": summary,
+            "failed": sum(1 for r in batch.rows if r.row_status != "Committed"),
+        },
         user=batch.committed_by or batch.owner,
     )
 

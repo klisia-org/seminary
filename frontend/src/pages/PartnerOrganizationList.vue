@@ -1,26 +1,27 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex flex-col gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5"
-	>
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-			<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Organizations') }}</h2>
-			<div class="relative w-full sm:w-72">
-				<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
-				<input
-					v-model="query"
-					type="search"
-					class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
-					:placeholder="__('Search name, type, city')"
-				/>
-			</div>
+	<AlumniHeader :title="__('Organizations')" />
+
+	<!-- ADR 075: filters belong in the body, above what they filter. -->
+	<div class="flex flex-col gap-2 border-b bg-surface-white px-3 py-3 sm:px-5">
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+		<div class="relative w-full sm:w-72">
+			<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
+			<input
+				v-model="query"
+				type="search"
+				class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none"
+				:placeholder="__('Search name, type, city')"
+			/>
 		</div>
-		<div class="flex flex-wrap items-center gap-2">
-			<select v-model="partnerType" class="filter-select">
-				<option value="">{{ __('All types') }}</option>
-				<option v-for="pt in partnerTypes.data || []" :key="pt" :value="pt">{{ pt }}</option>
-			</select>
-		</div>
-	</header>
+	</div>
+	<div class="flex flex-wrap items-center gap-2">
+		<select v-model="partnerType" class="filter-select">
+			<option value="">{{ __('All types') }}</option>
+			<option v-for="pt in partnerTypes.data || []" :key="pt" :value="pt">{{ pt }}</option>
+		</select>
+	</div>
+	</div>
+
 
 	<div class="mx-auto flex w-full max-w-6xl flex-col gap-5 p-3 sm:p-5 lg:flex-row lg:items-start">
 		<main class="min-w-0 flex-1">
@@ -66,6 +67,7 @@
 </template>
 
 <script setup>
+import AlumniHeader from '@/components/AlumniHeader.vue'
 import { ref, watch } from 'vue'
 import { createResource, debounce, Badge } from 'frappe-ui'
 import { Search, Building2, MapPin } from 'lucide-vue-next'

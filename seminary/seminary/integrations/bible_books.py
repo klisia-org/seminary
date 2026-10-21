@@ -5,8 +5,8 @@
 
 api.bible's /passages endpoint requires OSIS-style book codes (GEN, JHN, 1JN…).
 Profs type natural names (Jn, John, João, Joao, Sl, Salmos, Ps, Psalm…). This
-module owns the alias table for the 66-book Protestant canon in English and
-Brazilian Portuguese.
+module owns the alias table for the 66-book Protestant canon in English,
+Brazilian Portuguese and Spanish.
 
 Disambiguation notes:
 - Bare "jo" / "jó" is NOT in the map. After diacritic-stripping both normalize
@@ -34,7 +34,9 @@ def normalize(s: str) -> str:
 
 
 # (OSIS code, [aliases — written in their natural form; normalization happens at build time])
-# Aliases include: full EN name, common EN abbreviations, full PT name, common PT abbreviations.
+# Aliases include: full EN name, common EN abbreviations, full PT name, common PT abbreviations,
+# then ES names and Reina-Valera abbreviations. ES names that match a PT name once accents are
+# stripped (Génesis, Éxodo, Josué, Isaías…) are not repeated.
 _BOOKS = [
     # === Old Testament ===
     ("GEN", ["Genesis", "Gen", "Gn", "Ge", "Gênesis"]),
@@ -43,12 +45,42 @@ _BOOKS = [
     ("NUM", ["Numbers", "Num", "Nm", "Nu", "Números", "Numeros"]),
     ("DEU", ["Deuteronomy", "Deut", "Deu", "Dt", "Deuteronômio", "Deuteronomio"]),
     ("JOS", ["Joshua", "Josh", "Jos", "Js", "Josué", "Josue"]),
-    ("JDG", ["Judges", "Judg", "Jdg", "Jg", "Juízes", "Juizes", "Jz"]),
+    ("JDG", ["Judges", "Judg", "Jdg", "Jg", "Juízes", "Juizes", "Jz", "Jueces", "Jue"]),
     ("RUT", ["Ruth", "Rut", "Ru", "Rute", "Rt"]),
-    ("1SA", ["1 Samuel", "1Samuel", "1 Sam", "1Sam", "1Sa", "1Sm", "I Samuel"]),
-    ("2SA", ["2 Samuel", "2Samuel", "2 Sam", "2Sam", "2Sa", "2Sm", "II Samuel"]),
-    ("1KI", ["1 Kings", "1Kings", "1 Kgs", "1Kgs", "1Ki", "1Reis", "1 Reis", "1Rs"]),
-    ("2KI", ["2 Kings", "2Kings", "2 Kgs", "2Kgs", "2Ki", "2Reis", "2 Reis", "2Rs"]),
+    ("1SA", ["1 Samuel", "1Samuel", "1 Sam", "1Sam", "1Sa", "1Sm", "I Samuel", "1 S"]),
+    ("2SA", ["2 Samuel", "2Samuel", "2 Sam", "2Sam", "2Sa", "2Sm", "II Samuel", "2 S"]),
+    (
+        "1KI",
+        [
+            "1 Kings",
+            "1Kings",
+            "1 Kgs",
+            "1Kgs",
+            "1Ki",
+            "1Reis",
+            "1 Reis",
+            "1Rs",
+            "1 Reyes",
+            "1Reyes",
+            "1 R",
+        ],
+    ),
+    (
+        "2KI",
+        [
+            "2 Kings",
+            "2Kings",
+            "2 Kgs",
+            "2Kgs",
+            "2Ki",
+            "2Reis",
+            "2 Reis",
+            "2Rs",
+            "2 Reyes",
+            "2Reyes",
+            "2 R",
+        ],
+    ),
     (
         "1CH",
         [
@@ -75,14 +107,17 @@ _BOOKS = [
             "2Cr",
         ],
     ),
-    ("EZR", ["Ezra", "Ezr", "Esdras", "Ed"]),
-    ("NEH", ["Nehemiah", "Neh", "Ne", "Neemias"]),
+    ("EZR", ["Ezra", "Ezr", "Esdras", "Ed", "Esd"]),
+    ("NEH", ["Nehemiah", "Neh", "Ne", "Neemias", "Nehemías", "Nehemias"]),
     ("EST", ["Esther", "Est", "Et", "Ester"]),
     (
         "JOB",
         ["Job", "Jb"],
     ),  # "Jó" excluded — collides with "Jo" (João) after diacritic strip
-    ("PSA", ["Psalms", "Psalm", "Pss", "Ps", "Psa", "Pslm", "Salmos", "Salmo", "Sl"]),
+    (
+        "PSA",
+        ["Psalms", "Psalm", "Pss", "Ps", "Psa", "Pslm", "Salmos", "Salmo", "Sl", "Sal"],
+    ),
     ("PRO", ["Proverbs", "Prov", "Pro", "Pr", "Provérbios", "Proverbios", "Pv"]),
     ("ECC", ["Ecclesiastes", "Eccl", "Ecc", "Ec", "Eclesiastes"]),
     (
@@ -98,34 +133,42 @@ _BOOKS = [
             "Cânticos",
             "Canticos",
             "Ct",
+            "Cantar de los Cantares",
+            "Cnt",
         ],
     ),
     ("ISA", ["Isaiah", "Isa", "Is", "Isaías", "Isaias"]),
     ("JER", ["Jeremiah", "Jer", "Jr", "Jeremias"]),
-    ("LAM", ["Lamentations", "Lam", "Lm", "Lamentações", "Lamentacoes"]),
+    (
+        "LAM",
+        ["Lamentations", "Lam", "Lm", "Lamentações", "Lamentacoes", "Lamentaciones"],
+    ),
     ("EZK", ["Ezekiel", "Ezek", "Ezk", "Eze", "Ez", "Ezequiel"]),
     ("DAN", ["Daniel", "Dan", "Dn", "Da"]),
-    ("HOS", ["Hosea", "Hos", "Ho", "Os", "Oséias", "Oseias"]),
+    ("HOS", ["Hosea", "Hos", "Ho", "Os", "Oséias", "Oseias", "Oseas"]),
     ("JOL", ["Joel", "Jl"]),
     ("AMO", ["Amos", "Am", "Amó", "Amós"]),
-    ("OBA", ["Obadiah", "Obad", "Oba", "Ob", "Obadias"]),
+    ("OBA", ["Obadiah", "Obad", "Oba", "Ob", "Obadias", "Abdías", "Abdias", "Abd"]),
     ("JON", ["Jonah", "Jon", "Jnh", "Jonas"]),
-    ("MIC", ["Micah", "Mic", "Mi", "Miquéias", "Miqueias", "Mq"]),
+    ("MIC", ["Micah", "Mic", "Mi", "Miquéias", "Miqueias", "Mq", "Miqueas"]),
     ("NAM", ["Nahum", "Nah", "Na", "Naum"]),
-    ("HAB", ["Habakkuk", "Hab", "Hc", "Habacuque"]),  # "Hb" reserved for Hebreus (HEB)
-    ("ZEP", ["Zephaniah", "Zeph", "Zep", "Zph", "Sofonias", "Sf"]),
-    ("HAG", ["Haggai", "Hag", "Hg", "Ag", "Ageu"]),
+    (
+        "HAB",
+        ["Habakkuk", "Hab", "Hc", "Habacuque", "Habacuc"],
+    ),  # "Hb" reserved for Hebreus (HEB)
+    ("ZEP", ["Zephaniah", "Zeph", "Zep", "Zph", "Sofonias", "Sf", "Sof"]),
+    ("HAG", ["Haggai", "Hag", "Hg", "Ag", "Ageu", "Hageo"]),
     ("ZEC", ["Zechariah", "Zech", "Zec", "Zac", "Zc", "Zacarias"]),
     ("MAL", ["Malachi", "Mal", "Ml", "Malaquias"]),
     # === New Testament ===
-    ("MAT", ["Matthew", "Matt", "Mat", "Mt", "Mateus"]),
-    ("MRK", ["Mark", "Mrk", "Mk", "Mc", "Marcos"]),
+    ("MAT", ["Matthew", "Matt", "Mat", "Mt", "Mateus", "Mateo"]),
+    ("MRK", ["Mark", "Mrk", "Mk", "Mc", "Marcos", "Mr"]),
     ("LUK", ["Luke", "Luk", "Lk", "Lu", "Lc", "Lucas"]),
     (
         "JHN",
-        ["John", "Jhn", "Jn", "João", "Joao"],
+        ["John", "Jhn", "Jn", "João", "Joao", "Juan"],
     ),  # "Jo" excluded — see disambiguation note
-    ("ACT", ["Acts", "Act", "Ac", "At", "Atos"]),
+    ("ACT", ["Acts", "Act", "Ac", "At", "Atos", "Hechos", "Hch"]),
     ("ROM", ["Romans", "Rom", "Ro", "Rm", "Romanos"]),
     (
         "1CO",
@@ -153,8 +196,8 @@ _BOOKS = [
     ),
     ("GAL", ["Galatians", "Gal", "Ga", "Gl", "Gálatas", "Galatas"]),
     ("EPH", ["Ephesians", "Eph", "Ep", "Ef", "Efésios", "Efesios"]),
-    ("PHP", ["Philippians", "Phil", "Php", "Phlp", "Fp", "Filipenses"]),
-    ("COL", ["Colossians", "Col", "Cl", "Colossenses"]),
+    ("PHP", ["Philippians", "Phil", "Php", "Phlp", "Fp", "Filipenses", "Fil"]),
+    ("COL", ["Colossians", "Col", "Cl", "Colossenses", "Colosenses"]),
     (
         "1TH",
         [
@@ -208,16 +251,84 @@ _BOOKS = [
         ],
     ),
     ("TIT", ["Titus", "Tit", "Ti", "Tt", "Tito"]),
-    ("PHM", ["Philemon", "Philem", "Phm", "Pm", "Fm", "Filemom", "Filemon"]),
-    ("HEB", ["Hebrews", "Heb", "He", "Hb", "Hebreus"]),
-    ("JAS", ["James", "Jas", "Jm", "Tg", "Tiago"]),
-    ("1PE", ["1 Peter", "1Peter", "1 Pet", "1Pet", "1Pe", "1Pt", "1 Pedro", "1Pedro"]),
-    ("2PE", ["2 Peter", "2Peter", "2 Pet", "2Pet", "2Pe", "2Pt", "2 Pedro", "2Pedro"]),
-    ("1JN", ["1 John", "1John", "1 Jn", "1Jn", "1Jhn", "1 João", "1Joao", "1Jo"]),
-    ("2JN", ["2 John", "2John", "2 Jn", "2Jn", "2Jhn", "2 João", "2Joao", "2Jo"]),
-    ("3JN", ["3 John", "3John", "3 Jn", "3Jn", "3Jhn", "3 João", "3Joao", "3Jo"]),
+    ("PHM", ["Philemon", "Philem", "Phm", "Pm", "Fm", "Filemom", "Filemon", "Flm"]),
+    ("HEB", ["Hebrews", "Heb", "He", "Hb", "Hebreus", "Hebreos"]),
+    ("JAS", ["James", "Jas", "Jm", "Tg", "Tiago", "Santiago", "Stg"]),
+    (
+        "1PE",
+        [
+            "1 Peter",
+            "1Peter",
+            "1 Pet",
+            "1Pet",
+            "1Pe",
+            "1Pt",
+            "1 Pedro",
+            "1Pedro",
+            "1 P",
+        ],
+    ),
+    (
+        "2PE",
+        [
+            "2 Peter",
+            "2Peter",
+            "2 Pet",
+            "2Pet",
+            "2Pe",
+            "2Pt",
+            "2 Pedro",
+            "2Pedro",
+            "2 P",
+        ],
+    ),
+    (
+        "1JN",
+        [
+            "1 John",
+            "1John",
+            "1 Jn",
+            "1Jn",
+            "1Jhn",
+            "1 João",
+            "1Joao",
+            "1Jo",
+            "1 Juan",
+            "1Juan",
+        ],
+    ),
+    (
+        "2JN",
+        [
+            "2 John",
+            "2John",
+            "2 Jn",
+            "2Jn",
+            "2Jhn",
+            "2 João",
+            "2Joao",
+            "2Jo",
+            "2 Juan",
+            "2Juan",
+        ],
+    ),
+    (
+        "3JN",
+        [
+            "3 John",
+            "3John",
+            "3 Jn",
+            "3Jn",
+            "3Jhn",
+            "3 João",
+            "3Joao",
+            "3Jo",
+            "3 Juan",
+            "3Juan",
+        ],
+    ),
     ("JUD", ["Jude", "Jud", "Jd", "Judas"]),
-    ("REV", ["Revelation", "Rev", "Re", "Ap", "Apocalipse"]),
+    ("REV", ["Revelation", "Rev", "Re", "Ap", "Apocalipse", "Apocalipsis"]),
 ]
 
 

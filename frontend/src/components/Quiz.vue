@@ -45,12 +45,12 @@
 		<div class="bg-surface-blue-2 space-y-1 py-4 px-3 mb-4 rounded-md text-lg text-ink-blue-2">
 			<div class="leading-5">
 				{{
-					__(`This quiz consists of ${questions.length} questions`)
+					__('This quiz consists of {0} questions').format(questions.length)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
 				{{
-					__(`Please ensure that you complete all the questions in ${quiz.data.duration} minutes.`)
+					__('Please ensure that you complete all the questions in {0} minutes.').format(quiz.data.duration)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
@@ -62,19 +62,30 @@
 			</div>
 			<div v-if="quiz.data.passing_percentage" class="leading-relaxed">
 				{{ __(
-					`You will have to get ${quiz.data.passing_percentage}% correct answers in order to pass the quiz.`
-				) }}
+					'You will have to get {0}% correct answers in order to pass the quiz.'
+				).format(quiz.data.passing_percentage) }}
 			</div>
-			<div v-if="quiz.data.max_attempts && !attemptsExhausted" class="leading-relaxed">
+			<div v-if="maxAttempts && !attemptsExhausted" class="leading-relaxed">
 				{{
-					__(`You can attempt this quiz ${quiz.data.max_attempts === 1 ? __('1 time') : `${quiz.data.max_attempts}
-				times`
-						}.`)
+					maxAttempts === 1
+						? __('You can attempt this quiz once.')
+						: __('You can attempt this quiz {0} times.').format(maxAttempts)
 				}}
+			</div>
+			<!-- The student's own dates (decisions/082). -->
+			<div v-if="myDates.data?.extra_minutes" class="leading-relaxed">
+				{{ __('You have {0} extra minutes.').format(myDates.data.extra_minutes) }}
+			</div>
+			<div v-if="myDates.data?.due_date" class="leading-relaxed">
+				{{ __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+				<span v-if="isLate">{{ __('It is past the due date, so a late deduction may apply.') }}</span>
+			</div>
+			<div v-if="myDates.data?.cutoff_date" class="leading-relaxed">
+				{{ __('No submissions after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
 			</div>
 		</div>
 
-		<div v-if="quiz.data.duration" class="flex flex-col space-x-1 my-4">
+		<div v-if="timeLimit" class="flex flex-col space-x-1 my-4">
 			<div class="mb-2">
 				<span class=""> {{ __('Time') }}: </span>
 				<span class="font-semibold">
@@ -90,12 +101,15 @@
 				<div class="font-semibold text-lg">
 					{{ quiz.data.title }}
 				</div>
+				<div v-if="myDates.data?.closed" class="mt-2 text-ink-gray-6">
+					{{ __('This quiz closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+				</div>
 				<Button
-					v-if="(!quiz.data.max_attempts || attempts.data?.length < quiz.data.max_attempts) && quiz.data.qbyquestion"
+					v-else-if="(!maxAttempts || attempts.data?.length < maxAttempts) && quiz.data.qbyquestion"
 					@click="startQuiz" class="mt-2">
 					<span>{{ __('Start') }}</span>
 				</Button>
-				<Button v-else-if="(!quiz.data.max_attempts || attempts.data?.length < quiz.data.max_attempts)"
+				<Button v-else-if="(!maxAttempts || attempts.data?.length < maxAttempts)"
 					@click="startQuiz2" class="mt-2">
 					<span>{{ ('Start full quiz') }}</span>
 				</Button>
@@ -126,7 +140,7 @@
 					<SafeHtml class="text-ink-gray-9 font-semibold mt-2 leading-5" :html="questionDetails.data.question" />
 					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
 						<label v-if="questionDetails.data[`option_${index}`]"
-							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600">
+							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 							<input v-if="!showAnswers.length && !questionDetails.data.multiple" type="radio"
 								:name="encodeURIComponent(questionDetails.data.question)"
 								class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
@@ -259,7 +273,7 @@
 				<!-- Answer Options -->
 				<div v-if="question.type == 'Choices'" v-for="index in 4">
 					<label v-if="question[`option_${index}`]"
-						class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600">
+						class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-outline-blue-1">
 						<input v-if="!question.multiple" type="radio" :name="`question_${qtidx}`"
 							class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
 							@change="recordAnswer(qtidx, question[`option_${index}`])" />
@@ -316,8 +330,11 @@
 		<div v-else-if="quizSubmission.data" class="border rounded-md p-20 text-center space-y-4">
 			<div class="text-lg font-semibold">{{ __('Quiz Summary') }}</div>
 			<div class="text-ink-gray-9">
-				{{ __(`You got ${Math.ceil(quizSubmission.data.percentage)}% correct answers with a score of
-				${Math.round(quizSubmission.data.score * 100) / 100} out of ${quizSubmission.data.score_out_of}`) }}
+				{{ __('You got {0}% correct answers with a score of {1} out of {2}').format(
+					Math.ceil(quizSubmission.data.percentage),
+					Math.round(quizSubmission.data.score * 100) / 100,
+					quizSubmission.data.score_out_of
+				) }}
 			</div>
 			<div class="mt-6">
 				<div v-for="(question, qtidx) in detailedQuestions" :key="question.question_name"
@@ -391,6 +408,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import { Badge, Button, call, createResource, ListView, TextEditor, FormControl, toast } from 'frappe-ui'
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { createToast } from '@/utils/'
@@ -448,6 +466,7 @@ const quiz = createResource({
 		if (data) {
 			populateQuestions();
 			setupTimer();
+			if (courseName.value && !isInstructorView.value) myDates.reload();
 			lastSubmission.reload();
 			if (isInstructorView.value && courseName.value) {
 				quizDashboardResource.reload();
@@ -487,15 +506,51 @@ const populateQuestions = () => {
 
 }
 
+// The student's own dates: extra minutes, extra attempts and the cut-off
+// (decisions/082). A timed attempt ends at the earlier of its time limit and
+// the cut-off; the server refuses anything later.
+const myDates = createResource({
+	url: 'seminary.seminary.deadlines.get_my_dates',
+	makeParams: () => ({ course: courseName.value, activity_type: 'quiz', activity: props.quizName }),
+	auto: false,
+	onSuccess: () => setupTimer(),
+	onError: () => { },
+})
+
+const maxAttempts = computed(() =>
+	quiz.data?.max_attempts ? quiz.data.max_attempts + (myDates.data?.extra_attempts || 0) : 0
+)
+
+const secondsToCutoff = () => {
+	if (!myDates.data?.cutoff_date) return null
+	return Math.max(0, Math.floor((new Date(myDates.data.cutoff_date) - new Date()) / 1000))
+}
+
+// Worked out when the attempt starts, not cached: the cut-off moves closer
+// the longer the page stays open.
+const currentLimit = () => {
+	const own = quiz.data?.duration ? (quiz.data.duration + (myDates.data?.extra_minutes || 0)) * 60 : 0
+	const cutoff = secondsToCutoff()
+	if (cutoff !== null && (!own || cutoff < own)) return cutoff
+	return own
+}
+const timeLimit = ref(0)
+
+const isLate = computed(() => !!myDates.data?.due_date && new Date() > new Date(myDates.data.due_date))
+
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
+
 const setupTimer = () => {
-	if (quiz.data.duration) {
-		timer.value = quiz.data.duration * 60
+	timeLimit.value = currentLimit()
+	if (timeLimit.value) {
+		timer.value = timeLimit.value
 	}
 }
 
 const startTimer = () => {
+	setupTimer()
 	timerInterval = setInterval(() => {
-		if (quiz.data.duration) {
+		if (timeLimit.value) {
 			timer.value--;
 			if (timer.value == 0) {
 				clearInterval(timerInterval);
@@ -518,7 +573,7 @@ const formatTimer = (seconds) => {
 }
 
 const timerProgress = computed(() => {
-	return (timer.value / (quiz.data.duration * 60)) * 100
+	return timeLimit.value ? (timer.value / timeLimit.value) * 100 : 0
 })
 
 const shuffleArray = (array) => {
@@ -560,8 +615,8 @@ const attempts = createResource({
 // True once the student has used up every allowed attempt.
 const attemptsExhausted = computed(
 	() =>
-		!!quiz.data?.max_attempts &&
-		attempts.data?.length >= quiz.data.max_attempts
+		!!maxAttempts.value &&
+		attempts.data?.length >= maxAttempts.value
 )
 
 // --- Instructor view: dashboard stats and grading-criteria status ---
@@ -606,9 +661,7 @@ const quizSubmission = createResource({
 		if (!quiz.data) {
 			return {}; // Return an empty object to avoid errors
 		}
-		const timeTaken = quiz.data.duration
-			? quiz.data.duration * 60 - (timer.value || 0) // Use timer when duration is set
-			: elapsedTime.value || 0; // Use elapsedTime when duration is not set
+		const timeTaken = elapsedTime.value || 0;
 
 
 
@@ -945,7 +998,7 @@ const createSubmission = () => {
 			onSuccess(data) {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
-				if (quiz.data.duration) clearInterval(timerInterval)
+				if (timerInterval) clearInterval(timerInterval)
 				// Build the detailed result cards from the saved submission.
 				lastSubmission.reload()
 			},

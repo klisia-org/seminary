@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.utils import cstr, getdate
 
 from seminary.seminary import person_fields
+from seminary.seminary.ethnic_groups import validate_active
 
 
 class StudentApplicant(Document):
@@ -62,6 +63,7 @@ class StudentApplicant(Document):
 
     def validate(self):
         self.set_title()
+        validate_active(self, "ethnic")  # ADR 086
         self.validate_dates()
         self.validate_tax_id()
         self.validate_term()
@@ -163,6 +165,10 @@ class StudentApplicant(Document):
         # here (a guest can't write Person directly) and promotes them on
         # insert — no User exists yet.
         self._promote_to_person()
+        # Files sent with the application become Person Documents (decisions/091 §10).
+        from seminary.seminary.requirements import adopt_applicant_documents
+
+        adopt_applicant_documents(self)
 
         # Application-fee Sales Invoice(s) are raised on insert (not on submit:
         # web-form applicants stay at docstatus=0, so on_submit never fires) by
@@ -172,6 +178,10 @@ class StudentApplicant(Document):
     def on_update(self):
         self._repromote_to_person()
         self._flag_requirement_review()
+        # A row staff add on the desk is adopted too; adopted rows are skipped.
+        from seminary.seminary.requirements import adopt_applicant_documents
+
+        adopt_applicant_documents(self)
 
     def _flag_requirement_review(self):
         """ADR 058: when an applicant self-reports a circumstance needing

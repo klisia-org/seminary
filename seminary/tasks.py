@@ -71,8 +71,8 @@ def _update_term_flags(today):
     The old version only cleared a term whose end date had passed, which left a
     flag on a *future* term untouched for as long as it stayed future.
 
-    Student advancement is NOT done here — that's a manual action in
-    api.roll_students, so a registrar can verify grades first."""
+    Student advancement is NOT done here — that's the registrar's Advance
+    Students action (seminary.seminary.advancement), which waits for grades."""
     terms = frappe.get_all(
         "Academic Term",
         fields=["name", "term_start_date", "term_end_date", "iscurrent_acterm", "open"],

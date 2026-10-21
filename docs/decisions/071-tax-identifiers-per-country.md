@@ -111,3 +111,14 @@ ADR 067 §9 raises about derived mandatory fields.
   test asserts it does not reach the browser until it means something. The matching half —
   making `Mandatory Personal Field.mandatory` country-conditional, so a CPF is required of
   Brazilians and not of everyone — belongs with it.
+
+## Addendum (2026-09-30) — Asaas checkout reads the CPF on file
+
+The follow-up above. The payments app gains a generic `payer_tax_id` hook
+(`payer_email`, `reference_doctype`, `reference_docname` → digits or None); seminary answers it with
+the tax ID of the Person behind the payer's email, only when it is a valid CPF/CNPJ under this
+file's rules. Resolved server-side when the checkout loads and again when the charge is created, so
+the number stays out of the Integration Request and never reaches the browser whole: the page shows
+`***.444.777-**` and one Continue button, with "use a different CPF" for a sponsor paying. Keyed on
+the payer, not the student, because the Asaas customer is whoever pays. The Person Import dry-run
+now checks tax IDs, so a bad CPF is a row error there rather than a failed commit.

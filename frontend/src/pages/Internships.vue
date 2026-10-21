@@ -1,15 +1,20 @@
 <template>
-	<header class="sticky top-0 z-10 flex flex-col gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
+	<PageHeader :title="__('Internships')">
+		<template #actions>
+			<Button variant="subtle" @click="$router.push({ name: 'MyInternships' })">{{ __('My Internships') }}</Button>
+		</template>
+	</PageHeader>
+
+	<!-- ADR 075: filters live in the body, above what they filter. -->
+	<div class="flex flex-col gap-2 border-b bg-surface-white px-3 py-3 sm:px-5">
 		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-			<h2 class="text-xl font-bold text-ink-gray-8">{{ __('Internships') }}</h2>
 			<div class="flex items-center gap-2">
 				<div class="relative w-full sm:w-64">
 					<Search class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-gray-4" />
 					<input v-model="query" type="search" :placeholder="__('Search title, organization, city')"
 						class="w-full rounded-md border border-outline-gray-2 bg-surface-white py-1.5 pl-8 pr-3 text-sm text-ink-gray-8 focus:border-outline-gray-4 focus:outline-none" />
 				</div>
-				<Button variant="subtle" @click="$router.push({ name: 'MyInternships' })">{{ __('My Internships') }}</Button>
-			</div>
+							</div>
 		</div>
 		<div class="flex flex-wrap items-center gap-2">
 			<select v-model="ministrySetting" class="filter-select">
@@ -17,7 +22,7 @@
 				<option v-for="s in MINISTRY_SETTINGS" :key="s" :value="s">{{ __(s) }}</option>
 			</select>
 		</div>
-	</header>
+	</div>
 
 	<div class="mx-auto w-full max-w-5xl p-3 sm:p-5">
 		<div v-if="positions.loading" class="text-ink-gray-5">{{ __('Loading internships...') }}</div>
@@ -47,6 +52,7 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { ref, watch } from 'vue'
 import { createResource, debounce, Badge, Button } from 'frappe-ui'
 import { Search, Handshake, MapPin } from 'lucide-vue-next'

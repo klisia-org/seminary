@@ -29,8 +29,7 @@ seminary.seminary.patches.seed_disciplinary_actions
 seminary.seminary.patches.rename_academics_user_to_program_chair
 seminary.seminary.patches.backfill_student_leaving_records
 seminary.seminary.patches.seed_room_features
-seminary.seminary.patches.backfill_course_schedule_seat_caches
-seminary.seminary.patches.backfill_facility_locations
+seminary.seminary.patches.backfill_course_schedule_seat_caches #2026-09-24 free submits never recounted
 seminary.seminary.patches.create_person_spine
 seminary.seminary.patches.migrate_channel_provider_settings
 seminary.seminary.patches.seed_portal_messaging_rules
@@ -75,3 +74,20 @@ seminary.seminary.patches.p007_private_files
 seminary.seminary.patches.p008_scorm_teardown
 seminary.seminary.patches.p008_course_pack_coursecode
 seminary.seminary.patches.p009_scorm_fields
+seminary.seminary.patches.adr079_release_mode_ungated
+seminary.seminary.patches.adr079_scaffold_reflection_lessons
+seminary.seminary.patches.adr051_route_regenerate_button
+seminary.seminary.patches.adr081_drop_student_leave_application
+seminary.seminary.patches.drop_course_result_tool
+seminary.seminary.patches.adr084_progression_settings
+seminary.seminary.patches.adr085_fill_person_is_staff
+seminary.seminary.patches.adr086_ethnic_groups
+seminary.seminary.patches.p014_unit_chair_person
+seminary.seminary.patches.p015_fill_graded_by
+seminary.seminary.patches.p015_reply_course_reference
+seminary.seminary.patches.p016_degree_levels
+seminary.seminary.patches.p020_funding_lines
+seminary.seminary.patches.adr088a_drop_converted_sidebars
+seminary.seminary.patches.drop_student_language
+seminary.seminary.patches.refile_chapter_competencies
+seminary.seminary.patches.adr091_applicant_documents

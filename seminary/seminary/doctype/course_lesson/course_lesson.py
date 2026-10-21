@@ -34,6 +34,11 @@ class CourseLesson(Document):
             )
 
     def validate(self):
+        from seminary.seminary import cbe_reflection
+
+        # A reflection lesson keeps its block and its flag (ADR 079 decision 3).
+        cbe_reflection.assert_not_unflagged(self)
+        cbe_reflection.assert_block_kept(self)
         self.sanitize_editor_content()
         # self.check_and_create_folder()
         self.validate_quiz_id()
@@ -55,10 +60,24 @@ class CourseLesson(Document):
             )
         frappe.db.set_value("Course Schedule", self.course_sc, "lessons", lesson_count)
 
+    def on_trash(self):
+        from seminary.seminary import cbe_reflection
+
+        cbe_reflection.assert_lesson_deletable(self.name)
+
     def on_update(self):
         dynamic_documents = ["Exam", "Quiz", "Assignment", "Discussion"]
         for section in dynamic_documents:
             self.update_lesson_assessments(section)
+        # An activity placed in (or moved out of) a lesson takes its chapter's
+        # competency. A move between chapters is left to update_lesson_index,
+        # which refiles and tells the instructor what changed (ADR 079 §8).
+        if self.has_value_changed("content"):
+            from seminary.seminary.doctype.course_schedule.course_schedule import (
+                refile_chapter_competencies,
+            )
+
+            refile_chapter_competencies(self.course_sc)
 
     def update_lesson_assessments(self, section):
         """
@@ -180,11 +199,19 @@ def save_progress(lesson, chapter, course):
     discussion_completed = get_discussion_progress(lesson)
     # when uncomment, add (and quiz_completed and assignment_completed and discussion_completed) to the if condition below
 
+    # A reflection lesson is complete when its reflection is submitted, not
+    # when it has been open for thirty seconds (ADR 079 decision 4).
+    from seminary.seminary import cbe_reflection
+
+    student = frappe.db.get_value("Scheduled Course Roster", membership, "student")
+    reflection_done = cbe_reflection.lesson_done(lesson, student)
+
     if (
         not already_completed
         and quiz_completed
         and assignment_completed
         and discussion_completed
+        and reflection_done is not False
     ):
         frappe.get_doc(
             {

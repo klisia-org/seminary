@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "use_own_settings",
   "enabled",
   "provider",
   "credentials_section",
@@ -18,10 +19,19 @@
  "fields": [
   {
    "default": "0",
+   "depends_on": "eval:doc.__onload && doc.__onload.hosted",
+   "description": "This site uses its hosting provider's geocoding service, which is on and needs no key. Tick this to use your own Google key instead, or to turn geocoding off.",
+   "fieldname": "use_own_settings",
+   "fieldtype": "Check",
+   "label": "Configure Geocoding Myself"
+  },
+  {
+   "default": "0",
    "description": "While off, addresses are stored as usual and simply not geocoded.",
    "fieldname": "enabled",
    "fieldtype": "Check",
-   "label": "Enabled"
+   "label": "Enabled",
+   "depends_on": "eval:!(doc.__onload && doc.__onload.hosted) || doc.use_own_settings"
   },
   {
    "default": "Vendor proxy",
@@ -30,12 +40,14 @@
    "fieldtype": "Select",
    "label": "Provider",
    "options": "Google\nVendor proxy",
-   "reqd": 1
+   "depends_on": "eval:!(doc.__onload && doc.__onload.hosted) || doc.use_own_settings",
+   "mandatory_depends_on": "eval:!(doc.__onload && doc.__onload.hosted) || doc.use_own_settings"
   },
   {
    "fieldname": "credentials_section",
    "fieldtype": "Section Break",
-   "label": "Credentials"
+   "label": "Credentials",
+   "depends_on": "eval:!(doc.__onload && doc.__onload.hosted) || doc.use_own_settings"
   },
   {
    "description": "Google Cloud key with <b>Geocoding API</b> and <b>Places API (New)</b> enabled, or the site token for Vendor proxy. Restrict it by IP address \u2014 it is used only server-side and is never sent to a browser, including by the address autocomplete, which is proxied through this server for exactly that reason.",
@@ -56,7 +68,8 @@
   {
    "fieldname": "limits_section",
    "fieldtype": "Section Break",
-   "label": "Limits"
+   "label": "Limits",
+   "depends_on": "eval:!(doc.__onload && doc.__onload.hosted) || doc.use_own_settings"
   },
   {
    "default": "500",
@@ -70,7 +83,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-04 00:00:00",
+ "modified": "2026-09-30 12:00:00",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Address Geocoding Settings",

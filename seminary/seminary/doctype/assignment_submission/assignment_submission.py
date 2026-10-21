@@ -14,9 +14,13 @@ from seminary.seminary.guards import is_grader, require_course_staff, require_gr
 
 class AssignmentSubmission(Document):
     def validate(self):
-        from seminary.seminary.utils import backfill_submission_course_if_missing
+        from seminary.seminary.utils import (
+            backfill_submission_course_if_missing,
+            stamp_first_grading,
+        )
 
         backfill_submission_course_if_missing(self)
+        stamp_first_grading(self)
         self.sanitize_rich_text()
         self.validate_duplicates()
         self.validate_url()

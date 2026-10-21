@@ -1,15 +1,12 @@
 <template>
 	<div v-if="isStudent">
 
-		<h2
-			class="text-xl font-bold text-ink-gray-8 sticky flex items-center justify-between top-0 z-10 border-b bg-surface-white px-3 py-2.5 sm:px-5">
-			{{ __('My Financial Status') }}
-		</h2>
+		<PageHeader :title="__('My Financial Status')" />
 
 		<!-- Payment success banner -->
 		<div v-if="paymentSuccess"
-			class="mx-5 mt-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-			<svg class="h-5 w-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+			class="mx-5 mt-4 flex items-center gap-3 rounded-lg border border-outline-green-1 bg-surface-green-1 px-4 py-3 text-sm text-ink-green-3">
+			<svg class="h-5 w-5 shrink-0 text-ink-green-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
 			<span class="font-medium">{{ __('Payment successful! Your balance has been updated.') }}</span>
@@ -195,6 +192,8 @@
 </template>
 
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
+import PageHeader from '@/components/PageHeader.vue'
 
 import { Badge, Button, Dialog, FormControl, createResource } from 'frappe-ui'
 import { computed, onMounted, reactive, ref, inject } from 'vue'
@@ -357,15 +356,19 @@ const netPayableAmount = computed(() => {
 })
 
 const formatCurrency = (value) => {
-	return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+	return value.toLocaleString(userLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 const formatAbs = (value) => {
-	return Math.abs(parseFloat(value || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+	return Math.abs(parseFloat(value || 0)).toLocaleString(userLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// The billing app says where its invoice PDF lives (`print_url`); rows without
+// one come from the ERPNext bridge, whose invoices are Sales Invoices.
 const openInvoicePDF = (row) => {
-	let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&print_format=${encodeURIComponent(INVOICE_PRINT_FORMAT)}`
+	let url =
+		row.print_url ||
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=${encodeURIComponent('Sales Invoice')}&name=${encodeURIComponent(row.name)}&print_format=${encodeURIComponent(INVOICE_PRINT_FORMAT)}`
 	window.open(url, '_blank')
 }
 

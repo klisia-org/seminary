@@ -138,7 +138,7 @@ class CohortPlanner {
 	}
 
 	whatToPlanHtml() {
-		const bound = this.typeRow().program || this.typeRow().program_level;
+		const bound = this.typeRow().program || this.typeRow().program_tier;
 		const options = this.types
 			.map(
 				(t) =>

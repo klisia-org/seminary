@@ -11,7 +11,7 @@
                     :disabled="readOnly"
                     type="text"
                     :size="Math.max(tok.replace(STRIP_NON_ALNUM, '').length, 4)"
-                    class="bg-surface-amber-2 border-b-2 border-ink-amber-3 px-1 rounded-sm text-center focus:outline-none focus:border-ink-amber-4"
+                    class="bg-surface-amber-2 border-b-2 border-outline-amber-1 px-1 rounded-sm text-center focus:outline-none focus:border-outline-amber-2"
                 />
                 <span v-else>{{ tok }}</span>
             </template>

@@ -49,6 +49,7 @@ REVIEWED_MODULES = (
     # --- p008a G6: triaged endpoint by endpoint against the probe in
     # scripts/p008a_validation/probe_pending.py
     "seminary.alumni.api",
+    "seminary.api.folder_upload",
     "seminary.demo",
     "seminary.partner.api",
     "seminary.partner.doctype.internship_application.internship_application",
@@ -61,9 +62,11 @@ REVIEWED_MODULES = (
     "seminary.seminary.calendar",
     "seminary.seminary.cbe",
     "seminary.seminary.cbe_api",
+    "seminary.seminary.cbe_overview",
     "seminary.seminary.chapel",
     "seminary.seminary.comms",
     "seminary.seminary.course_checkin",
+    "seminary.seminary.course_students",
     "seminary.seminary.course_pack.export",
     "seminary.seminary.course_pack.import_",
     "seminary.seminary.dashboard_chart_source.students_per_current_courses.students_per_current_courses",
@@ -71,6 +74,9 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.feed_api",
     "seminary.seminary.discipleship.moderation",
     "seminary.seminary.discipleship.planner",
+    "seminary.seminary.discipleship.reading_plan_pack",
+    "seminary.seminary.discipleship.reading_plans",
+    "seminary.seminary.requirements",
     "seminary.seminary.discipleship.scripture",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
@@ -133,6 +139,9 @@ GUEST_ALLOWED = {
     "seminary.seminary.tax_ids.get_tax_id_rule",
     # @rate_limit 30/60s ip_based; format check only
     "seminary.seminary.tax_ids.check_tax_id",
+    # @rate_limit 300/3600s ip_based; the document types a program's public form
+    # asks for -- configuration, nothing about any person (decisions/091 §10)
+    "seminary.seminary.requirements.application_documents",
     # resolves through a readable File row; content-hash keys are not enumerable (p004)
     "seminary.storage.api.download_file",
 }
@@ -225,9 +234,14 @@ STUDENT_ALLOWED = {
     "seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment",
     "seminary.seminary.doctype.assignment_submission.assignment_submission.upload_assignment",
     "seminary.seminary.doctype.assignment_submission.assignment_submission.get_assignment",
+    # The session student's own dates, behind require_enrolled (decisions/082).
+    "seminary.seminary.deadlines.get_my_dates",
 }
 
 STAFF_ONLY = {
+    "seminary.seminary.cbe_overview.get_cbe_overview",
+    # The Students tab: the section's teaching staff only (privatedocs p015).
+    "seminary.seminary.course_students.get_course_students",
     # --- SCORM (p009 S10/S11). The grade mapping is a write capability into a
     # section's gradebook, and the selftest reaches object storage and the
     # network, so both are staff. `_lesson_context` gates before it reports
@@ -236,6 +250,13 @@ STAFF_ONLY = {
     "seminary.scorm.grades.criteria_for_lesson",
     "seminary.scorm.grades.set_criteria",
     "seminary.scorm.selftest.run",
+    # --- Billing actions routed to the active billing app (aretenic decision
+    # 051 §3). `frappe.only_for` Registrar / Seminary Manager before anything.
+    "seminary.seminary.financial.actions.regenerate_current_term_charges",
+    "seminary.seminary.financial.actions.open_financial_setup",
+    # Funding report default dates: the roles that open Sources of Funding or
+    # koinonia's Giving by Source.
+    "seminary.seminary.financial.funding.current_fiscal_year",
     # --- seminary.seminary.disciplinary (p008a G6): staff or a course instructor.
     # compute_occurrence_number / preview_recommendation / suggest_actions gated
     # here (p005a A01-16); the rest were already gated.
@@ -256,7 +277,11 @@ STAFF_ONLY = {
     "seminary.seminary.api.get_virtual_meetings",
     "seminary.seminary.api.add_virtual_meeting",
     "seminary.seminary.api.remove_virtual_meeting",
-    "seminary.seminary.api.roll_students",
+    "seminary.seminary.progression.change_term",
+    "seminary.seminary.doctype.bulk_course_enrollment.bulk_course_enrollment.new_run",
+    "seminary.seminary.doctype.bulk_course_enrollment.bulk_course_enrollment.get_students",
+    "seminary.seminary.doctype.bulk_course_enrollment.bulk_course_enrollment.get_courses",
+    "seminary.seminary.doctype.bulk_course_enrollment.bulk_course_enrollment.enroll",
     "seminary.seminary.api.check_schedule_conflicts",
     "seminary.seminary.api.resolve_schedule_conflict",
     "seminary.seminary.api.enroll_student",
@@ -306,33 +331,67 @@ STAFF_ONLY = {
     "seminary.seminary.student_standing.lift_hold",
     "seminary.seminary.doctype.student_attendance_tool.student_attendance_tool.get_student_attendance_records",
     "seminary.seminary.doctype.culminating_project.culminating_project.resnapshot_milestones",
+    # --- Absences over the limit at Send Grades (ADR 081). The first two use
+    # the Send Grades gate; the third is the registrar's, as fail_for_absence.
+    "seminary.seminary.absence_decisions.absence_decisions_needed",
+    "seminary.seminary.absence_decisions.record_absence_decisions",
+    "seminary.seminary.absence_decisions.keep_grade_despite_absences",
+    # --- Due dates and late deductions (decisions/082): the gradebook's gate,
+    # course staff with the registrar, checked before any lookup.
+    "seminary.seminary.deadlines.get_deadline_settings",
+    "seminary.seminary.deadlines.save_late_policy",
+    "seminary.seminary.deadlines.save_override",
+    "seminary.seminary.deadlines.delete_override",
+    "seminary.seminary.deadlines.set_late_adjustment",
+    "seminary.seminary.deadlines.get_student_dates",
+    "seminary.seminary.deadlines.excused_due",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
 # nor a plain staff gate: they carry their own ownership rule (the culminating
 # project's student/advisor checks) and are covered by their own test module.
-OWN_RULE = {
-    # disciplinary: these two carry their own rule rather than a throw -- an
-    # unauthorized caller gets [] (fail-closed, no leak), so they are not
-    # STAFF_ONLY in this test's "must raise PermissionError" sense.
-    "seminary.seminary.disciplinary.list_course_enrollments",
-    "seminary.seminary.disciplinary.list_pending_incidents",
-} | {
-    "seminary.seminary.doctype.culminating_project.culminating_project." + n
-    for n in (
-        "record_signoff",
-        "add_committee_member",
-        "add_submission",
-        "assign_advisor",
-        "create_milestone_event",
-        "enroll_in_project_course",
-        "get_culminating_project",
-        "get_my_culminating_projects",
-        "remove_committee_member",
-        "review_submission",
-        "save_abstract",
-    )
-}
+OWN_RULE = (
+    {
+        # disciplinary: these two carry their own rule rather than a throw -- an
+        # unauthorized caller gets [] (fail-closed, no leak), so they are not
+        # STAFF_ONLY in this test's "must raise PermissionError" sense.
+        "seminary.seminary.disciplinary.list_course_enrollments",
+        "seminary.seminary.disciplinary.list_pending_incidents",
+    }
+    | {
+        "seminary.seminary.doctype.culminating_project.culminating_project." + n
+        for n in (
+            "record_signoff",
+            "add_committee_member",
+            "add_submission",
+            "assign_advisor",
+            "create_milestone_event",
+            "enroll_in_project_course",
+            "get_culminating_project",
+            "get_my_culminating_projects",
+            "remove_committee_member",
+            "review_submission",
+            "save_abstract",
+        )
+    }
+    | {
+        # Course folder files: `_ensure_folder_permission` applies the course folder
+        # scope rule and refuses an unknown folder with PermissionError for everybody,
+        # so a fabricated target proves nothing. Exercised against real sections in
+        # test_course_folder (test_api_scope_rule, test_api_home_is_closed_to_students).
+        "seminary.api.folder_upload." + n
+        for n in (
+            "create_subfolder",
+            "delete_file",
+            "download_folder",
+            "get_files_in_folder",
+            "move_file",
+            "rename_file",
+            "upload_folder",
+            "upload_to_folder",
+        )
+    }
+)
 
 # ---------------------------------------------------------------------------
 # p008a G6 triage (2026-09-19). The widened walk left 291 endpoints parked in
@@ -349,6 +408,14 @@ OWN_RULE = {
 # Refuse a Student and admit school staff. Executed by
 # test_staff_only_refuses_student_and_admits_chair, minus NOT_EXECUTED below.
 G6_STAFF_ONLY = {
+    # seminary.seminary.requirements (decisions/091): require_registrar first;
+    # countersign then also needs the template's countersign role.
+    "seminary.seminary.requirements.accept_document",
+    "seminary.seminary.requirements.add_missing_requirements",
+    "seminary.seminary.requirements.countersign",
+    "seminary.seminary.requirements.reject_document",
+    "seminary.seminary.requirements.unwaive_requirement",
+    "seminary.seminary.requirements.waive_requirement",
     # seminary.alumni.api
     "seminary.alumni.api.mark_as_alumni",
     # seminary.demo
@@ -360,9 +427,11 @@ G6_STAFF_ONLY = {
     "seminary.seminary.attendance.get_course_attendance_standings",
     # seminary.seminary.cbe_api
     "seminary.seminary.cbe_api.get_activity_grading_panel",
+    "seminary.seminary.cbe_api.get_assessment_review",
     "seminary.seminary.cbe_api.get_cbe_gradebook",
     "seminary.seminary.cbe_api.get_competency_profile",
     "seminary.seminary.cbe_api.get_competency_roster",
+    "seminary.seminary.cbe_api.get_mentor_assessments_due",
     "seminary.seminary.cbe_api.get_student_competency_detail",
     "seminary.seminary.cbe_api.review_development_plan",
     "seminary.seminary.cbe_api.save_activity_grade",
@@ -394,7 +463,6 @@ G6_STAFF_ONLY = {
     # seminary.seminary.doctype.course_schedule.course_schedule
     "seminary.seminary.doctype.course_schedule.course_schedule.cancel_course",
     # seminary.seminary.doctype.instructor.instructor
-    "seminary.seminary.doctype.instructor.instructor.create_supplier",
     "seminary.seminary.doctype.instructor.instructor.update_instructorlog",
     # seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence
     "seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",
@@ -402,6 +470,7 @@ G6_STAFF_ONLY = {
     "seminary.seminary.doctype.program.program.apply_required_on_enroll",
     # seminary.seminary.doctype.seminary_settings.seminary_settings
     "seminary.seminary.doctype.seminary_settings.seminary_settings.check_payments_app",
+    "seminary.seminary.doctype.seminary_settings.seminary_settings.financial_backend_choices",
     # seminary.seminary.events
     "seminary.seminary.events.create_cohort_event",
     "seminary.seminary.events.create_requirement_event",
@@ -466,6 +535,7 @@ NOT_EXECUTED = {
     "seminary.seminary.doctype.partner_seminary_course_equivalence.partner_seminary_course_equivalence.create_legacy_integration",
     # seminary.seminary.doctype.seminary_settings.seminary_settings
     "seminary.seminary.doctype.seminary_settings.seminary_settings.check_payments_app",
+    "seminary.seminary.doctype.seminary_settings.seminary_settings.financial_backend_choices",
     # seminary.seminary.integrations.bible
     "seminary.seminary.integrations.bible.get_bible_name",
     "seminary.seminary.integrations.bible.list_bibles",
@@ -534,6 +604,7 @@ PORTAL_ONLY = {
     "seminary.partner.portal.get_my_org",
     "seminary.partner.portal.get_people",
     "seminary.partner.portal.get_skill_tags",
+    "seminary.partner.portal.leave_organization",
     "seminary.partner.portal.list_applications",
     "seminary.partner.portal.list_job_postings",
     "seminary.partner.portal.list_locations",
@@ -542,7 +613,9 @@ PORTAL_ONLY = {
     "seminary.partner.portal.save_location",
     "seminary.partner.portal.save_review",
     "seminary.partner.portal.set_application_status",
+    "seminary.partner.portal.set_contact_status",
     "seminary.partner.portal.update_org",
+    "seminary.partner.portal.update_my_contact",
     # seminary.seminary.discipleship.api
     "seminary.seminary.discipleship.api.create_my_cohort",
 }
@@ -578,11 +651,16 @@ G6_STUDENT_ALLOWED = {
     # seminary.seminary.cbe_api
     "seminary.seminary.cbe_api.delete_development_note",
     "seminary.seminary.cbe_api.get_competency_context",
+    "seminary.seminary.cbe_api.get_competency_review",
     "seminary.seminary.cbe_api.get_competency_transcript",
     "seminary.seminary.cbe_api.get_development_arc",
     "seminary.seminary.cbe_api.get_development_notes",
     "seminary.seminary.cbe_api.get_development_plan",
+    "seminary.seminary.cbe_api.get_my_formation",
     "seminary.seminary.cbe_api.get_outline_competencies",
+    "seminary.seminary.cbe_api.get_reflection_block",
+    "seminary.seminary.cbe_api.get_review_news",
+    "seminary.seminary.cbe_api.mark_review_seen",
     "seminary.seminary.cbe_api.get_self_assessment",
     "seminary.seminary.cbe_api.get_student_competency_overview",
     "seminary.seminary.cbe_api.save_development_note",
@@ -644,6 +722,7 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.feed_api.related_posts",
     "seminary.seminary.discipleship.feed_api.reopen_prayer",
     "seminary.seminary.discipleship.feed_api.search_posts",
+    "seminary.seminary.discipleship.feed_api.search_recipients",
     "seminary.seminary.discipleship.feed_api.toggle_reaction",
     "seminary.seminary.discipleship.feed_api.toggle_save",
     "seminary.seminary.discipleship.feed_api.unlink_post",
@@ -652,6 +731,34 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.moderation.flag_content",
     "seminary.seminary.discipleship.moderation.resolve_flag",
     "seminary.seminary.discipleship.moderation.set_post_status",
+    # seminary.seminary.discipleship.reading_plan_pack / reading_plans (ADR 087).
+    # A student may lead or join a cohort. Each checks its own rule: authoring
+    # needs a live cohort's leadership (or staff), a run needs leadership of
+    # that cohort, marks need active membership, reads need the cohort to be
+    # visible. test_adr087_reading_plans covers each refusal.
+    "seminary.seminary.discipleship.reading_plan_pack.export_plan",
+    "seminary.seminary.discipleship.reading_plan_pack.import_plan",
+    "seminary.seminary.discipleship.reading_plans.bible_books",
+    "seminary.seminary.discipleship.reading_plans.delete_plan",
+    "seminary.seminary.discipleship.reading_plans.discussion_draft",
+    "seminary.seminary.discipleship.reading_plans.duplicate_plan",
+    "seminary.seminary.discipleship.reading_plans.get_plan",
+    "seminary.seminary.discipleship.reading_plans.get_run",
+    "seminary.seminary.discipleship.reading_plans.list_plans",
+    "seminary.seminary.discipleship.reading_plans.mark_step",
+    "seminary.seminary.discipleship.reading_plans.my_reading_plans",
+    "seminary.seminary.discipleship.reading_plans.run_progress",
+    "seminary.seminary.discipleship.reading_plans.save_plan",
+    "seminary.seminary.discipleship.reading_plans.start_plan",
+    "seminary.seminary.discipleship.reading_plans.update_run",
+    # seminary.seminary.requirements (decisions/091). The caller's own rows only:
+    # each finds the session's Person and refuses a row that is not theirs
+    # (`_own_row`); an upload must be a File the caller uploaded and nobody has
+    # attached. test_adr091_requirements covers each refusal.
+    "seminary.seminary.requirements.agreement_preview",
+    "seminary.seminary.requirements.my_requirements",
+    "seminary.seminary.requirements.sign_agreement",
+    "seminary.seminary.requirements.upload_document",
     # seminary.seminary.discipleship.scripture
     "seminary.seminary.discipleship.scripture.posts_in_range",
     "seminary.seminary.discipleship.scripture.scripture_books",
@@ -800,9 +907,6 @@ PENDING_CLASSIFICATION = {
     "seminary.seminary.doctype.course_schedule.course_schedule.regenerate_token",
     "seminary.seminary.doctype.course_schedule.course_schedule.schedule_dates",
     "seminary.seminary.doctype.course_schedule.course_schedule.validate",
-    # seminary.seminary.doctype.instructor.instructor
-    "seminary.seminary.doctype.instructor.instructor.pull_education_from_employee",
-    "seminary.seminary.doctype.instructor.instructor.push_education_to_employee",
     # seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch
     "seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch.dry_run",
     "seminary.seminary.doctype.partner_transcript_import_batch.partner_transcript_import_batch.get_import_options",
@@ -835,6 +939,12 @@ KWARG_OVERRIDES = {
         "course_schedule": "ZZT-no-such-cs",
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
+    "seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
+    "seminary.seminary.deadlines.save_override": {"data": "{}"},
+    "seminary.seminary.deadlines.save_late_policy": {"policy": "{}"},
+    "seminary.seminary.deadlines.excused_due": {"students": "[]", "date": "2026-01-01"},
+    # An invalid status is refused before the org gate is reached.
+    "seminary.partner.portal.set_contact_status": {"status": "Active"},
     "seminary.seminary.api.save_discussion_submission_grade": {"grade": 1.0},
     "seminary.seminary.api.add_submission_comment": {"comment": "x"},
     "seminary.seminary.doctype.exam_submission.exam_submission.add_exam_grading_comment": {

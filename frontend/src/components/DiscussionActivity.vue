@@ -9,7 +9,7 @@
 					{{ __('Submission by') }} {{ submissionResource.doc?.member_name }}
 				</div>
 			</div>
-			<div class="mb-5 rounded-lg border border-outline-blue-2 bg-surface-blue-1 p-4">
+			<div class="mb-5 rounded-lg border border-outline-blue-1 bg-surface-blue-1 p-4">
 				<div class="text-base font-semibold text-ink-blue-3 mb-2 flex items-center gap-2">
 					<MessagesSquare class="h-5 w-5 shrink-0" />
 					{{ __('Discussion Prompt') }}
@@ -21,7 +21,7 @@
 				class="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm"
 				:class="participationMet
 					? 'border-outline-green-2 bg-surface-green-1 text-ink-green-3'
-					: 'border-outline-yellow-2 bg-surface-amber-1 text-ink-yellow-3'"
+					: 'border-outline-amber-2 bg-surface-amber-1 text-ink-amber-3'"
 				:title="__('Reply to {0} other students’ original posts to complete this discussion.').format(minRepliesRequired)">
 				<span>{{ __('Replies') }}:</span>
 				<span class="font-semibold">{{ qualifyingReplyCount }} / {{ minRepliesRequired }}</span>
@@ -55,7 +55,7 @@
 							{{ formatDate(discussion.creation) }}
 						</div>
 						<a v-if="discussion.original_attachment" :href="discussion.original_attachment" target="_blank"
-							class="text-blue-500 underline">
+							class="text-ink-blue-3 underline">
 							{{ __('View Attachment') }}
 						</a>
 					</div>
@@ -67,7 +67,7 @@
 							</div>
 							<SafeHtml :html="reply.reply" class="text-sm" />
 							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-								class="text-blue-500 underline">
+								class="text-ink-blue-3 underline">
 								{{ __('View Attachment') }}
 							</a>
 						</div>
@@ -225,6 +225,22 @@
 							</div>
 						</div>
 
+						<!-- The student's own dates (decisions/082 sections 2 and 5). -->
+						<div v-if="myDates.data?.due_date || myDates.data?.cutoff_date"
+							class="mb-3 rounded-md bg-surface-gray-2 p-2 text-sm text-ink-gray-7">
+							<div v-if="myDates.data.due_date">
+								{{ myDates.data.replies_due_date
+									? __('Initial post due {0}. Replies due {1}.').format(formatWhen(myDates.data.due_date), formatWhen(myDates.data.replies_due_date))
+									: __('Due {0}.').format(formatWhen(myDates.data.due_date)) }}
+							</div>
+							<div v-if="myDates.data.closed" class="text-ink-red-3">
+								{{ __('This discussion closed on {0}. If you need more time, ask your instructor for an extension.').format(formatWhen(myDates.data.cutoff_date)) }}
+							</div>
+							<div v-else-if="myDates.data.cutoff_date">
+								{{ __('No posts or replies after {0}.').format(formatWhen(myDates.data.cutoff_date)) }}
+							</div>
+						</div>
+
 						<div v-if="!hasSavedSubmission" class="text-md mb-4">
 							{{ __('Write your main post here') }}
 							<RichTextEditor :id="'original-post-' + (user.data?.name || 'anon') + '-' + discussionID" :content="original_post"
@@ -284,7 +300,7 @@
 					<SafeHtml :html="submission.original_post" class="text-sm" />
 
 					<a v-if="submission.original_attachment" :href="submission.original_attachment" target="_blank"
-						class="text-blue-500 underline">
+						class="text-ink-blue-3 underline">
 						{{ __('View Attachment') }}
 					</a>
 					<div class="replies pl-4 border-l border-outline-gray-2">
@@ -295,7 +311,7 @@
 							</div>
 							<SafeHtml :html="reply.reply" class="text-sm" />
 							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-								class="text-blue-500 underline">
+								class="text-ink-blue-3 underline">
 								{{ __('View Attachment') }}
 							</a>
 						</div>
@@ -351,6 +367,7 @@
 	</div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
 import {
 	Badge,
 	Button,
@@ -428,6 +445,14 @@ const props = defineProps({
 		required: false,
 	},
 })
+
+const myDates = createResource({
+	url: 'seminary.seminary.deadlines.get_my_dates',
+	makeParams: () => ({ course: props.courseName, activity_type: 'discussion', activity: props.discussionID }),
+	auto: true,
+	onError: () => { },
+})
+const formatWhen = (value) => (value ? new Date(value).toLocaleString(userLocale()) : '')
 
 // Check if this discussion is linked to a grading criteria
 const gradingCriteriaResource = createResource({

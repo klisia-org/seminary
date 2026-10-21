@@ -67,6 +67,8 @@ def _make_submission(member, answer="original"):
     )
     doc.flags.ignore_links = True
     doc.insert(ignore_permissions=True)
+    # The student creates their own submission in the app; Student write is if_owner.
+    doc.db_set("owner", member, update_modified=False)
     return doc
 
 

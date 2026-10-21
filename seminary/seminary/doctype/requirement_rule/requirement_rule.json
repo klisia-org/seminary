@@ -1,0 +1,98 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 12:00:00.000000",
+ "description": "Something a person must sign or upload.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "kind",
+  "agreement_template",
+  "document_type",
+  "blocking",
+  "due_days",
+  "renewal",
+  "ask_on_application",
+  "instructions"
+ ],
+ "fields": [
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Agreement\nDocument",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "agreement_template",
+   "fieldtype": "Link",
+   "label": "Agreement Template",
+   "options": "Agreement Template",
+   "depends_on": "eval:doc.kind=='Agreement'",
+   "mandatory_depends_on": "eval:doc.kind=='Agreement'",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "Document Type",
+   "depends_on": "eval:doc.kind=='Document'",
+   "mandatory_depends_on": "eval:doc.kind=='Document'",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "blocking",
+   "fieldtype": "Check",
+   "label": "Blocking",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "Once overdue, a student cannot enroll in courses from the portal; staff see a warning."
+  },
+  {
+   "fieldname": "due_days",
+   "fieldtype": "Int",
+   "label": "Due In (Days)",
+   "default": "30",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "renewal",
+   "fieldtype": "Select",
+   "label": "Renewal",
+   "options": "Not needed\nEvery Academic Term\nEvery Academic Year",
+   "default": "Not needed",
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "ask_on_application",
+   "fieldtype": "Check",
+   "label": "Ask on Application",
+   "depends_on": "eval:doc.kind=='Document' && parent.doctype=='Program'",
+   "description": "The application form asks for this document."
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Small Text",
+   "label": "Instructions"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-20 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Requirement Rule",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

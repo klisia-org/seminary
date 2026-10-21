@@ -35,6 +35,13 @@
 				{%- endif -%}
 			{%- endfor -%}
 
+			{#- Portal link for logged-in users; website.js reveals `.logged-in`. -#}
+			{%- if not only_static -%}
+			<li class="nav-item logged-in" style="display: none">
+				<a class="nav-link" href="/seminary">{{ _("Portal") }}</a>
+			</li>
+			{%- endif -%}
+
 			{#- Login link (Guest) / account dropdown (logged in). Reuses Frappe's
 				partial + website JS that toggles the two states. -#}
 			{% include "templates/includes/navbar/navbar_login.html" %}

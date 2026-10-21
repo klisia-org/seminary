@@ -12,6 +12,22 @@ frappe.ui.form.on('Seminary Settings', {
 		});
 	}
 });
+function toggle_financial_backend(frm) {
+	frappe.call({
+		method: "seminary.seminary.doctype.seminary_settings.seminary_settings.financial_backend_choices",
+		callback: (r) => {
+			const apps = r.message || [];
+			const choose = apps.length > 1;
+			frm.set_df_property("financial_backend", "hidden", choose ? 0 : 1);
+			frm.set_df_property("financial_backend_since", "hidden", choose ? 0 : 1);
+			if (choose) {
+				frm.set_df_property("financial_backend", "fieldtype", "Select");
+				frm.set_df_property("financial_backend", "options", ["", ...apps]);
+			}
+		},
+	});
+}
+
 function check_and_toggle_payment_gateway(frm) {
 	if (frm.doc.portal_payment_enable) {
 		frappe.call({
@@ -40,6 +56,7 @@ function check_and_toggle_payment_gateway(frm) {
 frappe.ui.form.on('Seminary Settings', {
     refresh: function(frm) {
         check_and_toggle_payment_gateway(frm);
+        toggle_financial_backend(frm);
 
         if (!frm.doc.demo_data_installed && !frm.doc.no_more_demo) {
             frm.add_custom_button(__('Install Demo Data'), () => {

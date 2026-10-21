@@ -6,8 +6,9 @@ from typing import Optional
 
 from frappe.sessions import get_csrf_token
 
+from seminary.seminary import portal_theme
+
 DEV_SERVER_ENV_KEY = "SEMINARY_DEV_SERVER_URL"
-DEFAULT_DEV_SERVER_URL = os.environ.get(DEV_SERVER_ENV_KEY, "http://localhost:8080")
 
 
 def get_context(context):
@@ -22,7 +23,12 @@ def get_context(context):
     # to this function is not guaranteed. This is also the pattern frappe's own desk
     # template and the mainstream apps (builder, hrms, insights) use.
     context.csrf_token = get_csrf_token()
+    theme = portal_theme.get_portal_theme()
     context.boot = frappe._dict(get_boot_data())
+    # Empty unless an installed app supplies a theme (p017).
+    context.portal_theme_head = portal_theme.render_head(theme)
+    if logo := portal_theme.boot_logo(theme):
+        context.boot.portal_logo = logo
     context.title = "Seminary ERP"
     context.history_base = "/seminary/"
 
@@ -80,6 +86,11 @@ def get_boot_data():
     #
     # If the SPA ever needs a default, add that ONE key here by name.
     #
+    # `lang` is such a key (aretenic decision 071): portal-shell's userLocale() and
+    # dayjsLocale() read it, so dates, numbers and relative times follow the user's
+    # language rather than the browser's.
+    boot["lang"] = frappe.local.lang
+    #
     # The session id is carried by the cookie; the SPA never reads it, so it is
     # not echoed into the page (p006 F8).
     boot["session"] = {"user": frappe.session.user}
@@ -87,13 +98,34 @@ def get_boot_data():
     return boot
 
 
+DEV_COOKIE = "seminary_dev"
+
+
 def _is_dev_request() -> bool:
+    """`?dev=1` serves the SPA from Vite; `?dev=0` goes back to the build.
+
+    Remembered in a cookie, because the router drops the query on the first
+    navigation and a refresh would otherwise fall back to the last build.
+    Only on a developer_mode site, so production never serves the dev page.
+    """
+    if not frappe.conf.developer_mode:
+        return False
     flag = frappe.form_dict.get("dev")
-    return isinstance(flag, str) and flag.lower() in {"1", "true", "yes"}
+    if isinstance(flag, str):
+        on = flag.lower() in {"1", "true", "yes"}
+        if on:
+            frappe.local.cookie_manager.set_cookie(DEV_COOKIE, "1")
+        else:
+            frappe.local.cookie_manager.delete_cookie(DEV_COOKIE)
+        return on
+    return frappe.request.cookies.get(DEV_COOKIE) == "1"
 
 
 def _get_dev_server_url() -> str:
-    return os.environ.get(DEV_SERVER_ENV_KEY, DEFAULT_DEV_SERVER_URL)
+    # frappe-ui's frappeProxy puts Vite at webserver_port + 80 (8006 -> 8086),
+    # so a fixed 8080 only matched a bench on 8000.
+    vite_port = int(frappe.conf.get("webserver_port") or 8000) + 80
+    return os.environ.get(DEV_SERVER_ENV_KEY, f"http://localhost:{vite_port}")
 
 
 def _is_dev_server_running(dev_server_url: str) -> bool:

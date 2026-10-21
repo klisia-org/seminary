@@ -49,19 +49,25 @@ from frappe.utils import (
     get_time_str,
     nowtime,
     format_datetime,
+    now_datetime,
 )
 from frappe.utils.dateutils import get_period
 from seminary.seminary.md import find_macros, markdown_to_html
 from seminary.seminary.guards import (
     SCHOOL_ROLES,
+    current_student,
     is_course_staff,
     is_enrolled,
     is_grader,
     may_read_course_schedule,
+    may_view_content,
     own_or_staff,
+    require_content_reader,
     require_course_staff,
     require_enrolled,
     require_grader,
+    section_access,
+    section_mentees,
 )
 
 
@@ -489,7 +495,8 @@ def get_courses_for_student(student):
         student = frappe.session.user
     courses = frappe.db.sql(
         """select cei.coursesc_ce as name, cei.course_data as course,
-                  cs.course_image, cs.course_description_for_lms,
+                  cs.course_image, cs.image_focus_x, cs.image_focus_y,
+                  cs.image_zoom, cs.course_description_for_lms,
                   cs.short_introduction, cs.academic_term, cs.section
 from `tabCourse Enrollment Individual` cei
 join `tabCourse Schedule` cs on cs.name = cei.coursesc_ce
@@ -546,11 +553,6 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
         filters = {}
 
     filters.setdefault("workflow_state", ["!=", "Cancelled"])
-    # Only staff may list unpublished sections (p006 §2.11).
-    if has_super_access():
-        filters.setdefault("published", 1)
-    else:
-        filters["published"] = 1
 
     roles = set(frappe.get_roles())
     full_access = bool(roles & COURSE_FULL_ACCESS_ROLES)
@@ -567,26 +569,31 @@ def get_courses(filters=None, start=0, page_length=20, scope="mine"):
                     return []
                 filters["name"] = ["in", readable]
         else:
-            # A grader who is also a student: the sections they work on plus
-            # the published ones they take.
-            from seminary.seminary.guards import student_sections
+            # A grader who is also a student: the sections they work on,
+            # published or not, plus the published ones they take. A mentor
+            # also lists the sections their mentees are in (p012 decision 1).
+            from seminary.seminary.guards import mentored_sections, student_sections
 
             own = sorted(
                 set(get_own_course_schedules(frappe.session.user))
                 | set(student_sections())
+                | set(mentored_sections())
             )
             if not own:
                 return []
             filters["name"] = ["in", own]
     elif not has_super_access():
         # A student lists the published sections they are enrolled in, not the
-        # school's whole published offering (p007 §8.1).
+        # school's whole published offering (p007 §8.1). Only staff see
+        # unpublished sections: that is where an instructor builds the course
+        # (p006 §2.11).
         from seminary.seminary.guards import student_sections
 
         mine = student_sections()
         if not mine:
             return []
         filters["name"] = ["in", mine]
+        filters["published"] = 1
 
     fields = get_course_fields()
 
@@ -611,7 +618,7 @@ def get_course_card_details(courses):
 
 @frappe.whitelist()
 def get_instructors(course):
-    require_enrolled(course)
+    require_content_reader(course)
     return _instructors(course)
 
 
@@ -830,7 +837,7 @@ def _require_published_or_enrolled(course):
     """Section reads (p007 §8.1): staff and readers through their tier; a
     student only when the section is published **and** they are on its roster.
     The name is historical — the rule used to be a disjunction."""
-    if not is_enrolled(course):
+    if not may_view_content(course):
         frappe.throw(_("Not permitted."), frappe.PermissionError)
 
 
@@ -865,6 +872,9 @@ def get_course_fields():
         "name",
         "course",
         "course_image",
+        "image_focus_x",
+        "image_focus_y",
+        "image_zoom",
         "short_introduction",
         "course_description_for_lms",
         "published",
@@ -914,6 +924,9 @@ def get_course_details(course):
     )
 
     course_details.instructors = _instructors(course_details.name)
+    # What the portal offers this viewer here (p012 decision 1); the outline
+    # editor and the staff tabs key off it rather than off roles alone.
+    course_details.access = section_access(course_details.name)
     course_details.location = get_course_location(course_details.room)
     course_details.days_of_week = [
         day.capitalize()
@@ -1028,8 +1041,13 @@ def get_course_location(room):
 def get_roster(course):
     """Returns the course roster, each row enriched with the student's gender
     (used to split community cohorts by gender). A student on the section
-    gets classmates' names and pictures only (p007 §2.5, decision 6)."""
-    require_enrolled(course)
+    gets classmates' names and pictures only (p007 §2.5, decision 6). A
+    mentor who is neither gets their own mentees, in full (p012 decision 1)."""
+    if not is_enrolled(course):
+        mentees = section_mentees(course)
+        if not mentees:
+            require_enrolled(course)
+        return [r for r in _roster(course) if r.student in mentees]
     staff = is_course_staff(course, include_registrar=True) or has_super_access()
     roster = _roster(course)
     if not staff:
@@ -1164,8 +1182,8 @@ def get_lesson(course, chapter, lesson):
         return {}
 
     if not (has_super_access() or has_course_moderator_role() or is_instructor(course)):
-        # Published and on the roster (p007 §8.1).
-        if not is_enrolled(course):
+        # Published and on the roster (p007 §8.1), or one of its mentors.
+        if not may_view_content(course):
             return {}
 
     lesson_details = frappe.db.get_value(
@@ -1380,6 +1398,11 @@ def get_lesson_icon(body, content):
                 return "icon-discussion"
             if block.get("type") == "folder":
                 return "icon-folder"
+            # Reflection lessons (ADR 079 decision 4).
+            if block.get("type") == "selfAssessment":
+                return "icon-self-assessment"
+            if block.get("type") == "developmentPlan":
+                return "icon-development-plan"
 
         return "icon-list"
 
@@ -1440,14 +1463,17 @@ def get_lesson_due_date(lesson):
     if not scac_names:
         return None
 
-    due_date = frappe.db.sql(
-        """SELECT due_date FROM `tabScheduled Course Assess Criteria`
-           WHERE name IN %(names)s AND due_date IS NOT NULL
-           ORDER BY due_date ASC LIMIT 1""",
-        {"names": scac_names},
-        as_dict=True,
-    )
-    return due_date[0].due_date if due_date else None
+    # Each row as the session student sees it: an override moves their date
+    # (decisions/082).
+    from seminary.seminary import deadlines
+
+    student = current_student(frappe.session.user)
+    dates = [
+        d.due_date
+        for d in (deadlines.effective(name, student) for name in scac_names)
+        if d and d.due_date
+    ]
+    return min(dates, key=get_datetime) if dates else None
 
 
 def render_html(lesson):
@@ -1825,7 +1851,7 @@ where q.name = qq.question and qq.name in ({', '.join(frappe.db.escape(q) for q 
 
 @frappe.whitelist()
 def get_assessments(course):
-    require_enrolled(course)
+    require_content_reader(course)
     assessments = frappe.get_all(
         "Scheduled Course Assess Criteria",
         filters={"parent": course},
@@ -1836,10 +1862,20 @@ def get_assessments(course):
 
     activity_to_lesson = _build_lesson_index_for_course(course)
     submitted_index = _build_user_submission_index(course)
+    # The student's own dates where an override gives them (decisions/082).
+    from seminary.seminary import deadlines
+
+    student = current_student(frappe.session.user)
     for a in assessments:
         key = _scac_activity_key(a)
         a["lesson"] = activity_to_lesson.get(key)
         a["submitted"] = bool(key and submitted_index.get(key))
+        dates = deadlines.effective(a.name, student, row=a)
+        a["due_date"] = dates.due_date
+        a["cutoff_date"] = dates.cutoff_date
+        a["replies_due_date"] = dates.replies_due_date
+        a["closed"] = deadlines.is_closed(dates)
+    assessments.sort(key=lambda a: (a.due_date is None, str(a.due_date or "")))
 
     return assessments
 
@@ -1852,7 +1888,7 @@ def get_assessment_due_date(course, activity_type, activity_id):
     Criteria so callers don't need explicit SCAC roles."""
     if not course or not activity_type or not activity_id:
         return None
-    require_enrolled(course)
+    require_content_reader(course)
     field = (activity_type or "").strip().lower()
     if field not in {"quiz", "assignment", "exam", "discussion"}:
         return None
@@ -1963,6 +1999,27 @@ _SUBMISSION_BACKFILL_CONFIG = {
     config[0]: (scac_type, config[1], config[2])
     for scac_type, config in _LESSON_SUBMISSION_LOOKUP.items()
 }
+
+
+def stamp_first_grading(submission):
+    """Record who first graded a submission and when (privatedocs p015 §1).
+
+    ``evaluator`` and ``graded_on`` are server-owned: set when the status first
+    becomes Graded, from the session, and never changed afterwards. Whatever a
+    client sends is replaced by the stored values. A submission that was
+    already Graded before these fields existed keeps them as they are (empty
+    unless the version history filled them): its grading time is unknown."""
+    before = None if submission.is_new() else submission.get_doc_before_save()
+    if before and (before.get("graded_on") or before.get("status") == "Graded"):
+        submission.evaluator = before.get("evaluator")
+        submission.graded_on = before.get("graded_on")
+        return
+    if submission.status == "Graded":
+        submission.evaluator = frappe.session.user
+        submission.graded_on = now_datetime()
+    else:
+        submission.evaluator = before.get("evaluator") if before else None
+        submission.graded_on = None
 
 
 def backfill_submission_course_if_missing(submission):
@@ -2167,6 +2224,19 @@ def _build_lesson_index_for_course(course_sc):
     return index
 
 
+def chapter_competency_for(course_sc, scac_row):
+    """The competency the chapter around an assessment's activity delivers,
+    or None. One row's answer to what Course Schedule's
+    ``_chapter_competencies`` resolves for every row."""
+    lesson = _build_lesson_index_for_course(course_sc).get(_scac_activity_key(scac_row))
+    if not lesson:
+        return None
+    chapter = frappe.db.get_value("Course Lesson", lesson, "chapter")
+    if not chapter:
+        return None
+    return frappe.db.get_value("Course Schedule Chapter", chapter, "course_competency")
+
+
 @frappe.whitelist()
 def get_gradebook(course):
     require_grader(include_registrar=True)
@@ -2183,11 +2253,12 @@ def get_gradebook(course):
             "stuemail_rc",
             "program_std_scr",
             "progress",
+            "student",
         ],
     )
     for student in students:
         student["assessments"] = frappe.db.sql(
-            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent = %s""",
             (student.name,),
@@ -2343,6 +2414,18 @@ def get_student_course_status(course):
         )
     else:
         roster["grading_scale_intervals"] = []
+
+    # Current and projected grade come from the one server algorithm the
+    # instructors' Students tab also uses (privatedocs p015 §3).
+    from seminary.seminary.grade_projection import compute
+
+    grades = compute(
+        roster["assessments"],
+        roster["grading_scale_intervals"],
+        roster["maxnumgrade"],
+    )
+    roster["current_grade"] = grades["current"]
+    roster["projected_grade"] = grades["projected"]
 
     # Get term withdrawal rules for the course's academic term
     if cs and cs.academic_term:

@@ -1,21 +1,25 @@
 <template>
-  <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-    <Breadcrumbs v-if="submisisonDetails.doc" :items="breadcrumbs" />
-    <div class="space-x-2">
-      <Badge v-if="submisisonDetails.isDirty" :label="__('Not Saved')" variant="subtle" theme="orange" />
-      <Button
-        v-if="portalDisciplinary && submisisonDetails.doc"
-        variant="outline"
-        theme="red"
-        @click="showReportModal = true"
-      >
-        {{ __('Report Disciplinary Incident') }}
-      </Button>
-      <Button variant="solid" @click="validateSubmission()">
-        {{ __('Save') }}
-      </Button>
-    </div>
-  </header>
+  <PageHeader>
+  	<template #title>
+  		<Breadcrumbs v-if="submisisonDetails.doc" :items="breadcrumbs" />
+  	</template>
+  	<template #actions>
+  		<div class="space-x-2">
+  		  <Badge v-if="submisisonDetails.isDirty" :label="__('Not Saved')" variant="subtle" theme="orange" />
+  		  <Button
+  		    v-if="portalDisciplinary && submisisonDetails.doc"
+  		    variant="outline"
+  		    theme="red"
+  		    @click="showReportModal = true"
+  		  >
+  		    {{ __('Report Disciplinary Incident') }}
+  		  </Button>
+  		  <Button variant="solid" @click="validateSubmission()">
+  		    {{ __('Save') }}
+  		  </Button>
+  		</div>
+  	</template>
+  </PageHeader>
   <ReportDisciplinaryIncidentModal
     v-if="submisisonDetails.doc"
     v-model="showReportModal"
@@ -204,6 +208,8 @@
   </div>
 </template>
 <script setup>
+import { userLocale } from '@seminary/portal-shell'
+import PageHeader from '@/components/PageHeader.vue'
 import {
   createDocumentResource,
   createResource,
@@ -494,7 +500,7 @@ const postGradingComment = () => {
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const d = new Date(dateString)
-  return d.toLocaleDateString(undefined, { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(undefined, { timeStyle: 'short' })
+  return d.toLocaleDateString(userLocale(), { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(userLocale(), { timeStyle: 'short' })
 }
 
 const currentSubmission = ref(props.submission);

@@ -1,25 +1,29 @@
 <template>
-	<header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-		<Breadcrumbs :items="breadcrumbs" />
-		<div class="space-x-2">
-			<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
-				{{ __('Back to lesson') }}
-			</Button>
-			<router-link v-if="assignment.doc?.name" :to="{
-				name: 'AssignmentSubmissionList',
-				query: {
-					assignmentID: assignment.doc.name,
-				},
-			}">
-				<Button>
-					{{ __('Submission List') }}
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs :items="breadcrumbs" />
+		</template>
+		<template #actions>
+			<div class="space-x-2">
+				<Button v-if="showBackToLesson" variant="outline" @click="backToLesson()">
+					{{ __('Back to lesson') }}
 				</Button>
-			</router-link>
-			<Button variant="solid" @click="saveAssignment()">
-				{{ __('Save') }}
-			</Button>
-		</div>
-	</header>
+				<router-link v-if="assignment.doc?.name" :to="{
+					name: 'AssignmentSubmissionList',
+					query: {
+						assignmentID: assignment.doc.name,
+					},
+				}">
+					<Button>
+						{{ __('Submission List') }}
+					</Button>
+				</router-link>
+				<Button variant="solid" @click="saveAssignment()">
+					{{ __('Save') }}
+				</Button>
+			</div>
+		</template>
+	</PageHeader>
 	<div class="w-3/4 mx-auto py-5">
 		<div class="font-semibold mb-4">
 			{{ __('Assignment Details') }}
@@ -47,6 +51,7 @@
 	</div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import {
 	Breadcrumbs,
 	Button,

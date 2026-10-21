@@ -654,7 +654,7 @@ def my_communities():
             "description",
             "leader_eligibility",
             "program",
-            "program_level",
+            "program_tier",
             "portal_size_limit",
             "max_lineages_per_member",
         ],
@@ -712,7 +712,7 @@ def create_my_cohort(cohort_name, cohort_type):
     policy = frappe.db.get_value(
         "Cohort Type",
         cohort_type,
-        ["alumni_may_create", "leader_eligibility", "program", "program_level"],
+        ["alumni_may_create", "leader_eligibility", "program", "program_tier"],
         as_dict=True,
     )
     if not (policy and policy.alumni_may_create):
@@ -721,7 +721,7 @@ def create_my_cohort(cohort_name, cohort_type):
             frappe.PermissionError,
         )
     if not may_lead(person, policy):
-        bound = policy.program or policy.program_level
+        bound = policy.program or policy.program_tier
         frappe.throw(
             (
                 _("Cohorts of this kind are led by graduates of {0}.").format(

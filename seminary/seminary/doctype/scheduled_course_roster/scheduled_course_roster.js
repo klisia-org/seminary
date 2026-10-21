@@ -36,6 +36,17 @@ frappe.ui.form.on("Scheduled Course Roster", {
                             .then(r => { if (r.message) { frappe.show_alert({ message: __('Failed for absence'), indicator: 'orange' }); frm.reload_doc(); } })
                     );
                 });
+                if (frm.doc.attendance_alert_level >= 2 && frm.doc.absence_decision !== 'Keep the grade') {
+                    frm.add_custom_button(__('Keep the Grade'), function() {
+                        frappe.prompt(
+                            { fieldname: 'reason', fieldtype: 'Small Text', label: __('Reason') },
+                            (values) => frappe.call('seminary.seminary.absence_decisions.keep_grade_despite_absences', { name: frm.doc.name, reason: values.reason })
+                                .then(r => { if (r.message) { frappe.show_alert({ message: __('Grade kept'), indicator: 'green' }); frm.reload_doc(); } }),
+                            __('Keep the grade despite absences'),
+                            __('Keep the Grade')
+                        );
+                    });
+                }
             } else {
                 frm.add_custom_button(__('Undo Fail for Absence'), function() {
                     frappe.call('seminary.seminary.api.undo_fail_for_absence', { name: frm.doc.name })

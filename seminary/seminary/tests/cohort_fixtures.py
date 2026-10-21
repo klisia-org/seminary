@@ -17,6 +17,9 @@ from frappe.utils import add_months, getdate, today
 
 PREFIX = "ZZT"
 _seq = [0]
+# The counter restarts with every process; a run token keeps a new run's names
+# clear of records an earlier run failed to tear down.
+_RUN = frappe.generate_hash(length=4)
 
 
 def uid(label=""):
@@ -29,12 +32,7 @@ def uid(label=""):
     `make_user` already give for the same reason.
     """
     _seq[0] += 1
-    return "%s %s%d-%s" % (
-        PREFIX,
-        (label + " ") if label else "",
-        _seq[0],
-        frappe.generate_hash(length=4),
-    )
+    return "%s %s%s%d" % (PREFIX, (label + " ") if label else "", _RUN, _seq[0])
 
 
 # ------------------------------------------------------------------- identity
@@ -217,9 +215,7 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
         {
             "doctype": "Program",
             "program_name": name,
-            # Unique-indexed, so it needs the same across-runs uniqueness the
-            # name gets from `uid` — a bare counter collides with the last run.
-            "program_abbreviation": "Z%d%s" % (_seq[0], frappe.generate_hash(length=4)),
+            "program_abbreviation": "Z%s%d" % (_RUN, _seq[0]),
             "program_type": program_type,
             "program_level": program_level,
             "competency_framework": framework,
@@ -227,11 +223,6 @@ def make_program(program_type="Time-based", program_level=None, framework=None):
     )
     doc.insert(ignore_permissions=True)
     return doc
-
-
-def make_program_level():
-    rows = frappe.get_all("Program Level", limit=1, pluck="name")
-    return rows[0] if rows else None
 
 
 def make_enrollment(student, program, submit=True):

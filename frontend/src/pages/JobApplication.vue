@@ -1,12 +1,9 @@
 <template>
-	<header
-		class="sticky top-0 z-10 flex items-center gap-2 border-b border-outline-gray-1 bg-surface-white px-3 py-2.5 sm:px-5">
-		<router-link :to="{ name: 'JobOpening', params: { jobName } }"
-			class="flex items-center gap-1 text-sm text-ink-gray-6 hover:text-ink-gray-8">
-			<ArrowLeft class="size-4" />
-			{{ __('Back to opening') }}
-		</router-link>
-	</header>
+	<PageHeader>
+		<template #title>
+			<Breadcrumbs class="h-7" :items="breadcrumbs" />
+		</template>
+	</PageHeader>
 
 	<div v-if="context.loading" class="p-5 text-ink-gray-5">{{ __('Loading...') }}</div>
 
@@ -169,10 +166,11 @@
 </template>
 
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { createResource, Button, Dialog, FormControl, TextEditor, FileUploader, toast } from 'frappe-ui'
-import { ArrowLeft, Mail } from 'lucide-vue-next'
+import { Breadcrumbs, createResource, Button, Dialog, FormControl, TextEditor, FileUploader, toast } from 'frappe-ui'
+import { Mail } from 'lucide-vue-next'
 import { validateFileSize } from '@/utils'
 
 const FULL_AGREEMENT = 'I agree completely, without reservations'
@@ -333,4 +331,10 @@ function validateResume(file) {
 	}
 	return validateFileSize(file)
 }
+
+const breadcrumbs = computed(() => [
+	{ label: __('Jobs'), route: { name: 'Jobs' } },
+	{ label: __('Opening'), route: { name: 'JobOpening', params: { jobName: props.jobName } } },
+	{ label: __('Application') },
+])
 </script>

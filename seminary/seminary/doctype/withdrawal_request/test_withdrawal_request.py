@@ -62,14 +62,18 @@ class TestWithdrawalDispatch(UnitTestCase):
         # all eight of these cases rather than the one that changed.
         with (
             patch.object(withdrawal, "process_academic_approval") as acad,
+            # The financial effect is the backend's refund step.
             patch(
                 "seminary.seminary.financial.backend.get_financial_backend"
             ) as backend,
             patch.object(withdrawal, "process_completion") as comp,
         ):
             withdrawal.dispatch_withdrawal_effects(_FakeDoc(prev, cur, is_parent))
-        fin = backend.return_value.process_withdrawal_refunds
-        return acad.called, fin.called, comp.called
+        return (
+            acad.called,
+            backend.return_value.process_withdrawal_refunds.called,
+            comp.called,
+        )
 
     # --- single-course (non-parent) edges ---------------------------------
     def test_academic_review_to_financial_review_runs_academic(self):

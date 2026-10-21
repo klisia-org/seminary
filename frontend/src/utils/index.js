@@ -1,8 +1,8 @@
 import { toast, createResource } from 'frappe-ui'
-import { useTimeAgo } from '@vueuse/core'
 import { Quiz } from '@/utils/quiz'
 import { Assignment } from '@/utils/assignment'
 import { Exam} from '@/utils/exam'
+import { SelfAssessment, DevelopmentPlan } from '@/utils/reflection'
 import { DiscussionActivity } from '@/utils/discussionactivity'
 import { Upload } from '@/utils/upload'
 import { Markdown } from '@/utils/markdownParser'
@@ -23,6 +23,7 @@ import Table from '@editorjs/table'
 import { FolderTool } from '@/utils/foldertool'
 import { IframeEmbed } from '@/utils/iframetool'
 import { VideoRecord } from '@/utils/videorecord'
+import { userLocale } from '@seminary/portal-shell'
 
 export function createToast(options = {}) {
 	// frappe-ui's `toast` is an object (toast.create/success/error/…), not a
@@ -42,8 +43,10 @@ export function createToast(options = {}) {
 	})
 }
 
+// dayjs rather than VueUse's useTimeAgo, whose wording is English-only; dayjs carries the
+// user's locale (decision 071).
 export function timeAgo(date) {
-	return useTimeAgo(date).value
+	return date ? dayjs(date).fromNow() : ''
 }
 
 export function formatTime(timeString) {
@@ -53,18 +56,17 @@ export function formatTime(timeString) {
 	// Create a Date object with dummy values for day, month, and year
 	const dummyDate = new Date(0, 0, 0, hour, minute)
 
-	// Use Intl.DateTimeFormat to format the time in 12-hour format
-	const formattedTime = new Intl.DateTimeFormat('en-US', {
+	// The user's language picks the clock: 12-hour in English, 24-hour in es/pt (decision 071).
+	const formattedTime = new Intl.DateTimeFormat(userLocale(), {
 		hour: 'numeric',
 		minute: 'numeric',
-		hour12: true,
 	}).format(dummyDate)
 
 	return formattedTime
 }
 
 export function formatNumber(number) {
-	return number.toLocaleString('en-IN', {
+	return number.toLocaleString(userLocale(), {
 		maximumFractionDigits: 0,
 	})
 }
@@ -156,7 +158,7 @@ export function validateFileSize(file, { allowDirect = false } = {}) {
 
 export function formatNumberIntoCurrency(number, currency) {
 	if (number) {
-		return number.toLocaleString('en-IN', {
+		return number.toLocaleString(userLocale(), {
 			maximumFractionDigits: 0,
 			style: 'currency',
 			currency: currency,
@@ -202,7 +204,7 @@ export function showToast(title, text, icon, iconClasses = null) {
 		if (icon == 'check') {
 			iconClasses = 'bg-surface-green-3 text-ink-white rounded-md p-px'
 		} else if (icon == 'alert-circle') {
-			iconClasses = 'bg-yellow-600 text-ink-white rounded-md p-px'
+			iconClasses = 'bg-surface-amber-3 text-ink-white rounded-md p-px'
 		} else {
 			iconClasses = 'bg-surface-red-5 text-ink-white rounded-md p-px'
 		}
@@ -258,14 +260,32 @@ export function updateDocumentTitle(meta) {
  * `<br>` becomes a newline. The detached-div version dropped it entirely, so
  * `a<br>b` came back as `ab`; Frappe's `_server_messages` are full of them.
  */
+/**
+ * Say which assessments a move re-filed on another competency, or null when
+ * none did. The server returns `[{title, from, to}]` (ADR 079 decision 8).
+ */
+export function refiledMessage(refiled) {
+	if (!refiled?.length) return null
+	return refiled
+		.map((r) =>
+			r.from
+				? __('{0} moved from {1} to {2}', [r.title, r.from, r.to])
+				: __('{0} is now filed under {1}', [r.title, r.to])
+		)
+		.join('; ')
+}
+
 export function htmlToText(html) {
 	const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
 	doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'))
 	return doc.body.textContent || ''
 }
 
-export const getEditorTools = (course = null, courseName = null) => {
+export const getEditorTools = (course = null, courseName = null, lesson = null) => {
 	return {
+		// Reflection blocks resolve what they cover from their lesson (ADR 079).
+		selfAssessment: { class: SelfAssessment, config: { lesson } },
+		developmentPlan: { class: DevelopmentPlan, config: { lesson } },
 		header: {
 			class: Header,
 			config: {

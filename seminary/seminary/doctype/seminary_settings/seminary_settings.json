@@ -32,7 +32,8 @@
   "academic_term_reqd",
   "section_break_qqak",
   "default_gradescale",
-  "advancetb",
+  "prerequisite_override_section",
+  "prerequisite_override_roles",
   "audit_settings_section",
   "allow_audit",
   "auditcredit",
@@ -43,6 +44,8 @@
   "term_based_withdrawal_dates",
   "column_break_withdrawal",
   "default_scholarship_withdrawal_procedure",
+  "instructor_requirements_section",
+  "instructor_requirements",
   "hr_payroll_section",
   "hrms_enable",
   "instructor_payment_split",
@@ -92,8 +95,6 @@
   "support_user",
   "messaging_section",
   "portal_messaging_rules",
-  "facilities_section",
-  "sync_rooms_to_asset_locations",
   "plagiarism_section",
   "plagiarism_enabled",
   "plagiarism_default_provider",
@@ -117,23 +118,12 @@
   "cohort_planning_section",
   "distance_unit",
   "integrations_section",
-  "has_oikonomos"
+  "has_oikonomos",
+  "has_billing",
+  "financial_backend",
+  "financial_backend_since"
  ],
  "fields": [
-  {
-   "collapsible": 1,
-   "fieldname": "facilities_section",
-   "fieldtype": "Section Break",
-   "label": "Facilities & Assets"
-  },
-  {
-   "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
-   "description": "Mirror Campuses, Buildings, and Rooms into the ERPNext Location tree so Assets can be placed in a room. Turn off if this seminary doesn't track Assets.",
-   "fieldname": "sync_rooms_to_asset_locations",
-   "fieldtype": "Check",
-   "label": "Sync rooms to Asset Locations"
-  },
   {
    "collapsible": 1,
    "fieldname": "plagiarism_section",
@@ -222,15 +212,15 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
-   "description": "By default, the Sales Invoice Created will be in Draft Mode. If enabled, the Sales Invoice will be submitted once created.",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
+   "description": "By default, invoices created from enrollments are drafts. If enabled, they are submitted as soon as they are created.",
    "fieldname": "auto_submit_sales_invoice",
    "fieldtype": "Check",
-   "label": "Submit Sales Invoice from Enrollments"
+   "label": "Submit Invoices from Enrollments"
   },
   {
    "default": "1",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "If enabled, the daily scheduler generates invoices on Academic Term start, Academic Year start, and the 1st of each month. Disable during initial setup or data migration.",
    "fieldname": "billing_automation_enabled",
    "fieldtype": "Check",
@@ -313,24 +303,29 @@
    "mandatory_depends_on": "allow_audit==True"
   },
   {
+   "fieldname": "prerequisite_override_section",
+   "fieldtype": "Section Break",
+   "label": "Prerequisite Overrides"
+  },
+  {
+   "description": "Roles that may enroll a student without a course's mandatory prerequisites, by ticking \"Don't check pre-requisites\" on the enrollment. Leave empty to allow Registrar, Program Chair, Seminary Manager and System Manager.",
+   "fieldname": "prerequisite_override_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles That May Override Prerequisites",
+   "options": "Prerequisite Override Role"
+  },
+  {
    "fieldname": "audit_settings_section",
    "fieldtype": "Section Break",
    "label": "Audit Settings"
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "If not checked, the corresponding fee will be the same for all audited courses.",
    "fieldname": "auditcredit",
    "fieldtype": "Check",
    "label": "Should audit be charged per credit hour?"
-  },
-  {
-   "default": "0",
-   "description": "In this version, all students will advance, regardless of their performance. However, a manual submission will be required when these validations will occur.",
-   "fieldname": "advancetb",
-   "fieldtype": "Check",
-   "label": "Auto-advance students in Time-based Programs?"
   },
   {
    "description": "Provide a small (100x100px), round image (or with enough blank space) to be used in the Student Portal. This is for the light theme,",
@@ -495,7 +490,7 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.has_oikonomos",
+   "depends_on": "eval:doc.has_oikonomos || doc.has_billing",
    "description": "This requires the installation of another app \"Payments\" by Frappe. Payments makes the bridge between this and the Payment Gateways.",
    "fieldname": "portal_payment_enable",
    "fieldtype": "Check",
@@ -510,6 +505,18 @@
    "fieldname": "alternative_payment_instructions",
    "fieldtype": "Text Editor",
    "label": "Alternative Payment Instructions"
+  },
+  {
+   "fieldname": "instructor_requirements_section",
+   "fieldtype": "Section Break",
+   "label": "Instructor Requirements"
+  },
+  {
+   "description": "What every active instructor signs or uploads, such as a yearly agreement with the doctrinal statement.",
+   "fieldname": "instructor_requirements",
+   "fieldtype": "Table",
+   "label": "Instructor Requirements",
+   "options": "Requirement Rule"
   },
   {
    "fieldname": "hr_payroll_section",
@@ -836,11 +843,35 @@
    "hidden": 1,
    "label": "Oikonomos (billing bridge) installed",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Set by a billing app on install. Shows the billing settings.",
+   "fieldname": "has_billing",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Billing app installed",
+   "read_only": 1
+  },
+  {
+   "description": "The billing app that raises charges and answers the student portal. Only asked when more than one billing app is installed; the other stays readable for its history.",
+   "fieldname": "financial_backend",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Active Billing App"
+  },
+  {
+   "depends_on": "eval:doc.financial_backend",
+   "description": "The date the active billing app took over. Balances open on this date were carried into it.",
+   "fieldname": "financial_backend_since",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Active Since"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-17 11:06:12.650516",
+ "modified": "2026-10-20 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

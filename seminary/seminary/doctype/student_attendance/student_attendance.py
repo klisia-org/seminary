@@ -10,8 +10,23 @@ from frappe.model.document import Document
 from frappe.utils import formatdate, get_link_to_form, getdate
 
 
+STATUSES = ("Present", "Tardy", "Absent", "Excused")
+
+
 class StudentAttendance(Document):
-    pass
+    def validate(self):
+        if not (self.is_new() or self.has_value_changed("status")):
+            return
+        if self.status not in STATUSES:
+            frappe.throw(
+                _("Attendance status must be one of: {0}.").format(", ".join(STATUSES))
+            )
+        # An instructor may excuse a student ahead of a class (ADR 081); no
+        # other status can be recorded before the meeting takes place.
+        if self.status != "Excused" and self.date and getdate(self.date) > getdate():
+            frappe.throw(
+                _("Only Excused can be recorded for a class that has not happened yet.")
+            )
 
 
 # 	def validate(self):

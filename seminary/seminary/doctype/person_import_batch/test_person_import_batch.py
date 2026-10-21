@@ -18,6 +18,13 @@ class TestPersonImportHelpers(unittest.TestCase):
         for v in ("0", "", "no", None, "false", "maybe"):
             self.assertEqual(pib._truthy(v), 0)
 
+    def test_decode_csv_keeps_accents(self):
+        name = "JOÃO AZEVEDO SARAIVA JÚNIOR"
+        self.assertEqual(pib._decode_csv(name.encode("utf-8")), name)
+        self.assertEqual(pib._decode_csv(b"\xef\xbb\xbf" + name.encode("utf-8")), name)
+        self.assertEqual(pib._decode_csv(name.encode("cp1252")), name)
+        self.assertEqual(pib._decode_csv("﻿" + name), name)
+
     def test_full_name_joins_parts(self):
         row = frappe._dict(first_name="Ada", middle_name=None, last_name="Lovelace")
         self.assertEqual(pib._full_name(row), "Ada Lovelace")
@@ -104,6 +111,42 @@ class IntegrationTestPersonImportBatch(IntegrationTestCase):
         self.assertTrue(result["clean"])
         self.assertEqual(batch.batch_status, "Dry-Run Clean")
 
+    def test_dry_run_refuses_a_mistyped_cpf(self):
+        batch = self._new_batch(
+            [
+                {
+                    "primary_email": "cpf.typo@example.com",
+                    "first_name": "Typo",
+                    "nationality": "Brazil",
+                    "tax_id": "111.444.777-34",
+                    "override_note": "bare person on purpose",
+                }
+            ]
+        )
+        result = batch.dry_run()
+        self.assertFalse(result["clean"])
+        self.assertEqual(batch.rows[0].row_status, "Error")
+        self.assertIn("bad_tax_id:111.444.777-34", batch.rows[0].messages)
+
+    def test_commit_imports_the_cpf(self):
+        batch = self._new_batch(
+            [
+                {
+                    "primary_email": "cpf.import@example.com",
+                    "first_name": "Cpf",
+                    "nationality": "Brazil",
+                    "tax_id": "111.444.777-35",
+                    "override_note": "bare person on purpose",
+                }
+            ]
+        )
+        self.assertTrue(batch.dry_run()["clean"])
+        batch._commit_rows()
+        self.assertEqual(
+            frappe.db.get_value("Person", batch.rows[0].created_person, "tax_id"),
+            "11144477735",
+        )
+
     def test_commit_bare_person_is_idempotent(self):
         email = "bare.person@example.com"
         batch = self._new_batch(
@@ -125,6 +168,39 @@ class IntegrationTestPersonImportBatch(IntegrationTestCase):
         batch2._commit_rows()
         self.assertEqual(batch2.rows[0].created_person, person)
         self.assertEqual(frappe.db.count("Person", {"primary_email": email}), 1)
+
+    def test_failed_row_is_recorded_and_the_rest_commit(self):
+        from unittest.mock import patch
+
+        bad, good = "bad.row@example.com", "good.row@example.com"
+        batch = self._new_batch(
+            [
+                {"primary_email": bad, "first_name": "Bad", "last_name": "Row"},
+                {"primary_email": good, "first_name": "Good", "last_name": "Row"},
+            ]
+        )
+        real = pib.ensure_person
+
+        def ensure_person(email, **kw):
+            person = real(email, **kw)  # written, then undone by the savepoint
+            if email == bad:
+                frappe.throw("boom")
+            return person
+
+        with patch.object(pib, "ensure_person", ensure_person):
+            batch._commit_rows()
+
+        failed, ok = batch.rows
+        self.assertEqual(failed.row_status, "Error")
+        self.assertIn("boom", failed.messages)
+        self.assertFalse(failed.created_person)
+        self.assertFalse(frappe.db.exists("Person", {"primary_email": bad}))
+        self.assertEqual(
+            frappe.db.get_value("Person Import Row", failed.name, "row_status"),
+            "Error",
+        )
+        self.assertEqual(ok.row_status, "Committed")
+        self.assertTrue(frappe.db.exists("Person", {"primary_email": good}))
 
     def test_commit_student_creates_user_and_person(self):
         email = "student.import@example.com"

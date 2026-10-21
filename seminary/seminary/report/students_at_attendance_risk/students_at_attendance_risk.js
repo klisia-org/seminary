@@ -10,6 +10,15 @@ function rosterOf(row) {
 }
 
 frappe.query_reports["Students At Attendance Risk"] = {
+	filters: [
+		{
+			fieldname: "absence_decision",
+			label: __("Decision"),
+			fieldtype: "Select",
+			options: ["", "No recommendation", "Keep the grade", "Fail for absence"],
+		},
+	],
+
 	// Row checkboxes so the registrar can act on selected students.
 	get_datatable_options(options) {
 		return Object.assign(options, { checkboxColumn: true });
@@ -46,6 +55,39 @@ frappe.query_reports["Students At Attendance Risk"] = {
 						})
 						.catch(() => frappe.dom.unfreeze());
 				}
+			);
+		});
+
+		// Settle a student over the limit by keeping the grade -- typically one
+		// the instructor left to the registrar at Send Grades.
+		report.page.add_inner_button(__("Keep the Grade"), () => {
+			const rows = frappe.query_report.get_checked_items();
+			const names = rows.map(rosterOf).filter(Boolean);
+			if (!names.length) {
+				frappe.msgprint(__("Select at least one student (checkbox)."));
+				return;
+			}
+			frappe.prompt(
+				{ fieldname: "reason", fieldtype: "Small Text", label: __("Reason") },
+				(values) => {
+					frappe.dom.freeze(__("Saving..."));
+					Promise.all(
+						names.map((rosterName) =>
+							frappe.call("seminary.seminary.absence_decisions.keep_grade_despite_absences", {
+								name: rosterName,
+								reason: values.reason,
+							})
+						)
+					)
+						.then(() => {
+							frappe.dom.unfreeze();
+							frappe.show_alert({ message: __("Done"), indicator: "green" });
+							report.refresh();
+						})
+						.catch(() => frappe.dom.unfreeze());
+				},
+				__("Keep the grade for {0} student(s)", [names.length]),
+				__("Keep the Grade")
 			);
 		});
 

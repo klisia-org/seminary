@@ -839,7 +839,13 @@ def get_my_organizations() -> dict:
             "portal_user": frappe.session.user,
             "parenttype": "Partner Organization",
         },
-        fields=["parent", "role_at_org", "is_primary"],
+        fields=[
+            "parent",
+            "role_at_org",
+            "is_primary",
+            "portal_access",
+            "relationship_status",
+        ],
     )
     org_names = [r.parent for r in rows]
     orgs_by_name = (
@@ -865,6 +871,11 @@ def get_my_organizations() -> dict:
                 **org,
                 "role_at_org": r.role_at_org,
                 "is_primary": bool(r.is_primary),
+                # ADR 077: drives the panel's Manage/Leave affordances. Portal
+                # access is what makes /partner reachable, and a Former contact
+                # keeps their row for the record without keeping the controls.
+                "portal_access": bool(r.portal_access),
+                "relationship_status": r.relationship_status or "Active",
             }
         )
 

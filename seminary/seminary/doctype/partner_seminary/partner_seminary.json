@@ -14,7 +14,6 @@
   "is_internal_legacy",
   "column_break_header",
   "country",
-  "customer",
   "partner_organization",
   "accreditation_status",
   "defaults_section",
@@ -64,13 +63,6 @@
    "fieldtype": "Link",
    "label": "Country",
    "options": "Country"
-  },
-  {
-   "description": "Optional link to a Customer record for registering contacts and other partner-institution information.",
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "label": "Customer",
-   "options": "Customer"
   },
   {
    "depends_on": "eval:!doc.is_internal_legacy",
@@ -150,7 +142,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-20 08:12:31.257038",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Partner Seminary",

@@ -1,15 +1,19 @@
 <template>
-  <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface-white px-3 py-2.5 sm:px-5">
-    <Breadcrumbs :items="breadcrumbs" />
-    <Button
-      v-if="portalDisciplinary && currentRow"
-      variant="outline"
-      theme="red"
-      @click="showReportModal = true"
-    >
-      {{ __('Report Disciplinary Incident') }}
-    </Button>
-  </header>
+  <PageHeader>
+  	<template #title>
+  		<Breadcrumbs :items="breadcrumbs" />
+  	</template>
+  	<template #actions>
+  		<Button
+  		  v-if="portalDisciplinary && currentRow"
+  		  variant="outline"
+  		  theme="red"
+  		  @click="showReportModal = true"
+  		>
+  		  {{ __('Report Disciplinary Incident') }}
+  		</Button>
+  	</template>
+  </PageHeader>
   <ReportDisciplinaryIncidentModal
     v-if="currentRow"
     v-model="showReportModal"
@@ -58,7 +62,7 @@
             <SafeHtml class="prose-sm" :html="post.original_post" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(post.creation) }}</div>
             <a v-if="post.original_attachment" :href="post.original_attachment" target="_blank"
-              class="text-blue-500 underline text-sm mt-1 inline-block">
+              class="text-ink-blue-3 underline text-sm mt-1 inline-block">
               {{ __('View Attachment') }}
             </a>
           </div>
@@ -79,7 +83,7 @@
             <SafeHtml class="prose-sm mt-2" :html="reply.reply" />
             <div class="text-xs text-ink-gray-4 mt-2">{{ formatDate(reply.reply_dt) }}</div>
             <a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-              class="text-blue-500 underline text-sm mt-1 inline-block">
+              class="text-ink-blue-3 underline text-sm mt-1 inline-block">
               {{ __('View Attachment') }}
             </a>
           </div>
@@ -150,6 +154,7 @@
   </div>
 </template>
 <script setup>
+import PageHeader from '@/components/PageHeader.vue'
 import { Breadcrumbs, createResource, Button, toast } from 'frappe-ui'
 import { computed, onMounted, inject, watch, ref } from 'vue'
 import { useRouter } from 'vue-router'

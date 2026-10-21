@@ -13,6 +13,11 @@ throttle), then the Person Channel Address scoped to the category (falling
 back to the primary), then the provider account matching the person's country
 (falling back to the channel's default account).
 
+Other apps can hold a Person from a category for a while through the
+``communication_holds`` hook (p019): koinonia holds appeals from a donor who is
+weighing a large gift. A held message is logged Cancelled with the app's reason,
+like a consent block, and ``reachability`` reports "held".
+
 Adapters are resolved through the ``communication_channel_providers`` hook —
 {provider_key: dotted.path.to.AdapterClass} — so other apps/regions add
 providers with one class and one Channel Provider Account row. An adapter
@@ -129,6 +134,9 @@ def get_adapter(provider_key):
 
 
 def consent_blocks(person_doc, channel, category):
+    # A deceased Person (p018) is sent nothing, on any channel or category.
+    if person_doc.get("deceased_on"):
+        return True
     if not category or category == "Emergency":
         return False
     # Physical mail carries no opt-in requirement — Print is never consent-blocked.
@@ -142,6 +150,28 @@ def consent_blocks(person_doc, channel, category):
     if category == "Promotional":
         return status != "Opted In"
     return status == "Opted Out"
+
+
+HOLD_HOOK = "communication_holds"
+
+
+def hold_reason(
+    person_doc, channel, category, reference_doctype=None, reference_name=None
+):
+    """Why another app holds this Person from this message, or None (p019).
+
+    Each ``communication_holds`` hook is called with (person, channel, category,
+    reference_doctype, reference_name) and returns a reason or None. Emergency is
+    never held. seminary does not know why: the app that holds says so."""
+    if not person_doc or category == "Emergency":
+        return None
+    for path in frappe.get_hooks(HOLD_HOOK) or []:
+        reason = frappe.get_attr(path)(
+            person_doc.name, channel, category, reference_doctype, reference_name
+        )
+        if reason:
+            return reason
+    return None
 
 
 def resolve_address(person_doc, channel, category=None):
@@ -169,15 +199,25 @@ def resolve_address(person_doc, channel, category=None):
     return None
 
 
-def reachability(person_doc, channel, category, *, email=None):
+def reachability(
+    person_doc,
+    channel,
+    category,
+    *,
+    email=None,
+    reference_doctype=None,
+    reference_name=None,
+):
     """Would a queued send on this channel actually deliver, and if not, why?
-    Returns 'ok' | 'opted_out' | 'no_address'. Mirrors the routing checks in
+    Returns 'ok' | 'opted_out' | 'held' | 'no_address'. Mirrors the routing checks in
     send_message so the announcement preview and the email/portal fallback
     agree with what dispatch will do. `email` is the known address for the
     Email channel when the spine has no Person (announcement recipients are
     resolved by email)."""
     if person_doc and consent_blocks(person_doc, channel, category):
         return "opted_out"
+    if hold_reason(person_doc, channel, category, reference_doctype, reference_name):
+        return "held"
     if channel == IN_APP_CHANNEL:
         return "ok" if person_doc else "no_address"
     if channel == PRINT_CHANNEL:
@@ -399,10 +439,19 @@ def send_message(
     if person_doc and consent_blocks(person_doc, channel, category):
         values.update(
             status="Cancelled",
-            error=_("Blocked by consent: {0} / {1} for {2}.").format(
-                channel, category, person_doc.name
+            error=(
+                _("{0} is deceased.").format(person_doc.name)
+                if person_doc.get("deceased_on")
+                else _("Blocked by consent: {0} / {1} for {2}.").format(
+                    channel, category, person_doc.name
+                )
             ),
         )
+        return _insert_log(values, dedupe_key)
+
+    held = hold_reason(person_doc, channel, category, reference_doctype, reference_name)
+    if held:
+        values.update(status="Cancelled", error=held)
         return _insert_log(values, dedupe_key)
 
     if not values["to_address"] and person_doc and channel not in ADDRESSLESS_CHANNELS:
@@ -1926,6 +1975,26 @@ def _attachment_html(attachments):
     return "<hr><p><b>{0}</b></p><ul>{1}</ul>".format(_("Attachments"), items)
 
 
+def _reply_reference(in_reply_to):
+    """The course a reply belongs to: the reference of the message it answers,
+    when that is a Course Schedule (privatedocs p015 §2). Anything else -- no
+    reference, or some other record -- is not copied."""
+    if not in_reply_to:
+        return {}
+    ref = frappe.db.get_value(
+        "Communication Log",
+        in_reply_to,
+        ["reference_doctype", "reference_name"],
+        as_dict=True,
+    )
+    if ref and ref.reference_doctype == "Course Schedule" and ref.reference_name:
+        return {
+            "reference_doctype": "Course Schedule",
+            "reference_name": ref.reference_name,
+        }
+    return {}
+
+
 @frappe.whitelist()
 def reply_portal_message(in_reply_to, message):
     """Portal reply: answer a received In-App message, threaded to it. Replies
@@ -1960,6 +2029,7 @@ def reply_portal_message(in_reply_to, message):
         category="Community",
         triggered_by=frappe.session.user,
         in_reply_to=in_reply_to,
+        **_reply_reference(in_reply_to),
     )
     return {"log": log}
 
@@ -2553,6 +2623,7 @@ def reply_in_conversation(person, message, in_reply_to=None, channel=None):
         category="Community",
         triggered_by=frappe.session.user,
         in_reply_to=in_reply_to,
+        **_reply_reference(in_reply_to),
     )
     if log and frappe.db.get_value("Communication Log", log, "status") == "Queued":
         deliver_now(log)

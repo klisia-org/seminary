@@ -23,8 +23,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import date
 
 import frappe
+from frappe.utils import getdate
 
 
 @dataclass
@@ -46,6 +48,11 @@ class PaymentAggregate:
 class FinancialBackend(ABC):
     """Contract seminary depends on. Implemented by oikonomos (ERPNext-backed);
     falls back to `NullFinancialBackend` when no financial app is installed."""
+
+    def setup_route(self) -> str | None:
+        """Desk route of the first page a school opens to set up billing, or
+        None. Not abstract: a backend with nothing to point at is still valid."""
+        return None
 
     @abstractmethod
     def has_financials(self) -> bool:
@@ -175,6 +182,44 @@ class FinancialBackend(ABC):
         """Holiday dates from the billing Company's holiday list. Empty with no
         financial app."""
 
+    # -- Optional reads -------------------------------------------------------
+
+    def preview_enrollment_charges(
+        self, pe_name: str, course_schedule: str, credits: float, audit: bool = False
+    ) -> list:
+        """What enrolling this student in this section would charge, before
+        scholarships, as [{"payer", "fee", "qty", "rate", "amount"}]. `rate` and
+        `amount` are None where a fee has no price. Nothing is raised. Bulk
+        Course Enrollment shows it before the run (ADR 083 §1). Empty with no
+        financial app."""
+        return []
+
+    # -- Optional actions: a backend opts in by overriding both methods --------
+
+    def can_regenerate_current_term_charges(self) -> bool:
+        """True when this backend can raise the current term's charges again on
+        demand. Desk shows the Registrar's button only when it can."""
+        return False
+
+    def regenerate_current_term_charges(self) -> dict:
+        """Clear the current term's billing flag and raise its charges again.
+        Returns {"created", "skipped", "failed"}; charges already raised are
+        skipped."""
+        frappe.throw(frappe._("The active billing app cannot regenerate term charges."))
+
+    def fiscal_year(self, on_date=None) -> tuple[date, date]:
+        """The (start, end) of the fiscal year containing `on_date` (p020).
+        The calendar year unless the billing app keeps its own."""
+        year = getdate(on_date).year
+        return date(year, 1, 1), date(year, 12, 31)
+
+    def tuition_revenue(self, start, end) -> dict:
+        """Tuition and fees posted between `start` and `end` (p020):
+        {"gross", "scholarships", "since"}. `gross` is before institutional
+        scholarships, `scholarships` is what they took off, and `since` is the
+        first date the app has any charge (None when it has none)."""
+        return {"gross": 0.0, "scholarships": 0.0, "since": None}
+
 
 class NullFinancialBackend(FinancialBackend):
     """No financial app installed. Everything reads as free / fully paid so
@@ -254,13 +299,37 @@ class NullFinancialBackend(FinancialBackend):
         return set()
 
 
-def get_financial_backend() -> FinancialBackend:
-    """Resolve the registered financial backend, or the null fallback.
+def registered_financial_backends() -> dict[str, str]:
+    """{app name: backend class path} for every installed financial app, in
+    hook order. The app name is the first segment of the registered path."""
+    return {
+        path.split(".", 1)[0]: path
+        for path in frappe.get_hooks("seminary_financial_backend")
+    }
 
-    The last registration wins (standard Frappe hook-override semantics), so an
-    app installed later can supersede an earlier one.
+
+def active_financial_app() -> str | None:
+    """The app whose backend is active, or None with no financial app.
+
+    Two financial apps may be installed on one site — a school changing ledgers
+    keeps the old app's history — but only one is active. With more than one
+    registered, `Seminary Settings.financial_backend` names it; when it is unset
+    or names an app no longer installed, the last registration wins (standard
+    Frappe hook-override semantics).
     """
-    paths = frappe.get_hooks("seminary_financial_backend")
-    if not paths:
+    backends = registered_financial_backends()
+    if not backends:
+        return None
+    if len(backends) > 1:
+        chosen = frappe.db.get_single_value("Seminary Settings", "financial_backend")
+        if chosen in backends:
+            return chosen
+    return list(backends)[-1]
+
+
+def get_financial_backend() -> FinancialBackend:
+    """Resolve the active financial backend, or the null fallback."""
+    app = active_financial_app()
+    if not app:
         return NullFinancialBackend()
-    return frappe.get_attr(paths[-1])()
+    return frappe.get_attr(registered_financial_backends()[app])()

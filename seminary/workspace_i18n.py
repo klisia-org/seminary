@@ -21,12 +21,21 @@ import frappe
 from frappe import _
 from frappe.desk import desktop
 
-_CONTENT_TEXT_TYPES = {"header", "paragraph"}
+from seminary import desk_nav
+
+# Block type → the data key holding its user-facing text. Values reach `_()`
+# through a variable: a literal key inside `_()` would be extracted into the POT.
+_CONTENT_TEXT_KEYS = {
+    "header": "text",
+    "paragraph": "text",
+    "card": "card_name",
+    "chart": "chart_name",
+}
 
 
 @frappe.whitelist()
 def get_desktop_page(page: str):
-    response = desktop.get_desktop_page(page) or {}
+    response = desk_nav.get_desktop_page(page) or {}
     for key in (
         "cards",
         "charts",
@@ -55,8 +64,8 @@ def get_desktop_page(page: str):
 def get_workspace_sidebar_items():
     response = desktop.get_workspace_sidebar_items() or {}
     for page in response.get("pages") or []:
-        if page.get("title"):
-            page["title"] = _(page["title"])
+        if title := page.get("title"):
+            page["title"] = _(title)
         page["content"] = _translate_content(page.get("content"))
     return response
 
@@ -75,12 +84,8 @@ def _translate_content(content):
         if not isinstance(block, dict):
             continue
         data = block.get("data") or {}
-        btype = block.get("type")
-        if btype in _CONTENT_TEXT_TYPES and data.get("text"):
-            data["text"] = _(data["text"])
-        elif btype == "card" and data.get("card_name"):
-            data["card_name"] = _(data["card_name"])
-        elif btype == "chart" and data.get("chart_name"):
-            data["chart_name"] = _(data["chart_name"])
+        key = _CONTENT_TEXT_KEYS.get(block.get("type"))
+        if key and (value := data.get(key)):
+            data[key] = _(value)
 
     return json.dumps(blocks)
