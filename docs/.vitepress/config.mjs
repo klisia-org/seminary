@@ -18,6 +18,15 @@ export default withMermaid(defineConfig({
   srcExclude: process.argv.includes('build') && !process.env.DOCS_DEV_PAGES ? ['dev/**'] : [],
   outDir: '.vitepress/dist',
 
+  vite: {
+    optimizeDeps: {
+      // Pre-bundle all of mermaid. The mermaid plugin pre-bundles only a fixed list of its CommonJS
+      // dependencies; mermaid 11.17 added more (fastdom, fastdom-promised…), and served raw they make
+      // `vitepress dev` render a blank page ("does not provide an export named 'default'").
+      include: ['mermaid'],
+    },
+  },
+
   head: [
     ['link', { rel: 'icon', href: '/klisia_icon.png' }],
   ],
