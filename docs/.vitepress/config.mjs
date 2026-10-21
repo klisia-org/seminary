@@ -13,7 +13,19 @@ export default withMermaid(defineConfig({
   description: 'Documentation for SeminaryERP — a theological seminary management system built on Frappe/ERPNext',
 
   srcDir: 'en',
+  // en/dev/ holds local test pages (e.g. the website widget harness); `vitepress dev` serves them,
+  // the published site never does (DOCS_DEV_PAGES=1 keeps them in a local build).
+  srcExclude: process.argv.includes('build') && !process.env.DOCS_DEV_PAGES ? ['dev/**'] : [],
   outDir: '.vitepress/dist',
+
+  vite: {
+    optimizeDeps: {
+      // Pre-bundle all of mermaid. The mermaid plugin pre-bundles only a fixed list of its CommonJS
+      // dependencies; mermaid 11.17 added more (fastdom, fastdom-promised…), and served raw they make
+      // `vitepress dev` render a blank page ("does not provide an export named 'default'").
+      include: ['mermaid'],
+    },
+  },
 
   head: [
     ['link', { rel: 'icon', href: '/klisia_icon.png' }],
