@@ -18,6 +18,8 @@ Mocking the joins would test the mocks.
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from seminary.seminary.tests.identity_cleanup import module_hooks
+
 from seminary.seminary import cbe, instructor_load
 from seminary.seminary.discipleship import api as dapi
 from seminary.seminary.discipleship import permissions as dperm
@@ -31,6 +33,9 @@ from seminary.seminary.tests import cohort_fixtures as fx
 
 ALUMNUS = "Alumnus of the bound program or level"
 ANY_ALUMNUS = "Any alumnus"
+
+
+setUpModule, tearDownModule = module_hooks()
 
 
 class TestCohortTypePolicy(IntegrationTestCase):

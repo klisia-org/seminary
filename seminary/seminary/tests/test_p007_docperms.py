@@ -13,6 +13,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from seminary.seminary import guards
+from seminary.seminary.tests.identity_cleanup import IdentityCleanup
 from seminary.seminary.tests.test_p006_api import _make_user
 
 PREFIX = "ZZT-p007"
@@ -163,7 +164,7 @@ def _submission(cs_name, student, user, answer="first"):
     return doc.name
 
 
-class TestP007DocPerms(IntegrationTestCase):
+class TestP007DocPerms(IdentityCleanup, IntegrationTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

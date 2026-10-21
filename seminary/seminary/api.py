@@ -3085,6 +3085,20 @@ def get_grade(grading_scale, percentage):
     return _resolve_interval(grading_scale, percentage, "grade_code")
 
 
+def narrative_section(course_schedule):
+    """True when this section's scale stores a *level* in `rawscore_card`.
+
+    A Descriptive scale's cell holds an interval threshold — the grade-point
+    value, Distinction = 4.0 — and not a percentage (ADR 072). This is the twin
+    of the `cbe.framework_for` check: both say "an auto-grader must not write a
+    percentage into this cell, because it will be read back as a level."
+    """
+    scale = frappe.db.get_value("Course Schedule", course_schedule, "gradesc_cs")
+    if not scale:
+        return False
+    return frappe.db.get_value("Grading Scale", scale, "grscale_type") == "Descriptive"
+
+
 def quizresult_to_card(doc, method):
     # Fetch max grade of the grading scale used for calculations
     # Discussion Submission uses 'coursesc' for Course Schedule; others use 'course'
@@ -3096,6 +3110,10 @@ def quizresult_to_card(doc, method):
     from seminary.seminary import cbe
 
     if cbe.framework_for(course_schedule):
+        return
+    # Same trap on a Descriptive section, and the same answer: the cell holds a
+    # level the evaluator chose, so the numeric path stands down (ADR 072).
+    if narrative_section(course_schedule):
         return
     max_grade = frappe.db.get_value("Course Schedule", course_schedule, "maxnumgrade")
     # Fetch the corresponding Course Assess Results Detail record
@@ -3634,6 +3652,44 @@ def _grade_thisstudent(name):
         csr.save()
         return "done"
 
+    if grading_scale.grscale_type == "Descriptive":
+        # rawscore_card holds the chosen interval's *threshold* — the grade-point
+        # value (Distinction = 4.0), not a percentage. The cell's grade is just
+        # the band that threshold lands in; the weighting happens in
+        # _fgrade_this_std, whose denominator is only known once the whole row is
+        # in hand (ADR 072). graded_card, not the Float, says whether a cell was
+        # graded: an ungraded cell reads back as 0.0 and 0.0 is a real level.
+        for row in detail:
+            if row.graded_card and not row.extracredit_card:
+                row.grade = get_grade(grading_scale.name, row.rawscore_card)
+                row.score = row.rawscore_card
+                frappe.db.set_value(
+                    "Course Assess Results Detail",
+                    row.name,
+                    {"grade": row.grade, "score": row.score},
+                )
+        csr.save()
+        return "done"
+
+
+def descriptive_fscore(rows):
+    """The weighted mean of a Descriptive roster's graded cells, in threshold units.
+
+    Kept free of frappe so the unit trap ADR 072 exists to prevent is testable
+    without a site: the Points branch builds a weighted *sum* out of 0-100, and
+    handing that to `get_grade` against a scale whose bands run 0-4 puts every
+    student in the top one. A mean cannot leave the scale's own units.
+
+    `rows` carry `rawscore_card` and `maximum_score` (the assessment's weight),
+    already filtered to graded, non-extra-credit cells. Dividing by the weights
+    actually present renormalizes a section whose weights do not total 100.
+    Returns None when there is nothing to average, which is not a zero.
+    """
+    weight = sum(flt(r["maximum_score"]) for r in rows)
+    if not weight:
+        return None
+    return sum(flt(r["rawscore_card"]) * flt(r["maximum_score"]) for r in rows) / weight
+
 
 def get_gradepass(grading_scale, percentage):
     """Returns Pass/Fail based on the Grading Scale and Score.
@@ -3725,6 +3781,37 @@ def _fgrade_this_std(name):
             if values
             else None
         )
+        fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
+        fgradepass = (
+            get_gradepass(grading_scale.name, fscore) if fscore is not None else None
+        )
+        if csr.get("failed_for_absence") and grading_scale.get("fa_code"):
+            fgrade = grading_scale.fa_code
+            fgradepass = "Fail"
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            name,
+            {"fscore": fscore, "fgrade": fgrade, "fgradepass": fgradepass},
+        )
+        return "done"
+
+    if grading_scale.grscale_type == "Descriptive":
+        # A narrative scale's interval threshold is the grade-point value
+        # (Distinction = 4.0), not a percentage, so the final is a weighted
+        # *mean* in threshold units — not the Points branch's weighted sum. A
+        # 0-100 number resolved against 0-4 bands would put every student in the
+        # top band (ADR 072). Dividing by the weights actually present also
+        # renormalizes a section whose weights do not total 100.
+        rows = frappe.get_all(
+            "Course Assess Results Detail",
+            filters={"parent": name, "graded_card": 1, "extracredit_card": 0},
+            fields=["rawscore_card", "maximum_score"],
+        )
+        # An ungraded assessment leaves the denominator as well as the numerator:
+        # a mean has a denominator, unlike the Points sum that can treat a
+        # missing score as 0. Extra credit has no meaning on a narrative band and
+        # is filtered out by the query above.
+        fscore = descriptive_fscore(rows)
         fgrade = get_grade(grading_scale.name, fscore) if fscore is not None else None
         fgradepass = (
             get_gradepass(grading_scale.name, fscore) if fscore is not None else None
@@ -4088,6 +4175,25 @@ def _assert_pdp_complete(course_schedule, roster_names):
         )
 
 
+def _assert_grade_computed(roster_name, fgrade, fgradepass):
+    """Refuse to finalize a roster the grading engine produced no grade for.
+
+    Credits are awarded unless ``fgradepass`` is exactly "Fail", so a blank one
+    awards credit against an empty transcript row. That is how the missing
+    Descriptive calculation path stayed silent for as long as it did: the scale
+    had no branch, nothing was written, and finalization carried on (ADR 072).
+    """
+    if fgrade and fgradepass:
+        return
+    frappe.throw(
+        _(
+            "Cannot send grades for {0}: the grading scale produced no final "
+            "grade. Check the section's Grading Scale — every interval needs a "
+            "Pass/Fail value, and the scale type needs a calculation path."
+        ).format(roster_name)
+    )
+
+
 def finalize_roster(roster_name):
     """Finalize one student: grade, write the transcript row, award credits.
 
@@ -4125,6 +4231,7 @@ def finalize_roster(roster_name):
     fscore, fgrade, fgradepass = frappe.db.get_value(
         "Scheduled Course Roster", record.name, ["fscore", "fgrade", "fgradepass"]
     )
+    _assert_grade_computed(record.name, fgrade, fgradepass)
 
     pec = frappe.db.get_value(
         "Program Enrollment Course",

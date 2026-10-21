@@ -9,6 +9,39 @@ from seminary.seminary.doctype.program.test_program import (
     make_program_and_linked_courses,
 )
 
+# The three identities the old test_records.json offered, which dependent
+# doctypes still link to by email.
+TEST_STUDENTS = (
+    ("_Test", "Student Name", "_test_student@example.com"),
+    ("_Test", "Student Name 1", "_test_student_1@example.com"),
+    ("_Test", "Student Name 2", "_test_student_2@example.com"),
+)
+
+
+def _make_test_records():
+    """Build the Student test records Person-first (ADR 068).
+
+    This replaces `test_records.json`, which was ERPNext's: identity typed
+    straight onto the Student (`first_name`, `student_email_id`, `gender`,
+    `blood_group`) beside a `program` link to a course that no longer exists.
+    Every one of those fields is a `fetch_from person.*` mirror now and
+    `person` is reqd, so the fixture could not insert at all — which is why
+    several modules in this app carry an `IGNORE_TEST_RECORD_DEPENDENCIES` list
+    naming "Student" purely to get past it.
+
+    `create_student` below is already the Person-first path; this just runs it
+    for the three identities the JSON used to declare.
+    """
+    for first, last, email in TEST_STUDENTS:
+        existing = get_student(email)
+        if existing:
+            yield ("loaded", existing)
+            continue
+        yield (
+            "created",
+            create_student({"first_name": first, "last_name": last, "email": email}),
+        )
+
 
 class TestStudent(unittest.TestCase):
     def setUp(self):

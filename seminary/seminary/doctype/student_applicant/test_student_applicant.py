@@ -17,6 +17,8 @@ attribute the registry declares can be left out of the promotion again.
 import frappe
 from frappe.model import NO_VALUE_FIELDS
 from frappe.tests import IntegrationTestCase
+
+from seminary.seminary.tests.identity_cleanup import module_hooks
 from frappe.utils import cstr
 
 from seminary.seminary import person_fields as registry
@@ -83,6 +85,9 @@ def make_applicant(ignore_mandatory=False, **overrides):
     doc.flags.ignore_mandatory = ignore_mandatory
     doc.insert(ignore_permissions=True)
     return doc
+
+
+setUpModule, tearDownModule = module_hooks()
 
 
 class TestTheCaptureReachesTheSpine(IntegrationTestCase):
