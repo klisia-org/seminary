@@ -707,6 +707,13 @@ plagiarism_providers = {
 # registers none.
 # agreement_context = ["oikonomos.agreements.add_fees"]
 
+# Other apps' records a Person can owe requirements for (decisions/092), as
+# {doctype: "dotted.path"}. The path names an object with person(name),
+# rules(name), label(name) and optionally active(). The app calls
+# ensure_requirements itself when its record should open rows. Seminary
+# registers none.
+# requirement_subjects = {"Some Doctype": "some_app.requirements.SUBJECT"}
+
 # Scheduled Tasks
 # ---------------
 

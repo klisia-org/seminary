@@ -55,7 +55,8 @@ class TestP010Boot(IntegrationTestCase):
         """A new key must be a deliberate edit, not a silent addition."""
         self.assertEqual(
             set(get_boot_data()),
-            {"user", "csrf_token", "sitename", "session"},
+            # lang: the portal follows the user's language (aretenic 071).
+            {"user", "csrf_token", "sitename", "session", "lang"},
         )
 
     def test_session_carries_only_the_user(self):

@@ -38,6 +38,8 @@ from seminary.seminary.guards import SCHOOL_ROLES, _deny, _roles, require_regist
 OPEN = ("Pending", "Submitted")
 NOT_RENEWED = "Not needed"
 SUBJECTS = ("Program Enrollment", "Instructor")
+# Other apps' records a Person can owe requirements for (ADR 092).
+SUBJECT_HOOK = "requirement_subjects"
 RULE_FIELDS = (
     "kind",
     "agreement_template",
@@ -58,18 +60,48 @@ SLOTS = ("signature", "countersignature")
 # --------------------------------------------------------------------------- #
 # Who owes what
 # --------------------------------------------------------------------------- #
+def hooked_subjects():
+    """{doctype: handler} from other apps' `requirement_subjects` hook. A handler
+    has person(name), rules(name), label(name) and optionally active(). A doctype
+    seminary handles itself, or one not installed, is skipped and logged."""
+    subjects = {}
+    for doctype, value in (frappe.get_hooks(SUBJECT_HOOK) or {}).items():
+        path = value[-1] if isinstance(value, list) else value
+        if doctype in SUBJECTS or not frappe.db.exists("DocType", doctype):
+            frappe.logger("seminary").warning(
+                f"requirement subject {doctype} ({path}) skipped"
+            )
+            continue
+        subjects[doctype] = frappe.get_attr(path)
+    return subjects
+
+
+def _subject(reference_doctype):
+    if reference_doctype in SUBJECTS:
+        return None
+    return hooked_subjects().get(reference_doctype)
+
+
+def is_subject(reference_doctype):
+    return reference_doctype in SUBJECTS or bool(_subject(reference_doctype))
+
+
 def person_of(reference_doctype, reference_name):
     if reference_doctype == "Program Enrollment":
         student = frappe.db.get_value("Program Enrollment", reference_name, "student")
         return frappe.db.get_value("Student", student, "person") if student else None
     if reference_doctype == "Instructor":
         return frappe.db.get_value("Instructor", reference_name, "person")
-    return None
+    subject = _subject(reference_doctype)
+    return subject.person(reference_name) if subject else None
 
 
 def rules_for(reference_doctype, reference_name):
     """The rules that apply to a record now: the program's for an enrollment,
-    Seminary Settings' for an instructor."""
+    Seminary Settings' for an instructor, the handler's for another app's record."""
+    subject = _subject(reference_doctype)
+    if subject:
+        return subject.rules(reference_name) or []
     if reference_doctype == "Program Enrollment":
         program = frappe.db.get_value("Program Enrollment", reference_name, "program")
         if not program:
@@ -140,7 +172,7 @@ def _rule_key(rule):
 def ensure_requirements(reference_doctype, reference_name, rules=None, notify=True):
     """Add a row for each rule that has none yet for the current period.
     Returns the names of the rows created."""
-    if reference_doctype not in SUBJECTS:
+    if not is_subject(reference_doctype):
         return []
     person = person_of(reference_doctype, reference_name)
     if not person:
@@ -574,8 +606,12 @@ def agreement_context(row):
         )
     elif row.reference_doctype == "Instructor":
         ctx.instructor = _as_dict("Instructor", row.reference_name)
-    ctx.doctrinal_statement = _doctrinal_statement(
-        row.reference_doctype == "Instructor"
+    # Another app's record gets none; its agreement_context adds the one it
+    # wants (ADR 092 §4).
+    ctx.doctrinal_statement = (
+        _doctrinal_statement(row.reference_doctype == "Instructor")
+        if row.reference_doctype in SUBJECTS
+        else frappe._dict(title="", body="")
     )
     # Empty signature lines; the PDFs fill them (ADR 091 §8, amended).
     ctx.signature = _slot(
@@ -1003,6 +1039,19 @@ def sweep():
                 frappe.get_traceback(), "enrollment requirement sweep failed"
             )
 
+    # Other apps' records read their handler's rules every day, like
+    # instructors, when the handler lists which are active (ADR 092 §1).
+    for doctype, subject in hooked_subjects().items():
+        if not hasattr(subject, "active"):
+            continue
+        for name in subject.active() or []:
+            try:
+                ensure_requirements(doctype, name)
+            except Exception:  # noqa: BLE001
+                frappe.log_error(
+                    frappe.get_traceback(), f"{doctype} requirement sweep failed"
+                )
+
 
 # --------------------------------------------------------------------------- #
 # Permissions
@@ -1085,8 +1134,14 @@ def _for_label(row, cache):
                 "Program Enrollment", row.reference_name, "program"
             )
             cache[key] = program or row.reference_name
-        else:
+        elif row.reference_doctype == "Instructor":
             cache[key] = _("Instructor")
+        else:
+            # An uninstalled app's rows keep the bare record name.
+            subject = _subject(row.reference_doctype)
+            cache[key] = (
+                subject.label(row.reference_name) if subject else None
+            ) or row.reference_name
     return cache[key]
 
 

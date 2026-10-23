@@ -75,6 +75,7 @@ declare module 'vue' {
     PartnerHeader: typeof import('./src/components/PartnerHeader.vue')['default']
     PartnerPlacementCard: typeof import('./src/components/PartnerPlacementCard.vue')['default']
     PartnerReviewQuestions: typeof import('./src/components/PartnerReviewQuestions.vue')['default']
+    PartnerSidebar: typeof import('./src/components/PartnerSidebar.vue')['default']
     PdfViewer: typeof import('./src/components/AssignmentViewers/PdfViewer.vue')['default']
     ProfileModal: typeof import('./src/components/ProfileModal.vue')['default']
     ProgressBar: typeof import('./src/components/ProgressBar.vue')['default']
