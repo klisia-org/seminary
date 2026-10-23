@@ -14,18 +14,22 @@ class PersonRequirement(Document):
     def validate(self):
         from seminary.seminary import requirements
 
-        if self.reference_doctype not in requirements.SUBJECTS:
+        if requirements.is_subject(self.reference_doctype):
+            person = requirements.person_of(self.reference_doctype, self.reference_name)
+            if not person:
+                frappe.throw(
+                    _("{0} {1} has no Person.").format(
+                        _(self.reference_doctype), self.reference_name
+                    )
+                )
+            self.person = person
+        elif self.is_new():
             frappe.throw(
-                _("A requirement is for a Program Enrollment or an Instructor.")
-            )
-        person = requirements.person_of(self.reference_doctype, self.reference_name)
-        if not person:
-            frappe.throw(
-                _("{0} {1} has no Person.").format(
-                    _(self.reference_doctype), self.reference_name
+                _("{0} records cannot have requirements.").format(
+                    _(self.reference_doctype)
                 )
             )
-        self.person = person
+        # A row whose app was uninstalled keeps the Person it was made for.
         if self.kind == "Agreement":
             self.document_type = None
         else:
