@@ -35,10 +35,12 @@
 				{%- endif -%}
 			{%- endfor -%}
 
-			{#- Portal link for logged-in users; website.js reveals `.logged-in`. -#}
-			{%- if not only_static -%}
+			{#- Portal link for logged-in users; website.js reveals `.logged-in`.
+				Website Branding names it, and an empty link hides it (093). -#}
+			{%- set portal_link = branding.portal_link if branding else '/seminary' -%}
+			{%- if portal_link and not only_static -%}
 			<li class="nav-item logged-in" style="display: none">
-				<a class="nav-link" href="/seminary">{{ _("Portal") }}</a>
+				<a class="nav-link" href="{{ portal_link | abs_url }}">{{ _("Portal") }}</a>
 			</li>
 			{%- endif -%}
 

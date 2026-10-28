@@ -71,9 +71,10 @@ class AcademicUnit(WebsiteGenerator):
             self.route = "team/" + slugify(self.unit_name)
 
     def get_context(self, context):
-        from seminary.seminary import faculty
+        from seminary.seminary import faculty, public_website
         from seminary.seminary.seo import page_metatags
 
+        public_website.require()
         context.no_cache = 1
         context.roster = faculty.get_unit_roster(self.name, public=True)
         context.show_salutations = bool(

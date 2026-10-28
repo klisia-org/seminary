@@ -1,5 +1,6 @@
 import frappe
 
+from seminary.seminary import public_website
 from seminary.seminary.seo import page_metatags
 
 
@@ -7,6 +8,7 @@ def get_context(context):
     """Public "What We Believe" page (ADR 061): renders the Doctrinal Statement
     flagged for the website. If several are flagged, prefer the active one, then
     the most recently updated."""
+    public_website.require()
     context.no_cache = 1
     context.title = frappe._("What We Believe")
 

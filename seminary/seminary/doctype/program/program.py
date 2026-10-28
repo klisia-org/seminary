@@ -9,6 +9,13 @@ from frappe.website.website_generator import WebsiteGenerator
 from seminary.seminary.utils import assert_url_safe_code, slugify
 
 
+def get_list_context(context=None):
+    """The /program list is one of the seminary's public pages (093)."""
+    from seminary.seminary import public_website
+
+    public_website.require()
+
+
 class Program(WebsiteGenerator):
     def autoname(self):
         self.name = self.program_name
@@ -221,9 +228,11 @@ class Program(WebsiteGenerator):
                 )
 
     def get_context(self, context):
+        from seminary.seminary import public_website
         from seminary.seminary.seo import page_metatags
         from seminary.seminary.website_data import program_enrollment
 
+        public_website.require()
         context.update(program_enrollment(self))
         context.metatags = page_metatags(
             self.program_name,

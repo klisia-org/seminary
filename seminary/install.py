@@ -53,6 +53,7 @@ def after_install():
     seed_allowed_graduation_documents()
     seed_internship_types()
     seed_internship_communication()
+    seed_public_website_defaults()
     seed_website_branding()
     seed_website_navigation()
     seed_website_pages()
@@ -911,6 +912,16 @@ def seed_portal_messaging_rules():
     frappe.db.commit()
 
 
+def seed_public_website_defaults():
+    """The public pages start on, and the navbar's Portal link points at the
+    portal (093). A new Single field reads as 0 or empty until a row is
+    written, so install and the 093 patch write both once; after that they
+    are the school's to change, and an empty Portal link hides it."""
+    frappe.db.set_single_value("Seminary Settings", "public_website", 1)
+    if frappe.db.exists("DocType", "Website Branding"):
+        frappe.db.set_single_value("Website Branding", "portal_link", "/seminary")
+
+
 def seed_website_branding():
     """Seed the Website Branding singleton (ADR 061). Copies the legacy
     Seminary Settings website logo across on first run and fills the default
@@ -955,7 +966,7 @@ def seed_website_branding():
         frappe.db.commit()
 
 
-def seed_website_navigation():
+def seed_website_navigation(commit=True):
     """Point the public website at the seminary's custom navbar/footer Web
     Templates and seed the starter top-bar / footer links (ADR 061).
     Create-only-if-empty: if a site already has a navbar template or top bar
@@ -973,63 +984,71 @@ def seed_website_navigation():
     if not ws.footer_template and frappe.db.exists("Web Template", "Seminary Footer"):
         ws.footer_template = "Seminary Footer"
         changed = True
-    if not ws.home_page:
-        # "/" serves the public marketing Home page (www/home).
-        ws.home_page = "home"
-        changed = True
+    # With the public pages off (093) only the navbar and footer are seeded:
+    # they and Website Branding keep serving other apps' public pages.
+    from seminary.seminary import public_website
 
-    if not ws.get("top_bar_items"):
-        # "/program" is the existing published Program list route; the other
-        # routes are delivered in ADR 061 Phase B.
-        for label, url in [
-            ("Home", "/"),
-            ("Our Programs", "/programs"),
-            ("Who We Are", "/our-team"),
-            ("What We Believe", "/what-we-believe"),
-            ("Contact", "/contact"),
-        ]:
-            ws.append("top_bar_items", {"label": label, "url": url})
-        changed = True
+    if public_website.enabled():
+        if not ws.home_page:
+            # "/" serves the public marketing Home page (www/home).
+            ws.home_page = public_website.HOME_PAGE
+            changed = True
 
-    if not ws.get("footer_items"):
-        ws.append("footer_items", {"label": "Privacy", "url": "/privacy"})
-        changed = True
+        if not ws.get("top_bar_items"):
+            for label, url in public_website.TOP_BAR_ITEMS:
+                ws.append("top_bar_items", {"label": label, "url": url})
+            changed = True
+
+        if not ws.get("footer_items"):
+            for label, url in public_website.FOOTER_ITEMS:
+                ws.append("footer_items", {"label": label, "url": url})
+            changed = True
 
     if changed:
         ws.flags.ignore_permissions = True
         ws.save()
-        frappe.db.commit()
+        if commit:
+            frappe.db.commit()
 
 
-def seed_website_pages():
+# Starter prose pages for the public website (061). public_website.tidy()
+# unpublishes the ones still exactly as seeded.
+STARTER_WEB_PAGES = [
+    {
+        "title": "Our History",
+        "route": "our-history",
+        "main_section": "<p>Share your seminary's story here — its founding, "
+        "mission, and milestones. Edit this page under Website &gt; Web Page.</p>",
+    },
+    {
+        "title": "Privacy Policy",
+        "route": "privacy",
+        "main_section": "<p>Add your privacy policy here. "
+        "Edit this page under Website &gt; Web Page.</p>",
+    },
+    {
+        "title": "Contact Us",
+        "route": "contact",
+        "main_section": "<p>We'd love to hear from you.</p>"
+        '<p>Email: <a href="mailto:info@example.org">info@example.org</a><br>'
+        "Phone: +00 000 000 0000<br>Address: Your address here</p>"
+        "<p>Edit this page under Website &gt; Web Page.</p>",
+    },
+]
+
+
+def seed_website_pages(commit=True):
     """Seed starter public prose Web Pages (History / Privacy / Contact) for the
     website (ADR 061). Create-only-if-missing by route; staff edit them in Desk
     afterwards (Website > Web Page). NOT fixtures — this is staff-owned content.
     """
     if not frappe.db.exists("DocType", "Web Page"):
         return
-    pages = [
-        {
-            "title": "Our History",
-            "route": "our-history",
-            "main_section": "<p>Share your seminary's story here — its founding, "
-            "mission, and milestones. Edit this page under Website &gt; Web Page.</p>",
-        },
-        {
-            "title": "Privacy Policy",
-            "route": "privacy",
-            "main_section": "<p>Add your privacy policy here. "
-            "Edit this page under Website &gt; Web Page.</p>",
-        },
-        {
-            "title": "Contact Us",
-            "route": "contact",
-            "main_section": "<p>We'd love to hear from you.</p>"
-            '<p>Email: <a href="mailto:info@example.org">info@example.org</a><br>'
-            "Phone: +00 000 000 0000<br>Address: Your address here</p>"
-            "<p>Edit this page under Website &gt; Web Page.</p>",
-        },
-    ]
+    from seminary.seminary import public_website
+
+    if not public_website.enabled():
+        return
+    pages = STARTER_WEB_PAGES
     for p in pages:
         if frappe.db.exists("Web Page", {"route": p["route"]}):
             continue
@@ -1045,7 +1064,8 @@ def seed_website_pages():
         )
         doc.flags.ignore_permissions = True
         doc.insert()
-    frappe.db.commit()
+    if commit:
+        frappe.db.commit()
 
 
 def seed_partner_types():
