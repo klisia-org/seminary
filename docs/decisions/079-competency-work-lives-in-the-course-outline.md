@@ -1,7 +1,7 @@
 # 079 — Competency work lives in the course outline
 
 **Date:** 2026-09-24
-**Status:** Accepted 2026-09-24 — implemented 2026-09-24 (branch `adr079-cbe-outline`; browser pass on potestas, owner validation pending)
+**Status:** Accepted 2026-09-24; implemented 2026-09-24 (3f369afa); branch `adr079-cbe-outline`, browser pass on potestas, owner validation pending
 **Implementation notes:**
 - **Decision 3.** Deleting a chapter that holds reflection lessons is refused too.
 - **Decision 5.** Students can list only their own Self rows through the generic list API. The profile radar plots only complete series, because echarts draws a missing value at the centre.

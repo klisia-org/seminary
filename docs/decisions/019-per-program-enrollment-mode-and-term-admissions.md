@@ -1,7 +1,8 @@
 # 019 — Per-program Enrollment Mode & Term-scoped Admissions
 
 **Date:** 2026-05-04
-**Status:** Accepted
+**Status:** Accepted 2026-05-04; implemented 2026-05-04 (0b1c0204)
+**Delivers:** SIS-ADM-01 (Partial), SIS-ADM-02 (Partial)
 
 ## Context
 

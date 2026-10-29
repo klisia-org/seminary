@@ -1,7 +1,8 @@
 # 036 — Course attendance self check-in (per-meeting code) + printable sheet
 
 **Date:** 2026-06-08
-**Status:** Accepted
+**Status:** Accepted 2026-06-08; implemented 2026-06-08 (3a5bd8d9)
+**Delivers:** LMS-ONL-03 (Yes)
 
 ## Context
 

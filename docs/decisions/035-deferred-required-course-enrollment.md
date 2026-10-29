@@ -1,7 +1,7 @@
 # 035 — Deferred auto-enrollment for mandatory-on-enrollment courses
 
 **Date:** 2026-06-08
-**Status:** Accepted
+**Status:** Accepted 2026-06-08; implemented 2026-06-08 (3a5bd8d9)
 
 ## Context
 

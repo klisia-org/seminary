@@ -1,7 +1,8 @@
 # 091 — Agreements and required documents for students and instructors
 
 **Date:** 2026-10-20
-**Status:** Accepted 2026-10-20
+**Status:** Accepted 2026-10-20; implemented 2026-10-20 (d8ec8259)
+**Delivers:** SIS-REC-06 (Yes), SIS-ADM-03 (Partial)
 **Amended 2026-10-20:** §8 — signature fields in the template.
 **Related:** 042 (Person spine), 068 (Person-first identity), 071 (tax identifiers), 083 (bulk enrollment), 084 (staff-enrolled programs)
 

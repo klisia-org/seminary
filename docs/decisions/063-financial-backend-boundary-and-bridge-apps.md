@@ -1,7 +1,7 @@
 # 063 — Financial-backend boundary & bridge apps (oikonomos, future QBO)
 
 **Date:** 2026-06-26
-**Status:** Implemented 2026-06-26 (seminary decoupled from ERPNext; `oikonomos` is the first backend)
+**Status:** Accepted 2026-06-26; implemented 2026-06-26 (3b5be6b6); seminary decoupled from ERPNext; `oikonomos` is the first backend
 
 ## Context
 

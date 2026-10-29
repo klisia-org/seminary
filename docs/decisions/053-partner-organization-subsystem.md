@@ -1,7 +1,7 @@
 # 053 — Partner Organization subsystem
 
 **Date:** 2026-06-13
-**Status:** Accepted — foundation implemented; later phases future
+**Status:** Accepted 2026-06-13; implemented 2026-06-14 (93383ae8; Phases 0–1); later phases future
 
 ## Context
 

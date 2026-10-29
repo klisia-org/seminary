@@ -1,7 +1,7 @@
 # 062 — Org-unit hierarchy & person-keyed unit capabilities
 
 **Date:** 2026-06-24
-**Status:** Implemented 2026-06-24 (Seminary foundation; consumed by aretenic ADR 028)
+**Status:** Accepted 2026-06-24; implemented 2026-06-24 (973788e5; Seminary foundation); consumed by aretenic ADR 028
 
 ## Context
 

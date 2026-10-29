@@ -1,7 +1,7 @@
 # 023 — Course & Program Course Lifecycle
 
 **Date:** 2026-05-26
-**Status:** Accepted
+**Status:** Accepted 2026-05-26; implemented 2026-05-26 (a1b4631d)
 
 ## Context
 

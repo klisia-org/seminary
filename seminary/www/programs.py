@@ -1,5 +1,6 @@
 import frappe
 
+from seminary.seminary import public_website
 from seminary.seminary.seo import page_metatags
 from seminary.seminary.website_data import programs_catalogue
 
@@ -9,6 +10,7 @@ def get_context(context):
     their level's tier (p016), ordered by the levels' web_order. The page heading uses a
     singular/plural label based on how many programs are published, or the
     Website Branding override when set. The data comes from website_data (p021)."""
+    public_website.require()
     context.no_cache = 1
 
     catalogue = programs_catalogue()

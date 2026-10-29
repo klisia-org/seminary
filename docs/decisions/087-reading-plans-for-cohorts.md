@@ -1,7 +1,7 @@
 # 087 — Reading plans for cohorts
 
 **Date:** 2026-10-12
-**Status:** Accepted 2026-10-12
+**Status:** Accepted 2026-10-12; implemented 2026-10-12 (811c01ea)
 **Related:** 041 (course packs), 064 (cohorts, verse ordinals), 066 (mentoring cohorts)
 
 ## Context

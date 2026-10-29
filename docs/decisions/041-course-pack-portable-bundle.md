@@ -1,7 +1,8 @@
 # 041 — Course Packs: portable, full-fidelity course bundles
 
 **Date:** 2026-06-10
-**Status:** Accepted
+**Status:** Accepted 2026-06-10; implemented 2026-06-10 (1bac6a88)
+**Delivers:** LMS-CRS-02 (Partial)
 
 ## Context
 

@@ -1,7 +1,8 @@
 # 042 — Person identity spine
 
 **Date:** 2026-06-10
-**Status:** Accepted — **superseded in part by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
+**Status:** Accepted 2026-06-10; implemented 2026-06-10 (61049a5e); **superseded in part by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
+**Delivers:** SIS-REC-01 (Partial)
 
 The core decision below stands: Person is a spine beside the role doctypes, not a replacement, with one
 mutation point and an opaque id. Three clauses do not, and 068 replaces them:

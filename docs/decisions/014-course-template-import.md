@@ -1,7 +1,8 @@
 # 014 — Course Template Import
 
 **Date:** 2026-04-27
-**Status:** Accepted
+**Status:** Accepted 2026-04-27; implemented 2026-04-27 (9c79eb90)
+**Delivers:** LMS-CRS-02 (Yes)
 
 ## Context
 

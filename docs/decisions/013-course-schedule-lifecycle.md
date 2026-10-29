@@ -1,7 +1,8 @@
 # 013 — Course Schedule Lifecycle
 
 **Date:** 2026-04-27
-**Status:** Accepted
+**Status:** Accepted 2026-04-27; implemented 2026-04-27 (63d65635)
+**Delivers:** SIS-GRD-01 (Partial)
 
 ## Context
 

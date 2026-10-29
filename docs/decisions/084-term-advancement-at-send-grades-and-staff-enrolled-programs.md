@@ -1,7 +1,7 @@
 # 084 — Term advancement at Send Grades, and staff-enrolled programs
 
 **Date:** 2026-09-29
-**Status:** Accepted 2026-09-29
+**Status:** Accepted 2026-09-29; implemented 2026-09-29 (3d1f5a41)
 **Supersedes:** 083 §3 (Advance Students message) and §4 (Advance Students by program step);
 narrows 083 §1 to staff-enrolled programs.
 

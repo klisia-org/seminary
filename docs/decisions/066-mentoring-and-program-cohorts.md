@@ -1,7 +1,8 @@
 # 066 — Mentoring and program cohorts
 
 **Date:** 2026-09-02
-**Status:** Accepted 2026-09-02 — building blocks only; Phases A–G implemented, automation deliberately not built
+**Status:** Accepted 2026-09-02; implemented 2026-09-02 (080501cb; Phases A–G, building blocks only); automation deliberately not built
+**Delivers:** LMS-COL-04 (Partial)
 
 ## Context
 

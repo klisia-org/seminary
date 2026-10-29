@@ -1,7 +1,8 @@
 # 012 — Graduation Requirements Architecture
 
 **Date:** 2026-04-25
-**Status:** Accepted
+**Status:** Accepted 2026-04-25; implemented 2026-04-26 (2363d795)
+**Delivers:** SIS-AUD-01 (Partial)
 
 ## Context
 

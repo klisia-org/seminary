@@ -1,7 +1,7 @@
 # 069 — Alumni academic history as rows
 
 **Date:** 2026-09-04
-**Status:** Accepted 2026-09-04
+**Status:** Accepted 2026-09-04; implemented 2026-09-04 (ae5db9ec)
 
 ## Context
 

@@ -11,6 +11,7 @@
   "branding_section",
   "logo_portal",
   "letterhead",
+  "public_website",
   "column_break_icme",
   "logo_dark",
   "website_logo",
@@ -727,6 +728,13 @@
    "options": "Letter Head"
   },
   {
+   "default": "1",
+   "description": "Serve the seminary's public pages: home, programs, team and what we believe. Turn off when this site's public pages come from elsewhere. The logo, colours, navbar and footer stay on.",
+   "fieldname": "public_website",
+   "fieldtype": "Check",
+   "label": "Public Website"
+  },
+  {
    "fieldname": "column_break_qndk",
    "fieldtype": "Column Break"
   },
@@ -871,7 +879,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-20 12:00:00.000000",
+ "modified": "2026-10-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

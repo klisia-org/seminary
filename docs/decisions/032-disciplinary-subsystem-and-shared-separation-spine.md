@@ -1,7 +1,7 @@
 # 032 — Disciplinary subsystem and shared separation spine
 
 **Date:** 2026-06-01
-**Status:** Accepted
+**Status:** Accepted 2026-06-01; implemented 2026-06-06 (71452e7e)
 
 ## Context
 

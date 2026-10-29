@@ -1,7 +1,8 @@
 # 039 — Facilities hierarchy and one-directional Location mirror
 
 **Date:** 2026-06-10
-**Status:** Accepted
+**Status:** Accepted 2026-06-10; implemented 2026-06-09 (f95f4272)
+**Delivers:** SIS-PLT-03 (Partial)
 
 ## Context
 

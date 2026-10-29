@@ -1,7 +1,8 @@
 # 072 — Descriptive scale grading
 
 **Date:** 2026-09-21
-**Status:** Accepted
+**Status:** Accepted 2026-09-21; implemented 2026-09-21 (8fc72d4b)
+**Delivers:** SIS-GRD-02 (Partial)
 
 ## Context
 

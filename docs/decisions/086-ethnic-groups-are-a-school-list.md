@@ -1,7 +1,7 @@
 # 086 — Ethnic groups are a list each school keeps
 
 **Date:** 2026-10-02
-**Status:** Accepted 2026-10-02
+**Status:** Accepted 2026-10-02; implemented 2026-10-02 (04a5880d)
 **Related:** 042 (Person is the spine), 068 (shared attribute registry)
 
 ## Context

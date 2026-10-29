@@ -1,7 +1,7 @@
 # 074 — Portal taxonomy: one portal per deployed SPA
 
 **Date:** 2026-09-22
-**Status:** Accepted
+**Status:** Accepted 2026-09-22; implemented 2026-09-22 (cce4a206)
 
 Amends [ADR 011](011-multi-portal-frontend-cohesion-and-alumni-module.md) (portal
 registry), [ADR 064 §8](064-discipleship-cohorts-and-channels.md) (the

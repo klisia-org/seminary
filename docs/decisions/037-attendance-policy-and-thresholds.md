@@ -1,7 +1,8 @@
 # 037 — Attendance policy: absence limits, standing & alerts
 
 **Date:** 2026-06-08
-**Status:** Accepted
+**Status:** Accepted 2026-06-08; implemented 2026-06-08 (3a5bd8d9)
+**Delivers:** LMS-OUT-02 (Partial)
 
 ## Context
 

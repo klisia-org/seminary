@@ -1,8 +1,8 @@
 # Translations: how the pipeline works, and its quirks
 
-Maintainer notes for the UI translations of the five apps on
+Maintainer notes for the UI translations of the six apps on
 [translate.seminaryerp.org](https://translate.seminaryerp.org): seminary,
-oikonomos, aretenic, koinonia and tamias. Not published on the docs site. The
+oikonomos, aretenic, koinonia, tamias and klisia. Not published on the docs site. The
 platform decision is [ADR 073](decisions/073-weblate-replaces-crowdin.md); the
 Frappe v16 workspace gaps are [ADR 020](decisions/020-workspace-and-dashboard-localization-workaround.md).
 
@@ -29,6 +29,7 @@ Frappe v16 workspace gaps are [ADR 020](decisions/020-workspace-and-dashboard-lo
 | seminary, oikonomos | `klisia` (public) | `main` |
 | aretenic, koinonia | `aretenic` (private; status widgets public) | `main` |
 | tamias | `aretenic` | `develop` |
+| klisia | `klisia-app` (private; status widgets public) | `develop` |
 
 ## Writing strings that extract correctly
 

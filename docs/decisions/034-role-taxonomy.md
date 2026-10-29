@@ -1,7 +1,8 @@
 # 034 — Seminary role taxonomy
 
 **Date:** 2026-06-07
-**Status:** Accepted
+**Status:** Accepted 2026-06-07; implemented 2026-06-07 (fd2b54cb)
+**Delivers:** SIS-SEC-02 (Partial)
 
 ## Context
 

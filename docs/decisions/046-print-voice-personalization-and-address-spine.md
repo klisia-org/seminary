@@ -1,7 +1,7 @@
 # 046 — Print & Voice channels, announcement personalization, and the address spine
 
 **Date:** 2026-06-11
-**Status:** Accepted — **address clauses superseded by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
+**Status:** Accepted 2026-06-11; implemented 2026-06-11 (2b06c9a8); **address clauses superseded by [ADR 068](068-person-first-identity-and-shared-attribute-registry.md) (2026-09-04)**
 
 The channels, personalization and mailing-label decisions stand. Two things about the address do not:
 

@@ -1,7 +1,8 @@
 # 038 — First-class rooms: capacity, waitlist, feature matching & conflict detection
 
 **Date:** 2026-06-09
-**Status:** Accepted
+**Status:** Accepted 2026-06-09; implemented 2026-06-09 (f95f4272)
+**Delivers:** SIS-REG-02 (Yes), SIS-REG-04 (Partial)
 
 ## Context
 

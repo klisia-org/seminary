@@ -1,7 +1,8 @@
 # 081 — Excused absences and leave of absence in attendance
 
 **Date:** 2026-09-26
-**Status:** Accepted 2026-09-26
+**Status:** Accepted 2026-09-26; implemented 2026-09-26 (91c1787f)
+**Delivers:** LMS-ONL-03 (Partial), SIS-REC-04 (Partial)
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 090 — CBE sections: grading starts, and the class is sent, in the portal
 
 **Date:** 2026-10-19
-**Status:** Accepted 2026-10-19
+**Status:** Accepted 2026-10-19; implemented 2026-10-19 (6d2af54b)
 
 ## Context
 

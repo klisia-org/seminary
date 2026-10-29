@@ -1,7 +1,8 @@
 # 054 — Internships: structured placements, requirements, and hours
 
 **Date:** 2026-06-16
-**Status:** Accepted — staged; Stage A (Desk core) the initial scope
+**Status:** Accepted 2026-06-16; implemented 2026-06-16 (48da92ba; Stages A–C)
+**Delivers:** SIS-FOR-01 (Yes), SIS-FOR-02 (Yes)
 
 ## Context
 

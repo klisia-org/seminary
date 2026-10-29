@@ -1,7 +1,8 @@
 # 047 — First-class scholarships
 
 **Date:** 2026-06-12
-**Status:** Accepted
+**Status:** Accepted 2026-06-12; implemented 2026-06-12 (3a904af5); engine since moved to oikonomos by 063
+**Delivers:** SIS-FIN-04 (Yes)
 
 ## Context
 

@@ -1,7 +1,8 @@
 # 052 — External accounting integration (QuickBooks Online)
 
 **Date:** 2026-06-13
-**Status:** Accepted — implementation deferred
+**Status:** Accepted 2026-06-13; implementation deferred
+**Delivers:** SIS-FIN-05 (Yes)
 
 ## Context
 

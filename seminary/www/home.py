@@ -1,11 +1,13 @@
 import frappe
 
+from seminary.seminary import public_website
 from seminary.seminary.seo import page_metatags
 
 
 def get_context(context):
     """Public Home page (ADR 061). Hero content comes from the Website Branding
     singleton so staff can edit it in Desk without a deploy."""
+    public_website.require()
     context.no_cache = 1
     context.title = frappe._("Home")
     branding = None

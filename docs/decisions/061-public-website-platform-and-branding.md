@@ -1,7 +1,7 @@
 # 061 — Public website platform and branding
 
 **Date:** 2026-06-19
-**Status:** Implemented 2026-06-19 (Phases A & B)
+**Status:** Accepted 2026-06-19; implemented 2026-06-19 (ec70ae13; Phases A & B)
 
 ## Context
 

@@ -1,7 +1,8 @@
 # 040 — Upload size limits & in-platform recordings
 
 **Date:** 2026-06-10
-**Status:** Accepted
+**Status:** Accepted 2026-06-10; implemented 2026-06-10 (ed8b2a5c)
+**Delivers:** LMS-CRS-05 (Partial)
 
 ## Context
 

@@ -1,6 +1,6 @@
 import frappe
 
-from seminary.seminary import faculty
+from seminary.seminary import faculty, public_website
 from seminary.seminary.seo import page_metatags
 
 
@@ -8,6 +8,7 @@ def get_context(context):
     """Public "Our Team" page (ADR 061): published Academic Units ordered by
     web_order. web_order==0 units render their roster inline (shown first);
     web_order>0 units show a card linking to the unit's own /team/<slug> page."""
+    public_website.require()
     context.no_cache = 1
     context.title = frappe._("Our Team")
     context.show_salutations = bool(

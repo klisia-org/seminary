@@ -1,7 +1,8 @@
 # 082 — Individual due dates, late penalties and submission cut-off
 
 **Date:** 2026-09-28
-**Status:** Accepted 2026-09-28
+**Status:** Accepted 2026-09-28; implemented 2026-09-28 (2b90ced6)
+**Delivers:** LMS-ASM-04 (Partial)
 
 ## Context
 

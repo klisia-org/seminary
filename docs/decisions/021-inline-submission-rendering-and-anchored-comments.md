@@ -1,7 +1,8 @@
 # 021 — Inline Submission Rendering and Anchored Grading Comments
 
 **Date:** 2026-05-23
-**Status:** Accepted
+**Status:** Accepted 2026-05-23; implemented 2026-05-23 (dfa62c3a)
+**Delivers:** LMS-ASM-05 (Yes)
 
 ## Context
 

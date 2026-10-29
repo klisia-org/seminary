@@ -1,7 +1,8 @@
 # 004 — Student Balance and Online Payments
 
 **Date:** 2026-04-17
-**Status:** Accepted
+**Status:** Accepted 2026-04-17; implemented 2026-04-17 (3e94cbf0); engine since moved to oikonomos by 063
+**Delivers:** SIS-FIN-02 (Yes)
 
 ## Context
 

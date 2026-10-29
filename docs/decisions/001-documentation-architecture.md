@@ -1,7 +1,7 @@
 # 001 — Documentation Architecture
 
 **Date:** 2026-04-06
-**Status:** Accepted
+**Status:** Accepted 2026-04-06; implemented 2026-04-06 (f6051c02)
 
 ## Context
 

@@ -91,3 +91,4 @@ seminary.seminary.patches.adr088a_drop_converted_sidebars
 seminary.seminary.patches.drop_student_language
 seminary.seminary.patches.refile_chapter_competencies
 seminary.seminary.patches.adr091_applicant_documents
+seminary.seminary.patches.adr093_public_website

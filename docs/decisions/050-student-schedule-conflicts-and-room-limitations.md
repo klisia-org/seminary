@@ -1,7 +1,8 @@
 # 050 — Student schedule conflicts (warn-not-block) & known room/scheduling limitations
 
 **Date:** 2026-06-13
-**Status:** Accepted
+**Status:** Accepted 2026-06-13; implemented 2026-06-13 (967ac30c)
+**Delivers:** SIS-REG-04 (Partial)
 
 ## Context
 

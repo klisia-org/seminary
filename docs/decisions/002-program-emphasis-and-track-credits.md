@@ -1,7 +1,8 @@
 # 002 — Program Emphasis & Track Credit Architecture
 
 **Date:** 2026-04-07
-**Status:** Accepted
+**Status:** Accepted 2026-04-07; implemented 2026-04-07 (535f76df)
+**Delivers:** SIS-REC-02 (Partial)
 
 ## Context
 

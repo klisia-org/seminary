@@ -14,3 +14,12 @@ class WebsiteBranding(Document):
         # the old :root block — clear the website cache so a reload reflects the
         # new scheme immediately (ADR 061).
         clear_website_cache()
+
+
+@frappe.whitelist()
+def public_website_enabled():
+    """Form helper: the hero and display options only serve the seminary's
+    public pages, so the form hides them while those pages are off (093)."""
+    from seminary.seminary import public_website
+
+    return public_website.enabled()

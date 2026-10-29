@@ -1,0 +1,145 @@
+"""The Public Website switch (093): the seminary's public pages go, the
+branding and the portal stay, and Website Settings is tidied."""
+
+import frappe
+from frappe.tests import IntegrationTestCase
+from frappe.utils import set_request
+from frappe.website.serve import get_response
+from frappe.website.utils import clear_website_cache
+
+from seminary.install import STARTER_WEB_PAGES
+from seminary.seminary import public_website
+
+
+def _status(path):
+    had_request = hasattr(frappe.local, "request")
+    clear_website_cache()
+    set_request(method="GET", path=path)
+    try:
+        return get_response(path).status_code
+    finally:
+        # Frappe reads `frappe.local.request.environ` whenever the attribute
+        # exists, so leave it as absent as it was.
+        if not had_request:
+            del frappe.local.request
+
+
+def _switch(on):
+    settings = frappe.get_single("Seminary Settings")
+    settings.public_website = on
+    settings.save(ignore_permissions=True)
+
+
+def _seeded_website_settings():
+    ws = frappe.get_single("Website Settings")
+    ws.home_page = public_website.HOME_PAGE
+    ws.set("top_bar_items", [])
+    ws.set("footer_items", [])
+    for label, url in public_website.TOP_BAR_ITEMS:
+        ws.append("top_bar_items", {"label": label, "url": url})
+    ws.append("top_bar_items", {"label": "Library", "url": "/library"})
+    ws.append("top_bar_items", {"label": "Who We Are", "url": "/about-us"})
+    for label, url in public_website.FOOTER_ITEMS:
+        ws.append("footer_items", {"label": label, "url": url})
+    ws.save(ignore_permissions=True)
+
+
+def _starter_page(route, edited=False):
+    seed = next(p for p in STARTER_WEB_PAGES if p["route"] == route)
+    name = frappe.db.get_value("Web Page", {"route": route})
+    doc = frappe.get_doc("Web Page", name) if name else frappe.new_doc("Web Page")
+    doc.update(
+        {
+            "title": seed["title"],
+            "route": route,
+            "published": 1,
+            "content_type": "Rich Text",
+            "main_section": "<p>Our own words.</p>" if edited else seed["main_section"],
+        }
+    )
+    doc.save(ignore_permissions=True)
+    return doc.name
+
+
+class TestPublicWebsite(IntegrationTestCase):
+    def setUp(self):
+        _switch(1)
+
+    def tearDown(self):
+        frappe.clear_cache()
+
+    def test_pages_404_while_off(self):
+        self.assertEqual(_status("our-team"), 200)
+        _switch(0)
+        for path in ("home", "programs", "our-team", "what-we-believe", "program"):
+            self.assertEqual(_status(path), 404, path)
+
+    def test_portal_and_login_stay(self):
+        _switch(0)
+        frappe.set_user("Guest")
+        try:
+            self.assertEqual(_status("login"), 200)
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_off_tidies_only_what_is_unchanged(self):
+        _seeded_website_settings()
+        placeholder = _starter_page("our-history")
+        edited = _starter_page("privacy", edited=True)
+
+        _switch(0)
+
+        ws = frappe.get_single("Website Settings")
+        self.assertFalse(ws.home_page)
+        self.assertEqual(
+            [(r.label, r.url) for r in ws.top_bar_items],
+            [("Library", "/library"), ("Who We Are", "/about-us")],
+        )
+        self.assertFalse(ws.footer_items)
+        self.assertEqual(frappe.db.get_value("Web Page", placeholder, "published"), 0)
+        self.assertEqual(frappe.db.get_value("Web Page", edited, "published"), 1)
+
+    def test_on_again_seeds_what_is_empty(self):
+        _seeded_website_settings()
+        placeholder = _starter_page("our-history")
+        _switch(0)
+        _switch(1)
+
+        ws = frappe.get_single("Website Settings")
+        self.assertEqual(ws.home_page, public_website.HOME_PAGE)
+        # The top bar kept staff rows, so it is not empty and is not re-seeded.
+        self.assertEqual(len(ws.top_bar_items), 2)
+        self.assertEqual(
+            [(r.label, r.url) for r in ws.footer_items],
+            list(public_website.FOOTER_ITEMS),
+        )
+        self.assertEqual(frappe.db.get_value("Web Page", placeholder, "published"), 1)
+
+    def test_off_keeps_a_home_page_staff_chose(self):
+        ws = frappe.get_single("Website Settings")
+        ws.home_page = "about"
+        ws.save(ignore_permissions=True)
+        _switch(0)
+        self.assertEqual(
+            frappe.db.get_single_value("Website Settings", "home_page"), "about"
+        )
+
+
+class TestPortalLink(IntegrationTestCase):
+    def _navbar(self, link):
+        branding = frappe.get_single("Website Branding")
+        branding.portal_link = link
+        return frappe.render_template(
+            "templates/includes/seminary_chrome/navbar.html", {"branding": branding}
+        )
+
+    def test_link_follows_branding(self):
+        self.assertIn(
+            'href="/klisia"',
+            self._navbar("/klisia").replace(frappe.utils.get_url(), ""),
+        )
+
+    def test_empty_link_hides_it(self):
+        self.assertNotIn(
+            ">Portal<", self._navbar("").replace(" ", "").replace("\n", "")
+        )

@@ -1,7 +1,7 @@
 # 020 — Workspace and Dashboard Localization Workaround for Frappe v16
 
 **Date:** 2026-05-19
-**Status:** Accepted
+**Status:** Accepted 2026-05-19; implemented 2026-05-19 (eadfe1d6)
 
 ## Context
 
