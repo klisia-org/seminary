@@ -1,7 +1,8 @@
 # 064 — Discipleship Cohorts & Channels ("Community") subsystem
 
 **Date:** 2026-07-22
-**Status:** Proposed — design approved; implementation deferred and phased
+**Status:** Accepted 2026-07-22; implemented 2026-07-24 (57e02994, 33ada219)
+**Delivers:** LMS-COL-04 (Yes), LMS-ONL-05 (Yes), LMS-COL-01 (Partial)
 
 ## Context
 

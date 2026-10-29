@@ -224,6 +224,9 @@ def ensure_requirements(reference_doctype, reference_name, rules=None, notify=Tr
 
 
 def on_program_enrollment_submit(doc, method=None):
+    # An imported enrollment is history: it opens nothing to chase (ADR 094 §1).
+    if frappe.flags.in_import:
+        return
     ensure_requirements("Program Enrollment", doc.name)
 
 

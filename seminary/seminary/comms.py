@@ -401,7 +401,12 @@ def send_message(
     For external channels embedded files are flipped public so the recipient's
     client can fetch them without a session. For In-App (portal inbox) they stay
     private and are attached to the per-recipient log instead, so Frappe's
-    /private/files ACL serves them only to the recipient/sender (ADR 043)."""
+    /private/files ACL serves them only to the recipient/sender (ADR 043).
+
+    Nothing is queued while history is being imported (ADR 094 §1): every
+    notice passes through here."""
+    if frappe.flags.in_import:
+        return None
     if channel != IN_APP_CHANNEL:
         message = _publish_embedded_files(message)
     person_doc = None

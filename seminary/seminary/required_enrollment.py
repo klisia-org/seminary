@@ -49,7 +49,7 @@ def fulfill_for_program_enrollment_hook(doc, method=None):
     # Trust the freshly-submitted in-memory doc for the active check; the DB
     # row's derived pgmenrol_active mirror is reliably defaulted to 1 on a new
     # Active enrollment.
-    if not doc.pgmenrol_active:
+    if not doc.pgmenrol_active or frappe.flags.in_import:
         return
     pe = frappe._dict(
         name=doc.name,

@@ -1,6 +1,6 @@
 ---
 # Configuration - fill in metadata when accepted
-status: proposed
+status: accepted
 date: 2026-04-19
 decision-makers: Murilo Melo
 consulted:
@@ -8,6 +8,9 @@ informed:
 ---
 
 # Unified Partner Seminary Model for Legacy Data and Transfer Credits
+
+**Status:** Accepted 2026-04-19; implemented 2026-04-20 (35351848)
+**Delivers:** SIS-GRD-04 (Yes), SIS-IMP-01 (Partial)
 
 ## Context and Problem Statement
 

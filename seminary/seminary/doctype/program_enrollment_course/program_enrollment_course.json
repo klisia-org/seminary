@@ -13,6 +13,8 @@
   "pec_finalgradenum",
   "credits",
   "status",
+  "sessions_attended",
+  "sessions_held",
   "count_in_gpa",
   "is_transfer",
   "transfer_section",
@@ -84,6 +86,17 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Pass/Fail"
+  },
+  {
+   "fieldname": "sessions_attended",
+   "fieldtype": "Int",
+   "label": "Sessions Attended",
+   "description": "Imported history: attendance as a summary, with Sessions Held."
+  },
+  {
+   "fieldname": "sessions_held",
+   "fieldtype": "Int",
+   "label": "Sessions Held"
   },
   {
    "default": "1",
@@ -161,7 +174,7 @@
   },
   {
    "default": "None",
-   "description": "Warning raised while converting the partner seminary's grade to this school's scale \u2014 a value that had to be rounded, or that fell outside the scale's range.",
+   "description": "Warning raised while converting the partner seminary's grade to this school's scale — a value that had to be rounded, or that fell outside the scale's range.",
    "fieldname": "conversion_warning",
    "fieldtype": "Select",
    "label": "Conversion Warning",
@@ -183,7 +196,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-04-20 10:14:45.403898",
+ "modified": "2026-10-29 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Program Enrollment Course",

@@ -1,8 +1,8 @@
 # 052 — External accounting integration (QuickBooks Online)
 
 **Date:** 2026-06-13
-**Status:** Accepted 2026-06-13; implementation deferred
-**Delivers:** SIS-FIN-05 (Yes)
+**Status:** Superseded 2026-10-29 by [063](063-financial-backend-boundary-and-bridge-apps.md) and aretenic
+ADR 049 (logistes)
 
 ## Context
 

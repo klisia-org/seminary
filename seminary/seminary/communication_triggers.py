@@ -48,7 +48,7 @@ def process(doc, method=None):
         and doc.flags.in_patch
     ):
         return
-    if frappe.flags.in_install or frappe.flags.in_migrate:
+    if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_import:
         return
     if not frappe.db.table_exists("Communication Trigger", cached=True):
         return

@@ -14,6 +14,11 @@ class ProgramEnrollment(Document):
     def validate(self):
         if frappe.flags.in_demo_install:
             return
+        from seminary.seminary import history
+
+        if self.is_new() and history.importing():
+            history.settle_enrollment(self)
+        history.check_attendance(self.courses)
         self.set_student_name()
         self.validate_duplication()
         self.validate_reenrollment_holds()
@@ -34,6 +39,10 @@ class ProgramEnrollment(Document):
     def on_submit(self):
         self.update_student_joining_date()
         self.set_max_graduation_date()
+        from seminary.seminary import history
+
+        if history.importing():
+            history.record_leaving(self)
 
     def before_update_after_submit(self):
         # validate() doesn't run on update-after-submit saves, so resolve
@@ -43,8 +52,10 @@ class ProgramEnrollment(Document):
             apply_sgr_choices,
             ensure_emphasis_scoped_requirements,
         )
+        from seminary.seminary.history import check_attendance
         from seminary.seminary.leveling import resolve_rows_hook
 
+        check_attendance(self.courses)
         # ADR 056: an emphasis change is frozen once a Graduation Request exists;
         # otherwise materialize any newly-applicable emphasis-scoped requirements
         # (e.g. an emphasis declared after enrollment).
@@ -217,8 +228,9 @@ class ProgramEnrollment(Document):
         enrollment_date = getdate(self.enrollment_date)
         # Only guard against a past start date when the enrollment is first
         # created. Editing or re-saving an existing record (e.g. a draft created
-        # on an earlier day) must not fail this check retroactively.
-        if self.is_new() and enrollment_date < getdate():
+        # on an earlier day) must not fail this check retroactively. Imported
+        # history is in the past by definition (ADR 094 §2).
+        if self.is_new() and enrollment_date < getdate() and not frappe.flags.in_import:
             frappe.throw(_("Enrollment Date cannot be before today."))
 
         if end_date and enrollment_date > getdate(end_date):

@@ -278,7 +278,11 @@ def recompute_standing(course_schedule, student, cs=None, settings=None, notify=
 
 def recompute_for_attendance(doc, method=None):
     """doc_events hook on Student Attendance (after_insert / on_update / on_trash)."""
-    recompute_standing(doc.get("course_schedule"), doc.get("student"))
+    recompute_standing(
+        doc.get("course_schedule"),
+        doc.get("student"),
+        notify=not frappe.flags.in_import,
+    )
 
 
 def recompute_for_course_schedule(course_schedule):

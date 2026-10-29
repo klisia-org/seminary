@@ -224,7 +224,8 @@ class CourseEnrollmentIndividual(Document):
         Submitted), so a promoted student is billed exactly like a directly
         enrolled one.
         """
-        if self.cei_si:
+        if self.cei_si or frappe.flags.in_import:
+            # Imported history is never billed (ADR 094 §1).
             return
         if frappe.db.get_value("Program", self.program_data, "is_free"):
             self.db_set("cei_si", 1)

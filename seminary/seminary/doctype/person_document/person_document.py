@@ -31,6 +31,14 @@ class PersonDocument(Document):
         ):
             # Without review, an upload counts as soon as it arrives.
             self._mark_accepted(frappe.session.user)
+        elif (
+            self.is_new()
+            and frappe.flags.in_import
+            and self.status == "Accepted"
+            and not self.reviewed_on
+        ):
+            # Accepted by the school's previous system (ADR 094 §4).
+            self._mark_accepted(frappe.session.user, self.valid_until)
 
     def on_update(self):
         self._recompute()
@@ -57,8 +65,10 @@ class PersonDocument(Document):
         self.reviewed_by = by
         self.reviewed_on = now_datetime()
         self.rejection_reason = None
+        # An imported document was valid from when it was submitted (ADR 094 §4).
+        on = self.submitted_on if frappe.flags.in_import else None
         self.valid_until = valid_until or requirements.accepted_valid_until(
-            self.document_type
+            self.document_type, on=on
         )
 
     def reject(self, reason, by=None):
