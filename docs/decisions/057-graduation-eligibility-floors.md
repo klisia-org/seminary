@@ -1,7 +1,8 @@
 # 057 — Graduation eligibility floors: GPA minimum and transfer-credit cap
 
 **Date:** 2026-06-17
-**Status:** Accepted
+**Status:** Accepted 2026-06-17; implemented 2026-06-18 (947db1f4)
+**Delivers:** SIS-AUD-01 (Partial)
 
 ## Context
 

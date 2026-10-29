@@ -1,7 +1,8 @@
 # 056 — Course-gated and emphasis-scoped graduation requirements
 
 **Date:** 2026-06-17
-**Status:** Accepted (amended same day — see Amendment)
+**Status:** Accepted 2026-06-17; implemented 2026-06-18 (947db1f4); amended same day — see Amendment
+**Delivers:** SIS-AUD-01 (Partial)
 
 ## Amendment (2026-06-17): single Link, not Table MultiSelect
 

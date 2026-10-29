@@ -1,7 +1,8 @@
 # 055 — Withdrawal Workflow: Five States with Action-Bound Dispatch
 
 **Date:** 2026-06-17
-**Status:** Accepted
+**Status:** Accepted 2026-06-17; implemented 2026-06-18 (947db1f4)
+**Delivers:** SIS-REC-04 (Partial)
 
 ## Context
 

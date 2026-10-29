@@ -1,7 +1,8 @@
 # 029 — Chapel attendance (count-based requirement + self check-in)
 
 **Date:** 2026-05-31
-**Status:** Accepted
+**Status:** Accepted 2026-05-31; implemented 2026-05-31 (0adb803e)
+**Delivers:** SIS-FOR-03 (Partial)
 
 ## Context
 

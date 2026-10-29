@@ -1,7 +1,8 @@
 # 016 — Payment-Gated Course Enrollment Lifecycle
 
 **Date:** 2026-05-01
-**Status:** Accepted
+**Status:** Accepted 2026-05-01; implemented 2026-05-01 (b9b7a1a6)
+**Delivers:** SIS-FIN-01 (Yes)
 
 ## Context
 

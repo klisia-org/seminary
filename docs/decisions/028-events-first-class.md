@@ -1,7 +1,7 @@
 # 028 — Events as first-class (Event Custom Category + attendance fulfilment)
 
 **Date:** 2026-05-30
-**Status:** Accepted
+**Status:** Accepted 2026-05-30; implemented 2026-05-31 (0adb803e)
 
 ## Context
 

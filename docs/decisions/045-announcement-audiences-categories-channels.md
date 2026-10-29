@@ -1,7 +1,8 @@
 # 045 — Announcement audiences, categories & multi-channel delivery
 
 **Date:** 2026-06-11
-**Status:** Accepted
+**Status:** Accepted 2026-06-11; implemented 2026-06-11 (2b06c9a8)
+**Delivers:** SIS-COM-01 (Yes), LMS-COL-02 (Yes)
 
 ## Context
 

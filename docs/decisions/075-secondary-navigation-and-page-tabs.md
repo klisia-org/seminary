@@ -1,7 +1,7 @@
 # 075 — Secondary navigation: one page-tab primitive, addressable
 
 **Date:** 2026-09-22
-**Status:** Accepted
+**Status:** Accepted 2026-09-22; implemented 2026-09-22 (26075107)
 
 Follows [ADR 074](074-portal-taxonomy-one-portal-per-spa.md), which settled what a
 *portal* is. This settles the level below it: how a page offers more than one

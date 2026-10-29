@@ -1,7 +1,7 @@
 # 073 — Weblate replaces Crowdin for translation hosting
 
 **Date:** 2026-09-21
-**Status:** Accepted
+**Status:** Accepted 2026-09-21; implemented 2026-09-21 (755db3d2)
 
 ## Context
 

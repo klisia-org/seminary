@@ -1,7 +1,8 @@
 # 051 — Per-meeting room, virtual meetings, time enforcement & per-meeting attendance
 
 **Date:** 2026-06-13
-**Status:** Accepted
+**Status:** Accepted 2026-06-13; implemented 2026-06-13 (967ac30c)
+**Delivers:** LMS-ONL-01 (Partial)
 
 ## Context
 

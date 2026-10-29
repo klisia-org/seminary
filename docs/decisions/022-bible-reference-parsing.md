@@ -1,7 +1,7 @@
 # 022 — Bible Reference Parser: Hand-coded EN+PT for Now, OpenBibleInfo Library Reserved
 
 **Date:** 2026-05-23
-**Status:** Accepted
+**Status:** Accepted 2026-05-23; implemented 2026-05-26 (2c37e6e1)
 
 ## Context
 

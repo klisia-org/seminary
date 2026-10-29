@@ -1,7 +1,7 @@
 # 048 — Donor ↔ Person soft cross-app link
 
 **Date:** 2026-06-12
-**Status:** Accepted
+**Status:** Accepted 2026-06-12; implemented 2026-06-12 (4679c45c)
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 060 — Separate leveling placement assessments from graduation requirements
 
 **Date:** 2026-06-18
-**Status:** Implemented 2026-06-18 (with ADR 059 Stage 2)
+**Status:** Accepted 2026-06-18; implemented 2026-06-18 (947db1f4; with ADR 059 Stage 2)
 
 ## Context
 

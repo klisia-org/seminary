@@ -1,7 +1,8 @@
 # 018 — Diploma Issuance and Verification
 
 **Date:** 2026-05-04
-**Status:** Accepted
+**Status:** Accepted 2026-05-04; implemented 2026-05-04 (96c9bb68)
+**Delivers:** SIS-AUD-04 (Partial)
 
 ## Context
 

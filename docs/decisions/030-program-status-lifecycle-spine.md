@@ -1,7 +1,8 @@
 # 030 — Program enrollment status lifecycle spine
 
 **Date:** 2026-06-01
-**Status:** Accepted
+**Status:** Accepted 2026-06-01; implemented 2026-06-06 (71452e7e)
+**Delivers:** SIS-REC-04 (Partial)
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 071 — Tax identifiers per country
 
 **Date:** 2026-09-10
-**Status:** Accepted
+**Status:** Accepted 2026-09-10; implemented 2026-09-10 (bfcf5c41)
 
 ## Context
 

@@ -1,7 +1,8 @@
 # 077 — Alumni organization membership: the lifecycle after "create"
 
 **Date:** 2026-09-22
-**Status:** Accepted
+**Status:** Accepted 2026-09-22; implemented 2026-09-22 (26075107)
+**Delivers:** ADV-ALU-02 (Partial)
 
 Extends [ADR 053](053-partner-organization-subsystem.md) (partner subsystem) and
 [ADR 070](070-alumni-reachability-and-peer-contact.md) (alumni-facing org

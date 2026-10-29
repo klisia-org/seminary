@@ -1,7 +1,8 @@
 # 017 — Graduation Request Fee-Bearing Approval Flow
 
 **Date:** 2026-05-02
-**Status:** Accepted
+**Status:** Accepted 2026-05-02; implemented 2026-05-02 (4865b17f)
+**Delivers:** SIS-AUD-03 (Yes)
 
 ## Context
 

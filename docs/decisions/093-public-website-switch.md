@@ -1,7 +1,7 @@
 # 093 — Turning the seminary's public pages off
 
 **Date:** 2026-10-28
-**Status:** Accepted 2026-10-28
+**Status:** Accepted 2026-10-28; implemented 2026-10-28 (20139261)
 **Related:** 061 (public website platform and branding)
 
 ## Context

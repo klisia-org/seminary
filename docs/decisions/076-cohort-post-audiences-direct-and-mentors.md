@@ -1,7 +1,7 @@
 # 076 — Cohort post audiences: making `direct` reachable, and a `mentors` level
 
 **Date:** 2026-09-22
-**Status:** Accepted
+**Status:** Accepted 2026-09-22; implemented 2026-09-22 (26075107)
 
 Amends [ADR 064 §6](064-discipleship-cohorts-and-channels.md) (post visibility levels).
 

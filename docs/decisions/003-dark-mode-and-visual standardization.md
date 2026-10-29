@@ -1,7 +1,7 @@
 # 003 — Dark Mode & Visual Standardization
 
 **Date:** 2026-04-10
-**Status:** Accepted
+**Status:** Accepted 2026-04-10; implemented 2026-04-10 (50978280)
 
 ## Context
 

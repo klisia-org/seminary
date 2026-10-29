@@ -1,7 +1,7 @@
 # 026 — Graduation Requirement Choices: Project-Type allow-list + "Choose Option" umbrella
 
 **Date:** 2026-05-29
-**Status:** Accepted
+**Status:** Accepted 2026-05-29; implemented 2026-05-30 (02582f48)
 
 ## Context
 

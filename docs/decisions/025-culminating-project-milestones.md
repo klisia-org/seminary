@@ -1,7 +1,7 @@
 # 025 — Culminating Project Milestones: Slim Lifecycle + Configurable Dated Milestone Model
 
 **Date:** 2026-05-29
-**Status:** Accepted
+**Status:** Accepted 2026-05-29; implemented 2026-05-29 (65e12c61)
 
 ## Context
 

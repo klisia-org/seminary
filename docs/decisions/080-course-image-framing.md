@@ -1,7 +1,7 @@
 # 080 — Course image framing on the portal
 
 **Date:** 2026-09-24
-**Status:** Accepted 2026-09-24
+**Status:** Accepted 2026-09-24; implemented 2026-09-24 (30196742)
 
 ## Context
 

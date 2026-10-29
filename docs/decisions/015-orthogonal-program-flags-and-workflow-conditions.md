@@ -1,7 +1,7 @@
 # 015 — Orthogonal Program Flags & Conditional Workflow Transitions
 
 **Date:** 2026-05-01
-**Status:** Accepted
+**Status:** Accepted 2026-05-01; implemented 2026-05-01 (b9b7a1a6)
 
 ## Context
 

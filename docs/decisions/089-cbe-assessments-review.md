@@ -1,7 +1,7 @@
 # 089 — CBE gradebook: Assessments review
 
 **Date:** 2026-10-19
-**Status:** Accepted 2026-10-19
+**Status:** Accepted 2026-10-19; implemented 2026-10-19 (6d2af54b)
 
 ## Context
 

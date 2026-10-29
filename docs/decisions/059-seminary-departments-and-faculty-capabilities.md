@@ -1,7 +1,8 @@
 # 059 — Academic Unit & Faculty Capabilities
 
 **Date:** 2026-06-18
-**Status:** Implemented 2026-06-18 (Stages 0–4: foundation; internship pool; verification/placement routing with [ADR 060](060-leveling-placement-assessment-separation.md); CP rework; portal worklist + roster button + audit report)
+**Status:** Accepted 2026-06-18; implemented 2026-06-18 (947db1f4; Stages 0–4: foundation; internship pool; verification/placement routing with [ADR 060](060-leveling-placement-assessment-separation.md); CP rework; portal worklist + roster button + audit report)
+**Delivers:** SIS-POR-02 (Partial)
 
 ## Context
 

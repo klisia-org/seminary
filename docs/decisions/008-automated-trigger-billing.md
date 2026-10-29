@@ -1,7 +1,8 @@
 # 008 — Automated Trigger Billing
 
 **Date:** 2026-04-21
-**Status:** Accepted
+**Status:** Accepted 2026-04-21; implemented 2026-04-23 (b0b7d255); engine since moved to oikonomos by 063
+**Delivers:** SIS-FIN-01 (Partial)
 
 ## Context
 

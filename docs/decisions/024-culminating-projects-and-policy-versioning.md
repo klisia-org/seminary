@@ -1,7 +1,8 @@
 # 024 — Culminating Projects as Academic+Financial Records, and Graduation-Policy Versioning
 
 **Date:** 2026-05-29
-**Status:** Accepted
+**Status:** Accepted 2026-05-29; implemented 2026-05-29 (65e12c61)
+**Delivers:** SIS-CUR-02 (Partial)
 
 ## Context
 

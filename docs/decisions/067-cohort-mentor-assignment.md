@@ -1,7 +1,7 @@
 # 067 — Cohort mentor assignment: a reviewed batch, not a trigger
 
 **Date:** 2026-09-03 (§2 and §5–§7 rewritten 2026-09-04)
-**Status:** Accepted 2026-09-04 — extends [ADR 066](066-mentoring-and-program-cohorts.md); assumes
+**Status:** Accepted 2026-09-04; implemented 2026-09-04 (e92a14a4); extends [ADR 066](066-mentoring-and-program-cohorts.md); assumes
 [ADR 068](068-person-first-identity-and-shared-attribute-registry.md); supersedes nothing
 
 ## Context

@@ -1,7 +1,7 @@
 # 068 — Person-first identity, the shared-attribute registry, and geolocation
 
 **Date:** 2026-09-03
-**Status:** Accepted 2026-09-04 — supersedes ADR 042 in part (the `read_only_depends_on` mirror
+**Status:** Accepted 2026-09-04; implemented 2026-09-04 (ae5db9ec); supersedes ADR 042 in part (the `read_only_depends_on` mirror
 mechanism, the "roles keep their naming series untouched" clause, and the two-onboarding-heads framing)
 and closes ADR 046's deferred reconciliation of Student's writable address onto the spine.
 §7 amended 2026-09-08 — geolocation is no longer Person-only (see the update note there)

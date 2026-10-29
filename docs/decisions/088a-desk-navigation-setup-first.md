@@ -1,7 +1,7 @@
 # 088a — Desk navigation: setup first, then the offices
 
 **Date:** 2026-10-17
-**Status:** Accepted 2026-10-17
+**Status:** Accepted 2026-10-17; implemented 2026-10-17 (bc8055b5)
 **Amends:** [088](088-desk-navigation-dock-and-sidebars.md) §1–§3, §5 and §8
 
 ## Context

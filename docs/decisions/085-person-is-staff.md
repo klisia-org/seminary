@@ -1,7 +1,7 @@
 # 085 — Who is staff: a derived flag on Person
 
 **Date:** 2026-10-02
-**Status:** Accepted 2026-10-02
+**Status:** Accepted 2026-10-02; implemented 2026-10-01 (ab82a05e)
 **Related:** 042 (Person is the spine); aretenic 057 (stewards are chosen from staff)
 
 ## Context

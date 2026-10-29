@@ -1,7 +1,8 @@
 # 044 — Declarative communication triggers & desk conversation surfaces
 
 **Date:** 2026-06-10
-**Status:** Accepted
+**Status:** Accepted 2026-06-10; implemented 2026-06-10 (61049a5e)
+**Delivers:** SIS-COM-02 (Yes)
 
 ## Context
 

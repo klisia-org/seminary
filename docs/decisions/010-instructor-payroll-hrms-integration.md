@@ -1,7 +1,7 @@
 # 010 — Instructor Payroll & HRMS Integration
 
 **Date:** 2026-04-23
-**Status:** Accepted
+**Status:** Accepted 2026-04-23; implemented 2026-04-23 (4a893628); engine since moved to oikonomos by 063
 
 ## Context
 

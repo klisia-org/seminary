@@ -1,7 +1,7 @@
 # 092 — Requirements owed for other apps' records
 
 **Date:** 2026-10-23
-**Status:** Accepted 2026-10-23
+**Status:** Accepted 2026-10-23; implemented 2026-10-23 (24ab106e)
 **Related:** 091 (agreements and required documents), 043 (channel adapters)
 
 ## Context

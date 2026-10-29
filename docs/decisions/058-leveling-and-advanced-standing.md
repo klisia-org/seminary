@@ -1,7 +1,7 @@
 # 058 — Leveling and advanced-standing (entrance-conditioned requirements)
 
 **Date:** 2026-06-18
-**Status:** Accepted — implemented 2026-06-18 (forks resolved same day; "Required leveling blocks graduation" confirmed)
+**Status:** Accepted 2026-06-18; implemented 2026-06-18 (947db1f4); forks resolved same day; "Required leveling blocks graduation" confirmed
 
 ## Context
 

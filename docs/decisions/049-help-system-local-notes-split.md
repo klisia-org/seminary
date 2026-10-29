@@ -1,7 +1,7 @@
 # 049 — Help system: native doc link + local-notes split
 
 **Date:** 2026-06-12
-**Status:** Accepted (supersedes part of ADR 001)
+**Status:** Accepted 2026-06-12; implemented 2026-06-12 (4679c45c); supersedes part of ADR 001
 
 ## Context
 

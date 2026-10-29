@@ -1,7 +1,7 @@
 # 078 — Dimension codes are a guarded vocabulary
 
 **Date:** 2026-09-22
-**Status:** Accepted 2026-09-22 — implemented 2026-09-22
+**Status:** Accepted 2026-09-22; implemented 2026-09-22 (17528f47)
 **Amends:** ADR 065 section 1 (adds the rename guard and `track_changes` to Grading Scale)
 **Relates to:** ADR 009 (track_changes convention), aretenic ADR 046 section 7a
 
