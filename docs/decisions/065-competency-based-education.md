@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-28
 **Status:** Accepted 2026-08-28; implemented 2026-09-01 (22c1fdb8; Phases 1–8 and 10); Phase 9 deferred
-**Delivers:** SIS-CUR-04 (Yes)
+**Delivers:** SIS-CUR-04 (Partial)
 **Amended 10/1/26:** section 3 (`report_basis`, `report_max`) — Removed these fields to simplify reporting x transcript.
 
 ## Context

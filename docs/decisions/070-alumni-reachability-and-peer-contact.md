@@ -1,7 +1,7 @@
 # 070 — Alumni reachability: peer contact, address verification, and cohort invitations
 
 **Date:** 2026-09-08
-**Status:** Proposed
+**Status:** Accepted 2026-09-08; implemented 2026-09-10 (bfcf5c41)
 
 ## Context
 
