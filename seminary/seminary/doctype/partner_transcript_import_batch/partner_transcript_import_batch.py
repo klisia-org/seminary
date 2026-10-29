@@ -6,7 +6,10 @@ from frappe.utils import flt, now_datetime
 
 class PartnerTranscriptImportBatch(Document):
     def validate(self):
+        from seminary.seminary.history import check_attendance
+
         self._validate_partner_and_policy_submitted()
+        check_attendance(self.rows)
 
     def before_submit(self):
         if self.batch_status != "Dry-Run Clean":
@@ -208,12 +211,30 @@ class PartnerTranscriptImportBatch(Document):
         from seminary.seminary.gpa import recompute_program_enrollment_gpa
 
         partner = frappe.get_cached_doc("Partner Seminary", self.partner_seminary)
+        # Our own past students' coursework is imported history (ADR 094 §1): it
+        # opens no requirements and sends no notices. A transfer student's is not.
+        was_importing = frappe.flags.in_import
+        if partner.is_internal_legacy:
+            frappe.flags.in_import = True
+        try:
+            affected_pes = self._commit_each_row(partner)
+        finally:
+            frappe.flags.in_import = was_importing
+
+        for pe_name in affected_pes:
+            _refresh_totalcredits(pe_name)
+            _recalculate_emphasis_credits(pe_name)
+            _check_auto_grant_emphases(pe_name)
+            recompute_program_enrollment_gpa(pe_name)
+
+    def _commit_each_row(self, partner):
         affected_pes = set()
         for row in self.rows:
             program_enrollment = _get_or_create_program_enrollment(
                 student=row.student,
                 program=self.target_program,
                 academic_term=self.target_academic_term,
+                any_term=partner.is_internal_legacy,
             )
             _upsert_transcript_row(
                 program_enrollment=program_enrollment,
@@ -227,12 +248,7 @@ class PartnerTranscriptImportBatch(Document):
                 update_modified=False,
             )
             affected_pes.add(program_enrollment.name)
-
-        for pe_name in affected_pes:
-            _refresh_totalcredits(pe_name)
-            _recalculate_emphasis_credits(pe_name)
-            _check_auto_grant_emphases(pe_name)
-            recompute_program_enrollment_gpa(pe_name)
+        return affected_pes
 
 
 def _resolve_student(row):
@@ -342,16 +358,14 @@ def _refresh_totalcredits(pe_name):
     )
 
 
-def _get_or_create_program_enrollment(student, program, academic_term):
+def _get_or_create_program_enrollment(student, program, academic_term, any_term=False):
+    """any_term: our own past students' coursework joins the enrollment imported
+    for that program, whatever its term (ADR 094 §2)."""
+    filters = {"student": student, "program": program, "docstatus": 1}
+    if not any_term:
+        filters["academic_term"] = academic_term
     existing = frappe.db.get_value(
-        "Program Enrollment",
-        {
-            "student": student,
-            "program": program,
-            "academic_term": academic_term,
-            "docstatus": 1,
-        },
-        "name",
+        "Program Enrollment", filters, "name", order_by="enrollment_date desc"
     )
     if existing:
         return frappe.get_doc("Program Enrollment", existing)
@@ -434,6 +448,8 @@ def _upsert_transcript_row(program_enrollment, row, partner, batch):
         "external_reference": row.external_reference,
         "conversion_warning": row.warning or "None",
         "conversion_override_note": row.override_note,
+        "sessions_attended": row.sessions_attended,
+        "sessions_held": row.sessions_held,
     }
 
     if existing_row:

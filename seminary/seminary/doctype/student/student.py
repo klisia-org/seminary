@@ -124,7 +124,8 @@ class Student(Document):
                     "last_name": self.last_name,
                     "email": self.student_email_id,
                     "gender": self.gender,
-                    "send_welcome_email": 1,
+                    # Imported history sends no welcome (ADR 094 §1).
+                    "send_welcome_email": 0 if frappe.flags.in_import else 1,
                     "user_type": "Website User",
                 }
             )
