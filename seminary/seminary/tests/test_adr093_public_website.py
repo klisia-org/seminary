@@ -217,4 +217,7 @@ class TestLanguagePicker(IntegrationTestCase):
         html = render([("en", "English"), ("es", "Español")])
         self.assertIn('<option value="es" selected>Español</option>', html)
         self.assertIn("preferred_language=", html)
+        # Frappe moves page scripts to the end of <body>, so the script must not
+        # hide its own parent: for a logged-in user that blanked the whole page.
+        self.assertNotIn("currentScript", html)
         self.assertNotIn("sem-navbar__lang", render([]))

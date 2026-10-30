@@ -54,7 +54,8 @@
 					<option value="{{ code }}" {{ 'selected' if code == current_language }}>{{ name }}</option>
 					{%- endfor %}
 				</select>
-				<script>if (/(^|; )user_id=(?!Guest)/.test(document.cookie)) document.currentScript.parentElement.hidden = true;</script>
+				{#- By id: Frappe moves page scripts to the end of <body>. -#}
+				<script>if (/(^|; )user_id=(?!Guest)/.test(document.cookie)) document.getElementById("sem-navbar-lang").parentElement.hidden = true;</script>
 			</li>
 			{%- endif -%}
 
