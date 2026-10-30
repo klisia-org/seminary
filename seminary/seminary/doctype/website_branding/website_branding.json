@@ -10,6 +10,7 @@
   "column_break_identity",
   "favicon",
   "portal_link",
+  "website_languages",
   "colours_section",
   "primary_color",
   "secondary_color",
@@ -64,6 +65,13 @@
    "fieldname": "portal_link",
    "fieldtype": "Data",
    "label": "Portal Link"
+  },
+  {
+   "fieldname": "website_languages",
+   "fieldtype": "Table MultiSelect",
+   "label": "Website Languages",
+   "options": "Website Language",
+   "description": "The languages your public pages are translated into. Visitors choose among them in the navbar; leave empty to hide the choice."
   },
   {
    "description": "Brand colours follow brand-manual convention. Primary drives the navbar, primary buttons and links; tertiary/accent are used for call-to-action highlights.",
@@ -224,7 +232,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-30 12:00:00.000000",
+ "modified": "2026-10-30 12:30:00.000000",
  "module": "Seminary",
  "name": "Website Branding",
  "owner": "Administrator",

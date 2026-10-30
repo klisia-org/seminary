@@ -146,6 +146,28 @@ a:hover {
 		margin-left: 0.5rem;
 	}
 }
+/* Language picker (061b): drawn in the bar's ink like the links; the open list
+   keeps the browser's own light menu, so its options get dark text. */
+.sem-navbar__lang select {
+	appearance: none;
+	background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E") right 0.6rem center / 0.6rem no-repeat;
+	color: color-mix(in srgb, var(--sem-bar-ink) 85%, transparent);
+	border: 0;
+	border-radius: 6px;
+	padding: 0.45rem 1.6rem 0.45rem 0.85rem;
+	font: inherit;
+	font-weight: 500;
+	cursor: pointer;
+}
+.sem-navbar__lang select:hover,
+.sem-navbar__lang select:focus {
+	color: var(--sem-bar-ink);
+	background-color: color-mix(in srgb, var(--sem-bar-ink) 12%, transparent);
+}
+.sem-navbar__lang option {
+	color: #1a2330;
+	background: #fff;
+}
 .sem-navbar__cta {
 	background-color: var(--brand-tertiary, #c8a24b);
 	color: #1a2330;

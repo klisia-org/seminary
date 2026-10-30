@@ -8,7 +8,7 @@ from frappe.website.serve import get_response
 from frappe.website.utils import clear_website_cache
 
 from seminary.install import STARTER_WEB_PAGES
-from seminary.overrides import apply_branding, bar_ink
+from seminary.overrides import apply_branding, bar_ink, website_languages
 from seminary.seminary import public_website
 
 
@@ -185,3 +185,36 @@ class TestBarColours(IntegrationTestCase):
         self.assertIn("--brand-navbar-bg: #ffffff;", head)
         self.assertIn("--brand-navbar-ink: #1a2330;", head)
         self.assertIn("--brand-footer-ink: #ffffff;", head)
+
+
+class TestLanguagePicker(IntegrationTestCase):
+    """061b: guests choose among the languages Website Branding lists."""
+
+    def _branding(self, *codes):
+        branding = frappe.get_single("Website Branding")
+        branding.set("website_languages", [{"language": c} for c in codes])
+        return branding
+
+    def test_choices_keep_the_listed_order(self):
+        frappe.db.set_value("Language", "pt-BR", "enabled", 1)
+        choices = website_languages(self._branding("pt-BR", "en"))
+        self.assertEqual([code for code, _ in choices], ["pt-BR", "en"])
+
+    def test_one_language_or_a_disabled_one_leaves_no_choice(self):
+        self.assertEqual(website_languages(self._branding("en")), [])
+        frappe.db.set_value("Language", "pt-BR", "enabled", 0)
+        self.assertEqual(website_languages(self._branding("en", "pt-BR")), [])
+
+    def test_navbar_marks_the_current_language(self):
+        render = lambda choices: frappe.render_template(  # noqa: E731
+            "templates/includes/seminary_chrome/navbar.html",
+            {
+                "branding": self._branding(),
+                "website_languages": choices,
+                "current_language": "es",
+            },
+        )
+        html = render([("en", "English"), ("es", "Español")])
+        self.assertIn('<option value="es" selected>Español</option>', html)
+        self.assertIn("preferred_language=", html)
+        self.assertNotIn("sem-navbar__lang", render([]))

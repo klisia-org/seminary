@@ -90,6 +90,24 @@ def _append_brand_css(context):
         context["web_include_css"] = existing + [href]
 
 
+def website_languages(branding):
+    """The navbar's language choices as (code, name), in the order listed (061b).
+    Fewer than two leaves nothing to choose, so the picker hides."""
+    codes = [row.language for row in branding.get("website_languages") or []]
+    if len(codes) < 2:
+        return []
+    names = dict(
+        frappe.get_all(
+            "Language",
+            filters={"name": ["in", codes], "enabled": 1},
+            fields=["name", "language_name"],
+            as_list=True,
+        )
+    )
+    choices = [(code, names[code] or code) for code in codes if code in names]
+    return choices if len(choices) > 1 else []
+
+
 def apply_branding(context):
     """Expose the Website Branding singleton to web templates and inject the
     public site's `--brand-*` CSS custom properties + favicon (ADR 061).
@@ -107,6 +125,9 @@ def apply_branding(context):
 
     if branding.favicon and not context.get("favicon"):
         context.favicon = branding.favicon
+
+    context.website_languages = website_languages(branding)
+    context.current_language = frappe.local.lang
 
     declarations = []
     for field, var in _BRAND_COLOR_VARS.items():

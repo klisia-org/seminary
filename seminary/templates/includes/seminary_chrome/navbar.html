@@ -44,6 +44,20 @@
 			</li>
 			{%- endif -%}
 
+			{#- Guests choose the page language (061b); a logged-in user reads in their
+				profile's language, and cached pages are shared, so it hides in the browser. -#}
+			{%- if website_languages -%}
+			<li class="sem-navbar__lang">
+				<label class="sr-only" for="sem-navbar-lang">{{ _("Language") }}</label>
+				<select id="sem-navbar-lang" onchange="document.cookie = 'preferred_language=' + this.value + '; path=/; max-age=31536000; SameSite=Lax'; location.reload();">
+					{%- for code, name in website_languages %}
+					<option value="{{ code }}" {{ 'selected' if code == current_language }}>{{ name }}</option>
+					{%- endfor %}
+				</select>
+				<script>if (/(^|; )user_id=(?!Guest)/.test(document.cookie)) document.currentScript.parentElement.hidden = true;</script>
+			</li>
+			{%- endif -%}
+
 			{#- Login link (Guest) / account dropdown (logged in). Reuses Frappe's
 				partial + website JS that toggles the two states. -#}
 			{% include "templates/includes/navbar/navbar_login.html" %}
