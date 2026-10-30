@@ -221,3 +221,36 @@ class TestLanguagePicker(IntegrationTestCase):
         # hide its own parent: for a logged-in user that blanked the whole page.
         self.assertNotIn("currentScript", html)
         self.assertNotIn("sem-navbar__lang", render([]))
+
+
+class TestRootForLoggedInUsers(IntegrationTestCase):
+    """093a: the site's public home page wins over the role portals."""
+
+    def _home_for_student(self, home_page):
+        from frappe.website.utils import get_home_page
+
+        frappe.db.set_single_value("Website Settings", "home_page", home_page)
+        user = "zz-093a-student@example.com"
+        if not frappe.db.exists("User", user):
+            frappe.get_doc(
+                {
+                    "doctype": "User",
+                    "email": user,
+                    "first_name": "Student",
+                    "user_type": "Website User",
+                    "send_welcome_email": 0,
+                    "roles": [{"role": "Student"}],
+                }
+            ).insert(ignore_permissions=True)
+        frappe.set_user(user)
+        frappe.cache.hdel("home_page", user)
+        try:
+            return get_home_page()
+        finally:
+            frappe.set_user("Administrator")
+
+    def test_public_home_page_for_everyone(self):
+        self.assertEqual(self._home_for_student("welcome"), "welcome")
+
+    def test_role_portal_without_one(self):
+        self.assertEqual(self._home_for_student(""), "seminary/courses")
