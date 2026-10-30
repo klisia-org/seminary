@@ -239,6 +239,11 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # Duplicate Persons (privatedocs p022): Possible Duplicate's read permission
+    # first, then who may merge the pair.
+    "seminary.seminary.duplicates.merge",
+    "seminary.seminary.duplicates.merge_preview",
+    "seminary.seminary.duplicates.not_the_same",
     "seminary.seminary.cbe_overview.get_cbe_overview",
     # The Students tab: the section's teaching staff only (privatedocs p015).
     "seminary.seminary.course_students.get_course_students",

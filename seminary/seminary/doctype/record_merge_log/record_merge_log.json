@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "autoname": "MERGE-.#####",
+ "creation": "2026-10-30 14:00:00.000000",
+ "description": "One merge of two records into one. A merge cannot be undone; the removed ID is kept here.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "kept",
+  "kept_title",
+  "column_break_kept",
+  "removed",
+  "removed_title",
+  "section_by",
+  "merged_by",
+  "column_break_by",
+  "merged_on",
+  "section_choices",
+  "choices"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Record Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kept",
+   "fieldtype": "Dynamic Link",
+   "in_standard_filter": 1,
+   "label": "Kept",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kept_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kept Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kept",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "removed",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Removed ID",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "removed_title",
+   "fieldtype": "Data",
+   "label": "Removed Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_by",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "merged_by",
+   "fieldtype": "Link",
+   "label": "Merged By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_by",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "merged_on",
+   "fieldtype": "Datetime",
+   "label": "Merged On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_choices",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "choices",
+   "fieldtype": "Code",
+   "label": "Choices",
+   "options": "JSON",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-10-30 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Record Merge Log",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "write": 0
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "write": 0
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "kept_title",
+ "track_changes": 0
+}
