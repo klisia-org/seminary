@@ -786,6 +786,9 @@ scheduler_events = {
         # A direct upload the user abandoned leaves an object no File row will ever
         # reference, and nothing in the database to notice it (privatedocs/p004).
         "seminary.storage.direct.sweep_pending_uploads",
+        # One human with two emails becomes two Persons; propose the pairs for
+        # staff to merge or set aside (privatedocs/p022).
+        "seminary.seminary.duplicates.daily",
     ],
     "hourly": ["seminary.tasks.hourly"],
     # 	"weekly": [
