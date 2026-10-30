@@ -74,8 +74,12 @@ a:hover {
 }
 
 /* ---- Custom navbar (Web Template: Seminary Navbar) ---------------------- */
+/* The bar's own background falls back to Primary; its ink (white or dark) is
+   derived server-side for contrast (061a), so no text here is a fixed white. */
 .sem-navbar {
-	background-color: var(--brand-primary, #0d3049);
+	--sem-bar-ink: var(--brand-navbar-ink, #fff);
+	background-color: var(--brand-navbar-bg, var(--brand-primary, #0d3049));
+	color: var(--sem-bar-ink);
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
 }
 .sem-navbar .container {
@@ -91,14 +95,14 @@ a:hover {
 	align-items: center;
 	gap: 0.6rem;
 	flex: 0 0 auto;
-	color: #fff;
+	color: var(--sem-bar-ink);
 	font-weight: 600;
 	font-size: 1.15rem;
 	text-decoration: none;
 	white-space: nowrap;
 }
 .sem-navbar__brand:hover {
-	color: #fff;
+	color: var(--sem-bar-ink);
 	opacity: 0.92;
 }
 .sem-navbar__logo {
@@ -119,28 +123,50 @@ a:hover {
 	flex-wrap: wrap;
 }
 .sem-navbar__links .nav-link {
-	color: rgba(255, 255, 255, 0.85);
+	color: color-mix(in srgb, var(--sem-bar-ink) 85%, transparent);
 	padding: 0.45rem 0.85rem;
 	border-radius: 6px;
 	font-weight: 500;
 }
 .sem-navbar__links .nav-link:hover,
 .sem-navbar__links .nav-link:focus {
-	color: #fff;
-	background-color: rgba(255, 255, 255, 0.12);
+	color: var(--sem-bar-ink);
+	background-color: color-mix(in srgb, var(--sem-bar-ink) 12%, transparent);
 }
 /* Login / account control (Frappe navbar_login.html partial) */
 .sem-navbar__links .btn-login-area {
-	border: 1px solid rgba(255, 255, 255, 0.45);
+	border: 1px solid color-mix(in srgb, var(--sem-bar-ink) 45%, transparent);
 }
 .sem-navbar__links .btn-login-area:hover {
-	background-color: rgba(255, 255, 255, 0.18);
+	background-color: color-mix(in srgb, var(--sem-bar-ink) 18%, transparent);
 }
 @media (min-width: 992px) {
 	.sem-navbar__links .nav-item.logged-in,
 	.sem-navbar__links .btn-login-area {
 		margin-left: 0.5rem;
 	}
+}
+/* Language picker (061b): drawn in the bar's ink like the links; the open list
+   keeps the browser's own light menu, so its options get dark text. */
+.sem-navbar__lang select {
+	appearance: none;
+	background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E") right 0.6rem center / 0.6rem no-repeat;
+	color: color-mix(in srgb, var(--sem-bar-ink) 85%, transparent);
+	border: 0;
+	border-radius: 6px;
+	padding: 0.45rem 1.6rem 0.45rem 0.85rem;
+	font: inherit;
+	font-weight: 500;
+	cursor: pointer;
+}
+.sem-navbar__lang select:hover,
+.sem-navbar__lang select:focus {
+	color: var(--sem-bar-ink);
+	background-color: color-mix(in srgb, var(--sem-bar-ink) 12%, transparent);
+}
+.sem-navbar__lang option {
+	color: #1a2330;
+	background: #fff;
 }
 .sem-navbar__cta {
 	background-color: var(--brand-tertiary, #c8a24b);
@@ -159,7 +185,7 @@ a:hover {
 	margin-left: auto;
 	background: transparent;
 	border: 0;
-	color: #fff;
+	color: var(--sem-bar-ink);
 	font-size: 1.6rem;
 	line-height: 1;
 	cursor: pointer;
@@ -179,19 +205,20 @@ a:hover {
 }
 
 /* ---- Custom footer (Web Template: Seminary Footer) --------------------- */
-/* Uses the primary brand colour directly (palette-true) rather than a
-   computed off-palette shade. */
+/* Its own background, else the primary brand colour (palette-true) rather
+   than a computed off-palette shade; the ink is derived like the navbar's. */
 .sem-footer {
-	background-color: var(--brand-primary, #0d3049);
-	color: rgba(255, 255, 255, 0.82);
+	--sem-bar-ink: var(--brand-footer-ink, #fff);
+	background-color: var(--brand-footer-bg, var(--brand-primary, #0d3049));
+	color: color-mix(in srgb, var(--sem-bar-ink) 82%, transparent);
 	padding: 2.5rem 0 1.5rem;
 	margin-top: 3rem;
 }
 .sem-footer a {
-	color: rgba(255, 255, 255, 0.82);
+	color: color-mix(in srgb, var(--sem-bar-ink) 82%, transparent);
 }
 .sem-footer a:hover {
-	color: #fff;
+	color: var(--sem-bar-ink);
 }
 .sem-footer__top {
 	display: flex;
@@ -219,8 +246,8 @@ a:hover {
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.12);
-	color: #fff;
+	background-color: color-mix(in srgb, var(--sem-bar-ink) 12%, transparent);
+	color: var(--sem-bar-ink);
 	transition: background-color 0.15s ease, color 0.15s ease;
 }
 .sem-footer__social a:hover {
@@ -235,7 +262,7 @@ a:hover {
 	margin-bottom: 1.5rem;
 }
 .sem-footer__group h5 {
-	color: #fff;
+	color: var(--sem-bar-ink);
 	font-size: 0.95rem;
 	margin-bottom: 0.6rem;
 }
@@ -256,7 +283,7 @@ a:hover {
 .sem-footer__copyright {
 	font-size: 0.86rem;
 	opacity: 0.85;
-	border-top: 1px solid rgba(255, 255, 255, 0.14);
+	border-top: 1px solid color-mix(in srgb, var(--sem-bar-ink) 14%, transparent);
 	padding-top: 1rem;
 	margin-top: 1rem;
 }

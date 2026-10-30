@@ -201,6 +201,10 @@ webform_include_js = {
 # application home page (will override Website Settings)
 # home_page = "login"
 
+# A logged-in user's `/`: the public home page when Website Settings has one
+# (093a); otherwise Frappe falls through to the role pages below.
+get_website_user_home_page = "seminary.seminary.public_website.user_home_page"
+
 # website user home page (by Role) — works for Website Users only
 role_home_page = {
     "Student": "/seminary/courses",

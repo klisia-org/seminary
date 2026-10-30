@@ -93,3 +93,9 @@ def _publish_starter_pages(published):
         )
         if name:
             frappe.db.set_value("Web Page", name, "published", published)
+
+
+def user_home_page(user=None):
+    """`/` for a logged-in user (093a): the site's public home page when it has
+    one, so the role portals (role_home_page) apply only to sites without one."""
+    return frappe.db.get_single_value("Website Settings", "home_page") or None

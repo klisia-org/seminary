@@ -10,6 +10,7 @@
   "column_break_identity",
   "favicon",
   "portal_link",
+  "website_languages",
   "colours_section",
   "primary_color",
   "secondary_color",
@@ -18,6 +19,8 @@
   "column_break_surface",
   "background_color",
   "text_color",
+  "navbar_background",
+  "footer_background",
   "typography_section",
   "heading_font",
   "column_break_type",
@@ -62,6 +65,13 @@
    "fieldname": "portal_link",
    "fieldtype": "Data",
    "label": "Portal Link"
+  },
+  {
+   "fieldname": "website_languages",
+   "fieldtype": "Table MultiSelect",
+   "label": "Website Languages",
+   "options": "Website Language",
+   "description": "The languages your public pages are translated into. Visitors choose among them in the navbar; leave empty to hide the choice."
   },
   {
    "description": "Brand colours follow brand-manual convention. Primary drives the navbar, primary buttons and links; tertiary/accent are used for call-to-action highlights.",
@@ -110,6 +120,18 @@
    "fieldname": "text_color",
    "fieldtype": "Color",
    "label": "Text"
+  },
+  {
+   "fieldname": "navbar_background",
+   "fieldtype": "Color",
+   "label": "Navbar Background",
+   "description": "Leave blank to use Primary. A light colour suits a logo drawn in the brand colour; the menu text turns dark or light to stay readable."
+  },
+  {
+   "fieldname": "footer_background",
+   "fieldtype": "Color",
+   "label": "Footer Background",
+   "description": "Leave blank to use Primary. The footer text turns dark or light to stay readable."
   },
   {
    "description": "Fonts are self-hosted (no external Google Fonts call at page load).",
@@ -210,7 +232,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-28 12:00:00.000000",
+ "modified": "2026-10-30 12:30:00.000000",
  "module": "Seminary",
  "name": "Website Branding",
  "owner": "Administrator",

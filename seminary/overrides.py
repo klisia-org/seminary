@@ -16,6 +16,48 @@ _BRAND_COLOR_VARS = {
     "text_color": "--brand-text",
 }
 
+# The navbar and footer each take their own background, falling back to
+# Primary, and get a derived ink so their text stays readable (061a).
+_BAR_FIELDS = {"navbar": "navbar_background", "footer": "footer_background"}
+_LIGHT_INK = "#ffffff"
+_DARK_INK = "#1a2330"
+
+
+def _luminance(hex_colour):
+    """WCAG relative luminance of a #rgb/#rrggbb colour, or None."""
+    value = (hex_colour or "").strip().lstrip("#")
+    if len(value) == 3:
+        value = "".join(c * 2 for c in value)
+    if len(value) != 6:
+        return None
+    try:
+        channels = [int(value[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    except ValueError:
+        return None
+    r, g, b = (
+        c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels
+    )
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(a, b):
+    lighter, darker = max(a, b), min(a, b)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def bar_ink(background, text_colour=None):
+    """The ink with the higher contrast on `background`: white, or the
+    school's Text colour (near-black when that is blank or too light).
+    None when the background can't be read, so the CSS fallback applies."""
+    bg = _luminance(background)
+    if bg is None:
+        return None
+    text = _luminance(text_colour)
+    dark = text_colour.strip() if text is not None and text < 0.2 else _DARK_INK
+    if _contrast(bg, _luminance(dark)) > _contrast(bg, 1.0):
+        return dark
+    return _LIGHT_INK
+
 
 def _website_branding():
     """Return the Website Branding singleton, or None if it isn't available
@@ -48,6 +90,24 @@ def _append_brand_css(context):
         context["web_include_css"] = existing + [href]
 
 
+def website_languages(branding):
+    """The navbar's language choices as (code, name), in the order listed (061b).
+    Fewer than two leaves nothing to choose, so the picker hides."""
+    codes = [row.language for row in branding.get("website_languages") or []]
+    if len(codes) < 2:
+        return []
+    names = dict(
+        frappe.get_all(
+            "Language",
+            filters={"name": ["in", codes], "enabled": 1},
+            fields=["name", "language_name"],
+            as_list=True,
+        )
+    )
+    choices = [(code, names[code] or code) for code in codes if code in names]
+    return choices if len(choices) > 1 else []
+
+
 def apply_branding(context):
     """Expose the Website Branding singleton to web templates and inject the
     public site's `--brand-*` CSS custom properties + favicon (ADR 061).
@@ -66,11 +126,21 @@ def apply_branding(context):
     if branding.favicon and not context.get("favicon"):
         context.favicon = branding.favicon
 
+    context.website_languages = website_languages(branding)
+    context.current_language = frappe.local.lang
+
     declarations = []
     for field, var in _BRAND_COLOR_VARS.items():
         value = (branding.get(field) or "").strip()
         if value:
             declarations.append(f"{var}: {value};")
+    for bar, field in _BAR_FIELDS.items():
+        background = (branding.get(field) or "").strip()
+        if background:
+            declarations.append(f"--brand-{bar}-bg: {background};")
+        ink = bar_ink(background or branding.primary_color, branding.text_color)
+        if ink:
+            declarations.append(f"--brand-{bar}-ink: {ink};")
     if branding.heading_font:
         declarations.append(f'--brand-heading-font: "{branding.heading_font}";')
     if branding.body_font:
