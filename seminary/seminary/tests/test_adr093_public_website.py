@@ -8,6 +8,7 @@ from frappe.website.serve import get_response
 from frappe.website.utils import clear_website_cache
 
 from seminary.install import STARTER_WEB_PAGES
+from seminary.overrides import apply_branding, bar_ink
 from seminary.seminary import public_website
 
 
@@ -143,3 +144,44 @@ class TestPortalLink(IntegrationTestCase):
         self.assertNotIn(
             ">Portal<", self._navbar("").replace(" ", "").replace("\n", "")
         )
+
+
+class TestBarColours(IntegrationTestCase):
+    """061a: the navbar and footer take their own background and a derived ink."""
+
+    def _head(self, **fields):
+        branding = frappe.get_single("Website Branding")
+        branding.update(fields)
+        branding.save(ignore_permissions=True)
+        context = frappe._dict()
+        apply_branding(context)
+        return context.get("head_html") or ""
+
+    def test_ink_follows_contrast(self):
+        self.assertEqual(bar_ink("#0d3049"), "#ffffff")
+        self.assertEqual(bar_ink("#fff"), "#1a2330")
+        self.assertEqual(bar_ink("#ffffff", "#000000"), "#000000")
+        # A light Text colour would vanish on a white bar.
+        self.assertEqual(bar_ink("#ffffff", "#eeeeee"), "#1a2330")
+        self.assertIsNone(bar_ink(""))
+        self.assertIsNone(bar_ink("not-a-colour"))
+
+    def test_blank_bars_follow_primary(self):
+        head = self._head(
+            primary_color="#0d3049", navbar_background="", footer_background=""
+        )
+        self.assertNotIn("--brand-navbar-bg", head)
+        self.assertNotIn("--brand-footer-bg", head)
+        self.assertIn("--brand-navbar-ink: #ffffff;", head)
+        self.assertIn("--brand-footer-ink: #ffffff;", head)
+
+    def test_light_navbar_gets_dark_ink(self):
+        head = self._head(
+            primary_color="#0d3049",
+            text_color="",
+            navbar_background="#ffffff",
+            footer_background="",
+        )
+        self.assertIn("--brand-navbar-bg: #ffffff;", head)
+        self.assertIn("--brand-navbar-ink: #1a2330;", head)
+        self.assertIn("--brand-footer-ink: #ffffff;", head)

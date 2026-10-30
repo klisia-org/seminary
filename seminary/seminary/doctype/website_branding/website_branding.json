@@ -18,6 +18,8 @@
   "column_break_surface",
   "background_color",
   "text_color",
+  "navbar_background",
+  "footer_background",
   "typography_section",
   "heading_font",
   "column_break_type",
@@ -110,6 +112,18 @@
    "fieldname": "text_color",
    "fieldtype": "Color",
    "label": "Text"
+  },
+  {
+   "fieldname": "navbar_background",
+   "fieldtype": "Color",
+   "label": "Navbar Background",
+   "description": "Leave blank to use Primary. A light colour suits a logo drawn in the brand colour; the menu text turns dark or light to stay readable."
+  },
+  {
+   "fieldname": "footer_background",
+   "fieldtype": "Color",
+   "label": "Footer Background",
+   "description": "Leave blank to use Primary. The footer text turns dark or light to stay readable."
   },
   {
    "description": "Fonts are self-hosted (no external Google Fonts call at page load).",
@@ -210,7 +224,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-28 12:00:00.000000",
+ "modified": "2026-10-30 12:00:00.000000",
  "module": "Seminary",
  "name": "Website Branding",
  "owner": "Administrator",
