@@ -1,7 +1,7 @@
 # 095 — Rubrics on assignments and discussions
 
 **Date:** 2026-10-30
-**Status:** Accepted 2026-10-30; implemented 2026-10-30
+**Status:** Accepted 2026-10-30; implemented 2026-10-30 (0c6f6ade)
 **Delivers:** LMS-ASM-03 (Yes)
 **Related:** 021 (inline submission rendering), 082 (due dates and late policy)
 
