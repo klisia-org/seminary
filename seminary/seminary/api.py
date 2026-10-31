@@ -3620,6 +3620,7 @@ def get_course_rosters(name):
         "Scheduled Course Roster",
         filters={"course_sc": name},
         fields=[
+            "name",
             "course_sc",
             "stuname_roster",
             "stuimage",
@@ -3632,8 +3633,13 @@ def get_course_rosters(name):
     )
     if not course_rosters:
         return []
-    else:
-        return course_rosters
+    # The course grade beside each student (decisions/096a).
+    from seminary.seminary.grade_projection import course_grades
+
+    grades = course_grades(name, [r.name for r in course_rosters])
+    for r in course_rosters:
+        r["course_grade"] = grades.get(r.name)
+    return course_rosters
 
 
 @frappe.whitelist()

@@ -382,3 +382,68 @@ class TestGrading(ADR096Case):
         )
         self.assertIn("category_code", _SCAC_COPYABLE_FIELDS)
         self.assertIn("never_drop", _SCAC_COPYABLE_FIELDS)
+
+
+# --- decisions/096a: the course grade column ------------------------------------
+
+
+class TestCourseGrade(ADR096Case):
+    def test_current_until_sent(self):
+        from seminary.seminary.grade_projection import course_grades
+
+        self.grade(q1=90, q2=40, q3=70, p1=80)
+        grade = course_grades(self.cs.name, [self.roster.name])[self.roster.name]
+        self.assertEqual((grade["score"], grade["final"]), (80, 0))
+
+    def test_the_stored_result_once_sent_or_failed_for_absence(self):
+        from seminary.seminary.grade_projection import course_grades
+
+        self.grade(q1=90, q2=40, q3=70, p1=80)
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            self.roster.name,
+            {"active": 0, "fscore": 77, "fgrade": "B", "fgradepass": "Pass"},
+        )
+        grade = course_grades(self.cs.name, [self.roster.name])[self.roster.name]
+        self.assertEqual((grade["score"], grade["grade"], grade["final"]), (77, "B", 1))
+        frappe.db.set_value(
+            "Scheduled Course Roster",
+            self.roster.name,
+            {
+                "active": 1,
+                "failed_for_absence": 1,
+                "fgrade": "FA",
+                "fgradepass": "Fail",
+            },
+        )
+        grade = course_grades(self.cs.name, [self.roster.name])[self.roster.name]
+        self.assertEqual((grade["grade"], grade["final"]), ("FA", 1))
+
+    def test_gradebook_and_roster_carry_it(self):
+        self.grade(q1=90, q2=40, q3=70, p1=80)
+        from seminary.seminary import utils
+
+        book = utils.get_gradebook(self.cs.name)
+        self.assertEqual(book[0]["course_grade"]["score"], 80)
+        rosters = api.get_course_rosters(self.cs.name)
+        self.assertEqual(rosters[0]["course_grade"]["score"], 80)
+
+
+class TestDescriptiveCurrent(IntegrationTestCase):
+    def test_a_descriptive_grade_is_the_mean_of_graded_rows(self):
+        from seminary.seminary.grade_projection import compute
+
+        ok, ko = "Pass", "Fail"  # nosec B105 -- grade results, not passwords
+        intervals = [
+            {"grade_code": "Distinction", "threshold": 4, "grade_pass": ok},
+            {"grade_code": "Pass", "threshold": 2, "grade_pass": ok},
+            {"grade_code": "Fail", "threshold": 0, "grade_pass": ko},
+        ]
+        rows = [
+            {"rawscore_card": 4, "graded_card": 1, "weight_scac": 25},
+            {"rawscore_card": 2, "graded_card": 1, "weight_scac": 75},
+            {"rawscore_card": 0, "graded_card": 0, "weight_scac": 50},
+        ]
+        current = compute(rows, intervals, 4, descriptive=True)["current"]
+        # 4 x 25 + 2 x 75 over 100; the ungraded row leaves the mean.
+        self.assertEqual((current["score"], current["grade"]), (2.5, "Pass"))

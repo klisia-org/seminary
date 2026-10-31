@@ -27,6 +27,7 @@ from frappe.utils import date_diff, get_datetime, now_datetime
 from seminary.seminary import cbe
 from seminary.seminary.grade_projection import (
     compute,
+    is_descriptive,
     section_assessments,
     section_scale,
 )
@@ -172,9 +173,10 @@ def get_course_students(course_schedule):
     grades = {}
     if not is_cbe:
         max_grade, intervals = section_scale(course_schedule)
+        descriptive = is_descriptive(course_schedule)
         rows = section_assessments(course_schedule, [r.name for r in rosters])
         grades = {
-            roster: compute(assessments, intervals, max_grade)["projected"]
+            roster: compute(assessments, intervals, max_grade, descriptive)["projected"]
             for roster, assessments in rows.items()
         }
 

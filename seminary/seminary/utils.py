@@ -2260,7 +2260,12 @@ def get_gradebook(course):
     from seminary.seminary.gradebook_weights import for_rosters
 
     weights = for_rosters(course, [s.name for s in students])
+    # The course grade column (decisions/096a).
+    from seminary.seminary.grade_projection import course_grades
+
+    grades = course_grades(course, [s.name for s in students])
     for student in students:
+        student["course_grade"] = grades.get(student.name)
         student["assessments"] = frappe.db.sql(
             """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
@@ -2458,12 +2463,14 @@ def get_student_course_status(course):
 
     # Current and projected grade come from the one server algorithm the
     # instructors' Students tab also uses (privatedocs p015 §3).
-    from seminary.seminary.grade_projection import compute
+    from seminary.seminary.grade_projection import compute, is_descriptive
 
+    roster["descriptive"] = is_descriptive(course)
     grades = compute(
         roster["assessments"],
         roster["grading_scale_intervals"],
         roster["maxnumgrade"],
+        roster["descriptive"],
     )
     roster["current_grade"] = grades["current"]
     roster["projected_grade"] = grades["projected"]

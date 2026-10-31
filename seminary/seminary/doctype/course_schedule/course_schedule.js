@@ -396,7 +396,7 @@ frappe.ui.form.on("Course Schedule", {
 					if (r.message) {
 						var enrollments = r.message;
 						var table = "<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #0d3049; padding: 8px; text-align: left; } </style>";
-						table += "<table><thead><tr><th>Photo</th><th>Student ID</th><th>Student Name</th><th>Student Email</th><th>Audit</th><th>Active</th><th>Program</th><th>Grade</th></tr></thead><tbody>";
+						table += "<table><thead><tr><th>Photo</th><th>Student ID</th><th>Student Name</th><th>Student Email</th><th>Audit</th><th>Active</th><th>Program</th><th>Course Grade</th><th>Grade</th></tr></thead><tbody>";
 						for (var i = 0; i < enrollments.length; i++) {
 							var activeStatus = enrollments[i].active ? "Yes" : "No";
 							var auditStatus = enrollments[i].audit_bool ? "Yes" : "No";
@@ -407,8 +407,14 @@ frappe.ui.form.on("Course Schedule", {
 							var stuname_roster = enrollments[i].stuname_roster || "";
 							var stuemail_rc = enrollments[i].stuemail_rc || "";
 							var program_std_scr = enrollments[i].program_std_scr || "";
+							// The gradebook's course grade (decisions/096a): current until sent.
+							var cg = enrollments[i].course_grade;
+							var course_grade = cg
+								? frappe.utils.escape_html(cg.score + (cg.grade ? " · " + cg.grade : ""))
+									+ "<br><small>" + (cg.final ? __("Sent") : __("Current")) + "</small>"
+								: "";
 
-							table += "<tr><td>" + image + "</td><td>" + student + "</td><td>" + stuname_roster + "</td><td>" + stuemail_rc + "</td><td>" + auditStatus + "</td><td>" + activeStatus + "</td><td>" + program_std_scr + "</td><td>" + grade + "</td></tr>";
+							table += "<tr><td>" + image + "</td><td>" + student + "</td><td>" + stuname_roster + "</td><td>" + stuemail_rc + "</td><td>" + auditStatus + "</td><td>" + activeStatus + "</td><td>" + program_std_scr + "</td><td>" + course_grade + "</td><td>" + grade + "</td></tr>";
 						}
 						table += "</tbody></table>";
 						frm.set_df_property('csroster_html', 'options', table);

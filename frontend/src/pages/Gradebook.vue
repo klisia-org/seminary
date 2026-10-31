@@ -121,6 +121,10 @@
               class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[100px] text-sm">
               {{ cat.title }}
             </th>
+            <!-- The course grade (decisions/096a). -->
+            <th class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[110px] text-sm">
+              {{ __('Grade') }}
+            </th>
           </tr>
 
           <!-- Weight Row -->
@@ -145,6 +149,9 @@
             <td v-for="cat in categories" :key="'catw-' + cat.category_code"
               class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 text-center text-xs text-ink-gray-5 font-medium">
               {{ cat.weight }}%<span v-if="cat.drop_lowest"> · {{ __('drop {0}').format(cat.drop_lowest) }}</span>
+            </td>
+            <td class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 text-center text-xs text-ink-gray-5 font-medium">
+              {{ __('Missing work counts as 0') }}
             </td>
           </tr>
         </thead>
@@ -223,6 +230,17 @@
             <td v-for="cat in categories" :key="'cats-' + cat.category_code"
               class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1.5 text-center text-sm font-medium text-ink-gray-8">
               {{ student.category_scores?.[cat.category_code] ?? '—' }}
+            </td>
+            <td class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1.5 text-center text-sm"
+              :title="student.course_grade?.final ? __('Sent: the grade on the transcript') : __('Current grade, updated when grades are saved')">
+              <template v-if="student.course_grade">
+                <span class="font-semibold"
+                  :class="student.course_grade.grade_pass === 'Fail' ? 'text-ink-red-3' : 'text-ink-gray-9'">
+                  {{ student.course_grade.score }}<span v-if="student.course_grade.grade"> · {{ student.course_grade.grade }}</span>
+                </span>
+                <div v-if="student.course_grade.final" class="text-xs text-ink-gray-5">{{ __('Sent') }}</div>
+              </template>
+              <span v-else class="text-ink-gray-5">—</span>
             </td>
           </tr>
         </tbody>
@@ -579,9 +597,9 @@ const saveCell = async (student, assessment) => {
 
     delete changedCells.value[cell.name]
     toast.success(__('Grade saved successfully'))
-    // A new score can change which one is dropped; reload unless that would
-    // lose other unsaved cells.
-    if (categories.value.length && !hasUnsavedChanges.value) gradebook.reload()
+    // A new score moves the course grade and can change which score is
+    // dropped; reload unless that would lose other unsaved cells.
+    if (!hasUnsavedChanges.value) gradebook.reload()
   } catch (error) {
     console.error('Error saving cell:', error)
     toast.error(error.messages?.[0] || error)
@@ -635,7 +653,7 @@ const saveAllChanges = async () => {
     toast.error(__('Failed to save {0} grade(s)').format(errors.length))
   } else {
     toast.success(__('Saved {0} grade(s) successfully').format(savedCount))
-    if (categories.value.length) gradebook.reload()
+    gradebook.reload()
   }
 }
 
