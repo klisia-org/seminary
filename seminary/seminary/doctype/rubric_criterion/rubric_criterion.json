@@ -1,0 +1,58 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "criterion_code",
+  "title",
+  "description",
+  "weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "criterion_code",
+   "fieldtype": "Data",
+   "label": "Code",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Criterion",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "What Is Judged",
+   "in_list_view": 1,
+   "columns": 4
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "label": "Weight",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "Any number; weights are rescaled to a total of 100. A criterion left blank weighs as much as an average one."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric Criterion",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

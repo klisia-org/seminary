@@ -101,7 +101,10 @@
                numeric grade box is replaced (ADR 065 section 11c). -->
           <CompetencyActivityGrading v-if="currentSubmission" submission-doctype="Discussion Submission"
             :submission="currentSubmission" @mode="(m) => (gradeMode = m)" />
-          <template v-if="gradeMode !== 'competency'">
+          <!-- A rubric derives the grade, so it replaces the box too (decisions/095). -->
+          <RubricGrading v-if="currentSubmission" submission-doctype="Discussion Submission"
+            :submission="currentSubmission" @active="(a) => (rubricActive = a)" @graded="onRubricGraded" />
+          <template v-if="gradeMode !== 'competency' && !rubricActive">
             <label class="block text-sm font-medium text-ink-gray-7 mb-1">{{ __('Grade') }}</label>
             <input v-model="grade" type="text" inputmode="decimal" :disabled="gradeLocked"
               class="block w-full rounded-md border border-outline-gray-2 bg-surface-white text-ink-gray-9 shadow-sm text-sm mb-3"
@@ -162,6 +165,7 @@ import dayjsModule from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import LightEditor from '@/components/LightEditor.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
+import RubricGrading from '@/components/RubricGrading.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -314,6 +318,11 @@ const fetchComments = () => {
 // A competency section records a level instead of a grade, so feedback must
 // not stay blocked waiting for a number nobody will type (ADR 065 11c).
 const gradeMode = ref('loading')
+const rubricActive = ref(false)
+const onRubricGraded = (res) => {
+  grade.value = res.grade
+  gradeLocked.value = true
+}
 const gradeEmpty = computed(
   () => gradeMode.value !== 'competency' && !grade.value && grade.value !== 0
 )

@@ -28,8 +28,9 @@
               </label>
             </div>
 
-            <!-- Per-CLO question scoping, only for Quiz/Exam components that have questions. -->
-            <div v-if="isQuestionBased && selected.includes(clo.name)" class="ml-6 mt-2">
+            <!-- Per-CLO scoping: a Quiz/Exam's questions, or the criteria of an assignment's or
+                 discussion's rubric (decisions/077). -->
+            <div v-if="partKind && selected.includes(clo.name)" class="ml-6 mt-2">
               <button
                 type="button"
                 class="text-xs font-medium text-ink-blue-2 hover:underline"
@@ -38,7 +39,7 @@
                 {{ expanded[clo.name] ? '▾' : '▸' }} {{ questionSummary(clo.name) }}
               </button>
               <div v-if="expanded[clo.name]" class="mt-2 rounded bg-surface-gray-1 p-3">
-                <div v-if="questions.loading" class="text-xs text-ink-gray-5">{{ __('Loading questions…') }}</div>
+                <div v-if="parts.loading" class="text-xs text-ink-gray-5">{{ __('Loading…') }}</div>
                 <template v-else-if="questionList.length">
                   <div class="mb-2 flex gap-3 text-xs">
                     <button type="button" class="text-ink-blue-2 hover:underline" @click="selectAll(clo.name)">
@@ -60,6 +61,7 @@
                       <label :for="`q-${clo.name}-${q.id}`" class="cursor-pointer text-xs text-ink-gray-7">
                         {{ q.label }}
                         <span v-if="q.points" class="text-ink-gray-5">({{ q.points }} {{ __('pts') }})</span>
+                        <span v-else-if="q.share != null" class="text-ink-gray-5">({{ q.share }}%)</span>
                       </label>
                     </li>
                   </ul>
@@ -99,6 +101,7 @@ const questionsByClo = reactive({})
 const expanded = reactive({})
 
 const isQuestionBased = computed(() => ['Quiz', 'Exam'].includes(props.assessmentType))
+const isRubricBased = computed(() => ['Assignment', 'Discussion'].includes(props.assessmentType))
 
 const clos = createResource({
   url: 'aretenic.outcome_api.get_course_clos',
@@ -110,6 +113,18 @@ const questions = createResource({
   makeParams: () => ({ scheduled_assess_criteria: props.scheduledAssessCriteria }),
 })
 
+const criteria = createResource({
+  url: 'aretenic.outcome_api.get_component_criteria',
+  makeParams: () => ({ scheduled_assess_criteria: props.scheduledAssessCriteria }),
+})
+
+// What a CLO can be narrowed to on this component, if anything: an assignment or discussion
+// without a rubric offers nothing and maps as a whole.
+const partKind = computed(() =>
+  isQuestionBased.value ? 'questions' : isRubricBased.value && criteria.data?.length ? 'criteria' : null
+)
+const parts = computed(() => (partKind.value === 'criteria' ? criteria : questions))
+
 const existingMaps = createResource({
   url: 'aretenic.outcome_api.get_clo_maps_for_component',
   makeParams: () => ({ scheduled_assess_criteria: props.scheduledAssessCriteria }),
@@ -120,7 +135,9 @@ const saver = createResource({
   makeParams: () => ({
     course_schedule: props.courseSchedule,
     scheduled_assess_criteria: props.scheduledAssessCriteria,
-    mappings: JSON.stringify(selected.value.map((clo) => ({ clo, questions: questionsByClo[clo] || [] }))),
+    mappings: JSON.stringify(
+      selected.value.map((clo) => ({ clo, [partKind.value || 'questions']: questionsByClo[clo] || [] }))
+    ),
   }),
   onSuccess() {
     toast.success(__('Outcome mapping saved'))
@@ -133,7 +150,7 @@ const saver = createResource({
 })
 
 const cloList = computed(() => clos.data || [])
-const questionList = computed(() => questions.data || [])
+const questionList = computed(() => parts.value.data || [])
 
 function ensureBucket(clo) {
   if (!Array.isArray(questionsByClo[clo])) questionsByClo[clo] = []
@@ -150,7 +167,10 @@ function clearQuestions(clo) {
 }
 function questionSummary(clo) {
   const n = (questionsByClo[clo] || []).length
-  return n ? __('{0} of {1} questions').format(n, questionList.value.length) : __('Whole assessment')
+  if (!n) return __('Whole assessment')
+  return partKind.value === 'criteria'
+    ? __('{0} of {1} rubric criteria').format(n, questionList.value.length)
+    : __('{0} of {1} questions').format(n, questionList.value.length)
 }
 
 // Keep a question bucket for every checked CLO so v-model bindings stay valid.
@@ -168,13 +188,15 @@ watch(show, (open) => {
   Object.keys(expanded).forEach((k) => delete expanded[k])
   clos.submit()
   if (isQuestionBased.value) questions.submit()
+  if (isRubricBased.value) criteria.submit()
   existingMaps.submit().then(() => {
     const maps = existingMaps.data || []
     selected.value = maps.map((m) => m.clo)
     maps.forEach((m) => {
       let qs = []
       try {
-        qs = m.mapped_questions ? JSON.parse(m.mapped_questions) : []
+        const raw = m.map_by === 'Rubric criteria' ? m.mapped_criteria : m.mapped_questions
+        qs = raw ? JSON.parse(raw) : []
       } catch (e) {
         qs = []
       }

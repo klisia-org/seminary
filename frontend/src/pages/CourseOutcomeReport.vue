@@ -97,6 +97,14 @@
 					{{ __('Mapped, but nothing graded to compute from.') }}
 				</div>
 
+				<!-- Rubric criteria behind this outcome: how many students reached each level. -->
+				<div v-if="row.criteria?.length" class="mt-2 space-y-0.5">
+					<div v-for="c in row.criteria" :key="c.title" class="text-xs text-ink-gray-6">
+						<span class="font-medium text-ink-gray-7">{{ c.title }}:</span>
+						<span v-for="(lv, i) in c.levels" :key="lv.label">{{ i ? ' · ' : ' ' }}{{ lv.label }} {{ lv.count }}</span>
+					</div>
+				</div>
+
 				<FormControl v-if="row.needs_analysis" type="textarea" class="mt-2" :rows="2"
 					:disabled="!report.data.editable"
 					:label="row.needs_action ? __('What happened, in your reading?') : __('Note')"

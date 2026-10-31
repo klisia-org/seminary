@@ -236,9 +236,22 @@ STUDENT_ALLOWED = {
     "seminary.seminary.doctype.assignment_submission.assignment_submission.get_assignment",
     # The session student's own dates, behind require_enrolled (decisions/082).
     "seminary.seminary.deadlines.get_my_dates",
+    # The rubric a student reads on an activity they can read, and their own
+    # levels on their own graded submission (decisions/095).
+    "seminary.seminary.rubrics.get_student_view",
 }
 
 STAFF_ONLY = {
+    # Rubrics (decisions/095): the editor needs write on the activity, grading
+    # needs require_grader + require_course_staff, a rubric's content needs its
+    # own read permission.
+    "seminary.seminary.rubrics.copy_candidates",
+    "seminary.seminary.rubrics.get_editor",
+    "seminary.seminary.rubrics.get_grading",
+    "seminary.seminary.rubrics.get_rubric",
+    "seminary.seminary.rubrics.remove_rubric",
+    "seminary.seminary.rubrics.save_rubric",
+    "seminary.seminary.rubrics.save_scores",
     # Duplicate Persons (privatedocs p022): Possible Duplicate's read permission
     # first, then who may merge the pair.
     "seminary.seminary.duplicates.merge",

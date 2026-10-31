@@ -17,6 +17,8 @@
 				<SafeHtml :html="discussion.doc.prompt"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal text-ink-gray-8" />
 			</div>
+			<RubricView v-if="isStudent" class="mb-5" activity-doctype="Discussion Activity" :activity="discussionID"
+				:submission="hasSavedSubmission ? submissionResource.doc?.name : null" />
 			<div v-if="isStudent && minRepliesRequired > 0"
 				class="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm"
 				:class="participationMet
@@ -385,6 +387,7 @@ import { getFileSize, validateFileSize } from '@/utils'
 import { useRouter } from 'vue-router'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import LightEditor from '@/components/LightEditor.vue'
+import RubricView from '@/components/RubricView.vue'
 import DiscussionModal from './Modals/DiscussionModal.vue'
 
 

@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "activity_doctype",
+  "activity",
+  "activity_title",
+  "column_break_rub1",
+  "course",
+  "scale",
+  "version",
+  "previous_version",
+  "criteria_section",
+  "criteria",
+  "cells"
+ ],
+ "fields": [
+  {
+   "fieldname": "activity_doctype",
+   "fieldtype": "Select",
+   "label": "Activity Type",
+   "options": "Assignment Activity\nDiscussion Activity",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Dynamic Link",
+   "label": "Activity",
+   "options": "activity_doctype",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "activity_title",
+   "fieldtype": "Data",
+   "label": "Activity Title",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_rub1",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "scale",
+   "fieldtype": "Link",
+   "label": "Scale",
+   "options": "Rubric Scale",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Int",
+   "label": "Version",
+   "read_only": 1,
+   "default": "1"
+  },
+  {
+   "fieldname": "previous_version",
+   "fieldtype": "Link",
+   "label": "Previous Version",
+   "options": "Rubric",
+   "read_only": 1
+  },
+  {
+   "fieldname": "criteria_section",
+   "fieldtype": "Section Break",
+   "label": "Criteria"
+  },
+  {
+   "fieldname": "criteria",
+   "fieldtype": "Table",
+   "label": "Criteria",
+   "options": "Rubric Criterion",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cells",
+   "fieldtype": "Table",
+   "label": "Cell Wording",
+   "options": "Rubric Cell",
+   "description": "Optional wording for one criterion at one level. An empty cell shows the scale's description."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "RUB-.#####",
+ "naming_rule": "Expression",
+ "title_field": "activity_title",
+ "show_title_field_in_link": 1,
+ "track_changes": 1,
+ "allow_import": 1,
+ "description": "The criteria an assignment or discussion is graded on, scored on a school-wide rubric scale. Once a student has been graded it cannot be changed; editing it from the activity creates a new version and earlier grades keep theirs.",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#rubrics"
+}

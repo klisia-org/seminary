@@ -13,7 +13,8 @@
   "post_before",
   "use_studentgroup",
   "min_replies_required",
-  "prompt"
+  "prompt",
+  "rubric"
  ],
  "fields": [
   {
@@ -58,12 +59,20 @@
    "fieldname": "min_replies_required",
    "fieldtype": "Int",
    "label": "Minimum replies to other students"
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Link",
+   "label": "Rubric",
+   "options": "Rubric",
+   "read_only": 1,
+   "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-14 09:01:33.570581",
+ "modified": "2026-10-30 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Discussion Activity",

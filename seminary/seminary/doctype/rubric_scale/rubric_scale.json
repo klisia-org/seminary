@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "scale_name",
+  "is_default",
+  "enabled",
+  "description",
+  "levels_section",
+  "levels"
+ ],
+ "fields": [
+  {
+   "fieldname": "scale_name",
+   "fieldtype": "Data",
+   "label": "Scale Name",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default",
+   "in_list_view": 1,
+   "description": "Preselected when an instructor creates a rubric."
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1",
+   "in_list_view": 1,
+   "description": "A disabled scale cannot be picked for new rubrics; rubrics already on it keep it."
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "levels_section",
+   "fieldtype": "Section Break",
+   "label": "Levels"
+  },
+  {
+   "fieldname": "levels",
+   "fieldtype": "Table",
+   "label": "Levels",
+   "options": "Rubric Scale Level",
+   "reqd": 1,
+   "description": "Highest level first. Once a student has been graded on this scale it cannot be changed; create a new scale instead."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric Scale",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  },
+  {
+   "read": 1,
+   "role": "Registrar"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:scale_name",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "track_changes": 1,
+ "description": "A school-wide set of performance levels that rubrics grade on. Instructors write a rubric's criteria; the levels, what they mean and how much of a criterion each one earns come from here, so students see the same levels in every course.",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#rubrics"
+}

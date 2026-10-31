@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import validate_email_address, sanitize_html
 
+from seminary.seminary import rubrics
 from seminary.seminary.url_policy import WEB_SCHEMES, is_safe_url
 from frappe.email.doctype.email_template.email_template import get_email_template
 from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
@@ -26,6 +27,7 @@ class AssignmentSubmission(Document):
         self.validate_url()
         self.validate_status()
         self.populate()
+        rubrics.apply_grade(self)
         self.sync_percentage_from_grade()
 
     def sanitize_rich_text(self):

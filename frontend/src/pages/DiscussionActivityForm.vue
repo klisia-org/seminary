@@ -70,6 +70,8 @@
 				@change="(val) => (discussion.prompt = val)"
 				:placeholder="__('Enter a prompt for the discussion...')"
 			/>
+			<RubricEditor v-if="discussionDetails.data?.name" class="mt-8" activity-doctype="Discussion Activity"
+				:activity="discussionDetails.data.name" />
 		</div>
 	</div>
 
@@ -97,6 +99,7 @@ import { updateDocumentTitle } from '@/utils'
 import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
+import RubricEditor from '@/components/RubricEditor.vue'
 import { examStore } from '@/stores/exam'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 

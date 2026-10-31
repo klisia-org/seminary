@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from seminary.seminary import rubrics
+
 
 class DiscussionSubmission(Document):
     def validate(self):
@@ -16,6 +18,7 @@ class DiscussionSubmission(Document):
         backfill_submission_course_if_missing(self)
         stamp_first_grading(self)
         self.populate()
+        rubrics.apply_grade(self)
         self.sync_percentage_from_grade()
 
     def sync_percentage_from_grade(self):
