@@ -1,7 +1,7 @@
 # 097 — Course discussions: threads, notifications and unread
 
 **Date:** 2026-10-31
-**Status:** Accepted 2026-10-31
+**Status:** Accepted 2026-10-31; implemented 2026-10-31 (48654acf, f508ed29)
 **Delivers:** LMS-COL-01 (Yes)
 **Related:** 021 (anchored comments), 064 (Community), 082 (two due dates), 095 (rubrics)
 
