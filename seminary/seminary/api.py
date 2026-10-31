@@ -3155,11 +3155,13 @@ def quizresult_to_card(doc, method):
 
 
 @frappe.whitelist()
-def save_course_assessment(course, assessment_data):
+def save_course_assessment(course, assessment_data, categories=None):
     """Save Course Assessment Criteria.
 
     :param course: Course.
     :param assessment_data: Assessment Data (JSON).
+    :param categories: the section's assessment categories (JSON list), or
+        None to leave them as they are (decisions/096).
     """
     require_outline_editor()
     require_course_staff(course)
@@ -3198,6 +3200,11 @@ def save_course_assessment(course, assessment_data):
                     doc.set(field, data.get(field) or None)
             if "late_policy_exempt" in data:
                 doc.late_policy_exempt = 1 if data.get("late_policy_exempt") else 0
+            # Category and never-drop (decisions/096), likewise only when sent.
+            if "category_code" in data:
+                doc.category_code = data.get("category_code") or None
+            if "never_drop" in data:
+                doc.never_drop = 1 if data.get("never_drop") else 0
             # Competency wiring (ADR 065 section 11b). Written only when the
             # form sent the key, so a caller that does not show these fields
             # cannot blank a mapping it knows nothing about.
@@ -3234,6 +3241,8 @@ def save_course_assessment(course, assessment_data):
                     "cutoff_date": data.get("cutoff_date") or None,
                     "replies_due_date": data.get("replies_due_date") or None,
                     "late_policy_exempt": 1 if data.get("late_policy_exempt") else 0,
+                    "category_code": data.get("category_code") or None,
+                    "never_drop": 1 if data.get("never_drop") else 0,
                 }
             )
             doc.insert(ignore_permissions=True)
@@ -3242,7 +3251,23 @@ def save_course_assessment(course, assessment_data):
     # chapter -> lesson -> assessment competency check live on the Course
     # Schedule controller (ADR 023), and saving child rows one at a time never
     # runs them.
-    frappe.get_doc("Course Schedule", course).save(ignore_permissions=True)
+    cs = frappe.get_doc("Course Schedule", course)
+    if categories is not None:
+        if isinstance(categories, str):
+            categories = json.loads(categories)
+        cs.set(
+            "assess_categories",
+            [
+                {
+                    "category_code": c.get("category_code") or None,
+                    "title": c.get("title"),
+                    "weight": c.get("weight") or 0,
+                    "drop_lowest": c.get("drop_lowest") or 0,
+                }
+                for c in categories or []
+            ],
+        )
+    cs.save(ignore_permissions=True)
 
     frappe.db.commit()
     return {"success": True}
@@ -3461,6 +3486,17 @@ def update_card(doc, method):
         (doc.parent, doc.name),
         as_dict=True,
     )
+    # The row's own weight is right only without categories or excuses;
+    # gradebook_weights.on_row_update fixes the rest once, after this, rather
+    # than once per card (decisions/096).
+    frappe.flags.seminary_weights_batch = True
+    try:
+        _update_cards(doc, existings)
+    finally:
+        frappe.flags.seminary_weights_batch = False
+
+
+def _update_cards(doc, existings):
     if existings:
         for existing in existings:
             # Update the existing record
@@ -3539,6 +3575,7 @@ def insert_cs_assessment(criteria):
             "discussion": criteria.get("discussion"),
             "extracredit_scac": criteria.get("extracredit_scac"),
             "fudgepoints_scac": criteria.get("fudgepoints_scac"),
+            "category_code": criteria.get("category_code") or None,
         }
     )
     # A bare child insert skips Course Schedule's validate, which is where an
@@ -3609,6 +3646,17 @@ def grade_thisstudent(name):
 
 
 def _grade_thisstudent(name):
+    # The final weights, with drops among every row (decisions/096 section 5),
+    # are set here and saved with the roster; the live refresh stands down.
+    frappe.flags.seminary_grading = True
+    try:
+        return _grade_roster(name)
+    finally:
+        frappe.flags.seminary_grading = False
+
+
+def _grade_roster(name):
+    from seminary.seminary import gradebook_weights
 
     csr = frappe.get_doc("Scheduled Course Roster", name)
     cs = csr.course_sc
@@ -3617,6 +3665,8 @@ def _grade_thisstudent(name):
     grading_scale = frappe.get_doc("Grading Scale", gscale)
     gmax = grading_scale.maxnumgrade
     detail = csr.stdroster_grade
+    if grading_scale.grscale_type != "Competency-based education":
+        gradebook_weights.apply_to_roster_doc(csr, final=True)
     if grading_scale.grscale_type == "Points":
         for row in detail:
             score = row.rawscore_card
@@ -4051,6 +4101,7 @@ def _ungraded_roster_count(course_schedule, rosters=None):
           AND scr.audit_bool = 0
           AND COALESCE(cei.course_cancelled, 0) = 0
           AND COALESCE(card.graded_card, 0) = 0
+          AND COALESCE(card.excused, 0) = 0
         """
         + scope,  # nosec B608 -- interpolates an identifier fixed in this module, never a request value
         params,

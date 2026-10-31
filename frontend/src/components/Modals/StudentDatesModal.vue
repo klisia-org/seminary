@@ -59,6 +59,24 @@
 					</div>
 					<p v-else class="text-sm text-ink-gray-5">{{ __('Grades were sent, so this can no longer change.') }}</p>
 				</template>
+
+				<!-- Excused from this assessment (decisions/096 section 4). -->
+				<template v-if="cell && !assessment?.extracredit_scac">
+					<h4 class="mt-6 font-semibold text-ink-gray-8 mb-1">{{ __('Excuse from this assessment') }}</h4>
+					<p class="mb-2 text-sm text-ink-gray-6">
+						{{ cell.excused
+							? __('Excused: {0}. It does not count, and its weight goes to the student\'s other assessments.').format(cell.excused_reason || '')
+							: __('It will not count for this student, and its weight goes to their other assessments.') }}
+					</p>
+					<template v-if="!finalized">
+						<FormControl v-if="!cell.excused" v-model="excuse.reason" :label="__('Reason')" />
+						<div class="mt-3 flex gap-2">
+							<Button v-if="!cell.excused" size="sm" :loading="saving" @click="saveExcuse(1)">{{ __('Excuse') }}</Button>
+							<Button v-else size="sm" :loading="saving" @click="saveExcuse(0)">{{ __('Remove the excuse') }}</Button>
+						</div>
+					</template>
+					<p v-else class="text-sm text-ink-gray-5">{{ __('Grades were sent, so this can no longer change.') }}</p>
+				</template>
 			</template>
 		</template>
 	</Dialog>
@@ -66,8 +84,9 @@
 
 <script setup>
 import { userLocale } from '@seminary/portal-shell'
-// The gradebook cell menu: one student's dates on one assessment, and the late
-// deduction on their grade (decisions/082 section 7).
+// The gradebook cell menu: one student's dates on one assessment, the late
+// deduction on their grade (decisions/082 section 7), and excusing them from it
+// (decisions/096 section 4).
 import { computed, reactive, ref } from 'vue'
 import { Button, DateTimePicker, Dialog, FormControl, call, toast } from 'frappe-ui'
 
@@ -85,6 +104,7 @@ let courseSchedule = null
 
 const form = reactive({})
 const adjust = reactive({ deduction: '', reason: '' })
+const excuse = reactive({ reason: '' })
 
 const title = computed(() =>
 	student.value ? `${student.value.stuname_roster} · ${assessment.value?.title || ''}` : ''
@@ -103,6 +123,7 @@ async function show(course, studentRow, assessmentRow, cellRow) {
 	finalized.value = !studentRow.active
 	adjust.deduction = cellRow?.late_deduction_card || 0
 	adjust.reason = cellRow?.late_adjusted_reason || ''
+	excuse.reason = ''
 	open.value = true
 	await load()
 }
@@ -178,6 +199,24 @@ async function saveAdjustment(deduction) {
 			card: cell.value.name,
 			deduction: deduction === null ? '' : deduction,
 			reason: adjust.reason,
+		})
+		Object.assign(cell.value, out)
+		toast.success(__('Saved'))
+		emit('changed')
+	} catch (e) {
+		toast.error(errorText(e, __('Could not save.')))
+	} finally {
+		saving.value = false
+	}
+}
+
+async function saveExcuse(excused) {
+	saving.value = true
+	try {
+		const out = await call('seminary.seminary.gradebook_weights.set_excused', {
+			card: cell.value.name,
+			excused,
+			reason: excuse.reason,
 		})
 		Object.assign(cell.value, out)
 		toast.success(__('Saved'))

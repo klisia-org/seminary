@@ -2256,16 +2256,44 @@ def get_gradebook(course):
             "student",
         ],
     )
+    # Each student's own weights: categories, drops, excuses (decisions/096).
+    from seminary.seminary.gradebook_weights import for_rosters
+
+    weights = for_rosters(course, [s.name for s in students])
     for student in students:
         student["assessments"] = frappe.db.sql(
-            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
+            """select r.name, r.rawscore_card, r.actualextrapt_card, r.graded_card, r.late_base_card, r.late_deduction_card, r.late_adjusted_card, r.late_adjusted_reason, r.excused, r.excused_reason, scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac, scar.category_code, scar.never_drop, r.assessment_criteria, scar.title, scar.type, scar.due_date, scar.cutoff_date, scar.quiz, scar.exam, scar.assignment, scar.discussion
 	from  `tabCourse Assess Results Detail` r, `tabScheduled Course Assess Criteria` scar
 	where r.assessment_criteria = scar.name and r.parent = %s""",
             (student.name,),
             as_dict=1,
         )
+        mine = weights.get(student.name) or {}
+        for a in student["assessments"]:
+            w = mine.get(a.assessment_criteria) or {}
+            a["effective_weight"] = w.get("weight")
+            a["weight_status"] = w.get("status")
+        student["category_scores"] = _category_scores(student["assessments"])
 
     return students
+
+
+def _category_scores(assessments):
+    """{category code: the student's weighted average score in it, or None},
+    over graded rows that count."""
+    sums = {}
+    for a in assessments:
+        code = a.get("category_code")
+        if not code or a.get("extracredit_scac") or a.get("weight_status"):
+            continue
+        total = sums.setdefault(code, [0.0, 0.0])
+        if a.get("graded_card") and flt(a.get("effective_weight")) > 0:
+            total[0] += flt(a.get("rawscore_card")) * flt(a.get("effective_weight"))
+            total[1] += flt(a.get("effective_weight"))
+    return {
+        code: (round(num / den, 1) if den else None)
+        for code, (num, den) in sums.items()
+    }
 
 
 @frappe.whitelist()
@@ -2315,7 +2343,8 @@ def get_student_course_status(course):
     roster["assessments"] = frappe.db.sql(
         """select scar.name as assessment_criteria, scar.title, scar.type, scar.due_date,
             scar.weight_scac, scar.extracredit_scac, scar.fudgepoints_scac,
-            r.name as grade_name, r.rawscore_card, r.actualextrapt_card
+            scar.category_code, r.name as grade_name, r.rawscore_card,
+            r.actualextrapt_card, r.graded_card, r.excused
         from `tabScheduled Course Assess Criteria` scar
         left join `tabCourse Assess Results Detail` r
             on r.assessment_criteria = scar.name and r.parent = %s
@@ -2325,9 +2354,21 @@ def get_student_course_status(course):
         as_dict=1,
     )
 
+    # The student's own weights (decisions/096): what counts, and how much.
+    from seminary.seminary.gradebook_weights import for_rosters, section_categories
+
+    mine = for_rosters(course, [roster.name]).get(roster.name) or {}
+    roster["categories"] = section_categories(course)
+    for a in roster["assessments"]:
+        w = mine.get(a.assessment_criteria) or {}
+        a["effective_weight"] = w.get("weight", a.weight_scac)
+        a["weight_status"] = w.get("status")
+
     # Add status field per assessment
     for a in roster["assessments"]:
-        if a.rawscore_card is None:
+        if a.get("weight_status"):
+            a["status"] = a["weight_status"]
+        elif a.rawscore_card is None:
             a["status"] = "Not Submitted"
         elif a.rawscore_card == 0:
             a["status"] = "Not Graded"

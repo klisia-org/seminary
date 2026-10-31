@@ -36,7 +36,7 @@
       <div v-if="weightsApply"
         :class="{ 'max-w-full flex justify-between mb-4 mt-5 text-xl': true, 'bg-surface-red-3 text-ink-red-3 rounded px-2': totalPoints !== 100 }">
         <div>
-          <strong>{{ __('Total Points') }}:</strong> {{ totalPoints }}
+          <strong>{{ categories.length ? __('Category Weights') : __('Total Points') }}:</strong> {{ totalPoints }}
         </div>
         <div>
           <strong>{{ __('Max Fudge Points') }}:</strong> {{ maxFudgePoints }}
@@ -68,6 +68,30 @@
       {{ __('Percentage points of the maximum score, for every started day or hour after the due date. Work within the grace period is not late.') }}
     </p>
   </div>
+  <!-- Categories (decisions/096): each category's weight is a share of the
+       final grade, each assessment's weight a share of its category. -->
+  <div v-if="weightsApply" class="mx-5 mb-6 rounded border border-outline-gray-2 p-4">
+    <div class="flex items-center justify-between">
+      <h3 class="font-semibold text-ink-gray-8">{{ __('Categories') }}</h3>
+      <Button size="sm" @click="addCategory">{{ __('Add category') }}</Button>
+    </div>
+    <p class="mt-1 text-sm text-ink-gray-6">
+      {{ categories.length
+        ? __('Each assessment counts as a percent of its category. Leave an assessment at 0 to share what the others leave. The lowest scores you drop do not count for that student.')
+        : __('Optional. Group assessments, for example Quizzes 20%, Papers 40%, and drop each student\'s lowest scores in a group.') }}
+    </p>
+    <div v-for="(cat, i) in categories" :key="i" class="mt-3 grid items-end gap-3 sm:grid-cols-[2fr_1fr_1fr_auto]">
+      <FormControl v-model="cat.title" :label="__('Category')" />
+      <FormControl type="number" v-model="cat.weight" :label="__('Weight (%)')" />
+      <FormControl type="number" v-model="cat.drop_lowest" :label="__('Drop lowest')" />
+      <Button variant="ghost" theme="red" :aria-label="__('Remove category')" @click="removeCategory(i)">
+        <Trash2 class="h-4 w-4 stroke-1.5" />
+      </Button>
+    </div>
+    <p v-if="categories.length" class="mt-2 text-xs text-ink-gray-5">
+      {{ __('These are saved with the Save button at the top of the page.') }}
+    </p>
+  </div>
   <table class="min-w-full table-auto border-collapse overflow-auto">
     <thead>
       <tr>
@@ -86,7 +110,13 @@
       </tr>
     </thead>
     <tbody>
-      <template v-for="(criteria, index) in assessmentCriteria" :key="index">
+      <template v-for="group in groupedCriteria" :key="group.code">
+      <tr v-if="categories.length">
+        <td :colspan="detailColspan" class="p-2 border bg-surface-gray-2 text-sm font-semibold text-ink-gray-8">
+          {{ group.label }}
+        </td>
+      </tr>
+      <template v-for="{ criteria, index } in group.rows" :key="index">
       <tr>
         <td class="p-2 border">
           <FormControl v-model="criteria.title" class="mb-4 overflow-visible" :required="false" />
@@ -135,8 +165,18 @@
               :required="true" />
           </div>
           <div v-else class="mb-4">
-            <FormControl v-model="criteria.weight_scac" :label="__('Weight')" type="float" class="max-w-14ch"
-              :required="true" />
+            <FormControl v-model="criteria.weight_scac"
+              :label="categories.length ? __('% of category') : __('Weight')" type="float" class="max-w-14ch"
+              :required="!categories.length" />
+            <template v-if="categories.length">
+              <p class="mt-1 text-xs text-ink-gray-5">
+                {{ __('{0}% of the grade').format(shareOf(criteria, index)) }}
+              </p>
+              <FormControl type="select" class="mt-2" v-model="criteria.category_code"
+                :options="categoryOptions" />
+              <FormControl type="checkbox" class="mt-2" v-model="criteria.never_drop"
+                :label="__('Never drop')" />
+            </template>
           </div>
         </td>
         <td class="p-2 border">
@@ -338,6 +378,7 @@
         </td>
       </tr>
       </template>
+      </template>
     </tbody>
   </table>
 
@@ -352,7 +393,8 @@
 
 
     <CourseAssessmentModal v-model="showCourseAssessmentModal" v-model:modalcriteria="modalcriteria"
-      :courseName="props.courseName" :weightsApply="weightsApply" @assessment-saved="onAssessmentSaved" />
+      :courseName="props.courseName" :weightsApply="weightsApply"
+      :categories="categories.filter((c) => !c.isNew)" @assessment-saved="onAssessmentSaved" />
 
     <CLOAssessmentMapperModal v-if="hasAretenic" v-model="showCloMapper" :course="course.data?.course"
       :courseSchedule="props.courseName" :scheduledAssessCriteria="activeCriteria?.name"
@@ -371,6 +413,7 @@ import { computed, reactive, onMounted, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Trash2, Target, SlidersHorizontal, Clock } from 'lucide-vue-next'
 import { updateDocumentTitle } from '@/utils'
+import { nominalWeights } from '@/utils/gradeWeights'
 import CourseAssessmentModal from '@/components/Modals/CourseAssessmentModal.vue'
 import CLOAssessmentMapperModal from '@/components/Modals/CLOAssessmentMapperModal.vue'
 import CLOCoveragePanel from '@/components/CLOCoveragePanel.vue'
@@ -633,6 +676,73 @@ async function removeOverride(ov) {
   }
 }
 
+// --- Categories (decisions/096) ------------------------------------------
+const categories = reactive([])
+const categoryData = createResource({
+  url: 'seminary.seminary.gradebook_weights.get_categories',
+  makeParams: () => ({ course: props.courseName }),
+  auto: true,
+  onSuccess(data) {
+    categories.length = 0
+    for (const c of data?.categories || []) categories.push({ ...c })
+  },
+  onError: () => { },
+})
+function addCategory() {
+  categories.push({ category_code: '', title: '', weight: 0, drop_lowest: 0, isNew: true })
+}
+function removeCategory(i) {
+  const code = categories[i].category_code
+  if (code && assessmentCriteria.some((c) => c.category_code === code)) {
+    if (!confirm(__('Assessments in this category will need another one before you can save. Remove it?'))) return
+  }
+  categories.splice(i, 1)
+}
+// A new category's code comes from its title, as the server would make it
+// (rubrics.slug), so an assessment can be put in it before saving. A saved
+// category keeps its code when renamed: its assessments point at the code.
+const slugify = (text) =>
+  (text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+const codeOf = (cat) => (cat.isNew ? slugify(cat.title) : cat.category_code)
+const categoryOptions = computed(() => [
+  { label: __('Choose a category'), value: '' },
+  ...categories.filter((c) => codeOf(c)).map((c) => ({ label: c.title, value: codeOf(c) })),
+])
+const rowKey = (criteria, index) => criteria.name || `new-${index}`
+const nominal = computed(() =>
+  nominalWeights(
+    assessmentCriteria.map((c, i) => ({ ...c, name: rowKey(c, i) })),
+    categories.map((c) => ({ ...c, category_code: codeOf(c) })),
+  )
+)
+const shareOf = (criteria, index) => {
+  const w = nominal.value[rowKey(criteria, index)] || 0
+  return Math.round(w * 100) / 100
+}
+const groupedCriteria = computed(() => {
+  const indexed = assessmentCriteria.map((criteria, index) => ({ criteria, index }))
+  if (!categories.length) return [{ code: '', label: '', rows: indexed }]
+  const groups = categories.map((c) => {
+    const drop = Number(c.drop_lowest) || 0
+    const parts = [c.title || __('(untitled)'), `${Number(c.weight) || 0}%`]
+    if (drop) parts.push(__('lowest {0} dropped').format(drop))
+    return { code: codeOf(c), label: parts.join(' · '), rows: [] }
+  })
+  const other = { code: '__other__', label: __('No category'), rows: [] }
+  for (const item of indexed) {
+    const group = item.criteria.extracredit_scac
+      ? null
+      : groups.find((g) => g.code && g.code === item.criteria.category_code)
+    if (group) group.rows.push(item)
+    else other.rows.push(item)
+  }
+  if (other.rows.length) {
+    other.label = other.rows.every((r) => r.criteria.extracredit_scac) ? __('Extra credit') : __('No category')
+    groups.push(other)
+  }
+  return groups
+})
+
 const modalcriteria = reactive({
   title: '',
   assesscriteria_scac: '',
@@ -706,6 +816,9 @@ watch(
 
 
 const totalPoints = computed(() => {
+  if (categories.length) {
+    return categories.reduce((sum, c) => sum + parseFloat(c.weight || 0), 0);
+  }
   return assessmentCriteria.reduce((sum, criteria) => {
     return criteria.extracredit_scac === 0 ? sum + parseFloat(criteria.weight_scac || 0) : sum;
   }, 0);
@@ -747,6 +860,8 @@ function toCriteria(item) {
     cutoff_date: item.cutoff_date || '',
     replies_due_date: item.replies_due_date || '',
     late_policy_exempt: item.late_policy_exempt ? 1 : 0,
+    category_code: item.category_code || '',
+    never_drop: item.never_drop ? 1 : 0,
     lesson: item.lesson || '',
     // Carried so a save writes back what is stored; leaving them out made the
     // competency picker read "Select option" after every reload.
@@ -865,7 +980,12 @@ function validateCriteria() {
     }
     // A competency section has no weight or extra-credit columns to fill.
     if (!weightsApply.value) continue;
-    if (!criteria.extracredit_scac && !criteria.weight_scac) {
+    // With categories a weight of 0 shares the category; the category itself
+    // is what must be chosen (decisions/096).
+    if (!criteria.extracredit_scac && categories.length && !criteria.category_code) {
+      return false;
+    }
+    if (!criteria.extracredit_scac && !categories.length && !criteria.weight_scac) {
       return false;
     }
     if (criteria.extracredit_scac && !criteria.fudgepoints_scac) {
@@ -897,6 +1017,16 @@ async function submitCourseAssessment() {
           ...c,
           course_competency: c.course_competency === NO_COMPETENCY ? '' : c.course_competency,
         })),
+        ...(weightsApply.value
+          ? {
+              categories: categories.map((c) => ({
+                title: c.title,
+                weight: c.weight,
+                drop_lowest: c.drop_lowest,
+                category_code: codeOf(c),
+              })),
+            }
+          : {}),
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -912,6 +1042,7 @@ async function submitCourseAssessment() {
     }
     toast.success(__('Course updated successfully'));
     deadlines.reload();
+    categoryData.reload();
     // New rows only get a name on save, and the dimension editors key off it.
     if (isCbe.value) competencyContext.reload();
   } catch (error) {

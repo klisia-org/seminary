@@ -196,7 +196,7 @@
   <Dialog v-model="showExcusedDue" :options="{ title: __('Due that day'), size: 'xl' }">
     <template #body-content>
       <p class="mb-3 text-sm text-ink-gray-6">
-        {{ __('These students were excused on a day something is due. Give them a later due date? Untick any you do not want to change.') }}
+        {{ __('These students were excused on a day something is due. Give them a later due date, or excuse them from it so it does not count? Untick any you do not want to change.') }}
       </p>
       <div v-for="row in excusedDue" :key="row.student + row.course_assess"
         class="mb-2 flex flex-wrap items-center gap-3 rounded border border-outline-gray-2 p-2">
@@ -205,13 +205,15 @@
           <div class="font-medium text-ink-gray-9">{{ row.student_name }}</div>
           <div class="text-ink-gray-6">{{ row.title }} · {{ __('due {0}').format(dayjs(row.due_date).format('MMM D, HH:mm')) }}</div>
         </div>
-        <DateTimePicker v-model="row.new_due" variant="subtle" :disabled="!row.keep" />
+        <FormControl type="select" v-model="row.action" :disabled="!row.keep"
+          :options="[{ label: __('Later due date'), value: 'later' }, { label: __('Excuse from it'), value: 'excuse' }]" />
+        <DateTimePicker v-if="row.action === 'later'" v-model="row.new_due" variant="subtle" :disabled="!row.keep" />
       </div>
     </template>
     <template #actions>
       <Button variant="solid" :loading="savingExcusedDue" :disabled="!excusedDue.some((r) => r.keep)"
         @click="saveExcusedDue">
-        {{ __('Change these due dates') }}
+        {{ __('Save') }}
       </Button>
     </template>
   </Dialog>
@@ -288,7 +290,7 @@
 <script setup>
 import PageHeader from '@/components/PageHeader.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Avatar, Button, createResource, Breadcrumbs, DateTimePicker, Dialog, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
+import { Avatar, Button, createResource, Breadcrumbs, DateTimePicker, Dialog, FormControl, LoadingIndicator, Tooltip, call, toast } from 'frappe-ui';
 import { useRouter, useRoute } from 'vue-router'
 import { Check, Printer, QrCode, Send } from 'lucide-vue-next'
 import QRCode from 'qrcode'
@@ -596,6 +598,7 @@ async function offerDueDateChanges(excused) {
     excusedDue.value = rows.map((r) => ({
       ...r,
       keep: true,
+      action: 'later',
       new_due: dayjs(r.due_date).add(7, 'day').format('YYYY-MM-DD HH:mm:ss'),
     }));
     showExcusedDue.value = true;
@@ -608,7 +611,19 @@ async function saveExcusedDue() {
   savingExcusedDue.value = true;
   let saved = 0;
   try {
+    const reason = __('Excused absence on {0}').format(dayjs(selectedDate.value.cs_meetdate).format('YYYY-MM-DD'));
     for (const row of excusedDue.value.filter((r) => r.keep)) {
+      // Excused from the assessment itself (decisions/096 section 4).
+      if (row.action === 'excuse') {
+        await call('seminary.seminary.gradebook_weights.set_excused', {
+          course_assess: row.course_assess,
+          student: row.student,
+          excused: 1,
+          reason,
+        });
+        saved++;
+        continue;
+      }
       await call('seminary.seminary.deadlines.save_override', {
         data: JSON.stringify({
           course_assess: row.course_assess,
@@ -620,7 +635,7 @@ async function saveExcusedDue() {
       });
       saved++;
     }
-    toast.success(__('{0} due date(s) changed').format(saved));
+    toast.success(__('{0} saved').format(saved));
     showExcusedDue.value = false;
   } catch (e) {
     toast.error(e?.messages?.join('\n') || e?.message || __('Could not save.'));

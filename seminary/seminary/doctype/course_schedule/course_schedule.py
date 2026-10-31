@@ -88,6 +88,11 @@ class CourseSchedule(Document):
         from seminary.seminary import deadlines
 
         deadlines.on_section_update(self)
+        # Categories added, changed or removed re-weigh the grades not yet
+        # sent (decisions/096).
+        from seminary.seminary import gradebook_weights
+
+        gradebook_weights.on_section_update(self)
 
     def _scaffold_if_became_cbe(self):
         """A section whose course or scale changes so that it now resolves to a
@@ -578,6 +583,15 @@ class CourseSchedule(Document):
             self.validate_assessment_competencies()
             return
 
+        # With categories, they total 100 and each row is a share of its own
+        # (decisions/096).
+        if self.assess_categories:
+            from seminary.seminary import gradebook_weights
+
+            gradebook_weights.fill_codes(self.assess_categories)
+            gradebook_weights.validate(self.assess_categories, self.courseassescrit_sc)
+            return
+
         total_weight_scac = 0
         for criteria in self.courseassescrit_sc:
             if criteria.extracredit_scac == 0:
@@ -1008,7 +1022,7 @@ class CourseSchedule(Document):
         ``courseassescrit_sc.reqd:1`` is overwritten). Refuses if the target
         already has chapters or any graded data. Roster, grades, SCAC
         due_dates and cut-offs, and student due date overrides are NOT
-        copied; the late policy is.
+        copied; the late policy and the assessment categories are.
         """
         self._validate_target_for_import(source_cs)
         _validate_source_for_import(source_cs, self)
@@ -1044,6 +1058,7 @@ class CourseSchedule(Document):
         frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
         _copy_late_policy(source_cs, self.name)
+        _copy_categories(source_cs, self.name)
         # Other apps copy what they keep per assessment row (aretenic's
         # outcome maps, p023); a failure rolls the import back with it.
         for fn in frappe.get_hooks("course_template_imported"):
@@ -1318,6 +1333,14 @@ def _validate_source_for_import(source_cs, target):
     if cbe.framework_for_course_and_scale(target.course, target.gradesc_cs):
         return
 
+    # A source with categories was checked against them when it was saved
+    # (decisions/096); its row weights are shares of a category, not of 100.
+    if frappe.db.count(
+        "Scheduled Course Assess Category",
+        {"parent": source_cs, "parenttype": "Course Schedule"},
+    ):
+        return
+
     weight_total = (
         frappe.db.sql(
             """
@@ -1355,6 +1378,9 @@ _SCAC_COPYABLE_FIELDS = (
     # Whether the section's late deductions apply (decisions/082 section 6).
     # The cut-off and replies due date are dates, like due_date: not copied.
     "late_policy_exempt",
+    # The row's category and whether it may drop (decisions/096 section 7).
+    "category_code",
+    "never_drop",
 )
 
 
@@ -1369,6 +1395,33 @@ def _copy_late_policy(source_cs_name, target_cs_name):
     )
     if values:
         frappe.db.set_value("Course Schedule", target_cs_name, values)
+
+
+def _copy_categories(source_cs_name, target_cs_name):
+    """Categories and their drop rules travel with the template, like the
+    late policy (decisions/096 section 7). Inserted directly, for the reason
+    given in import_template."""
+    frappe.db.delete(
+        "Scheduled Course Assess Category",
+        {"parent": target_cs_name, "parenttype": "Course Schedule"},
+    )
+    for row in frappe.get_all(
+        "Scheduled Course Assess Category",
+        filters={"parent": source_cs_name, "parenttype": "Course Schedule"},
+        fields=["idx", "category_code", "title", "weight", "drop_lowest"],
+        order_by="idx asc",
+    ):
+        new_row = frappe.get_doc(
+            {
+                "doctype": "Scheduled Course Assess Category",
+                "parent": target_cs_name,
+                "parenttype": "Course Schedule",
+                "parentfield": "assess_categories",
+                **row,
+            }
+        )
+        new_row.flags.ignore_permissions = True
+        new_row.insert()
 
 
 def _replace_scac_rows(source_cs_name, target_cs_name):

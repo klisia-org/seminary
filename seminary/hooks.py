@@ -522,6 +522,8 @@ doc_events = {
         "on_update": [
             "seminary.seminary.api.update_card",
             "seminary.seminary.deadlines.on_row_update",
+            # After update_card: categories, drops and excuses (decisions/096).
+            "seminary.seminary.gradebook_weights.on_row_update",
         ],
     },
     # Cut-offs and late timestamps (decisions/082) are checked in validate, so
@@ -567,10 +569,16 @@ doc_events = {
         "on_update": "seminary.seminary.disciplinary.on_incident_update",
     },
     "Course Assess Results Detail": {
-        "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
+        "on_update": [
+            "seminary.seminary.cs_lifecycle.maybe_advance_to_grading",
+            "seminary.seminary.gradebook_weights.on_card_update",
+        ],
     },
     "Scheduled Course Roster": {
-        "on_update": "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
+        "on_update": [
+            "seminary.seminary.cs_lifecycle.maybe_advance_to_grading_from_roster",
+            "seminary.seminary.gradebook_weights.on_roster_update",
+        ],
     },
     # Billing documents (Sales Invoice, Payment Entry) belong entirely to the
     # financial backend: the bridge (oikonomos) subscribes to them from its own
