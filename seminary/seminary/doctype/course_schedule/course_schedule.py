@@ -404,7 +404,10 @@ class CourseSchedule(Document):
             # `modified`. Reload, or the form gets a copy with no chapters and
             # a stale timestamp: its next action (Import Course Template among
             # them) is refused as "modified after you have opened it".
-            if frappe.db.get_value(self.doctype, self.name, "modified") != self.modified:
+            if (
+                frappe.db.get_value(self.doctype, self.name, "modified")
+                != self.modified
+            ):
                 self.reload()
 
     def onload(self):
@@ -1041,6 +1044,10 @@ class CourseSchedule(Document):
         frappe.get_doc("Course Schedule", self.name).refile_assessment_competencies()
 
         _copy_late_policy(source_cs, self.name)
+        # Other apps copy what they keep per assessment row (aretenic's
+        # outcome maps, p023); a failure rolls the import back with it.
+        for fn in frappe.get_hooks("course_template_imported"):
+            frappe.get_attr(fn)(source_cs, self.name, scac_name_map)
         n_scac = len(scac_name_map)
         lines = [
             _(

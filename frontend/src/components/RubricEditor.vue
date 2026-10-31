@@ -96,6 +96,8 @@ import { Badge, Button, FormControl, call, createResource, toast } from 'frappe-
 import { X } from 'lucide-vue-next'
 import { computed, reactive, ref, watch } from 'vue'
 
+const emit = defineEmits(['saved'])
+
 const props = defineProps({
 	activityDoctype: { type: String, required: true },
 	activity: { type: String, required: true },
@@ -246,6 +248,7 @@ const save = async () => {
 		})
 		editor.setData(d)
 		load(d.rubric, d)
+		emit('saved')
 		toast.success(__('Rubric saved'))
 	} catch (e) {
 		toast.error(errorText(e, __('Could not save the rubric.')))
@@ -262,6 +265,7 @@ const remove = async () => {
 			activity: props.activity,
 		})
 		editor.reload()
+		emit('saved')
 	} catch (e) {
 		toast.error(errorText(e, __('Could not remove the rubric.')))
 	}
