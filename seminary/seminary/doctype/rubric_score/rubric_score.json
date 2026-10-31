@@ -1,0 +1,195 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "submission_doctype",
+  "submission",
+  "rubric",
+  "column_break_rbs1",
+  "student",
+  "course_schedule",
+  "assess_criteria",
+  "score_section",
+  "criterion_code",
+  "level",
+  "percent",
+  "column_break_rbs2",
+  "graded_by",
+  "graded_on",
+  "comment_section",
+  "comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "submission_doctype",
+   "fieldtype": "Select",
+   "label": "Submission Type",
+   "options": "Assignment Submission\nDiscussion Submission",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submission",
+   "fieldtype": "Dynamic Link",
+   "label": "Submission",
+   "options": "submission_doctype",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Link",
+   "label": "Rubric",
+   "options": "Rubric",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_rbs1",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "assess_criteria",
+   "fieldtype": "Link",
+   "label": "Assessment Criterion",
+   "options": "Scheduled Course Assess Criteria",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "score_section",
+   "fieldtype": "Section Break",
+   "label": "Score"
+  },
+  {
+   "fieldname": "criterion_code",
+   "fieldtype": "Data",
+   "label": "Criterion Code",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Data",
+   "label": "Level",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "percent",
+   "fieldtype": "Percent",
+   "label": "Percent of Criterion",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rbs2",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "graded_by",
+   "fieldtype": "Link",
+   "label": "Graded By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "graded_on",
+   "fieldtype": "Datetime",
+   "label": "Graded On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment_section",
+   "fieldtype": "Section Break",
+   "label": ""
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric Score",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Registrar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "RBS-.#######",
+ "naming_rule": "Expression",
+ "track_changes": 1,
+ "description": "The level one student reached on one rubric criterion of a graded assignment or discussion, with the grader's comment. A submission's grade is computed from these once every criterion has a level.",
+ "documentation": "https://docs.seminaryerp.org/modules/grading.html#rubrics"
+}

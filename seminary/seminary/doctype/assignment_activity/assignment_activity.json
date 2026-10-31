@@ -16,7 +16,8 @@
   "type",
   "show_answer",
   "grade_assignment",
-  "answer"
+  "answer",
+  "rubric"
  ],
  "fields": [
   {
@@ -82,11 +83,19 @@
    "fieldtype": "Data",
    "is_virtual": 1,
    "label": "Course Code"
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Link",
+   "label": "Rubric",
+   "options": "Rubric",
+   "read_only": 1,
+   "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-02 07:32:33.620482",
+ "modified": "2026-10-30 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Assignment Activity",

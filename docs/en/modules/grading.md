@@ -149,6 +149,56 @@ Three things to know:
 Extra-credit columns are tinted blue and show a "Max Extra: N" hint
 under the title instead of a weight, so they're easy to spot.
 
+## Rubrics
+
+A rubric grades an assignment or a discussion criterion by criterion instead of
+with one number. Rubrics have two parts, and different people own each part.
+
+**The scale belongs to the school.** On the Desk, under **Rubric Scale**, the
+academic office defines the levels every rubric uses, highest first. For example:
+
+| Level | Percent of the criterion | Description |
+|---|---|---|
+| Excellent | 100 | Goes beyond what the assignment asks. |
+| Proficient | 85 | Does what the assignment asks. *(meets expectations)* |
+| Developing | 70 | Partly does what the assignment asks. |
+| Beginning | 50 | Does not yet do what the assignment asks. |
+
+Mark one level as **Meets Expectations**, and tick **Default** on the scale
+instructors should start from. A school can keep more than one scale. Once a
+student has been graded on a scale, its levels can no longer change. To change
+them, create a new scale and make it the default.
+
+**The criteria belong to the instructor.** Open the assignment or discussion in
+the portal and use **Add a rubric** at the bottom of the page:
+
+- Give each criterion a title and, if you like, a line about what is judged.
+- **Weight** is optional and can be any number. Criteria left blank count as
+  much as an average criterion. The weights are rescaled to a total of 100, and
+  the percent beside each criterion shows what it counts for. You never need to
+  make them add up.
+- The levels come from the scale, and each one shows the scale's description.
+  Use **Write wording per level** only where you want to say something specific,
+  such as *"Proficient: identifies the structure but misses the chiasm."*
+- **Copy from…** starts from a rubric you used on another activity.
+
+Students see the rubric under the assignment or discussion prompt before they
+submit.
+
+**Grading.** On the grading page, click a level for each criterion. You can add
+a comment under each one. Once every criterion has a level, the grade is
+computed for you on the course's grading scale, and the score box is hidden.
+For example, all criteria at the top level give the scale's maximum. Extra
+credit and late deductions still apply as usual. Once the work is graded,
+students see the level they reached on each criterion and your comments.
+
+**Changing a rubric after grading.** A rubric that has been used to grade
+cannot be edited in place. Saving it from the activity creates a new version.
+Students graded earlier keep the version they were graded on.
+
+Rubrics are not used in competency-based courses, which grade on the
+competency's own levels, or in courses graded on a descriptive scale.
+
 ## A typical week
 
 A common rhythm for a seminary instructor:

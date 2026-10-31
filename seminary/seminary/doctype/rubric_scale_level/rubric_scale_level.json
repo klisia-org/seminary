@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "percent",
+  "meets_expectations",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "label": "Label",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "percent",
+   "fieldtype": "Percent",
+   "label": "Percent of Criterion",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "How much of a criterion a student earns at this level."
+  },
+  {
+   "fieldname": "meets_expectations",
+   "fieldtype": "Check",
+   "label": "Meets Expectations",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "The lowest level that meets what the work asks for. Exactly one level per scale."
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "in_list_view": 1,
+   "columns": 5,
+   "description": "What this level means on any criterion. Shown in a rubric's cells unless the instructor wrote their own."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric Scale Level",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

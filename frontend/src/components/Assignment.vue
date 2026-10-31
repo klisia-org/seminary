@@ -95,6 +95,9 @@
 					<CompetencyActivityGrading v-if="submissionName && submissionName !== 'new'"
 						submission-doctype="Assignment Submission" :submission="submissionName"
 						@mode="(m) => (gradeMode = m)" />
+					<RubricGrading v-if="submissionName && submissionName !== 'new'"
+						submission-doctype="Assignment Submission" :submission="submissionName"
+						@active="(a) => (rubricActive = a)" @graded="onRubricGraded" />
 					<FormControl v-if="submissionResource.doc && showScoreBox"
 						v-model="submissionResource.doc.grade" :label="__('Score')" type="number" />
 					<div>
@@ -319,6 +322,8 @@
 					</div>
 				</div>
 			</a>
+			<RubricView class="mb-4" activity-doctype="Assignment Activity" :activity="props.assignmentID"
+				:submission="submissionName" />
 			<details class="mb-4">
 				<summary class="cursor-pointer text-sm text-ink-gray-7 font-medium select-none">
 					{{ __('Assignment Question') }}
@@ -345,6 +350,7 @@
 				</div>
 				<SafeHtml :html="assignment.data.question"
 					class="ProseMirror prose prose-table:table-fixed prose-td:p-2 prose-th:p-2 prose-td:border prose-th:border prose-td:border-outline-gray-2 prose-th:border-outline-gray-2 prose-td:relative prose-th:relative prose-th:bg-surface-gray-2 prose-sm max-w-none !whitespace-normal" />
+				<RubricView class="mt-4" activity-doctype="Assignment Activity" :activity="props.assignmentID" />
 			</div>
 
 			<div class="flex flex-col">
@@ -519,6 +525,8 @@ import { useRouter } from 'vue-router'
 import SubmissionViewer from '@/components/AssignmentViewers/SubmissionViewer.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
+import RubricGrading from '@/components/RubricGrading.vue'
+import RubricView from '@/components/RubricView.vue'
 import ReportDisciplinaryIncidentModal from '@/components/Modals/ReportDisciplinaryIncidentModal.vue'
 import { usePortalDisciplinary } from '@/composables/usePortalDisciplinary'
 
@@ -549,11 +557,13 @@ const props = defineProps({
 })
 
 const gradeMode = ref('loading')
+// A rubric derives the grade, so its panel replaces the score box (decisions/095).
+const rubricActive = ref(false)
 const showScoreBox = computed(
 	() =>
 		!props.submissionName ||
 		props.submissionName === 'new' ||
-		gradeMode.value === 'numeric'
+		(gradeMode.value === 'numeric' && !rubricActive.value)
 )
 
 onMounted(() => {
@@ -813,6 +823,7 @@ watch(
 	(newGrade, oldGrade) => {
 		if (
 			canGradeSubmission.value &&
+			!syncingRubric.value &&
 			oldGrade !== undefined &&
 			newGrade !== oldGrade &&
 			submissionResource.doc &&
@@ -823,6 +834,20 @@ watch(
 		}
 	}
 );
+
+// The rubric panel saved the submission on the server; reload it so a later
+// Save does not send a stale copy, keeping any comment typed meanwhile.
+const syncingRubric = ref(false)
+const onRubricGraded = async () => {
+	const typed = comments.value
+	syncingRubric.value = true
+	try {
+		await submissionResource.reload()
+		comments.value = typed
+	} finally {
+		syncingRubric.value = false
+	}
+}
 
 const submitAssignment = () => {
 	if (props.submissionName != 'new') {

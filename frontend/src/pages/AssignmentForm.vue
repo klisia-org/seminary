@@ -48,6 +48,8 @@
 				@change="(val) => (model.question = val)" :editable="true" :fixedMenu="true"
 				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
 		</div>
+		<RubricEditor v-if="assignment.doc?.name" class="mt-8" activity-doctype="Assignment Activity"
+			:activity="assignment.doc.name" />
 	</div>
 </template>
 <script setup>
@@ -73,6 +75,7 @@ import {
 import { useRouter } from 'vue-router'
 import { examStore } from '@/stores/exam'
 import LinkControl from '@/components/Controls/Link.vue'
+import RubricEditor from '@/components/RubricEditor.vue'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 
 const user = inject('$user')

@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "criterion_code",
+  "level",
+  "descriptor"
+ ],
+ "fields": [
+  {
+   "fieldname": "criterion_code",
+   "fieldtype": "Data",
+   "label": "Criterion Code",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Data",
+   "label": "Level",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "descriptor",
+   "fieldtype": "Small Text",
+   "label": "Descriptor",
+   "in_list_view": 1,
+   "columns": 6
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Rubric Cell",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

@@ -24,6 +24,10 @@ FRAMEWORK_DOCTYPES = {"User", "Website Settings"}
 # links, but listed in no sidebar (088a §6).
 PORTAL_ONLY = {
     "Activity Competency Grade",
+    # Edited from the activity and the grading page (decisions/095); the
+    # school's Rubric Scale is the one rubric record on the Desk.
+    "Rubric",
+    "Rubric Score",
     "Assessment Dimension Weight",
     "Assessment Grading Matrix",
     "Assignment Activity",
