@@ -165,12 +165,60 @@ def _student_groups(course_name):
     return groups
 
 
+def _visible_classmates(course_name, discussion_id, user=None):
+    """Which classmates' posts this user may read and answer.
+
+    None means every post: the section's staff, and readers who are not on its
+    roster. For a student on the roster, the activity's two settings are kept
+    here and not only in the browser: with "post before reply" nothing is
+    visible until they have posted, and with student groups only their own
+    group's posts are. Returns the visible authors' Users otherwise.
+    """
+    user = user or frappe.session.user
+    if is_course_staff(course_name, include_registrar=True, user=user):
+        return None
+    me = frappe.db.get_value(
+        "Scheduled Course Roster",
+        {"course_sc": course_name, "stuemail_rc": user, "active": 1},
+        "student",
+    )
+    if not me:
+        return None
+    settings = (
+        frappe.db.get_value(
+            "Discussion Activity",
+            discussion_id,
+            ["post_before", "use_studentgroup"],
+            as_dict=True,
+        )
+        or frappe._dict()
+    )
+    if settings.post_before and not frappe.db.exists(
+        "Discussion Submission",
+        {"coursesc": course_name, "disc_activity": discussion_id, "member": user},
+    ):
+        return set()
+    roster = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course_name, "stuemail_rc": ["is", "set"]},
+        fields=["student", "stuemail_rc"],
+    )
+    if not settings.use_studentgroup:
+        return {r.stuemail_rc for r in roster}
+    group_of = {}
+    for row in _student_groups(course_name):
+        group_of.setdefault(row.student, row.student_group)
+    mine = group_of.get(me)
+    return {r.stuemail_rc for r in roster if group_of.get(r.student) == mine}
+
+
 def _get_discussion_replies(parent_name: str) -> list[dict]:
     """Return replies for a given discussion submission."""
     replies = frappe.get_all(
         "Discussion Submission Replies",
         filters={"parent": parent_name},
         fields=[
+            "member",
             "reply",
             "reply_attach",
             "member_name",
@@ -201,6 +249,13 @@ def get_discussion_submissions(
 
     if member:
         filters["member"] = ["!=", member]
+
+    visible = _visible_classmates(course_name, discussion_id)
+    if visible is not None:
+        visible = visible - {member}
+        if not visible:
+            return []
+        filters["member"] = ["in", list(visible)]
 
     submissions = frappe.get_all(
         "Discussion Submission",
@@ -248,11 +303,19 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
     the save.
     """
     row = frappe.db.get_value(
-        "Discussion Submission", submission, ["name", "coursesc"], as_dict=True
+        "Discussion Submission",
+        submission,
+        ["name", "coursesc", "disc_activity", "student", "member"],
+        as_dict=True,
     )
     if not row:
         frappe.throw(_("Not permitted."), frappe.PermissionError)
     require_enrolled(row.coursesc)
+    # A post the student may not read is one they may not answer either.
+    if row.member != frappe.session.user:
+        visible = _visible_classmates(row.coursesc, row.disc_activity)
+        if visible is not None and row.member not in visible:
+            frappe.throw(_("Not permitted."), frappe.PermissionError)
 
     # The reply counts toward the replier's own grade, so their cut-off
     # closes it (decisions/082).
