@@ -12,6 +12,9 @@ with this file.
 - **Projected:** the same, but an assessment with no score yet counts at the
   unweighted average of the student's scored regular assessments. None until
   at least one regular assessment has a score.
+- **Weights** are the student's own (decisions/096): ``effective_weight`` where
+  a row carries it, and a dropped or excused row (``weight_status``) does not
+  count at all, not even toward the average.
 """
 
 import math
@@ -50,6 +53,12 @@ def _result(total, max_grade, intervals):
     }
 
 
+def _weight(a):
+    if "effective_weight" in a:
+        return flt(a.get("effective_weight"))
+    return flt(a.get("weight_scac"))
+
+
 def compute(assessments, intervals, max_grade):
     """``{"current": {...} | None, "projected": {...} | None}`` from the
     section's assessment rows (``rawscore_card``, ``actualextrapt_card``,
@@ -58,16 +67,18 @@ def compute(assessments, intervals, max_grade):
     if not assessments or intervals is None:
         return {"current": None, "projected": None}
 
-    regular = [a for a in assessments if not a.get("extracredit_scac")]
+    regular = [
+        a
+        for a in assessments
+        if not a.get("extracredit_scac") and not a.get("weight_status")
+    ]
     extra = sum(
         flt(a.get("actualextrapt_card"))
         for a in assessments
         if a.get("extracredit_scac")
     )
 
-    current = sum(
-        flt(a.get("rawscore_card")) * flt(a.get("weight_scac")) for a in regular
-    )
+    current = sum(flt(a.get("rawscore_card")) * _weight(a) for a in regular)
     out = {"current": _result(current + extra, max_grade, intervals), "projected": None}
 
     scored = [_score(a.get("rawscore_card")) for a in regular]
@@ -75,8 +86,7 @@ def compute(assessments, intervals, max_grade):
     if scored:
         average = sum(scored) / len(scored)
         projected = sum(
-            (_score(a.get("rawscore_card")) or average) * flt(a.get("weight_scac"))
-            for a in regular
+            (_score(a.get("rawscore_card")) or average) * _weight(a) for a in regular
         )
         out["projected"] = _result(projected + extra, max_grade, intervals)
     return out
@@ -104,9 +114,13 @@ def section_scale(course_schedule):
 
 def section_assessments(course_schedule, rosters):
     """{roster name: [assessment rows]}: every assessment of the section, each
-    with that roster's card values (None where it has no card)."""
+    with that roster's card values (None where it has no card) and its own
+    weight (decisions/096)."""
+    from seminary.seminary.gradebook_weights import for_rosters
+
     if not rosters:
         return {}
+    weights = for_rosters(course_schedule, rosters)
     criteria = frappe.get_all(
         "Scheduled Course Assess Criteria",
         filters={"parent": course_schedule},
@@ -125,6 +139,7 @@ def section_assessments(course_schedule, rosters):
         rows = []
         for crit in criteria:
             card = cards.get((roster, crit.name)) or {}
+            w = (weights.get(roster) or {}).get(crit.name) or {}
             rows.append(
                 {
                     "assessment_criteria": crit.name,
@@ -132,6 +147,8 @@ def section_assessments(course_schedule, rosters):
                     "extracredit_scac": crit.extracredit_scac,
                     "rawscore_card": card.get("rawscore_card"),
                     "actualextrapt_card": card.get("actualextrapt_card"),
+                    "effective_weight": w.get("weight", crit.weight_scac),
+                    "weight_status": w.get("status"),
                 }
             )
         out[roster] = rows

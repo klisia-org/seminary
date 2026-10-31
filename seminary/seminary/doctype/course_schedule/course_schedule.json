@@ -55,6 +55,9 @@
   "late_grace_minutes",
   "late_floor",
   "missing_reply_deduction",
+  "assess_categories_section",
+  "assess_categories",
+  "assessments_section",
   "courseassescrit_sc",
   "lms_tab",
   "lms_configuration_section",
@@ -723,12 +726,30 @@
    "non_negative": 1,
    "label": "Deduction per Missing Reply (%)",
    "description": "For discussions with a separate replies due date: percentage points taken off for each required reply not posted by that date."
+  },
+  {
+   "fieldname": "assess_categories_section",
+   "fieldtype": "Section Break",
+   "label": "Assessment Categories",
+   "description": "Optional. With categories, each category's weight is a share of the final grade and each assessment's weight is a share of its category. Leave empty to weigh each assessment against the final grade."
+  },
+  {
+   "fieldname": "assess_categories",
+   "fieldtype": "Table",
+   "label": "Assessment Categories",
+   "options": "Scheduled Course Assess Category",
+   "permlevel": 1
+  },
+  {
+   "fieldname": "assessments_section",
+   "fieldtype": "Section Break",
+   "label": "Assessments"
   }
  ],
  "image_field": "course_image",
  "is_calendar_and_gantt": 1,
  "links": [],
- "modified": "2026-09-28 12:00:00.000000",
+ "modified": "2026-10-31 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Schedule",

@@ -2,8 +2,9 @@
   The rubric editor on an assignment's or discussion's page (decisions/095).
 
   The school's scale supplies the levels; the instructor writes criteria and,
-  if they like, weights and their own wording for some cells. Weights are any
-  numbers: the shares shown beside them are what the grade will use. A rubric
+  if they like, weights and their own wording for some cells. Criteria split
+  100% evenly; a typed weight fixes that criterion's percent and the blank ones
+  share what is left, so the boxes always show what the grade will use. A rubric
   someone was graded on is saved as a new version, never edited in place.
 -->
 <template>
@@ -57,9 +58,11 @@
 			<div v-for="(c, i) in form.criteria" :key="c.key" class="space-y-2 border-t pt-3">
 				<div class="flex items-end gap-2">
 					<FormControl v-model="c.title" class="flex-1" :label="__('Criterion {0}').format(i + 1)" />
-					<FormControl v-model="c.weight" type="number" class="w-28" :label="__('Weight')"
-						:placeholder="__('auto')" />
-					<div class="w-16 pb-2 text-right text-sm text-ink-gray-7">{{ shares[i] }}%</div>
+					<FormControl v-model="c.weight" type="number" class="w-28" :label="__('Weight %')"
+						:placeholder="String(shares[i])" :title="__('Leave blank to share what is left evenly')" />
+					<div class="w-16 pb-2 text-right text-xs text-ink-gray-5">
+						{{ rescaled ? `→ ${shares[i]}%` : (c.weight > 0 ? __('fixed') : __('auto')) }}
+					</div>
 					<Button variant="ghost" :aria-label="__('Remove criterion')" @click="form.criteria.splice(i, 1)">
 						<X class="h-4 w-4" />
 					</Button>
@@ -78,7 +81,12 @@
 
 			<Button @click="addCriterion">{{ __('Add criterion') }}</Button>
 
-			<p v-if="weightNote" class="text-sm text-ink-gray-6">{{ weightNote }}</p>
+			<p class="text-xs text-ink-gray-5">
+				{{ __('Criteria share 100% evenly. Type a weight to fix one; the blank ones share what is left. Clear it to go back to automatic.') }}
+			</p>
+			<p v-if="weightNote" class="text-sm" :class="weightBlocked ? 'text-ink-red-3' : 'text-ink-gray-6'">
+				{{ weightNote }}
+			</p>
 		</div>
 	</div>
 </template>
@@ -87,6 +95,8 @@
 import { Badge, Button, FormControl, call, createResource, toast } from 'frappe-ui'
 import { X } from 'lucide-vue-next'
 import { computed, reactive, ref, watch } from 'vue'
+
+const emit = defineEmits(['saved'])
 
 const props = defineProps({
 	activityDoctype: { type: String, required: true },
@@ -166,24 +176,36 @@ const copyOptions = computed(() =>
 		: []
 )
 
-// The server's rule, mirrored so the shares move as the instructor types: a
-// blank weight counts as an average criterion, and all weights rescale to 100.
+// The server's rule, mirrored so the boxes move as the instructor types: a
+// typed weight is a fixed percent, the blank ones share what is left evenly,
+// and only an all-fixed rubric that misses 100 is rescaled.
+const weightParts = computed(() => {
+	const w = form.criteria.map((c) => (Number(c.weight) > 0 ? Number(c.weight) : 0))
+	const fixed = w.reduce((a, b) => a + b, 0)
+	const auto = w.filter((x) => !x).length
+	return { w, fixed: Math.round(fixed * 100) / 100, auto }
+})
+
 const shares = computed(() => {
-	const w = form.criteria.map((c) => Number(c.weight) > 0 ? Number(c.weight) : 0)
-	const typed = w.filter((x) => x > 0)
-	const fill = typed.length ? typed.reduce((a, b) => a + b, 0) / typed.length : 1
+	const { w, fixed, auto } = weightParts.value
+	const fill = auto && fixed < 100 ? (100 - fixed) / auto : 0
 	const all = w.map((x) => x || fill)
 	const total = all.reduce((a, b) => a + b, 0)
 	return all.map((x) => (total ? Math.round((x / total) * 1000) / 10 : 0))
 })
 
+const weightBlocked = computed(() => weightParts.value.auto > 0 && weightParts.value.fixed >= 100)
+const rescaled = computed(() =>
+	form.criteria.length > 0 && !weightParts.value.auto && weightParts.value.fixed !== 100
+)
+
 const weightNote = computed(() => {
-	const typed = form.criteria.map((c) => Number(c.weight)).filter((x) => x > 0)
-	if (!typed.length) return ''
-	const sum = Math.round(typed.reduce((a, b) => a + b, 0) * 100) / 100
-	const blanks = form.criteria.length - typed.length
-	if (sum === 100 && !blanks) return ''
-	return __('The weights add up to {0}. We rescale them automatically to a total of 100; the percent beside each criterion is what it counts for.').format(sum)
+	const { fixed } = weightParts.value
+	if (weightBlocked.value)
+		return __('The fixed weights add up to {0}%, which leaves nothing for the criteria left blank. Lower one of them or clear it.').format(fixed)
+	if (rescaled.value)
+		return __('Every weight is fixed and they add up to {0}%. We rescale them to a total of 100%, as shown beside each one.').format(fixed)
+	return ''
 })
 
 const copyFrom = async (rubric) => {
@@ -206,6 +228,10 @@ const save = async () => {
 		toast.error(__('Add at least one criterion.'))
 		return
 	}
+	if (weightBlocked.value) {
+		toast.error(weightNote.value)
+		return
+	}
 	saving.value = true
 	try {
 		const d = await call('seminary.seminary.rubrics.save_rubric', {
@@ -222,6 +248,7 @@ const save = async () => {
 		})
 		editor.setData(d)
 		load(d.rubric, d)
+		emit('saved')
 		toast.success(__('Rubric saved'))
 	} catch (e) {
 		toast.error(errorText(e, __('Could not save the rubric.')))
@@ -238,6 +265,7 @@ const remove = async () => {
 			activity: props.activity,
 		})
 		editor.reload()
+		emit('saved')
 	} catch (e) {
 		toast.error(errorText(e, __('Could not remove the rubric.')))
 	}

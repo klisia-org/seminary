@@ -71,7 +71,9 @@
 				:placeholder="__('Enter a prompt for the discussion...')"
 			/>
 			<RubricEditor v-if="discussionDetails.data?.name" class="mt-8" activity-doctype="Discussion Activity"
-				:activity="discussionDetails.data.name" />
+				:activity="discussionDetails.data.name" @saved="outcomesPanel?.reload()" />
+			<ActivityOutcomesPanel v-if="discussionDetails.data?.name && user?.data?.has_aretenic" ref="outcomesPanel"
+				class="mt-6" activity-doctype="Discussion Activity" :activity="discussionDetails.data.name" />
 		</div>
 	</div>
 
@@ -100,6 +102,7 @@ import { useRouter } from 'vue-router'
 import Link from '@/components/Controls/Link.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import RubricEditor from '@/components/RubricEditor.vue'
+import ActivityOutcomesPanel from '@/components/ActivityOutcomesPanel.vue'
 import { examStore } from '@/stores/exam'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 
@@ -107,6 +110,7 @@ import { useActivityReturn } from '@/composables/useActivityReturn'
 
 
 const user = inject('$user')
+const outcomesPanel = ref(null)
 const router = useRouter()
 const { showBackToLesson, backToLesson } = useActivityReturn(
 	() => discussionDetails.data?.name

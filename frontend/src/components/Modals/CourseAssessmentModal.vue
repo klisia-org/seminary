@@ -58,11 +58,19 @@
         <template v-if="weightsApply">
         <FormControl
           v-model="criteria.weight_scac"
-          :label="__('Weight')"
+          :label="categories.length ? __('% of category (0 shares what the others leave)') : __('Weight')"
           class="mb-4"
-          :required="!criteria.extracredit_scac"
+          :required="!criteria.extracredit_scac && !categories.length"
           :disabled="!!criteria.extracredit_scac"
           maxlength="10"
+        />
+        <FormControl
+          v-if="categories.length && !criteria.extracredit_scac"
+          type="select"
+          v-model="criteria.category_code"
+          :label="__('Category')"
+          class="mb-4"
+          :options="[{ label: __('Choose a category'), value: '' }, ...categories.map((c) => ({ label: c.title, value: c.category_code }))]"
         />
         <div class="flex items-center gap-2 mb-4 pl-1">
           <input
@@ -114,6 +122,11 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  // The section's saved categories (decisions/096); empty when it has none.
+  categories: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const defaultCriteriaState = () => ({
@@ -127,6 +140,7 @@ const defaultCriteriaState = () => ({
   discussion: '',
   extracredit_scac: 0,
   fudgepoints_scac: '',
+  category_code: '',
   parent: props.courseName,
   parenttype: 'Course Schedule',
   parentfield: 'courseassescrit_sc',

@@ -28,7 +28,12 @@
   "late_deduction_card",
   "late_adjusted_card",
   "late_adjusted_deduction",
-  "late_adjusted_reason"
+  "late_adjusted_reason",
+  "weight_section",
+  "excused",
+  "excused_reason",
+  "weight_column",
+  "dropped_card"
  ],
  "fields": [
   {
@@ -41,11 +46,11 @@
    "reqd": 1
   },
   {
-   "fetch_from": "assessment_criteria.weight_scac",
    "fieldname": "maximum_score",
    "fieldtype": "Percent",
    "label": "Maximum Weighted Score",
-   "read_only": 1
+   "read_only": 1,
+   "description": "This student's weight for the assessment: its share of the final grade after categories, dropped scores and excuses."
   },
   {
    "fieldname": "column_break_ayqu",
@@ -176,12 +181,42 @@
    "fieldtype": "Small Text",
    "label": "Reason for Changing the Deduction",
    "read_only": 1
+  },
+  {
+   "fieldname": "weight_section",
+   "fieldtype": "Section Break",
+   "label": "Weight"
+  },
+  {
+   "default": "0",
+   "fieldname": "excused",
+   "fieldtype": "Check",
+   "label": "Excused",
+   "description": "This assessment does not count for this student. Its weight goes to the student's other assessments."
+  },
+  {
+   "depends_on": "excused",
+   "fieldname": "excused_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason for Excusing"
+  },
+  {
+   "fieldname": "weight_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "dropped_card",
+   "fieldtype": "Check",
+   "label": "Dropped",
+   "read_only": 1,
+   "description": "One of the student's lowest scores in its category, so it does not count."
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-09-28 12:00:00.000000",
+ "modified": "2026-10-31 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Course Assess Results Detail",

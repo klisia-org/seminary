@@ -37,14 +37,14 @@
   {
    "fieldname": "weight",
    "fieldtype": "Float",
-   "label": "Weight",
+   "label": "Weight (%)",
    "in_list_view": 1,
    "columns": 1,
-   "description": "Any number; weights are rescaled to a total of 100. A criterion left blank weighs as much as an average one."
+   "description": "Leave blank to share what is left evenly with the other blank criteria. Type a percent to fix this criterion's weight."
   }
  ],
  "links": [],
- "modified": "2026-10-30 12:00:00.000000",
+ "modified": "2026-10-31 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Rubric Criterion",

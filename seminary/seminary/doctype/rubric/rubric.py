@@ -60,6 +60,13 @@ class Rubric(Document):
                 frappe.throw(
                     _("Criterion {0}: a weight cannot be negative.").format(c.title)
                 )
+        fixed = sum(flt(c.weight) for c in self.criteria if flt(c.weight) > 0)
+        if fixed >= 100 and any(flt(c.weight) <= 0 for c in self.criteria):
+            frappe.throw(
+                _(
+                    "The fixed weights add up to {0}%, which leaves nothing for the criteria left blank. Lower one of them or clear it."
+                ).format(round(fixed, 2))
+            )
 
     def validate_cells(self):
         codes = {c.criterion_code for c in self.criteria}

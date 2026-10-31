@@ -173,10 +173,11 @@ them, create a new scale and make it the default.
 the portal and use **Add a rubric** at the bottom of the page:
 
 - Give each criterion a title and, if you like, a line about what is judged.
-- **Weight** is optional and can be any number. Criteria left blank count as
-  much as an average criterion. The weights are rescaled to a total of 100, and
-  the percent beside each criterion shows what it counts for. You never need to
-  make them add up.
+- **Weight %** starts out automatic: the criteria share 100% evenly, and each
+  box shows the percent its criterion counts for. Type a percent to fix one
+  criterion, and the blank ones share what is left. For example, with five
+  criteria, fixing one at 5% gives each of the other four 23.75%. Clear a box to
+  make it automatic again. You never need to make the weights add up.
 - The levels come from the scale, and each one shows the scale's description.
   Use **Write wording per level** only where you want to say something specific,
   such as *"Proficient: identifies the structure but misses the chiasm."*

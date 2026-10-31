@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "creation": "2026-10-31 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "category_code",
+  "weight",
+  "drop_lowest"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Category",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 4
+  },
+  {
+   "fieldname": "category_code",
+   "fieldtype": "Data",
+   "label": "Code",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "Filled from the name when left blank. Assessments name their category by this code, so renaming the category keeps them in it."
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Percent",
+   "label": "Weight (%)",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "Share of the final grade. The categories of a section total 100%."
+  },
+  {
+   "default": "0",
+   "fieldname": "drop_lowest",
+   "fieldtype": "Int",
+   "non_negative": 1,
+   "label": "Drop Lowest",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "How many of each student's lowest scores in this category do not count."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-31 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Scheduled Course Assess Category",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

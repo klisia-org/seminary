@@ -49,7 +49,9 @@
 				editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]" />
 		</div>
 		<RubricEditor v-if="assignment.doc?.name" class="mt-8" activity-doctype="Assignment Activity"
-			:activity="assignment.doc.name" />
+			:activity="assignment.doc.name" @saved="outcomesPanel?.reload()" />
+		<ActivityOutcomesPanel v-if="assignment.doc?.name && user?.data?.has_aretenic" ref="outcomesPanel"
+			class="mt-6" activity-doctype="Assignment Activity" :activity="assignment.doc.name" />
 	</div>
 </template>
 <script setup>
@@ -76,9 +78,11 @@ import { useRouter } from 'vue-router'
 import { examStore } from '@/stores/exam'
 import LinkControl from '@/components/Controls/Link.vue'
 import RubricEditor from '@/components/RubricEditor.vue'
+import ActivityOutcomesPanel from '@/components/ActivityOutcomesPanel.vue'
 import { useActivityReturn } from '@/composables/useActivityReturn'
 
 const user = inject('$user')
+const outcomesPanel = ref(null)
 const router = useRouter()
 const { showBackToLesson, backToLesson } = useActivityReturn(
 	() => assignment.doc?.name

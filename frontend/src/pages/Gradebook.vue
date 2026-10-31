@@ -116,6 +116,11 @@
                 </span>
               </div>
             </th>
+            <!-- One subtotal per category (decisions/096). -->
+            <th v-for="cat in categories" :key="'cat-' + cat.category_code"
+              class="border border-outline-gray-2 bg-surface-gray-3 px-2 py-2 sm:px-4 min-w-[100px] text-sm">
+              {{ cat.title }}
+            </th>
           </tr>
 
           <!-- Weight Row -->
@@ -130,9 +135,16 @@
               <span v-if="assessment.extracredit_scac" class="italic">
                 {{ __('Max Extra: ') }} {{ assessment.fudgepoints_scac }}
               </span>
+              <span v-else-if="categories.length" :title="__('Share of the final grade')">
+                {{ categoryTitle(assessment.category_code) }} · {{ shareOf(assessment) }}%
+              </span>
               <span v-else>
                 {{ assessment.weight_scac }}%
               </span>
+            </td>
+            <td v-for="cat in categories" :key="'catw-' + cat.category_code"
+              class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1 text-center text-xs text-ink-gray-5 font-medium">
+              {{ cat.weight }}%<span v-if="cat.drop_lowest"> · {{ __('drop {0}').format(cat.drop_lowest) }}</span>
             </td>
           </tr>
         </thead>
@@ -169,13 +181,23 @@
 
             <!-- Grade Cells -->
             <td v-for="assessment in sortedAssessments" :key="assessment.assessment_criteria"
-              :class="assessment.extracredit_scac ? 'bg-surface-blue-1' : ''"
+              :class="[assessment.extracredit_scac ? 'bg-surface-blue-1' : '', weightStatus(student, assessment) ? 'bg-surface-gray-2' : '']"
+              :title="weightNote(student, assessment)"
               class="border border-outline-gray-2 px-1 py-1.5 sm:px-2">
-              <div class="flex items-center gap-1">
+              <div v-if="weightStatus(student, assessment) === 'Excused'" class="flex items-center justify-center gap-1">
+                <span class="rounded bg-surface-gray-3 px-1.5 text-xs font-semibold text-ink-gray-7">{{ __('EX') }}</span>
+                <button
+                  class="shrink-0 rounded p-0.5 text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-colors"
+                  :aria-label="__('Dates, late deduction and excuse')" :title="__('Dates, late deduction and excuse')"
+                  @click="openDates(student, assessment)">
+                  <Clock class="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div v-else class="flex items-center gap-1">
                 <input type="number"
                   :disabled="isFinalized"
                   class="w-full min-w-[50px] text-center text-sm border border-outline-gray-1 bg-surface-white text-ink-gray-9 rounded px-1 py-1 focus:border-outline-blue-1 focus:ring-1 focus:ring-outline-blue-1 outline-none transition-colors disabled:bg-surface-gray-1 disabled:text-ink-gray-6 disabled:cursor-not-allowed"
-                  :class="isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : ''"
+                  :class="[isCellChanged(student, assessment) ? 'border-outline-blue-1 !bg-surface-blue-1 text-ink-blue-2' : '', weightStatus(student, assessment) ? 'text-ink-gray-5 line-through' : '']"
                   :value="assessment.extracredit_scac ? getExtraCredit(student, assessment) : getRegularGrade(student, assessment)"
                   @input="assessment.extracredit_scac
                     ? markExtraCreditAsChanged(student, assessment, $event.target.value)
@@ -188,7 +210,7 @@
                 <!-- This student's dates and the late deduction (decisions/082). -->
                 <button
                   class="shrink-0 rounded p-0.5 text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-colors"
-                  :aria-label="__('Dates and late deduction')" :title="__('Dates and late deduction')"
+                  :aria-label="__('Dates, late deduction and excuse')" :title="__('Dates, late deduction and excuse')"
                   @click="openDates(student, assessment)">
                   <Clock class="h-3.5 w-3.5" />
                 </button>
@@ -197,6 +219,10 @@
                 :class="cellOf(student, assessment).late_adjusted_card ? 'text-ink-gray-5' : 'text-ink-amber-3'">
                 {{ __('{0} late of {1}').format('−' + lateDeduction(student, assessment), cellOf(student, assessment).late_base_card) }}
               </div>
+            </td>
+            <td v-for="cat in categories" :key="'cats-' + cat.category_code"
+              class="border border-outline-gray-2 bg-surface-gray-1 px-2 py-1.5 text-center text-sm font-medium text-ink-gray-8">
+              {{ student.category_scores?.[cat.category_code] ?? '—' }}
             </td>
           </tr>
         </tbody>
@@ -335,6 +361,7 @@ const hasNullGrades = computed(() => {
       const cell = student.assessments.find(
         (a) => a.assessment_criteria === def.assessment_criteria
       );
+      if (cell?.excused) continue;
       if (!cell || !cell.graded_card) return true;
     }
   }
@@ -404,6 +431,32 @@ const sortedAssessments = computed(() => {
     return a.title.localeCompare(b.title);
   });
 });
+
+// Categories, dropped scores and excuses (decisions/096). The server works out
+// each student's weights; the page only shows them.
+const categoryData = createResource({
+  url: 'seminary.seminary.gradebook_weights.get_categories',
+  makeParams: () => ({ course: props.courseName }),
+  auto: true,
+  onError: () => { },
+})
+const categories = computed(() => categoryData.data?.categories || [])
+const categoryTitle = (code) => categories.value.find((c) => c.category_code === code)?.title || __('No category')
+const shareOf = (assessment) =>
+  Math.round((categoryData.data?.shares?.[assessment.assessment_criteria] || 0) * 100) / 100
+const weightStatus = (student, assessment) => cellOf(student, assessment).weight_status || null
+const weightNote = (student, assessment) => {
+  const cell = cellOf(student, assessment)
+  if (cell.weight_status === 'Excused') {
+    return __('Excused: does not count. {0}').format(cell.excused_reason || '')
+  }
+  if (cell.weight_status === 'Dropped') {
+    const cat = categories.value.find((c) => c.category_code === assessment.category_code)
+    const n = assessments.value.filter((a) => a.category_code === assessment.category_code).length
+    return __('One of the lowest {0} of {1} in {2}, dropped: does not count.').format(cat?.drop_lowest || 1, n, cat?.title || '')
+  }
+  return ''
+}
 
 // Dates and late deductions (decisions/082 section 7).
 const studentDates = ref(null)
@@ -526,6 +579,9 @@ const saveCell = async (student, assessment) => {
 
     delete changedCells.value[cell.name]
     toast.success(__('Grade saved successfully'))
+    // A new score can change which one is dropped; reload unless that would
+    // lose other unsaved cells.
+    if (categories.value.length && !hasUnsavedChanges.value) gradebook.reload()
   } catch (error) {
     console.error('Error saving cell:', error)
     toast.error(error.messages?.[0] || error)
@@ -579,6 +635,7 @@ const saveAllChanges = async () => {
     toast.error(__('Failed to save {0} grade(s)').format(errors.length))
   } else {
     toast.success(__('Saved {0} grade(s) successfully').format(savedCount))
+    if (categories.value.length) gradebook.reload()
   }
 }
 

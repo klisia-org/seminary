@@ -20,6 +20,7 @@ Run directly (the app-wide suite does not run on the dev sites):
 """
 
 import json
+from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase as FrappeTestCase
@@ -281,6 +282,28 @@ class TestTemplateImportFolders(FrappeTestCase):
         for folder in refs:
             self.assertTrue(cf.user_may_read(folder, user), folder)
 
+    def test_other_apps_hear_of_the_import_with_the_row_map(self):
+        # p023: aretenic copies its outcome maps through this hook.
+        calls = []
+        real = frappe.get_hooks
+
+        def hooks(name=None, *a, **kw):
+            if name == "course_template_imported":
+                return [f"{__name__}.record_imported"]
+            return real(name, *a, **kw)
+
+        with patch("frappe.get_hooks", side_effect=hooks), patch(
+            f"{__name__}.record_imported", side_effect=lambda *a: calls.append(a)
+        ):
+            target, _result = self._import_into(self.instr_b)
+        source_row = frappe.db.get_value(
+            "Scheduled Course Assess Criteria", {"parent": self.source}, "name"
+        )
+        target_row = frappe.db.get_value(
+            "Scheduled Course Assess Criteria", {"parent": target}, "name"
+        )
+        self.assertEqual(calls, [(self.source, target, {source_row: target_row})])
+
     def test_source_must_be_readable(self):
         target = make_cs(self.course, self.scale, self.instr_b, f"T{uid()}"[-6:])
         # A user with the import roles but no read permission on Course Schedule.
@@ -296,6 +319,10 @@ class TestTemplateImportFolders(FrappeTestCase):
                 )
         finally:
             frappe.has_permission = original
+
+
+def record_imported(*args):
+    pass
 
 
 def run_smoke():

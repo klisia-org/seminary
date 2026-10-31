@@ -735,7 +735,11 @@ def excused_due(course, date, students):
     out = []
     for student in students:
         for row in rows:
-            if get_override(row.name, student):
+            if get_override(row.name, student) or frappe.db.get_value(
+                "Course Assess Results Detail",
+                {"assessment_criteria": row.name, "student_card": student},
+                "excused",
+            ):
                 continue
             out.append(
                 {

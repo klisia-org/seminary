@@ -147,7 +147,7 @@
               <ListHeaderItem v-for="column in assessmentColumns" :key="column.key" :item="column" />
             </ListHeader>
             <ListRow v-for="row in assessmentRows" :key="row.name" :row="row"
-              :class="row.isExtraCredit ? 'bg-surface-blue-1' : ''"
+              :class="row.isExtraCredit ? 'bg-surface-blue-1' : (row.doesNotCount ? 'bg-surface-gray-2 text-ink-gray-5' : '')"
               v-slot="{ column, item }">
               <ListRowItem :item="item" :align="column.align" />
             </ListRow>
@@ -165,9 +165,9 @@
               </thead>
               <tbody>
                 <tr v-for="a in simAssessments" :key="a.key"
-                  :class="a.isExtraCredit ? 'bg-surface-amber-1' : ''">
+                  :class="a.isExtraCredit ? 'bg-surface-amber-1' : (simWeights[a.criteria]?.status ? 'text-ink-gray-5' : '')">
                   <td class="px-3 py-2">{{ a.title }}</td>
-                  <td class="px-3 py-2">{{ a.weight }}</td>
+                  <td class="px-3 py-2">{{ simWeightLabel(a) }}</td>
                   <td class="px-3 py-2 text-right">
                     <div class="inline-flex items-center gap-1">
                       <input type="number" :min="0" :max="a.maxGrade"
@@ -285,6 +285,7 @@ import { computed, inject, ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { AlertTriangle, Check } from 'lucide-vue-next'
 import { formatDate } from '@/utils'
+import { computeWeights } from '@/utils/gradeWeights'
 
 const props = defineProps({
   courseName: { type: String, required: true },
@@ -394,8 +395,17 @@ const breadcrumbs = computed(() => {
   ]
 })
 
-const assessmentColumns = [
+// With categories (decisions/096) the student sees each assessment's category,
+// grouped in the section's order, and the weight is their own share of the
+// grade: 0 for a dropped or excused one.
+const categories = computed(() => status.data?.categories || [])
+const categoryIndex = (code) => {
+  const i = categories.value.findIndex((c) => c.category_code === code)
+  return i < 0 ? categories.value.length : i
+}
+const assessmentColumns = computed(() => [
   { label: __('Assessment'), key: 'title', width: 2 },
+  ...(categories.value.length ? [{ label: __('Category'), key: 'category', width: 1 }] : []),
   { label: __('Type'), key: 'type', width: 1 },
   { label: __('Status'), key: 'status', width: 1 },
   { label: __('Due Date'), key: 'due_date', width: 1 },
@@ -403,13 +413,24 @@ const assessmentColumns = [
   { label: __('Weight'), key: 'weight_display', width: 1, align: 'right' },
   { label: __('Class Median'), key: 'median_display', width: 1, align: 'right' },
   { label: __('Percentile'), key: 'percentile', width: 1, align: 'right' },
-]
+])
+
+const pct = (w) => `${Math.round((Number(w) || 0) * 100) / 100}%`
+const weightLabel = (a) => {
+  if (a.extracredit_scac) return `Extra ${a.fudgepoints_scac} pts`
+  if (a.weight_status === 'Dropped') return __('Dropped')
+  if (a.weight_status === 'Excused') return __('Excused')
+  const w = a.effective_weight ?? a.weight_scac
+  return w ? pct(w) : '-'
+}
 
 const assessmentRows = computed(() => {
   if (!status.data?.assessments) return []
   const maxGrade = status.data.maxnumgrade || 100
 
   const sorted = [...status.data.assessments].sort((a, b) => {
+    const byCategory = categoryIndex(a.category_code) - categoryIndex(b.category_code)
+    if (categories.value.length && byCategory) return byCategory
     if (!a.due_date && b.due_date) return 1
     if (a.due_date && !b.due_date) return -1
     if (a.due_date && b.due_date) {
@@ -428,10 +449,14 @@ const assessmentRows = computed(() => {
     status: a.status || '-',
     due_date: a.due_date ? formatDate(a.due_date) : '-',
     isExtraCredit: !!a.extracredit_scac,
+    doesNotCount: !!a.weight_status,
+    category: a.extracredit_scac
+      ? __('Extra credit')
+      : (categories.value.find((c) => c.category_code === a.category_code)?.title || '-'),
     score_display: a.extracredit_scac
       ? (a.actualextrapt_card != null && a.actualextrapt_card > 0 ? `+${a.actualextrapt_card} pts` : '-')
       : (a.rawscore_card != null && a.rawscore_card > 0 ? `${a.rawscore_card} / ${maxGrade}` : '-'),
-    weight_display: a.weight_scac ? `${a.weight_scac}%` : (a.extracredit_scac ? `Extra ${a.fudgepoints_scac} pts` : '-'),
+    weight_display: weightLabel(a),
     median_display: a.class_median != null ? `${a.class_median} / ${maxGrade}` : '-',
     percentile: a.percentile != null ? `Top ${100 - a.percentile}%` : '-',
     rawPercentile: a.percentile,
@@ -450,10 +475,24 @@ const currentGrade = computed(() => fromServer(status.data?.current_grade))
 const projectedGrade = computed(() => fromServer(status.data?.projected_grade))
 
 // The server's "current" algorithm (seminary/seminary/grade_projection.py),
-// rerun here on edited scores for Simulate Grades. Keep the two in step.
+// rerun here on edited scores for Simulate Grades. Keep the two in step. The
+// weights are reworked too, so a simulated score can change which is dropped.
+function weightsFor(assessments, scoreOf) {
+  return computeWeights(
+    assessments.map(a => ({
+      ...a,
+      name: a.assessment_criteria,
+      score: scoreOf(a),
+      graded: scoreOf(a) > 0 ? 1 : 0,
+    })),
+    categories.value,
+  )
+}
+
 function gradeFromScores(assessments, scoreOf, intervals, maxGrade) {
-  const regular = assessments.filter(a => !a.extracredit_scac)
-  const weightedSum = regular.reduce((sum, a) => sum + scoreOf(a) * (a.weight_scac || 0), 0)
+  const weights = weightsFor(assessments, scoreOf)
+  const regular = assessments.filter(a => !a.extracredit_scac && !weights[a.assessment_criteria]?.status)
+  const weightedSum = regular.reduce((sum, a) => sum + scoreOf(a) * (weights[a.assessment_criteria]?.weight || 0), 0)
   const extraPoints = assessments
     .filter(a => a.extracredit_scac)
     .reduce((sum, a) => sum + scoreOf(a), 0)
@@ -480,9 +519,9 @@ const simAssessments = computed(() => {
   const maxGrade = status.data.maxnumgrade || 100
   return status.data.assessments.map(a => ({
     key: a.grade_name || a.assessment_criteria,
+    criteria: a.assessment_criteria,
     title: a.title || a.assessment_criteria,
     isExtraCredit: !!a.extracredit_scac,
-    weight: a.weight_scac ? `${a.weight_scac}%` : (a.extracredit_scac ? `Extra` : '-'),
     maxGrade,
   }))
 })
@@ -509,6 +548,17 @@ function toggleSimulation() {
     })
   }
   simulating.value = !simulating.value
+}
+
+const simWeights = computed(() =>
+  weightsFor(status.data?.assessments || [], (a) => Number(simScores[a.grade_name || a.assessment_criteria]) || 0)
+)
+const simWeightLabel = (a) => {
+  if (a.isExtraCredit) return __('Extra')
+  const w = simWeights.value[a.criteria]
+  if (w?.status === 'Dropped') return __('Dropped')
+  if (w?.status === 'Excused') return __('Excused')
+  return w ? pct(w.weight) : '-'
 }
 
 const simulatedGrade = computed(() => {

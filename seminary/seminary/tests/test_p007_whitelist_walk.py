@@ -363,6 +363,10 @@ STAFF_ONLY = {
     "seminary.seminary.deadlines.set_late_adjustment",
     "seminary.seminary.deadlines.get_student_dates",
     "seminary.seminary.deadlines.excused_due",
+    # --- Categories and excuses (decisions/096): the same gate, before any
+    # lookup or write.
+    "seminary.seminary.gradebook_weights.get_categories",
+    "seminary.seminary.gradebook_weights.set_excused",
 }
 
 # Whitelisted functions in the walked modules that are neither student-facing
