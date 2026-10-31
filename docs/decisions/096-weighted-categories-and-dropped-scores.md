@@ -1,7 +1,7 @@
 # 096 — Weighted categories, dropped scores and excused assessments
 
 **Date:** 2026-10-31
-**Status:** Accepted 2026-10-31
+**Status:** Accepted 2026-10-31; implemented 2026-10-31 (436ea430)
 **Delivers:** LMS-ASM-04 (Yes)
 **Related:** 081 (excused absences), 082 (due dates and late policy), 095 (rubrics)
 
