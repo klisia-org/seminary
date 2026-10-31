@@ -131,26 +131,40 @@ class ADR095Case(IntegrationTestCase):
             [
                 {
                     "title": "Exegesis",
-                    "weight": 3,
+                    "weight": 40,
                     "cells": {"Excellent": "Finds the chiasm"},
                 },
-                {"title": "Context", "weight": 1},
+                {"title": "Context"},
                 {"title": "Application"},
             ],
         )
 
-    def test_blank_weights_count_as_an_average_criterion(self):
-        share = rubrics.shares(
+    def test_typed_weights_are_fixed_and_blank_ones_share_the_rest(self):
+        def pct(*weights):
+            share = rubrics.shares(
+                [{"criterion_code": str(i), "weight": w} for i, w in enumerate(weights)]
+            )
+            return [round(share[str(i)] * 100, 2) for i in range(len(weights))]
+
+        self.assertEqual(pct(None, None, None, None, None), [20.0] * 5)
+        self.assertEqual(pct(None, None, None, None, 5), [23.75] * 4 + [5.0])
+        self.assertEqual(pct(35, None, None, None, 5), [35.0, 20.0, 20.0, 20.0, 5.0])
+        # All fixed and off 100: rescaled, the one case the editor warns about.
+        self.assertEqual(pct(30, 30, 30), [33.33, 33.33, 33.33])
+
+    def test_fixed_weights_must_leave_room_for_blank_ones(self):
+        self.assertRaises(
+            frappe.ValidationError,
+            rubrics.save_rubric,
+            "Assignment Activity",
+            self.activity.name,
+            self.scale.name,
             [
-                {"criterion_code": "a", "weight": 3},
-                {"criterion_code": "b", "weight": 1},
-                {"criterion_code": "c"},
-            ]
+                {"title": "A", "weight": 60},
+                {"title": "B", "weight": 40},
+                {"title": "C"},
+            ],
         )
-        self.assertAlmostEqual(share["a"], 0.5)
-        self.assertAlmostEqual(share["c"], 2 / 6)
-        even = rubrics.shares([{"criterion_code": "a"}, {"criterion_code": "b"}])
-        self.assertEqual(even, {"a": 0.5, "b": 0.5})
 
     def test_scale_needs_one_meets_expectations_level_and_descending_percents(self):
         doc = frappe.get_doc(
@@ -175,7 +189,7 @@ class ADR095Case(IntegrationTestCase):
             [c["criterion_code"] for c in criteria],
             ["exegesis", "context", "application"],
         )
-        self.assertEqual([c["share"] for c in criteria], [50.0, 16.7, 33.3])
+        self.assertEqual([c["share"] for c in criteria], [40.0, 30.0, 30.0])
         self.assertEqual(ed["rubric"]["cells"][0]["descriptor"], "Finds the chiasm")
         self.assertEqual(
             frappe.db.get_value("Assignment Activity", self.activity.name, "rubric"),
@@ -198,17 +212,17 @@ class ADR095Case(IntegrationTestCase):
             self.sub.name,
             [{"criterion_code": "application", "level": "Developing"}],
         )
-        # 0.5 x 100% + 1/6 x 85% + 2/6 x 70% = 87.5% of a section graded out of 10
-        self.assertEqual(res["grade"], 8.75)
+        # 40% x 100% + 30% x 85% + 30% x 70% = 86.5% of a section graded out of 10
+        self.assertEqual(res["grade"], 8.65)
         sub = frappe.get_doc("Assignment Submission", self.sub.name)
         self.assertEqual(
-            (sub.grade, sub.percentage, sub.status), (8.75, 8.75, "Graded")
+            (sub.grade, sub.percentage, sub.status), (8.65, 8.65, "Graded")
         )
 
         # A whole-document save from a grading page cannot drift from the rubric.
         sub.grade = 2
         sub.save()
-        self.assertEqual(sub.grade, 8.75)
+        self.assertEqual(sub.grade, 8.65)
 
     def test_a_used_rubric_becomes_a_new_version_and_old_grades_keep_theirs(self):
         first = self.make_rubric()["rubric"]["name"]
@@ -287,7 +301,7 @@ class ADR095Case(IntegrationTestCase):
         rows = {r["criterion_code"]: r for r in rubrics.criterion_scores(self.row.name)}
         self.assertEqual(rows["context"]["percent"], 85)
         self.assertEqual(rows["context"]["meets_expectations_percent"], 85)
-        self.assertAlmostEqual(rows["exegesis"]["share"], 0.5)
+        self.assertAlmostEqual(rows["exegesis"]["share"], 0.4)
         self.assertEqual(rows["exegesis"]["student"], self.student.name)
 
     def test_descriptive_section_stands_down(self):

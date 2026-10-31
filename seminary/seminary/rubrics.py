@@ -4,8 +4,8 @@
 
 The school owns the levels (Rubric Scale); the instructor owns the criteria
 (Rubric, one per activity, versioned once used); the grader picks a level per
-criterion (Rubric Score). We do the arithmetic: weights are free numbers
-rescaled to a total of 100, and the grade is Σ share × level percent of the
+criterion (Rubric Score). We do the arithmetic: criteria split 100% evenly
+unless the instructor fixes some weights, and the grade is Σ share × level percent of the
 section's maximum grade.
 
 Other apps read scores through `criterion_scores` and listen through three
@@ -48,12 +48,14 @@ SUBMISSIONS = {
 def shares(criteria) -> dict:
     """{criterion_code: share}, shares summing to 1.
 
-    A blank (or zero) weight counts as an average criterion, so a rubric with
-    no weights at all splits evenly and one with a few typed weights does not
-    drop the others to nothing."""
+    A weight is a percent the instructor fixes; criteria left blank (or 0)
+    share what is left evenly. When every criterion is fixed and they do not
+    total 100 they are rescaled. Fixed weights of 100 or more beside blank
+    ones are refused on save; here they rescale and the blanks get nothing."""
     weights = [flt(c.get("weight")) for c in criteria]
-    typed = [w for w in weights if w > 0]
-    fill = sum(typed) / len(typed) if typed else 1.0
+    fixed = sum(w for w in weights if w > 0)
+    auto = sum(1 for w in weights if w <= 0)
+    fill = (100 - fixed) / auto if auto and fixed < 100 else 0.0
     weights = [w if w > 0 else fill for w in weights]
     total = sum(weights)
     if not total:

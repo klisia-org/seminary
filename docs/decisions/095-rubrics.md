@@ -23,17 +23,18 @@ recognise everywhere; an instructor wants to write only what is particular to th
 2. **The instructor writes the criteria.** A `Rubric` belongs to one activity (`activity_doctype`
    + `activity`, Assignment Activity or Discussion Activity) and names a `scale` (the default is
    preselected). `criteria` (`Rubric Criterion`): `criterion_code`, `title`, `description` and
-   `weight` (Float, optional). Optional per-cell wording goes in `cells`
+   `weight` (Float, optional, a percent). Optional per-cell wording goes in `cells`
    (`Rubric Cell`: `criterion_code`, `level`, `descriptor`); an empty cell shows the scale's
    description. A flattened grid, as in 058, since Frappe has no grandchild tables.
-3. **We do the math.** Weights are free numbers. Left blank, criteria weigh the same; if they don't
-   sum to 100, the editor says they will be rescaled to a total of 100 and shows each criterion's
-   resulting share beside its weight. Weights are stored as typed; a criterion's share is its weight
-   over the total. A student's grade is Σ share × level percent of the section's maximum grade, the
-   scale every assignment and discussion grade already uses, so all criteria at the top level give
-   exactly that maximum. Fixed
-   emphasis steps (Low / Normal / High) were rejected: they block the uneven splits some
-   assignments need, and every request to allow one becomes a support ticket.
+3. **We do the math.** Criteria split 100% evenly. A typed `weight` fixes that criterion's percent;
+   the blank ones share what is left evenly, so five criteria with one fixed at 5% give 23.75% to
+   each of the others. Each box shows the percent the grade will use. Fixed weights of 100% or more
+   beside blank criteria are refused; if every criterion is fixed and they don't total 100, they are
+   rescaled and the editor says so. A student's grade is Σ share × level percent of the section's
+   maximum grade, the scale every assignment and discussion grade already uses, so all criteria at
+   the top level give exactly that maximum. Free relative weights rescaled to 100 were tried
+   first: in the browser, the number typed and the percent it produced read as two different
+   things. Fixed emphasis steps (Low / Normal / High) were rejected: they block uneven splits.
 4. **One rubric per activity; reuse by copying.** *Copy from…* fills a new rubric from any the
    instructor can see. After the first graded score the rubric is locked; editing creates a new
    version for the same activity, and earlier scores keep theirs. A shared rubric linked from many
