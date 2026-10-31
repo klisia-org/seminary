@@ -1,7 +1,7 @@
 # 096a — The course grade in the gradebook and the roster
 
 **Date:** 2026-10-31
-**Status:** Accepted 2026-10-31
+**Status:** Accepted 2026-10-31; implemented 2026-10-31 (b0554a7f)
 **Amends:** [096](096-weighted-categories-and-dropped-scores.md)
 **Related:** 072 (descriptive grading), 081 (fail for absences), p015 (grade projection)
 
