@@ -46,6 +46,7 @@ declare module 'vue' {
     DiscussionActivityBlock: typeof import('./src/components/DiscussionActivityBlock.vue')['default']
     DiscussionModal: typeof import('./src/components/Modals/DiscussionModal.vue')['default']
     DiscussionReplies: typeof import('./src/components/DiscussionReplies.vue')['default']
+    DiscussionReplyTree: typeof import('./src/components/DiscussionReplyTree.vue')['default']
     Discussions: typeof import('./src/components/Discussions.vue')['default']
     DocxPreview: typeof import('./src/components/AssignmentViewers/DocxPreview.vue')['default']
     Editor: typeof import('./src/components/Editor.vue')['default']

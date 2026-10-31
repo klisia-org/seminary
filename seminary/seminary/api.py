@@ -165,12 +165,62 @@ def _student_groups(course_name):
     return groups
 
 
+def _visible_classmates(course_name, discussion_id, user=None):
+    """Which classmates' posts this user may read and answer.
+
+    None means every post: the section's staff, and readers who are not on its
+    roster. For a student on the roster, the activity's two settings are kept
+    here and not only in the browser: with "post before reply" nothing is
+    visible until they have posted, and with student groups only their own
+    group's posts are. Returns the visible authors' Users otherwise.
+    """
+    user = user or frappe.session.user
+    if is_course_staff(course_name, include_registrar=True, user=user):
+        return None
+    me = frappe.db.get_value(
+        "Scheduled Course Roster",
+        {"course_sc": course_name, "stuemail_rc": user, "active": 1},
+        "student",
+    )
+    if not me:
+        return None
+    settings = (
+        frappe.db.get_value(
+            "Discussion Activity",
+            discussion_id,
+            ["post_before", "use_studentgroup"],
+            as_dict=True,
+        )
+        or frappe._dict()
+    )
+    if settings.post_before and not frappe.db.exists(
+        "Discussion Submission",
+        {"coursesc": course_name, "disc_activity": discussion_id, "member": user},
+    ):
+        return set()
+    roster = frappe.get_all(
+        "Scheduled Course Roster",
+        filters={"course_sc": course_name, "stuemail_rc": ["is", "set"]},
+        fields=["student", "stuemail_rc"],
+    )
+    if not settings.use_studentgroup:
+        return {r.stuemail_rc for r in roster}
+    group_of = {}
+    for row in _student_groups(course_name):
+        group_of.setdefault(row.student, row.student_group)
+    mine = group_of.get(me)
+    return {r.stuemail_rc for r in roster if group_of.get(r.student) == mine}
+
+
 def _get_discussion_replies(parent_name: str) -> list[dict]:
     """Return replies for a given discussion submission."""
     replies = frappe.get_all(
         "Discussion Submission Replies",
         filters={"parent": parent_name},
         fields=[
+            "name",
+            "in_reply_to",
+            "member",
             "reply",
             "reply_attach",
             "member_name",
@@ -202,6 +252,13 @@ def get_discussion_submissions(
     if member:
         filters["member"] = ["!=", member]
 
+    visible = _visible_classmates(course_name, discussion_id)
+    if visible is not None:
+        visible = visible - {member}
+        if not visible:
+            return []
+        filters["member"] = ["in", list(visible)]
+
     submissions = frappe.get_all(
         "Discussion Submission",
         filters=filters,
@@ -232,11 +289,15 @@ def get_discussion_submissions(
                 submission["group_instructor"] = group["group_instructor"]
                 break
 
-    return submissions
+    from seminary.seminary import discussion_threads
+
+    return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
-def reply_to_discussion_submission(submission, reply, reply_attach=None):
+def reply_to_discussion_submission(
+    submission, reply, reply_attach=None, in_reply_to=None
+):
     """Reply to a classmate's post in a graded Discussion Activity.
 
     The portal used to insert the child row with `frappe.client.insert`, which
@@ -248,11 +309,29 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
     the save.
     """
     row = frappe.db.get_value(
-        "Discussion Submission", submission, ["name", "coursesc"], as_dict=True
+        "Discussion Submission",
+        submission,
+        ["name", "coursesc", "disc_activity", "student", "member"],
+        as_dict=True,
     )
     if not row:
         frappe.throw(_("Not permitted."), frappe.PermissionError)
     require_enrolled(row.coursesc)
+    # A post the student may not read is one they may not answer either.
+    if row.member != frappe.session.user:
+        visible = _visible_classmates(row.coursesc, row.disc_activity)
+        if visible is not None and row.member not in visible:
+            frappe.throw(_("Not permitted."), frappe.PermissionError)
+    # A reply may answer another reply on the same post (decisions/097 §2).
+    if in_reply_to and not frappe.db.exists(
+        "Discussion Submission Replies",
+        {
+            "name": in_reply_to,
+            "parent": row.name,
+            "parenttype": "Discussion Submission",
+        },
+    ):
+        frappe.throw(_("The reply you are answering is not on this post."))
 
     # The reply counts toward the replier's own grade, so their cut-off
     # closes it (decisions/082).
@@ -292,9 +371,13 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
             "reply": reply,
             "reply_attach": reply_attach or None,
             "reply_dt": frappe.utils.now_datetime(),
+            "in_reply_to": in_reply_to or None,
         }
     )
     doc.insert(ignore_permissions=True)
+    from seminary.seminary import discussion_threads
+
+    discussion_threads.notify_discussion_reply(row.name, doc.name, in_reply_to)
     if priced:
         # A reply by the replies due date can lift a missing-reply deduction.
         deadlines.refresh(priced[0], [priced[1]])
@@ -333,7 +416,9 @@ def get_user_discussion_submission(
     for submission in submissions:
         submission["replies"] = _get_discussion_replies(submission["name"])
 
-    return submissions
+    from seminary.seminary import discussion_threads
+
+    return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
@@ -3620,6 +3705,7 @@ def get_course_rosters(name):
         "Scheduled Course Roster",
         filters={"course_sc": name},
         fields=[
+            "name",
             "course_sc",
             "stuname_roster",
             "stuimage",
@@ -3632,8 +3718,13 @@ def get_course_rosters(name):
     )
     if not course_rosters:
         return []
-    else:
-        return course_rosters
+    # The course grade beside each student (decisions/096a).
+    from seminary.seminary.grade_projection import course_grades
+
+    grades = course_grades(name, [r.name for r in course_rosters])
+    for r in course_rosters:
+        r["course_grade"] = grades.get(r.name)
+    return course_rosters
 
 
 @frappe.whitelist()

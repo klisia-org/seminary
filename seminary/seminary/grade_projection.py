@@ -12,6 +12,9 @@ with this file.
 - **Projected:** the same, but an assessment with no score yet counts at the
   unweighted average of the student's scored regular assessments. None until
   at least one regular assessment has a score.
+- **Descriptive scales** (decisions/096a section 4): both are the weighted mean
+  of the graded rows that count, in grade points, as Send Grades works it out
+  (ADR 072); an ungraded row leaves the mean rather than counting as 0.
 - **Weights** are the student's own (decisions/096): ``effective_weight`` where
   a row carries it, and a dropped or excused row (``weight_status``) does not
   count at all, not even toward the average.
@@ -59,10 +62,27 @@ def _weight(a):
     return flt(a.get("weight_scac"))
 
 
-def compute(assessments, intervals, max_grade):
+def _descriptive(regular, max_grade, intervals):
+    graded = [a for a in regular if a.get("graded_card") and _weight(a) > 0]
+    weight = sum(_weight(a) for a in graded)
+    if not weight:
+        return {"current": None, "projected": None}
+    mean = sum(flt(a.get("rawscore_card")) * _weight(a) for a in graded) / weight
+    grade, grade_pass = _interval(mean, intervals)
+    result = {
+        "score": _round2(mean),
+        "max_grade": max_grade,
+        "grade": grade,
+        "grade_pass": grade_pass,
+    }
+    return {"current": result, "projected": dict(result)}
+
+
+def compute(assessments, intervals, max_grade, descriptive=False):
     """``{"current": {...} | None, "projected": {...} | None}`` from the
     section's assessment rows (``rawscore_card``, ``actualextrapt_card``,
-    ``weight_scac``, ``extracredit_scac``) and its grading scale intervals."""
+    ``weight_scac``, ``extracredit_scac``, and ``graded_card`` on a
+    Descriptive scale) and its grading scale intervals."""
     max_grade = flt(max_grade) or 100
     if not assessments or intervals is None:
         return {"current": None, "projected": None}
@@ -72,6 +92,8 @@ def compute(assessments, intervals, max_grade):
         for a in assessments
         if not a.get("extracredit_scac") and not a.get("weight_status")
     ]
+    if descriptive:
+        return _descriptive(regular, max_grade, intervals)
     extra = sum(
         flt(a.get("actualextrapt_card"))
         for a in assessments
@@ -112,6 +134,13 @@ def section_scale(course_schedule):
     return flt(cs.maxnumgrade) or 100, intervals
 
 
+def is_descriptive(course_schedule):
+    scale = frappe.db.get_value("Course Schedule", course_schedule, "gradesc_cs")
+    return bool(scale) and (
+        frappe.db.get_value("Grading Scale", scale, "grscale_type") == "Descriptive"
+    )
+
+
 def section_assessments(course_schedule, rosters):
     """{roster name: [assessment rows]}: every assessment of the section, each
     with that roster's card values (None where it has no card) and its own
@@ -131,7 +160,13 @@ def section_assessments(course_schedule, rosters):
     for c in frappe.get_all(
         "Course Assess Results Detail",
         filters={"parent": ("in", list(rosters))},
-        fields=["parent", "assessment_criteria", "rawscore_card", "actualextrapt_card"],
+        fields=[
+            "parent",
+            "assessment_criteria",
+            "rawscore_card",
+            "actualextrapt_card",
+            "graded_card",
+        ],
     ):
         cards[(c.parent, c.assessment_criteria)] = c
     out = {}
@@ -147,6 +182,7 @@ def section_assessments(course_schedule, rosters):
                     "extracredit_scac": crit.extracredit_scac,
                     "rawscore_card": card.get("rawscore_card"),
                     "actualextrapt_card": card.get("actualextrapt_card"),
+                    "graded_card": card.get("graded_card"),
                     "effective_weight": w.get("weight", crit.weight_scac),
                     "weight_status": w.get("status"),
                 }
@@ -167,4 +203,53 @@ def course_grade_projection(course_schedule, student):
         return {"current": None, "projected": None}
     max_grade, intervals = section_scale(course_schedule)
     rows = section_assessments(course_schedule, [roster]).get(roster)
-    return compute(rows, intervals, max_grade)
+    return compute(rows, intervals, max_grade, is_descriptive(course_schedule))
+
+
+def course_grades(course_schedule, rosters):
+    """{roster name: {score, max_grade, grade, grade_pass, final} | None}: the
+    course grade the gradebook and the Desk roster show (decisions/096a). The
+    current grade until grades are sent; the stored result once they are, or
+    once the student is failed for absences. None on a competency section."""
+    from seminary.seminary import cbe
+
+    if not rosters or cbe.framework_for(course_schedule):
+        return {}
+    max_grade, intervals = section_scale(course_schedule)
+    descriptive = is_descriptive(course_schedule)
+    stored = {
+        r.name: r
+        for r in frappe.get_all(
+            "Scheduled Course Roster",
+            filters={"name": ("in", list(rosters))},
+            fields=[
+                "name",
+                "active",
+                "failed_for_absence",
+                "fscore",
+                "fgrade",
+                "fgradepass",
+            ],
+        )
+    }
+    live = [n for n, r in stored.items() if r.active and not r.failed_for_absence]
+    rows = section_assessments(course_schedule, live)
+    out = {}
+    for name, r in stored.items():
+        if name in rows:
+            out[name] = compute(rows[name], intervals, max_grade, descriptive)[
+                "current"
+            ]
+            if out[name]:
+                out[name]["final"] = 0
+        elif r.fgrade:
+            out[name] = {
+                "score": _round2(flt(r.fscore)),
+                "max_grade": max_grade,
+                "grade": r.fgrade,
+                "grade_pass": r.fgradepass or "",
+                "final": 1,
+            }
+        else:
+            out[name] = None
+    return out

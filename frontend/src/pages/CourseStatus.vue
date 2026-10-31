@@ -491,13 +491,23 @@ function weightsFor(assessments, scoreOf) {
 
 function gradeFromScores(assessments, scoreOf, intervals, maxGrade) {
   const weights = weightsFor(assessments, scoreOf)
+  const weightOf = (a) => weights[a.assessment_criteria]?.weight || 0
   const regular = assessments.filter(a => !a.extracredit_scac && !weights[a.assessment_criteria]?.status)
-  const weightedSum = regular.reduce((sum, a) => sum + scoreOf(a) * (weights[a.assessment_criteria]?.weight || 0), 0)
-  const extraPoints = assessments
-    .filter(a => a.extracredit_scac)
-    .reduce((sum, a) => sum + scoreOf(a), 0)
-
-  const score = (weightedSum + extraPoints) / maxGrade
+  let score
+  if (status.data?.descriptive) {
+    // A Descriptive scale's grade is the weighted mean in grade points of the
+    // graded rows (decisions/096a section 4), not a sum.
+    const graded = regular.filter(a => (a.graded_card || scoreOf(a) > 0) && weightOf(a) > 0)
+    const weight = graded.reduce((sum, a) => sum + weightOf(a), 0)
+    if (!weight) return null
+    score = graded.reduce((sum, a) => sum + scoreOf(a) * weightOf(a), 0) / weight
+  } else {
+    const weightedSum = regular.reduce((sum, a) => sum + scoreOf(a) * weightOf(a), 0)
+    const extraPoints = assessments
+      .filter(a => a.extracredit_scac)
+      .reduce((sum, a) => sum + scoreOf(a), 0)
+    score = (weightedSum + extraPoints) / maxGrade
+  }
 
   const sorted = [...intervals].sort((a, b) => b.threshold - a.threshold)
   let grade = ''

@@ -192,6 +192,11 @@
 												class="rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3">
 												{{ __('Mentor feedback') }}
 											</span>
+											<span v-if="lesson.discussion_unread"
+												class="rounded bg-surface-blue-1 px-1.5 py-0.5 text-xs font-medium text-ink-blue-3"
+												:title="__('New posts and replies in this lesson\'s discussion')">
+												{{ __('{0} new').format(lesson.discussion_unread) }}
+											</span>
 											<Check v-if="lesson.is_complete || lesson.assessments_submitted"
 												class="h-4 w-4 text-ink-green-3"
 												:title="lesson.is_complete ? __('Lesson complete') : __('Assessments submitted')" />
