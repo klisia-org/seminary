@@ -91,6 +91,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.doctype.seminary_lesson_note.seminary_lesson_note",
     "seminary.seminary.doctype.seminary_settings.seminary_settings",
     "seminary.seminary.doctype.term_admission.term_admission",
+    "seminary.seminary.discussion_threads",
     "seminary.seminary.events",
     "seminary.seminary.faculty",
     "seminary.seminary.graduation",
@@ -160,6 +161,8 @@ STUDENT_ALLOWED = {
     "seminary.scorm.runtime.state",
     # lesson discussions: whoever reads the lesson posts; own-reply rules inside
     "seminary.seminary.api.reply_to_discussion_submission",
+    # decisions/097: the caller's own read state, after require_enrolled
+    "seminary.seminary.discussion_threads.mark_discussion_seen",
     "seminary.seminary.utils.create_discussion_topic",
     "seminary.seminary.utils.add_discussion_reply",
     "seminary.seminary.utils.edit_discussion_reply",

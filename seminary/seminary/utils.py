@@ -1347,6 +1347,7 @@ def get_lesson_details(chapter, progress=False):
             lesson_details
         )
         lesson_details.has_graded_activity = _lesson_has_graded_activity(lesson_details)
+        lesson_details.discussion_unread = _lesson_discussion_unread(lesson_details)
 
         if progress:
             lesson_details.is_complete = get_progress(
@@ -2122,6 +2123,22 @@ def _lesson_activities_by_type(content_json):
     return activities
 
 
+def _lesson_discussion_unread(lesson_row):
+    """New posts and replies in the lesson's discussions (decisions/097 §6)."""
+    if frappe.session.user == "Guest" or not lesson_row.get("course_sc"):
+        return 0
+    discussions = _lesson_activities_by_type(lesson_row.get("content")).get(
+        "Discussion"
+    )
+    if not discussions:
+        return 0
+    from seminary.seminary import discussion_threads
+
+    return sum(
+        discussion_threads.unread_count(lesson_row.course_sc, d) for d in discussions
+    )
+
+
 def _lesson_has_graded_activity(lesson_row):
     """True iff the lesson embeds at least one activity that is actually graded
     on its course, i.e. referenced by a Scheduled Course Assess Criteria on the
@@ -2725,6 +2742,9 @@ def add_discussion_reply(topic, reply):
         {"doctype": "Discussion Reply", "topic": topic, "reply": _clean_reply(reply)}
     )
     doc.insert(ignore_permissions=True)
+    from seminary.seminary import discussion_threads
+
+    discussion_threads.notify_lesson_answer(topic, doc.name)
     return doc.name
 
 

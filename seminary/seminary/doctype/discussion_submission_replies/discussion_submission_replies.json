@@ -11,7 +11,8 @@
   "member_name",
   "reply",
   "reply_attach",
-  "reply_dt"
+  "reply_dt",
+  "in_reply_to"
  ],
  "fields": [
   {
@@ -50,13 +51,20 @@
    "fieldname": "reply_dt",
    "fieldtype": "Datetime",
    "label": "Submitted on"
+  },
+  {
+   "fieldname": "in_reply_to",
+   "fieldtype": "Data",
+   "label": "In Reply To",
+   "read_only": 1,
+   "description": "The reply this one answers. Empty when it answers the post itself."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-10 17:57:45.624325",
+ "modified": "2026-10-31 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Discussion Submission Replies",

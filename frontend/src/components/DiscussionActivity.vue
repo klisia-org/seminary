@@ -51,7 +51,10 @@
 				<div v-for="discussion in filteredDiscussions" :key="discussion.name"
 					class="mb-6 border-round border-outline-gray-2 p-4 bg-surface-white shadow-sm">
 					<div class="original-post mb-4">
-						<div class="font-semibold">{{ discussion.student_name }}</div>
+						<div class="flex items-center gap-2">
+							<span class="font-semibold">{{ discussion.student_name }}</span>
+							<Badge v-if="discussion.is_new" theme="orange" size="sm">{{ __('New') }}</Badge>
+						</div>
 						<SafeHtml :html="discussion.original_post" class="text-sm" />
 						<div class="text-sm text-ink-gray-5 mt-1 mb-2">
 							{{ formatDate(discussion.creation) }}
@@ -61,19 +64,8 @@
 							{{ __('View Attachment') }}
 						</a>
 					</div>
-					<div class="replies pl-4 border-l border-outline-gray-2">
-						<div v-for="reply in discussion.replies" :key="reply.creation" class="mb-2">
-							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
-							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
-								{{ formatDate(reply.reply_dt) }}
-							</div>
-							<SafeHtml :html="reply.reply" class="text-sm" />
-							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-								class="text-ink-blue-3 underline">
-								{{ __('View Attachment') }}
-							</a>
-						</div>
-					</div>
+					<DiscussionReplyTree :submission="discussion.name" :replies="discussion.replies || []"
+						@posted="refreshDiscussionLists" />
 					<div class="new-reply mt-4 space-y-2">
 						<!-- This is the post below the discussion in the main area -->
 						<LightEditor :id="'reply-saved-' + getEditorKey(discussion.name)"
@@ -305,19 +297,8 @@
 						class="text-ink-blue-3 underline">
 						{{ __('View Attachment') }}
 					</a>
-					<div class="replies pl-4 border-l border-outline-gray-2">
-						<div v-for="reply in submission.replies" :key="reply.creation" class="mb-2">
-							<div class="font-semibold">{{ reply.member_name || reply.owner }}</div>
-							<div class="text-sm text-ink-gray-5 mt-1 mb-2">
-								{{ formatDate(reply.reply_dt) }}
-							</div>
-							<SafeHtml :html="reply.reply" class="text-sm" />
-							<a v-if="reply.reply_attach" :href="reply.reply_attach" target="_blank"
-								class="text-ink-blue-3 underline">
-								{{ __('View Attachment') }}
-							</a>
-						</div>
-					</div>
+					<DiscussionReplyTree :submission="submission.name" :replies="submission.replies || []"
+						@posted="refreshDiscussionLists" />
 					<div class="new-reply mt-4 space-y-2">
 						<LightEditor :key="getEditorKey(submission.name)"
 							:id="'original-post-' + getEditorKey(submission.name)" :content="submission.new_reply || ''"
@@ -389,6 +370,7 @@ import RichTextEditor from '@/components/RichTextEditor.vue'
 import LightEditor from '@/components/LightEditor.vue'
 import RubricView from '@/components/RubricView.vue'
 import DiscussionModal from './Modals/DiscussionModal.vue'
+import DiscussionReplyTree from '@/components/DiscussionReplyTree.vue'
 
 
 
@@ -792,11 +774,26 @@ const reloadDiscussionLists = async () => {
 			discussion_id: props.discussionID,
 			owner: owner.value,
 		})
+		markSeen()
 	} catch (error) {
 		console.error("Error reloading discussion lists:", error)
 	} finally {
 		isReloading = false
 	}
+}
+
+// What was just loaded is no longer new next time (decisions/097 §6); the
+// marks stay on screen until the discussion is loaded again. A student who
+// must post first has seen nothing yet, so nothing is marked.
+let seenMarked = false
+const markSeen = () => {
+	if (seenMarked) return
+	if (isStudent.value && post_before.value && !hasSavedSubmission.value) return
+	seenMarked = true
+	call('seminary.seminary.discussion_threads.mark_discussion_seen', {
+		course_name: props.courseName,
+		discussion_id: props.discussionID,
+	}).catch(() => { seenMarked = false })
 }
 
 

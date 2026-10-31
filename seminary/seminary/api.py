@@ -218,6 +218,8 @@ def _get_discussion_replies(parent_name: str) -> list[dict]:
         "Discussion Submission Replies",
         filters={"parent": parent_name},
         fields=[
+            "name",
+            "in_reply_to",
             "member",
             "reply",
             "reply_attach",
@@ -287,11 +289,15 @@ def get_discussion_submissions(
                 submission["group_instructor"] = group["group_instructor"]
                 break
 
-    return submissions
+    from seminary.seminary import discussion_threads
+
+    return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
-def reply_to_discussion_submission(submission, reply, reply_attach=None):
+def reply_to_discussion_submission(
+    submission, reply, reply_attach=None, in_reply_to=None
+):
     """Reply to a classmate's post in a graded Discussion Activity.
 
     The portal used to insert the child row with `frappe.client.insert`, which
@@ -316,6 +322,16 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
         visible = _visible_classmates(row.coursesc, row.disc_activity)
         if visible is not None and row.member not in visible:
             frappe.throw(_("Not permitted."), frappe.PermissionError)
+    # A reply may answer another reply on the same post (decisions/097 §2).
+    if in_reply_to and not frappe.db.exists(
+        "Discussion Submission Replies",
+        {
+            "name": in_reply_to,
+            "parent": row.name,
+            "parenttype": "Discussion Submission",
+        },
+    ):
+        frappe.throw(_("The reply you are answering is not on this post."))
 
     # The reply counts toward the replier's own grade, so their cut-off
     # closes it (decisions/082).
@@ -355,9 +371,13 @@ def reply_to_discussion_submission(submission, reply, reply_attach=None):
             "reply": reply,
             "reply_attach": reply_attach or None,
             "reply_dt": frappe.utils.now_datetime(),
+            "in_reply_to": in_reply_to or None,
         }
     )
     doc.insert(ignore_permissions=True)
+    from seminary.seminary import discussion_threads
+
+    discussion_threads.notify_discussion_reply(row.name, doc.name, in_reply_to)
     if priced:
         # A reply by the replies due date can lift a missing-reply deduction.
         deadlines.refresh(priced[0], [priced[1]])
@@ -396,7 +416,9 @@ def get_user_discussion_submission(
     for submission in submissions:
         submission["replies"] = _get_discussion_replies(submission["name"])
 
-    return submissions
+    from seminary.seminary import discussion_threads
+
+    return discussion_threads.annotate(submissions, course_name, discussion_id)
 
 
 @frappe.whitelist()
