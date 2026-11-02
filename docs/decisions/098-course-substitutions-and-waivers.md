@@ -1,7 +1,7 @@
 # 098 — Course substitutions and waivers with approval
 
 **Date:** 2026-11-01
-**Status:** Accepted 2026-11-01
+**Status:** Accepted 2026-11-01; implemented 2026-11-01 (ac6a1583)
 **Delivers:** SIS-AUD-02 (Yes)
 **Related:** 012 (graduation requirements), 056 (emphasis-scoped requirements), 058 (leveling and
 advanced standing)
