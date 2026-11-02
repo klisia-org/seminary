@@ -150,13 +150,17 @@ def _compute(pe) -> bool:
     in_progress_credits = _credit_sum(program, in_progress)
 
     # Leveling / advanced standing (ADR 058): placed-out courses are satisfied;
-    # Required leveling courses must be passed to graduate.
+    # Required leveling courses must be passed to graduate. Approved
+    # substitutions and course waivers count too (decisions/098 §5).
+    from seminary.seminary.exceptions import satisfied_courses
     from seminary.seminary.leveling import leveling_sets
 
-    exempted, required_leveling, _lvl = leveling_sets(pe.name)
+    _exempted, required_leveling, _lvl = leveling_sets(pe.name)
 
     count_in_progress = trigger == "Enrolled in final courses"
-    satisfied = completed | exempted | (in_progress if count_in_progress else set())
+    satisfied = satisfied_courses(
+        pe.name, completed | (in_progress if count_in_progress else set())
+    )
 
     if mandatory_program - satisfied:
         return False

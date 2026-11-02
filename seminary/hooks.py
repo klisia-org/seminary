@@ -316,6 +316,8 @@ permission_query_conditions = {
     # decisions/091: a person reads their own; school roles read all.
     "Person Document": "seminary.seminary.requirements.person_document_query",
     "Person Requirement": "seminary.seminary.requirements.person_requirement_query",
+    # decisions/098: a Program Chair lists only the programs they direct.
+    "Requirement Exception": "seminary.seminary.exceptions.query",
     "Signed Agreement": "seminary.seminary.requirements.signed_agreement_query",
     "Partner Organization": "seminary.partner.permissions.org_query",
     "Partner Organization Location": "seminary.partner.permissions.location_query",
@@ -373,6 +375,7 @@ has_permission = {
     "Communication Log": "seminary.seminary.communication_log_permissions.has_permission",
     "Person Document": "seminary.seminary.requirements.person_document_has",
     "Person Requirement": "seminary.seminary.requirements.person_requirement_has",
+    "Requirement Exception": "seminary.seminary.exceptions.has_permission",
     "Signed Agreement": "seminary.seminary.requirements.signed_agreement_has",
     "Plagiarism Check Result": "seminary.seminary.plagiarism.permissions.has_permission",
     "Partner Organization": "seminary.partner.permissions.org_has",

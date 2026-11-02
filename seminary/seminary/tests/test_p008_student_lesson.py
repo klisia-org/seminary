@@ -48,7 +48,6 @@ KNOWN_SWEEP_PAIRS = {
         "seminary.seminary.doctype.term_admission.term_admission.refresh_programs",
         "Term Admission",
     ),
-    ("seminary.seminary.graduation.waive_sgr", "Program Enrollment"),
     ("seminary.seminary.leveling.apply_leveling_profile", "Leveling Profile"),
     ("seminary.seminary.leveling.apply_leveling_profile", "Program Enrollment"),
     ("seminary.seminary.leveling.resolve_leveling_plan", "Program Enrollment"),

@@ -6,10 +6,14 @@ Lists emphasis-scoped Student Graduation Requirement rows whose scoping
 emphasis the student no longer holds (an emphasis was dropped after the
 requirement was materialized). These are never auto-removed — registrar
 judgement resolves each via the report's Cancel / Waive / Withdraw actions.
+
+Open Requirement Exceptions whose requirement no longer applies are listed too
+(decisions/098 §6); they are resolved on the exception itself (Revoke).
 """
 
 import frappe
 
+from seminary.seminary.exceptions import orphaned as orphaned_exceptions
 from seminary.seminary.graduation import emphasis_scope_for_pgr_item
 
 
@@ -55,6 +59,13 @@ def execute(filters=None):
             "fieldtype": "Data",
             "hidden": 1,
         },
+        {
+            "label": "Requirement Exception",
+            "fieldname": "requirement_exception",
+            "fieldtype": "Link",
+            "options": "Requirement Exception",
+            "width": 160,
+        },
         {"label": "SGR", "fieldname": "sgr", "fieldtype": "Data", "hidden": 1},
     ]
 
@@ -75,8 +86,19 @@ def execute(filters=None):
             "linked_doc",
         ],
     )
+    exception_rows = [
+        {
+            "program_enrollment": ex.program_enrollment,
+            "student_name": ex.student_name,
+            "program": ex.program,
+            "requirement_name": ex.requirement_name or ex.required_course,
+            "status": f"{ex.kind} ({ex.status})",
+            "requirement_exception": ex.name,
+        }
+        for ex in orphaned_exceptions()
+    ]
     if not sgrs:
-        return columns, []
+        return columns, exception_rows
 
     pe_names = list({s.parent for s in sgrs})
     pe_meta = {
@@ -135,4 +157,4 @@ def execute(filters=None):
                 "sgr": s.name,
             }
         )
-    return columns, rows
+    return columns, rows + exception_rows

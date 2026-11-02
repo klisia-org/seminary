@@ -384,6 +384,14 @@ OWN_RULE = (
         "seminary.seminary.disciplinary.list_pending_incidents",
     }
     | {
+        # decisions/098: the student, their mentor or a decider requests; the
+        # registrar, a Seminary Manager or the program's own chair decides --
+        # a chair of another program is refused, so not STAFF_ONLY. Covered by
+        # test_adr098_requirement_exceptions.
+        "seminary.seminary.exceptions." + n
+        for n in ("request", "decide", "withdraw", "revoke", "substitute_options")
+    }
+    | {
         "seminary.seminary.doctype.culminating_project.culminating_project." + n
         for n in (
             "record_signoff",

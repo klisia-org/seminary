@@ -316,6 +316,10 @@ def resnapshot(program_enrollment, preserve_waivers=1):
         _merge_preserved_waivers(enrollment, keep)
 
     enrollment.save(ignore_permissions=False)
+    if keep:
+        from seminary.seminary.exceptions import relink_after_resnapshot
+
+        relink_after_resnapshot(enrollment)
     return {"requirements": len(enrollment.graduation_requirements)}
 
 
@@ -330,6 +334,7 @@ def _merge_preserved_waivers(enrollment, keep):
         row.waiver_reason = preserved.get("waiver_reason")
         row.waived_by = preserved.get("waived_by")
         row.waived_on = preserved.get("waived_on")
+        row.requirement_exception = preserved.get("requirement_exception")
         row.status = "Waived"
 
 
@@ -703,18 +708,26 @@ def mark_sgr_verified(program_enrollment, sgr_name, attachment_url=None):
 
 @frappe.whitelist()
 def waive_sgr(program_enrollment, sgr_name, reason):
-    """Staff action: waive a requirement, recording who and why."""
+    """Staff action: waive a requirement, recording who and why.
+
+    Every waiver is a Requirement Exception approved by the caller
+    (decisions/098 §4), so the waiver keeps its trail; the exception's
+    insert writes the waiver onto the row."""
+    require_registrar()
     if not reason or not reason.strip():
         frappe.throw(_("A waiver reason is required."))
     pe = frappe.get_doc("Program Enrollment", program_enrollment)
-    row = _find_sgr(pe, sgr_name)
-    row.waived = 1
-    row.waiver_reason = reason
-    row.waived_by = frappe.session.user
-    row.waived_on = now_datetime()
-    row.status = "Waived"
-    pe.save(ignore_permissions=False)
-    return {"status": row.status}
+    _find_sgr(pe, sgr_name)  # validates existence
+    frappe.get_doc(
+        {
+            "doctype": "Requirement Exception",
+            "program_enrollment": program_enrollment,
+            "kind": "Requirement Waiver",
+            "student_graduation_requirement": sgr_name,
+            "reason": reason,
+        }
+    ).insert(ignore_permissions=True)
+    return {"status": "Waived"}
 
 
 @frappe.whitelist()
