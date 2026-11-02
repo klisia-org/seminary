@@ -2,6 +2,8 @@
 
 After [installation](installation.md), walk through the sections below **in order**. Each one depends on the previous. Everything is done in the Frappe Desk unless noted.
 
+The **Setup Progress** page, first under **Setup** in the Desk, follows the same order. It ticks each step as your records fill in, so you can see what is left at a glance.
+
 ::: tip ERPNext fundamentals
 SeminaryERP is built on top of ERPNext. Several items below (Items, Price Lists, Customer Groups, Item Prices, Payment Terms) are *standard ERPNext records* — this page covers what a seminary specifically needs, and links out to the ERPNext manual for the full reference.
 :::

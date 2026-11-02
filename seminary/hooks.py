@@ -259,6 +259,9 @@ after_migrate = "seminary.install.after_migrate"
 # sidebars, so neither module gets a computed sidebar of its own (decision 088a §1).
 code_only_modules = {"Partner": ["Seminary"], "Alumni": ["Seminary"]}
 
+# Setup progress (privatedocs p024): each app returns its group of setup steps.
+setup_steps = ["seminary.setup_steps.setup_steps"]
+
 boot_session = [
     "seminary.desk_nav.boot_session",
     "seminary.seminary.financial.desk.boot_session",

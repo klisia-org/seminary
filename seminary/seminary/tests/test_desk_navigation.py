@@ -108,6 +108,7 @@ class UnitTestDeskNavigation(UnitTestCase):
             "DocType": _names("DocType", "doctype") | FRAMEWORK_DOCTYPES,
             "Report": _names("Report", "report"),
             "Workspace": _names("Workspace", "workspace"),
+            "Page": _names("Page", "page"),
         }
         for sidebar in _sidebars():
             for item in _links(sidebar):

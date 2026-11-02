@@ -1,0 +1,22 @@
+{
+ "content": null,
+ "creation": "2026-11-02 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "list-checks",
+ "idx": 0,
+ "modified": "2026-11-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "seminary-setup",
+ "owner": "Administrator",
+ "page_name": "seminary-setup",
+ "roles": [
+  {"role": "Seminary Manager"},
+  {"role": "Registrar"},
+  {"role": "System Manager"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Setup Progress"
+}
