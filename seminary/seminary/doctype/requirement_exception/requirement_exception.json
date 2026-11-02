@@ -1,0 +1,266 @@
+{
+ "actions": [],
+ "autoname": "REX-.#####",
+ "creation": "2026-11-01 12:00:00.000000",
+ "description": "A course substitution, course waiver or graduation requirement waiver for one student, with who asked and who decided.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program_enrollment",
+  "student",
+  "student_name",
+  "program",
+  "column_break_main",
+  "kind",
+  "status",
+  "section_break_what",
+  "required_course",
+  "substitute_course",
+  "column_break_what",
+  "student_graduation_requirement",
+  "requirement_name",
+  "section_break_why",
+  "reason",
+  "supporting_document",
+  "section_break_decision",
+  "requested_by",
+  "decided_by",
+  "decided_on",
+  "column_break_decision",
+  "decision_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Program Enrollment",
+   "options": "Program Enrollment",
+   "reqd": 1,
+   "set_only_once": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "fetch_from": "program_enrollment.student",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Student Name",
+   "fetch_from": "program_enrollment.student_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program",
+   "fetch_from": "program_enrollment.program",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Substitution\nCourse Waiver\nRequirement Waiver",
+   "reqd": 1,
+   "set_only_once": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Requested\nApproved\nDenied\nWithdrawn\nRevoked",
+   "default": "Requested",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "section_break_what",
+   "fieldtype": "Section Break",
+   "label": "What it replaces"
+  },
+  {
+   "fieldname": "required_course",
+   "fieldtype": "Link",
+   "label": "Required Course",
+   "options": "Course",
+   "set_only_once": 1,
+   "depends_on": "eval:doc.kind!='Requirement Waiver'",
+   "in_list_view": 1,
+   "description": "The required course this exception satisfies."
+  },
+  {
+   "fieldname": "substitute_course",
+   "fieldtype": "Link",
+   "label": "Substitute Course",
+   "options": "Course",
+   "set_only_once": 1,
+   "depends_on": "eval:doc.kind=='Substitution'",
+   "description": "Counts for the required course once it is passed. Its credits count as its own."
+  },
+  {
+   "fieldname": "column_break_what",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "student_graduation_requirement",
+   "fieldtype": "Data",
+   "label": "Graduation Requirement Row",
+   "set_only_once": 1,
+   "depends_on": "eval:doc.kind=='Requirement Waiver'",
+   "description": "The row on the enrollment's Graduation Requirements table."
+  },
+  {
+   "fieldname": "requirement_name",
+   "fieldtype": "Data",
+   "label": "Requirement",
+   "read_only": 1,
+   "depends_on": "eval:doc.kind=='Requirement Waiver'"
+  },
+  {
+   "fieldname": "section_break_why",
+   "fieldtype": "Section Break",
+   "label": "Why"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "supporting_document",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
+  },
+  {
+   "fieldname": "section_break_decision",
+   "fieldtype": "Section Break",
+   "label": "Decision"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "decided_on",
+   "fieldtype": "Datetime",
+   "label": "Decided On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_decision",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "decision_note",
+   "fieldtype": "Small Text",
+   "label": "Decision Note",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-01 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Requirement Exception",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "create": 1,
+   "role": "System Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "create": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "create": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "create": 1,
+   "role": "Program Chair"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "title": "Requested",
+   "color": "Orange"
+  },
+  {
+   "title": "Approved",
+   "color": "Green"
+  },
+  {
+   "title": "Denied",
+   "color": "Red"
+  },
+  {
+   "title": "Withdrawn",
+   "color": "Gray"
+  },
+  {
+   "title": "Revoked",
+   "color": "Gray"
+  }
+ ],
+ "title_field": "student_name",
+ "track_changes": 1
+}

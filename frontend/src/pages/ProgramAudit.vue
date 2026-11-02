@@ -159,6 +159,7 @@
                   <th class="py-2 px-3 font-medium">{{ __('Credits') }}</th>
                   <th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
                   <th class="py-2 px-3 font-medium">{{ __('Grade') }}</th>
+                  <th class="py-2 px-3 font-medium">{{ __('Action') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -167,8 +168,24 @@
                   <td class="py-2 px-3">{{ mc.credits }}</td>
                   <td class="py-2 px-3">
                     <Badge :theme="statusTheme(mc.status)" :label="mc.status" />
+                    <div v-if="exceptionNote(mc)" class="text-xs text-ink-gray-5 mt-1">
+                      {{ exceptionNote(mc) }}
+                    </div>
                   </td>
                   <td class="py-2 px-3">{{ mc.grade_code }}</td>
+                  <td class="py-2 px-3">
+                    <button v-if="canRequestException(mc)"
+                      class="text-ink-blue-3 hover:underline text-xs"
+                      @click="openExceptionDialog(mc)">
+                      {{ __('Request substitution or waiver') }}
+                    </button>
+                    <button v-else-if="mc.exception && mc.exception.status === 'Requested'"
+                      class="text-ink-blue-3 hover:underline text-xs"
+                      @click="withdrawException(mc)">
+                      {{ __('Withdraw request') }}
+                    </button>
+                    <span v-else class="text-xs text-ink-gray-4">—</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -192,6 +209,7 @@
                   <th class="py-2 px-3 font-medium">{{ __('Credits') }}</th>
                   <th class="py-2 px-3 font-medium">{{ __('Status') }}</th>
                   <th class="py-2 px-3 font-medium">{{ __('Grade') }}</th>
+                  <th class="py-2 px-3 font-medium">{{ __('Action') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -200,8 +218,24 @@
                   <td class="py-2 px-3">{{ mc.credits }}</td>
                   <td class="py-2 px-3">
                     <Badge :theme="statusTheme(mc.status)" :label="mc.status" />
+                    <div v-if="exceptionNote(mc)" class="text-xs text-ink-gray-5 mt-1">
+                      {{ exceptionNote(mc) }}
+                    </div>
                   </td>
                   <td class="py-2 px-3">{{ mc.grade_code }}</td>
+                  <td class="py-2 px-3">
+                    <button v-if="canRequestException(mc)"
+                      class="text-ink-blue-3 hover:underline text-xs"
+                      @click="openExceptionDialog(mc)">
+                      {{ __('Request substitution or waiver') }}
+                    </button>
+                    <button v-else-if="mc.exception && mc.exception.status === 'Requested'"
+                      class="text-ink-blue-3 hover:underline text-xs"
+                      @click="withdrawException(mc)">
+                      {{ __('Withdraw request') }}
+                    </button>
+                    <span v-else class="text-xs text-ink-gray-4">—</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -455,6 +489,43 @@
       </Button>
     </template>
   </Dialog>
+
+  <!-- Substitution / waiver request modal (decisions/098) -->
+  <Dialog v-model="showExceptionDialog" :options="{ title: __('Request a Substitution or Waiver') }">
+    <template #body-content>
+      <p v-if="exceptionForCourse" class="text-xs text-ink-gray-5 mb-3">
+        {{ __('For') }}: <span class="font-medium">{{ exceptionForCourse.course_name }}</span>
+      </p>
+      <FormControl v-model="exceptionForm.kind" type="select" :label="__('Request')"
+        :options="[
+          { label: __('Count another course in its place'), value: 'Substitution' },
+          { label: __('Waive this course'), value: 'Course Waiver' },
+        ]" class="mb-3" />
+      <FormControl v-if="exceptionForm.kind === 'Substitution'" v-model="exceptionForm.substitute_course"
+        type="autocomplete" :label="__('Substitute Course')" :options="substituteOptions"
+        :description="__('It counts once you pass it. Its credits count as its own.')" required class="mb-3" />
+      <FormControl v-model="exceptionForm.reason" type="textarea" :label="__('Reason')" required class="mb-3" />
+      <FileUploader
+        :upload-args="{ folder: 'Home/Attachments', private: 1 }"
+        :validate-file="validateFileSize"
+        @success="(file) => (exceptionForm.supporting_document = file.file_url)">
+        <template #default="{ openFileSelector, uploading }">
+          <Button :loading="uploading" @click="openFileSelector">
+            {{ exceptionForm.supporting_document ? __('Replace supporting document') : __('Attach supporting document') }}
+          </Button>
+        </template>
+      </FileUploader>
+      <p class="text-xs text-ink-gray-4 italic mt-3">
+        {{ __('The registrar or your program chair will decide, and you will be notified.') }}
+      </p>
+    </template>
+    <template #actions>
+      <Button @click="showExceptionDialog = false">{{ __('Cancel') }}</Button>
+      <Button variant="solid" :loading="exceptionSubmitting" @click="submitException">
+        {{ __('Send Request') }}
+      </Button>
+    </template>
+  </Dialog>
 </template>
 
 <script setup>
@@ -577,6 +648,7 @@ const programMandatoryCourses = computed(() => {
     credits: mc.credits,
     status: mc.status,
     grade_code: mc.grade_code || '',
+    exception: mc.exception,
   }))
 })
 
@@ -590,6 +662,7 @@ function trackMandatoryCourses(emphasisTrack) {
     credits: mc.credits || '',
     status: mc.status,
     grade_code: mc.grade_code || '',
+    exception: mc.exception,
   }))
 }
 
@@ -860,6 +933,85 @@ async function submitProject() {
     toast.error(e.messages?.[0] || e.message || __('Failed to create project'))
   } finally {
     projectSubmitting.value = false
+  }
+}
+// Course substitutions and waivers (decisions/098)
+const SATISFIED = ['Completed', 'Exempt', 'Waived']
+
+function exceptionNote(mc) {
+  const ex = mc.exception
+  if (!ex) return ''
+  const sub = ex.substitute_course_name || ex.substitute_course
+  if (ex.status === 'Requested') {
+    return ex.kind === 'Substitution'
+      ? __('Substitution requested: {0}', [sub])
+      : __('Waiver requested')
+  }
+  if (ex.kind === 'Course Waiver') return __('Waived: {0}', [ex.reason])
+  return mc.status === 'Completed'
+    ? __('Satisfied by {0} (substitution)', [sub])
+    : __('To be satisfied by {0}', [sub])
+}
+
+function canRequestException(mc) {
+  return !mc.exception && !SATISFIED.includes(mc.status) && !!audit.data?.active
+}
+
+const showExceptionDialog = ref(false)
+const exceptionForCourse = ref(null)
+const exceptionSubmitting = ref(false)
+const exceptionForm = reactive({ kind: 'Substitution', substitute_course: null, reason: '', supporting_document: null })
+const substituteOptions = ref([])
+
+function openExceptionDialog(mc) {
+  exceptionForCourse.value = mc
+  Object.assign(exceptionForm, { kind: 'Substitution', substitute_course: null, reason: '', supporting_document: null })
+  call('seminary.seminary.exceptions.substitute_options', { program_enrollment: selectedPE.value })
+    .then((rows) => {
+      substituteOptions.value = (rows || []).map(r => ({ label: r.course_name || r.name, value: r.name }))
+    })
+  showExceptionDialog.value = true
+}
+
+async function submitException() {
+  const substitute = typeof exceptionForm.substitute_course === 'object'
+    ? exceptionForm.substitute_course?.value
+    : exceptionForm.substitute_course
+  if (exceptionForm.kind === 'Substitution' && !substitute) {
+    toast.error(__('Choose the substitute course'))
+    return
+  }
+  if (!(exceptionForm.reason || '').trim()) {
+    toast.error(__('A reason is required'))
+    return
+  }
+  exceptionSubmitting.value = true
+  try {
+    await call('seminary.seminary.exceptions.request', {
+      program_enrollment: selectedPE.value,
+      kind: exceptionForm.kind,
+      reason: exceptionForm.reason,
+      required_course: exceptionForCourse.value.course,
+      substitute_course: exceptionForm.kind === 'Substitution' ? substitute : null,
+      supporting_document: exceptionForm.supporting_document,
+    })
+    toast.success(__('Request sent'))
+    showExceptionDialog.value = false
+    audit.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not send the request'))
+  } finally {
+    exceptionSubmitting.value = false
+  }
+}
+
+async function withdrawException(mc) {
+  try {
+    await call('seminary.seminary.exceptions.withdraw', { name: mc.exception.name })
+    toast.success(__('Request withdrawn'))
+    audit.reload()
+  } catch (e) {
+    toast.error(e.messages?.[0] || e.message || __('Could not withdraw the request'))
   }
 }
 </script>

@@ -2063,6 +2063,70 @@ def _best_attempt_per_course(pec_rows):
     return best
 
 
+_SATISFIED_STATUSES = ("Completed", "Exempt", "Waived")
+
+
+def _mandatory_course_line(
+    course, student_courses, in_progress_courses, exempted, exceptions
+):
+    """Status of one required course for the audit, read the way the
+    graduation check reads it (decisions/098 §5): passed, placed out (058),
+    waived, or satisfied by an approved substitute."""
+    sc = student_courses.get(course)
+    ex = exceptions.get(course)
+    approved = ex and ex.status == "Approved"
+    shown = sc
+    if sc and sc["status"] == "Pass":
+        status = "Completed"
+    elif course in exempted:
+        status = "Exempt"
+    elif approved and ex.kind == "Course Waiver":
+        status = "Waived"
+    elif approved and ex.kind == "Substitution":
+        shown = student_courses.get(ex.substitute_course)
+        if shown and shown["status"] == "Pass":
+            status = "Completed"
+        elif ex.substitute_course in in_progress_courses or (
+            shown and not shown["status"]
+        ):
+            status = "In Progress"
+        else:
+            status = "Not Started"
+    elif course in in_progress_courses or (sc and not sc["status"]):
+        status = "In Progress"
+    else:
+        status = "Not Started"
+
+    exception = None
+    if ex:
+        exception = {
+            "name": ex.name,
+            "kind": ex.kind,
+            "status": ex.status,
+            "substitute_course": ex.substitute_course,
+            "substitute_course_name": (
+                frappe.db.get_value("Course", ex.substitute_course, "course_name")
+                if ex.substitute_course
+                else None
+            ),
+            "reason": ex.reason,
+            "decision_note": ex.decision_note,
+        }
+    substituted = bool(approved and ex.kind == "Substitution")
+    return {
+        "status": status,
+        "grade_code": shown["grade_code"] if shown else None,
+        "grade_num": shown["grade_num"] if shown else None,
+        # B's credits count as B's own (098 §4).
+        "earned_credits": (
+            (shown["credits"] if shown else 0)
+            if substituted and status == "Completed"
+            else None
+        ),
+        "exception": exception,
+    }
+
+
 def _program_audit(program_enrollment):
     """Server callers (alumni portal, the program progress report) gate on
     their own terms and call this."""
@@ -2113,6 +2177,12 @@ def _program_audit(program_enrollment):
     )
     in_progress_courses = {cei.course_data for cei in in_progress}
 
+    from seminary.seminary.exceptions import course_exceptions
+    from seminary.seminary.leveling import leveling_sets
+
+    exempted = leveling_sets(pe.name)[0]
+    exceptions = course_exceptions(pe.name)
+
     # Build emphases data FIRST so we can deduplicate the program mandatory list
     emphases_data = []
     active_emphases = [
@@ -2146,21 +2216,21 @@ def _program_audit(program_enrollment):
         mandatory_remaining = []
         track_mandatory_courses = []
         for tc in track_courses:
-            sc = student_courses.get(tc.program_track_course)
             course_name_display = tc.program_track_course
             # Try to get a readable name from Program Course table
             pc_info = program_courses.get(tc.program_track_course)
             if pc_info:
                 course_name_display = pc_info["course_name"] or tc.program_track_course
 
-            if sc and sc["status"] == "Pass":
-                status = "Completed"
-            elif tc.program_track_course in in_progress_courses or (
-                sc and not sc["status"]
-            ):
-                status = "In Progress"
-            else:
-                status = "Not Started"
+            line = _mandatory_course_line(
+                tc.program_track_course,
+                student_courses,
+                in_progress_courses,
+                exempted,
+                exceptions,
+            )
+            status = line["status"]
+            if status not in _SATISFIED_STATUSES:
                 mandatory_remaining.append(tc.program_track_course)
 
             course_term = pc_info["course_term"] if pc_info else 0
@@ -2171,7 +2241,8 @@ def _program_audit(program_enrollment):
                     "credits": pc_info["credits"] if pc_info else 0,
                     "course_term": course_term,
                     "status": status,
-                    "grade_code": sc["grade_code"] if sc else None,
+                    "grade_code": line["grade_code"],
+                    "exception": line["exception"],
                 }
             )
             courses_in_emphases.add(tc.program_track_course)
@@ -2212,13 +2283,9 @@ def _program_audit(program_enrollment):
             continue
         if course_name in courses_in_emphases:
             continue
-        sc = student_courses.get(course_name)
-        if sc and sc["status"] == "Pass":
-            status = "Completed"
-        elif course_name in in_progress_courses or (sc and not sc["status"]):
-            status = "In Progress"
-        else:
-            status = "Not Started"
+        line = _mandatory_course_line(
+            course_name, student_courses, in_progress_courses, exempted, exceptions
+        )
 
         mandatory_courses.append(
             {
@@ -2226,9 +2293,11 @@ def _program_audit(program_enrollment):
                 "course_name": pc["course_name"],
                 "credits": pc["credits"],
                 "course_term": pc["course_term"],
-                "status": status,
-                "grade_code": sc["grade_code"] if sc else None,
-                "grade_num": sc["grade_num"] if sc else None,
+                "status": line["status"],
+                "grade_code": line["grade_code"],
+                "grade_num": line["grade_num"],
+                "earned_credits": line["earned_credits"],
+                "exception": line["exception"],
             }
         )
 
@@ -2259,7 +2328,9 @@ def _program_audit(program_enrollment):
     committed_total = program_mandatory_credits + emphasis_committed_credits
 
     mandatory_credits_earned = sum(
-        mc["credits"] for mc in mandatory_courses if mc["status"] == "Completed"
+        mc["credits"] if mc["earned_credits"] is None else mc["earned_credits"]
+        for mc in mandatory_courses
+        if mc["status"] == "Completed"
     )
     emphasis_credits_earned = sum(emph["credits_earned"] for emph in emphases_data)
 
@@ -2298,7 +2369,7 @@ def _program_audit(program_enrollment):
             graduation_eligible = False
 
     # All mandatory program courses passed?
-    if any(mc["status"] != "Completed" for mc in mandatory_courses):
+    if any(mc["status"] not in _SATISFIED_STATUSES for mc in mandatory_courses):
         graduation_eligible = False
 
     # All emphasis requirements met?
