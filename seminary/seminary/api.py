@@ -829,12 +829,13 @@ def get_translations():
 @frappe.whitelist()
 def get_enabled_languages():
     """Return all enabled languages and the current user's language preference."""
-    languages = frappe.get_all(
-        "Language",
-        filters={"enabled": 1},
-        fields=["name as language_code", "language_name"],
-        order_by="language_name asc",
-    )
+    from seminary.language import native_choices
+
+    # Each language in its own name, so the person finds theirs.
+    languages = [
+        {"language_code": code, "language_name": name}
+        for code, name in native_choices(enabled_only=True)
+    ]
     current = frappe.db.get_value("User", frappe.session.user, "language") or ""
     return {"languages": languages, "current": current}
 
@@ -6041,7 +6042,7 @@ def preview_announcement_letter(name):
     to a PDF so staff can preview/print the 'newsletter'. Personalization tokens
     are resolved against the first real recipient (or a sample). Returns
     {file_url}."""
-    from frappe.utils.pdf import get_pdf
+    from seminary.pdf import render as get_pdf
     from seminary.seminary import comms
     from seminary.seminary.doctype.seminary_announcement import (
         seminary_announcement as sa,

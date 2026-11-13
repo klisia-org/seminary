@@ -10,7 +10,8 @@ grow a street address.
 
 import frappe
 from frappe.utils import escape_html
-from frappe.utils.pdf import get_pdf
+
+from seminary.pdf import render as get_pdf
 
 DEFAULT_MODEL = "Avery 5160"
 

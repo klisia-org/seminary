@@ -96,7 +96,13 @@ def _my_orgs() -> list[dict]:
     return frappe.get_all(
         "Partner Organization",
         filters={"name": ["in", names]},
-        fields=["name", "organization_name"],
+        # The portal shows only the areas the organization takes part in (p025).
+        fields=[
+            "name",
+            "organization_name",
+            "accepts_job_postings",
+            "offers_internships",
+        ],
         order_by="organization_name asc",
     )
 

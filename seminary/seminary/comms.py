@@ -38,6 +38,7 @@ from frappe.rate_limiter import rate_limit
 from frappe.utils import add_to_date, cint, now_datetime
 
 from seminary.seminary import security_log
+from seminary.language import native_choices
 from seminary.seminary.author_templates import render_author_text
 
 ADAPTER_HOOK = "communication_channel_providers"
@@ -1129,12 +1130,11 @@ def get_my_communication_preferences():
     consents = {f"{row.channel}::{row.category}": row.status for row in person.consents}
     return {
         "language": person.language,
-        "languages": frappe.get_all(
-            "Language",
-            filters={"enabled": 1},
-            fields=["name", "language_name"],
-            order_by="language_name asc",
-        ),
+        # Each language in its own name, so the person finds theirs.
+        "languages": [
+            {"name": code, "language_name": name}
+            for code, name in native_choices(enabled_only=True)
+        ],
         "channels": frappe.get_all(
             "Communication Channel",
             filters={"enabled": 1},

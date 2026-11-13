@@ -74,7 +74,7 @@ const links = computed(() => {
 			{ label: __('Fees'), to: '/fees', icon: Banknote, activeFor: ['Fees'] },
 		] : []),
 		...(isPartner ? [
-			{ label: __('Partner'), to: '/partner/jobs', icon: Building2, activeFor: ['PartnerProfile', 'PartnerPeople', 'PartnerJobPostings', 'PartnerJobPosting', 'PartnerApplication', 'PartnerInternshipPostings', 'PartnerInternshipPosting', 'PartnerInterns'] },
+			{ label: __('Partner'), to: '/partner/profile', icon: Building2, activeFor: ['PartnerProfile', 'PartnerPeople', 'PartnerJobPostings', 'PartnerJobPosting', 'PartnerApplication', 'PartnerInternshipPostings', 'PartnerInternshipPosting', 'PartnerInterns'] },
 		] : []),
 		...((isModerator || isSystemManager) ? [
 			{ label: __('Desk'), to: '/desk/seminary', icon: MonitorCog, activeFor: ['Desk'] },

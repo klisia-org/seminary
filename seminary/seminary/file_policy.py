@@ -322,6 +322,11 @@ def apply_on_insert(file_doc):
         return
     if (file_doc.file_url or "").startswith(("http://", "https://")):
         return  # a link, not an upload
+    if file_doc.file_url and not file_doc.get("content"):
+        # A new row for bytes already stored (Frappe adds one when a record's
+        # Attach field names an existing file): the URL already says where they
+        # are, and marking the row private would only fail Frappe's path check.
+        return
     if not may_be_public(file_doc):
         file_doc.is_private = 1
 

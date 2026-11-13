@@ -11,6 +11,7 @@ from frappe.utils.dashboard import sync_dashboards
 from frappe import _
 
 from seminary.seminary.ethnic_groups import seed_ethnic_groups
+from seminary.language import rename_frappe_languages
 from seminary.seminary.doctype.program_level.program_level import seed_program_levels
 
 
@@ -62,6 +63,7 @@ def after_install():
     seed_standard_reading_plans()
     setup_user_bible_field()
     ensure_registrar_tools()
+    rename_frappe_languages()
 
 
 # ERPNext install-time checks (check_erpnext*) moved to the oikonomos bridge's
@@ -1772,6 +1774,8 @@ def after_migrate():
     ensure_registrar_tools()
     merge_academics_user_into_program_chair()
     ensure_instructor_community_access()
+    # Frappe's language rows get English names for editors (languages.py).
+    rename_frappe_languages()
 
 
 def merge_academics_user_into_program_chair():

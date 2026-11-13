@@ -25,6 +25,7 @@ TIERS = (
     "Go-live",
     "Before the first term",
     "Before the first evaluation or self-study cycle",
+    "Before the first publication",
     "Optional",
 )
 ALWAYS = "System Manager"
@@ -118,6 +119,7 @@ def tier_label(tier):
         "Before the first evaluation or self-study cycle": _(
             "Before the first evaluation or self-study cycle"
         ),
+        "Before the first publication": _("Before the first publication"),
         "Optional": _("Optional"),
     }[tier]
 
