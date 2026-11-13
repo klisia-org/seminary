@@ -169,7 +169,7 @@ const links = computed(() => {
 		}] : []),
 		...(isPartner ? [{
 			label: __('Partner'),
-			to: '/partner/jobs',
+			to: '/partner/profile',
 			icon: Building2,
 		}] : []),
 		...((isStudent || isAlumni) ? [{

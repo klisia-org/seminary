@@ -96,6 +96,25 @@ class TestP007FilePolicy(IdentityCleanup, IntegrationTestCase):
         )
         self.assertEqual(doc.is_private, 1)
 
+    def test_a_row_for_an_existing_public_file_stays_public(self):
+        # Frappe adds such a row when a record's Attach field names a file
+        # already stored; forcing it private failed Frappe's own path check.
+        public = _file(self.web_user, is_private=0)
+        todo = frappe.get_doc({"doctype": "ToDo", "description": "p007 copy"}).insert()
+        frappe.set_user(self.stu_user)
+        try:
+            copy = frappe.get_doc(
+                {
+                    "doctype": "File",
+                    "file_url": public.file_url,
+                    "attached_to_doctype": "ToDo",
+                    "attached_to_name": todo.name,
+                }
+            ).insert(ignore_permissions=True)
+        finally:
+            frappe.set_user("Administrator")
+        self.assertEqual((copy.is_private, copy.file_url), (0, public.file_url))
+
     def test_a_student_cannot_flip_a_file_public(self):
         doc = _file(self.stu_user, is_private=1)
         frappe.set_user(self.stu_user)

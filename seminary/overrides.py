@@ -96,15 +96,11 @@ def website_languages(branding):
     codes = [row.language for row in branding.get("website_languages") or []]
     if len(codes) < 2:
         return []
-    names = dict(
-        frappe.get_all(
-            "Language",
-            filters={"name": ["in", codes], "enabled": 1},
-            fields=["name", "language_name"],
-            as_list=True,
-        )
-    )
-    choices = [(code, names[code] or code) for code in codes if code in names]
+    from seminary.language import native_choices
+
+    # Each language in its own name, so a reader finds theirs.
+    names = dict(native_choices(codes, enabled_only=True))
+    choices = [(code, names[code]) for code in codes if code in names]
     return choices if len(choices) > 1 else []
 
 

@@ -59,7 +59,7 @@ const routes = [
   },
   {
     path: "/partner",
-    redirect: "/partner/jobs",
+    redirect: "/partner/profile",
   },
   {
     path: "/partner/profile",

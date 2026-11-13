@@ -357,8 +357,7 @@ def _collect_letters(doc):
 
 def build_letters_pdf(doc):
     """(pdf_bytes, letter_count) for the consolidated Print letters."""
-    from frappe.utils.pdf import get_pdf
-
+    from seminary.pdf import render as get_pdf
     from seminary.seminary import comms
 
     letters = _collect_letters(doc)

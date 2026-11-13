@@ -63,12 +63,22 @@ function onSwitchOrg(name) {
 }
 
 // Route-backed: no local state, and a detail route (/partner/jobs/ABC) keeps
-// its list tab highlighted because PageTabs matches on path prefix.
-const tabs = computed(() => [
-	{ key: 'profile', label: __('Our Profile'), route: '/partner/profile' },
-	{ key: 'people', label: __('Our People'), route: '/partner/people' },
-	{ key: 'jobs', label: __('Job Postings'), route: '/partner/jobs' },
-	{ key: 'internships', label: __('Internships'), route: '/partner/internships' },
-	{ key: 'interns', label: __('Our Interns'), route: '/partner/interns' },
-])
+// its list tab highlighted because PageTabs matches on path prefix. Jobs and
+// internships show only for an organization that takes part in them (p025).
+const tabs = computed(() => {
+	const org = orgs.value.find((o) => o.name === activeOrg.value)
+	const jobs = !org || !!org.accepts_job_postings
+	const internships = !org || !!org.offers_internships
+	return [
+		{ key: 'profile', label: __('Our Profile'), route: '/partner/profile' },
+		{ key: 'people', label: __('Our People'), route: '/partner/people' },
+		...(jobs ? [{ key: 'jobs', label: __('Job Postings'), route: '/partner/jobs' }] : []),
+		...(internships
+			? [
+					{ key: 'internships', label: __('Internships'), route: '/partner/internships' },
+					{ key: 'interns', label: __('Our Interns'), route: '/partner/interns' },
+				]
+			: []),
+	]
+})
 </script>

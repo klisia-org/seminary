@@ -700,8 +700,7 @@ def _evidence_html(rows):
 
 
 def _pdf(title, html, evidence_blocks):
-    from frappe.utils.pdf import get_pdf
-
+    from seminary.pdf import render as get_pdf
     from seminary.seminary import comms
     from seminary.seminary.doctype.seminary_announcement.seminary_announcement import (
         _wrap_letterhead,
