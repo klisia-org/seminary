@@ -119,11 +119,14 @@
               {{ __('Draft saved') }}
             </div>
           </div>
-          <div v-for="(question, index) in exam.data.questions" :key="question.name"
+          <div v-if="oneAtATime" class="text-sm text-ink-gray-6 mb-4">
+            {{ __('Question {0} of {1}').format(activeQuestion + 1, exam.data.questions.length) }}
+          </div>
+          <div v-for="(question, index) in shownQuestions" :key="question.name"
             class="relative border rounded-md p-5 mb-4">
             <div
               class="absolute -top-3 -left-3 bg-surface-gray-7 text-ink-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
-              {{ index + 1 }}
+              {{ oneAtATime ? activeQuestion + 1 : index + 1 }}
             </div>
             <div class="text-ink-gray-9 text-sm font-semibold text-right">
               {{ question.points }} {{ question.points === 1 ? __('Point') : __('Points') }}
@@ -137,7 +140,18 @@
                 @change="(val) => updateAnswer(question.name, val)" />
             </div>
           </div>
-          <div class="text-center mt-4">
+          <div v-if="oneAtATime" class="flex justify-between items-center mt-4">
+            <Button :disabled="activeQuestion === 0" @click="goToQuestion(activeQuestion - 1)">
+              <span>{{ __('Previous') }}</span>
+            </Button>
+            <Button v-if="!isLastQuestion" variant="solid" @click="goToQuestion(activeQuestion + 1)">
+              <span>{{ __('Next') }}</span>
+            </Button>
+            <Button v-else variant="solid" @click="submitExam">
+              <span>{{ __('Submit Your Exam') }}</span>
+            </Button>
+          </div>
+          <div v-else class="text-center mt-4">
             <Button @click="submitExam">
               <span>{{ __('Submit Your Exam') }}</span>
             </Button>
@@ -542,11 +556,35 @@ const submitExam = async () => {
   }
 }
 
+// "Question by question" (Exam Activity.qbyquestion): the same exam, draft and
+// timer as the full view, shown one question at a time. Moving on saves the
+// draft. Oral questions will refuse going back (decisions/100a §5).
+const activeQuestion = ref(0)
+const oneAtATime = computed(
+  () => !!exam.data?.qbyquestion && fullExamMode.value && !is_instructor()
+)
+const shownQuestions = computed(() => {
+  const list = exam.data?.questions || []
+  if (!oneAtATime.value) return list
+  return list[activeQuestion.value] ? [list[activeQuestion.value]] : []
+})
+const isLastQuestion = computed(
+  () => activeQuestion.value >= (exam.data?.questions?.length || 1) - 1
+)
+const goToQuestion = (index) => {
+  const last = (exam.data?.questions?.length || 1) - 1
+  activeQuestion.value = Math.min(Math.max(index, 0), last)
+  // A save already running will be followed by the debounced one; only
+  // replace the debounce when this call will actually save.
+  if (!isSaving.value) {
+    clearTimeout(saveTimer)
+    autoSave()
+  }
+}
+
 const startExam = () => {
-  activeQuestion.value = 1
-  localStorage.removeItem(exam.data.title)
-  startTimer()
-  ensureAnswersInitialized(exam.data?.questions || []);
+  activeQuestion.value = 0
+  return startExam2()
 }
 
 const startExam2 = async () => {

@@ -4482,7 +4482,14 @@ def finalize_roster(roster_name):
 
     frappe.db.set_value("Program Enrollment Course", pec, values)
     frappe.db.set_value("Program Enrollment", pe, "totalcredits", newcredits)
-    frappe.db.set_value("Scheduled Course Roster", record.name, "active", 0)
+    # The send date is kept per student, not per section: an open-ended section
+    # sends students one by one (send_selected_grades). Retention of graded
+    # evidence, such as oral recordings (ADR 100 §8), counts from it.
+    frappe.db.set_value(
+        "Scheduled Course Roster",
+        record.name,
+        {"active": 0, "grades_sent_on": frappe.utils.now_datetime()},
+    )
     return pe
 
 
