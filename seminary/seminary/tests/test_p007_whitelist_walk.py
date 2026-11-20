@@ -148,6 +148,9 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # decisions/093: whether the public website is on -- one site-wide flag the
+    # Website Branding form reads to hide options; nothing about any person.
+    "seminary.seminary.doctype.website_branding.website_branding.public_website_enabled",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a
@@ -245,6 +248,9 @@ STUDENT_ALLOWED = {
 }
 
 STAFF_ONLY = {
+    # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
+    # group's roles (Registrar, Seminary Manager for "Seminary").
+    "seminary.setup_progress.get_progress",
     # Rubrics (decisions/095): the editor needs write on the activity, grading
     # needs require_grader + require_course_staff, a rubric's content needs its
     # own read permission.
@@ -972,6 +978,8 @@ KWARG_OVERRIDES = {
         "course_schedule": "ZZT-no-such-cs",
     },
     "seminary.seminary.api.send_grades": {"doc": '{"name": "ZZT-no-such-cs"}'},
+    # An unknown group is refused before the role gate; name a real one.
+    "seminary.setup_progress.get_progress": {"group": "Seminary"},
     "seminary.seminary.absence_decisions.record_absence_decisions": {"decisions": "[]"},
     "seminary.seminary.deadlines.save_override": {"data": "{}"},
     "seminary.seminary.deadlines.save_late_policy": {"policy": "{}"},
