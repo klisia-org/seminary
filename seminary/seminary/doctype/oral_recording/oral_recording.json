@@ -1,0 +1,267 @@
+{
+ "actions": [],
+ "creation": "2026-11-20 18:00:00.000000",
+ "description": "One recorded oral answer, conversation or defense, with the products of the steps run on it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "reference_name",
+  "course_schedule",
+  "column_break_a",
+  "status",
+  "source",
+  "recorded_by",
+  "language",
+  "timing_section",
+  "started_at",
+  "ended_at",
+  "column_break_b",
+  "duration_s",
+  "mime_type",
+  "audio_section",
+  "audio",
+  "audio_deleted_on",
+  "participants",
+  "processing_section",
+  "steps",
+  "step_state",
+  "error",
+  "transcript_section",
+  "transcript",
+  "speakers"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Belongs To",
+   "options": "DocType",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Record",
+   "options": "reference_doctype",
+   "reqd": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "read_only": 1,
+   "search_index": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Recording\nRecorded\nProcessing\nReady\nFailed",
+   "default": "Recording",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Recorded\nUploaded",
+   "default": "Recorded",
+   "read_only": 1,
+   "description": "Uploaded means a file recorded elsewhere; its start time is the upload time."
+  },
+  {
+   "fieldname": "recorded_by",
+   "fieldtype": "Link",
+   "label": "Recorded By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "options": "Language",
+   "read_only": 1
+  },
+  {
+   "fieldname": "timing_section",
+   "fieldtype": "Section Break",
+   "label": "Timing"
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Started At",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "ended_at",
+   "fieldtype": "Datetime",
+   "label": "Ended At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "duration_s",
+   "fieldtype": "Int",
+   "label": "Duration (seconds)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mime_type",
+   "fieldtype": "Data",
+   "label": "Format",
+   "read_only": 1
+  },
+  {
+   "fieldname": "audio_section",
+   "fieldtype": "Section Break",
+   "label": "Audio"
+  },
+  {
+   "fieldname": "audio",
+   "fieldtype": "Attach",
+   "label": "Audio",
+   "read_only": 1
+  },
+  {
+   "fieldname": "audio_deleted_on",
+   "fieldtype": "Datetime",
+   "label": "Audio Deleted On",
+   "read_only": 1,
+   "description": "The audio is deleted after the retention period; the transcript, speakers and moments are kept."
+  },
+  {
+   "fieldname": "participants",
+   "fieldtype": "Table",
+   "label": "Participants",
+   "options": "Oral Recording Participant",
+   "read_only": 1,
+   "description": "The students whose recording this is. They, the section's instructors and school staff may listen to it."
+  },
+  {
+   "fieldname": "processing_section",
+   "fieldtype": "Section Break",
+   "label": "Processing"
+  },
+  {
+   "fieldname": "steps",
+   "fieldtype": "Small Text",
+   "label": "Steps",
+   "read_only": 1,
+   "description": "The steps chosen for this recording, in order."
+  },
+  {
+   "fieldname": "step_state",
+   "fieldtype": "Code",
+   "label": "Step State",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transcript_section",
+   "fieldtype": "Section Break",
+   "label": "Transcript"
+  },
+  {
+   "fieldname": "transcript",
+   "fieldtype": "Code",
+   "label": "Transcript",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "speakers",
+   "fieldtype": "Table",
+   "label": "Speakers",
+   "options": "Oral Speaker",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Recording",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "write": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "role": "Seminary Manager"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Program Chair"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Registrar"
+  },
+  {
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1,
+   "role": "Instructor"
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "track_changes": 1
+}

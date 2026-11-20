@@ -122,7 +122,19 @@
   "has_oikonomos",
   "has_billing",
   "financial_backend",
-  "financial_backend_since"
+  "financial_backend_since",
+  "oral_assessment_section",
+  "oral_audio_retention_days",
+  "oral_max_minutes",
+  "column_break_oral",
+  "oral_steps_html",
+  "oral_step_transcribe",
+  "oral_step_diarize",
+  "oral_step_moments",
+  "oral_step_questions",
+  "oral_step_follow_up",
+  "oral_step_score_suggestions",
+  "oral_step_consistency"
  ],
  "fields": [
   {
@@ -875,11 +887,83 @@
    "fieldtype": "Date",
    "hidden": 1,
    "label": "Active Since"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "oral_assessment_section",
+   "fieldtype": "Section Break",
+   "label": "Oral Assessment"
+  },
+  {
+   "default": "365",
+   "description": "Counted from the day a student's grades are sent. The audio is then deleted; the transcript, speakers and marked moments are kept.",
+   "fieldname": "oral_audio_retention_days",
+   "fieldtype": "Int",
+   "label": "Keep Oral Audio For (days)",
+   "non_negative": 1
+  },
+  {
+   "default": "60",
+   "fieldname": "oral_max_minutes",
+   "fieldtype": "Int",
+   "label": "Longest Recording (minutes)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_oral",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "oral_steps_html",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">Steps an installed app may run on recordings. An instructor is never offered a step the school has turned off here.</p>"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_transcribe",
+   "fieldtype": "Check",
+   "label": "Transcription"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_diarize",
+   "fieldtype": "Check",
+   "label": "Who spoke when"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_moments",
+   "fieldtype": "Check",
+   "label": "Suggested moments"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_questions",
+   "fieldtype": "Check",
+   "label": "Defense questions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_follow_up",
+   "fieldtype": "Check",
+   "label": "Follow-up questions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_score_suggestions",
+   "fieldtype": "Check",
+   "label": "Score suggestions"
+  },
+  {
+   "default": "1",
+   "fieldname": "oral_step_consistency",
+   "fieldtype": "Check",
+   "label": "Consistency notes"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-28 12:00:00.000000",
+ "modified": "2026-11-20 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Seminary Settings",

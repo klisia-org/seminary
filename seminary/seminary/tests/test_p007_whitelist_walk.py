@@ -78,6 +78,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.discipleship.reading_plans",
     "seminary.seminary.requirements",
     "seminary.seminary.discipleship.scripture",
+    "seminary.seminary.oral",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
     "seminary.seminary.doctype.course_competency.course_competency",
@@ -151,6 +152,14 @@ STUDENT_ALLOWED = {
     # decisions/093: whether the public website is on -- one site-wide flag the
     # Website Branding form reads to hide options; nothing about any person.
     "seminary.seminary.doctype.website_branding.website_branding.public_website_enabled",
+    # Oral recordings (decisions/100). start_recording asks the record's own
+    # resolver whether this user may record it now (an unregistered doctype is
+    # refused); the other three act only on a recording the caller opened and
+    # that is still open. Covered by test_adr100_oral_core.
+    "seminary.seminary.oral.start_recording",
+    "seminary.seminary.oral.upload_chunk",
+    "seminary.seminary.oral.received_chunks",
+    "seminary.seminary.oral.finish_recording",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a

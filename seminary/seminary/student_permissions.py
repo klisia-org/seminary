@@ -66,6 +66,11 @@ CONFIG = {
     "Student Attendance": (None, "course"),
     # A student reads their own extensions; staff their sections' (decisions/082).
     "Student Due Date Override": (("student", "student"), "course"),
+    # Moments and the instructor-only step results are the section staff's
+    # (decisions/100 §6). Oral Recording itself has its own rule in oral.py:
+    # it belongs to every student on it, not to one field.
+    "Oral Moment": (None, "course"),
+    "Oral Step Result": (None, "course"),
 }
 
 

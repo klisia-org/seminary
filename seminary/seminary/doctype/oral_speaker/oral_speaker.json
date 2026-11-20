@@ -1,0 +1,71 @@
+{
+ "actions": [],
+ "creation": "2026-11-20 18:00:00.000000",
+ "description": "One voice in a recording and, once linked, the student it belongs to.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "student",
+  "talk_s",
+  "turns",
+  "longest_turn_s",
+  "audio"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "label": "Label",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "talk_s",
+   "fieldtype": "Float",
+   "label": "Talk Time (seconds)",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "turns",
+   "fieldtype": "Int",
+   "label": "Turns",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "longest_turn_s",
+   "fieldtype": "Float",
+   "label": "Longest Turn (seconds)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "audio",
+   "fieldtype": "Attach",
+   "label": "Own Track",
+   "read_only": 1,
+   "description": "This speaker's own audio, when the meeting provider records one track per person."
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-20 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Oral Speaker",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

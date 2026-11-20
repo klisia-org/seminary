@@ -362,6 +362,9 @@ permission_query_conditions = {
     "Course Lesson": "seminary.seminary.student_permissions.query_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
     "Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
+    "Oral Recording": "seminary.seminary.oral.get_permission_query_conditions",
+    "Oral Moment": "seminary.seminary.student_permissions.query_oral_moment",
+    "Oral Step Result": "seminary.seminary.student_permissions.query_oral_step_result",
 }
 # Instructors can only see their own records
 # Students can only see Sales Invoices where custom_student matches their own Student record
@@ -420,6 +423,9 @@ has_permission = {
     "Course Lesson": "seminary.seminary.student_permissions.has_permission_course_lesson",
     "Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
     "Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
+    "Oral Recording": "seminary.seminary.oral.has_permission",
+    "Oral Moment": "seminary.seminary.student_permissions.has_permission_oral_moment",
+    "Oral Step Result": "seminary.seminary.student_permissions.has_permission_oral_step_result",
 }
 
 # DocType Class
@@ -719,6 +725,12 @@ plagiarism_providers = {
     "external-http": "seminary.seminary.plagiarism.external.ExternalHTTPPlagiarismAdapter",
 }
 
+# Oral assessment steps (decisions/100 §4). An app provides a step with
+# {"transcribe": "dotted.path", ...}; the path is called with
+# (recording, step, payload), returns at once and later calls
+# seminary.seminary.oral.step_done or step_failed. Seminary ships none.
+# oral_steps = {}
+
 # Agreement fields from other apps (decisions/091 §7). Each dotted path is called
 # as fn(context, person_requirement) and adds keys to the context an Agreement
 # Template renders with -- the billing bridges add fees this way. Seminary
@@ -800,6 +812,8 @@ scheduler_events = {
         # A direct upload the user abandoned leaves an object no File row will ever
         # reference, and nothing in the database to notice it (privatedocs/p004).
         "seminary.storage.direct.sweep_pending_uploads",
+        # Oral recordings (decisions/100 §8): abandoned chunks, expired audio.
+        "seminary.seminary.oral.daily",
         # One human with two emails becomes two Persons; propose the pairs for
         # staff to merge or set aside (privatedocs/p022).
         "seminary.seminary.duplicates.daily",
