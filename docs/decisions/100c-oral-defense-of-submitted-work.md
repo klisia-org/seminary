@@ -42,5 +42,5 @@ from the paper itself do.
 - Every paper can be defended in a few minutes of the student's time and of the instructor's.
 - Outsourcing a paper becomes costly: the student must still explain it, aloud, unprepared.
 - Students anxious about speaking, or with a speech disability, need 100 §9's written alternative.
-- Open: a live defense with the instructor in a meeting instead of recorded answers; reusing this
-  for culminating projects (024).
+- A live defense with the instructor needs no recording (100d §9).
+- Open: reusing this for culminating projects (024).

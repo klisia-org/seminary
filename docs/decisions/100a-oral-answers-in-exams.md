@@ -1,7 +1,7 @@
 # 100a — Oral answers in exams
 
 **Date:** 2026-11-19
-**Status:** Proposed
+**Status:** Accepted
 **Parent:** [100](100-oral-assessment.md)
 
 ## Context
@@ -34,4 +34,4 @@ grades each answer as today, question by question, but from audio.
 - An instructor can turn one question of an existing exam into an oral one with a single field.
 - Time limits and single takes make an oral answer hard to script, but not impossible to coach;
   this is a deterrent, not proctoring.
-- Open: per-question rubrics; whether `prepare_s` counts toward the exam's `duration`.
+- There are no per-question rubrics - same as text questions; `prepare_s` counts toward the exam's `duration`.
