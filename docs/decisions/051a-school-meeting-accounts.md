@@ -1,7 +1,7 @@
 # 051a — School meeting accounts
 
 **Date:** 2026-11-20
-**Status:** Proposed
+**Status:** Accepted
 **Amends:** [051](051-per-meeting-room-virtual-and-attendance.md) (#2 per-meeting virtual meeting)
 **Related:** 038 (overlap), 092 (hooks for other apps), 100d (capture from virtual meetings)
 

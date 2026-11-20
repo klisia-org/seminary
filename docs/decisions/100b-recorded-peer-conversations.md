@@ -1,7 +1,7 @@
 # 100b — Recorded peer conversations and talk time
 
 **Date:** 2026-11-19
-**Status:** Proposed
+**Status:** Accepted
 **Parent:** [100](100-oral-assessment.md)
 **Related:** 097 (discussions, student groups)
 
