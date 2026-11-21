@@ -9,6 +9,8 @@
   "course_schedule",
   "course_assess",
   "oral_activity",
+  "kind",
+  "group_label",
   "meeting",
   "column_break_a",
   "meeting_date",
@@ -23,6 +25,17 @@
   "column_break_b",
   "confirmed_by",
   "confirmed_on",
+  "group_section",
+  "link",
+  "meeting_account",
+  "provider_meeting_id",
+  "column_break_g",
+  "meeting_status",
+  "meeting_error",
+  "host_key",
+  "schedule_note",
+  "members_section",
+  "members",
   "participants_section",
   "participants"
  ],
@@ -53,11 +66,30 @@
    "in_list_view": 1
   },
   {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Whole class\nGroup",
+   "default": "Whole class",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "group_label",
+   "fieldtype": "Data",
+   "label": "Group",
+   "read_only": 1,
+   "depends_on": "eval:doc.kind=='Group'",
+   "in_list_view": 1
+  },
+  {
    "fieldname": "meeting",
    "fieldtype": "Data",
    "label": "Meeting Row",
-   "reqd": 1,
-   "read_only": 1
+   "read_only": 1,
+   "depends_on": "eval:doc.kind!='Group'",
+   "mandatory_depends_on": "eval:doc.kind!='Group'"
   },
   {
    "fieldname": "column_break_a",
@@ -141,6 +173,73 @@
    "read_only": 1
   },
   {
+   "fieldname": "group_section",
+   "fieldtype": "Section Break",
+   "label": "Group Meeting",
+   "depends_on": "eval:doc.kind=='Group'"
+  },
+  {
+   "fieldname": "link",
+   "fieldtype": "Data",
+   "label": "Join Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "meeting_account",
+   "fieldtype": "Link",
+   "label": "Meeting Account",
+   "options": "Web Meeting Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "provider_meeting_id",
+   "fieldtype": "Data",
+   "label": "Provider Meeting ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_g",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "meeting_status",
+   "fieldtype": "Select",
+   "label": "Meeting Status",
+   "options": "\nPending\nCreated\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "meeting_error",
+   "fieldtype": "Small Text",
+   "label": "Meeting Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "host_key",
+   "fieldtype": "Data",
+   "label": "Host Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "schedule_note",
+   "fieldtype": "Small Text",
+   "label": "Scheduling Note",
+   "read_only": 1,
+   "description": "Why this time, when no time fits every member's day."
+  },
+  {
+   "fieldname": "members_section",
+   "fieldtype": "Section Break",
+   "label": "Members",
+   "depends_on": "eval:doc.kind=='Group'"
+  },
+  {
+   "fieldname": "members",
+   "fieldtype": "Table",
+   "label": "Members",
+   "options": "Oral Activity Meeting Member"
+  },
+  {
    "fieldname": "participants_section",
    "fieldtype": "Section Break",
    "label": "Participants"
@@ -154,7 +253,7 @@
   }
  ],
  "links": [],
- "modified": "2026-11-21 12:00:00.000000",
+ "modified": "2026-11-21 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Activity Meeting",

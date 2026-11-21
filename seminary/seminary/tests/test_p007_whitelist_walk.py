@@ -152,6 +152,11 @@ GUEST_ALLOWED = {
 }
 
 STUDENT_ALLOWED = {
+    # decisions/100d-a §9: the caller's own time zone, read and set on their
+    # own User only; nothing about anyone else.
+    "seminary.seminary.time_zones.report",
+    "seminary.seminary.time_zones.set_my_time_zone",
+    "seminary.seminary.time_zones.my_time_zone",
     # decisions/093: whether the public website is on -- one site-wide flag the
     # Website Branding form reads to hide options; nothing about any person.
     "seminary.seminary.doctype.website_branding.website_branding.public_website_enabled",
@@ -294,6 +299,13 @@ STAFF_ONLY = {
     "seminary.seminary.oral_defense.delete_question",
     "seminary.seminary.oral_defense.release",
     "seminary.seminary.school_meetings.provider_names",
+    "seminary.seminary.oral_groups.cancel_meeting",
+    "seminary.seminary.oral_groups.configure_state",
+    "seminary.seminary.oral_groups.create_meetings",
+    "seminary.seminary.oral_groups.move_meeting",
+    "seminary.seminary.oral_groups.move_student",
+    "seminary.seminary.oral_groups.propose_groups",
+    "seminary.seminary.oral_groups.suggest",
     "seminary.seminary.oral_meetings.attendance_suggestions",
     "seminary.seminary.oral_meetings.cancel_capture",
     "seminary.seminary.oral_meetings.capture_options",

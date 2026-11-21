@@ -343,6 +343,8 @@ def my_state(course, activity):
         "mode": act.mode,
         "capture": act.capture or "Browser",
         "meetings": _captured_meetings(course, activity),
+        # Only this student's own group meeting, with its link (100d-a §6).
+        "my_meetings": my_group_meetings(user, course, activity),
         "prompt": act.prompt,
         "allow_upload": ctx["allow_upload"],
         "max_seconds": min(
@@ -364,6 +366,12 @@ def my_state(course, activity):
     }
 
 
+def my_group_meetings(user, course, activity):
+    from seminary.seminary.oral_groups import my_meetings
+
+    return my_meetings(user, course, activity)
+
+
 def _captured_meetings(course, activity):
     """The class meetings recorded for this activity, for the student's notice."""
     return frappe.get_all(
@@ -371,6 +379,7 @@ def _captured_meetings(course, activity):
         filters={
             "course_schedule": course,
             "oral_activity": activity,
+            "kind": ["!=", "Group"],
             "status": ["not in", ["Cancelled", "Failed"]],
         },
         fields=["meeting_date", "from_time", "to_time", "status"],

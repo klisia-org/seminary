@@ -411,6 +411,13 @@ const routes = [
 		props: true,
 	},
 	{
+		// Group meetings for an oral activity on one section (decisions/100d-a).
+		path: '/courses/:courseName/oral-meetings/:activityID',
+		name: 'OralActivityMeetingsConfigure',
+		component: () => import('@/pages/OralActivityMeetingsConfigure.vue'),
+		props: true,
+	},
+	{
 		path: '/gradebook/:courseName/oral-submissions/:activityID',
 		name: 'OralActivitySubmissionCS',
 		component: () => import('@/pages/OralActivitySubmissionCS.vue'),

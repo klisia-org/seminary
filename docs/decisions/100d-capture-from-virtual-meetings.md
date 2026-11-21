@@ -4,6 +4,7 @@
 **Status:** Accepted
 **Parent:** [100](100-oral-assessment.md)
 **Amended:** 2026-11-21 (§1, §4, §7, §8: Oral Activity Meeting, confirmed matches)
+**Amended by:** [100d-a](100d-a-online-meeting-groups.md) (group meetings)
 **Related:** 051 and 051a (virtual meetings, school meeting accounts), 100b (peer conversations)
 
 ## Context

@@ -18,6 +18,10 @@
 			<p v-else class="text-sm text-ink-gray-5">
 				{{ __('Students cannot record this yet: add it to the section\'s Course Assessment as an Oral criterion.') }}
 			</p>
+			<router-link v-if="gradeable.data && activityDoc.data?.capture === 'Virtual meeting'"
+				:to="{ name: 'OralActivityMeetingsConfigure', params: { courseName, activityID: activity } }">
+				<Button>{{ __('Configure meetings') }}</Button>
+			</router-link>
 			<router-link :to="{ name: 'OralActivityForm', params: { activityID: activity } }">
 				<Button>{{ __('Edit activity') }}</Button>
 			</router-link>
@@ -58,12 +62,21 @@
 				<p class="rounded-md bg-surface-amber-1 p-3 text-ink-amber-3">
 					{{ __('This activity is recorded in your online class meetings, for assessment. A recorder named for it, or the meeting\'s own recording notice, shows in the call. Your instructor confirms who took part, and your submission then appears here.') }}
 				</p>
+				<!-- Only this student's own group meeting (decisions/100d-a §6) -->
+				<div v-for="m in state.data.my_meetings || []" :key="m.name"
+					class="rounded-md border p-3 text-ink-gray-8">
+					<div class="font-medium">{{ __('Your group meeting') }}<template v-if="m.group"> · {{ m.group }}</template></div>
+					<div>{{ whenLocal(m.start_utc) }}–{{ timeLocal(m.end_utc) }}</div>
+					<a v-if="m.link" :href="m.link" target="_blank" rel="noopener noreferrer">
+						<Button size="sm" variant="solid" class="mt-2">{{ __('Join the meeting') }}</Button>
+					</a>
+				</div>
 				<ul v-if="state.data.meetings?.length" class="list-disc pl-5 text-ink-gray-7">
 					<li v-for="m in state.data.meetings" :key="m.meeting_date + m.from_time">
 						{{ formatDay(m.meeting_date) }} · {{ hhmm(m.from_time) }}–{{ hhmm(m.to_time) }}
 					</li>
 				</ul>
-				<p v-else class="text-ink-gray-5">{{ __('No meeting has been chosen yet.') }}</p>
+				<p v-else-if="!state.data.my_meetings?.length" class="text-ink-gray-5">{{ __('No meeting has been chosen yet.') }}</p>
 			</div>
 
 			<div v-else-if="state.data.recording" class="space-y-3">
@@ -139,9 +152,11 @@ const uploading = ref(false)
 
 const activityDoc = createResource({
 	url: 'frappe.client.get_value',
-	makeParams: () => ({ doctype: 'Oral Activity', filters: { name: props.activity }, fieldname: ['title', 'prompt', 'mode'] }),
+	makeParams: () => ({ doctype: 'Oral Activity', filters: { name: props.activity }, fieldname: ['title', 'prompt', 'mode', 'capture'] }),
 	auto: true,
 })
+const whenLocal = (iso) => new Date(iso).toLocaleString(userLocale(), { dateStyle: 'full', timeStyle: 'short' })
+const timeLocal = (iso) => new Date(iso).toLocaleTimeString(userLocale(), { hour: '2-digit', minute: '2-digit' })
 const hhmm = (t) => (t ? String(t).split(':').slice(0, 2).join(':') : '')
 const formatDay = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(userLocale()) : '')
 const isConversation = computed(() => (state.data?.mode || activityDoc.data?.mode) === 'Conversation')

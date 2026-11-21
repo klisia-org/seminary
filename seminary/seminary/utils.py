@@ -993,6 +993,17 @@ def get_course_details(course):
             m["cs_web_meeting"] = None
             m["web_meeting"] = None
 
+    # A student's own oral activity group meetings, never another group's (100d-a §6).
+    course_details.my_oral_meetings = []
+    if frappe.session.user != "Guest" and user_is_enrolled_in_section(
+        course_details.name
+    ):
+        from seminary.seminary.oral_groups import my_meetings
+
+        course_details.my_oral_meetings = my_meetings(
+            frappe.session.user, course_details.name
+        )
+
     if frappe.session.user == "Guest":
         course_details.membership = None
         course_details.is_instructor = False

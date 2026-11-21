@@ -143,6 +143,41 @@ def validate(cs):
 
 
 def _others_booked(cs, rows, accounts):
+    booked = _class_booked(cs, rows, accounts)
+    # Group meetings of oral activities hold accounts too (100d-a §4).
+    for m in frappe.get_all(
+        "Oral Activity Meeting",
+        filters={
+            "kind": "Group",
+            "status": ["not in", ["Cancelled", "Failed"]],
+            "meeting_account": ["in", list(accounts)],
+            "meeting_date": ["in", list({str(r.cs_meetdate) for r in rows})],
+        },
+        fields=[
+            "course_schedule",
+            "group_label",
+            "meeting_date",
+            "from_time",
+            "to_time",
+            "meeting_account",
+        ],
+    ):
+        booked.append(
+            frappe._dict(
+                parent=m.course_schedule,
+                title=_("{0}, group meeting {1}").format(
+                    m.course_schedule, m.group_label or ""
+                ),
+                cs_meetdate=m.meeting_date,
+                cs_fromtime=m.from_time,
+                cs_totime=m.to_time,
+                cs_meeting_account=m.meeting_account,
+            )
+        )
+    return booked
+
+
+def _class_booked(cs, rows, accounts):
     return frappe.db.sql(
         """
         SELECT m.parent, cs.title, m.cs_meetdate, m.cs_fromtime, m.cs_totime,

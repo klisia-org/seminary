@@ -67,6 +67,20 @@
                     </dd>
                 </div>
 
+                <!-- This student's own oral activity group meetings (decisions/100d-a §6) -->
+                <div v-if="course.data.my_oral_meetings?.length" class="flex flex-col sm:flex-row sm:gap-2">
+                    <dt class="font-medium text-ink-gray-7">{{ __('Your oral activity meetings') }}</dt>
+                    <dd>
+                        <ul>
+                            <li v-for="m in course.data.my_oral_meetings" :key="m.name">
+                                {{ m.activity_title }}: {{ new Date(m.start_utc).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) }}
+                                <a v-if="m.link" :href="safeUrl(m.link)" target="_blank" rel="noopener noreferrer"
+                                    class="text-ink-blue-3 hover:underline">· {{ __('Join Online') }}</a>
+                                <span class="text-ink-amber-3">· {{ __('Recorded for an oral assessment') }}</span>
+                            </li>
+                        </ul>
+                    </dd>
+                </div>
                 <div v-if="course.data.meeting_dates?.length" class="flex flex-col sm:flex-row sm:gap-2">
                     <dt class="font-semibold text-ink-gray-8 sm:w-40 shrink-0">{{ __('Meeting Dates') }}</dt>
                     <dd class="text-ink-gray-7">

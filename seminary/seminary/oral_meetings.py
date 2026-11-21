@@ -134,6 +134,27 @@ def _utc(day, time):
 
 def _capture(doc):
     """What a method is told about one capture."""
+    if doc.get("kind") == "Group":
+        # A group meeting holds its own meeting (100d-a §4).
+        activity = _activity(doc.oral_activity)
+        title = frappe.db.get_value("Course Schedule", doc.course_schedule, "title")
+        provider = (
+            frappe.db.get_value("Web Meeting Account", doc.meeting_account, "provider")
+            if doc.meeting_account
+            else None
+        )
+        return {
+            "name": doc.name,
+            "title": f"{title or doc.course_schedule}: {activity.title}"
+            + (f" ({doc.group_label})" if doc.group_label else ""),
+            "course_schedule": doc.course_schedule,
+            "meeting_url": doc.link,
+            "provider": provider,
+            "provider_meeting_id": doc.provider_meeting_id,
+            "start": _utc(doc.meeting_date, doc.from_time),
+            "end": _utc(doc.meeting_date, doc.to_time),
+            "bot_name": _("Seminary recorder (for assessment)"),
+        }
     row = _row(doc.meeting)
     cs = frappe.db.get_value(
         "Course Schedule", doc.course_schedule, ["title", "web_meeting"], as_dict=True
@@ -262,6 +283,7 @@ def schedule_capture(course, activity, meeting, capture_method):
             "course_schedule": course,
             "course_assess": scac,
             "oral_activity": activity,
+            "kind": "Whole class",
             "meeting": meeting,
             "meeting_date": row.cs_meetdate,
             "from_time": row.cs_fromtime,
@@ -282,6 +304,8 @@ def list_captures(course, activity):
         filters={"course_schedule": course, "oral_activity": activity},
         fields=[
             "name",
+            "kind",
+            "group_label",
             "meeting",
             "meeting_date",
             "from_time",
@@ -355,6 +379,9 @@ def rearm(name):
     if doc.capture_ref:
         disarm(doc.method, doc.capture_ref, _capture(doc))
         doc.db_set({"capture_ref": None, "status": "Scheduled"})
+    if doc.get("kind") == "Group":
+        arm(name)
+        return
     row = _row(doc.meeting)
     doc.db_set(
         {
@@ -562,8 +589,15 @@ def _suggest(doc, participants):
         if email:
             by_email[email.lower()] = student
     by_name = {}
+    expected = {m.student for m in doc.get("members") or []}
     for _user, student, name in roster:
         by_name.setdefault(_normal(name), []).append(student)
+    if expected:
+        # A group meeting expects its members: a name among them wins (100d-a §4).
+        for key, found in by_name.items():
+            mine = [s for s in found if s in expected]
+            if mine:
+                by_name[key] = mine
     doc.set("participants", [])
     for p in participants:
         email = (p.get("email") or "").strip().lower()
@@ -739,12 +773,15 @@ def attendance_suggestions(course_schedule, meeting):
 
 
 def captured_rows(course_schedule) -> set:
-    """Meeting rows recorded for assessment, for the notice (100d §5)."""
+    """Class meeting rows recorded for assessment, for the notice (100d §5).
+    Group meetings are not class meetings and never reach the shared feed."""
     return set(
         frappe.get_all(
             OAM,
             filters={
                 "course_schedule": course_schedule,
+                "kind": ["!=", "Group"],
+                "meeting": ["is", "set"],
                 "status": ["not in", ["Cancelled", "Failed"]],
             },
             pluck="meeting",
