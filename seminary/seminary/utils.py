@@ -910,6 +910,7 @@ def get_course_details(course):
             "calendar_token",
             "room",
             "web_meeting",
+            "school_meeting",
             "from_time",
             "to_time",
             "monday",

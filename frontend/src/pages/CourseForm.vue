@@ -136,6 +136,22 @@
 										<span v-if="m.cs_fromtime" class="text-ink-gray-5">
 											· {{ hhmm(m.cs_fromtime) }}–{{ hhmm(m.cs_totime) }}
 										</span>
+										<!-- School meeting accounts (decisions/051a) -->
+										<div v-if="m.cs_meeting_status === 'Pending'" class="text-xs text-ink-gray-5">
+											{{ __('Creating the meeting...') }}
+										</div>
+										<div v-else-if="m.cs_meeting_status === 'Failed'" class="text-xs text-ink-red-3">
+											{{ __('The meeting could not be created or changed: {0}').format(m.cs_meeting_error || '') }}
+											<Button size="sm" variant="ghost" class="ml-1" @click="retryMeetings()">
+												{{ __('Try again') }}
+											</Button>
+										</div>
+										<div v-if="m.cs_meeting_hosts" class="text-xs text-ink-gray-5">
+											{{ __('Alternative hosts: {0}').format(m.cs_meeting_hosts) }}
+										</div>
+										<div v-else-if="m.cs_host_key" class="text-xs text-ink-gray-5">
+											{{ __('Host key: {0} (to claim host in the meeting; never share it with students)').format(m.cs_host_key) }}
+										</div>
 									</div>
 									<div class="flex items-center gap-2 shrink-0">
 										<a v-if="m.cs_web_meeting || course.web_meeting"
@@ -207,7 +223,10 @@
 						<FormControl type="time" v-model="vForm.from_time" :label="__('From')" :required="true" />
 						<FormControl type="time" v-model="vForm.to_time" :label="__('To')" :required="true" />
 					</div>
-					<FormControl type="url" v-model="vForm.link" :label="__('Meeting Link')"
+					<p v-if="course.school_meeting" class="text-sm text-ink-gray-6">
+						{{ __('The meeting is created on one of the school\'s meeting accounts and its link filled in for you.') }}
+					</p>
+					<FormControl v-else type="url" v-model="vForm.link" :label="__('Meeting Link')"
 						:placeholder="__('https://zoom.us/j/...')"
 						:description="__('Leave blank to use the course Web Meeting Link above.')" />
 				</div>
@@ -327,6 +346,8 @@ const course = reactive({
 	image_zoom: 1,
 	published: false,
 	web_meeting: '',
+	// Set by the registrar on Desk: online meetings get school-account links (051a).
+	school_meeting: 0,
 	content_release_override: '',
 })
 
@@ -401,10 +422,21 @@ const addVirtualMeeting = async () => {
 		toast.success(__('Virtual meeting added to the calendar'))
 		showVirtualDialog.value = false
 		virtualMeetings.reload()
+		if (course.school_meeting) setTimeout(() => virtualMeetings.reload(), 4000)
 	} catch (e) {
 		toast.error(e?.messages?.[0] || e?.message || __('Could not add the meeting'))
 	} finally {
 		savingVirtual.value = false
+	}
+}
+
+const retryMeetings = async () => {
+	try {
+		await call('seminary.seminary.school_meetings.retry', { course_schedule: props.courseName })
+		toast.success(__('Trying again'))
+		setTimeout(() => virtualMeetings.reload(), 3000)
+	} catch (e) {
+		toast.error(e?.messages?.[0] || e?.message || __('Could not try again'))
 	}
 }
 

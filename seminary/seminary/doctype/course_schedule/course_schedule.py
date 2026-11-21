@@ -58,6 +58,10 @@ class CourseSchedule(Document):
         self._default_max_enrollment_from_room()
         self._validate_room_fit()
         self._log_room_change()
+        # School meeting accounts (decisions/051a): an account is a room.
+        from seminary.seminary import school_meetings
+
+        school_meetings.validate(self)
 
     def on_update(self):
         # Re-level attendance standings: the per-student Auto limit moves when
@@ -92,6 +96,10 @@ class CourseSchedule(Document):
         from seminary.seminary import gradebook_weights
 
         gradebook_weights.on_section_update(self)
+        # Create, move or delete the provider meetings after commit (decisions/051a §5).
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_update(self)
 
     def _scaffold_if_became_cbe(self):
         """A section whose course or scale changes so that it now resolves to a
@@ -466,6 +474,9 @@ class CourseSchedule(Document):
                     "Use Cancel Course to retire a course that has opened for enrollment."
                 )
             )
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_section_gone(self)
 
     def _resolve_dates_if_needed(self):
         from seminary.seminary.cs_lifecycle import resolve_window_dates
@@ -1058,6 +1069,10 @@ class CourseSchedule(Document):
 
         mark_waitlist_unseated(self.name)
         recount(self.name)
+        # A cancelled section's school meetings are deleted (decisions/051a §5).
+        from seminary.seminary import school_meetings
+
+        school_meetings.on_section_gone(self)
 
     @frappe.whitelist()
     def import_template(self, source_cs):

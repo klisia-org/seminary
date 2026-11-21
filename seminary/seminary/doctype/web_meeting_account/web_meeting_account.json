@@ -1,0 +1,117 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:label",
+ "creation": "2026-11-21 08:00:00.000000",
+ "description": "A licensed host on the school's meeting service, such as a Zoom user, that sections' online meetings are created under. Add one per licence; Max Concurrent says how many meetings it can run at once, and a section that would need more is refused when it is saved.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "provider",
+  "host_id",
+  "column_break_main",
+  "max_concurrent",
+  "enabled"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "label": "Label",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1,
+   "description": "A name staff recognise, e.g. Zoom licence 1."
+  },
+  {
+   "fieldname": "provider",
+   "fieldtype": "Autocomplete",
+   "label": "Provider",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "The meeting service, offered by an installed app."
+  },
+  {
+   "fieldname": "host_id",
+   "fieldtype": "Data",
+   "label": "Host",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "The provider's user that meetings are created under, e.g. the licensed Zoom user's email."
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_concurrent",
+   "fieldtype": "Int",
+   "label": "Max Concurrent",
+   "default": "1",
+   "non_negative": 1,
+   "in_list_view": 1,
+   "description": "How many of its meetings may overlap. A Zoom licence runs one, or two with the right add-on."
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 08:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Web Meeting Account",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Seminary Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "Registrar",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Program Chair",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "label",
+ "track_changes": 1
+}

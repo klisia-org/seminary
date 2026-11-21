@@ -985,6 +985,12 @@ def get_virtual_meetings(course_schedule):
             "cs_totime",
             "cs_web_meeting",
             "attendance",
+            # School meetings (decisions/051a): staff only, as this endpoint is.
+            "cs_meeting_account",
+            "cs_meeting_status",
+            "cs_meeting_error",
+            "cs_meeting_hosts",
+            "cs_host_key",
         ],
         order_by="cs_meetdate asc, cs_fromtime asc",
     )
@@ -1010,7 +1016,8 @@ def add_virtual_meeting(course_schedule, meeting_date, from_time, to_time, link=
             "cs_fromtime": from_time,
             "cs_totime": to_time,
             "cs_online": 1,
-            "cs_web_meeting": link or doc.web_meeting,
+            # A school meeting gets its link from the provider (decisions/051a).
+            "cs_web_meeting": None if doc.school_meeting else (link or doc.web_meeting),
         },
     )
     doc.hasmtgdate = 1

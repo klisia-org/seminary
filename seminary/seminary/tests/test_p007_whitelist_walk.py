@@ -293,6 +293,8 @@ STAFF_ONLY = {
     "seminary.seminary.oral_defense.save_question",
     "seminary.seminary.oral_defense.delete_question",
     "seminary.seminary.oral_defense.release",
+    "seminary.seminary.school_meetings.provider_names",
+    "seminary.seminary.school_meetings.retry",
     # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
     # group's roles (Registrar, Seminary Manager for "Seminary").
     "seminary.setup_progress.get_progress",
