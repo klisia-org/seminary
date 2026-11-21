@@ -37,7 +37,15 @@
   "graded_on",
   "comments_thread",
   "plagiarism_text",
-  "plagiarism_text_hash"
+  "plagiarism_text_hash",
+  "defense_section",
+  "defense_status",
+  "defense_opened_on",
+  "defense_due",
+  "column_break_defense",
+  "defense_started_on",
+  "defense_done_on",
+  "defense_late"
  ],
  "fields": [
   {
@@ -246,11 +254,65 @@
    "label": "Submitted On",
    "read_only": 1,
    "description": "When the student last turned in or changed this work."
+  },
+  {
+   "fieldname": "defense_section",
+   "fieldtype": "Section Break",
+   "label": "Oral Defense",
+   "collapsible": 1,
+   "depends_on": "eval:doc.defense_status"
+  },
+  {
+   "fieldname": "defense_status",
+   "fieldtype": "Select",
+   "label": "Defense",
+   "permlevel": 1,
+   "read_only": 1,
+   "options": "\nWaiting for Questions\nWaiting for Release\nOpen\nIn Progress\nDone"
+  },
+  {
+   "fieldname": "defense_opened_on",
+   "fieldtype": "Datetime",
+   "label": "Defense Opened On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "defense_due",
+   "fieldtype": "Datetime",
+   "label": "Defense Due",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_defense",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "defense_started_on",
+   "fieldtype": "Datetime",
+   "label": "Defense Started On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "defense_done_on",
+   "fieldtype": "Datetime",
+   "label": "Defense Done On",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "defense_late",
+   "fieldtype": "Duration",
+   "label": "Defense Lateness",
+   "permlevel": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-02 12:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Assignment Submission",

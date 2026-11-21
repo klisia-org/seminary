@@ -17,7 +17,16 @@
   "show_answer",
   "grade_assignment",
   "answer",
-  "rubric"
+  "rubric",
+  "defense_section",
+  "oral_defense",
+  "defense_questions",
+  "defense_answer_s",
+  "defense_follow_up",
+  "column_break_defense",
+  "defense_window",
+  "defense_review",
+  "defense_steps"
  ],
  "fields": [
   {
@@ -91,11 +100,76 @@
    "options": "Rubric",
    "read_only": 1,
    "description": "The current version of this activity's rubric. Set from the activity's page in the portal."
+  },
+  {
+   "fieldname": "defense_section",
+   "fieldtype": "Section Break",
+   "label": "Oral Defense",
+   "collapsible": 1,
+   "depends_on": "eval:['PDF','Document','Text'].includes(doc.type)"
+  },
+  {
+   "default": "0",
+   "fieldname": "oral_defense",
+   "fieldtype": "Check",
+   "label": "Oral Defense",
+   "description": "After submitting, the student answers a few questions about the paper aloud. Only for PDF, Document and Text assignments."
+  },
+  {
+   "default": "3",
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_questions",
+   "fieldtype": "Int",
+   "label": "Questions",
+   "non_negative": 1
+  },
+  {
+   "default": "120",
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_answer_s",
+   "fieldtype": "Int",
+   "label": "Seconds per Answer",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_follow_up",
+   "fieldtype": "Check",
+   "label": "Ask a Follow-up Question",
+   "description": "After each answer, one more question on what the student just said, when it can be written within 20 seconds."
+  },
+  {
+   "fieldname": "column_break_defense",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "259200",
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_window",
+   "fieldtype": "Duration",
+   "label": "Defense Due Within",
+   "description": "Counted from when the defense opens: an hour for a defense straight after the paper, or days for one taken later."
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_review",
+   "fieldtype": "Check",
+   "label": "Review Questions Before the Defense Opens",
+   "description": "The defense waits until you release its questions; the time to answer counts from then."
+  },
+  {
+   "depends_on": "eval:doc.oral_defense",
+   "fieldname": "defense_steps",
+   "fieldtype": "Small Text",
+   "label": "Processing Steps for Answers",
+   "description": "Steps run on each recorded answer, from those the school allows. Stored as a list."
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-10-30 12:00:00.000000",
+ "modified": "2026-11-21 12:00:00.000000",
  "modified_by": "murilomelodts@gmail.com",
  "module": "Seminary",
  "name": "Assignment Activity",

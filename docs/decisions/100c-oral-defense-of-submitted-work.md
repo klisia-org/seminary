@@ -16,8 +16,10 @@ from the paper itself do.
 ## Decision
 
 1. **`oral_defense` on Assignment Activity**, with `defense_questions` (default 3),
-   `defense_answer_s` (default 120) and `defense_follow_up` (check). Only for text-bearing types
-   (PDF, Document, Text), whose text is already extracted into `plagiarism_text`.
+   `defense_answer_s` (default 120), `defense_follow_up` (check), `defense_window` and
+   `defense_review` (§4).
+   Only for text-bearing types (PDF, Document, Text), whose text is already extracted into
+   `plagiarism_text`.
 2. **Questions are written when the paper is submitted.** The `questions` step reads the extracted
    text and the rubric and returns questions, each tied to a passage, with what a good answer would
    address. The student sees none of them in advance. The instructor may see, edit or replace them
@@ -26,9 +28,14 @@ from the paper itself do.
    timed recording, one take. With `defense_follow_up`, after each answer the `follow_up` step may
    ask one more question on what the student just said; if it returns none, or does not answer
    within 20 seconds, the defense moves on.
-4. **Due.** The defense opens on submission and is due `defense_due_days` (default 3) after it, or
-   the assignment's due date if later. A paper without its defense is *Incomplete*; 082's late
-   policy applies to the defense like any other part.
+4. **Due.** The defense opens when its questions are ready, not on submission: the paper's text
+   is extracted and the questions written first, which can take a minute or two, or the
+   instructor writes them by hand. The student is told it is open. It is due within
+   `defense_window`, a duration the instructor sets: an hour for a defense taken straight after
+   the paper, or days for one taken later (default 3 days). The window is counted from the moment
+   the defense opens; the assignment's due date does not extend it. With `defense_review`, the
+   defense opens only when the instructor releases its questions, and the window counts from then. A paper without its defense
+   is *Incomplete*; 082's late policy applies to the defense like any other part.
 5. **It is graded through the rubric.** A criterion may be flagged `from_defense`; the panel and
    moments read the defense transcript for it, the paper for the others. Schools that want the
    defense to weigh more give those criteria more weight (095 §3).

@@ -81,6 +81,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.oral",
     "seminary.seminary.oral_exams",
     "seminary.seminary.oral_activities",
+    "seminary.seminary.oral_defense",
     "seminary.seminary.doctype.academic_term.academic_term",
     "seminary.seminary.doctype.course.course",
     "seminary.seminary.doctype.course_competency.course_competency",
@@ -177,6 +178,13 @@ STUDENT_ALLOWED = {
     "seminary.seminary.oral_activities.my_state",
     "seminary.seminary.oral_activities.submit",
     "seminary.seminary.oral_activities.gradeable",
+    # Oral defense (decisions/100c): the student's own submission only, by
+    # member; a question is revealed only when asked. Covered by
+    # test_adr100c_oral_defense.
+    "seminary.seminary.oral_defense.my_defense",
+    "seminary.seminary.oral_defense.start",
+    "seminary.seminary.oral_defense.next_question",
+    "seminary.seminary.oral_defense.answer_in_writing",
     # SCORM (p009). All five are the student's own player talking about the
     # student's own launch. `launch` runs `require_enrolled` on the section --
     # the same gate every other course read uses -- and the other four take a
@@ -280,6 +288,11 @@ STAFF_ONLY = {
     "seminary.seminary.oral_activities.section_summary",
     "seminary.seminary.oral_activities.get_submission",
     "seminary.seminary.oral_activities.save_grade",
+    # decisions/100c: require_grader, then the submission's section staff.
+    "seminary.seminary.oral_defense.get_defense",
+    "seminary.seminary.oral_defense.save_question",
+    "seminary.seminary.oral_defense.delete_question",
+    "seminary.seminary.oral_defense.release",
     # Setup progress (privatedocs p024): `can_open` refuses anyone outside the
     # group's roles (Registrar, Seminary Manager for "Seminary").
     "seminary.setup_progress.get_progress",

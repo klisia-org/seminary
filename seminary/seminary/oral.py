@@ -78,6 +78,7 @@ REFERENCES: dict[str, str] = {
     # An oral activity on a section: the recording is made before any
     # submission exists, and submitting points every member's at it (100b).
     "Scheduled Course Assess Criteria": "seminary.seminary.oral_activities.resolve",
+    "Oral Defense Question": "seminary.seminary.oral_defense.resolve",  # 100c
 }
 
 MIME_EXTENSIONS = {
@@ -457,6 +458,8 @@ def _payload(doc, step, ctx):
         # do transcription and speaker labels in one job.
         "steps": _steps_of(doc),
         "expected_speakers": ctx.get("expected_speakers") or len(doc.participants),
+        # Someone is waiting on this result (a defense follow-up, 100c §3).
+        "urgent": bool(ctx.get("urgent")),
     }
     if step == "transcribe":
         return base

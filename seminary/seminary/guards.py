@@ -479,6 +479,7 @@ COURSE_FIELD = {
     "Student Due Date Override": "course_schedule",
     # Oral assessment (decisions/100).
     "Oral Recording": "course_schedule",
+    "Oral Defense Question": "course",
     "Oral Moment": "course_schedule",
     "Oral Step Result": "course_schedule",
 }

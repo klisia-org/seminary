@@ -364,6 +364,7 @@ permission_query_conditions = {
     "Student Attendance": "seminary.seminary.student_permissions.query_student_attendance",
     "Student Due Date Override": "seminary.seminary.student_permissions.query_student_due_date_override",
     "Oral Recording": "seminary.seminary.oral.get_permission_query_conditions",
+    "Oral Defense Question": "seminary.seminary.oral_defense.get_permission_query_conditions",
     "Oral Moment": "seminary.seminary.student_permissions.query_oral_moment",
     "Oral Step Result": "seminary.seminary.student_permissions.query_oral_step_result",
 }
@@ -426,6 +427,7 @@ has_permission = {
     "Student Attendance": "seminary.seminary.student_permissions.has_permission_student_attendance",
     "Student Due Date Override": "seminary.seminary.student_permissions.has_permission_student_due_date_override",
     "Oral Recording": "seminary.seminary.oral.has_permission",
+    "Oral Defense Question": "seminary.seminary.oral_defense.has_permission",
     "Oral Moment": "seminary.seminary.student_permissions.has_permission_oral_moment",
     "Oral Step Result": "seminary.seminary.student_permissions.has_permission_oral_step_result",
 }
@@ -556,6 +558,7 @@ doc_events = {
         "on_update": [
             "seminary.seminary.api.quizresult_to_card",
             "seminary.seminary.plagiarism.service.on_submission_update",
+            "seminary.seminary.oral_defense.on_submission_update",
         ],
     },
     "Exam Submission": {
@@ -735,7 +738,9 @@ plagiarism_providers = {
 # Oral assessment steps (decisions/100 §4). An app provides a step with
 # {"transcribe": "dotted.path", ...}; the path is called with
 # (recording, step, payload), returns at once and later calls
-# seminary.seminary.oral.step_done or step_failed. Seminary ships none.
+# seminary.seminary.oral.step_done or step_failed. "questions" and "follow_up"
+# (an oral defense, decisions/100c) are called directly, recording None for
+# questions, and return their result. Seminary ships none.
 # oral_steps = {}
 
 # Agreement fields from other apps (decisions/091 §7). Each dotted path is called
