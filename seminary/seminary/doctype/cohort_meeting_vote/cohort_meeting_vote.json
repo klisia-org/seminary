@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "meeting",
+  "option",
+  "person",
+  "answer",
+  "cohort"
+ ],
+ "fields": [
+  {
+   "fieldname": "meeting",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Meeting",
+   "options": "Cohort Meeting",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "option",
+   "fieldtype": "Data",
+   "label": "Option",
+   "reqd": 1,
+   "description": "The meeting's option row this answer is for."
+  },
+  {
+   "fieldname": "person",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Member",
+   "options": "Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Answer",
+   "options": "Yes\nIf need be\nNo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "label": "Cohort",
+   "options": "Cohort",
+   "fetch_from": "meeting.cohort",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Meeting Vote",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "COHORT-VOTE-.#####",
+ "naming_rule": "Expression",
+ "description": "A member's answer to one option of a meeting poll."
+}

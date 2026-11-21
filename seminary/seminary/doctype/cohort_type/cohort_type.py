@@ -90,7 +90,14 @@ def releases_on_archive(cohort_type):
     return not (row.category in PROGRAM_CATEGORIES and row.program)
 
 
+#: Reminder hours a new type starts with (decisions/101 section 4.5).
+DEFAULT_REMINDER_HOURS = (24, 1)
+
+
 class CohortType(Document):
+    def before_insert(self):
+        self.start_with_community_defaults()
+
     def validate(self):
         self.clear_fields_the_category_does_not_use()
         self.validate_binding()
@@ -99,6 +106,33 @@ class CohortType(Document):
         self.validate_graduation_target()
         self.validate_one_paced_type_per_program()
         self.validate_planning_settings()
+        self.validate_channels()
+
+    def start_with_community_defaults(self):
+        """A new type offers the default channels and reminds 24 and 1 hours
+        before a meeting (decisions/101 sections 1.2 and 4.5). Staff trim
+        either afterwards; an empty reminder table then means no reminders."""
+        if not self.get("channels"):
+            for channel in frappe.get_all(
+                "Cohort Channel",
+                filters={"enabled": 1, "is_default": 1},
+                pluck="name",
+                order_by="sort_order asc, channel_name asc",
+            ):
+                self.append("channels", {"channel": channel})
+        if not self.get("meeting_reminders"):
+            for hours in DEFAULT_REMINDER_HOURS:
+                self.append("meeting_reminders", {"hours_before": hours})
+
+    def validate_channels(self):
+        """A cohort with no channel has nowhere to post. Only asked once the
+        site has channels at all, so installing in any order still works."""
+        if any((r.hours_before or 0) < 0 for r in self.get("meeting_reminders") or []):
+            frappe.throw(_("Reminder hours cannot be negative."))
+        if self.get("channels") or frappe.flags.in_install or frappe.flags.in_patch:
+            return
+        if frappe.db.exists("Cohort Channel", {"enabled": 1}):
+            frappe.throw(_("Choose at least one channel for this cohort type."))
 
     def clear_fields_the_category_does_not_use(self):
         """A hidden field that still holds a value is a rule nobody can see.

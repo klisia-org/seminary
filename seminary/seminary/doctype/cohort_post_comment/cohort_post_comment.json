@@ -31,7 +31,8 @@
   "cohort",
   "visibility",
   "post_author",
-  "direct_recipient"
+  "direct_recipient",
+  "channel"
  ],
  "fields": [
   {
@@ -209,10 +210,18 @@
    "label": "Direct Recipient",
    "options": "Person",
    "read_only": 1
+  },
+  {
+   "fieldname": "channel",
+   "fieldtype": "Link",
+   "label": "Channel",
+   "options": "Cohort Channel",
+   "fetch_from": "post.channel",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-09-22 22:37:30.757198",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Post Comment",

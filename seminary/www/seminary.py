@@ -69,6 +69,9 @@ def get_boot_data():
     # same value (frappe/utils/safe_exec.py:363).
     boot["csrf_token"] = get_csrf_token()
     boot["sitename"] = frappe.local.site
+    # Server datetimes are naive in the site's zone; the portal needs the zone
+    # to show them in the viewer's own time ("2 hours ago", not "in 9 hours").
+    boot["site_time_zone"] = frappe.utils.get_system_timezone()
     # `sysdefaults` is NOT shipped (p005a A02-1, deferred from p006 F8 pending
     # this inventory). `frappe.defaults.get_defaults()` returned 92 keys into
     # `window.sysdefaults` on every page load, and nothing in `frontend/src`,

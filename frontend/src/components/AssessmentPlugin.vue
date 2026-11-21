@@ -4,7 +4,7 @@
 	}">
 		<template #body>
 			<button style="opacity: 0; position: absolute;">Fallback Focus</button>
-			<div class="p-5 space-y-4">
+			<div class="activity-picker p-5 space-y-4">
 				<div v-if="type == 'quiz'" class="text-lg font-semibold">
 					{{ __('Add a quiz to your lesson') }}
 				</div>
@@ -125,4 +125,17 @@ const redirectToForm = (close) => {
 	show.value = false
 	router.push({ name: target.name, params: { [target.param]: 'new' } })
 }
-</script>
+</script><style>
+/* This dialog opens on its own the moment an activity block lands in a lesson,
+   over a busy form. Portal themes give light-mode dialogs the page colour, and
+   the stock backdrop barely dims, so the form read through it. Dim harder and
+   edge the panel so the dialog stands apart. Unscoped: the dialog is teleported. */
+.dialog-overlay:has(.activity-picker) {
+	background-color: rgb(0 0 0 / 0.45);
+}
+
+.dialog-content:has(.activity-picker) {
+	border: 1px solid var(--outline-gray-2);
+	box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.45);
+}
+</style>

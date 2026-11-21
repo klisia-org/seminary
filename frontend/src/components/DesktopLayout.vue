@@ -1,5 +1,8 @@
 <template>
-	<div class="relative flex h-full flex-col">
+	<div class="relative isolate flex h-full flex-col">
+		<!-- `isolate`: the page's own stacking (sticky PageHeader z-10, sidebar z-20,
+		     help widget) stays below dialogs frappe-ui teleports to <body>. Toasts live
+		     outside this wrapper, so they still show over an open dialog. -->
 		<div class="h-full flex-1">
 			<div class="flex h-screen text-base bg-surface-white text-ink-gray-9">
 				<div class="relative h-full">

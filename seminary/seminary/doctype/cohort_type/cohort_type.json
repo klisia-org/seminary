@@ -37,7 +37,14 @@
   "allow_self_split",
   "column_break_policy",
   "default_visibility",
-  "default_max_size"
+  "default_max_size",
+  "community_section",
+  "channels",
+  "meetings_section",
+  "school_meeting_allowed",
+  "meetings_in_calendar_feed",
+  "column_break_meetings",
+  "meeting_reminders"
  ],
  "fields": [
   {
@@ -257,10 +264,51 @@
    "fieldtype": "Int",
    "label": "Default Max Size",
    "non_negative": 1
+  },
+  {
+   "fieldname": "community_section",
+   "fieldtype": "Section Break",
+   "label": "Community"
+  },
+  {
+   "fieldname": "channels",
+   "fieldtype": "Table MultiSelect",
+   "label": "Channels",
+   "options": "Cohort Type Channel",
+   "description": "The channels this type's cohorts post in. New types start with the default channels."
+  },
+  {
+   "fieldname": "meetings_section",
+   "fieldtype": "Section Break",
+   "label": "Meetings"
+  },
+  {
+   "fieldname": "school_meeting_allowed",
+   "fieldtype": "Check",
+   "label": "Meetings may use a school meeting account",
+   "description": "Leaders may have Seminary create the meeting link on one of the school's meeting accounts."
+  },
+  {
+   "fieldname": "meetings_in_calendar_feed",
+   "fieldtype": "Check",
+   "default": "1",
+   "label": "Cohorts have a calendar feed",
+   "description": "Members can subscribe to their cohort's meetings in their calendar."
+  },
+  {
+   "fieldname": "column_break_meetings",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "meeting_reminders",
+   "fieldtype": "Table",
+   "label": "Meeting reminders",
+   "options": "Cohort Type Meeting Reminder",
+   "description": "When members are reminded of a meeting. No rows: no reminders."
   }
  ],
  "links": [],
- "modified": "2026-10-02 20:00:00.000000",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Type",

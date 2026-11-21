@@ -46,8 +46,25 @@ export function createToast(options = {}) {
 
 // dayjs rather than VueUse's useTimeAgo, whose wording is English-only; dayjs carries the
 // user's locale (decision 071).
+// A server datetime ("2026-11-21 14:05:00") is naive in the site's zone, not
+// the browser's; parse it there so a viewer elsewhere sees their own time.
+// Values that carry a zone (ISO with Z or an offset) and Date objects pass
+// through unchanged.
+const NAIVE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/
+export function siteDate(value) {
+	const zone = typeof window !== 'undefined' ? window.site_time_zone : null
+	if (zone && typeof value === 'string' && NAIVE.test(value.trim())) {
+		try {
+			return dayjs.tz(value.trim().replace('T', ' '), zone)
+		} catch {
+			/* unknown zone: fall back to the browser's reading */
+		}
+	}
+	return dayjs(value)
+}
+
 export function timeAgo(date) {
-	return date ? dayjs(date).fromNow() : ''
+	return date ? siteDate(date).fromNow() : ''
 }
 
 export function formatTime(timeString) {

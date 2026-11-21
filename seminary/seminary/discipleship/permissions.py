@@ -116,6 +116,38 @@ def led_cohorts(user=None):
     return _descendants(live) if live else set()
 
 
+def my_channels(user=None):
+    """Channels offered by the types of the cohorts the user can see
+    (decisions/101 section 1.3). A *Whole community* post reaches a reader only
+    in these, so a faculty channel's posts never reach students whatever their
+    visibility."""
+    if not user:
+        user = frappe.session.user
+    cohorts = visible_cohorts(user)
+    channels = set()
+    if cohorts:
+        types = set(
+            frappe.get_all(
+                "Cohort",
+                filters={"name": ["in", list(cohorts)]},
+                pluck="cohort_type",
+            )
+        )
+        types.discard(None)
+        if types:
+            channels = set(
+                frappe.get_all(
+                    "Cohort Type Channel",
+                    filters={
+                        "parenttype": "Cohort Type",
+                        "parent": ["in", list(types)],
+                    },
+                    pluck="channel",
+                )
+            )
+    return channels
+
+
 def _in_clause(table, field, names):
     joined = ", ".join(frappe.db.escape(n) for n in names)
     return f"(`tab{table}`.`{field}` in ({joined}))"
@@ -185,7 +217,19 @@ def _visibility_clause(user, table, author_field, status_field=None, own_field=N
     person = find_person(user=user)
     me = frappe.db.escape(person) if person else None
     t = f"`tab{table}`"
-    parts = [f"{t}.`visibility` = 'portal_users'"]
+    parts = []
+    channels = my_channels(user)
+    if channels:
+        joined_ch = ", ".join(frappe.db.escape(c) for c in channels)
+        parts.append(
+            f"({t}.`visibility` = 'portal_users' AND {t}.`channel` in ({joined_ch}))"
+        )
+    if me:
+        # An author keeps their own post even after leaving the cohorts that
+        # offer its channel.
+        parts.append(
+            f"({t}.`visibility` = 'portal_users' AND {t}.`{author_field}` = {me})"
+        )
     cohorts = visible_cohorts(user)
     if cohorts:
         joined = ", ".join(frappe.db.escape(c) for c in cohorts)
@@ -211,7 +255,7 @@ def _visibility_clause(user, table, author_field, status_field=None, own_field=N
             f"({t}.`visibility` = 'direct' AND ({t}.`{author_field}` = {me} "
             f"OR {t}.`direct_recipient` = {me}))"
         )
-    clause = "(" + " OR ".join(parts) + ")"
+    clause = "(" + " OR ".join(parts) + ")" if parts else "1=0"
     # Drafts / blocked content are visible only to their own author.
     if status_field and own_field:
         allowed = "'published', 'pinned'" if status_field == "status" else "'published'"
@@ -232,7 +276,9 @@ def _visibility_has(doc, user, author_field, status_field=None, own_field=None):
         ):
             return False
     if vis == "portal_users":
-        return True
+        if person and doc.get(author_field) == person:
+            return True
+        return doc.get("channel") in my_channels(user)
     if vis == "cohort_only":
         return doc.get("cohort") in visible_cohorts(user)
     if vis == "mentors":
@@ -336,5 +382,54 @@ def flag_has(doc, ptype=None, user=None):
         user = frappe.session.user
     person = find_person(user=user)
     if person and doc.reporter == person:
+        return True
+    return doc.cohort in led_cohorts(user)
+
+
+# ---------------------------------------------------------------------------
+# Cohort Meeting / Cohort Meeting Vote (decisions/101 section 4): a meeting is
+# seen by the cohort's members and leaders; a vote by its voter and leaders.
+# ---------------------------------------------------------------------------
+def meeting_query(user=None):
+    if not _should_restrict(user):
+        return ""
+    names = visible_cohorts(user)
+    if not names:
+        return "1=0"
+    return _in_clause("Cohort Meeting", "cohort", names)
+
+
+def meeting_has(doc, ptype=None, user=None):
+    if not _should_restrict(user):
+        return True
+    return doc.cohort in visible_cohorts(user)
+
+
+def vote_query(user=None):
+    if not _should_restrict(user):
+        return ""
+    if not user:
+        user = frappe.session.user
+    person = find_person(user=user)
+    clauses = []
+    led = led_cohorts(user)
+    if led:
+        clauses.append(_in_clause("Cohort Meeting Vote", "cohort", led))
+    if person:
+        clauses.append(
+            f"(`tabCohort Meeting Vote`.`person` = {frappe.db.escape(person)})"
+        )
+    if not clauses:
+        return "1=0"
+    return "(" + " OR ".join(clauses) + ")"
+
+
+def vote_has(doc, ptype=None, user=None):
+    if not _should_restrict(user):
+        return True
+    if not user:
+        user = frappe.session.user
+    person = find_person(user=user)
+    if person and doc.person == person:
         return True
     return doc.cohort in led_cohorts(user)

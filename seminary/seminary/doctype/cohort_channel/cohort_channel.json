@@ -11,11 +11,12 @@
   "channel_name",
   "channel_kind",
   "enabled",
+  "is_default",
   "column_break_head",
-  "icon",
   "default_visibility",
   "sort_order",
-  "description"
+  "description",
+  "reactions"
  ],
  "fields": [
   {
@@ -49,12 +50,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "An emoji or icon name shown in the channel list.",
-   "fieldname": "icon",
-   "fieldtype": "Data",
-   "label": "Icon"
-  },
-  {
    "default": "cohort_only",
    "fieldname": "default_visibility",
    "fieldtype": "Select",
@@ -71,10 +66,24 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "label": "Description"
+  },
+  {
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "default": "1",
+   "label": "Default for new cohort types",
+   "description": "New cohort types start with this channel."
+  },
+  {
+   "fieldname": "reactions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Reactions",
+   "options": "Cohort Channel Reaction",
+   "description": "The reactions offered on this channel's posts and replies."
   }
  ],
  "links": [],
- "modified": "2026-09-22 22:37:30.492149",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Channel",

@@ -351,7 +351,7 @@ def _accounts():
 
 
 def _account_bookings(accounts, date_from, date_to, exclude=None):
-    """[(account, start, end)] from class meetings and group meetings."""
+    """[(account, start, end)] from class, group and cohort meetings."""
     if not accounts:
         return []
     out = []
@@ -382,6 +382,10 @@ def _account_bookings(accounts, date_from, date_to, exclude=None):
             out.append(
                 (m.meeting_account, *_interval(m.meeting_date, m.from_time, m.to_time))
             )
+    # Cohort meetings on a school account are rooms too (decisions/101 s. 4.4).
+    from seminary.seminary.discipleship.meetings import account_bookings
+
+    out.extend(account_bookings(accounts, date_from, date_to, exclude=exclude))
     return out
 
 

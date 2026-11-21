@@ -62,6 +62,7 @@ import { Breadcrumbs, Button, FormControl, call, createResource, toast } from 'f
 import { userLocale } from '@seminary/portal-shell'
 import { computed, ref } from 'vue'
 import SafeHtml from '@/components/SafeHtml.vue'
+import { htmlToText } from '@/utils'
 import OralPlayer from '@/components/OralPlayer.vue'
 import RubricGrading from '@/components/RubricGrading.vue'
 import CompetencyActivityGrading from '@/components/CompetencyActivityGrading.vue'
@@ -77,12 +78,6 @@ const comments = ref('')
 const gradeMode = ref(null)
 const rubricActive = ref(false)
 const saving = ref(false)
-
-const htmlToText = (html) => {
-	const div = document.createElement('div')
-	div.innerHTML = html || ''
-	return div.textContent || ''
-}
 
 const sub = createResource({
 	url: 'seminary.seminary.oral_activities.get_submission',
