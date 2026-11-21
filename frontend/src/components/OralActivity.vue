@@ -21,6 +21,9 @@
 			<router-link :to="{ name: 'OralActivityForm', params: { activityID: activity } }">
 				<Button>{{ __('Edit activity') }}</Button>
 			</router-link>
+			<router-link :to="{ name: 'CourseAssessment', params: { courseName } }">
+				<Button :variant="gradeable.data ? 'outline' : 'solid'">{{ __('Configure Assessments') }}</Button>
+			</router-link>
 		</div>
 
 		<!-- Student -->
