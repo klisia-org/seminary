@@ -72,6 +72,7 @@ REVIEWED_MODULES = (
     "seminary.seminary.dashboard_chart_source.students_per_current_courses.students_per_current_courses",
     "seminary.seminary.discipleship.api",
     "seminary.seminary.discipleship.feed_api",
+    "seminary.seminary.discipleship.meetings",
     "seminary.seminary.discipleship.moderation",
     "seminary.seminary.discipleship.planner",
     "seminary.seminary.discipleship.reading_plan_pack",
@@ -128,6 +129,9 @@ GUEST_ALLOWED = {
     # --- found by the widened walk (p008a G6); each verified in p005a §4.2 A06-6
     # token-gated (secrets.token_hex(32), compare_digest since p008a G3b); the token is the whole control
     "seminary.seminary.calendar.course_ics",
+    # decisions/101 §4.6: the same guard per cohort -- a token from
+    # secrets.token_urlsafe(24) under compare_digest, @rate_limit 120/3600s
+    "seminary.seminary.discipleship.meetings.cohort_ics",
     # inbound provider callback, shared secret under compare_digest
     "seminary.seminary.comms.webhook",
     # @rate_limit 60/60s ip_based; billable upstream
@@ -816,6 +820,10 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.api.set_cohort_status",
     # seminary.seminary.discipleship.feed_api
     "seminary.seminary.discipleship.feed_api.add_comment",
+    # decisions/101: counts over get_list, so the visibility clause applies;
+    # the summary is the caller's own cohorts.
+    "seminary.seminary.discipleship.feed_api.channel_counts",
+    "seminary.seminary.discipleship.feed_api.community_summary",
     "seminary.seminary.discipleship.feed_api.create_post",
     "seminary.seminary.discipleship.feed_api.delete_comment",
     "seminary.seminary.discipleship.feed_api.delete_post",
@@ -834,10 +842,24 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.discipleship.feed_api.reopen_prayer",
     "seminary.seminary.discipleship.feed_api.search_posts",
     "seminary.seminary.discipleship.feed_api.search_recipients",
+    # decisions/101 §5.6: counts over get_list; unreadable-only topics hidden.
+    "seminary.seminary.discipleship.feed_api.suggest_topics",
     "seminary.seminary.discipleship.feed_api.toggle_reaction",
     "seminary.seminary.discipleship.feed_api.toggle_save",
     "seminary.seminary.discipleship.feed_api.unlink_post",
     "seminary.seminary.discipleship.feed_api.unread_counts",
+    # seminary.seminary.discipleship.meetings (decisions/101 §4). Members read
+    # and vote; leaders poll, schedule, move, cancel and take attendance. Each
+    # checks membership or leadership itself; test_adr101_community covers it.
+    "seminary.seminary.discipleship.meetings.calendar_feed_url",
+    "seminary.seminary.discipleship.meetings.cancel_meeting",
+    "seminary.seminary.discipleship.meetings.choose_option",
+    "seminary.seminary.discipleship.meetings.cohort_meetings",
+    "seminary.seminary.discipleship.meetings.create_poll",
+    "seminary.seminary.discipleship.meetings.mark_attendance",
+    "seminary.seminary.discipleship.meetings.move_meeting",
+    "seminary.seminary.discipleship.meetings.schedule",
+    "seminary.seminary.discipleship.meetings.vote",
     # seminary.seminary.discipleship.moderation
     "seminary.seminary.discipleship.moderation.flag_content",
     "seminary.seminary.discipleship.moderation.resolve_flag",
@@ -871,6 +893,7 @@ G6_STUDENT_ALLOWED = {
     "seminary.seminary.requirements.sign_agreement",
     "seminary.seminary.requirements.upload_document",
     # seminary.seminary.discipleship.scripture
+    "seminary.seminary.discipleship.scripture.all_books",
     "seminary.seminary.discipleship.scripture.posts_in_range",
     "seminary.seminary.discipleship.scripture.scripture_books",
     "seminary.seminary.discipleship.scripture.scripture_chapters",

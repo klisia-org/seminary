@@ -1489,14 +1489,15 @@ def seed_cohort_reaction_types():
     seminary can add or rename reactions without them being clobbered."""
     if not frappe.db.exists("DocType", "Cohort Reaction Type"):
         return
-    # label, glyph, sort_order
+    # label, glyph, sort_order, saves_post (decisions/101 section 3: praying
+    # keeps the request in the person's Saved list)
     defaults = [
-        (_("Like"), "\U0001f44d", 1),
-        (_("Amen"), "\U0001f64c", 2),
-        (_("Pray"), "\U0001f64f", 3),
-        (_("Insightful"), "\U0001f4a1", 4),
+        (_("Like"), "\U0001f44d", 1, 0),
+        (_("Amen"), "\U0001f64c", 2, 0),
+        (_("Pray"), "\U0001f64f", 3, 1),
+        (_("Insightful"), "\U0001f4a1", 4, 0),
     ]
-    for label, glyph, order in defaults:
+    for label, glyph, order, saves in defaults:
         if not frappe.db.exists("Cohort Reaction Type", label):
             frappe.get_doc(
                 {
@@ -1505,6 +1506,7 @@ def seed_cohort_reaction_types():
                     "glyph": glyph,
                     "enabled": 1,
                     "sort_order": order,
+                    "saves_post": saves,
                 }
             ).insert(ignore_permissions=True)
 
@@ -1610,43 +1612,22 @@ def seed_cohort_channels():
     adds, renames, or disables channels from the desk without them reverting."""
     if not frappe.db.exists("DocType", "Cohort Channel"):
         return
-    # name, kind, icon, description
+    # name, kind, description
     defaults = [
-        (
-            "Sermon Lab",
-            "video_timestamp",
-            "\U0001f3a5",
-            _("Timestamped feedback on sermon videos."),
-        ),
+        ("Sermon Lab", "video_timestamp", _("Timestamped feedback on sermon videos.")),
         (
             "Exegetical Insight",
             "bible_passage",
-            "\U0001f4d6",
             _("Discussion anchored to Bible passages."),
         ),
-        ("Prayer", "prayer", "\U0001f64f", _("Prayer requests and answered prayers.")),
-        (
-            "Family Ministry",
-            "generic",
-            "\U0001f46a",
-            _("Family and marriage ministry."),
-        ),
-        ("Children's Ministry", "generic", "\U0001f9f8", _("Children's ministry.")),
-        (
-            "Discipleship",
-            "generic",
-            "\U0001f331",
-            _("Discipleship and spiritual growth."),
-        ),
-        ("Missions", "generic", "\U0001f30d", _("Missions and outreach.")),
-        (
-            "Personal Challenges",
-            "generic",
-            "\U0001f4aa",
-            _("Personal struggles and encouragement."),
-        ),
+        ("Prayer", "prayer", _("Prayer requests and answered prayers.")),
+        ("Family Ministry", "generic", _("Family and marriage ministry.")),
+        ("Children's Ministry", "generic", _("Children's ministry.")),
+        ("Discipleship", "generic", _("Discipleship and spiritual growth.")),
+        ("Missions", "generic", _("Missions and outreach.")),
+        ("Personal Challenges", "generic", _("Personal struggles and encouragement.")),
     ]
-    for i, (name, kind, icon, desc) in enumerate(defaults):
+    for i, (name, kind, desc) in enumerate(defaults):
         if not frappe.db.exists("Cohort Channel", name):
             frappe.get_doc(
                 {
@@ -1654,12 +1635,40 @@ def seed_cohort_channels():
                     "channel_name": name,
                     "channel_kind": kind,
                     "enabled": 1,
-                    "icon": icon,
+                    "is_default": 1,
                     "default_visibility": "cohort_only",
                     "sort_order": i,
                     "description": desc,
+                    "reactions": [
+                        {"reaction_type": r} for r in _channel_reactions(kind)
+                    ],
                 }
             ).insert(ignore_permissions=True)
+
+
+# The reactions that fit each kind of channel (decisions/101 section 2.1):
+# Insightful on a prayer request reads wrong; Pray on a sermon critique too.
+_REACTIONS_BY_KIND = {
+    "prayer": ("Pray", "Amen"),
+    "bible_passage": ("Insightful", "Like"),
+    "video_timestamp": ("Like", "Amen", "Insightful"),
+}
+
+
+def _channel_reactions(kind):
+    """Seeded reactions for a channel kind, as they exist on this site: a
+    renamed or deleted reaction is simply left out."""
+    labels = _REACTIONS_BY_KIND.get(kind)
+    rows = frappe.get_all(
+        "Cohort Reaction Type",
+        filters={"enabled": 1},
+        fields=["name", "label"],
+        order_by="sort_order asc",
+    )
+    if not labels:
+        return [r.name for r in rows]
+    wanted = {_(label) for label in labels} | set(labels)
+    return [r.name for r in rows if r.label in wanted or r.name in wanted]
 
 
 def create_program_chair_role():

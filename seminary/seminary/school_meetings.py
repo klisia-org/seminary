@@ -174,6 +174,10 @@ def _others_booked(cs, rows, accounts):
                 cs_meeting_account=m.meeting_account,
             )
         )
+    # So do cohort meetings on a school account (decisions/101 section 4.4).
+    from seminary.seminary.discipleship.meetings import class_rows
+
+    booked.extend(class_rows(accounts, {str(r.cs_meetdate) for r in rows}))
     return booked
 
 

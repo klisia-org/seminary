@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "starts_on",
+  "ends_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "starts_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Starts",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ends_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Ends",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Meeting Option",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

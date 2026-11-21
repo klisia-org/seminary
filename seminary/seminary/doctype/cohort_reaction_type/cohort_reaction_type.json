@@ -11,6 +11,7 @@
   "label",
   "glyph",
   "enabled",
+  "saves_post",
   "sort_order"
  ],
  "fields": [
@@ -42,10 +43,16 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Sort Order"
+  },
+  {
+   "fieldname": "saves_post",
+   "fieldtype": "Check",
+   "label": "Reacting also saves the post",
+   "description": "The post is saved for whoever reacts, and unsaved if they take the reaction back."
   }
  ],
  "links": [],
- "modified": "2026-07-22 12:00:00",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort Reaction Type",

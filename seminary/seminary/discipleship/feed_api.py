@@ -13,6 +13,7 @@ from seminary.seminary.person import find_person
 from seminary.seminary.discipleship.permissions import (
     STAFF_BYPASS,
     led_cohorts,
+    my_channels,
     post_has,
     visible_cohorts,
 )
@@ -35,6 +36,27 @@ def _my_person():
     if not person:
         frappe.throw(_("You need a linked Person record to use the community."))
     return person
+
+
+def cohort_channels(cohort):
+    """The channels a cohort offers: its type's (decisions/101 section 1)."""
+    cohort_type = frappe.db.get_value("Cohort", cohort, "cohort_type")
+    if not cohort_type:
+        return []
+    return frappe.get_all(
+        "Cohort Type Channel",
+        filters={"parenttype": "Cohort Type", "parent": cohort_type},
+        pluck="channel",
+        order_by="idx asc",
+    )
+
+
+def _require_channel(cohort, channel):
+    if channel not in cohort_channels(cohort):
+        frappe.throw(
+            _("{0} is not a channel of this cohort.").format(channel),
+            frappe.ValidationError,
+        )
 
 
 def _is_member(cohort, person):
@@ -66,6 +88,7 @@ def create_post(
     person = _my_person()
     if not _is_member(cohort, person) and not _is_staff():
         frappe.throw(_("Only cohort members can post here."), frappe.PermissionError)
+    _require_channel(cohort, channel)
     if not visibility:
         visibility = (
             frappe.db.get_value("Cohort", cohort, "visibility") or "cohort_only"
@@ -154,6 +177,7 @@ def list_feed(
     answered=None,
     visibility=None,
     saved_only=None,
+    mine=None,
 ):
     filters = {"status": ["in", ["published", "pinned"]]}
     # `cohort` omitted means the All-posts view: no cohort filter at all, so
@@ -178,6 +202,8 @@ def list_feed(
             else []
         )
         filters["name"] = ["in", saved or [""]]
+    if int(mine or 0):
+        filters["author"] = find_person(user=frappe.session.user) or ""
     if answered is not None and answered != "":
         # prayer channels split into an active list (0) and answered prayers (1)
         filters["prayer_answered"] = int(answered)
@@ -196,18 +222,21 @@ def list_feed(
 
 
 @frappe.whitelist()
-def search_posts(cohort, query, limit=30):
-    """Scoped search over one cohort's posts — title/content plus topic and
-    scripture-reference matches. Cohort-scoped (an indexed column) so it stays
-    fast; get_list applies the visibility permission clause."""
+def search_posts(query, cohort=None, limit=30):
+    """Search over one cohort's posts, or every post the caller may see —
+    title/content plus topic and scripture-reference matches. get_list
+    applies the visibility permission clause."""
     query = (query or "").strip()
     if len(query) < 2:
         return []
     like = f"%{query}%"
+    scope = {"status": ["in", ["published", "pinned"]]}
+    if cohort:
+        scope["cohort"] = cohort
     names = set(
         frappe.get_list(
             "Cohort Post",
-            filters={"cohort": cohort, "status": ["in", ["published", "pinned"]]},
+            filters=scope,
             or_filters=[["title", "like", like], ["content", "like", like]],
             pluck="name",
             page_length=int(limit),
@@ -235,17 +264,59 @@ def search_posts(cohort, query, limit=30):
         return []
     posts = frappe.get_list(
         "Cohort Post",
-        filters={
-            "name": ["in", list(names)],
-            "cohort": cohort,
-            "status": ["in", ["published", "pinned"]],
-        },
+        filters={"name": ["in", list(names)], **scope},
         fields=_FEED_FIELDS,
         order_by="creation desc",
         page_length=int(limit),
     )
     _decorate_posts(posts)
     return posts
+
+
+@frappe.whitelist()
+def suggest_topics(query, limit=8):
+    """Existing topics matching `query`, each with how many posts the caller
+    can read use it (decisions/101 section 5.6). A topic only on posts the
+    caller cannot read is not offered: its name alone may say too much."""
+    query = (query or "").strip().lstrip("#").strip()
+    if not query:
+        return []
+    topics = frappe.get_all(
+        "Cohort Post Topic",
+        filters={"topic_name": ["like", f"%{query}%"]},
+        pluck="name",
+        limit=100,
+    )
+    if not topics:
+        return []
+    links = frappe.get_all(
+        "Cohort Post Topic Link",
+        filters={"topic": ["in", topics], "parenttype": "Cohort Post"},
+        fields=["parent", "topic"],
+    )
+    if not links:
+        return []
+    readable = set(
+        frappe.get_list(
+            "Cohort Post",
+            filters={
+                "name": ["in", list({link.parent for link in links})],
+                "status": ["in", ["published", "pinned"]],
+            },
+            pluck="name",
+            limit_page_length=0,
+        )
+    )
+    counts = {}
+    for link in links:
+        if link.parent in readable:
+            counts[link.topic] = counts.get(link.topic, 0) + 1
+    q = query.lower()
+    ranked = sorted(
+        counts.items(),
+        key=lambda kv: (not kv[0].lower().startswith(q), -kv[1], kv[0].lower()),
+    )
+    return [{"topic": t, "posts": n} for t, n in ranked[: int(limit)]]
 
 
 @frappe.whitelist()
@@ -420,9 +491,24 @@ def toggle_reaction(reaction_type, post=None, comment=None):
         fields=["name", "comment"],
     )
     existing = next((r.name for r in rows if (r.comment or None) == target), None)
+    # decisions/101 section 3: a reaction that saves (Pray) keeps the post in
+    # the person's Saved list. Only a post-level reaction does; taking it back
+    # removes only the save it made. Neither touches the post itself.
+    saves = not target and frappe.db.get_value(
+        "Cohort Reaction Type", reaction_type, "saves_post"
+    )
     if existing:
         frappe.delete_doc("Cohort Post Reaction", existing, ignore_permissions=True)
-        return {"reacted": False}
+        if saves:
+            made = frappe.db.exists(
+                "Cohort Post Save", {"person": person, "post": post, "via_reaction": 1}
+            )
+            if made:
+                frappe.delete_doc("Cohort Post Save", made, ignore_permissions=True)
+        return {"reacted": False, "saved": _is_saved(person, post)}
+    allowed = channel_reactions(post_doc.channel)
+    if allowed and reaction_type not in allowed:
+        frappe.throw(_("That reaction is not offered in this channel."))
     frappe.get_doc(
         {
             "doctype": "Cohort Post Reaction",
@@ -432,7 +518,33 @@ def toggle_reaction(reaction_type, post=None, comment=None):
             "reaction_type": reaction_type,
         }
     ).insert(ignore_permissions=True)
-    return {"reacted": True}
+    if saves and not _is_saved(person, post):
+        frappe.get_doc(
+            {
+                "doctype": "Cohort Post Save",
+                "person": person,
+                "post": post,
+                "via_reaction": 1,
+            }
+        ).insert(ignore_permissions=True)
+    return {"reacted": True, "saved": _is_saved(person, post)}
+
+
+def _is_saved(person, post):
+    return bool(frappe.db.exists("Cohort Post Save", {"person": person, "post": post}))
+
+
+def channel_reactions(channel):
+    """The reactions a channel offers (decisions/101 section 2). Empty means
+    the channel was never given a list, and every enabled reaction applies."""
+    if not channel:
+        return []
+    return frappe.get_all(
+        "Cohort Channel Reaction",
+        filters={"parenttype": "Cohort Channel", "parent": channel},
+        pluck="reaction_type",
+        order_by="idx asc",
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -550,11 +662,82 @@ def mark_prayer_answered(post, note=None):
     """Move a prayer request into Answered prayers, with an optional testimony."""
     _require_author_or_staff(post)
     doc = frappe.get_doc("Cohort Post", post)
+    was_answered = doc.prayer_answered
     doc.prayer_answered = 1
     if note:
         doc.prayer_answer_note = note
     doc.save(ignore_permissions=True)
+    if not was_answered:
+        frappe.enqueue(
+            "seminary.seminary.discipleship.feed_api.tell_praying_partners",
+            post=doc.name,
+            queue="short",
+            enqueue_after_commit=True,
+            now=bool(frappe.flags.in_test),
+        )
     return doc.name
+
+
+def praying_partners(post):
+    """People who reacted to the post with a reaction that saves it (Pray),
+    saved or not since, who can still read it (decisions/101 section 3.4)."""
+    doc = frappe.get_doc("Cohort Post", post)
+    saving = frappe.get_all(
+        "Cohort Reaction Type", filters={"saves_post": 1}, pluck="name"
+    )
+    if not saving:
+        return []
+    people = set(
+        frappe.get_all(
+            "Cohort Post Reaction",
+            filters={
+                "post": post,
+                "reaction_type": ["in", saving],
+                "comment": ["is", "not set"],
+            },
+            pluck="person",
+        )
+    )
+    people.discard(doc.author)
+    out = []
+    for person in sorted(people):
+        user = frappe.db.get_value("Person", person, "user")
+        # Someone with no account cannot have reacted, but a Person can lose
+        # their user; without one there is no reader to check, so skip.
+        if user and post_has(doc, user=user):
+            out.append(person)
+    return out
+
+
+def tell_praying_partners(post):
+    from seminary.seminary import comms
+
+    doc = frappe.get_doc("Cohort Post", post)
+    author = frappe.db.get_value("Person", doc.author, "full_name") or ""
+    title = doc.title or _("a prayer request")
+    subject = _("{0}'s prayer was answered").format(author)
+    message = _("<p>{0} marked “{1}” answered.</p>").format(
+        frappe.utils.escape_html(author), frappe.utils.escape_html(title)
+    )
+    if doc.prayer_answer_note:
+        message += "<blockquote>{0}</blockquote>".format(
+            frappe.utils.escape_html(doc.prayer_answer_note)
+        )
+    for person in praying_partners(post):
+        for channel in ("In-App", "Email"):
+            try:
+                comms.send_message(
+                    channel=channel,
+                    subject=subject,
+                    message=message,
+                    person=person,
+                    category="Community",
+                    reference_doctype="Cohort Post",
+                    reference_name=doc.name,
+                    dedupe_key=f"prayer-answered:{doc.name}:{person}:{channel}",
+                )
+            except Exception:
+                frappe.log_error(title=f"Answered prayer notice failed: {post}")
 
 
 @frappe.whitelist()
@@ -738,16 +921,32 @@ def my_cohorts_list():
         fields=["cohort", "is_leader", "role"],
     ):
         c = frappe.db.get_value(
-            "Cohort", r.cohort, ["cohort_name", "status", "visibility"], as_dict=True
+            "Cohort",
+            r.cohort,
+            ["cohort_name", "status", "visibility", "cohort_type"],
+            as_dict=True,
         )
         if c and c.status == "Active":
+            kind = (
+                frappe.db.get_value(
+                    "Cohort Type",
+                    c.cohort_type,
+                    ["school_meeting_allowed", "meetings_in_calendar_feed"],
+                    as_dict=True,
+                )
+                if c.cohort_type
+                else None
+            ) or {}
             out.append(
                 {
                     "name": r.cohort,
                     "cohort_name": c.cohort_name,
+                    "cohort_type": c.cohort_type,
                     "is_leader": r.is_leader,
                     "role": r.role,
                     "visibility": c.visibility,
+                    "school_meeting_allowed": kind.get("school_meeting_allowed") or 0,
+                    "calendar_feed": kind.get("meetings_in_calendar_feed") or 0,
                 }
             )
     return out
@@ -815,13 +1014,30 @@ def search_recipients(query, limit=10):
 
 
 @frappe.whitelist()
-def list_channels():
-    return frappe.get_all(
+def list_channels(cohort=None):
+    """The channels on offer (decisions/101 section 1): one cohort's, or
+    those of every cohort the caller can see. Staff in no cohort see all.
+    Each carries the reactions it offers (section 2)."""
+    if cohort:
+        if not (_is_staff() or cohort in visible_cohorts()):
+            frappe.throw(_("You cannot see this cohort."), frappe.PermissionError)
+        offered = set(cohort_channels(cohort))
+    else:
+        offered = my_channels()
+        if not offered and _is_staff():
+            offered = None
+    filters = {"enabled": 1}
+    if offered is not None:
+        filters["name"] = ["in", list(offered) or [""]]
+    rows = frappe.get_all(
         "Cohort Channel",
-        filters={"enabled": 1},
-        fields=["name", "channel_name", "channel_kind", "icon"],
+        filters=filters,
+        fields=["name", "channel_name", "channel_kind", "description"],
         order_by="sort_order asc, channel_name asc",
     )
+    for r in rows:
+        r["reactions"] = channel_reactions(r.name)
+    return rows
 
 
 @frappe.whitelist()
@@ -829,9 +1045,51 @@ def list_reaction_types():
     return frappe.get_all(
         "Cohort Reaction Type",
         filters={"enabled": 1},
-        fields=["name", "label", "glyph"],
+        fields=["name", "label", "glyph", "saves_post"],
         order_by="sort_order asc",
     )
+
+
+@frappe.whitelist()
+def channel_counts(cohort=None):
+    """Visible published posts per channel, for the rail."""
+    filters = {"status": ["in", ["published", "pinned"]]}
+    if cohort:
+        filters["cohort"] = cohort
+    out = {}
+    for channel in frappe.get_list("Cohort Post", filters=filters, pluck="channel"):
+        out[channel] = out.get(channel, 0) + 1
+    return out
+
+
+@frappe.whitelist()
+def community_summary():
+    """The rail and the header: each cohort with its type, size and new posts,
+    and when the caller last read anything (decisions/101 section 5)."""
+    person = _my_person()
+    cohorts = my_cohorts_list()
+    names = [c["name"] for c in cohorts]
+    sizes = {}
+    if names:
+        for cohort in frappe.get_all(
+            "Cohort Membership",
+            filters={"cohort": ["in", names], "active": 1},
+            pluck="cohort",
+        ):
+            sizes[cohort] = sizes.get(cohort, 0) + 1
+    total = 0
+    for c in cohorts:
+        c["members"] = sizes.get(c["name"], 0)
+        c["new"] = sum(unread_counts(c["name"]).values())
+        total += c["new"]
+    last = frappe.get_all(
+        "Cohort Feed Read State",
+        filters={"person": person},
+        pluck="last_seen",
+        order_by="last_seen desc",
+        limit=1,
+    )
+    return {"cohorts": cohorts, "new": total, "since": last[0] if last else None}
 
 
 # --------------------------------------------------------------------------- #
@@ -969,11 +1227,26 @@ def _attach_reactions(rows, target):
         if target == "post" and r.comment:
             continue
         bucket = summary.setdefault(
-            (r.get(field), r.reaction_type), {"count": 0, "mine": False}
+            (r.get(field), r.reaction_type), {"count": 0, "mine": False, "people": []}
         )
         bucket["count"] += 1
+        bucket["people"].append(r.person)
         if person and r.person == person:
             bucket["mine"] = True
+    # Who reacted, by name, for the hover list (decisions/101 section 2.2).
+    everyone = {p for v in summary.values() for p in v["people"]}
+    names = (
+        {
+            p.name: p.full_name
+            for p in frappe.get_all(
+                "Person",
+                filters={"name": ["in", list(everyone)]},
+                fields=["name", "full_name"],
+            )
+        }
+        if everyone
+        else {}
+    )
     for row in rows:
         row["reactions"] = [
             {
@@ -981,6 +1254,7 @@ def _attach_reactions(rows, target):
                 "glyph": glyphs.get(rt),
                 "count": v["count"],
                 "mine": v["mine"],
+                "people": [names.get(p) or p for p in v["people"][:20]],
             }
             for (tid, rt), v in summary.items()
             if tid == row["name"]

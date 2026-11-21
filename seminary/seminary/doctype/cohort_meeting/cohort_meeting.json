@@ -1,0 +1,277 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "cohort",
+  "title",
+  "status",
+  "column_break_head",
+  "mode",
+  "series",
+  "when_section",
+  "starts_on",
+  "column_break_when",
+  "ends_on",
+  "poll_section",
+  "poll_closes_on",
+  "poll_reminded",
+  "poll_close_notified",
+  "options",
+  "place_section",
+  "link",
+  "location",
+  "column_break_place",
+  "school_meeting",
+  "meeting_account",
+  "meeting_status",
+  "meeting_error",
+  "provider_meeting_id",
+  "host_key",
+  "attendance_section",
+  "attendance"
+ ],
+ "fields": [
+  {
+   "fieldname": "cohort",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cohort",
+   "options": "Cohort",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Polling\nScheduled\nCancelled",
+   "default": "Scheduled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "Virtual\nIn person",
+   "default": "Virtual",
+   "reqd": 1
+  },
+  {
+   "fieldname": "series",
+   "fieldtype": "Data",
+   "label": "Series",
+   "read_only": 1,
+   "description": "Meetings scheduled together as a repeating series share this."
+  },
+  {
+   "fieldname": "when_section",
+   "fieldtype": "Section Break",
+   "label": "When"
+  },
+  {
+   "fieldname": "starts_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Starts",
+   "search_index": 1,
+   "mandatory_depends_on": "eval:doc.status=='Scheduled'"
+  },
+  {
+   "fieldname": "column_break_when",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ends_on",
+   "fieldtype": "Datetime",
+   "label": "Ends",
+   "mandatory_depends_on": "eval:doc.status=='Scheduled'"
+  },
+  {
+   "fieldname": "poll_section",
+   "fieldtype": "Section Break",
+   "label": "Poll",
+   "depends_on": "eval:doc.options && doc.options.length"
+  },
+  {
+   "fieldname": "poll_closes_on",
+   "fieldtype": "Datetime",
+   "label": "Poll closes",
+   "mandatory_depends_on": "eval:doc.status=='Polling'"
+  },
+  {
+   "fieldname": "poll_reminded",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Non-voters reminded",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "poll_close_notified",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Leader told the poll closed",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "options",
+   "fieldtype": "Table",
+   "label": "Options",
+   "options": "Cohort Meeting Option"
+  },
+  {
+   "fieldname": "place_section",
+   "fieldtype": "Section Break",
+   "label": "Where"
+  },
+  {
+   "fieldname": "link",
+   "fieldtype": "Data",
+   "label": "Link",
+   "options": "URL",
+   "depends_on": "eval:doc.mode=='Virtual'"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Small Text",
+   "label": "Location",
+   "depends_on": "eval:doc.mode=='In person'"
+  },
+  {
+   "fieldname": "column_break_place",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "school_meeting",
+   "fieldtype": "Check",
+   "label": "Use a school meeting account",
+   "depends_on": "eval:doc.mode=='Virtual'"
+  },
+  {
+   "fieldname": "meeting_account",
+   "fieldtype": "Link",
+   "label": "Meeting account",
+   "options": "Web Meeting Account",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "school_meeting"
+  },
+  {
+   "fieldname": "meeting_status",
+   "fieldtype": "Select",
+   "label": "Meeting status",
+   "options": "\nPending\nCreated\nFailed",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "school_meeting"
+  },
+  {
+   "fieldname": "meeting_error",
+   "fieldtype": "Small Text",
+   "label": "Meeting error",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "meeting_error"
+  },
+  {
+   "fieldname": "provider_meeting_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Provider meeting",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "host_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Host key",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "attendance_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance",
+   "depends_on": "eval:doc.status=='Scheduled'"
+  },
+  {
+   "fieldname": "attendance",
+   "fieldtype": "Table",
+   "label": "Attendance",
+   "options": "Cohort Meeting Attendance"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Meeting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Seminary Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Program Chair",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  },
+  {
+   "read": 1,
+   "role": "Alumni"
+  },
+  {
+   "read": 1,
+   "role": "Cohort Participant"
+  },
+  {
+   "read": 1,
+   "role": "Instructor"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "COHORT-MTG-.#####",
+ "naming_rule": "Expression",
+ "title_field": "title",
+ "description": "A meeting of a cohort: polled with its members, or set by its leader.",
+ "track_changes": 1
+}

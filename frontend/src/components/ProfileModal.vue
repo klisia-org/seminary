@@ -321,7 +321,7 @@
 </template>
 
 <script setup>
-import { Dialog, Avatar, FeatherIcon, FileUploader, createResource } from 'frappe-ui'
+import { Dialog, Avatar, FeatherIcon, FileUploader, createResource, toast } from 'frappe-ui'
 import { ref, computed, watch, watchEffect } from 'vue'
 import { validateFileSize } from '@/utils'
 import { usersStore } from '../stores/user'
@@ -453,7 +453,9 @@ const saveStudentResource = createResource({
 		}
 	},
 	onError(err) {
-		console.error(err.messages?.[0] || err)
+		// Said, not just logged: a refused save used to leave the dialog
+		// looking as if Save did nothing.
+		toast.error(err.messages?.[0] || __('Could not save your profile.'))
 	},
 })
 
@@ -506,7 +508,7 @@ const saveInstructorResource = createResource({
 		}
 	},
 	onError(err) {
-		console.error(err.messages?.[0] || err)
+		toast.error(err.messages?.[0] || __('Could not save your profile.'))
 	},
 })
 

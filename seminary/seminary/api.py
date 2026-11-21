@@ -1265,18 +1265,20 @@ def save_student_profile(
     The address columns it wrote no longer exist on Student at all (ADR 068
     phase 4); the mailing address has lived on the Person since ADR 046.
     """
-    from seminary.seminary.person import update_person
+    from seminary.seminary.person import find_person, update_person
 
-    student = frappe.db.get_value(
-        "Student", {"user": frappe.session.user}, ["name", "person"], as_dict=True
-    )
-    if not student:
-        frappe.throw(_("Student record not found"))
-    if not student.person:
-        frappe.throw(_("This student is not linked to a person record yet."))
+    # Every field here lives on the Person, so a user with the Student role but
+    # no Student record of their own -- staff, a pastor -- still has somewhere
+    # to save it. Before, they got "Student record not found" and a dialog that
+    # silently did nothing.
+    person = frappe.db.get_value(
+        "Student", {"user": frappe.session.user}, "person"
+    ) or find_person(user=frappe.session.user)
+    if not person:
+        frappe.throw(_("Your account is not linked to a person record yet."))
 
     update_person(
-        student.person,
+        person,
         mobile=mobile,
         address_line_1=address_line_1,
         address_line_2=address_line_2,
@@ -1293,7 +1295,7 @@ def save_student_profile(
     )
     row = frappe.db.get_value(
         "Person",
-        student.person,
+        person,
         [
             "primary_mobile",
             "address_line_1",
@@ -5307,7 +5309,30 @@ def get_student_info():
     )
 
     if not student_list:
-        return None
+        # The Student role without a Student record (staff, an invited
+        # pastor): show the Person, so the profile form opens filled in and a
+        # save cannot blank what is already on file.
+        from seminary.seminary.person import find_person
+
+        person = find_person(user=email)
+        if not person:
+            return None
+        p = frappe.db.get_value(
+            "Person",
+            person,
+            ["full_name", "primary_email", "primary_mobile", "image", "gender"],
+            as_dict=True,
+        )
+        info = {
+            "person": person,
+            "student_name": p.full_name,
+            "student_email_id": p.primary_email,
+            "student_mobile_number": p.primary_mobile,
+            "image": p.image,
+            "gender": p.gender,
+        }
+        info.update(_spine_details(person))
+        return info
 
     student_info = student_list[0]
 

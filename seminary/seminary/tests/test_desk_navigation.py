@@ -40,6 +40,9 @@ PORTAL_ONLY = {
     "Cohort Post Comment",
     "Cohort Post Reaction",
     "Cohort Post Save",
+    # Polled, scheduled and attended in the Community (decisions/101).
+    "Cohort Meeting",
+    "Cohort Meeting Vote",
     "Competency Assessment",
     "Competency Result",
     "Course Activity",

@@ -1,79 +1,97 @@
 <template>
-	<PageHeader :title="__('Community')">
+	<PageHeader>
+		<template #title>
+			<div class="min-w-0">
+				<h1 class="truncate text-xl font-bold text-ink-gray-8">{{ __('Community') }}</h1>
+				<p class="truncate text-sm text-ink-gray-5">
+					{{ scopeLabel }}<template v-if="newCount"> · <b class="text-ink-gray-8">{{ __('{0} new').format(newCount) }}</b> {{ sinceLabel }}</template>
+				</p>
+			</div>
+		</template>
 		<template #actions>
-					<select v-if="cohorts.length" v-model="selectedCohort"
-						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
-						<!-- One scope control, not two: "" is every post I may see --
-						     portal-wide from anywhere, plus my own cohorts' -- which
-						     is exactly what an unfiltered feed already returns. -->
-						<option value="">{{ __('All posts') }}</option>
-						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
-					</select>
-					<button v-if="cohorts.length > 1 && selectedCohort"
-						:title="defaultCohort === selectedCohort ? __('Default cohort (click to clear)') : __('Save as default cohort')"
-						@click="setDefaultCohort">
-						<Star class="h-4 w-4"
-							:class="defaultCohort === selectedCohort ? 'fill-current text-ink-amber-2' : 'text-ink-gray-5 hover:text-ink-gray-8'" />
-					</button>
-					<Button v-if="canModerate" variant="subtle" :title="__('Message leaders')" @click="openBroadcast">
-						<template #prefix><Megaphone class="h-4 w-4" /></template>
-					</Button>
-					<Button v-if="selectedCohort" variant="subtle" :title="__('My cohort')" @click="openMembers">
-						<template #prefix><UsersRound class="h-4 w-4" /></template>
-					</Button>
-					<Button v-if="canModerate" variant="subtle" :title="__('Moderation queue')" @click="openModeration">
-						<template #prefix><Shield class="h-4 w-4" /></template>
-					</Button>
-					<Button v-if="cohorts.length" variant="solid" :label="__('New post')" @click="openCompose">
-						<template #prefix><SquarePen class="h-4 w-4" /></template>
-					</Button>
+			<Button v-if="canModerate" :label="__('Announce')" @click="openBroadcast" />
+			<Button v-if="canModerate"
+				:label="openFlags ? __('Moderation · {0}').format(openFlags) : __('Moderation')"
+				@click="openModeration" />
+			<Button v-if="cohorts.length" variant="solid" :label="__('New post')" @click="openCompose">
+				<template #prefix><Plus class="h-4 w-4" /></template>
+			</Button>
 		</template>
 	</PageHeader>
 
-	<div class="mx-auto flex h-full w-full max-w-5xl gap-4 px-4 py-6">
-		<!-- Bible tree (left) -->
-		<aside v-if="cohorts.length && bibleTree.data?.length"
-			class="hidden w-56 shrink-0 flex-col overflow-y-auto md:flex">
-			<div class="mb-2 flex items-center gap-1 text-sm font-semibold text-ink-gray-8">
-				<BookOpen class="h-4 w-4" />{{ __('Scripture') }}
-			</div>
-			<div v-if="passageFilter" class="mb-2 flex items-center gap-1 rounded bg-surface-gray-2 px-2 py-1 text-xs text-ink-gray-7">
-				<span class="truncate">{{ passageLabel }}</span>
-				<button class="ml-auto" @click="clearPassage"><X class="h-3 w-3" /></button>
-			</div>
-			<ul class="flex flex-col gap-0.5 text-sm">
-				<li v-for="b in bibleTree.data" :key="b.osis">
-					<button class="flex w-full items-center gap-1 rounded px-1.5 py-1 hover:bg-surface-gray-2"
-						@click="toggleBook(b)">
-						<component :is="expandedBook === b.osis ? ChevronDown : ChevronRight" class="h-3 w-3 text-ink-gray-4" />
-						<span class="truncate text-ink-gray-8">{{ b.name }}</span>
-						<span class="ml-auto text-xs text-ink-gray-5">{{ b.count }}</span>
-					</button>
-					<ul v-if="expandedBook === b.osis" class="ml-3 flex flex-col gap-0.5">
-						<li v-for="c in chapters" :key="c.chapter">
-							<button class="flex w-full items-center gap-1 rounded px-1.5 py-0.5 hover:bg-surface-gray-2"
-								@click="toggleChapter(b, c)">
-								<component :is="expandedChapter === c.chapter ? ChevronDown : ChevronRight" class="h-3 w-3 text-ink-gray-4" />
-								<span class="text-ink-gray-7">{{ b.name }} {{ c.chapter }}</span>
-								<span class="ml-auto text-xs text-ink-gray-5">{{ c.count }}</span>
+	<div class="mx-auto flex h-full w-full max-w-6xl gap-6 px-4 py-6">
+		<!-- Rail: cohorts, then channels (decisions/101 section 5.1) -->
+		<aside v-if="cohorts.length" class="hidden w-64 shrink-0 md:block">
+			<div class="sticky top-20 flex flex-col gap-6">
+				<section>
+					<h2 class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Cohorts') }}</h2>
+					<div class="flex flex-col gap-1">
+						<button type="button" class="flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left"
+							:class="selectedCohort === '' ? 'border-outline-gray-2 bg-surface-white shadow-sm' : 'border-transparent hover:bg-surface-gray-2'"
+							@click="selectedCohort = ''">
+							<span class="h-2.5 w-2.5 shrink-0 rounded-sm bg-surface-gray-7"></span>
+							<span class="min-w-0 flex-1">
+								<span class="block truncate text-sm font-medium text-ink-gray-9">{{ __('All my cohorts') }}</span>
+								<span class="block truncate text-xs text-ink-gray-5">
+									{{ cohorts.length === 1 ? __('1 cohort') : __('{0} cohorts').format(cohorts.length) }}
+								</span>
+							</span>
+							<span v-if="totalNew" class="rounded-full bg-surface-gray-7 px-1.5 text-xs text-ink-white">{{ totalNew }}</span>
+						</button>
+						<div v-for="(c, i) in cohorts" :key="c.name">
+							<button type="button" class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left"
+								:class="selectedCohort === c.name ? 'border-outline-gray-2 bg-surface-white shadow-sm' : 'border-transparent hover:bg-surface-gray-2'"
+								@click="selectedCohort = c.name">
+								<span class="h-2.5 w-2.5 shrink-0 rounded-sm" :style="{ background: dotColor(i) }"></span>
+								<span class="min-w-0 flex-1">
+									<span class="block truncate text-sm font-medium text-ink-gray-9">{{ c.cohort_name }}</span>
+									<span class="block truncate text-xs text-ink-gray-5">
+										{{ [c.cohort_type, c.members === 1 ? __('1 member') : __('{0} members').format(c.members || 0)].filter(Boolean).join(' · ') }}
+									</span>
+								</span>
+								<span v-if="c.new" class="rounded-full bg-surface-gray-7 px-1.5 text-xs text-ink-white">{{ c.new }}</span>
 							</button>
-							<ul v-if="expandedChapter === c.chapter" class="ml-4 flex flex-col gap-0.5">
-								<li v-for="v in verses" :key="v.verse">
-									<button class="flex w-full items-center rounded px-1.5 py-0.5 text-xs hover:bg-surface-gray-2"
-										@click="selectVerse(b, c, v)">
-										<span class="text-ink-gray-6">{{ b.name }} {{ c.chapter }}:{{ v.verse }}</span>
-										<span class="ml-auto text-ink-gray-5">{{ v.count }}</span>
-									</button>
-								</li>
-							</ul>
-						</li>
-					</ul>
-				</li>
-			</ul>
+							<div v-if="selectedCohort === c.name" class="mt-1 flex gap-3 pl-8 text-xs">
+								<button type="button" class="text-ink-gray-6 hover:text-ink-gray-9" @click="openMembers">{{ __('Members') }}</button>
+								<button type="button" class="text-ink-gray-6 hover:text-ink-gray-9" @click="meetingsRef?.openList()">{{ __('Meetings') }}</button>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<section>
+					<h2 class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-ink-gray-5">{{ __('Channels') }}</h2>
+					<div class="flex flex-col gap-0.5">
+						<button type="button" class="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-left text-sm"
+							:class="channelFilter === '' ? 'border-outline-gray-2 bg-surface-white font-medium text-ink-gray-9 shadow-sm' : 'border-transparent text-ink-gray-7 hover:bg-surface-gray-2'"
+							@click="setChannel('')">
+							<span class="flex-1">{{ __('All channels') }}</span>
+						</button>
+						<button v-for="ch in channels" :key="ch.name" type="button"
+							class="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-left text-sm"
+							:class="channelFilter === ch.name ? 'border-outline-gray-2 bg-surface-white font-medium text-ink-gray-9 shadow-sm' : 'border-transparent text-ink-gray-7 hover:bg-surface-gray-2'"
+							@click="setChannel(ch.name)">
+							<span class="flex-1 truncate">{{ ch.channel_name }}</span>
+							<span v-if="unread[ch.name]" class="rounded-full bg-surface-gray-7 px-1.5 text-xs text-ink-white">{{ unread[ch.name] }}</span>
+							<span v-else-if="channelCounts[ch.name]" class="text-xs text-ink-gray-5">{{ channelCounts[ch.name] }}</span>
+						</button>
+					</div>
+				</section>
+			</div>
 		</aside>
 
 		<div class="flex min-w-0 flex-1 flex-col">
-		<!-- pending invitations banner -->
+			<!-- Phones: the rail folds into selectors above the feed (section 5.5). -->
+			<div v-if="cohorts.length" class="mb-3 flex flex-wrap gap-2 md:hidden">
+				<select v-model="selectedCohort"
+					class="min-w-0 flex-1 rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
+					<option value="">{{ __('All my cohorts') }}</option>
+					<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
+				</select>
+				<Button v-if="selectedCohort" :label="__('Members')" @click="openMembers" />
+			</div>
+
+			<!-- pending invitations banner -->
 			<div v-if="pendingRes.data?.length" class="mb-4 flex flex-col gap-2">
 				<div v-for="inv in pendingRes.data" :key="inv.membership"
 					class="flex flex-wrap items-center gap-3 rounded-md border border-outline-gray-3 bg-surface-gray-1 px-3 py-2 text-sm">
@@ -90,167 +108,189 @@
 
 			<div v-if="!cohorts.length && !pendingRes.data?.length && !feed.data?.length"
 				class="mt-16 text-center text-ink-gray-5">
-			{{ __('You are not part of any cohort yet.') }}
-		</div>
-
-		<template v-else>
-			<!-- search -->
-			<div class="mb-3 flex items-center gap-2 rounded-md border border-outline-gray-2 bg-surface-white px-2">
-				<Search class="h-4 w-4 text-ink-gray-4" />
-				<input v-model="searchQuery" type="text" :placeholder="__('Search posts, topics, passages…')"
-					class="w-full bg-transparent py-1.5 text-sm text-ink-gray-8 focus:outline-none" />
-				<button v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
-			</div>
-			<div v-if="searchActive" class="mb-3 flex items-center gap-2 text-xs text-ink-gray-5">
-				<span v-if="searchRes.loading">{{ __('Searching…') }}</span>
-				<span v-else>{{ __('{0} result(s)').format(posts.length) }}</span>
+				{{ __('You are not part of any cohort yet.') }}
 			</div>
 
-			<!-- channel filter -->
-			<div v-show="!searchActive" class="mb-4 flex flex-wrap gap-2">
-				<button
-					class="rounded-full border px-3 py-1 text-sm"
-					:class="channelFilter === '' ? 'border-outline-gray-3 bg-surface-gray-3 text-ink-gray-9' : 'border-outline-gray-2 text-ink-gray-6'"
-					@click="setChannel('')">{{ __('All') }}</button>
-				<button v-for="ch in channels" :key="ch.name"
-					class="rounded-full border px-3 py-1 text-sm"
-					:class="channelFilter === ch.name ? 'border-outline-gray-3 bg-surface-gray-3 text-ink-gray-9' : 'border-outline-gray-2 text-ink-gray-6'"
-					@click="setChannel(ch.name)">
-					<span v-if="ch.icon" class="mr-1">{{ ch.icon }}</span>{{ ch.channel_name }}
-					<span v-if="unread[ch.name]" class="ml-1 rounded-full bg-surface-gray-4 px-1.5 text-xs">{{ unread[ch.name] }}</span>
-				</button>
-			</div>
+			<template v-else>
+				<CohortMeetings v-if="selectedCohort" ref="meetingsRef" :key="selectedCohort"
+					:cohort="selectedCohort" :cohort-name="selectedCohortName" />
 
-			<div class="mb-3 flex items-center gap-2 text-sm text-ink-gray-6">
-				<label class="flex items-center gap-1">
-					<input type="checkbox" v-model="savedOnly" class="rounded" @change="refresh" />
-					<Bookmark class="h-3.5 w-3.5" />{{ __('Saved') }}
-				</label>
-			</div>
+				<!-- One filter row: search, passage, channel, view (section 5.3) -->
+				<div class="mb-3 flex flex-wrap items-center gap-2">
+					<div class="flex min-w-[12rem] flex-1 items-center gap-2 rounded-md border border-outline-gray-2 bg-surface-white px-2">
+						<Search class="h-4 w-4 text-ink-gray-4" />
+						<input v-model="searchQuery" type="text" :placeholder="__('Search posts or people')"
+							class="w-full border-0 bg-transparent px-0 py-1.5 text-sm text-ink-gray-8 shadow-none focus:outline-none focus:ring-0" />
+						<button v-if="searchQuery" @click="searchQuery = ''"><X class="h-4 w-4 text-ink-gray-4" /></button>
+					</div>
+					<CommunityPassagePicker v-model="passageFilter" :cohort="selectedCohort" />
+					<select v-model="channelFilter"
+						class="rounded-md border px-2 py-1.5 text-sm"
+						:class="channelFilter ? 'border-outline-gray-4 bg-surface-gray-3 text-ink-gray-9' : 'border-outline-gray-2 bg-surface-white text-ink-gray-7'">
+						<option value="">{{ __('Channel: all') }}</option>
+						<option v-for="ch in channels" :key="ch.name" :value="ch.name">{{ __('Channel: {0}').format(ch.channel_name) }}</option>
+					</select>
+					<div class="flex rounded-md bg-surface-gray-2 p-0.5 text-sm">
+						<button v-for="v in views" :key="v.value" type="button" class="rounded px-3 py-1"
+							:class="view === v.value ? 'bg-surface-white font-medium text-ink-gray-9 shadow-sm' : 'text-ink-gray-6 hover:text-ink-gray-8'"
+							@click="view = v.value">{{ v.label }}</button>
+					</div>
+				</div>
 
-			<!-- prayer: active vs answered -->
-			<div v-if="isPrayerChannel" class="mb-3 flex gap-2 text-sm">
-				<button class="rounded-md px-3 py-1"
-					:class="prayerView === 'active' ? 'bg-surface-gray-3 text-ink-gray-9' : 'text-ink-gray-6'"
-					@click="setPrayerView('active')">{{ __('Active') }}</button>
-				<button class="rounded-md px-3 py-1"
-					:class="prayerView === 'answered' ? 'bg-surface-gray-3 text-ink-gray-9' : 'text-ink-gray-6'"
-					@click="setPrayerView('answered')">{{ __('Answered') }}</button>
-			</div>
+				<div v-if="searchActive" class="mb-3 text-sm text-ink-gray-6">
+					<span v-if="searchRes.loading">{{ __('Searching…') }}</span>
+					<span v-else>{{ posts.length === 1 ? __('1 result') : __('{0} results').format(posts.length) }}</span>
+				</div>
+				<div v-else-if="passageFilter || channelFilter" class="mb-3 text-sm text-ink-gray-6">
+					<b class="text-ink-gray-9">{{ posts.length === 1 ? __('1 post') : __('{0} posts').format(posts.length) }}</b>
+					<span v-if="channelFilter"> {{ __('in {0}').format(channelName(channelFilter)) }}</span>
+					<span v-if="passageFilter"> {{ __('about {0}').format(passageFilter.label) }}</span>
+				</div>
 
-			<!-- feed -->
-			<div class="flex flex-col gap-4">
-				<div v-if="feed.loading" class="py-10 text-center text-ink-gray-5">{{ __('Loading…') }}</div>
-				<div v-else-if="!posts.length" class="py-10 text-center text-ink-gray-5">{{ __('No posts yet. Be the first to share.') }}</div>
+				<!-- prayer: active vs answered -->
+				<div v-if="isPrayerChannel && view !== 'saved'" class="mb-3 flex gap-2 text-sm">
+					<button class="rounded-md px-3 py-1"
+						:class="prayerView === 'active' ? 'bg-surface-gray-3 text-ink-gray-9' : 'text-ink-gray-6'"
+						@click="setPrayerView('active')">{{ __('Active') }}</button>
+					<button class="rounded-md px-3 py-1"
+						:class="prayerView === 'answered' ? 'bg-surface-gray-3 text-ink-gray-9' : 'text-ink-gray-6'"
+						@click="setPrayerView('answered')">{{ __('Answered') }}</button>
+				</div>
 
-				<template v-for="(post, i) in posts" :key="post.name">
-				<article class="rounded-lg border border-outline-gray-2 bg-surface-white p-4">
-					<header class="mb-2 flex items-center justify-between">
-						<div class="flex items-center gap-2 text-sm">
-							<span class="font-medium text-ink-gray-9">{{ post.author_name || post.author }}</span>
-							<template v-if="post.on_behalf_of">
-								<a v-if="post.on_behalf_of.route" :href="post.on_behalf_of.route"
-									class="text-ink-gray-7 underline-offset-2 hover:underline">· {{ post.on_behalf_of.label }}</a>
-								<span v-else class="text-ink-gray-7">· {{ post.on_behalf_of.label }}</span>
+				<!-- feed -->
+				<div class="flex flex-col gap-4">
+					<div v-if="feed.loading && !posts.length" class="py-10 text-center text-ink-gray-5">{{ __('Loading…') }}</div>
+					<div v-else-if="!posts.length" class="py-10 text-center text-ink-gray-5">
+						{{ view === 'saved' ? __('Nothing saved yet.') : view === 'mine' ? __('You have not posted yet.') : __('No posts yet. Be the first to share.') }}
+					</div>
+
+					<template v-for="section in sections" :key="section.key">
+					<h3 v-if="section.label && section.posts.length" class="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-gray-5">
+						{{ section.label }}
+					</h3>
+					<template v-for="(post, i) in section.posts" :key="post.name">
+					<article class="rounded-xl border border-outline-gray-2 bg-surface-white p-5">
+						<header class="mb-2 flex items-center justify-between gap-2">
+							<div class="flex min-w-0 items-center gap-2 text-sm">
+								<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-gray-2 text-xs font-semibold text-ink-gray-7">
+									{{ initials(post.author_name || post.author) }}
+								</span>
+								<span class="truncate font-medium text-ink-gray-9">{{ post.author_name || post.author }}</span>
+								<template v-if="post.on_behalf_of">
+									<a v-if="post.on_behalf_of.route" :href="post.on_behalf_of.route"
+										class="text-ink-gray-7 underline-offset-2 hover:underline">· {{ post.on_behalf_of.label }}</a>
+									<span v-else class="text-ink-gray-7">· {{ post.on_behalf_of.label }}</span>
+								</template>
+								<span v-if="post.author_membership === 'outside'"
+									class="rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">{{ __('guest') }}</span>
+								<component :is="visIcon(post.visibility)" class="h-3.5 w-3.5 shrink-0 text-ink-gray-5" />
+								<span class="whitespace-nowrap text-ink-gray-5">· {{ timeAgo(post.creation) }}</span>
+							</div>
+							<div class="flex shrink-0 items-center gap-2">
+								<span v-if="post.new_comments" class="rounded-full bg-surface-red-5 px-1.5 py-0.5 text-xs text-ink-white">
+									{{ post.new_comments }} {{ __('new') }}
+								</span>
+								<span v-if="post.prayer_answered" class="flex items-center gap-1 rounded bg-surface-gray-2 px-2 py-0.5 text-xs text-ink-gray-7">
+									<Check class="h-3.5 w-3.5" />{{ __('Answered') }}
+								</span>
+								<span v-if="post.status === 'pinned'" class="flex items-center gap-1 text-xs text-ink-gray-5">
+									<Pin class="h-3.5 w-3.5" />{{ __('Pinned') }}
+								</span>
+								<span class="hidden rounded-md bg-surface-gray-2 px-2 py-0.5 text-xs text-ink-gray-7 sm:inline">{{ channelName(post.channel) }}</span>
+							</div>
+						</header>
+
+						<h2 v-if="post.title" class="mb-1 text-lg font-semibold text-ink-gray-9">{{ post.title }}</h2>
+						<SafeHtml class="prose-sm max-w-none text-ink-gray-8" :html="post.content" />
+
+						<!-- prayer testimony -->
+						<div v-if="post.prayer_answered && post.prayer_answer_note"
+							class="mt-2 rounded-md border-l-2 border-outline-gray-3 bg-surface-gray-1 p-2 text-sm text-ink-gray-7">
+							<span class="font-medium">{{ __('Answered') }}<span v-if="post.prayer_answered_on"> · {{ post.prayer_answered_on }}</span>:</span>
+							{{ post.prayer_answer_note }}
+						</div>
+
+						<!-- tags -->
+						<div v-if="post.topics?.length || (post.scripture?.length && post.channel_kind !== 'bible_passage')" class="mt-2 flex flex-wrap gap-1.5">
+							<span v-for="t in post.topics" :key="'t' + t"
+								class="rounded border border-outline-gray-2 px-2 py-0.5 text-xs text-ink-gray-6">#{{ t }}</span>
+							<template v-if="post.channel_kind !== 'bible_passage'">
+								<button v-for="s in post.scripture" :key="'s' + s.resolved_ref"
+									class="flex items-center gap-1 rounded border border-outline-gray-2 px-2 py-0.5 text-xs text-ink-gray-7 hover:bg-surface-gray-2"
+									@click="openPassage(s)">
+									<BookOpen class="h-3 w-3" />{{ s.display }}
+								</button>
 							</template>
-							<span v-if="post.author_membership === 'outside'"
-								class="rounded bg-surface-gray-2 px-1.5 py-0.5 text-xs text-ink-gray-6">{{ __('guest') }}</span>
-							<component :is="visIcon(post.visibility)" class="h-3.5 w-3.5 text-ink-gray-5" />
-							<span class="text-ink-gray-5">· {{ timeAgo(post.creation) }}</span>
 						</div>
-						<div class="flex items-center gap-2">
-							<span v-if="post.new_comments" class="rounded-full bg-surface-red-5 px-1.5 py-0.5 text-xs text-ink-white">
-								{{ post.new_comments }} {{ __('new') }}
-							</span>
-							<span v-if="post.prayer_answered" class="flex items-center gap-1 rounded bg-surface-gray-2 px-2 py-0.5 text-xs text-ink-gray-7">
-								<Check class="h-3.5 w-3.5" />{{ __('Answered') }}
-							</span>
-							<span v-if="post.status === 'pinned'" class="flex items-center gap-1 text-xs text-ink-gray-5">
-								<Pin class="h-3.5 w-3.5" />{{ __('Pinned') }}
-							</span>
+
+						<!-- sermon lab: video + timestamped comments -->
+						<SermonLabPlayer v-if="post.channel_kind === 'video_timestamp' && post.video_url"
+							:post-name="post.name" :video-url="post.video_url" :can-comment="true" />
+
+						<!-- exegetical: the passage folds behind "Show passage" (section 5.4) -->
+						<template v-else-if="post.channel_kind === 'bible_passage' && post.scripture?.length">
+							<div class="mt-3 flex items-center gap-2 rounded-lg border border-outline-gray-2 bg-surface-gray-1 px-3 py-2 text-sm">
+								<BookOpen class="h-4 w-4 shrink-0 text-ink-gray-6" />
+								<span class="min-w-0 flex-1 truncate font-medium text-ink-gray-8">{{ post.scripture.map((s) => s.display).join('; ') }}</span>
+								<button type="button" class="whitespace-nowrap text-ink-gray-7 hover:text-ink-gray-9" @click="toggleReader(post)">
+									{{ openReaders[post.name] ? __('Hide passage') : __('Show passage') }}
+								</button>
+							</div>
+							<ExegeticalReader v-if="openReaders[post.name]"
+								:post-name="post.name" :scripture="post.scripture" :can-comment="true" />
+						</template>
+
+						<!-- reactions: the post's channel's own, with counts -->
+						<div class="mt-3 flex flex-wrap items-center gap-1.5">
+							<button v-for="rt in reactionsFor(post)" :key="rt.name"
+								class="flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm"
+								:class="reactionMine(post, rt.name) ? 'border-outline-gray-4 bg-surface-gray-2' : 'border-outline-gray-2'"
+								:title="reactionTitle(post, rt)"
+								@click="react(post, rt.name)">
+								<span>{{ rt.glyph }}</span>
+								<span v-if="reactionCount(post, rt.name)" class="text-xs text-ink-gray-6">{{ reactionCount(post, rt.name) }}</span>
+							</button>
+							<button v-if="!['video_timestamp', 'bible_passage'].includes(post.channel_kind)"
+								class="ml-2 flex items-center gap-1 text-sm text-ink-gray-6" @click="toggleThread(post)">
+								<MessageCircle class="h-4 w-4" />{{ post.comment_count || 0 }}
+							</button>
+							<button v-if="post.channel_kind === 'prayer' && post.is_mine && !post.prayer_answered"
+								class="ml-2 text-sm text-ink-gray-6 hover:text-ink-gray-9" @click="openAnswer(post)">
+								{{ __('Mark answered') }}
+							</button>
+							<button v-if="post.channel_kind === 'prayer' && post.is_mine && post.prayer_answered"
+								class="ml-2 text-sm text-ink-gray-6 hover:text-ink-gray-9" @click="reopen(post)">
+								{{ __('Reopen') }}
+							</button>
+							<button class="ml-auto text-ink-gray-4 hover:text-ink-gray-7"
+								:title="post.saved ? __('Unsave') : __('Save')" @click="toggleSave(post)">
+								<component :is="post.saved ? BookmarkCheck : Bookmark" class="h-3.5 w-3.5"
+									:class="post.saved ? 'text-ink-gray-8' : ''" />
+							</button>
+							<button class="text-ink-gray-4 hover:text-ink-gray-7" :title="__('Report')"
+								@click="openReport('Cohort Post', post.name)">
+								<Flag class="h-3.5 w-3.5" />
+							</button>
+							<template v-if="canModerate">
+								<button class="text-ink-gray-5 hover:text-ink-gray-9"
+									:title="post.status === 'pinned' ? __('Unpin') : __('Pin')"
+									@click="moderatePost(post, post.status === 'pinned' ? 'published' : 'pinned')">
+									<Pin class="h-3.5 w-3.5" />
+								</button>
+								<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Block')"
+									@click="moderatePost(post, 'blocked')">
+									<Ban class="h-3.5 w-3.5" />
+								</button>
+							</template>
+							<template v-if="post.is_mine">
+								<button class="text-ink-gray-5 hover:text-ink-gray-9" :title="__('Edit')" @click="openEdit(post)">
+									<Pencil class="h-3.5 w-3.5" />
+								</button>
+								<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Delete')" @click="confirmDelete(post)">
+									<Trash2 class="h-3.5 w-3.5" />
+								</button>
+							</template>
 						</div>
-					</header>
-
-					<h2 v-if="post.title" class="mb-1 font-semibold text-ink-gray-9">{{ post.title }}</h2>
-					<SafeHtml class="prose-sm max-w-none text-ink-gray-8" :html="post.content" />
-
-					<!-- prayer testimony -->
-					<div v-if="post.prayer_answered && post.prayer_answer_note"
-						class="mt-2 rounded-md border-l-2 border-outline-gray-3 bg-surface-gray-1 p-2 text-sm text-ink-gray-7">
-						<span class="font-medium">{{ __('Answered') }}<span v-if="post.prayer_answered_on"> · {{ post.prayer_answered_on }}</span>:</span>
-						{{ post.prayer_answer_note }}
-					</div>
-
-					<!-- tags -->
-					<div v-if="post.topics?.length || post.scripture?.length" class="mt-2 flex flex-wrap gap-1.5">
-						<span v-for="t in post.topics" :key="'t' + t"
-							class="rounded border border-outline-gray-2 px-2 py-0.5 text-xs text-ink-gray-6">#{{ t }}</span>
-						<button v-for="s in post.scripture" :key="'s' + s.resolved_ref"
-							class="flex items-center gap-1 rounded border border-outline-gray-2 px-2 py-0.5 text-xs text-ink-gray-7 hover:bg-surface-gray-2"
-							@click="openPassage(s)">
-							<BookOpen class="h-3 w-3" />{{ s.display }}
-						</button>
-					</div>
-
-					<!-- sermon lab: video + timestamped comments -->
-					<SermonLabPlayer v-if="post.channel_kind === 'video_timestamp' && post.video_url"
-						:post-name="post.name" :video-url="post.video_url" :can-comment="true" />
-
-					<!-- exegetical: passage reader + verse-anchored comments -->
-					<ExegeticalReader v-else-if="post.channel_kind === 'bible_passage' && post.scripture?.length"
-						:post-name="post.name" :scripture="post.scripture" :can-comment="true" />
-
-					<!-- reactions -->
-					<div class="mt-3 flex flex-wrap items-center gap-1.5">
-						<button v-for="rt in reactionTypes" :key="rt.name"
-							class="flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm"
-							:class="reactionMine(post, rt.name) ? 'border-outline-gray-4 bg-surface-gray-2' : 'border-outline-gray-2'"
-							@click="react(post, rt.name)">
-							<span>{{ rt.glyph }}</span>
-							<span v-if="reactionCount(post, rt.name)" class="text-xs text-ink-gray-6">{{ reactionCount(post, rt.name) }}</span>
-						</button>
-						<button v-if="!['video_timestamp', 'bible_passage'].includes(post.channel_kind)"
-							class="ml-2 flex items-center gap-1 text-sm text-ink-gray-6" @click="toggleThread(post)">
-							<MessageCircle class="h-4 w-4" />{{ post.comment_count || 0 }}
-						</button>
-						<button v-if="post.channel_kind === 'prayer' && post.is_mine && !post.prayer_answered"
-							class="ml-2 text-sm text-ink-gray-6 hover:text-ink-gray-9" @click="openAnswer(post)">
-							{{ __('Mark answered') }}
-						</button>
-						<button v-if="post.channel_kind === 'prayer' && post.is_mine && post.prayer_answered"
-							class="ml-2 text-sm text-ink-gray-6 hover:text-ink-gray-9" @click="reopen(post)">
-							{{ __('Reopen') }}
-						</button>
-						<button class="ml-auto text-ink-gray-4 hover:text-ink-gray-7"
-							:title="post.saved ? __('Unsave') : __('Save')" @click="toggleSave(post)">
-							<component :is="post.saved ? BookmarkCheck : Bookmark" class="h-3.5 w-3.5"
-								:class="post.saved ? 'text-ink-gray-8' : ''" />
-						</button>
-						<button class="text-ink-gray-4 hover:text-ink-gray-7" :title="__('Report')"
-							@click="openReport('Cohort Post', post.name)">
-							<Flag class="h-3.5 w-3.5" />
-						</button>
-						<template v-if="canModerate">
-							<button class="text-ink-gray-5 hover:text-ink-gray-9"
-								:title="post.status === 'pinned' ? __('Unpin') : __('Pin')"
-								@click="moderatePost(post, post.status === 'pinned' ? 'published' : 'pinned')">
-								<Pin class="h-3.5 w-3.5" />
-							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Block')"
-								@click="moderatePost(post, 'blocked')">
-								<Ban class="h-3.5 w-3.5" />
-							</button>
-						</template>
-						<template v-if="post.is_mine">
-							<button class="text-ink-gray-5 hover:text-ink-gray-9" :title="__('Edit')" @click="openEdit(post)">
-								<Pencil class="h-3.5 w-3.5" />
-							</button>
-							<button class="text-ink-gray-5 hover:text-ink-red-4" :title="__('Delete')" @click="confirmDelete(post)">
-								<Trash2 class="h-3.5 w-3.5" />
-							</button>
-						</template>
-					</div>
-
 					<!-- thread -->
 					<div v-if="expandedPost === post.name" class="mt-3 border-t border-outline-gray-1 pt-3">
 						<div v-if="thread.loading" class="text-sm text-ink-gray-5">{{ __('Loading…') }}</div>
@@ -310,81 +350,152 @@
 						</div>
 					</div>
 				</article>
-				<div v-if="i === lastNewIndex && i < posts.length - 1"
-					class="my-1 flex items-center gap-2 text-xs font-medium text-ink-red-4">
-					<div class="h-px flex-1 bg-surface-red-3"></div>{{ __('New') }}<div class="h-px flex-1 bg-surface-red-3"></div>
-				</div>
-				</template>
-			</div>
-		</template>
-
-		<!-- compose dialog -->
-		<Dialog v-model="showCompose" :options="{ title: __('New post'), size: 'lg' }">
-			<template #body-content>
-				<div class="flex flex-col gap-3">
-					<select v-if="cohorts.length > 1" v-model="draft.cohort"
-						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm text-ink-gray-8">
-						<option v-for="c in cohorts" :key="c.name" :value="c.name">{{ c.cohort_name }}</option>
-					</select>
-					<select v-model="draft.channel"
-						class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
-						<option value="" disabled>{{ __('Select a channel') }}</option>
-						<option v-for="ch in channels" :key="ch.name" :value="ch.name">{{ ch.channel_name }}</option>
-					</select>
-					<Input v-model="draft.title" type="text" :placeholder="__('Title (optional)')" />
-					<div v-if="composeChannelKind === 'video_timestamp'" class="flex items-center gap-2">
-						<Video class="h-4 w-4 text-ink-gray-5" />
-						<Input v-model="draft.video_url" type="text"
-							:placeholder="__('YouTube link (required)')" class="flex-1" />
+					<div v-if="section.key === 'all' && i === lastNewIndex && i < section.posts.length - 1"
+						class="my-1 flex items-center gap-2 text-xs font-medium text-ink-red-4">
+						<div class="h-px flex-1 bg-surface-red-3"></div>{{ __('New') }}<div class="h-px flex-1 bg-surface-red-3"></div>
 					</div>
-					<div class="flex items-center gap-2">
-						<label class="text-sm text-ink-gray-6">{{ __('Visibility') }}</label>
-						<select v-model="draft.visibility"
-							class="rounded-md border border-outline-gray-2 bg-surface-white px-2 py-1.5 text-sm">
-							<option value="cohort_only">{{ __('Cohort only') }}</option>
-							<option value="portal_users">{{ __('Whole community') }}</option>
-							<!-- ADR 076: shown only to those who may use it, so most
-							     people's composer is unchanged. The server enforces
-							     the same test -- a hidden control is not a permission. -->
-							<option v-if="canBroadcast" value="mentors">{{ __('Mentors in this cohort') }}</option>
-							<option value="direct">{{ __('One person') }}</option>
-							<option value="private">{{ __('Only me') }}</option>
-						</select>
-						<!-- Scoped type-ahead: only people the author already shares a
-						     cohort with, so the picker never promises an unreachable
-						     recipient and lineage size never matters. -->
-						<div v-if="draft.visibility === 'direct'" class="relative">
-							<Input v-model="recipientQuery" type="text"
-								:placeholder="__('Search someone in your cohorts…')"
-								@input="searchRecipients" />
-							<div v-if="draft.direct_recipient" class="mt-1 text-xs text-ink-gray-6">
-								{{ __('To: {0}').format(recipientLabel) }}
-							</div>
-							<ul v-if="recipientResults.length"
-								class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-outline-gray-2 bg-surface-white shadow">
-								<li v-for="r in recipientResults" :key="r.person">
-									<button type="button" class="flex w-full flex-col px-3 py-1.5 text-left text-sm hover:bg-surface-gray-2"
-										@click="pickRecipient(r)">
-										<span class="text-ink-gray-8">{{ r.full_name }}</span>
-										<span class="text-xs text-ink-gray-5">{{ r.cohort_name }}</span>
-									</button>
-								</li>
-							</ul>
+					</template>
+					</template>
+
+					<!-- A filtered list ends with what else it is hiding (section 5.4). -->
+					<div v-if="otherChannelPosts.length"
+						class="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-outline-gray-3 px-4 py-3 text-sm text-ink-gray-7">
+						<span class="flex-1">
+							{{ otherChannelPosts.length === 1
+								? __('1 more post about {0} in {1}.').format(passageFilter.label, otherChannelNames)
+								: __('{0} more posts about {1} in {2}.').format(otherChannelPosts.length, passageFilter.label, otherChannelNames) }}
+						</span>
+						<Button :label="__('Show all {0} posts').format(passageFilter.label)" @click="channelFilter = ''" />
+					</div>
+				</div>
+			</template>
+
+		<!-- compose dialog (decisions/101 section 5.6) -->
+		<Dialog v-model="showCompose" :options="{ title: __('New post'), size: 'xl' }">
+			<template #body-content>
+				<div class="flex flex-col gap-4">
+					<div v-if="cohorts.length > 1">
+						<div class="mb-1.5 text-sm font-medium text-ink-gray-7">{{ __('Cohort') }}</div>
+						<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+							<button v-for="(c, i) in cohorts" :key="c.name" type="button"
+								class="rounded-lg border px-3 py-2 text-left"
+								:class="draft.cohort === c.name ? 'border-outline-gray-5 bg-surface-gray-1 ring-1 ring-outline-gray-5' : 'border-outline-gray-2 hover:bg-surface-gray-1'"
+								:aria-pressed="draft.cohort === c.name"
+								@click="draft.cohort = c.name">
+								<span class="flex items-center gap-2">
+									<span class="h-2.5 w-2.5 shrink-0 rounded-sm" :style="{ background: dotColor(i) }"></span>
+									<span class="truncate text-sm font-medium text-ink-gray-9">{{ c.cohort_name }}</span>
+								</span>
+								<span class="mt-0.5 block truncate pl-[1.125rem] text-xs text-ink-gray-5">
+									{{ [c.cohort_type, c.members || 0].filter((v) => v !== '' && v != null).join(' · ') }}
+								</span>
+							</button>
 						</div>
 					</div>
-					<Input v-model="draft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
-					<Input v-model="draft.scripture" type="text"
-						:placeholder="__('Scripture, e.g. Jn 3:16-18; Rom 8:28')" />
-					<!-- content editor: :teleport="false" keeps its menu inline (inside
-					     the Dialog) instead of teleporting to body over other fields -->
-					<RichTextEditor :key="'compose-' + composeKey" :content="draft.content" :teleport="false"
-						:placeholder="__('Share something…')" @change="(v) => (draft.content = v)" />
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-7">
+							<span class="font-medium">{{ __('Channel') }}</span>
+							<span v-if="composeCohort" class="text-ink-gray-5"> — {{ __('channels for {0}').format(composeCohort.cohort_name) }}</span>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							<button v-for="ch in composeChannels" :key="ch.name" type="button"
+								class="rounded-full border px-3.5 py-1.5 text-sm"
+								:class="draft.channel === ch.name ? 'border-transparent bg-surface-gray-7 font-medium text-ink-white' : 'border-outline-gray-2 text-ink-gray-8 hover:bg-surface-gray-2'"
+								:aria-pressed="draft.channel === ch.name"
+								@click="draft.channel = ch.name">{{ ch.channel_name }}</button>
+						</div>
+					</div>
+					<label class="block">
+						<span class="mb-1.5 block text-sm text-ink-gray-7"><span class="font-medium">{{ __('Title') }}</span> <span class="text-ink-gray-5">({{ __('optional') }})</span></span>
+						<Input v-model="draft.title" type="text" :placeholder="__('A short headline helps people scan the feed')" />
+					</label>
+					<label v-if="composeChannelKind === 'video_timestamp'" class="block">
+						<span class="mb-1.5 block text-sm font-medium text-ink-gray-7">{{ __('YouTube link') }}</span>
+						<div class="flex items-center gap-2">
+							<Video class="h-4 w-4 text-ink-gray-5" />
+							<Input v-model="draft.video_url" type="text" :placeholder="__('Required for this channel')" class="flex-1" />
+						</div>
+					</label>
+					<div>
+						<div class="mb-1.5 text-sm font-medium text-ink-gray-7">{{ __('Post') }}</div>
+						<!-- :teleport="false" keeps the editor's menu inside the Dialog -->
+						<RichTextEditor :key="'compose-' + composeKey" :content="draft.content" :teleport="false"
+							:placeholder="__('Share a question, insight or request…')" @change="(v) => (draft.content = v)" />
+					</div>
+					<div>
+						<div class="mb-1.5 text-sm text-ink-gray-7">
+							<span class="font-medium">{{ __('Topics') }}</span>
+							<span class="text-ink-gray-5"> — {{ __('press Enter or comma after each') }}</span>
+						</div>
+						<CommunityTopicInput v-model="draft.topics" />
+					</div>
+					<label class="block">
+						<span class="mb-1.5 block text-sm text-ink-gray-7"><span class="font-medium">{{ __('Scripture') }}</span> <span class="text-ink-gray-5">({{ __('optional') }})</span></span>
+						<TextInput v-model="draft.scripture" type="text" size="md" :placeholder="__('e.g. Rom 8:28; Jn 3:16-18')">
+							<template #prefix><BookOpen class="h-4 w-4 text-ink-gray-5" /></template>
+						</TextInput>
+					</label>
+					<!-- Scoped type-ahead: only people the author already shares a
+					     cohort with, so the picker never promises an unreachable
+					     recipient and lineage size never matters. -->
+					<div v-if="draft.visibility === 'direct'" class="relative">
+						<div class="mb-1.5 text-sm font-medium text-ink-gray-7">{{ __('To') }}</div>
+						<Input v-model="recipientQuery" type="text"
+							:placeholder="__('Search someone in your cohorts…')"
+							@input="searchRecipients" />
+						<div v-if="draft.direct_recipient" class="mt-1 text-xs text-ink-gray-6">
+							{{ __('To: {0}').format(recipientLabel) }}
+						</div>
+						<ul v-if="recipientResults.length"
+							class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-outline-gray-2 bg-surface-white shadow">
+							<li v-for="r in recipientResults" :key="r.person">
+								<button type="button" class="flex w-full flex-col px-3 py-1.5 text-left text-sm hover:bg-surface-gray-2"
+									@click="pickRecipient(r)">
+									<span class="text-ink-gray-8">{{ r.full_name }}</span>
+									<span class="text-xs text-ink-gray-5">{{ r.cohort_name }}</span>
+								</button>
+							</li>
+						</ul>
+					</div>
 				</div>
 			</template>
 			<template #actions>
-				<div class="flex justify-end gap-2">
-					<Button :label="__('Cancel')" @click="showCompose = false" />
-					<Button variant="solid" :label="__('Post')" :loading="createPost.loading" @click="submitPost" />
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<div class="relative flex items-center gap-2" @focusout="onVisFocusOut">
+						<span class="text-sm text-ink-gray-6">{{ __('Who can see this:') }}</span>
+						<button type="button"
+							class="flex items-center gap-1.5 rounded-lg border border-outline-gray-3 px-3 py-1.5 text-sm font-medium text-ink-gray-8 hover:bg-surface-gray-2"
+							:aria-expanded="visMenuOpen" aria-haspopup="listbox"
+							@click="visMenuOpen = !visMenuOpen">
+							<component :is="visIcon(draft.visibility)" class="h-4 w-4" />
+							{{ currentVis?.label }}
+							<ChevronUp class="h-3.5 w-3.5 text-ink-gray-5 transition-transform" :class="visMenuOpen ? '' : 'rotate-180'" />
+						</button>
+						<!-- ADR 076: Mentors is offered only to those who may use it.
+						     The server enforces the same test. -->
+						<ul v-if="visMenuOpen" role="listbox"
+							class="absolute bottom-full left-0 z-30 mb-2 w-[22rem] max-w-[calc(100vw-3rem)] rounded-xl border border-outline-gray-2 bg-surface-white p-1.5 shadow-xl">
+							<li v-for="o in visOptions" :key="o.value">
+								<button type="button" role="option" :aria-selected="draft.visibility === o.value"
+									class="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left"
+									:class="draft.visibility === o.value ? 'bg-surface-gray-2' : 'hover:bg-surface-gray-1'"
+									@click="draft.visibility = o.value; visMenuOpen = false">
+									<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-gray-2">
+										<component :is="visIcon(o.value)" class="h-4 w-4 text-ink-gray-7" />
+									</span>
+									<span class="min-w-0 flex-1">
+										<span class="block text-sm font-medium text-ink-gray-9">{{ o.label }}</span>
+										<span class="block truncate text-xs text-ink-gray-5">{{ o.hint }}</span>
+									</span>
+									<Check v-if="draft.visibility === o.value" class="h-4 w-4 shrink-0 text-ink-gray-8" />
+								</button>
+							</li>
+						</ul>
+					</div>
+					<div class="flex gap-2">
+						<Button :label="__('Cancel')" @click="showCompose = false" />
+						<Button variant="solid" :label="__('Post')" :loading="createPost.loading" @click="submitPost" />
+					</div>
 				</div>
 			</template>
 		</Dialog>
@@ -422,7 +533,7 @@
 							<option value="private">{{ __('Only me') }}</option>
 						</select>
 					</div>
-					<Input v-model="editDraft.topics" type="text" :placeholder="__('Topics (comma-separated)')" />
+					<CommunityTopicInput v-model="editDraft.topics" />
 					<Input v-model="editDraft.scripture" type="text"
 						:placeholder="__('Scripture, e.g. Jn 3:16-18; Rom 8:28')" />
 					<RichTextEditor :key="'edit-' + editKey" :content="editDraft.content" :teleport="false"
@@ -676,16 +787,19 @@
 import PageHeader from '@/components/PageHeader.vue'
 import { computed, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Button, Dialog, Input, createResource, debounce } from 'frappe-ui'
+import { Button, Dialog, Input, TextInput, createResource, debounce } from 'frappe-ui'
 import {
 	MessagesSquare, SquarePen, MessageCircle, Send, Pin, X,
 	Lock, Users, Globe, Mail, BookOpen, Check, Video, Flag, Shield, Ban, Pencil, Trash2,
-	Bookmark, BookmarkCheck, UsersRound, ChevronRight, ChevronDown, Search, Star, Megaphone,
+	Bookmark, BookmarkCheck, UsersRound, Search, Plus, ChevronUp, User,
 } from 'lucide-vue-next'
-import { timeAgo, createToast } from '@/utils'
+import { timeAgo, siteDate, createToast } from '@/utils'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import SermonLabPlayer from '@/components/SermonLabPlayer.vue'
 import ExegeticalReader from '@/components/ExegeticalReader.vue'
+import CommunityPassagePicker from '@/components/CommunityPassagePicker.vue'
+import CohortMeetings from '@/components/CohortMeetings.vue'
+import CommunityTopicInput from '@/components/CommunityTopicInput.vue'
 
 const socket = inject('$socket')
 const route = useRoute()
@@ -697,9 +811,17 @@ const replyTo = ref(null)
 const replyText = ref('')
 const showCompose = ref(false)
 const composeKey = ref(0)
-const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
+const draft = reactive({ cohort: '', channel: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: [], scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
 const prayerView = ref('active')
-const savedOnly = ref(false)
+// All / Saved / Mine (decisions/101 section 5.3)
+const view = ref('all')
+const views = [
+	{ value: 'all', label: __('All') },
+	{ value: 'saved', label: __('Saved') },
+	{ value: 'mine', label: __('Mine') },
+]
+const openReaders = reactive({})
+const meetingsRef = ref(null)
 const searchQuery = ref('')
 const showPassage = ref(false)
 const showMembers = ref(false)
@@ -719,8 +841,6 @@ const searchAlumniDebounced = debounce(() => {
 	alumniSearch.fetch()
 }, 300)
 watch(alumniQuery, searchAlumniDebounced)
-const expandedBook = ref(null)
-const expandedChapter = ref(null)
 const passageFilter = ref(null)
 const showSplit = ref(false)
 const splitName = ref('')
@@ -734,47 +854,54 @@ const broadcastMessage = ref('')
 const broadcastEmail = ref(false)
 const showEdit = ref(false)
 const editKey = ref(0)
-const editDraft = reactive({ name: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', channel_kind: '' })
+const editDraft = reactive({ name: '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: [], scripture: '', video_url: '', channel_kind: '' })
 const showAnswer = ref(false)
 const answerNote = ref('')
 const answerPost = ref(null)
 const linkTarget = ref('')
 
 // --- resources ---
+// The rail remembers the last selection in this browser (decisions/101
+// section 5.1); it replaced the default-cohort star.
+const LAST_COHORT = 'community:lastCohort'
+function readLast() {
+	try { return localStorage.getItem(LAST_COHORT) } catch { return null }
+}
+function writeLast(name) {
+	try { localStorage.setItem(LAST_COHORT, name || '') } catch { /* private mode */ }
+}
+let firstLoad = true
 const cohortsRes = createResource({
-	url: 'seminary.seminary.discipleship.feed_api.my_cohorts_list',
+	url: 'seminary.seminary.discipleship.feed_api.community_summary',
 	auto: true,
 	onSuccess(data) {
-		if (data?.length && !selectedCohort.value) {
-			// Arriving from a link that names a cohort (the alumni home does
-			// this) beats the remembered default: the person just said which
-			// one they meant.
-			const asked = route.query.cohort
-			const saved = localStorage.getItem('community:defaultCohort')
-			const known = (name) => name && data.some((c) => c.name === name)
-			selectedCohort.value = known(asked) ? asked : known(saved) ? saved : data[0].name
-		}
+		const list = data?.cohorts || []
+		if (!firstLoad) return
+		firstLoad = false
+		// Arriving from a link that names a cohort (the alumni home does this)
+		// beats the remembered selection: the person just said which one they
+		// meant. Otherwise the last one, else all of them.
+		const asked = route.query.cohort
+		const last = readLast()
+		const known = (name) => name && list.some((c) => c.name === name)
+		const pick = known(asked) ? asked : known(last) ? last : ''
+		if (pick !== selectedCohort.value) selectedCohort.value = pick
+		else refresh()
 		if (route.query.members && selectedCohort.value) openMembers()
 		if (route.query.discuss && route.query.step) openDiscussion(route.query.discuss, route.query.step)
 	},
 })
-const defaultCohort = ref(localStorage.getItem('community:defaultCohort') || '')
-function setDefaultCohort() {
-	if (!selectedCohort.value) return
-	if (defaultCohort.value === selectedCohort.value) {
-		localStorage.removeItem('community:defaultCohort')
-		defaultCohort.value = ''
-		createToast({ title: __('Default cohort cleared.'), icon: 'check' })
-	} else {
-		localStorage.setItem('community:defaultCohort', selectedCohort.value)
-		defaultCohort.value = selectedCohort.value
-		createToast({ title: __('Default cohort saved.'), icon: 'check' })
-	}
-}
 const channelsRes = createResource({
 	url: 'seminary.seminary.discipleship.feed_api.list_channels',
+	makeParams: () => ({ cohort: selectedCohort.value || null }),
 	auto: true,
 })
+const channelCountsRes = createResource({
+	url: 'seminary.seminary.discipleship.feed_api.channel_counts',
+	makeParams: () => ({ cohort: selectedCohort.value || null }),
+})
+// The composer offers the channels of the cohort it posts to (section 1.3).
+const composeChannelsRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.list_channels' })
 const reactionTypesRes = createResource({
 	url: 'seminary.seminary.discipleship.feed_api.list_reaction_types',
 	auto: true,
@@ -784,8 +911,10 @@ const feed = createResource({
 	makeParams: () => ({
 		cohort: selectedCohort.value,
 		channel: channelFilter.value || null,
-		saved_only: savedOnly.value ? 1 : 0,
-		answered: isPrayerChannel.value ? (prayerView.value === 'answered' ? 1 : 0) : null,
+		saved_only: view.value === 'saved' ? 1 : 0,
+		mine: view.value === 'mine' ? 1 : 0,
+		// Saved shows prayers answered and not, each under its heading.
+		answered: isPrayerChannel.value && view.value !== 'saved' ? (prayerView.value === 'answered' ? 1 : 0) : null,
 	}),
 })
 const unreadRes = createResource({
@@ -826,39 +955,114 @@ const acceptInviteRes = createResource({ url: 'seminary.seminary.discipleship.ap
 const declineInviteRes = createResource({ url: 'seminary.seminary.discipleship.api.decline_invite' })
 const reassignRes = createResource({ url: 'seminary.seminary.discipleship.api.reassign_leader' })
 const splitRes = createResource({ url: 'seminary.seminary.discipleship.api.split_cohort' })
-const bibleTree = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_books' })
-const chaptersRes = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_chapters' })
-const versesRes = createResource({ url: 'seminary.seminary.discipleship.scripture.scripture_verses' })
 const passagePostsRes = createResource({ url: 'seminary.seminary.discipleship.scripture.posts_in_range' })
+const passageRefRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.posts_for_passage' })
 const searchRes = createResource({ url: 'seminary.seminary.discipleship.feed_api.search_posts' })
 const broadcastRes = createResource({ url: 'seminary.seminary.discipleship.api.broadcast_to_leaders' })
 
 // --- derived ---
-const cohorts = computed(() => cohortsRes.data || [])
+const cohorts = computed(() => cohortsRes.data?.cohorts || [])
+// New posts in the selection: one cohort's, or all of them.
+const totalNew = computed(() => cohortsRes.data?.new || 0)
+const newCount = computed(() =>
+	selectedCohort.value
+		? cohorts.value.find((c) => c.name === selectedCohort.value)?.new || 0
+		: totalNew.value
+)
+const sinceLabel = computed(() => {
+	const since = cohortsRes.data?.since
+	if (!since) return ''
+	const d = siteDate(since).toDate()
+	if (isNaN(d)) return ''
+	const days = (Date.now() - d.getTime()) / 86400000
+	const when = days < 6
+		? d.toLocaleDateString(undefined, { weekday: 'long' })
+		: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+	return __('since {0}').format(when)
+})
 const selectedCohortName = computed(
 	() => cohorts.value.find((c) => c.name === selectedCohort.value)?.cohort_name || ''
 )
 // Named, not just "My cohort": someone who leads two of them is one click from
 // inviting a person into the wrong one, and the switcher sits behind the dialog
 // where they cannot check it.
+const scopeLabel = computed(() => {
+	if (selectedCohortName.value) return selectedCohortName.value
+	const n = cohorts.value.length
+	return n === 1 ? __('All my cohorts · 1 cohort') : __('All my cohorts · {0} cohorts').format(n)
+})
 const membersTitle = computed(() =>
 	selectedCohortName.value
 		? __('Cohort: {0}').format(selectedCohortName.value)
 		: __('My cohort')
 )
 const channels = computed(() => channelsRes.data || [])
+const channelCounts = computed(() => channelCountsRes.data || {})
+const composeChannels = computed(() => composeChannelsRes.data || channels.value)
+function channelName(name) {
+	return channels.value.find((c) => c.name === name)?.channel_name || name
+}
 const selectedChannelKind = computed(() => channels.value.find((c) => c.name === channelFilter.value)?.channel_kind || null)
 const isPrayerChannel = computed(() => selectedChannelKind.value === 'prayer')
-const composeChannelKind = computed(() => channels.value.find((c) => c.name === draft.channel)?.channel_kind || null)
+const composeChannelKind = computed(() => composeChannels.value.find((c) => c.name === draft.channel)?.channel_kind || null)
+const composeCohort = computed(() => cohorts.value.find((c) => c.name === draft.cohort) || null)
+// Who each choice reaches, said plainly (section 5.6). Whole-community posts
+// reach only cohorts that offer the channel (section 1.3), so the hint names it.
+const visMenuOpen = ref(false)
+const visOptions = computed(() => {
+	const c = composeCohort.value
+	const name = c?.cohort_name || __('this cohort')
+	const n = c?.members || 0
+	const channel = composeChannels.value.find((ch) => ch.name === draft.channel)?.channel_name
+	return [
+		{ value: 'cohort_only', label: __('Cohort only'), hint: n === 1 ? __('1 member of {0}').format(name) : __('{0} members of {1}').format(n, name) },
+		{ value: 'portal_users', label: __('Whole community'), hint: channel ? __('Every cohort with {0}').format(channel) : __('Everyone in all cohorts') },
+		...(canBroadcast.value ? [{ value: 'mentors', label: __('Mentors in this cohort'), hint: __('Only mentors of {0}').format(name) }] : []),
+		{ value: 'direct', label: __('One person'), hint: __('Choose someone — like a private note') },
+		{ value: 'private', label: __('Only me'), hint: __('A private draft or journal entry') },
+	]
+})
+const currentVis = computed(() => visOptions.value.find((o) => o.value === draft.visibility) || visOptions.value[0])
+function onVisFocusOut(e) {
+	if (!e.currentTarget.contains(e.relatedTarget)) visMenuOpen.value = false
+}
 const reactionTypes = computed(() => reactionTypesRes.data || [])
 const searchActive = computed(() => searchQuery.value.trim().length >= 2)
+// Posts about the picked passage in this cohort (or all), before the channel
+// filter, so the note can say what the channel filter hides.
+const passagePosts = computed(() => {
+	if (!passageFilter.value) return []
+	const rows = (passageFilter.value.ref ? passageRefRes.data : passagePostsRes.data) || []
+	const inView = (p) => (view.value === 'saved' ? p.saved : view.value === 'mine' ? p.is_mine : true)
+	return rows.filter((p) => (!selectedCohort.value || p.cohort === selectedCohort.value) && inView(p))
+})
 const posts = computed(() => {
 	if (searchActive.value) return searchRes.data || []
-	return passageFilter.value ? (passagePostsRes.data || []) : (feed.data || [])
+	if (passageFilter.value) {
+		return channelFilter.value
+			? passagePosts.value.filter((p) => p.channel === channelFilter.value)
+			: passagePosts.value
+	}
+	return feed.data || []
 })
-const chapters = computed(() => chaptersRes.data || [])
-const verses = computed(() => versesRes.data || [])
-const passageLabel = computed(() => passageFilter.value?.label || '')
+const otherChannelPosts = computed(() =>
+	passageFilter.value && channelFilter.value && !searchActive.value
+		? passagePosts.value.filter((p) => p.channel !== channelFilter.value)
+		: []
+)
+const otherChannelNames = computed(() =>
+	[...new Set(otherChannelPosts.value.map((p) => channelName(p.channel)))].join(', ')
+)
+// Saved splits prayers you are praying for from answered ones (section 3.2).
+const sections = computed(() => {
+	if (view.value !== 'saved' || searchActive.value) return [{ key: 'all', label: '', posts: posts.value }]
+	const prayer = (p) => p.channel_kind === 'prayer'
+	return [
+		{ key: 'praying', label: __('Praying for'), posts: posts.value.filter((p) => prayer(p) && !p.prayer_answered) },
+		{ key: 'answered', label: __('Answered'), posts: posts.value.filter((p) => prayer(p) && p.prayer_answered) },
+		{ key: 'other', label: __('Other saved posts'), posts: posts.value.filter((p) => !prayer(p)) },
+	]
+})
 const lastNewIndex = computed(() => {
 	let idx = -1
 	posts.value.forEach((p, i) => { if (p.is_new) idx = i })
@@ -895,9 +1099,26 @@ function reactionFor(post, rtName) {
 	return (post.reactions || []).find((r) => r.reaction_type === rtName)
 }
 function reactionCount(post, rtName) { return reactionFor(post, rtName)?.count || 0 }
+// The reactions the post's channel offers (section 2); a channel with no list,
+// or one outside the caller's channels, offers them all.
+function reactionsFor(post) {
+	const offered = channels.value.find((c) => c.name === post.channel)?.reactions
+	if (!offered?.length) return reactionTypes.value
+	return offered.map((n) => reactionTypes.value.find((r) => r.name === n)).filter(Boolean)
+}
+function reactionTitle(post, rt) {
+	const people = reactionFor(post, rt.name)?.people || []
+	return people.length ? `${rt.label}: ${people.join(', ')}` : rt.label
+}
+function initials(name) {
+	return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+}
+const DOTS = ['var(--ink-blue-3)', 'var(--ink-amber-3)', 'var(--ink-green-3)', 'var(--ink-red-4)', 'var(--ink-gray-6)']
+function dotColor(i) { return DOTS[i % DOTS.length] }
+function toggleReader(post) { openReaders[post.name] = !openReaders[post.name] }
 function reactionMine(post, rtName) { return !!reactionFor(post, rtName)?.mine }
 
-const visIconMap = { cohort_only: Users, portal_users: Globe, mentors: UsersRound, private: Lock, direct: Mail }
+const visIconMap = { cohort_only: Users, portal_users: Globe, mentors: Shield, private: Lock, direct: User }
 function visIcon(v) { return visIconMap[v] || Users }
 
 // --- actions ---
@@ -907,6 +1128,7 @@ function refresh() {
 	// as "everything I may see".
 	feed.fetch()
 	unreadRes.fetch()
+	channelCountsRes.fetch()
 }
 function setChannel(name) {
 	channelFilter.value = name // watch → refresh; feed onSuccess marks seen
@@ -918,7 +1140,7 @@ function openEdit(post) {
 		content: post.content || '',
 		visibility: post.visibility,
 		direct_recipient: post.direct_recipient || '',
-		topics: (post.topics || []).join(', '),
+		topics: [...(post.topics || [])],
 		scripture: (post.scripture || []).map((s) => s.display).join('\n'),
 		video_url: post.video_url || '',
 		channel_kind: post.channel_kind || '',
@@ -934,7 +1156,7 @@ function submitEdit() {
 			content: editDraft.content,
 			visibility: editDraft.visibility,
 			direct_recipient: editDraft.visibility === 'direct' ? editDraft.direct_recipient : null,
-			topics: editDraft.topics.split(',').map((t) => t.trim()).filter(Boolean),
+			topics: editDraft.topics,
 			scripture: editDraft.scripture.split('\n').map((s) => s.trim()).filter(Boolean),
 			video_url: editDraft.channel_kind === 'video_timestamp' ? editDraft.video_url : null,
 		})
@@ -1163,42 +1385,23 @@ function submitSplit() {
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not split.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
-// --- bible tree ---
-function fetchTree() {
-	expandedBook.value = null
-	expandedChapter.value = null
-	if (selectedCohort.value) bibleTree.fetch({ cohort: selectedCohort.value })
+// --- passage filter (section 5.3) ---
+function fetchPassage() {
+	const f = passageFilter.value
+	if (!f) return
+	if (f.ref) passageRefRes.fetch({ ref: f.ref })
+	else passagePostsRes.fetch({ start_ord: f.start, end_ord: f.end, cohort: selectedCohort.value || null })
 }
-function toggleBook(b) {
-	if (expandedBook.value === b.osis) { expandedBook.value = null; return }
-	expandedBook.value = b.osis
-	expandedChapter.value = null
-	chaptersRes.fetch({ cohort: selectedCohort.value, book: b.osis })
-	setPassage(b.name, b.start_ord, b.end_ord)
-}
-function toggleChapter(b, c) {
-	if (expandedChapter.value === c.chapter) { expandedChapter.value = null; return }
-	expandedChapter.value = c.chapter
-	versesRes.fetch({ cohort: selectedCohort.value, book: b.osis, chapter: c.chapter })
-	setPassage(`${b.name} ${c.chapter}`, c.start_ord, c.end_ord)
-}
-function selectVerse(b, c, v) {
-	setPassage(`${b.name} ${c.chapter}:${v.verse}`, v.start_ord, v.end_ord)
-}
-function setPassage(label, start, end) {
-	passageFilter.value = { label, start, end }
-	passagePostsRes.fetch({ cohort: selectedCohort.value, start_ord: start, end_ord: end })
-}
-function clearPassage() {
-	passageFilter.value = null
-	expandedBook.value = null
-	expandedChapter.value = null
-}
+watch(passageFilter, (f) => { if (f) { searchQuery.value = ''; fetchPassage() } })
 function react(post, rtName) {
-	toggleReaction.submit({ reaction_type: rtName, post: post.name }).then(() => {
-		feed.fetch()
-		if (expandedPost.value) thread.fetch()
-	})
+	toggleReaction
+		.submit({ reaction_type: rtName, post: post.name })
+		.then(() => {
+			feed.fetch()
+			if (passageFilter.value) fetchPassage()
+			if (expandedPost.value) thread.fetch()
+		})
+		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not react.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 function submitReply(post) {
 	if (!replyText.value.trim()) return
@@ -1229,20 +1432,30 @@ function openCompose() {
 	// A post always belongs to a cohort (ADR 064 keeps `cohort` for attribution
 	// and lineage), so in the All-posts view the composer has to ask. Default to
 	// the starred cohort, else the first one.
-	Object.assign(draft, { cohort: selectedCohort.value || defaultCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || (channels.value[0]?.name || ''), title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: '', scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
+	Object.assign(draft, { cohort: selectedCohort.value || cohorts.value[0]?.name || '', channel: channelFilter.value || '', title: '', content: '', visibility: 'cohort_only', direct_recipient: '', topics: [], scripture: '', video_url: '', reference_doctype: '', reference_name: '' })
 	recipientQuery.value = ''
 	recipientResults.value = []
 	recipientLabel.value = ''
+	visMenuOpen.value = false
 	composeKey.value++ // force the editor to remount with empty content
 	showCompose.value = true
+	loadComposeChannels()
 }
+function loadComposeChannels() {
+	if (!draft.cohort) return
+	composeChannelsRes.fetch({ cohort: draft.cohort }).then((rows) => {
+		const names = (rows || []).map((r) => r.name)
+		if (!names.includes(draft.channel)) draft.channel = names[0] || ''
+	})
+}
+watch(() => draft.cohort, () => { if (showCompose.value) loadComposeChannels() })
 // ADR 087: "Discuss" on a reading-plan step opens the composer filled in from
 // the step. Nothing is posted until the member presses Post.
 const discussionDraftRes = createResource({ url: 'seminary.seminary.discipleship.reading_plans.discussion_draft' })
 function openDiscussion(run, step) {
 	discussionDraftRes.submit({ run, step }).then((d) => {
 		openCompose()
-		const passageChannel = d.scripture?.length && channels.value.find((c) => c.channel_kind === 'bible_passage')
+		const passageChannel = d.scripture?.length && composeChannels.value.find((c) => c.channel_kind === 'bible_passage')
 		Object.assign(draft, {
 			cohort: d.cohort,
 			channel: passageChannel?.name || draft.channel,
@@ -1272,18 +1485,18 @@ function submitPost() {
 			content: draft.content,
 			visibility: draft.visibility,
 			direct_recipient: draft.visibility === 'direct' ? draft.direct_recipient : null,
-			topics: draft.topics.split(',').map((t) => t.trim()).filter(Boolean),
+			topics: draft.topics,
 			scripture: draft.scripture.split('\n').map((s) => s.trim()).filter(Boolean),
 			video_url: draft.video_url || null,
 			reference_doctype: draft.reference_doctype || null,
 			reference_name: draft.reference_name || null,
 		})
-		.then(() => { showCompose.value = false; refresh() })
+		.then(() => { showCompose.value = false; refresh(); cohortsRes.reload() })
 		.catch((e) => createToast({ title: e.messages?.[0] || __('Could not post.'), icon: 'alert-circle', iconClasses: 'text-ink-red-3' }))
 }
 
 // --- reactive refetch + realtime ---
-watch([selectedCohort, channelFilter], () => { expandedPost.value = null; refresh() })
+watch([selectedCohort, channelFilter, view], () => { expandedPost.value = null; refresh() })
 
 // debounced search: cohort-scoped, only fires at 2+ chars
 let searchTimer = null
@@ -1291,9 +1504,9 @@ watch(searchQuery, (q) => {
 	clearTimeout(searchTimer)
 	const term = (q || '').trim()
 	if (term.length < 2) { searchRes.data = []; return }
-	if (passageFilter.value) clearPassage()
+	if (passageFilter.value) passageFilter.value = null
 	searchTimer = setTimeout(
-		() => searchRes.submit({ cohort: selectedCohort.value, query: term }),
+		() => searchRes.submit({ cohort: selectedCohort.value || null, query: term }),
 		300,
 	)
 })
@@ -1311,7 +1524,12 @@ function markLeaving(cohort, channel) {
 // your last visit" baseline. The "All" view never mass-marks mid-session, so
 // its divider survives channel hops.
 watch(channelFilter, (nv, ov) => { if (ov) markLeaving(selectedCohort.value, ov) })
-watch(selectedCohort, (nv, ov) => { if (ov) markLeaving(ov, null); passageFilter.value = null; fetchTree() })
+watch(selectedCohort, (nv, ov) => {
+	if (ov) markLeaving(ov, null)
+	writeLast(nv)
+	channelsRes.fetch()
+	if (passageFilter.value) fetchPassage()
+})
 
 function onFeedUpdate(data) {
 	if (data?.cohort === selectedCohort.value) refresh()

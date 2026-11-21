@@ -23,7 +23,8 @@
   "provenance_section",
   "source_course_schedule",
   "column_break_provenance",
-  "source_student_group"
+  "source_student_group",
+  "calendar_token"
  ],
  "fields": [
   {
@@ -140,10 +141,18 @@
    "options": "Student Group",
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "calendar_token",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Calendar token",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "links": [],
- "modified": "2026-09-22 22:37:30.187310",
+ "modified": "2026-11-21 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Cohort",

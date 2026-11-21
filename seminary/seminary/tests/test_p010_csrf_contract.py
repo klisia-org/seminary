@@ -56,6 +56,9 @@ SENDERS = {
     "pages/CourseAssessment.vue": "fetch save_course_assessment",
     "pages/StudentAttendanceCS.vue": "fetch self check-in",
     "pages/CourseForm.vue": "fetch course save",
+    # Oral assessment (decisions/100): multipart bodies frappe-ui's call() cannot send.
+    "components/OralActivity.vue": "fetch upload_recording (a recorded file)",
+    "components/OralRecorder.vue": "fetch upload_chunk (recording in pieces, retried)",
 }
 
 HEADER = "X-Frappe-CSRF-Token"

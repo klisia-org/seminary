@@ -93,3 +93,4 @@ seminary.seminary.patches.refile_chapter_competencies
 seminary.seminary.patches.adr091_applicant_documents
 seminary.seminary.patches.adr093_public_website
 seminary.seminary.patches.adr100d_meeting_capture_defaults
+seminary.seminary.patches.adr101_community_channels

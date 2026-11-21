@@ -342,6 +342,8 @@ permission_query_conditions = {
     "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_query",
     "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_query",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_query",
+    "Cohort Meeting": "seminary.seminary.discipleship.permissions.meeting_query",
+    "Cohort Meeting Vote": "seminary.seminary.discipleship.permissions.vote_query",
     # p007 §2.2 / §2.8: student-keyed rows and instructor tiers, one factory.
     "Student": "seminary.seminary.student_permissions.query_student",
     "Scheduled Course Roster": "seminary.seminary.student_permissions.query_scheduled_course_roster",
@@ -405,6 +407,8 @@ has_permission = {
     "Cohort Reading Plan": "seminary.seminary.discipleship.reading_plans.run_has",
     "Reading Plan Progress": "seminary.seminary.discipleship.reading_plans.progress_has",
     "Cohort Content Flag": "seminary.seminary.discipleship.permissions.flag_has",
+    "Cohort Meeting": "seminary.seminary.discipleship.permissions.meeting_has",
+    "Cohort Meeting Vote": "seminary.seminary.discipleship.permissions.vote_has",
     # p007 §2.2 / §2.8
     "Student": "seminary.seminary.student_permissions.has_permission_student",
     "Scheduled Course Roster": "seminary.seminary.student_permissions.has_permission_scheduled_course_roster",
@@ -830,7 +834,11 @@ scheduler_events = {
         # staff to merge or set aside (privatedocs/p022).
         "seminary.seminary.duplicates.daily",
     ],
-    "hourly": ["seminary.tasks.hourly"],
+    "hourly": [
+        "seminary.tasks.hourly",
+        # Meeting polls: remind non-voters, tell the leader it closed (101).
+        "seminary.seminary.discipleship.meetings.hourly",
+    ],
     # 	"weekly": [
     # 		"seminary.tasks.weekly"
     # 	],

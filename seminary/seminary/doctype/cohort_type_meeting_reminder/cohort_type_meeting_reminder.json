@@ -1,0 +1,32 @@
+{
+ "actions": [],
+ "creation": "2026-11-21 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "hours_before"
+ ],
+ "fields": [
+  {
+   "fieldname": "hours_before",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Hours before",
+   "reqd": 1,
+   "description": "Members are reminded this many hours before each meeting."
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-21 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Seminary",
+ "name": "Cohort Type Meeting Reminder",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "editable_grid": 1
+}

@@ -16,6 +16,14 @@
   existence by wrapping badly at phone width. Put them in the body, above what
   they filter. The one exception is a single primary scope selector that decides
   what the whole page is about (Program Audit's enrollment, Partner's org).
+
+  Stacking: `sticky z-10` keeps sticky table columns from scrolling over the
+  header, but any positive z-index also out-paints frappe-ui dialogs, whose
+  overlay is teleported to <body> with no z-index of its own. So each app's
+  layout root carries `isolate`, which folds the whole page (this header, the
+  sidebar, floating widgets) into one layer under <body>-level dialogs and
+  popovers. Toasts render outside that root and stay on top. An app that adopts
+  PageHeader needs the same `isolate` on its layout root.
 -->
 <template>
 	<header

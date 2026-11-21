@@ -18,17 +18,27 @@ from seminary.seminary.integrations.bible_books import (
 
 _MAX_VERSE = 176  # longest chapter (Ps 119) — bounds open-ended tails
 
+# Chapters per book in canonical order (BOOK_ORDER 1..66), for picking a
+# passage in a book no post has tagged yet (decisions/101 section 5.3).
+CHAPTERS = (
+    50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42, 150,
+    31, 12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4,
+    28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5, 3,
+    5, 1, 1, 1, 22,
+)  # fmt: skip
+OLD_TESTAMENT = 39
 
-def _visible_post_ids(cohort):
-    # get_list applies the visibility permission clause for the caller.
-    return frappe.get_list(
-        "Cohort Post",
-        filters={"cohort": cohort, "status": ["in", ["published", "pinned"]]},
-        pluck="name",
-    )
+
+def _visible_post_ids(cohort=None):
+    # get_list applies the visibility permission clause for the caller. No
+    # cohort is the All-my-cohorts view: every post the caller may see.
+    filters = {"status": ["in", ["published", "pinned"]]}
+    if cohort:
+        filters["cohort"] = cohort
+    return frappe.get_list("Cohort Post", filters=filters, pluck="name")
 
 
-def _refs_for(cohort):
+def _refs_for(cohort=None):
     ids = _visible_post_ids(cohort)
     if not ids:
         return []
@@ -40,7 +50,7 @@ def _refs_for(cohort):
 
 
 @frappe.whitelist()
-def scripture_books(cohort):
+def scripture_books(cohort=None):
     books = {}
     for r in _refs_for(cohort):
         b1 = decode_ordinal(r.verse_start_ord)[0]
@@ -66,7 +76,7 @@ def scripture_books(cohort):
 
 
 @frappe.whitelist()
-def scripture_chapters(cohort, book):
+def scripture_chapters(book, cohort=None):
     bi = BOOK_ORDER.get(book)
     if not bi:
         return []
@@ -92,7 +102,7 @@ def scripture_chapters(cohort, book):
 
 
 @frappe.whitelist()
-def scripture_verses(cohort, book, chapter):
+def scripture_verses(book, chapter, cohort=None):
     bi = BOOK_ORDER.get(book)
     if not bi:
         return []
@@ -118,7 +128,7 @@ def scripture_verses(cohort, book, chapter):
 
 
 @frappe.whitelist()
-def posts_in_range(cohort, start_ord, end_ord):
+def posts_in_range(start_ord, end_ord, cohort=None):
     """Visible posts whose scripture overlaps the ordinal range [start, end]."""
     from seminary.seminary.discipleship.feed_api import _scoped_posts
 
@@ -136,3 +146,23 @@ def posts_in_range(cohort, start_ord, end_ord):
         pluck="parent",
     )
     return _scoped_posts(set(rows))
+
+
+@frappe.whitelist()
+def all_books():
+    """Every book with its chapters, Old and New Testament."""
+    out = []
+    for i, chapters in enumerate(CHAPTERS, start=1):
+        osis = OSIS_BY_ORDER[i]
+        out.append(
+            {
+                "osis": osis,
+                "name": BOOK_NAMES.get(osis, osis),
+                "index": i,
+                "testament": "OT" if i <= OLD_TESTAMENT else "NT",
+                "chapters": chapters,
+                "start_ord": i * 1_000_000,
+                "end_ord": i * 1_000_000 + 999_999,
+            }
+        )
+    return out
