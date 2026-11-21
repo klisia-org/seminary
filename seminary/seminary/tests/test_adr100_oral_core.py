@@ -368,6 +368,16 @@ class TestSteps(OralCase):
         self.assertEqual((by_hand.source, by_hand.state), ("Instructor", "Kept"))
 
 
+class TestAllowedSteps(IntegrationTestCase):
+    def test_unset_checks_allow_and_an_untick_forbids(self):
+        with patch.object(oral, "_settings", return_value=frappe._dict()):
+            self.assertEqual(oral.allowed_steps(), list(oral.STEPS))
+        with patch.object(
+            oral, "_settings", return_value=frappe._dict(oral_step_moments=0)
+        ):
+            self.assertNotIn("moments", oral.allowed_steps())
+
+
 class TestTalkTime(IntegrationTestCase):
     def test_overlap_counts_for_both_and_runs_are_turns(self):
         stats = oral.talk_time(

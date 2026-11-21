@@ -90,10 +90,10 @@
   },
   {
    "fieldname": "language",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Language",
-   "options": "Language",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Blank means the speech provider detects it. Not taken from the student's portal language, which may differ from the language they answer in."
   },
   {
    "fieldname": "timing_section",
@@ -201,7 +201,7 @@
   }
  ],
  "links": [],
- "modified": "2026-11-20 18:00:00.000000",
+ "modified": "2026-11-20 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Seminary",
  "name": "Oral Recording",

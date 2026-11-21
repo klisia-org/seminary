@@ -100,7 +100,13 @@ def _settings():
 def allowed_steps() -> list[str]:
     """Steps the school has not turned off (Seminary Settings)."""
     s = _settings()
-    return [step for step in STEPS if cint(s.get(f"oral_step_{step}", 1))]
+    # A site that had Seminary Settings before these checks has them unset:
+    # unset means allowed; only an explicit untick turns a step off.
+    return [
+        step
+        for step in STEPS
+        if s.get(f"oral_step_{step}") in (None, "") or cint(s.get(f"oral_step_{step}"))
+    ]
 
 
 def provided_steps() -> dict[str, str]:
@@ -369,14 +375,15 @@ def _payload(doc, step, ctx):
         "tracks": [
             {"label": s.label, "audio": s.audio} for s in doc.speakers if s.audio
         ],
+        # Which steps follow and how many voices to expect, so a provider can
+        # do transcription and speaker labels in one job.
+        "steps": _steps_of(doc),
+        "expected_speakers": ctx.get("expected_speakers") or len(doc.participants),
     }
     if step == "transcribe":
         return base
     base["segments"] = _segments(doc)
     if step == "diarize":
-        base["expected_speakers"] = ctx.get("expected_speakers") or len(
-            doc.participants
-        )
         return base
     base.update(
         {
@@ -469,8 +476,7 @@ def _apply_transcribe(doc, result):
     segments = _clean_segments(result.get("segments"))
     doc.transcript = json.dumps(segments)
     if result.get("language") and not doc.language:
-        if frappe.db.exists("Language", result["language"]):
-            doc.language = result["language"]
+        doc.language = str(result["language"])[:20]
     if any("speaker" in s for s in segments):
         _refresh_speakers(doc, segments)
 
