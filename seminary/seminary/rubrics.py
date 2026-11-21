@@ -223,6 +223,7 @@ def rubric_payload(rubric) -> dict | None:
                 "title": c.title,
                 "description": c.description,
                 "weight": c.weight or None,
+                "from_defense": cint(c.get("from_defense")),
                 "share": round(share.get(c.criterion_code, 0) * 100, 1),
             }
             for c in doc.criteria
@@ -340,6 +341,8 @@ def save_rubric(activity_doctype, activity, scale, criteria):
                 "title": c.get("title"),
                 "description": c.get("description"),
                 "weight": flt(c.get("weight")),
+                # Judged from the oral defense (decisions/100c §5).
+                "from_defense": cint(c.get("from_defense")),
             },
         )
         for level, descriptor in (c.get("cells") or {}).items():

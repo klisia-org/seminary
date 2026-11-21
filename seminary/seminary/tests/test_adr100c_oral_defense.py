@@ -353,3 +353,38 @@ class TestWritten(DefenseCase):
             "Then faith.",
         )
         self.assertTrue(out["done"])
+
+
+class TestByHand(DefenseCase):
+    def test_without_a_questions_step_the_instructor_writes_them_and_it_opens(self):
+        def go():
+            doc = frappe.get_doc(
+                {
+                    "doctype": "Assignment Submission",
+                    "assignment": self.activity,
+                    "course": self.cs,
+                    "member": self.student.user,
+                    "student": self.student.name,
+                    "answer": "<p>A paper.</p>",
+                }
+            )
+            doc.flags.ignore_links = True
+            doc.insert()
+            return doc.name
+
+        with patch.object(oral, "provided_steps", return_value={}):
+            self.sub = self.as_student(go)
+        self.assertEqual(
+            frappe.db.get_value("Assignment Submission", self.sub, "defense_status"),
+            "Waiting for Questions",
+        )
+        oral_defense.save_question(self.sub, "First?")
+        oral_defense.save_question(self.sub, "Second?")
+        rows = oral_defense.get_defense(self.sub)["questions"]
+        self.assertEqual(
+            [(r.question, r.position) for r in rows], [("First?", 10), ("Second?", 20)]
+        )
+        self.assertEqual(
+            frappe.db.get_value("Assignment Submission", self.sub, "defense_status"),
+            "Open",
+        )

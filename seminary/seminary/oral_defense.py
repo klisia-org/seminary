@@ -674,7 +674,10 @@ def save_question(submission, question, passage=None, good_answer=None, name=Non
             frappe.throw(_("Question not found."))
     else:
         last = frappe.db.get_value(
-            QUESTION, {"submission": submission}, "max(position)"
+            QUESTION,
+            {"submission": submission},
+            "position",
+            order_by="position desc",
         )
         doc = frappe.get_doc(
             {
